@@ -32,11 +32,16 @@ Mouse/Touch/Stylusから高頻度入力を受け、低遅延かつ再現可能�
 
 Main ThreadでPointer Eventsを受ける。
 
-優先経路:
+Input sourceは**性能Profileにより選択**する。
 
-1. `pointerrawupdate` が適切に利用可能ならraw/coalesced入力として利用
-2. それ以外は `pointermove.getCoalescedEvents()`
-3. coalescedが得られない場合は親PointerEvent
+Default候補:
+
+1. `pointermove.getCoalescedEvents()`
+2. coalescedが得られない場合は親PointerEvent
+
+`pointerrawupdate` は、高frequency入力が実際に必要で、かつCPU/Event-loop costを含めてinput-to-present改善が実測できたDevice/Profileだけで有効化するFast Pathとする。
+
+Pointer Events Level 3自身もraw listenerが性能へ悪影響を与え得ると注意しているため、「利用可能なら常にraw」を禁止する。
 
 同じ物理区間を複数event sourceから二重取り込みしない。
 
@@ -80,10 +85,18 @@ Event受信時点のView Transform generationを記録し、Document coordinate�
 
 Pan/Zoom/Rotateと同時に描画しても、後で現在Viewを使って過去Sampleを再解釈しない。
 
+### 4.1 Packed hot-path representation
+
+Normalized SampleをJS object配列として大量生成することを標準にしない。
+
+Hot PathはTypedArray/packed struct等の連続Bufferを候補とし、GC pressureとcopy量を測定する。
+
+Sample propertyが利用されないDeviceでは不要field処理を省けるProfileを許容する。
+
 ### 5. Input transport
 
-Primary:
-- batched transferable buffers
+Primary候補:
+- small bounded batched transferable buffers
 
 Optional fast path:
 - SharedArrayBuffer ring when cross-origin isolated
@@ -212,7 +225,7 @@ stable pages/chunksへstreamし、active RAMはbounded tailとworking setにす�
 
 ## External specification check
 
-2026-05のPointer Events Level 3 advancement proposalでは:
+Pointer Events Level 3は2026-06-30にW3C Recommendationとなり、
 
 - altitudeAngle
 - azimuthAngle
@@ -220,9 +233,9 @@ stable pages/chunksへstreamし、active RAMはbounded tailとworking setにす�
 - coalesced events
 - predicted events
 
-がLevel 3の主な追加要素として列挙されている。
+がLevel 3の追加要素として標準化されている。
 
-API capability detectionを行い、未対応Browserでfallbackする。
+ただし `pointerrawupdate` はhigh-frequency event処理自体がページ性能へ影響し得る。API capability detectionだけでなく**実行Profile**で選択する。
 
 ## Legacy reference review
 
