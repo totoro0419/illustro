@@ -39,7 +39,7 @@ Lineart Region Systemは**通常描画の同期Hot Pathへ常駐させない。*
 - Lineart Stroke commit時はまずdirty generation/boundsを記録する
 - Topology更新はRegion Fill、Persistent Fill、Region Selection等が必要とした時、またはbudget内のbackground jobとして行う
 - 通常Brush Strokeのpresent/commitをRegion解析完了待ちにしない
-- 连続編集中はdirty更新をcoalesceし、中間generationを全て解析しない
+- 連続編集中はdirty更新をcoalesceし、中間generationを全て解析しない
 
 Persistent Fillを有効にしたDocumentでは追従更新を優先するが、それでもcurrent stroke latencyより優先しない。必要なら「Updating」状態を明示する。
 
