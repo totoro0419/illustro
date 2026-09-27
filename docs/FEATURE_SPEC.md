@@ -904,6 +904,87 @@ Tool/Command/Panel/Brush/Macro/Setting等を横断検索できる。
 
 検索結果からQuick Menu/Toolbar等へ追加できる操作を検討する。
 
+### FR-SHORTCUT-001 Press-to-bind
+
+Keyboard Shortcutの追加は、キー名を文字列入力・リスト選択する方式をPrimaryにしない。
+
+対象Commandの「ショートカットを追加」を実行するとCapture Modeへ入り、**ユーザーが実際に押したキー組み合わせをShortcutとして登録する方式**を標準とする。
+
+例:
+
+Commandを選択 → ショートカットを追加 → Capture Mode → 実際に `Ctrl + Shift + K` を押す → 候補表示 → 確定。
+
+### FR-SHORTCUT-002 Live capture display
+
+Capture Mode中は、現在認識しているキー・Modifierをリアルタイム表示する。
+
+少なくとも次を区別する。
+
+- Ctrl
+- Shift
+- Alt / Option
+- Meta / Command
+- main key
+
+### FR-SHORTCUT-003 Conflict detection
+
+入力されたShortcutが既存Bindingと衝突する場合、確定前に衝突先を表示する。
+
+ユーザーは少なくとも次を選択できる。
+
+- 既存Bindingを置換
+- 新規登録をキャンセル
+- 別のShortcutを入力
+
+Silent overrideは禁止する。
+
+### FR-SHORTCUT-004 Multiple bindings
+
+一つのCommandへ複数Shortcutを登録可能にする。
+
+Default ShortcutとUser Shortcutを区別して保持できる構造にする。
+
+### FR-SHORTCUT-005 Remove / cancel
+
+- Capture Modeは `Esc` 等でキャンセル可能にする。
+- 既存Shortcutは明示操作で解除可能にする。
+- Shortcut解除とCommand削除を混同しない。
+
+### FR-SHORTCUT-006 Reserved shortcut warning
+
+OS / Browser / Runtimeが優先して取得する可能性のあるShortcutは、登録時に警告する。
+
+Runtime上確実に受け取れない組み合わせを「使用可能」と誤表示しない。
+
+### FR-SHORTCUT-007 Event-derived binding
+
+Shortcut Captureでは実Keyboard EventからBinding情報を取得する。
+
+単なる表示文字列だけを保存せず、少なくとも以下を区別して保持できる設計とする。
+
+- normalized modifiers
+- logical key
+- physical key code
+- display label
+
+Keyboard Layout差を考慮し、保存データをUI表示文字列そのものへ依存させない。
+
+### FR-SHORTCUT-008 Modifier-only policy
+
+Modifier単体のShortcutは誤操作・OS競合が大きいためDefaultでは割当対象外とする。
+
+高度設定として許可するかは、Input/UI Prototypeで再評価する。
+
+### FR-SHORTCUT-009 Immediate discoverability
+
+Shortcut編集画面だけでなく、Command Search、Quick Menu、Menu/Tooltip等から現在のShortcutを確認できる設計にする。
+
+### FR-SHORTCUT-010 Touch-device equivalence
+
+Physical KeyboardがないTablet/Smartphoneでも同じCommandへ到達可能でなければならない。
+
+Keyboard Shortcutは高速アクセス手段であり、Command唯一の入口にしてはならない。
+
 ---
 
 ## 24. Workspace / Device Adaptation
