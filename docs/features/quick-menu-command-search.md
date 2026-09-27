@@ -1,0 +1,152 @@
+# Quick Menu / Command Search Interaction Specification
+
+> Status: **Accepted P0 interaction specification**
+
+## Quick Menu purpose
+
+High-frequency command surface that can be summoned near the current work without permanently occupying large screen area.
+
+## Activation
+
+Supported activation candidates:
+
+PC:
+- configurable shortcut
+- pen button
+- context gesture where non-conflicting
+
+Tablet:
+- stylus button where available
+- configurable touch gesture
+- explicit on-screen trigger
+
+Smartphone:
+- explicit thumb-reachable trigger
+- configurable gesture
+
+No device relies on right-click-only activation.
+
+Exact default gesture/button is UI prototype decision.
+
+## Open behavior
+
+Open at:
+- cursor/pen position where safe
+- otherwise stable reachable anchor
+
+Menu must avoid screen edges/safe areas and reposition automatically.
+
+Opening Quick Menu does not change current tool until an item is activated.
+
+## Contents
+
+Items may be:
+
+- Tool
+- Command
+- Brush
+- Color
+- Macro
+- Layer Action
+- Canvas Action
+
+Item behavior type:
+- Trigger
+- Toggle
+- Hold/temporary where supported
+- Subgroup
+
+## Customization
+
+Edit mode is explicit to prevent accidental rearrangement while painting.
+
+Operations:
+- add
+- remove
+- reorder
+- group
+- rename label
+- choose icon
+- assign shortcut
+- reset profile
+
+Add browser can use Command Search.
+
+## Profiles / context
+
+User may have multiple profiles.
+
+Context-aware suggestions may appear separately from pinned user items.
+
+Context system must not rearrange user-pinned items unpredictably.
+
+## Command Search
+
+Search indexes:
+- commands
+- tools
+- panels
+- brushes
+- macros
+- settings
+- selected-context actions
+
+Search result shows:
+- name
+- category/context
+- current shortcut
+- availability/disabled reason
+
+Actions:
+- execute
+- add to Quick Menu
+- add shortcut
+- open relevant settings
+
+## Disabled commands
+
+Unavailable command remains discoverable when useful, with reason:
+- no selection
+- locked layer
+- unsupported target
+- capability absent
+
+Do not silently hide every unavailable command.
+
+## Close / cancel
+
+Esc/tap outside/gesture close returns to previous state.
+
+Opening and closing without action creates no Undo entry.
+
+## Device
+
+PC:
+- keyboard-first search
+- pointer Quick Menu
+Tablet:
+- pen/touch radial/grid/list layout candidate
+Phone:
+- thumb reach, large hit targets
+- menu may favor bottom/near-thumb sheet if radial space insufficient
+
+Visual form is not fixed by this spec.
+
+## Persistence
+
+Quick Menu profiles = Workspace/user settings.
+Current open state = Session only.
+
+## Performance
+
+- command index incremental/prebuilt
+- opening Quick Menu should not scan full document
+- brushes/assets search uses lazy index
+- inactive menu near-zero cost
+
+## Acceptance
+
+- every item type executable
+- user pins remain stable despite context
+- unavailable command explains why
+- touch-only activation path exists
