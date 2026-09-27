@@ -80,6 +80,14 @@ Cut全体 = 1 Undo step。
 
 Undoでsource content/structureを正確に戻す。
 
+## 6.1 Commit semantics
+
+- Copy: Internal Clipboard更新が成功した時点で完了。Document commitなし。
+- Cut: Clipboard payload確保とsource removalを同一user-intent transactionとしてcommit。
+- Paste: target Documentへnew Layer/Objectを追加できた時点でcommit。
+- Paste in Place: Pasteと同じtransactionでposition metadataまでcommit。
+- System Clipboard export失敗は、すでに成功したInternal Copyをrollbackしない。
+
 ## 7. Paste
 
 Default:
