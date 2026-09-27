@@ -1,6 +1,6 @@
 # Illustro Architecture Overview
 
-> Status: **Architecture Baseline v0.1 — Accepted for prototyping**  
+> Status: **Architecture Baseline v0.2 — Performance-first, accepted for prototyping**  
 > Date: 2026-09-27  
 > Scope: 新Illustroのコアアーキテクチャ。UIの視覚設計ではなく、Document / Render / History / Brush / Region / Color / Persistenceを統合する内部構造。  
 > Important: 数値定数・Tile Size・Worker数・Cache容量・性能保証値は、Benchmark前には固定しない。
@@ -20,6 +20,18 @@
 9. 将来Native wrapperや共同編集へ拡張可能だが、今それらを中心に複雑化しない
 10. 過去Illustroとの内部互換性を設計制約にしない
 
+## 1.1 Performance-first execution rules
+
+Architectureの概念的な美しさより、実行時の軽さを優先する。
+
+- **Inactive feature = near-zero recurring cost** を原則とする。
+- 高度Moduleは必要になるまでload/compile/allocateしない。
+- Published revisionはimmutableでも、active interactionまでpure immutableにしない。
+- JS / WASM / Worker / GPU境界は固定思想ではなく実測costで決める。
+- 小さなDocumentや単純操作へ、大規模Document用の重い仕組みを常時課さない。
+- Background workはForeground latency、battery、thermal、memory budgetを超えて実行しない。
+- 同じSemantic correctnessを満たすなら、抽象化が多少重複してもHot Pathが軽い案を選ぶ。
+
 ## 2. Runtime baseline
 
 ### 2.1 Web-first
@@ -38,17 +50,21 @@
 
 将来Desktop wrapper / native hostを追加しても、Document/Brush/Region/HistoryのCanonical modelを再設計しない構造にする。
 
-### 2.2 Language boundary
+### 2.2 Language / module placement
 
-Baseline:
+**言語境界自体をArchitectureの目的にしない。**
 
-- **TypeScript**: UI、DOM、Platform adapter、Worker orchestration、Web API integration
-- **Rust → WebAssembly**: Canonical data structures、deterministic/reference algorithms、Region/Geometry、Raster CPU evaluator、serialization-critical logic
-- **WGSL**: WebGPU rendering / compute fast path
+Baseline policy:
 
-WASM境界は細粒度で呼ばず、Stroke batch / Tile job / Region job等の粗いCommand単位にする。
+- **TypeScript**: UI、DOM、Platform adapter、Command orchestration、軽量metadata処理
+- **Rust → WebAssembly候補**: Computational geometry、Region、codec、reference raster、ICC等、実測で利益があるCPU-heavy / correctness-critical kernel
+- **WGSL**: WebGPU fast path
 
-Rust CoreはBrowserだけに依存しないcrate構成とし、native unit/property testsを可能にする。
+Canonical data structureのすべてをWASMへ入れることは要求しない。JS↔WASM copy/serializationやstartup costが利益を上回る場合はTypeScript側へ置く。
+
+WASM利用時も境界は粗粒度にし、Buffer ownershipを明確化する。Region、PSD、advanced ICC等の大きなModuleは可能な限りlazy-loadする。
+
+Rustは有力実装候補だが、**性能測定前の無条件採用範囲は固定しない。**
 
 ## 3. Canonical state model
 
@@ -132,9 +148,9 @@ Preview-only stateをSave/Exportの正解として扱わない。
                            │ normalized input + commands
                            ▼
 ┌──────────────────────────────────────────────────────────────┐
-│ Realtime Engine Worker                                      │
-│ WASM Core coordinator + Stroke/Brush + View state           │
-│ Render Graph + WebGPU/compat renderer                        │
+│ Realtime Engine Role                                        │
+│ Stroke/Brush/View + Render orchestration                     │
+│ physical placement: Main or Worker, selected by profile      │
 └─────────────┬──────────────────────┬─────────────────────────┘
               │                      │
         immutable jobs         persistence packets
@@ -150,9 +166,11 @@ Preview-only stateをSave/Exportの正解として扱わない。
               Immutable Revision / Block Store
 ```
 
-これは**役割分離**であり、固定Worker数ではない。
+これは**論理的な役割分離**であり、物理Thread/Worker配置ではない。
 
-利用可能CPU、Memory、cross-origin isolation、Platform制約に応じてCompute Pool数は変える。必要なら一部Roleを同Workerへ統合できる。
+Realtime EngineをDedicated Workerへ置くかMain Threadへ一部残すかも実測対象とする。Worker message latencyやbrowser compatibilityが不利な端末では、render submissionをMain Threadに置き、heavy computeだけWorkerへ逃がす構成を許容する。
+
+利用可能CPU、Memory、cross-origin isolation、Platform制約に応じてCompute Pool数は変える。必要ならRoleを統合し、逆にDesktopでは分離する。
 
 ## 5. Renderer backend policy
 
@@ -214,6 +232,21 @@ display transform
   ↓
 presentation surface
 ```
+
+## 7.1 Inactive-feature policy
+
+通常のRaster描画中に以下を自動常駐させない。
+
+- Region topology analysis
+- general ICC LUT compilation
+- Wet Media state
+- PSD/EXR codecs
+- expensive global filters
+- Timelapse video encoding
+
+必要なTool/Document featureが有効になった時点でlazy initializeする。
+
+Region source editは原則としてdirty generationを記録するだけで、通常Stroke commitをTopology再構築待ちにしない。
 
 ## 8. Data flow: Lineart Region
 
@@ -315,7 +348,7 @@ Cross-origin isolationを利用可能なDeploymentではRing Buffer等に利用�
 
 2026-09時点:
 
-- Pointer Events Level 3はpointerrawupdate、coalesced/predicted events、azimuth/altitudeを含む。
+- Pointer Events Level 3は2026-06-30にW3C Recommendationとなり、pointerrawupdate、coalesced/predicted events、azimuth/altitudeを含む。ただし仕様自体がpointerrawupdate listenerの性能影響を警告しているため、raw pathを常時最優先にはしない。
 - WebGPUはW3C Candidate Recommendation Draftであり、全対象Browserで無条件利用できる前提にはしない。
 - OffscreenCanvasはWorkerで利用可能。
 - OPFSはWorkerから利用でき、Dedicated Worker内のSyncAccessHandleによるin-place accessが可能。
@@ -354,12 +387,15 @@ Cross-origin isolationを利用可能なDeploymentではRing Buffer等に利用�
 - logical tile size
 - GPU microtile/workgroup
 - input transport batch size
-- materialization threshold
+- materialization threshold / active transaction strategy
 - cache budgets
 - history/checkpoint threshold
 - recovery journal cadence
 - compression block size
 - worker pool size
+- Main-thread vs Worker realtime placement
+- JS/TypeScript vs WASM kernel placement
+- pointermove/coalesced vs pointerrawupdate crossover
 - WebGPU vs compatibility backend crossover
 - ICC transform/LUT strategy
 - float/integer canonical raster trade-off
