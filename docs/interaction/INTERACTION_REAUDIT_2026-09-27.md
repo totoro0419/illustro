@@ -13,7 +13,7 @@
 - Performance Policy/Audit
 - Device Capability ADR/Audit
 - Interaction Model
-- 13 P0 feature interaction specs
+- P0 feature interaction specs including Clipboard
 - Keyboard Shortcut detailed spec
 - Source-of-truth hierarchy
 - Requirement IDs
@@ -189,6 +189,33 @@ Press-to-bind, conflicts, multiple bindings, event-derived storage, reserved key
 
 Current grade: **A**
 
+### Clipboard / Cross-document
+
+Initial audit missed a conventional core-editing area: Copy/Cut/Paste.
+
+Added:
+- Internal Clipboard independent of System Clipboard
+- Copy / Cut / Paste / Copy Merged / Paste in Place
+- Native cross-document payload
+- System Clipboard optional bridge
+- Desktop Drag & Drop semantics
+- Device-independent access
+- Cut/Paste Undo behavior
+
+Current grade: **A-**
+
+### Localization / Internationalization
+
+Initial audit found no explicit localization architecture.
+
+Added:
+- localizable UI resources
+- Japanese/CJK layout and IME assumptions
+- stable locale-independent command/schema IDs
+- locale-aware display formatting separated from canonical values
+
+Current grade: **A-**
+
 ### Save / Recovery
 
 Added:
@@ -344,4 +371,4 @@ The remaining unknowns are now explicitly classified as one of:
 - P1/P2 feature interaction backlog
 - Future scope
 
-No major P0 interaction uncertainty is currently known.
+No major known P0 interaction uncertainty remains after the current audit. Exact visual choices and benchmark-derived constants remain intentionally open.
