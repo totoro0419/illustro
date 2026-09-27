@@ -65,6 +65,12 @@ Runtime lightness rules are defined in [Performance-First Policy](docs/architect
 
 PC / Tablet / Smartphone adaptation is defined in [ADR-0010](docs/architecture/ADR-0010-device-capability-adaptation.md), with [Device Compatibility Audit](docs/architecture/DEVICE_COMPATIBILITY_AUDIT_2026-09-27.md) and [Device Test Matrix](docs/architecture/DEVICE_TEST_MATRIX.md).
 
+## Interaction Specifications
+
+Core user interaction is defined in [Interaction Specifications](docs/interaction/README.md). The current post-remediation audit is [Interaction Precision Re-audit](docs/interaction/INTERACTION_REAUDIT_2026-09-27.md), with remaining advanced-feature decisions tracked in [Remaining Interaction Backlog](docs/interaction/REMAINING_INTERACTION_BACKLOG.md).
+
+The core painting workflow is interaction-ready for dedicated UI design. Advanced-feature final UI remains gated by its interaction backlog.
+
 ## Development gate
 
 本実装へ進む前に、少なくとも以下を詳細設計します。
