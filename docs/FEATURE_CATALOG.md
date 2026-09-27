@@ -1,375 +1,380 @@
-# Illustro Feature Catalog
+# Illustro 機能カタログ
 
-> Status: Initial catalog derived from the canonical product specification.  
-> Purpose: Master index of planned capabilities. Detailed behavior belongs in `docs/features/*.md`.  
-> Important: Presence here means “part of the intended product scope or an explicit investigation target,” not “already implemented.”
+> 状態: 上位製品仕様から作成した初期マスターカタログ。競合調査により継続更新する。  
+> 目的: Illustro が最終的に持つ機能・調査対象を一覧化する。詳細挙動は将来 `docs/features/*.md` に分離する。  
+> 注意: ここに載っていることは「実装済み」を意味しない。
 
-## Status vocabulary
+## ステータス定義
 
-- **Core** — foundational or product-defining; architecture must account for it early.
-- **Required** — intended final product capability.
-- **Investigate** — intended direction, but exact technical/product form requires validation.
-- **Future** — intentionally postponed beyond the core painting application.
-- **Out of scope** — intentionally not part of the product direction.
+- **Core** — 基盤・製品定義級。初期アーキテクチャから考慮必須。
+- **Required** — 最終製品に搭載する方針。
+- **Investigate** — 方向性は重要だが、具体方式は調査・検証後に確定。
+- **Future** — コアペイントアプリ完成後に扱う。
+- **Out of scope** — 現在の製品方針として対象外。
 
-## A. Canvas and document
+## A. キャンバス・ドキュメント
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Raster canvas | Core | Primary drawing surface |
-| Tile-based large-canvas architecture | Core / Investigate | Architecture candidate to meet scalability requirements |
-| Pan / Zoom / Rotate | Core | Must feel immediate |
-| Zoom up to 64000% | Required | Coordinate precision must remain stable |
-| Canvas flip | Required | Horizontal/vertical as appropriate |
-| Crop | Required | Detailed interaction TBD |
-| Canvas resize | Required | Detailed resampling options TBD |
-| Image resize | Required | Interpolation modes TBD |
-| Seamless Tile Drawing | Required | Live repeated-edge editing |
-| Multiple documents | Required | UX TBD |
-| Document metadata | Required | Native format support |
+| Raster Canvas | Core | 主描画面 |
+| Tile-based 大規模Canvas | Core / Investigate | 大規模キャンバス要件を満たす有力方式 |
+| Pan / Zoom / Rotate | Core | 即応性最重要 |
+| 最大 64000% Zoom | Required | 高倍率でも座標精度を維持 |
+| Canvas Flip | Required | 水平/垂直 |
+| Crop | Required | 詳細操作は未確定 |
+| Canvas Resize | Required | |
+| Image Resize | Required | 補間方式は別途仕様化 |
+| Seamless Tile Drawing | Required | 上下左右反復をリアルタイム確認 |
+| 複数Document | Required | UX未確定 |
+| Document Metadata | Required | .illustroで保持 |
 
-## B. Drawing and brush engine
+## B. 描画・ブラシエンジン
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Brush tool | Core | Low-latency input |
-| Eraser | Core | Brush-compatible behavior preferred |
-| Smudge / blend tool | Required | Detailed model TBD |
-| Brush size / opacity | Core | Fast-access controls |
-| Pressure | Core where hardware supports it | |
-| Tilt | Required where hardware supports it | |
-| Azimuth | Required where hardware supports it | |
-| Stylus eraser | Required where hardware supports it | |
-| Barrel button | Required where hardware supports it | |
-| Stabilization / smoothing | Required | Algorithms TBD |
-| Procedural Brush System | Core differentiator | Shape, spacing, scatter, dynamics, noise, etc. |
-| Texture-based brush inputs | Required | Procedural does not prohibit raster textures |
-| Brush presets | Required | |
-| Brush organization/search | Required | |
-| User-authored brushes | Required | |
-| Dynamic Wet Media | Core differentiator / Investigate | Illustration-oriented simulation |
-| Pigment / wetness state | Investigate | Wet-media subsystem |
-| Paper / grain interaction | Required / Investigate | Brush and wet-media integration |
+| Brush Tool | Core | 低遅延 |
+| Eraser | Core | Brush Engineと統一的に扱える設計を優先 |
+| Smudge / Blend Tool | Required | 詳細方式未確定 |
+| Brush Size / Opacity | Core | 高速アクセス必須 |
+| Pressure | Core | 対応端末 |
+| Tilt | Required | 対応端末 |
+| Azimuth | Required | 対応端末 |
+| Stylus Eraser | Required | 対応端末 |
+| Barrel Button | Required | 対応端末 |
+| Stabilization / Smoothing | Required | アルゴリズム未確定 |
+| Procedural Brush System | Core | Illustroの主要独自機能 |
+| Texture-based Brush Input | Required | Proceduralと併用 |
+| Brush Preset | Required | |
+| Brush検索・整理 | Required | |
+| ユーザー作成Brush | Required | |
+| Dynamic Wet Media | Core / Investigate | イラスト向け湿式表現 |
+| Wetness / Pigment等の内部状態 | Investigate | Wet Media基盤 |
+| 紙質・粒子・質感 | Required / Investigate | Brush/Wet Media連携 |
 
-## C. Line art and region intelligence
+## C. 線画・Region Intelligence
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Lineart Region System | Core differentiator | Foundational document concept |
-| Closed-region detection | Core | First-stage requirement |
-| Persistent Region IDs | Core | Persistence/remapping rules TBD |
-| Region adjacency graph | Core | Supports coloring assistance |
-| Boundary tracking | Core | |
-| Line connectivity analysis | Core | |
-| Region selection | Required | |
+| Lineart Region System | Core | 製品定義級の独自機能 |
+| 閉領域検出 | Core | 第一段階の必須能力 |
+| Persistent Region ID | Core | 再計算後の対応付けが必要 |
+| Region隣接グラフ | Core | 彩色支援等に利用 |
+| Boundary Tracking | Core | |
+| Line Connectivity Analysis | Core | |
+| Region Selection | Required | |
 | Region Fill | Required | |
-| Lineart-linked Coloring | Core differentiator | Re-map color after line edits |
-| Configurable remapping strength/conditions | Required | |
-| Region change preview/confirmation | Required | Must remain user-controlled |
-| Semantic region labels | Investigate | Not required for first implementation |
+| Lineart-linked Coloring | Core | 線画変更後に既存塗りを再マッピング |
+| 追従強度・条件設定 | Required | |
+| 変更結果の確認・Undo | Required | 自動変更をユーザー制御下に置く |
+| Semantic Region Label | Investigate | 初期段階では必須にしない |
 
-## D. Fill and coloring
+## D. 塗り・彩色
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
 | Flood Fill | Core | |
-| Gap closing | Required | |
-| Gap tolerance | Required | |
-| Boundary expand/shrink | Required | |
-| Multi-layer reference fill | Required | |
-| Line-art reference fill | Required | |
-| Color-difference tolerance | Required | |
-| Enclose and Fill | Required | |
-| Trace and Fill | Required | |
+| Gap Closing | Required | |
+| Gap Tolerance | Required | |
+| Boundary Expand / Contract | Required | |
+| Multi-layer Reference Fill | Required | |
+| Lineart Reference Fill | Required | |
+| Color Difference Tolerance | Required | |
+| Enclose and Fill | Required | 囲って塗る |
+| Trace and Fill | Required | なぞって塗る |
 | Drag Fill | Required | |
-| Continuous-area fill | Required | |
-| Smart Fill unified workflow | Core differentiator | Avoid needless tool fragmentation |
-| Smart Color Assist | Core differentiator | Artist-assistive, not generative-first |
-| Base-color suggestions | Required / Investigate | Deterministic methods preferred |
-| Palette suggestions | Required / Investigate | |
-| Adjacent-color harmony assistance | Required / Investigate | |
-| Region recoloring | Required | |
-| Shadow/highlight candidates | Investigate | |
-| Color-temperature adjustment | Required | |
-| Global color adjustment | Required | |
+| Continuous Region Fill | Required | |
+| Smart Fill 統合UI | Core | モード分散を避ける |
+| Smart Color Assist | Core | ユーザー補助。生成AI主体にしない |
+| Base Color候補 | Required / Investigate | 決定的アルゴリズム優先 |
+| Palette候補 | Required / Investigate | |
+| 隣接色調和支援 | Required / Investigate | |
+| Region Recolor | Required | |
+| Shadow / Highlight候補 | Investigate | |
+| Color Temperature調整 | Required | |
+| 全体色調整 | Required | |
 
-## E. Color system
+## E. カラーシステム
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Color picker | Core | |
-| Canvas eyedropper | Core | |
-| Reference Eyedropper | Core differentiator | Directly sample reference assets |
-| Color history | Required | |
-| Palettes | Required | |
-| Palette import/export | Required | Format support TBD |
-| HSV/HSL/RGB style controls | Required | Exact models TBD |
-| Color harmony assistance | Required / Investigate | |
-| Grayscale preview | Required | Also useful in references |
-| Color management / ICC | Core / Investigate | Architecture must account for managed color; exact models, profiles and conversion policy remain to be specified |
+| Color Picker | Core | |
+| Canvas Eyedropper | Core | |
+| Reference Eyedropper | Core | Illustro独自の高速資料採色 |
+| Color History | Required | |
+| Palette | Required | |
+| Palette Import / Export | Required | 形式未確定 |
+| HSV/HSL/RGB等のカラーコントロール | Required | 最終対応モデル未確定 |
+| Color Harmony支援 | Required / Investigate | |
+| Grayscale Preview | Required | Referenceにも利用 |
+| Color Management / ICC | Core / Investigate | ドキュメント・合成モデル確定前に仕様化必須 |
+| Wide Gamut | Investigate | Display P3等を含め検討 |
+| Bit Depth Policy | Investigate | 8/16/32bit等 |
+| HDR / Linear-light Policy | Investigate | |
 
-## F. Layers
+## F. レイヤー
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
 | Raster Layer | Core | |
-| Vector Layer | Required | Detailed vector model TBD |
+| Vector Layer | Required | ベクターモデル詳細未確定 |
 | Group | Core | |
 | Mask | Required | |
-| Clipping | Core | High-frequency workflow |
-| Persistent Clipping Control | Core UX requirement | Directly visible/controllable |
+| Clipping | Core | 高頻度操作 |
+| Persistent Clipping Control | Core | レイヤーUI上で即時確認・切替 |
 | Adjustment Layer | Required | |
 | Filter Layer | Required | |
-| Text layer/entity | Required | |
-| Multi-select layers | Required | |
-| Drag reorder | Core | |
+| Text Layer / Entity | Required | |
+| Multi-select | Required | |
+| Drag Reorder | Core | |
 | Search | Required | |
 | Filter | Required | |
-| Color tags | Required | |
-| Lock types | Required | |
-| Solo | Required | |
+| Color Tag | Required | |
+| Lock種別 | Required | |
+| Solo / Isolate | Required | |
 | Collapse | Required | |
 | Duplicate | Required | |
 | Merge | Required | |
 | Merge Visible | Required | |
 | Flatten Copy | Required | |
-| Layer Comps | Core differentiator | Store coordinated layer states |
-| Large-layer-count performance | Core quality requirement | Virtualization/caching approach TBD |
+| Layer Comps | Core | |
+| Canvasから直接Layer選択 | Required | 大量レイヤー時の高速操作 |
+| 大量レイヤーUI性能 | Core | Virtualization等を検討 |
 
-## G. Selection and transform
+## G. 選択・変形
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Rectangular / elliptical selection | Required | |
-| Freehand selection | Required | |
-| Polygonal selection | Required | |
-| Color / similarity selection | Required | Detailed algorithms TBD |
-| Region selection | Required | Region-system integration |
-| Add / subtract / intersect | Required | |
-| Invert selection | Required | |
+| Rectangle / Ellipse Selection | Required | |
+| Freehand Selection | Required | |
+| Polygonal Selection | Required | |
+| Color / Similarity Selection | Required | アルゴリズム未確定 |
+| Region Selection | Required | Region System連携 |
+| Add / Subtract / Intersect | Required | |
+| Invert Selection | Required | |
 | Feather | Required | |
-| Expand / contract | Required | |
-| Transform scale / rotate / move | Core | |
+| Expand / Contract | Required | |
+| Saved Selection / Selection Mask | Required | 再利用可能なグレースケール選択 |
+| Select from Layer Content | Required | |
+| Luminance / Color-range Selection | Required | |
+| Move / Scale / Rotate | Core | |
 | Flip | Required | |
-| Free transform | Required | |
-| Perspective / distortion | Required | |
-| Warp | Required | Prefer non-destructive where practical |
-| Liquify | Required | Prefer non-destructive where practical |
-| Transform interpolation options | Required | |
+| Free Transform | Required | |
+| Perspective / Distort | Required | |
+| Warp | Required | 可能な限り非破壊 |
+| Liquify | Required | 可能な限り非破壊 |
+| Transform Interpolation | Required | 方式未確定 |
 
-## H. Non-destructive editing and compositing
+## H. 非破壊編集・合成
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
 | Adjustment Layer | Required | |
 | Filter Layer | Required | |
 | Live Blur | Required | |
 | Live Color Adjustment | Required | |
-| Masks | Required | |
+| Mask | Required | |
 | Vector Mask | Required / Investigate | |
 | Clipping Mask | Required | |
-| Blend modes | Core | Exact mode list TBD |
-| Blend If equivalent | Core differentiator | More visual/intuitive interaction desired |
+| Blend Mode | Core | 完全なモード一覧は別途調査 |
+| Blend If 相当 | Core | より視覚的なUIへ再設計 |
 | Displacement | Required / Investigate | |
-| Healing | Required | Illustration-friendly workflow |
-| Patch | Required | Illustration-friendly workflow |
+| Healing | Required | イラスト向けに最適化 |
+| Patch | Required | イラスト向けに最適化 |
+| Clone | Required | 直接操作を重視 |
 
-## I. Reference system
+## I. Reference System
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Reference Workspace | Core differentiator | Independent of artwork layers |
-| Multiple references | Required | |
-| Free placement | Required | |
-| Pinning | Required | |
-| Reference scale/rotate | Required | |
-| Horizontal flip | Required | |
+| Reference Workspace | Core | |
+| 複数Reference | Required | |
+| 自由配置 | Required | |
+| Pin | Required | |
+| Scale / Rotate | Required | |
+| Horizontal Flip | Required | |
 | Grayscale | Required | |
-| Always on top | Required | |
-| Temporary hide | Required | |
-| Reference Groups | Required | |
-| Reference persistence | Required | |
-| Reference Eyedropper | Core differentiator | |
+| Always on Top | Required | |
+| Temporary Hide | Required | |
+| Reference Group | Required | |
+| Reference Persistence | Required | |
+| Reference Eyedropper | Core | |
 
-## J. History, snapshots, and branching
+## J. 履歴・Snapshot・分岐
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Undo | Core | Deep, fast, stable |
+| Undo | Core | 深く・高速・安定 |
 | Redo | Core | |
-| Command-level history where practical | Core architecture direction | |
-| Snapshot System | Core differentiator | Explicit checkpoints |
-| Snapshot comparison | Required | |
-| Snapshot branching | Required / Investigate | |
-| History panel | Required | Detailed UX TBD |
+| Command単位履歴 | Core | 可能な範囲で意味のある履歴 |
+| Snapshot System | Core | 明示的Checkpoint |
+| Snapshot比較 | Required | |
+| Snapshot分岐 | Required / Investigate | |
+| History Panel | Required | UX未確定 |
 
-## K. Timelapse and work analytics
+## K. Timelapse・作業時間
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| History-based Timelapse | Core differentiator | Prefer document changes over screen recording |
-| UI-free output | Required | |
-| High-resolution export | Required | |
-| Frame pacing controls | Required | |
-| Work Time | Core differentiator | Measure active production time |
-| Session time | Required | |
-| Daily time | Required | |
-| Total work time | Required | |
-| Inactivity filtering | Required | |
+| 制作履歴ベースTimelapse | Core | 画面録画より履歴利用を優先 |
+| UIを含めない出力 | Required | |
+| High-resolution Export | Required | |
+| Frame Pace調整 | Required | |
+| Work Time | Core | 実作業時間を測る |
+| Session | Required | |
+| Today | Required | |
+| Total | Required | |
+| Average | Required | |
+| Inactivity除外 | Required | |
 
 ## L. Automation
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Auto Actions / Macros | Core differentiator | |
-| Action recording | Required | |
-| Parameterized actions | Required / Investigate | |
-| Macro presets | Required | |
-| Shortcut assignment | Required | |
-| Quick Menu registration | Required | |
+| Auto Actions / Macros | Core | |
+| Action Recording | Required | |
+| Parameterized Action | Required / Investigate | |
+| Macro Preset | Required | |
+| Shortcut Assignment | Required | |
+| Quick Menu登録 | Required | |
 
-## M. UI, workspace, and interaction
+## M. UI・Workspace・操作体系
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Canvas First UI | Core principle | |
-| Direct Manipulation | Core principle | |
+| Canvas First | Core | 上位設計原則 |
+| Direct Manipulation | Core | 上位設計原則 |
 | Context UI | Core | |
-| Quick Menu | Core differentiator | User-customizable |
-| Command/tool search | Required | Discoverability mechanism |
-| Dock panels | Required on desktop-class UI | |
-| Undock / floating panels | Required on desktop-class UI | |
-| Panel resize/reorder/hide | Required | |
-| Workspace Save/Load | Required | |
-| Workspace presets | Required | Drawing, Painting, Coloring, Photo Editing, Pixel Art, Minimal candidates |
-| Left/right UI mirroring | Required | More than toolbar relocation |
-| Keyboard shortcuts | Core on desktop | |
-| Gestures | Core on touch devices | |
-| Hover behavior | Required where hardware supports it | |
-| Context click | Required on desktop | Important actions must not exist only here |
-| Custom toolbar | Required | |
-| Custom shortcuts | Required | |
-| Custom gestures | Required | |
+| Quick Menu | Core | ユーザーカスタマイズ可能 |
+| Command / Tool Search | Required | 機能発見性 |
+| Dock Panel | Required | PC系 |
+| Undock / Floating | Required | PC系 |
+| Panel Resize / Reorder / Hide | Required | |
+| Workspace Save / Load | Required | |
+| Workspace Preset | Required | Drawing/Painting/Coloring等 |
+| 左右UI反転 | Required | Toolbarだけに限定しない |
+| Keyboard Shortcut | Core | PC |
+| Gesture | Core | Touch Device |
+| Hover | Required | 対応環境 |
+| 右クリック / Context Click | Required | 重要機能をここだけに隠さない |
+| Custom Toolbar | Required | |
+| Custom Shortcut | Required | |
+| Custom Gesture | Required | |
 
-## N. Device adaptation
+## N. デバイス別適応
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Desktop-specific UI | Core requirement | Keyboard/mouse/pen/panels/hover |
-| Tablet-specific UI | Core requirement | Pen/touch/one-hand/canvas area |
-| Smartphone-specific UI | Core requirement | Thumb reach/Quick Menu/compact context UI |
-| Shared capabilities across device classes | Core principle | Do not remove advanced features solely due to form factor |
+| Desktop専用最適化UI | Core | Keyboard/Mouse/Pen/Panel/Hover |
+| Tablet専用最適化UI | Core | Pen/Touch/片手/Canvas面積 |
+| Smartphone専用最適化UI | Core | 親指/Quick Menu/小画面 |
+| 機能そのものは可能な限り共通 | Core | 端末を理由に高度機能を削らない |
 
-## O. File, persistence, recovery, and offline behavior
+## O. 定規・ガイド・形状・グラデーション
 
-| Capability | Status | Notes |
+競合一次資料の第1パスで、これらは一枚絵制作における確立した重要領域であることを確認した。
+
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| .illustro native format | Core | Preserve native document state |
-| PNG export | Required | |
-| JPEG export | Required | |
-| WebP export | Required | |
-| PSD import/export | Investigate | Information-preservation limits must be documented |
+| Straight / Parallel Ruler | Required | 詳細な定規一覧は継続調査 |
+| 2D Grid | Required | Canvas上で直接編集 |
+| Isometric Grid | Required | |
+| Perspective Guide | Required | 1/2/3点透視 |
+| Symmetry / Mirror | Required | |
+| Radial Symmetry | Required | |
+| Guide Snapping | Required | 対応ツールで予測可能に動作 |
+| Guide Visibility / Lock | Required | |
+| Guide Preset / Save | Required | |
+| Line / Rectangle / Ellipse / Polygon | Required | |
+| Post-stroke Shape Correction | Required / Investigate | 描画後に自然に整形 |
+| Vector-backed Shape | Required / Investigate | Vector Layerと統合 |
+| Linear Gradient | Required | |
+| Radial Gradient | Required | |
+| Reflected / Bilinear Gradient | Required | |
+| Shape-aware Gradient | Required / Investigate | |
+| Editable Gradient Stops | Required | |
+| Non-destructive Gradient | Required | |
+| Gradient Map | Required | Adjustmentとしても利用 |
+| Gradient Dithering | Required / Investigate | 低bit出力でBanding低減 |
+
+詳細根拠は `docs/research/COMPETITOR_MATRIX.md` を参照。
+
+## P. ファイル・保存・Recovery・Offline
+
+| 機能 | 状態 | 備考 |
+|---|---|---|
+| .illustro | Core | Native Document |
+| PNG Export | Required | |
+| JPEG Export | Required | |
+| WebP Export | Required | |
+| PSD Import / Export | Investigate | 情報保持範囲を明文化 |
 | Auto Save | Core | |
 | Crash Recovery | Core | |
 | Recovery Snapshot | Core | |
 | Incremental Save | Core | |
-| Saving without blocking drawing | Core quality requirement | |
-| Offline First | Core principle | |
-| No mandatory login for normal editing | Core principle | |
-| PWA installation | Investigate | Depends on final runtime architecture |
+| 描画を止めない保存 | Core | |
+| Offline First | Core | |
+| 通常編集でログイン不要 | Core | |
+| PWA Install | Investigate | 最終Runtime次第 |
 
-## P. Performance and rendering
+## Q. Performance・Rendering
 
-| Capability / Requirement | Status | Notes |
+| 要件 | 状態 | 備考 |
 |---|---|---|
-| Perceived-zero-lag goal | Core quality target | |
-| Low input latency | Core | |
-| Stable frame time | Core | |
-| Worst-frame monitoring | Core engineering metric | |
-| Memory scaling | Core engineering metric | |
-| Canvas-size scaling | Core engineering metric | |
-| GPU brush compositing | Investigate / likely required | |
-| GPU filters | Investigate / likely required | |
-| GPU transforms | Investigate / likely required | |
-| WebGPU | Investigate | Architecture candidate, not yet fixed |
-| GPU fallback path | Required where compatibility demands it | |
+| 体感0ラグ | Core | 品質目標 |
+| Low Input Latency | Core | |
+| Stable Frame Time | Core | |
+| Worst Frame計測 | Core | |
+| Memory Scaling | Core | |
+| Canvas Size Scaling | Core | |
+| GPU Brush Compositing | Investigate / likely required | |
+| GPU Filter | Investigate / likely required | |
+| GPU Transform | Investigate / likely required | |
+| WebGPU | Investigate | 技術候補。未固定 |
+| GPU Fallback | Required | 互換性上必要な場合 |
 
-## Q. AI-assisted functionality
+## R. AI補助
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Generative AI as central product workflow | Out of scope | Explicit product decision |
-| Assistive color suggestions | Investigate | Prefer deterministic algorithms where practical |
-| Region assistance | Investigate | |
-| Selection assistance | Investigate | |
-| Organization assistance | Investigate | |
-| Repair/correction assistance | Investigate | Must remain artist-controlled |
-| Offline-capable non-AI alternatives | Core principle | |
+| 生成AIを中心価値にする | Out of scope | 明示的方針 |
+| 色提案 | Investigate | 決定的アルゴリズム優先 |
+| Region補助 | Investigate | |
+| Selection補助 | Investigate | |
+| 整理補助 | Investigate | |
+| 修正補助 | Investigate | ユーザー制御必須 |
+| AIなしでも成立する基本機能 | Core | Offline/再現性/Privacy |
 
-## R. Future collaboration
+## S. 将来の共同編集
 
-| Capability | Status | Notes |
+| 機能 | 状態 | 備考 |
 |---|---|---|
-| Collaborative drawing / 絵チャ | Future | Consider only after core application completion |
-| Realtime multi-user document editing | Future / Investigate | Architecture should not make it needlessly impossible |
+| 絵チャ / Collaborative Drawing | Future | 本体完成後 |
+| Realtime Multi-user Editing | Future / Investigate | 今は設計中心にしない |
 
-## S. Drawing guides, geometry, and gradients
+## T. 競合調査がまだ必要な領域
 
-First-pass competitor research confirms these as established illustration workflows that Illustro should explicitly support rather than leave implicit.
+以下は**「搭載しない」のではなく未確定**であり、完全機能仕様の確定前に継続調査する。
 
-| Capability | Status | Notes |
-|---|---|---|
-| Straight / parallel ruler assistance | Required | Exact ruler inventory TBD |
-| 2D grid | Required | On-canvas editable controls |
-| Isometric grid | Required | |
-| Perspective guides | Required | One-, two-, and three-point workflows |
-| Symmetry / mirror drawing | Required | |
-| Radial symmetry | Required | |
-| Guide snapping | Required | Supported tools should snap predictably |
-| Guide visibility / locking | Required | |
-| Saved guide setups | Required | |
-| Direct line / rectangle / ellipse / polygon tools | Required | |
-| Post-stroke shape correction | Required / Investigate | Quick correction without changing tool where practical |
-| Vector-backed editable shapes | Required / Investigate | Integrate with vector layer model |
-| Linear gradient | Required | |
-| Radial gradient | Required | |
-| Reflected / bilinear gradient | Required | |
-| Shape-aware gradient | Required / Investigate | |
-| Editable gradient stops | Required | |
-| Non-destructive gradient representation | Required | |
-| Gradient Map adjustment | Required | |
-| Gradient dithering | Required / Investigate | Especially for low-bit-depth output |
+- Brush Dynamics / Sensor の完全な項目体系
+- Vector Path編集モデル
+- Text編集範囲
+- Brush Import / Export / Interchange
+- Material / Asset Library
+- Navigator / 複数View
+- Color Managementの詳細
+- ICCの変換・埋め込みポリシー
+- Bit Depth / HDR / Linear-light
+- Blend Modeの完全な対応範囲
+- Selection Edge Algorithm
+- Transform Interpolation
+- Filter / Adjustment の完全な一覧
+- Canvas作成・Resizeの詳細
+- Export Control / Metadata
+- Keyboard / GestureのDefault
+- Accessibility
+- Plugin / Extension方針
+- PSD互換境界
+- Platform別File Access
+- 一枚絵制作に必要な範囲での印刷対応
 
-See `docs/research/COMPETITOR_MATRIX.md` for the first-pass evidence and design implications.
-
-## T. Areas still requiring systematic competitor research
-
-The catalog is intentionally incomplete in several conventional painting-app areas. These must be researched and specified before the feature set is considered complete:
-
-- rulers and drawing guides,
-- symmetry and radial drawing,
-- perspective guides,
-- shape tools,
-- gradient tools,
-- vector path editing,
-- text editing details,
-- brush import/export/interchange,
-- material/asset libraries,
-- navigator,
-- color-management details,
-- ICC behavior,
-- bit depth and HDR policy,
-- blend-mode coverage,
-- selection algorithms,
-- transform interpolation,
-- filters and adjustment inventory,
-- canvas creation and resize options,
-- export controls and metadata,
-- keyboard/gesture defaults,
-- accessibility,
-- plugin/extensibility policy,
-- PSD compatibility boundaries,
-- platform/runtime-specific file access,
-- print-related support only insofar as it benefits single-illustration production.
-
-These items are not assumed absent. They are **unresolved** until competitor research and product decisions are completed.
+これらは調査完了まで未決定事項として扱い、推測で仕様を埋めない。
