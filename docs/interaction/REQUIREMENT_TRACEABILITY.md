@@ -33,6 +33,8 @@
 | Accessibility | INTERACTION_MODEL; backlog §14 | FEATURE_SPEC; ADR-0010 | B+ / per-feature QA pending |
 | Asset Library | backlog §9 | PERFORMANCE_POLICY | C / P1 |
 | Navigator / Multi-view | backlog §10 | ADR-0002 principles | C / P2 |
+| Clipboard / Cross-document | clipboard.md | ADR-0001/0003 semantics | A- |
+| Localization / i18n | LOCALIZATION_POLICY.md | Command stable-ID policies | A- |
 | File Format / Persistence | document-lifecycle.md; save-recovery.md | ADR-0008 | A- |
 | Autosave / Recovery / Offline | save-recovery.md | ADR-0008; ADR-0010 | A- |
 | Performance | INTERACTION_MODEL §23 | PERFORMANCE_POLICY; audit | Policy A / benchmarks pending |
