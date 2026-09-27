@@ -16,6 +16,8 @@ Brush preset browserからpresetを選択可能。
 
 ## Drawing
 
+Compatible editable Raster targetが存在しない場合はDocument Lifecycle仕様に従ってRaster Layerを作成してから同一user-intent内でstrokeを開始する。
+
 Pointer down → stroke begins.
 Move/coalesced input → realtime stroke.
 Pointer up → commit one stroke transaction.
