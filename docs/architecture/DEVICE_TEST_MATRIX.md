@@ -1,8 +1,22 @@
 # Device Test Matrix — PC / Tablet / Smartphone
 
-> Status: Required prototype validation matrix  
+> Status: **Support / regression validation matrix — not a Core implementation blocker**  
 > Date: 2026-09-27  
-> Purpose: 「対応可能」ではなく、実機で正常動作を証明するための共通テスト。
+> Purpose: 実装後にPC / Tablet / Smartphone対応を「Supported」と宣言するための共通テスト。
+
+## 0. Gate placement
+
+このMatrixをPC / Tablet / Smartphoneすべてで完走することは、Core Editor本実装を開始する前提ではない。
+
+Implementation前:
+- Architecture semantics / fallbackを設計
+- automated CI / browser testsを通す
+- 少なくとも1つの代表的な実端末でRealtime pathの仮説を検証
+
+Implementation後、Supported environment宣言前:
+- このMatrixで該当Device classをRegression検証
+
+2026-09-28時点ではXiaomi tablet + Xiaomi penでMain/Worker入力経路の実測証拠がある。ただしこれはTablet Core Normal Operation全体のPROTOTYPE PASSを意味しない。
 
 ## 1. Core Normal Operation Script
 
@@ -217,4 +231,10 @@ No cross-device numeric target is fixed before measurements.
 - **DEGRADED** — semantics correct, performance below target
 - **UNSUPPORTED** — Core script cannot be completed safely
 
-At current stage all three device classes are **DESIGN PASS / RUNTIME UNVERIFIED**.
+Current status:
+
+- PC: **DESIGN PASS / Core runtime unverified**
+- Tablet: **DESIGN PASS / Main-vs-Worker input benchmark measured on Xiaomi tablet + Xiaomi pen / full Core runtime unverified**
+- Smartphone: **DESIGN PASS / Core runtime unverified**
+
+Full-device validation remains required before Support claims, but is not required before Core implementation begins.
