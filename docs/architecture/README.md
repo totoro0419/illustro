@@ -1,6 +1,6 @@
 # Illustro Architecture
 
-> Current baseline: **v0.1 — Accepted for prototyping**  
+> Current baseline: **v0.2 — Performance-first, accepted for prototyping**  
 > Date: 2026-09-27
 
 ## Read first
@@ -44,10 +44,12 @@ The legacy file `ILLUSTRO_SECTION9_ALGORITHM_REVIEW_DRAFT(2).txt` is a reference
 - engine-managed color pipeline with ICC-aware architecture
 - non-destructive transform/effect model
 - OPFS working store separated from portable `.illustro`
-- WebGPU primary with compatibility fallback
-- TypeScript platform/UI + Rust/WASM canonical/algorithm core baseline
-- role-based workers, not fixed worker counts
+- WebGPU is the initial GPU prototype path with lazy compatibility fallback; final runtime/backend remains benchmark-driven
+- performance-driven module placement; TypeScript/WASM boundaries are benchmarked, not ideology-fixed
+- role-based ownership; physical Main/Worker placement is benchmark-driven
 - Offline-first core editing
+
+- inactive features must impose near-zero recurring runtime cost; advanced modules are lazy where practical
 
 ## What is deliberately NOT fixed yet
 
