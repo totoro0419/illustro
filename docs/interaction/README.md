@@ -22,6 +22,7 @@ Visual UIはInteraction Specを勝手に変更してはならない。
 ## Canonical common model
 
 - [Interaction Model](INTERACTION_MODEL.md)
+- [Localization Policy](LOCALIZATION_POLICY.md)
 
 ## P0 detailed interaction specs
 
@@ -38,6 +39,7 @@ Visual UIはInteraction Specを勝手に変更してはならない。
 - [Quick Menu / Command Search](../features/quick-menu-command-search.md)
 - [Keyboard Shortcuts](../features/keyboard-shortcuts.md)
 - [Save / Autosave / Recovery](../features/save-recovery.md)
+- [Clipboard](../features/clipboard.md)
 
 ## Current gate
 
