@@ -1,7 +1,7 @@
 # P0 Architecture Prototype — Initial Harness
 
 > Date: 2026-09-27  
-> Status: **Implemented and committed / GitHub Actions CI PASS / served Chromium integration tests PASS / Xiaomi tablet + Xiaomi pen realtime-path measurement completed**
+> Status: **P0 completed / Architecture V1 promotion PASS after second audit / Core implementation may begin**
 
 ## Purpose
 
@@ -224,9 +224,9 @@ GitHub Actions CI was added and completed successfully.
 Verified on the successful CI run:
 
 - TypeScript 7.0.2 strict typecheck: **PASS**
-- Vitest: **17 tests / 9 files PASS**
+- V1 first PASS: Vitest **24 tests / 11 files PASS**, served Chromium **4 / 4 PASS**
+- V1 second PASS after corrective audit: Vitest **29 tests / 12 files PASS**, served Chromium **4 / 4 PASS**
 - Vite 8.3.1 production build: **PASS**
-- Playwright Chromium served-browser integration tests: **3 / 3 PASS**
 - served module Worker input path: **PASS**
 - browser benchmark API exposure: **PASS**
 - localhost persistence benchmark path completes: **PASS**
@@ -236,21 +236,21 @@ Published harness:
 
 `https://totoro0419.github.io/illustro/`
 
-The persistence integration test currently proves that the browser-side durability pipeline completes and produces batch metrics; it does **not** yet assert that OPFS SyncAccessHandle rather than the memory fallback was the selected backend.
+Second-pass persistence integration explicitly asserted **opfs-sync-access**, verified reload recovery, injected an 11-byte torn tail, repaired it on reopen, and successfully resumed append with sequences 8 and 9.
 
-## Verification still not completed
+## Verification still intentionally deferred
 
-The following remain **UNVERIFIED or intentionally deferred**:
+Architecture V1 promotion no longer waits on the following:
 
-- physical input-to-display/scan-out latency
-- WebGPU production render path and device-loss recovery
-- exact OPFS SyncAccessHandle backend selection + crash/power-loss durability on a real secure browser profile
-- final sparse-tile size under representative painting workloads
-- heavy-kernel TS/WASM crossover
-- startup → first canvas / first stroke budget with production module graph
-- complete PC/Tablet/Smartphone Core regression
+- physical input-to-display / scan-out latency
+- actual WebGPU hardware execution on a runtime exposing a usable adapter
+- physical sudden-power-loss durability guarantees
+- representative heavy-kernel TS/WASM crossover
+- production-app startup SLA after the real module graph exists
+- full PC / Tablet / Smartphone Support regression
+- final device-specific 128↔256 Tile profile threshold
 
-The complete PC/Tablet/Smartphone matrix is now a post-implementation Support/Regression gate rather than a Core implementation blocker.
+These are implementation-time, target-device, or support-release measurements rather than missing Core architecture.
 
 ## How to run when dependencies are available
 
@@ -330,21 +330,47 @@ Performance-first rule for this profile:
 
 > If two paths feel equivalent and preserve the same semantics, prefer the path with less measured overhead and lower implementation/runtime complexity until contrary evidence appears.
 
-## Next measurement gate
+## V1 promotion result
 
-For the **initial realtime placement decision**, the Xiaomi tablet + Xiaomi pen result is sufficient.
+The five pre-implementation Architecture gates are complete.
 
-Current initial decision:
-- Main Thread = default Pointer/stroke coordination path
-- Full Realtime Worker = optional measured fast path only
+### First PASS
 
-Remaining pre-production evidence should focus on architectural unknowns that can materially change implementation:
+- GitHub Actions run: \`36334997832\`
+- 24 unit tests / 11 files
+- 4 served-browser tests
+- strict TypeScript / production build PASS
 
-1. WebGPU / compatibility GPU render and device-loss prototype
-2. sparse Tile + dirty-subrect + eviction under representative workloads
-3. canonical raster sealing under realistic tile payloads
-4. OPFS backend selection / recovery fault behavior
-5. representative heavy-kernel TS/WASM crossover
-6. startup → first canvas / first stroke module-loading measurement
+### Second audit findings
 
-Repeating the same Main/Worker comparison on PC and Smartphone is not required before Core implementation.
+The first green run was not accepted as final. Manual cross-gate review found:
+
+1. stale Raster transaction orphan-block risk
+2. dirty subrect snapshot destruction
+3. Graphics probe context-lock false negative
+4. torn OPFS tail not repaired before later append
+
+All four were corrected and adversarial tests were added.
+
+### Second PASS
+
+- GitHub Actions run: \`36335428192\`
+- 29 unit tests / 12 files
+- 4 served-browser tests
+- strict TypeScript PASS
+- production build PASS
+- OPFS SyncAccessHandle actual backend PASS
+- torn-tail repair + resumed append PASS
+- WebGL2 actual draw/readback PASS
+- first-stroke lazy-load invariant PASS
+
+### Result
+
+**Architecture V1 is confirmed for Core implementation.**
+
+Canonical decisions are recorded in:
+
+- \`docs/architecture/ARCHITECTURE_V1.md\`
+- \`docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md\`
+
+The prototype remains evidence infrastructure and is not the production editor.
