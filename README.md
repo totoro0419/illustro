@@ -55,6 +55,12 @@ UIも、内部能力とデータモデルが矛盾しないところまで設計
 - Device-adaptive UI
 - 高度な非破壊編集を直感的に扱うUI
 
+## Architecture
+
+Core architecture phases 1–9 are documented in [Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md), with the complete ADR index in [docs/architecture/README.md](docs/architecture/README.md). The integrated consistency review is in [Architecture Integration Validation](docs/architecture/INTEGRATION_VALIDATION.md).
+
+Architecture v0.1 is accepted for **prototyping**, not yet performance-validated.
+
 ## Development gate
 
 本実装へ進む前に、少なくとも以下を詳細設計します。
