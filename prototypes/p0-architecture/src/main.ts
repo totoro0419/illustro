@@ -1,5 +1,6 @@
 import './style.css';
 import { PointerNormalizer } from './core/input';
+import { ActivePointerGate } from './core/activePointer';
 import { MetricSeries } from './core/metrics';
 import { runHistoryBenchmark, runTileBenchmark } from './bench/api';
 import type { PointSample } from './core/types';
@@ -12,28 +13,30 @@ function requireElement<T extends Element>(selector: string): T {
 
 const canvas = requireElement<HTMLCanvasElement>('#surface');
 const status = requireElement<HTMLPreElement>('#status');
-
 const mode = new URLSearchParams(location.search).get('input') === 'worker' ? 'worker' : 'main';
 const normalizer = new PointerNormalizer();
 const metrics = new MetricSeries();
 let worker: Worker | null = null;
 let mainCtx: CanvasRenderingContext2D | null = null;
 let lastMainSample: PointSample | null = null;
+const pointerGate = new ActivePointerGate();
+let canvasRect = canvas.getBoundingClientRect();
+let canvasDpr = Math.min(devicePixelRatio || 1, 2);
 let persistenceSequence = 0;
 const persistenceWorker = new Worker(new URL('./workers/persistence.worker.ts', import.meta.url), { type: 'module' });
 
-function resize(): void {
-  const rect = canvas.getBoundingClientRect();
-  const dpr = Math.min(devicePixelRatio || 1, 2);
-  const width = Math.max(1, Math.round(rect.width * dpr));
-  const height = Math.max(1, Math.round(rect.height * dpr));
+function refreshGeometry(): void {
+  canvasRect = canvas.getBoundingClientRect();
+  canvasDpr = Math.min(devicePixelRatio || 1, 2);
+  const width = Math.max(1, Math.round(canvasRect.width * canvasDpr));
+  const height = Math.max(1, Math.round(canvasRect.height * canvasDpr));
   if (mode === 'main') {
     canvas.width = width;
     canvas.height = height;
     mainCtx = canvas.getContext('2d', { alpha: true, desynchronized: true });
-    mainCtx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mainCtx?.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
   } else if (worker) {
-    worker.postMessage({ type: 'resize', width, height });
+    worker.postMessage({ type: 'resize', width, height, dpr: canvasDpr });
   }
 }
 
@@ -58,25 +61,42 @@ function drawMain(samples: PointSample[], eventStart: number): void {
   });
 }
 
-function onPointerMove(event: PointerEvent): void {
-  if (event.buttons === 0 && event.pointerType !== 'pen') return;
+function handleActivePointer(event: PointerEvent): void {
+  if (!pointerGate.accepts(event.pointerId)) return;
   const start = performance.now();
-  const samples = normalizer.fromEvent(event, canvas.getBoundingClientRect());
+  const samples = normalizer.fromEvent(event, canvasRect);
   if (samples.length === 0) return;
   if (mode === 'main') drawMain(samples, start);
   else worker?.postMessage({ type: 'samples', samples, sentAt: start });
 }
 
+function endStroke(event: PointerEvent): void {
+  if (!pointerGate.accepts(event.pointerId)) return;
+  worker?.postMessage({ type: 'end' });
+  lastMainSample = null;
+  pointerGate.end(event.pointerId);
+  if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+}
+
 canvas.addEventListener('pointerdown', (event) => {
+  if (!pointerGate.begin(event.pointerId)) return;
+  lastMainSample = null;
+  worker?.postMessage({ type: 'begin' });
   canvas.setPointerCapture(event.pointerId);
-  onPointerMove(event);
+  handleActivePointer(event);
 });
-canvas.addEventListener('pointermove', onPointerMove);
+canvas.addEventListener('pointermove', handleActivePointer);
 canvas.addEventListener('pointerup', (event) => {
-  if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+  handleActivePointer(event);
+  endStroke(event);
 });
-canvas.addEventListener('pointercancel', (event) => {
-  if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+canvas.addEventListener('pointercancel', endStroke);
+canvas.addEventListener('lostpointercapture', (event) => {
+  if (pointerGate.accepts(event.pointerId)) {
+    worker?.postMessage({ type: 'end' });
+    lastMainSample = null;
+    pointerGate.end(event.pointerId);
+  }
 });
 
 if (mode === 'worker' && 'transferControlToOffscreen' in canvas) {
@@ -84,28 +104,45 @@ if (mode === 'worker' && 'transferControlToOffscreen' in canvas) {
   worker = new Worker(new URL('./workers/realtime.worker.ts', import.meta.url), { type: 'module' });
   worker.onmessage = (event) => {
     if (event.data?.type === 'presented') {
+      const now = performance.now();
       metrics.push({
-        name: 'main-to-worker-complete',
-        value: performance.now() - Number(event.data.sentAt),
+        name: 'worker-roundtrip',
+        value: now - Number(event.data.sentAt),
         unit: 'ms',
-        timestamp: performance.now(),
+        timestamp: now,
       });
-      renderStatus();
+      requestAnimationFrame(() => {
+        metrics.push({
+          name: 'worker-to-next-raf',
+          value: performance.now() - Number(event.data.sentAt),
+          unit: 'ms',
+          timestamp: performance.now(),
+        });
+        renderStatus();
+      });
     }
   };
-  const rect = canvas.getBoundingClientRect();
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  canvasRect = canvas.getBoundingClientRect();
+  canvasDpr = Math.min(devicePixelRatio || 1, 2);
   worker.postMessage(
-    { type: 'init', canvas: offscreen, width: Math.round(rect.width * dpr), height: Math.round(rect.height * dpr) },
+    {
+      type: 'init',
+      canvas: offscreen,
+      width: Math.max(1, Math.round(canvasRect.width * canvasDpr)),
+      height: Math.max(1, Math.round(canvasRect.height * canvasDpr)),
+      dpr: canvasDpr,
+    },
     [offscreen],
   );
 } else if (mode === 'worker') {
   status.textContent = 'OffscreenCanvas transfer unavailable; reload with ?input=main';
 } else {
-  resize();
+  refreshGeometry();
 }
 
-window.addEventListener('resize', resize, { passive: true });
+window.addEventListener('resize', refreshGeometry, { passive: true });
+window.addEventListener('scroll', () => { canvasRect = canvas.getBoundingClientRect(); }, { passive: true });
+window.visualViewport?.addEventListener('resize', refreshGeometry, { passive: true });
 
 persistenceWorker.onmessage = (event) => {
   if (event.data?.type === 'append-done') {
@@ -136,13 +173,17 @@ async function runPersistenceBenchmark(records = 64, bytesPerRecord = 16_384): P
 }
 
 function renderStatus(): void {
-  const key = mode === 'main' ? 'input-to-raf' : 'main-to-worker-complete';
-  const input = metrics.summary(key);
+  const mainInput = metrics.summary('input-to-raf');
+  const workerRoundtrip = metrics.summary('worker-roundtrip');
+  const workerRaf = metrics.summary('worker-to-next-raf');
   const persistence = metrics.summary('journal-write');
+  const inputLine = mode === 'main'
+    ? `input→next RAF ${mainInput.count} | p50 ${mainInput.p50.toFixed(2)}ms | p95 ${mainInput.p95.toFixed(2)}ms | p99 ${mainInput.p99.toFixed(2)}ms | max ${mainInput.max.toFixed(2)}ms`
+    : `worker roundtrip ${workerRoundtrip.count} | p50 ${workerRoundtrip.p50.toFixed(2)}ms | p95 ${workerRoundtrip.p95.toFixed(2)}ms; input→next RAF p50 ${workerRaf.p50.toFixed(2)}ms | p95 ${workerRaf.p95.toFixed(2)}ms`;
   status.textContent = [
     'Illustro P0 prototype',
     `input path: ${mode}`,
-    `input ${input.count} samples | p50 ${input.p50.toFixed(2)}ms | p95 ${input.p95.toFixed(2)}ms | p99 ${input.p99.toFixed(2)}ms | max ${input.max.toFixed(2)}ms`,
+    inputLine,
     `journal ${persistence.count} writes | p50 ${persistence.p50.toFixed(2)}ms | p95 ${persistence.p95.toFixed(2)}ms`,
     'console API: window.illustroPrototype',
   ].join('\n');
