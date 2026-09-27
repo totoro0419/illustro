@@ -24,6 +24,8 @@ Inverse CommandだけのUndoは、Raster destructive operation、Region reconcil
 
 ### 1. Transaction
 
+Active interaction中はmutable/coalesced stateを許容し、sample/parameter updateごとにHistory transactionを増やさない。
+
 Userが「一回のUndo」と認識する操作単位をTransactionとする。
 
 例:
@@ -138,6 +140,14 @@ UI event録画ではない。
 
 History GCでTimelapse必要データを誤削除しない。
 
+### 9.1 Hot / cold history
+
+Recent Undoに必要なmetadata/tilesだけをRAM hot setとして維持し、Cold historyはOPFS等のlocal working storeへspill可能にする。
+
+Undo depthを増やすために全History payloadをRAMへ保持しない。
+
+History metadataも、UI表示に不要な詳細を常時materializeしない。
+
 ### 10. Retention / GC
 
 固定「1000 undo」等をArchitectureで決めない。
@@ -155,7 +165,7 @@ Retentionは:
 
 から決定する。
 
-Resource pressure時はユーザー保護Stateを優先し、Cache→unprotected historyの順に削減する。
+Resource pressure時はユーザー保護Stateを優先し、Cache→cold historyのRAM copy→policy上prunable historyの順に削減する。
 
 ### 11. History vs Recovery
 
