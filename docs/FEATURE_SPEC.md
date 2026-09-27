@@ -368,6 +368,16 @@ Filter/Blend等で必要な場合、Linear-light計算を選択・内部利用�
 
 初期ReleaseでHDR Authoring UIを完備しない場合でも、Document/Render architectureで将来実装を不必要に塞がない。
 
+### FR-COLOR-007 Soft Proof
+
+指定した出力ICC Profile等を用いて、最終出力の色域・色変化をCanvas上でPreviewできるSoft Proofを提供する。
+
+### FR-COLOR-008 Gamut Warning
+
+Soft Proof時に、出力先で再現できない色をOut-of-Gamut Warningとして可視化できる。
+
+Soft ProofはDocument View単位でON/OFFできる設計を優先し、元Pixelを変更してはならない。
+
 ---
 
 ## 10. Layers
@@ -406,11 +416,31 @@ ReferenceはArtwork Layerとは意味を分離して管理できる。
 - Merge Visible
 - Flatten Copy
 
-### FR-LAYER-004 Quick Clipping
+### FR-LAYER-004 Alpha Lock / Clipping
 
-Clipping状態はLayer UIで即時認識・切替可能にする。
+Alpha Lock / Lock Transparencyを高頻度彩色機能として提供する。
 
-### FR-LAYER-005 Direct Canvas Selection
+Clipping / Alpha Inheritance相当の機能も提供し、状態はLayer UIで即時認識・切替可能にする。
+
+### FR-LAYER-005 Layer Style
+
+Layerへ非破壊Effectを適用できるLayer Styleを提供する。
+
+対象候補:
+
+- Stroke
+- Drop Shadow
+- Inner Shadow
+- Outer Glow
+- Inner Glow
+- Color Overlay
+- Gradient Overlay
+- Pattern Overlay
+- Bevel / Emboss
+
+Effectは展開・非表示・再編集可能にする。
+
+### FR-LAYER-006 Direct Canvas Selection
 
 Canvas上の描画内容から対応Layerを高速に選択する方法を提供する。
 
