@@ -551,6 +551,12 @@ Feather、Expand、Contractを提供する。
 
 Selectionを一時表示だけでなく、Selection Mask等として保存・再利用可能にする。
 
+### FR-SELECT-005 Select All / Deselect / Reselect
+
+Select All、Deselect、直前SelectionのReselectをCommandとして提供する。
+
+DeselectはSelection削除ではなくActive Selection解除として扱い、Undo/Reselect可能な履歴を保持できる。
+
 ### DR-SELECT-001 Grayscale
 
 Selectionはbinaryだけでなく濃度を持つMaskとして表現可能にする。
@@ -1180,6 +1186,66 @@ NavigatorはDock/Float/Hide可能にする。
 同一Documentを複数Viewで表示する機能をInvestigateする。
 
 ---
+
+## 27.1 Clipboard / Cross-document Transfer
+
+### FR-CLIP-001 Internal Clipboard
+
+Illustro内部Clipboardを持ち、System Clipboardの可否に依存せずCopy/Cut/Pasteを成立させる。
+
+### FR-CLIP-002 Copy / Cut / Paste
+
+少なくとも以下を提供する。
+
+- Copy
+- Cut
+- Paste
+- Copy Merged
+- Paste in Place
+
+Selectionがある場合はSelection範囲を尊重する。
+
+### FR-CLIP-003 Native Payload
+
+Illustro内Document間では、可能な対象についてRaster化せずNative Layer/Object情報を保持できるClipboard payloadを優先する。
+
+Copy Merged等は明示的にRaster結果を作る。
+
+### FR-CLIP-004 System Clipboard Bridge
+
+Browser/OSが許す場合、画像等をSystem Clipboardと交換可能にする。
+
+System Clipboard API/permissionをCore Copy/Pasteの必須条件にしない。
+
+### FR-CLIP-005 Paste Destination
+
+PasteはDefaultでactive layer/group contextの直上へ新しいLayer/Objectとして追加する。
+
+Paste in PlaceはIllustro内部Clipboardでsource document coordinatesが分かる場合、その位置関係を保持する。
+
+### FR-CLIP-006 Cross-device Access
+
+KeyboardのないTablet/SmartphoneでもCopy/Cut/PasteへUIから到達可能にする。
+
+## 27.2 Localization / Internationalization
+
+### FR-I18N-001 Localizable UI
+
+UI文字列を実装コードへ散在させず、localization可能なresourceとして管理する。
+
+### FR-I18N-002 Japanese Layout Support
+
+日本語UI文字列、CJK font fallback、IME入力、長い翻訳文字列でも主要UIが破綻しないLayoutを前提にする。
+
+### FR-I18N-003 Locale-independent Identity
+
+Command ID、Shortcut binding、File schema、Macro等の内部Identityへlocalized display stringを使用してはならない。
+
+### FR-I18N-004 Formatting
+
+数値、単位、日時等はLocaleに応じた表示を可能にするが、Document canonical numeric valuesとは分離する。
+
+初期出荷Locale一覧はUI/Product phaseで確定する。
 
 ## 28. File Format / Persistence
 
