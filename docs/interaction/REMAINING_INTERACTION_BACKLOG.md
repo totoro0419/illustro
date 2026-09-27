@@ -249,3 +249,76 @@ A backlog area moves to **Interaction Ready** only after it has:
 - Acceptance criteria
 
 and is cross-checked with Architecture.
+
+
+## 18. Pixel Art specialized behavior — P1
+
+Pixel Art Workspace presetだけでは不十分。
+
+Need:
+
+- hard-edge 1px brush behavior
+- anti-aliasing OFF semantics
+- nearest-neighbor transform default
+- pixel grid visibility / threshold
+- integer-coordinate snapping
+- selection/transform avoiding half-pixel blur
+- palette-oriented workflow
+- export scaling with nearest-neighbor
+- device-independent crisp preview
+
+Indexed-color document mode itselfをCoreへ入れるかは別途評価。
+
+## 19. Export / Metadata / Physical-output details — P1/P2
+
+Need:
+
+- PNG alpha/profile behavior
+- JPEG background flatten + quality
+- WebP quality/lossless/alpha
+- TIFF options
+- ICC embed/strip
+- EXIF orientation normalization on import
+- metadata preserve/strip
+- export resize
+- filename extension behavior
+- overwrite
+- transparency warning for non-alpha formats
+- soft-proof-to-export relationship
+
+Direct Print機能は一枚絵用途に有益か調査するが、DTP化はしない。
+初期Coreは高品質Export + Soft Proofを優先。
+
+## 20. Input binding beyond keyboard — P1
+
+Keyboard press-to-bindは詳細化済み。
+
+Need:
+
+- mouse button assignment
+- pen barrel button assignment
+- stylus eraser behavior customization
+- touch gesture assignment
+- double tap / hold / multi-finger gestures
+- device-specific unavailable binding indication
+- context conflicts
+- OS/browser reserved gesture detection
+- import/export/reset binding profile
+
+Binding identityはDevice-specific raw codesとCommand semanticsを分離する。
+
+## 21. UI Theme / Canvas presentation — Visual UI phase
+
+Need decisions:
+
+- neutral default theme
+- light/dark variants
+- canvas surround/background
+- transparency checker
+- pixel grid colors
+- selection/guide colors
+- high-contrast accessibility variants
+
+Color-critical artwork perceptionを不必要に歪めないこと。
+
+These are visual decisions and must use the dedicated UI design skill.
