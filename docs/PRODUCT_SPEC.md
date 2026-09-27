@@ -511,8 +511,9 @@ Photoshop方式をそのまま複雑にコピーするのではなく、**視覚
 - Clipping
 - Adjustment Layer
 - Filter Layer
-- Reference系
 - Text
+
+Reference系EntityはDocumentに保持できるが、**通常のArtwork Layer treeへ混ぜて合成対象にしない**。Reference Workspaceとして独立管理する。
 
 重要要件:
 
@@ -770,7 +771,9 @@ Tile-based Canvasの具体方式はアーキテクチャ設計で検証するが
 - References
 - Snapshots
 - Layer Comps
-- Workspace metadata
+- Document固有のWorkspace/View metadata（必要な範囲）
+
+Global shortcut、Global workspace layout等のUser preferenceは、Native Documentへ必須埋め込みしない。
 - Timelapse
 - Document settings
 
