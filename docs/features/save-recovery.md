@@ -132,6 +132,25 @@ Unsupported/newer optional data:
 
 Import failure does not damage current open document.
 
+## Concurrent / external modification
+
+### Same destination open in multiple Illustro documents
+
+同じportable destinationを複数Document/sessionが参照していることを検出できる場合、通常Save前に競合を警告する。
+
+Working recovery stateはsessionごとに独立させ、別sessionが同じworking storeをmutable共有しない。
+
+### External file changed
+
+Open/last successful save以降にdestination fileが外部変更されたことをPlatform APIで検出できる場合:
+
+- Silent overwriteしない
+- reload/compare/save copy/overwrite等の選択肢を提示
+
+検出不能Platformでは完全防止を保証せず、Save As/backup/recoveryを利用可能にする。
+
+競合解決のためにcurrent protected recoveryを破棄しない。
+
 ## Image export
 
 PNG/JPEG/WebP etc. use fixed revision.
