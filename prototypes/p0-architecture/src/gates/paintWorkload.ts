@@ -49,12 +49,9 @@ export function runTileWorkload(tileSize: number, workload: PaintWorkload): Tile
       for (const key of keysForRect(tileSize, x, y, diameter, diameter)) strokeKeys.add(key);
     }
     const dirtyTiles = surface.consumeDirty();
-    for (const tile of dirtyTiles) {
-      if (!tile.dirty) continue;
-      dirtyAreaPixels += tile.dirty.width * tile.dirty.height;
+    for (const item of dirtyTiles) {
+      dirtyAreaPixels += item.dirty.width * item.dirty.height;
     }
-    // consumeDirty clears dirty state; recompute dirty area from the exact stroke bounds below.
-    dirtyAreaPixels += strokeDirtyArea(tileSize, stroke);
     touchedKeysByStroke.push([...strokeKeys]);
   }
 
@@ -70,42 +67,6 @@ export function runTileWorkload(tileSize: number, workload: PaintWorkload): Tile
     dirtyUploadBytes: dirtyAreaPixels * 4,
     touchedKeysByStroke,
   };
-}
-
-function strokeDirtyArea(tileSize: number, stroke: BrushStroke): number {
-  const byTile = new Map<TileKey, { minX: number; minY: number; maxX: number; maxY: number }>();
-  for (const point of stroke) {
-    const diameter = Math.max(1, Math.ceil(point.radius * 2));
-    const x = Math.floor(point.x - point.radius);
-    const y = Math.floor(point.y - point.radius);
-    const minTx = Math.floor(x / tileSize);
-    const minTy = Math.floor(y / tileSize);
-    const maxTx = Math.floor((x + diameter - 1) / tileSize);
-    const maxTy = Math.floor((y + diameter - 1) / tileSize);
-    for (let ty = minTy; ty <= maxTy; ty += 1) {
-      for (let tx = minTx; tx <= maxTx; tx += 1) {
-        const key = `${tx},${ty}` as TileKey;
-        const tileX = tx * tileSize;
-        const tileY = ty * tileSize;
-        const localMinX = Math.max(0, x - tileX);
-        const localMinY = Math.max(0, y - tileY);
-        const localMaxX = Math.min(tileSize, x + diameter - tileX);
-        const localMaxY = Math.min(tileSize, y + diameter - tileY);
-        const existing = byTile.get(key);
-        if (!existing) {
-          byTile.set(key, { minX: localMinX, minY: localMinY, maxX: localMaxX, maxY: localMaxY });
-        } else {
-          existing.minX = Math.min(existing.minX, localMinX);
-          existing.minY = Math.min(existing.minY, localMinY);
-          existing.maxX = Math.max(existing.maxX, localMaxX);
-          existing.maxY = Math.max(existing.maxY, localMaxY);
-        }
-      }
-    }
-  }
-  let area = 0;
-  for (const rect of byTile.values()) area += Math.max(0, rect.maxX - rect.minX) * Math.max(0, rect.maxY - rect.minY);
-  return area;
 }
 
 function keysForRect(tileSize: number, x: number, y: number, width: number, height: number): TileKey[] {
