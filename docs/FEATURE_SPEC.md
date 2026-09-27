@@ -1,0 +1,1234 @@
+# Illustro 機能要求仕様
+
+> 状態: Functional Baseline v0.1  
+> 目的: `PRODUCT_SPEC.md` と `FEATURE_CATALOG.md` を、実装・UI・アーキテクチャ設計で参照できる要求単位へ落とす。  
+> 優先順位: `PRODUCT_SPEC.md` > 本書 > 個別機能仕様 > UI/実装仕様。  
+> 注意: 本書は「実装済み」を意味しない。内部アルゴリズムが未決定でも、ユーザーから見た能力・制約・品質要件を固定する。
+
+## 1. 要求の表記
+
+- **FR-***: Functional Requirement
+- **QR-***: Quality Requirement
+- **IR-***: Interaction Requirement
+- **DR-***: Data / Document Requirement
+- **CR-***: Compatibility Requirement
+- **FUT-***: 将来要件
+
+`MUST` 相当の要求は「〜しなければならない」、設計候補は「検討する」と明記する。
+
+---
+
+## 2. Document / Canvas
+
+### FR-CANVAS-001 基本描画面
+
+IllustroはRaster描画可能なCanvasを持たなければならない。
+
+### FR-CANVAS-002 View Transform
+
+Canvas Viewは少なくとも以下を即時操作できなければならない。
+
+- Pan
+- Zoom
+- Rotate
+- Horizontal Flip
+- Fit to Screen
+- 100% / actual-pixel相当表示
+
+### FR-CANVAS-003 High Zoom
+
+最大Zoomは **64000%を目標値**とし、高倍率でも座標の飛び・線のズレ・選択境界の破綻を起こさない設計にしなければならない。
+
+### FR-CANVAS-004 Canvas Resize / Image Resize
+
+Canvas ResizeとImage Resizeは別操作として提供しなければならない。
+
+Image Resizeでは補間方式を選択可能にする。最終アルゴリズム一覧は個別仕様で決定する。
+
+### FR-CANVAS-005 Crop
+
+CropはCanvas上の直接操作を基本とし、必要に応じて数値指定も可能にする。
+
+### FR-CANVAS-006 Multiple Documents
+
+複数Documentを同時に開ける構造を持たなければならない。
+
+### FR-CANVAS-007 Seamless Tile
+
+Seamless Tile Drawingでは上下左右に反復表示し、境界を越える描画を反対側へリアルタイム反映しなければならない。
+
+### QR-CANVAS-001 Large Canvas Scaling
+
+Canvas Size増加に対して、毎操作で全画像を処理する設計を避けなければならない。
+
+Tile-based方式を第一候補として検証する。
+
+---
+
+## 3. Input
+
+### FR-INPUT-001 対応入力
+
+以下をサポートする。
+
+- Mouse
+- Keyboard
+- Touch
+- Stylus
+
+### FR-INPUT-002 Stylus Data
+
+Platform/Deviceが提供する場合、以下を利用できなければならない。
+
+- Pressure
+- Tilt
+- Azimuth
+- Barrel rotation where available
+- Eraser
+- Barrel button
+
+### FR-INPUT-003 Input Normalization
+
+Device固有入力をBrush Engineが直接依存する形にせず、内部で正規化された入力イベントへ変換する。
+
+### FR-INPUT-004 Global Input Assistance
+
+Stroke StabilizationはBrushごとの設定に加え、必要な利用者向けにGlobal設定も提供する。
+
+### QR-INPUT-001 Latency
+
+Pointer入力から可視Stroke更新までの遅延を最重要性能指標として扱う。
+
+平均FPSのみを性能評価基準にしてはならない。
+
+---
+
+## 4. Brush Engine
+
+### FR-BRUSH-001 Procedural Brush
+
+BrushはRaster Stampのみでなく、複数Parameterを動的に組み合わせて定義可能でなければならない。
+
+### FR-BRUSH-002 Modulation Sources
+
+Brush Parameterは少なくとも以下を変調入力として利用できる構造にする。
+
+- Pressure
+- Tilt
+- Azimuth / barrel rotation
+- Speed
+- Direction
+- Stroke distance
+- Time
+- Stroke start/end phase
+- Random
+- Custom curve
+
+### FR-BRUSH-003 Modulatable Properties
+
+少なくとも以下を共通変調対象として設計する。
+
+- Size
+- Opacity
+- Flow
+- Spacing
+- Rotation
+- Scatter
+- Shape deformation
+- Texture scale/strength/rotation
+- Hue/Saturation/Value
+- Edge hardness
+- Mix/Pull
+- Wetness
+- Pigment-related values
+- Noise/particle values
+
+### FR-BRUSH-004 Mapping UI
+
+入力値→ParameterのMappingはCurve、Range、Invert等を共通方式で設定可能にする。
+
+### FR-BRUSH-005 Texture
+
+Procedural方式はRaster Textureを排除しない。
+
+Brush Tip、Grain、Paper Texture等を組み合わせられる。
+
+### FR-BRUSH-006 Stabilization
+
+以下を実現できる設計とする。
+
+- simple smoothing
+- moving-average系Stabilization
+- advanced motion filtering系処理
+- pressure smoothing
+- response curve
+
+正確なアルゴリズムはPrototypeで比較する。
+
+### FR-BRUSH-007 Smudge / Mix
+
+既存Pixelを引きずるSmudgeと、Pigmentを追加しながら混色するPaint Mixingを区別して扱える構造にする。
+
+### FR-BRUSH-008 Eraser
+
+EraserはBrush Engineの能力を可能な限り再利用し、専用機能不足を避ける。
+
+### QR-BRUSH-001 Brush Switch
+
+Brush切替によって制作の流れを阻害する待ち時間を発生させないことを目標とする。
+
+---
+
+## 5. Dynamic Wet Media
+
+### FR-WET-001 Stateful Media
+
+Wet Mediaは単なるStamp表現ではなく、必要に応じてCanvas側の内部状態を参照・更新できる。
+
+### DR-WET-001 Candidate State
+
+少なくとも以下を表現可能なモデルを検証する。
+
+- Wetness
+- Pigment
+- Flow
+- Absorption
+- Dryness
+
+### FR-WET-002 Simulation Goal
+
+完全物理再現ではなく、以下の優先順位で最適化する。
+
+1. イラストとして望ましい見た目
+2. 操作の予測可能性
+3. 速度
+4. 物理的妥当性
+
+### FR-WET-003 Determinism
+
+Undo/Redo、Timelapse、保存/再開のため、同一State/Commandから再現可能な挙動を可能な限り維持する。
+
+---
+
+## 6. Lineart Region System
+
+### DR-REGION-001 Region
+
+RegionをDocument内の明示的なデータ概念として扱える構造を持つ。
+
+### DR-REGION-002 Region Properties
+
+Regionは少なくとも以下を持てる。
+
+- Region ID
+- Boundary
+- adjacency
+- source/reference information
+- validity/confidence state
+- mapping metadata
+
+### FR-REGION-001 Closed Region Detection
+
+線画から閉領域を検出できなければならない。
+
+### FR-REGION-002 Gap Tolerance
+
+小さな線の隙間を設定に応じて閉領域として扱える。
+
+### FR-REGION-003 Stable Identity
+
+線画の軽微な変更後も、可能な限り同一Regionとして対応付ける。
+
+単純な配列index等をRegion identityとして使用してはならない。
+
+### FR-REGION-004 Adjacency
+
+Region間の隣接関係を取得可能にする。
+
+### FR-REGION-005 Region Selection / Fill
+
+RegionはSelection、Fill、Color Assistの入力として利用可能にする。
+
+### FR-REGION-006 User Override
+
+誤認識が発生した場合、ユーザーがRegionの結合・分離・無視・再計算等を制御できる方式を持つ。
+
+### FR-REGION-007 Optional Semantics
+
+Hair/Skin等の意味ラベルは将来拡張可能にするが、基本Region機能は意味認識なしで成立しなければならない。
+
+---
+
+## 7. Lineart-linked Coloring
+
+### FR-LINKCOLOR-001 Boundary Recalculation
+
+Lineart変更後、影響するRegion境界を再評価する。
+
+### FR-LINKCOLOR-002 Color Remapping
+
+既存Color情報を、新しいRegionへ可能な範囲で再マッピングできる。
+
+### FR-LINKCOLOR-003 Preview
+
+自動追従による大きな変更はユーザーが結果を確認可能でなければならない。
+
+### FR-LINKCOLOR-004 Undo
+
+追従処理全体をUndo可能なCommandとして記録する。
+
+### FR-LINKCOLOR-005 Control
+
+追従のON/OFF、強度、対象、条件を設定可能にする。
+
+---
+
+## 8. Fill / Coloring
+
+### FR-FILL-001 Flood Fill
+
+通常のColor Tolerance型Flood Fillを提供する。
+
+### FR-FILL-002 Reference Source
+
+Fillは以下を参照元として選択できる設計にする。
+
+- current layer
+- selected layers
+- reference-designated layers
+- visible composite
+- Region model
+
+### FR-FILL-003 Gap Closing
+
+Gap ClosingとToleranceを提供する。
+
+### FR-FILL-004 Boundary Expansion
+
+Fill結果のExpand/Contractを設定可能にする。
+
+### FR-FILL-005 Unified Smart Fill
+
+以下をバラバラな独立アプリ機能として散在させず、一貫したFill Familyとして設計する。
+
+- Region Fill
+- Enclose and Fill
+- Trace and Fill
+- Drag Fill
+- Continuous Fill
+
+### FR-COLORASSIST-001 Smart Color Assist
+
+Smart Color Assistはユーザーの既存Artwork/Region/Paletteを入力とする補助機能として動作する。
+
+### FR-COLORASSIST-002 Deterministic-first
+
+可能な処理は、AI推論を必須にせず決定的アルゴリズムで成立させる。
+
+---
+
+## 9. Color System / Color Management
+
+### FR-COLOR-001 Picker
+
+Color Picker / Eyedropper / History / Paletteを提供する。
+
+### FR-COLOR-002 Multiple Models
+
+少なくともRGB系とHSV/HSL系の実用的なColor Controlを提供する。
+
+### DR-COLOR-001 ICC
+
+Native DocumentはICC Profileまたは同等のColor Space識別情報を保持できなければならない。
+
+### FR-COLOR-003 Color Conversion
+
+Profile ConversionとDisplay Transformを行える構造にする。
+
+### DR-COLOR-002 Precision
+
+内部Document/Tile表現は、8-bit sRGBのみへ固定して将来の高精度化を不可能にしてはならない。
+
+少なくとも以下を設計対象とする。
+
+- 8-bit integer
+- 16-bit integer
+- 16-bit float
+- 32-bit float（検証対象）
+
+### FR-COLOR-004 Wide Gamut
+
+Display P3等のWide Gamutを扱えるColor Pipelineを目標とする。
+
+### FR-COLOR-005 Linear Processing
+
+Filter/Blend等で必要な場合、Linear-light計算を選択・内部利用できる設計にする。
+
+### FR-COLOR-006 HDR-ready
+
+初期ReleaseでHDR Authoring UIを完備しない場合でも、Document/Render architectureで将来実装を不必要に塞がない。
+
+---
+
+## 10. Layers
+
+### FR-LAYER-001 Layer Types
+
+最終製品では少なくとも次を扱う。
+
+- Raster
+- Vector
+- Group
+- Mask
+- Adjustment
+- Filter
+- Text
+
+ReferenceはArtwork Layerとは意味を分離して管理できる。
+
+### FR-LAYER-002 Multi-select
+
+複数Layerを選択し、Move/Transform/Visibility等の適切なCommandをまとめて適用できる。
+
+### FR-LAYER-003 Organization
+
+以下を持つ。
+
+- Reorder
+- Search
+- Filter
+- Color Tag
+- Lock types
+- Solo/Isolate
+- Collapse
+- Duplicate
+- Merge
+- Merge Visible
+- Flatten Copy
+
+### FR-LAYER-004 Quick Clipping
+
+Clipping状態はLayer UIで即時認識・切替可能にする。
+
+### FR-LAYER-005 Direct Canvas Selection
+
+Canvas上の描画内容から対応Layerを高速に選択する方法を提供する。
+
+### QR-LAYER-001 Large Layer Count
+
+Layer Panelは大量Layerで全Itemを常時重くRenderする実装を避ける。
+
+Virtualization等を使用してUI応答性を維持する。
+
+---
+
+## 11. Vector
+
+### FR-VECTOR-001 Path Model
+
+Vector Layerは少なくとも以下を持つ。
+
+- Path
+- Anchor Point
+- Bezier Handle
+- Open/Closed Path
+- Fill
+- Stroke
+
+### FR-VECTOR-002 Edit
+
+NodeのAdd/Delete/Convert、Path Transform、Smooth/Simplifyを提供する。
+
+### FR-VECTOR-003 Boolean
+
+実用的なPath Boolean Operationを提供する。
+
+### FR-VECTOR-004 Illustration-oriented Stroke
+
+一枚絵のLineart用途に適したStroke Width編集、可変幅、Vector Eraser等を提供する。
+
+### FR-VECTOR-005 Rasterize
+
+Vectorを明示的にRasterizeできる。
+
+### FR-VECTOR-006 Region Integration
+
+Vector LineartをRegion Boundary Sourceとして利用できる方式を検討する。
+
+---
+
+## 12. Text
+
+### FR-TEXT-001 Editable Text
+
+TextはRaster化するまで編集可能なText Entityとして保持する。
+
+### FR-TEXT-002 Japanese Support
+
+Horizontal/Vertical TextをRequiredとする。
+
+### FR-TEXT-003 Typography Basics
+
+少なくとも以下を提供する。
+
+- Font family
+- style/weight
+- size
+- alignment
+- tracking/letter spacing
+- line height
+- baseline
+- color
+
+### FR-TEXT-004 Font Import
+
+Platformが許す場合、local font importを提供する。
+
+### FR-TEXT-005 Missing Font
+
+Fontが存在しない場合、無言で別Fontへ置換せず、missing/substitution状態を認識可能にする。
+
+### FR-TEXT-006 Convert
+
+TextをVector Pathへ変換する機能を提供する。
+
+---
+
+## 13. Selection
+
+### FR-SELECT-001 Basic Modes
+
+以下を提供する。
+
+- Rectangle
+- Ellipse
+- Freehand
+- Polygon
+- Color/Similarity
+- Luminance/Color Range
+- Region-based
+- Layer-content
+
+### FR-SELECT-002 Boolean Operations
+
+Add/Subtract/Intersect/Invertを提供する。
+
+### FR-SELECT-003 Edge
+
+Feather、Expand、Contractを提供する。
+
+### FR-SELECT-004 Saved Selection
+
+Selectionを一時表示だけでなく、Selection Mask等として保存・再利用可能にする。
+
+### DR-SELECT-001 Grayscale
+
+Selectionはbinaryだけでなく濃度を持つMaskとして表現可能にする。
+
+---
+
+## 14. Transform / Liquify / Warp
+
+### FR-TRANSFORM-001 Basic
+
+Move/Scale/Rotate/Flipを提供する。
+
+### FR-TRANSFORM-002 Advanced
+
+Perspective、Distort、Warpを提供する。
+
+### FR-TRANSFORM-003 Liquify
+
+Liquifyを提供する。
+
+### FR-TRANSFORM-004 Interpolation
+
+Raster Transformでは補間方式を選択可能にする。
+
+### IR-TRANSFORM-001 Direct Manipulation
+
+Canvas上Handle/Dragを主要操作とし、数値入力は補助手段とする。
+
+### FR-TRANSFORM-005 Non-destructive
+
+可能なTransformは非破壊状態として保持できる方式を検討・優先する。
+
+---
+
+## 15. Guides / Rulers / Shapes / Gradients
+
+### FR-GUIDE-001 Guide Types
+
+少なくとも次を提供する。
+
+- Straight / Parallel
+- 2D Grid
+- Isometric
+- Perspective 1/2/3 point
+- Symmetry / Mirror
+- Radial Symmetry
+
+### FR-GUIDE-002 Canvas Editing
+
+GuideはCanvas上Handleで直接編集可能にする。
+
+### FR-GUIDE-003 Snapping
+
+対応Drawing ToolはGuideへSnapできる。
+
+### FR-SHAPE-001 Shapes
+
+Line、Rectangle、Ellipse、Polygonを提供する。
+
+### FR-SHAPE-002 Post-stroke Correction
+
+Freehandで描いたShapeを保持操作等で幾何形状へ補正する高速操作を提供する方向で設計する。
+
+### FR-GRADIENT-001 Gradient Types
+
+少なくとも以下を提供する。
+
+- Linear
+- Radial
+- Reflected/Bilinear
+
+Shape-aware方式は追加検討。
+
+### FR-GRADIENT-002 Editable
+
+Gradient Stop、位置、向き等を作成後に変更できる非破壊表現を提供する。
+
+---
+
+## 16. Blend / Non-destructive Editing
+
+### FR-BLEND-001 Core Blend Modes
+
+少なくとも次の系統を提供する。
+
+- Normal / Dissolve
+- Darken / Multiply / Burn系
+- Lighten / Screen / Dodge系
+- Overlay / Soft Light / Hard Light系
+- Vivid/Linear/Pin/Hard Mix系
+- Difference / Exclusion
+- Subtract / Divide
+- Hue / Saturation / Color / Luminosity
+
+### FR-BLEND-002 Painting Modes
+
+Erase/Behind/Alpha関連等、Paintingに有用なModeをBrush側でも利用できる設計にする。
+
+### FR-BLEND-003 Preview
+
+Blend Modeを選択するときCanvas上Live Previewを提供する。
+
+### FR-BLENDIF-001 Blend If Equivalent
+
+Layer自身または下地のTone/Channel Rangeに応じて合成を制御できる。
+
+UIはTone Rangeと結果の関係を視覚的に理解できる方式を優先する。
+
+---
+
+## 17. Adjustments / Filters
+
+### FR-ADJ-001 Adjustment Layer
+
+AdjustmentをLayerとして非破壊保持できる。
+
+### FR-ADJ-002 Core Adjustments
+
+少なくとも以下を対象とする。
+
+- Brightness/Contrast
+- Levels
+- Curves
+- Exposure
+- Hue/Saturation/Lightness
+- Vibrance
+- Color Balance
+- Temperature/Tint
+- Black & White
+- Channel Mixer
+- Selective Color
+- Invert
+- Posterize
+- Threshold
+- Gradient Map
+- LUT/Color Lookup
+
+### FR-FILTER-001 Live Filter
+
+Filterを再編集可能な非破壊状態として保持できる。
+
+### FR-FILTER-002 Core Filters
+
+少なくとも以下を対象とする。
+
+- Gaussian Blur
+- Motion Blur
+- Radial Blur
+- Sharpen
+- Unsharp Mask
+- High Pass
+- Noise
+- Median系cleanup
+- Pixelate/Mosaic
+- Offset
+- Displacement
+- Halftone/Screentone-oriented effect
+
+### FR-FILTER-003 Composition
+
+Live Filterは必要に応じてMask、Opacity、Blend Mode、Reorderを利用できる。
+
+### FR-FILTER-004 Destructive Apply
+
+高速・単純な用途向けに、明示的な破壊適用Commandも提供できる。
+
+---
+
+## 18. Healing / Patch / Clone
+
+### FR-REPAIR-001 Healing
+
+周囲のTexture/Colorを利用した修復Brushを提供する。
+
+### FR-REPAIR-002 Patch
+
+選択領域を別領域から修復するPatch Workflowを提供する。
+
+### FR-REPAIR-003 Clone
+
+Source Pointを指定して描画するCloneを提供する。
+
+### IR-REPAIR-001 Illustration-oriented
+
+写真編集Dialog中心ではなく、Canvas上でSource/Targetを確認できる直接操作を優先する。
+
+---
+
+## 19. Reference Workspace
+
+### FR-REF-001 Independent References
+
+ReferenceはArtwork Layerとは独立して管理可能にする。
+
+### FR-REF-002 Multiple
+
+複数Referenceを同時表示可能にする。
+
+### FR-REF-003 Manipulation
+
+Referenceごとに以下を提供する。
+
+- Move
+- Scale
+- Rotate
+- Flip
+- Grayscale
+- Pin
+- Hide
+- Always-on-top相当
+
+### FR-REF-004 Groups
+
+Reference Groupを作成可能にする。
+
+### FR-REF-005 Eyedropper
+
+Reference上から直接Color Pickできる。
+
+### DR-REF-001 Persistence
+
+DocumentまたはWorkspaceにReference状態を保存できる。
+
+---
+
+## 20. History / Snapshot / Layer Comp / Timelapse
+
+### DR-HISTORY-001 Command History
+
+Undo/Redoは可能な範囲で意味のあるCommand単位で管理する。
+
+### FR-HISTORY-001 Deep Undo
+
+長い作業でも実用的なUndo Depthを維持する。
+
+### FR-SNAPSHOT-001 Snapshot
+
+ユーザーが名前付きCheckpointを保存できる。
+
+### FR-SNAPSHOT-002 Compare
+
+Snapshot間またはCurrentとの比較を容易にする。
+
+### FR-SNAPSHOT-003 Branch
+
+Snapshotから分岐制作できる構造を検討する。
+
+### FR-LAYERCOMP-001 Layer Comp
+
+LayerのVisibility/Opacity/Blend Mode等の状態セットを保存・復元できる。
+
+### FR-TIMELAPSE-001 History-based
+
+Timelapseは可能な限りDocument変更履歴を利用し、UIを映さない。
+
+### FR-TIMELAPSE-002 Export
+
+高解像度出力とFrame pacing調整を提供する。
+
+### CONCEPT-HISTORY-001 Separation
+
+以下はユーザー向け概念として区別する。
+
+- Undo History
+- Snapshot
+- Layer Comp
+- Macro
+- Timelapse
+
+内部Primitiveの共有は許容する。
+
+---
+
+## 21. Work Time
+
+### FR-WORKTIME-001 Active Time
+
+Documentを開いている時間ではなく、実際の編集活動を基準に時間を計測する。
+
+### FR-WORKTIME-002 Idle
+
+長時間入力・編集がない期間は自動除外する。
+
+### FR-WORKTIME-003 Views
+
+少なくとも次を表示可能にする。
+
+- Session
+- Today
+- Total
+- Average
+
+### FR-WORKTIME-004 Privacy
+
+Work TimeはOfflineで成立し、外部Server送信を必須にしない。
+
+---
+
+## 22. Macro / Automation
+
+### FR-MACRO-001 Record
+
+複数Commandを記録し再生できる。
+
+### FR-MACRO-002 Edit
+
+記録済みMacroからCommandの有効/無効、順序変更等を可能にする。
+
+### FR-MACRO-003 Parameterization
+
+適切なCommand Parameterを実行時入力・Preset化できる方式を検討する。
+
+### FR-MACRO-004 Access
+
+Macroは以下から起動できる。
+
+- Macro Panel
+- Shortcut
+- Quick Menu
+- Command Search
+
+---
+
+## 23. Quick Menu / Search
+
+### FR-QUICK-001 Customization
+
+Quick Menuへ少なくとも以下を登録可能にする。
+
+- Tool
+- Command
+- Brush
+- Color
+- Macro
+- Layer Action
+- Canvas Action
+
+### FR-QUICK-002 Item Metadata
+
+ItemはIcon、Label、Shortcut、Group等を持てる。
+
+### FR-QUICK-003 Context
+
+ユーザーの固定Customizationを尊重しながら、Contextに応じた候補表示・Profile切替を検討する。
+
+### FR-SEARCH-001 Command Search
+
+Tool/Command/Panel/Brush/Macro/Setting等を横断検索できる。
+
+### FR-SEARCH-002 Add from Search
+
+検索結果からQuick Menu/Toolbar等へ追加できる操作を検討する。
+
+---
+
+## 24. Workspace / Device Adaptation
+
+### FR-WORKSPACE-001 Desktop Panels
+
+PCではDock/Undock/Floating/Resize/Reorder/Hideを提供する。
+
+### FR-WORKSPACE-002 Save / Load
+
+Workspaceを保存・復元できる。
+
+### FR-WORKSPACE-003 Presets
+
+Drawing/Painting/Coloring/Photo Editing/Pixel Art/Minimal等のPresetを提供する方向で設計する。
+
+### FR-DEVICE-001 Adaptive UI
+
+Desktop/Tablet/Smartphoneで、同一UIを単純Scaleして使い回してはならない。
+
+### FR-DEVICE-002 Capability Preservation
+
+画面サイズを理由として高度機能そのものを削除することを原則としない。
+
+アクセス方法を再設計する。
+
+### FR-DEVICE-003 Left/Right
+
+Left/Right LayoutをToolbarだけでなくPanel/Popup/Quick Menu/主要操作位置まで考慮する。
+
+---
+
+## 25. Accessibility
+
+### FR-A11Y-001 Scalable UI
+
+UI/Text Sizeを拡大可能にする。
+
+### FR-A11Y-002 Single-pointer Alternative
+
+Multi-touchでしか実行できない主要操作を作らず、代替UIを持たせる。
+
+### FR-A11Y-003 Non-color-only State
+
+状態・警告・選択を色だけで伝えない。
+
+### FR-A11Y-004 Color Assistance
+
+Color Name/Description等、色覚を補助する機能を提供する方向で設計する。
+
+### FR-A11Y-005 Reduced Motion
+
+不要なAnimationを減らす設定を持つ。
+
+### FR-A11Y-006 Stabilization
+
+Global Motion Filtering/Stabilizationを利用可能にする。
+
+### FR-A11Y-007 Targets
+
+Touch Deviceでは十分なHit Targetを保証するDesign Tokenを定義する。
+
+### FR-A11Y-008 Keyboard
+
+描画そのものを除く主要Commandは、PCでKeyboardから到達可能にすることを目標とする。
+
+---
+
+## 26. Asset Library
+
+### FR-ASSET-001 Asset Types
+
+少なくとも次を管理できる。
+
+- Brush
+- Brush tip
+- Texture
+- Paper
+- Pattern
+- Gradient
+- Palette
+- Macro
+- Workspace
+- Reference Set
+- Shape
+
+### FR-ASSET-002 Organization
+
+Folder/Collection/Tag/Search/Favorite/Recentを提供する。
+
+### FR-ASSET-003 Import / Export
+
+AssetをImport/Exportできる。
+
+### FR-ASSET-004 Local-first
+
+Cloud接続なしでAsset Libraryが成立する。
+
+---
+
+## 27. Navigator / Multi-view
+
+### FR-NAV-001 Navigator
+
+Artwork ThumbnailとCurrent Viewportを表示するNavigatorを提供する。
+
+### FR-NAV-002 Direct Navigation
+
+NavigatorからPan/Zoomできる。
+
+### FR-NAV-003 Workspace
+
+NavigatorはDock/Float/Hide可能にする。
+
+### FR-NAV-004 Multi-view
+
+同一Documentを複数Viewで表示する機能をInvestigateする。
+
+---
+
+## 28. File Format / Persistence
+
+### DR-FILE-001 Native Format
+
+Native Formatは **.illustro** とする。
+
+### DR-FILE-002 Native Data
+
+.illustroは少なくとも以下を保存可能にする。
+
+- Canvas
+- Layer tree
+- Masks
+- Vector
+- Text
+- Brush/document-specific brush data
+- Region
+- References
+- Snapshot
+- Layer Comp
+- Timelapse/history-related data
+- Workspace/document metadata
+- Color profile
+- Recovery/version metadata
+
+### FR-FILE-001 Standard Export
+
+PNG/JPEG/WebPをRequiredとする。
+
+### FR-FILE-002 OpenRaster
+
+OpenRaster (.ora)をLayer交換形式としてRequiredとする。
+
+### FR-FILE-003 TIFF
+
+TIFFを高品質Raster交換形式としてRequiredとする。
+
+### FR-FILE-004 PSD
+
+PSD Import/ExportはHigh-priority Investigate。
+
+「完全互換」を前提にせず、Feature-by-feature互換性を管理する。
+
+### CR-PSD-001 Loss Reporting
+
+PSD Import/Exportで情報損失が発生する場合、可能な限りユーザーへ明示する。
+
+### CR-PSD-002 Round Trip
+
+PSD対応を実装する場合はRound-trip Test Suiteを持つ。
+
+### FR-FILE-005 SVG / EXR
+
+SVGとOpenEXRをそれぞれVector/HDR Interchange候補として検証する。
+
+---
+
+## 29. Autosave / Recovery / Offline
+
+### FR-SAVE-001 Autosave
+
+制作中の定期・イベント駆動保存を提供する。
+
+### FR-SAVE-002 Incremental Save
+
+Document全体を書き直さず変更分を安全に永続化できる方式を優先する。
+
+### FR-SAVE-003 Crash Recovery
+
+Crash後に最後の安全な状態へ復旧できる。
+
+### FR-SAVE-004 Recovery Snapshot
+
+通常Saveと独立したRecovery Stateを保持する。
+
+### QR-SAVE-001 Non-blocking
+
+保存処理でStroke/Inputを長時間Blockしてはならない。
+
+### FR-OFFLINE-001 Offline Core
+
+以下はInternetなしで成立しなければならない。
+
+- Draw
+- Edit
+- Save
+- Layer
+- Brush
+- Undo/Redo
+- Reference
+- Filter
+- Macro
+- Asset Library
+
+### FR-OFFLINE-002 Login
+
+通常のLocal制作でLoginを必須にしない。
+
+---
+
+## 30. Performance
+
+### QR-PERF-001 Perceived Zero Lag
+
+「体感0ラグ」を目標とする。
+
+### QR-PERF-002 Metrics
+
+少なくとも以下を継続計測対象とする。
+
+- Input latency
+- frame time
+- worst frame
+- memory usage
+- canvas-size scaling
+- layer-count scaling
+- Undo latency
+- brush-switch latency
+- save interruption
+
+### QR-PERF-003 Partial Update
+
+変更範囲のみを更新できるArchitectureを優先する。
+
+### QR-PERF-004 GPU
+
+GPUが有効な環境ではBrush/Filter/Transform/Blend/Preview等へ積極利用する。
+
+### QR-PERF-005 Fallback
+
+GPU Feature差によって基本編集不能にならないFallback戦略を持つ。
+
+---
+
+## 31. AI Policy
+
+### FR-AI-001 Author-first
+
+AIがArtwork完成を主体的に代行することをIllustroの中心価値にしない。
+
+### FR-AI-002 Assistive Only
+
+AI利用候補はColor/Region/Selection/Organization/Repair等の補助を中心とする。
+
+### FR-AI-003 Deterministic Alternative
+
+可能な機能はAIなしでも成立するAlgorithmを優先する。
+
+### FR-AI-004 Offline / Privacy
+
+AI FeatureがなくてもCore Painting Workflowは完全に成立しなければならない。
+
+---
+
+## 32. Extension Policy
+
+### FUT-EXT-001 Plugin API
+
+Plugin/Extension APIは本体完成前の必須機能にしない。
+
+### DR-EXT-001 Internal Boundaries
+
+将来のExtensionを不必要に妨げないよう、Command/Document/Render/Import-Export等の内部Module Boundaryを明確にする。
+
+### FUT-EXT-002 Potential Extension Points
+
+将来候補:
+
+- Commands
+- import/export codec
+- filters
+- brush modules
+- panels
+- automation functions
+
+任意コードの無制限実行を前提としない。
+
+---
+
+## 33. Future Collaboration / 絵チャ
+
+### FUT-COLLAB-001
+
+絵チャ・Realtime共同描画は、Core Illustro完成後のFuture Scopeとする。
+
+### DR-COLLAB-001
+
+現段階でRealtime Collaboration向けの複雑性をCore設計へ持ち込まない。
+
+ただし、Document ID、Command、Entity identity等について、将来の共同編集を不必要に不可能にする制約は避ける。
+
+---
+
+## 34. 仕様上の未確定事項
+
+以下は「機能を入れるかどうか」ではなく、主に**どう実装するか**が未確定。
+
+- Tile size / cache / eviction
+- internal pixel format
+- working color space
+- ICC implementation
+- HDR output/display mapping
+- Blend Mode exact formula
+- brush graph data model
+- wet-media simulation
+- Region matching algorithm
+- Vector stroke representation
+- text shaping engine
+- selection antialiasing
+- transform interpolation
+- live-filter render graph
+- Undo delta/checkpoint strategy
+- Snapshot branch storage
+- .illustro container/versioning
+- PSD parser/writer
+- Web/PWA/Desktop runtime composition
+- default keyboard/gesture mapping
+
+これらはアーキテクチャ設計・Prototype・Benchmarkの結果を根拠として確定する。
+
+---
+
+## 35. 次段階へのGate
+
+UI設計または本実装へ進む前に、少なくとも以下を個別仕様化する。
+
+1. Document / Layer Data Model
+2. Tile Canvas / Render Pipeline
+3. Undo / Command / Snapshot Model
+4. Brush Engine / Dynamics
+5. Lineart Region System
+6. Color Pipeline
+7. Selection / Transform
+8. .illustro Native Format
+9. Input / Device Abstraction
+10. Autosave / Recovery
+
+UIはこれらの完全実装を待つ必要はないが、**内部能力と矛盾しない状態まで設計を詰めてから生成する。**
