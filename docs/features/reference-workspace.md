@@ -95,7 +95,10 @@ Phone:
 
 ## Persistence
 
-Reference metadata/placement/group/display flags = DocumentまたはDocument-linked workspace。
+Reference metadata/placement/group/display flags = **Document-persistent**。
+
+Reference panelのdock位置・panel size等 = Workspace-persistent。
+
 Resource bytesをembedするかlinkするかはfile format specで決定。
 
 Missing linked resource時はrelink UI。
