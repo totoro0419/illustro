@@ -147,7 +147,7 @@ Phone:
 
 ## Persistence
 
-Active selection = Document editing state。
+Active selection = Document editing stateであり、native .illustro save/recoveryでは復元対象とする。通常画像Exportへは影響しない。
 Saved selection = Document。
 Transform committed state = Document。
 Transform preview = Session-only。
