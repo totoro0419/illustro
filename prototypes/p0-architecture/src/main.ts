@@ -211,6 +211,11 @@ function onPersistenceMessage(event: MessageEvent): void {
     return;
   }
 
+  if (data?.type === 'inspect-done' && Array.isArray(data.sequences) && data.sequences.length > 0) {
+    const maxSequence = Math.max(...(data.sequences as number[]));
+    if (Number.isFinite(maxSequence)) persistenceSequence = Math.max(persistenceSequence, maxSequence + 1);
+  }
+
   if (typeof data?.requestId === 'number') {
     const pending = controlPending.get(data.requestId);
     if (!pending) return;
