@@ -27,9 +27,8 @@ type GpuNavigator = Navigator & {
 };
 
 export async function probeGraphicsCapabilities(): Promise<GraphicsProbe> {
-  const canvas = document.createElement('canvas');
-  const canvas2d = Boolean(canvas.getContext('2d'));
-  const webgl2 = Boolean(canvas.getContext('webgl2'));
+  const canvas2d = Boolean(document.createElement('canvas').getContext('2d'));
+  const webgl2 = Boolean(document.createElement('canvas').getContext('webgl2'));
   const offscreenCanvas = typeof OffscreenCanvas !== 'undefined';
 
   const gpu = (navigator as GpuNavigator).gpu;
