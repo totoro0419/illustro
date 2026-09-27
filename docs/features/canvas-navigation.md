@@ -4,7 +4,7 @@
 
 ## Entry / default
 
-Documentを開いたらCanvasは中央に表示し、Artworkが見切れないFit表示を初期候補とする。前回View復元はDocument/Workspace方針に従う。
+Documentを初めて開く場合はCanvasを中央に表示し、Artworkが見切れない **Fit表示をDefault** とする。明示的に保存されたView stateがある場合のみ、そのViewを復元する。
 
 NavigationはToolではなく常時利用可能なView操作として扱う。
 
