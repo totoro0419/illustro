@@ -500,3 +500,19 @@ PC / Tablet / Smartphoneそれぞれについて、Core Normal Operationの全�
 設計検査時点では**対応可能性はPASS**。
 
 実装がまだ存在しないため、**実動作は未確認**。
+
+
+## 20. Official references
+
+- W3C Pointer Events Level 3: https://www.w3.org/TR/pointerevents3/
+- W3C Media Queries Level 4: https://www.w3.org/TR/mediaqueries-4/
+- WebKit Safari 26 features / WebGPU / web apps: https://webkit.org/blog/17333/webkit-features-in-safari-26-0/
+- Chrome WebGPU Android / compatibility mode: https://developer.chrome.com/blog/new-in-webgpu-146
+- MDN Origin Private File System: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
+- MDN showSaveFilePicker: https://developer.mozilla.org/en-US/docs/Web/API/Window/showSaveFilePicker
+- MDN OffscreenCanvas: https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas
+- MDN GPUCanvasContext: https://developer.mozilla.org/en-US/docs/Web/API/GPUCanvasContext
+- MDN deviceMemory: https://developer.mozilla.org/en-US/docs/Web/API/Navigator/deviceMemory
+- MDN VisualViewport: https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport
+- MDN StorageManager.estimate: https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/estimate
+- MDN beforeunload reliability: https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
