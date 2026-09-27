@@ -22,6 +22,9 @@ UIも、内部能力とデータモデルが矛盾しないところまで設計
 4. `docs/features/*.md` — 個別機能の詳細仕様（今後作成）
 5. UI / Architecture / Implementation specifications — 今後作成
 
+過去Illustro資料の扱いは [Legacy Reference Policy](docs/LEGACY_REFERENCE_POLICY.md) に従います。
+重要なArchitecture判断は [ADR Template](docs/architecture/ADR_TEMPLATE.md) を使って記録します。
+
 下位仕様は上位仕様を具体化できますが、無断で矛盾してはなりません。
 
 ## Research
