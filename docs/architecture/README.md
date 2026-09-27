@@ -80,3 +80,10 @@ These require prototypes/benchmarks:
 ## Next gate
 
 Before production editor implementation, execute the P0 architecture prototypes listed in [Integration Validation](INTEGRATION_VALIDATION.md).
+
+
+## Prototype evidence
+
+- [P0 Architecture Prototype — Initial Harness](../prototypes/P0_ARCHITECTURE_PROTOTYPE.md)
+
+The harness is evidence-gathering infrastructure only; it does not lock Tile Size, Worker placement, runtime backend, or production dependencies.
