@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted as Architecture Baseline v0.2 — Performance-first**
+**Accepted — Architecture V1 Runtime Baseline**
 
 ## Date
 
@@ -331,7 +331,7 @@ TypeScript + component UI frameworkを採用予定。具体frameworkはUI設計�
 
 ### Canonical/algorithm kernels
 
-Rust → WebAssemblyは**有力候補**であり、全面Baselineではない。
+TypeScriptをV1のDefault implementation languageとする。Rust → WebAssemblyは**representative heavy kernelで明確な利益が確認された場合の候補**であり、全面Baselineではない。
 
 WASMへ置く候補:
 
@@ -453,6 +453,22 @@ Cloud同期/CollaborationはCore dependencyにしない。
 - OPFS SyncAccessHandleはDedicated Worker限定。
 
 これらをcapability adapterで吸収する。
+
+## 21.1 V1 runtime confirmation
+
+Architecture V1で確定:
+
+- Main Thread: Pointer intake / active Stroke coordination / lightweight render submission
+- Dedicated Worker: Persistence
+- bounded utility Worker lanes: Region / codec / heavy filter / expensive compute
+- full Realtime Worker: optional measured fast path
+- Persistence WorkerはFirst Stroke前にloadしない
+- Region / ICC / codecs / Wet Media / advanced filtersはpay-for-use
+- TypeScript default; heavy-kernel WASMは後続測定で採否判断
+
+Second-pass served Chromiumではfirst stroke前後でadvanced module load flagsがすべてfalseで、resource request listも増加しなかった。
+
+V1 promotion: [Architecture V1](ARCHITECTURE_V1.md)
 
 ## 21. Decision summary
 
