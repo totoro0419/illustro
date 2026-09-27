@@ -193,6 +193,18 @@ corrupt blockをsilent zero-fillして正常Documentとして開かない。
 
 可能ならprevious good generationへfallback。
 
+## 10.1 Session isolation / concurrent opens
+
+Each open document session uses a distinct mutable working namespace/session identity.
+
+The same portable .illustro source opened twice must not cause both sessions to mutate the same OPFS journal/root concurrently.
+
+Shared immutable blocks may be deduplicated later if proven safe/beneficial, but journal/generation ownership remains isolated.
+
+Recovery entries record session/project/source identity so startup can distinguish concurrent branches.
+
+When saving back to the same external destination, destination version/metadata should be compared where the platform exposes reliable information. External modification conflict must not be silently overwritten.
+
 ## 11. Storage pressure
 
 Monitor:
