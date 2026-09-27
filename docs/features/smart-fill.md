@@ -21,9 +21,15 @@ Modeごとに別Toolへ深く分散させない。
 
 Defaultは通常のFlood Fill。
 
-Reference source default:
-- current layerまたはvisible/reference layersのどちらを初期値にするかはPrototype UX testで決定
-- Userが変更したreference modeはWorkspaceで保持可能
+Reference source defaultは **Auto** とする。
+
+Auto:
+- designated Reference Layerが1つ以上ある場合: Reference Layer群を参照
+- ない場合: Current Layerを参照
+
+Autoが何を参照しているかはContext UIで常に確認可能にする。
+
+Userが明示的にreference modeを変更した場合はWorkspaceで保持可能。
 
 Gap Closing defaultは保守的にし、強い補完を勝手に行わない。
 
