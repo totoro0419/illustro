@@ -3,6 +3,9 @@ import { PointerNormalizer } from './core/input';
 import { ActivePointerGate } from './core/activePointer';
 import { MetricSeries } from './core/metrics';
 import { runHistoryBenchmark, runTileBenchmark } from './bench/api';
+import { runCachePressureBenchmark, runRasterSealBenchmark } from './bench/extended';
+import { probeGraphicsCapabilities } from './core/graphicsProbe';
+import { runWasmBoundaryBenchmark } from './core/wasmBoundary';
 import type { PointSample } from './core/types';
 
 function requireElement<T extends Element>(selector: string): T {
@@ -213,6 +216,10 @@ const api = {
   metrics,
   runTileBenchmark,
   runHistoryBenchmark,
+  runRasterSealBenchmark,
+  runCachePressureBenchmark,
+  probeGraphicsCapabilities,
+  runWasmBoundaryBenchmark,
   runPersistenceBenchmark,
   tileSweep: (operations = 20_000) => [64, 128, 256, 512, 1024].map((size) => runTileBenchmark(size, operations)),
 };
