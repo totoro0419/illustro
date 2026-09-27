@@ -299,7 +299,8 @@
 | Hover | Required | 対応環境 |
 | 右クリック / Context Click | Required | 重要機能をここだけに隠さない |
 | Custom Toolbar | Required | |
-| Custom Shortcut | Required | |
+| Custom Shortcut | Required | Press-to-bind方式。実際にキーを押して登録し、衝突検出・複数割当・解除・予約キー警告を行う |
+| Keyboard Shortcut Capture | Required | 実Keyboard Eventからmodifier/key/codeを取得。表示文字列だけを保存しない |
 | Custom Gesture | Required | |
 | Scalable UI / Text | Required | Accessibility |
 | Single-pointer Alternative | Required | Multi-touch必須操作に代替手段を用意 |
