@@ -76,7 +76,9 @@ Text input中はglobal shortcutsを抑制。
 
 Delete layerはUndo可能。
 
-last drawable layerを消せるか、自動replacementするかはP1で決定するが、Documentを操作不能にはしない。
+Last layerも削除可能で、Layer treeはemptyになり得る。
+
+その状態でRaster Brushによる描画を開始した場合はDocument Lifecycle仕様に従い、新規Raster Layerを自動作成しfirst strokeと同じuser-intent groupとして扱う。
 
 ## Duplicate
 
