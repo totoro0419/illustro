@@ -110,11 +110,18 @@ Exact confidence thresholdはDataset検証後に決定。
 
 ## Undo
 
-Lineart editとRegion remapを1 stepにまとめるか2 stepに分けるかは、ユーザー期待に応じてPrototypeで検証。
+Lineart editによって自動的に発生したhigh-confidence Region remapは、**原因となったLineart editと同じHistory groupとして提示**する。
 
-最低条件:
--元のlineartとcolor assignmentへ完全復帰可能
--Region correctionもUndo可能
+Undoすると:
+- lineart
+- topology/identity decision
+- automatic color remap
+
+が一緒に元状態へ戻る。
+
+Ambiguous/Conflictを後からUserが明示Accept/Resolveした操作は別Undo step。
+
+Region manual correctionも1 user action = 1 Undo step。
 
 ## Device
 
