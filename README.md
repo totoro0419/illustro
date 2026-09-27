@@ -63,6 +63,8 @@ Architecture v0.2 is accepted for **prototyping**, not yet performance-validated
 
 Runtime lightness rules are defined in [Performance-First Policy](docs/architecture/PERFORMANCE_POLICY.md), with the current audit in [Performance Audit 2026-09-27](docs/architecture/PERFORMANCE_AUDIT_2026-09-27.md).
 
+PC / Tablet / Smartphone adaptation is defined in [ADR-0010](docs/architecture/ADR-0010-device-capability-adaptation.md), with [Device Compatibility Audit](docs/architecture/DEVICE_COMPATIBILITY_AUDIT_2026-09-27.md) and [Device Test Matrix](docs/architecture/DEVICE_TEST_MATRIX.md).
+
 ## Development gate
 
 本実装へ進む前に、少なくとも以下を詳細設計します。
