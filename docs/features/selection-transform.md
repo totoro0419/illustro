@@ -17,6 +17,8 @@ Selection Tool family:
 
 ## Selection mode
 
+Default selection modeは **Replace** とする。
+
 Primary modes:
 
 - Replace
