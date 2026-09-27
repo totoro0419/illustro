@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted for prototype**
+**Accepted — Architecture V1**
 
 ## Date
 
@@ -302,3 +302,51 @@ Success criteria:
 - UI thread not blocked by persistence
 - corruption diagnosed
 - cache loss never loses artwork
+
+
+## V1 recovery baseline
+
+Architecture V1 promotionでserved Chromium上のOPFS SyncAccessHandle pathを実検証した。
+
+### Journal contract
+
+- framed
+- batched
+- bounded
+- append-oriented
+- durability attempt完了前にprotected acknowledgementしない
+
+Batch bytes / delayはRuntime calibration値であり、Document semanticsにはしない。
+
+### Recovery scan
+
+Open/recovery時:
+
+1. 先頭から連続valid frameをscan
+2. 最初のinvalid/truncated frameで停止
+3. 後方のmagicを検索して再同期しない
+4. valid prefixのみRecovery truthとする
+5. invalid tailをtruncate
+6. その後appendを再開
+
+### Verified browser sequence
+
+Second-pass served Chromium:
+
+- backend: **opfs-sync-access**
+- 8 complete frames write
+- reload後8 frames復元
+- 11-byte torn tailをinject
+- scanner: 8 complete frames + `truncated-frame`
+- reload時11-byte tailをtruncate
+- sequence 8, 9を正常append
+- final frame count 10
+- final tail 0
+
+Unit fault injectionでは2番目のFrameを全285 cut positionで切断し、不完全Frameを0/285回受理した。
+
+### Limitation
+
+`flush()`成功を物理電源断に対する絶対durability保証とはしない。
+
+Evidence: [V1 Second Audit](V1_SECOND_AUDIT_EVIDENCE.md)
