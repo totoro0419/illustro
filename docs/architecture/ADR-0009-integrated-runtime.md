@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted as Architecture Baseline v0.1**
+**Accepted as Architecture Baseline v0.2 — Performance-first**
 
 ## Date
 
