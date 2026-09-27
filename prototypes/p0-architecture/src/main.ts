@@ -23,6 +23,7 @@ const pointerGate = new ActivePointerGate();
 let canvasRect = canvas.getBoundingClientRect();
 let canvasDpr = Math.min(devicePixelRatio || 1, 2);
 let persistenceSequence = 0;
+const journalPending = new Map<number, { resolve: () => void; reject: (error: Error) => void }>();
 const persistenceWorker = new Worker(new URL('./workers/persistence.worker.ts', import.meta.url), { type: 'module' });
 
 function refreshGeometry(): void {
@@ -145,29 +146,46 @@ window.addEventListener('scroll', () => { canvasRect = canvas.getBoundingClientR
 window.visualViewport?.addEventListener('resize', refreshGeometry, { passive: true });
 
 persistenceWorker.onmessage = (event) => {
-  if (event.data?.type === 'append-done') {
-    metrics.push({ name: 'journal-write', value: Number(event.data.duration), unit: 'ms', timestamp: performance.now() });
+  if (event.data?.type === 'batch-done') {
+    const now = performance.now();
+    metrics.push({ name: 'journal-batch-flush', value: Number(event.data.duration), unit: 'ms', timestamp: now });
+    metrics.push({ name: 'journal-batch-bytes', value: Number(event.data.bytes), unit: 'bytes', timestamp: now });
+    metrics.push({ name: 'journal-batch-records', value: Number(event.data.records), unit: 'count', timestamp: now });
+    for (const sequence of event.data.sequences as number[]) journalPending.get(sequence)?.resolve();
+    for (const sequence of event.data.sequences as number[]) journalPending.delete(sequence);
     renderStatus();
+    return;
+  }
+  if (event.data?.type === 'batch-error') {
+    const error = new Error(String(event.data.message));
+    for (const sequence of event.data.sequences as number[]) journalPending.get(sequence)?.reject(error);
+    for (const sequence of event.data.sequences as number[]) journalPending.delete(sequence);
   }
 };
 
-async function runPersistenceBenchmark(records = 64, bytesPerRecord = 16_384): Promise<void> {
+type PersistenceBenchmarkOptions = Readonly<{ maxBatchBytes?: number; batchDelayMs?: number }>;
+
+async function runPersistenceBenchmark(
+  records = 64,
+  bytesPerRecord = 16_384,
+  options: PersistenceBenchmarkOptions = {},
+): Promise<void> {
+  // Harness defaults only. They are deliberately not production constants.
+  const maxBatchBytes = options.maxBatchBytes ?? 128 * 1024;
+  const batchDelayMs = options.batchDelayMs ?? 16;
+  persistenceWorker.postMessage({ type: 'configure', maxBatchBytes, batchDelayMs });
+
   const pending: Promise<void>[] = [];
   for (let i = 0; i < records; i += 1) {
     const bytes = new Uint8Array(bytesPerRecord);
     crypto.getRandomValues(bytes);
     const sequence = persistenceSequence++;
     pending.push(new Promise((resolve, reject) => {
-      const listener = (event: MessageEvent) => {
-        if (event.data?.sequence !== sequence) return;
-        persistenceWorker.removeEventListener('message', listener);
-        if (event.data?.type === 'append-error') reject(new Error(event.data.message));
-        else resolve();
-      };
-      persistenceWorker.addEventListener('message', listener);
+      journalPending.set(sequence, { resolve, reject });
       persistenceWorker.postMessage({ type: 'append', bytes, sequence }, [bytes.buffer]);
     }));
   }
+  persistenceWorker.postMessage({ type: 'flush' });
   await Promise.all(pending);
   renderStatus();
 }
@@ -176,7 +194,8 @@ function renderStatus(): void {
   const mainInput = metrics.summary('input-to-raf');
   const workerRoundtrip = metrics.summary('worker-roundtrip');
   const workerRaf = metrics.summary('worker-to-next-raf');
-  const persistence = metrics.summary('journal-write');
+  const persistence = metrics.summary('journal-batch-flush');
+  const batchRecords = metrics.summary('journal-batch-records');
   const inputLine = mode === 'main'
     ? `input→next RAF ${mainInput.count} | p50 ${mainInput.p50.toFixed(2)}ms | p95 ${mainInput.p95.toFixed(2)}ms | p99 ${mainInput.p99.toFixed(2)}ms | max ${mainInput.max.toFixed(2)}ms`
     : `worker roundtrip ${workerRoundtrip.count} | p50 ${workerRoundtrip.p50.toFixed(2)}ms | p95 ${workerRoundtrip.p95.toFixed(2)}ms; input→next RAF p50 ${workerRaf.p50.toFixed(2)}ms | p95 ${workerRaf.p95.toFixed(2)}ms`;
@@ -184,7 +203,7 @@ function renderStatus(): void {
     'Illustro P0 prototype',
     `input path: ${mode}`,
     inputLine,
-    `journal ${persistence.count} writes | p50 ${persistence.p50.toFixed(2)}ms | p95 ${persistence.p95.toFixed(2)}ms`,
+    `journal ${persistence.count} batches | flush p50 ${persistence.p50.toFixed(2)}ms | p95 ${persistence.p95.toFixed(2)}ms | records/batch p50 ${batchRecords.p50.toFixed(0)}`,
     'console API: window.illustroPrototype',
   ].join('\n');
 }
