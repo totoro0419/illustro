@@ -35,7 +35,11 @@ Mutableな巨大Document objectを一つ持ち、各Commandがin-place mutation�
 
 一方、全編集でDocument全体をimmutable copyする方式も大量Layer/Tileで非現実的。
 
-したがって、**stable entity identity + immutable revision root + structural sharing** をBaselineとする。
+したがって、**stable entity identity + immutable published revision + copy-on-write / structural sharing** をBaselineとする。
+
+ただし、Active Strokeやparameter dragの途中までpersistent immutable nodeを量産しない。**公開前のActive Transactionはbounded mutable scratch stateを持ってよい。** Transaction commit時に変更ページ/Tile/metadataだけをfreeze/publishする。
+
+Pure functional data structureを使うこと自体を目標にしない。実測で単純なarena + copy-on-write pageの方が軽ければそちらを採用する。
 
 ## Decision
 
@@ -60,9 +64,9 @@ ID生成アルゴリズム自体はCodec/APIから隠し、versioning可能に�
 
 Runtime object addressや配列indexをIdentityにしない。
 
-### 2. Immutable Revision Root
+### 2. Immutable Published Revision Root
 
-Commitされた編集は新しいRevision Rootを生成する。
+Commitされた編集は新しいRevision Rootを生成する。Stroke中のpreview/sample更新ごとには生成しない。
 
 Revision Rootは以下を参照する。
 
@@ -78,6 +82,8 @@ Revision Rootは以下を参照する。
 変更されていないSubtree/Blockは共有する。
 
 具体的Persistent Tree実装（HAMT/RRB等）はPrototype比較後に決める。
+
+小Document/小metadata更新でPersistent Treeのalloc/copy overheadが不利なら、page arena + generation + copy-on-write table等を許容する。
 
 ### 3. Layer Node model
 
@@ -175,6 +181,17 @@ Reference itemはtransform/display options/resource referenceを持ち、必要�
 - workspace-linked metadata
 
 View center/zoom等はDocument保存とWorkspace保存の責務を分ける。
+
+## Active transaction fast path
+
+Active transactionでは:
+
+- dirty entity/table pageだけmutable scratchへcopy
+- rasterはworking tile/subrectへ書く
+- parameter dragはintermediate revisionを作らずcoalesce可能
+- commit時に一度だけpublished revisionを作る
+
+Hot Pathで「immutableであること」自体のために短命Nodeを大量生成しない。
 
 ## Canonical vs derived
 
