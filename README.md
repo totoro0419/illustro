@@ -75,6 +75,10 @@ The core painting workflow is interaction-ready for dedicated UI design. Advance
 
 The current comprehensive specification audit is [Specification Precision Audit 2026-09-27](docs/SPECIFICATION_AUDIT_2026-09-27.md).
 
+## P0 Architecture Prototype
+
+The first performance/architecture harness is in [`prototypes/p0-architecture`](prototypes/p0-architecture/PROTOTYPE.md). Current verified results and limitations are recorded in [P0 Architecture Prototype — Initial Harness](docs/prototypes/P0_ARCHITECTURE_PROTOTYPE.md).
+
 ## Development gate
 
 本実装へ進む前に、少なくとも以下を詳細設計します。
