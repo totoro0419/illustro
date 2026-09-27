@@ -72,11 +72,12 @@ export async function probeGraphicsCapabilities(): Promise<GraphicsProbe> {
   };
 }
 
-function normalizeLimits(source: Record<string, number> | undefined): Record<string, number> {
-  if (!source) return {};
+function normalizeLimits(source: unknown): Record<string, number> {
+  if (!source || typeof source !== 'object') return {};
   const result: Record<string, number> = {};
+  const record = source as Record<string, unknown>;
   for (const key of ['maxTextureDimension2D', 'maxBufferSize', 'maxStorageBufferBindingSize']) {
-    const value = source[key];
+    const value = record[key];
     if (typeof value === 'number' && Number.isFinite(value)) result[key] = value;
   }
   return result;
