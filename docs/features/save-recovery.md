@@ -15,6 +15,14 @@ UI distinguishes:
 
 "Saved" must not ambiguously mean all of them.
 
+## Default
+
+Autosave / Recovery protectionは **Default ON**。
+
+Userが通常制作を開始する前に設定を要求しない。
+
+Recoveryを完全に無効化する高度設定を将来提供する場合はData-loss riskを明示する。
+
 ## Working protection indicator
 
 Normal editing continuously advances recovery protection.
@@ -27,6 +35,12 @@ UI may show subtle state:
 Do not show noisy spinner for every journal packet.
 
 ## Explicit Save
+
+Save/export encodingが安全に中断可能な段階ではCancelを提供する。
+
+Cancelしてもcurrent Documentと既存の最後に成功したSaveを破壊しない。
+
+File picker/Save Asをキャンセルした場合もDocument状態は変えない。
 
 If document has associated writable destination:
 - Save writes a fixed revision snapshot to that destination asynchronously
@@ -77,8 +91,8 @@ Do not promise full save on app exit.
 ## Crash recovery startup
 
 If newer protected recovery state exists:
-- restore automatically when safe, or
-- present clear recovery choice if multiple/conflicting states
+- 同一Projectで候補が一つだけかつ関係が明確: latest protected recoveryをDefault restore
+- 複数候補・explicit saved fileとの関係が曖昧・branch conflict: clear recovery choiceを表示
 
 User sees:
 - project identity
