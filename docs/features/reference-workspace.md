@@ -16,6 +16,12 @@ ReferenceはArtwork Layerへ自動変換しない。
 
 ## Manipulation
 
+Referenceのmove/scale/rotate操作中は開始時状態を保持する。
+
+- release/explicit finish: commit
+- Esc/Cancel: 開始時状態へ復帰
+- incompatible tool switch: silent commitせず共通Interaction Modelに従う
+
 Reference select時に:
 - move
 - scale
@@ -96,11 +102,11 @@ Missing linked resource時はrelink UI。
 
 ## Undo
 
-Reference placement/editをArtwork Undoへ含めるかReference-specific historyにするかはP1検証。
+Referenceの追加・削除・move・scale・rotate・group変更は通常Command Historyへ入り、1 gesture = 1 Undo stepとする。
 
-最低条件:
--delete/move mistake recovery possible
--Document artwork undo chainを過剰汚染しない
+ただしReference visibilityの一時hideやtemporary presentation-only操作はUndoへ入れない。
+
+History UIではReference操作であることを明示し、Artwork Pixel editと区別できる。
 
 ## Performance
 
