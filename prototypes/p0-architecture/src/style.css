@@ -1,0 +1,31 @@
+html, body, main {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  font-family: system-ui, sans-serif;
+  background: #202124;
+}
+#surface {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+#status {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  max-width: min(520px, calc(100vw - 16px));
+  max-height: 40vh;
+  overflow: auto;
+  margin: 0;
+  padding: 8px;
+  font: 12px/1.35 ui-monospace, monospace;
+  background: rgb(0 0 0 / 65%);
+  color: white;
+  pointer-events: none;
+  white-space: pre-wrap;
+}
