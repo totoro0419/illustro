@@ -44,7 +44,7 @@ Eye toggleは即時。
 
 Multi-selected layersに一括操作可能。
 
-Visibility changeはArtwork document stateとしてUndo可能にする方針を基本とする。ただし連続大量toggleのcoalescingを検討。
+Visibility changeはDocument stateとして **1 user action = 1 Undo step** とする。Multi-selected layersへの一括toggleは1 stepにまとめる。
 
 ## Clipping / Alpha Lock
 
@@ -66,7 +66,7 @@ Ungroup:
 
 ## Rename
 
-Inline renameをPrimary候補。
+Inline renameを **Primary** とする。
 
 Enter commit / Esc cancel.
 
