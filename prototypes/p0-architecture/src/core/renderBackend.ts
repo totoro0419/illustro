@@ -107,7 +107,8 @@ export function smokeWebGl2(canvas: HTMLCanvasElement): RenderBackendSmoke {
     gl.clear(gl.COLOR_BUFFER_BIT);
     const pixel = new Uint8Array(4);
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-    const passed = pixel[0] >= 62 && pixel[0] <= 66 && pixel[1] >= 126 && pixel[1] <= 130 && pixel[2] >= 190 && pixel[2] <= 194 && pixel[3] === 255;
+    const [red = 0, green = 0, blue = 0, alpha = 0] = pixel;
+    const passed = red >= 62 && red <= 66 && green >= 126 && green <= 130 && blue >= 190 && blue <= 194 && alpha === 255;
     return {
       kind: 'webgl2',
       smokePassed: passed,
@@ -128,7 +129,8 @@ export function smokeCanvas2d(canvas: HTMLCanvasElement): RenderBackendSmoke {
     ctx.fillStyle = 'rgb(64, 128, 192)';
     ctx.fillRect(0, 0, 2, 2);
     const pixel = ctx.getImageData(0, 0, 1, 1).data;
-    const passed = pixel[0] === 64 && pixel[1] === 128 && pixel[2] === 192 && pixel[3] === 255;
+    const [red = 0, green = 0, blue = 0, alpha = 0] = pixel;
+    const passed = red === 64 && green === 128 && blue === 192 && alpha === 255;
     return { kind: 'canvas2d', smokePassed: passed, detail: `readback=${[...pixel].join(',')}` };
   } catch (error) {
     return { kind: 'canvas2d', smokePassed: false, detail: String(error) };
