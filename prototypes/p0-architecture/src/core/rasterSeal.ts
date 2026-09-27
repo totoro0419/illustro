@@ -14,8 +14,10 @@ type RasterRevision = Readonly<{
 
 export type SealMetrics = Readonly<{
   changedTiles: number;
-  loadedBytes: number;
-  sealedBytes: number;
+  canonicalReadBytes: number;
+  workingAllocatedBytes: number;
+  transferredBytes: number;
+  avoidableSealCopyBytes: number;
   newBlocks: number;
   revisionId: number;
 }>;
@@ -34,9 +36,12 @@ export class CanonicalTileStore {
     return total;
   }
 
-  putCopy(bytes: Uint8Array): number {
+  putTransferred(bytes: Uint8Array): number {
+    if (typeof structuredClone !== 'function') throw new Error('structuredClone transfer is required for ownership sealing');
+    const buffer = bytes.buffer as ArrayBuffer;
+    const owned = structuredClone(bytes, { transfer: [buffer] });
     const id = this.#nextId++;
-    this.#blocks.set(id, { id, bytes: bytes.slice() });
+    this.#blocks.set(id, { id, bytes: owned });
     return id;
   }
 
@@ -153,7 +158,8 @@ export class RasterSealTransaction {
   readonly #baseRevisionId: number;
   readonly #working = new Map<RasterTileKey, Uint8Array>();
   #closed = false;
-  #loadedBytes = 0;
+  #canonicalReadBytes = 0;
+  #workingAllocatedBytes = 0;
 
   constructor(document: RasterSealingDocument, baseRevisionId: number) {
     this.#document = document;
@@ -164,8 +170,14 @@ export class RasterSealTransaction {
     this.assertOpen();
     let bytes = this.#working.get(key);
     if (!bytes) {
-      bytes = this.#document.readTileCopy(key, this.#baseRevisionId);
-      this.#loadedBytes += bytes.byteLength;
+      const blockId = this.#document.resolveBlockId(key, this.#baseRevisionId);
+      if (blockId === null) {
+        bytes = new Uint8Array(this.#document.tileBytes);
+      } else {
+        bytes = this.#document.store.copyForEdit(blockId);
+        this.#canonicalReadBytes += bytes.byteLength;
+      }
+      this.#workingAllocatedBytes += bytes.byteLength;
       this.#working.set(key, bytes);
     }
     edit(bytes);
@@ -180,18 +192,24 @@ export class RasterSealTransaction {
   seal(): SealMetrics {
     this.assertOpen();
     const changes = new Map<RasterTileKey, number | null>();
-    let sealedBytes = 0;
+    let transferredBytes = 0;
+
     for (const [key, bytes] of this.#working) {
-      const blockId = this.#document.store.putCopy(bytes);
+      const byteLength = bytes.byteLength;
+      const blockId = this.#document.store.putTransferred(bytes);
       changes.set(key, blockId);
-      sealedBytes += bytes.byteLength;
+      transferredBytes += byteLength;
     }
+
     const revisionId = this.#document.publish(this.#baseRevisionId, changes);
+    this.#working.clear();
     this.#closed = true;
     return {
       changedTiles: changes.size,
-      loadedBytes: this.#loadedBytes,
-      sealedBytes,
+      canonicalReadBytes: this.#canonicalReadBytes,
+      workingAllocatedBytes: this.#workingAllocatedBytes,
+      transferredBytes,
+      avoidableSealCopyBytes: 0,
       newBlocks: changes.size,
       revisionId,
     };
