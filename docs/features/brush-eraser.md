@@ -24,6 +24,17 @@ Pointer up → commit one stroke transaction.
 
 Stroke途中のTool設定変更は原則現在Strokeへ遡及適用しない。次のstable segment/next strokeからの反映方式はparameterごとに定義する。
 
+## Brush cursor
+
+Hover-capable pointerでは、可能なBrushについてCanvas上に現在のBrush footprint/sizeを示すCursorを表示する。
+
+- CursorはArtworkへ描き込まない
+- Brush size変更中は新しいsizeを即Preview
+- texture全形状表示が高コストなBrushは簡略outlineを許容
+- no-hover touch deviceではStroke開始前のcursorを必須にしない
+- pen hoverがあるDeviceでは利用可能
+- cursor renderingがinput latencyを悪化させる場合は簡略化/無効化可能
+
 ## Brush size / opacity
 
 高頻度設定としてContext UIへ常時近接配置。
