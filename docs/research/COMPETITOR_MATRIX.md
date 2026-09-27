@@ -1,67 +1,72 @@
-# Illustro Competitor Research Matrix
+# Illustro 競合調査マトリクス
 
-> Status: First-pass official-source research  
-> Checked: 2026-09-27  
-> Scope: Painting / illustration workflows relevant to Illustro. This is not a claim that every feature of every competitor has been exhaustively catalogued.
+> 状態: 公式一次資料による第1パス調査  
+> 確認日: 2026-09-27  
+> 対象: Illustro の一枚絵制作に関係する描画・編集ワークフロー  
+> 注意: 各製品の全機能を完全網羅したという意味ではない。
 
-## Research rule
+## 調査ルール
 
-Only features that can be verified from official product documentation are treated as confirmed here. This document is used to identify:
+公式製品ドキュメントで確認できた内容だけを「確認済み」とする。
 
-1. conventional capabilities Illustro must not accidentally omit,
-2. interaction patterns worth studying,
-3. areas where Illustro should intentionally redesign the workflow,
-4. dependencies between Illustro's unique systems and established painting workflows.
+この文書の目的は次の4点。
+
+1. Illustro が一般機能を取りこぼさないこと
+2. 参考にすべき優れた操作体系を見つけること
+3. Illustro が再設計すべき領域を明確にすること
+4. 独自機能と既存の確立した制作機能の依存関係を把握すること
 
 ## 1. Clip Studio Paint
 
-### Confirmed relevant capabilities
+### 確認できた関連機能
 
-Official Clip Studio Paint Ver. 5.0 documentation covers, among other areas:
+Clip Studio Paint Ver.5.0 の公式User Guideでは、少なくとも次の領域が明示されている。
 
-- pens and brushes,
-- layers,
-- color,
-- selections,
-- transforms,
-- filters and adjustments,
-- fill and gradients,
-- figures and shapes,
-- text,
-- rulers,
-- vector layers,
-- perspective rulers,
-- timelapses,
-- materials.
+- Pen / Brush
+- Layer
+- Color
+- Selection
+- Transform
+- Filter / Adjustment
+- Fill / Gradient
+- Figure / Shape
+- Text
+- Ruler
+- Vector Layer
+- Perspective Ruler
+- Timelapse
+- Material
 
-Reference layers can be used by Fill and Selection tools, and brushes can use them as boundaries to avoid overflow.
+Reference Layer は Fill / Selection の参照元として利用でき、Brushにも参照レイヤーの線を越えない設定がある。
 
-The Fill tool supports editing-layer or multi-layer reference workflows and exposes detailed parameters including closing gaps between lines.
+Fill Tool は編集レイヤーのみ参照、複数レイヤー参照などを持ち、線の隙間を閉じる設定も持つ。
 
-Vector layers store editable path/control-point information instead of only raster pixels, allowing post-stroke line editing.
+Vector Layer は単なるRaster Pixelではなく、線のPathやControl Point等を保持し、描画後の線編集が可能。
 
-Gradient layers remain editable after creation instead of permanently rasterizing the gradient.
+Gradient Layer は作成後にも色・範囲・方向を変更できる非破壊的な表現を持つ。
 
-### Illustro implications
+### Illustroへの反映
 
-**Adopt / match**
+**採用・同等以上を目標**
 
-- reference-source selection for fill and selection,
-- configurable gap-closing,
-- editable vector stroke representation,
-- robust rulers and perspective assistance,
-- editable/non-destructive gradient representation,
-- strong transform, selection, and layer fundamentals.
+- Fill/SelectionのReference Source指定
+- Gap Closing
+- 編集可能なVector Stroke
+- Ruler / Perspective Assistance
+- 編集可能なGradient
+- 高度なSelection / Transform / Layer基盤
 
-**Improve**
+**改善対象**
 
-Clip Studio exposes many capabilities through tool settings and advanced settings. Illustro should preserve equivalent depth but surface high-frequency controls through a unified Context UI.
+Clip Studio Paintの高度設定は非常に強力だが、設定項目が深くなりやすい。Illustroでは機能を削らず、Context UI・検索・Quick Menu等によって高頻度項目を前面化する。
 
-**Unique integration opportunity**
+**独自機能との接続**
 
-The Lineart Region System should sit *above* ordinary reference-layer fill rather than replacing it. Users must still be able to use conventional pixel/reference fill when region analysis is not desired.
+Lineart Region System はReference Layer方式を置き換えるものではない。
 
-### Official sources
+Region解析を使いたくないケースでも、従来型のReference Fillを利用可能にする。
+
+### 公式資料
 
 - https://help.clip-studio.com/en-us/
 - https://help.clip-studio.com/en-us/manual_en/180_layers/Reference_layers.htm
@@ -73,45 +78,52 @@ The Lineart Region System should sit *above* ordinary reference-layer fill rathe
 
 ## 2. Procreate
 
-### Confirmed relevant capabilities
+### 確認できた関連機能
 
-Procreate's current handbook documents:
+Procreate公式Handbookでは次を確認した。
 
-- touch-centric transformation with direct bounding-box manipulation,
-- multiple selection modes,
-- Drawing Guides including 2D Grid, Isometric, Perspective, and Symmetry,
-- Drawing Assist,
-- QuickShape for snapping hand-drawn strokes to clean geometric shapes,
-- customizable QuickMenu profiles,
-- multi-layer selection and direct layer selection from canvas content,
-- Reference Companion,
-- eyedropper sampling from the Reference Companion,
-- color profiles including RGB, Display P3, CMYK options, and imported profiles,
-- adjustments including Gradient Map and Clone.
+- Bounding BoxとHandleを使った直接的なTransform
+- 複数方式のSelection
+- 2D Grid
+- Isometric Guide
+- Perspective Guide
+- Symmetry Guide
+- Drawing Assist
+- QuickShape
+- カスタマイズ可能なQuickMenu Profile
+- 複数Layer選択
+- Canvas上からのLayer Select
+- Reference Companion
+- Reference Companion上からのEyedropper
+- RGB / Display P3 / CMYK系Color Profile
+- Custom Color Profile Import
+- Gradient Map
+- Clone
+- Reference Layerを利用した別LayerへのFill
 
-Procreate also supports a Reference Layer that lets fill operations on another layer respect line art stored separately.
+### Illustroへの反映
 
-### Illustro implications
+**採用・同等以上を目標**
 
-**Adopt / match**
+- Gesture主体のDirect Manipulation
+- Canvas上Transform Handle
+- Canvasから直接Layerを選ぶ操作
+- Perspective / Symmetry Assistance
+- 描いたShapeをその場で整える操作
+- Floating Reference + Direct Eyedropper
+- 高速でカスタマイズ可能なCommand Surface
 
-- gesture-first direct manipulation,
-- on-canvas transform handles,
-- fast layer selection from canvas content,
-- perspective/symmetry assistance,
-- quick shape correction,
-- floating reference viewing with direct color sampling,
-- fast customizable command surface.
+**改善対象**
 
-**Improve**
+IllustroはProcreateの低摩擦操作を参考にしつつ、より高度なLayer / Adjustment / Selection / Automationを同じ操作思想で扱う。
 
-Illustro should not inherit Procreate's narrower layer/non-destructive model. Its Quick Menu and direct manipulation should be combined with deeper layer, adjustment, automation, and selection systems.
+**独自機能との接続**
 
-**Unique integration opportunity**
+Quick Menuは固定的なツール一覧ではなく、Macro、Region Action、Layer Action、Color、Brush、Canvas Commandを登録可能にする。
 
-Quick Menu should be context-aware and able to contain Macros, Region actions, layer actions, colors, brushes, and canvas commands while still remaining user-configurable.
+Contextによる候補変化とユーザーカスタマイズの両立を検討する。
 
-### Official sources
+### 公式資料
 
 - https://help.procreate.com/procreate/handbook/transform/transform-interface-gestures
 - https://help.procreate.com/procreate/handbook/5.4/selections
@@ -127,42 +139,44 @@ Quick Menu should be context-aware and able to contain Macros, Region actions, l
 
 ## 3. ibisPaint
 
-### Confirmed relevant capabilities
+### 確認できた関連機能
 
-Official ibisPaint materials document:
+ibisPaint公式資料では次を確認した。
 
-- a large customizable brush library,
-- a large material library,
-- a broad filter inventory,
-- Adjustment Layers,
-- PSD export with layers preserved or merged,
-- clipping and alpha lock,
-- perspective and mesh transforms,
-- interpolation settings for transforms,
-- mirror and other ruler systems,
-- Perspective Array Ruler for one-, two-, and three-point perspective workflows,
-- layer/folder transforms.
+- 大規模なBrush Library
+- Material Library
+- 多数のFilter
+- Adjustment Layer
+- PSD書き出し
+- Clipping
+- Alpha Lock
+- Perspective Transform
+- Mesh Transform
+- Transform時のInterpolation設定
+- Mirror Ruler
+- Perspective Array Ruler
+- Folder単位のMove / Transform
 
-### Illustro implications
+### Illustroへの反映
 
-**Adopt / match**
+**採用・同等以上を目標**
 
-- dense feature availability on touch devices,
-- clear access to common layer operations such as clipping,
-- usable perspective and ruler workflows on mobile,
-- adjustment-layer availability in an illustration-first app,
-- transform interpolation controls,
-- practical materials/preset management.
+- Touch Device上での高い機能密度
+- Clipping等、高頻度Layer操作への短いアクセス
+- Mobileでも利用しやすいPerspective/Ruler
+- Illustration AppでもAdjustment Layerを自然に扱える設計
+- Transform Interpolation
+- Material / Preset管理
 
-**Improve**
+**改善対象**
 
-Illustro should avoid feature density becoming tool-window density. Common functions should remain reachable through Context UI, Quick Menu, gestures, and search.
+機能数の多さがWindowやMenuの多さに直結しないよう、Context UI・Quick Menu・Gesture・Searchへ再構成する。
 
-**Unique integration opportunity**
+**独自機能との接続**
 
-Region Fill, Smart Fill, Quick Clipping, and Reference Eyedropper can make coloring workflows substantially shorter than conventional mobile painting workflows.
+Region Fill、Smart Fill、Quick Clipping、Reference Eyedropperを組み合わせ、Mobileでの彩色手数を削減する余地が大きい。
 
-### Official sources
+### 公式資料
 
 - https://ibispaint.com/about.jsp
 - https://ibispaint.com/newFeature.jsp
@@ -174,46 +188,50 @@ Region Fill, Smart Fill, Quick Clipping, and Reference Eyedropper can make color
 
 ## 4. Krita
 
-### Confirmed relevant capabilities
+### 確認できた関連機能
 
-Krita's official manual documents:
+Krita公式Manualでは次を確認した。
 
-- multiple brush engines and detailed brush settings,
-- sensors, texture, opacity and flow controls,
-- color-smudge workflows,
-- masked brushes,
-- paint, group, vector, file, fill, clone, filter and other layer/mask types,
-- selection masks,
-- freehand/shape selections,
-- advanced transforms including Perspective, Warp, Cage, and Liquify,
-- drawing assistants,
-- symmetry/mirror and wrap-around workflows,
-- robust color management using Little CMS,
-- ICC-oriented workflows,
-- vector layers,
-- multiple gradient types.
+- 複数Brush Engine
+- Brush Sensor / Texture / Opacity / Flow
+- Color Smudge
+- Masked Brush
+- 多数のLayer / Mask種別
+- Selection Mask
+- 複数Selection Tool
+- Perspective / Warp / Cage / Liquify Transform
+- Drawing Assistant
+- Symmetry / Mirror
+- Wrap Around系ワークフロー
+- Little CMSを用いたColor Management
+- ICCを意識したWorkflow
+- Vector Layer
+- 複数種のGradient
 
-### Illustro implications
+### Illustroへの反映
 
-**Adopt / match**
+**採用・同等以上を目標**
 
-- brush-engine depth and sensor mapping,
-- selection-as-mask workflows,
-- transform variety,
-- reusable drawing assistants,
-- serious color management,
-- vector capability,
-- broad gradient behavior.
+- Brush Engineの深さ
+- Sensor Mapping
+- SelectionをMaskとして保持する方式
+- Transformの幅
+- Drawing Assistant
+- Color Management
+- Vector機能
+- Gradient機能
 
-**Improve**
+**改善対象**
 
-Krita's depth should inform engine capability, but Illustro should expose it through better progressive disclosure and task-centered UI.
+Engine能力の深さはKritaを参考にするが、ユーザーがBrush Engineの種類そのものを理解しないと使えない構造は避けたい。
 
-**Unique integration opportunity**
+Progressive Disclosureによって一貫したBrush UIへまとめる。
 
-Procedural Brush and Dynamic Wet Media should be designed as one coherent engine family rather than an accumulation of independent brush engines that feel unrelated to users.
+**独自機能との接続**
 
-### Official sources
+Procedural BrushとDynamic Wet Mediaを互いに孤立した別機能にせず、共有可能なBrush Parameter / Sensor / Material基盤として設計する。
+
+### 公式資料
 
 - https://docs.krita.org/en/reference_manual/brushes/brush_settings.html
 - https://docs.krita.org/ja/reference_manual/brushes/brush_engines/color_smudge_engine.html
@@ -228,43 +246,46 @@ Procedural Brush and Dynamic Wet Media should be designed as one coherent engine
 
 ## 5. Adobe Photoshop
 
-### Confirmed relevant capabilities
+### 確認できた関連機能
 
-Current Adobe documentation confirms:
+Adobe公式資料では次を確認した。
 
-- Adjustment Layers,
-- broad transform operations including Scale, Rotate, Skew, Distort, Perspective and Warp,
-- mesh/control-point based Transform Warp,
-- Liquify,
-- Healing Brush,
-- Patch Tool,
-- Actions for recorded automation,
-- ICC-based color management and embedded color profiles,
-- tonal-range controlled layer compositing through Blend If,
-- broad layer masking and retouching workflows.
+- Adjustment Layer
+- Scale / Rotate / Skew / Distort / Perspective / Warp
+- Mesh / Control Pointを使うTransform Warp
+- Liquify
+- Healing Brush
+- Patch Tool
+- Action Recording
+- ICCベースのColor Management
+- Embedded Color Profile
+- Blend IfによるTone Range Compositing
+- Smart Objectを利用した非破壊Liquify
 
-Photoshop also documents non-destructive Liquify when applied through a Smart Object.
+### Illustroへの反映
 
-### Illustro implications
+**採用・同等以上を目標**
 
-**Adopt / match**
+- 高度な非破壊編集
+- Tone-dependent Compositing
+- Action / Macro
+- ICC / Profile Management
+- Warp
+- Healing / Patch
 
-- deep non-destructive editing,
-- tone-dependent compositing,
-- recorded actions/macros,
-- robust ICC/profile behavior,
-- high-quality transform/warp,
-- healing/patch repair.
+**改善対象**
 
-**Improve**
+写真編集ソフト由来のDialog中心UIをそのまま持ち込まない。
 
-Illustro should avoid forcing illustration users through photo-editor-oriented dialogs. Blend If, adjustment controls, Warp, Healing and Patch should be surfaced as direct, previewable painting workflows.
+Blend If、Warp、Healing、Patch、AdjustmentはCanvas上PreviewとDirect Manipulationを優先する。
 
-**Unique integration opportunity**
+**独自機能との接続**
 
-Blend If can be redesigned as an on-canvas tonal-range visualization, and macros can integrate directly into Quick Menu and Context UI.
+Blend IfはSliderだけではなく、対象Tone RangeをCanvas上で可視化・選択できるUIを検討する。
 
-### Official sources
+MacroはQuick Menu / Shortcut / Context UIへ直接登録可能にする。
+
+### 公式資料
 
 - https://helpx.adobe.com/photoshop/web/get-set-up/learn-the-basics/compare-photoshop-web-and-desktop-features.html
 - https://helpx.adobe.com/photoshop/desktop/crop-resize-transform/transform-manipulate-reshape/transformation-options-in-adobe-photoshop.html
@@ -277,50 +298,54 @@ Blend If can be redesigned as an on-canvas tonal-range visualization, and macros
 
 ## 6. Affinity Photo 2
 
-### Confirmed relevant capabilities
+### 確認できた関連機能
 
-Affinity Photo 2 official help documents:
+Affinity Photo 2公式Helpでは次を確認した。
 
-- adjustment layers,
-- Live Filters,
-- layer masks,
-- live layer masks,
-- blend ranges,
-- layer states,
-- snapshots,
-- macro recording and batch jobs,
-- Liquify,
-- custom brushes and paint mixing,
-- symmetry/mirror painting,
-- snapping and grids,
-- dockable/floating panels and customizable workspace behavior,
-- layer tags, finding, isolation and locking,
-- broad color-management functionality,
-- non-destructive live filters including displacement and lighting effects.
+- Adjustment Layer
+- Live Filter
+- Layer Mask
+- Live Layer Mask
+- Blend Range
+- Layer State
+- Snapshot
+- Macro Recording / Batch
+- Liquify
+- Custom Brush
+- Paint Mixing
+- Symmetry / Mirror
+- Snapping / Grid
+- Dock / Floating Panel
+- Custom Workspace
+- Layer Tag / Find / Isolate / Lock
+- Color Management
+- Non-destructive Displacement
+- Non-destructive Lighting Effect
+- Vector/Text Tooling
 
-Affinity's feature documentation also shows substantial vector/text tooling and customizable UI/workspace support.
+### Illustroへの反映
 
-### Illustro implications
+**採用・同等以上を目標**
 
-**Adopt / match**
+- Live Non-destructive Effect
+- Snapshot
+- Layer State
+- Macro
+- Flexible Workspace
+- Blend Range
+- Layer Search / Tag / Isolation
 
-- live non-destructive effects,
-- snapshots,
-- layer-state concepts,
-- macro workflows,
-- flexible workspace behavior,
-- blend-range control,
-- layer search/tagging/isolation.
+**改善対象**
 
-**Improve**
+SnapshotとLayer Compがユーザーから見て混同されないよう、保存する状態の意味を明確に分ける。
 
-Illustro should consolidate Snapshot and Layer Comp concepts so users understand whether they are saving document content state or only layer presentation state.
+**独自機能との接続**
 
-**Unique integration opportunity**
+Snapshot、Layer Comp、History、Timelapse、Macroは内部では共通のCommand/History基盤を利用できる可能性が高い。
 
-Snapshot, Layer Comp, history, Timelapse and Macro should share a common Command/History foundation but remain separate concepts in the UI.
+ただしUI上の概念は明確に分離する。
 
-### Official sources
+### 公式資料
 
 - https://affinity.help/photo2/English.lproj
 - https://affinity.help/photo2ipad/en-US.lproj/pages/Layers/layerBlendModes.html
@@ -329,148 +354,145 @@ Snapshot, Layer Comp, history, Timelapse and Macro should share a common Command
 - https://affinity.help/photo2ipad/en-US.lproj/pages/Filters/filter_displace.html
 - https://affinity.help/photo2ipad/English.lproj/pages/Workspace/shortcuts.html
 
-## 7. Cross-product capability matrix
+## 7. 横断マトリクス
 
-Legend:
+凡例:
 
-- **✓**: directly verified in official documentation reviewed in this pass
-- **—**: not verified in this pass; this does **not** mean the product lacks it
+- **✓** — 今回確認した公式資料で直接確認できた
+- **—** — 今回の調査では未確認。機能が存在しないことを意味しない
 
-| Capability | CSP | Procreate | ibisPaint | Krita | Photoshop | Affinity |
+| 領域 | CSP | Procreate | ibisPaint | Krita | Photoshop | Affinity |
 |---|---:|---:|---:|---:|---:|---:|
-| Reference-based fill | ✓ | ✓ | — | — | — | — |
-| Gap-aware fill | ✓ | — | — | — | — | — |
-| Vector layer / editable vector content | ✓ | — | ✓* | ✓ | ✓* | ✓ |
-| Perspective / drawing guides | ✓ | ✓ | ✓ | ✓ | — | ✓ |
-| Symmetry / mirrored drawing | ✓ | ✓ | ✓ | ✓ | — | ✓ |
-| Advanced transform / warp | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Adjustment / non-destructive effect layers | ✓ | — | ✓ | ✓ | ✓ | ✓ |
-| Tone-dependent blend ranges | — | — | — | — | ✓ | ✓ |
-| Snapshot/checkpoint concept | — | — | — | — | — | ✓ |
-| Recorded macros/actions | — | — | — | — | ✓ | ✓ |
-| Reference image + direct color pick | — | ✓ | — | — | — | — |
-| ICC/profile color management | — | ✓ | — | ✓ | ✓ | ✓ |
-| Customizable fast command surface | — | ✓ | — | — | — | — |
+| Reference-based Fill | ✓ | ✓ | — | — | — | — |
+| Gap-aware Fill | ✓ | — | — | — | — | — |
+| Vector Layer / Vector Content | ✓ | — | ✓* | ✓ | ✓* | ✓ |
+| Perspective / Drawing Guide | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| Symmetry / Mirror Drawing | ✓ | ✓ | ✓ | ✓ | — | ✓ |
+| Advanced Transform / Warp | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Adjustment / Non-destructive Effect | ✓ | — | ✓ | ✓ | ✓ | ✓ |
+| Tone-dependent Blend Range | — | — | — | — | ✓ | ✓ |
+| Snapshot / Checkpoint | — | — | — | — | — | ✓ |
+| Recorded Macro / Action | — | — | — | — | ✓ | ✓ |
+| Reference + Direct Eyedropper | — | ✓ | — | — | — | — |
+| ICC / Profile Color Management | — | ✓ | — | ✓ | ✓ | ✓ |
+| Customizable Fast Command Surface | — | ✓ | — | — | — | — |
 
-\* Verified only at a broad capability level in this pass; exact semantics differ from Illustro's intended vector model.
+\* 今回は大分類として確認。具体的なデータモデルや編集能力は製品ごとに異なる。
 
-## 8. Immediate specification consequences
+## 8. 第1パス調査から確定した仕様上の影響
 
-The following areas should be promoted from “unresolved conventional feature” to explicit Illustro requirements or architecture investigations:
+### 8.1 Drawing Guide / Ruler — Requiredへ昇格
 
-### 8.1 Drawing guides and rulers — Required
+Illustroは少なくとも次を明示的な機能領域として持つ。
 
-Illustro should include:
+- Straight / Parallel系Ruler
+- Symmetry / Mirror
+- Radial Symmetry
+- 2D Grid
+- Isometric Grid
+- 1/2/3点Perspective
+- GuideへのSnap
+- Canvas上Handleによる直接編集
+- Visibility / Lock
+- Guide設定の保存
 
-- straight ruler,
-- parallel ruler,
-- ellipse/circle assistance where useful,
-- symmetry/mirror,
-- radial symmetry,
-- 2D grid,
-- isometric grid,
-- one-/two-/three-point perspective assistance,
-- snapping of supported drawing tools to guides,
-- editable on-canvas guide handles,
-- guide visibility/locking,
-- saved guide setups.
+詳細なRuler種別は継続調査する。
 
-Exact inventory remains to be specified.
+### 8.2 Shape Correction / Shape Tool — Requiredへ昇格
 
-### 8.2 Shape correction and shape tools — Required
+次の統合方式を検討する。
 
-Illustro should investigate a unified approach combining:
+- Line / Rectangle / Ellipse / Polygon
+- Stroke後のShape Correction
+- QuickShapeに近い自然な形状Snap
+- 必要に応じたVector-backed Shape
 
-- direct line/rectangle/ellipse/polygon tools,
-- post-stroke shape correction,
-- shape snapping similar in spirit to QuickShape,
-- vector-backed shapes where appropriate.
+### 8.3 Gradient System — Requiredへ昇格
 
-### 8.3 Gradient system — Required
+少なくとも次を対象とする。
 
-Illustro should support at least:
+- Linear
+- Radial
+- Reflected / Bilinear
+- Shape-aware Gradient
+- Editable Stop
+- Non-destructive Gradient
+- Dithering
+- Gradient Map
 
-- linear,
-- radial,
-- reflected/bilinear,
-- shape-aware gradients where technically appropriate,
-- editable gradient stops,
-- non-destructive gradient representation,
-- dithering for low-bit-depth output where useful,
-- Gradient Map adjustment.
+### 8.4 Color Management — Core Architecture Requirementへ昇格
 
-### 8.4 Color management — Core architecture requirement
+Render / Document Modelを固定する前に、最低でも次を決定する。
 
-Before the rendering architecture is frozen, Illustro must explicitly decide:
+- Color Model
+- Bit Depth
+- Document Color Space
+- ICC Profile保持
+- Display Conversion
+- Import Profile Policy
+- Export Profile Policy
+- Wide Gamut
+- CMYKを編集対象にするか、Import/Export中心にするか
+- HDR / Linear-light
 
-- supported color models,
-- bit depths,
-- document color space representation,
-- ICC profile embedding,
-- display conversion,
-- import profile policy,
-- export profile policy,
-- wide-gamut support,
-- whether CMYK document editing is in core scope or import/export-only scope,
-- HDR/linear-light policy.
+Color Managementは後付けで安全に解決できる前提にしない。
 
-This cannot be safely bolted on after the document and compositing model are fixed.
+### 8.5 Selectionを再利用可能なデータとして扱う — Required
 
-### 8.5 Selection as reusable data — Required
+Selectionを一時的な「点線」だけに限定しない。
 
-Selections should not exist only as temporary marching ants.
+- Selection Mask
+- Saved Selection
+- Featherを含むGrayscale Selection
+- Region → Selection
+- Layer Content → Selection
+- Luminance / Color Range Selection
+- Boolean Operation
 
-Illustro should support:
+を対象とする。
 
-- selection masks / saved selections,
-- feathered grayscale selections,
-- region-to-selection,
-- layer-content selection,
-- luminance/color-based selection,
-- boolean selection operations.
+### 8.6 大量Layer向けNavigation — Required
 
-### 8.6 Layer navigation for large documents — Required
+- Search
+- Tag
+- Filter
+- Solo / Isolate
+- Canvasから直接Layer選択
+- 高速Collapse / Expand
+- UI Virtualization
 
-High-layer-count workflows require:
+を前提にする。
 
-- search,
-- tags,
-- filtering,
-- isolation/solo,
-- direct layer selection from canvas content,
-- fast group collapse/expand,
-- virtualization so the panel remains responsive.
+### 8.7 History系概念を分離する
 
-### 8.7 Macro / History / Snapshot separation — Required conceptual model
+UI上では次を別概念として扱う。
 
-These concepts must be distinct:
+- **Undo History** — 実際に行ったCommandの可逆履歴
+- **Snapshot** — 名前付きDocument Checkpoint
+- **Layer Comp** — Layer表示・状態セット
+- **Macro** — 再利用可能なCommand列
+- **Timelapse** — 制作履歴から生成する可視化・動画
 
-- **Undo History**: reversible sequence of actual document commands.
-- **Snapshot**: named checkpoint of document state.
-- **Layer Comp**: saved presentation/configuration state for layers.
-- **Macro**: reusable sequence of commands.
-- **Timelapse**: visual reconstruction/export derived from production history.
+内部Primitiveを共有することは可能だが、ユーザー向け概念は混同させない。
 
-They may share storage primitives internally but must not be conflated in user-facing behavior.
+## 9. 継続調査が必要な領域
 
-## 9. Research still required before “complete feature specification”
+完全機能仕様と呼べる状態にするには、少なくとも次の第2パスが必要。
 
-A second pass is still needed for:
+- Brush Dynamics / Sensorの完全な項目体系
+- Vector Editing Model
+- Text機能範囲
+- Blend Mode完全一覧
+- Filter / Adjustment完全一覧
+- File Format Compatibility
+- Bit Depth / HDR
+- Selection Edge Algorithm
+- Interpolation Algorithm
+- Canvas Preset / Limit
+- Material / Asset Management
+- Navigator / Multi-view
+- Accessibility
+- Plugin / Extensibility
+- Platform別File System
 
-- exact brush dynamics and sensor inventories,
-- vector editing models,
-- text feature scope,
-- complete blend-mode coverage,
-- filter/adjustment inventory,
-- file-format compatibility boundaries,
-- bit-depth/HDR behavior,
-- selection edge algorithms,
-- interpolation algorithms,
-- canvas creation presets and limits,
-- materials/assets management,
-- navigator and multi-view workflows,
-- accessibility,
-- plugin/extensibility model,
-- platform-specific file-system behavior.
-
-No claim of complete competitive parity should be made until these are reviewed.
+これらを確認するまでは「主要競合と完全同等以上」といった結論は出さない。
