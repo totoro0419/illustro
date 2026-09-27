@@ -117,6 +117,18 @@ Unavailable command remains discoverable when useful, with reason:
 
 Do not silently hide every unavailable command.
 
+## Commit semantics
+
+Quick Menu自身にはArtwork Commitはない。
+
+Item activation時:
+- Trigger commandはそのCommand自身のcommit/undo契約に従う
+- Tool selectionはToolを切り替えるだけでArtwork commitしない
+- Color/Brush selectionはWorkspace state更新で、Artwork Undoには入らない
+- Toggle/Layer Action等は対象Commandのtransactionとしてcommit
+
+Menuを開いただけではDocumentを変更しない。
+
 ## Close / cancel
 
 Esc/tap outside/gesture close returns to previous state.
