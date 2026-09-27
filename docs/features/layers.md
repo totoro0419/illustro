@@ -54,6 +54,29 @@ Quick Clippingはdeep menuへ隠さない。
 
 Clipping targetが存在しない等のinvalid stateはsilent no-opにせず説明可能にする。
 
+## Mask
+
+Layer/GroupへMaskを追加可能。
+
+Default:
+- new raster maskはfully visible（white）を基本とする
+- mask作成後にMask thumbnail/edit targetを明示選択可能
+
+Layer contentとMaskのどちらを編集しているかを、thumbnail border/icon/text等で明確にする。
+
+Operations:
+- add
+- select/edit
+- enable/disable
+- invert
+- unlink/link transform where supported
+- delete
+- apply/bake
+
+Mask delete/applyはUndo可能。
+
+Touch端末でも小さなthumbnailだけを唯一の選択手段にしない。
+
 ## Group
 
 Group create:
