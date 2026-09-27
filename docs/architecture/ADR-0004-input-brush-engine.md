@@ -223,6 +223,32 @@ Raw sample/DabをStroke終了まで全てRAMに保持しない。
 
 stable pages/chunksへstreamし、active RAMはbounded tailとworking setにする。
 
+## Device interaction adaptation
+
+### Pen + Touch
+
+Penが観測された環境ではDefault drawing pointerをPenとする。
+
+Pen active中のTouchはDefaultでPan/Zoom/Rotate等のGestureへ割り当て、Finger Drawingは明示設定で切替可能にする。
+
+Touch contact sizeだけからPalmを確定するような強いheuristicを標準にしない。
+
+### Mouse + Touch / Trackpad
+
+Touch-enabled PCやTablet + Trackpadでは入力種類を排他的にせず、pointerTypeと実際のevent capabilityで処理する。
+
+### touch-action / pointer capture
+
+Canvas direct-manipulation領域はPointer Eventsのtouch-action semanticsを利用し、Browser viewport gestureとIllustro gestureの所有権を事前に明示する。
+
+Stroke/drag中はPointer Captureを利用し、pointerがCanvas bounds外へ出てもinteraction continuityを維持する。
+
+### Missing sensors
+
+Pressure/Tilt/Azimuth等が利用できない場合、Brush Dynamicsは固定値/代替inputへfall backする。
+
+unsupported fieldのdefault numeric valueを実Hardware measurementとして扱わない。
+
 ## External specification check
 
 Pointer Events Level 3は2026-06-30にW3C Recommendationとなり、
