@@ -106,7 +106,7 @@
 | HSV/HSL/RGB style controls | Required | Exact models TBD |
 | Color harmony assistance | Required / Investigate | |
 | Grayscale preview | Required | Also useful in references |
-| Color management / ICC | Investigate | Must be researched before architecture freeze |
+| Color management / ICC | Core / Investigate | Architecture must account for managed color; exact models, profiles and conversion policy remain to be specified |
 
 ## F. Layers
 
@@ -313,7 +313,36 @@
 | Collaborative drawing / 絵チャ | Future | Consider only after core application completion |
 | Realtime multi-user document editing | Future / Investigate | Architecture should not make it needlessly impossible |
 
-## S. Areas still requiring systematic competitor research
+## S. Drawing guides, geometry, and gradients
+
+First-pass competitor research confirms these as established illustration workflows that Illustro should explicitly support rather than leave implicit.
+
+| Capability | Status | Notes |
+|---|---|---|
+| Straight / parallel ruler assistance | Required | Exact ruler inventory TBD |
+| 2D grid | Required | On-canvas editable controls |
+| Isometric grid | Required | |
+| Perspective guides | Required | One-, two-, and three-point workflows |
+| Symmetry / mirror drawing | Required | |
+| Radial symmetry | Required | |
+| Guide snapping | Required | Supported tools should snap predictably |
+| Guide visibility / locking | Required | |
+| Saved guide setups | Required | |
+| Direct line / rectangle / ellipse / polygon tools | Required | |
+| Post-stroke shape correction | Required / Investigate | Quick correction without changing tool where practical |
+| Vector-backed editable shapes | Required / Investigate | Integrate with vector layer model |
+| Linear gradient | Required | |
+| Radial gradient | Required | |
+| Reflected / bilinear gradient | Required | |
+| Shape-aware gradient | Required / Investigate | |
+| Editable gradient stops | Required | |
+| Non-destructive gradient representation | Required | |
+| Gradient Map adjustment | Required | |
+| Gradient dithering | Required / Investigate | Especially for low-bit-depth output |
+
+See `docs/research/COMPETITOR_MATRIX.md` for the first-pass evidence and design implications.
+
+## T. Areas still requiring systematic competitor research
 
 The catalog is intentionally incomplete in several conventional painting-app areas. These must be researched and specified before the feature set is considered complete:
 
