@@ -934,6 +934,82 @@ Desktop/Tablet/Smartphoneで、同一UIを単純Scaleして使い回してはな
 
 Left/Right LayoutをToolbarだけでなくPanel/Popup/Quick Menu/主要操作位置まで考慮する。
 
+### FR-DEVICE-004 Capability-driven Adaptation
+
+PC / Tablet / Smartphoneという端末分類だけでRenderer、入力方式、Worker数、機能可否を決めてはならない。
+
+Viewport、Pointer、Hover、Keyboard、GPU、Storage等をRuntime Capabilityとして検出し、実際の環境へ適応する。
+
+User-Agent文字列を主要な機能分岐根拠にしない。
+
+### FR-DEVICE-005 Core Fallback Independence
+
+以下はCore paintingの必須条件にしない。
+
+- WebGPU
+- SharedArrayBuffer
+- Stylus
+- Pressure / Tilt
+- Hover
+- Physical Keyboard
+- Direct File System Picker
+- PWA install
+
+利用できない場合もCore Normal Operationが成立しなければならない。
+
+### FR-DEVICE-006 Core Normal Operation
+
+PC / Tablet / Smartphoneで少なくとも以下が同じDocument semanticsで成立することを必須とする。
+
+- Document create/open
+- Raster Brush / Eraser
+- Color Pick / Change
+- Layer / Group / Clipping
+- Undo / Redo
+- Pan / Zoom / Rotate
+- Basic Selection / Transform
+- Reference viewing
+- Autosave / Recovery
+- portable .illustro export/import
+- PNG / JPEG / WebP export
+
+### FR-DEVICE-007 Input Arbitration
+
+Pen / Touch / Mouseが同時に存在する環境を前提とする。
+
+DefaultではPenをDrawing、TouchをCanvas Gestureへ割り当て、Finger Drawingは設定可能にする。
+
+Sensor値がHardware/Browserから提供されない場合に、default値を実測Sensor値として扱ってはならない。
+
+### FR-DEVICE-008 Mobile Viewport Adaptation
+
+Smartphone / Tabletでは以下を動的に扱う。
+
+- safe area
+- Visual Viewport
+- software keyboard
+- orientation
+- split view / window resize
+- browser chromeによるviewport変化
+
+重要UIがnotch、home indicator、software keyboard等の背後に隠れないようにする。
+
+### FR-DEVICE-009 Mobile Lifecycle Recovery
+
+MobileではBackground化後のprocess termination / tab discardを通常のFailure Modeとして扱う。
+
+beforeunload / unload完了をData Safety条件にしてはならない。
+
+通常編集時からRecovery Journalを進め、visibility hiddenを追加flushの契機として利用する。
+
+### FR-DEVICE-010 Dynamic Resource Budget
+
+Memory、GPU Cache、Worker数、Background Job量をPC/Tablet/Smartphoneごとの固定値だけで決めない。
+
+Runtime capabilityと実測負荷から調整可能にする。
+
+navigator.deviceMemory等のoptional/coarsened情報はhintとしてのみ利用する。
+
 ---
 
 ## 25. Accessibility
