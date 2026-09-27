@@ -20,11 +20,13 @@
 
 一方でTileを細かくしすぎるとMetadata、dispatch、seam処理が増える。
 
-したがって**Sparse logical tiling + dirty dependency propagation + GPU derived cache**を採用し、Tile Sizeは実測で決める。
+したがって**Sparse logical tiling + dirty dependency propagation + GPU derived cache**を採用し、Tile Sizeは実測で決める。小Brushの局所更新と大Filterのhalo処理を別subdivisionで扱い、単一Tile Sizeへ全処理粒度を強制しない。
 
 ## Decision
 
 ### 1. Logical Sparse Tiles
+
+**1 dabごとに論理Tile全体をcopyしてはならない。** Active strokeではGPU working tile、dirty subrect、CPU staging/delta等を使い、commit/materialization時に必要な単位だけ固定する。
 
 Raster SurfaceをDocument pixel座標のSparse Tile gridで管理する。
 
@@ -54,6 +56,12 @@ GPU texture/atlasはDerived Cache。
 GPU textureだけに存在する作品StateをCommit済みCanonicalとみなさない。
 
 Realtime strokeはGPU working tileへ即時反映してよいが、同時にCanonical transaction semanticsを保持する。
+
+### 3.1 Pay-for-use rendering
+
+非表示Layer、無効Effect、未使用Region/Wet Media等はrender dependency graphへ常時参加させない。
+
+高度Backend/Shaderは必要になるまでcompile/loadしない。Compatibility backendもstartup bundleへ必ず同梱・初期化するのではなく、capability failure時にlazy-load可能な構成を優先する。
 
 ### 4. Render graph
 
@@ -135,7 +143,9 @@ Global filter:
 
 GPU resultをCanonical bytesへ直接sealできるのは、定義したreference semanticsへ適合すると検証できる場合。
 
-それ以外はCanonical recordを保持し、background reference evaluatorでmaterializeする。
+それ以外はCanonical recordを保持し、必要になった時またはreplay costがbudgetへ近づいた時だけbackground reference evaluatorでmaterializeする。
+
+**全commit直後にstrict materializationを走らせる設計にはしない。**
 
 すべてのEffectでbit-identical CPU/GPUを要求するのではなく、
 
