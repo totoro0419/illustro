@@ -74,6 +74,29 @@ hardwareConcurrencyはWorker upper-bound hint、deviceMemoryは利用可能な�
 
 WebGPUはnavigator.gpuの存在だけで採用せず、adapter/device作成とIllustro representative smoke testを通す。
 
+## 0.2 Initial realtime placement decision
+
+2026-09-28のXiaomi tablet + Xiaomi pen実機Prototype測定では、Main pathとWorker pathに体感差は報告されなかった一方、input → next RAF proxyはMain pathの方が低かった。
+
+Measured profile:
+
+- Main p50: 9.40 ms
+- Main p95: 13.40 ms
+- Worker p50: 16.80 ms
+- Worker p95: 18.90 ms
+
+したがってCore Editor実装の**initial default**は:
+
+- Pointer intake / active stroke coordination / lightweight render submission: Main Thread
+- persistence / compression / Region / heavy compute: Worker/utility lanes
+- full Realtime Worker path: optional measured fast path only
+
+とする。
+
+これは全端末でMainが常に最速という主張ではない。将来、実装後のProfile/RegressionでWorker pathが有意に優れる環境が確認された場合はCapability Profileで切替可能にする。
+
+PC/Tablet/Smartphoneすべてで同一比較を実装前に繰り返すことはGateとしない。Cross-device検証はSupported environmentを宣言する前のValidationへ移す。
+
 ## 1. Main UI role
 
 Main Threadの責務:
