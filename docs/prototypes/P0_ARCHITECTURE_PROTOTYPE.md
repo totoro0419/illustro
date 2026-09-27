@@ -261,7 +261,10 @@ illustroPrototype.metrics.summary('worker-to-next-raf')
 
 ## User-device measurement — 2026-09-28
 
-> Exact device model / browser version / input device: **not yet recorded**.  
+> Device family: **Xiaomi tablet**  
+> Input device: **Xiaomi pen**  
+> Exact tablet model: **unknown**  
+> Browser / browser version: **unknown**  
 > Evidence source: user-run GitHub Pages harness screenshots and user-reported perceived latency.
 
 ### Main-thread path
