@@ -74,8 +74,8 @@ Interpretation:
 
 - Larger tiles reduced metadata/tile-touch overhead in this synthetic workload.
 - Larger tiles also increased allocated pixel memory because each touched tile is materially larger.
-- This benchmark is deliberately simple and **does not identify a production-optimal tile size**.
-- Real brush locality, empty-tile compression, GPU upload granularity, filter halos, cache behavior and mobile memory pressure must be measured before deciding.
+- This **initial** benchmark alone did not identify a production Tile policy.
+- Later deterministic fine/medium/large/long Brush workloads were added for the V1 promotion gate; those measurements selected 256 as the standard initial profile and 128 as the memory-constrained candidate.
 
 ### Synthetic history control-plane benchmark
 
@@ -140,15 +140,25 @@ The synthetic worker path showed non-zero and variable scheduling/message overhe
 
    Fix: split into `worker-roundtrip` and `worker-to-next-raf`, with explicit proxy semantics.
 
-### Still unverified in Chromium
+### Historical limitations of the injected Chromium run
 
-- the exact Vite module-Worker loading path
+At this early injected-test stage, the following were still unverified:
+
+- exact Vite module-Worker loading
 - secure-origin OPFS / SyncAccessHandle
 - WebGPU
-- real Pointer Events/coalesced stylus samples from hardware
-- physical input-to-visible/display latency
+- real stylus/coalesced samples
+- physical input-to-display latency
 
-A module Worker created from a Blob under the injected opaque-origin test failed to load, while the classic Blob Worker path succeeded. Because the real application uses a normal module Worker from a served origin, this failure is treated as an environment/origin limitation until tested from an actual preview or local development origin.
+These were **not final project status**. Later GitHub Actions served-browser tests superseded this limitation:
+
+- Vite-served module Worker: PASS
+- OPFS SyncAccessHandle actual backend: PASS
+- reload/torn-tail repair/resumed append: PASS
+- WebGL2 actual draw/readback: PASS
+- WebGPU hardware adapter: still unavailable on the CI runner and therefore not claimed
+
+Real stylus placement evidence was separately collected on Xiaomi tablet + Xiaomi pen. Physical scan-out latency remains intentionally unclaimed.
 
 ## Persistence / Recovery prototype
 
