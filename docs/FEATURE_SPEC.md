@@ -1156,6 +1156,42 @@ GPUが有効な環境ではBrush/Filter/Transform/Blend/Preview等へ積極利�
 
 GPU Feature差によって基本編集不能にならないFallback戦略を持つ。
 
+### QR-PERF-006 Zero-cost inactive features
+
+使用していない高度機能が、通常描画の恒常的なCPU/GPU処理を発生させてはならない。
+
+例:
+
+- Region解析はRegion依存機能を使用しないDocumentでは常時実行しない
+- Soft Proof OFF時はProof変換を実行しない
+- Wet Media未使用時はWet stateを確保しない
+- PSD/EXR等のCodecは必要になるまでロードしない
+- Timelapse用の高コストな動画生成処理は制作Hot Pathで行わない
+
+### QR-PERF-007 Startup / First Draw
+
+アプリ起動から最初のStrokeまでに、通常描画へ不要な高度Moduleの初期化完了を待たせてはならない。
+
+Module/Shader/Codec/Assetは可能な限り遅延ロード・遅延Compileする。
+
+### QR-PERF-008 Copy / Allocation Budget
+
+Hot Pathでは大きなBufferの不要なCopy、短命Objectの大量生成、全Tile/全Layerの複製を避ける。
+
+JS↔WASM↔Worker↔GPU間の境界は、抽象化の統一性より**実測されたCopy/Serialization cost**を優先して配置する。
+
+### QR-PERF-009 Background Work Budget
+
+Background解析・Materialization・Cache生成はForegroundのInput/Present予算を侵食しない。
+
+Idleであることだけを理由に無制限のBackground処理を開始せず、CPU/GPU/Memory/Thermal budgetを持つ。
+
+### QR-PERF-010 Adaptive architecture
+
+Thread/Worker/WASM/GPUの配置は一つの理想構造へ固定せず、Target deviceで最も軽い構成を選択できるようにする。
+
+同じSemantic contractを保つ限り、DesktopとMobileで物理実行構成が異なることを許容する。
+
 ---
 
 ## 31. AI Policy
