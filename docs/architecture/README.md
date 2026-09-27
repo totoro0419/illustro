@@ -7,6 +7,8 @@
 
 1. [Architecture Overview](ARCHITECTURE_OVERVIEW.md)
 2. [Integration Validation](INTEGRATION_VALIDATION.md)
+3. [Performance-First Policy](PERFORMANCE_POLICY.md)
+4. [Performance Audit 2026-09-27](PERFORMANCE_AUDIT_2026-09-27.md)
 
 ## Architecture decisions
 
