@@ -349,6 +349,27 @@
 
 詳細根拠は `docs/research/COMPETITOR_MATRIX.md` を参照。
 
+## O.1 Clipboard / Cross-document Editing
+
+| 機能 | 状態 | 備考 |
+|---|---|---|
+| Internal Clipboard | Core | System Clipboard非依存 |
+| Copy / Cut / Paste | Core | Selection/Layer/Object対応 |
+| Copy Merged | Required | Visible compositeをRaster copy |
+| Paste in Place | Required | Illustro内部座標を保持 |
+| Native cross-document payload | Required | 可能な対象はRasterizeしない |
+| System Clipboard Bridge | Required / Investigate | Platform permission/capability依存 |
+| Desktop Drag & Drop | Required | Open/Place/Reference等Context別 |
+
+## O.2 Localization
+
+| 機能 | 状態 | 備考 |
+|---|---|---|
+| Localizable UI resources | Core | Display文字列と内部IDを分離 |
+| Japanese/CJK layout support | Core | IME/font fallbackを含む |
+| Locale-aware units/date/number | Required | Canonical値とは分離 |
+| Shipping locale set | Investigate | Product/UI phaseで決定 |
+
 ## P. ファイル・保存・Recovery・Offline
 
 | 機能 | 状態 | 備考 |
