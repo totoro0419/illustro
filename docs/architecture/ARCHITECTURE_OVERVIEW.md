@@ -425,5 +425,6 @@ Cross-origin isolationを利用可能なDeploymentではRing Buffer等に利用�
 7. Selection / Transform / Effects — **Designed**
 8. Native Format / Autosave / Recovery — **Designed**
 9. Integrated architecture validation — **Designed / validation recorded**
+10. Device Capability Adaptation (PC / Tablet / Smartphone) — **Design PASS / runtime unverified**
 
 詳細は各ADRを参照。
