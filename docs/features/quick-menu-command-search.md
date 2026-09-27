@@ -8,6 +8,10 @@ High-frequency command surface that can be summoned near the current work withou
 
 ## Activation
 
+**Quick Menuには全Deviceで発見可能な明示On-screen entryを必ず用意する。**
+
+Shortcut / pen button / gestureは高速化手段であり、唯一の入口にしない。
+
 Supported activation candidates:
 
 PC:
