@@ -118,6 +118,19 @@ Liquify:
 
 Bake時に一度resampleする。
 
+## 6.1 Effect cost policy
+
+非破壊であることを理由に、毎frame最初からEffect chainを再評価してはならない。
+
+- effect output tileはinput revision + parameter generationでcacheする
+- expensive nodeはderived checkpoint/materialized cacheを持てる
+- parameter drag中は必要viewportだけ再評価する
+- non-visible branchは評価しない
+- disabled effectはnear-zero recurring costを目標にする
+- userが望む場合は明示Bake/Applyで計算量を下げられる
+
+Cacheは再生成可能で、編集可能なEffect parameterをCanonicalとして維持する。
+
 ## 7. Effect graph
 
 Effectの内部Interface:
@@ -160,7 +173,7 @@ parameter/source変更から:
 
 をinvalidate。
 
-Canvas全体invalidateをdefaultにしない。
+Canvas全体invalidateをdefaultにしない。Parameter変更でも実際のdependency/footprintとvisible demandを使う。
 
 ## 10. Effect canonicality
 
