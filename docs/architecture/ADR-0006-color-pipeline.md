@@ -28,6 +28,19 @@ Browser CanvasのColor Managementへ作品の意味を委ねると:
 
 ## Decision
 
+### 0. Fast path
+
+Color Managementは常時「高価なICC処理」を行うことを意味しない。
+
+- Document working space内のBrush/Layer値はStrokeごとにICC変換しない
+- Brush Colorは選択/変更時にDocument domainへ変換してcacheする
+- sRGB / Display P3等の一般的matrix/TRC pathは軽量専用Fast Pathを許容する
+- 一般ICC LUT/complex profileは対象Resourceを初めて使う時にlazy compileする
+- Soft Proof OFF時はProof transformのCPU/GPU workを発生させない
+- Profile conversionはTile demand単位でlazy/cache可能にする
+
+正確性を維持する限り、全Color処理を一つの汎用ICC関数へ通す「統一の美しさ」は要求しない。
+
 ### 1. Document color descriptor
 
 Documentは少なくとも:
@@ -87,11 +100,13 @@ ICC transformはBrowser display conversionへ依存せず、Engine側で管理�
 Candidate:
 - LittleCMS系WASM
 - skcms系
-- custom limited pathは不可（一般ICC互換性不足）
+- built-in common-profile fast path + general ICC fallback
+
+限定Fast Path自体は禁止しない。ただしunsupported profileを誤処理せず、general ICC pathへ確実にfallbackする。
 
 実装Libraryは性能/精度/License/sizeで比較する。
 
-Transform/LUTはDerived Cache。
+Transform/LUTはDerived Cache。Document/Profileが同じ間は再compileしない。
 
 ### 6. Artwork composite
 
