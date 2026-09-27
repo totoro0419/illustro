@@ -301,9 +301,9 @@ Command/Context/Direct ManipulationをUIから呼べるAPI境界を持てる。
 
 ### P0 — before real editor implementation
 
-1. Main-thread vs Worker realtime/render placement
-2. coalesced pointermove vs pointerrawupdate across target stylus devices
-3. TypeScript vs Rust/WASM kernel placement and boundary overhead
+1. **Realtime placement — initial decision measured:** Main-thread input/stroke coordination is the default; full Realtime Worker remains an optional measured path
+2. coalesced pointermove vs pointerrawupdate when/if raw path is introduced
+3. TypeScript vs Rust/WASM kernel placement and boundary overhead for representative heavy kernels
 4. sparse tile representation + logical tile size + dirty-subrect strategy
 5. canonical raster sealing strategy
 6. OPFS journal batching/flush throughput and failure behavior
@@ -328,15 +328,15 @@ Command/Context/Direct ManipulationをUIから呼べるAPI境界を持てる。
 
 数値Targetはまだ保証しない。
 
-最低限以下のDevice classを実機で測る。
+実装前のArchitecture placement判断では、代表的な実Stylus端末で十分な根拠を得る。
 
-- desktop high-end
-- desktop integrated GPU
-- mid-range laptop
-- modern iPad-class tablet/browser
-- Android tablet
-- modern smartphone iOS
-- modern smartphone Android
+Current evidence:
+- Xiaomi tablet + Xiaomi pen
+- Main/Worker双方をGitHub Pagesのserved harnessで実測
+- User perception: meaningful differenceなし
+- scheduling proxy: Main pathが低overhead
+
+全Device classでの実機測定は、Core implementation後のSupport/Regression phaseで実施する。
 
 Workloads:
 
@@ -369,7 +369,8 @@ Architecture v0.2を実装Architecture v1へ昇格する条件:
 - inactive feature idle-cost is near zero for Region/Wet/Soft Proof/advanced codecs
 - startup/first-stroke does not wait for unused advanced modules
 - worker/WASM placement is supported by measured benefit, not architecture preference
-- target device classes have measured latency/frame/memory data
+- at least one representative real-device profile supports the initial realtime placement decision
+- full PC/Tablet/Smartphone latency/frame/memory validation is required before those environments are declared Supported, not before Core implementation
 
 数値thresholdは測定データと製品UX要件から別途決定する。
 
