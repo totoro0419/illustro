@@ -71,6 +71,10 @@ Core user interaction is defined in [Interaction Specifications](docs/interactio
 
 The core painting workflow is interaction-ready for dedicated UI design. Advanced-feature final UI remains gated by its interaction backlog.
 
+## Specification Audit
+
+The current comprehensive specification audit is [Specification Precision Audit 2026-09-27](docs/SPECIFICATION_AUDIT_2026-09-27.md).
+
 ## Development gate
 
 本実装へ進む前に、少なくとも以下を詳細設計します。
