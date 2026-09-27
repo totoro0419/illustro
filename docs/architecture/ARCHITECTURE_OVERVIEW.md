@@ -34,21 +34,35 @@ Architectureの概念的な美しさより、実行時の軽さを優先する�
 
 ## 2. Runtime baseline
 
-### 2.1 Web-first
+### 2.1 Prototype runtime baseline
 
-実装Baselineは **Web-first / PWA-capable** とする。
+最初のArchitecture Prototypeは **Web/PWA-capable runtime** で実施する。
 
-理由:
+ただし、これは最終製品RuntimeのLOCKではない。
 
-- PC / Tablet / Smartphoneで同一製品Coreを共有しやすい
-- Pointer Events / Touch / Stylusへ統一的にアクセスできる
-- Offline / Service Worker / OPFSを利用できる
-- WebGPUをPrimary GPU backendとして利用可能
-- Installable PWAを実現できる
+Web prototypeを先に使う理由:
 
-ただしWeb APIへCore semanticsを直接埋め込まない。
+- PC / Tablet / Smartphoneで同じ実験を展開しやすい
+- Pointer Events / Touch / Stylusを早期検証できる
+- Offline / OPFS / PWA候補を検証できる
+- WebGPUをGPU prototypeに利用できる
 
-将来Desktop wrapper / native hostを追加しても、Document/Brush/Region/HistoryのCanonical modelを再設計しない構造にする。
+ただし最終Runtimeは、Web/PWA、Native shell、Hybridの実測比較で決める。
+
+比較項目:
+
+- input-to-present latency
+- sustained frame time / thermal behavior
+- memory
+- startup / bundle
+- stylus capability
+- GPU feature/driver stability
+- color management
+- file I/O / recovery
+- battery
+- platform distribution/maintenance cost
+
+Web APIへCore semanticsを直接埋め込まず、Native hostを選んでもDocument/Brush/Region/Historyの意味を再設計しない構造にする。
 
 ### 2.2 Language / module placement
 
