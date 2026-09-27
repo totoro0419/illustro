@@ -253,6 +253,15 @@ Bindings should be versioned so future command renames or schema changes can mig
 
 Command identity must use stable command IDs, not localized display names.
 
+## 18.1 Undo applicability
+
+Shortcut設定変更はArtwork Undo/Redoへ入れない。
+
+Capture確定前はCancelで変更なし。
+確定後の誤変更はShortcut editor内のremove/reset/rebindで修正する。
+
+将来Settings-level undoを追加する場合もArtwork Historyとは分離する。
+
 ## 19. Acceptance criteria
 
 The shortcut system is not complete until all of the following pass:
