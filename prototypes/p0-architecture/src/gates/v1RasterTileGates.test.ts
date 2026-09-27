@@ -39,7 +39,7 @@ describe('Architecture V1 raster/tile gates', () => {
       for (const key of keys) {
         tx.editTile(key, (bytes) => {
           const offset = (strokeIndex * 997) % bytes.byteLength;
-          bytes[offset] = (bytes[offset] + 1) & 0xff;
+          bytes[offset] = ((bytes[offset] ?? 0) + 1) & 0xff;
         });
       }
       const metrics = tx.seal();
