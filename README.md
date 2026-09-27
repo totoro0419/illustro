@@ -61,6 +61,8 @@ Core architecture phases 1–9 are documented in [Architecture Overview](docs/ar
 
 Architecture v0.2 is accepted for **prototyping**, not yet performance-validated. Runtime/backend/language/thread placement remains benchmark-driven.
 
+Runtime lightness rules are defined in [Performance-First Policy](docs/architecture/PERFORMANCE_POLICY.md), with the current audit in [Performance Audit 2026-09-27](docs/architecture/PERFORMANCE_AUDIT_2026-09-27.md).
+
 ## Development gate
 
 本実装へ進む前に、少なくとも以下を詳細設計します。
