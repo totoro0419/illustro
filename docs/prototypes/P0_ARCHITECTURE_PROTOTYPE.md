@@ -150,6 +150,73 @@ The synthetic worker path showed non-zero and variable scheduling/message overhe
 
 A module Worker created from a Blob under the injected opaque-origin test failed to load, while the classic Blob Worker path succeeded. Because the real application uses a normal module Worker from a served origin, this failure is treated as an environment/origin limitation until tested from an actual preview or local development origin.
 
+## Persistence / Recovery prototype
+
+The initial Persistence Worker flushed every record independently. That was intentionally simple but inconsistent with the performance-first architecture.
+
+The worker now:
+
+- frames recovery records before batching
+- keeps OPFS `FileSystemSyncAccessHandle` open when available instead of opening/closing it per record
+- batches multiple records before `flush()`
+- exposes `maxBatchBytes` and `batchDelayMs` as **benchmark inputs**
+- acknowledges records only after the containing batch has completed its durability attempt
+- falls back to in-memory batches when OPFS is unavailable in the test environment
+
+The harness defaults (`128 KiB`, `16 ms`) are convenience values for this prototype only. They are not production decisions and were not copied from the legacy review document.
+
+### Prototype journal framing
+
+A deliberately small prototype-only frame format was added to test torn-tail recovery behavior.
+
+It is **not** the future `.illustro` journal format and deliberately does not adopt the legacy draft's fixed frame sizes, hashes, CRC choices, segment magic, or flush timings.
+
+The scanner:
+
+- accepts only consecutive complete frames
+- stops at the first truncated/invalid frame
+- never scans forward for a later matching magic value
+- requires caller-supplied resource limits
+
+### Fault injection result
+
+A complete first frame and a second 257-byte-payload frame were concatenated.
+
+The second frame was then truncated at **every byte position** before completion.
+
+Result:
+
+- truncation cut positions checked: **285**
+- complete first frame recovered: **285 / 285**
+- incomplete second frame accepted: **0 / 285**
+- corrupted trailer test: **rejected**
+- complete two-frame stream: **accepted**
+- JournalBatcher threshold/take/reset behavior: **PASS**
+
+This validates the intended torn-tail rule for the prototype framing. It does not yet prove power-loss durability or OPFS atomicity.
+
+### Legacy-reference comparison
+
+After the independent implementation plan was established, the relevant sections of `ILLUSTRO_SECTION9_ALGORITHM_REVIEW_DRAFT(2).txt` were rechecked.
+
+Higher-level lessons retained:
+
+- partial journal records must not become completed recovery state
+- durability work must not run on the realtime UI path
+- recovery/backpressure must stay bounded
+- batching values are calibration inputs, not semantic constants
+- API `flush()` success alone must not be promoted into an unmeasured power-loss guarantee
+
+Details explicitly not inherited:
+
+- legacy journal magic/record layout
+- fixed header/trailer sizes
+- SHA/CRC selection
+- fixed payload size
+- fixed batch sizes
+- fixed flush-age candidates
+- fixed recovery latency guarantees
+
 ## Verification not completed yet
 
 The current execution environment timed out while running `npm install`, so these items remain **UNVERIFIED**:
@@ -159,7 +226,7 @@ The current execution environment timed out while running `npm install`, so thes
 - Vitest package test run
 - real served-page pointer-to-visible metrics
 - exact module-Worker Main vs Worker comparison
-- OPFS SyncAccessHandle behavior on a secure served origin
+- OPFS SyncAccessHandle batching/flush behavior on a secure served origin
 - mobile Safari / Android Chrome behavior
 - WebGPU path (not included in this first harness yet)
 
