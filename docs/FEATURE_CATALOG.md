@@ -119,6 +119,9 @@
 | Linear-light Processing Path | Core / Investigate | Blend/Filterの一部で利用可能な構造 |
 | HDR-capable Architecture | Core / Investigate | 初期UI実装とは分離しても将来を塞がない |
 | CMYK Native Editing | Investigate | 一枚絵制作での必要性とコストを評価 |
+| Soft Proof | Required | 出力ProfileをCanvas上Preview |
+| Out-of-Gamut Warning | Required | 色域外を可視化 |
+| Rendering Intent / Black Point Compensation | Required / Investigate | Color Management詳細仕様で確定 |
 
 ## F. レイヤー
 
@@ -138,9 +141,12 @@
 | Group | Core | |
 | Mask | Required | |
 | Clipping | Core | 高頻度操作 |
+| Alpha Lock / Lock Transparency | Core | 彩色で高頻度 |
+| Alpha Inheritance / Clipping-equivalent | Required | Group/Clipping設計と整合させる |
 | Persistent Clipping Control | Core | レイヤーUI上で即時確認・切替 |
 | Adjustment Layer | Required | |
 | Filter Layer | Required | |
+| Layer Style / Layer Effect | Required | 非破壊。Stroke/Shadow/Glow/Overlay等 |
 | Text Layer / Entity | Required | 編集可能なTextを保持 |
 | Horizontal / Vertical Text | Required | 日本語用途を考慮 |
 | Font Family / Style / Size | Required | |
@@ -212,6 +218,11 @@
 | Core Live Filter Set | Required | Gaussian/Motion/Radial Blur, Sharpen, Unsharp Mask, High Pass, Noise, Median系, Pixelate/Mosaic, Offset, Displacement, Halftone等 |
 | Filter Masking / Reorder / Opacity / Blend | Required | 非破壊Filterを組み合わせ可能にする |
 | Destructive Apply Command | Required | 明示操作として残す |
+| Layer Style: Stroke | Required | 非破壊 |
+| Layer Style: Drop/Inner Shadow | Required | 非破壊 |
+| Layer Style: Outer/Inner Glow | Required | 非破壊 |
+| Layer Style: Color/Gradient/Pattern Overlay | Required | 非破壊 |
+| Layer Style: Bevel/Emboss | Required | 非破壊。優先度は他のIllustration機能より低くてもよい |
 
 ## I. Reference System
 
