@@ -118,9 +118,33 @@ Random、GPU、並列実行、再計算等が関係する場合に記述する�
 
 それぞれへの影響を分離して記述する。
 
+## Performance cost contract
+
+必ず記録する。
+
+- activation condition
+- inactive recurring CPU/GPU cost
+- startup / module-load cost
+- hot-path additions
+- allocations / GC pressure
+- buffer copies / serialization
+- Main↔Worker hops
+- JS↔WASM boundary cost
+- CPU working set
+- GPU residency
+- storage write amplification
+- background jobs
+- invalidation granularity
+- mobile/thermal implications
+- lazy-load / fallback plan
+
+「抽象化が綺麗」「一つの経路に統一できる」は性能上の採用理由にしない。
+
 ## Performance risks
 
 推測と実測を分ける。
+
+Hot Pathへ新しい処理を追加する場合は、追加前後を同一Benchmarkで比較する。
 
 ## Open risks
 
