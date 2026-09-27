@@ -9,6 +9,11 @@ export type Tile = {
   dirty: Rect | null;
 };
 
+export type DirtyTile = Readonly<{
+  tile: Tile;
+  dirty: Rect;
+}>;
+
 export class SparseTileSurface {
   readonly tileSize: number;
   readonly #tiles = new Map<TileKey, Tile>();
@@ -66,11 +71,11 @@ export class SparseTileSurface {
     return touched;
   }
 
-  consumeDirty(): Tile[] {
-    const dirty: Tile[] = [];
+  consumeDirty(): DirtyTile[] {
+    const dirty: DirtyTile[] = [];
     for (const tile of this.#tiles.values()) {
       if (tile.dirty) {
-        dirty.push(tile);
+        dirty.push({ tile, dirty: { ...tile.dirty } });
         tile.dirty = null;
       }
     }
