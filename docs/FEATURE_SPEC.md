@@ -1568,6 +1568,10 @@ Visual UIはInteraction SpecやArchitectureを勝手に補完・変更しては�
 - canonical raster sealing
 - OPFS journal/recovery
 - startup/first stroke
-- PC/Tablet/Smartphone representative devices
+- 少なくとも1つの代表的な実Stylus端末でRealtime pathを実測し、初期配置判断の根拠を得る
+
+2026-09-28のXiaomi tablet + Xiaomi pen測定により、Main/Worker initial placementについてこの実装前Device Gateは満たした。
+
+PC / Tablet / Smartphoneすべてで同一Architecture比較を本実装前に完了することは要求しない。3端末の正常動作・性能・Fallback検証は、該当機能が実装された後、Supported environmentを宣言する前のRegression/Compatibility Gateで実施する。
 
 UI設計は完全実装を待つ必要はないが、**Interaction semanticsとArchitecture能力に矛盾しないこと**を条件とする。
