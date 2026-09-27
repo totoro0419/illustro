@@ -6,11 +6,13 @@ Illustro は、**一枚絵を完成させる制作体験**に特化し、直感�
 
 ## Current status
 
-**仕様策定フェーズです。**
+**Core implementation開始直前です。**
 
-現時点では製品思想と機能要求を確定している段階で、本体実装はまだ開始していません。
+製品仕様・Core Interaction仕様・Architecture V1まで確定し、UI以外の5つのpre-implementation Architecture GateはSecond AuditまでPASSしています。
 
-UIも、内部能力とデータモデルが矛盾しないところまで設計を詰めた後、専用UI生成Skillを使用して設計します。
+本体Production Editorの実装はまだ開始していません。
+
+Visual UIはユーザーと共同で設計し、UI生成を行う場合は専用UI Design Skillを使用します。
 
 ## Specification hierarchy
 
@@ -19,8 +21,9 @@ UIも、内部能力とデータモデルが矛盾しないところまで設計
 1. [Product Specification](docs/PRODUCT_SPEC.md) — 製品定義・絶対優先順位・設計思想
 2. [Feature Specification](docs/FEATURE_SPEC.md) — 実装/UI設計で使う機能要求
 3. [Feature Catalog](docs/FEATURE_CATALOG.md) — 全機能・調査対象のマスター一覧
-4. `docs/features/*.md` — 個別機能の詳細仕様（今後作成）
-5. UI / Architecture / Implementation specifications — 今後作成
+4. `docs/features/*.md` — 個別機能の詳細Interaction仕様
+5. [Architecture V1](docs/architecture/ARCHITECTURE_V1.md) — Core実装Baseline
+6. UI / Implementation specifications — 実装フェーズで具体化
 
 過去Illustro資料の扱いは [Legacy Reference Policy](docs/LEGACY_REFERENCE_POLICY.md) に従います。
 重要なArchitecture判断は [ADR Template](docs/architecture/ADR_TEMPLATE.md) を使って記録します。
@@ -57,9 +60,9 @@ UIも、内部能力とデータモデルが矛盾しないところまで設計
 
 ## Architecture
 
-Core architecture phases 1–9 are documented in [Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md), with the complete ADR index in [docs/architecture/README.md](docs/architecture/README.md). The integrated consistency review is in [Architecture Integration Validation](docs/architecture/INTEGRATION_VALIDATION.md).
+Core architecture is now fixed at **Architecture V1 — Confirmed for Core implementation**. The canonical baseline is [Architecture V1](docs/architecture/ARCHITECTURE_V1.md), with the ADR index in [docs/architecture/README.md](docs/architecture/README.md) and integrated review in [Architecture Integration Validation](docs/architecture/INTEGRATION_VALIDATION.md).
 
-Architecture v0.2 is accepted for **prototyping**, not yet performance-validated. Runtime/backend/language/thread placement remains benchmark-driven.
+V1 promotion required five pre-implementation gates, a first PASS, an independent second audit, corrective fixes, and a second PASS. Evidence is in [V1 Second Audit Evidence](docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md).
 
 Runtime lightness rules are defined in [Performance-First Policy](docs/architecture/PERFORMANCE_POLICY.md), with the current audit in [Performance Audit 2026-09-27](docs/architecture/PERFORMANCE_AUDIT_2026-09-27.md).
 
@@ -81,17 +84,27 @@ The first performance/architecture harness is in [`prototypes/p0-architecture`](
 
 ## Development gate
 
-本実装へ進む前に、少なくとも以下を詳細設計します。
+**Core implementation gate: PASS.**
 
-1. Document / Layer Data Model
-2. Tile Canvas / Render Pipeline
-3. Undo / Command / Snapshot Model
-4. Brush Engine / Dynamics
-5. Lineart Region System
-6. Color Pipeline
-7. Selection / Transform
-8. `.illustro` Native Format
-9. Input / Device Abstraction
-10. Autosave / Recovery
+Architecture V1 has verified baselines for:
 
-将来的な絵チャ・Realtime共同描画は、Core Illustro完成後のFuture Scopeです。
+1. Canonical Raster sealing
+2. GPU / compatibility backend fallback
+3. Sparse Tile / dirty rect / cache policy
+4. OPFS Recovery
+5. Startup / First Stroke lazy loading
+6. measured initial Main-vs-Worker realtime placement
+
+Second PASS:
+
+- GitHub Actions run: \`36335428192\`
+- strict TypeScript: PASS
+- Vitest: 29 tests / 12 files PASS
+- Vite production build: PASS
+- served Chromium: 4 / 4 PASS
+
+The next engineering phase is **Production Core Editor implementation under Architecture V1**.
+
+Visual UI design proceeds separately with the user.
+
+Future realtime collaboration remains out of Core scope until the single-illustration editor is mature.
