@@ -4,9 +4,12 @@ test('startup reaches first stroke before any advanced module is requested', asy
   await page.goto('/?input=main');
   await expect(page.locator('#status')).toContainText('Illustro P0 prototype');
 
-  const before = await page.evaluate(() => window.illustroPrototype.getStartupMetrics());
-  expect(before.bootToCanvasReadyMs).toBeGreaterThanOrEqual(0);
-  expect(Object.values(before.advancedLoads).every((loaded) => loaded === false)).toBe(true);
+  const before = await page.evaluate(() => ({
+    startup: window.illustroPrototype.getStartupMetrics(),
+    resources: performance.getEntriesByType('resource').map((entry) => entry.name).sort(),
+  }));
+  expect(before.startup.bootToCanvasReadyMs).toBeGreaterThanOrEqual(0);
+  expect(Object.values(before.startup.advancedLoads).every((loaded) => loaded === false)).toBe(true);
 
   const canvas = page.locator('#surface');
   const box = await canvas.boundingBox();
@@ -19,10 +22,14 @@ test('startup reaches first stroke before any advanced module is requested', asy
   await page.mouse.up();
 
   await expect.poll(async () => page.evaluate(() => window.illustroPrototype.getStartupMetrics().firstStrokeToNextRafMs)).not.toBeNull();
-  const after = await page.evaluate(() => window.illustroPrototype.getStartupMetrics());
-  expect(Object.values(after.advancedLoads).every((loaded) => loaded === false)).toBe(true);
+  const after = await page.evaluate(() => ({
+    startup: window.illustroPrototype.getStartupMetrics(),
+    resources: performance.getEntriesByType('resource').map((entry) => entry.name).sort(),
+  }));
+  expect(Object.values(after.startup.advancedLoads).every((loaded) => loaded === false)).toBe(true);
+  expect(after.resources).toEqual(before.resources);
 
-  console.log('[V1_STARTUP]', JSON.stringify(after));
+  console.log('[V1_STARTUP]', JSON.stringify(after.startup));
 });
 
 test('lazy benchmark modules execute and render backend smoke selects a working path', async ({ page }) => {
@@ -49,6 +56,8 @@ test('lazy benchmark modules execute and render backend smoke selects a working 
   expect(result.graphicsProbe.canvas2d).toBe(true);
   expect(result.backend.selected.smokePassed).toBe(true);
   expect(['webgpu', 'webgl2', 'canvas2d']).toContain(result.backend.selected.kind);
+  if (result.backend.selected.kind === 'webgl2') expect(result.graphicsProbe.webgl2).toBe(true);
+  if (result.backend.selected.kind === 'canvas2d') expect(result.graphicsProbe.canvas2d).toBe(true);
   expect(result.wasm.wasmResult).toBe(1000);
   expect(result.startup.advancedLoads.benchmarkCore).toBe(true);
   expect(result.startup.advancedLoads.benchmarkExtended).toBe(true);
@@ -122,9 +131,31 @@ test('OPFS SyncAccessHandle persists complete frames across reload and rejects t
   expect(torn.tailBytes).toBe(11);
   expect(torn.issue).toBe('truncated-frame');
 
+  await page.reload();
+
+  const repaired = await page.evaluate(async () => {
+    const api = window.illustroPrototype;
+    const inspectAfterRepair = await api.inspectPersistence() as any;
+    const append = await api.runPersistenceBenchmark(2, 1024, { maxBatchBytes: 4096, batchDelayMs: 1 });
+    const inspectAfterAppend = await api.inspectPersistence() as any;
+    return { inspectAfterRepair, append, inspectAfterAppend };
+  }) as any;
+
+  expect(repaired.inspectAfterRepair.backend).toBe('opfs-sync-access');
+  expect(repaired.inspectAfterRepair.frameCount).toBe(8);
+  expect(repaired.inspectAfterRepair.tailBytes).toBe(0);
+  expect(repaired.inspectAfterRepair.issue).toBeNull();
+  expect(repaired.inspectAfterRepair.repair?.tailBytes).toBe(11);
+  expect(repaired.append.backend).toBe('opfs-sync-access');
+  expect(repaired.inspectAfterAppend.frameCount).toBe(10);
+  expect(repaired.inspectAfterAppend.tailBytes).toBe(0);
+  expect(repaired.inspectAfterAppend.issue).toBeNull();
+  expect(repaired.inspectAfterAppend.sequences.slice(-2)).toEqual([8, 9]);
+
   console.log('[V1_OPFS]', JSON.stringify({
     initial: first.inspect,
     reopened: reopened.inspect,
     torn,
+    repaired,
   }));
 });
