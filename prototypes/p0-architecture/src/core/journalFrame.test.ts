@@ -35,4 +35,19 @@ describe('prototype journal framing', () => {
     expect(scan.frames).toHaveLength(0);
     expect(scan.issue).toBe('invalid-trailer');
   });
+
+  it('does not resynchronize past corrupted bytes into a later valid-looking frame', () => {
+    const first = encodePrototypeJournalFrame(1, new Uint8Array([1, 2, 3]));
+    const later = encodePrototypeJournalFrame(99, new Uint8Array([9, 9, 9]));
+    const garbage = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x00, 0x01, 0x02]);
+    const stream = new Uint8Array(first.byteLength + garbage.byteLength + later.byteLength);
+    stream.set(first, 0);
+    stream.set(garbage, first.byteLength);
+    stream.set(later, first.byteLength + garbage.byteLength);
+
+    const scan = scanPrototypeJournal(stream, limits);
+    expect(scan.frames.map((frame) => frame.sequence)).toEqual([1]);
+    expect(scan.validBytes).toBe(first.byteLength);
+    expect(scan.issue).toBe('invalid-header');
+  });
 });
