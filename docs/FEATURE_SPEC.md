@@ -1519,59 +1519,89 @@ Plugin/Extension APIは本体完成前の必須機能にしない。
 
 ### 35.1 Architecture Gate
 
-以下はArchitecture v0.2として個別設計済み。
+Architecture v1は2026-09-28時点で**Core implementation開始可能**として確定済み。
 
-1. Document / Layer Data Model
-2. Tile Canvas / Render Pipeline
-3. Undo / Command / Snapshot Model
-4. Brush Engine / Dynamics
-5. Lineart Region System
-6. Color Pipeline
-7. Selection / Transform
-8. .illustro / Persistence / Recovery
-9. Input / Device Abstraction
-10. PC / Tablet / Smartphone capability adaptation
+V1で実装Baselineとして確定した主要事項:
 
-ただしTile Size、Worker配置、WASM境界、各種Threshold等はPrototype/Benchmark前には固定しない。
+- Main Thread defaultのPointer/Stroke coordination
+- Dedicated Persistence Worker
+- sparse logical Raster
+- standard Tile profile 256 / memory-constrained candidate 128
+- local dirty-subrect
+- ownership-transfer Canonical Raster sealing
+- WebGPU → WebGL2 → Canvas2D fallback
+- OPFS framed/batched Recovery + torn-tail repair
+- First Draw critical pathのlazy module policy
+- TypeScript default / heavy-kernel WASMは後続実測で採否判断
+
+根拠:
+
+- \`docs/architecture/ARCHITECTURE_V1.md\`
+- \`docs/architecture/V1_PROMOTION_GATE.md\`
+- \`docs/architecture/V1_FIRST_PASS_EVIDENCE.md\`
+- \`docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md\`
+
+First PASS後に独立再監査を行い、4件のhidden issueを修正してSecond PASSまで確認済み。
 
 ### 35.2 Interaction Gate
 
-Core painting workflowについては `docs/interaction/INTERACTION_MODEL.md` と `docs/features/*.md` のP0詳細仕様をSourceとして使用する。
+Core painting workflowについては \`docs/interaction/INTERACTION_MODEL.md\` と \`docs/features/*.md\` のP0詳細仕様をSourceとして使用する。
 
-Core UI visual designへ進むためのP0 Interaction Gateは、2026-09-27の再監査時点でPASS。
+Core UI visual designへ進むためのP0 Interaction GateはPASS済み。
 
 詳細:
-- `docs/interaction/INTERACTION_REAUDIT_2026-09-27.md`
-- `docs/interaction/REQUIREMENT_TRACEABILITY.md`
+
+- \`docs/interaction/INTERACTION_REAUDIT_2026-09-27.md\`
+- \`docs/interaction/REQUIREMENT_TRACEABILITY.md\`
 
 ### 35.3 Advanced-feature Gate
 
-Vector/Text/Wet Media/Advanced Filter/Macro/Asset等の最終UIは、各領域のInteraction backlogを解消してから確定する。
+Vector / Text / Wet Media / Advanced Filter / Macro / Asset等の最終実装・最終UIは、それぞれのInteraction backlogを解消してから確定する。
 
 未決定事項:
-- `docs/interaction/REMAINING_INTERACTION_BACKLOG.md`
+
+- \`docs/interaction/REMAINING_INTERACTION_BACKLOG.md\`
+
+これらはCore Editor実装開始のblockerではない。
 
 ### 35.4 UI generation rule
 
-UI生成は専用UI Design Skillを使用する。
+Visual UIはユーザーと共同で設計する。
 
-Visual UIはInteraction SpecやArchitectureを勝手に補完・変更してはならない。
+UI生成を行う場合は専用UI Design Skillを使用し、Interaction SpecやArchitectureを勝手に補完・変更してはならない。
 
-### 35.5 Implementation Gate
+### 35.5 Core Implementation Gate
 
-本番実装へ進む前に、Architecture P0 Prototypeで少なくとも以下を実測する。
+**PASS済み。**
 
-- input-to-present
-- Main/Worker placement
-- TypeScript/WASM boundary
-- sparse tile behavior
-- canonical raster sealing
-- OPFS journal/recovery
-- startup/first stroke
-- 少なくとも1つの代表的な実Stylus端末でRealtime pathを実測し、初期配置判断の根拠を得る
+Second PASS evidence:
 
-2026-09-28のXiaomi tablet + Xiaomi pen測定により、Main/Worker initial placementについてこの実装前Device Gateは満たした。
+- GitHub Actions run: \`36335428192\`
+- strict TypeScript: PASS
+- Vitest: 29 tests / 12 files PASS
+- Vite production build: PASS
+- served Chromium: 4 / 4 PASS
+- actual OPFS SyncAccessHandle recovery path: PASS
+- WebGL2 actual draw/readback fallback: PASS
+- First Stroke lazy-load invariant: PASS
+- Xiaomi tablet + Xiaomi pen Realtime placement measurement: recorded
 
-PC / Tablet / Smartphoneすべてで同一Architecture比較を本実装前に完了することは要求しない。3端末の正常動作・性能・Fallback検証は、該当機能が実装された後、Supported environmentを宣言する前のRegression/Compatibility Gateで実施する。
+したがってCore Editor本実装はArchitecture v1をBaselineとして開始可能。
 
-UI設計は完全実装を待つ必要はないが、**Interaction semanticsとArchitecture能力に矛盾しないこと**を条件とする。
+PC / Tablet / Smartphone全体の正常動作・性能・Fallback検証は、該当機能が実装された後、Supported environmentを宣言する前のRegression/Compatibility Gateで実施する。
+
+### 35.6 Still-open implementation-time decisions
+
+次は実装を止めない。
+
+- heavy-kernel TS/WASM split
+- exact memory/cache budgets
+- 128↔256 Tile profile switch threshold
+- brush stabilizer/resampling constants
+- Region thresholds
+- ICC implementation/library
+- portable .illustro physical encoding/compression/hash
+- PSD mapping
+- advanced-feature interaction details
+
+代表的なProduction-like workloadが存在した時点で測定し、必要なADRへ追加する。
