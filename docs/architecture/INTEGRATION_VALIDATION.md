@@ -2,7 +2,7 @@
 
 > Date: 2026-09-27  
 > Scope: ADR-0001〜ADR-0009の相互整合性検査  
-> Result: **Architecture Baseline v0.1 is internally coherent enough to enter prototyping.**  
+> Result: **Architecture Baseline v0.2 is internally coherent enough to enter performance-focused prototyping.**  
 > Important: 性能値は未実測。Prototype/Benchmark Gateを通るまで「性能達成済み」とはしない。
 
 ## 1. Validation method
@@ -29,6 +29,26 @@
 8. device fallback
 9. future collaboration boundary
 10. UI requirementsとの矛盾
+
+## 1.1 Performance-first re-audit — PASS WITH CORRECTIONS
+
+Architecture v0.1は責務整合性は高かったが、軽量性より内部統一を優先しかねない箇所があった。
+
+v0.2で以下を修正した。
+
+- Rust/WASM全面Baseline → measured hot-kernel placement
+- Dedicated Realtime Worker寄り → physical placement adaptive
+- Web-first product lock → WebはPrototype baseline
+- pointerrawupdate優先 → measured fast path
+- active pure-immutable risk → mutable active transaction
+- Region常時更新risk → lazy/demand-driven
+- general ICC常時path risk → common fast path + lazy general fallback
+- effect chain repeated evaluation → derived checkpoint/cache
+- deep history RAM residency → hot/cold separation
+- block hashing/flush overhead → optional hash + bounded batching
+- advanced feature startup cost → lazy modules
+
+詳細: `PERFORMANCE_AUDIT_2026-09-27.md` / `PERFORMANCE_POLICY.md`
 
 ## 2. Canonical State consistency — PASS
 
@@ -281,12 +301,13 @@ Command/Context/Direct ManipulationをUIから呼べるAPI境界を持てる。
 
 ### P0 — before real editor implementation
 
-1. WebGPU worker rendering across target browsers/devices
-2. Input transport latency: postMessage vs optional SAB
-3. Rust/WASM ↔ JS/WebGPU boundary overhead
-4. sparse tile representation + logical tile size
+1. Main-thread vs Worker realtime/render placement
+2. coalesced pointermove vs pointerrawupdate across target stylus devices
+3. TypeScript vs Rust/WASM kernel placement and boundary overhead
+4. sparse tile representation + logical tile size + dirty-subrect strategy
 5. canonical raster sealing strategy
-6. OPFS journal throughput/failure behavior
+6. OPFS journal batching/flush throughput and failure behavior
+7. startup → first canvas / first stroke module-loading path
 
 ### P1 — before advanced painting
 
@@ -334,7 +355,7 @@ Workloads:
 
 ## 21. Acceptance gates for prototype phase
 
-Architecture v0.1を実装Architecture v1へ昇格する条件:
+Architecture v0.2を実装Architecture v1へ昇格する条件:
 
 - no correctness failure in revision/undo fault tests
 - GPU loss does not lose protected artwork
@@ -345,6 +366,9 @@ Architecture v0.1を実装Architecture v1へ昇格する条件:
 - Region ambiguity is preserved rather than silently forced
 - ICC alpha invariants pass
 - memory reaches bounded steady behavior under synthetic long session
+- inactive feature idle-cost is near zero for Region/Wet/Soft Proof/advanced codecs
+- startup/first-stroke does not wait for unused advanced modules
+- worker/WASM placement is supported by measured benefit, not architecture preference
 - target device classes have measured latency/frame/memory data
 
 数値thresholdは測定データと製品UX要件から別途決定する。
