@@ -66,7 +66,9 @@ Worker数は固定しないが、exclusive OPFS file access等のconstraintを�
 
 ## 3. Immutable block store
 
-Working Storeはimmutable blockを基本とする。
+Working Storeはimmutable/published blockを基本とする。
+
+ただしHot Pathで全Blockをcontent-hash/deduplicateすることを必須にしない。高速なallocated block ID + lightweight integrity metadataを使い、重いhash/dedupは必要性が実測された場合のみbackgroundで行える。
 
 Block categories:
 
@@ -211,7 +213,9 @@ Current protected artworkをsilent deleteしない。
 
 PNG/JPEG/WebP/TIFF/ORA/PSD等はfixed Revision Snapshotから別Jobとして生成。
 
-Exportが現在編集中Documentをlockし続けないよう immutable state sharingを利用する。
+Exportが現在編集中Documentをlockし続けないよう published revision sharingを利用する。
+
+PSD/EXR/TIFF等の重いCodecは通常起動時に初期化せず、Import/Export時にlazy-loadする。
 
 ## 13. File integrity
 
