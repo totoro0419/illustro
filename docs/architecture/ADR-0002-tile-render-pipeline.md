@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted for prototype**
+**Accepted — Architecture V1**
 
 ## Date
 
@@ -33,9 +33,9 @@ Raster SurfaceをDocument pixel座標のSparse Tile gridで管理する。
 - empty/default tileは物理Blockを持たない
 - dirty subrectを追跡
 - tile border/haloが必要なfilterはdependencyとして要求
-- logical tile sizeはformat/profileで明示し、runtime heuristicで既存Documentのidentityを変えない
+- logical tile sizeはRuntime Profileの実装詳細とし、Document identity / portable file semanticsを変えない
 
-候補128/256/512等をBenchmarkするが、このADRでは固定しない。
+V1 standard profileは**256**。Memory-constrained profile候補として**128**を許容する。**512はUniversal Defaultにしない**。
 
 ### 2. Canonical raster representation
 
@@ -172,7 +172,7 @@ GPU resultをCanonical bytesへ直接sealできるのは、定義したreference
 
 WebGPUは2026-09時点でもCandidate Recommendation Draftであり、Target Browser全てで無条件利用できる前提にしない。
 
-OffscreenCanvas/GPUCanvasContextはWorker利用可能な環境があるため、Realtime WorkerでのrenderをPrimary設計とする。
+OffscreenCanvas/GPUCanvasContextはWorker利用可能だが、V1のRealtime defaultはMain Thread上のinput/stroke coordination + lightweight render submissionとする。Full Realtime Workerは実測上有利なProfileだけのoptional fast path。
 
 ## Validation plan
 
@@ -196,3 +196,51 @@ Benchmark matrix:
 - dispatch count
 - working-set memory
 - cache hit rate
+
+
+## V1 promotion addendum
+
+Architecture V1で次を確定した。
+
+### Logical Tile
+
+- standard profile: **256 × 256**
+- memory-constrained candidate: **128 × 128**
+- 512: Universal Default不採用
+- Tile Sizeはportable .illustro semanticsではない
+
+Deterministic fine/medium/large/long Brush workloadで128/256/512を比較し、256をtouch overheadとMemory/dirty uploadの折衷点として採用した。
+
+### Dirty update
+
+`consumeDirty()`はlive Tileのdirty stateをclearしつつ、Jobへ渡すdirty rectangle snapshotを保持する。
+
+### Canonical sealing
+
+- active tile = mutable working buffer
+- published block = immutable
+- existing Tileはfirst edit時にworking bufferへ1回copy
+- seal時はownership transfer
+- avoidable second full-tile copyは禁止
+- stale transactionはownership transfer / store insertion前にreject
+
+Second-pass representative workload:
+
+- 48 revisions
+- 192 changed tiles
+- 256×256 RGBA8 payload
+- working/transferred bytes: 50,331,648
+- canonical read bytes: 5,242,880
+- avoidable second seal copy: 0 by invariant/test
+
+### Backend
+
+V1 runtime selection:
+
+1. WebGPU smoke success
+2. WebGL2 actual draw/readback
+3. Canvas2D/CPU compatibility
+
+GPU state remains Derived. Device loss must not mutate Canonical Raster.
+
+Evidence: [Architecture V1](ARCHITECTURE_V1.md) / [Second Audit](V1_SECOND_AUDIT_EVIDENCE.md)
