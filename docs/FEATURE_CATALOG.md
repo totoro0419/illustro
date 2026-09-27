@@ -292,6 +292,7 @@
 | Undock / Floating | Required | PC系 |
 | Panel Resize / Reorder / Hide | Required | |
 | Workspace Save / Load | Required | |
+| Canvas Focus Mode | Core | 一操作で非必須UIを隠しCanvas面積最大化 |
 | Workspace Preset | Required | Drawing/Painting/Coloring等 |
 | 左右UI反転 | Required | Toolbarだけに限定しない |
 | Keyboard Shortcut | Core | PC |
