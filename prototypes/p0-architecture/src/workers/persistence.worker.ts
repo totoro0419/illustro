@@ -25,6 +25,7 @@ let accessHandle: FileSystemSyncAccessHandle | null = null;
 let writeOffset = 0;
 let fallbackBatches: Uint8Array[] = [];
 let lastBackend: Backend | null = null;
+let lastRepair: Readonly<{ validBytes: number; tailBytes: number; issue: string | null }> | null = null;
 
 async function openSyncHandle(): Promise<FileSystemSyncAccessHandle | null> {
   if (accessHandle) return accessHandle;
@@ -35,7 +36,7 @@ async function openSyncHandle(): Promise<FileSystemSyncAccessHandle | null> {
   const sync = await (handle as SyncHandleCapableFile).createSyncAccessHandle?.();
   if (!sync) return null;
   accessHandle = sync;
-  writeOffset = sync.getSize();
+  writeOffset = repairInvalidTail(sync);
   return sync;
 }
 
@@ -104,6 +105,7 @@ async function resetStore(requestId: number): Promise<void> {
   pendingSequences = [];
   batcher = null;
   fallbackBatches = [];
+  lastRepair = null;
 
   const sync = accessHandle ?? await openSyncHandle();
   if (sync) {
@@ -154,6 +156,7 @@ async function inspectStore(requestId: number): Promise<void> {
     validBytes: scan.validBytes,
     tailBytes: scan.tailBytes,
     issue: scan.issue,
+    repair: lastRepair,
   });
 }
 
@@ -249,6 +252,37 @@ self.onmessage = (event: MessageEvent<Incoming>) => {
     void closeStore(message.requestId).catch((error) => self.postMessage({ type: 'control-error', requestId: message.requestId, message: String(error) }));
   }
 };
+
+function repairInvalidTail(sync: FileSystemSyncAccessHandle): number {
+  const size = sync.getSize();
+  if (size <= 0) {
+    lastRepair = null;
+    return 0;
+  }
+
+  const bytes = new Uint8Array(size);
+  const read = sync.read(bytes, { at: 0 });
+  if (read !== size) throw new Error(`short OPFS recovery read: ${read}/${size}`);
+
+  const scan = scanPrototypeJournal(bytes, {
+    maxPayloadBytes: 16 * 1024 * 1024,
+    maxFrames: 100_000,
+  });
+
+  if (scan.tailBytes > 0 || scan.issue !== null) {
+    sync.truncate(scan.validBytes);
+    sync.flush();
+    lastRepair = {
+      validBytes: scan.validBytes,
+      tailBytes: scan.tailBytes,
+      issue: scan.issue,
+    };
+    return scan.validBytes;
+  }
+
+  lastRepair = null;
+  return size;
+}
 
 function concatBytes(parts: ReadonlyArray<Uint8Array>): Uint8Array {
   let total = 0;
