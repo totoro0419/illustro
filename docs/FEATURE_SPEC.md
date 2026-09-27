@@ -1441,7 +1441,9 @@ Plugin/Extension APIは本体完成前の必須機能にしない。
 
 ## 35. 次段階へのGate
 
-UI設計または本実装へ進む前に、少なくとも以下を個別仕様化する。
+### 35.1 Architecture Gate
+
+以下はArchitecture v0.2として個別設計済み。
 
 1. Document / Layer Data Model
 2. Tile Canvas / Render Pipeline
@@ -1450,8 +1452,46 @@ UI設計または本実装へ進む前に、少なくとも以下を個別仕様
 5. Lineart Region System
 6. Color Pipeline
 7. Selection / Transform
-8. .illustro Native Format
+8. .illustro / Persistence / Recovery
 9. Input / Device Abstraction
-10. Autosave / Recovery
+10. PC / Tablet / Smartphone capability adaptation
 
-UIはこれらの完全実装を待つ必要はないが、**内部能力と矛盾しない状態まで設計を詰めてから生成する。**
+ただしTile Size、Worker配置、WASM境界、各種Threshold等はPrototype/Benchmark前には固定しない。
+
+### 35.2 Interaction Gate
+
+Core painting workflowについては `docs/interaction/INTERACTION_MODEL.md` と `docs/features/*.md` のP0詳細仕様をSourceとして使用する。
+
+Core UI visual designへ進むためのP0 Interaction Gateは、2026-09-27の再監査時点でPASS。
+
+詳細:
+- `docs/interaction/INTERACTION_REAUDIT_2026-09-27.md`
+- `docs/interaction/REQUIREMENT_TRACEABILITY.md`
+
+### 35.3 Advanced-feature Gate
+
+Vector/Text/Wet Media/Advanced Filter/Macro/Asset等の最終UIは、各領域のInteraction backlogを解消してから確定する。
+
+未決定事項:
+- `docs/interaction/REMAINING_INTERACTION_BACKLOG.md`
+
+### 35.4 UI generation rule
+
+UI生成は専用UI Design Skillを使用する。
+
+Visual UIはInteraction SpecやArchitectureを勝手に補完・変更してはならない。
+
+### 35.5 Implementation Gate
+
+本番実装へ進む前に、Architecture P0 Prototypeで少なくとも以下を実測する。
+
+- input-to-present
+- Main/Worker placement
+- TypeScript/WASM boundary
+- sparse tile behavior
+- canonical raster sealing
+- OPFS journal/recovery
+- startup/first stroke
+- PC/Tablet/Smartphone representative devices
+
+UI設計は完全実装を待つ必要はないが、**Interaction semanticsとArchitecture能力に矛盾しないこと**を条件とする。
