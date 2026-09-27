@@ -60,7 +60,7 @@ Recent colors:
 - new committed colorを追加
 - exact duplicate suppression
 - bounded list
-- document or workspace scopeはUser setting候補
+- Recent Color HistoryはDefaultで **Workspace/local user state** とする。Document固有色はPalette/Swatchとして明示保存する。
 
 ## Palette
 
