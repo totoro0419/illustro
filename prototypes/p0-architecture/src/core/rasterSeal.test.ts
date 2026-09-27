@@ -69,6 +69,11 @@ describe('RasterSealingDocument', () => {
     current.editTile('0,0', (bytes) => { bytes[0] = 1; });
     current.seal();
     stale.editTile('1,0', (bytes) => { bytes[0] = 2; });
+    const blocksBefore = document.store.blockCount;
+    const headBefore = document.headId;
     expect(() => stale.seal()).toThrow(/stale/);
+    expect(document.store.blockCount).toBe(blocksBefore);
+    expect(document.headId).toBe(headBefore);
+    expect(document.resolveBlockId('1,0')).toBeNull();
   });
 });
