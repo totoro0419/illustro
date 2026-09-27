@@ -318,6 +318,27 @@ Discovery mechanisms:
 
 Tutorial completionを機能利用の前提にしない。
 
+## 18.1 Canvas Focus Mode
+
+Focus ModeはCanvas Firstを実現するCore interaction。
+
+Enter:
+- explicit command
+- shortcut/gesture acceleration possible
+
+Behavior:
+- non-essential panels/chrome hide
+- current Tool/Selection/View preserved
+- temporary Context UI remains summonable
+- critical storage/recovery/error state can still surface
+
+Exit:
+- same command/shortcut
+- discoverable touch control
+- no keyboard-only dependency
+
+Focus Mode toggleはArtwork Undoへ入れない。
+
 ## 19. Settings philosophy
 
 Defaultを高品質にする。
