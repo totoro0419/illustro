@@ -32,7 +32,7 @@
 
 ## 1.1 Performance-first re-audit — PASS WITH CORRECTIONS
 
-Architecture v0.1は責務整合性は高かったが、軽量性より内部統一を優先しかねない箇所があった。
+旧Architecture Baselineは責務整合性は高かったが、軽量性より内部統一を優先しかねない箇所があった。
 
 v0.2で以下を修正した。
 
