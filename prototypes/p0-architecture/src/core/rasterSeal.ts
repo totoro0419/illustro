@@ -100,8 +100,12 @@ export class RasterSealingDocument {
     return blockId === null ? new Uint8Array(this.tileBytes) : this.store.readCopy(blockId);
   }
 
-  publish(baseRevisionId: number, changes: ReadonlyMap<RasterTileKey, number | null>): number {
+  assertPublishable(baseRevisionId: number): void {
     if (baseRevisionId !== this.#headId) throw new Error('stale raster transaction');
+  }
+
+  publish(baseRevisionId: number, changes: ReadonlyMap<RasterTileKey, number | null>): number {
+    this.assertPublishable(baseRevisionId);
     const id = this.#nextRevisionId++;
     const shouldCheckpoint = this.checkpointInterval > 0 && id % this.checkpointInterval === 0;
     const revision: RasterRevision = {
@@ -191,6 +195,7 @@ export class RasterSealTransaction {
 
   seal(): SealMetrics {
     this.assertOpen();
+    this.#document.assertPublishable(this.#baseRevisionId);
     const changes = new Map<RasterTileKey, number | null>();
     let transferredBytes = 0;
 
