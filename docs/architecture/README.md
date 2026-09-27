@@ -9,6 +9,8 @@
 2. [Integration Validation](INTEGRATION_VALIDATION.md)
 3. [Performance-First Policy](PERFORMANCE_POLICY.md)
 4. [Performance Audit 2026-09-27](PERFORMANCE_AUDIT_2026-09-27.md)
+5. [Device Compatibility Audit](DEVICE_COMPATIBILITY_AUDIT_2026-09-27.md)
+6. [Device Test Matrix](DEVICE_TEST_MATRIX.md)
 
 ## Architecture decisions
 
@@ -21,6 +23,7 @@
 7. [ADR-0007 — Selection / Transform / Effects](ADR-0007-selection-transform-effects.md)
 8. [ADR-0008 — .illustro / Autosave / Recovery](ADR-0008-persistence-recovery.md)
 9. [ADR-0009 — Integrated Runtime / Scheduling](ADR-0009-integrated-runtime.md)
+10. [ADR-0010 — Device Capability Adaptation](ADR-0010-device-capability-adaptation.md)
 
 ## Decision rules
 
