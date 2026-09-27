@@ -29,7 +29,8 @@ describe('prototype journal framing', () => {
 
   it('stops at a bad trailer instead of searching later magic', () => {
     const frame = encodePrototypeJournalFrame(7, new Uint8Array([7, 7, 7]));
-    frame[frame.length - 12] ^= 0xff;
+    const trailerIndex = frame.length - 12;
+    frame[trailerIndex] = (frame[trailerIndex] ?? 0) ^ 0xff;
     const scan = scanPrototypeJournal(frame, limits);
     expect(scan.frames).toHaveLength(0);
     expect(scan.issue).toBe('invalid-trailer');
