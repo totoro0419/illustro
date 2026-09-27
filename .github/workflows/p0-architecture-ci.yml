@@ -1,0 +1,43 @@
+name: P0 Architecture CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'prototypes/p0-architecture/**'
+      - '.github/workflows/p0-architecture-ci.yml'
+  pull_request:
+    paths:
+      - 'prototypes/p0-architecture/**'
+      - '.github/workflows/p0-architecture-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: prototypes/p0-architecture
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22.22.0'
+          package-manager-cache: false
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Served-browser tests
+        run: npm run test:e2e
