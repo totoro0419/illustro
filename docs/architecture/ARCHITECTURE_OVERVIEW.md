@@ -1,9 +1,10 @@
 # Illustro Architecture Overview
 
-> Status: **Architecture Baseline v0.2 — Performance-first, accepted for prototyping**  
-> Date: 2026-09-27  
+> Status: **Architecture V1 — Confirmed for Core implementation**  
+> Date: 2026-09-28  
 > Scope: 新Illustroのコアアーキテクチャ。UIの視覚設計ではなく、Document / Render / History / Brush / Region / Color / Persistenceを統合する内部構造。  
-> Important: 数値定数・Tile Size・Worker数・Cache容量・性能保証値は、Benchmark前には固定しない。
+> Canonical V1 decisions: [ARCHITECTURE_V1.md](ARCHITECTURE_V1.md)  
+> Important: V1で確定したBaselineと、実装中に測定して決めるRuntime calibration値を区別する。
 
 ## 1. Architecture goals
 
@@ -164,7 +165,7 @@ Preview-only stateをSave/Exportの正解として扱わない。
 ┌──────────────────────────────────────────────────────────────┐
 │ Realtime Engine Role                                        │
 │ Stroke/Brush/View + Render orchestration                     │
-│ physical placement: Main or Worker, selected by profile      │
+│ V1 default: Main; full Realtime Worker is optional fast path │
 └─────────────┬──────────────────────┬─────────────────────────┘
               │                      │
         immutable jobs         persistence packets
@@ -182,7 +183,7 @@ Preview-only stateをSave/Exportの正解として扱わない。
 
 これは**論理的な役割分離**であり、物理Thread/Worker配置ではない。
 
-Realtime EngineをDedicated Workerへ置くかMain Threadへ一部残すかも実測対象とする。Worker message latencyやbrowser compatibilityが不利な端末では、render submissionをMain Threadに置き、heavy computeだけWorkerへ逃がす構成を許容する。
+V1ではPointer intake / active Stroke coordination / lightweight render submissionをMain Thread defaultとする。Full Realtime Workerは実測で明確な利点が出るProfileだけに限定する。PersistenceはDedicated Worker、Region/codec/heavy filter等はbounded utility Worker lanesへ分離する。
 
 利用可能CPU、Memory、cross-origin isolation、Platform制約に応じてCompute Pool数は変える。必要ならRoleを統合し、逆にDesktopでは分離する。
 
@@ -394,25 +395,36 @@ Cross-origin isolationを利用可能なDeploymentではRing Buffer等に利用�
 - specific persistence encoding
 - fixed queue/deadline values
 
-## 16. Architecture gates before implementation
+## 16. V1 resolved decisions and deferred calibration
 
-以下はPrototypeで実測してから数値確定する。
+### Resolved before Core implementation
 
-- logical tile size
-- GPU microtile/workgroup
-- input transport batch size
-- materialization threshold / active transaction strategy
-- cache budgets
-- history/checkpoint threshold
-- recovery journal cadence
-- compression block size
-- worker pool size
-- Main-thread vs Worker realtime placement
-- JS/TypeScript vs WASM kernel placement
-- pointermove/coalesced vs pointerrawupdate crossover
-- WebGPU vs compatibility backend crossover
-- ICC transform/LUT strategy
-- float/integer canonical raster trade-off
+- Realtime default placement: Main Thread
+- Persistence: Dedicated Worker
+- sparse logical Raster
+- standard logical Tile profile: 256
+- memory-constrained Tile candidate: 128
+- 512 is not the universal default
+- local dirty-subrect propagation
+- Canonical Raster ownership-transfer sealing
+- WebGPU → WebGL2 → Canvas2D compatibility order
+- OPFS framed/batched Recovery with torn-tail repair
+- first-draw lazy-module boundary
+- TypeScript as default implementation language
+
+### Deferred without blocking Core implementation
+
+- exact per-device cache budgets
+- worker pool count
+- queue deadlines
+- recovery batch timing/size calibration
+- heavy-kernel TS/WASM split
+- pointerrawupdate crossover if introduced
+- ICC implementation
+- brush/Region numerical constants
+- portable .illustro physical encoding
+
+These are Runtime/Profile or feature-specific calibration decisions, not missing Core architecture.
 
 ## 17. Phase status
 
@@ -424,7 +436,22 @@ Cross-origin isolationを利用可能なDeploymentではRing Buffer等に利用�
 6. Color Pipeline — **Designed**
 7. Selection / Transform / Effects — **Designed**
 8. Native Format / Autosave / Recovery — **Designed**
-9. Integrated architecture validation — **Designed / validation recorded**
-10. Device Capability Adaptation (PC / Tablet / Smartphone) — **Design PASS / runtime unverified**
+9. Integrated architecture validation — **V1 promotion PASS after second audit**
+10. Device Capability Adaptation (PC / Tablet / Smartphone) — **Design PASS; full Support regression deferred until implementation exists**
 
 詳細は各ADRを参照。
+
+
+## 18. V1 verification
+
+Architecture V1 promotion evidence:
+
+- First PASS: GitHub Actions run `36334997832`
+- First-pass suite: 24 tests / 11 files + 4 served-browser tests
+- Second audit found and corrected 4 hidden issues
+- Second PASS: GitHub Actions run `36335428192`
+- Second-pass suite: 29 tests / 12 files + 4 served-browser tests
+- strict TypeScript: PASS
+- Vite production build: PASS
+
+Core implementation may begin under [Architecture V1](ARCHITECTURE_V1.md).
