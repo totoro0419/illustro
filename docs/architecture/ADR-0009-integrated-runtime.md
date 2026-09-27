@@ -40,6 +40,20 @@ ADR-0001〜0008を一つの実行Architectureとして統合し、UI thread、WA
 
 ## Decision
 
+## 0. Physical placement is adaptive
+
+以下のRoleは責務境界であり、**物理Worker境界ではない。**
+
+Main↔Worker messaging、OffscreenCanvas、WebGPU Worker実装の性能は端末/Browserで異なるため、startup/profile benchmarkまたはknown-good capability profileで配置を選べるようにする。
+
+候補:
+
+- Main: UI + render submission / Worker: compute
+- Main: UI only / Realtime Worker: input processing + render
+- low-core mobile: Realtime + utilityを一つへ統合
+
+内部システムを綺麗に分離するためだけにWorker hopを増やさない。
+
 ## 1. Main UI role
 
 Main Threadの責務:
@@ -61,7 +75,7 @@ Main Threadの責務:
 - huge hash scan
 - blocking file I/O
 
-Main ThreadはCanonical Document objectのauthoritative ownerにならない。
+Main Threadをauthoritative ownerにする必要はないが、**物理thread配置よりownership contractを優先する。** Worker hopが遅いProfileでは一部Realtime stateをMain側へ置く実装を許容する。
 
 ## 2. Realtime Engine role
 
@@ -77,11 +91,13 @@ Primary owner:
 - GPU/compat presentation
 - lightweight dirty scheduling
 
-Implementation baseline:
+Implementation candidates:
 
-- Dedicated Worker where platform permits
-- Rust/WASM Core + TypeScript Web API adapter
-- OffscreenCanvas/WebGPU primary
+- Dedicated Worker + OffscreenCanvas/WebGPU
+- Main-thread GPU submission + Worker CPU kernels
+- hybrid profile
+
+Rust/WASMはCPU-heavy kernel候補であり、Realtime coordinator全体をWASMへ固定しない。
 
 WebGPU不可の場合はcompatibility backendへ切替。
 
@@ -270,24 +286,49 @@ Current artwork canonical blocks、recovery closure、pinned snapshotをCache pr
 ### UI
 TypeScript + component UI frameworkを採用予定。具体frameworkはUI設計開始時に決める。
 
-### Canonical/algorithm core
-Rust → WebAssemblyをBaseline。
+### Canonical/algorithm kernels
 
-理由:
+Rust → WebAssemblyは**有力候補**であり、全面Baselineではない。
 
-- deterministic/reference algorithmを一箇所へ集約
-- memory/data layout制御
-- native test/benchmark可能
-- 将来native host reuse
-- computational geometry/codec ecosystem
+WASMへ置く候補:
 
-ただしWASM化が不利な小処理を無理に移さない。
+- Region / computational geometry
+- raster/reference kernels
+- ICC/codec
+- heavy selection/fill kernels
+
+TypeScriptへ残す候補:
+
+- command orchestration
+- lightweight metadata
+- UI projection
+- platform integration
+
+採用基準はstartup、memory、copy量、call overhead、throughputの実測値。
+
+内部実装言語の統一より実行コストを優先する。
 
 ### GPU
 WebGPU/WGSL primary。
 
 ### Persistence
 OPFS working store + portable .illustro container。
+
+## 14.1 Lazy module loading
+
+Startup bundleは最初のCanvas/Brush/Undo/Saveに不要なModuleを可能な限り分離する。
+
+lazy-load候補:
+
+- Region analysis
+- general ICC engine
+- Wet Media
+- PSD/TIFF/EXR codecs
+- advanced filters
+- compatibility backend not currently selected
+- future collaboration
+
+First Drawがこれらのcompile/loadを待たない構成を優先する。
 
 ## 15. WebGPU fallback
 
@@ -296,7 +337,7 @@ WebGPU availabilityをstartup capability profileで確認。
 Tier concept:
 
 ### Tier A
-WebGPU + worker render + preferred fast paths
+WebGPU + measured preferred render placement + fast paths
 
 ### Tier B
 WebGL2/compositor + WASM CPU algorithms
@@ -374,7 +415,7 @@ Cloud同期/CollaborationはCore dependencyにしない。
 
 新IllustroのRuntimeは:
 
-> **UI Main Thread + authoritative Realtime Engine + isolated Persistence + adaptive bounded compute + GPU derived presentation**
+> **UI/Platform role + authoritative Realtime semantics + isolated Persistence responsibility + adaptive bounded compute + GPU derived presentation**
 
 を基本形とする。
 
