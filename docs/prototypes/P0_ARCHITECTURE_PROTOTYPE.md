@@ -1,7 +1,7 @@
 # P0 Architecture Prototype — Initial Harness
 
 > Date: 2026-09-27  
-> Status: **Implemented and committed / core static+runtime checks PASS / limited Headless Chromium execution PASS / target-device browser validation still pending**
+> Status: **Implemented and committed / GitHub Actions CI PASS / served Chromium integration tests PASS / Xiaomi tablet + Xiaomi pen realtime-path measurement completed**
 
 ## Purpose
 
@@ -217,20 +217,40 @@ Details explicitly not inherited:
 - fixed flush-age candidates
 - fixed recovery latency guarantees
 
-## Verification not completed yet
+## GitHub Actions verification
 
-The current execution environment timed out while running `npm install`, so these items remain **UNVERIFIED**:
+GitHub Actions CI was added and completed successfully.
 
-- build with Vite 8.3.1
-- typecheck with TypeScript 7.0.2
-- Vitest package test run
-- real served-page pointer-to-visible metrics
-- exact module-Worker Main vs Worker comparison
-- OPFS SyncAccessHandle batching/flush behavior on a secure served origin
-- mobile Safari / Android Chrome behavior
-- WebGPU path (not included in this first harness yet)
+Verified on the successful CI run:
 
-The timeout is an environment/dependency-fetch limitation, not evidence that the prototype code succeeds or fails in-browser.
+- TypeScript 7.0.2 strict typecheck: **PASS**
+- Vitest: **17 tests / 9 files PASS**
+- Vite 8.3.1 production build: **PASS**
+- Playwright Chromium served-browser integration tests: **3 / 3 PASS**
+- served module Worker input path: **PASS**
+- browser benchmark API exposure: **PASS**
+- localhost persistence benchmark path completes: **PASS**
+- GitHub Pages build/deploy: **PASS**
+
+Published harness:
+
+`https://totoro0419.github.io/illustro/`
+
+The persistence integration test currently proves that the browser-side durability pipeline completes and produces batch metrics; it does **not** yet assert that OPFS SyncAccessHandle rather than the memory fallback was the selected backend.
+
+## Verification still not completed
+
+The following remain **UNVERIFIED or intentionally deferred**:
+
+- physical input-to-display/scan-out latency
+- WebGPU production render path and device-loss recovery
+- exact OPFS SyncAccessHandle backend selection + crash/power-loss durability on a real secure browser profile
+- final sparse-tile size under representative painting workloads
+- heavy-kernel TS/WASM crossover
+- startup → first canvas / first stroke budget with production module graph
+- complete PC/Tablet/Smartphone Core regression
+
+The complete PC/Tablet/Smartphone matrix is now a post-implementation Support/Regression gate rather than a Core implementation blocker.
 
 ## How to run when dependencies are available
 
@@ -312,11 +332,19 @@ Performance-first rule for this profile:
 
 ## Next measurement gate
 
-Before selecting production values or architecture placement:
+For the **initial realtime placement decision**, the Xiaomi tablet + Xiaomi pen result is sufficient.
 
-1. Run the **served** harness in Chromium, Safari/WebKit and Firefox-compatible fallback environments where applicable.
-2. Measure real stylus input on PC, iPad-class tablet, Android tablet, iPhone-class phone and Android phone.
-3. Add WebGPU and compatibility GPU microbenchmarks.
-4. Add memory high-water and tile eviction tests.
-5. Fault-inject OPFS journal interruption.
-6. Only then narrow Tile Size, Worker placement and persistence cadence candidates.
+Current initial decision:
+- Main Thread = default Pointer/stroke coordination path
+- Full Realtime Worker = optional measured fast path only
+
+Remaining pre-production evidence should focus on architectural unknowns that can materially change implementation:
+
+1. WebGPU / compatibility GPU render and device-loss prototype
+2. sparse Tile + dirty-subrect + eviction under representative workloads
+3. canonical raster sealing under realistic tile payloads
+4. OPFS backend selection / recovery fault behavior
+5. representative heavy-kernel TS/WASM crossover
+6. startup → first canvas / first stroke module-loading measurement
+
+Repeating the same Main/Worker comparison on PC and Smartphone is not required before Core implementation.
