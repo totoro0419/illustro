@@ -1007,6 +1007,16 @@ Workspaceを保存・復元できる。
 
 Drawing/Painting/Coloring/Photo Editing/Pixel Art/Minimal等のPresetを提供する方向で設計する。
 
+### FR-WORKSPACE-004 Canvas Focus Mode
+
+Panel/Toolbar等の非必須UIを一操作で一時的に隠し、Canvas面積を最大化するFocus/Canvas-only Modeを提供する。
+
+- selected Toolを維持する
+- Artwork stateを変更しない
+- Undo Historyへ入れない
+- keyboardなし端末でも解除可能
+- storage/recovery/error等の重大状態を完全に不可視化しない
+
 ### FR-DEVICE-001 Adaptive UI
 
 Desktop/Tablet/Smartphoneで、同一UIを単純Scaleして使い回してはならない。
