@@ -177,6 +177,8 @@ Platform:
 
 同じPersistence Coreを使用する。
 
+Direct File System picker/handleはOptional Capabilityとする。showSaveFilePicker等が存在しないBrowser/Deviceでも、Blob export/download、file input/import、platform share adapter等でportable .illustro workflowを成立させる。
+
 ## 10. Crash recovery
 
 Startup:
@@ -208,6 +210,18 @@ Pressure policy:
 4. prompt/user decision
 
 Current protected artworkをsilent deleteしない。
+
+## 11.1 Mobile lifecycle
+
+Mobile Browser/Web AppではBackground化後にProcessがfreeze/discard/terminateされる可能性を通常条件として扱う。
+
+- beforeunload / unloadをRecovery correctnessの条件にしない
+- normal editing中からjournalを進める
+- visibilitychangeでhiddenへ入る際は、既に生成済みのrecovery packetを優先flushする
+- hidden後に長い新規save jobが完了する前提を置かない
+- pagehide/freezeは追加signalとして利用可能
+- resume/reload時はlast protected revisionから復旧する
+- Background中はRegion/thumbnail/cache maintenance等を止め、battery/thermalを消費しない
 
 ## 12. Export
 
