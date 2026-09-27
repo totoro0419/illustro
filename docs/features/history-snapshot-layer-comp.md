@@ -14,6 +14,14 @@ UI must keep these distinct:
 
 Do not merge them into one ambiguous panel.
 
+## Default state
+
+Current History Headは常に現在のDocument Revision。
+
+History panelを開いただけではRevisionを変更しない。
+
+古いentryを単にhover/focusしただけでもDocument stateを変更しない。
+
 ## Undo / Redo
 
 Primary:
@@ -28,7 +36,9 @@ Long-running transaction may expose "processing" but once committed appears as o
 Shows recent committed transactions in chronological order.
 
 Selecting an older entry:
-- previews or moves current head according to explicit mode
+- preview modeではtemporary previewのみ
+- explicit Navigate/Restore actionでcurrent headを移動
+- preview中のCancel/Escで元のcurrent headへ戻る
 - destructive branch creation must not occur from mere hover
 
 If user edits after moving to older revision:
