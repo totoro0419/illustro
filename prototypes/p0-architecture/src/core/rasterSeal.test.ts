@@ -26,16 +26,16 @@ describe('RasterSealingDocument', () => {
 
   it('transfers working ownership instead of making a second full-tile copy at seal', () => {
     const document = new RasterSealingDocument(64);
-    let retained: Uint8Array | null = null;
+    const retained: { value?: Uint8Array } = {};
     const tx = document.beginTransaction();
     tx.editTile('0,0', (bytes) => {
-      retained = bytes;
+      retained.value = bytes;
       bytes[0] = 42;
     });
     const metrics = tx.seal();
     expect(metrics.transferredBytes).toBe(64);
     expect(metrics.avoidableSealCopyBytes).toBe(0);
-    expect(retained?.byteLength).toBe(0);
+    expect(retained.value?.byteLength).toBe(0);
     expect(document.readTileCopy('0,0')[0]).toBe(42);
   });
 
