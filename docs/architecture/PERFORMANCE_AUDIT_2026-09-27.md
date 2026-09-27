@@ -233,7 +233,7 @@ Architecture prototypeでは平均FPSだけでなく以下を測る。
 
 ## 7. Conclusion
 
-Architecture v0.1は概念整合性は高かったが、**内部構造を綺麗に統一する方向へ寄りすぎる箇所があった。**
+旧Architecture Baselineは概念整合性は高かったが、**内部構造を綺麗に統一する方向へ寄りすぎる箇所があった。**
 
 v0.2では、Semantic correctnessを保ちながら:
 
