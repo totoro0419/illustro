@@ -30,6 +30,19 @@ Selectionとは別概念。
 
 ## Decision
 
+### 0. Activation / pay-for-use
+
+Lineart Region Systemは**通常描画の同期Hot Pathへ常駐させない。**
+
+- Regionを使っていないDocumentではTopology stateを作成しなくてよい
+- Region Sourceとして指定されたLayerだけを監視する
+- Lineart Stroke commit時はまずdirty generation/boundsを記録する
+- Topology更新はRegion Fill、Persistent Fill、Region Selection等が必要とした時、またはbudget内のbackground jobとして行う
+- 通常Brush Strokeのpresent/commitをRegion解析完了待ちにしない
+- 连続編集中はdirty更新をcoalesceし、中間generationを全て解析しない
+
+Persistent Fillを有効にしたDocumentでは追従更新を優先するが、それでもcurrent stroke latencyより優先しない。必要なら「Updating」状態を明示する。
+
 ### 1. Evidence sources
 
 SourceごとにEvidence adapterを持つ。
@@ -109,9 +122,17 @@ face:
 
 を取得可能にする。
 
+### 5.1 Evidence cache policy
+
+Raster Evidence生成結果はDerived Cache。
+
+Source LayerがRegion機能に参加していない場合はEvidence cacheを保持しない。
+
+Zoom表示用のLine rendering cacheとRegion evidence cacheを無理に共通化して、どちらかのHot Pathを重くしない。
+
 ### 6. Incremental update
 
-全Document topologyを毎Stroke再構築しない。
+全Document topologyを毎Stroke再構築しない。**原則として毎StrokeにTopology solver自体を起動しない。**
 
 dirty evidence bounds + gap influence radius + dependent connected componentを更新対象とする。
 
