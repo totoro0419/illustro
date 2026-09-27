@@ -41,7 +41,9 @@
 | Azimuth | Required | 対応端末 |
 | Stylus Eraser | Required | 対応端末 |
 | Barrel Button | Required | 対応端末 |
-| Stabilization / Smoothing | Required | アルゴリズム未確定 |
+| Stabilization / Smoothing | Core | Global / per-brush の両方を想定。アクセシビリティにも利用 |
+| Brush Dynamics 共通変調モデル | Core | Pressure/Tilt/Azimuth/Speed/Direction/Distance/Time/Random等を共通入力として扱う |
+| Dynamics Curve / Range / Invert | Required | 入力→Brush Parameterの対応を共通UIで設定 |
 | Procedural Brush System | Core | Illustroの主要独自機能 |
 | Texture-based Brush Input | Required | Proceduralと併用 |
 | Brush Preset | Required | |
@@ -107,23 +109,46 @@
 | Color Harmony支援 | Required / Investigate | |
 | Grayscale Preview | Required | Referenceにも利用 |
 | Color Management / ICC | Core / Investigate | ドキュメント・合成モデル確定前に仕様化必須 |
-| Wide Gamut | Investigate | Display P3等を含め検討 |
-| Bit Depth Policy | Investigate | 8/16/32bit等 |
-| HDR / Linear-light Policy | Investigate | |
+| Wide Gamut | Core / Investigate | Display P3等を扱えるColor Pipelineを前提にする |
+| 8-bit integer | Required | |
+| 16-bit integer | Required | 高精度編集用途 |
+| 16-bit float | Required / Investigate | HDR/高精度Filter基盤として検討 |
+| 32-bit float | Investigate | メモリ・性能コストを含め評価 |
+| Embedded ICC Profile | Required | Native documentで保持 |
+| Profile Conversion / Display Transform | Required | |
+| Linear-light Processing Path | Core / Investigate | Blend/Filterの一部で利用可能な構造 |
+| HDR-capable Architecture | Core / Investigate | 初期UI実装とは分離しても将来を塞がない |
+| CMYK Native Editing | Investigate | 一枚絵制作での必要性とコストを評価 |
 
 ## F. レイヤー
 
 | 機能 | 状態 | 備考 |
 |---|---|---|
 | Raster Layer | Core | |
-| Vector Layer | Required | ベクターモデル詳細未確定 |
+| Vector Layer | Required | 一枚絵の線画・図形・Mask用途に最適化 |
+| Vector Path / Anchor / Bezier Handle | Required | Open/Closed Pathを編集可能 |
+| Vector Stroke Width / Fill / Stroke | Required | |
+| Vector Node Add/Delete/Convert | Required | |
+| Vector Simplify / Smooth | Required | |
+| Vector Boolean Operation | Required | |
+| Vector Eraser / Line Erase | Required | |
+| Rasterize Vector | Required | |
+| Variable-width Vector Stroke | Required / Investigate | |
+| Brush-like Rendering on Vector Path | Investigate | Procedural Brushとの統合を検討 |
 | Group | Core | |
 | Mask | Required | |
 | Clipping | Core | 高頻度操作 |
 | Persistent Clipping Control | Core | レイヤーUI上で即時確認・切替 |
 | Adjustment Layer | Required | |
 | Filter Layer | Required | |
-| Text Layer / Entity | Required | |
+| Text Layer / Entity | Required | 編集可能なTextを保持 |
+| Horizontal / Vertical Text | Required | 日本語用途を考慮 |
+| Font Family / Style / Size | Required | |
+| Tracking / Line Height / Baseline | Required | |
+| Font Import | Required | Platformが許す範囲 |
+| Missing Font Handling | Required | 警告・代替を明示 |
+| Text → Vector/Path | Required | |
+| Text on Path / Area Text | Investigate | DTP化しすぎない範囲で評価 |
 | Multi-select | Required | |
 | Drag Reorder | Core | |
 | Search | Required | |
@@ -175,12 +200,18 @@
 | Mask | Required | |
 | Vector Mask | Required / Investigate | |
 | Clipping Mask | Required | |
-| Blend Mode | Core | 完全なモード一覧は別途調査 |
+| Blend Mode | Core | Normal/Multiply/Screen/Overlay/Soft Light/Hard Light/Color Dodge/Burn/Linear Dodge/Burn/Darken/Lighten/Difference/Exclusion/Hue/Saturation/Color/Luminosity等をCore Setとする |
+| Painting Blend Modes | Required | Erase/Behind/Alpha関連等を描画Engineと統合 |
+| Blend Mode Live Preview | Required | Canvas上で即時比較 |
 | Blend If 相当 | Core | より視覚的なUIへ再設計 |
 | Displacement | Required / Investigate | |
 | Healing | Required | イラスト向けに最適化 |
 | Patch | Required | イラスト向けに最適化 |
 | Clone | Required | 直接操作を重視 |
+| Core Adjustment Set | Required | Brightness/Contrast, Levels, Curves, Exposure, Hue/Saturation, Vibrance, Color Balance, Temperature/Tint, B&W, Channel Mixer, Selective Color, Invert, Posterize, Threshold, Gradient Map, LUT等 |
+| Core Live Filter Set | Required | Gaussian/Motion/Radial Blur, Sharpen, Unsharp Mask, High Pass, Noise, Median系, Pixelate/Mosaic, Offset, Displacement, Halftone等 |
+| Filter Masking / Reorder / Opacity / Blend | Required | 非破壊Filterを組み合わせ可能にする |
+| Destructive Apply Command | Required | 明示操作として残す |
 
 ## I. Reference System
 
@@ -259,6 +290,14 @@
 | Custom Toolbar | Required | |
 | Custom Shortcut | Required | |
 | Custom Gesture | Required | |
+| Scalable UI / Text | Required | Accessibility |
+| Single-pointer Alternative | Required | Multi-touch必須操作に代替手段を用意 |
+| Color-independent State Indication | Required | 色だけで状態を伝えない |
+| Color Description Assistance | Required | 色覚支援 |
+| Reduced Motion | Required | Motionを減らす設定 |
+| Touch Target Policy | Required | Touch環境で十分なHit Areaを確保 |
+| Feedback Sound / Haptic | Required / Investigate | Platform対応時 |
+| Keyboard Navigation for Commands | Required | 描画以外の主要操作を中心に |
 
 ## N. デバイス別適応
 
@@ -306,7 +345,12 @@
 | PNG Export | Required | |
 | JPEG Export | Required | |
 | WebP Export | Required | |
-| PSD Import / Export | Investigate | 情報保持範囲を明文化 |
+| PSD Import / Export | Investigate / High Priority | 完全互換を謳わずFeature-by-feature互換表とLoss Reportを持つ |
+| OpenRaster (.ora) | Required | OpenなLayer交換形式 |
+| TIFF | Required | 高品質Raster交換 |
+| SVG Import / Export | Required / Investigate | Vector交換用途 |
+| OpenEXR | Required / Investigate | HDR交換用途 |
+| AVIF / HEIF | Investigate | 画質・HDR・互換性を評価 |
 | Auto Save | Core | |
 | Crash Recovery | Core | |
 | Recovery Snapshot | Core | |
@@ -351,30 +395,56 @@
 | 絵チャ / Collaborative Drawing | Future | 本体完成後 |
 | Realtime Multi-user Editing | Future / Investigate | 今は設計中心にしない |
 
-## T. 競合調査がまだ必要な領域
+## T. Asset Library・Navigator・拡張性
 
-以下は**「搭載しない」のではなく未確定**であり、完全機能仕様の確定前に継続調査する。
+| 機能 | 状態 | 備考 |
+|---|---|---|
+| 2D Asset Library | Required | Local-first |
+| Brush Asset | Required | |
+| Brush Tip / Texture Asset | Required | |
+| Paper Texture | Required | |
+| Pattern | Required | |
+| Gradient Preset | Required | |
+| Color Palette Asset | Required | |
+| Macro Asset | Required | |
+| Workspace Asset | Required | |
+| Reference Set | Required | |
+| Shape Preset | Required | |
+| Folder / Collection / Tag | Required | |
+| Search / Favorite / Recent | Required | |
+| Asset Import / Export | Required | |
+| Navigator | Required | Thumbnail + Viewport + Zoom/Pan |
+| Dock / Float Navigator | Required | |
+| Multi-view of same Document | Investigate | 全体/細部、Mirror、Value確認等 |
+| Plugin / Extension API | Future / Investigate | Core完成前に公開APIを固定しない |
+| Internal Module Boundaries | Core | 将来拡張を不必要に阻害しない |
 
-- Brush Dynamics / Sensor の完全な項目体系
-- Vector Path編集モデル
-- Text編集範囲
-- Brush Import / Export / Interchange
-- Material / Asset Library
-- Navigator / 複数View
-- Color Managementの詳細
-- ICCの変換・埋め込みポリシー
-- Bit Depth / HDR / Linear-light
-- Blend Modeの完全な対応範囲
-- Selection Edge Algorithm
-- Transform Interpolation
-- Filter / Adjustment の完全な一覧
-- Canvas作成・Resizeの詳細
-- Export Control / Metadata
-- Keyboard / GestureのDefault
-- Accessibility
-- Plugin / Extension方針
-- PSD互換境界
-- Platform別File Access
-- 一枚絵制作に必要な範囲での印刷対応
+## U. まだ確定していない「内部方式」
 
-これらは調査完了まで未決定事項として扱い、推測で仕様を埋めない。
+第2パスまでで、主要な一般機能の**有無**についての空白はかなり減った。残る未確定は主として実装方式・互換性境界である。
+
+- Blend Modeの正確な数式・色空間・PSD互換マッピング
+- Color Pipelineの内部Working Space
+- ICC変換ライブラリ/実装方式
+- HDR出力・Display Mappingの具体方式
+- Brush Graph / Moduleのデータモデル
+- Dynamic Wet MediaのSimulation Model
+- Vector Strokeの内部データモデル
+- Text Shaping Engine / Font Fallback
+- Selection Edge / Anti-aliasing Algorithm
+- Transform Interpolation Algorithm
+- Filter Execution Graph
+- Tile Size / Cache / Eviction Policy
+- Undo Delta / Checkpoint Policy
+- Snapshot Branching Storage
+- .illustro Container Layout / Versioning / Recovery Journal
+- PSD Parser/Writer方式と互換境界
+- Platform別File Access / PWA制約
+- Canvas作成Preset・上限値
+- Export Metadata Policy
+- Keyboard / Gesture Default Mapping
+- 一枚絵制作に必要な印刷・Soft Proof範囲
+
+これらは推測で固定せず、個別機能仕様・アーキテクチャ設計・Prototype計測によって決定する。
+
+第2パスの根拠は `docs/research/COMPETITOR_PASS2.md` を参照。
