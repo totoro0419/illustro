@@ -1,9 +1,9 @@
 # Architecture Integration Validation
 
-> Date: 2026-09-27  
-> Scope: ADR-0001〜ADR-0009の相互整合性検査  
-> Result: **Architecture Baseline v0.2 is internally coherent enough to enter performance-focused prototyping.**  
-> Important: 性能値は未実測。Prototype/Benchmark Gateを通るまで「性能達成済み」とはしない。
+> Date: 2026-09-28  
+> Scope: ADR-0001〜0010 + P0 Architecture Prototype + V1 promotion gateの統合検証  
+> Result: **Architecture V1 confirmed for Core implementation after a second audit.**  
+> Important: V1はCore実装開始のArchitecture Gateを満たしたことを意味する。最終製品性能・全端末Support・Visual UI完成を意味しない。
 
 ## 1. Validation method
 
@@ -49,6 +49,43 @@ v0.2で以下を修正した。
 - advanced feature startup cost → lazy modules
 
 詳細: `PERFORMANCE_AUDIT_2026-09-27.md` / `PERFORMANCE_POLICY.md`
+
+## 1.2 V1 promotion — PASS after second audit
+
+Predeclared promotion criteria: [V1_PROMOTION_GATE.md](V1_PROMOTION_GATE.md)
+
+### First PASS
+
+- GitHub Actions run: `36334997832`
+- strict TypeScript: PASS
+- Vitest: 24 tests / 11 files PASS
+- Vite production build: PASS
+- served Chromium: 4 / 4 PASS
+
+### Independent second audit
+
+First PASS後に次のhidden issueを検出した。
+
+1. stale Raster transactionがreject前にorphan blockを作る可能性
+2. dirty rect snapshotがconsume時に破壊される問題
+3. Canvas context lockによるGraphics probe/fallback誤判定
+4. torn Recovery tailをtruncateせず次のappendへ進む問題
+
+すべて修正し、cross-gate adversarial testsを追加した。
+
+### Second PASS
+
+- GitHub Actions run: `36335428192`
+- strict TypeScript: PASS
+- Vitest: 29 tests / 12 files PASS
+- Vite production build: PASS
+- served Chromium: 4 / 4 PASS
+- OPFS SyncAccessHandle actual backend: PASS
+- torn tail repair + resumed append: PASS
+- first-stroke lazy-load invariant: PASS
+- WebGL2 actual draw/readback fallback: PASS
+
+詳細: [V1 Second Audit Evidence](V1_SECOND_AUDIT_EVIDENCE.md)
 
 ## 2. Canonical State consistency — PASS
 
@@ -123,7 +160,7 @@ Region→Selectionは可能。
 
 SelectionをStable Regionとして自動採用しない。
 
-## 6. Raster / Tile / History integration — PASS with benchmark gate
+## 6. Raster / Tile / History integration — PASS for V1
 
 Raster Revisionは:
 
@@ -139,12 +176,17 @@ Materialization/GCはbackground。
 
 矛盾なし。
 
-未確定:
-- logical tile size
+V1 resolved:
+- standard logical Tile profile: 256
+- memory-constrained candidate: 128
+- 512 is not the universal default
+- local dirty subrect
+- ownership-transfer Canonical Raster sealing
+
+Still deferred:
 - record compaction/materialization threshold
 - compression
-
-すべて実測対象。
+- device-specific 128↔256 switch threshold
 
 ## 7. Brush / Random / History integration — PASS
 
@@ -223,13 +265,18 @@ Cloud:
 
 へ分離。
 
-## 13. WebGPU compatibility — PASS by fallback design
+## 13. GPU backend compatibility — PASS for V1
 
-WebGPUをPrimaryにするが必須唯一Backendにしない。
+WebGPUをPrimary候補にするが必須唯一Backendにしない。
+
+V1 selection order:
+- WebGPU
+- WebGL2
+- Canvas2D / CPU compatibility
+
+GitHub-hosted ChromiumではWebGPU adapterが利用できなかったためWebGPU hardware execution自体は未確認。一方WebGL2 actual draw/readbackとCanvas2D fallbackはserved-browser testでPASSした。
 
 Document semanticsはRenderer backendから独立。
-
-ただしCompatibility backendで要求性能を満たせるかは未実測。
 
 ## 14. Cross-origin isolation dependency — PASS
 
@@ -295,34 +342,30 @@ Command/Context/Direct ManipulationをUIから呼べるAPI境界を持てる。
 - fixed CBOR encoding
 - fixed PRNG
 
-## 19. Current high-risk unknowns
+## 19. Current implementation-time unknowns
 
-優先Prototype順:
+### Resolved before Core implementation
 
-### P0 — before real editor implementation
+- Realtime placement initial default: Main Thread
+- sparse Tile baseline: 256 standard / 128 constrained candidate
+- Canonical Raster sealing ownership strategy
+- OPFS Recovery framing / repair / resumed append
+- Startup / First Stroke lazy-module boundary
+- GPU backend fallback semantics
 
-1. **Realtime placement — initial decision measured:** Main-thread input/stroke coordination is the default; full Realtime Worker remains an optional measured path
-2. coalesced pointermove vs pointerrawupdate when/if raw path is introduced
-3. TypeScript vs Rust/WASM kernel placement and boundary overhead for representative heavy kernels
-4. sparse tile representation + logical tile size + dirty-subrect strategy
-5. canonical raster sealing strategy
-6. OPFS journal batching/flush throughput and failure behavior
-7. startup → first canvas / first stroke module-loading path
+### Deferred without blocking Core implementation
 
-### P1 — before advanced painting
+- pointerrawupdate crossover if introduced
+- representative heavy-kernel TypeScript vs WASM split
+- exact device cache budgets
+- brush dynamics constants
+- ICC engine accuracy/performance
+- effect halo/dirty graph tuning
+- Region incremental repair thresholds
+- portable .illustro physical encoding
+- PSD mapping/loss report
 
-7. Brush dynamics evaluator + random reproducibility
-8. high-radius brush / smudge dependencies
-9. ICC engine accuracy/performance
-10. effect tile halo/dirty graph
-11. Region topology incremental repair
-
-### P2 — before native-format freeze
-
-12. .illustro container encoding
-13. compression/hash
-14. forward compatibility
-15. PSD mapping/loss report
+These remain tracked decisions, but are no longer reasons to delay Core Editor implementation.
 
 ## 20. Prototype benchmark profiles
 
@@ -353,34 +396,31 @@ Workloads:
 - save/export while painting
 - storage pressure
 
-## 21. Acceptance gates for prototype phase
+## 21. V1 acceptance result
 
-Architecture v0.2を実装Architecture v1へ昇格する条件:
+Architecture V1 promotion gate: **PASS after second audit**.
 
-- no correctness failure in revision/undo fault tests
-- GPU loss does not lose protected artwork
-- partial write never becomes valid current generation
-- input sample duplication/loss rules validated
-- cache eviction does not alter canonical output
-- deterministic committed random fixtures pass
-- Region ambiguity is preserved rather than silently forced
-- ICC alpha invariants pass
-- memory reaches bounded steady behavior under synthetic long session
-- inactive feature idle-cost is near zero for Region/Wet/Soft Proof/advanced codecs
-- startup/first-stroke does not wait for unused advanced modules
-- worker/WASM placement is supported by measured benefit, not architecture preference
-- at least one representative real-device profile supports the initial realtime placement decision
-- full PC/Tablet/Smartphone latency/frame/memory validation is required before those environments are declared Supported, not before Core implementation
+Evidence:
 
-数値thresholdは測定データと製品UX要件から別途決定する。
+- [V1 Promotion Gate](V1_PROMOTION_GATE.md)
+- [V1 First PASS Evidence](V1_FIRST_PASS_EVIDENCE.md)
+- [V1 Second Audit Evidence](V1_SECOND_AUDIT_EVIDENCE.md)
+
+Important remaining validation placement:
+
+- PC / Tablet / Smartphone full compatibility = after Core implementation, before Support claims
+- actual WebGPU hardware path = when a representative runtime exposes a usable adapter
+- heavy-kernel WASM = when representative Production-like kernels exist
+- final product performance SLA = on actual application and target devices
 
 ## 22. Final result
 
 現段階では:
 
-- **機能設計とArchitectureに重大な責務矛盾は見つからない**
-- **実装可能な構造へ落とせている**
-- **性能達成は未確認**
-- **数値・Algorithm細部はPrototypeで決めるべき状態**
+- **Architecture V1はCore implementation開始可能**
+- **5つのpre-implementation GateはPASS**
+- **一度目のPASS後に独立再監査を行い、4件修正後に再PASS**
+- **Visual UIは別レーンでユーザーと共同設計する**
+- **最終製品性能・WebGPU全端末動作・全端末Supportは未証明**
 
-したがって次の工程はUI生成ではなく、まずP0 Architecture Prototypeを実装して実測することが最も合理的。
+次工程はArchitecture再設計ではなく、V1 invariantを守ったCore Editor実装。
