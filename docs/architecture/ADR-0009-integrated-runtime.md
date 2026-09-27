@@ -54,6 +54,26 @@ Main↔Worker messaging、OffscreenCanvas、WebGPU Worker実装の性能は端�
 
 内部システムを綺麗に分離するためだけにWorker hopを増やさない。
 
+## 0.1 Capability profile
+
+Runtime開始時と環境変化時にCapability Profileを構築する。
+
+分類:
+
+- Input capabilities
+- Layout/viewport capabilities
+- Graphics capabilities
+- Storage capabilities
+- Compute hints
+
+PC/Tablet/SmartphoneはUI initial presetには使えるが、Renderer/Worker/Feature enablementのauthorityにしない。
+
+User-Agent stringよりfeature detectionとruntime smoke testを優先する。
+
+hardwareConcurrencyはWorker upper-bound hint、deviceMemoryは利用可能な場合のみcoarse hintとして扱い、固定Resource Budgetのauthorityにはしない。
+
+WebGPUはnavigator.gpuの存在だけで採用せず、adapter/device作成とIllustro representative smoke testを通す。
+
 ## 1. Main UI role
 
 Main Threadの責務:
