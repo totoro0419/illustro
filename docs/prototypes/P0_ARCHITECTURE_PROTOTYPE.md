@@ -259,6 +259,54 @@ illustroPrototype.metrics.summary('worker-roundtrip')
 illustroPrototype.metrics.summary('worker-to-next-raf')
 ```
 
+## User-device measurement — 2026-09-28
+
+> Exact device model / browser version / input device: **not yet recorded**.  
+> Evidence source: user-run GitHub Pages harness screenshots and user-reported perceived latency.
+
+### Main-thread path
+
+Observed after sustained drawing:
+
+- samples: 4096
+- input → next RAF p50: **9.40 ms**
+- p95: **13.40 ms**
+- p99: **14.50 ms**
+- max: **16.60 ms**
+
+### Worker path
+
+Observed after sustained drawing:
+
+- worker roundtrip samples: 2048
+- worker roundtrip p50: **3.70 ms**
+- worker roundtrip p95: **6.20 ms**
+- input → next RAF p50: **16.80 ms**
+- input → next RAF p95: **18.90 ms**
+
+### User perception
+
+User report:
+
+- **No meaningful perceived difference between Main and Worker paths.**
+
+### Interpretation
+
+These are scheduling proxies, not physical scan-out latency.
+
+Within this single device/profile:
+
+- Worker messaging/drawing adds measurable scheduling overhead.
+- The Worker path does not show a user-perceived benefit.
+- Main-thread input → next-RAF proxy is lower than the Worker path.
+- Therefore **there is currently no evidence to prefer the Worker realtime path for this device profile**.
+
+This does **not** establish a global Main-thread architecture decision. PC, tablet, smartphone, browser, refresh rate, stylus stack, GPU backend and workload can change the crossover.
+
+Performance-first rule for this profile:
+
+> If two paths feel equivalent and preserve the same semantics, prefer the path with less measured overhead and lower implementation/runtime complexity until contrary evidence appears.
+
 ## Next measurement gate
 
 Before selecting production values or architecture placement:
