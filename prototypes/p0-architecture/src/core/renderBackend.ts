@@ -45,16 +45,22 @@ type NavigatorWithGpu = Navigator & { gpu?: MinimalGpu };
 
 export async function selectRenderBackend(canvas: HTMLCanvasElement): Promise<RenderBackendSelection> {
   const attempts: Array<{ kind: RenderBackendKind; passed: boolean; detail: string }> = [];
+  const createProbeCanvas = (): HTMLCanvasElement => {
+    const probe = document.createElement('canvas');
+    probe.width = Math.max(2, canvas.width);
+    probe.height = Math.max(2, canvas.height);
+    return probe;
+  };
 
-  const webgpu = await smokeWebGpu(canvas);
+  const webgpu = await smokeWebGpu(createProbeCanvas());
   attempts.push({ kind: 'webgpu', passed: webgpu.smokePassed, detail: webgpu.detail });
   if (webgpu.smokePassed) return { selected: webgpu, attempts };
 
-  const webgl2 = smokeWebGl2(canvas);
+  const webgl2 = smokeWebGl2(createProbeCanvas());
   attempts.push({ kind: 'webgl2', passed: webgl2.smokePassed, detail: webgl2.detail });
   if (webgl2.smokePassed) return { selected: webgl2, attempts };
 
-  const canvas2d = smokeCanvas2d(canvas);
+  const canvas2d = smokeCanvas2d(createProbeCanvas());
   attempts.push({ kind: 'canvas2d', passed: canvas2d.smokePassed, detail: canvas2d.detail });
   if (!canvas2d.smokePassed) throw new Error(`No render backend passed: ${attempts.map((x) => `${x.kind}:${x.detail}`).join(', ')}`);
   return { selected: canvas2d, attempts };
