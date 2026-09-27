@@ -1,0 +1,379 @@
+# Illustro Architecture Overview
+
+> Status: **Architecture Baseline v0.1 — Accepted for prototyping**  
+> Date: 2026-09-27  
+> Scope: 新Illustroのコアアーキテクチャ。UIの視覚設計ではなく、Document / Render / History / Brush / Region / Color / Persistenceを統合する内部構造。  
+> Important: 数値定数・Tile Size・Worker数・Cache容量・性能保証値は、Benchmark前には固定しない。
+
+## 1. Architecture goals
+
+新Illustroは次を同時に満たす必要がある。
+
+1. Canvas First / Direct Manipulationを妨げない低遅延
+2. 巨大Canvas・大量Layerでも局所更新できる
+3. Undo / Snapshot / Timelapse / Autosave / Recoveryを混同しない
+4. Raster / Vector / Text / Region / Effectを非破壊に保持できる
+5. GPUを積極利用しつつ、作品のCanonical StateをGPU固有挙動へ依存させない
+6. Offline First
+7. PC / Tablet / Smartphoneへ適応可能
+8. PWAとして成立可能
+9. 将来Native wrapperや共同編集へ拡張可能だが、今それらを中心に複雑化しない
+10. 過去Illustroとの内部互換性を設計制約にしない
+
+## 2. Runtime baseline
+
+### 2.1 Web-first
+
+実装Baselineは **Web-first / PWA-capable** とする。
+
+理由:
+
+- PC / Tablet / Smartphoneで同一製品Coreを共有しやすい
+- Pointer Events / Touch / Stylusへ統一的にアクセスできる
+- Offline / Service Worker / OPFSを利用できる
+- WebGPUをPrimary GPU backendとして利用可能
+- Installable PWAを実現できる
+
+ただしWeb APIへCore semanticsを直接埋め込まない。
+
+将来Desktop wrapper / native hostを追加しても、Document/Brush/Region/HistoryのCanonical modelを再設計しない構造にする。
+
+### 2.2 Language boundary
+
+Baseline:
+
+- **TypeScript**: UI、DOM、Platform adapter、Worker orchestration、Web API integration
+- **Rust → WebAssembly**: Canonical data structures、deterministic/reference algorithms、Region/Geometry、Raster CPU evaluator、serialization-critical logic
+- **WGSL**: WebGPU rendering / compute fast path
+
+WASM境界は細粒度で呼ばず、Stroke batch / Tile job / Region job等の粗いCommand単位にする。
+
+Rust CoreはBrowserだけに依存しないcrate構成とし、native unit/property testsを可能にする。
+
+## 3. Canonical state model
+
+IllustroはStateを次の5種類へ明示的に分類する。
+
+### A. Canonical Persistent State
+
+作品の意味そのもの。
+
+例:
+
+- Document metadata
+- Layer tree
+- Raster canonical tiles / bounded mutation records
+- Vector paths
+- Text content/style
+- Masks
+- Effect parameters
+- Region topology/identity/assignments
+- Color profile
+- Guides
+- References metadata
+- Layer Comps
+- Snapshot references
+
+### B. Canonical Transaction Records
+
+作品を変更した意味のある操作記録。
+
+例:
+
+- generated brush stroke semantics
+- fill result/query record
+- transform command
+- structural layer edit
+- effect parameter edit
+- region identity decision
+
+### C. Derived State
+
+Canonical Stateから再計算可能だが、ユーザーが見る結果へ必要。
+
+例:
+
+- composited layer tile
+- Region spatial index
+- effect dependency summary
+- mip pyramid
+
+### D. Cache
+
+消えても作品を失わない高速化データ。
+
+例:
+
+- GPU textures
+- decoded brush texture
+- ICC LUT cache
+- render pipeline cache
+- viewport tile cache
+
+### E. Preview-only State
+
+Commit前の一時表示。
+
+例:
+
+- predicted pointer cursor
+- transform drag preview
+- provisional stroke tail
+
+Preview-only stateをSave/Exportの正解として扱わない。
+
+## 4. Top-level component model
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ UI / Platform Adapter (TypeScript, Main Thread)             │
+│ DOM / Commands / Panels / Pointer capture / Accessibility   │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ normalized input + commands
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│ Realtime Engine Worker                                      │
+│ WASM Core coordinator + Stroke/Brush + View state           │
+│ Render Graph + WebGPU/compat renderer                        │
+└─────────────┬──────────────────────┬─────────────────────────┘
+              │                      │
+        immutable jobs         persistence packets
+              ▼                      ▼
+┌──────────────────────┐   ┌──────────────────────────────────┐
+│ Bounded Compute Pool │   │ Persistence Worker               │
+│ Region / strict CPU  │   │ OPFS / journal / block store     │
+│ ICC / filter / codec │   │ save/export snapshot             │
+└──────────────────────┘   └──────────────────────────────────┘
+              │                      │
+              └──────────┬───────────┘
+                         ▼
+              Immutable Revision / Block Store
+```
+
+これは**役割分離**であり、固定Worker数ではない。
+
+利用可能CPU、Memory、cross-origin isolation、Platform制約に応じてCompute Pool数は変える。必要なら一部Roleを同Workerへ統合できる。
+
+## 5. Renderer backend policy
+
+### Primary
+
+- WebGPU
+
+### Compatibility
+
+- WebGL2またはCPU/WASM compositingをPlatform capabilityに応じて選択
+- 高度FilterがGPU非対応でもCPU/WASMで同じDocument semanticsを維持する
+
+Fallbackで機能そのものを削るのではなく、性能差として扱うことを基本とする。
+
+ただしTarget Deviceで要求性能を満たせない場合は、Supported Device Profileを明示する。
+
+## 6. Data flow: brush stroke
+
+```text
+Pointer Events
+  ↓
+Platform Input Adapter
+  ↓
+Normalized Samples
+  ↓
+Stabilizer / Stroke Reconstruction
+  ↓
+Generated Stroke Semantics / Dabs
+  ├─→ GPU working tiles → immediate presentation
+  └─→ Canonical transaction record
+          ↓
+     strict/background sealing
+          ↓
+   canonical raster blocks + new revision
+          ↓
+ persistence/recovery protection
+```
+
+Raw eventsのみを作品の唯一の意味として保存しない。
+
+## 7. Data flow: render
+
+```text
+Document Revision
+  ↓
+Layer/effect dependency graph
+  ↓
+Visible tile demand
+  ↓
+Dirty propagation
+  ↓
+Source tile/effect evaluation
+  ↓
+composite in document working domain
+  ↓
+optional soft proof
+  ↓
+display transform
+  ↓
+presentation surface
+```
+
+## 8. Data flow: Lineart Region
+
+```text
+Source Layers
+  ↓
+Evidence extraction
+  ↓
+Boundary model
+  ↓
+Gap hypotheses / manual corrections
+  ↓
+Planar topology
+  ↓
+Regions
+  ↓
+Stable identity reconciliation
+  ↓
+Persistent color/selection assistance
+```
+
+Selection Maskとは別Subsystemとする。
+
+## 9. Persistence model
+
+制作中:
+
+- OPFSを高速なLocal Working Storeとして優先
+- immutable blocks
+- append-style recovery journal
+- verified generation manifest
+
+ユーザー可視Native File:
+
+- `.illustro` 単一Container
+- 明示Save/Exportは固定Revision snapshotから非同期生成
+- PlatformがFile System Accessを提供する場合は直接Saveを利用可能
+- 非対応Platformではimport/export方式を用いる
+
+OPFSだけを唯一のユーザーファイルとしない。OPFSはOrigin storageであり、ユーザーが明示的に保持するProject fileとは役割を分ける。
+
+## 10. Revision / History
+
+- Entity ID: stable identity
+- Revision: immutable document root
+- Transaction: Undo grouping
+- Snapshot: named/pinned revision
+- Layer Comp: layer-state preset
+- Macro: reusable command sequence
+- Timelapse: independent production-history projection
+
+これらを同一ID/同一概念へ統合しない。
+
+## 11. Scheduling principle
+
+固定Priority数値ではなくRoleで分類する。
+
+1. Realtime input/present
+2. Required visible work
+3. Canonical commit/sealing
+4. Recovery protection
+5. Visible catch-up/cache
+6. Background analysis/materialization
+7. Export/maintenance
+
+Queueは件数だけでなくbytes / estimated work / memory reservationでBoundする。
+
+低優先Jobが巨大なnon-preemptible GPU dispatchを投げないようJobを分割する。
+
+## 12. Determinism policy
+
+### Must be reproducible
+
+- Entity/Region identity decision
+- command ordering
+- generated stroke semantic record
+- random sequence used by committed stroke
+- Undo result
+- persisted raster bytes once sealed
+- file/recovery dependency closure
+
+### May have bounded presentation variation
+
+- GPU preview floating-point result
+- intermediate antialias preview
+- display conversion imposed by device/browser
+
+Presentation variationがCanonical dataへ逆流してはならない。
+
+## 13. Cross-origin isolation
+
+SharedArrayBuffer / shared-memory fast pathは**optional optimization**とする。
+
+Cross-origin isolationを利用可能なDeploymentではRing Buffer等に利用できる。
+
+利用できない場合でもpostMessage + transferable bufferによって機能が成立しなければならない。
+
+## 14. Current external platform facts
+
+2026-09時点:
+
+- Pointer Events Level 3はpointerrawupdate、coalesced/predicted events、azimuth/altitudeを含む。
+- WebGPUはW3C Candidate Recommendation Draftであり、全対象Browserで無条件利用できる前提にはしない。
+- OffscreenCanvasはWorkerで利用可能。
+- OPFSはWorkerから利用でき、Dedicated Worker内のSyncAccessHandleによるin-place accessが可能。
+- SharedArrayBufferはsecure context + cross-origin isolationが必要。
+- Canvas/ImageDataのDisplay P3/float16機能は存在するが、互換性差があるためIllustro Canonical color pipelineの根拠にはしない。
+
+## 15. Legacy reference review
+
+`ILLUSTRO_SECTION9_ALGORITHM_REVIEW_DRAFT(2).txt` を、現在案を作った後に関連箇所だけ確認した。
+
+再利用した上位知見:
+
+- RealtimeとFinalで意味を変えない
+- Canonical stateとGPU working/cacheを分ける
+- Randomを再現可能にする
+- RegionをEvidence→Boundary→Topology→Identityへ分解する
+- Undo/Recovery/Persistenceを分離する
+- unbounded replay/history/cacheを避ける
+- ambiguous Regionを正常値として強制確定しない
+
+継承していない具体事項:
+
+- Tile Size
+- numerical thresholds
+- matching weights
+- fixed retention counts
+- Worker構成
+- GPU evaluator details
+- specific persistence encoding
+- fixed queue/deadline values
+
+## 16. Architecture gates before implementation
+
+以下はPrototypeで実測してから数値確定する。
+
+- logical tile size
+- GPU microtile/workgroup
+- input transport batch size
+- materialization threshold
+- cache budgets
+- history/checkpoint threshold
+- recovery journal cadence
+- compression block size
+- worker pool size
+- WebGPU vs compatibility backend crossover
+- ICC transform/LUT strategy
+- float/integer canonical raster trade-off
+
+## 17. Phase status
+
+1. Document / Layer Data Model — **Designed**
+2. Tile Canvas / Render Pipeline — **Designed**
+3. Command / Undo / Snapshot — **Designed**
+4. Input / Brush Engine — **Designed**
+5. Lineart Region System — **Designed**
+6. Color Pipeline — **Designed**
+7. Selection / Transform / Effects — **Designed**
+8. Native Format / Autosave / Recovery — **Designed**
+9. Integrated architecture validation — **Designed / validation recorded**
+
+詳細は各ADRを参照。
