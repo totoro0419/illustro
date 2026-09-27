@@ -1,12 +1,16 @@
 import { JournalBatcher } from '../core/journalBatcher';
-import { encodePrototypeJournalFrame } from '../core/journalFrame';
+import { encodePrototypeJournalFrame, scanPrototypeJournal } from '../core/journalFrame';
 
 type ConfigureMessage = Readonly<{ type: 'configure'; maxBatchBytes: number; batchDelayMs: number }>;
 type AppendMessage = Readonly<{ type: 'append'; bytes: Uint8Array; sequence: number }>;
 type FlushMessage = Readonly<{ type: 'flush' }>;
-type ResetMessage = Readonly<{ type: 'reset' }>;
-type CloseMessage = Readonly<{ type: 'close' }>;
-type Incoming = ConfigureMessage | AppendMessage | FlushMessage | ResetMessage | CloseMessage;
+type ResetMessage = Readonly<{ type: 'reset'; requestId: number }>;
+type InspectMessage = Readonly<{ type: 'inspect'; requestId: number }>;
+type InjectTornFrameMessage = Readonly<{ type: 'inject-torn-frame'; requestId: number; sequence: number; payloadBytes: number; keepBytes: number }>;
+type CloseMessage = Readonly<{ type: 'close'; requestId: number }>;
+type Incoming = ConfigureMessage | AppendMessage | FlushMessage | ResetMessage | InspectMessage | InjectTornFrameMessage | CloseMessage;
+
+type Backend = 'opfs-sync-access' | 'memory-fallback';
 
 type SyncHandleCapableFile = FileSystemFileHandle & {
   createSyncAccessHandle?: () => Promise<FileSystemSyncAccessHandle>;
@@ -20,6 +24,7 @@ let flushChain: Promise<void> = Promise.resolve();
 let accessHandle: FileSystemSyncAccessHandle | null = null;
 let writeOffset = 0;
 let fallbackBatches: Uint8Array[] = [];
+let lastBackend: Backend | null = null;
 
 async function openSyncHandle(): Promise<FileSystemSyncAccessHandle | null> {
   if (accessHandle) return accessHandle;
@@ -61,7 +66,7 @@ async function flushPending(): Promise<void> {
 
   try {
     const sync = await openSyncHandle();
-    let backend: 'opfs-sync-access' | 'memory-fallback';
+    let backend: Backend;
     if (sync) {
       const written = sync.write(batch, { at: writeOffset });
       if (written !== batch.byteLength) throw new Error(`short OPFS write: ${written}/${batch.byteLength}`);
@@ -72,6 +77,7 @@ async function flushPending(): Promise<void> {
       fallbackBatches.push(batch.slice());
       backend = 'memory-fallback';
     }
+    lastBackend = backend;
 
     self.postMessage({
       type: 'batch-done',
@@ -91,21 +97,98 @@ async function flushPending(): Promise<void> {
   }
 }
 
-async function resetStore(): Promise<void> {
+async function resetStore(requestId: number): Promise<void> {
   requestFlush();
   await flushChain;
   clearFlushTimer();
   pendingSequences = [];
   batcher = null;
   fallbackBatches = [];
-  if (accessHandle) {
-    accessHandle.truncate(0);
-    accessHandle.flush();
-    accessHandle.close();
-    accessHandle = null;
+
+  const sync = accessHandle ?? await openSyncHandle();
+  if (sync) {
+    sync.truncate(0);
+    sync.flush();
+    writeOffset = 0;
+    lastBackend = 'opfs-sync-access';
+  } else {
+    lastBackend = 'memory-fallback';
   }
-  writeOffset = 0;
-  self.postMessage({ type: 'reset-done' });
+
+  self.postMessage({ type: 'reset-done', requestId, backend: lastBackend });
+}
+
+async function inspectStore(requestId: number): Promise<void> {
+  requestFlush();
+  await flushChain;
+
+  let bytes: Uint8Array;
+  const sync = accessHandle ?? await openSyncHandle();
+  let backend: Backend;
+  if (sync) {
+    const size = sync.getSize();
+    bytes = new Uint8Array(size);
+    if (size > 0) {
+      const read = sync.read(bytes, { at: 0 });
+      if (read !== size) throw new Error(`short OPFS read: ${read}/${size}`);
+    }
+    backend = 'opfs-sync-access';
+  } else {
+    bytes = concatBytes(fallbackBatches);
+    backend = 'memory-fallback';
+  }
+  lastBackend = backend;
+
+  const scan = scanPrototypeJournal(bytes, {
+    maxPayloadBytes: 16 * 1024 * 1024,
+    maxFrames: 100_000,
+  });
+
+  self.postMessage({
+    type: 'inspect-done',
+    requestId,
+    backend,
+    size: bytes.byteLength,
+    frameCount: scan.frames.length,
+    sequences: scan.frames.map((frame) => frame.sequence),
+    validBytes: scan.validBytes,
+    tailBytes: scan.tailBytes,
+    issue: scan.issue,
+  });
+}
+
+async function injectTornFrame(message: InjectTornFrameMessage): Promise<void> {
+  requestFlush();
+  await flushChain;
+
+  const payload = new Uint8Array(message.payloadBytes);
+  payload.fill(0x5a);
+  const full = encodePrototypeJournalFrame(message.sequence, payload);
+  const keepBytes = Math.max(1, Math.min(message.keepBytes, full.byteLength - 1));
+  const partial = full.slice(0, keepBytes);
+
+  const sync = accessHandle ?? await openSyncHandle();
+  let backend: Backend;
+  if (sync) {
+    const written = sync.write(partial, { at: writeOffset });
+    if (written !== partial.byteLength) throw new Error(`short torn-tail write: ${written}/${partial.byteLength}`);
+    writeOffset += written;
+    sync.flush();
+    backend = 'opfs-sync-access';
+  } else {
+    fallbackBatches.push(partial);
+    backend = 'memory-fallback';
+  }
+  lastBackend = backend;
+  self.postMessage({ type: 'inject-torn-done', requestId: message.requestId, backend, bytes: partial.byteLength });
+}
+
+async function closeStore(requestId: number): Promise<void> {
+  requestFlush();
+  await flushChain;
+  accessHandle?.close();
+  accessHandle = null;
+  self.postMessage({ type: 'closed', requestId, backend: lastBackend });
 }
 
 self.onmessage = (event: MessageEvent<Incoming>) => {
@@ -148,16 +231,33 @@ self.onmessage = (event: MessageEvent<Incoming>) => {
   }
 
   if (message.type === 'reset') {
-    void resetStore();
+    void resetStore(message.requestId).catch((error) => self.postMessage({ type: 'control-error', requestId: message.requestId, message: String(error) }));
+    return;
+  }
+
+  if (message.type === 'inspect') {
+    void inspectStore(message.requestId).catch((error) => self.postMessage({ type: 'control-error', requestId: message.requestId, message: String(error) }));
+    return;
+  }
+
+  if (message.type === 'inject-torn-frame') {
+    void injectTornFrame(message).catch((error) => self.postMessage({ type: 'control-error', requestId: message.requestId, message: String(error) }));
     return;
   }
 
   if (message.type === 'close') {
-    requestFlush();
-    void flushChain.then(() => {
-      accessHandle?.close();
-      accessHandle = null;
-      self.postMessage({ type: 'closed' });
-    });
+    void closeStore(message.requestId).catch((error) => self.postMessage({ type: 'control-error', requestId: message.requestId, message: String(error) }));
   }
 };
+
+function concatBytes(parts: ReadonlyArray<Uint8Array>): Uint8Array {
+  let total = 0;
+  for (const part of parts) total += part.byteLength;
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) {
+    result.set(part, offset);
+    offset += part.byteLength;
+  }
+  return result;
+}
