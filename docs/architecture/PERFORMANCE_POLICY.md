@@ -240,6 +240,21 @@ Desktopで問題ない構造でもMobileで不適格なら全体Baselineとは�
 
 低Core/低Memory端末ではRole統合を許容する。
 
+## 16.1 Device capability policy
+
+PC / Tablet / Smartphoneは性能Budgetの固定値を意味しない。
+
+- device class: UI initial preset
+- capability profile: actual feature/runtime choice
+- benchmark profile: physical placement/cache/concurrency choice
+
+deviceMemoryは利用可能でもcoarse hintに限る。
+hardwareConcurrencyはWorker数そのものではなく上限hintとして扱う。
+
+WebGPU、SAB、direct file picker、hover、keyboard、stylus等のoptional capabilityをCore editingのsingle point of failureにしてはならない。
+
+Mobileではbackground/hidden時に不要background jobを停止し、Recovery protectionを優先する。
+
 ## 17. Performance evidence hierarchy
 
 性能判断の優先順位:
