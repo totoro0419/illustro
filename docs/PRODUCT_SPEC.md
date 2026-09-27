@@ -37,6 +37,31 @@ Illustro は、
 
 ただし、**「使いやすくするために機能を削る」設計にはしない。**
 
+### 1.1 実装内部の美しさより、実使用時の軽さを優先する
+
+内部Architectureの統一感、抽象化の純粋さ、理論的な美しさは、それ自体を製品価値として優先しない。
+
+同じユーザー体験・正確性・データ安全性・保守可能性を満たす複数案がある場合は、原則として次の実測コストが小さい案を優先する。
+
+- Input latency
+- CPU time
+- GPU time
+- Memory working set
+- Memory allocation / copy量
+- Startup / first-draw latency
+- Background work
+- Storage write amplification
+- Battery / thermal load
+- Bundle / module load cost
+
+特に、**使っていない高度機能が通常の描画を重くしてはならない。**
+
+Region解析、ICC高度変換、Wet Media、PSD codec、高度Filter、Timelapse生成等は、必要でない制作中に恒常的なCPU/GPU/Memoryコストを課さない設計を優先する。
+
+> **機能は多くても、実行コストは使用時にだけ支払う（pay-for-use）。**
+
+Architecture上の共通化を維持するためだけにHot Pathを遅くする場合は、共通化を弱めることを許容する。
+
 目標は、
 
 > **高機能なのに簡単**
