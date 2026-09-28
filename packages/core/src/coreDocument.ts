@@ -30,8 +30,7 @@ export class CoreDocument{
   get canonicalBlockCount(){return this.storeValue.blockCount;} get canonicalRasterBytes(){return this.storeValue.allocatedBytes;}
   begin(label:string){return new DocumentTransaction(this,label);}
   undo(){return this.historyValue.undo();} redo(){return this.historyValue.redo();} hasRevision(id:RevisionId){return this.historyValue.has(id);}
-  protect(id:RevisionId){if(!this.historyValue.has(id))throw new Error('unknown revision');return this.recoveryValue.mark(id);}
-  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {ids:this.idsValue,clock:this.clockValue,store:this.storeValue,history:this.historyValue};}
+  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {ids:this.idsValue,clock:this.clockValue,store:this.storeValue,history:this.historyValue,recovery:this.recoveryValue};}
   readPixel(layerId:LayerId,x:number,y:number){
     pixel(x,this.root.width);pixel(y,this.root.height);const l=this.root.getLayer(layerId);
     const tx=Math.floor(x/this.tileSize),ty=Math.floor(y/this.tileSize),id=l.surface.getBlockId(tx,ty);
