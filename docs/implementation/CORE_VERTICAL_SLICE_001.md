@@ -1,7 +1,7 @@
 # Core Vertical Slice 001 — Document / Raster / History
 
 > Date: 2026-09-28  
-> Status: **Implemented and second-pass verified on `core/vslice-001`**  
+> Status: **Merged to `main` and verified**  
 > Scope: Production Core code. Visual UI is intentionally excluded.
 
 ## Purpose
@@ -102,8 +102,17 @@ Additional corrections after the first re-audit:
    - Document Root, Raster Manifest and paged metadata state are frozen or runtime-private where appropriate
    - Active Transaction scratch state is hidden behind the internal capability
 
-Final Core CI run `36376962511`:
+Final branch Core CI run `36376962511`:
 
+- strict TypeScript: PASS
+- Vitest: **8 tests / 8 files PASS**
+- result: **success**
+
+Post-merge verification:
+
+- PR: #1
+- merge commit: `9157533cd8715c8e7d68e669b6f2f6ebdf7f7938`
+- main Core CI run: `36377149212`
 - strict TypeScript: PASS
 - Vitest: **8 tests / 8 files PASS**
 - result: **success**
