@@ -221,6 +221,34 @@ Fill:
 
 Context UIから高度設定へdrill-down可能だが、高頻度項目をdeep settingsへ追いやらない。
 
+## 10.1 Detachable workspace / Canvas-near controls
+
+Inspector / Reference / Layer / Color / Brush設定等について、固定Panelへ移動することが制作集中を損なう場合は、必要な意味単位だけをCanvas近傍へ持ち出せる方式を検討する。
+
+目的はFloating Windowを増やすことではない。
+
+目的:
+
+- Canvasからの視線離脱を減らす
+- Pen/Pointer移動距離を減らす
+- 制作Contextを維持する
+- 必要な情報だけ手元へ置く
+
+候補Mechanism:
+
+- detachable block
+- floating control
+- Canvas-anchored overlay
+- context popover
+- split view
+- temporary pin
+
+PC / Tablet / Smartphoneで同じ形を強制しない。
+
+Acceptanceでは「Detachできるか」だけでなく、Canvas離脱時間、操作距離、Canvas占有、誤操作率、Focus維持を評価する。
+
+詳細原則は [Creation-Proximity Design Principles](../CREATION_PROXIMITY_PRINCIPLES.md) を継承する。
+
 ## 11. Direct manipulation
 
 Canvasで意味が理解しやすい操作は直接操作をPrimaryにする。
