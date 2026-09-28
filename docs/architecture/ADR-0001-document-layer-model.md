@@ -6,6 +6,10 @@
 
 Production continuation is governed by [`DESIGN_COMPLETION_GATE.md`](../DESIGN_COMPLETION_GATE.md); this ADR status is not implementation authorization.
 
+## Architecture V2 supersession note
+
+This ADR remains design history/detail. Where it conflicts with the current V2 contracts, [Identity / Operation / Revision V2](IDENTITY_OPERATION_REVISION_V2.md) and [Canonical Raster V2](CANONICAL_RASTER_V2.md) are authoritative.
+
 ## Date
 
 2026-09-27
