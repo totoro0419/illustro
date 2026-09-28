@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted for prototype**
+**Accepted — Architecture V1 / implementation active**
 
 ## Date
 
@@ -263,3 +263,8 @@ Prototypeで以下を測る。
 - revision creation latency
 - branch/snapshot memory amplification
 - save snapshot consistency
+
+
+## V1 implementation note
+
+Production Vertical Slice 001 implements the Raster subset of this model: stable IDs, paged copy-on-write metadata, immutable published Document Root, sparse Raster Surface Manifest, and mutable Active Transaction working state. Vector/Text/Mask/Effect/Region entities remain planned and are not claimed as implemented by this slice.
