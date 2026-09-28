@@ -1,0 +1,44 @@
+{
+  "schema": "illustro.brush-device-benchmark.v1",
+  "generatedAt": "2026-09-28T23:20:05.012Z",
+  "profile": {"kind":"one-euro","minCutoff":4,"beta":4,"dCutoff":1},
+  "environment": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "platform": "Linux armv81",
+    "hardwareConcurrency": 8,
+    "deviceMemory": 8,
+    "dpr": 2.75,
+    "viewport": [1163,648]
+  },
+  "session": {
+    "durationMs": 34499.300000190735,
+    "strokeCount": 3,
+    "acceptedActualSamples": 5727,
+    "penSamples": 5727,
+    "touchSamples": 0,
+    "mouseSamples": 0,
+    "coalescedSamples": 1043,
+    "predictedSamples": 24450,
+    "pressureMin": 0,
+    "pressureMax": 0.6601147651672363,
+    "tiltSeen": true,
+    "totalDabs": 7412,
+    "sealedPages": 24,
+    "maxPendingObserved": 8,
+    "backpressureEvents": 16,
+    "maxReleaseWork": 181
+  },
+  "timing": {
+    "pipelineP50Ms": 0.7000000476837158,
+    "pipelineP95Ms": 1,
+    "pipelineP99Ms": 1.3999998569488525,
+    "pipelineMaxMs": 11.199999809265137,
+    "receiveToNextRafP50Ms": 9.900000095367432,
+    "receiveToNextRafP95Ms": 17.799999952316284,
+    "receiveToNextRafP99Ms": 21.700000047683716,
+    "frameIntervalP95Ms": 16.700000000004366,
+    "frameIntervalsOver25ms": 0
+  },
+  "memory": {"usedJSHeapSize":10000000,"totalJSHeapSize":10000000,"jsHeapSizeLimit":2060000000},
+  "gateEvidence": {"actualSampleLossObservable":0,"penProtocolComplete":true,"requiredPenSamples":500,"requiredStrokes":3,"requiredPressureRange":0.15}
+}
