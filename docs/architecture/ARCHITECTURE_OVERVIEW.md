@@ -1,9 +1,10 @@
 # Illustro Architecture Overview
 
-> Status: **Architecture V1 — Confirmed for Core implementation**  
+> Status: **Historical V1 integrated overview — superseded by Architecture V2 for current design decisions**  
 > Date: 2026-09-28  
 > Scope: 新Illustroのコアアーキテクチャ。UIの視覚設計ではなく、Document / Render / History / Brush / Region / Color / Persistenceを統合する内部構造。  
-> Canonical V1 decisions: [ARCHITECTURE_V1.md](ARCHITECTURE_V1.md)  
+> Current canonical design: [ARCHITECTURE_V2.md](ARCHITECTURE_V2.md)  
+> V1 evidence baseline: [ARCHITECTURE_V1.md](ARCHITECTURE_V1.md)  
 > Important: V1で確定したBaselineと、実装中に測定して決めるRuntime calibration値を区別する。
 
 ## 1. Architecture goals
@@ -454,4 +455,4 @@ Architecture V1 promotion evidence:
 - strict TypeScript: PASS
 - Vite production build: PASS
 
-Core implementation may begin under [Architecture V1](ARCHITECTURE_V1.md).
+This V1 PASS remains feasibility evidence. Production continuation is governed by [Architecture V2](ARCHITECTURE_V2.md) and [Design Completion Gate](../DESIGN_COMPLETION_GATE.md); it is not implementation authorization.
