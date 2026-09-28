@@ -9,7 +9,7 @@ export function tileKey(x:number,y:number):TileKey{
 }
 
 export class RasterSurfaceManifest{
-  constructor(readonly tiles:PagedMap<TileKey,BlockId>=PagedMap.empty()){}
+  constructor(readonly tiles:PagedMap<TileKey,BlockId>=PagedMap.empty()){Object.freeze(this);}
   getBlockId(x:number,y:number){return this.tiles.get(tileKey(x,y));}
   withBlocks(changes:ReadonlyMap<TileKey,BlockId>){
     if(!changes.size)return this;
