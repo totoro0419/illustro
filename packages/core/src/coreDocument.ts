@@ -23,7 +23,7 @@ export class CoreDocument{
     this.tileBytes=this.tileSize*this.tileSize*4;this.idsValue=o.ids??cryptoIdFactory;this.clockValue=o.clock??(()=>Date.now());
     this.storeValue=new CanonicalTileStore(o.transfer);
     const id=this.idsValue.layer(),layer=rasterLayer(id),e=PagedMap.empty<LayerId,typeof layer>().edit();e.set(id,layer);
-    const root=new DocumentRoot(this.idsValue.document(),o.width,o.height,o.name??'Untitled',o.colorProfileId??'srgb',e.commit(),[id]);
+    const root=new DocumentRoot(this.idsValue.document(),o.width,o.height,o.name??'Untitled',o.colorProfileId??'srgb','rgba8-straight-v1',e.commit(),[id]);
     this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.clockValue());
   }
   get root(){return this.historyValue.current.root;} get head(){return this.historyValue.head;} get revisionCount(){return this.historyValue.count;}
