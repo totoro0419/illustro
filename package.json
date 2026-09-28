@@ -1,0 +1,11 @@
+{
+  "name": "illustro",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "core:typecheck": "npm --workspace @illustro/core run typecheck",
+    "core:test": "npm --workspace @illustro/core run test",
+    "core:check": "npm run core:typecheck && npm run core:test"
+  }
+}
