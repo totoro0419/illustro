@@ -31,6 +31,19 @@ node --test src/*.test.js
 
 The benchmark runner was executed separately and emitted `results/benchmark-2026-09-28.json`.
 
+## 2.1 Repository CI verification
+
+The exact source committed to PR #3 was independently re-executed by GitHub Actions.
+
+- Workflow: `V2 Brush Region Validation CI`
+- Run: `36415726716`
+- Job: `verify`
+- Unit / semantic tests: **SUCCESS**
+- Reference benchmarks: **SUCCESS**
+- Overall workflow conclusion: **SUCCESS**
+
+This GitHub Actions run is the authoritative verification that the repository version of the harness executes successfully. It supersedes any concern about byte-for-byte differences between intermediate local authoring copies and the committed source.
+
 ## 3. Brush conclusion
 
 Reference algorithm/semantic benchmark: **PASS**.
