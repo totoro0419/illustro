@@ -1570,9 +1570,9 @@ Visual UIはユーザーと共同で設計する。
 
 UI生成を行う場合は専用UI Design Skillを使用し、Interaction SpecやArchitectureを勝手に補完・変更してはならない。
 
-### 35.5 Core Implementation Gate
+### 35.5 Architecture Implementation Baseline
 
-**PASS済み。**
+**Architecture baselineはPASS済み。ただしIllustro全体のDesign Completion GateはOPEN。**
 
 Second PASS evidence:
 
@@ -1586,7 +1586,7 @@ Second PASS evidence:
 - First Stroke lazy-load invariant: PASS
 - Xiaomi tablet + Xiaomi pen Realtime placement measurement: recorded
 
-したがってCore Editor本実装はArchitecture v1をBaselineとして開始可能。
+Architecture v1はCore Infrastructureを実装可能にするBaselineとして有効。実際のSubsystem Production実装は、`docs/DESIGN_COMPLETION_GATE.md` のSubsystem readiness ruleを満たしてから進める。Architecture PASSだけを設計完了や実装許可と解釈しない。
 
 PC / Tablet / Smartphone全体の正常動作・性能・Fallback検証は、該当機能が実装された後、Supported environmentを宣言する前のRegression/Compatibility Gateで実施する。
 
