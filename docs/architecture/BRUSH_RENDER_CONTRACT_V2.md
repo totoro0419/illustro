@@ -1,6 +1,6 @@
 # Illustro Brush ↔ Raster ↔ Renderer Contract V2
 
-> Status: **SEMANTIC DESIGN COMPLETE — Production benchmark gate remains**
+> Status: **SEMANTIC DESIGN COMPLETE — reference validation PASS / target-device execution gate remains**
 > Date: 2026-09-28
 > Scope: input normalization, stroke semantics, deterministic Brush execution, realtime preview, Raster commit and Renderer boundary
 > Production effect: specification only. Brush Production implementation remains prohibited until the benchmark gate in section 17 passes and the user authorizes implementation.
@@ -440,3 +440,32 @@ These values become versioned Runtime/Brush Profile data after measurement.
 - W3C WebGPU: device-owned GPU objects become unusable on device loss, reinforcing GPU-as-Derived state.
 - Current Procreate/Krita/CSP/ibisPaint official documentation confirms deep Brush dynamics/sensor/texture systems; Illustro does not copy their UI or code.
 
+
+
+## 19. Validation evidence — 2026-09-28
+
+The non-Production reference harness in `prototypes/v2-validation` was executed against this contract.
+
+Reference result:
+
+- semantic/unit suite: **23/23 PASS** across Brush + Region validation;
+- selected reconstruction candidate: `one-euro.v1`, `minCutoff=4`, `beta=4`, `dCutoff=1`;
+- Philox4x32-10 known-answer vector: PASS;
+- strict reopen/replay mismatches: 0;
+- normal and reversed Tile traversal mismatches: 0;
+- predicted input excluded from canonical semantics: PASS;
+- Preview strict conformance threshold candidate: `1/4096` normalized coverage; measured generated-corpus max `0.000023780`;
+- 100,000 accepted samples: 0 sample loss; release work 160 samples with page=256 / mutable tail=16;
+- reference materialization comparison profile: watermark 24 / hard 32 fragments under a 4 ms reference-machine p95 comparison target.
+
+These numbers are recorded in [Brush V2 Reference Benchmark](../benchmarks/BRUSH_V2_BENCHMARK_2026-09-28.md).
+
+### Gate interpretation
+
+The algorithmic/reference portion of Gate B **passes**.
+
+The overall Production Gate B remains **CONDITIONAL**, because the actual V2 Brush hot path has not yet been measured on representative target hardware for latency, sustained memory/thermal behavior and perceptual stabilizer response.
+
+Existing Xiaomi tablet input→RAF measurements predate this full Brush pipeline and must not be numerically combined with the Node reference benchmark.
+
+The reference numeric profile above is a candidate/conformance profile, not a cross-device Product guarantee.
