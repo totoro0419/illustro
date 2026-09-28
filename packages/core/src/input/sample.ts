@@ -17,7 +17,7 @@ const SENSOR_STRIDE=3;
 const META_STRIDE=6;
 
 export class PackedSampleBatch{
-  constructor(
+  private constructor(
     readonly count:number,
     private readonly geometry:Float64Array,
     private readonly sensors:Float32Array,
@@ -105,7 +105,7 @@ function validateSample(
   if((validityFlags&SampleValidity.Pressure)!==0&&(pressure<0||pressure>1))throw new Error('pressure must be within 0..1');
   if((validityFlags&SampleValidity.Tilt)!==0&&(tiltX<-90||tiltX>90||tiltY<-90||tiltY>90))throw new Error('tilt must be within -90..90');
   if(!Number.isSafeInteger(buttons)||buttons<0||buttons>0xffff_ffff)throw new Error('invalid buttons');
-  if(!Object.values(PointerType).includes(pointerType))throw new Error('invalid pointer type');
+  if(!Number.isInteger(pointerType)||pointerType<PointerType.Mouse||pointerType>PointerType.Unknown)throw new Error('invalid pointer type');
   if(!Number.isSafeInteger(viewGeneration)||viewGeneration<0||!Number.isSafeInteger(calibrationGeneration)||calibrationGeneration<0)throw new Error('invalid generation');
   if(!Number.isSafeInteger(validityFlags)||validityFlags<0||validityFlags>0xffff)throw new Error('invalid validity flags');
 }
