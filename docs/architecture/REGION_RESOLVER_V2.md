@@ -1,6 +1,6 @@
 # Illustro Shared Region Resolver Contract V2
 
-> Status: **SEMANTIC DESIGN COMPLETE — threshold/corpus benchmark remains**
+> Status: **SEMANTIC DESIGN COMPLETE — synthetic labeled corpus PASS / representative real-artwork calibration remains**
 > Date: 2026-09-28
 > Scope: Fill / Selection / Lineart / Persistent Region shared resolver boundary
 > Production effect: specification only. Region/Fill Production remains benchmark-gated and user authorization is still required.
@@ -457,3 +457,44 @@ This contract follows the current Illustro requirements that:
 - automatic ambiguity must be exposed rather than hidden;
 - Region work must not live on the normal Brush hot path.
 
+
+
+## 20. Validation evidence — 2026-09-28
+
+The non-Production resolver prototype and labeled corpus in `prototypes/v2-validation` were executed against this contract.
+
+Synthetic/adversarial result:
+
+- static labeled fixtures: **17/17 PASS**;
+- calibrated identity/topology transitions: **7/7 PASS**;
+- total calibrated cases: **24/24 PASS**;
+- false Ambiguous on fixtures not labeled Ambiguous: 0;
+- conflicting merge assignments → Ambiguous: PASS;
+- UserPinned evidence survives source evidence loss: PASS;
+- stale generation cannot publish as Current: PASS;
+- fixed-source result remains frozen after later source edits: PASS;
+- incremental result equals full reference topology: PASS;
+- incremental affected old scope in the fixture: 6,320 / 147,456 cells = **4.286%**.
+
+Synthetic reference policy candidate:
+
+```text
+evidenceThreshold       = 0.50
+gapMax                  = 2 px
+confidenceThreshold     = 0.65
+retainIoU               = 0.80
+identityMargin          = 0.20
+ambiguousIoUFloor       = 0.30
+lineageOverlapFraction  = 0.18
+candidateSearchPx       = 4 px
+```
+
+Reference background comparison point: 16,384 cells.
+
+Full details are recorded in [Region Resolver V2 Reference Benchmark](../benchmarks/REGION_V2_BENCHMARK_2026-09-28.md).
+
+### Gate interpretation
+
+The synthetic semantic/corpus portion of Gate C **passes**.
+
+The overall Production Gate C remains **CONDITIONAL** because these labels are synthetic. Production confidence/gap/identity thresholds must not be frozen until a representative labeled real-artwork corpus is evaluated without changing expected labels after seeing results.
