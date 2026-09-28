@@ -128,11 +128,12 @@ Passed:
 Still open:
 
 - sustained multi-minute runtime/thermal behavior on the target tablet;
-- explicit perceptual confirmation that the selected stabilizer profile has no unacceptable lag/oversmoothing;
 - Desktop/Smartphone device certification if those profiles are claimed.
+
+Perceptual confirmation was supplied by the user after the physical run: no noticeable tracking delay, hitching, or excessive stabilization was observed with the selected One Euro `4/4/1` profile.
 
 Therefore:
 
-> **Brush Gate B = CONDITIONAL — TABLET PHYSICAL-PEN SUBGATE PASSED; SUSTAINED/PERCEPTUAL EVIDENCE PENDING**
+> **Brush Gate B = CONDITIONAL — TABLET PHYSICAL-PEN + PERCEPTUAL SUBGATES PASSED; SUSTAINED/THERMAL EVIDENCE PENDING**
 
 No Production Brush implementation is authorized by this result.
