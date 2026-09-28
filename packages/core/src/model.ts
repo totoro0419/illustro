@@ -16,7 +16,7 @@ export class DocumentRoot{
     readonly colorProfileId:string,
     readonly layers:PagedMap<LayerId,LayerNode>,
     readonly rootLayerIds:readonly LayerId[],
-  ){}
+  ){this.rootLayerIds=Object.freeze([...rootLayerIds]);Object.freeze(this);}
   getLayer(id:LayerId){const v=this.layers.get(id);if(!v)throw new Error('missing layer');return v;}
   withLayers(changes:ReadonlyMap<LayerId,LayerNode>){
     if(!changes.size)return this;
