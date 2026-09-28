@@ -6,13 +6,13 @@ Illustro は、**一枚絵を完成させる制作体験**に特化し、直感�
 
 ## Current status
 
-**Core implementationを開始しました。**
+**設計再監査中です。Production CoreはSlice 001まで実装済みですが、後続実装はDesign Completion Gateが開いているため停止しています。**
 
 製品仕様・Core Interaction仕様・Architecture V1まで確定し、UI以外の5つのpre-implementation Architecture GateはSecond AuditまでPASSしています。
 
-Production Coreの最初のVertical Slice（Document / Sparse Raster / Revision / Undo/Redo）は実装・検証済みです。Visual UIとRenderer/Persistence等の後続Subsystemはまだ未実装です。
+Production Coreの最初のVertical Slice（Document / Sparse Raster / Revision / Undo/Redo）は実装・検証済みです。現在は [Redesign Principles](docs/REDESIGN_PRINCIPLES.md) と [Design Completion Gate](docs/DESIGN_COMPLETION_GATE.md) に基づいて全体設計を再監査しており、Brush / Renderer / Persistence / Region / UI等の後続Production実装は保留しています。
 
-Visual UIはユーザーと共同で設計し、UI生成を行う場合は専用UI Design Skillを使用します。
+Visual UIはユーザーと共同で設計し、UI生成を行う場合は専用UI Design Skillを使用します。Slice 001の現行設計との整合性は [Core Slice 001 Redesign Re-audit](docs/implementation/CORE_SLICE_001_REDESIGN_REAUDIT.md) に記録しています。
 
 ## Specification hierarchy
 
