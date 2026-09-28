@@ -56,15 +56,20 @@ Decision:
 
 > **Tablet physical-Pen subgate = PASS**
 
+Perceptual confirmation:
+
+- user reported no noticeable tracking delay;
+- no noticeable hitching;
+- no excessive stabilization/oversmoothing was perceived with One Euro `4/4/1`.
+
 Unresolved:
 
 - sustained multi-minute runtime/thermal behavior;
-- explicit perceptual confirmation of the selected One Euro stabilizer;
 - Desktop/Smartphone certification if those profiles are claimed.
 
 Therefore:
 
-> **Gate B = CONDITIONAL — TABLET PEN PASS / SUSTAINED+PERCEPTUAL EVIDENCE PENDING**
+> **Gate B = CONDITIONAL — TABLET PEN + PERCEPTUAL PASS / SUSTAINED+THERMAL EVIDENCE PENDING**
 
 ## 3. Region Gate C
 
@@ -109,6 +114,6 @@ Do **not** continue threshold tuning.
 
 The next Region step is a V3 Evidence prototype with multi-scale oriented boundary inference and texture/wash separation.
 
-The next Brush step is sustained/perceptual validation of the already-passing tablet profile; no additional short physical-Pen acquisition is required.
+The next Brush step is sustained/thermal validation of the already-passing tablet profile; no additional short physical-Pen or perceptual acquisition is required.
 
 Those are independent: Region redesign can proceed without waiting for the physical Brush run.
