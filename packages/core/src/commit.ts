@@ -1,13 +1,13 @@
 import type { BlockId,LayerId } from './ids';
 import type { Revision,CommandOperation } from './history';
 import type { DocumentRoot,LayerNode } from './model';
-import type { RecoveryEnvelope } from './recovery';
+import type { PersistenceHandoff } from './recovery';
 import type { TileKey } from './raster/surface';
 import type { DocumentTransaction } from './transaction';
 import { CORE_INTERNAL } from './internal';
 
 export type CommitReceipt=Readonly<{
-  revision:Revision<DocumentRoot>;changedBlockIds:readonly BlockId[];recovery:RecoveryEnvelope;
+  revision:Revision<DocumentRoot>;changedBlockIds:readonly BlockId[];persistence:PersistenceHandoff;
 }>;
 
 export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
@@ -23,6 +23,6 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
   for(const id of v.updates.keys())ops.push({kind:'layer.metadata',layerId:id});
   const revision=s.history.publish(v.base,v.id,root,{version:1,kind:'core.transaction',label:tx.label,operations:ops},s.clock());
   v.close();
-  const recovery=Object.freeze({revisionId:revision.id,parentRevisionId:v.base,transactionId:v.id,changedBlockIds:Object.freeze([...ids])});
-  return Object.freeze({revision,changedBlockIds:Object.freeze([...ids]),recovery});
+  const persistence=Object.freeze({revisionId:revision.id,parentRevisionId:v.base,transactionId:v.id,changedBlockIds:Object.freeze([...ids])});
+  return Object.freeze({revision,changedBlockIds:Object.freeze([...ids]),persistence});
 }
