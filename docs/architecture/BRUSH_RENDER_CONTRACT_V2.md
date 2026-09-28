@@ -1,6 +1,6 @@
 # Illustro Brush ↔ Raster ↔ Renderer Contract V2
 
-> Status: **SEMANTIC DESIGN COMPLETE — reference + browser runtime PASS / physical target-device Pen record remains**
+> Status: **SEMANTIC DESIGN COMPLETE — reference + browser + representative Tablet Pen PASS / sustained+perceptual device evidence remains**
 > Date: 2026-09-28
 > Scope: input normalization, stroke semantics, deterministic Brush execution, realtime preview, Raster commit and Renderer boundary
 > Production effect: specification only. Brush Production implementation remains prohibited until the benchmark gate in section 17 passes and the user authorizes implementation.
@@ -491,12 +491,28 @@ The manual harness intentionally refuses completion unless it observes:
 - at least 500 `pointerType=pen` samples;
 - pressure range >= 0.15.
 
-No genuine physical target-device Pen record was obtainable from this session. Browser CI cannot synthesize that evidence.
+A genuine representative Tablet Pen record was later supplied by the user through the same V2 device harness:
+
+```text
+trusted pen samples      = 5727
+accepted actual samples  = 5727
+pressure range           = 0.660115
+tilt observed            = yes
+max pending pages        = 8
+backpressure events      = 16
+max release work         = 181 samples
+pipeline p95             = 1.000 ms
+receive→next RAF p95     = 17.800 ms
+frame intervals >25 ms   = 0
+session duration         = 34.499 s
+```
+
+The representative Tablet physical-Pen subgate therefore **passes**.
 
 ### Gate interpretation
 
 > **Gate B remains CONDITIONAL / NOT CLOSED.**
 
-The remaining evidence is specifically the physical target-device Pen run, sustained device behavior and perceptual stabilizer response.
+The remaining evidence is sustained multi-minute runtime/thermal behavior and explicit perceptual confirmation of the selected stabilizer profile. Desktop/Smartphone remain separate supported-device profile certifications.
 
 See [Brush V2 Device Validation](../benchmarks/BRUSH_DEVICE_VALIDATION_2026-09-29.md).
