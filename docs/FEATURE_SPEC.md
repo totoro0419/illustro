@@ -1488,30 +1488,38 @@ Plugin/Extension APIは本体完成前の必須機能にしない。
 
 ## 34. 仕様上の未確定事項
 
-以下は「機能を入れるかどうか」ではなく、主に**どう実装するか**が未確定。
+Architecture V2によりCross-cutting Core semanticsは以下まで確定した。
 
-- Tile size / cache / eviction
-- internal pixel format
-- working color space
-- ICC implementation
+- stable ID / Revision / Operation taxonomy
+- signed sparse Raster coordinate model
+- canonical logical Tile 256
+- Surface-level UNORM8 / UNORM16 / FLOAT32 Raster precision
+- straight alpha / hidden RGB
+- semantic Brush record / deterministic random boundary
+- Persistence / Recovery dependency closure
+- Shared Region Resolver fixed/live/confidence/identity boundary
+
+以下は引き続き、主にFeature-specific implementation / Prototype / UIで決める。
+
+- working color spaceの製品Default
+- ICC implementation/library
 - HDR output/display mapping
-- Blend Mode exact formula
-- brush graph data model
-- wet-media simulation
-- Region matching algorithm
+- exact Blend Mode compatibility formula
+- Brush stabilization/reconstruction calibration constants
+- Wet Media simulation
+- Region evidence/gap/confidence thresholds
 - Vector stroke representation
 - text shaping engine
-- selection antialiasing
-- transform interpolation
-- live-filter render graph
-- Undo delta/checkpoint strategy
-- Snapshot branch storage
-- .illustro container/versioning
-- PSD parser/writer
+- selection antialiasing/resampling kernels
+- advanced transform interpolation
+- live-filter render graph details
+- physical .illustro container/versioning/compression
+- PSD parser/writer mapping
 - Web/PWA/Desktop runtime composition
 - default keyboard/gesture mapping
+- concrete PiP / Quick Controller / Panel / Color / Brush UI
 
-これらはアーキテクチャ設計・Prototype・Benchmarkの結果を根拠として確定する。
+これらは該当Subsystem Gateで確定する。Cross-cutting Core仕様へ逆流する変更が必要になった場合はArchitecture V2を明示的に改訂する。
 
 ---
 
@@ -1519,89 +1527,105 @@ Plugin/Extension APIは本体完成前の必須機能にしない。
 
 ### 35.1 Architecture Gate
 
-Architecture v1は2026-09-28時点で**Core implementation開始可能**として確定済み。
+Current semantic design baseline:
 
-V1で実装Baselineとして確定した主要事項:
+- `docs/architecture/ARCHITECTURE_V2.md`
 
-- Main Thread defaultのPointer/Stroke coordination
-- Dedicated Persistence Worker
-- sparse logical Raster
-- standard Tile profile 256 / memory-constrained candidate 128
-- local dirty-subrect
-- ownership-transfer Canonical Raster sealing
-- WebGPU → WebGL2 → Canvas2D fallback
-- OPFS framed/batched Recovery + torn-tail repair
-- First Draw critical pathのlazy module policy
-- TypeScript default / heavy-kernel WASMは後続実測で採否判断
+Architecture V1の5 Gate + Second Auditは、実現可能性・性能基盤のEvidenceとして保持する。
 
-根拠:
+V2で追加確定した主要事項:
 
-- \`docs/architecture/ARCHITECTURE_V1.md\`
-- \`docs/architecture/V1_PROMOTION_GATE.md\`
-- \`docs/architecture/V1_FIRST_PASS_EVIDENCE.md\`
-- \`docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md\`
+- UUID stable identity + runtime handle + content digest分離
+- one Transaction → one immutable Revision
+- semantic Operation records
+- signed overscan Raster
+- canonical logical Tile 256 / adaptive execution subdivision
+- UNORM8 / UNORM16 / FLOAT32 Raster Surface
+- straight alpha / hidden RGB
+- Brush semantic record / Philox4x32-10 random
+- Preview / strict materialization boundary
+- WriterEpoch + CommitSequence + dependency-closed Recovery
+- Shared Region Resolver / fixed-live / confidence / lineage rules
 
-First PASS後に独立再監査を行い、4件のhidden issueを修正してSecond PASSまで確認済み。
+Architecture design completionだけではProduction implementation authorizationにならない。
 
 ### 35.2 Interaction Gate
 
-Core painting workflowについては \`docs/interaction/INTERACTION_MODEL.md\` と \`docs/features/*.md\` のP0詳細仕様をSourceとして使用する。
+Core painting workflowについては `docs/interaction/INTERACTION_MODEL.md` と `docs/features/*.md` をSourceとして使用する。
 
-Core UI visual designへ進むためのP0 Interaction GateはPASS済み。
+Core painting interaction baselineはVisual prototypeへ進める精度がある。
 
-詳細:
+Concrete UI placement/shape/layoutはユーザー共同設計とする。
 
-- \`docs/interaction/INTERACTION_REAUDIT_2026-09-27.md\`
-- \`docs/interaction/REQUIREMENT_TRACEABILITY.md\`
+### 35.3 Brush Production Gate
 
-### 35.3 Advanced-feature Gate
+Semantic design: **COMPLETE**。
 
-Vector / Text / Wet Media / Advanced Filter / Macro / Asset等の最終実装・最終UIは、それぞれのInteraction backlogを解消してから確定する。
+Production前に `docs/architecture/BRUSH_RENDER_CONTRACT_V2.md` のPrototype/Benchmark Gateを通す。
 
-未決定事項:
+Calibration対象:
 
-- \`docs/interaction/REMAINING_INTERACTION_BACKLOG.md\`
+- stabilizer/reconstruction coefficients
+- mutable-tail budgets
+- preview tolerance
+- materialization limits
+- supported-device performance profile
 
-これらはCore Editor実装開始のblockerではない。
+### 35.4 Region / Fill Production Gate
 
-### 35.4 UI generation rule
+Semantic design: **COMPLETE**。
+
+Production前に `docs/architecture/REGION_RESOLVER_V2.md` のlabeled corpus benchmarkを通す。
+
+Calibration対象:
+
+- evidence threshold
+- gap/bridge threshold
+- confidence/margin threshold
+- update/work budgets
+
+### 35.5 Persistence / Native File Gate
+
+Logical Save/Recovery semanticsは `docs/architecture/PERSISTENCE_RECOVERY_LOGICAL_V2.md` で確定。
+
+Production Persistence / portable `.illustro` 前にphysical encodingを決める。
+
+### 35.6 UI generation rule
 
 Visual UIはユーザーと共同で設計する。
 
 UI生成を行う場合は専用UI Design Skillを使用し、Interaction SpecやArchitectureを勝手に補完・変更してはならない。
 
-### 35.5 Architecture Implementation Baseline
+未承認:
 
-**Architecture baselineはPASS済み。ただしIllustro全体のDesign Completion GateはOPEN。**
+- PiP具体形
+- Quick Controller具体形
+- Panel layout
+- Color UI
+- Brush Settings UI
+- Desktop / Tablet / Smartphone concrete layout
+- icons/theme/visual hierarchy
 
-Second PASS evidence:
+### 35.7 Production authorization
 
-- GitHub Actions run: \`36335428192\`
-- strict TypeScript: PASS
-- Vitest: 29 tests / 12 files PASS
-- Vite production build: PASS
-- served Chromium: 4 / 4 PASS
-- actual OPFS SyncAccessHandle recovery path: PASS
-- WebGL2 actual draw/readback fallback: PASS
-- First Stroke lazy-load invariant: PASS
-- Xiaomi tablet + Xiaomi pen Realtime placement measurement: recorded
+**Production implementation is locked after Vertical Slice 001.**
 
-Architecture v1はCore Infrastructureを実装可能にするBaselineとして有効。実際のSubsystem Production実装は、`docs/DESIGN_COMPLETION_GATE.md` のSubsystem readiness ruleを満たしてから進める。Architecture PASSだけを設計完了や実装許可と解釈しない。
+Architecture V2 completion、Prototype PASS、UI prototype完成のいずれも、自動的な実装許可ではない。
 
-PC / Tablet / Smartphone全体の正常動作・性能・Fallback検証は、該当機能が実装された後、Supported environmentを宣言する前のRegression/Compatibility Gateで実施する。
+Vertical Slice 002以降はユーザーが対象Scopeを明示的に許可した場合のみ開始する。
 
-### 35.6 Still-open implementation-time decisions
+### 35.8 Still-open calibration decisions
 
-次は実装を止めない。
+次はArchitectureのsemantic defectではなく、該当Feature/Runtimeの測定項目。
 
 - heavy-kernel TS/WASM split
 - exact memory/cache budgets
-- 128↔256 Tile profile switch threshold
-- brush stabilizer/resampling constants
+- scheduler deadlines
+- Brush calibration constants
 - Region thresholds
 - ICC implementation/library
-- portable .illustro physical encoding/compression/hash
+- physical .illustro encoding/compression
 - PSD mapping
 - advanced-feature interaction details
 
-代表的なProduction-like workloadが存在した時点で測定し、必要なADRへ追加する。
+代表的なProduction-like workload / labeled corpusで測定し、該当仕様へversioned resultとして追加する。
