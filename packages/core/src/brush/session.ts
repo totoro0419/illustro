@@ -35,6 +35,7 @@ export class BrushStrokeSession{
     if(document.root.pixelFormat!=='rgba8-straight-v1')throw new Error('opaque-round-v1 requires rgba8-straight-v1');
     const layer=document.root.getLayer(layerId);
     if(layer.kind!=='raster')throw new Error('brush target must be raster');
+    if(layer.locked)throw new Error('brush target is locked');
     this.style=createOpaqueRoundBrushV1(style);
     this.transaction=document.begin(label);
     this.sampler=new ArcLengthDabSampler(this.style);
@@ -100,6 +101,7 @@ export class BrushStrokeSession{
 
   private pushOne(batch:PackedSampleBatch,index:number):void{
     const sequence=batch.sequence(index),time=batch.monotonicTime(index);
+    if(batch.predicted(index))throw new Error('predicted samples are not canonical');
     if(sequence<=this.lastSequence)throw new Error('sample sequence must be strictly increasing');
     if(time<this.lastTime)throw new Error('sample time must be monotonic');
     if(!batch.contact(index))throw new Error('active brush stroke requires contact samples');
