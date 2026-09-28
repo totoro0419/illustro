@@ -2,7 +2,7 @@
 
 > 状態: 正式な上位製品仕様（Canonical Product Specification）  
 > 対象: 製品定義、絶対優先順位、設計思想、必須能力、品質基準  
-> 原則: 下位の機能仕様・UI仕様・アーキテクチャ仕様・実装判断は、本書に反しないこと。
+> 原則: 下位の機能仕様・UI仕様・アーキテクチャ仕様・実装判断は、本書に反しないこと。\n> 再設計時の判断原則は [Illustro Redesign Principles](REDESIGN_PRINCIPLES.md) を併用する。
 
 ## 0. Illustro の基本定義
 
