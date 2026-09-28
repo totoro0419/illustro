@@ -1,0 +1,13 @@
+export { CoreDocument,type CoreOptions } from './coreDocument';
+export { DocumentTransaction } from './transaction';
+export type { CommitReceipt } from './commit';
+export { createDeterministicIdFactory,cryptoIdFactory } from './ids';
+export type { BlockId,DocumentId,IdFactory,LayerId,RevisionId,TransactionId } from './ids';
+export { DocumentRoot,type LayerNode } from './model';
+export { RevisionHistory,type Revision,type Command } from './history';
+export { CanonicalTileStore,defaultOwnershipTransfer } from './raster/store';
+export type { OwnershipTransfer } from './raster/store';
+export { RasterSurfaceManifest,tileKey } from './raster/surface';
+export type { TileKey } from './raster/surface';
+export { RecoveryState } from './recovery';
+export type { RecoveryEnvelope } from './recovery';
