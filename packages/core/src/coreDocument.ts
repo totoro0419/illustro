@@ -24,9 +24,9 @@ export class CoreDocument{
     const root=new DocumentRoot(this.ids.document(),o.width,o.height,o.name??'Untitled',o.colorProfileId??'srgb',e.commit(),[id]);
     this.defaultRasterLayerId=id;this.history=new RevisionHistory(root,this.clock());
   }
-  get root(){return this.history.current.root;} get head(){return this.history.head;}
+  get root(){return this.history.current.root;} get head(){return this.history.head;} get revisionCount(){return this.history.count;}
   begin(label:string){return new DocumentTransaction(this,label);}
-  undo(){return this.history.undo();} redo(){return this.history.redo();}
+  undo(){return this.history.undo();} redo(){return this.history.redo();} hasRevision(id:RevisionId){return this.history.has(id);}
   protect(id:RevisionId){if(!this.history.has(id))throw new Error('unknown revision');return this.recovery.mark(id);}
   readPixel(layerId:LayerId,x:number,y:number){
     pixel(x,this.root.width);pixel(y,this.root.height);const l=this.root.getLayer(layerId);
