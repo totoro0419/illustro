@@ -1,27 +1,34 @@
 # Illustro Architecture
 
-> Current baseline: **v1 — Confirmed for Core implementation**  
+> Current semantic baseline: **Architecture V2 — Design Complete for Review**  
+> Production status: **Locked after Vertical Slice 001**  
 > Date: 2026-09-28
 
 ## Read first
 
-1. [Architecture V1](ARCHITECTURE_V1.md)
-2. [V1 Promotion Gate](V1_PROMOTION_GATE.md)
-3. [V1 Second Audit Evidence](V1_SECOND_AUDIT_EVIDENCE.md)
-4. [Architecture Overview](ARCHITECTURE_OVERVIEW.md)
-5. [Integration Validation](INTEGRATION_VALIDATION.md)
-6. [Performance-First Policy](PERFORMANCE_POLICY.md)
-7. [Device Capability Adaptation](ADR-0010-device-capability-adaptation.md)
+1. [Architecture V2](ARCHITECTURE_V2.md)
+2. [Identity / Operation / Revision V2](IDENTITY_OPERATION_REVISION_V2.md)
+3. [Canonical Raster V2](CANONICAL_RASTER_V2.md)
+4. [Brush ↔ Raster ↔ Renderer V2](BRUSH_RENDER_CONTRACT_V2.md)
+5. [Persistence / Recovery Logical V2](PERSISTENCE_RECOVERY_LOGICAL_V2.md)
+6. [Shared Region Resolver V2](REGION_RESOLVER_V2.md)
+7. [Design Completion Gate](../DESIGN_COMPLETION_GATE.md)
+8. [Performance-First Policy](PERFORMANCE_POLICY.md)
+9. [Device Capability Adaptation](ADR-0010-device-capability-adaptation.md)
 
-Historical prototype/audit records remain available:
+## V1 evidence
 
-- [V1 First PASS Evidence](V1_FIRST_PASS_EVIDENCE.md)
+Architecture V1 remains technical/prototype evidence:
+
+- [Architecture V1](ARCHITECTURE_V1.md)
+- [V1 Promotion Gate](V1_PROMOTION_GATE.md)
+- [V1 Second Audit Evidence](V1_SECOND_AUDIT_EVIDENCE.md)
+- [Integration Validation](INTEGRATION_VALIDATION.md)
 - [P0 Architecture Prototype](../prototypes/P0_ARCHITECTURE_PROTOTYPE.md)
-- [Performance Audit 2026-09-27](PERFORMANCE_AUDIT_2026-09-27.md)
-- [Device Compatibility Audit](DEVICE_COMPATIBILITY_AUDIT_2026-09-27.md)
-- [Device Test Matrix](DEVICE_TEST_MATRIX.md)
 
-## Architecture decisions
+Where V1 design semantics conflict with Architecture V2, **V2 is authoritative**.
+
+## Existing ADRs
 
 1. [ADR-0001 — Document / Layer Data Model](ADR-0001-document-layer-model.md)
 2. [ADR-0002 — Tile Canvas / Render Pipeline](ADR-0002-tile-render-pipeline.md)
@@ -34,67 +41,48 @@ Historical prototype/audit records remain available:
 9. [ADR-0009 — Integrated Runtime / Scheduling](ADR-0009-integrated-runtime.md)
 10. [ADR-0010 — Device Capability Adaptation](ADR-0010-device-capability-adaptation.md)
 
-## Decision rules
+These ADRs remain useful detail/evidence. V2 contracts supersede conflicting older details.
 
-Architecture work follows:
+## V2 fixed cross-cutting decisions
 
-- [Product Specification](../PRODUCT_SPEC.md)
-- [Feature Specification](../FEATURE_SPEC.md)
-- [Performance-First Policy](PERFORMANCE_POLICY.md)
-- [Legacy Reference Policy](../LEGACY_REFERENCE_POLICY.md)
+- UUID stable Entity/Transaction/Revision/Block identity
+- runtime handles separated from durable identity
+- SHA-256 content digest separated from operation identity
+- one Transaction → one immutable Revision
+- semantic versioned operations
+- signed sparse Raster / off-canvas retention
+- canonical logical Tile = 256
+- adaptive sub-tile execution/physical subdivision
+- Raster Surface precision = UNORM8 / UNORM16 / FLOAT32
+- canonical straight alpha + hidden RGB
+- Brush actual/predicted separation
+- semantic Brush stroke record
+- counter-based Philox4x32-10 Brush random
+- bounded Stable Prefix / Mutable Tail
+- GPU/Renderer as Derived state
+- WriterEpoch + CommitSequence Recovery ordering
+- transitive dependency-closed Protection
+- fixed-source Fill/Selection vs explicit Live Region binding
+- Shared Region Resolver confidence/ambiguity and lineage rules
+- Slice 001 final Retain/Modify/Replace disposition
 
-The legacy file \`ILLUSTRO_SECTION9_ALGORITHM_REVIEW_DRAFT(2).txt\` is reference material, not a Source of Truth.
+## Still benchmark/feature/UI gated
 
-## Fixed in Architecture V1
+These are not missing Cross-cutting semantics:
 
-- stable entity IDs + immutable published revisions
-- mutable active interaction / immutable published state
-- sparse/tiled Raster architecture
-- **256 logical-pixel standard Tile profile**
-- **128 logical-pixel memory-constrained candidate**
-- local dirty-subrect propagation
-- ownership-transfer Canonical Raster sealing without avoidable second full-tile copy
-- Revision-based Undo/Redo
-- GPU resources are Derived state, never artwork authority
-- render backend order: WebGPU → WebGL2 → Canvas2D/CPU compatibility
-- Main Thread default for pointer/stroke coordination
-- Dedicated Persistence Worker
-- bounded utility Worker lanes for heavy/background work
-- OPFS working store + framed/batched Recovery journal
-- invalid/torn journal tail truncation before resumed append
-- first-draw critical path excludes inactive advanced modules
-- TypeScript default; WASM only where representative heavy-kernel measurement justifies it
-- Offline-first Core editing
-- inactive advanced features should have near-zero recurring cost
+- Brush stabilizer/tail/preview numerical calibration
+- Region threshold/margin calibration
+- ICC implementation/library and exact compatibility formulas
+- runtime cache/worker/deadline values
+- physical .illustro encoding
+- advanced feature details
+- PiP / Quick Controller / Panel / Color / Brush Settings visual design
+- per-device concrete layout
+- plugin/collaboration protocol
 
-## Deliberately not fixed yet
+## Production rule
 
-These do **not** block Core implementation.
+Architecture V2 completion does not authorize implementation.
 
-- final per-device memory/cache budgets
-- 128↔256 Tile profile switch threshold
-- worker pool size / queue deadlines
-- brush resampling/stabilizer constants
-- PRNG implementation
-- Region matching weights/thresholds
-- ICC engine/library
-- exact blend compatibility formulas
-- persistence batch timing/size calibration
-- portable .illustro physical encoding/compression/hash
-- PSD mapping
-- representative heavy-kernel TS/WASM placement
-- advanced-feature interaction details
-- visual UI design
+Vertical Slice 002 and later Production changes require explicit user authorization.
 
-## Implementation gate
-
-The five pre-implementation Architecture gates passed and were then re-audited.
-
-- First PASS: GitHub Actions run \`36334997832\`
-- Second PASS after corrective audit: run \`36335428192\`
-- Second PASS: **29 unit tests / 12 files + 4 served-browser tests**
-- strict TypeScript and production build: PASS
-
-**Core implementation may begin under Architecture V1.**
-
-This is not a claim that final product performance, all-device support, or visual UI design is complete.
