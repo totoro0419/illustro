@@ -95,3 +95,33 @@ This Gate changes to **CLOSED / DESIGN READY** only after a fresh specification 
 - cross-subsystem semantics are coherent
 - UI-dependent decisions that affect Core contracts are identified
 - user has reviewed the design state before broad Production implementation continues
+
+
+## 7. Production implementation lock
+
+Current lock state:
+
+> **Production implementation is stopped after Vertical Slice 001. Vertical Slice 002 and later Production changes are not authorized.**
+
+Even after a design scope satisfies this Gate, that state means **DESIGN READY FOR USER REVIEW**, not automatic implementation permission.
+
+Production resumes only after the user explicitly authorizes the intended implementation scope.
+
+Design documents, research, benchmarks and non-Production prototypes may continue while this lock is active, provided they do not silently adopt user-owned UI decisions.
+
+## 8. Cross-cutting re-entry requirements
+
+The current first-pass audit is tracked in [DESIGN_COMPLETION_AUDIT_2026-09-28.md](DESIGN_COMPLETION_AUDIT_2026-09-28.md).
+
+Before broad Production continuation, at minimum resolve:
+
+1. stable Entity / Transaction / Revision / runtime Block / durable Content identity taxonomy;
+2. Canonical Raster pixel/alpha/precision/Tile/coordinate contract;
+3. semantic Operation / Transaction / Revision contract;
+4. logical Persistence / Recovery dependency-closure and acknowledgement contract;
+5. UI-to-Core action boundary independent of any unapproved PiP/Quick Controller form;
+6. explicit Retain / Modify / Replace disposition for Vertical Slice 001 foundations.
+
+The intended next subsystem must additionally satisfy the Section 3 subsystem readiness rule. Brush and Region/Fill have dedicated high-coupling gates in the audit.
+
+Physical file encoding, feature-local advanced UI and calibration constants need not all be frozen before unrelated Production work, unless they alter one of the cross-cutting contracts above.
