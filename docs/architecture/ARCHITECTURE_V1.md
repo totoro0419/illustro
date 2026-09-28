@@ -1,8 +1,8 @@
 # Illustro Architecture V1
 
-> Status: **Confirmed for Core implementation**  
+> Status: **Confirmed Architecture V1 technical baseline — Production continuation gated**  
 > Date: 2026-09-28  
-> Scope: UI visual designを除く、Core Editor本実装の内部Architecture baseline
+> Scope: UI visual designを除く、Core Editor内部のArchitecture baseline。Production continuationは `../DESIGN_COMPLETION_GATE.md` に従う。
 
 ## Evidence
 
@@ -17,7 +17,7 @@ Architecture V1は「Illustroの性能が完成した」という意味ではな
 
 V1で確定するのは次。
 
-- Core Editor実装を開始するための責務分離
+- Core Editorを実装可能にするための責務分離（implementation authorizationではない）
 - Realtime placementの初期Default
 - Raster canonical ownership
 - Sparse Tile / dirty updateのBaseline
@@ -310,7 +310,7 @@ Rust / WASMは次のようなProduction-like heavy kernelが存在した時点�
 
 JS↔WASMのcopy、call overhead、startup、memoryを含めて利益が明確なkernelだけ移す。
 
-これはCore implementation開始のblockerではない。
+この判断自体はArchitecture baselineのblockerではない。Productionで対象kernelを実装する前に、該当Subsystem Gateで再評価する。
 
 ## 11. History / revision semantics
 
@@ -337,9 +337,9 @@ Document / Brush / History / PersistenceのsemanticsはPC / Tablet / Smartphone�
 - memory-constrained Tile Profile
 - input fast path
 
-Full 3-device validationはCore implementation後、Supported environment宣言前に行う。
+Full 3-device validationは関連Subsystem実装後、Supported environment宣言前に行う。
 
-Core実装開始前に全端末で同一benchmarkを繰り返すことは要求しない。
+Design Gateを閉じるためだけに全端末で同一benchmarkを繰り返すことは要求しない。該当機能のSupported environment認定前には必要な実機検証を行う。
 
 ## 13. Pay-for-use
 
@@ -356,7 +356,7 @@ Background workよりForeground input / presentを優先する。
 
 ## 14. V1 implementation invariants
 
-Core implementationで破ってはならない。
+Production Core実装時に破ってはならない。
 
 1. GPU cacheをCanonical artworkにしない
 2. active Strokeごとにfull Canvas copyしない
@@ -371,7 +371,7 @@ Core implementationで破ってはならない。
 
 ## 15. Still intentionally open
 
-Core implementation開始を止めない未確定事項:
+Architecture V1の技術Baseline自体を否定しない未確定事項。Production実装を止めるかどうかは `../DESIGN_COMPLETION_GATE.md` と対象Subsystem Gateで判断する:
 
 - representative heavy-kernel TS / WASM split
 - final memory budget values
@@ -419,4 +419,4 @@ First PASS後に4件のhidden issueを発見した。
 - strict typecheck PASS
 - Vite build PASS
 
-以上によりArchitecture V1を**Confirmed for Core implementation**とする。
+以上によりArchitecture V1を**technical baselineとしてConfirmed**とする。これはProduction implementation authorizationではなく、後続実装は `../DESIGN_COMPLETION_GATE.md` とユーザーの明示許可に従う。
