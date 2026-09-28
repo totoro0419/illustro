@@ -6,13 +6,13 @@ Illustro は、**一枚絵を完成させる制作体験**に特化し、直感�
 
 ## Current status
 
-**設計再監査中です。Production CoreはSlice 001まで実装済みですが、後続実装はDesign Completion Gateが開いているため停止しています。**
+**Core Architecture V2のCross-cutting設計は完了し、ユーザーレビュー可能な状態です。Production CoreはSlice 001まで実装済みですが、後続Production実装は明示許可まで停止しています。**
 
-製品仕様・Core Interaction仕様・Architecture V1まで確定し、UI以外の5つのpre-implementation Architecture GateはSecond AuditまでPASSしています。
+Architecture V1の実現可能性検証を土台に、Identity / Raster / Brush-Renderer / Persistence-Recovery / Region ResolverをArchitecture V2へ統合しました。V1の5つのArchitecture GateとSecond Auditは引き続き技術Evidenceとして保持します。
 
-Production Coreの最初のVertical Slice（Document / Sparse Raster / Revision / Undo/Redo）は実装・検証済みです。現在は [Redesign Principles](docs/REDESIGN_PRINCIPLES.md) と [Design Completion Gate](docs/DESIGN_COMPLETION_GATE.md) に基づいて全体設計を再監査しており、Brush / Renderer / Persistence / Region / UI等の後続Production実装は保留しています。
+Production Coreの最初のVertical Slice（Document / Sparse Raster / Revision / Undo/Redo）は実装・検証済みです。Slice 001は [Final V2 Disposition](docs/implementation/CORE_SLICE_001_FINAL_DISPOSITION.md) によりRetain/Modify/Replace判定済みです。現在は [Design Completion Gate](docs/DESIGN_COMPLETION_GATE.md) に従い、Brush/Region benchmarkまたはUI共同設計へ進めますが、Production実装は保留です。
 
-Visual UIはユーザーと共同で設計し、UI生成を行う場合は専用UI Design Skillを使用します。Slice 001の現行設計との整合性は [Core Slice 001 Redesign Re-audit](docs/implementation/CORE_SLICE_001_REDESIGN_REAUDIT.md) に記録しています。
+Visual UIはユーザーと共同で設計し、UI生成を行う場合は専用UI Design Skillを使用します。V2完了判定は [Design Completion Re-evaluation](docs/DESIGN_COMPLETION_REEVALUATION_2026-09-28.md) に記録しています。
 
 ## Specification hierarchy
 
@@ -22,8 +22,9 @@ Visual UIはユーザーと共同で設計し、UI生成を行う場合は専用
 2. [Feature Specification](docs/FEATURE_SPEC.md) — 実装/UI設計で使う機能要求
 3. [Feature Catalog](docs/FEATURE_CATALOG.md) — 全機能・調査対象のマスター一覧
 4. `docs/features/*.md` — 個別機能の詳細Interaction仕様
-5. [Architecture V1](docs/architecture/ARCHITECTURE_V1.md) — Core実装Baseline
-6. UI / Implementation specifications — 実装フェーズで具体化
+5. [Architecture V2](docs/architecture/ARCHITECTURE_V2.md) — 現在のCore semantic design baseline
+6. [Architecture V1](docs/architecture/ARCHITECTURE_V1.md) — Prototype/feasibility evidence baseline
+7. UI / Implementation specifications — 該当Gate後に具体化
 
 過去Illustro資料の扱いは [Legacy Reference Policy](docs/LEGACY_REFERENCE_POLICY.md) に従います。
 重要なArchitecture判断は [ADR Template](docs/architecture/ADR_TEMPLATE.md) を使って記録します。
@@ -60,7 +61,7 @@ Visual UIはユーザーと共同で設計し、UI生成を行う場合は専用
 
 ## Architecture
 
-Core architecture is now fixed at **Architecture V1 — Confirmed for Core implementation**. The canonical baseline is [Architecture V1](docs/architecture/ARCHITECTURE_V1.md), with the ADR index in [docs/architecture/README.md](docs/architecture/README.md) and integrated review in [Architecture Integration Validation](docs/architecture/INTEGRATION_VALIDATION.md).
+Current semantic design baseline is **Architecture V2 — Design Complete for Review**: [Architecture V2](docs/architecture/ARCHITECTURE_V2.md). Architecture V1 remains prototype/feasibility evidence and is not standing implementation permission. The architecture index is [docs/architecture/README.md](docs/architecture/README.md).
 
 V1 promotion required five pre-implementation gates, a first PASS, an independent second audit, corrective fixes, and a second PASS. Evidence is in [V1 Second Audit Evidence](docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md).
 
@@ -84,7 +85,7 @@ The first performance/architecture harness is in [`prototypes/p0-architecture`](
 
 ## Development gate
 
-**Core implementation gate: PASS.**
+**Cross-cutting Core V2 design gate: COMPLETE. Production authorization: LOCKED.**
 
 Architecture V1 has verified baselines for:
 
@@ -103,8 +104,8 @@ Second PASS:
 - Vite production build: PASS
 - served Chromium: 4 / 4 PASS
 
-The next engineering phase is **Production Core Editor implementation under Architecture V1**.
+The next allowed phases are **Brush/Region benchmark prototypes and UI co-design** according to their gates. Production Core implementation does not resume until the user explicitly authorizes a scope.
 
-Visual UI design proceeds separately with the user.
+Visual UI design proceeds separately with the user and uses the dedicated UI Design Skill.
 
 Future realtime collaboration remains out of Core scope until the single-illustration editor is mature.
