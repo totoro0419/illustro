@@ -1,3 +1,4 @@
+const DAB_STREAM_TOKEN=Symbol('illustro-dab-stream');
 const STRIDE=3;
 const CHUNK_DABS=256;
 
@@ -12,7 +13,7 @@ class DabChunk{
 }
 
 export class PackedDabStream{
-  constructor(private readonly chunks:readonly DabChunk[],readonly count:number){}
+  constructor(token:typeof DAB_STREAM_TOKEN,private readonly chunks:readonly DabChunk[],readonly count:number){if(token!==DAB_STREAM_TOKEN)throw new Error('invalid dab stream capability');Object.freeze(this);}
   x(index:number){const [c,i]=this.locate(index);return c.x(i);}
   y(index:number){const [c,i]=this.locate(index);return c.y(i);}
   diameter(index:number){const [c,i]=this.locate(index);return c.diameter(i);}
@@ -50,7 +51,7 @@ export class DabStreamBuilder{
     if(this.sealed)throw new Error('dab stream is sealed');
     this.sealed=true;
     if(this.currentCount>0)this.chunks.push(new DabChunk(this.current,this.currentCount));
-    return new PackedDabStream(Object.freeze([...this.chunks]),this.total);
+    return new PackedDabStream(DAB_STREAM_TOKEN,Object.freeze([...this.chunks]),this.total);
   }
 
   private flushFullChunk(){
