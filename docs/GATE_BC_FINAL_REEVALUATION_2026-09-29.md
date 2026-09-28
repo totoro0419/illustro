@@ -1,6 +1,6 @@
 # Gate B / C Final Re-evaluation — 2026-09-29
 
-> Status: **EXECUTION PACKAGE COMPLETE — NEITHER GATE IS CLOSED**
+> Status: **EXECUTION PACKAGE COMPLETE — BRUSH TABLET PEN SUBGATE PASSED / REGION GATE C BLOCKED**
 > Production: **LOCKED after Vertical Slice 001**
 
 ## 1. Requested work
@@ -36,15 +36,35 @@ max pending pages 8
 browser batch p95 0.100 ms
 ```
 
-Unresolved:
+Physical tablet evidence received:
 
-- genuine physical target-device Pen input through this V2 path;
-- target-device sustained memory/thermal behavior;
-- perceptual response of the selected stabilizer on the target pen stack.
+```text
+session duration        34.499 s
+trusted pen samples     5727
+accepted actual samples 5727
+pressure range          0.660115
+tilt                    observed
+max pending pages       8
+backpressure events     16
+max release work        181
+pipeline p95            1.000 ms
+receive→next RAF p95    17.800 ms
+frame intervals >25 ms  0
+```
 
 Decision:
 
-> **Gate B = CONDITIONAL — PHYSICAL PEN DEVICE RECORD PENDING**
+> **Tablet physical-Pen subgate = PASS**
+
+Unresolved:
+
+- sustained multi-minute runtime/thermal behavior;
+- explicit perceptual confirmation of the selected One Euro stabilizer;
+- Desktop/Smartphone certification if those profiles are claimed.
+
+Therefore:
+
+> **Gate B = CONDITIONAL — TABLET PEN PASS / SUSTAINED+PERCEPTUAL EVIDENCE PENDING**
 
 ## 3. Region Gate C
 
@@ -75,7 +95,7 @@ A fresh blind final set was intentionally **not** consumed, because the training
 These results do not authorize Production.
 
 - Gate A remains COMPLETE.
-- Gate B remains CONDITIONAL.
+- Gate B remains CONDITIONAL, but the representative Tablet physical-Pen subgate is PASS.
 - Gate C is BLOCKED.
 - Gate D physical format remains PENDING.
 - Gate E user UI decision remains PENDING.
@@ -89,6 +109,6 @@ Do **not** continue threshold tuning.
 
 The next Region step is a V3 Evidence prototype with multi-scale oriented boundary inference and texture/wash separation.
 
-The next Brush step is only to execute the already-built standalone/device harness with actual target hardware and preserve its emitted JSON.
+The next Brush step is sustained/perceptual validation of the already-passing tablet profile; no additional short physical-Pen acquisition is required.
 
 Those are independent: Region redesign can proceed without waiting for the physical Brush run.
