@@ -1,0 +1,33 @@
+name: V2 Brush Region Validation CI
+
+on:
+  pull_request:
+    paths:
+      - 'prototypes/v2-validation/**'
+      - 'docs/benchmarks/**'
+      - 'docs/V2_VALIDATION_REEVALUATION_2026-09-28.md'
+      - 'docs/architecture/BRUSH_RENDER_CONTRACT_V2.md'
+      - 'docs/architecture/REGION_RESOLVER_V2.md'
+      - 'docs/DESIGN_COMPLETION_GATE.md'
+      - '.github/workflows/v2-validation-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: prototypes/v2-validation
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          package-manager-cache: false
+      - name: Unit / semantic tests
+        run: npm test
+      - name: Reference benchmarks
+        run: npm run benchmark

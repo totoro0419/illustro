@@ -1,0 +1,12 @@
+{
+  "name": "illustro-v2-validation",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/*.test.js",
+    "benchmark": "node src/run-benchmarks.js",
+    "check": "npm test && npm run benchmark"
+  },
+  "engines": {"node": ">=22.0.0"}
+}
