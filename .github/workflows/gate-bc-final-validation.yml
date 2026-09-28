@@ -1,0 +1,53 @@
+name: Gate B/C Final Validation
+
+on:
+  pull_request:
+    paths:
+      - 'prototypes/v2-validation/**'
+      - 'docs/benchmarks/**'
+      - 'docs/architecture/BRUSH_RENDER_CONTRACT_V2.md'
+      - 'docs/architecture/REGION_RESOLVER_V2.md'
+      - 'docs/DESIGN_COMPLETION_GATE.md'
+      - 'docs/GATE_BC_FINAL_REEVALUATION_2026-09-29.md'
+      - '.github/workflows/gate-bc-final-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: prototypes/v2-validation
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Reference semantic tests
+        run: npm test
+
+      - name: Reference benchmarks
+        run: npm run benchmark
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser / real-art validation
+        run: npm run test:browser
+
+      - name: Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-bc-validation-results
+          path: prototypes/v2-validation/results/*.json
+          if-no-files-found: warn
