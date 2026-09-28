@@ -89,14 +89,24 @@ function evidenceFromLuma(decoded) {
     }
   }
 
-  // One-pixel max filter compensates for antialiasing/downsampling of thin real ink.
+  // Two-pixel max filter compensates for antialiasing/downsampling of thin real ink.
   // This is evidence thickening, not a semantic gap-close decision.
+  //
+  // The outer crop/paper frame is not treated as artwork boundary evidence by default.
+  // A source adapter may opt in to frame-as-boundary later, but ordinary Region analysis
+  // should not turn a scan/photo crop edge into a closed artwork Region.
   const grid = new EvidenceGrid(width, height);
+  const edgeMargin = Math.max(3, Math.round(Math.min(width, height) * 0.05));
+  const thickenRadius = 2;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
+      if (x < edgeMargin || y < edgeMargin || x >= width - edgeMargin || y >= height - edgeMargin) {
+        grid.set(x, y, 0);
+        continue;
+      }
       let v = 0;
-      for (let yy = Math.max(0, y - 1); yy <= Math.min(height - 1, y + 1); yy += 1) {
-        for (let xx = Math.max(0, x - 1); xx <= Math.min(width - 1, x + 1); xx += 1) {
+      for (let yy = Math.max(0, y - thickenRadius); yy <= Math.min(height - 1, y + thickenRadius); yy += 1) {
+        for (let xx = Math.max(0, x - thickenRadius); xx <= Math.min(width - 1, x + thickenRadius); xx += 1) {
           v = Math.max(v, raw[yy * width + xx]);
         }
       }
@@ -151,7 +161,7 @@ function classify(grid, query, basePolicy) {
   const cx = Math.max(0, Math.min(grid.width - 1, Math.round(query.seed[0] * (grid.width - 1))));
   const cy = Math.max(0, Math.min(grid.height - 1, Math.round(query.seed[1] * (grid.height - 1))));
   let strong = 0, localN = 0;
-  const localRadius = 10;
+  const localRadius = 4;
   const localThreshold = Math.max(0.15, basePolicy.evidenceThreshold * 0.80);
   for (let y = Math.max(0, cy - localRadius); y <= Math.min(grid.height - 1, cy + localRadius); y += 1) {
     for (let x = Math.max(0, cx - localRadius); x <= Math.min(grid.width - 1, cx + localRadius); x += 1) {
@@ -170,14 +180,14 @@ function classify(grid, query, basePolicy) {
   }
 
   // Material topology-size changes under small policy perturbations are ambiguous.
-  if (areaRange > 0.20) {
+  if (areaRange > 0.15) {
     return { label: 'ambiguous', stability: dominant / votes.length, votes, areaRange, localStrongFraction };
   }
 
   // An apparently open answer surrounded by dense boundary evidence is unresolved rather than
   // silently leaking to the exterior. The threshold is intentionally high so clean paper/background
   // does not become Ambiguous just because a frame or nearby line enters the local window.
-  if (openCandidate && localStrongFraction > 0.28) {
+  if (openCandidate && localStrongFraction > 0.30) {
     return { label: 'ambiguous', stability: open / votes.length, votes, areaRange, localStrongFraction };
   }
 
