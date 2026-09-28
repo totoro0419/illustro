@@ -1,10 +1,14 @@
 # Illustro Pre-Implementation Design Completion Audit — 2026-09-28
 
-> Status: **AUDIT IN PROGRESS — Production implementation remains locked**
+> Status: **HISTORICAL FIRST PASS — superseded by DESIGN_COMPLETION_REEVALUATION_2026-09-28.md; Production remains locked**
 > Scope: current Product / Feature / Interaction / Architecture / Vertical Slice 001 vs current redesign doctrine
 > Implementation effect: **None. This document does not authorize Vertical Slice 002 or any later Production subsystem.**
 > Source hierarchy: `PRODUCT_SPEC.md` → `REDESIGN_PRINCIPLES.md` / `CREATION_PROXIMITY_PRINCIPLES.md` → Feature / Interaction / Architecture specifications → implementation notes.
 > Legacy/Library material, including `ILLUSTRO_SECTION9_ALGORITHM_REVIEW_DRAFT(2).txt`, is reference-only.
+
+## Supersession
+
+This file records the first-pass findings. The completed V2 status is [Design Completion Re-evaluation — 2026-09-28](DESIGN_COMPLETION_REEVALUATION_2026-09-28.md). Unresolved items in this historical first pass must not override later V2 decisions.
 
 ## 1. Audit conclusion at this pass
 
