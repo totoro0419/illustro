@@ -98,31 +98,28 @@ These no longer need to be invented during Production implementation.
 ## 6. Brush Gate B
 
 ### Semantic design: **COMPLETE**
-### Prototype/benchmark calibration: **PENDING**
+### Reference algorithm / semantic benchmark: **PASS**
+### Target-device execution validation: **PENDING**
+### Overall Production Gate B: **CONDITIONAL**
 
-Before Brush Production implementation, the benchmark harness must select/verify:
+Reference validation is recorded in [Brush V2 Reference Benchmark](benchmarks/BRUSH_V2_BENCHMARK_2026-09-28.md).
 
-- default stabilization/reconstruction coefficients
-- mutable-tail budgets
-- preview tolerance
-- materialization admission limits
-- supported-device latency/memory profile
+Reference candidates now exist for reconstruction, mutable-tail/page bounds, Preview tolerance and materialization admission. They are not cross-device Product guarantees.
 
-Mandatory properties and corpus are defined in `architecture/BRUSH_RENDER_CONTRACT_V2.md`.
+Before Brush Production Gate B can become CLOSED, execute the actual V2 Brush path on representative target hardware and verify latency, sustained memory/thermal behavior and perceptual stabilizer response.
 
 ## 7. Region / Fill Gate C
 
 ### Semantic design: **COMPLETE**
-### Corpus calibration: **PENDING**
+### Synthetic labeled/adversarial corpus: **PASS**
+### Representative real-artwork calibration: **PENDING**
+### Overall Production Gate C: **CONDITIONAL**
 
-Before Region/Fill Production implementation, benchmark:
+Reference validation is recorded in [Region Resolver V2 Reference Benchmark](benchmarks/REGION_V2_BENCHMARK_2026-09-28.md).
 
-- evidence thresholds
-- gap/bridge thresholds
-- confidence/margin thresholds
-- candidate/update budgets
+The synthetic corpus has internally consistent candidate values for evidence/gap/confidence/identity/update behavior. They are not Production thresholds.
 
-Mandatory corpus and semantic pass properties are defined in `architecture/REGION_RESOLVER_V2.md`.
+Before Region/Fill Production Gate C can become CLOSED, add a representative labeled real-artwork corpus and rerun the calibration without changing expected labels after seeing results.
 
 ## 8. Persistence / native-file Gate D
 
@@ -193,5 +190,5 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY FOR USER REVIEW / BENCHMARK PHASE AVAILABLE / PRODUCTION LOCKED**
+> **CORE V2 DESIGN READY / BRUSH+REGION REFERENCE VALIDATION COMPLETE / GATES B+C CONDITIONAL / PRODUCTION LOCKED**
 
