@@ -12,6 +12,10 @@ export const SampleValidity={
   Tilt:1<<1,
 } as const;
 
+export const SampleProvenance={
+  Predicted:1<<15,
+} as const;
+
 const SAMPLE_BATCH_TOKEN=Symbol('illustro-sample-batch');
 const GEOMETRY_STRIDE=3;
 const SENSOR_STRIDE=3;
@@ -41,6 +45,7 @@ export class PackedSampleBatch{
   validityFlags(i:number){return this.validity[i]??0;}
   pressureValid(i:number){return (this.validityFlags(i)&SampleValidity.Pressure)!==0;}
   tiltValid(i:number){return (this.validityFlags(i)&SampleValidity.Tilt)!==0;}
+  predicted(i:number){return (this.validityFlags(i)&SampleProvenance.Predicted)!==0;}
 }
 
 export class SampleBatchBuilder{
@@ -108,6 +113,6 @@ function validateSample(
   if((validityFlags&SampleValidity.Tilt)!==0&&(tiltX<-90||tiltX>90||tiltY<-90||tiltY>90))throw new Error('tilt must be within -90..90');
   if(!Number.isSafeInteger(buttons)||buttons<0||buttons>0xffff_ffff)throw new Error('invalid buttons');
   if(!Number.isInteger(pointerType)||pointerType<PointerType.Mouse||pointerType>PointerType.Unknown)throw new Error('invalid pointer type');
-  if(!Number.isSafeInteger(viewGeneration)||viewGeneration<0||!Number.isSafeInteger(calibrationGeneration)||calibrationGeneration<0)throw new Error('invalid generation');
+  if(!Number.isSafeInteger(viewGeneration)||viewGeneration<0||viewGeneration>0xffff_ffff||!Number.isSafeInteger(calibrationGeneration)||calibrationGeneration<0||calibrationGeneration>0xffff_ffff)throw new Error('invalid generation');
   if(!Number.isSafeInteger(validityFlags)||validityFlags<0||validityFlags>0xffff)throw new Error('invalid validity flags');
 }
