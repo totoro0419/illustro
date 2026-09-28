@@ -297,3 +297,36 @@ Measure:
 - sample duplication/drop
 - canonical replay equivalence
 - RAM growth
+
+
+## Brush Engine First principle
+
+Brush Engineは「Tipを一定間隔でStampする補助機能」ではなく、Illustroの描き味・応答性・表現力・再現性を決める中核Subsystemとして扱う。
+
+Canonical conceptual pipeline:
+
+```text
+Input
+→ Normalization
+→ Stroke Reconstruction
+→ Dynamics
+→ Dab / Continuous Coverage Generation
+→ Tip / Texture Evaluation
+→ Color / Mixing
+→ Coverage / Compositing
+→ Canvas
+```
+
+設計上の優先事項:
+
+- Pen入力を失わない
+- PreviewとCommitで別意味にしない
+- deterministic/reproducibleなCommitted Stroke
+- Zoom / Tile境界で描き味を変えない
+- fast/slow双方のStrokeで破綻しない
+- large Canvasで性能崩壊しない
+- Proceduralを優先候補とするがAsset排除を目的化しない
+- advanced dynamicsがinactiveな時はnear-zero recurring cost
+
+この原則は [Creation-Proximity Design Principles](../CREATION_PROXIMITY_PRINCIPLES.md) を継承する。
+
