@@ -30,13 +30,14 @@ export class DocumentTransaction{
  }
  renameLayer(id:LayerId,name:string){this.meta(id,{name:name.trim()});}
  setLayerVisibility(id:LayerId,visible:boolean){this.meta(id,{visible});}
+ setLayerLocked(id:LayerId,locked:boolean){this.meta(id,{locked});}
  commit():CommitReceipt{this.open();try{return commitTransaction(this);}catch(e){this.failed=true;throw e;}}
  cancel(){if(this.closed)throw new Error('transaction closed');this.workingValue.clear();this.updatesValue.clear();this.semanticOpsValue.length=0;this.closed=true;}
  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,semanticOps:this.semanticOpsValue,recordSemantic:(op:CommandOperation)=>{this.open();this.semanticOpsValue.push(op);},hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
  private hasChanges(){return this.updatesValue.size>0||[...this.workingValue.values()].some(w=>w.changedTileCount>0);}
- private meta(id:LayerId,p:Partial<Pick<LayerNode,'name'|'visible'>>){
+ private meta(id:LayerId,p:Partial<Pick<LayerNode,'name'|'visible'|'locked'>>){
   this.open();const b=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(p.name!==undefined&&!p.name)throw new Error('empty layer name');
-  if((p.name===undefined||p.name===b.name)&&(p.visible===undefined||p.visible===b.visible))return;
+  if((p.name===undefined||p.name===b.name)&&(p.visible===undefined||p.visible===b.visible)&&(p.locked===undefined||p.locked===b.locked))return;
   this.updatesValue.set(id,Object.freeze({...b,...p}));
  }
  private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
