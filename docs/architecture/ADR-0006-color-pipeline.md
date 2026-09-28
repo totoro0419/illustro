@@ -4,6 +4,10 @@
 
 **Accepted for prototype**
 
+## Architecture V2 supersession note
+
+This ADR remains design history/detail. Where it conflicts with the current V2 contracts, [Canonical Raster V2](CANONICAL_RASTER_V2.md) and [Architecture V2](ARCHITECTURE_V2.md) are authoritative.
+
 ## Date
 
 2026-09-27
