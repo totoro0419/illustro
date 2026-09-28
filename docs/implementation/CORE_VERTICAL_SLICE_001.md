@@ -31,8 +31,8 @@ Document → Active Transaction → Sparse Tile → Canonical Block → Revision
 - Undo / Redo by Revision root switching
 - alternate Revision retention after Undo + branch
 - multi-parent-compatible `parentIds[]` Revision shape
-- Persistence/Recovery handoff envelope containing Revision / Transaction / changed Block identities
-- monotonic protected Revision tracking
+- Persistence handoff containing Revision / Transaction / changed Block identities; it is not itself a durability acknowledgement
+- internal monotonic protected-Revision primitive reserved for the future Persistence acknowledgement path
 - package public-entry restriction and internal capability token
 
 ## Sparse behavior verified
@@ -84,9 +84,25 @@ Corrections:
 5. **Metadata no-op**
    - setting an already-current Layer name/visibility does not create a Revision
 
-## Second CI pass
+## Post-audit verification
 
-Core CI run `36376332915`:
+Additional corrections after the first re-audit:
+
+6. **Typed Command records**
+   - Command is versioned
+   - operations use a discriminated union instead of encoded strings
+   - published Command/Revision metadata is frozen
+
+7. **Recovery semantics boundary**
+   - caller-facing `protect()` was removed
+   - only the future Persistence acknowledgement path may advance protected Revision state
+   - the commit result is named a Persistence handoff, not a completed Recovery packet
+
+8. **Published state hardening**
+   - Document Root, Raster Manifest and paged metadata state are frozen or runtime-private where appropriate
+   - Active Transaction scratch state is hidden behind the internal capability
+
+Final Core CI run `36376962511`:
 
 - strict TypeScript: PASS
 - Vitest: **8 tests / 8 files PASS**
