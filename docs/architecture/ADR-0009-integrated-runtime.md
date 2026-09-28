@@ -4,6 +4,10 @@
 
 **Accepted — Architecture V1 Runtime Baseline**
 
+## Architecture V2 supersession note
+
+This ADR remains design history/detail. Where it conflicts with the current V2 contracts, [Architecture V2](ARCHITECTURE_V2.md) are authoritative.
+
 ## Date
 
 2026-09-27
