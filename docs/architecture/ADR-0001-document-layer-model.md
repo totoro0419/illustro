@@ -2,7 +2,9 @@
 
 ## Status
 
-**Accepted — Architecture V1 / implementation active**
+**Accepted — Architecture V1 technical baseline / Production continuation gated**
+
+Production continuation is governed by [`DESIGN_COMPLETION_GATE.md`](../DESIGN_COMPLETION_GATE.md); this ADR status is not implementation authorization.
 
 ## Date
 
