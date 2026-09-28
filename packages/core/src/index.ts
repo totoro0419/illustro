@@ -7,7 +7,7 @@ export { DocumentRoot,type LayerNode } from './model';
 export type { Revision,Command,CommandOperation } from './history';
 export type { OwnershipTransfer } from './raster/store';
 export type { PersistenceHandoff } from './recovery';
-export {SampleBatchBuilder,PackedSampleBatch,PointerType,SampleValidity} from './input/sample';
+export {SampleBatchBuilder,PackedSampleBatch,PointerType,SampleValidity,SampleProvenance} from './input/sample';
 export type {PointerTypeCode} from './input/sample';
 export {BrushStrokeSession} from './brush/session';
 export type {BrushStrokeFinish} from './brush/session';
