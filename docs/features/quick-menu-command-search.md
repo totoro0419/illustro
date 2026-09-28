@@ -6,6 +6,33 @@
 
 High-frequency command surface that can be summoned near the current work without permanently occupying large screen area.
 
+## Spatial memory principle
+
+Quick Menu / Quick Controllerの主目的は、単にCommandをCanvas近くへ出すことではない。
+
+> **高頻度CommandをVisual SearchではなくSpatial Memory / Muscle Memoryで呼び出せること**
+
+を重要な評価基準とする。
+
+過去案の六角形Controllerは候補の一つであり、形状は固定しない。
+
+候補:
+- radial / pie / arc
+- edge controller
+- floating toolbar
+- hex controller
+- gesture
+- hybrid
+
+Critical invariant:
+
+- user-pinned commandの位置は安定させる
+- Context適応のためにuser-pinned slotを予測不能に並べ替えない
+- Context-aware候補は別領域/別slot等でSpatial Memoryを壊さない
+- handedness変更では明示的mirror/profile変換を行い、無意識に位置を漂わせない
+
+採用判断は操作速度、到達距離、誤操作率、Canvas占有、Pen/Touch適合性、Muscle Memory形成で行う。
+
 ## Activation
 
 **Quick Menuには全Deviceで発見可能な明示On-screen entryを必ず用意する。**
