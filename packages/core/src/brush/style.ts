@@ -23,6 +23,7 @@ export function createOpaqueRoundBrushV1(input:Readonly<{
   const min=input.minPressureDiameterPx??input.diameterPx;
   if(!Number.isFinite(min)||min<=0||min>input.diameterPx)throw new Error('invalid minPressureDiameterPx');
   if(!Number.isFinite(input.spacingPx)||input.spacingPx<=0)throw new Error('spacingPx must be positive');
+  if(input.color.length!==4||input.color[3]!==255)throw new Error('opaque brush alpha must be 255');
   for(const channel of input.color){
     if(!Number.isInteger(channel)||channel<0||channel>255)throw new Error('invalid brush color');
   }
