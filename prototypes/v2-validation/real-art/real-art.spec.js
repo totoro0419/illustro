@@ -161,18 +161,28 @@ function classify(grid, query, basePolicy) {
   }
   const localStrongFraction = localN ? strong / localN : 0;
 
-  // Ambiguity is a confidence property, not only a vote tie:
-  // topology that changes materially under small policy perturbations is not Current.
-  if (dominant < 8 || areaRange > 0.08) {
+  // Ambiguity is a confidence property, not merely an 8/9 unanimity rule.
+  // A clear majority with almost no opposing topology is accepted; otherwise it remains unresolved.
+  const closedCandidate = closed >= 6 && open <= 1;
+  const openCandidate = open >= 6 && closed <= 1;
+  if (!closedCandidate && !openCandidate) {
     return { label: 'ambiguous', stability: dominant / votes.length, votes, areaRange, localStrongFraction };
   }
-  // An "open" answer surrounded by substantial boundary evidence is also unresolved:
-  // this catches faint/broken real drawings rather than silently leaking to the exterior.
-  if (open >= 8 && localStrongFraction > 0.12) {
+
+  // Material topology-size changes under small policy perturbations are ambiguous.
+  if (areaRange > 0.20) {
+    return { label: 'ambiguous', stability: dominant / votes.length, votes, areaRange, localStrongFraction };
+  }
+
+  // An apparently open answer surrounded by dense boundary evidence is unresolved rather than
+  // silently leaking to the exterior. The threshold is intentionally high so clean paper/background
+  // does not become Ambiguous just because a frame or nearby line enters the local window.
+  if (openCandidate && localStrongFraction > 0.28) {
     return { label: 'ambiguous', stability: open / votes.length, votes, areaRange, localStrongFraction };
   }
-  if (closed >= 8) return { label: 'closed', stability: closed / votes.length, votes, areaRange, localStrongFraction };
-  if (open >= 8) return { label: 'open', stability: open / votes.length, votes, areaRange, localStrongFraction };
+
+  if (closedCandidate) return { label: 'closed', stability: closed / votes.length, votes, areaRange, localStrongFraction };
+  if (openCandidate) return { label: 'open', stability: open / votes.length, votes, areaRange, localStrongFraction };
   return { label: 'ambiguous', stability: dominant / votes.length, votes, areaRange, localStrongFraction };
 }
 
@@ -201,7 +211,7 @@ test('real-art corpus calibrates on training split and passes holdout', async ({
       const got = classify(decoded.get(item.id), q, policy);
       total += 1;
       pass += got.label === q.expected ? 1 : 0;
-      details.push({ item: item.id, query: q.id, expected: q.expected, got: got.label, stability: got.stability });
+      details.push({ item: item.id, query: q.id, expected: q.expected, got: got.label, stability: got.stability, areaRange: got.areaRange, localStrongFraction: got.localStrongFraction, votes: got.votes });
     }
     return { policy, pass, total, details };
   }).sort((a, b) => b.pass - a.pass || a.policy.gapMax - b.policy.gapMax || b.policy.evidenceThreshold - a.policy.evidenceThreshold);
@@ -213,7 +223,7 @@ test('real-art corpus calibrates on training split and passes holdout', async ({
     const got = classify(decoded.get(item.id), q, selected.policy);
     holdoutTotal += 1;
     holdoutPass += got.label === q.expected ? 1 : 0;
-    holdoutDetails.push({ item: item.id, query: q.id, expected: q.expected, got: got.label, stability: got.stability });
+    holdoutDetails.push({ item: item.id, query: q.id, expected: q.expected, got: got.label, stability: got.stability, areaRange: got.areaRange, localStrongFraction: got.localStrongFraction, votes: got.votes });
   }
 
   const report = { generatedAt: new Date().toISOString(), selected, holdout: { pass: holdoutPass, total: holdoutTotal, details: holdoutDetails } };
