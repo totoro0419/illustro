@@ -1,0 +1,30 @@
+name: Core CI
+on:
+  push:
+    branches: [main, "core/**"]
+    paths:
+      - "package.json"
+      - "tsconfig.base.json"
+      - "packages/core/**"
+      - ".github/workflows/core-ci.yml"
+  pull_request:
+    paths:
+      - "package.json"
+      - "tsconfig.base.json"
+      - "packages/core/**"
+      - ".github/workflows/core-ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.22.0
+          package-manager-cache: false
+      - run: npm install --no-audit --no-fund
+      - run: npm run core:typecheck
+      - run: npm run core:test
