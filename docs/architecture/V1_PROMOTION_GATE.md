@@ -1,8 +1,8 @@
 # Architecture V1 Promotion Gate
 
 > Date: 2026-09-28
-> Status: **Acceptance criteria fixed before implementation**
-> Scope: UIを除くCore Editor本実装開始前のArchitecture Gate
+> Status: **Historical V1 feasibility gate — PASS evidence retained**
+> Scope: Architecture V1 technical-feasibility evidence. Current Production authority is Architecture V2 + Design Completion Gate.
 
 ## Gate 1 — Canonical Raster Sealing
 
@@ -81,7 +81,7 @@ After first PASS:
 1. perform a second source/spec consistency audit
 2. add adversarial/regression checks for cross-gate assumptions
 3. run GitHub Actions again
-4. only then mark Architecture v1 as confirmed for Core implementation
+4. only then mark Architecture v1 as a confirmed technical baseline
 
 ## Non-blocking after V1
 
@@ -92,4 +92,4 @@ After first PASS:
 - UI layout/design
 - advanced-feature interaction backlog
 
-These are resolved when representative production workloads/features exist or before support claims.
+These were V1 deferred items. Architecture V2 has since resolved the cross-cutting semantic subset; remaining calibration stays feature/runtime gated.
