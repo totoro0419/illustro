@@ -1,7 +1,8 @@
 # Illustro Architecture V1
 
-> Status: **Confirmed Architecture V1 technical baseline — Production continuation gated**  
+> Status: **Historical confirmed technical baseline — superseded by Architecture V2 for current semantic design**  
 > Date: 2026-09-28  
+> Current semantic design: [Architecture V2](ARCHITECTURE_V2.md)  
 > Scope: UI visual designを除く、Core Editor内部のArchitecture baseline。Production continuationは `../DESIGN_COMPLETION_GATE.md` に従う。
 
 ## Evidence
