@@ -3,6 +3,7 @@ import type { LayerNode } from './model';
 import { RasterWorkingSet } from './raster/working';
 import type { CoreDocument } from './coreDocument';
 import { commitTransaction,type CommitReceipt } from './commit';
+import { CORE_INTERNAL } from './internal';
 
 export class DocumentTransaction{
   readonly base:RevisionId;readonly root;readonly id:TransactionId;
@@ -10,12 +11,12 @@ export class DocumentTransaction{
   readonly updates=new Map<LayerId,LayerNode>();closed=false;
   constructor(readonly doc:CoreDocument,readonly label:string){
     if(!label.trim())throw new Error('empty transaction label');
-    this.base=doc.head;this.root=doc.root;this.id=doc.ids.transaction();
+    this.base=doc.head;this.root=doc.root;this.id=doc._internal(CORE_INTERNAL).ids.transaction();
   }
   editTile(layerId:LayerId,x:number,y:number,edit:(b:Uint8Array)=>void){
     this.open();if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0||x*this.doc.tileSize>=this.root.width||y*this.doc.tileSize>=this.root.height)throw new Error('tile outside document');
     let w=this.working.get(layerId);
-    if(!w){const l=this.root.getLayer(layerId);w=new RasterWorkingSet(l.surface,this.doc.store,this.doc.tileBytes);this.working.set(layerId,w);}
+    if(!w){const l=this.root.getLayer(layerId);w=new RasterWorkingSet(l.surface,this.doc._internal(CORE_INTERNAL).store,this.doc.tileBytes);this.working.set(layerId,w);}
     w.editTile(x,y,edit);
   }
   setPixel(layerId:LayerId,x:number,y:number,rgba:readonly [number,number,number,number]){
