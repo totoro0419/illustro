@@ -1,6 +1,6 @@
 # Illustro Brush ↔ Raster ↔ Renderer Contract V2
 
-> Status: **SEMANTIC DESIGN COMPLETE — reference validation PASS / target-device execution gate remains**
+> Status: **SEMANTIC DESIGN COMPLETE — reference + browser runtime PASS / physical target-device Pen record remains**
 > Date: 2026-09-28
 > Scope: input normalization, stroke semantics, deterministic Brush execution, realtime preview, Raster commit and Renderer boundary
 > Production effect: specification only. Brush Production implementation remains prohibited until the benchmark gate in section 17 passes and the user authorizes implementation.
@@ -469,3 +469,34 @@ The overall Production Gate B remains **CONDITIONAL**, because the actual V2 Bru
 Existing Xiaomi tablet input→RAF measurements predate this full Brush pipeline and must not be numerically combined with the Node reference benchmark.
 
 The reference numeric profile above is a candidate/conformance profile, not a cross-device Product guarantee.
+
+
+## 20. Target-device validation evidence — 2026-09-29
+
+A browser-executable V2 streaming path now exists in `prototypes/v2-validation/device`.
+
+GitHub Actions run `36494680697` produced:
+
+    accepted actual synthetic samples = 100000
+    release work                      = 160
+    max pending pages                 = 8
+    browser batch p95                 = 0.100 ms
+    browser batch max                 = 5.100 ms
+
+The automated browser runtime subgate therefore **passes** for boundedness/execution.
+
+The manual harness intentionally refuses completion unless it observes:
+
+- at least 3 strokes;
+- at least 500 `pointerType=pen` samples;
+- pressure range >= 0.15.
+
+No genuine physical target-device Pen record was obtainable from this session. Browser CI cannot synthesize that evidence.
+
+### Gate interpretation
+
+> **Gate B remains CONDITIONAL / NOT CLOSED.**
+
+The remaining evidence is specifically the physical target-device Pen run, sustained device behavior and perceptual stabilizer response.
+
+See [Brush V2 Device Validation](../benchmarks/BRUSH_DEVICE_VALIDATION_2026-09-29.md).
