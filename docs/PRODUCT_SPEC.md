@@ -117,6 +117,26 @@ Architecture上の共通化を維持するためだけにHot Pathを遅くする
 
 **よく使う操作ほど少ない手数で実行可能にする。**
 
+### 2.4 Creation Proximity — 機能を制作行為へ近づける
+
+Illustroでは、
+
+> **ユーザーが機能へ移動するより、必要な機能・情報・処理が制作中のユーザーへ近づく**
+
+方向を重視する。
+
+この思想を具体化する重要な設計原則として、次を扱う。
+
+- **PiP / Detachable Workspace** — 必要なInspector/Reference/Layer/Color/Brush等の一部を、必要時だけCanvas近傍へ昇格させる
+- **Brush Engine First** — Inputから最終Pixelまで一貫したBrush Pipelineを中核Subsystemとして設計する
+- **Quick Controller / Spatial Command Surface** — 高頻度CommandをVisual SearchではなくSpatial Memory / Muscle Memoryで呼び出せる状態を目指す
+
+これらは過去UIの再実装指示ではない。
+
+PiPという名称、六角形Button、具体Panel形状、古い内部実装は固定しない。より単純で、速く、誤操作が少なく、Canvasへの集中を守る方式がある場合は積極的に再設計する。
+
+詳細なCanonical補足は [Creation-Proximity Design Principles](CREATION_PROXIMITY_PRINCIPLES.md) に定義する。
+
 ## 3. Illustro の主要独自機能
 
 ### 3.1 Lineart Region System — 線画領域認識システム
