@@ -4,6 +4,10 @@
 
 **Accepted — Architecture V1**
 
+## Architecture V2 supersession note
+
+This ADR remains design history/detail. Where it conflicts with the current V2 contracts, [Persistence / Recovery Logical V2](PERSISTENCE_RECOVERY_LOGICAL_V2.md) are authoritative.
+
 ## Date
 
 2026-09-27
