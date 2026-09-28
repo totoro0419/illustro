@@ -12,18 +12,20 @@ export const SampleValidity={
   Tilt:1<<1,
 } as const;
 
+const SAMPLE_BATCH_TOKEN=Symbol('illustro-sample-batch');
 const GEOMETRY_STRIDE=3;
 const SENSOR_STRIDE=3;
 const META_STRIDE=6;
 
 export class PackedSampleBatch{
-  private constructor(
+  constructor(
+    token:typeof SAMPLE_BATCH_TOKEN,
     readonly count:number,
     private readonly geometry:Float64Array,
     private readonly sensors:Float32Array,
     private readonly meta:Uint32Array,
     private readonly validity:Uint16Array,
-  ){}
+  ){if(token!==SAMPLE_BATCH_TOKEN)throw new Error('invalid sample batch capability');}
   sequence(i:number){return this.meta[i*META_STRIDE]??0;}
   monotonicTime(i:number){return this.geometry[i*GEOMETRY_STRIDE]??0;}
   x(i:number){return this.geometry[i*GEOMETRY_STRIDE+1]??0;}
@@ -91,7 +93,7 @@ export class SampleBatchBuilder{
     if(this.sealed)throw new Error('sample batch builder is sealed');
     for(let i=0;i<this.count;i++)if(this.written[i]!==1)throw new Error('sample batch has unwritten slots');
     this.sealed=true;
-    return new PackedSampleBatch(this.count,this.geometry,this.sensors,this.meta,this.validity);
+    return new PackedSampleBatch(SAMPLE_BATCH_TOKEN,this.count,this.geometry,this.sensors,this.meta,this.validity);
   }
 }
 
