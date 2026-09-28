@@ -1,21 +1,42 @@
 # Illustro Design Completion Gate
 
-> Status: **OPEN**
+> Status: **CORE V2 DESIGN READY FOR USER REVIEW — PRODUCTION LOCKED**
 > Date: 2026-09-28
-> Purpose: Architecture実装可能性と、Illustro全体の設計完了を混同しないためのGate。
+> Purpose: Architecture readiness, feature benchmark readiness, UI approval and Production authorizationを混同しないためのGate。
 
 ## 1. Current interpretation
 
-Architecture V1はCore基盤の実装可能性を確認した。
+Architecture V1は技術基盤の実現可能性を検証した。
 
-しかし以下は同義ではない。
+Architecture V2は、その後に残ったCross-cutting Core semanticsを設計完了させた現在のBaseline。
 
-- Architecture Gate PASS
-- Product / Interaction / Algorithm / UI全体のDesign Complete
+しかし以下は別状態として扱う。
 
-Production Vertical Slice 001は基礎Infrastructureとして存在するが、後続Subsystem実装はこのGateに従う。
+- Architecture / semantic design complete
+- feature-specific benchmark complete
+- visual UI approved
+- Production implementation authorized
 
-## 2. Global principles that must be reflected
+Production Vertical Slice 001は既存の暫定実装基盤。
+
+Vertical Slice 002以降は、ユーザーが明示的に許可するまで開始しない。
+
+## 2. Canonical V2 design package
+
+Current Core design authority:
+
+- [Architecture V2](architecture/ARCHITECTURE_V2.md)
+- [Identity / Operation / Revision V2](architecture/IDENTITY_OPERATION_REVISION_V2.md)
+- [Canonical Raster V2](architecture/CANONICAL_RASTER_V2.md)
+- [Brush ↔ Raster ↔ Renderer V2](architecture/BRUSH_RENDER_CONTRACT_V2.md)
+- [Persistence / Recovery Logical V2](architecture/PERSISTENCE_RECOVERY_LOGICAL_V2.md)
+- [Shared Region Resolver V2](architecture/REGION_RESOLVER_V2.md)
+- [Core Slice 001 Final Disposition](implementation/CORE_SLICE_001_FINAL_DISPOSITION.md)
+- [Design Completion Re-evaluation](DESIGN_COMPLETION_REEVALUATION_2026-09-28.md)
+
+Architecture V1 and its prototype/CI evidence remain technical evidence. Where V1 semantics conflict with V2, V2 wins.
+
+## 3. Global principles
 
 - Canvas First / Direct Manipulation
 - Creation Proximity
@@ -34,13 +55,11 @@ Production Vertical Slice 001は基礎Infrastructureとして存在するが、�
 - Existing-app research before needless reinvention
 - Legacy reference as Reference Only
 
-Canonical source: `REDESIGN_PRINCIPLES.md`.
+Canonical doctrine: `REDESIGN_PRINCIPLES.md`.
 
-## 3. Subsystem readiness rule
+## 4. Subsystem readiness rule
 
-A Production subsystem may move from design to implementation only when its required decisions are complete.
-
-Required checklist:
+A Production subsystem may move from design to implementation only when all items material to that subsystem are complete:
 
 1. Problem statement
 2. User-facing semantics
@@ -53,75 +72,126 @@ Required checklist:
 9. Device behavior
 10. Creation-Proximity implications
 11. Legacy reference comparison where applicable
-12. Competitor research where it can materially improve the design
+12. Competitor research where materially useful
 13. Acceptance criteria
+14. Required Prototype/Benchmark gate
+15. Explicit user authorization
 
 UI-bearing subsystems additionally require user co-design and dedicated UI Design Skill.
 
-## 4. Current status
+## 5. Cross-cutting Core Gate A
 
-### Infrastructure foundation
+### Status: **COMPLETE**
 
-- Document / Sparse Raster / Revision foundation: implemented as Vertical Slice 001
-- Must remain subject to design re-audit when later subsystem requirements expose missing semantics
+Resolved:
 
-### Not yet authorized as design-complete
+- Identity taxonomy
+- Canonical Raster pixel/alpha/precision/Tile/coordinate model
+- Semantic Operation / Transaction / Revision contract
+- Persistence / Recovery dependency-closure and acknowledgement model
+- UI-to-Core semantic Command boundary
+- Slice 001 Retain/Modify/Replace disposition
+- Architecture V1/V2 authority relationship
 
-- Brush Engine final algorithm contract
-- Renderer production contract
-- Production Persistence / Recovery integration
-- Shared Region Resolver
-- Lineart Region production algorithm
-- Selection/Region shared semantics
-- advanced Color/ICC implementation
-- Wet Media
-- advanced Effect/Filter system
-- PiP / Detachable Workspace concrete interaction
-- Quick Controller concrete interaction/form
-- complete UI visual/layout design
-- portable .illustro physical encoding
+These no longer need to be invented during Production implementation.
 
-## 5. Implementation rule
+## 6. Brush Gate B
 
-Do not infer "次" or an Architecture PASS alone as permission to implement a subsystem whose design checklist above is still open.
+### Semantic design: **COMPLETE**
+### Prototype/benchmark calibration: **PENDING**
 
-When design is sufficiently complete, implementation may proceed subsystem-by-subsystem.
+Before Brush Production implementation, the benchmark harness must select/verify:
 
-## 6. Completion
+- default stabilization/reconstruction coefficients
+- mutable-tail budgets
+- preview tolerance
+- materialization admission limits
+- supported-device latency/memory profile
 
-This Gate changes to **CLOSED / DESIGN READY** only after a fresh specification audit verifies that:
+Mandatory properties and corpus are defined in `architecture/BRUSH_RENDER_CONTRACT_V2.md`.
 
-- no P0 design-critical backlog remains for the intended implementation scope
-- cross-subsystem semantics are coherent
-- UI-dependent decisions that affect Core contracts are identified
-- user has reviewed the design state before broad Production implementation continues
+## 7. Region / Fill Gate C
 
+### Semantic design: **COMPLETE**
+### Corpus calibration: **PENDING**
 
-## 7. Production implementation lock
+Before Region/Fill Production implementation, benchmark:
 
-Current lock state:
+- evidence thresholds
+- gap/bridge thresholds
+- confidence/margin thresholds
+- candidate/update budgets
 
-> **Production implementation is stopped after Vertical Slice 001. Vertical Slice 002 and later Production changes are not authorized.**
+Mandatory corpus and semantic pass properties are defined in `architecture/REGION_RESOLVER_V2.md`.
 
-Even after a design scope satisfies this Gate, that state means **DESIGN READY FOR USER REVIEW**, not automatic implementation permission.
+## 8. Persistence / native-file Gate D
+
+### Logical semantics: **COMPLETE**
+### Physical encoding: **PENDING BEFORE PRODUCTION PERSISTENCE/NATIVE FILE**
+
+Before Production portable `.illustro` / final Recovery storage:
+
+- metadata encoding
+- block/chunk layout
+- physical integrity framing
+- compression
+- index/directory
+- unknown-field preservation
+- compatibility/salvage encoding
+
+must be reviewed independently.
+
+The Library Section 9 draft is reference-only.
+
+## 9. UI Gate E
+
+### Status: **USER DECISION PENDING**
+
+Not formally adopted yet:
+
+- PiP / Detachable Workspace concrete form
+- Quick Controller geometry/form
+- Panel layout
+- Color UI
+- Brush Settings UI
+- Desktop / Tablet / Smartphone concrete layout
+- icons / hierarchy / theme / Canvas presentation
+
+Core V2 only fixes the capabilities these UIs may call.
+
+Visual prototyping must use the dedicated UI Design Skill.
+
+## 10. Production authorization Gate F
+
+### Status: **LOCKED**
+
+> **Production implementation remains stopped after Vertical Slice 001. Vertical Slice 002 and later Production changes are not authorized.**
+
+Passing Gate A or a feature benchmark does not automatically unlock Production.
 
 Production resumes only after the user explicitly authorizes the intended implementation scope.
 
-Design documents, research, benchmarks and non-Production prototypes may continue while this lock is active, provided they do not silently adopt user-owned UI decisions.
+## 11. Safe deferral rule
 
-## 8. Cross-cutting re-entry requirements
+The following may remain feature-local and do not block unrelated Core work:
 
-The current first-pass audit is tracked in [DESIGN_COMPLETION_AUDIT_2026-09-28.md](DESIGN_COMPLETION_AUDIT_2026-09-28.md).
+- Wet Media final simulation
+- deep Vector/Text details
+- advanced Effect/Filter catalog
+- Healing/Patch/Clone details
+- Macro editor
+- Asset/Navigator/Work Time UI
+- PSD mapping
+- plugin runtime
+- collaboration protocol
+- exact cache/worker/scheduler numeric budgets
+- visual theme/iconography
 
-Before broad Production continuation, at minimum resolve:
+They still require their own subsystem gate before implementation.
 
-1. stable Entity / Transaction / Revision / runtime Block / durable Content identity taxonomy;
-2. Canonical Raster pixel/alpha/precision/Tile/coordinate contract;
-3. semantic Operation / Transaction / Revision contract;
-4. logical Persistence / Recovery dependency-closure and acknowledgement contract;
-5. UI-to-Core action boundary independent of any unapproved PiP/Quick Controller form;
-6. explicit Retain / Modify / Replace disposition for Vertical Slice 001 foundations.
+## 12. Current label
 
-The intended next subsystem must additionally satisfy the Section 3 subsystem readiness rule. Brush and Region/Fill have dedicated high-coupling gates in the audit.
+The correct project phase is:
 
-Physical file encoding, feature-local advanced UI and calibration constants need not all be frozen before unrelated Production work, unless they alter one of the cross-cutting contracts above.
+> **CORE V2 DESIGN READY FOR USER REVIEW / BENCHMARK PHASE AVAILABLE / PRODUCTION LOCKED**
+
