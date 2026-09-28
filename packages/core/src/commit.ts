@@ -1,5 +1,5 @@
 import type { BlockId,LayerId } from './ids';
-import type { Revision } from './history';
+import type { Revision,CommandOperation } from './history';
 import type { DocumentRoot,LayerNode } from './model';
 import type { RecoveryEnvelope } from './recovery';
 import type { TileKey } from './raster/surface';
@@ -18,10 +18,10 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
   all.forEach((m,i)=>{const id=ids[i];if(id===undefined)throw new Error('block mismatch');let x=byLayer.get(m.layerId);if(!x){x=new Map();byLayer.set(m.layerId,x);}x.set(m.key,id);});
   const updates=new Map<LayerId,LayerNode>(tx.updates);
   for(const [layerId,blocks] of byLayer){const l=updates.get(layerId)??tx.root.getLayer(layerId);updates.set(layerId,Object.freeze({...l,surface:l.surface.withBlocks(blocks)}));}
-  const root=tx.root.withLayers(updates),ops:string[]=[];
-  for(const [id,w] of tx.working)if(w.changedTileCount)ops.push('raster:'+id+':'+w.changedTileCount);
-  for(const id of tx.updates.keys())ops.push('layer:'+id);
-  const revision=s.history.publish(tx.base,tx.id,root,{label:tx.label,operations:ops},s.clock());
+  const root=tx.root.withLayers(updates),ops:CommandOperation[]=[];
+  for(const [id,w] of tx.working)if(w.changedTileCount)ops.push({kind:'raster.tiles',layerId:id,tileCount:w.changedTileCount});
+  for(const id of tx.updates.keys())ops.push({kind:'layer.metadata',layerId:id});
+  const revision=s.history.publish(tx.base,tx.id,root,{version:1,kind:'core.transaction',label:tx.label,operations:ops},s.clock());
   tx.close();
   const recovery=Object.freeze({revisionId:revision.id,parentRevisionId:tx.base,transactionId:tx.id,changedBlockIds:Object.freeze([...ids])});
   return Object.freeze({revision,changedBlockIds:Object.freeze([...ids]),recovery});
