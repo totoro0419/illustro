@@ -257,6 +257,32 @@ ADR-0001 keeps HAMT/RRB/etc. open to measured comparison. Slice 001 uses a fixed
 
 **Action:** preserve the abstract structural-sharing contract now; benchmark/replace the concrete data structure when realistic scale requires it. Do not expose the current `PagedMap` shape as file/API semantics.
 
+## 6.1 Current competitor revalidation — 2026-09-28
+
+A focused official-document re-check was performed for the three high-coupling themes in this audit. This is not a visual-design adoption decision.
+
+Verified current patterns:
+
+- Procreate QuickMenu remains a customizable near-canvas command surface, while Brush Studio separates Stroke Path, Stabilization, Wet Mix, Color Dynamics, Dynamics and Pencil inputs with live preview.
+- CLIP STUDIO PAINT Quick Access can register tools, commands, Auto Actions and drawing colors and includes search; advanced brush settings can choose which parameters are promoted into the normal Tool Settings surface.
+- Krita 5.3 provides configurable Dockers and an On-Canvas Brush Editor / brush HUD; its brush system keeps explicit Sensor, Texture, Opacity/Flow and engine-level capabilities.
+- Photoshop desktop's current Contextual Task Bar is a floating on-canvas interface that surfaces task-relevant actions; current Actions can also be reached from that contextual surface.
+- ibisPaint continues to expose brush Shape/Spacing, Jitter, Texture and speed/pressure-dependent Dynamics.
+
+Official references:
+
+- https://help.procreate.com/procreate/handbook/5.3/interface-gestures/quickmenu
+- https://help.procreate.com/procreate/handbook/brushes/brush-studio-settings
+- https://help.clip-studio.com/en-us/manual_en/690_interface/Quick_Access_Palette.htm
+- https://help.clip-studio.com/en-us/manual_en/240_brushes/Customizing_brush_tools.htm
+- https://docs.krita.org/en/reference_manual/dockers/oncanvas_brush_editor.html
+- https://docs.krita.org/en/reference_manual/brushes/brush_settings.html
+- https://helpx.adobe.com/photoshop/desktop/get-started/learn-the-basics/boost-workflows-with-the-contextual-task-bar.html
+- https://helpx.adobe.com/photoshop/desktop/automate-tasks/automation-settings-and-presets/apply-actions-in-the-actions-panel.html
+- https://ibispaint.com/lecture/index.jsp?lang=en&no=118
+
+**Audit effect:** these current products reinforce the value of customizable command access, context/Canvas-near controls and deep Brush Dynamics. They do not establish a preferred Illustro PiP shape, Quick Controller geometry or Brush UI layout. Those remain independent Illustro design decisions and, where visual, user-owned decisions.
+
 ## 7. What does not need to block Production re-entry
 
 Provided Gate A and the intended subsystem gate pass, the following can remain feature-local:
