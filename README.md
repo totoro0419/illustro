@@ -6,11 +6,11 @@ Illustro は、**一枚絵を完成させる制作体験**に特化し、直感�
 
 ## Current status
 
-**Core implementation開始直前です。**
+**Core implementationを開始しました。**
 
 製品仕様・Core Interaction仕様・Architecture V1まで確定し、UI以外の5つのpre-implementation Architecture GateはSecond AuditまでPASSしています。
 
-本体Production Editorの実装はまだ開始していません。
+Production Coreの最初のVertical Slice（Document / Sparse Raster / Revision / Undo/Redo）は実装・検証済みです。Visual UIとRenderer/Persistence等の後続Subsystemはまだ未実装です。
 
 Visual UIはユーザーと共同で設計し、UI生成を行う場合は専用UI Design Skillを使用します。
 
