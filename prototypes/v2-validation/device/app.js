@@ -6,6 +6,7 @@ const status = document.querySelector('#status');
 const result = document.querySelector('#result');
 const resetButton = document.querySelector('#reset');
 const copyButton = document.querySelector('#copy');
+const saveButton = document.querySelector('#save');
 const syntheticButton = document.querySelector('#synthetic');
 
 const pipeline = new StreamingBrushPipeline();
@@ -161,7 +162,31 @@ function renderStatus() {
 }
 
 resetButton.addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); location.reload(); });
-copyButton.addEventListener('click', async () => { await navigator.clipboard.writeText(result.value); copyButton.textContent = 'コピー済み'; setTimeout(() => copyButton.textContent = 'JSONをコピー', 1200); });
+saveButton.addEventListener('click', () => {
+  const payload = result.value || JSON.stringify(summary(), null, 2);
+  const blob = new Blob([payload + '\n'], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'illustro-brush-device-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  saveButton.textContent = '保存済み';
+  setTimeout(() => saveButton.textContent = 'JSONを保存', 1200);
+});
+copyButton.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(result.value);
+    copyButton.textContent = 'コピー済み';
+  } catch {
+    result.focus();
+    result.select();
+    copyButton.textContent = '選択しました';
+  }
+  setTimeout(() => copyButton.textContent = 'JSONをコピー', 1200);
+});
 syntheticButton.addEventListener('click', () => { const b = runSyntheticBrowserBenchmark({ samples: 100000, batch: 32 }); result.value = JSON.stringify({ manual: summary(), synthetic100k: b }, null, 2); });
 window.illustroBrushDevice = { summary, runSyntheticBrowserBenchmark };
 renderStatus();
