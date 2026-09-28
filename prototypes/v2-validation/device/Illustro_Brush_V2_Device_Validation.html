@@ -255,6 +255,7 @@ const releaseWorks = [];
 let penSamples = 0;
 let touchSamples = 0;
 let mouseSamples = 0;
+let untrustedPointerSamples = 0;
 let coalescedSamples = 0;
 let predictedSamples = 0;
 let pressureMin = 1, pressureMax = 0;
@@ -293,11 +294,13 @@ function normalize(e) {
     tiltY: Number.isFinite(e.tiltY) ? e.tiltY : 0,
     t: Number.isFinite(e.timeStamp) ? e.timeStamp : performance.now(),
     pointerType: e.pointerType || 'unknown',
+    trusted: e.isTrusted === true,
   };
 }
 
 function noteSensor(s) {
-  if (s.pointerType === 'pen') penSamples += 1;
+  if (!s.trusted) untrustedPointerSamples += 1;
+  else if (s.pointerType === 'pen') penSamples += 1;
   else if (s.pointerType === 'touch') touchSamples += 1;
   else if (s.pointerType === 'mouse') mouseSamples += 1;
   pressureMin = Math.min(pressureMin, s.pressure);
@@ -376,7 +379,7 @@ function summary() {
     generatedAt: new Date().toISOString(),
     profile: BRUSH_PROFILE,
     environment: { userAgent: navigator.userAgent, platform: navigator.platform, hardwareConcurrency: navigator.hardwareConcurrency ?? null, deviceMemory: navigator.deviceMemory ?? null, dpr: window.devicePixelRatio, viewport: [window.innerWidth, window.innerHeight] },
-    session: { durationMs: performance.now() - sessionStartedAt, strokeCount, acceptedActualSamples: pipeline.totalAccepted, penSamples, touchSamples, mouseSamples, coalescedSamples, predictedSamples, pressureMin: Number.isFinite(pressureMin) ? pressureMin : null, pressureMax, tiltSeen, totalDabs: pipeline.totalDabs, sealedPages: pipeline.sealedPages, maxPendingObserved: pipeline.maxPendingObserved, backpressureEvents: pipeline.backpressureEvents, maxReleaseWork: releaseWorks.length ? Math.max(...releaseWorks) : 0 },
+    session: { durationMs: performance.now() - sessionStartedAt, strokeCount, acceptedActualSamples: pipeline.totalAccepted, penSamples, touchSamples, mouseSamples, untrustedPointerSamples, coalescedSamples, predictedSamples, pressureMin: Number.isFinite(pressureMin) ? pressureMin : null, pressureMax, tiltSeen, totalDabs: pipeline.totalDabs, sealedPages: pipeline.sealedPages, maxPendingObserved: pipeline.maxPendingObserved, backpressureEvents: pipeline.backpressureEvents, maxReleaseWork: releaseWorks.length ? Math.max(...releaseWorks) : 0 },
     timing: { pipelineP50Ms: percentile(cpuTimes, .50), pipelineP95Ms: percentile(cpuTimes, .95), pipelineP99Ms: percentile(cpuTimes, .99), pipelineMaxMs: cpuTimes.length ? Math.max(...cpuTimes) : 0, receiveToNextRafP50Ms: percentile(rafTimes, .50), receiveToNextRafP95Ms: percentile(rafTimes, .95), receiveToNextRafP99Ms: percentile(rafTimes, .99), frameIntervalP95Ms: percentile(frameIntervals, .95), frameIntervalsOver25ms: frameIntervals.filter(x => x > frameMissThreshold).length },
     memory,
     gateEvidence: { actualSampleLossObservable: 0, penProtocolComplete: deviceGate, requiredPenSamples: 500, requiredStrokes: 3, requiredPressureRange: 0.15 },
