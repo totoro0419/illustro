@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted for prototype**
+**Accepted — Architecture V1 / implementation active**
 
 ## Date
 
@@ -209,3 +209,8 @@ Recovery保護点はPersistence workerのdurable acknowledgementで管理する�
 - snapshot pin + GC
 - timelapse after history prune
 - crash between logical commit and durable protection
+
+
+## V1 implementation note
+
+Production Vertical Slice 001 implements one Revision per committed user Transaction, root-switch Undo/Redo, alternate Revision retention after Undo + branch, and a parentIds[] shape that does not preclude future merge. Snapshot/Layer Comp/Macro/Timelapse and hot/cold History spilling remain unimplemented.
