@@ -18,7 +18,7 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
   all.forEach((m,i)=>{const id=ids[i];if(id===undefined)throw new Error('block mismatch');let x=byLayer.get(m.layerId);if(!x){x=new Map();byLayer.set(m.layerId,x);}x.set(m.key,id);});
   const updates=new Map<LayerId,LayerNode>(v.updates);
   for(const [layerId,blocks] of byLayer){const l=updates.get(layerId)??v.root.getLayer(layerId);updates.set(layerId,Object.freeze({...l,surface:l.surface.withBlocks(blocks)}));}
-  const root=v.root.withLayers(updates),ops:CommandOperation[]=[];
+  const root=v.root.withLayers(updates),ops:CommandOperation[]=[...v.semanticOps];
   for(const [id,w] of v.working)if(w.changedTileCount)ops.push({kind:'raster.tiles',layerId:id,tileCount:w.changedTileCount});
   for(const id of v.updates.keys())ops.push({kind:'layer.metadata',layerId:id});
   const revision=s.history.publish(v.base,v.id,root,{version:1,kind:'core.transaction',label:tx.label,operations:ops},s.clock());
