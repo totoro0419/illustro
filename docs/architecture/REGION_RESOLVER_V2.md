@@ -1,6 +1,6 @@
 # Illustro Shared Region Resolver Contract V2
 
-> Status: **SEMANTIC DESIGN COMPLETE — synthetic labeled corpus PASS / representative real-artwork calibration remains**
+> Status: **SEMANTIC DESIGN COMPLETE — synthetic PASS / real-art Evidence→Topology prototype FAILS gate**
 > Date: 2026-09-28
 > Scope: Fill / Selection / Lineart / Persistent Region shared resolver boundary
 > Production effect: specification only. Region/Fill Production remains benchmark-gated and user authorization is still required.
@@ -498,3 +498,45 @@ Full details are recorded in [Region Resolver V2 Reference Benchmark](../benchma
 The synthetic semantic/corpus portion of Gate C **passes**.
 
 The overall Production Gate C remains **CONDITIONAL** because these labels are synthetic. Production confidence/gap/identity thresholds must not be frozen until a representative labeled real-artwork corpus is evaluated without changing expected labels after seeing results.
+
+
+## 21. Representative real-art validation — 2026-09-29
+
+The missing real-art evidence was implemented and executed using actual public-domain/Open Access drawings with labels frozen before the first Resolver run.
+
+Final Train-driven candidate result:
+
+    training                     = 10 / 14 = 71.4%
+    required training            >= 90%
+    development holdout          = 3 / 6 = 50.0%
+    required development holdout >= 80%
+
+The training requirement fails, so a new blind final set was deliberately **not consumed**.
+
+Observed failure classes include:
+
+- faint/weak closed boundaries leaking to exterior;
+- dense ornament producing unresolved/over-segmented topology;
+- wash/hatching producing false closure;
+- one global evidence policy failing to separate structural line, texture and wash.
+
+The synthetic semantic suite remains valid. The failure is specifically the current real-image Evidence → Boundary → Topology inference strategy.
+
+### Gate interpretation
+
+> **Gate C is BLOCKED / NOT CLOSED.**
+
+Do not continue threshold chasing.
+
+Before the next real-art gate attempt, redesign the Evidence layer to support at least:
+
+- multi-scale line/edge likelihood;
+- orientation-aware continuity;
+- texture/wash suppression;
+- oriented gap continuation;
+- explicit source-frame/crop policy;
+- confidence over competing topology hypotheses.
+
+After redesign, rerun the frozen training corpus, then freeze a **new never-before-evaluated blind final set** before any CLOSED claim.
+
+See [Region Resolver V2 Real-Art Benchmark](../benchmarks/REGION_REAL_ART_BENCHMARK_2026-09-29.md).
