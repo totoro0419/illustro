@@ -52,11 +52,13 @@ function percentile(a, p) {
 
 function evidenceFromLuma(decoded) {
   const { width, height, luma } = decoded;
-  const paper = percentile(luma, 0.86);
-  const dark = percentile(luma, 0.12);
+  const paper = percentile(luma, 0.90);
+  const dark = percentile(luma, 0.10);
   const range = Math.max(0.06, paper - dark);
-  const grid = new EvidenceGrid(width, height);
+  const raw = new Float32Array(width * height);
   const radius = 2;
+  const at = (x, y) => luma[Math.max(0, Math.min(height - 1, y)) * width + Math.max(0, Math.min(width - 1, x))];
+
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       let sum = 0, n = 0;
@@ -65,10 +67,40 @@ function evidenceFromLuma(decoded) {
           sum += luma[yy * width + xx]; n += 1;
         }
       }
+      const center = at(x, y);
       const local = sum / n;
-      const globalInk = Math.max(0, (paper - luma[y * width + x]) / range);
-      const localInk = Math.max(0, (local - luma[y * width + x]) / 0.16);
-      grid.set(x, y, Math.min(1, 0.38 * globalInk + 0.92 * localInk));
+      const globalInk = Math.max(0, (paper - center) / range);
+      const localInk = Math.max(0, (local - center) / 0.12);
+
+      const gx =
+        -at(x - 1, y - 1) + at(x + 1, y - 1) +
+        -2 * at(x - 1, y) + 2 * at(x + 1, y) +
+        -at(x - 1, y + 1) + at(x + 1, y + 1);
+      const gy =
+        -at(x - 1, y - 1) - 2 * at(x, y - 1) - at(x + 1, y - 1) +
+         at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1);
+      const gradient = Math.min(1, Math.hypot(gx, gy) / 1.15);
+
+      raw[y * width + x] = Math.min(1, Math.max(
+        0.45 * globalInk,
+        0.92 * localInk,
+        0.98 * gradient,
+      ));
+    }
+  }
+
+  // One-pixel max filter compensates for antialiasing/downsampling of thin real ink.
+  // This is evidence thickening, not a semantic gap-close decision.
+  const grid = new EvidenceGrid(width, height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      let v = 0;
+      for (let yy = Math.max(0, y - 1); yy <= Math.min(height - 1, y + 1); yy += 1) {
+        for (let xx = Math.max(0, x - 1); xx <= Math.min(width - 1, x + 1); xx += 1) {
+          v = Math.max(v, raw[yy * width + xx]);
+        }
+      }
+      grid.set(x, y, v);
     }
   }
   return grid;
@@ -91,6 +123,7 @@ function seedComponent(result, nx, ny) {
 
 function classify(grid, query, basePolicy) {
   const votes = [];
+  const areas = [];
   for (const dt of [-0.06, 0, 0.06]) {
     for (const dg of [-1, 0, 1]) {
       const policy = {
@@ -104,20 +137,48 @@ function classify(grid, query, basePolicy) {
         candidateSearchPx: 4,
       };
       const r = resolveRegion(grid, policy);
-      const c = seedComponent(r, query.seed[0], query.seed[1]);
-      votes.push(c ? (c.touchesEdge ? 'open' : 'closed') : 'ambiguous');
+      const component = seedComponent(r, query.seed[0], query.seed[1]);
+      votes.push(component ? (component.touchesEdge ? 'open' : 'closed') : 'ambiguous');
+      if (component) areas.push(component.area / (grid.width * grid.height));
     }
   }
+
   const closed = votes.filter(v => v === 'closed').length;
   const open = votes.filter(v => v === 'open').length;
-  if (closed >= 8) return { label: 'closed', stability: closed / votes.length, votes };
-  if (open >= 8) return { label: 'open', stability: open / votes.length, votes };
-  return { label: 'ambiguous', stability: Math.max(closed, open) / votes.length, votes };
+  const dominant = Math.max(closed, open);
+  const areaRange = areas.length ? Math.max(...areas) - Math.min(...areas) : 1;
+
+  const cx = Math.max(0, Math.min(grid.width - 1, Math.round(query.seed[0] * (grid.width - 1))));
+  const cy = Math.max(0, Math.min(grid.height - 1, Math.round(query.seed[1] * (grid.height - 1))));
+  let strong = 0, localN = 0;
+  const localRadius = 10;
+  const localThreshold = Math.max(0.15, basePolicy.evidenceThreshold * 0.80);
+  for (let y = Math.max(0, cy - localRadius); y <= Math.min(grid.height - 1, cy + localRadius); y += 1) {
+    for (let x = Math.max(0, cx - localRadius); x <= Math.min(grid.width - 1, cx + localRadius); x += 1) {
+      localN += 1;
+      if (grid.get(x, y) >= localThreshold) strong += 1;
+    }
+  }
+  const localStrongFraction = localN ? strong / localN : 0;
+
+  // Ambiguity is a confidence property, not only a vote tie:
+  // topology that changes materially under small policy perturbations is not Current.
+  if (dominant < 8 || areaRange > 0.08) {
+    return { label: 'ambiguous', stability: dominant / votes.length, votes, areaRange, localStrongFraction };
+  }
+  // An "open" answer surrounded by substantial boundary evidence is also unresolved:
+  // this catches faint/broken real drawings rather than silently leaking to the exterior.
+  if (open >= 8 && localStrongFraction > 0.12) {
+    return { label: 'ambiguous', stability: open / votes.length, votes, areaRange, localStrongFraction };
+  }
+  if (closed >= 8) return { label: 'closed', stability: closed / votes.length, votes, areaRange, localStrongFraction };
+  if (open >= 8) return { label: 'open', stability: open / votes.length, votes, areaRange, localStrongFraction };
+  return { label: 'ambiguous', stability: dominant / votes.length, votes, areaRange, localStrongFraction };
 }
 
 function candidatePolicies() {
   const out = [];
-  for (const evidenceThreshold of [0.28, 0.34, 0.40, 0.46, 0.52, 0.58, 0.64]) {
+  for (const evidenceThreshold of [0.24, 0.30, 0.36, 0.42, 0.48, 0.54, 0.60]) {
     for (const gapMax of [0, 1, 2, 3]) out.push({ evidenceThreshold, gapMax });
   }
   return out;
