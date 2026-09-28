@@ -82,9 +82,14 @@ export class BrushStrokeSession{
       dabs,
     }));
 
-    const commit=this.transaction.commit();
-    this.closed=true;
-    return Object.freeze({commit,dabs,sampleCount:this.sampleCountValue});
+    try{
+      const commit=this.transaction.commit();
+      this.closed=true;
+      return Object.freeze({commit,dabs,sampleCount:this.sampleCountValue});
+    }catch(error){
+      this.failed=true;
+      throw error;
+    }
   }
 
   cancel():void{
