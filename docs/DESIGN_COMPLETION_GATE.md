@@ -1,7 +1,7 @@
 # Illustro Design Completion Gate
 
-> Status: **CORE V2 DESIGN READY FOR USER REVIEW — PRODUCTION LOCKED**
-> Date: 2026-09-28
+> Status: **CORE V2 DESIGN READY — GATE B PHYSICAL-PEN PENDING / GATE C REAL-ART BLOCKED / PRODUCTION LOCKED**
+> Date: 2026-09-29
 > Purpose: Architecture readiness, feature benchmark readiness, UI approval and Production authorizationを混同しないためのGate。
 
 ## 1. Current interpretation
@@ -33,6 +33,7 @@ Current Core design authority:
 - [Shared Region Resolver V2](architecture/REGION_RESOLVER_V2.md)
 - [Core Slice 001 Final Disposition](implementation/CORE_SLICE_001_FINAL_DISPOSITION.md)
 - [Design Completion Re-evaluation](DESIGN_COMPLETION_REEVALUATION_2026-09-28.md)
+- [Gate B/C Final Re-evaluation](GATE_BC_FINAL_REEVALUATION_2026-09-29.md)
 
 Architecture V1 and its prototype/CI evidence remain technical evidence. Where V1 semantics conflict with V2, V2 wins.
 
@@ -99,28 +100,39 @@ These no longer need to be invented during Production implementation.
 
 ### Semantic design: **COMPLETE**
 ### Reference algorithm / semantic benchmark: **PASS**
-### Target-device execution validation: **PENDING**
-### Overall Production Gate B: **CONDITIONAL**
+### Browser-runtime V2 streaming validation: **PASS**
+### Physical target-device Pen validation: **PENDING**
+### Overall Production Gate B: **CONDITIONAL — NOT CLOSED**
 
-Reference validation is recorded in [Brush V2 Reference Benchmark](benchmarks/BRUSH_V2_BENCHMARK_2026-09-28.md).
+Evidence:
 
-Reference candidates now exist for reconstruction, mutable-tail/page bounds, Preview tolerance and materialization admission. They are not cross-device Product guarantees.
+- [Brush V2 Reference Benchmark](benchmarks/BRUSH_V2_BENCHMARK_2026-09-28.md)
+- [Brush V2 Device Validation](benchmarks/BRUSH_DEVICE_VALIDATION_2026-09-29.md)
 
-Before Brush Production Gate B can become CLOSED, execute the actual V2 Brush path on representative target hardware and verify latency, sustained memory/thermal behavior and perceptual stabilizer response.
+The committed Chromium V2 streaming path accepts 100,000 synthetic samples with bounded release/page state, but that is not a substitute for genuine target-device Pen Pointer Events, sustained device memory/thermal behavior or perceptual stabilizer response.
 
+Gate B closes only after the device harness emits a valid physical-Pen record from representative target hardware.
 ## 7. Region / Fill Gate C
 
 ### Semantic design: **COMPLETE**
 ### Synthetic labeled/adversarial corpus: **PASS**
-### Representative real-artwork calibration: **PENDING**
-### Overall Production Gate C: **CONDITIONAL**
+### Representative real-artwork corpus: **EXECUTED**
+### Real-art algorithm result: **FAIL**
+### Overall Production Gate C: **BLOCKED — NOT CLOSED**
 
-Reference validation is recorded in [Region Resolver V2 Reference Benchmark](benchmarks/REGION_V2_BENCHMARK_2026-09-28.md).
+Evidence:
 
-The synthetic corpus has internally consistent candidate values for evidence/gap/confidence/identity/update behavior. They are not Production thresholds.
+- [Region Resolver V2 Reference Benchmark](benchmarks/REGION_V2_BENCHMARK_2026-09-28.md)
+- [Region Resolver V2 Real-Art Benchmark](benchmarks/REGION_REAL_ART_BENCHMARK_2026-09-29.md)
 
-Before Region/Fill Production Gate C can become CLOSED, add a representative labeled real-artwork corpus and rerun the calibration without changing expected labels after seeing results.
+Final Train-driven real-art result:
 
+- training: **10 / 14 = 71.4%**, required >= 90%;
+- exposed development holdout: **3 / 6 = 50.0%**, required >= 80%.
+
+The corpus is no longer the missing item. The current real-image Evidence → Boundary → Topology prototype is insufficient.
+
+Gate C now requires an Evidence-layer redesign with multi-scale/oriented continuity and texture/wash separation. After redesign, freeze a new never-before-evaluated blind final set before any CLOSED claim.
 ## 8. Persistence / native-file Gate D
 
 ### Logical semantics: **COMPLETE**
@@ -190,5 +202,5 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY / BRUSH+REGION REFERENCE VALIDATION COMPLETE / GATES B+C CONDITIONAL / PRODUCTION LOCKED**
+> **CORE V2 DESIGN READY / BRUSH PHYSICAL-PEN EVIDENCE PENDING / REGION REAL-ART ALGORITHM BLOCKED / PRODUCTION LOCKED**
 
