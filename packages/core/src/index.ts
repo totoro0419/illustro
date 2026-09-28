@@ -4,6 +4,6 @@ export type { CommitReceipt } from './commit';
 export { cryptoIdFactory } from './ids';
 export type { BlockId,DocumentId,IdFactory,LayerId,RevisionId,TransactionId } from './ids';
 export { DocumentRoot,type LayerNode } from './model';
-export type { Revision,Command } from './history';
+export type { Revision,Command,CommandOperation } from './history';
 export type { OwnershipTransfer } from './raster/store';
-export type { RecoveryEnvelope } from './recovery';
+export type { PersistenceHandoff } from './recovery';
