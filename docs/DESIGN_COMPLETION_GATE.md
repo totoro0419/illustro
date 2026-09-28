@@ -1,6 +1,6 @@
 # Illustro Design Completion Gate
 
-> Status: **CORE V2 DESIGN READY — GATE B TABLET PEN PASS / SUSTAINED+PERCEPTUAL PENDING / GATE C REAL-ART BLOCKED / PRODUCTION LOCKED**
+> Status: **CORE V2 DESIGN READY — GATE B TABLET PEN+PERCEPTUAL PASS / SUSTAINED+THERMAL PENDING / GATE C REAL-ART BLOCKED / PRODUCTION LOCKED**
 > Date: 2026-09-29
 > Purpose: Architecture readiness, feature benchmark readiness, UI approval and Production authorizationを混同しないためのGate。
 
@@ -102,7 +102,8 @@ These no longer need to be invented during Production implementation.
 ### Reference algorithm / semantic benchmark: **PASS**
 ### Browser-runtime V2 streaming validation: **PASS**
 ### Representative Tablet physical-Pen validation: **PASS**
-### Sustained/thermal + perceptual validation: **PENDING**
+### Perceptual stabilizer validation: **PASS**
+### Sustained/thermal validation: **PENDING**
 ### Overall Production Gate B: **CONDITIONAL — NOT CLOSED**
 
 Evidence:
@@ -114,7 +115,7 @@ The committed Chromium V2 streaming path accepts 100,000 synthetic samples with 
 
 A genuine target-tablet Pen record has now also passed the device protocol: 5,727 trusted Pen samples, pressure range 0.660115, tilt observed, max pending pages 8, max release work 181 samples, pipeline p95 1.0 ms, receive→next-RAF p95 17.8 ms, and 0 frame intervals over 25 ms in the 34.5-second session.
 
-This closes the representative Tablet physical-Pen subgate. Gate B remains CONDITIONAL because multi-minute sustained/thermal behavior and explicit perceptual confirmation of the selected stabilizer profile are not yet evidenced. Desktop/Smartphone remain separate device-profile certifications.
+This closes the representative Tablet physical-Pen subgate. The user additionally reported no noticeable tracking delay, hitching, or excessive stabilization with the selected One Euro `4/4/1` profile, so the perceptual stabilizer subgate also passes. Gate B remains CONDITIONAL because multi-minute sustained/thermal behavior is not yet evidenced. Desktop/Smartphone remain separate device-profile certifications.
 ## 7. Region / Fill Gate C
 
 ### Semantic design: **COMPLETE**
@@ -205,5 +206,5 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY / BRUSH TABLET PHYSICAL-PEN PASS — SUSTAINED+PERCEPTUAL PENDING / REGION REAL-ART ALGORITHM BLOCKED / PRODUCTION LOCKED**
+> **CORE V2 DESIGN READY / BRUSH TABLET PEN+PERCEPTUAL PASS — SUSTAINED+THERMAL PENDING / REGION REAL-ART ALGORITHM BLOCKED / PRODUCTION LOCKED**
 
