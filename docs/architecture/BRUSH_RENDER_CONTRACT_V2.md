@@ -1,6 +1,6 @@
 # Illustro Brush ↔ Raster ↔ Renderer Contract V2
 
-> Status: **SEMANTIC DESIGN COMPLETE — reference + browser + representative Tablet Pen PASS / sustained+perceptual device evidence remains**
+> Status: **SEMANTIC DESIGN COMPLETE — reference + browser + representative Tablet Pen + perceptual PASS / sustained+thermal evidence remains**
 > Date: 2026-09-28
 > Scope: input normalization, stroke semantics, deterministic Brush execution, realtime preview, Raster commit and Renderer boundary
 > Production effect: specification only. Brush Production implementation remains prohibited until the benchmark gate in section 17 passes and the user authorizes implementation.
@@ -513,6 +513,6 @@ The representative Tablet physical-Pen subgate therefore **passes**.
 
 > **Gate B remains CONDITIONAL / NOT CLOSED.**
 
-The remaining evidence is sustained multi-minute runtime/thermal behavior and explicit perceptual confirmation of the selected stabilizer profile. Desktop/Smartphone remain separate supported-device profile certifications.
+The user reported no noticeable tracking delay, hitching, or excessive stabilization during the physical Pen run with the selected One Euro `4/4/1` profile, so the perceptual subgate passes. The remaining evidence is sustained multi-minute runtime/thermal behavior. Desktop/Smartphone remain separate supported-device profile certifications.
 
 See [Brush V2 Device Validation](../benchmarks/BRUSH_DEVICE_VALIDATION_2026-09-29.md).
