@@ -14,6 +14,7 @@ export class DocumentRoot{
     readonly height:number,
     readonly name:string,
     readonly colorProfileId:string,
+    readonly pixelFormat:'rgba8-straight-v1',
     readonly layers:PagedMap<LayerId,LayerNode>,
     readonly rootLayerIds:readonly LayerId[],
   ){this.rootLayerIds=Object.freeze([...rootLayerIds]);Object.freeze(this);}
@@ -21,7 +22,7 @@ export class DocumentRoot{
   withLayers(changes:ReadonlyMap<LayerId,LayerNode>){
     if(!changes.size)return this;
     const e=this.layers.edit();for(const [k,v] of changes)e.set(k,v);
-    return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,e.commit(),this.rootLayerIds);
+    return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.pixelFormat,e.commit(),this.rootLayerIds);
   }
 }
 export function rasterLayer(id:LayerId):LayerNode{
