@@ -1,7 +1,16 @@
 import {revisionId,type LayerId,type RevisionId,type TransactionId} from './ids';
-export type CommandOperation=Readonly<{kind:'raster.tiles';layerId:LayerId;tileCount:number}>|Readonly<{kind:'layer.metadata';layerId:LayerId}>;
+import type {PointerTypeCode} from './input/sample';
+import type {OpaqueRoundBrushV1} from './brush/style';
+import type {PackedDabStream} from './brush/dabStream';
+
+export type CommandOperation=
+ |Readonly<{kind:'raster.tiles';layerId:LayerId;tileCount:number}>
+ |Readonly<{kind:'layer.metadata';layerId:LayerId}>
+ |Readonly<{kind:'brush.stroke';layerId:LayerId;algorithmVersion:'linear-arc-opaque-round-v1';brush:OpaqueRoundBrushV1;pointerType:PointerTypeCode;sampleCount:number;dabs:PackedDabStream}>;
+
 export type Command=Readonly<{version:1;kind:'core.transaction';label:string;operations:readonly CommandOperation[]}>;
 export type Revision<T>=Readonly<{id:RevisionId;parentIds:readonly RevisionId[];transactionId:TransactionId|null;root:T;command:Command|null;committedAt:number}>;
+
 export class RevisionHistory<T>{
  private revisions=new Map<RevisionId,Revision<T>>();private h=revisionId(0);private next=1;private redoIds:RevisionId[]=[];
  constructor(root:T,at=0){this.revisions.set(this.h,Object.freeze({id:this.h,parentIds:Object.freeze([]),transactionId:null,root,command:null,committedAt:at}));}
