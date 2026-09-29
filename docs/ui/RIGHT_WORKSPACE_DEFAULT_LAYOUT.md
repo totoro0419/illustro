@@ -1,8 +1,9 @@
 # Illustro Right Workspace — Default Layout & Collapse Specification
 
-> Status: **DESIGN BASELINE / USER REVIEW PENDING**
+> Status: **SUPPORTING DETAIL / CANONICALIZED**
 > Date: 2026-09-29
-> Scope: PC / tablet Right Workspace default order, expansion state and collapsed summaries
+> Scope: Supporting default-layout detail
+> Canonical authority: [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
 > Parent: [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 > General UI research: [RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 > Interaction behavior: [RIGHT_WORKSPACE_INTERACTION_SPEC.md](RIGHT_WORKSPACE_INTERACTION_SPEC.md)
