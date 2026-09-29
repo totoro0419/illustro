@@ -1,0 +1,32 @@
+name: Brush Device Harness CI
+
+on:
+  pull_request:
+    paths:
+      - 'prototypes/v2-validation/device/**'
+      - 'prototypes/v2-validation/package.json'
+      - 'prototypes/v2-validation/playwright.config.js'
+      - '.github/workflows/brush-device-harness-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-device-harness:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: prototypes/v2-validation
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.16.0
+          package-manager-cache: false
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify device harnesses
+        run: npx playwright test device
