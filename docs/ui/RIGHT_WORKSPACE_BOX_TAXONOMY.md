@@ -5,6 +5,7 @@
 > Scope: PC / tablet right magnetic Workspace/PiP
 > Related: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
 > General UI research: [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
+> Default layout: [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
 > Parent: [UI Gate E](UI_GATE_E.md)
 
 ## 1. Role
@@ -601,29 +602,29 @@ A Box may contain tabs/sections only when they share one clear work purpose.
 
 ## 8. Recommended distinction: persistent vs contextual
 
-### Expansion priority
+### Default expansion profile
 
-All Boxes remain present, but they do not need to remain expanded simultaneously.
+Canonical baseline is fixed in [RIGHT_WORKSPACE_DEFAULT_LAYOUT.md](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md).
 
-Likely high-frequency expanded candidates:
+Expanded by default:
 
 - Layers & Compositing
 - Color
 - Brush
 
-Often-collapsed / expanded-on-demand candidates:
+Collapsed by default:
 
 - Properties / Inspector
-- Effects & Adjustments
 - Reference
 - Assets
+- Effects & Adjustments
+- Navigator & View
 - History & Progress
 - Automation
-- Navigator & View
 - Document
 - Workspace
 
-This is an expansion-density distinction, not a visibility/removal distinction. Exact default expanded/collapsed states are still to be decided.
+All Boxes remain present. This is an expansion-density distinction, not a visibility/removal distinction. User changes persist as Workspace state.
 
 ## 9. General professional-UI rules now applied
 
@@ -670,12 +671,12 @@ The most important architectural decisions are:
 10. keep Box headers sparse and drag operations previewable/reversible;
 11. avoid arbitrary semantic tab-merging of unrelated Boxes.
 
-The next design step is to decide:
+Default vertical order and default expanded/collapsed state are now fixed by `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md`.
 
-- default expanded/collapsed state for all Boxes;
-- default vertical order;
+Remaining Right-UI design work:
+
 - Layer Page geometry/behavior;
 - Box header/control anatomy;
 - magnetic detach/reorder behavior;
 - minimum/maximum sizing;
-- tablet projection.
+- tablet projection details beyond the shared semantic order.
