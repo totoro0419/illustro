@@ -109,19 +109,28 @@ Contains:
 - transient contextual overlays
 - Canvas-near Quick Controller when summoned
 
-### 3.2 Primary Tool Surface
+### 3.2 Left Access Surface
 
-Stable tool selection.
+The Left UI is the **universal access root** for user-facing Illustro capability.
 
-Contains tool identities, not deep settings, and is **icon-first** rather than text-led.
+It is icon-first and split into:
 
-Canonical option catalog:
+- a customizable **Pinned Rail** for direct access;
+- a non-removable **All Features** entry;
+- category palettes for non-pinned capability;
+- full feature search using the shared Command/Tool index.
 
+Canonical design:
+
+- [Left UI Access Architecture](LEFT_UI_ACCESS_ARCHITECTURE.md)
+- [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 - [Left Tool Surface — Option Catalog](LEFT_TOOL_SURFACE_OPTIONS.md)
 
-The default visible set is intentionally not fixed yet. Users may customize which eligible tools/modes appear.
+The default visible set is intentionally not fixed yet.
 
-Tool choice and tool settings are separate.
+Selecting a Tool/Mode activates Canvas behavior. Selecting a settings/panel item opens or focuses the corresponding right magnetic Workspace/PiP block. Immediate Commands execute through the same semantic Command used by shortcuts, Quick Controller and other surfaces.
+
+Deep settings do not expand inside the Rail itself.
 
 ### 3.3 Context Surface
 
@@ -185,7 +194,7 @@ This is a prototype reference size, not a fixed product requirement.
 ### Structure
 
 - minimal top document/app strip for non-drawing application/document operations such as Home and Save; Undo/Redo do not live here
-- stable icon-first left Primary Tool Surface
+- stable icon-first left universal access surface (Pinned Rail + All Features)
 - central Canvas
 - right magnetic Workspace/PiP stack
 - transient Context Surface inside the Canvas working region
@@ -217,7 +226,7 @@ Designed for tablet-class stylus + touch use, but capability-driven.
 ### Structure
 
 - Canvas-first full working area
-- compact Primary Tool Surface at one edge
+- compact Left Access Surface at one edge, preserving All Features reachability
 - persistent full-height right Dock is not the default
 - Workspace Blocks open as anchored overlay / drawer / detachable card
 - Context Surface appears near a reachable Canvas edge
@@ -241,7 +250,7 @@ Reference prototype viewport: **390 × 844** portrait, with landscape reflow req
 - Canvas occupies nearly the entire viewport
 - no permanent desktop-style side panel
 - compact top document/status strip
-- thumb-reachable primary tool/command surface at the lower edge
+- thumb-reachable compact access surface at the lower edge
 - Workspace Blocks open as bottom/edge sheets or temporary cards
 - Context Surface is compact and collapsible
 - Quick Controller is anchored to a reachable corner/edge when cursor-centered radial space is insufficient
@@ -435,7 +444,7 @@ A PASS candidate must contain all three in one visual comparison set:
 Each must visibly demonstrate:
 
 - Canvas dominance
-- Primary Tool Surface
+- Left Access Surface
 - Context Surface
 - Layers access
 - Color access
