@@ -301,10 +301,12 @@ External standards/guidelines informed them only within scope:
 - Carbon accordion example header: 40px.
 
 Illustro therefore uses:
-- pointer Box header 40px;
-- touch/pen Box header 48px;
+- pointer Box header visible height 40px;
+- touch/pen Box header visible height 40px by default;
 - pointer ordinary effective targets 32px+;
-- touch/pen primary effective targets 44px+.
+- touch/pen primary effective targets 44px+ through hit areas/spacing rather than wholesale visual enlargement.
+
+The tablet projection intentionally preserves the desktop visual grammar unless a concrete touch constraint requires a visible change.
 
 These values still require runtime usability validation.
 
