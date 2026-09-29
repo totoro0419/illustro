@@ -2,17 +2,15 @@
 
 > Status: **CANDIDATE UNIVERSE V1 / DEFAULT NOT DECIDED**
 > Date: 2026-09-29
-> Scope: PC / tablet left Primary Tool Surface
+> Scope: Tool/Mode option catalog used by the PC / tablet Left Access Surface
 > Parent: [UI Gate E](UI_GATE_E.md)
 > Rule: This document defines what may be added to the left tool surface. It does **not** define the default visible set or final order.
 
 ## 1. Purpose
 
-The left surface is primarily a **tool-selection surface**.
+The left surface is now a **universal feature access surface**. This document covers only the Tool/Mode subset of that larger system.
 
-It answers:
-
-> **What do I operate on the Canvas with now?**
+For the full navigation model and non-tool capability, see [Left UI Access Architecture](LEFT_UI_ACCESS_ARCHITECTURE.md).
 
 It is not the primary home for:
 
