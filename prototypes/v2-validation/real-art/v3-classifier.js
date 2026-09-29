@@ -342,6 +342,8 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
   const saturatedOrnamentNetwork = !!closure &&
     local.texture >= 0.90 &&
     closure.texture >= 0.90 &&
+    local.wash >= 0.28 &&
+    local.coherence < 0.60 &&
     closure.bridge < 0.15 &&
     closure.coherence < 0.55;
 
