@@ -148,13 +148,14 @@ The Library Section 9 draft is reference-only.
 ### Definition: **IN REVISION**
 ### Left UI semantic / interaction subgate: **COMPLETE**
 ### Right UI semantic / interaction / layout subgate: **COMPLETE**
-### Visual prototype/user review: **PENDING**
+### Visual prototype/user review: **PARTIAL PASS — EXPANDED / MEDIUM APPROVED; COMPACT PENDING**
 
 Canonical Gate E specification:
 
 - [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
 - [Left UI — Canonical Specification](ui/LEFT_UI_SPEC.md)
 - [Right UI — Canonical Specification](ui/RIGHT_UI_SPEC.md)
+- [Expanded / Medium Visual Review Record](ui/UI_GATE_E_VISUAL_REVIEW_2026-09-29.md)
 - [Right UI Feature Coverage](ui/RIGHT_UI_FEATURE_COVERAGE.md)
 - [Right UI Quality Review](ui/RIGHT_UI_QUALITY_REVIEW.md)
 - [Right Workspace — Default Layout & Collapse](ui/RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
@@ -176,7 +177,9 @@ Confirmed / currently recorded decisions include:
 
 The default left-tool set, several controller details, and remaining device-specific composition are still being refined.
 
-Gate E is not PASS until the rendered Expanded / Medium / Compact prototype set is generated with the dedicated UI Design Skill, inspected, and reviewed by the user.
+Expanded and Medium visual composition have been rendered, corrected, inspected, and **approved by the user on 2026-09-29**.
+
+Gate E is not yet overall PASS because the required Compact / smartphone visual projection has not yet been reviewed, and runtime-only behavior remains unverified where applicable.
 
 ## 10. Production authorization Gate F
 
@@ -210,4 +213,4 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY / LEFT UI DESIGN COMPLETE / RIGHT UI DESIGN COMPLETE / UI GATE E IN REVISION / VISUAL REVIEW PENDING / PRODUCTION LOCKED**
+> **CORE V2 DESIGN READY / LEFT UI DESIGN COMPLETE / RIGHT UI DESIGN COMPLETE / EXPANDED+MEDIUM VISUAL APPROVED / COMPACT VISUAL PENDING / PRODUCTION LOCKED**
