@@ -125,7 +125,14 @@ test('V4 exposed Region corpus including all three exposed large-final failures 
         topologyPersistence: got.topologyPersistence,
         radial: got.radial,
         boundaryConfidence: got.boundaryConfidence,
-        radialConfidence: got.radialConfidence,
+        radialConfidence: got.radial?.confidence,
+        topologyIdentityConfidence: got.topologyIdentityConfidence,
+        componentReliability: got.componentReliability,
+        openEnclosureAmbiguityRisk: got.openEnclosureAmbiguityRisk,
+        closureConfidence: got.closureConfidence,
+        continuityConfidence: got.continuityConfidence,
+        denseNetworkRisk: got.denseNetworkRisk,
+        boundaryDiscontinuityRisk: got.boundaryDiscontinuityRisk,
         textureNetworkRisk: got.textureNetworkRisk,
       });
     }
