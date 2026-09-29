@@ -1,0 +1,564 @@
+# Illustro Right Workspace — Box Taxonomy Candidate V1
+
+> Status: **CANDIDATE TAXONOMY / USER REVIEW PENDING**
+> Date: 2026-09-29
+> Scope: PC / tablet right magnetic Workspace/PiP
+> Related: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
+> Parent: [UI Gate E](UI_GATE_E.md)
+
+## 1. Role
+
+The right side is the **Workspace / Inspector side**.
+
+It is responsible for:
+
+- detailed properties/settings;
+- artwork structure/state management;
+- persistent auxiliary workspaces;
+- deep editing systems that should not crowd the Left UI.
+
+The Left UI remains the universal navigation root. A Left entry may deep-link to a specific Right Box and section.
+
+The right side must not become one giant miscellaneous inspector. Boxes are grouped by coherent work purpose.
+
+Undo / Redo are fixed right-side commands (and may also exist in the enabled Quick Controller). They are **not a detachable Box**.
+
+## 2. External interaction evidence
+
+Major applications commonly separate tools from dockable property/workspace panels.
+
+Relevant official evidence includes:
+
+- Photoshop panels can dock, undock, group, stack, resize and be saved as a workspace.
+- Krita Dockers include Layers, color selectors, Brush Presets, Reference Images, Snapshot and Undo History, and their arrangements can be saved as Workspaces.
+- Illustro uses this as interaction evidence only; its magnetic PiP model is its own design.
+
+## 3. Proposed Box set
+
+### R1 — Layers & Compositing
+
+Primary purpose:
+
+> Manage document structure and layer-level compositing.
+
+Contains:
+
+- Raster / Vector / Text / Adjustment / Filter layer creation
+- Group
+- Mask / Vector Mask
+- layer tree
+- Multi-select
+- Drag Reorder
+- Search
+- Filter
+- Color Tag
+- Lock types
+- Solo / Isolate
+- Collapse
+- Clipping
+- Alpha Lock / Lock Transparency
+- Alpha inheritance / clipping-equivalent
+- Blend Mode
+- Painting Blend Modes where layer-relevant
+- Duplicate
+- Merge
+- Merge Visible
+- Flatten Copy
+- Rasterize Vector
+- Layer Comps
+- Layer Style / Effect attachment summary
+- Canvas-direct Layer selection state / reveal
+
+Does not contain:
+
+- full Vector node editing -> Properties / Inspector
+- full Text typography -> Properties / Inspector
+- full Adjustment/Filter editor -> Effects & Adjustments
+
+### R2 — Color
+
+Primary purpose:
+
+> Choose, organize and reason about color while painting.
+
+Contains:
+
+- Color Picker
+- HSV / HSL / RGB controls
+- Color History
+- Palette
+- Palette Import / Export
+- Color Harmony
+- Smart Color Assist
+- Base Color candidates
+- Palette candidates
+- adjacent-color harmony assistance
+- Region Recolor entry/results
+- Shadow / Highlight suggestions
+- Color Temperature controls where used as painting assistance
+
+Cross-links:
+
+- Reference Eyedropper
+- Grayscale Preview
+- Soft Proof
+- Out-of-Gamut Warning
+
+The canonical advanced color-management configuration remains in Document.
+
+### R3 — Brush
+
+Primary purpose:
+
+> Select and configure the current mark-making engine/preset.
+
+Contains:
+
+- Brush Presets
+- Brush search / organization
+- user-created Brush
+- Brush Size / Opacity
+- Stabilization / Smoothing
+- Pressure / Tilt / Azimuth mappings
+- Brush Dynamics
+- Dynamics Curve / Range / Invert
+- Procedural Brush
+- Texture-based Brush Input
+- Dynamic Wet Media controls
+- paper / grain / particle / texture
+- relevant Smudge / Blend parameters
+- relevant Eraser parameters when using shared Brush Engine
+
+The same Brush assets may also appear in Asset Library. They reference the same asset IDs.
+
+### R4 — Properties / Inspector
+
+Primary purpose:
+
+> Show detailed controls for the current Tool, selection or Canvas entity without creating a separate Box for every tool.
+
+This is the main load absorber for the Left UI.
+
+Context sections include:
+
+#### Smart Fill / Region
+
+- Fill mode
+- Gap Closing
+- Gap Tolerance
+- Boundary Expand / Contract
+- reference source
+- Multi-layer / Lineart Reference
+- Color Difference Tolerance
+- Region follow strength / conditions
+- Lineart-linked Coloring parameters
+
+#### Selection
+
+- Add / Subtract / Intersect
+- Feather
+- Expand / Contract
+- selection/mask properties
+
+#### Transform
+
+- transform mode
+- Flip
+- interpolation
+- Warp / Perspective / Liquify relevant parameters
+- preview Apply / Cancel state
+
+#### Vector
+
+- Stroke Width
+- Fill / Stroke
+- node / path properties
+- variable-width stroke controls
+- relevant Boolean/Simplify/Smooth actions
+
+#### Text
+
+- Horizontal / Vertical
+- Font Family / Style / Size
+- Tracking
+- Line Height
+- Baseline
+- missing font status
+- path/area-text properties when supported
+
+#### Gradient
+
+- gradient type
+- Editable Stops
+- dithering
+- non-destructive state
+
+#### Guide / Ruler
+
+- Snap
+- Visibility / Lock
+- guide-specific properties
+- preset/save controls
+
+#### Reference item
+
+- position/state properties for the selected Reference entity
+
+Rule:
+
+A Tool activation must not automatically force this Box open if the user has closed it. The Box reflects current context when open.
+
+### R5 — Effects & Adjustments
+
+Primary purpose:
+
+> Build and edit non-destructive image/layer processing.
+
+Contains:
+
+- Adjustment Layer browser/editor
+- Filter Layer browser/editor
+- Live Blur
+- Live Color Adjustment
+- Core Adjustment Set
+- Core Live Filter Set
+- Blend If equivalent
+- Displacement
+- Filter masking
+- Filter reorder
+- Filter opacity / blend
+- Layer Style editors:
+  - Stroke
+  - Drop / Inner Shadow
+  - Outer / Inner Glow
+  - Color / Gradient / Pattern Overlay
+  - Bevel / Emboss
+- destructive Apply entry only as an explicit alternative
+
+Healing / Patch / Clone remain Canvas Tools; their current Tool options belong in Inspector.
+
+### R6 — Reference
+
+Primary purpose:
+
+> Manage live visual references used while drawing.
+
+Contains:
+
+- Reference list
+- multiple References
+- Reference Groups
+- Pin
+- Scale / Rotate
+- Horizontal Flip
+- Grayscale
+- Always on Top
+- Temporary Hide
+- persistence state
+- Reference Eyedropper affordance/status
+
+Direct manipulation on Canvas remains primary where spatial.
+
+### R7 — Assets
+
+Primary purpose:
+
+> Browse and organize reusable resources.
+
+Contains:
+
+- 2D Asset Library
+- Brush Assets
+- Brush Tip / Texture
+- Paper Texture
+- Pattern
+- Gradient Preset
+- Color Palette Asset
+- Macro Asset
+- Workspace Asset
+- Reference Set
+- Shape Preset
+- Folder / Collection / Tag
+- Search / Favorite / Recent
+- Asset Import / Export
+
+Asset-type-specific editing routes to the owning Box, e.g. Brush asset -> Brush.
+
+### R8 — History & Progress
+
+Primary purpose:
+
+> Inspect and manage the evolution of the current artwork.
+
+Use distinct tabs/sections; do not merge the concepts semantically.
+
+#### Undo History
+
+- command history
+- Undo / Redo history inspection
+
+#### Snapshots
+
+- Snapshot create
+- compare
+- branch
+
+#### Timelapse
+
+- creation-history-based Timelapse
+- UI-free output
+- high-resolution export
+- frame pace
+
+#### Work Time
+
+- Session
+- Today
+- Total
+- Average
+
+Layer Comps remain in Layers because they are layer-state sets, not document-history checkpoints.
+
+### R9 — Automation
+
+Primary purpose:
+
+> Create and manage reusable command sequences.
+
+Contains:
+
+- Auto Actions / Macros
+- Action Recording
+- Parameterized Action
+- Macro Presets
+- Shortcut Assignment entry
+- Quick Controller registration entry
+
+Macro assets are browsable from Assets but edited/recorded here.
+
+### R10 — Navigator & View
+
+Primary purpose:
+
+> Observe and navigate the artwork without changing its semantic content.
+
+Contains:
+
+- Navigator thumbnail
+- current viewport indicator
+- Zoom / Pan navigation affordances
+- Multi-view entry/state
+- Seamless Tile preview entry/state
+- Grayscale Preview
+- Soft Proof
+- Out-of-Gamut Warning
+
+Canvas Flip / Rotate View remain commands/tools that can be invoked from Left/Quick Controller; this Box may reflect their view state where useful.
+
+### R11 — Document
+
+Primary purpose:
+
+> Manage current-document properties that are deeper than normal painting workflow.
+
+Contains:
+
+- Document Metadata
+- Canvas Resize
+- Image Resize
+- Crop properties when relevant
+- native document status
+- save/recovery status and applicable settings
+- Color Management / ICC
+- bit depth
+- Embedded ICC Profile
+- Profile Conversion / Display Transform
+- Wide Gamut
+- CMYK policy/editing where supported
+- Rendering Intent / Black Point Compensation
+- format/export configuration entry
+
+File pickers and OS-level import/export flows are not forced into a PiP Box.
+
+### R12 — Workspace & Input
+
+Primary purpose:
+
+> Configure the working environment rather than the artwork.
+
+Contains:
+
+- magnetic Workspace layout controls
+- Panel Resize / Reorder / Hide settings
+- Workspace Save / Load
+- Workspace Presets
+- Left / Right UI mirror
+- Left UI customization entry
+- Quick Controller configuration
+- Keyboard Shortcuts
+- Custom Shortcut / capture
+- Gesture / Custom Gesture
+- stylus input options
+- UI / Text scaling
+- Single-pointer alternatives
+- Reduced Motion
+- feedback sound / haptic
+- language/locale controls where exposed
+- Plugin / Extension management when implemented
+- Diagnostics when intentionally exposed
+
+This is secondary and should not be part of the default always-open painting workspace.
+
+## 4. Fixed right-side chrome outside Boxes
+
+The following are not ordinary detachable Boxes:
+
+- Undo
+- Redo
+- magnetic workspace management affordance(s) needed to restore/rearrange Boxes
+- critical save/recovery/error indicator if the final shell places it on the right
+
+Undo / Redo may also be assigned anywhere in the enabled six-slot Quick Controller.
+
+## 5. Box ownership summary
+
+| Box | Primary ownership |
+|---|---|
+| Layers & Compositing | artwork structure, masks, blend, layer states |
+| Color | picking, palettes, harmony, coloring assistance |
+| Brush | presets and brush-engine configuration |
+| Properties / Inspector | current tool/entity parameters |
+| Effects & Adjustments | non-destructive corrections, filters, styles |
+| Reference | live reference images |
+| Assets | reusable resources |
+| History & Progress | undo history, snapshots, timelapse, work time |
+| Automation | macros/actions |
+| Navigator & View | viewport/navigation/diagnostic views |
+| Document | document properties/color management/save state |
+| Workspace & Input | application workspace/input configuration |
+
+## 6. Left UI load transfer
+
+The Left UI remains the universal route, but it should **not duplicate every Right-side property as a browsable standalone row**.
+
+Recommended transfer:
+
+### Move the detailed browsing burden to Right Boxes
+
+Instead of showing every property in the Left category tree, Left may expose the owning destination.
+
+Examples:
+
+- `描画 -> Brush Settings` -> R3 Brush
+- `塗り・色・Region -> Fill Settings` -> R4 Inspector / Fill section
+- `選択・変形 -> Transform Settings` -> R4 Inspector / Transform section
+- `ベクター・文字・図形 -> Text Properties` -> R4 Inspector / Text section
+- `定規・ガイド -> Guide Properties` -> R4 Inspector / Guide section
+- `レイヤー・合成 -> Layers` -> R1
+- `補正・フィルター・修復 -> Effects & Adjustments` -> R5
+- `資料・アセット -> Reference` -> R6
+- `資料・アセット -> Assets` -> R7
+- `履歴・自動化 -> History / Snapshot / Timelapse` -> R8
+- `履歴・自動化 -> Automation` -> R9
+- `キャンバス・表示 -> Navigator` -> R10
+- `ドキュメント・編集・出力 -> Document Properties` -> R11
+- `ワークスペース・設定 -> Workspace & Input` -> R12
+
+### Exact-setting search remains available
+
+The shared Left/Search index may still find exact properties such as:
+
+- Gap Tolerance
+- Transform Interpolation
+- Tracking
+- Rendering Intent
+
+Selecting such a search result deep-links to the owning Right Box and reveals the exact section.
+
+Therefore:
+
+> **Left keeps reachability; Right carries detail density.**
+
+This preserves the user's requirement that all capability has a Left route while preventing All Features from becoming a 300-row settings tree.
+
+## 7. Box interaction baseline
+
+All Boxes are coherent semantic units.
+
+Where applicable they may be:
+
+- reordered;
+- magnetically docked;
+- detached;
+- re-docked;
+- collapsed;
+- resized;
+- pinned;
+- hidden/restored.
+
+Do not fragment individual sliders or tiny property groups into separate PiP windows.
+
+A Box may contain tabs/sections only when they share one clear work purpose.
+
+## 8. Recommended distinction: persistent vs contextual
+
+### Persistent-workspace candidates
+
+Most useful to keep open for long periods:
+
+- Layers & Compositing
+- Color
+- Brush
+- Reference
+- Navigator & View
+
+### Contextual/deep-work candidates
+
+Usually opened when needed:
+
+- Properties / Inspector
+- Effects & Adjustments
+- Assets
+- History & Progress
+- Automation
+- Document
+- Workspace & Input
+
+This distinction is **not** a default layout decision yet. It only informs later default-workspace design.
+
+## 9. UIimprove checks
+
+Applied design constraints:
+
+- high-frequency work is not hidden solely to make the UI minimal;
+- each Box has one comprehensible work purpose;
+- contextual settings use Inspector rather than creating many small panels;
+- exact settings remain searchable/deep-linkable;
+- pointer/pen/touch/keyboard entry cannot depend solely on hover/right click;
+- detached/docked state does not change command semantics;
+- closing a Box does not make its capability undiscoverable because Left/Search can restore it;
+- runtime/visual validation remains pending.
+
+## 10. Current recommendation
+
+Proceed with these **12 Box types** as the Right Workspace candidate taxonomy.
+
+The most important architectural decisions are:
+
+1. keep Layers, Color and Brush independent;
+2. introduce one contextual Properties / Inspector Box;
+3. keep Effects separate from generic Properties;
+4. keep Reference separate from the generic Asset Library;
+5. group Undo History / Snapshot / Timelapse / Work Time in one History & Progress Box using distinct tabs;
+6. keep Automation separate from History;
+7. move detailed setting density from Left browsing into Right Boxes while preserving Left deep links/search.
+
+The next design step is to decide:
+
+- which Boxes are shown by default;
+- default vertical order;
+- Box header/control anatomy;
+- magnetic detach/reorder/group behavior;
+- collapsed state;
+- minimum/maximum sizing;
+- tablet projection.
