@@ -86,5 +86,12 @@ test('completed JSON stays selectable and fallback select button works', async (
   expect(selection.end).toBe(selection.length);
 
   const selectDisabled = await page.isDisabled('#select-json');
-  expect(selectDisabled).toBe(true);
+  expect(selectDisabled).toBe(false);
+  await page.click('#select-json');
+  const selected = await page.evaluate(() => {
+    const el = document.querySelector('#result');
+    return { start: el.selectionStart, end: el.selectionEnd, length: el.value.length };
+  });
+  expect(selected.start).toBe(0);
+  expect(selected.end).toBe(selected.length);
 });
