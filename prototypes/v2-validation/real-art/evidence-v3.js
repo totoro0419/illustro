@@ -191,21 +191,25 @@ export function buildRealArtEvidenceV3(decoded) {
     balanced[i] = clamp01(Math.max(
       dilated[i],
       0.95 * bridgeShort[i],
-      0.88 * softEdge[i],
       line[i] * (1 - 0.48 * texture[i]) - 0.26 * wash[i]
     ));
     permissive[i] = clamp01(Math.max(
       balanced[i],
       bridgeLong[i],
-      softEdge[i],
       line[i] * (1 - 0.34 * texture[i]) - 0.15 * wash[i]
     ));
   }
+  const soft = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    soft[i] = clamp01(Math.max(permissive[i], 1.35 * softEdge[i]));
+  }
+
   const edgeMargin = Math.max(3, Math.round(Math.min(width, height) * 0.04));
   const grids = {
     conservative: toGrid(conservative, width, height, edgeMargin),
     balanced: toGrid(balanced, width, height, edgeMargin),
     permissive: toGrid(permissive, width, height, edgeMargin),
+    soft: toGrid(soft, width, height, edgeMargin),
   };
   return {
     width, height, paper, dark, range, edgeMargin, grids,
