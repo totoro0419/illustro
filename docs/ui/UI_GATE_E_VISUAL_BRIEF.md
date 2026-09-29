@@ -505,7 +505,7 @@ This brief is ready when:
 - rejection conditions are explicit
 - remaining choices are legitimately visual/compositional
 
-Current status: **NOT YET READY TO GENERATE. Finish the ongoing structural decisions first, then refresh this brief before visual generation.**
+Current status: **EXPANDED / MEDIUM GENERATED, CORRECTED AND USER-APPROVED. COMPACT / SMARTPHONE VISUAL GENERATION AND REVIEW REMAIN PENDING.**
 
 
 ## Right Box interaction states to render
@@ -588,4 +588,4 @@ Geometry invariant:
 - every button disc is fully inside the donut outer boundary;
 - every button disc remains outside the center hole.
 
-This is a visual-review token pending user acceptance, not a change to Quick Controller semantics.
+This visual token was accepted by the user as part of the Expanded / Medium visual review on 2026-09-29. It does not change Quick Controller semantics.
