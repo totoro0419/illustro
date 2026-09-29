@@ -155,7 +155,7 @@ Canonical Gate E specification:
 Confirmed / currently recorded decisions include:
 
 - Canvas-dominant shell
-- icon-first customizable Primary Tool Surface
+- icon-first customizable Left Access Surface with universal All Features route
 - top bar reserved for application/document operations rather than drawing controls
 - magnetic detachable/reorderable right Workspace/PiP blocks
 - PC/tablet pen-following six-slot Quick Controller
