@@ -246,6 +246,19 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.texture < 0.55 &&
     closure.wash < 0.25;
 
+  // Moderate contours can still be reliable when several independent cues
+  // agree. Require coherent orientation, strong bridge continuity, bounded
+  // texture/wash, and either a long observed boundary or especially strong
+  // bridge support.
+  const mediumStructuralClosure = !!closure &&
+    closure.line >= 0.44 &&
+    closure.coherence >= 0.58 &&
+    closure.bridge >= 0.34 &&
+    closure.texture < 0.36 &&
+    closure.wash < 0.26 &&
+    closure.samples >= 8 &&
+    (closure.samples >= 50 || closure.bridge >= 0.40);
+
   const softBoundaryClosure = !!closure &&
     closure.softEdge >= 0.34 &&
     closure.softCoherence >= 0.60 &&
@@ -299,7 +312,8 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     denseContextContrastClosure ||
     quietContinuousClosure ||
     quietFramedClosure ||
-    cleanerLargeFrameClosure;
+    cleanerLargeFrameClosure ||
+    mediumStructuralClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -417,6 +431,7 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     quietContinuousClosure,
     quietFramedClosure,
     cleanerLargeFrameClosure,
+    mediumStructuralClosure,
     softBoundaryClosure,
     clutterEnclosure,
     microTextureAccidentalClosure,
