@@ -6,6 +6,7 @@ async function fetchJson(url) {
   const response = await fetch(url, {
     redirect: 'follow',
     headers: { 'user-agent': 'Illustro-Validation/1.0' },
+        signal: AbortSignal.timeout(15_000),
   });
   if (!response.ok) throw new Error('fetch ' + response.status + ' ' + url);
   return response.json();
@@ -69,6 +70,7 @@ test('large final candidate sources are public-domain, readable, and visually fi
     const response = await fetch(imageUrl, {
       redirect: 'follow',
       headers: { 'user-agent': 'Illustro-Validation/1.0' },
+        signal: AbortSignal.timeout(15_000),
     });
     expect(response.ok).toBe(true);
     const contentType = response.headers.get('content-type') || 'image/jpeg';
