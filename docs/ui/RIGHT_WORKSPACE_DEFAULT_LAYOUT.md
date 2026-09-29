@@ -5,6 +5,7 @@
 > Scope: PC / tablet Right Workspace default order, expansion state and collapsed summaries
 > Parent: [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 > General UI research: [RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
+> Interaction behavior: [RIGHT_WORKSPACE_INTERACTION_SPEC.md](RIGHT_WORKSPACE_INTERACTION_SPEC.md)
 
 ## 1. Baseline principle
 
