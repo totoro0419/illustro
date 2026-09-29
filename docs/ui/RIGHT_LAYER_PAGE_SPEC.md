@@ -1,8 +1,9 @@
 # Illustro Right UI — Layer Page Specification
 
-> Status: **SEMANTIC / INTERACTION BASELINE COMPLETE — VISUAL VALIDATION PENDING**
+> Status: **SUPPORTING DETAIL / CANONICALIZED**
 > Date: 2026-09-29
-> Scope: PC / tablet Layer Page opened from the fixed right-bottom Layer Page button
+> Scope: Supporting Layer Page detail
+> Canonical authority: [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
 > Related:
 > - [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 > - [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
