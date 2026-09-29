@@ -128,6 +128,7 @@ Canonical design:
 - [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 - [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 - [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
+- [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
 - [Left Tool Surface — Option Catalog](LEFT_TOOL_SURFACE_OPTIONS.md)
 
 The default PC/tablet Rail is fixed in `LEFT_UI_SPEC.md`: Brush, Eraser, Smudge/Blend, Eyedropper, Smart Fill, Selection, Transform, Move, plus fixed All Features.
@@ -242,7 +243,9 @@ Canonical candidate references:
 
 Layer Page is a separate expanded surface from the Layers Box, but both share the same Layer model and semantic commands.
 
-Right Workspace is **not yet semantically complete**; default expanded/collapsed states, order, Layer Page geometry, exact magnetic behavior, sizing and tablet projection still require explicit design decisions.
+Default Box order and default expansion/collapse state are now fixed in `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md`.
+
+Right Workspace is **not yet semantically complete**; Layer Page geometry, exact magnetic behavior, Box header anatomy, sizing and remaining tablet projection details still require explicit design decisions.
 
 ## 4. Expanded layout baseline
 
@@ -264,8 +267,10 @@ This is a prototype reference size, not a fixed product requirement.
 ### Default behavior
 
 - Canvas is visually dominant.
-- Right Dock defaults to Layers as the primary visible block.
-- Color and Brush are available in the Dock but may detach independently.
+- Right Workspace default order is Layers -> Color -> Brush -> Inspector -> Reference -> Assets -> Effects -> Navigator -> History -> Automation -> Document -> Workspace.
+- Layers, Color and Brush are expanded by default.
+- All other Boxes are present but collapsed by default.
+- The Box stack scrolls independently; the fixed five-button bottom strip remains visible.
 - Context Surface is tool-specific and substantially smaller than a full settings panel.
 - Detached blocks float only when requested; the default state is not a field of floating windows.
 - Command Search is keyboard-fast but always has an on-screen path.
@@ -295,8 +300,9 @@ Designed for tablet-class stylus + touch use, but capability-driven.
 
 ### Default behavior
 
-- Layers opens as an anchored workspace panel and can remain pinned while useful.
-- Color/Brush basics are closer to the drawing hand than a desktop-style distant inspector.
+- The same logical Box order and default expansion profile are retained.
+- The Right stack may project more overlay-oriented on tablet, but does not auto-reorder or auto-collapse user-expanded Boxes.
+- Color/Brush basics remain eligible for Context Surface / detached proximity controls when repeated travel would be excessive.
 - External keyboard/trackpad may add shortcuts without changing semantic layout.
 - Split-screen and orientation changes reflow the shell without resetting the Canvas view transform.
 - Focus Mode preserves a touch-visible exit.
