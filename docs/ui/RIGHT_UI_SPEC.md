@@ -5,6 +5,8 @@
 > Scope: PC / tablet Right UI
 > Parent: [UI Gate E](UI_GATE_E.md)
 > Left counterpart: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
+> Coverage: [Right UI Feature Coverage](RIGHT_UI_FEATURE_COVERAGE.md)
+> Quality review: [Right UI Quality Review](RIGHT_UI_QUALITY_REVIEW.md)
 > Supporting research/specs:
 > - [Right Workspace — Box Taxonomy](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 > - [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
