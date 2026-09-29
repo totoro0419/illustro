@@ -1,6 +1,6 @@
 # Illustro UI Gate E — Core UI Surface & Workspace
 
-> Status: **DEFINITION LOCKED / VISUAL PROTOTYPE PENDING**
+> Status: **DEFINITION IN REVISION / VISUAL PROTOTYPE PENDING**
 > Date: 2026-09-29
 > Scope: Core painting UI shell, Workspace, Context Surface, Quick Controller, device layout, Focus Mode and visual acceptance.
 > Production effect: **None. This document does not authorize Production implementation.**
@@ -11,7 +11,7 @@
 
 Gate E separates two different decisions:
 
-1. **Core UI structure / interaction architecture** — fixed here.
+1. **Core UI structure / interaction architecture** — being refined with the user in this Gate.
 2. **Final visual composition / polish** — requires a rendered prototype and user review.
 
 Core V2 already fixes semantic commands and interaction meaning. UI Gate E decides how those capabilities are surfaced without changing their semantics.
@@ -80,9 +80,9 @@ No device class is a simple scaled copy of another.
 
 ### E-P6 Spatial memory is stable
 
-User-pinned Quick Controller commands never reorder implicitly.
+Quick Controller slots never reorder implicitly.
 
-Context-aware suggestions occupy a separate region/layer and may not displace pinned commands.
+All six slots are user-customizable/reorderable. The default profile places Undo at the leftmost slot and Redo at the rightmost slot, but those assignments and positions are not locked.
 
 ### E-P7 Direct manipulation first
 
@@ -113,17 +113,13 @@ Contains:
 
 Stable tool selection.
 
-Contains only high-frequency tool identities, not all settings.
+Contains tool identities, not deep settings, and is **icon-first** rather than text-led.
 
-Candidate items include:
+Canonical option catalog:
 
-- Brush
-- Eraser
-- Fill
-- Selection
-- Transform
-- Eyedropper
-- Navigation/hand where needed
+- [Left Tool Surface — Option Catalog](LEFT_TOOL_SURFACE_OPTIONS.md)
+
+The default visible set is intentionally not fixed yet. Users may customize which eligible tools/modes appear.
 
 Tool choice and tool settings are separate.
 
@@ -164,9 +160,9 @@ Meaningful blocks such as:
 - Navigator
 - Properties
 
-Blocks can be docked, collapsed, detached or temporarily pinned where the device form permits.
+Blocks form a **magnetic Workspace/PiP system**. They can be reordered, docked, detached, collapsed or temporarily pinned where the device form permits. Compatible docking zones/neighboring blocks may magnetically accept a dragged block.
 
-Detach never changes feature meaning.
+Detach/reorder never changes feature meaning.
 
 ### 3.5 Quick Controller
 
@@ -188,10 +184,10 @@ This is a prototype reference size, not a fixed product requirement.
 
 ### Structure
 
-- minimal top document/app strip
-- stable left Primary Tool Surface
+- minimal top document/app strip for non-drawing application/document operations such as Home and Save; Undo/Redo do not live here
+- stable icon-first left Primary Tool Surface
 - central Canvas
-- right Workspace Dock
+- right magnetic Workspace/PiP stack
 - transient Context Surface inside the Canvas working region
 - optional detached Workspace Blocks over/near unused Canvas margin
 - bottom status information only when it has persistent value
@@ -261,50 +257,44 @@ Reference prototype viewport: **390 × 844** portrait, with landscape reflow req
 
 ## 7. Quick Controller concrete baseline
 
-Gate E adopts a **device-adaptive spatial controller**, not one universal geometry.
+For the current PC/tablet design pass, Gate E adopts an optional **pen-following six-button donut controller** for high-frequency shortcuts.
 
 ### Expanded / Medium
 
-Default projection:
+When the controller is enabled:
 
-- radial/pie family centered near pointer/pen when safe
-- otherwise shifted to a safe nearby anchor
-- eight stable pinned directional slots
-- optional center action opens Command Search / profile edit
-- context suggestions use a visually separate secondary ring/strip and do not replace pinned slots
+- its anchor follows the current pen position;
+- while a pen stroke is actively being drawn, the controller is hidden;
+- after pen-up, a semi-transparent donut/ring appears near the pen position;
+- six buttons are arranged evenly at the vertices of a flat-top hexagonal layout (the six-point layout with distinct leftmost and rightmost positions);
+- the donut/ring whitespace is draggable for repositioning;
+- button treatment should minimize artwork obstruction; outline-led buttons are a visual candidate, not yet a locked visual rule.
+
+Default profile:
+
+- leftmost slot: Undo;
+- rightmost slot: Redo;
+- remaining four slots: user-chosen.
+
+All six slots, including the default Undo/Redo slots, are user-customizable and may be reordered. The left/right Undo/Redo mapping is a default, not a permanent restriction.
+
+Open question:
+
+- how manual ring dragging interacts with subsequent pen-position following (temporary offset, pinned mode, reset condition, etc.) is not yet locked.
 
 ### Compact
 
-Default projection:
-
-- edge/thumb-arc family
-- same user profile ordering is preserved as far as geometry allows
-- handedness mirror is explicit and deterministic
-- no hidden reliance on hover/right-click
+Smartphone geometry/behavior is not yet derived from the PC/tablet controller. Do not assume a scaled copy or an edge-arc substitute until Compact is designed explicitly.
 
 ### Required invariants
 
-- pinned slot identity is stable
-- open/close without action is not Artwork History
-- on-screen entry exists on all device classes
-- customization mode is explicit
-- unavailable commands may remain visible with reason
-- no document-wide scan when opening
-
-### Default profile direction
-
-The first prototype should include a practical default profile, but the default command set is not a Core semantic requirement.
-
-The prototype should test at minimum:
-
-- Undo
-- Redo
-- temporary Eraser
-- temporary Eyedropper
-- Brush
-- Fill
-- Transform/Selection action
-- one Layer/Canvas action
+- no implicit slot reordering;
+- all six slot assignments are explicitly customizable;
+- controller is hidden during an active drawing stroke;
+- opening/closing/repositioning the controller is not Artwork History;
+- customization mode is explicit;
+- no document-wide scan is allowed merely to show the controller;
+- it remains an additional command route, not the only route to a Core command.
 
 ## 8. Detachable Workspace concrete baseline
 
@@ -478,9 +468,9 @@ Gate E may be marked **PASS / UI BASELINE APPROVED** only when all are true:
 
 ## 17. Current Gate E state
 
-### Gate definition: **LOCKED**
+### Gate definition: **IN REVISION**
 
-The structural decisions and PASS criteria above are now the Gate E baseline.
+Gate E is currently being refined with the user. Confirmed decisions are recorded above, but unresolved UI semantics must not be treated as locked.
 
 ### Visual prototype: **NOT GENERATED / UNVERIFIED**
 
@@ -494,14 +484,15 @@ A failed optional Figma attempt does not block Gate E.
 
 Do not label Gate E complete merely because the specification exists.
 
-All non-rendered prototype requirements are captured in `UI_GATE_E_VISUAL_BRIEF.md`.
+`UI_GATE_E_VISUAL_BRIEF.md` is a working brief and must track the ongoing Gate E decisions.
 
-The only remaining Gate E work is:
+Remaining Gate E work is:
 
-1. render the three reference layouts with the dedicated UI Design Skill using that brief;
-2. inspect them for structural/visual defects;
-3. obtain user review;
-4. record accepted visual decisions;
-5. then change Gate E to PASS / UI BASELINE APPROVED.
+1. finish unresolved structural/UI decisions with the user;
+2. update the visual brief so it contains no stale assumptions;
+3. render the reference layouts with the dedicated UI Design Skill;
+4. inspect them for structural/visual defects;
+5. obtain user review and record accepted visual decisions;
+6. then change Gate E to PASS / UI BASELINE APPROVED.
 
 Production Gate F remains independently locked.
