@@ -1,0 +1,26 @@
+{
+  "schema": "illustro.brush-sustained-benchmark.v1",
+  "generatedAt": "2026-09-29T13:23:54.217Z",
+  "ciMode": false,
+  "profile": {"kind":"one-euro","minCutoff":4,"beta":4,"dCutoff":1},
+  "config": {"bucketMs":30000,"baselineMs":60000,"minMs":180000,"maxMs":360000,"strokeMs":5000,"realisticRate":240,"stressDuty":0.5},
+  "environment": {"userAgent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36","platform":"Linux armv81","hardwareConcurrency":8,"deviceMemory":8,"dpr":2.75,"viewport":[1163,648]},
+  "auto": {
+    "phase":"done","elapsedMs":180075.79999995232,"stopReason":"stable-screening-criterion",
+    "generatedSamples":8877743,"acceptedSamples":8878243,"maxPendingObserved":8,"backpressureEvents":34155,
+    "visibilityInterruptions":0,"invalidatedReason":null,"wakeLockState":"denied-or-unavailable",
+    "framePeriodEstimateMs":16.667530753178784,
+    "stabilityScreen":{"ready":true,"stable":true,"bounded":true,"initialThroughput":72154.40789429849,"recentThroughput":74914.1,"throughputDrop":-0.03824703419012575,"allowedThroughputDrop":0.15,"initialFrameP95Ms":16.70000000001164,"recentFrameP95Ms":16.70000000001164,"frameRise":0,"allowedFrameRise":0.15},
+    "buckets":[
+      {"index":0,"startMs":0,"endMs":30009.39999985695,"mode":"realistic-baseline","generatedSamples":7202,"acceptedSamples":7202,"samplesPerSecond":239.99146934075094,"workP50Ms":0.5,"workP95Ms":1.2000000476837158,"workP99Ms":1.7999999523162842,"frameIntervalP50Ms":16.69999999999891,"frameIntervalP95Ms":16.700000000000728,"frameIntervalsOver25ms":1,"frameCount":1910,"maxPendingPages":1,"backpressureEvents":0,"heap":{"usedJSHeapSize":10000000,"totalJSHeapSize":10000000,"jsHeapSizeLimit":2060000000}},
+      {"index":1,"startMs":30009.39999985695,"endMs":60025.99999985695,"mode":"realistic-baseline","generatedSamples":7997,"acceptedSamples":7997,"samplesPerSecond":266.41924801609775,"workP50Ms":0.39999985694885254,"workP95Ms":0.5,"workP99Ms":0.7000000476837158,"frameIntervalP50Ms":16.69999999999709,"frameIntervalP95Ms":16.700000000004366,"frameIntervalsOver25ms":0,"frameCount":1801,"maxPendingPages":4,"backpressureEvents":0,"heap":{"usedJSHeapSize":10000000,"totalJSHeapSize":10000000,"jsHeapSizeLimit":2060000000}},
+      {"index":2,"startMs":60025.99999985695,"endMs":90042.59999985695,"mode":"stress","generatedSamples":2165830,"acceptedSamples":2165830,"samplesPerSecond":72154.40789429849,"workP50Ms":8,"workP95Ms":11.200000047683716,"workP99Ms":12.700000047683716,"frameIntervalP50Ms":16.69999999999709,"frameIntervalP95Ms":16.70000000001164,"frameIntervalsOver25ms":4,"frameCount":1797,"maxPendingPages":8,"backpressureEvents":8340,"heap":{"usedJSHeapSize":10000000,"totalJSHeapSize":10000000,"jsHeapSizeLimit":2060000000}},
+      {"index":3,"startMs":90042.59999985695,"endMs":120042.59999985695,"mode":"stress","generatedSamples":2195889,"acceptedSamples":2195889,"samplesPerSecond":73196.3,"workP50Ms":8,"workP95Ms":11.100000143051147,"workP99Ms":12.399999856948853,"frameIntervalP50Ms":16.69999999999709,"frameIntervalP95Ms":16.70000000001164,"frameIntervalsOver25ms":3,"frameCount":1797,"maxPendingPages":8,"backpressureEvents":8463,"heap":{"usedJSHeapSize":10000000,"totalJSHeapSize":10000000,"jsHeapSizeLimit":2060000000}},
+      {"index":4,"startMs":120042.59999985695,"endMs":150059.19999985694,"mode":"stress","generatedSamples":2253402,"acceptedSamples":2253402,"samplesPerSecond":75071.86023733536,"workP50Ms":8,"workP95Ms":10.699999809265137,"workP99Ms":12,"frameIntervalP50Ms":16.699999999982538,"frameIntervalP95Ms":16.79999999998836,"frameIntervalsOver25ms":2,"frameCount":1799,"maxPendingPages":8,"backpressureEvents":8686,"heap":{"usedJSHeapSize":10000000,"totalJSHeapSize":10000000,"jsHeapSizeLimit":2060000000}},
+      {"index":5,"startMs":150059.19999985694,"endMs":180059.19999985694,"mode":"stress","generatedSamples":2247423,"acceptedSamples":2247423,"samplesPerSecond":74914.1,"workP50Ms":8,"workP95Ms":10.799999952316284,"workP99Ms":12.099999904632568,"frameIntervalP50Ms":16.699999999982538,"frameIntervalP95Ms":16.70000000001164,"frameIntervalsOver25ms":2,"frameCount":1797,"maxPendingPages":8,"backpressureEvents":8662,"heap":{"usedJSHeapSize":10000000,"totalJSHeapSize":10000000,"jsHeapSizeLimit":2060000000}}
+    ]
+  },
+  "postPen":{"strokes":3,"trustedPenSamples":500,"pressureMin":0,"pressureMax":0.6123794317245483,"pressureRange":0.6123794317245483,"tiltSeen":true,"pipelineP50Ms":0.09999990463256836,"pipelineP95Ms":0.20000004768371582,"pipelineP99Ms":0.2999999523162842,"receiveToNextRafP50Ms":6.599999904632568,"receiveToNextRafP95Ms":11.5,"receiveToNextRafP99Ms":12.600000143051147},
+  "userObservation":{"heat":"normal"},
+  "reviewEligibility":{"autoCompleted":true,"minimumElapsedReached":true,"foregroundContinuous":true,"notInvalidated":true,"acceptedEqualsGenerated":true,"pendingBounded":true,"postPenComplete":true}
+}
