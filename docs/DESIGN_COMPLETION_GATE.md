@@ -147,14 +147,14 @@ The Library Section 9 draft is reference-only.
 
 ### Definition: **IN REVISION**
 ### Left UI semantic / interaction subgate: **COMPLETE**
-### Right Box interaction subgate: **COMPLETE**
-### Layer Page semantic / interaction subgate: **COMPLETE**
+### Right UI semantic / interaction / layout subgate: **COMPLETE**
 ### Visual prototype/user review: **PENDING**
 
 Canonical Gate E specification:
 
 - [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
 - [Left UI — Canonical Specification](ui/LEFT_UI_SPEC.md)
+- [Right UI — Canonical Specification](ui/RIGHT_UI_SPEC.md)
 - [Right Workspace — Default Layout & Collapse](ui/RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
 - [Right Workspace — Box Interaction Specification](ui/RIGHT_WORKSPACE_INTERACTION_SPEC.md)
 - [Right UI — Layer Page Specification](ui/RIGHT_LAYER_PAGE_SPEC.md)
@@ -208,4 +208,4 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY / LEFT UI SEMANTIC DESIGN COMPLETE / UI GATE E IN REVISION / VISUAL REVIEW PENDING / PRODUCTION LOCKED**
+> **CORE V2 DESIGN READY / LEFT UI DESIGN COMPLETE / RIGHT UI DESIGN COMPLETE / UI GATE E IN REVISION / VISUAL REVIEW PENDING / PRODUCTION LOCKED**
