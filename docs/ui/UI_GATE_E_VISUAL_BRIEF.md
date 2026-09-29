@@ -112,10 +112,11 @@ The exact default visible Pin set is **not yet locked**.
 Use:
 
 - `LEFT_UI_ACCESS_ARCHITECTURE.md` for navigation semantics;
+- `LEFT_PINNED_RAIL_SPEC.md` for Rail/All Features/Overflow/Stack behavior;
 - `LEFT_UI_ACCESS_COVERAGE.md` for complete feature reachability;
 - `LEFT_TOOL_SURFACE_OPTIONS.md` for tool-family candidates.
 
-The visible Rail is icon-first and contains a permanent All Features entry plus user-configurable Pins. Brush may be shown selected for prototype continuity.
+The visible Rail is icon-first and contains user Pins, a conditional fixed Overflow entry, and a permanent bottom-fixed All Features entry. Brush may be shown selected for prototype continuity. Do not make the Rail itself vertically scroll in the baseline prototype.
 
 Do not place deep settings inside the Rail. Selecting a settings/workspace item from the Left UI opens/focuses the corresponding right magnetic PiP.
 
