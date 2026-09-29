@@ -147,6 +147,7 @@ The Library Section 9 draft is reference-only.
 
 ### Definition: **IN REVISION**
 ### Left UI semantic / interaction subgate: **COMPLETE**
+### Right Box interaction subgate: **COMPLETE**
 ### Visual prototype/user review: **PENDING**
 
 Canonical Gate E specification:
@@ -154,6 +155,7 @@ Canonical Gate E specification:
 - [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
 - [Left UI — Canonical Specification](ui/LEFT_UI_SPEC.md)
 - [Right Workspace — Default Layout & Collapse](ui/RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
+- [Right Workspace — Box Interaction Specification](ui/RIGHT_WORKSPACE_INTERACTION_SPEC.md)
 
 Confirmed / currently recorded decisions include:
 
