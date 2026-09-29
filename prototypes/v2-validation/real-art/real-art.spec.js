@@ -136,11 +136,17 @@ function classify(bundle, query, basePolicy) {
   const sx = Math.max(0, Math.min(bundle.width - 1, Math.round(query.seed[0] * (bundle.width - 1))));
   const sy = Math.max(0, Math.min(bundle.height - 1, Math.round(query.seed[1] * (bundle.height - 1))));
   const nearFrame = sx < bundle.edgeMargin + 2 || sy < bundle.edgeMargin + 2 || sx >= bundle.width - bundle.edgeMargin - 2 || sy >= bundle.height - bundle.edgeMargin - 2;
-  const coherentClosure = !!closure &&
+  const cleanCoherentClosure = !!closure &&
+    closure.line >= 0.50 &&
+    closure.coherence >= 0.65 &&
+    closure.texture < 0.35 &&
+    closure.wash < 0.30;
+  const strongCoherentClosure = !!closure &&
     closure.line >= 0.68 &&
     closure.coherence >= 0.42 &&
     local.wash < 0.45 &&
     (closure.texture < 0.75 || closure.coherence >= 0.70 || (closure.line >= 0.80 && local.coherence >= 0.60));
+  const coherentClosure = cleanCoherentClosure || strongCoherentClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -179,6 +185,8 @@ function classify(bundle, query, basePolicy) {
     artifact,
     nearFrame,
     coherentClosure,
+    cleanCoherentClosure,
+    strongCoherentClosure,
   };
 }
 
