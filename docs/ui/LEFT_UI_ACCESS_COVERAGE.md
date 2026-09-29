@@ -1,25 +1,25 @@
 # Illustro Left UI Access Coverage
 
-> Generated from `docs/FEATURE_CATALOG.md` on 2026-09-29.
-> Purpose: every catalog item is classified as Left-reachable, System/Internal, or Future.
+> Generated from `docs/FEATURE_CATALOG.md` and reconciled with canonical Left/Right UI ownership on 2026-09-29.
+> Purpose: every catalog item is classified as Left-reachable, Dedicated Settings, System/Internal, or Future.
 > This is a design coverage audit, not implementation status.
 
 ## Summary
 
-| Category | Items | Canvas | Right PiP | Command/Feature | System/Future |
-|---|---:|---:|---:|---:|---:|
-| 描画 | 20 | 4 | 10 | 2 | 4 |
-| 塗り・色・Region | 50 | 7 | 13 | 25 | 5 |
-| 選択・変形 | 21 | 11 | 1 | 9 | 0 |
-| ベクター・文字・図形 | 19 | 1 | 4 | 14 | 0 |
-| 定規・ガイド | 9 | 0 | 3 | 6 | 0 |
-| レイヤー・合成 | 39 | 0 | 3 | 35 | 1 |
-| 補正・フィルター・修復 | 13 | 3 | 0 | 10 | 0 |
-| 資料・アセット | 26 | 1 | 5 | 20 | 0 |
-| 履歴・自動化 | 23 | 0 | 12 | 9 | 2 |
-| キャンバス・表示 | 10 | 0 | 2 | 6 | 2 |
-| ドキュメント・編集・出力 | 44 | 1 | 13 | 21 | 9 |
-| ワークスペース・設定 | 52 | 0 | 12 | 16 | 24 |
+| Category | Items | Canvas | Right PiP | Settings | Command/Feature | System/Future |
+|---|---:|---:|---:|---:|---:|---:|
+| キャンバス・表示 | 10 | 0 | 2 | 0 | 6 | 2 |
+| ドキュメント・編集・出力 | 44 | 1 | 12 | 1 | 21 | 9 |
+| 描画 | 20 | 4 | 10 | 0 | 2 | 4 |
+| 塗り・色・Region | 50 | 7 | 13 | 0 | 25 | 5 |
+| 選択・変形 | 21 | 11 | 1 | 0 | 9 | 0 |
+| レイヤー・合成 | 39 | 0 | 3 | 0 | 35 | 1 |
+| ベクター・文字・図形 | 19 | 1 | 4 | 0 | 14 | 0 |
+| 補正・フィルター・修復 | 13 | 3 | 0 | 0 | 10 | 0 |
+| 資料・アセット | 26 | 1 | 5 | 0 | 20 | 0 |
+| 履歴・自動化 | 23 | 0 | 12 | 0 | 9 | 2 |
+| ワークスペース・設定 | 52 | 0 | 3 | 9 | 16 | 24 |
+| 定規・ガイド | 9 | 0 | 3 | 0 | 6 | 0 |
 
 ## Coverage
 
@@ -249,16 +249,16 @@
 | M. UI・Workspace・操作体系 | Hover | Required | ワークスペース・設定 | Input / Accessibility | Command/Feature | command | Left → All Features → ワークスペース・設定 → Input / Accessibility → Hover |
 | M. UI・Workspace・操作体系 | 右クリック / Context Click | Required | ワークスペース・設定 | Workspace / Settings | Command/Feature | command | Left → All Features → ワークスペース・設定 → Workspace / Settings → 右クリック / Context Click |
 | M. UI・Workspace・操作体系 | Custom Toolbar | Required | ワークスペース・設定 | Workspace / Settings | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Workspace / Settings → Custom Toolbar → Right PiP/Settings |
-| M. UI・Workspace・操作体系 | Custom Shortcut | Required | ワークスペース・設定 | Input / Accessibility | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Input / Accessibility → Custom Shortcut → Right PiP/Settings |
+| M. UI・Workspace・操作体系 | Custom Shortcut | Required | ワークスペース・設定 | Input / Accessibility | Setting/Property | settings | Left → All Features → ワークスペース・設定 → Input / Accessibility → Custom Shortcut → Dedicated Settings surface |
 | M. UI・Workspace・操作体系 | Keyboard Shortcut Capture | Required | ワークスペース・設定 | Input / Accessibility | Command/Feature | command | Left → All Features → ワークスペース・設定 → Input / Accessibility → Keyboard Shortcut Capture |
-| M. UI・Workspace・操作体系 | Custom Gesture | Required | ワークスペース・設定 | Input / Accessibility | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Input / Accessibility → Custom Gesture → Right PiP/Settings |
-| M. UI・Workspace・操作体系 | Scalable UI / Text | Required | ワークスペース・設定 | Workspace / Settings | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Workspace / Settings → Scalable UI / Text → Right PiP/Settings |
+| M. UI・Workspace・操作体系 | Custom Gesture | Required | ワークスペース・設定 | Input / Accessibility | Setting/Property | settings | Left → All Features → ワークスペース・設定 → Input / Accessibility → Custom Gesture → Dedicated Settings surface |
+| M. UI・Workspace・操作体系 | Scalable UI / Text | Required | ワークスペース・設定 | Workspace / Settings | Setting/Property | settings | Left → All Features → ワークスペース・設定 → Workspace / Settings → Scalable UI / Text → Dedicated Settings surface |
 | M. UI・Workspace・操作体系 | Single-pointer Alternative | Required | ワークスペース・設定 | Workspace / Settings | Command/Feature | command | Left → All Features → ワークスペース・設定 → Workspace / Settings → Single-pointer Alternative |
 | M. UI・Workspace・操作体系 | Color-independent State Indication | Required | ワークスペース・設定 | Workspace / Settings | Command/Feature | command | Left → All Features → ワークスペース・設定 → Workspace / Settings → Color-independent State Indication |
-| M. UI・Workspace・操作体系 | Color Description Assistance | Required | ワークスペース・設定 | Workspace / Settings | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Workspace / Settings → Color Description Assistance → Right PiP/Settings |
-| M. UI・Workspace・操作体系 | Reduced Motion | Required | ワークスペース・設定 | Input / Accessibility | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Input / Accessibility → Reduced Motion → Right PiP/Settings |
-| M. UI・Workspace・操作体系 | Touch Target Policy | Required | ワークスペース・設定 | Input / Accessibility | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Input / Accessibility → Touch Target Policy → Right PiP/Settings |
-| M. UI・Workspace・操作体系 | Feedback Sound / Haptic | Required / Investigate | ワークスペース・設定 | Input / Accessibility | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Input / Accessibility → Feedback Sound / Haptic → Right PiP/Settings |
+| M. UI・Workspace・操作体系 | Color Description Assistance | Required | ワークスペース・設定 | Workspace / Settings | Setting/Property | settings | Left → All Features → ワークスペース・設定 → Workspace / Settings → Color Description Assistance → Dedicated Settings surface |
+| M. UI・Workspace・操作体系 | Reduced Motion | Required | ワークスペース・設定 | Input / Accessibility | Setting/Property | settings | Left → All Features → ワークスペース・設定 → Input / Accessibility → Reduced Motion → Dedicated Settings surface |
+| M. UI・Workspace・操作体系 | Touch Target Policy | Required | ワークスペース・設定 | Input / Accessibility | Setting/Property | settings | Left → All Features → ワークスペース・設定 → Input / Accessibility → Touch Target Policy → Dedicated Settings surface |
+| M. UI・Workspace・操作体系 | Feedback Sound / Haptic | Required / Investigate | ワークスペース・設定 | Input / Accessibility | Setting/Property | settings | Left → All Features → ワークスペース・設定 → Input / Accessibility → Feedback Sound / Haptic → Dedicated Settings surface |
 | M. UI・Workspace・操作体系 | Keyboard Navigation for Commands | Required | ワークスペース・設定 | Input / Accessibility | Command/Feature | command | Left → All Features → ワークスペース・設定 → Input / Accessibility → Keyboard Navigation for Commands |
 | N. デバイス別適応 | Desktop専用最適化UI | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | N. デバイス別適応 | Tablet専用最適化UI | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
@@ -293,7 +293,7 @@
 | O.2 Localization | Localizable UI resources | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | O.2 Localization | Japanese/CJK layout support | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | O.2 Localization | Locale-aware units/date/number | Required | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
-| O.2 Localization | Shipping locale set | Investigate | ワークスペース・設定 | Workspace / Settings | Setting/Property | rightPiP | Left → All Features → ワークスペース・設定 → Workspace / Settings → Shipping locale set → Right PiP/Settings |
+| O.2 Localization | Shipping locale set | Investigate | ワークスペース・設定 | Workspace / Settings | Setting/Property | settings | Left → All Features → ワークスペース・設定 → Workspace / Settings → Shipping locale set → Dedicated Settings surface |
 | P. ファイル・保存・Recovery・Offline | .illustro | Core | ドキュメント・編集・出力 | Document / Save | Command/Feature | command | Left → All Features → ドキュメント・編集・出力 → Document / Save → .illustro |
 | P. ファイル・保存・Recovery・Offline | PNG Export | Required | ドキュメント・編集・出力 | Import / Export | Command/Feature | command | Left → All Features → ドキュメント・編集・出力 → Import / Export → PNG Export |
 | P. ファイル・保存・Recovery・Offline | JPEG Export | Required | ドキュメント・編集・出力 | Import / Export | Command/Feature | command | Left → All Features → ドキュメント・編集・出力 → Import / Export → JPEG Export |
@@ -311,11 +311,11 @@
 | P. ファイル・保存・Recovery・Offline | 描画を止めない保存 | Core | ドキュメント・編集・出力 | Document / Save | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | P. ファイル・保存・Recovery・Offline | Offline First | Core | ドキュメント・編集・出力 | Document / Save | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | P. ファイル・保存・Recovery・Offline | 通常編集でログイン不要 | Core | ドキュメント・編集・出力 | Document / Save | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
-| P. ファイル・保存・Recovery・Offline | PWA Install | Investigate | ドキュメント・編集・出力 | Document / Save | Subfeature/Property | rightPiP | Left → All Features → ドキュメント・編集・出力 → Document / Save → parent feature → PWA Install |
+| P. ファイル・保存・Recovery・Offline | PWA Install | Investigate | ドキュメント・編集・出力 | Document / Save | Subfeature/Property | settings | Left → All Features → ドキュメント・編集・出力 → Document / Save → PWA Install → Dedicated Settings surface |
 | Q. Performance・Rendering | 体感0ラグ | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | Q. Performance・Rendering | Low Input Latency | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | Q. Performance・Rendering | Stable Frame Time | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
-| Q. Performance・Rendering | Worst Frame計測 | Core | ワークスペース・設定 | Workspace / Settings | Diagnostic | rightPiP | Left → All Features → ワークスペース・設定 → Diagnostics（診断UI提供時） |
+| Q. Performance・Rendering | Worst Frame計測 | Core | ワークスペース・設定 | Workspace / Settings | Diagnostic | settings | Left → All Features → ワークスペース・設定 → Workspace / Settings → Worst Frame計測 → Dedicated Settings surface |
 | Q. Performance・Rendering | Memory Scaling | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | Q. Performance・Rendering | Canvas Size Scaling | Core | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
 | Q. Performance・Rendering | GPU Brush Compositing | Investigate / likely required | ワークスペース・設定 | Workspace / Settings | System/Internal | none | ユーザーが直接実行する機能ではない。関連する設定/状態がある場合のみ該当カテゴリから到達。 |
