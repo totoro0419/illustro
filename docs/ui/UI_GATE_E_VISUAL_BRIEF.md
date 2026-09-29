@@ -134,7 +134,8 @@ Use:
 - `LEFT_PINNED_RAIL_SPEC.md` for Rail/All Features/Overflow/Stack behavior;
 - `LEFT_UI_ACCESS_COVERAGE.md` for complete feature reachability;
 - `LEFT_TOOL_SURFACE_OPTIONS.md` for tool-family candidates.
-- `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md` for Right Workspace order/collapse baseline.
+- `RIGHT_UI_SPEC.md` as canonical Right UI semantics/layout/geometry;
+- `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md` as supporting order/collapse detail.
 - `RIGHT_WORKSPACE_INTERACTION_SPEC.md` for Box header/reorder/detach/magnetic/resize behavior.
 - `RIGHT_LAYER_PAGE_SPEC.md` for the expanded ibisPaint-like Layer Page.
 
@@ -165,22 +166,13 @@ Show the right side as a magnetic Workspace/PiP system. Layers, Color, Brush and
 
 The workspace is not a settings dump.
 
-Default Right Workspace order:
+Use `RIGHT_UI_SPEC.md` exactly for Right UI geometry, density and states.
 
-1. Layers & Compositing — expanded
-2. Color — expanded
-3. Brush — expanded
-4. Properties / Inspector — collapsed
-5. Reference — collapsed
-6. Assets — collapsed
-7. Effects & Adjustments — collapsed
-8. Navigator & View — collapsed
-9. History & Progress — collapsed
-10. Automation — collapsed
-11. Document — collapsed
-12. Workspace — collapsed
+Expanded pointer prototype uses the 344px default dock target; Medium touch/pen uses the 360px target when inline/overlay conditions permit.
 
-The Box stack scrolls independently. The fixed bottom strip remains visible and contains Layer Page / Undo / Redo / Horizontal Flip / Vertical Flip.
+Default order remains Layers / Color / Brush expanded, all remaining Boxes collapsed. All 12 Boxes remain represented. The fixed bottom strip remains visible and contains Layer Page / Undo / Redo / Horizontal Flip / Vertical Flip.
+
+The visual prototype must include a detached-placeholder state as well as the detached Box itself.
 
 ### 6.4 Brush Context Surface
 
