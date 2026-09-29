@@ -233,6 +233,22 @@ function finishAuto(reason) {
   render();
 }
 
+function invalidateRun(reason) {
+  if (phase !== 'auto') return;
+  const now = performance.now();
+  if (now - bucketStartAt > CONFIG.bucketMs * 0.5) closeBucket(now);
+  pipeline.endStroke();
+  autoEnd = now;
+  stopReason = reason;
+  invalidatedReason = reason;
+  phase = 'done';
+  stopButton.disabled = true;
+  if (wakeLock && !wakeLock.released) wakeLock.release();
+  startButton.disabled = false;
+  startButton.textContent = '再測定を開始';
+  render();
+}
+
 function finalize() {
   if (phase !== 'post-pen') return;
   phase = 'done';
@@ -302,8 +318,7 @@ requestAnimationFrame(loop);
 document.addEventListener('visibilitychange', () => {
   if (phase === 'auto' && document.visibilityState !== 'visible') {
     visibilityInterruptions += 1;
-    invalidatedReason = 'visibility-interruption';
-    finishAuto('visibility-interruption');
+    invalidateRun('visibility-interruption');
   }
 });
 
@@ -488,5 +503,5 @@ selectJsonButton.addEventListener('click', () => {
 });
 heatSelect.addEventListener('change', render);
 
-window.illustroSustained = { report, startRun, finishAuto, stabilityScreen };
+window.illustroSustained = { report, startRun, finishAuto, invalidateRun, stabilityScreen };
 render();
