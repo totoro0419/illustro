@@ -66,11 +66,11 @@ Opening/closing Layer Page is Workspace/UI state, not Artwork History.
 
 ### PC / large tablet
 
-Layer Page appears as a **wide right-side overlay/page**, larger than the normal Layers Box.
+Layer Page appears as a right-side overlay/page using **the same width as the current Right Workspace**.
 
-It may cover part of the Canvas, but does not replace the entire app.
+It is an expanded layer-management *mode*, not a second wider sidebar.
 
-It does not push the Canvas into a permanently smaller layout merely because the page is open.
+It may cover part of the Canvas, but does not replace the entire app and does not push the Canvas into a permanently smaller layout merely because the page is open.
 
 ### Optional floating form
 
