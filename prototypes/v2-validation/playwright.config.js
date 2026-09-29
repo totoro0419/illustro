@@ -10,7 +10,6 @@ export default defineConfig({
     'real-art/final-large2-source.spec.js',
     'real-art/final-large3-source.spec.js',
     'real-art/final-large2.spec.js',
-    'real-art/final-large.spec.js',
   ],
   timeout: 30_000,
   expect: { timeout: 5_000 },
