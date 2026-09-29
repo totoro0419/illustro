@@ -65,7 +65,7 @@ function structureFeatures(gx, gy, width, height) {
 
 function orientedBridgeField(score, tx, ty, coherence, texture, width, height, maxGap = 5) {
   const out = new Float32Array(score.length);
-  const dirs = [[1, 0], [1, 1], [0, 1], [-1, 1]];
+  const dirs = [[1, 0], [2, 1], [1, 1], [1, 2], [0, 1], [-1, 2], [-1, 1], [-2, 1]];
   const idx = (x, y) => y * width + x;
   const inside = (x, y) => x >= 0 && y >= 0 && x < width && y < height;
   const align = (i, dx, dy) => {
@@ -77,13 +77,15 @@ function orientedBridgeField(score, tx, ty, coherence, texture, width, height, m
     if (score[center] >= 0.72) continue;
     let best = 0;
     for (const [dx, dy] of dirs) {
-      for (let a = 1; a <= 3; a += 1) {
+      const stepLength = Math.hypot(dx, dy);
+      const maxSteps = Math.min(5, Math.max(1, Math.ceil((maxGap + 1) / stepLength)));
+      for (let a = 1; a <= maxSteps; a += 1) {
         const ax = x - dx * a, ay = y - dy * a;
         if (!inside(ax, ay)) break;
         const ai = idx(ax, ay);
         if (score[ai] < 0.46) continue;
-        for (let b = 1; b <= 3; b += 1) {
-          if (a + b - 1 > maxGap) break;
+        for (let b = 1; b <= maxSteps; b += 1) {
+          if ((a + b - 1) * stepLength > maxGap) break;
           const bx = x + dx * b, by = y + dy * b;
           if (!inside(bx, by)) break;
           const bi = idx(bx, by);
@@ -167,12 +169,13 @@ export function buildRealArtEvidenceV3(decoded) {
     wash[i] = clamp01(broadInk[i] * (1 - 0.72 * fineLine[i]) * (0.65 + 0.35 * (1 - coherence[i])));
     conservative[i] = clamp01(line[i] * (1 - 0.60 * texture[i]) - 0.38 * wash[i]);
   }
-  const bridge = orientedBridgeField(conservative, tx, ty, coherence, texture, width, height, 5);
+  const bridgeShort = orientedBridgeField(conservative, tx, ty, coherence, texture, width, height, 5);
+  const bridgeLong = orientedBridgeField(conservative, tx, ty, coherence, texture, width, height, 9);
   const dilated = directionalDilate(conservative, gx, gy, coherence, texture, width, height);
   const balanced = new Float32Array(n), permissive = new Float32Array(n);
   for (let i = 0; i < n; i += 1) {
-    balanced[i] = clamp01(Math.max(dilated[i], 0.95 * bridge[i], line[i] * (1 - 0.48 * texture[i]) - 0.26 * wash[i]));
-    permissive[i] = clamp01(Math.max(balanced[i], bridge[i], line[i] * (1 - 0.34 * texture[i]) - 0.15 * wash[i]));
+    balanced[i] = clamp01(Math.max(dilated[i], 0.95 * bridgeShort[i], line[i] * (1 - 0.48 * texture[i]) - 0.26 * wash[i]));
+    permissive[i] = clamp01(Math.max(balanced[i], bridgeLong[i], line[i] * (1 - 0.34 * texture[i]) - 0.15 * wash[i]));
   }
   const edgeMargin = Math.max(3, Math.round(Math.min(width, height) * 0.04));
   const grids = {
@@ -182,7 +185,7 @@ export function buildRealArtEvidenceV3(decoded) {
   };
   return {
     width, height, paper, dark, range, edgeMargin, grids,
-    features: { line, texture, wash, coherence, bridge, gradient, fineLine, broadInk },
+    features: { line, texture, wash, coherence, bridge: bridgeLong, bridgeShort, bridgeLong, gradient, fineLine, broadInk },
   };
 }
 
