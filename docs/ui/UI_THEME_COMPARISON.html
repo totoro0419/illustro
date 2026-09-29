@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ja" data-theme="aurora">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Illustro Theme Candidates — UI Gate E</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--app-bg);color:var(--text)}
+  button,select{font:inherit;color:inherit}
+  button{border:0}
+  :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  :root{
+    --top-h:44px;--left-w:58px;--right-w:344px;--bottom-strip-h:48px;
+    --radius:11px;--radius-sm:8px;--shadow:0 10px 26px rgba(30,38,51,.08);
+  }
+  html[data-theme="aurora"]{
+    --app-bg:#F5F8FC;--surround:#E9EFF6;--surface:#FFFFFF;--surface-2:#FAFCFF;--surface-3:#F1F5FA;
+    --border:#D7E0EC;--border-strong:#BECBDD;--text:#1E2633;--muted:#657184;--faint:#9099A8;
+    --accent:#5CA8FF;--accent-2:#8C83FF;--accent-3:#D986D9;--accent-ink:#315F98;--accent-soft:#EEF5FF;
+    --focus:#706CFA;--danger:#B94A5D;--warning:#A66A24;--shadow-color:rgba(72,92,119,.13);
+    --indicator:linear-gradient(180deg,#5CA8FF 0%,#8C83FF 54%,#D986D9 100%);
+    --brand:linear-gradient(90deg,#5CA8FF 0%,#8C83FF 53%,#D986D9 100%);
+    --ring:conic-gradient(from 210deg,#5CA8FF 0 18%,#8C83FF 28% 51%,#D986D9 62% 82%,#62D4BF 92% 100%);
+    --ring-glow:0 0 0 1px rgba(92,168,255,.18),0 12px 28px rgba(112,108,250,.14);
+  }
+  html[data-theme="halo"]{
+    --app-bg:#F7FBFD;--surround:#ECF4F8;--surface:#FFFFFF;--surface-2:#FBFDFF;--surface-3:#F0F7FA;
+    --border:#D5E5ED;--border-strong:#BDD5E1;--text:#1D2A33;--muted:#647684;--faint:#91A1AB;
+    --accent:#6CCBFF;--accent-2:#8CA7FF;--accent-3:#C8B6FF;--accent-ink:#2D6E91;--accent-soft:#EFFAFF;
+    --focus:#5B8DE4;--danger:#B75566;--warning:#9B712B;--shadow-color:rgba(70,123,145,.10);
+    --indicator:linear-gradient(180deg,#70D8F8 0%,#8CA7FF 72%,#C8B6FF 100%);
+    --brand:linear-gradient(90deg,#6CCBFF 0%,#8CA7FF 56%,#C8B6FF 100%);
+    --ring:conic-gradient(from 225deg,rgba(108,203,255,.94),rgba(140,167,255,.86),rgba(200,182,255,.75),rgba(108,203,255,.94));
+    --ring-glow:0 0 0 6px rgba(108,203,255,.07),0 14px 30px rgba(86,151,188,.12);
+  }
+  html[data-theme="bloom"]{
+    --app-bg:#FFF8FB;--surround:#F6EEF4;--surface:#FFFFFF;--surface-2:#FFFBFD;--surface-3:#F9F1F6;
+    --border:#E8D8E4;--border-strong:#D6BDCF;--text:#2B2530;--muted:#776778;--faint:#A394A2;
+    --accent:#F29BCB;--accent-2:#B19CFF;--accent-3:#FFBE8A;--accent-ink:#9A4C79;--accent-soft:#FFF0F8;
+    --focus:#8D75E8;--danger:#B64D62;--warning:#A46824;--shadow-color:rgba(122,83,112,.11);
+    --indicator:linear-gradient(180deg,#F29BCB 0%,#B19CFF 58%,#FFBE8A 100%);
+    --brand:linear-gradient(90deg,#F29BCB 0%,#B19CFF 52%,#FFBE8A 100%);
+    --ring:conic-gradient(from 205deg,#F29BCB,#B19CFF,#FFBE8A,#F29BCB);
+    --ring-glow:0 0 0 1px rgba(242,155,203,.2),0 12px 28px rgba(141,117,232,.10);
+  }
+  html[data-theme="cosmo"]{
+    --app-bg:#F4F6FB;--surround:#E8ECF5;--surface:#FBFCFF;--surface-2:#F7F9FE;--surface-3:#EEF1F8;
+    --border:#D4DBEA;--border-strong:#B8C4DA;--text:#1B2332;--muted:#5F6A80;--faint:#8791A6;
+    --accent:#4D7CFF;--accent-2:#6D63E6;--accent-3:#7E8AA8;--accent-ink:#2E54BF;--accent-soft:#EDF2FF;
+    --focus:#4B55D8;--danger:#B14D5D;--warning:#9C6A27;--shadow-color:rgba(54,67,103,.14);
+    --indicator:linear-gradient(180deg,#4D7CFF 0%,#6D63E6 72%,#7E8AA8 100%);
+    --brand:linear-gradient(90deg,#4D7CFF 0%,#6D63E6 68%,#7E8AA8 100%);
+    --ring:conic-gradient(from 220deg,#4D7CFF,#6D63E6,#8996B2,#4D7CFF);
+    --ring-glow:0 0 0 1px rgba(77,124,255,.18),0 13px 30px rgba(67,70,141,.16);
+  }
+  html[data-theme="simple"]{
+    --app-bg:#F7F9FC;--surround:#EEF3F8;--surface:#FFFFFF;--surface-2:#FBFCFE;--surface-3:#F2F5F9;
+    --border:#DCE3EC;--border-strong:#C4CFDC;--text:#1F2732;--muted:#697585;--faint:#96A0AE;
+    --accent:#6FA8FF;--accent-2:#6FA8FF;--accent-3:#6FA8FF;--accent-ink:#3569B5;--accent-soft:#EFF6FF;
+    --focus:#4F83D1;--danger:#B44D5C;--warning:#986A2B;--shadow-color:rgba(64,78,97,.09);
+    --indicator:#6FA8FF;--brand:#6FA8FF;--ring:#6FA8FF;--ring-glow:0 10px 24px rgba(67,96,132,.10);
+  }
+  html[data-theme="mono"]{
+    --app-bg:#F7F8F9;--surround:#ECEFF2;--surface:#FFFFFF;--surface-2:#FAFBFC;--surface-3:#F2F4F7;
+    --border:#D5DBE3;--border-strong:#BAC2CC;--text:#1F252C;--muted:#68717B;--faint:#969DA5;
+    --accent:#343B43;--accent-2:#525C66;--accent-3:#828A92;--accent-ink:#1F252C;--accent-soft:#EFF1F3;
+    --focus:#1F252C;--danger:#5D2F35;--warning:#6F5D39;--shadow-color:rgba(39,45,52,.09);
+    --indicator:#343B43;--brand:linear-gradient(90deg,#1F252C,#7C858E);--ring:conic-gradient(from 220deg,#2F363E,#68717B,#B6BDC4,#2F363E);--ring-glow:0 10px 24px rgba(39,45,52,.10);
+  }
+  .app{width:100vw;height:100vh;background:var(--app-bg);display:grid;grid-template-rows:var(--top-h) 1fr;overflow:hidden}
+  .topbar{display:flex;align-items:center;gap:12px;height:var(--top-h);padding:0 10px;border-bottom:1px solid var(--border);background:var(--surface);position:relative;z-index:20}
+  .brand{width:116px;display:flex;align-items:center;gap:9px;font-weight:760;letter-spacing:-.02em}
+  .brand-mark{width:22px;height:22px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface-2);position:relative;overflow:hidden;box-shadow:0 2px 6px var(--shadow-color)}
+  .brand-mark::after{content:"";position:absolute;left:3px;right:3px;bottom:3px;height:3px;border-radius:999px;background:var(--brand)}
+  .doc-chip{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);font-size:12px;color:var(--muted)}
+  .doc-chip strong{color:var(--text);font-weight:680}.saved-dot{width:7px;height:7px;border-radius:50%;background:#67A879;box-shadow:0 0 0 3px rgba(103,168,121,.12)}
+  .top-spacer{flex:1}.top-actions{display:flex;align-items:center;gap:6px}.top-btn{height:30px;min-width:30px;padding:0 9px;border:1px solid var(--border);border-radius:8px;background:var(--surface);font-size:12px;color:var(--muted)}
+  .review-switcher{position:absolute;left:50%;top:6px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;height:32px;padding:3px 5px 3px 8px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:0 5px 16px var(--shadow-color);backdrop-filter:blur(8px);font-size:11px;color:var(--muted)}
+  .review-switcher select{height:24px;border:0;border-radius:7px;background:var(--surface-3);padding:0 25px 0 8px;font-weight:650;outline:none}
+  .shell{min-height:0;display:grid;grid-template-columns:var(--left-w) minmax(0,1fr) var(--right-w);position:relative}
+  .left-rail{min-height:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:9px 7px 8px;gap:7px;z-index:10}
+  .tool{width:42px;height:42px;border-radius:10px;background:transparent;border:1px solid transparent;color:var(--muted);display:grid;place-items:center;position:relative;cursor:default}
+  .tool svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tool.selected{background:var(--accent-soft);color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent) 45%,var(--border));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--surface) 50%,transparent)}
+  .tool.selected::before{content:"";position:absolute;left:-7px;top:9px;width:3px;height:24px;border-radius:0 4px 4px 0;background:var(--indicator)}
+  .tool-sep{width:26px;height:1px;background:var(--border);margin:1px 0}.left-spacer{flex:1}.all-features{border-color:var(--border);background:var(--surface-2)}
+  .workspace{min-width:0;min-height:0;position:relative;background:var(--surround);overflow:hidden}
+  .workspace::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 52% 36%,rgba(255,255,255,.45),transparent 52%);pointer-events:none;opacity:.75}
+  html[data-theme="simple"] .workspace::before,html[data-theme="mono"] .workspace::before{display:none}
+  .canvas-paper{position:absolute;width:min(760px,73%);aspect-ratio:1/1;max-height:770px;left:50%;top:50%;transform:translate(-50%,-50%);background:#FCFCFB;border:1px solid rgba(93,103,113,.22);box-shadow:0 18px 42px rgba(55,63,72,.15);overflow:hidden}
+  .canvas-paper svg{width:100%;height:100%;display:block}
+  .canvas-badge{position:absolute;left:14px;top:14px;padding:6px 9px;border-radius:7px;background:rgba(255,255,255,.88);border:1px solid rgba(86,99,112,.18);font-size:11px;color:#687382;backdrop-filter:blur(6px)}
+  .context-bar{position:absolute;left:26px;bottom:20px;height:48px;width:438px;display:grid;grid-template-columns:1.45fr 1fr 1fr 40px;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 94%,transparent);box-shadow:var(--shadow);backdrop-filter:blur(9px);z-index:5}
+  .ctx-item{height:34px;display:flex;align-items:center;gap:8px;padding:0 9px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);font-size:11px;color:var(--muted);min-width:0}
+  .ctx-item strong{color:var(--text);font-weight:680;white-space:nowrap}.brush-dot{width:18px;height:18px;border-radius:50%;background:#202730;border:3px solid #D8DEE5;box-shadow:inset 0 0 0 2px #202730;flex:none}
+  .mini-slider{height:4px;flex:1;border-radius:999px;background:var(--border);position:relative;overflow:hidden}.mini-slider::after{content:"";position:absolute;inset:0 36% 0 0;border-radius:999px;background:var(--accent)}
+  .ctx-more{height:34px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);display:grid;place-items:center;color:var(--muted)}
+  .quick{position:absolute;width:112px;height:112px;right:18px;bottom:22px;z-index:6;filter:drop-shadow(0 10px 18px var(--shadow-color))}
+  .quick-ring{position:absolute;width:100px;height:100px;left:6px;top:6px;border-radius:50%;background:var(--ring);box-shadow:var(--ring-glow);opacity:.82}
+  .quick-ring::before{content:"";position:absolute;inset:5px;border-radius:50%;background:color-mix(in srgb,var(--surface) 84%,transparent)}
+  .quick-ring::after{content:"";position:absolute;width:44px;height:44px;left:28px;top:28px;border-radius:50%;background:color-mix(in srgb,var(--surround) 88%,transparent);border:1px solid color-mix(in srgb,var(--border-strong) 70%,transparent)}
+  .qbtn{position:absolute;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-size:11px;font-weight:750;box-shadow:0 4px 10px var(--shadow-color);z-index:3}
+  .q0{left:6px;top:42px}.q1{left:24px;top:10.823px}.q2{left:60px;top:10.823px}.q3{left:78px;top:42px}.q4{left:60px;top:73.177px}.q5{left:24px;top:73.177px}
+  .right-panel{min-height:0;border-left:1px solid var(--border);background:var(--surface);display:grid;grid-template-rows:1fr var(--bottom-strip-h);z-index:10}
+  .box-stack{min-height:0;overflow-y:auto;overscroll-behavior:contain;background:var(--surface);scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+  .box{border-bottom:1px solid var(--border);background:var(--surface)}
+  .box-head{height:35px;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:11px;font-weight:690;color:var(--text);position:relative}
+  .box-head::before{content:"";width:3px;height:14px;border-radius:4px;background:var(--border-strong)}
+  .box.expanded .box-head::before{background:var(--indicator)}
+  .box-head .chev{margin-left:auto;color:var(--faint);font-size:10px}.box-head .summary{margin-left:auto;color:var(--faint);font-weight:550;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.box-head .chev+.more{margin-left:0}.more{width:25px;height:25px;border-radius:7px;background:transparent;color:var(--faint);display:grid;place-items:center;font-size:15px}
+  .box-body{padding:8px 10px 10px;background:var(--surface-2)}
+  .layers-body{height:141px}.layer-row{height:29px;border:1px solid var(--border);border-radius:7px;background:var(--surface);display:grid;grid-template-columns:18px 28px 1fr 18px;align-items:center;gap:7px;padding:0 7px;margin-bottom:5px;font-size:10px;color:var(--muted)}
+  .layer-row.active{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}.eye{width:11px;height:7px;border:1.4px solid currentColor;border-radius:100% 0 100% 0;transform:rotate(45deg);opacity:.75}.thumb{width:22px;height:19px;border-radius:4px;background:linear-gradient(135deg,#EDF1F4,#BFC9D4);border:1px solid #C7D0D8}.layer-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lock{font-size:10px;color:var(--faint)}
+  .color-body{height:107px}.color-main{display:grid;grid-template-columns:94px 1fr;gap:10px;height:100%}.color-square{border-radius:8px;border:1px solid var(--border);background:linear-gradient(0deg,#000,transparent),linear-gradient(90deg,#fff,#778092);position:relative;overflow:hidden}.color-square::after{content:"";position:absolute;width:11px;height:11px;border-radius:50%;border:2px solid white;box-shadow:0 0 0 1px #303640;left:57px;top:26px}.color-controls{display:flex;flex-direction:column;gap:8px}.swatches{display:flex;gap:5px}.sw{width:22px;height:22px;border-radius:6px;border:1px solid var(--border)}.s1{background:#202730}.s2{background:#5E738E}.s3{background:#C7D1DA}.s4{background:#F2EEE8}.range-line{display:grid;grid-template-columns:17px 1fr 30px;align-items:center;gap:6px;font-size:9px;color:var(--faint)}
+  .brush-body{height:103px}.brush-row{height:30px;display:grid;grid-template-columns:64px 1fr 38px;align-items:center;gap:8px;font-size:10px;color:var(--muted)}.brush-row strong{color:var(--text);font-weight:620}.track{height:5px;border-radius:999px;background:var(--border);position:relative;overflow:hidden}.track>i{display:block;height:100%;border-radius:999px;background:var(--accent)}.val{height:23px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:grid;place-items:center;color:var(--text);font-variant-numeric:tabular-nums}
+  .bottom-strip{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--border);background:var(--surface);padding:5px 6px;gap:4px}
+  .strip-btn{min-width:0;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:10px;display:grid;place-items:center;gap:1px}.strip-btn.primary{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,var(--border));color:var(--accent-ink);font-weight:690}.strip-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.strip-label{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center}
+  .theme-note{position:absolute;top:12px;left:12px;z-index:4;display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;background:color-mix(in srgb,var(--surface) 90%,transparent);border:1px solid var(--border);font-size:10px;color:var(--muted);box-shadow:0 4px 12px var(--shadow-color);backdrop-filter:blur(8px)}
+  .theme-note::before{content:"";width:16px;height:3px;border-radius:99px;background:var(--brand)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+<defs>
+<symbol id="i-brush" viewBox="0 0 24 24"><path d="M14.5 4.5 19.5 9.5M13 6l5 5M12.5 6.5 5 14v5h5l7.5-7.5M5 16c-2 0-3 1.5-3 4 2.5 0 4-.8 4-3"/></symbol>
+<symbol id="i-eraser" viewBox="0 0 24 24"><path d="m4 15 8-9 8 7-7 8H8zM10 20h10"/></symbol>
+<symbol id="i-smudge" viewBox="0 0 24 24"><path d="M5 17c4-9 8-11 14-9-1 7-5 11-12 11M8 15c3-1 5-3 6-6"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="m5 19 11-11 3 3L8 22H5zM14 7l3-3 3 3-3 3M4 4l4 4"/></symbol>
+<symbol id="i-fill" viewBox="0 0 24 24"><path d="m5 13 8-8 6 6-8 8H5zM14 6l-3-3M18 17c2 2 2 4 0 5-2-1-2-3 0-5z"/></symbol>
+<symbol id="i-select" viewBox="0 0 24 24"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/></symbol>
+<symbol id="i-transform" viewBox="0 0 24 24"><path d="M7 7h10v10H7zM4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/></symbol>
+<symbol id="i-move" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3 9 6M12 3l3 3M21 12l-3-3M21 12l-3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 4 8 4-8 4-8-4zM4 12l8 4 8-4M4 16l8 4 8-4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7H4v-5M4 7c3-3 8-4 12-1 4 3 4 9 0 12-3 2-7 2-10 0"/></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 7h5v-5M20 7c-3-3-8-4-12-1-4 3-4 9 0 12 3 2 7 2 10 0"/></symbol>
+<symbol id="i-fliph" viewBox="0 0 24 24"><path d="M12 3v18M9 6 4 12l5 6M15 6l5 6-5 6"/></symbol>
+<symbol id="i-flipv" viewBox="0 0 24 24"><path d="M3 12h18M6 9l6-5 6 5M6 15l6 5 6-5"/></symbol>
+</defs></svg>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"></span><span>Illustro</span></div>
+    <div class="doc-chip"><strong>Untitled Artwork</strong><span>2048 × 2048</span></div>
+    <div class="doc-chip"><span class="saved-dot"></span><span>Saved</span></div>
+    <div class="review-switcher" data-review-only="true"><span>Theme</span><select id="themeSelect" aria-label="比較テーマ"><option value="aurora">1 Aurora</option><option value="halo">2 Halo</option><option value="bloom">3 Bloom</option><option value="cosmo">4 Cosmo</option><option value="simple">5 Simple</option><option value="mono">6 Mono</option></select></div>
+    <div class="top-spacer"></div>
+    <div class="top-actions"><button class="top-btn">Focus</button><button class="top-btn">Search</button><button class="top-btn">Save</button></div>
+  </header>
+  <main class="shell">
+    <nav class="left-rail" aria-label="Main tools">
+      <button class="tool selected" aria-label="Brush" aria-pressed="true"><svg><use href="#i-brush"/></svg></button>
+      <button class="tool" aria-label="Eraser"><svg><use href="#i-eraser"/></svg></button>
+      <button class="tool" aria-label="Smudge Blend"><svg><use href="#i-smudge"/></svg></button>
+      <button class="tool" aria-label="Eyedropper"><svg><use href="#i-eye"/></svg></button>
+      <button class="tool" aria-label="Smart Fill"><svg><use href="#i-fill"/></svg></button>
+      <div class="tool-sep"></div>
+      <button class="tool" aria-label="Selection"><svg><use href="#i-select"/></svg></button>
+      <button class="tool" aria-label="Transform"><svg><use href="#i-transform"/></svg></button>
+      <button class="tool" aria-label="Move"><svg><use href="#i-move"/></svg></button>
+      <div class="left-spacer"></div>
+      <button class="tool all-features" aria-label="All Features"><svg><use href="#i-grid"/></svg></button>
+    </nav>
+    <section class="workspace" aria-label="Canvas workspace">
+      <div class="theme-note"><span id="themeName">Aurora</span><span>candidate / review pending</span></div>
+      <div class="canvas-paper">
+        <span class="canvas-badge">Canvas · 82%</span>
+        <svg viewBox="0 0 760 760" role="img" aria-label="Quiet abstract illustration preview">
+          <rect width="760" height="760" fill="#FCFCFB"/>
+          <path d="M88 545c120-175 218-187 326-95 62 53 111 60 176 6 38-32 73-32 105-7v174H88z" fill="#EEF1F3"/>
+          <path d="M120 530c94-131 181-151 278-78 70 52 121 57 181 8 41-33 78-34 111-9" fill="none" stroke="#AEB9C4" stroke-width="4" stroke-linecap="round"/>
+          <path d="M238 332c50-46 94-45 135-4 31 31 68 34 107 9 42-27 83-17 119 30" fill="none" stroke="#738294" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="256" cy="260" r="55" fill="#F3F0EB" stroke="#C8BDAF" stroke-width="3"/>
+          <path d="M193 438c28-75 73-113 137-117 71-5 116 34 142 118" fill="none" stroke="#566577" stroke-width="6" stroke-linecap="round"/>
+          <path d="M531 403c35-28 66-28 94 0" fill="none" stroke="#9AA7B3" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="context-bar" aria-label="Brush context controls">
+        <div class="ctx-item"><span class="brush-dot"></span><strong>Inking Brush</strong></div>
+        <div class="ctx-item"><span>Size</span><div class="mini-slider"></div><strong>18 px</strong></div>
+        <div class="ctx-item"><span>Opacity</span><div class="mini-slider" style="--x:0"></div><strong>100%</strong></div>
+        <button class="ctx-more" aria-label="Open full Brush box">›</button>
+      </div>
+      <div class="quick" aria-label="Quick Controller six-slot visual candidate">
+        <div class="quick-ring"></div><span class="qbtn q0">↶</span><span class="qbtn q1">B</span><span class="qbtn q2">S</span><span class="qbtn q3">↷</span><span class="qbtn q4">C</span><span class="qbtn q5">E</span>
+      </div>
+    </section>
+    <aside class="right-panel" aria-label="Workspace boxes">
+      <div class="box-stack" id="boxStack">
+        <section class="box expanded" data-box="Layers"><div class="box-head">Layers<span class="chev">⌄</span><button class="more" aria-label="Layers more">···</button></div><div class="box-body layers-body">
+          <div class="layer-row active"><span class="eye"></span><span class="thumb"></span><span class="layer-name">Ink & details</span><span class="lock">·</span></div>
+          <div class="layer-row"><span class="eye"></span><span class="thumb"></span><span class="layer-name">Colors</span><span class="lock">·</span></div>
+          <div class="layer-row"><span class="eye"></span><span class="thumb"></span><span class="layer-name">Sketch</span><span class="lock">·</span></div>
+          <div class="layer-row"><span class="eye"></span><span class="thumb"></span><span class="layer-name">Background</span><span class="lock">•</span></div>
+        </div></section>
+        <section class="box expanded" data-box="Color"><div class="box-head">Color<span class="chev">⌄</span><button class="more" aria-label="Color more">···</button></div><div class="box-body color-body"><div class="color-main"><div class="color-square"></div><div class="color-controls"><div class="swatches"><i class="sw s1"></i><i class="sw s2"></i><i class="sw s3"></i><i class="sw s4"></i></div><div class="range-line"><span>H</span><div class="track"><i style="width:66%"></i></div><span>214</span></div><div class="range-line"><span>S</span><div class="track"><i style="width:22%"></i></div><span>22</span></div><div class="range-line"><span>V</span><div class="track"><i style="width:18%"></i></div><span>18</span></div></div></div></div></section>
+        <section class="box expanded" data-box="Brush"><div class="box-head">Brush<span class="chev">⌄</span><button class="more" aria-label="Brush more">···</button></div><div class="box-body brush-body"><div class="brush-row"><strong>Size</strong><div class="track"><i style="width:43%"></i></div><div class="val">18</div></div><div class="brush-row"><strong>Opacity</strong><div class="track"><i style="width:100%"></i></div><div class="val">100</div></div><div class="brush-row"><strong>Stabilize</strong><div class="track"><i style="width:28%"></i></div><div class="val">28</div></div></div></section>
+        <section class="box" data-box="Inspector"><div class="box-head">Inspector<span class="summary">Context locked</span><button class="more">···</button></div></section>
+        <section class="box" data-box="Reference"><div class="box-head">Reference<span class="summary">2 images</span><button class="more">···</button></div></section>
+        <section class="box" data-box="Assets"><div class="box-head">Assets<span class="summary">Recent</span><button class="more">···</button></div></section>
+        <section class="box" data-box="Effects"><div class="box-head">Effects<span class="summary">None</span><button class="more">···</button></div></section>
+        <section class="box" data-box="Navigator"><div class="box-head">Navigator<span class="summary">82%</span><button class="more">···</button></div></section>
+        <section class="box" data-box="History"><div class="box-head">History<span class="summary">42 steps</span><button class="more">···</button></div></section>
+        <section class="box" data-box="Automation"><div class="box-head">Automation<span class="summary">Idle</span><button class="more">···</button></div></section>
+        <section class="box" data-box="Document"><div class="box-head">Document<span class="summary">sRGB · 8-bit</span><button class="more">···</button></div></section>
+        <section class="box" data-box="Workspace"><div class="box-head">Workspace<span class="summary">Default</span><button class="more">···</button></div></section>
+      </div>
+      <div class="bottom-strip">
+        <button class="strip-btn primary"><svg><use href="#i-layers"/></svg><span class="strip-label">Layer Page</span></button>
+        <button class="strip-btn"><svg><use href="#i-undo"/></svg><span class="strip-label">Undo</span></button>
+        <button class="strip-btn"><svg><use href="#i-redo"/></svg><span class="strip-label">Redo</span></button>
+        <button class="strip-btn"><svg><use href="#i-fliph"/></svg><span class="strip-label">H Flip</span></button>
+        <button class="strip-btn"><svg><use href="#i-flipv"/></svg><span class="strip-label">V Flip</span></button>
+      </div>
+    </aside>
+  </main>
+</div>
+<script>
+(() => {
+  const themes=['aurora','halo','bloom','cosmo','simple','mono'];
+  const names={aurora:'Aurora',halo:'Halo',bloom:'Bloom',cosmo:'Cosmo',simple:'Simple',mono:'Mono'};
+  const params=new URLSearchParams(location.search);
+  const requested=(params.get('theme')||'aurora').toLowerCase();
+  const theme=themes.includes(requested)?requested:'aurora';
+  const select=document.getElementById('themeSelect');
+  const name=document.getElementById('themeName');
+  function apply(v,writeUrl=false){
+    document.documentElement.dataset.theme=v; select.value=v; name.textContent=names[v]; document.title=`Illustro Theme — ${names[v]}`;
+    if(writeUrl){try{const p=new URLSearchParams(location.search);p.set('theme',v);history.replaceState(null,'','?'+p.toString())}catch(_){/* embedded/import preview may have an opaque origin */}}
+  }
+  apply(theme);
+  select.addEventListener('change',()=>apply(select.value,true));
+  addEventListener('keydown',e=>{const n=Number(e.key);if(n>=1&&n<=6)apply(themes[n-1],true)});
+  window.__ILLUSTRO_THEME_REVIEW__={themes,get theme(){return document.documentElement.dataset.theme},boxCount:document.querySelectorAll('[data-box]').length};
+})();
+</script>
+</body>
+</html>
