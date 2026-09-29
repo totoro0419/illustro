@@ -27,6 +27,8 @@ function radialEnclosureProfile(bundle, nx, ny) {
   const rayCount = 32;
   const rayBest = [];
   const rayDistances = [];
+  const firstSupportDistances = [];
+  const firstSupportScores = [];
   const maxRadius = Math.max(8, Math.round(Math.min(w, h) * 0.46));
 
   for (let r = 0; r < rayCount; r += 1) {
@@ -35,6 +37,8 @@ function radialEnclosureProfile(bundle, nx, ny) {
     const dy = Math.sin(angle);
     let best = 0;
     let bestDistance = maxRadius;
+    let firstSupportDistance = null;
+    let firstSupportScore = 0;
 
     for (let distance = 5; distance <= maxRadius; distance += 1) {
       const x = Math.round(cx + dx * distance);
@@ -57,6 +61,10 @@ function radialEnclosureProfile(bundle, nx, ny) {
         0.24 * features.texture[i] -
         0.18 * features.wash[i]
       );
+      if (firstSupportDistance === null && score >= 0.40) {
+        firstSupportDistance = distance;
+        firstSupportScore = score;
+      }
       if (score > best) {
         best = score;
         bestDistance = distance;
@@ -65,6 +73,8 @@ function radialEnclosureProfile(bundle, nx, ny) {
 
     rayBest.push(best);
     rayDistances.push(bestDistance);
+    firstSupportDistances.push(firstSupportDistance);
+    firstSupportScores.push(firstSupportScore);
   }
 
   const supported = rayBest.map(value => value >= 0.40);
@@ -81,6 +91,46 @@ function radialEnclosureProfile(bundle, nx, ny) {
   const weakArcFraction = longestWeak / rayCount;
   const supportQ25 = quantile(rayBest, 0.25);
   const supportMedian = quantile(rayBest, 0.50);
+
+  // A ray hitting some strong line anywhere is not sufficient evidence of one
+  // enclosing contour: dense drawings can satisfy that accidentally. Track the
+  // nearest supported hit and require neighboring rays to meet the boundary at
+  // geometrically compatible distances. These diagnostics are intentionally
+  // classification-neutral until their behavior is audited on the full exposed
+  // corpus.
+  const finiteFirstDistances = firstSupportDistances.filter(Number.isFinite);
+  const firstHitCoverage = finiteFirstDistances.length / rayCount;
+  const firstHitDistanceMedian = quantile(finiteFirstDistances, 0.50);
+  const firstHitDistanceQ25 = quantile(finiteFirstDistances, 0.25);
+  const firstHitDistanceQ75 = quantile(finiteFirstDistances, 0.75);
+  const firstHitDistanceIqrNormalized = firstHitDistanceMedian > 0
+    ? (firstHitDistanceQ75 - firstHitDistanceQ25) / firstHitDistanceMedian
+    : 1;
+  const firstHitDistanceMadNormalized = firstHitDistanceMedian > 0
+    ? quantile(
+        finiteFirstDistances.map(distance => Math.abs(distance - firstHitDistanceMedian)),
+        0.50,
+      ) / firstHitDistanceMedian
+    : 1;
+
+  const adjacentJumps = [];
+  let adjacentComparable = 0;
+  let adjacentContinuous = 0;
+  for (let r = 0; r < rayCount; r += 1) {
+    const a = firstSupportDistances[r];
+    const b = firstSupportDistances[(r + 1) % rayCount];
+    if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
+    adjacentComparable += 1;
+    const normalizedJump = Math.abs(a - b) / Math.max(1, Math.min(a, b));
+    adjacentJumps.push(normalizedJump);
+    if (normalizedJump <= 0.35) adjacentContinuous += 1;
+  }
+  const adjacentDistanceContinuity = adjacentComparable
+    ? adjacentContinuous / adjacentComparable
+    : 0;
+  const adjacentJumpQ75 = quantile(adjacentJumps, 0.75);
+  const firstHitStrongFraction = firstSupportScores.filter(score => score >= 0.55).length / rayCount;
+
   const confidence = clamp01(
     0.38 * coverage +
     0.16 * strongFraction +
@@ -98,6 +148,13 @@ function radialEnclosureProfile(bundle, nx, ny) {
     supportMedian,
     confidence,
     medianHitDistance: quantile(rayDistances, 0.50),
+    firstHitCoverage,
+    firstHitStrongFraction,
+    firstHitDistanceMedian,
+    firstHitDistanceIqrNormalized,
+    firstHitDistanceMadNormalized,
+    adjacentDistanceContinuity,
+    adjacentJumpQ75,
   };
 }
 
