@@ -1,8 +1,9 @@
 # Illustro Right Workspace — Box Interaction Specification
 
-> Status: **SEMANTIC / INTERACTION BASELINE COMPLETE — VISUAL & RUNTIME VALIDATION PENDING**
+> Status: **SUPPORTING DETAIL / CANONICALIZED**
 > Date: 2026-09-29
-> Scope: PC / tablet Right Workspace Box header, collapse, reorder, detach, re-dock, resize and magnetic behavior
+> Scope: Supporting interaction detail
+> Canonical authority: [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
 > Parent:
 > - [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 > - [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
