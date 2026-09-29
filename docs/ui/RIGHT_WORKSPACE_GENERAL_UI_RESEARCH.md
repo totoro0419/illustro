@@ -197,7 +197,7 @@ Baseline header:
 - detach/re-dock;
 - More.
 
-Lower-frequency operations such as Reset Location, Hide, Lock Context, and advanced Box options stay under More unless testing proves they need promotion.
+Lower-frequency operations such as Reset Location, Lock Context, and advanced Box options stay under More unless testing proves they need promotion.
 
 ### G12 — Global settings are not normal Inspector content
 
