@@ -432,6 +432,10 @@ UI Gate E requires:
 
 ## 15. Gate E prototype package
 
+Canonical generation brief:
+
+- [UI Gate E — Visual Prototype Brief](UI_GATE_E_VISUAL_BRIEF.md)
+
 A PASS candidate must contain all three in one visual comparison set:
 
 1. **Expanded** — 1440×900 reference
@@ -490,9 +494,11 @@ A failed optional Figma attempt does not block Gate E.
 
 Do not label Gate E complete merely because the specification exists.
 
+All non-rendered prototype requirements are captured in `UI_GATE_E_VISUAL_BRIEF.md`.
+
 The only remaining Gate E work is:
 
-1. render the three reference layouts with a dedicated UI Design Skill;
+1. render the three reference layouts with the dedicated UI Design Skill using that brief;
 2. inspect them for structural/visual defects;
 3. obtain user review;
 4. record accepted visual decisions;
