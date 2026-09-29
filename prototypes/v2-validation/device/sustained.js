@@ -16,6 +16,7 @@ const progress = document.querySelector('#progress');
 const startButton = document.querySelector('#start');
 const stopButton = document.querySelector('#stop');
 const copyButton = document.querySelector('#copy');
+const selectJsonButton = document.querySelector('#select-json');
 const heatSelect = document.querySelector('#heat');
 
 let pipeline = new StreamingBrushPipeline();
@@ -46,6 +47,7 @@ let postPen = {
   startedAt: null, strokes: 0, trustedPenSamples: 0, cpuTimes: [], rafTimes: [], pressureMin: 1, pressureMax: 0, tiltSeen: false,
 };
 let activePointer = null;
+let lastResultJson = '';
 
 function resize() {
   const rect = canvas.getBoundingClientRect();
@@ -196,6 +198,7 @@ function startRun() {
   startButton.disabled = true;
   stopButton.disabled = false;
   copyButton.disabled = true;
+  selectJsonButton.disabled = true;
   heatSelect.value = '';
   runStart = performance.now();
   acceptedAtStart = pipeline.totalAccepted;
@@ -235,6 +238,7 @@ function finalize() {
   phase = 'done';
   if (wakeLock && !wakeLock.released) wakeLock.release();
   copyButton.disabled = false;
+  selectJsonButton.disabled = false;
   render();
 }
 
@@ -425,16 +429,52 @@ function render() {
     `pending max: ${pipeline.maxPendingObserved}`,
     `post Pen: ${postPen.trustedPenSamples}/500`,
   ].join('\n');
-  result.value = JSON.stringify(r, null, 2);
+  const json = JSON.stringify(r, null, 2);
+  if (json !== lastResultJson && document.activeElement !== result) {
+    result.value = json;
+    lastResultJson = json;
+  }
 }
 
 startButton.addEventListener('click', startRun);
 stopButton.addEventListener('click', () => finishAuto('user-stop'));
+function freezeCurrentJson() {
+  const json = JSON.stringify(report(), null, 2);
+  if (result.value !== json) result.value = json;
+  lastResultJson = json;
+  return json;
+}
+
+function selectJson() {
+  freezeCurrentJson();
+  result.focus();
+  result.select();
+  result.setSelectionRange(0, result.value.length);
+}
+
 copyButton.addEventListener('click', async () => {
-  result.value = JSON.stringify(report(), null, 2);
-  try { await navigator.clipboard.writeText(result.value); copyButton.textContent = 'コピー済み'; }
-  catch { result.focus(); result.select(); copyButton.textContent = '選択しました'; }
-  setTimeout(() => copyButton.textContent = 'JSONをコピー', 1200);
+  const json = freezeCurrentJson();
+  let copied = false;
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(json);
+      copied = true;
+    } catch {}
+  }
+  if (!copied) {
+    selectJson();
+    try { copied = document.execCommand('copy'); } catch {}
+  }
+  copyButton.textContent = copied ? 'コピー済み' : '全選択しました';
+  if (!copied) instruction.textContent = 'JSONを全選択しました。端末の「コピー」を実行して、このチャットへ貼ってください。';
+  setTimeout(() => copyButton.textContent = 'JSONをコピー', 1600);
+});
+
+selectJsonButton.addEventListener('click', () => {
+  selectJson();
+  selectJsonButton.textContent = '全選択済み';
+  instruction.textContent = 'JSONを全選択しました。端末の「コピー」を実行して、このチャットへ貼ってください。';
+  setTimeout(() => selectJsonButton.textContent = 'JSONを全選択', 1600);
 });
 heatSelect.addEventListener('change', render);
 
