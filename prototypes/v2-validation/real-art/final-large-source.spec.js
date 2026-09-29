@@ -11,7 +11,47 @@ async function fetchJson(url) {
   return response.json();
 }
 
-test('large final candidate sources are public-domain and image-readable', async () => {
+async function visualFingerprint(page, bytes, contentType) {
+  const base64 = bytes.toString('base64');
+  return page.evaluate(async ({ base64, contentType }) => {
+    const bin = atob(base64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i += 1) u8[i] = bin.charCodeAt(i);
+    const blob = new Blob([u8], { type: contentType });
+    const bitmap = await createImageBitmap(blob);
+
+    // 64-bit dHash. It deliberately fingerprints decoded visual content rather
+    // than JPEG container bytes, so metadata-only CDN rewrites do not invalidate
+    // an otherwise identical frozen source image.
+    const canvas = new OffscreenCanvas(9, 8);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bitmap, 0, 0, 9, 8);
+    const data = ctx.getImageData(0, 0, 9, 8).data;
+    const luma = new Float64Array(72);
+    for (let i = 0; i < 72; i += 1) {
+      const p = i * 4;
+      luma[i] = 0.2126 * data[p] + 0.7152 * data[p + 1] + 0.0722 * data[p + 2];
+    }
+
+    let hash = 0n;
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        hash = (hash << 1n) | (luma[y * 9 + x] > luma[y * 9 + x + 1] ? 1n : 0n);
+      }
+    }
+    const result = {
+      width: bitmap.width,
+      height: bitmap.height,
+      dHash64: hash.toString(16).padStart(16, '0'),
+    };
+    bitmap.close();
+    return result;
+  }, { base64, contentType });
+}
+
+test('large final candidate sources are public-domain, readable, and visually fingerprinted', async ({ page }) => {
   test.setTimeout(120000);
   const resultsDir = new URL('../results/', import.meta.url);
   await mkdir(resultsDir, { recursive: true });
@@ -36,6 +76,7 @@ test('large final candidate sources are public-domain and image-readable', async
     const bytes = Buffer.from(await response.arrayBuffer());
     expect(bytes.length).toBeGreaterThan(1000);
 
+    const fingerprint = await visualFingerprint(page, bytes, contentType);
     const ext = contentType.includes('png') ? 'png' : 'jpg';
     await writeFile(new URL('final-large-source-' + item.objectId + '.' + ext, resultsDir), bytes);
     report.push({
@@ -45,6 +86,7 @@ test('large final candidate sources are public-domain and image-readable', async
       isPublicDomain: object.isPublicDomain,
       bytes: bytes.length,
       contentType,
+      fingerprint,
     });
   }
 
