@@ -126,6 +126,8 @@ Canonical design:
 - [Left UI Access Architecture](LEFT_UI_ACCESS_ARCHITECTURE.md)
 - [Left UI — Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md)
 - [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
+- [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
+- [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 - [Left Tool Surface — Option Catalog](LEFT_TOOL_SURFACE_OPTIONS.md)
 
 The default PC/tablet Rail is fixed in `LEFT_UI_SPEC.md`: Brush, Eraser, Smudge/Blend, Eyedropper, Smart Fill, Selection, Transform, Move, plus fixed All Features.
@@ -216,6 +218,28 @@ Completed:
 Color/theme, final icon art, exact sizing, rendered density, hit-testing, focus/runtime behavior and measured performance remain unverified.
 
 This does not block continuing the rest of Gate E design, but Left UI semantics should not be reinvented during implementation without a concrete defect and explicit spec update.
+
+### 3.8 Right Workspace design status
+
+Current taxonomy: **V2 CANDIDATE / GENERAL-UI RESEARCH APPLIED**
+
+Applied cross-domain professional UI principles:
+
+- Canvas remains the primary content region;
+- Boxes keep stable semantic identity while location changes;
+- Properties / Inspector follows context by default and supports Lock Context;
+- flexible layouts require Reset Location / Reset Workspace Layout;
+- Box movement has visible drop preview, cancel behavior and a non-drag keyboard route;
+- permanent Box headers remain sparse;
+- global application settings are not dumped into an ordinary painting-workspace Box;
+- PC/tablet may use inline/overlay projections without changing Box semantics.
+
+Canonical candidate references:
+
+- [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
+- [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
+
+Right Workspace is **not yet semantically complete**; default Box visibility/order, exact magnetic behavior, sizing and tablet projection still require explicit design decisions.
 
 ## 4. Expanded layout baseline
 
