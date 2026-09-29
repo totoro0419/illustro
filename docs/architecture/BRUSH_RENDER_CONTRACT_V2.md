@@ -1,6 +1,6 @@
 # Illustro Brush ↔ Raster ↔ Renderer Contract V2
 
-> Status: **SEMANTIC DESIGN COMPLETE — reference + browser + representative Tablet Pen + perceptual PASS / sustained+thermal evidence remains**
+> Status: **SEMANTIC DESIGN COMPLETE — BRUSH GATE B CLOSED FOR REPRESENTATIVE TABLET PROFILE**
 > Date: 2026-09-28
 > Scope: input normalization, stroke semantics, deterministic Brush execution, realtime preview, Raster commit and Renderer boundary
 > Production effect: specification only. Brush Production implementation remains prohibited until the benchmark gate in section 17 passes and the user authorizes implementation.
@@ -511,8 +511,24 @@ The representative Tablet physical-Pen subgate therefore **passes**.
 
 ### Gate interpretation
 
-> **Gate B remains CONDITIONAL / NOT CLOSED.**
+A clean sustained / thermal-proxy record was subsequently collected:
 
-The user reported no noticeable tracking delay, hitching, or excessive stabilization during the physical Pen run with the selected One Euro `4/4/1` profile, so the perceptual subgate passes. The remaining evidence is sustained multi-minute runtime/thermal behavior. Desktop/Smartphone remain separate supported-device profile certifications.
+```text
+automatic elapsed             = 180.076 s
+visibility interruptions      = 0
+stress throughput             = 72,154 → 74,914 samples/s
+stress frame p95              = 16.700 → 16.700 ms
+max pending pages             = 8
+post-stress Pen samples       = 500
+post-stress pipeline p95      = 0.200 ms
+post-stress receive→RAF p95   = 11.500 ms
+thermal observation           = normal / not noticeable
+```
+
+Every recorded automatic bucket preserved generated == accepted samples. The realistic-rate baseline produced zero backpressure; the deliberately overloaded stress phase reached the configured queue bound without runaway growth or observed accepted-sample loss.
+
+> **Gate B = PASS / CLOSED FOR REPRESENTATIVE TABLET PROFILE.**
+
+Desktop/Smartphone remain separate supported-device profile certifications if claimed. Production implementation still requires the separate Production authorization gate.
 
 See [Brush V2 Device Validation](../benchmarks/BRUSH_DEVICE_VALIDATION_2026-09-29.md).
