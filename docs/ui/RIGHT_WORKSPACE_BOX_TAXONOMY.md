@@ -1,8 +1,9 @@
-# Illustro Right Workspace — Box Taxonomy Candidate V2
+# Illustro Right Workspace — Box Taxonomy
 
-> Status: **CANDIDATE TAXONOMY V2 / GENERAL-UI RESEARCH APPLIED / USER REVIEW PENDING**
+> Status: **SUPPORTING / SUPERSEDED BY CANONICAL RIGHT_UI_SPEC**
 > Date: 2026-09-29
-> Scope: PC / tablet right magnetic Workspace/PiP
+> Scope: Supporting taxonomy notes for PC / tablet Right UI
+> Canonical authority: [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
 > Related: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
 > General UI research: [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 > Default layout: [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
@@ -409,7 +410,7 @@ Primary purpose:
 Contains:
 
 - magnetic Box layout controls
-- Box resize / reorder / hide controls
+- Box resize / reorder controls
 - Workspace Save / Load
 - Workspace Presets
 - Left / Right UI mirror
@@ -658,7 +659,7 @@ Applied design constraints:
 
 ## 11. Current recommendation
 
-Proceed with these **12 semantic Box types** as the Right Workspace candidate taxonomy.
+The 12 semantic Box types are canonicalized by `RIGHT_UI_SPEC.md`.
 
 The twelfth Box is now **Workspace**, not a catch-all Workspace & Input panel. Global application settings use a dedicated Settings surface.
 
@@ -682,8 +683,6 @@ Header, collapse, reorder, detach, magnetic re-dock, resize, recovery and non-dr
 
 Layer Page semantic/interaction behavior is now fixed in `RIGHT_LAYER_PAGE_SPEC.md`.
 
-Remaining Right-UI work is visual/runtime validation:
+Exact layout/size tokens, Layer Page geometry, tablet projection and interaction semantics are now canonicalized by `RIGHT_UI_SPEC.md`.
 
-- final visual sizing/tokens;
-- exact Layer Page width/row density/action placement;
-- visual/runtime validation of tablet projection.
+This document remains supporting rationale only.
