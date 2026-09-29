@@ -136,6 +136,7 @@ Use:
 - `LEFT_TOOL_SURFACE_OPTIONS.md` for tool-family candidates.
 - `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md` for Right Workspace order/collapse baseline.
 - `RIGHT_WORKSPACE_INTERACTION_SPEC.md` for Box header/reorder/detach/magnetic/resize behavior.
+- `RIGHT_LAYER_PAGE_SPEC.md` for the expanded ibisPaint-like Layer Page.
 
 The visible Rail is icon-first. Prototype the default order:
 
@@ -532,3 +533,22 @@ The visual prototype must include:
 - fixed five-button bottom strip.
 
 Do not add a permanent Detach icon to every Box header unless visual testing demonstrates a concrete need and the semantic spec is explicitly revised.
+
+
+## Layer Page visual state
+
+Render the Layer Page as an expanded right-side layer-management surface inspired by ibisPaint's Layer Window interaction model, without copying its visual style.
+
+Must show:
+- Canvas still visible on the left;
+- wide layer-management page on the right;
+- layer tree/list as the dominant area;
+- visibility/reorder/folder hierarchy;
+- selected-layer high-frequency properties including opacity/blend/clipping/alpha-lock class controls;
+- compact structural action strip including Add Layer and special layer creation;
+- local search/filter;
+- close/back;
+- synchronization relationship with the compact Layers Box;
+- optional detached/floating state for PC/tablet comparison.
+
+Do not invent Layer Page-only layer state or commands.
