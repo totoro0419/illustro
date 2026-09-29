@@ -556,3 +556,36 @@ These are acceptance requirements, not optional polish:
 - The six Quick Controller buttons must have centers on an even flat-top regular-hexagon arrangement.
 - Each Quick Controller button disc must be fully contained inside the donut's outer boundary **and** remain outside the central draggable hole. Buttons may occupy the donut band, but may not hang outside it or intrude into the blank center.
 - Do not fix these issues by redesigning unrelated Left/Right/Canvas structure.
+
+
+### Tablet right-stack clipping defect — corrected rule
+
+The visual prototype exposed a failure mode: proportionally shrinking Layers / Color / Brush bodies to fit the tablet viewport can make fixed-size children overflow their Box, visually collide with the next header/fixed strip, and make the panel look corrupted.
+
+Required behavior:
+
+- keep the PC Box geometry/content density unless a specific control requires touch adaptation;
+- never shrink an expanded Box body below the intrinsic height needed by its visible children;
+- let the outer Right Box stack scroll vertically instead;
+- keep the five-button bottom strip fixed;
+- collection sublists may scroll internally, but must not show accidental partial rows solely because of an arbitrary viewport height.
+
+For the current Layers compact list, the review prototype shows **three complete rows** rather than a clipped partial fourth row.
+
+### Quick Controller review-size correction
+
+The previous 150px visual controller was too large relative to the Canvas.
+
+Current visual-review candidate:
+
+- controller footprint: **112×112 CSS px**
+- donut outer diameter: **100 px**
+- donut inner diameter: **44 px**
+- six button discs: **28 px**
+- button centers: regular flat-top hexagon, radius **36 px**
+
+Geometry invariant:
+- every button disc is fully inside the donut outer boundary;
+- every button disc remains outside the center hole.
+
+This is a visual-review token pending user acceptance, not a change to Quick Controller semantics.
