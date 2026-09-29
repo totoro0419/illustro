@@ -134,6 +134,7 @@ Use:
 - `LEFT_PINNED_RAIL_SPEC.md` for Rail/All Features/Overflow/Stack behavior;
 - `LEFT_UI_ACCESS_COVERAGE.md` for complete feature reachability;
 - `LEFT_TOOL_SURFACE_OPTIONS.md` for tool-family candidates.
+- `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md` for Right Workspace order/collapse baseline.
 
 The visible Rail is icon-first. Prototype the default order:
 
@@ -161,6 +162,23 @@ Target starting width: approximately 280–340 px.
 Show the right side as a magnetic Workspace/PiP system. Layers, Color, Brush and Reference are coherent blocks that can be reordered and, where applicable, detached and magnetically re-docked.
 
 The workspace is not a settings dump.
+
+Default Right Workspace order:
+
+1. Layers & Compositing — expanded
+2. Color — expanded
+3. Brush — expanded
+4. Properties / Inspector — collapsed
+5. Reference — collapsed
+6. Assets — collapsed
+7. Effects & Adjustments — collapsed
+8. Navigator & View — collapsed
+9. History & Progress — collapsed
+10. Automation — collapsed
+11. Document — collapsed
+12. Workspace — collapsed
+
+The Box stack scrolls independently. The fixed bottom strip remains visible and contains Layer Page / Undo / Redo / Horizontal Flip / Vertical Flip.
 
 ### 6.4 Brush Context Surface
 
