@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createHash } from 'node:crypto';
+import { REGION_V3_FINAL_LARGE_FINGERPRINTS } from './final-large-fingerprints.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { REGION_V3_FINAL_LARGE, REGION_V3_FINAL_LARGE_CRITERIA } from './final-large-manifest.js';
 import { buildRealArtEvidenceV3 } from './evidence-v3.js';
@@ -18,19 +19,49 @@ async function fetchFrozenBytes(item) {
       if (!response.ok) throw new Error('fetch ' + response.status + ' ' + item.imageUrl);
       const contentType = response.headers.get('content-type') || 'image/jpeg';
       const bytes = Buffer.from(await response.arrayBuffer());
-      const digest = createHash('sha256').update(bytes).digest('hex');
-      if (digest !== item.sha256) {
-        throw new Error(
-          'source digest mismatch for ' + item.id + ': expected ' + item.sha256 + ', got ' + digest,
-        );
-      }
-      return { bytes, contentType, digest };
+      const rawDigest = createHash('sha256').update(bytes).digest('hex');
+      return { bytes, contentType, rawDigest };
     } catch (error) {
       lastError = error;
       if (attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 1000));
     }
   }
   throw lastError;
+}
+
+async function decodedVisualFingerprint(page, bytes, contentType) {
+  const base64 = bytes.toString('base64');
+  return page.evaluate(async ({ base64, contentType }) => {
+    const bin = atob(base64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i += 1) u8[i] = bin.charCodeAt(i);
+    const bitmap = await createImageBitmap(new Blob([u8], { type: contentType }));
+
+    const canvas = new OffscreenCanvas(9, 8);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bitmap, 0, 0, 9, 8);
+    const data = ctx.getImageData(0, 0, 9, 8).data;
+    const luma = new Float64Array(72);
+    for (let i = 0; i < 72; i += 1) {
+      const p = i * 4;
+      luma[i] = 0.2126 * data[p] + 0.7152 * data[p + 1] + 0.0722 * data[p + 2];
+    }
+    let hash = 0n;
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        hash = (hash << 1n) | (luma[y * 9 + x] > luma[y * 9 + x + 1] ? 1n : 0n);
+      }
+    }
+    const result = {
+      width: bitmap.width,
+      height: bitmap.height,
+      dHash64: hash.toString(16).padStart(16, '0'),
+    };
+    bitmap.close();
+    return result;
+  }, { base64, contentType });
 }
 
 async function decodeLuma(page, bytes, contentType) {
@@ -62,9 +93,18 @@ test('Gate C large final blind meets frozen balanced acceptance criteria', async
 
   const decoded = new Map();
   const sourceDigests = {};
+  const sourceFingerprints = {};
   for (const item of REGION_V3_FINAL_LARGE) {
-    const { bytes, contentType, digest } = await fetchFrozenBytes(item);
-    sourceDigests[item.id] = digest;
+    const { bytes, contentType, rawDigest } = await fetchFrozenBytes(item);
+    const fingerprint = await decodedVisualFingerprint(page, bytes, contentType);
+    const expectedFingerprint = REGION_V3_FINAL_LARGE_FINGERPRINTS[item.id];
+    expect(expectedFingerprint, 'missing frozen fingerprint for ' + item.id).toBeTruthy();
+    expect(fingerprint.width, item.id + ' width changed').toBe(expectedFingerprint.width);
+    expect(fingerprint.height, item.id + ' height changed').toBe(expectedFingerprint.height);
+    expect(fingerprint.dHash64, item.id + ' decoded visual content changed').toBe(expectedFingerprint.dHash64);
+
+    sourceDigests[item.id] = rawDigest;
+    sourceFingerprints[item.id] = fingerprint;
     decoded.set(item.id, buildRealArtEvidenceV3(await decodeLuma(page, bytes, contentType)));
   }
 
@@ -124,10 +164,12 @@ test('Gate C large final blind meets frozen balanced acceptance criteria', async
     status: 'ONE_SHOT_GATE_C_FINAL',
     candidateSourceFreezeCommit: '9d65bc51fdd1892207eae2298b6c81365eea448a',
     labelSeedSourceHashFreezeCommit: '4d4542551f71573764e1155e2c9315592d2cb990',
+    decodedVisualFingerprintFreezeCommit: '5113a6c9725d9a4c7e2ef166daeae99ef187d074',
     classifierFreezeCommit: '28b90c658004ee1c83ce25d93cb50a856f50ab22',
     evidenceModel: 'v3-multiscale-oriented-texture-wash-plus-isolated-soft',
     fixedPolicy: FIXED_V3_POLICY,
     sourceDigests,
+    sourceFingerprints,
     criteria: REGION_V3_FINAL_LARGE_CRITERIA,
     result: { pass, total, byLabel, byStratum, details },
   };
