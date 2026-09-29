@@ -49,5 +49,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gate-bc-validation-results
-          path: prototypes/v2-validation/results/*.json
+          path: prototypes/v2-validation/results/*
           if-no-files-found: warn
