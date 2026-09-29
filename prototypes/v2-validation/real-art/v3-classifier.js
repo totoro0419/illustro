@@ -259,6 +259,29 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.samples >= 8 &&
     (closure.samples >= 50 || closure.bridge >= 0.40);
 
+  // Long architectural/decorative frames can downsample to only moderate line
+  // and bridge amplitude. Boundary length plus low texture provides independent
+  // evidence that this is a real enclosing frame rather than a tiny accidental
+  // cell in a line network.
+  const longLowTextureFrameClosure = !!closure &&
+    closure.samples >= 100 &&
+    closure.line >= 0.46 &&
+    closure.coherence >= 0.55 &&
+    closure.bridge >= 0.28 &&
+    closure.texture < 0.24 &&
+    closure.wash < 0.50;
+
+  // Smaller framed panels need stronger directional agreement, but should not
+  // require the bridge score to clear an arbitrary 0.40 cliff when line,
+  // coherence and low artifact all agree.
+  const compactStructuralFrameClosure = !!closure &&
+    closure.samples >= 24 &&
+    closure.line >= 0.45 &&
+    closure.coherence >= 0.70 &&
+    closure.bridge >= 0.38 &&
+    closure.texture < 0.32 &&
+    closure.wash < 0.22;
+
   const softBoundaryClosure = !!closure &&
     closure.softEdge >= 0.34 &&
     closure.softCoherence >= 0.60 &&
@@ -302,6 +325,15 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.bridge >= 0.33 &&
     !denseOutlinedClosure;
 
+  // Extremely texture-saturated ornament can look like a closed outline even
+  // when it is really a dense line network. Weak bridge support and modest
+  // orientation coherence distinguish this from a genuinely isolated frame.
+  const saturatedOrnamentNetwork = !!closure &&
+    local.texture >= 0.90 &&
+    closure.texture >= 0.90 &&
+    closure.bridge < 0.15 &&
+    closure.coherence < 0.55;
+
   const coherentClosure =
     cleanCoherentClosure ||
     strongCoherentClosure ||
@@ -313,7 +345,9 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     quietContinuousClosure ||
     quietFramedClosure ||
     cleanerLargeFrameClosure ||
-    mediumStructuralClosure;
+    mediumStructuralClosure ||
+    longLowTextureFrameClosure ||
+    compactStructuralFrameClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -325,11 +359,11 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
       if (interiorUncertain) label = 'ambiguous';
     }
   } else if (groups.balanced === 'closed' && groups.permissive === 'closed') {
-    label = (clutterEnclosure || microTextureAccidentalClosure)
+    label = (clutterEnclosure || microTextureAccidentalClosure || saturatedOrnamentNetwork)
       ? 'ambiguous'
       : (coherentClosure ? 'closed' : 'ambiguous');
   } else if (groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'closed') {
-    if (clutterEnclosure || microTextureAccidentalClosure || texturedBridgeNetworkEnclosure) label = 'ambiguous';
+    if (clutterEnclosure || microTextureAccidentalClosure || texturedBridgeNetworkEnclosure || saturatedOrnamentNetwork) label = 'ambiguous';
     else if (coherentClosure) label = 'closed';
     else if (closure && closure.coherence < 0.40 && local.wash < 0.35) label = 'open';
     else label = 'ambiguous';
@@ -432,10 +466,13 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     quietFramedClosure,
     cleanerLargeFrameClosure,
     mediumStructuralClosure,
+    longLowTextureFrameClosure,
+    compactStructuralFrameClosure,
     softBoundaryClosure,
     clutterEnclosure,
     microTextureAccidentalClosure,
     texturedBridgeNetworkEnclosure,
+    saturatedOrnamentNetwork,
     softHypothesis,
   };
 }
