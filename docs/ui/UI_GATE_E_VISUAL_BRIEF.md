@@ -544,3 +544,15 @@ Must show:
 - optional detached/floating state for PC/tablet comparison.
 
 Do not invent Layer Page-only layer state or commands.
+
+
+## Visual correction rules from user review
+
+These are acceptance requirements, not optional polish:
+
+- **Anchored Layer Page width must equal the current Right Workspace width.** It must not appear as a second, arbitrarily wider sidebar.
+- **Tablet keeps the PC visual grammar by default.** Do not enlarge headers, rows, controls and the bottom strip wholesale. Adapt only what is needed for touch hit areas and vertical fit.
+- At the tablet review size, the initial Layers / Color / Brush presentation must not leave controls visibly protruding behind the fixed five-button bottom strip.
+- The six Quick Controller buttons must have centers on an even flat-top regular-hexagon arrangement.
+- Each Quick Controller button disc must be fully contained inside the donut's outer boundary **and** remain outside the central draggable hole. Buttons may occupy the donut band, but may not hang outside it or intrude into the blank center.
+- Do not fix these issues by redesigning unrelated Left/Right/Canvas structure.
