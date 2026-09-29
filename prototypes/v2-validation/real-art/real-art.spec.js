@@ -11,7 +11,7 @@ async function fetchBytes(url) {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       const response = await fetch(url, { redirect: 'follow', headers: { 'user-agent': 'Illustro-Validation/1.0' } });
-      if (!response.ok) throw new Error(\`fetch \${response.status} \${url}\`);
+      if (!response.ok) throw new Error('fetch ' + response.status + ' ' + url);
       const contentType = response.headers.get('content-type') || 'image/jpeg';
       return { bytes: Buffer.from(await response.arrayBuffer()), contentType };
     } catch (error) {
