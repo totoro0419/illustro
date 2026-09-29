@@ -155,6 +155,8 @@ Canonical Gate E specification:
 - [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
 - [Left UI — Canonical Specification](ui/LEFT_UI_SPEC.md)
 - [Right UI — Canonical Specification](ui/RIGHT_UI_SPEC.md)
+- [Right UI Feature Coverage](ui/RIGHT_UI_FEATURE_COVERAGE.md)
+- [Right UI Quality Review](ui/RIGHT_UI_QUALITY_REVIEW.md)
 - [Right Workspace — Default Layout & Collapse](ui/RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
 - [Right Workspace — Box Interaction Specification](ui/RIGHT_WORKSPACE_INTERACTION_SPEC.md)
 - [Right UI — Layer Page Specification](ui/RIGHT_LAYER_PAGE_SPEC.md)
