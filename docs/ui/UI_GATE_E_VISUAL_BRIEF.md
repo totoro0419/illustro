@@ -1,6 +1,6 @@
 # Illustro UI Gate E — Visual Prototype Brief
 
-> Status: **READY FOR DEDICATED UI DESIGN GENERATION**
+> Status: **WORKING BRIEF / STRUCTURE IN REVISION**
 > Date: 2026-09-29
 > Parent: [UI Gate E](UI_GATE_E.md)
 > Purpose: remove generation-time ambiguity so the dedicated UI Design Skill can produce the Gate E comparison set without inventing product semantics.
@@ -95,10 +95,10 @@ Do not make the interface visually louder than the Canvas.
 
 Use:
 
-- top document/app strip: visually minimal
-- left Primary Tool Surface
+- top application/document strip: visually minimal; Home/Save and similar non-drawing document/app operations live here; Undo/Redo do not
+- icon-first left Primary Tool Surface
 - central Canvas
-- right Workspace Dock
+- right magnetic Workspace/PiP stack
 - Context Surface attached to the Canvas working region
 - optional detached block over a low-risk Canvas margin
 - no mandatory bottom bar unless persistent information genuinely needs it
@@ -107,34 +107,19 @@ Use:
 
 Target visual width: approximately 48–64 px.
 
-Required visible tools:
+The exact default visible tool set is **not yet locked**. Use `LEFT_TOOL_SURFACE_OPTIONS.md` as the canonical option universe.
 
-- Brush — selected
-- Eraser
-- Fill
-- Selection
-- Transform
-- Eyedropper
+For prototype continuity, Brush may be shown selected, but do not infer that every previously listed tool must be visible by default.
 
-Secondary/global actions may be separated visually from tools.
-
-Do not place full brush settings here.
+The surface is icon-first. Do not place full brush settings here.
 
 ### 6.3 Right Workspace Dock
 
 Target starting width: approximately 280–340 px.
 
-Default visible primary block:
+Show the right side as a magnetic Workspace/PiP system. Layers, Color, Brush and Reference are coherent blocks that can be reordered and, where applicable, detached and magnetically re-docked.
 
-- Layers
-
-Also provide direct tabs/entries for:
-
-- Color
-- Brush
-- Reference
-
-The dock is a workspace, not a settings dump.
+The workspace is not a settings dump.
 
 ### 6.4 Brush Context Surface
 
@@ -163,12 +148,17 @@ Show one open-state inset or side-by-side state in the Expanded composition.
 
 Baseline:
 
-- radial/pie family
-- 8 stable pinned directional slots
-- center action for Search/Edit
-- context suggestion region visually separate from pinned slots
+- optional pen-following controller;
+- hidden during an active pen stroke;
+- shown after pen-up near the current pen position;
+- semi-transparent donut/ring;
+- six buttons evenly distributed on a flat-top hexagonal six-point layout, including distinct leftmost/rightmost slots;
+- ring whitespace is draggable;
+- default leftmost = Undo, default rightmost = Redo;
+- all six assignments/positions remain user-customizable;
+- outline-led low-obstruction button styling may be explored, but is not locked.
 
-Do not copy Procreate's six-button geometry.
+Do not add an eighth slot or a center action unless the user later specifies one.
 
 ### 6.7 Expanded Focus Mode access
 
@@ -210,9 +200,7 @@ The composition must make sense for stylus + touch:
 
 ### 7.5 Quick Controller
 
-Use the same spatial profile meaning as Expanded.
-
-Geometry may be slightly larger/less dense for touch.
+Use the same six-slot pen-following semantics as Expanded for the current tablet design pass. Touch target sizing may adapt, but do not alter slot count or silently reorder assignments.
 
 ## 8. Compact screen — 390 × 844
 
@@ -262,14 +250,7 @@ Do not force users into the full Brush settings sheet for these frequent control
 
 ### 8.5 Quick Controller
 
-Use an edge/thumb-arc family rather than forcing a centered radial menu into insufficient space.
-
-Requirements:
-
-- stable profile ordering
-- explicit handedness mirroring behavior
-- no overlap with OS safe areas
-- no hover/right-click dependency
+**Pending.** Smartphone-specific geometry/behavior has not yet been designed. Do not derive it by simply scaling the PC/tablet six-button controller.
 
 ### 8.6 Command Search
 
@@ -362,20 +343,13 @@ Exact product font remains a visual-system decision unless already established e
 
 ## 15. Quick Controller prototype profile
 
-Use this profile only as a test/default prototype, not as a locked Core command mapping:
+Use a six-slot profile. Current default mapping locks only the initial suggestion, not the user's final arrangement:
 
-- Undo
-- Redo
-- Eraser
-- Eyedropper
-- Brush
-- Fill
-- Selection/Transform
-- Layer action
+- leftmost: Undo
+- rightmost: Redo
+- other four: not yet selected
 
-Pinned locations remain stable.
-
-Context suggestions must not replace these positions.
+All six slots, including Undo/Redo, can be reassigned and reordered by the user. No context system may implicitly replace or move a user's chosen assignments.
 
 ## 16. Workspace block behavior to communicate visually
 
@@ -416,7 +390,7 @@ Official QuickMenu documentation confirms the value of a customizable radial men
 Reference:
 https://help.procreate.com/procreate/handbook/interface-gestures/quickmenu
 
-Illustro must not clone its six-button form; Gate E uses its own device-adaptive profile and stable-slot rules.
+Procreate is relevant evidence for spatial shortcut/muscle-memory behavior. Illustro's current controller is independently defined by pen-position following, stroke-time hiding, a draggable semi-transparent donut, and an explicitly customizable flat-top six-slot layout.
 
 ### Krita
 
@@ -478,4 +452,4 @@ This brief is ready when:
 - rejection conditions are explicit
 - remaining choices are legitimately visual/compositional
 
-Current status: **READY TO GENERATE once the dedicated UI Design Skill execution path is available.**
+Current status: **NOT YET READY TO GENERATE. Finish the ongoing structural decisions first, then refresh this brief before visual generation.**
