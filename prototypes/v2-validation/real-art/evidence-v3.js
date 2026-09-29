@@ -148,11 +148,15 @@ export function buildRealArtEvidenceV3(decoded) {
   const blur7 = boxBlur(luma, width, height, 7);
   const { gx, gy } = gradients(blur1, width, height);
   const { coherence, tx, ty } = structureFeatures(gx, gy, width, height);
+  const { gx: softGx, gy: softGy } = gradients(blur3, width, height);
+  const { coherence: softCoherence } = structureFeatures(softGx, softGy, width, height);
   const n = width * height;
   const gradient = new Float32Array(n), fineLine = new Float32Array(n), dog = new Float32Array(n), broadInk = new Float32Array(n);
+  const softGradient = new Float32Array(n);
   const gradEnergy = new Float32Array(n), gradPresence = new Float32Array(n);
   for (let i = 0; i < n; i += 1) {
     gradient[i] = clamp01(Math.hypot(gx[i], gy[i]) / (0.045 + 0.18 * range));
+    softGradient[i] = clamp01(Math.hypot(softGx[i], softGy[i]) / (0.012 + 0.07 * range));
     fineLine[i] = clamp01((blur3[i] - luma[i]) / (0.035 + 0.16 * range));
     dog[i] = clamp01(Math.abs(blur1[i] - blur7[i]) / (0.030 + 0.12 * range));
     broadInk[i] = clamp01((paper - blur7[i]) / range);
@@ -162,12 +166,21 @@ export function buildRealArtEvidenceV3(decoded) {
   const localGradEnergy = boxBlur(gradEnergy, width, height, 3);
   const localGradient = boxBlur(gradient, width, height, 3);
   const localGradPresence = boxBlur(gradPresence, width, height, 4);
-  const line = new Float32Array(n), texture = new Float32Array(n), wash = new Float32Array(n), conservative = new Float32Array(n);
+  const line = new Float32Array(n), texture = new Float32Array(n), wash = new Float32Array(n), softEdge = new Float32Array(n), conservative = new Float32Array(n);
   for (let i = 0; i < n; i += 1) {
     const variance = Math.max(0, localGradEnergy[i] - localGradient[i] * localGradient[i]);
     texture[i] = clamp01(((localGradPresence[i] - 0.18) / 0.50) * (0.65 + 0.55 * (1 - coherence[i])) + (Math.sqrt(variance) / 0.60) * 0.20 * (1 - coherence[i]));
     line[i] = clamp01(Math.max(0.92 * fineLine[i], 0.74 * dog[i], 0.70 * gradient[i] * (0.55 + 0.45 * coherence[i])));
     wash[i] = clamp01(broadInk[i] * (1 - 0.72 * fineLine[i]) * (0.65 + 0.35 * (1 - coherence[i])));
+    // Smooth tonal boundaries (e.g. light watercolor fills) are separate from
+    // narrow ink lines. Multi-scale gradient + coherence preserves them while
+    // texture/wash terms prevent broad noisy wash from becoming a hard wall.
+    softEdge[i] = clamp01(
+      softGradient[i] *
+      (0.45 + 0.55 * softCoherence[i]) *
+      (1 - 0.55 * texture[i]) *
+      (1 - 0.65 * wash[i])
+    );
     conservative[i] = clamp01(line[i] * (1 - 0.60 * texture[i]) - 0.38 * wash[i]);
   }
   const bridgeShort = orientedBridgeField(conservative, tx, ty, coherence, texture, wash, width, height, 5, 0.46, 0.20, 0.58, 5);
@@ -175,8 +188,18 @@ export function buildRealArtEvidenceV3(decoded) {
   const dilated = directionalDilate(conservative, gx, gy, coherence, texture, width, height);
   const balanced = new Float32Array(n), permissive = new Float32Array(n);
   for (let i = 0; i < n; i += 1) {
-    balanced[i] = clamp01(Math.max(dilated[i], 0.95 * bridgeShort[i], line[i] * (1 - 0.48 * texture[i]) - 0.26 * wash[i]));
-    permissive[i] = clamp01(Math.max(balanced[i], bridgeLong[i], line[i] * (1 - 0.34 * texture[i]) - 0.15 * wash[i]));
+    balanced[i] = clamp01(Math.max(
+      dilated[i],
+      0.95 * bridgeShort[i],
+      0.88 * softEdge[i],
+      line[i] * (1 - 0.48 * texture[i]) - 0.26 * wash[i]
+    ));
+    permissive[i] = clamp01(Math.max(
+      balanced[i],
+      bridgeLong[i],
+      softEdge[i],
+      line[i] * (1 - 0.34 * texture[i]) - 0.15 * wash[i]
+    ));
   }
   const edgeMargin = Math.max(3, Math.round(Math.min(width, height) * 0.04));
   const grids = {
@@ -186,7 +209,7 @@ export function buildRealArtEvidenceV3(decoded) {
   };
   return {
     width, height, paper, dark, range, edgeMargin, grids,
-    features: { line, texture, wash, coherence, bridge: bridgeLong, bridgeShort, bridgeLong, gradient, fineLine, broadInk },
+    features: { line, texture, wash, coherence, bridge: bridgeLong, bridgeShort, bridgeLong, gradient, fineLine, broadInk, softEdge, softCoherence, softGradient },
   };
 }
 
