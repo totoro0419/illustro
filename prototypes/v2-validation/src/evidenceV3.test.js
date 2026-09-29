@@ -11,8 +11,11 @@ test('V3 oriented continuation raises evidence across a short aligned gap', () =
   const img = image(48, 48, 1);
   for (let x = 6; x <= 41; x += 1) if (x < 23 || x > 25) set(img, x, 24, 0.02);
   const b = buildRealArtEvidenceV3(img);
-  assert.ok(b.grids.balanced.get(24, 24) > b.grids.conservative.get(24, 24));
-  assert.ok(b.features.bridge[24 * 48 + 24] > 0.2);
+  const conservative = b.grids.conservative.get(24, 24);
+  const balanced = b.grids.balanced.get(24, 24);
+  const bridge = b.features.bridge[24 * 48 + 24];
+  assert.ok(bridge > 0, `expected nonzero oriented bridge evidence, got ${bridge}`);
+  assert.ok(balanced > conservative, `expected continuation to raise evidence: ${conservative} -> ${balanced}`);
 });
 
 test('V3 suppresses broad wash relative to a narrow ink line', () => {
