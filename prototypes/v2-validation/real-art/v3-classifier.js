@@ -194,6 +194,32 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     local.wash >= closure.wash + 0.20 &&
     closure.samples >= 20;
 
+  // Dense decorative interiors can make the seed neighborhood look highly
+  // textured even when the enclosing contour itself is cleaner and coherent.
+  // Accept the closure only when boundary texture drops substantially relative
+  // to the local interior instead of treating high local texture as clutter.
+  const denseContextContrastClosure = !!closure &&
+    closure.line >= 0.60 &&
+    closure.coherence >= 0.65 &&
+    closure.texture < 0.60 &&
+    closure.wash < 0.30 &&
+    closure.samples >= 20 &&
+    local.texture >= 0.85 &&
+    local.texture - closure.texture >= 0.25;
+
+  // Large continuous frames may survive downsampling with only modest line
+  // amplitude. A quiet seed neighborhood plus long coherent bridge support is
+  // sufficient when the inferred boundary has many samples and low artifacts.
+  const quietContinuousClosure = !!closure &&
+    closure.line >= 0.42 &&
+    closure.coherence >= 0.60 &&
+    closure.bridge >= 0.33 &&
+    closure.texture < 0.30 &&
+    closure.wash < 0.25 &&
+    closure.samples >= 50 &&
+    local.line < 0.35 &&
+    local.texture < 0.20;
+
   const softBoundaryClosure = !!closure &&
     closure.softEdge >= 0.34 &&
     closure.softCoherence >= 0.60 &&
@@ -228,7 +254,9 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     bridgeSupportedClosure ||
     denseOutlinedClosure ||
     structuralClosure ||
-    framedWashClosure;
+    framedWashClosure ||
+    denseContextContrastClosure ||
+    quietContinuousClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -342,6 +370,8 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     coherentStructuralClosure,
     structuralClosure,
     framedWashClosure,
+    denseContextContrastClosure,
+    quietContinuousClosure,
     softBoundaryClosure,
     clutterEnclosure,
     microTextureAccidentalClosure,
