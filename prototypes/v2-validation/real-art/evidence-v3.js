@@ -74,7 +74,7 @@ function orientedBridgeField(score, tx, ty, coherence, texture, width, height, m
   };
   for (let y = 1; y < height - 1; y += 1) for (let x = 1; x < width - 1; x += 1) {
     const center = idx(x, y);
-    if (score[center] >= 0.72 || texture[center] > 0.72) continue;
+    if (score[center] >= 0.72) continue;
     let best = 0;
     for (const [dx, dy] of dirs) {
       for (let a = 1; a <= 3; a += 1) {
@@ -97,7 +97,7 @@ function orientedBridgeField(score, tx, ty, coherence, texture, width, height, m
             const pi = idx(x + dx * s, y + dy * s);
             pathTexture += texture[pi]; pathN += 1;
           }
-          const textureFactor = 1 - clamp01((pathTexture / Math.max(1, pathN) - 0.28) / 0.55);
+          const textureFactor = 1 - 0.75 * clamp01((pathTexture / Math.max(1, pathN) - 0.62) / 0.38);
           best = Math.max(best, Math.min(score[ai], score[bi]) * Math.sqrt(aa * ab) * (0.72 + 0.28 * structural) * textureFactor);
         }
       }
@@ -147,20 +147,22 @@ export function buildRealArtEvidenceV3(decoded) {
   const { coherence, tx, ty } = structureFeatures(gx, gy, width, height);
   const n = width * height;
   const gradient = new Float32Array(n), fineLine = new Float32Array(n), dog = new Float32Array(n), broadInk = new Float32Array(n);
-  const gradEnergy = new Float32Array(n);
+  const gradEnergy = new Float32Array(n), gradPresence = new Float32Array(n);
   for (let i = 0; i < n; i += 1) {
     gradient[i] = clamp01(Math.hypot(gx[i], gy[i]) / (0.045 + 0.18 * range));
     fineLine[i] = clamp01((blur3[i] - luma[i]) / (0.035 + 0.16 * range));
     dog[i] = clamp01(Math.abs(blur1[i] - blur7[i]) / (0.030 + 0.12 * range));
     broadInk[i] = clamp01((paper - blur7[i]) / range);
     gradEnergy[i] = gradient[i] * gradient[i];
+    gradPresence[i] = gradient[i] > 0.28 ? 1 : 0;
   }
   const localGradEnergy = boxBlur(gradEnergy, width, height, 3);
   const localGradient = boxBlur(gradient, width, height, 3);
+  const localGradPresence = boxBlur(gradPresence, width, height, 4);
   const line = new Float32Array(n), texture = new Float32Array(n), wash = new Float32Array(n), conservative = new Float32Array(n);
   for (let i = 0; i < n; i += 1) {
     const variance = Math.max(0, localGradEnergy[i] - localGradient[i] * localGradient[i]);
-    texture[i] = clamp01((Math.sqrt(variance) / 0.34) * (0.45 + 0.85 * (1 - coherence[i])));
+    texture[i] = clamp01(((localGradPresence[i] - 0.18) / 0.50) * (0.65 + 0.55 * (1 - coherence[i])) + (Math.sqrt(variance) / 0.60) * 0.20 * (1 - coherence[i]));
     line[i] = clamp01(Math.max(0.92 * fineLine[i], 0.74 * dog[i], 0.70 * gradient[i] * (0.55 + 0.45 * coherence[i])));
     wash[i] = clamp01(broadInk[i] * (1 - 0.72 * fineLine[i]) * (0.65 + 0.35 * (1 - coherence[i])));
     conservative[i] = clamp01(line[i] * (1 - 0.60 * texture[i]) - 0.38 * wash[i]);
