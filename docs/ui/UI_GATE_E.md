@@ -130,6 +130,7 @@ Canonical design:
 - [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 - [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
 - [Right Workspace — Box Interaction Specification](RIGHT_WORKSPACE_INTERACTION_SPEC.md)
+- [Right UI — Layer Page Specification](RIGHT_LAYER_PAGE_SPEC.md)
 - [Left Tool Surface — Option Catalog](LEFT_TOOL_SURFACE_OPTIONS.md)
 
 The default PC/tablet Rail is fixed in `LEFT_UI_SPEC.md`: Brush, Eraser, Smudge/Blend, Eyedropper, Smart Fill, Selection, Transform, Move, plus fixed All Features.
@@ -248,7 +249,9 @@ Default Box order and default expansion/collapse state are now fixed in `RIGHT_W
 
 Right Box manipulation semantics are now complete: header anatomy, collapse, reorder, detach, re-dock, magnetic targets, resize, Workspace Layout Lock, recovery and non-drag alternatives are fixed in `RIGHT_WORKSPACE_INTERACTION_SPEC.md`.
 
-Right Workspace as a whole is **not yet semantically complete** because Layer Page geometry/behavior still requires explicit design decisions. Exact visual tokens and runtime thresholds remain validation work, not open interaction semantics.
+Layer Page semantic/interaction behavior is now fixed in `RIGHT_LAYER_PAGE_SPEC.md`, using an ibisPaint-like expanded layer-management surface while sharing the same Layer model/commands as the Layers Box.
+
+Right Workspace semantic/interaction design is now substantially complete. Exact visual tokens, Layer Page width/row density, magnetic thresholds and runtime behavior remain validation work.
 
 ## 4. Expanded layout baseline
 
