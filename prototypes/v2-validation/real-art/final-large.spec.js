@@ -88,7 +88,7 @@ async function decodeLuma(page, bytes, contentType) {
   }, { base64, contentType, maxSide: MAX_SIDE });
 }
 
-test('Gate C large final blind meets frozen balanced acceptance criteria', async ({ page }) => {
+test('exposed first large corpus remains above post-failure development regression floor', async ({ page }) => {
   test.setTimeout(180000);
 
   const decoded = new Map();
@@ -161,7 +161,7 @@ test('Gate C large final blind meets frozen balanced acceptance criteria', async
 
   const report = {
     generatedAt: new Date().toISOString(),
-    status: 'ONE_SHOT_GATE_C_FINAL',
+    status: 'EXPOSED_LARGE_DEVELOPMENT_REGRESSION',
     candidateSourceFreezeCommit: '9d65bc51fdd1892207eae2298b6c81365eea448a',
     labelSeedSourceHashFreezeCommit: '4d4542551f71573764e1155e2c9315592d2cb990',
     decodedVisualFingerprintFreezeCommit: '5113a6c9725d9a4c7e2ef166daeae99ef187d074',
