@@ -1,8 +1,9 @@
 # Illustro Left UI — Pinned Rail Specification
 
-> Status: **DESIGN BASELINE / USER REVIEW PENDING**
+> Status: **SUPPORTING DETAIL / CANONICALIZED**
 > Date: 2026-09-29
-> Scope: PC / tablet Left UI rail behavior
+> Scope: Detailed PC / tablet Rail behavior
+> Canonical authority: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
 > Parent: [Left UI Access Architecture](LEFT_UI_ACCESS_ARCHITECTURE.md)
 > Coverage: [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 
@@ -427,21 +428,19 @@ All Features entry itself is invariant and is not stored as a user Pin.
 
 ## 17. Default profile relationship
 
-The default Rail will be selected later.
+The default Rail is now fixed by `LEFT_UI_SPEC.md`:
 
-This specification intentionally does **not** decide:
+1. Brush
+2. Eraser
+3. Smudge / Blend
+4. Eyedropper
+5. Smart Fill
+6. Selection
+7. Transform
+8. Move
+9. All Features (fixed)
 
-- which tools ship visible by default;
-- exact visible Pin count;
-- exact icon artwork;
-- exact spacing/size.
-
-However, any default must satisfy:
-
-- All Features is always visible;
-- high-frequency creation tasks do not require opening All Features repeatedly;
-- advanced capability remains discoverable;
-- no default auto-reorders based on usage.
+Final icon artwork/color and exact visual sizing remain visual-validation concerns.
 
 ## 18. UIimprove review
 
