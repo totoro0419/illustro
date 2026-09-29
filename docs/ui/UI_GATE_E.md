@@ -480,12 +480,11 @@ The structural decisions and PASS criteria above are now the Gate E baseline.
 
 ### Visual prototype: **NOT GENERATED / UNVERIFIED**
 
-On 2026-09-29, two dedicated-design execution paths were attempted:
+The required prototype path is the dedicated UI Design Skill (Superdesign). Figma is optional and is not part of Gate E acceptance.
 
-- Figma new-file creation: rejected because the selected team currently exposes a View seat to the connected account.
-- Superdesign CLI: startup timed out on two attempts in the current execution environment.
+On 2026-09-29, Superdesign CLI startup/registry access timed out in the current execution environment, so no rendered screen could be produced or independently inspected in this session.
 
-Therefore no rendered screen has been independently inspected in this session.
+A failed optional Figma attempt does not block Gate E.
 
 ### Gate result: **NOT YET PASS**
 
