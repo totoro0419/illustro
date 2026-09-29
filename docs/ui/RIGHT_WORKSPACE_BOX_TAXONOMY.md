@@ -18,6 +18,8 @@ It is responsible for:
 - persistent auxiliary workspaces;
 - deep editing systems that should not crowd the Left UI.
 
+All semantic Right Boxes are represented in the Right Workspace. Information density is reduced primarily by **collapsing Boxes**, not by removing capability from the workspace.
+
 The Left UI remains the universal navigation root. A Left entry may deep-link to a specific Right Box and section.
 
 The right side must not become one giant miscellaneous inspector. Boxes are grouped by coherent work purpose.
@@ -426,16 +428,48 @@ belong to a dedicated **Settings surface**, reachable from Left/Search/top-level
 
 This Box is secondary and should not be part of the default always-open painting workspace.
 
-## 4. Fixed right-side chrome outside Boxes
+## 4. Fixed bottom command strip
 
-The following are not ordinary detachable Boxes:
+A compact fixed strip lives at the **bottom of the Right UI**.
 
-- Undo
-- Redo
-- magnetic workspace management affordance(s) needed to restore/rearrange Boxes
-- critical save/recovery/error indicator if the final shell places it on the right
+It contains exactly five primary buttons:
 
-Undo / Redo may also be assigned anywhere in the enabled six-slot Quick Controller.
+1. **Layer Page**
+2. **Undo**
+3. **Redo**
+4. **Horizontal Flip** (左右反転)
+5. **Vertical Flip** (上下反転)
+
+These five controls are outside the collapsible/magnetic Box stack and remain visible independently of Box expansion state.
+
+Undo / Redo call the same semantic commands used by History and the optional six-slot Quick Controller.
+
+Horizontal / Vertical Flip are Canvas-view commands and do not create duplicate command semantics.
+
+### Layer Page
+
+Layer Page is a special surface and is **not the same UI container as the Layers & Compositing Box**.
+
+However, both operate on the same Layer model and the same semantic layer commands.
+
+Baseline distinction:
+
+- **Layers Box** — compact, always-present workspace representation suitable for normal painting;
+- **Layer Page** — expanded layer-management surface opened by the fixed bottom Layer Page button.
+
+The two surfaces may expose substantially the same layer capabilities. They must share:
+
+- selection;
+- ordering;
+- visibility/lock state;
+- groups/masks/clipping;
+- blend/compositing state;
+- search/filter/tag state where applicable;
+- layer commands and history semantics.
+
+No separate Layer Page data model or duplicate layer-command implementation is allowed.
+
+The exact geometry of Layer Page is a later Right-UI design decision.
 
 ## 5. Box ownership summary
 
@@ -503,16 +537,22 @@ This preserves the user's requirement that all capability has a Left route while
 
 All Boxes are coherent semantic units.
 
-Where applicable they may be:
+All 12 semantic Boxes have a persistent presence in the Right Workspace registry and are available from the Right side.
+
+Primary density control is **collapse / expand**.
+
+Where applicable Boxes may also be:
 
 - reordered;
 - magnetically docked;
 - detached;
 - re-docked;
-- collapsed;
 - resized;
-- pinned;
-- hidden/restored.
+- pinned.
+
+A detached Box remains the same registered Box; detach does not create another semantic instance.
+
+Do not use ordinary hide/remove as the primary way to manage normal Right-UI density.
 
 ### Magnetic movement contract
 
@@ -561,29 +601,29 @@ A Box may contain tabs/sections only when they share one clear work purpose.
 
 ## 8. Recommended distinction: persistent vs contextual
 
-### Persistent-workspace candidates
+### Expansion priority
 
-Most useful to keep open for long periods:
+All Boxes remain present, but they do not need to remain expanded simultaneously.
+
+Likely high-frequency expanded candidates:
 
 - Layers & Compositing
 - Color
 - Brush
-- Reference
-- Navigator & View
 
-### Contextual/deep-work candidates
-
-Usually opened when needed:
+Often-collapsed / expanded-on-demand candidates:
 
 - Properties / Inspector
 - Effects & Adjustments
+- Reference
 - Assets
 - History & Progress
 - Automation
+- Navigator & View
 - Document
 - Workspace
 
-This distinction is **not** a default layout decision yet. It only informs later default-workspace design.
+This is an expansion-density distinction, not a visibility/removal distinction. Exact default expanded/collapsed states are still to be decided.
 
 ## 9. General professional-UI rules now applied
 
@@ -632,10 +672,10 @@ The most important architectural decisions are:
 
 The next design step is to decide:
 
-- which Boxes are shown by default;
+- default expanded/collapsed state for all Boxes;
 - default vertical order;
+- Layer Page geometry/behavior;
 - Box header/control anatomy;
-- magnetic detach/reorder/group behavior;
-- collapsed state;
+- magnetic detach/reorder behavior;
 - minimum/maximum sizing;
 - tablet projection.
