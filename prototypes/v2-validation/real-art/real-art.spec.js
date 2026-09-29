@@ -133,19 +133,37 @@ function classify(bundle, query, basePolicy) {
   const artifact = closure ? Math.max(closure.texture, closure.wash) : Math.max(local.texture, local.wash);
   const closureQuality = closure ? (0.50 * closure.line + 0.25 * closure.coherence + 0.25 * closure.bridge - 0.45 * artifact) : -1;
 
+  const sx = Math.max(0, Math.min(bundle.width - 1, Math.round(query.seed[0] * (bundle.width - 1))));
+  const sy = Math.max(0, Math.min(bundle.height - 1, Math.round(query.seed[1] * (bundle.height - 1))));
+  const nearFrame = sx < bundle.edgeMargin + 2 || sy < bundle.edgeMargin + 2 || sx >= bundle.width - bundle.edgeMargin - 2 || sy >= bundle.height - bundle.edgeMargin - 2;
+  const coherentClosure = !!closure &&
+    closure.line >= 0.68 &&
+    closure.coherence >= 0.42 &&
+    local.wash < 0.45 &&
+    (closure.texture < 0.75 || closure.coherence >= 0.70 || (closure.line >= 0.80 && local.coherence >= 0.60));
+
   let label = 'ambiguous';
-  if (groups.conservative === groups.balanced && groups.balanced === groups.permissive) {
+  if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
+    label = 'open';
+  } else if (groups.conservative === groups.balanced && groups.balanced === groups.permissive) {
     label = groups.balanced;
-    if (label === 'closed' && closure && artifact > 0.58 && closure.line < 0.52) label = 'ambiguous';
-  } else if (groups.balanced === 'closed' && groups.permissive === 'closed' && closureQuality >= 0.24 && areaRange <= 0.18) {
-    label = 'closed';
-  } else if (groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive !== 'closed' && areaRange <= 0.18) {
+    if (label === 'open') {
+      const interiorUncertain = areaRange > 0.20 && local.line >= 0.33 && (local.texture >= 0.15 || local.wash >= 0.18);
+      if (interiorUncertain) label = 'ambiguous';
+    }
+  } else if (groups.balanced === 'closed' && groups.permissive === 'closed') {
+    label = coherentClosure ? 'closed' : 'ambiguous';
+  } else if (groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'closed') {
+    if (coherentClosure) label = 'closed';
+    else if (closure && closure.coherence < 0.40 && local.wash < 0.35) label = 'open';
+    else label = 'ambiguous';
+  } else if (groups.conservative === 'open' && groups.balanced === 'open') {
     label = 'open';
   } else {
     const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const [winner, winnerCount] = ranked[0];
     const opposition = winner === 'closed' ? counts.open : winner === 'open' ? counts.closed : Math.max(counts.closed, counts.open);
-    if (winnerCount >= 7 && opposition <= 1 && areaRange <= 0.15 && artifact < 0.36) label = winner;
+    if (winnerCount >= 7 && opposition <= 1 && artifact < 0.36) label = winner;
   }
 
   return {
@@ -159,6 +177,8 @@ function classify(bundle, query, basePolicy) {
     closure,
     closureQuality,
     artifact,
+    nearFrame,
+    coherentClosure,
   };
 }
 
