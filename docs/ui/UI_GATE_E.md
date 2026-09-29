@@ -128,6 +128,7 @@ Canonical design:
 - [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 - [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
 - [Expanded / Medium Visual Review Record](UI_GATE_E_VISUAL_REVIEW_2026-09-29.md)
+- [Compact / Smartphone UI Candidate](COMPACT_UI_SPEC.md)
 - [Right UI Feature Coverage](RIGHT_UI_FEATURE_COVERAGE.md)
 - [Right UI Quality Review](RIGHT_UI_QUALITY_REVIEW.md)
 - [Right Workspace — Box Taxonomy](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
@@ -375,24 +376,38 @@ Designed for tablet-class stylus + touch use, but capability-driven.
 
 Reference prototype viewport: **390 × 844** portrait, with landscape reflow required.
 
-### Structure
+Canonical candidate:
 
-- Canvas occupies nearly the entire viewport
-- no permanent desktop-style side panel
-- compact top document/status strip
-- thumb-reachable compact access surface at the lower edge
-- Workspace Blocks open as bottom/edge sheets or temporary cards
-- Context Surface is compact and collapsible
-- Quick Controller is anchored to a reachable corner/edge when cursor-centered radial space is insufficient
+- [Compact / Smartphone UI Candidate](COMPACT_UI_SPEC.md)
 
-### Default behavior
+### Current candidate direction
 
-- Core painting is touch-only completable.
-- Common non-drawing commands are reachable one-handed.
-- Layers, Brush settings, Color and Reference never require tiny controls.
-- Reference can enter a temporary overlay/fullscreen comparison form while preserving a fast return to painting.
-- Numeric precision remains available but is never the only path.
-- virtual keyboard and safe areas may not cover required Apply/Cancel/Search controls.
+Compact is not a scaled desktop shell.
+
+It uses:
+
+- Canvas-first composition;
+- ibisPaint-inspired bottom Main Toolbar;
+- the 12 Right semantic Boxes projected as ordered **Workspace Pages**;
+- horizontal swipe between Workspace Pages;
+- explicit Page Overview for direct jump;
+- PDF-like page filmstrip/organizer for page reorder;
+- explicit PiP button rather than drag-to-detach as the primary Compact PiP entry;
+- one Compact PiP at a time;
+- direct Main Toolbar routes to Properties / Color / Layers.
+
+Compact page order is independent Workspace state from desktop Right Box order.
+
+### Required interaction constraints
+
+- page swipe must not steal slider/list/reorder gestures;
+- Workspace Page reorder occurs only in explicit Edit Order mode;
+- reorder has non-drag alternatives;
+- no 12-dot-only navigation;
+- PiP is not required for pages whose content needs a structured full sheet;
+- Canvas remains the primary working area.
+
+Exact toolbar allocation, Undo/Redo placement, sheet heights, PiP geometry and portrait/landscape visual composition remain user co-design items for the Compact HTML prototype.
 
 ## 7. Quick Controller concrete baseline
 
