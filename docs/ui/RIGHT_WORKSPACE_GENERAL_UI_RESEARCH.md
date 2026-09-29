@@ -1,9 +1,10 @@
 
 # Right Workspace — General UI Research and Applied Principles
 
-> Status: **APPLIED RESEARCH**
+> Status: **SUPPORTING RESEARCH / APPLIED TO CANONICAL RIGHT_UI_SPEC**
 > Date: 2026-09-29
-> Scope: General-purpose professional UI patterns applicable to Illustro's right magnetic Workspace/PiP
+> Scope: General-purpose professional UI research applied to Illustro
+> Canonical authority: [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
 > Related: RIGHT_WORKSPACE_BOX_TAXONOMY.md
 
 ## 1. Why research outside paint applications
