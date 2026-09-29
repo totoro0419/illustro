@@ -220,6 +220,32 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     local.line < 0.35 &&
     local.texture < 0.20;
 
+  // Quiet interiors can be enclosed by moderately textured decorative frames.
+  // This is distinct from a textured line network: the seed neighborhood itself
+  // remains low-line, low-texture and low-wash.
+  const quietFramedClosure = !!closure &&
+    closure.line >= 0.54 &&
+    closure.coherence >= 0.60 &&
+    closure.bridge >= 0.29 &&
+    closure.texture < 0.45 &&
+    closure.wash < 0.20 &&
+    closure.samples >= 50 &&
+    local.line < 0.35 &&
+    local.texture < 0.12 &&
+    local.wash < 0.15;
+
+  // Painted/ornamental interiors may be very textured and washed while their
+  // actual enclosing frame is substantially cleaner on both dimensions.
+  const cleanerLargeFrameClosure = !!closure &&
+    closure.line >= 0.55 &&
+    closure.samples >= 100 &&
+    local.texture >= 0.75 &&
+    local.texture - closure.texture >= 0.35 &&
+    local.wash >= 0.35 &&
+    local.wash - closure.wash >= 0.20 &&
+    closure.texture < 0.55 &&
+    closure.wash < 0.25;
+
   const softBoundaryClosure = !!closure &&
     closure.softEdge >= 0.34 &&
     closure.softCoherence >= 0.60 &&
@@ -248,6 +274,21 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.texture >= 0.45 &&
     closure.coherence <= local.coherence + 0.02;
 
+  // Perspective/hatching networks can form apparently coherent closed cells at
+  // permissive thresholds. High texture plus strong bridge evidence both inside
+  // and on the boundary indicates a connected line network, not an isolated
+  // semantic frame. Dense outlined ornament is excluded explicitly.
+  const texturedBridgeNetworkEnclosure = !!closure &&
+    areaRange > 0.75 &&
+    groups.conservative === 'open' &&
+    groups.balanced === 'open' &&
+    groups.permissive === 'closed' &&
+    local.texture >= 0.60 &&
+    closure.texture >= 0.65 &&
+    local.bridge >= 0.33 &&
+    closure.bridge >= 0.33 &&
+    !denseOutlinedClosure;
+
   const coherentClosure =
     cleanCoherentClosure ||
     strongCoherentClosure ||
@@ -256,7 +297,9 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     structuralClosure ||
     framedWashClosure ||
     denseContextContrastClosure ||
-    quietContinuousClosure;
+    quietContinuousClosure ||
+    quietFramedClosure ||
+    cleanerLargeFrameClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -272,7 +315,7 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
       ? 'ambiguous'
       : (coherentClosure ? 'closed' : 'ambiguous');
   } else if (groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'closed') {
-    if (clutterEnclosure || microTextureAccidentalClosure) label = 'ambiguous';
+    if (clutterEnclosure || microTextureAccidentalClosure || texturedBridgeNetworkEnclosure) label = 'ambiguous';
     else if (coherentClosure) label = 'closed';
     else if (closure && closure.coherence < 0.40 && local.wash < 0.35) label = 'open';
     else label = 'ambiguous';
@@ -372,9 +415,12 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     framedWashClosure,
     denseContextContrastClosure,
     quietContinuousClosure,
+    quietFramedClosure,
+    cleanerLargeFrameClosure,
     softBoundaryClosure,
     clutterEnclosure,
     microTextureAccidentalClosure,
+    texturedBridgeNetworkEnclosure,
     softHypothesis,
   };
 }
