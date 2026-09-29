@@ -127,3 +127,22 @@ acceptance thresholds, classifier code, evidence code, or fixed policy:
 CI Chromium and an independent local Chromium calculation produced identical
 fingerprints for all 12 sources. The one-shot algorithmic evaluation remains unused
 until the evaluator passes this decoded-visual source guard.
+
+
+## Algorithmic final result
+
+The first algorithmic execution that passed the decoded-visual source guard ran on
+classifier freeze `28b90c658004ee1c83ce25d93cb50a856f50ab22` and produced:
+
+- overall: **18 / 24**
+- closed: **3 / 8**
+- open: **8 / 8**
+- ambiguous: **7 / 8**
+
+This is a **FAIL** under the frozen 21/24 and 7/8-per-class criteria. Therefore this
+24-query corpus is permanently exposed development evidence from this point forward
+and MUST NOT be used to close Gate C.
+
+Subsequent executions of this corpus are regression-only. Gate C closure requires a
+new, never-before-evaluated large final corpus frozen after the next classifier/evidence
+revision.
