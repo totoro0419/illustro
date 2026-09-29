@@ -145,24 +145,27 @@ The Library Section 9 draft is reference-only.
 
 ## 9. UI Gate E
 
-### Definition: **LOCKED**
+### Definition: **IN REVISION**
 ### Visual prototype/user review: **PENDING**
 
 Canonical Gate E specification:
 
 - [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
 
-Locked structural decisions include:
+Confirmed / currently recorded decisions include:
 
 - Canvas-dominant shell
-- Primary Tool Surface
+- icon-first customizable Primary Tool Surface
+- top bar reserved for application/document operations rather than drawing controls
+- magnetic detachable/reorderable right Workspace/PiP blocks
+- PC/tablet pen-following six-slot Quick Controller
 - Context Surface
-- meaningful detachable Workspace Blocks
-- device-adaptive Quick Controller with stable pinned spatial slots
-- Expanded / Medium / Compact device projections
+- device-specific projections
 - Focus Mode
 - Command Search / discovery hierarchy
 - UI performance and persistence boundaries
+
+The default left-tool set, several controller details, and remaining device-specific composition are still being refined.
 
 Gate E is not PASS until the rendered Expanded / Medium / Compact prototype set is generated with the dedicated UI Design Skill, inspected, and reviewed by the user.
 
@@ -198,4 +201,4 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY / UI GATE E DEFINITION LOCKED / VISUAL REVIEW PENDING / PRODUCTION LOCKED**
+> **CORE V2 DESIGN READY / UI GATE E IN REVISION / VISUAL REVIEW PENDING / PRODUCTION LOCKED**
