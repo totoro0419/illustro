@@ -588,7 +588,7 @@ Top bar may provide faster routes to Home/Save/document commands, but the Left U
 **Workspace**
 
 - magnetic Dock/PiP layout
-- panel resize / reorder / hide
+- panel resize / reorder
 - Workspace Save / Load
 - Workspace Preset
 - Left/Right UI mirror
