@@ -63,7 +63,7 @@ function structureFeatures(gx, gy, width, height) {
   return { coherence, tx, ty };
 }
 
-function orientedBridgeField(score, tx, ty, coherence, texture, width, height, maxGap = 5) {
+function orientedBridgeField(score, tx, ty, coherence, texture, wash, width, height, maxGap = 5, endpointThreshold = 0.46, minStructural = 0.20, minAlignment = 0.58, maxStepsCap = 5) {
   const out = new Float32Array(score.length);
   const dirs = [[1, 0], [2, 1], [1, 1], [1, 2], [0, 1], [-1, 2], [-1, 1], [-2, 1]];
   const idx = (x, y) => y * width + x;
@@ -74,26 +74,27 @@ function orientedBridgeField(score, tx, ty, coherence, texture, width, height, m
   };
   for (let y = 1; y < height - 1; y += 1) for (let x = 1; x < width - 1; x += 1) {
     const center = idx(x, y);
-    if (score[center] >= 0.72) continue;
+    if (score[center] >= 0.72 || score[center] < 0.02) continue;
     let best = 0;
     for (const [dx, dy] of dirs) {
       const stepLength = Math.hypot(dx, dy);
-      const maxSteps = Math.min(5, Math.max(1, Math.ceil((maxGap + 1) / stepLength)));
+      const maxSteps = Math.min(maxStepsCap, Math.max(1, Math.ceil((maxGap + 1) / stepLength)));
       for (let a = 1; a <= maxSteps; a += 1) {
         const ax = x - dx * a, ay = y - dy * a;
         if (!inside(ax, ay)) break;
         const ai = idx(ax, ay);
-        if (score[ai] < 0.46) continue;
+        if (score[ai] < endpointThreshold) continue;
         for (let b = 1; b <= maxSteps; b += 1) {
           if ((a + b - 1) * stepLength > maxGap) break;
           const bx = x + dx * b, by = y + dy * b;
           if (!inside(bx, by)) break;
           const bi = idx(bx, by);
-          if (score[bi] < 0.46) continue;
+          if (score[bi] < endpointThreshold) continue;
           const aa = align(ai, dx, dy), ab = align(bi, dx, dy);
-          if (aa < 0.58 || ab < 0.58) continue;
+          if (aa < minAlignment || ab < minAlignment) continue;
           const structural = Math.sqrt(Math.max(0, coherence[ai] * coherence[bi]));
-          if (structural < 0.20) continue;
+          if (structural < minStructural) continue;
+          if ((wash[ai] + wash[bi]) * 0.5 > 0.48) continue;
           let pathTexture = 0, pathN = 0;
           for (let s = -a + 1; s < b; s += 1) {
             const pi = idx(x + dx * s, y + dy * s);
@@ -169,8 +170,8 @@ export function buildRealArtEvidenceV3(decoded) {
     wash[i] = clamp01(broadInk[i] * (1 - 0.72 * fineLine[i]) * (0.65 + 0.35 * (1 - coherence[i])));
     conservative[i] = clamp01(line[i] * (1 - 0.60 * texture[i]) - 0.38 * wash[i]);
   }
-  const bridgeShort = orientedBridgeField(conservative, tx, ty, coherence, texture, width, height, 5);
-  const bridgeLong = orientedBridgeField(conservative, tx, ty, coherence, texture, width, height, 9);
+  const bridgeShort = orientedBridgeField(conservative, tx, ty, coherence, texture, wash, width, height, 5, 0.46, 0.20, 0.58, 5);
+  const bridgeLong = orientedBridgeField(conservative, tx, ty, coherence, texture, wash, width, height, 13, 0.34, 0.38, 0.48, 7);
   const dilated = directionalDilate(conservative, gx, gy, coherence, texture, width, height);
   const balanced = new Float32Array(n), permissive = new Float32Array(n);
   for (let i = 0; i < n; i += 1) {
