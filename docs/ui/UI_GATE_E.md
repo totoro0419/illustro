@@ -387,14 +387,16 @@ Compact is not a scaled desktop shell.
 It uses:
 
 - Canvas-first composition;
-- ibisPaint-inspired bottom Main Toolbar;
-- the 12 Right semantic Boxes projected as ordered **Workspace Pages**;
+- ibisPaint-inspired **side Main Toolbar**;
+- a fixed **Bottom Control Bar** for immediate controls;
+- the desktop/tablet Right UI projected as a **swipe-up Workspace Drawer** above the Bottom Control Bar;
+- the 12 Right semantic Boxes projected as ordered **Workspace Pages** inside that Drawer;
 - horizontal swipe between Workspace Pages;
 - explicit Page Overview for direct jump;
 - PDF-like page filmstrip/organizer for page reorder;
 - explicit PiP button rather than drag-to-detach as the primary Compact PiP entry;
 - one Compact PiP at a time;
-- direct Main Toolbar routes to Properties / Color / Layers.
+- direct Side Toolbar routes to Properties / Color / Layers.
 
 Compact page order is independent Workspace state from desktop Right Box order.
 
@@ -407,7 +409,7 @@ Compact page order is independent Workspace state from desktop Right Box order.
 - PiP is not required for pages whose content needs a structured full sheet;
 - Canvas remains the primary working area.
 
-Exact toolbar allocation, Undo/Redo placement, sheet heights, PiP geometry and portrait/landscape visual composition remain user co-design items for the Compact HTML prototype.
+Exact Side Toolbar allocation, Bottom Control Bar content, Undo/Redo placement, Drawer snap heights, PiP geometry and portrait/landscape visual composition remain user co-design items for the Compact HTML prototype.
 
 ## 7. Quick Controller concrete baseline
 
