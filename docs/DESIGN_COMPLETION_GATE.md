@@ -145,21 +145,26 @@ The Library Section 9 draft is reference-only.
 
 ## 9. UI Gate E
 
-### Status: **USER DECISION PENDING**
+### Definition: **LOCKED**
+### Visual prototype/user review: **PENDING**
 
-Not formally adopted yet:
+Canonical Gate E specification:
 
-- PiP / Detachable Workspace concrete form
-- Quick Controller geometry/form
-- Panel layout
-- Color UI
-- Brush Settings UI
-- Desktop / Tablet / Smartphone concrete layout
-- icons / hierarchy / theme / Canvas presentation
+- [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
 
-Core V2 only fixes the capabilities these UIs may call.
+Locked structural decisions include:
 
-Visual prototyping must use the dedicated UI Design Skill.
+- Canvas-dominant shell
+- Primary Tool Surface
+- Context Surface
+- meaningful detachable Workspace Blocks
+- device-adaptive Quick Controller with stable pinned spatial slots
+- Expanded / Medium / Compact device projections
+- Focus Mode
+- Command Search / discovery hierarchy
+- UI performance and persistence boundaries
+
+Gate E is not PASS until the rendered Expanded / Medium / Compact prototype set is generated with the dedicated UI Design Skill, inspected, and reviewed by the user.
 
 ## 10. Production authorization Gate F
 
@@ -193,5 +198,4 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY FOR USER REVIEW / BENCHMARK PHASE AVAILABLE / PRODUCTION LOCKED**
-
+> **CORE V2 DESIGN READY / UI GATE E DEFINITION LOCKED / VISUAL REVIEW PENDING / PRODUCTION LOCKED**
