@@ -407,6 +407,7 @@ Compact page order is independent Workspace state from desktop Right Box order.
 - reorder has non-drag alternatives;
 - no 12-dot-only navigation;
 - PiP is not required for pages whose content needs a structured full sheet;
+- **Compact Workspace surfaces are exclusive**: Drawer Page / Page Overview / Edit Order / PiP do not remain stacked; opening one closes/replaces the others;
 - Canvas remains the primary working area.
 
 Exact Side Toolbar allocation, Bottom Control Bar content, Undo/Redo placement, Drawer snap heights, PiP geometry and portrait/landscape visual composition remain user co-design items for the Compact HTML prototype.
