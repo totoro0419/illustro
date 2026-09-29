@@ -11,6 +11,14 @@ export const FIXED_V4_POLICY = Object.freeze({
   quietInteriorMaximumLine: 0.30,
   quietInteriorMaximumTexture: 0.10,
   quietInteriorMaximumWash: 0.11,
+
+  // General V4 confidence gates. These operate on image/topology evidence only;
+  // no artwork IDs, query names, or corpus-specific identifiers are consulted.
+  openEnclosureAmbiguityRiskMinimum: 0.20,
+  ambiguousClosureConfidenceMinimum: 0.832,
+  ambiguousContinuityMinimum: 0.35,
+  closedTextureNetworkRiskMinimum: 0.50,
+  boundaryDiscontinuityRiskScale: 0.65,
 });
 
 function quantile(values, q) {
@@ -18,6 +26,11 @@ function quantile(values, q) {
   const sorted = values.slice().sort((a, b) => a - b);
   const position = Math.max(0, Math.min(sorted.length - 1, Math.round((sorted.length - 1) * q)));
   return sorted[position];
+}
+
+function ramp01(value, low, high) {
+  if (high <= low) return value >= high ? 1 : 0;
+  return clamp01((value - low) / (high - low));
 }
 
 function radialEnclosureProfile(bundle, nx, ny) {
@@ -159,10 +172,10 @@ function radialEnclosureProfile(bundle, nx, ny) {
 }
 
 export function classifyV4(bundle, query, policy = FIXED_V4_POLICY) {
-  // V3 already protects Open and Ambiguous well on the exposed corpus. V4 does
-  // not replace those guards. It adds one independently measurable enclosure
-  // signal for V3's known false-open mode: a quiet interior surrounded in every
-  // angular sector by strong boundary evidence.
+  // V3 remains the topology prior. V4 converts independent enclosure,
+  // persistence, boundary-continuity and texture-network evidence into compact
+  // confidence/risk scores. It only overrides V3 when the corresponding gate is
+  // strong enough; otherwise the safer legacy label is preserved.
   const legacy = classifyV3(bundle, query, {
     evidenceThreshold: policy.evidenceThreshold,
   });
@@ -179,65 +192,110 @@ export function classifyV4(bundle, query, policy = FIXED_V4_POLICY) {
     radial.strongFraction >= policy.quietRadialMinimumStrongFraction &&
     radial.weakArcFraction <= policy.quietRadialMaximumWeakArcFraction;
 
-  // V3 can report Open when all threshold hypotheses leak through a faint frame.
-  // If every angular sector sees strong enclosing evidence, the topology is not
-  // genuinely exterior-connected. Broad wash with almost no texture is kept
-  // Ambiguous rather than force-closed because it often represents scene content
-  // rather than one intended fill face.
-  const radialWashAmbiguity =
+  const persistence = legacy.topologyPersistence ?? {};
+  const closedVoteFraction =
+    persistence.closedVoteFraction ?? (legacy.counts.closed / 9);
+  const stableClosedRatio = closedVoteFraction > 0
+    ? clamp01((persistence.stableClosedVoteFraction ?? 0) / closedVoteFraction)
+    : 0;
+  const areaStability = 1 - clamp01(persistence.closedAreaMadNormalized ?? 1);
+  const topologyIdentityConfidence = clamp01(
+    0.45 * (persistence.closedIouQ25 ?? 0) +
+    0.30 * stableClosedRatio +
+    0.25 * areaStability
+  );
+
+  const boundaryConfidence = legacy.boundary?.confidence ?? 0;
+  const componentReliability = clamp01(
+    0.65 * topologyIdentityConfidence +
+    0.35 * boundaryConfidence
+  );
+
+  // Broad wash can make "a line somewhere on every ray" look enclosed even
+  // when those hits do not describe one intended fill face. Stable component
+  // identity discounts that ambiguity instead of using a raw wash cutoff.
+  const openEnclosureAmbiguityRisk =
+    ramp01(legacy.local.wash, 0.18, 0.35) *
+    (1 - componentReliability);
+
+  // For V3 Ambiguous results, require several independent closure cues:
+  // radial enclosure, closed topology vote share, low local texture, and either
+  // persistent component identity or a continuous observed boundary.
+  const closureConfidence = clamp01(
+    (
+      radial.confidence +
+      closedVoteFraction +
+      0.5 * (1 - legacy.local.texture)
+    ) / 2.5
+  );
+  const continuityConfidence = Math.max(
+    boundaryConfidence,
+    persistence.closedIouQ25 ?? 0
+  );
+
+  // Dense line networks are risky in two different ways:
+  //  1) moderately strong strokes can form accidental cells in textured fields;
+  //  2) the inferred component can have a long weak boundary arc even when a
+  //     radial scan finds unrelated strong edges farther away.
+  // The first term is an AND-like soft conjunction (min); the second is a
+  // boundary-discontinuity score deliberately capped below the dense-network
+  // term so only severe discontinuity can independently force Ambiguous.
+  const denseNetworkRisk = Math.min(
+    ramp01(legacy.local.texture, 0.55, 0.70),
+    1 - ramp01(legacy.local.line, 0.58, 0.62),
+    1 - ramp01(legacy.local.wash, 0.30, 0.40),
+    ramp01(legacy.local.coherence, 0.45, 0.55)
+  );
+  const boundaryDiscontinuityRiskRaw = clamp01(
+    0.45 * ramp01(legacy.local.texture, 0.60, 0.90) +
+    0.30 * ramp01(legacy.boundary?.weakArcFraction ?? 0, 0.35, 0.70) +
+    0.25 * (1 - (legacy.boundary?.supportCoverage ?? 0))
+  );
+  const boundaryDiscontinuityRisk = clamp01(
+    policy.boundaryDiscontinuityRiskScale * boundaryDiscontinuityRiskRaw
+  );
+  const textureNetworkRisk = Math.max(
+    denseNetworkRisk,
+    boundaryDiscontinuityRisk
+  );
+
+  const enclosedOpenCandidate =
     legacy.label === 'open' &&
     !legacy.nearFrame &&
-    fullRadialEnclosure &&
-    legacy.local.texture <= 0.10 &&
-    legacy.local.wash >= 0.20;
+    fullRadialEnclosure;
 
-  const radialEnclosureRescue =
-    legacy.label === 'open' &&
-    !legacy.nearFrame &&
-    fullRadialEnclosure &&
-    !radialWashAmbiguity;
-
-  // When V3 is already Ambiguous but the balanced/permissive topology is Closed,
-  // combine radial support, closed-vote share, and low local texture into one
-  // continuous confidence score. This covers both pale panels and strongly
-  // washed framed fields without per-artwork thresholds.
-  const ambiguousClosureScore =
-    radial.confidence +
-    legacy.counts.closed / 9 +
-    0.5 * (1 - legacy.local.texture);
-
-  const ambiguousClosureRescue =
+  const confidentAmbiguousClosure =
     legacy.label === 'ambiguous' &&
     !legacy.nearFrame &&
     fullRadialEnclosure &&
     legacy.groups.balanced === 'closed' &&
     legacy.groups.permissive === 'closed' &&
-    ambiguousClosureScore >= 2.08;
+    closureConfidence >= policy.ambiguousClosureConfidenceMinimum &&
+    continuityConfidence >= policy.ambiguousContinuityMinimum;
 
-  // Dense, low-wash line networks can create a closed topology even when the
-  // local stroke field is only moderately strong and directionally mixed. Keep
-  // those cases Ambiguous instead of trusting the accidental cell.
-  const denseNetworkAmbiguity =
+  const riskyClosedNetwork =
     legacy.label === 'closed' &&
-    legacy.local.texture >= 0.60 &&
-    legacy.local.wash < 0.30 &&
-    legacy.local.line < 0.60 &&
-    legacy.local.coherence > 0.48;
+    textureNetworkRisk >= policy.closedTextureNetworkRiskMinimum;
 
   let label = legacy.label;
   let decision = 'v3-preserved';
-  if (radialWashAmbiguity) {
-    label = 'ambiguous';
-    decision = 'radial-wash-ambiguity';
-  } else if (radialEnclosureRescue) {
+  if (enclosedOpenCandidate) {
+    if (
+      openEnclosureAmbiguityRisk >=
+      policy.openEnclosureAmbiguityRiskMinimum
+    ) {
+      label = 'ambiguous';
+      decision = 'confidence-enclosure-ambiguous';
+    } else {
+      label = 'closed';
+      decision = 'confidence-enclosure-closed';
+    }
+  } else if (confidentAmbiguousClosure) {
     label = 'closed';
-    decision = 'radial-enclosure-rescue';
-  } else if (ambiguousClosureRescue) {
-    label = 'closed';
-    decision = 'radial-topology-confidence-rescue';
-  } else if (denseNetworkAmbiguity) {
+    decision = 'confidence-topology-closed';
+  } else if (riskyClosedNetwork) {
     label = 'ambiguous';
-    decision = 'dense-network-ambiguity';
+    decision = 'confidence-network-ambiguous';
   }
 
   return {
@@ -248,11 +306,17 @@ export function classifyV4(bundle, query, policy = FIXED_V4_POLICY) {
     radial,
     quietInterior,
     fullRadialEnclosure,
-    quietRadialRescue: radialEnclosureRescue,
-    radialWashAmbiguity,
-    radialEnclosureRescue,
-    ambiguousClosureScore,
-    ambiguousClosureRescue,
-    denseNetworkAmbiguity,
+    topologyIdentityConfidence,
+    componentReliability,
+    boundaryConfidence,
+    openEnclosureAmbiguityRisk,
+    closureConfidence,
+    continuityConfidence,
+    denseNetworkRisk,
+    boundaryDiscontinuityRisk,
+    textureNetworkRisk,
+    enclosedOpenCandidate,
+    confidentAmbiguousClosure,
+    riskyClosedNetwork,
   };
 }
