@@ -50,3 +50,22 @@ After the freezes above:
 
 Infrastructure-only failures occurring before classifier execution do not expose the
 labels to classifier output, but any correction must preserve all freezes above.
+
+
+## One-shot result
+
+The first algorithmic execution reached classification and produced:
+
+- overall: **17 / 24**
+- closed: **4 / 8**
+- open: **8 / 8**
+- ambiguous: **5 / 8**
+- clean-linework: **6 / 8**
+- structured-wash: **6 / 8**
+- complex-linewash: **5 / 8**
+
+This is a **FAIL** under the frozen criteria. This corpus is permanently exposed
+development evidence from this point forward and MUST NOT be used to close Gate C.
+
+All subsequent executions are regression-only. Gate C closure requires a new,
+never-before-evaluated large corpus after the next classifier/evidence revision.
