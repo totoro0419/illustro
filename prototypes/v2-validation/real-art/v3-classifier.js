@@ -293,6 +293,41 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.texture < 0.32 &&
     closure.wash < 0.22;
 
+  // High-wash interiors can still be safely framed when the boundary itself is
+  // coherent, less washed than the interior and long enough to be structural.
+  const highWashFrameClosure = !!closure &&
+    closure.line >= 0.60 &&
+    closure.coherence >= 0.78 &&
+    closure.bridge >= 0.20 &&
+    closure.texture < 0.20 &&
+    closure.wash < 0.52 &&
+    closure.samples >= 100 &&
+    local.wash >= 0.55 &&
+    local.wash - closure.wash >= 0.15;
+
+  // Very large quiet fields produce weak average orientation/bridge scores after
+  // downsampling. Long low-artifact boundaries are sufficient when the interior
+  // itself is nearly textureless and wash-free.
+  const hugeQuietFrameClosure = !!closure &&
+    closure.samples >= 500 &&
+    closure.line >= 0.48 &&
+    closure.texture < 0.20 &&
+    closure.wash < 0.20 &&
+    local.line < 0.20 &&
+    local.texture < 0.10 &&
+    local.wash < 0.10;
+
+  // Moderately textured decorative panels remain reliable when the seed
+  // neighborhood itself is not a dense texture field.
+  const decorativeFrameClosure = !!closure &&
+    closure.line >= 0.63 &&
+    closure.coherence >= 0.66 &&
+    closure.bridge >= 0.34 &&
+    closure.texture < 0.45 &&
+    closure.wash < 0.25 &&
+    closure.samples >= 100 &&
+    local.texture < 0.50;
+
   const softBoundaryClosure = !!closure &&
     closure.softEdge >= 0.34 &&
     closure.softCoherence >= 0.60 &&
@@ -347,6 +382,25 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.bridge < 0.15 &&
     closure.coherence < 0.55;
 
+  // Very large components inside dense scenes are often accidental unions of
+  // many semantic regions even when their outer boundary looks coherent.
+  const hugeComplexNetworkEnclosure = !!closure &&
+    areaRange > 0.80 &&
+    closure.samples >= 1000 &&
+    local.line >= 0.60 &&
+    local.texture >= 0.65 &&
+    closure.texture >= 0.40;
+
+  // Tiny high-texture cells inside complex line networks should remain
+  // ambiguous unless the local and boundary orientation are unusually strong.
+  const microDenseNetworkEnclosure = !!closure &&
+    areaRange > 0.80 &&
+    closure.samples <= 8 &&
+    local.texture >= 0.80 &&
+    closure.texture >= 0.70 &&
+    local.coherence < 0.65 &&
+    closure.coherence < 0.80;
+
   const coherentClosure =
     cleanCoherentClosure ||
     strongCoherentClosure ||
@@ -359,8 +413,12 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     quietFramedClosure ||
     cleanerLargeFrameClosure ||
     mediumStructuralClosure ||
+    longMultiCueClosure ||
     longLowTextureFrameClosure ||
-    compactStructuralFrameClosure;
+    compactStructuralFrameClosure ||
+    highWashFrameClosure ||
+    hugeQuietFrameClosure ||
+    decorativeFrameClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -372,13 +430,31 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
       if (interiorUncertain) label = 'ambiguous';
     }
   } else if (groups.balanced === 'closed' && groups.permissive === 'closed') {
-    label = (clutterEnclosure || microTextureAccidentalClosure || saturatedOrnamentNetwork)
+    label = (
+      clutterEnclosure ||
+      microTextureAccidentalClosure ||
+      saturatedOrnamentNetwork ||
+      hugeComplexNetworkEnclosure ||
+      microDenseNetworkEnclosure
+    )
       ? 'ambiguous'
       : (coherentClosure ? 'closed' : 'ambiguous');
   } else if (groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'closed') {
-    if (clutterEnclosure || microTextureAccidentalClosure || texturedBridgeNetworkEnclosure || saturatedOrnamentNetwork) label = 'ambiguous';
+    if (
+      clutterEnclosure ||
+      microTextureAccidentalClosure ||
+      texturedBridgeNetworkEnclosure ||
+      saturatedOrnamentNetwork ||
+      hugeComplexNetworkEnclosure ||
+      microDenseNetworkEnclosure
+    ) label = 'ambiguous';
     else if (coherentClosure) label = 'closed';
-    else if (closure && closure.coherence < 0.40 && local.wash < 0.35) label = 'open';
+    else if (
+      closure &&
+      closure.coherence < 0.40 &&
+      local.wash < 0.35 &&
+      (local.texture >= 0.30 || local.bridge < 0.35)
+    ) label = 'open';
     else label = 'ambiguous';
   } else if (groups.conservative === 'open' && groups.balanced === 'open') {
     label = 'open';
@@ -479,13 +555,19 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     quietFramedClosure,
     cleanerLargeFrameClosure,
     mediumStructuralClosure,
+    longMultiCueClosure,
     longLowTextureFrameClosure,
     compactStructuralFrameClosure,
+    highWashFrameClosure,
+    hugeQuietFrameClosure,
+    decorativeFrameClosure,
     softBoundaryClosure,
     clutterEnclosure,
     microTextureAccidentalClosure,
     texturedBridgeNetworkEnclosure,
     saturatedOrnamentNetwork,
+    hugeComplexNetworkEnclosure,
+    microDenseNetworkEnclosure,
     softHypothesis,
   };
 }
