@@ -60,3 +60,31 @@ test('synthetic PointerEvents cannot complete post-stress physical Pen check', a
   expect(r.postPen.trustedPenSamples).toBe(0);
   expect(r.reviewEligibility.postPenComplete).toBe(false);
 });
+
+
+test('completed JSON stays selectable and fallback select button works', async ({ page }) => {
+  test.setTimeout(30000);
+  await openHarness(page);
+  await page.click('#start');
+  await expect.poll(async () => {
+    const r = await page.evaluate(() => window.illustroSustained.report());
+    return r.auto.phase;
+  }, { timeout: 15000 }).toBe('post-pen');
+
+  await page.evaluate(() => {
+    const el = document.querySelector('#result');
+    el.value = '{"probe":"stable"}';
+    el.focus();
+    el.select();
+  });
+  await page.waitForTimeout(100);
+  const selection = await page.evaluate(() => {
+    const el = document.querySelector('#result');
+    return { start: el.selectionStart, end: el.selectionEnd, length: el.value.length };
+  });
+  expect(selection.start).toBe(0);
+  expect(selection.end).toBe(selection.length);
+
+  const selectDisabled = await page.isDisabled('#select-json');
+  expect(selectDisabled).toBe(true);
+});
