@@ -182,6 +182,18 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     lowArtifactStructuralClosure ||
     coherentStructuralClosure;
 
+  // Filled/wash regions can have high interior wash while still being bounded
+  // by a strong, clean frame. Require the boundary to be markedly less wash-
+  // dominated than the seed neighborhood, with high orientation/bridge support.
+  const framedWashClosure = !!closure &&
+    closure.line >= 0.60 &&
+    closure.coherence >= 0.85 &&
+    closure.bridge >= 0.35 &&
+    closure.texture < 0.45 &&
+    closure.wash < 0.50 &&
+    local.wash >= closure.wash + 0.20 &&
+    closure.samples >= 20;
+
   const softBoundaryClosure = !!closure &&
     closure.softEdge >= 0.34 &&
     closure.softCoherence >= 0.60 &&
@@ -215,7 +227,8 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     strongCoherentClosure ||
     bridgeSupportedClosure ||
     denseOutlinedClosure ||
-    structuralClosure;
+    structuralClosure ||
+    framedWashClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -231,7 +244,8 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
       ? 'ambiguous'
       : (coherentClosure ? 'closed' : 'ambiguous');
   } else if (groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'closed') {
-    if (coherentClosure) label = 'closed';
+    if (clutterEnclosure || microTextureAccidentalClosure) label = 'ambiguous';
+    else if (coherentClosure) label = 'closed';
     else if (closure && closure.coherence < 0.40 && local.wash < 0.35) label = 'open';
     else label = 'ambiguous';
   } else if (groups.conservative === 'open' && groups.balanced === 'open') {
@@ -327,6 +341,7 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     lowArtifactStructuralClosure,
     coherentStructuralClosure,
     structuralClosure,
+    framedWashClosure,
     softBoundaryClosure,
     clutterEnclosure,
     microTextureAccidentalClosure,
