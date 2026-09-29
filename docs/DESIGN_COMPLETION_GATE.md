@@ -1,6 +1,6 @@
 # Illustro Design Completion Gate
 
-> Status: **CORE V2 DESIGN READY — GATE B TABLET PEN+PERCEPTUAL PASS / SUSTAINED+THERMAL PENDING / GATE C REAL-ART BLOCKED / PRODUCTION LOCKED**
+> Status: **CORE V2 DESIGN READY — GATE B CLOSED FOR REPRESENTATIVE TABLET / GATE C REAL-ART BLOCKED / PRODUCTION LOCKED**
 > Date: 2026-09-29
 > Purpose: Architecture readiness, feature benchmark readiness, UI approval and Production authorizationを混同しないためのGate。
 
@@ -103,8 +103,8 @@ These no longer need to be invented during Production implementation.
 ### Browser-runtime V2 streaming validation: **PASS**
 ### Representative Tablet physical-Pen validation: **PASS**
 ### Perceptual stabilizer validation: **PASS**
-### Sustained/thermal validation: **PENDING**
-### Overall Production Gate B: **CONDITIONAL — NOT CLOSED**
+### Sustained/thermal-proxy validation: **PASS**
+### Overall Production Gate B: **PASS — CLOSED FOR REPRESENTATIVE TABLET PROFILE**
 
 Evidence:
 
@@ -115,7 +115,7 @@ The committed Chromium V2 streaming path accepts 100,000 synthetic samples with 
 
 A genuine target-tablet Pen record has now also passed the device protocol: 5,727 trusted Pen samples, pressure range 0.660115, tilt observed, max pending pages 8, max release work 181 samples, pipeline p95 1.0 ms, receive→next-RAF p95 17.8 ms, and 0 frame intervals over 25 ms in the 34.5-second session.
 
-This closes the representative Tablet physical-Pen subgate. The user additionally reported no noticeable tracking delay, hitching, or excessive stabilization with the selected One Euro `4/4/1` profile, so the perceptual stabilizer subgate also passes. Gate B remains CONDITIONAL because multi-minute sustained/thermal behavior is not yet evidenced. Desktop/Smartphone remain separate device-profile certifications.
+This closes the representative Tablet physical-Pen subgate. The user additionally reported no noticeable tracking delay, hitching, or excessive stabilization with the selected One Euro `4/4/1` profile, so the perceptual stabilizer subgate also passes. A clean 180.076-second sustained run then showed zero visibility interruptions, no stress throughput degradation (72,154 → 74,914 samples/s), unchanged 16.700 ms stress frame p95, bounded pending pages at 8, 500 trusted post-stress Pen samples, post-stress pipeline p95 0.200 ms, and user-reported thermal state 'normal / not noticeable'. Therefore Gate B is CLOSED for the representative Tablet profile. Desktop/Smartphone remain separate device-profile certifications.
 ## 7. Region / Fill Gate C
 
 ### Semantic design: **COMPLETE**
@@ -206,5 +206,5 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY / BRUSH TABLET PEN+PERCEPTUAL PASS — SUSTAINED+THERMAL PENDING / REGION REAL-ART ALGORITHM BLOCKED / PRODUCTION LOCKED**
+> **CORE V2 DESIGN READY / BRUSH GATE B CLOSED FOR REPRESENTATIVE TABLET / REGION REAL-ART ALGORITHM BLOCKED / PRODUCTION LOCKED**
 
