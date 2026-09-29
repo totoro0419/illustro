@@ -53,7 +53,7 @@ The artwork itself should be visually quiet and generic. UI evaluation must not 
 
 ## 4. Shared information architecture
 
-Every projection must provide a visible or clearly discoverable path to:
+Every projection must provide a visible or clearly discoverable Left-UI-rooted path to:
 
 - Brush
 - Eraser
@@ -96,22 +96,28 @@ Do not make the interface visually louder than the Canvas.
 Use:
 
 - top application/document strip: visually minimal; Home/Save and similar non-drawing document/app operations live here; Undo/Redo do not
-- icon-first left Primary Tool Surface
+- icon-first left Left Access Surface
 - central Canvas
 - right magnetic Workspace/PiP stack
 - Context Surface attached to the Canvas working region
 - optional detached block over a low-risk Canvas margin
 - no mandatory bottom bar unless persistent information genuinely needs it
 
-### 6.2 Left Primary Tool Surface
+### 6.2 Left Left Access Surface
 
 Target visual width: approximately 48–64 px.
 
-The exact default visible tool set is **not yet locked**. Use `LEFT_TOOL_SURFACE_OPTIONS.md` as the canonical option universe.
+The exact default visible Pin set is **not yet locked**.
 
-For prototype continuity, Brush may be shown selected, but do not infer that every previously listed tool must be visible by default.
+Use:
 
-The surface is icon-first. Do not place full brush settings here.
+- `LEFT_UI_ACCESS_ARCHITECTURE.md` for navigation semantics;
+- `LEFT_UI_ACCESS_COVERAGE.md` for complete feature reachability;
+- `LEFT_TOOL_SURFACE_OPTIONS.md` for tool-family candidates.
+
+The visible Rail is icon-first and contains a permanent All Features entry plus user-configurable Pins. Brush may be shown selected for prototype continuity.
+
+Do not place deep settings inside the Rail. Selecting a settings/workspace item from the Left UI opens/focuses the corresponding right magnetic PiP.
 
 ### 6.3 Right Workspace Dock
 
