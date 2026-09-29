@@ -259,6 +259,17 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.samples >= 8 &&
     (closure.samples >= 50 || closure.bridge >= 0.40);
 
+  // Long low-texture boundaries can be reliable even when no single cue is
+  // individually strong enough for the narrower structural rules. Require
+  // actual boundary extent plus agreement between line, bridge continuity and
+  // either orientation coherence or low wash.
+  const longMultiCueClosure = !!closure &&
+    closure.samples >= 30 &&
+    closure.line >= 0.45 &&
+    closure.texture < 0.30 &&
+    closure.bridge >= 0.28 &&
+    (closure.coherence >= 0.70 || (closure.coherence >= 0.55 && closure.wash < 0.30));
+
   // Long architectural/decorative frames can downsample to only moderate line
   // and bridge amplitude. Boundary length plus low texture provides independent
   // evidence that this is a real enclosing frame rather than a tiny accidental
