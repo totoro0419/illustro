@@ -149,6 +149,16 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.wash < 0.20 &&
     closure.samples >= 8;
 
+  // Dense ornament must not be rejected merely because both the region and its
+  // enclosing linework contain texture. Accept it when the boundary is strong,
+  // remains no more textured than its local context, and is not wash-dominated.
+  const denseOutlinedClosure = !!closure &&
+    closure.line >= 0.80 &&
+    closure.wash <= 0.32 &&
+    closure.samples >= 12 &&
+    local.texture >= 0.70 &&
+    closure.texture <= local.texture + 0.08;
+
   const softBoundaryClosure = !!closure &&
     closure.softEdge >= 0.34 &&
     closure.softCoherence >= 0.60 &&
@@ -166,7 +176,22 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.texture >= 0.65 &&
     closure.texture - local.texture >= 0.30;
 
-  const coherentClosure = cleanCoherentClosure || strongCoherentClosure || bridgeSupportedClosure;
+  // Tiny cells created inside textured perspective/hatching are unreliable when
+  // the inferred boundary is not more directionally coherent than the local
+  // field. Genuine small ornaments in the corpus show the opposite relation.
+  const microTextureAccidentalClosure = !!closure &&
+    areaRange > 0.70 &&
+    closure.samples <= 12 &&
+    local.line >= 0.60 &&
+    local.texture >= 0.45 &&
+    closure.texture >= 0.45 &&
+    closure.coherence <= local.coherence + 0.02;
+
+  const coherentClosure =
+    cleanCoherentClosure ||
+    strongCoherentClosure ||
+    bridgeSupportedClosure ||
+    denseOutlinedClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -178,7 +203,9 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
       if (interiorUncertain) label = 'ambiguous';
     }
   } else if (groups.balanced === 'closed' && groups.permissive === 'closed') {
-    label = clutterEnclosure ? 'ambiguous' : (coherentClosure ? 'closed' : 'ambiguous');
+    label = (clutterEnclosure || microTextureAccidentalClosure)
+      ? 'ambiguous'
+      : (coherentClosure ? 'closed' : 'ambiguous');
   } else if (groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'closed') {
     if (coherentClosure) label = 'closed';
     else if (closure && closure.coherence < 0.40 && local.wash < 0.35) label = 'open';
@@ -272,8 +299,10 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     cleanCoherentClosure,
     strongCoherentClosure,
     bridgeSupportedClosure,
+    denseOutlinedClosure,
     softBoundaryClosure,
     clutterEnclosure,
+    microTextureAccidentalClosure,
     softHypothesis,
   };
 }
