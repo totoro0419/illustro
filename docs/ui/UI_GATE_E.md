@@ -1,6 +1,6 @@
 # Illustro UI Gate E — Core UI Surface & Workspace
 
-> Status: **DEFINITION IN REVISION / EXPANDED + MEDIUM VISUAL REVIEW PASSED / COMPACT PENDING**
+> Status: **DEFINITION IN REVISION / EXPANDED + MEDIUM VISUAL REVIEW PASSED / COMPACT HTML REVIEW PENDING**
 > Date: 2026-09-29
 > Scope: Core painting UI shell, Workspace, Context Surface, Quick Controller, device layout, Focus Mode and visual acceptance.
 > Production effect: **None. This document does not authorize Production implementation.**
