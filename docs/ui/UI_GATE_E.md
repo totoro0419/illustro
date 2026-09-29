@@ -126,7 +126,8 @@ Canonical design:
 - [Left UI Access Architecture](LEFT_UI_ACCESS_ARCHITECTURE.md)
 - [Left UI — Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md)
 - [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
-- [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
+- [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
+- [Right Workspace — Box Taxonomy](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 - [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 - [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
 - [Right Workspace — Box Interaction Specification](RIGHT_WORKSPACE_INTERACTION_SPEC.md)
@@ -224,7 +225,7 @@ This does not block continuing the rest of Gate E design, but Left UI semantics 
 
 ### 3.8 Right Workspace design status
 
-Current taxonomy: **V2 CANDIDATE / GENERAL-UI RESEARCH APPLIED**
+Canonical Right UI: **SEMANTIC / INTERACTION / LAYOUT DESIGN COMPLETE**
 
 Applied cross-domain professional UI principles:
 
@@ -238,9 +239,13 @@ Applied cross-domain professional UI principles:
 - global application settings are not dumped into an ordinary painting-workspace Box;
 - PC/tablet may use inline/overlay projections without changing Box semantics.
 
-Canonical candidate references:
+Canonical authority:
 
-- [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
+- [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
+
+Supporting references:
+
+- [Right Workspace — Box Taxonomy](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 - [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 
 Layer Page is a separate expanded surface from the Layers Box, but both share the same Layer model and semantic commands.
@@ -249,9 +254,53 @@ Default Box order and default expansion/collapse state are now fixed in `RIGHT_W
 
 Right Box manipulation semantics are now complete: header anatomy, collapse, reorder, detach, re-dock, magnetic targets, resize, Workspace Layout Lock, recovery and non-drag alternatives are fixed in `RIGHT_WORKSPACE_INTERACTION_SPEC.md`.
 
-Layer Page semantic/interaction behavior is now fixed in `RIGHT_LAYER_PAGE_SPEC.md`, using an ibisPaint-like expanded layer-management surface while sharing the same Layer model/commands as the Layers Box.
+Layer Page semantic/interaction behavior is fixed and integrated into `RIGHT_UI_SPEC.md`, using an ibisPaint-like expanded layer-management surface while sharing the same Layer model/commands as the Layers Box.
 
-Right Workspace semantic/interaction design is now substantially complete. Exact visual tokens, Layer Page width/row density, magnetic thresholds and runtime behavior remain validation work.
+Right UI semantic, interaction and layout design is **COMPLETE** for PC/tablet. Project geometry/density tokens are also fixed in `RIGHT_UI_SPEC.md`. Final color/theme, icon artwork, font family, pixel polish, and runtime-calibrated drag/magnetic thresholds remain visual/runtime validation rather than open product semantics.
+
+### 3.9 Right UI subgate
+
+### Semantic / interaction / layout design: **COMPLETE**
+
+Canonical authority:
+
+- [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
+
+Completed:
+
+- all 12 Box ownership and content
+- persistent all-Box presence
+- collapse-first density model
+- default order and expansion profile
+- precise PC/touch geometry tokens
+- Box header grammar
+- collapsed summaries
+- stack/internal scrolling policy
+- reorder / detach / magnetic / re-dock
+- detached placeholders
+- Workspace Layout Lock
+- reset/recovery
+- fixed five-button bottom strip
+- ibisPaint-inspired Layer Page geometry/anatomy
+- per-Box internal information architecture
+- loading/empty/error/disabled states
+- pointer/pen/touch/keyboard and accessibility contracts
+- motion/persistence/performance contracts
+- PC/tablet inline/overlay projection rule
+
+### Visual/runtime validation: **PENDING**
+
+Not yet verified:
+
+- final color/theme and icon art
+- final font/pixel polish
+- rendered visual balance
+- empirical usability at intermediate window sizes
+- measured drag/magnetic thresholds
+- actual pointer/pen/touch/keyboard runtime behavior
+- performance under large layer/asset/history data
+
+These must remain `UNVERIFIED` until prototype/runtime testing.
 
 ## 4. Expanded layout baseline
 
