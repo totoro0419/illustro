@@ -1,8 +1,9 @@
 # Illustro Left Tool Surface — Option Catalog
 
-> Status: **CANDIDATE UNIVERSE V1 / DEFAULT NOT DECIDED**
+> Status: **SUPPORTING TOOL OPTION RESEARCH / CANONICAL LEFT UI FIXED**
 > Date: 2026-09-29
-> Scope: Tool/Mode option catalog used by the PC / tablet Left Access Surface
+> Scope: Tool/Mode option research used by the PC / tablet Left Access Surface
+> Canonical authority: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
 > Parent: [UI Gate E](UI_GATE_E.md)
 > Rule: This document defines what may be added to the left tool surface. It does **not** define the default visible set or final order.
 
@@ -265,7 +266,7 @@ Canvas Flip is an instant command, not a continuous tool, so it should normally 
 29. Measure
 30. Freeform Gradient mode
 
-This is the **complete V1 candidate set**, not the default toolbar.
+This is the research candidate set. The actual default Rail and canonical category ownership are fixed in `LEFT_UI_SPEC.md`.
 
 ## 6. Explicitly excluded from the left tool universe
 
