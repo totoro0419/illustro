@@ -89,6 +89,24 @@ Chrome should be neutral and low-distraction.
 
 Do not make the interface visually louder than the Canvas.
 
+## 5.1 Left UI visual acceptance
+
+The rendered prototype must visibly validate:
+
+- eight default Pins + fixed All Features
+- All Features anchored palette with text-labeled category entries
+- the exact 12-category order from `LEFT_UI_SPEC.md`
+- one Tool Family chooser state
+- one Workspace/PiP routing state from Left UI
+- one Overflow state
+- one customization state
+- selected/focus/disabled/open-workspace state distinctions without relying on color alone
+- pointer-density Expanded projection
+- touch/pen-density Medium projection
+- Canvas remains visually dominant
+
+Left UI visual validation may adjust visual tokens but must not silently change semantic behavior.
+
 ## 6. Expanded screen — 1440 × 900
 
 ### 6.1 Shell
@@ -107,16 +125,32 @@ Use:
 
 Target visual width: approximately 48–64 px.
 
-The exact default visible Pin set is **not yet locked**.
+The default PC/tablet visible Pin set is **locked semantically**.
 
 Use:
 
-- `LEFT_UI_ACCESS_ARCHITECTURE.md` for navigation semantics;
+- `LEFT_UI_SPEC.md` as canonical Left UI semantics;
+- `LEFT_UI_ACCESS_ARCHITECTURE.md` as supporting navigation notes;
 - `LEFT_PINNED_RAIL_SPEC.md` for Rail/All Features/Overflow/Stack behavior;
 - `LEFT_UI_ACCESS_COVERAGE.md` for complete feature reachability;
 - `LEFT_TOOL_SURFACE_OPTIONS.md` for tool-family candidates.
 
-The visible Rail is icon-first and contains user Pins, a conditional fixed Overflow entry, and a permanent bottom-fixed All Features entry. Brush may be shown selected for prototype continuity. Do not make the Rail itself vertically scroll in the baseline prototype.
+The visible Rail is icon-first. Prototype the default order:
+
+1. Brush
+2. Eraser
+3. Smudge / Blend
+4. Eyedropper
+5. Smart Fill
+6. Selection
+7. Transform
+8. Move
+
+Then reserve:
+- conditional Overflow directly above the final fixed entry;
+- All Features as the permanent bottom-fixed entry.
+
+Do not make the Rail itself vertically scroll.
 
 Do not place deep settings inside the Rail. Selecting a settings/workspace item from the Left UI opens/focuses the corresponding right magnetic PiP.
 
