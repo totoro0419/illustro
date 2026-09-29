@@ -5,7 +5,7 @@
 > Scope: PC / tablet Left UI as the universal access root
 > Parent: [UI Gate E](UI_GATE_E.md)
 > Coverage appendix: [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
-> Related option catalog: [Left Tool Surface Options](LEFT_TOOL_SURFACE_OPTIONS.md)
+> Related specs: [Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md) / [Left Tool Surface Options](LEFT_TOOL_SURFACE_OPTIONS.md)
 
 ## 1. Decision
 
@@ -475,46 +475,31 @@ Home/Save等はTop barからも同一semantic Commandを呼ぶ。
 
 ## 7. Pin system
 
-### Pin rules
+Canonical specification:
 
-ユーザーはL2/L3内の対象をRailへdrag/dropまたはPin actionで追加できる。
+- [Left UI — Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md)
 
-Pin可能対象には一意のsemantic IDを持たせる。
+Key decisions:
 
-例:
+- All Features is a non-removable fixed root entry at the bottom of the Rail.
+- Overflow, when needed, sits immediately above All Features.
+- The Rail itself does not scroll by default.
+- Overflow preserves the logical Pin order; it does not reorder by frequency or context.
+- Tool Family, individual Mode, Command, Toggle, Workspace/PiP opener, Category shortcut, supported dynamic preset and one-level Custom Stack may be pinned.
+- Category shortcuts are explicitly pinnable.
+- Custom Stack nesting is limited to one level.
+- Rail reordering/add/remove/Stack editing uses explicit customization mode.
+- Workspace/PiP Pins use open/focus semantics rather than implicit open/close toggling.
+
+Pin-capable targets have stable semantic IDs, for example:
 
 - `tool.brush`
 - `tool.selection.region`
 - `workspace.layers`
+- `category.selection-transform`
 - `command.canvas.flip.horizontal`
 - `command.history.undo`
 - `brush.preset.<id>`
-
-### Reorder
-
-Rail上で並べ替え可能。
-
-編集誤操作を避けるため、通常のDrawing dragとRail reorderを混同させない。
-
-PC:
-- explicit customization modeをprimaryにする。
-- optional context menu / modifierはaccelerator。
-
-Tablet:
-- explicit edit modeを必須経路にする。
-- long-pressだけを唯一の編集経路にしない。
-
-### Overflow
-
-Railに収まらないPinを消失させない。
-
-- scroll
-- overflow group
-- user-created group
-
-のどれを採るかはvisual prototypeで比較する。
-
-自動的な「使用頻度順並べ替え」は行わない。Spatial Memoryを守る。
 
 ## 8. Tool Family behavior
 
@@ -594,15 +579,15 @@ Indexはmetadata中心に保ち、preview/thumbnailはlazy loadする。
 
 このappendixは「各機能がどの経路で到達可能か」を監査するための設計資料であり、Default Railを意味しない。
 
-## 13. Unresolved decisions
+## 13. Remaining unresolved decisions
 
-この時点でまだ固定しない:
+Pinned Railの構造は `LEFT_PINNED_RAIL_SPEC.md` でBaseline化した。
+
+まだ固定しない:
 
 - Default Railに何を何個置くか
-- Rail overflow方式
-- active Tool Family再タップ時のchooser挙動
 - Category Paletteのexact width / columns / animation
-- PCとtabletでPin profileを共有するか
-- dynamic Brush/Shape presetのPinを初期リリースから有効にするか
+- dynamic Brush/Shape preset Pinを初期リリースから有効にするか
+- final icon artwork / spacing / visual density
 
-これらは次の左UI設計ステップで決める。
+PC/tabletは同じ論理Pin orderを保持し、viewport/input capabilityに応じてvisible capacityとpalette projectionだけを変える。特別なdevice別auto-reorderは行わない。
