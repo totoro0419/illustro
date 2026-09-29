@@ -6,6 +6,7 @@
 > Related: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
 > General UI research: [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 > Default layout: [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
+> Interaction: [Right Workspace — Box Interaction Specification](RIGHT_WORKSPACE_INTERACTION_SPEC.md)
 > Parent: [UI Gate E](UI_GATE_E.md)
 
 ## 1. Role
@@ -586,15 +587,18 @@ Repeated invocation does not toggle the Box closed.
 
 ### Header baseline
 
-Keep permanent header chrome sparse:
+Canonical behavior is defined by `RIGHT_WORKSPACE_INTERACTION_SPEC.md`.
 
-- short title;
-- current context indicator where relevant;
-- collapse/expand;
-- detach/re-dock;
+Permanent header chrome:
+
+- Expand/Collapse;
+- Box icon;
+- short stable title;
+- context/collapsed summary region;
+- Inspector-only Lock Context when justified;
 - More.
 
-Low-frequency actions such as Reset Location, Hide, and Inspector Lock Context live under More unless later testing justifies promotion.
+Detach/Re-dock is **not** a permanent button on every Box. It is available through direct header drag and the More menu.
 
 Do not fragment individual sliders or tiny property groups into separate PiP windows.
 
@@ -671,12 +675,12 @@ The most important architectural decisions are:
 10. keep Box headers sparse and drag operations previewable/reversible;
 11. avoid arbitrary semantic tab-merging of unrelated Boxes.
 
-Default vertical order and default expanded/collapsed state are now fixed by `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md`.
+Default vertical order and default expanded/collapsed state are fixed by `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md`.
+
+Header, collapse, reorder, detach, magnetic re-dock, resize, recovery and non-drag alternatives are fixed by `RIGHT_WORKSPACE_INTERACTION_SPEC.md`.
 
 Remaining Right-UI design work:
 
 - Layer Page geometry/behavior;
-- Box header/control anatomy;
-- magnetic detach/reorder behavior;
-- minimum/maximum sizing;
-- tablet projection details beyond the shared semantic order.
+- final visual sizing/tokens;
+- visual/runtime validation of tablet projection.
