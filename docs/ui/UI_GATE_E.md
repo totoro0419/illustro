@@ -127,6 +127,8 @@ Canonical design:
 - [Left UI — Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md)
 - [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 - [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
+- [Right UI Feature Coverage](RIGHT_UI_FEATURE_COVERAGE.md)
+- [Right UI Quality Review](RIGHT_UI_QUALITY_REVIEW.md)
 - [Right Workspace — Box Taxonomy](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 - [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 - [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
