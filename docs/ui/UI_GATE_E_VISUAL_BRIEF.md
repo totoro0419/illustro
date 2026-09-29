@@ -135,6 +135,7 @@ Use:
 - `LEFT_UI_ACCESS_COVERAGE.md` for complete feature reachability;
 - `LEFT_TOOL_SURFACE_OPTIONS.md` for tool-family candidates.
 - `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md` for Right Workspace order/collapse baseline.
+- `RIGHT_WORKSPACE_INTERACTION_SPEC.md` for Box header/reorder/detach/magnetic/resize behavior.
 
 The visible Rail is icon-first. Prototype the default order:
 
@@ -512,3 +513,22 @@ This brief is ready when:
 - remaining choices are legitimately visual/compositional
 
 Current status: **NOT YET READY TO GENERATE. Finish the ongoing structural decisions first, then refresh this brief before visual generation.**
+
+
+## Right Box interaction states to render
+
+The visual prototype must include:
+
+- normal expanded header;
+- collapsed header with summary;
+- Inspector header with Lock Context;
+- Box More menu;
+- docked reorder drop-zone preview;
+- detach preview;
+- detached Box;
+- magnetic re-dock insertion preview;
+- Reset Location / Reset Workspace Layout affordance;
+- Layout Lock state;
+- fixed five-button bottom strip.
+
+Do not add a permanent Detach icon to every Box header unless visual testing demonstrates a concrete need and the semantic spec is explicitly revised.
