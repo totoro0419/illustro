@@ -7,6 +7,7 @@
 > General UI research: [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 > Default layout: [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
 > Interaction: [Right Workspace — Box Interaction Specification](RIGHT_WORKSPACE_INTERACTION_SPEC.md)
+> Layer Page: [Right UI — Layer Page Specification](RIGHT_LAYER_PAGE_SPEC.md)
 > Parent: [UI Gate E](UI_GATE_E.md)
 
 ## 1. Role
@@ -471,7 +472,7 @@ The two surfaces may expose substantially the same layer capabilities. They must
 
 No separate Layer Page data model or duplicate layer-command implementation is allowed.
 
-The exact geometry of Layer Page is a later Right-UI design decision.
+Layer Page geometry/interaction is defined in `RIGHT_LAYER_PAGE_SPEC.md`: an ibisPaint-like expanded right-side layer surface, with optional PC/tablet floating presentation.
 
 ## 5. Box ownership summary
 
@@ -679,8 +680,10 @@ Default vertical order and default expanded/collapsed state are fixed by `RIGHT_
 
 Header, collapse, reorder, detach, magnetic re-dock, resize, recovery and non-drag alternatives are fixed by `RIGHT_WORKSPACE_INTERACTION_SPEC.md`.
 
-Remaining Right-UI design work:
+Layer Page semantic/interaction behavior is now fixed in `RIGHT_LAYER_PAGE_SPEC.md`.
 
-- Layer Page geometry/behavior;
+Remaining Right-UI work is visual/runtime validation:
+
 - final visual sizing/tokens;
+- exact Layer Page width/row density/action placement;
 - visual/runtime validation of tablet projection.
