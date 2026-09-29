@@ -166,7 +166,7 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.texture >= 0.65 &&
     closure.texture - local.texture >= 0.30;
 
-  const coherentClosure = cleanCoherentClosure || strongCoherentClosure || bridgeSupportedClosure || softBoundaryClosure;
+  const coherentClosure = cleanCoherentClosure || strongCoherentClosure || bridgeSupportedClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -195,6 +195,67 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     if (winnerCount >= 7 && opposition <= 1 && artifact < 0.36) label = winner;
   }
 
+  // A fourth, isolated hypothesis handles smooth low-contrast filled objects.
+  // It never changes the normal three topology masks; it may only promote an
+  // otherwise-unanimous Open result when a compact, coherent soft boundary is
+  // independently observed around a low-artifact seed.
+  let softHypothesis = null;
+  const softInteriorCandidate =
+    !nearFrame &&
+    groups.conservative === 'open' &&
+    groups.balanced === 'open' &&
+    groups.permissive === 'open' &&
+    local.line < 0.30 &&
+    local.texture < 0.18 &&
+    local.wash < 0.18 &&
+    local.coherence >= 0.45;
+
+  if (softInteriorCandidate && bundle.grids.soft) {
+    const softLabels = [];
+    const softResults = [];
+    for (const dt of [-0.035, 0, 0.035]) {
+      const policy = {
+        evidenceThreshold: Math.max(0.15, Math.min(0.90, basePolicy.evidenceThreshold + dt)),
+        gapMax: 0,
+        confidenceThreshold: 0,
+        retainIou: 0.8,
+        identityMargin: 0.2,
+        ambiguousIouFloor: 0.3,
+        lineageOverlapFraction: 0.18,
+        candidateSearchPx: 4,
+      };
+      const result = resolveRegion(bundle.grids.soft, policy);
+      const component = seedComponent(result, query.seed[0], query.seed[1]);
+      const softLabel = component ? (component.touchesEdge ? 'open' : 'closed') : 'ambiguous';
+      softLabels.push(softLabel);
+      softResults.push({ result, component, label: softLabel });
+    }
+    const softGroup = dominant3(softLabels);
+    const centralSoft = softResults[1];
+    const softBoundary = centralSoft?.component && centralSoft.label === 'closed'
+      ? componentBoundaryStats(bundle, centralSoft.result, centralSoft.component)
+      : null;
+    const areaFraction = centralSoft?.component
+      ? centralSoft.component.area / (bundle.width * bundle.height)
+      : 1;
+    const credibleSoftClosure = softGroup === 'closed' &&
+      !!softBoundary &&
+      softBoundary.softEdge >= 0.18 &&
+      softBoundary.softCoherence >= 0.65 &&
+      softBoundary.texture < 0.45 &&
+      softBoundary.wash < 0.32 &&
+      areaFraction <= 0.20;
+
+    softHypothesis = {
+      labels: softLabels,
+      group: softGroup,
+      boundary: softBoundary,
+      areaFraction,
+      credible: credibleSoftClosure,
+    };
+    if (label === 'open' && credibleSoftClosure) label = 'closed';
+  }
+
   return {
     label,
     stability: Math.max(counts.closed, counts.open, counts.ambiguous) / votes.length,
@@ -213,5 +274,6 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     bridgeSupportedClosure,
     softBoundaryClosure,
     clutterEnclosure,
+    softHypothesis,
   };
 }
