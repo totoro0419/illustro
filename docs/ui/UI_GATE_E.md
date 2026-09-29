@@ -129,6 +129,7 @@ Canonical design:
 - [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 - [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 - [Right Workspace — Default Layout & Collapse](RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
+- [Right Workspace — Box Interaction Specification](RIGHT_WORKSPACE_INTERACTION_SPEC.md)
 - [Left Tool Surface — Option Catalog](LEFT_TOOL_SURFACE_OPTIONS.md)
 
 The default PC/tablet Rail is fixed in `LEFT_UI_SPEC.md`: Brush, Eraser, Smudge/Blend, Eyedropper, Smart Fill, Selection, Transform, Move, plus fixed All Features.
@@ -245,7 +246,9 @@ Layer Page is a separate expanded surface from the Layers Box, but both share th
 
 Default Box order and default expansion/collapse state are now fixed in `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md`.
 
-Right Workspace is **not yet semantically complete**; Layer Page geometry, exact magnetic behavior, Box header anatomy, sizing and remaining tablet projection details still require explicit design decisions.
+Right Box manipulation semantics are now complete: header anatomy, collapse, reorder, detach, re-dock, magnetic targets, resize, Workspace Layout Lock, recovery and non-drag alternatives are fixed in `RIGHT_WORKSPACE_INTERACTION_SPEC.md`.
+
+Right Workspace as a whole is **not yet semantically complete** because Layer Page geometry/behavior still requires explicit design decisions. Exact visual tokens and runtime thresholds remain validation work, not open interaction semantics.
 
 ## 4. Expanded layout baseline
 
