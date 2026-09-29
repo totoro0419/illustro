@@ -8,6 +8,7 @@ export default defineConfig({
     'real-art/development-regression.spec.js',
     'real-art/final-large-source.spec.js',
     'real-art/final-large2-source.spec.js',
+    'real-art/final-large2.spec.js',
     'real-art/final-large.spec.js',
   ],
   timeout: 30_000,
