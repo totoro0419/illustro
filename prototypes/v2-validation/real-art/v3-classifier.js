@@ -32,13 +32,15 @@ function componentBoundaryStats(bundle, result, component) {
     }
   }
   if (!cells.size) return null;
-  const sums = { line: 0, texture: 0, wash: 0, coherence: 0, bridge: 0 };
+  const sums = { line: 0, texture: 0, wash: 0, coherence: 0, bridge: 0, softEdge: 0, softCoherence: 0 };
   for (const i of cells) {
     sums.line += features.line[i];
     sums.texture += features.texture[i];
     sums.wash += features.wash[i];
     sums.coherence += features.coherence[i];
     sums.bridge += features.bridge[i];
+    sums.softEdge += features.softEdge?.[i] ?? 0;
+    sums.softCoherence += features.softCoherence?.[i] ?? 0;
   }
   const n = cells.size;
   return {
@@ -47,6 +49,8 @@ function componentBoundaryStats(bundle, result, component) {
     wash: sums.wash / n,
     coherence: sums.coherence / n,
     bridge: sums.bridge / n,
+    softEdge: sums.softEdge / n,
+    softCoherence: sums.softCoherence / n,
     samples: n,
   };
 }
@@ -145,7 +149,24 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.wash < 0.20 &&
     closure.samples >= 8;
 
-  const coherentClosure = cleanCoherentClosure || strongCoherentClosure || bridgeSupportedClosure;
+  const softBoundaryClosure = !!closure &&
+    closure.softEdge >= 0.34 &&
+    closure.softCoherence >= 0.60 &&
+    closure.texture < 0.45 &&
+    closure.wash < 0.32 &&
+    closure.samples >= 8;
+
+  // Dense line networks can accidentally form small closed cells. Treat a
+  // closure as clutter-driven when the inferred boundary is far more textured
+  // than its seed neighborhood and the topology is highly perturbation-sensitive.
+  const clutterEnclosure = !!closure &&
+    areaRange > 0.50 &&
+    local.line >= 0.60 &&
+    local.coherence >= 0.75 &&
+    closure.texture >= 0.65 &&
+    closure.texture - local.texture >= 0.30;
+
+  const coherentClosure = cleanCoherentClosure || strongCoherentClosure || bridgeSupportedClosure || softBoundaryClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -157,7 +178,7 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
       if (interiorUncertain) label = 'ambiguous';
     }
   } else if (groups.balanced === 'closed' && groups.permissive === 'closed') {
-    label = coherentClosure ? 'closed' : 'ambiguous';
+    label = clutterEnclosure ? 'ambiguous' : (coherentClosure ? 'closed' : 'ambiguous');
   } else if (groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'closed') {
     if (coherentClosure) label = 'closed';
     else if (closure && closure.coherence < 0.40 && local.wash < 0.35) label = 'open';
@@ -190,5 +211,7 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     cleanCoherentClosure,
     strongCoherentClosure,
     bridgeSupportedClosure,
+    softBoundaryClosure,
+    clutterEnclosure,
   };
 }
