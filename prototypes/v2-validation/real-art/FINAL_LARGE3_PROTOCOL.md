@@ -88,3 +88,27 @@ After the freezes above:
 4. PASS permits Gate C closure documentation.
 5. FAIL permanently exposes this corpus and Gate C remains open.
 6. No mini-blind replacement loop is permitted.
+
+
+## One-shot result — exposed
+
+The first algorithmic execution reached V4 classification and produced:
+
+- overall: **15 / 24**
+- closed: **4 / 8**
+- open: **8 / 8**
+- ambiguous: **3 / 8**
+- clean-linework: **5 / 8**
+- structured-wash: **5 / 8**
+- complex-linewash: **5 / 8**
+
+This is a **FAIL** under the frozen criteria. This corpus is permanently exposed
+development evidence and MUST NOT be reused for Gate C closure.
+
+GitHub Actions evidence:
+
+- run: `36591899535`
+- job: `109486850767`
+- reference semantic tests: PASS
+- reference benchmarks: PASS
+- browser / real-art final assertion: FAIL
