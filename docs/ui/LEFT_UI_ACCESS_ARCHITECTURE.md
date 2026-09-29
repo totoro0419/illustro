@@ -1,8 +1,9 @@
 # Illustro Left UI Access Architecture
 
-> Status: **ACTIVE DESIGN / LEFT-UI FOCUS**
+> Status: **SUPPORTING / SUPERSEDED BY CANONICAL LEFT_UI_SPEC**
 > Date: 2026-09-29
-> Scope: PC / tablet Left UI as the universal access root
+> Scope: Supporting architecture notes for the PC / tablet Left UI
+> Canonical: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
 > Parent: [UI Gate E](UI_GATE_E.md)
 > Coverage appendix: [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 > Related specs: [Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md) / [Left Tool Surface Options](LEFT_TOOL_SURFACE_OPTIONS.md)
@@ -95,7 +96,7 @@ Pin可能Type:
 
 つまり、LayersやColorを左へPinしたいユーザーも許可する。
 
-ただし **Default Rail** は高頻度Tool中心とし、最終構成は別途決める。
+Default RailはCanonical仕様で確定済み。最終決定は `LEFT_UI_SPEC.md` を参照する。
 
 ### L1 — All Features
 
@@ -579,15 +580,10 @@ Indexはmetadata中心に保ち、preview/thumbnailはlazy loadする。
 
 このappendixは「各機能がどの経路で到達可能か」を監査するための設計資料であり、Default Railを意味しない。
 
-## 13. Remaining unresolved decisions
+## 13. Authority note
 
-Pinned Railの構造は `LEFT_PINNED_RAIL_SPEC.md` でBaseline化した。
+Left UIのsemantic / interaction decisionsは `LEFT_UI_SPEC.md` で完了している。
 
-まだ固定しない:
+この文書に残る旧案・例示よりCanonical仕様を優先する。
 
-- Default Railに何を何個置くか
-- Category Paletteのexact width / columns / animation
-- dynamic Brush/Shape preset Pinを初期リリースから有効にするか
-- final icon artwork / spacing / visual density
-
-PC/tabletは同じ論理Pin orderを保持し、viewport/input capabilityに応じてvisible capacityとpalette projectionだけを変える。特別なdevice別auto-reorderは行わない。
+Color/theme、final icon artwork、exact visual tokens、runtime hit-testing/latencyはVisual/Runtime validationで扱う。
