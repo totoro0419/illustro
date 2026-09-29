@@ -226,6 +226,7 @@ Current taxonomy: **V2 CANDIDATE / GENERAL-UI RESEARCH APPLIED**
 Applied cross-domain professional UI principles:
 
 - Canvas remains the primary content region;
+- all semantic Right Boxes remain represented in the Right Workspace; collapse is the primary density-control mechanism;
 - Boxes keep stable semantic identity while location changes;
 - Properties / Inspector follows context by default and supports Lock Context;
 - flexible layouts require Reset Location / Reset Workspace Layout;
@@ -239,7 +240,9 @@ Canonical candidate references:
 - [Right Workspace — Box Taxonomy V2](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 - [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 
-Right Workspace is **not yet semantically complete**; default Box visibility/order, exact magnetic behavior, sizing and tablet projection still require explicit design decisions.
+Layer Page is a separate expanded surface from the Layers Box, but both share the same Layer model and semantic commands.
+
+Right Workspace is **not yet semantically complete**; default expanded/collapsed states, order, Layer Page geometry, exact magnetic behavior, sizing and tablet projection still require explicit design decisions.
 
 ## 4. Expanded layout baseline
 
@@ -252,7 +255,8 @@ This is a prototype reference size, not a fixed product requirement.
 - minimal top document/app strip for non-drawing application/document operations such as Home and Save; Undo/Redo do not live here
 - stable icon-first left universal access surface using the canonical default Rail + fixed All Features
 - central Canvas
-- right magnetic Workspace/PiP stack
+- right magnetic Workspace/PiP stack with all semantic Boxes present and collapsible
+- compact fixed bottom-right command strip: Layer Page / Undo / Redo / Horizontal Flip / Vertical Flip
 - transient Context Surface inside the Canvas working region
 - optional detached Workspace Blocks over/near unused Canvas margin
 - bottom status information only when it has persistent value
