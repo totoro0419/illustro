@@ -152,6 +152,32 @@ Opening it does not change artwork state or current Tool.
 
 Left/Search semantic deep links map to the corresponding Compact Workspace Page.
 
+## 4.1 Exclusive workspace-surface rule
+
+Compact uses an **exclusive primary Workspace surface**.
+
+At any time, only one of the following may be the active primary Compact Workspace surface:
+
+1. a normal Workspace Page in the Drawer;
+2. Page Overview;
+3. Page Overview Edit Order;
+4. Compact PiP.
+
+Opening another replaces/closes the current one.
+
+Examples:
+
+- Layers -> Color: Layers closes; Color opens.
+- Drawer Page -> Page Overview: Drawer Page closes; Page Overview opens.
+- Page Overview -> direct page selection: Overview closes; selected Drawer Page opens.
+- Drawer Page -> PiP: Drawer closes; PiP opens.
+- PiP -> another Side Toolbar page: PiP closes/docks back; selected Drawer Page opens.
+- Edit Order -> normal page: organizer closes before the page appears.
+
+No two primary Workspace tabs/surfaces stack visually on smartphone.
+
+This exclusivity is UI presentation state only; semantic state/content is preserved and shared.
+
 ## 5. Horizontal page switching
 
 When the Workspace Drawer is open, **horizontal swipe inside the Workspace Page switches to the previous/next page in the user's Compact page order**.
