@@ -41,6 +41,7 @@ Applied to Illustro:
 - The entire workspace has Reset Workspace Layout.
 - Box movement has a keyboard-accessible command path, not drag-only.
 - Box header actions stay sparse; low-frequency actions live under More.
+- For Illustro's current design, normal density reduction uses collapse rather than removing Boxes from the Right Workspace.
 
 Sources:
 - https://code.visualstudio.com/docs/editing/getting-started/userinterface
@@ -221,9 +222,9 @@ PC/tablet may use different target size, Box width, inline/overlay projection, a
 
 They retain the same semantic Box registry and IDs.
 
-### G15 — Hidden Boxes should be cheap
+### G15 — Collapsed/inactive Boxes should be cheap
 
-Hidden, collapsed, or off-screen Boxes should have near-zero recurring work. Expensive preview/list data uses lazy loading and virtualization.
+Collapsed or detached-inactive Boxes should have near-zero recurring work. Expensive preview/list data uses lazy loading and virtualization.
 
 ## 4. Resulting changes to the Right Box taxonomy
 
@@ -254,6 +255,8 @@ The ordinary Right Box contains only workspace-local functions:
 - reset layout;
 - Left UI layout entry;
 - Quick Controller layout/profile entry.
+
+All semantic Right Boxes remain represented in the Right Workspace. Collapse/expand is the primary information-density control.
 
 Application-global input, accessibility, language, shortcut, and extension settings move to a dedicated Settings surface.
 
