@@ -13,13 +13,15 @@
 
 Compact is **not** a scaled PC/tablet shell.
 
-It uses an ibisPaint-inspired interaction pattern:
+It uses an ibisPaint-inspired interaction pattern adapted to Illustro:
 
 - Canvas occupies nearly the full screen;
-- a stable bottom Main Toolbar exposes high-frequency destinations;
-- detailed work opens in temporary pages/sheets;
+- a stable **side Main Toolbar** exposes Tool/destination choices;
+- a stable **bottom Control Bar** exposes immediate current-tool controls and high-frequency commands;
+- the desktop/tablet Right UI is projected as a **Workspace Drawer** that rises from the Bottom Control Bar;
+- detailed Right-UI content is organized as swipeable Workspace Pages inside that Drawer;
 - Tool selection is explicit and discoverable;
-- Color / Properties / Layers are one-tap destinations.
+- Color / Properties / Layers remain one-tap destinations.
 
 Illustro adds one major system:
 
@@ -27,25 +29,58 @@ Illustro adds one major system:
 
 The 12 page IDs are the same semantic IDs as the Right UI. Compact changes projection, not capability identity.
 
-## 2. Main Toolbar
+## 2. Side Main Toolbar
 
-Baseline structure follows the ibisPaint idea of a small stable command row, while preserving Illustro semantics.
+The Compact primary toolbar is a **vertical rail attached to one side of the Canvas**.
 
-Candidate left -> right:
+Default side:
+- left edge.
+
+User preference:
+- mirror to right edge for handedness.
+
+Candidate top -> bottom:
 
 1. **Brush / Eraser**
 2. **Tools / All Features**
 3. **Properties**
 4. **Color**
-5. **Focus**
-6. **Layers**
-7. **Workspace Pages**
+5. **Layers**
+6. **Workspace Pages**
+7. **Focus**
 
-Notes:
+Role:
 
-- this is interaction inspiration, not a visual copy of ibisPaint;
-- Home/document navigation remains in the compact document strip rather than consuming a drawing-tool slot;
-- the exact Undo/Redo compact projection remains to be visually co-designed; gesture/Quick Controller may accelerate it but cannot be the only route.
+> **Side Main Toolbar = what to use / where to go**
+
+Rules:
+
+- stable spatial order;
+- icon-first;
+- no automatic reordering;
+- current Tool/destination state is distinguishable without color alone;
+- Home/document navigation remains in the compact document strip;
+- this is interaction inspiration from compact painting apps, not a visual copy of ibisPaint.
+
+## 2.1 Bottom Control Bar
+
+A compact horizontal bar is fixed to the bottom safe area.
+
+Role:
+
+> **Bottom Control Bar = what to do now / how to adjust the current operation**
+
+It may contain:
+
+- current Tool quick controls;
+- high-frequency immediate commands;
+- visible Workspace Drawer handle/chevron;
+- Undo/Redo candidate placement;
+- other context-specific controls only when they remain stable and understandable.
+
+The Bottom Control Bar is not the full Right UI.
+
+It is the **summoning surface and immediate-control surface** for the Workspace Drawer.
 
 ## 3. Workspace Pages
 
@@ -68,40 +103,58 @@ Default order matches PC/tablet semantic order for learnability.
 
 Compact stores its own page order as Compact Workspace state. Reordering Compact pages does **not** silently reorder PC/tablet Boxes.
 
-## 4. Opening a page
+## 4. Workspace Drawer opening
 
-A Workspace Page opens as an anchored sheet above the bottom Main Toolbar.
+The Right-UI projection is a **bottom Workspace Drawer** anchored directly above the Bottom Control Bar.
 
-Default goals:
+### Primary direct gesture
 
-- Canvas remains visible;
-- the page is non-modal;
-- drawing can resume immediately after dismissing it;
-- page content gets enough vertical space for real controls rather than miniaturization.
+The top edge of the Bottom Control Bar contains a visible **Grab / Expand region**.
 
-Pages may support:
+From that region:
 
-- normal height;
-- expanded / near-full height;
-- dismissed.
+- swipe upward -> open the Workspace Drawer;
+- continue dragging upward -> expand toward near-full height;
+- swipe downward from the Drawer grab/header -> close/minimize.
 
-Exact pixel heights are visual-prototype work.
+Do **not** recognize the open gesture when it starts on an interactive Bottom Control Bar control.
 
-Dedicated toolbar routes:
+### Explicit non-gesture path
 
-- Properties -> Inspector page
-- Color -> Color page
-- Layers -> Layers page
+The same Grab region contains an explicit chevron / Workspace button:
 
-Workspace Pages button:
-- closed -> opens last-used Workspace Page;
-- open -> opens Page Overview / page navigator.
+- tap while closed -> open last-used Workspace Page;
+- tap while open -> minimize/close the Drawer;
+- Page Overview remains available inside the Drawer.
 
-Left/Search semantic deep links map to the corresponding Compact page.
+Therefore swipe is an accelerator, not the only route.
+
+### Drawer states
+
+Stable states:
+
+1. **Closed** — Bottom Control Bar only.
+2. **Standard** — Workspace Page visible while substantial Canvas remains visible.
+3. **Expanded** — near-full-height Workspace Page for Layers/Assets/etc.
+
+Exact snap heights are visual-prototype work.
+
+The Drawer is non-modal.
+
+Opening it does not change artwork state or current Tool.
+
+### Dedicated side-toolbar routes
+
+- Properties -> open Drawer at Inspector page
+- Color -> open Drawer at Color page
+- Layers -> open Drawer at Layers page
+- Workspace Pages -> open Drawer at last-used page, or Page Overview if already open
+
+Left/Search semantic deep links map to the corresponding Compact Workspace Page.
 
 ## 5. Horizontal page switching
 
-When a Workspace Page is open, **horizontal swipe switches to the previous/next page in the user's Compact page order**.
+When the Workspace Drawer is open, **horizontal swipe inside the Workspace Page switches to the previous/next page in the user's Compact page order**.
 
 Gesture conflict rule:
 
@@ -121,7 +174,9 @@ The page header and noninteractive page background are guaranteed swipe regions.
 
 A sufficiently clear horizontal-intent threshold distinguishes page switching from vertical scrolling.
 
-No page switch begins from the Canvas outside the Workspace Page.
+No page switch begins from the Canvas outside the Workspace Drawer.
+
+Vertical Drawer open/close gestures are recognized only from the Drawer grab/header region, preventing conflict with vertical content scrolling.
 
 ## 6. Page position / navigation
 
@@ -144,11 +199,11 @@ Direct navigation is always available through Page Overview; users are not force
 
 Page Overview is the direct-jump and organization surface.
 
-Opening it shows an ordered **PDF-like page filmstrip / organizer**.
+Opening it shows an ordered **PDF-like page filmstrip / organizer** inside the Workspace Drawer.
 
 Baseline:
 
-- horizontal filmstrip positioned at the lower part of the Workspace Page;
+- horizontal filmstrip positioned near the lower part of the open Workspace Drawer;
 - each Workspace Page appears as a compact card;
 - card contains icon + short label + order number;
 - current page is clearly marked without color alone;
@@ -201,7 +256,7 @@ A permanent 12-item tab row would:
 - consume Canvas height;
 - create tiny targets;
 - overload the user with all advanced pages at once;
-- conflict with the ibisPaint-style compact toolbar.
+- conflict with the side-toolbar + bottom-Control-Bar compact shell.
 
 Therefore:
 
@@ -212,7 +267,7 @@ Therefore:
 
 Compact does **not** use drag-to-detach as the primary PiP entry.
 
-PiP is activated with an explicit **PiP button in the page header**.
+PiP is activated with an explicit **PiP button in the Workspace Page header**.
 
 This matches the user's preferred mental model:
 
@@ -305,7 +360,7 @@ The same semantic state is shared with the full page.
 
 Layers remains a privileged Compact page.
 
-Opening from the Main Toolbar goes directly to Layers, not through Workspace Page navigation.
+Opening from the Side Main Toolbar opens the Workspace Drawer directly at Layers, not through Page Overview navigation.
 
 It uses the same Layer model as desktop/tablet.
 
@@ -327,13 +382,13 @@ Workspace Page reorder and Layer reorder must have visually different modes/hand
 
 ## 14. Gesture hierarchy
 
-Priority when a Workspace Page is open:
+Priority when the Workspace Drawer is open:
 
 1. active control direct manipulation
 2. Layer/page-card reorder handle drag
 3. vertical content scroll
 4. horizontal Workspace Page swipe from eligible region
-5. sheet vertical resize/dismiss gesture
+5. vertical Drawer open/close/resize gesture **from the dedicated grab/header region only**
 
 This priority prevents a color slider or layer reorder from accidentally switching the entire Workspace Page.
 
@@ -398,13 +453,15 @@ Illustro therefore combines:
 
 Before marking Compact semantic layout complete, visually test:
 
-1. Does the ibis-like bottom toolbar feel sufficiently direct?
-2. Does horizontal page swipe feel natural without fighting sliders/lists?
-3. Is the Page Overview filmstrip faster to understand than a grid?
-4. Is one Compact PiP enough?
-5. Which pages should be PiP-eligible?
-6. Does Layers deserve a slightly different opening height from other pages?
-7. Where should the visible Undo/Redo route live in Compact?
+1. Does the side Main Toolbar feel sufficiently direct?
+2. Does the Bottom Control Bar stay useful without becoming crowded?
+3. Does swiping upward from the Drawer grab feel obvious and reliable?
+4. Does horizontal page swipe feel natural without fighting sliders/lists?
+5. Is the Page Overview filmstrip faster to understand than a grid?
+6. Is one Compact PiP enough?
+7. Which pages should be PiP-eligible?
+8. Does Layers deserve a different default Drawer snap height?
+9. Where should visible Undo/Redo live in the Bottom Control Bar?
 
 ## 20. Current status
 
@@ -412,9 +469,10 @@ The architecture above is the **recommended Compact candidate**.
 
 Not yet locked:
 
-- exact toolbar button allocation;
+- exact Side Main Toolbar button allocation;
+- exact Bottom Control Bar content;
 - Undo/Redo visible placement;
-- exact sheet heights;
+- exact Drawer snap heights;
 - exact Page Overview filmstrip size;
 - exact PiP geometry;
 - final PiP eligibility set;
