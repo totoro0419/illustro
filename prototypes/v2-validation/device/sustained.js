@@ -29,6 +29,7 @@ let acceptedAtStart = 0;
 let wakeLock = null;
 let wakeLockState = 'not-requested';
 let visibilityInterruptions = 0;
+let invalidatedReason = null;
 let lastRaf = null;
 let nextBucketAt = 0;
 let bucketStartAt = 0;
@@ -191,7 +192,7 @@ async function requestWakeLock() {
 }
 
 function startRun() {
-  if (phase !== 'idle') return;
+  if (!(phase === 'idle' || (phase === 'done' && invalidatedReason))) return;
   pipeline = new StreamingBrushPipeline();
   pipeline.beginStroke();
   phase = 'auto';
@@ -212,6 +213,7 @@ function startRun() {
   realisticProcessed = 0;
   stopReason = null;
   visibilityInterruptions = 0;
+  invalidatedReason = null;
   postPen = { startedAt:null, strokes:0, trustedPenSamples:0, cpuTimes:[], rafTimes:[], pressureMin:1, pressureMax:0, tiltSeen:false };
   requestWakeLock();
   render();
@@ -235,6 +237,10 @@ function finalize() {
   if (phase !== 'post-pen') return;
   phase = 'done';
   if (wakeLock && !wakeLock.released) wakeLock.release();
+  if (invalidatedReason) {
+    startButton.disabled = false;
+    startButton.textContent = '再測定を開始';
+  }
   render();
 }
 
@@ -265,9 +271,10 @@ function autoWork(now) {
   }
   if (now >= nextBucketAt) {
     closeBucket(now);
-    nextBucketAt += CONFIG.bucketMs;
+    nextBucketAt = now + CONFIG.bucketMs;
   }
   const screen = stabilityScreen();
+  if (invalidatedReason !== null) return;
   if (elapsed >= CONFIG.minMs && screen.ready && screen.stable) {
     finishAuto('stable-screening-criterion');
   } else if (elapsed >= CONFIG.maxMs) {
@@ -293,7 +300,11 @@ function loop(now) {
 requestAnimationFrame(loop);
 
 document.addEventListener('visibilitychange', () => {
-  if (phase === 'auto' && document.visibilityState !== 'visible') visibilityInterruptions += 1;
+  if (phase === 'auto' && document.visibilityState !== 'visible') {
+    visibilityInterruptions += 1;
+    invalidatedReason = 'visibility-interruption';
+    finishAuto('visibility-interruption');
+  }
 });
 
 function normalize(e) {
@@ -371,7 +382,7 @@ function report() {
       generatedSamples, acceptedSamples: pipeline.totalAccepted - acceptedAtStart,
       maxPendingObserved: pipeline.maxPendingObserved,
       backpressureEvents: pipeline.backpressureEvents,
-      visibilityInterruptions, wakeLockState,
+      visibilityInterruptions, invalidatedReason, wakeLockState,
       framePeriodEstimateMs: framePeriodEstimate,
       stabilityScreen: stable,
       buckets,
@@ -395,6 +406,7 @@ function report() {
       autoCompleted: phase === 'post-pen' || phase === 'done',
       minimumElapsedReached: elapsedAuto >= CONFIG.minMs,
       foregroundContinuous: visibilityInterruptions === 0,
+      notInvalidated: invalidatedReason === null,
       acceptedEqualsGenerated: (pipeline.totalAccepted - acceptedAtStart) >= generatedSamples,
       pendingBounded: pipeline.maxPendingObserved <= 8,
       postPenComplete: postPen.trustedPenSamples >= 500,
@@ -412,8 +424,10 @@ function render() {
     phaseEl.textContent = '自動負荷';
     instruction.textContent = `${sec.toFixed(0)}秒 / 最短${(CONFIG.minMs/60000).toFixed(0)}分・最大${(CONFIG.maxMs/60000).toFixed(0)}分。画面は開いたままにしてください。`;
   } else if (phase === 'done') {
-    phaseEl.textContent = '測定完了';
-    instruction.textContent = '端末の熱さを選び、JSONをコピーしてチャットへ貼ってください。';
+    phaseEl.textContent = invalidatedReason ? '測定無効' : '測定完了';
+    instruction.textContent = invalidatedReason
+      ? '自動負荷中に画面が非表示になったため、このrunは耐久判定には使えません。JSONは診断用に回収できます。'
+      : '端末の熱さを選び、JSONをコピーしてチャットへ貼ってください。';
   }
   const pct = phase === 'auto' ? Math.min(100, r.auto.elapsedMs / CONFIG.maxMs * 100) : phase === 'idle' ? 0 : 100;
   progress.style.width = pct + '%';
