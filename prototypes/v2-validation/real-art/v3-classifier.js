@@ -105,7 +105,11 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
   for (const vote of votes) counts[vote] += 1;
   const areaRange = areas.length ? Math.max(...areas) - Math.min(...areas) : 1;
   const local = evidenceV3LocalSummary(bundle, query.seed[0], query.seed[1], 5);
-  const closure = central.balanced?.label === 'closed' ? central.balanced.boundary : central.permissive?.boundary;
+  const closedCentral =
+    central.balanced?.label === 'closed' ? central.balanced :
+    central.permissive?.label === 'closed' ? central.permissive :
+    null;
+  const closure = closedCentral?.boundary ?? null;
   const artifact = closure ? Math.max(closure.texture, closure.wash) : Math.max(local.texture, local.wash);
   const closureQuality = closure
     ? (0.50 * closure.line + 0.25 * closure.coherence + 0.25 * closure.bridge - 0.45 * artifact)
@@ -131,7 +135,17 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     local.wash < 0.45 &&
     (closure.texture < 0.75 || closure.coherence >= 0.70 || (closure.line >= 0.80 && local.coherence >= 0.60));
 
-  const coherentClosure = cleanCoherentClosure || strongCoherentClosure;
+  // Weak/faint ink should still close when independent orientation evidence agrees:
+  // strong directional continuity + low texture/wash is a boundary cue even when
+  // mean line amplitude is modest after downsampling.
+  const bridgeSupportedClosure = !!closure &&
+    closure.coherence >= 0.70 &&
+    closure.bridge >= 0.35 &&
+    closure.texture < 0.20 &&
+    closure.wash < 0.20 &&
+    closure.samples >= 8;
+
+  const coherentClosure = cleanCoherentClosure || strongCoherentClosure || bridgeSupportedClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -175,5 +189,6 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     coherentClosure,
     cleanCoherentClosure,
     strongCoherentClosure,
+    bridgeSupportedClosure,
   };
 }
