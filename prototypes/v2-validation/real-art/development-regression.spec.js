@@ -9,8 +9,9 @@ import { REGION_V3_FINAL_BLIND_6 } from './final-blind6-manifest.js';
 import { REGION_V3_FINAL_BLIND_7 } from './final-blind7-manifest.js';
 import { REGION_V3_FINAL_BLIND_8 } from './final-blind8-manifest.js';
 import { REGION_V3_FINAL_BLIND_9 } from './final-blind9-manifest.js';
+import { REGION_V3_FINAL_LARGE } from './final-large-manifest.js';
 import { buildRealArtEvidenceV3 } from './evidence-v3.js';
-import { classifyV3, FIXED_V3_POLICY } from './v3-classifier.js';
+import { classifyV4, FIXED_V4_POLICY } from './v4-classifier.js';
 
 const MAX_SIDE = 256;
 const CORPORA = [
@@ -23,13 +24,14 @@ const CORPORA = [
   REGION_V3_FINAL_BLIND_7,
   REGION_V3_FINAL_BLIND_8,
   REGION_V3_FINAL_BLIND_9,
+  REGION_V3_FINAL_LARGE,
 ];
 
 const DEVELOPMENT_FLOOR = Object.freeze({
-  totalQueries: 90,
-  minimumOverallPass: 80,
-  expectedByLabel: Object.freeze({ closed: 27, open: 45, ambiguous: 18 }),
-  minimumPassByLabel: Object.freeze({ closed: 21, open: 42, ambiguous: 15 }),
+  totalQueries: 114,
+  minimumOverallPass: 103,
+  expectedByLabel: Object.freeze({ closed: 35, open: 53, ambiguous: 26 }),
+  minimumPassByLabel: Object.freeze({ closed: 32, open: 51, ambiguous: 24 }),
 });
 
 async function fetchBytes(url) {
@@ -76,7 +78,7 @@ async function decodeLuma(page, bytes, contentType) {
   }, { base64, contentType, maxSide: MAX_SIDE });
 }
 
-test('exposed Region blind sets remain above aggregate development regression floor', async ({ page }) => {
+test('V4 exposed Region corpus including large-final failure meets development floor', async ({ page }) => {
   test.setTimeout(240000);
 
   const items = CORPORA.flat();
@@ -98,7 +100,7 @@ test('exposed Region blind sets remain above aggregate development regression fl
 
   for (const item of items) {
     for (const query of item.queries) {
-      const got = classifyV3(decoded.get(item.id), query, FIXED_V3_POLICY);
+      const got = classifyV4(decoded.get(item.id), query, FIXED_V4_POLICY);
       const ok = got.label === query.expected;
       total += 1;
       pass += ok ? 1 : 0;
@@ -110,6 +112,16 @@ test('exposed Region blind sets remain above aggregate development regression fl
         expected: query.expected,
         got: got.label,
         ok,
+        decision: got.decision,
+        groups: got.groups,
+        counts: got.counts,
+        areaRange: got.areaRange,
+        local: got.local,
+        boundary: got.boundary,
+        radial: got.radial,
+        boundaryConfidence: got.boundaryConfidence,
+        radialConfidence: got.radialConfidence,
+        textureNetworkRisk: got.textureNetworkRisk,
       });
     }
   }
@@ -117,16 +129,16 @@ test('exposed Region blind sets remain above aggregate development regression fl
   const report = {
     generatedAt: new Date().toISOString(),
     status: 'EXPOSED_DEVELOPMENT_REGRESSION',
-    policy: FIXED_V3_POLICY,
+    policy: FIXED_V4_POLICY,
     floor: DEVELOPMENT_FLOOR,
     result: { pass, total, byLabel, details },
   };
   await mkdir(new URL('../results/', import.meta.url), { recursive: true });
   await writeFile(
-    new URL('../results/region-v3-development-regression-2026-09-29.json', import.meta.url),
+    new URL('../results/region-v4-development-regression-2026-09-29.json', import.meta.url),
     JSON.stringify(report, null, 2) + '\n',
   );
-  console.log('REGION_V3_EXPOSED_DEVELOPMENT', JSON.stringify(report, null, 2));
+  console.log('REGION_V4_EXPOSED_DEVELOPMENT', JSON.stringify(report, null, 2));
 
   expect(total).toBe(DEVELOPMENT_FLOOR.totalQueries);
   expect(pass).toBeGreaterThanOrEqual(DEVELOPMENT_FLOOR.minimumOverallPass);
