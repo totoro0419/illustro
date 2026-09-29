@@ -122,6 +122,7 @@ test('V4 exposed Region corpus including all three exposed large-final failures 
         areaRange: got.areaRange,
         local: got.local,
         boundary: got.boundary,
+        topologyPersistence: got.topologyPersistence,
         radial: got.radial,
         boundaryConfidence: got.boundaryConfidence,
         radialConfidence: got.radialConfidence,
