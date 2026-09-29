@@ -338,8 +338,9 @@ Touch/pen profile:
 
 - uses the same content structure and visual density as the pointer profile;
 - does **not** enlarge all three default Boxes merely because touch/pen is available;
-- when vertical space is constrained, Layers / Color / Brush content heights may compact just enough to avoid controls protruding behind the fixed bottom strip;
-- if further reduction would make internal controls unusable, the outer Box stack scrolls instead.
+- does **not** compress an expanded Box body below the intrinsic height required by its visible controls;
+- when vertical space is constrained, the **outer Right Box stack scrolls** while the fixed five-button strip remains visible;
+- individual Box content may use its already-defined internal scrolling only where the Box type requires it.
 
 These are Workspace presentation rules, not artwork state.
 
