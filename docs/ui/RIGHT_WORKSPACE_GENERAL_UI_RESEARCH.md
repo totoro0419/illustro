@@ -286,7 +286,7 @@ General selected-layer/object properties may surface in Inspector instead of add
 
 Research application: **DONE**
 
-Right taxonomy after this research: **V2 CANDIDATE**
+Right taxonomy after this research was incorporated into the canonical `RIGHT_UI_SPEC.md`; this document is supporting evidence only.
 
 Not yet validated:
 
