@@ -101,3 +101,29 @@ whose last algorithm change is `28b90c658004ee1c83ce25d93cb50a856f50ab22`.
 Source bytes are additionally guarded by the per-image SHA-256 values in the manifest.
 Any source digest mismatch invalidates the run rather than silently evaluating a
 different image.
+
+
+## Source-integrity preflight correction
+
+The first attempted execution at evaluator commit
+`97979a5ec40229811425d6573facfade616a739c` did **not** execute the Region
+classifier on this final corpus. It stopped inside the source-integrity preflight
+because a Met CDN response returned different raw JPEG container bytes for
+`met-388251-ceiling`.
+
+Independent comparison of the candidate-selection artifact and a later CI source
+artifact showed that raw JPEG bytes may differ while decoded RGB pixels remain
+identical. Therefore raw-container SHA-256 is not a valid source-identity primitive
+for this corpus.
+
+The correction is source-only and does not alter artwork IDs, labels, seeds,
+acceptance thresholds, classifier code, evidence code, or fixed policy:
+
+- decoded source width / height;
+- Chromium 64-bit perceptual difference hash (dHash);
+- exact fingerprint set frozen at
+  `5113a6c9725d9a4c7e2ef166daeae99ef187d074`.
+
+CI Chromium and an independent local Chromium calculation produced identical
+fingerprints for all 12 sources. The one-shot algorithmic evaluation remains unused
+until the evaluator passes this decoded-visual source guard.
