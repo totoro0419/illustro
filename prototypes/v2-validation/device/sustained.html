@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Illustro Brush V2 Sustained Validation</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .phase { font-size: clamp(18px, 3vw, 26px); font-weight: 800; }
+    .meter { width: 100%; height: 10px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, CanvasText 12%, transparent); }
+    .meter > div { height: 100%; width: 0%; background: currentColor; transition: width .25s linear; }
+    .note { font-size: 12px; opacity: .72; }
+    .heat { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    select { min-height:42px; border-radius:9px; padding:0 10px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">NON-PRODUCTION VALIDATION</p>
+        <h1>Brush V2 Sustained / Thermal Proxy</h1>
+      </div>
+      <pre id="status"></pre>
+    </header>
+
+    <section class="protocol">
+      <div class="phase" id="phase">開始前</div>
+      <div id="instruction">開始すると自動負荷が走ります。途中はPen操作不要です。</div>
+      <div class="meter" aria-label="進捗"><div id="progress"></div></div>
+      <div class="note">固定10分ではありません。最短3分、最大6分。30秒bucketの安定性を見て早期終了します。</div>
+    </section>
+
+    <canvas id="canvas" aria-label="Sustained validation canvas"></canvas>
+
+    <section class="actions">
+      <button id="start">自動負荷を開始</button>
+      <button id="stop" disabled>中止</button>
+      <button id="copy" disabled>JSONをコピー</button>
+    </section>
+
+    <section class="heat">
+      <label for="heat">終了時の端末の熱さ:</label>
+      <select id="heat">
+        <option value="">未選択</option>
+        <option value="normal">特に気にならない</option>
+        <option value="warm">少し温かいが問題ない</option>
+        <option value="hot">明確に熱い / 不快</option>
+      </select>
+    </section>
+
+    <textarea id="result" spellcheck="false" aria-label="検証結果JSON"></textarea>
+  </main>
+  <script type="module" src="./sustained.js"></script>
+</body>
+</html>
