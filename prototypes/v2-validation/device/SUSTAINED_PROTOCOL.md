@@ -78,3 +78,12 @@ The browser exposes no general device-temperature telemetry here. Therefore this
 This protocol may close the representative-tablet sustained-runtime subgate if the returned evidence shows no material degradation or boundedness/correctness failure relative to the already-recorded pre-stress physical-Pen run.
 
 Desktop and Smartphone remain separate device-profile certifications.
+
+
+## Foreground interruption rule
+
+A sustained run is only valid while the page stays continuously foregrounded.
+
+If the page becomes hidden during the automatic phase, the harness now ends the automatic phase immediately with `stopReason = "visibility-interruption"` and marks the run invalid for Gate B. It does not attempt to catch up missed 30-second buckets after resume.
+
+This rule prevents background throttling or a long RAF gap from creating compressed synthetic buckets that could falsely satisfy the stability screen.
