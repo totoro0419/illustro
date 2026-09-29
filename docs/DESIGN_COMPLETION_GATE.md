@@ -156,6 +156,7 @@ Canonical Gate E specification:
 - [Left UI — Canonical Specification](ui/LEFT_UI_SPEC.md)
 - [Right UI — Canonical Specification](ui/RIGHT_UI_SPEC.md)
 - [Expanded / Medium Visual Review Record](ui/UI_GATE_E_VISUAL_REVIEW_2026-09-29.md)
+- [Compact / Smartphone UI Candidate](ui/COMPACT_UI_SPEC.md)
 - [Right UI Feature Coverage](ui/RIGHT_UI_FEATURE_COVERAGE.md)
 - [Right UI Quality Review](ui/RIGHT_UI_QUALITY_REVIEW.md)
 - [Right Workspace — Default Layout & Collapse](ui/RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
@@ -179,7 +180,7 @@ The default left-tool set, several controller details, and remaining device-spec
 
 Expanded and Medium visual composition have been rendered, corrected, inspected, and **approved by the user on 2026-09-29**.
 
-Gate E is not yet overall PASS because the required Compact / smartphone visual projection has not yet been reviewed, and runtime-only behavior remains unverified where applicable.
+Gate E is not yet overall PASS. Compact / smartphone now has a documented candidate architecture (`COMPACT_UI_SPEC.md`), but its toolbar allocation, page organizer, PiP geometry and visual composition still require HTML prototype review. Runtime-only behavior remains unverified where applicable.
 
 ## 10. Production authorization Gate F
 
