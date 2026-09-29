@@ -1,7 +1,7 @@
 # Brush V2 Device Validation — 2026-09-29
 
-> Result: **BROWSER RUNTIME PASS / REPRESENTATIVE TABLET PHYSICAL-PEN PASS / SUSTAINED+PERCEPTUAL EVIDENCE PENDING**
-> Production Gate B: **CONDITIONAL — TABLET PHYSICAL-PEN SUBGATE PASSED**
+> Result: **BROWSER RUNTIME PASS / REPRESENTATIVE TABLET PHYSICAL-PEN PASS / PERCEPTUAL PASS / SUSTAINED-THERMAL PROXY PASS**
+> Production Gate B: **PASS / CLOSED FOR REPRESENTATIVE TABLET PROFILE**
 > Scope: non-Production V2 Brush target-device harness
 
 ## 1. What was implemented
@@ -125,15 +125,37 @@ Passed:
 - browser-runtime boundedness gate;
 - representative Tablet physical-Pen execution gate.
 
-Still open:
+Sustained / thermal-proxy evidence was subsequently collected on the same representative Tablet profile.
 
-- sustained multi-minute runtime/thermal behavior on the target tablet;
-- Desktop/Smartphone device certification if those profiles are claimed.
+Clean sustained record:
+
+```text
+automatic elapsed            = 180.076 s
+visibility interruptions     = 0
+generated automatic samples  = 8,877,743
+max pending pages            = 8
+stress throughput initial    = 72,154 samples/s
+stress throughput recent     = 74,914 samples/s
+throughput drop              = -3.82% (no degradation)
+stress frame p95 initial     = 16.700 ms
+stress frame p95 recent      = 16.700 ms
+frame rise                   = 0%
+post-stress Pen samples      = 500
+post-stress pipeline p95     = 0.200 ms
+post-stress receive→RAF p95  = 11.500 ms
+post-stress pressure range   = 0.612379
+post-stress tilt             = observed
+user thermal observation     = normal / not noticeable
+```
+
+Every recorded automatic bucket has acceptedSamples == generatedSamples. The high stress phase intentionally drives the queue to its configured 8-page bound; its backpressure count is therefore a stress-load signal, not accepted-sample loss. The realistic 240 Hz baseline showed zero backpressure.
 
 Perceptual confirmation was supplied by the user after the physical run: no noticeable tracking delay, hitching, or excessive stabilization was observed with the selected One Euro `4/4/1` profile.
 
 Therefore:
 
-> **Brush Gate B = CONDITIONAL — TABLET PHYSICAL-PEN + PERCEPTUAL SUBGATES PASSED; SUSTAINED/THERMAL EVIDENCE PENDING**
+> **Brush Gate B = PASS / CLOSED FOR THE REPRESENTATIVE TABLET PROFILE**
 
-No Production Brush implementation is authorized by this result.
+Desktop and Smartphone remain separate device-profile certifications if they are claimed as supported performance profiles.
+
+This gate result still does **not** authorize Production by itself; Gate F/user authorization remains separate.
