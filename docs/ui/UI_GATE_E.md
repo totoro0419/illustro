@@ -1,6 +1,6 @@
 # Illustro UI Gate E — Core UI Surface & Workspace
 
-> Status: **DEFINITION IN REVISION / VISUAL PROTOTYPE PENDING**
+> Status: **DEFINITION IN REVISION / EXPANDED + MEDIUM VISUAL REVIEW PASSED / COMPACT PENDING**
 > Date: 2026-09-29
 > Scope: Core painting UI shell, Workspace, Context Surface, Quick Controller, device layout, Focus Mode and visual acceptance.
 > Production effect: **None. This document does not authorize Production implementation.**
@@ -127,6 +127,7 @@ Canonical design:
 - [Left UI — Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md)
 - [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 - [Right UI — Canonical Specification](RIGHT_UI_SPEC.md)
+- [Expanded / Medium Visual Review Record](UI_GATE_E_VISUAL_REVIEW_2026-09-29.md)
 - [Right UI Feature Coverage](RIGHT_UI_FEATURE_COVERAGE.md)
 - [Right UI Quality Review](RIGHT_UI_QUALITY_REVIEW.md)
 - [Right Workspace — Box Taxonomy](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
@@ -290,19 +291,25 @@ Completed:
 - motion/persistence/performance contracts
 - PC/tablet inline/overlay projection rule
 
-### Visual/runtime validation: **PENDING**
+### Visual composition: **PASS — EXPANDED / MEDIUM USER REVIEWED**
 
-Not yet verified:
+Recorded in `UI_GATE_E_VISUAL_REVIEW_2026-09-29.md`.
 
+Approved visual-composition baseline includes the corrected Right Workspace, same-width anchored Layer Page, Tablet projection, fixed bottom strip, and reduced Quick Controller geometry.
+
+### Remaining visual/runtime validation: **PENDING**
+
+Not yet verified/finalized:
+
+- Compact / smartphone visual composition
 - final color/theme and icon art
 - final font/pixel polish
-- rendered visual balance
-- empirical usability at intermediate window sizes
+- empirical usability at intermediate window sizes beyond the reviewed prototypes
 - measured drag/magnetic thresholds
 - actual pointer/pen/touch/keyboard runtime behavior
 - performance under large layer/asset/history data
 
-These must remain `UNVERIFIED` until prototype/runtime testing.
+These remain `UNVERIFIED` until their own prototype/runtime testing.
 
 ## 4. Expanded layout baseline
 
@@ -407,6 +414,16 @@ Default profile:
 - leftmost slot: Undo;
 - rightmost slot: Redo;
 - remaining four slots: user-chosen.
+
+Expanded / Medium visual baseline approved on 2026-09-29:
+
+- overall footprint: **112×112 CSS px**;
+- donut outer diameter: **100 px**;
+- donut inner diameter: **44 px**;
+- button disc diameter: **28 px**;
+- button-center radius: **36 px**, flat-top regular hexagon.
+
+These are approved visual baseline tokens for PC/tablet; runtime hit testing may use larger invisible effective targets.
 
 All six slots, including the default Undo/Redo slots, are user-customizable and may be reordered. The left/right Undo/Redo mapping is a default, not a permanent restriction.
 
