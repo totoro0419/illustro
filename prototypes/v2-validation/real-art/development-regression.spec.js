@@ -11,6 +11,7 @@ import { REGION_V3_FINAL_BLIND_8 } from './final-blind8-manifest.js';
 import { REGION_V3_FINAL_BLIND_9 } from './final-blind9-manifest.js';
 import { REGION_V3_FINAL_LARGE } from './final-large-manifest.js';
 import { REGION_V3_FINAL_LARGE_2 } from './final-large2-manifest.js';
+import { REGION_V4_FINAL_LARGE_3 } from './final-large3-manifest.js';
 import { buildRealArtEvidenceV3 } from './evidence-v3.js';
 import { classifyV4, FIXED_V4_POLICY } from './v4-classifier.js';
 
@@ -27,13 +28,14 @@ const CORPORA = [
   REGION_V3_FINAL_BLIND_9,
   REGION_V3_FINAL_LARGE,
   REGION_V3_FINAL_LARGE_2,
+  REGION_V4_FINAL_LARGE_3,
 ];
 
 const DEVELOPMENT_FLOOR = Object.freeze({
-  totalQueries: 138,
-  minimumOverallPass: 125,
-  expectedByLabel: Object.freeze({ closed: 43, open: 61, ambiguous: 34 }),
-  minimumPassByLabel: Object.freeze({ closed: 39, open: 58, ambiguous: 31 }),
+  totalQueries: 162,
+  minimumOverallPass: 146,
+  expectedByLabel: Object.freeze({ closed: 51, open: 69, ambiguous: 42 }),
+  minimumPassByLabel: Object.freeze({ closed: 46, open: 66, ambiguous: 38 }),
 });
 
 async function fetchBytes(url) {
@@ -80,7 +82,7 @@ async function decodeLuma(page, bytes, contentType) {
   }, { base64, contentType, maxSide: MAX_SIDE });
 }
 
-test('V4 exposed Region corpus including both exposed large-final failures meets development floor', async ({ page }) => {
+test('V4 exposed Region corpus including all three exposed large-final failures meets development floor', async ({ page }) => {
   test.setTimeout(240000);
 
   const items = CORPORA.flat();
