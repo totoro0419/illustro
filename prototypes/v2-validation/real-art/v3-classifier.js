@@ -389,7 +389,9 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     closure.samples >= 1000 &&
     local.line >= 0.60 &&
     local.texture >= 0.65 &&
-    closure.texture >= 0.40;
+    closure.texture >= 0.40 &&
+    closure.texture < 0.60 &&
+    closure.wash >= 0.18;
 
   // Tiny high-texture cells inside complex line networks should remain
   // ambiguous unless the local and boundary orientation are unusually strong.
