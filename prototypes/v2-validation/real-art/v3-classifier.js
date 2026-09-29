@@ -159,6 +159,29 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     local.texture >= 0.70 &&
     closure.texture <= local.texture + 0.08;
 
+  // A closed boundary need not be dominated by one cue. Two complementary
+  // structural modes cover faint clean contours and moderately textured,
+  // directionally coherent contours without relaxing the clutter guards.
+  const lowArtifactStructuralClosure = !!closure &&
+    closure.line >= 0.44 &&
+    closure.coherence >= 0.65 &&
+    closure.bridge >= 0.30 &&
+    closure.texture < 0.15 &&
+    closure.wash < 0.30 &&
+    closure.samples >= 12;
+
+  const coherentStructuralClosure = !!closure &&
+    closure.line >= 0.62 &&
+    closure.coherence >= 0.70 &&
+    closure.bridge >= 0.25 &&
+    closure.texture < 0.55 &&
+    closure.wash < 0.35 &&
+    closure.samples >= 5;
+
+  const structuralClosure =
+    lowArtifactStructuralClosure ||
+    coherentStructuralClosure;
+
   const softBoundaryClosure = !!closure &&
     closure.softEdge >= 0.34 &&
     closure.softCoherence >= 0.60 &&
@@ -191,7 +214,8 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     cleanCoherentClosure ||
     strongCoherentClosure ||
     bridgeSupportedClosure ||
-    denseOutlinedClosure;
+    denseOutlinedClosure ||
+    structuralClosure;
 
   let label = 'ambiguous';
   if (nearFrame && groups.conservative === 'open' && groups.balanced === 'open' && groups.permissive === 'open') {
@@ -300,6 +324,9 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     strongCoherentClosure,
     bridgeSupportedClosure,
     denseOutlinedClosure,
+    lowArtifactStructuralClosure,
+    coherentStructuralClosure,
+    structuralClosure,
     softBoundaryClosure,
     clutterEnclosure,
     microTextureAccidentalClosure,
