@@ -667,7 +667,7 @@ A Custom Stack containing the active item may show a small active-child marker b
 
 ## 12. Workspace/PiP routing
 
-Workspace/PiP Pins and category items use **open/focus** semantics.
+Workspace/PiP Pins and category items use **open/focus** semantics. Application-global Settings entries use the same Left/Search deep-link model but route to the dedicated Settings surface instead of a Right Box.
 
 1. closed -> open in remembered/default magnetic position;
 2. open/docked -> focus;
