@@ -122,12 +122,13 @@ It is icon-first and split into:
 
 Canonical design:
 
+- [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
 - [Left UI Access Architecture](LEFT_UI_ACCESS_ARCHITECTURE.md)
 - [Left UI — Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md)
 - [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 - [Left Tool Surface — Option Catalog](LEFT_TOOL_SURFACE_OPTIONS.md)
 
-The default visible set is intentionally not fixed yet.
+The default PC/tablet Rail is fixed in `LEFT_UI_SPEC.md`: Brush, Eraser, Smudge/Blend, Eyedropper, Smart Fill, Selection, Transform, Move, plus fixed All Features.
 
 Selecting a Tool/Mode activates Canvas behavior. Selecting a settings/panel item opens or focuses the corresponding right magnetic Workspace/PiP block. Immediate Commands execute through the same semantic Command used by shortcuts, Quick Controller and other surfaces.
 
@@ -186,6 +187,36 @@ Global discovery and execution fallback.
 
 Search indexes commands, tools, panels, brushes, macros, settings and selected-context actions.
 
+## 3.7 Left UI subgate
+
+### Semantic / interaction design: **COMPLETE**
+
+Canonical authority:
+
+- [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
+
+Completed:
+
+- universal access-root role
+- default Rail
+- fixed All Features route
+- 12-category taxonomy
+- complete category ownership
+- Pin / Overflow / Stack semantics
+- Tool Family semantics
+- Search aliases
+- Canvas / Command / Right-PiP routing
+- PC/tablet projection
+- customization transaction
+- state/error/accessibility/persistence/performance contracts
+- current FEATURE_CATALOG coverage audit
+
+### Visual/runtime validation: **PENDING**
+
+Color/theme, final icon art, exact sizing, rendered density, hit-testing, focus/runtime behavior and measured performance remain unverified.
+
+This does not block continuing the rest of Gate E design, but Left UI semantics should not be reinvented during implementation without a concrete defect and explicit spec update.
+
 ## 4. Expanded layout baseline
 
 Reference prototype viewport: **1440 × 900**.
@@ -195,7 +226,7 @@ This is a prototype reference size, not a fixed product requirement.
 ### Structure
 
 - minimal top document/app strip for non-drawing application/document operations such as Home and Save; Undo/Redo do not live here
-- stable icon-first left universal access surface (Pinned Rail + All Features)
+- stable icon-first left universal access surface using the canonical default Rail + fixed All Features
 - central Canvas
 - right magnetic Workspace/PiP stack
 - transient Context Surface inside the Canvas working region
