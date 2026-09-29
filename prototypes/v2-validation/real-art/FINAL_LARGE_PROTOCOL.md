@@ -1,7 +1,10 @@
 # Gate C Large Final Blind Protocol
 
-> Status: **PROTOCOL FROZEN — LABELS/SEEDS NOT YET FROZEN**
+> Status: **READY FOR ONE-SHOT FINAL — LABELS/SEEDS/SOURCES FROZEN**
 > Date: 2026-09-29
+> Candidate-source freeze: `9d65bc51fdd1892207eae2298b6c81365eea448a`
+> Label/seed/source-hash freeze: `4d4542551f71573764e1155e2c9315592d2cb990`
+> Classifier/evidence freeze: `28b90c658004ee1c83ce25d93cb50a856f50ab22`
 
 ## Why this replaces blind #1–#9
 
@@ -87,3 +90,14 @@ After labels/seeds and classifier/evidence freeze SHAs are recorded:
 4. FAIL keeps Gate C open and exposes this corpus permanently.
 
 No sequence of replacement mini-blinds is permitted after this point.
+
+
+## Frozen execution state
+
+The final evaluator must import `final-large-manifest.js` exactly as frozen at
+`4d4542551f71573764e1155e2c9315592d2cb990` and execute the Region implementation
+whose last algorithm change is `28b90c658004ee1c83ce25d93cb50a856f50ab22`.
+
+Source bytes are additionally guarded by the per-image SHA-256 values in the manifest.
+Any source digest mismatch invalidates the run rather than silently evaluating a
+different image.
