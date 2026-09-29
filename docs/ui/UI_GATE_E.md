@@ -123,6 +123,7 @@ It is icon-first and split into:
 Canonical design:
 
 - [Left UI Access Architecture](LEFT_UI_ACCESS_ARCHITECTURE.md)
+- [Left UI — Pinned Rail Specification](LEFT_PINNED_RAIL_SPEC.md)
 - [Left UI Access Coverage](LEFT_UI_ACCESS_COVERAGE.md)
 - [Left Tool Surface — Option Catalog](LEFT_TOOL_SURFACE_OPTIONS.md)
 
