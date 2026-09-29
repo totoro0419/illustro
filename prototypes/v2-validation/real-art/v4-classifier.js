@@ -122,22 +122,80 @@ export function classifyV4(bundle, query, policy = FIXED_V4_POLICY) {
     radial.strongFraction >= policy.quietRadialMinimumStrongFraction &&
     radial.weakArcFraction <= policy.quietRadialMaximumWeakArcFraction;
 
-  const quietRadialRescue =
+  // V3 can report Open when all threshold hypotheses leak through a faint frame.
+  // If every angular sector sees strong enclosing evidence, the topology is not
+  // genuinely exterior-connected. Broad wash with almost no texture is kept
+  // Ambiguous rather than force-closed because it often represents scene content
+  // rather than one intended fill face.
+  const radialWashAmbiguity =
     legacy.label === 'open' &&
     !legacy.nearFrame &&
-    quietInterior &&
-    fullRadialEnclosure;
+    fullRadialEnclosure &&
+    legacy.local.texture <= 0.10 &&
+    legacy.local.wash >= 0.20;
 
-  const label = quietRadialRescue ? 'closed' : legacy.label;
+  const radialEnclosureRescue =
+    legacy.label === 'open' &&
+    !legacy.nearFrame &&
+    fullRadialEnclosure &&
+    !radialWashAmbiguity;
+
+  // When V3 is already Ambiguous but the balanced/permissive topology is Closed,
+  // combine radial support, closed-vote share, and low local texture into one
+  // continuous confidence score. This covers both pale panels and strongly
+  // washed framed fields without per-artwork thresholds.
+  const ambiguousClosureScore =
+    radial.confidence +
+    legacy.counts.closed / 9 +
+    0.5 * (1 - legacy.local.texture);
+
+  const ambiguousClosureRescue =
+    legacy.label === 'ambiguous' &&
+    !legacy.nearFrame &&
+    fullRadialEnclosure &&
+    legacy.groups.balanced === 'closed' &&
+    legacy.groups.permissive === 'closed' &&
+    ambiguousClosureScore >= 2.08;
+
+  // Dense, low-wash line networks can create a closed topology even when the
+  // local stroke field is only moderately strong and directionally mixed. Keep
+  // those cases Ambiguous instead of trusting the accidental cell.
+  const denseNetworkAmbiguity =
+    legacy.label === 'closed' &&
+    legacy.local.texture >= 0.60 &&
+    legacy.local.wash < 0.30 &&
+    legacy.local.line < 0.60 &&
+    legacy.local.coherence > 0.48;
+
+  let label = legacy.label;
+  let decision = 'v3-preserved';
+  if (radialWashAmbiguity) {
+    label = 'ambiguous';
+    decision = 'radial-wash-ambiguity';
+  } else if (radialEnclosureRescue) {
+    label = 'closed';
+    decision = 'radial-enclosure-rescue';
+  } else if (ambiguousClosureRescue) {
+    label = 'closed';
+    decision = 'radial-topology-confidence-rescue';
+  } else if (denseNetworkAmbiguity) {
+    label = 'ambiguous';
+    decision = 'dense-network-ambiguity';
+  }
 
   return {
     ...legacy,
     label,
-    decision: quietRadialRescue ? 'quiet-radial-enclosure-rescue' : 'v3-preserved',
+    decision,
     legacyLabel: legacy.label,
     radial,
     quietInterior,
     fullRadialEnclosure,
-    quietRadialRescue,
+    quietRadialRescue: radialEnclosureRescue,
+    radialWashAmbiguity,
+    radialEnclosureRescue,
+    ambiguousClosureScore,
+    ambiguousClosureRescue,
+    denseNetworkAmbiguity,
   };
 }
