@@ -1,9 +1,10 @@
-# Illustro Right Workspace — Box Taxonomy Candidate V1
+# Illustro Right Workspace — Box Taxonomy Candidate V2
 
-> Status: **CANDIDATE TAXONOMY / USER REVIEW PENDING**
+> Status: **CANDIDATE TAXONOMY V2 / GENERAL-UI RESEARCH APPLIED / USER REVIEW PENDING**
 > Date: 2026-09-29
 > Scope: PC / tablet right magnetic Workspace/PiP
 > Related: [Left UI — Canonical Specification](LEFT_UI_SPEC.md)
+> General UI research: [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
 > Parent: [UI Gate E](UI_GATE_E.md)
 
 ## 1. Role
@@ -204,9 +205,17 @@ Context sections include:
 
 - position/state properties for the selected Reference entity
 
-Rule:
+Inspector behavior:
 
-A Tool activation must not automatically force this Box open if the user has closed it. The Box reflects current context when open.
+- default mode: **Follow Context**;
+- optional mode: **Lock Context** to keep the current target while Canvas/tool selection changes;
+- header shows the current target/context path;
+- local property search/filter is available;
+- selection/tool changes update an open unlocked Inspector, but never auto-open a closed Inspector;
+- context changes never steal keyboard focus;
+- deep-links from Left/Search reveal the exact section predictably.
+
+Lock Context is Workspace state, not Artwork state.
 
 ### R5 — Effects & Adjustments
 
@@ -214,20 +223,21 @@ Primary purpose:
 
 > Build and edit non-destructive image/layer processing.
 
-Contains:
+Owns the **non-destructive effect/adjustment stack**, including:
 
-- Adjustment Layer browser/editor
-- Filter Layer browser/editor
+- Adjustment Layer creation/list
+- Filter Layer creation/list
 - Live Blur
 - Live Color Adjustment
 - Core Adjustment Set
 - Core Live Filter Set
 - Blend If equivalent
 - Displacement
+- Filter enable/disable
 - Filter masking
 - Filter reorder
 - Filter opacity / blend
-- Layer Style editors:
+- Layer Style stack:
   - Stroke
   - Drop / Inner Shadow
   - Outer / Inner Glow
@@ -235,7 +245,9 @@ Contains:
   - Bevel / Emboss
 - destructive Apply entry only as an explicit alternative
 
-Healing / Patch / Clone remain Canvas Tools; their current Tool options belong in Inspector.
+Detailed parameters of the currently selected effect/adjustment are shown primarily in **Properties / Inspector**. This avoids two competing parameter editors.
+
+Healing / Patch / Clone remain Canvas Tools; their current Tool options also belong in Inspector.
 
 ### R6 — Reference
 
@@ -331,8 +343,11 @@ Contains:
 - Action Recording
 - Parameterized Action
 - Macro Presets
-- Shortcut Assignment entry
-- Quick Controller registration entry
+
+Cross-actions:
+
+- assign shortcut -> dedicated Settings surface
+- add/register to Quick Controller -> Quick Controller customization surface
 
 Macro assets are browsable from Assets but edited/recorded here.
 
@@ -380,34 +395,36 @@ Contains:
 
 File pickers and OS-level import/export flows are not forced into a PiP Box.
 
-### R12 — Workspace & Input
+### R12 — Workspace
 
 Primary purpose:
 
-> Configure the working environment rather than the artwork.
+> Configure the **current workspace layout**, not global application preferences.
 
 Contains:
 
-- magnetic Workspace layout controls
-- Panel Resize / Reorder / Hide settings
+- magnetic Box layout controls
+- Box resize / reorder / hide controls
 - Workspace Save / Load
 - Workspace Presets
 - Left / Right UI mirror
-- Left UI customization entry
-- Quick Controller configuration
-- Keyboard Shortcuts
-- Custom Shortcut / capture
-- Gesture / Custom Gesture
-- stylus input options
-- UI / Text scaling
-- Single-pointer alternatives
-- Reduced Motion
-- feedback sound / haptic
-- language/locale controls where exposed
-- Plugin / Extension management when implemented
-- Diagnostics when intentionally exposed
+- Reset Workspace Layout
+- Left UI layout/customization entry
+- Quick Controller profile/layout entry
 
-This is secondary and should not be part of the default always-open painting workspace.
+Application-global settings such as:
+
+- keyboard shortcut editor;
+- custom gestures;
+- stylus/input defaults;
+- UI/text accessibility defaults;
+- Reduced Motion;
+- language/locale;
+- extension/plugin management
+
+belong to a dedicated **Settings surface**, reachable from Left/Search/top-level application controls.
+
+This Box is secondary and should not be part of the default always-open painting workspace.
 
 ## 4. Fixed right-side chrome outside Boxes
 
@@ -435,7 +452,7 @@ Undo / Redo may also be assigned anywhere in the enabled six-slot Quick Controll
 | Automation | macros/actions |
 | Navigator & View | viewport/navigation/diagnostic views |
 | Document | document properties/color management/save state |
-| Workspace & Input | application workspace/input configuration |
+| Workspace | workspace layout/preset/reset configuration |
 
 ## 6. Left UI load transfer
 
@@ -462,7 +479,8 @@ Examples:
 - `履歴・自動化 -> Automation` -> R9
 - `キャンバス・表示 -> Navigator` -> R10
 - `ドキュメント・編集・出力 -> Document Properties` -> R11
-- `ワークスペース・設定 -> Workspace & Input` -> R12
+- `ワークスペース・設定 -> Workspace` -> R12
+- global input/accessibility/language/shortcut settings -> dedicated Settings surface
 
 ### Exact-setting search remains available
 
@@ -496,6 +514,47 @@ Where applicable they may be:
 - pinned;
 - hidden/restored.
 
+### Magnetic movement contract
+
+Dragging a Box header:
+
+- shows the intended insertion/snap destination before commit;
+- commits only on release;
+- Escape cancels;
+- invalid drops return to the previous position;
+- keyboard **Move Box...** provides an equivalent non-drag path.
+
+Baseline docking is a vertical stack. Magnetic movement does **not** semantically merge unrelated Boxes into arbitrary user-created tab groups.
+
+### Recovery
+
+Each Box provides **Reset Location**.
+
+The Workspace provides **Reset Workspace Layout**.
+
+### Open/focus semantics
+
+Invoking a Box from Left/Search:
+
+- closed -> open;
+- docked/open -> focus/reveal;
+- detached/open -> bring forward;
+- off-screen -> restore into a visible safe area.
+
+Repeated invocation does not toggle the Box closed.
+
+### Header baseline
+
+Keep permanent header chrome sparse:
+
+- short title;
+- current context indicator where relevant;
+- collapse/expand;
+- detach/re-dock;
+- More.
+
+Low-frequency actions such as Reset Location, Hide, and Inspector Lock Context live under More unless later testing justifies promotion.
+
 Do not fragment individual sliders or tiny property groups into separate PiP windows.
 
 A Box may contain tabs/sections only when they share one clear work purpose.
@@ -522,11 +581,23 @@ Usually opened when needed:
 - History & Progress
 - Automation
 - Document
-- Workspace & Input
+- Workspace
 
 This distinction is **not** a default layout decision yet. It only informs later default-workspace design.
 
-## 9. UIimprove checks
+## 9. General professional-UI rules now applied
+
+- Canvas remains the primary content region.
+- Each Box has one clear work purpose.
+- Inspector follows context by default but can be locked.
+- Selected effect/layer/reference detail may flow into Inspector rather than duplicating editors.
+- flexible layout always has Reset Location / Reset Workspace recovery.
+- Box relocation has a keyboard path and visible drop preview.
+- focus order follows logical Box order; focus alone never changes document/tool context.
+- tablet may use a more overlay-oriented projection while preserving Box identity.
+- collapsed/hidden Boxes must be near-zero recurring work.
+
+## 10. UIimprove checks
 
 Applied design constraints:
 
@@ -539,9 +610,11 @@ Applied design constraints:
 - closing a Box does not make its capability undiscoverable because Left/Search can restore it;
 - runtime/visual validation remains pending.
 
-## 10. Current recommendation
+## 11. Current recommendation
 
-Proceed with these **12 Box types** as the Right Workspace candidate taxonomy.
+Proceed with these **12 semantic Box types** as the Right Workspace candidate taxonomy.
+
+The twelfth Box is now **Workspace**, not a catch-all Workspace & Input panel. Global application settings use a dedicated Settings surface.
 
 The most important architectural decisions are:
 
@@ -551,7 +624,11 @@ The most important architectural decisions are:
 4. keep Reference separate from the generic Asset Library;
 5. group Undo History / Snapshot / Timelapse / Work Time in one History & Progress Box using distinct tabs;
 6. keep Automation separate from History;
-7. move detailed setting density from Left browsing into Right Boxes while preserving Left deep links/search.
+7. move detailed setting density from Left browsing into Right Boxes while preserving Left deep links/search;
+8. use Inspector context-path + Follow/Lock Context;
+9. require Reset Location / Reset Workspace Layout;
+10. keep Box headers sparse and drag operations previewable/reversible;
+11. avoid arbitrary semantic tab-merging of unrelated Boxes.
 
 The next design step is to decide:
 
