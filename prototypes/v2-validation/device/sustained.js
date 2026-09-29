@@ -197,8 +197,6 @@ function startRun() {
   phase = 'auto';
   startButton.disabled = true;
   stopButton.disabled = false;
-  copyButton.disabled = true;
-  selectJsonButton.disabled = true;
   heatSelect.value = '';
   runStart = performance.now();
   acceptedAtStart = pipeline.totalAccepted;
@@ -237,8 +235,6 @@ function finalize() {
   if (phase !== 'post-pen') return;
   phase = 'done';
   if (wakeLock && !wakeLock.released) wakeLock.release();
-  copyButton.disabled = false;
-  selectJsonButton.disabled = false;
   render();
 }
 
