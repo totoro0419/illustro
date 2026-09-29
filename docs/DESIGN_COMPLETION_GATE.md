@@ -146,16 +146,18 @@ The Library Section 9 draft is reference-only.
 ## 9. UI Gate E
 
 ### Definition: **IN REVISION**
+### Left UI semantic / interaction subgate: **COMPLETE**
 ### Visual prototype/user review: **PENDING**
 
 Canonical Gate E specification:
 
 - [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
+- [Left UI — Canonical Specification](ui/LEFT_UI_SPEC.md)
 
 Confirmed / currently recorded decisions include:
 
 - Canvas-dominant shell
-- icon-first customizable Left Access Surface with Pinned Rail, fixed All Features route, stable overflow, pinnable category shortcuts and one-level custom stacks
+- completed PC/tablet Left Access Surface semantics: creation-first default Rail, fixed All Features, 12 categories, stable overflow, Pin/Stack/Search/customization, and Canvas/Command/Right-PiP routing
 - top bar reserved for application/document operations rather than drawing controls
 - magnetic detachable/reorderable right Workspace/PiP blocks
 - PC/tablet pen-following six-slot Quick Controller
