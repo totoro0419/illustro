@@ -119,17 +119,19 @@ This exceeds WCAG 2.2's 24 CSS px minimum target baseline while retaining deskto
 
 ### 5.2 Touch / pen-capable Medium profile
 
+Tablet/pen projection keeps the **same visible UI grammar and density as the pointer profile unless a concrete touch requirement demands otherwise**.
+
 - default Right Workspace width: **360 CSS px**
 - minimum: **320 CSS px**
 - maximum: **440 CSS px**
-- Box header / collapsed height: **48 CSS px**
-- standard content horizontal padding: **16 CSS px**
-- standard control row: **44 CSS px minimum effective height**
-- bottom command strip height: **52 CSS px**
-- Box icon visual size: **20–22 CSS px**
-- primary interactive targets: **44×44 CSS px minimum effective area**
+- Box header / collapsed visible height: **40 CSS px**
+- standard content horizontal padding: **12 CSS px**
+- standard control-row visible height: **32 CSS px**
+- bottom command strip visible height: **44 CSS px**
+- Box icon visual size: **18–20 CSS px**
+- primary interactive **effective** targets: **44×44 CSS px minimum**, implemented through hit area/spacing rather than visually enlarging every control
 
-This adopts the stronger 44-class target baseline for touch/pen use.
+Tablet therefore does not become a separately enlarged UI. Only hit areas, magnetic targets and vertical fit adapt as necessary.
 
 ### 5.3 Inline vs overlay projection
 
@@ -332,13 +334,14 @@ Pointer profile default heights:
 - Color: **216 px**
 - Brush: **240 px**
 
-Touch/pen profile default heights:
+Touch/pen profile:
 
-- Layers: **288 px**
-- Color: **248 px**
-- Brush: **288 px**
+- uses the same content structure and visual density as the pointer profile;
+- does **not** enlarge all three default Boxes merely because touch/pen is available;
+- when vertical space is constrained, Layers / Color / Brush content heights may compact just enough to avoid controls protruding behind the fixed bottom strip;
+- if further reduction would make internal controls unusable, the outer Box stack scrolls instead.
 
-These are starting Workspace values, not hard maxima.
+These are Workspace presentation rules, not artwork state.
 
 Expanded remembered height range:
 
@@ -564,17 +567,20 @@ Layer Page is the expanded ibisPaint-inspired layer-management surface.
 
 It is a **single instance** sharing the exact Layer model/commands with Layers Box.
 
-### Pointer profile
+### Anchored width
 
-- default width: **480 CSS px**
-- minimum: **400 CSS px**
-- maximum: **600 CSS px**
+When Layer Page is docked/anchored, its width is **exactly the current Right Workspace width**.
 
-### Touch/pen profile
+Therefore:
 
-- default width: **440 CSS px**
-- minimum: **360 CSS px**
-- maximum: **min(520 CSS px, 62vw)**
+- pointer default: **344 CSS px** when the Right Workspace is at its default width;
+- touch/pen default: **360 CSS px** when the Right Workspace is at its default width;
+- resizing the Right Workspace also changes the anchored Layer Page width;
+- there is no separate wider Layer Page width token.
+
+This keeps the Layer Page visually continuous with the Right UI instead of appearing as an unrelated second sidebar.
+
+A **floating** Layer Page may have an independent remembered width after explicit detachment.
 
 Layer Page is an anchored right overlay by default.
 
@@ -596,8 +602,9 @@ This ordering keeps high-frequency layer properties stable while the layer list 
 
 ## 20. Layer Page header
 
-Pointer height: **44 px**
-Touch/pen height: **52 px**
+Visible height: **44 px** in both pointer and tablet projections.
+
+Touch/pen may enlarge the effective hit area without visually enlarging the title bar.
 
 Contains:
 
@@ -623,8 +630,8 @@ Escape closes anchored Layer Page when no deeper interaction owns Escape.
 
 Height target:
 
-- pointer: **72–88 px**
-- touch: **88–104 px**
+- **72–88 px** visible height in both pointer and tablet projections;
+- touch/pen effective targets may expand inside this region without changing the overall page density.
 
 Always relevant controls:
 
@@ -641,8 +648,7 @@ Type-specific deep properties remain in Inspector.
 
 ## 22. Layer Page search/filter row
 
-Pointer height: **40 px**
-Touch height: **48 px**
+Visible height: **40 px** in both pointer and tablet projections.
 
 Contains:
 
@@ -671,8 +677,9 @@ Search/filter never mutates artwork.
 
 ## 23. Layer Page row anatomy
 
-Pointer row height: **40 px**
-Touch/pen row height: **48 px**
+Visible row height: **40 px** in both pointer and tablet projections.
+
+Touch/pen uses larger effective hit regions around row controls without turning the entire Layer Page into a larger-density variant.
 
 Row left -> right:
 
@@ -686,9 +693,10 @@ Row left -> right:
 
 Project tokens:
 
-- thumbnail: **28 px pointer / 36 px touch**
-- hierarchy indent step: **16 px pointer / 20 px touch**
-- primary row icon effective target: **32 px pointer / 44 px touch**
+- thumbnail visual size: **28 px**
+- hierarchy indent step: **16 px**
+- pointer row-control effective target: **32 px**
+- touch/pen row-control effective target: **44 px**, achieved through hit region rather than a larger visual icon
 
 Selected state is not indicated by color alone.
 
@@ -714,8 +722,9 @@ Layers Box, Layer Page, Canvas selection and Inspector synchronize immediately.
 
 Fixed at Layer Page bottom.
 
-Pointer height: **44 px**
-Touch/pen height: **52 px**
+Visible height: **44 px** in both pointer and tablet projections.
+
+Touch/pen increases effective target area without increasing the strip height.
 
 Primary actions:
 
