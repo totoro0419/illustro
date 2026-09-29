@@ -55,6 +55,150 @@ function componentBoundaryStats(bundle, result, component) {
   };
 }
 
+function quantile(values, q) {
+  if (!values.length) return 0;
+  const sorted = values.slice().sort((a, b) => a - b);
+  const position = Math.max(0, Math.min(sorted.length - 1, Math.round((sorted.length - 1) * q)));
+  return sorted[position];
+}
+
+function componentBoundaryProfile(bundle, result, component, nx, ny) {
+  if (!component) return null;
+  const { width: w, height: h, features } = bundle;
+  const cells = new Set();
+  for (const i of component.cells) {
+    const x = i % w, y = Math.floor(i / w);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+      const ni = yy * w + xx;
+      if (result.mask[ni]) cells.add(ni);
+    }
+  }
+  if (!cells.size) return null;
+
+  const cx = Math.max(0, Math.min(w - 1, Math.round(nx * (w - 1))));
+  const cy = Math.max(0, Math.min(h - 1, Math.round(ny * (h - 1))));
+  const binCount = 32;
+  const support = new Array(binCount).fill(0);
+  const nearestDistance = new Array(binCount).fill(Infinity);
+
+  for (const i of cells) {
+    const x = i % w, y = Math.floor(i / w);
+    const dx = x - cx, dy = y - cy;
+    const angle = Math.atan2(dy, dx);
+    const bin = Math.max(0, Math.min(
+      binCount - 1,
+      Math.floor(((angle + Math.PI) / (2 * Math.PI)) * binCount),
+    ));
+    const score = Math.max(0, Math.min(1,
+      0.40 * features.line[i] +
+      0.20 * features.coherence[i] +
+      0.20 * features.bridge[i] +
+      0.12 * (features.softEdge?.[i] ?? 0) +
+      0.08 * (features.softCoherence?.[i] ?? 0) +
+      0.12 -
+      0.25 * features.texture[i] -
+      0.18 * features.wash[i]
+    ));
+    support[bin] = Math.max(support[bin], score);
+    nearestDistance[bin] = Math.min(nearestDistance[bin], Math.hypot(dx, dy));
+  }
+
+  const supported = support.map(value => value >= 0.40);
+  const geometryCoverage = nearestDistance.filter(Number.isFinite).length / binCount;
+  const supportCoverage = supported.filter(Boolean).length / binCount;
+  const strongFraction = support.filter(value => value >= 0.55).length / binCount;
+  let longestWeak = 0;
+  for (let start = 0; start < binCount; start += 1) {
+    let run = 0;
+    while (run < binCount && !supported[(start + run) % binCount]) run += 1;
+    longestWeak = Math.max(longestWeak, run);
+  }
+
+  const adjacentJumps = [];
+  let comparable = 0;
+  let continuous = 0;
+  for (let r = 0; r < binCount; r += 1) {
+    const a = nearestDistance[r], b = nearestDistance[(r + 1) % binCount];
+    if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
+    comparable += 1;
+    const jump = Math.abs(a - b) / Math.max(1, Math.min(a, b));
+    adjacentJumps.push(jump);
+    if (jump <= 0.35) continuous += 1;
+  }
+
+  const supportQ25 = quantile(support, 0.25);
+  const supportMedian = quantile(support, 0.50);
+  const weakArcFraction = longestWeak / binCount;
+  const adjacentDistanceContinuity = comparable ? continuous / comparable : 0;
+  const confidence = Math.max(0, Math.min(1,
+    0.28 * geometryCoverage +
+    0.24 * supportCoverage +
+    0.14 * strongFraction +
+    0.14 * (1 - weakArcFraction) +
+    0.10 * supportQ25 +
+    0.10 * adjacentDistanceContinuity
+  ));
+
+  return {
+    binCount,
+    geometryCoverage,
+    supportCoverage,
+    strongFraction,
+    weakArcFraction,
+    supportQ25,
+    supportMedian,
+    adjacentDistanceContinuity,
+    adjacentJumpQ75: quantile(adjacentJumps, 0.75),
+    confidence,
+  };
+}
+
+function topologyPersistenceProfile(runRecords) {
+  const closedRuns = runRecords.filter(run => run.label === 'closed' && run.component);
+  if (!closedRuns.length) {
+    return {
+      closedVoteFraction: 0,
+      stableClosedVoteFraction: 0,
+      closedIouQ25: 0,
+      closedIouMedian: 0,
+      closedAreaIqrNormalized: 1,
+      closedAreaMadNormalized: 1,
+    };
+  }
+
+  const ranked = closedRuns.slice().sort((a, b) => a.area - b.area);
+  const reference = ranked[Math.floor((ranked.length - 1) / 2)];
+  const referenceCells = new Set(reference.component.cells);
+  const referenceArea = reference.component.cells.length;
+  const ious = [];
+  for (const run of closedRuns) {
+    let intersection = 0;
+    for (const cell of run.component.cells) {
+      if (referenceCells.has(cell)) intersection += 1;
+    }
+    const union = referenceArea + run.component.cells.length - intersection;
+    ious.push(union > 0 ? intersection / union : 0);
+  }
+
+  const areas = closedRuns.map(run => run.area);
+  const areaMedian = quantile(areas, 0.50);
+  const areaQ25 = quantile(areas, 0.25);
+  const areaQ75 = quantile(areas, 0.75);
+  const areaMad = quantile(areas.map(area => Math.abs(area - areaMedian)), 0.50);
+  const stableClosedCount = ious.filter(iou => iou >= 0.65).length;
+
+  return {
+    closedVoteFraction: closedRuns.length / 9,
+    stableClosedVoteFraction: stableClosedCount / 9,
+    closedIouQ25: quantile(ious, 0.25),
+    closedIouMedian: quantile(ious, 0.50),
+    closedAreaIqrNormalized: areaMedian > 0 ? (areaQ75 - areaQ25) / areaMedian : 1,
+    closedAreaMadNormalized: areaMedian > 0 ? areaMad / areaMedian : 1,
+  };
+}
+
 function dominant3(labels) {
   const counts = { closed: 0, open: 0, ambiguous: 0 };
   for (const label of labels) counts[label] += 1;
@@ -73,6 +217,7 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
   const areas = [];
   const groups = {};
   const central = {};
+  const runRecords = [];
 
   for (const hypothesis of hypotheses) {
     const labels = [];
@@ -90,9 +235,11 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
       const result = resolveRegion(bundle.grids[hypothesis.name], policy);
       const component = seedComponent(result, query.seed[0], query.seed[1]);
       const label = component ? (component.touchesEdge ? 'open' : 'closed') : 'ambiguous';
+      const area = component ? component.area / (result.gridWidth * result.gridHeight) : null;
       labels.push(label);
       votes.push(label);
-      if (component) areas.push(component.area / (result.gridWidth * result.gridHeight));
+      if (area !== null) areas.push(area);
+      runRecords.push({ hypothesis: hypothesis.name, dt, label, area, component });
       if (dt === 0) {
         central[hypothesis.name] = {
           result,
@@ -114,6 +261,10 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     central.permissive?.label === 'closed' ? central.permissive :
     null;
   const closure = closedCentral?.boundary ?? null;
+  const boundary = closedCentral
+    ? componentBoundaryProfile(bundle, closedCentral.result, closedCentral.component, query.seed[0], query.seed[1])
+    : null;
+  const topologyPersistence = topologyPersistenceProfile(runRecords);
   const artifact = closure ? Math.max(closure.texture, closure.wash) : Math.max(local.texture, local.wash);
   const closureQuality = closure
     ? (0.50 * closure.line + 0.25 * closure.coherence + 0.25 * closure.bridge - 0.45 * artifact)
@@ -540,6 +691,8 @@ export function classifyV3(bundle, query, basePolicy = FIXED_V3_POLICY) {
     areaRange,
     local,
     closure,
+    boundary,
+    topologyPersistence,
     closureQuality,
     artifact,
     nearFrame,
