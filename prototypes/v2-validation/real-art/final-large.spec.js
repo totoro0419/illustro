@@ -15,6 +15,7 @@ async function fetchFrozenBytes(item) {
       const response = await fetch(item.imageUrl, {
         redirect: 'follow',
         headers: { 'user-agent': 'Illustro-Validation/1.0' },
+        signal: AbortSignal.timeout(15_000),
       });
       if (!response.ok) throw new Error('fetch ' + response.status + ' ' + item.imageUrl);
       const contentType = response.headers.get('content-type') || 'image/jpeg';
