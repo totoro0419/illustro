@@ -153,6 +153,7 @@ Canonical Gate E specification:
 
 - [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
 - [Left UI — Canonical Specification](ui/LEFT_UI_SPEC.md)
+- [Right Workspace — Default Layout & Collapse](ui/RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
 
 Confirmed / currently recorded decisions include:
 
