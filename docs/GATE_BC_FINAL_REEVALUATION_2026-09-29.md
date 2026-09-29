@@ -1,6 +1,6 @@
 # Gate B / C Final Re-evaluation — 2026-09-29
 
-> Status: **EXECUTION PACKAGE COMPLETE — BRUSH TABLET PEN SUBGATE PASSED / REGION GATE C BLOCKED**
+> Status: **EXECUTION PACKAGE COMPLETE — BRUSH GATE B CLOSED FOR REPRESENTATIVE TABLET / REGION GATE C BLOCKED**
 > Production: **LOCKED after Vertical Slice 001**
 
 ## 1. Requested work
@@ -62,14 +62,27 @@ Perceptual confirmation:
 - no noticeable hitching;
 - no excessive stabilization/oversmoothing was perceived with One Euro `4/4/1`.
 
-Unresolved:
+Sustained / thermal-proxy tablet evidence:
 
-- sustained multi-minute runtime/thermal behavior;
-- Desktop/Smartphone certification if those profiles are claimed.
+```text
+automatic elapsed             180.076 s
+visibility interruptions      0
+stress throughput             72,154 → 74,914 samples/s
+stress frame p95              16.700 → 16.700 ms
+max pending pages             8
+post-stress Pen samples       500
+post-stress pipeline p95      0.200 ms
+post-stress receive→RAF p95   11.500 ms
+user thermal observation      normal / not noticeable
+```
+
+All automatic buckets preserve generated == accepted sample counts. No sustained throughput or frame-pacing degradation was observed.
 
 Therefore:
 
-> **Gate B = CONDITIONAL — TABLET PEN + PERCEPTUAL PASS / SUSTAINED+THERMAL EVIDENCE PENDING**
+> **Gate B = PASS / CLOSED FOR REPRESENTATIVE TABLET PROFILE**
+
+Desktop/Smartphone remain separate device-profile certifications if those performance profiles are claimed.
 
 ## 3. Region Gate C
 
@@ -100,7 +113,7 @@ A fresh blind final set was intentionally **not** consumed, because the training
 These results do not authorize Production.
 
 - Gate A remains COMPLETE.
-- Gate B remains CONDITIONAL, but the representative Tablet physical-Pen subgate is PASS.
+- Gate B is CLOSED for the representative Tablet profile.
 - Gate C is BLOCKED.
 - Gate D physical format remains PENDING.
 - Gate E user UI decision remains PENDING.
@@ -114,6 +127,6 @@ Do **not** continue threshold tuning.
 
 The next Region step is a V3 Evidence prototype with multi-scale oriented boundary inference and texture/wash separation.
 
-The next Brush step is sustained/thermal validation of the already-passing tablet profile; no additional short physical-Pen or perceptual acquisition is required.
+No further Brush evidence is required for the representative Tablet profile. Desktop/Smartphone performance certification remains separate if those profiles are claimed.
 
 Those are independent: Region redesign can proceed without waiting for the physical Brush run.
