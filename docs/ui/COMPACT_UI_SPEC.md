@@ -1,6 +1,6 @@
 # Illustro Compact / Smartphone UI — Candidate Specification
 
-> Status: **CANDIDATE / USER CO-DESIGN IN PROGRESS**
+> Status: **CANDIDATE / HTML VISUAL PROTOTYPE GENERATED / USER REVIEW PENDING**
 > Date: 2026-09-29
 > Scope: Smartphone / Compact projection
 > Parent: [UI Gate E](UI_GATE_E.md)
@@ -479,3 +479,63 @@ Not yet locked:
 - portrait/landscape visual composition.
 
 Those should be decided through the next Compact HTML visual prototype and user review.
+
+
+## 21. Current HTML visual-review candidate
+
+A Compact HTML visual prototype was generated on 2026-09-29 using the project UI constraints, UI Implementation Quality guidance, and the dedicated UI-design workflow fallback after Superdesign CLI preflight timed out twice.
+
+Candidate visual tokens used for review only:
+
+- portrait viewport: **390 × 844**
+- top document strip: **42 px**
+- side Main Toolbar: **48 px**
+- Bottom Control Bar: **58 px**
+- Workspace Drawer standard height: **390 px**
+- Workspace Drawer width: viewport minus Side Toolbar = **342 px**
+- Page Overview height: **286 px**
+- Page organizer card: **82 × 132 px**
+- Compact PiP: approximately **204 px** wide
+- landscape review viewport: **844 × 390**
+- landscape standard Drawer candidate height: **250 px**
+
+Candidate Side Main Toolbar:
+
+1. Brush
+2. Tools / All Features
+3. Properties
+4. Color
+5. Layers
+6. Workspace Pages
+7. Focus
+
+Candidate Bottom Control Bar:
+
+- Undo
+- Redo
+- Brush Size
+- Opacity
+- current Color
+- dedicated Drawer grab / chevron above the bar
+
+Prototype states included:
+
+- Drawer closed
+- Layers Drawer standard state
+- Page Overview filmstrip
+- explicit Edit Order state
+- button-created Layers PiP
+- landscape projection
+
+These are **visual-review candidates only** until the user approves or requests changes.
+
+Runtime verification performed on the HTML mock:
+
+- portrait document horizontal overflow: none
+- portrait page-script errors: none in reviewed states
+- landscape document overflow: none after clean review projection
+- duplicate HTML IDs: none
+- unlabeled buttons: none
+- external/local asset dependencies: none
+
+This does not verify production touch/stylus behavior, accessibility technology behavior, performance, or the final product implementation.
