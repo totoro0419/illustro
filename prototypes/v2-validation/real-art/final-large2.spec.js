@@ -90,7 +90,7 @@ async function decodeLuma(page, bytes, contentType) {
   }, { base64, contentType, maxSide: MAX_SIDE });
 }
 
-test('second large Gate C one-shot final meets frozen balanced criteria', async ({ page }) => {
+test('exposed second large corpus remains above post-failure development regression floor', async ({ page }) => {
   test.setTimeout(180000);
 
   const decoded = new Map();
@@ -164,7 +164,7 @@ test('second large Gate C one-shot final meets frozen balanced criteria', async 
 
   const report = {
     generatedAt: new Date().toISOString(),
-    status: 'ONE_SHOT_GATE_C_FINAL_2',
+    status: 'EXPOSED_LARGE_2_DEVELOPMENT_REGRESSION',
     candidateSourceFreezeCommit: 'c78f9a8c53957d451fd17f205c989b8a064541d9',
     labelSeedFingerprintFreezeCommit: '54d6a89189cf874f6f97163d4367c622a200a92d',
     protocolFreezeCommit: '19ddea331062a7def394c163ef1f0177d523a3e9',
