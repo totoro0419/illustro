@@ -153,3 +153,21 @@ Still UNVERIFIED until implementation/runtime work:
 - final PC/tablet/compact responsive surfaces;
 - live-preview latency/performance;
 - application-level history/transaction integration.
+
+
+## 10. Post-closure visual customization requirement
+
+A later user requirement clarified that Workspace customization must be **visually obvious and directly manipulable**, not merely semantically reachable through commands.
+
+The input-design closure was therefore re-opened for this narrow requirement and re-closed without introducing a new semantic primitive.
+
+Resolved in:
+
+- `WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md`;
+- `RIGHT_WORKSPACE_INTERACTION_SPEC.md`;
+- `RIGHT_UI_SPEC.md`;
+- `UI_INPUT_CONTROL_STANDARD.md`.
+
+The Right Workspace width now explicitly requires a visible/direct resize affordance, live preview, a touch/pen-safe grip, and a non-drag Resize route. Structural customization uses an explicit Customize Workspace mode with temporary handles, Done/Cancel and Workspace-only layout Undo/Redo.
+
+This does not change the Production-lock or runtime-verification boundary.
