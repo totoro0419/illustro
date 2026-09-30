@@ -1,5 +1,3 @@
-import { performance } from 'node:perf_hooks';
-
 export class EvidenceGrid {
   constructor(width,height){this.width=width;this.height=height;this.data=new Float32Array(width*height);this.userPinned=new Uint8Array(width*height);}
   index(x,y){return y*this.width+x;}
