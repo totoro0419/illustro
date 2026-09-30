@@ -123,3 +123,50 @@ Review these visually before any canonical decision:
 - Are Simple and Mono clearly more restrained than Aurora / Halo / Bloom / Cosmo?
 
 No theme is final/canonical until the user explicitly approves it.
+
+
+## 9. Strong identity pass after user review
+
+User feedback on the previous six-theme set:
+
+> 各々に個性が無い。微妙
+
+The problem was not the base palette alone. The six themes were still sharing nearly the same highlight/gradient grammar, so they read as recolors.
+
+This candidate pass keeps the exact same PC geometry and changes the **visual-expression grammar** per theme:
+
+- **Aurora** — multi-hue flowing light. Asymmetric spectrum bloom in the Canvas surround, iridescent active controls, flowing five-color edge/ring treatment.
+- **Halo** — concentric luminous circles and airy transparency. Circular selected-tool indicator, narrow cyan/blue/violet range, pale halo ring.
+- **Bloom** — organic soft light. Blush/apricot ambient blooms, asymmetrical petal-like brand/selection shapes, warm diffused active states.
+- **Cosmo** — geometric / instrument-like light. Diagonal beams, faint grid, segmented Box edges and segmented Quick Controller ring, sharper indigo hierarchy.
+- **Simple** — flat operational clarity. No ambient effects, no multi-hue gradient, minimal shadow, single-blue state language.
+- **Mono** — precision monochrome. Neutral micro-grid, heavier outline-based selection, grayscale segmented ring and state emphasis through line weight/luminance.
+
+The following remain invariant across all six:
+
+- 1440×900 review viewport;
+- Left / Canvas / Right geometry;
+- 344 px Right Workspace;
+- 12 Box order;
+- Layers / Color / Brush default expansion;
+- all control positions and sizes;
+- Context Surface geometry;
+- Quick Controller 112 / 100 / 44 / 28 / radius-36 geometry;
+- fixed five-button bottom strip;
+- navigation/state semantics.
+
+### Verification for this pass
+
+Rendered all six candidates at 1440×900 in Chromium after the identity changes.
+
+Confirmed:
+
+- viewport scroll size stays exactly 1440×900 for all six;
+- Right Workspace stays exactly 344 px;
+- all 12 Boxes remain present in the same order;
+- only Layers / Color / Brush are expanded by default;
+- no geometry differences across the six themes for shell, Left Rail, Canvas workspace, Right Workspace, Context Surface, Quick Controller, or bottom strip;
+- Quick Controller containment invariant remains valid in all six;
+- zero JavaScript runtime exceptions during the render verification.
+
+This remains **CANDIDATE / USER VISUAL REVIEW PENDING** and is not a canonical/final theme decision.
