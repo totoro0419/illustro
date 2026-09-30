@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildStandalone } from './build-connectivity-standalone.mjs';
@@ -17,6 +17,8 @@ function safePath(urlPath){
 }
 test.beforeAll(async()=>{
   await buildStandalone();
+  await mkdir(path.join(ROOT, 'results'), { recursive: true });
+  await copyFile(path.join(ROOT, 'connectivity', 'interactive-connectivity-standalone.html'), path.join(ROOT, 'results', 'interactive-connectivity-standalone.html'));
   server=createServer(async(req,res)=>{
     const full=safePath(req.url||'/');if(!full){res.writeHead(403).end('forbidden');return}
     try{
