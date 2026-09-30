@@ -1,55 +1,363 @@
 {
-  "html_parse": true,
-  "nav_pages": [
-    "numbers",
-    "choices",
-    "color",
-    "geometry",
-    "editors",
-    "appio"
-  ],
-  "page_ids": [
-    "numbers",
-    "choices",
-    "color",
-    "geometry",
-    "editors",
-    "appio"
-  ],
-  "nav_page_match": true,
-  "page_count": 6,
-  "card_count": 26,
-  "duplicate_ids": [],
-  "js_syntax_ok": true,
-  "js_syntax_stderr": "",
-  "standard_required_sections": {
-    "Brush input standard": true,
-    "Color input standard": true,
-    "Gradient input standard": true,
-    "Transform / geometry input standard": true,
-    "Selection and Fill inputs": true,
-    "Layer / compositing inputs": true,
-    "Vector / shape / guide inputs": true,
-    "Text input standard": true,
-    "Adjustment / filter input standard": true,
-    "Document / export inputs": true,
-    "Reference / navigator / workspace inputs": true,
-    "Assets, presets, search, shortcuts and automation": true
+  "schema": "illustro.ui-input-control-audit.v1",
+  "date": "2026-09-30",
+  "skill": {
+    "name": "ui-implementation-quality",
+    "version": "0.3"
   },
-  "all_required_sections_present": true,
-  "browser_runtime": "UNVERIFIED: local file/http navigation was blocked by the container browser administrator policy; source/JS/static semantic checks completed instead.",
-  "semantic_ambiguity_scan": {
-    "patterns_checked": [
-      "C5/C6",
-      "C1/C5",
-      "C1/C2",
-      "C8/C2",
-      "N1/N2",
-      "N1/N3",
-      "depending surface",
-      "according to final",
-      "depending scale"
-    ],
-    "unresolved_matches": []
-  }
+  "scope": {
+    "standard": "docs/ui/UI_INPUT_CONTROL_STANDARD.md",
+    "atlas": "docs/ui/UI_INPUT_CONTROL_ATLAS.html",
+    "production_implementation": "LOCKED"
+  },
+  "quality_engine_metadata": {
+    "searchable": {
+      "status": "PASS",
+      "decision_id": "searchable-value",
+      "pattern": "PATTERN.COMBOBOX",
+      "evaluation_scope": "metadata decision executed; not UI runtime certification",
+      "ui_runtime_status": "UNVERIFIED"
+    },
+    "relative": {
+      "status": "PASS",
+      "decision_id": "relative-number",
+      "pattern": "PATTERN.SLIDER",
+      "evaluation_scope": "metadata decision executed; not UI runtime certification",
+      "ui_runtime_status": "UNVERIFIED"
+    },
+    "precision": {
+      "status": "PASS",
+      "decision_id": "precise-number",
+      "pattern": "PATTERN.SPINBUTTON",
+      "evaluation_scope": "metadata decision executed; not UI runtime certification",
+      "ui_runtime_status": "UNVERIFIED"
+    },
+    "small_choice": {
+      "status": "PASS",
+      "decision_id": "visible-choice",
+      "pattern": "PATTERN.RADIO_GROUP",
+      "evaluation_scope": "metadata decision executed; not UI runtime certification",
+      "ui_runtime_status": "UNVERIFIED"
+    },
+    "boolean": {
+      "status": "PASS",
+      "decision_id": "switch",
+      "pattern": "PATTERN.SWITCH",
+      "evaluation_scope": "metadata decision executed; not UI runtime certification",
+      "ui_runtime_status": "UNVERIFIED"
+    }
+  },
+  "initial_observed_findings": {
+    "static_scanner_counts": {
+      "critical": 1,
+      "major_instances": 117,
+      "moderate": 1
+    },
+    "note": "Major instance count includes repeated unlabeled-control occurrences; it is not 117 distinct design decisions.",
+    "root_findings": [
+      {
+        "severity": "critical",
+        "code": "N2_SEMANTIC_VALUE_MISMATCH",
+        "rules": [
+          "RANGE.02",
+          "A11Y.03",
+          "INPUT.06"
+        ],
+        "summary": "Nonlinear Brush Size exposed internal track coordinate instead of the real px value."
+      },
+      {
+        "severity": "major",
+        "code": "NARROW_NAV_UNREACHABLE",
+        "rules": [
+          "ADAPT.01",
+          "ADAPT.02",
+          "ADAPT.06"
+        ],
+        "summary": "Atlas navigation disappeared at narrow widths, making non-Numbers pages unreachable."
+      },
+      {
+        "severity": "major",
+        "code": "CHOICE_STATE_SEMANTICS",
+        "rules": [
+          "CHOICE.01",
+          "A11Y.03",
+          "A11Y.04",
+          "FOCUS.02"
+        ],
+        "summary": "Segmented choices, switches, swatches and anchor grid did not consistently expose their selection/state semantics."
+      },
+      {
+        "severity": "major",
+        "code": "ACCESSIBLE_NAMES",
+        "rules": [
+          "FORM.01",
+          "A11Y.03"
+        ],
+        "summary": "Many visible inputs and visual-only buttons lacked accessible names or persistent labels."
+      },
+      {
+        "severity": "major",
+        "code": "DRAG_ALTERNATIVES",
+        "rules": [
+          "INPUT.03",
+          "INPUT.05",
+          "INPUT.06"
+        ],
+        "summary": "Gradient placement, crop placement and workspace splitter sizing lacked a complete non-drag pointer route in the standard."
+      },
+      {
+        "severity": "major",
+        "code": "PEER_PAGE_SEMANTICS",
+        "rules": [
+          "CHOICE.01",
+          "FOCUS.02",
+          "A11Y.03"
+        ],
+        "summary": "Color peer pages and Atlas category pages needed an explicit tabs contract."
+      },
+      {
+        "severity": "moderate",
+        "code": "FOCUS_VISIBILITY",
+        "rules": [
+          "FOCUS.01",
+          "COLOR.02"
+        ],
+        "summary": "The original translucent focus outline was too weak against light surfaces."
+      }
+    ]
+  },
+  "repairs": [
+    "N2 custom semantic slider now exposes actual Brush Size min/max/current/value text in px; internal nonlinear coordinate is hidden from semantics.",
+    "Narrow navigation becomes a reachable horizontal tab list instead of disappearing.",
+    "Exclusive segmented choices, swatches and anchor cells use radio-group semantics; switch and toggle-button states are explicit and synchronized.",
+    "Inputs, visual swatches, anchors, reorder controls, link controls and search receive persistent/accessibility names.",
+    "Gradient, crop and workspace resize standards now include non-drag single-pointer alternatives in addition to keyboard alternatives.",
+    "Color peer pages and Atlas categories use tab semantics with roving focus and selected/focus separation.",
+    "Focus outline changed to solid #756DF5 at 3px; measured contrast is ~3.99:1 on white and ~3.78:1 on #F7F9FC.",
+    "Shortcut capture now has explicit recording/cancel semantics; reorder commands work without drag and preserve focus.",
+    "Numeric validation/unavailable-state and custom-control implementation contracts were added to the standard.",
+    "Coarse-pointer rules enlarge effective targets; final 320px coarse-pointer scan found no visible button/input/select target below 24×24 CSS px."
+  ],
+  "final_static": {
+    "duplicate_ids": [],
+    "resource_search_has_visible_label": true,
+    "n2_semantic_slider_present": true,
+    "defined_semantic_audit_findings": [],
+    "semantic_ambiguity_scan": {
+      "patterns_checked": [
+        "C5/C6",
+        "C1/C5",
+        "C1/C2",
+        "C8/C2",
+        "N1/N2",
+        "N1/N3",
+        "depending surface",
+        "according to final",
+        "depending scale"
+      ],
+      "unresolved_matches": []
+    }
+  },
+  "standalone_browser_runtime": {
+    "engine": "Chromium headless / exact current Atlas bytes via page.set_content",
+    "viewports": {
+      "1440x900": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "horizontalOverflow": false,
+        "orientation": "vertical",
+        "reachable_pages": [
+          "numbers",
+          "choices",
+          "color",
+          "geometry",
+          "editors",
+          "appio"
+        ],
+        "errors": []
+      },
+      "1024x768": {
+        "scrollWidth": 1024,
+        "clientWidth": 1024,
+        "horizontalOverflow": false,
+        "orientation": "vertical",
+        "reachable_pages": [
+          "numbers",
+          "choices",
+          "color",
+          "geometry",
+          "editors",
+          "appio"
+        ],
+        "errors": []
+      },
+      "720x900": {
+        "scrollWidth": 720,
+        "clientWidth": 720,
+        "horizontalOverflow": false,
+        "orientation": "horizontal",
+        "reachable_pages": [
+          "numbers",
+          "choices",
+          "color",
+          "geometry",
+          "editors",
+          "appio"
+        ],
+        "errors": []
+      },
+      "480x900": {
+        "scrollWidth": 480,
+        "clientWidth": 480,
+        "horizontalOverflow": false,
+        "orientation": "horizontal",
+        "reachable_pages": [
+          "numbers",
+          "choices",
+          "color",
+          "geometry",
+          "editors",
+          "appio"
+        ],
+        "errors": []
+      },
+      "320x900": {
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "horizontalOverflow": false,
+        "orientation": "horizontal",
+        "reachable_pages": [
+          "numbers",
+          "choices",
+          "color",
+          "geometry",
+          "editors",
+          "appio"
+        ],
+        "errors": []
+      }
+    },
+    "interactions": {
+      "size_before": {
+        "now": "18",
+        "text": "18 px",
+        "num": "18"
+      },
+      "size_after_arrow": {
+        "now": "19",
+        "text": "19 px",
+        "num": "19"
+      },
+      "tab_keyboard": {
+        "active": "choices",
+        "focused": "tab-choices",
+        "selected": "true"
+      },
+      "radio_keyboard": [
+        {
+          "text": "Replace",
+          "checked": "false",
+          "tabindex": "-1"
+        },
+        {
+          "text": "Add",
+          "checked": "true",
+          "tabindex": "0"
+        },
+        {
+          "text": "Subtract",
+          "checked": "false",
+          "tabindex": "-1"
+        },
+        {
+          "text": "Intersect",
+          "checked": "false",
+          "tabindex": "-1"
+        }
+      ],
+      "switch_space": {
+        "before": "true",
+        "after": "false"
+      },
+      "reorder": {
+        "before": [
+          "⠿\nLayers\n↑\n↓",
+          "⠿\nColor\n↑\n↓",
+          "⠿\nBrush\n↑\n↓"
+        ],
+        "after": [
+          "⠿\nColor\n↑\n↓",
+          "⠿\nLayers\n↑\n↓",
+          "⠿\nBrush\n↑\n↓"
+        ],
+        "focused": "Move Layers later"
+      },
+      "shortcut": {
+        "previous": "Ctrl+Alt+B",
+        "recording_label": "Recording keyboard shortcut. Press a key combination, or Escape to cancel.",
+        "after_escape": "Ctrl+Alt+B",
+        "new": "Ctrl+Shift+K"
+      },
+      "focus_style": {
+        "outline": "rgb(117, 109, 245) solid 3px",
+        "outlineColor": "rgb(117, 109, 245)",
+        "outlineWidth": "3px"
+      },
+      "errors": []
+    },
+    "coarse_pointer": {
+      "matches": true,
+      "under24": [],
+      "shortcut": {
+        "x": 19,
+        "y": 589.09375,
+        "width": 146.5625,
+        "height": 44
+      },
+      "checkbox_labels": [
+        {
+          "w": 102.765625,
+          "h": 44,
+          "text": "Embed profile"
+        },
+        {
+          "w": 114.796875,
+          "h": 44,
+          "text": "Export metadata"
+        }
+      ],
+      "horizontalOverflow": false,
+      "errors": []
+    },
+    "synthetic_text_resize_2x": {
+      "1440": {
+        "horizontalOverflow": false,
+        "clipped": [],
+        "errors": []
+      },
+      "320": {
+        "horizontalOverflow": false,
+        "clipped": [],
+        "errors": []
+      }
+    }
+  },
+  "verified_here": [
+    "Semantic pattern selection against UI Implementation Quality engine for relative numeric, precision numeric, boolean, small exclusive choice, and searchable large choice.",
+    "Static accessible-name/state/tab/radio/switch/N2 semantic-value checks defined for this Atlas.",
+    "Standalone Chromium interaction tests for N2 keyboard adjustment, tabs, radio groups, switch, non-drag reorder, shortcut capture/cancel, focus style.",
+    "Responsive page reachability and horizontal overflow at 1440, 1024, 720, 480 and 320 CSS px widths.",
+    "Coarse-pointer target scan at 320 CSS px width.",
+    "Synthetic computed-font-size ×2 stress at 1440 and 320 widths."
+  ],
+  "unverified": [
+    "Representative real assistive-technology operation (NVDA, VoiceOver, TalkBack).",
+    "Touch assistive-technology behavior for custom slider/direct editors.",
+    "Real pen/stylus behavior and pen/touch arbitration.",
+    "Virtual-keyboard occlusion and final Compact production layout.",
+    "Native platform text-scaling/zoom behavior beyond the browser synthetic stress.",
+    "Production application integration, history transactions, live-preview performance and latency.",
+    "Final product ranges, steps and nonlinear calibration that require brush/device testing."
+  ],
+  "conclusion": "The semantic standard and standalone Atlas defects found by this audit were repaired and regression-checked. Full UI/production PASS is not claimed because device/AT/application integration gates remain unverified."
 }
