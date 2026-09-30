@@ -6,6 +6,7 @@ export default defineConfig({
     'device/*.spec.js',
     'real-art/real-art.spec.js',
     'real-art/development-regression.spec.js',
+    'real-art/interactive-region.spec.js',
     'real-art/final-large-source.spec.js',
     'real-art/final-large2-source.spec.js',
     'real-art/final-large3-source.spec.js',
