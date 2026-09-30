@@ -495,7 +495,9 @@ Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants up
 
 ### Workspace / settings
 
-- panel sizing: direct splitter for pointer speed **plus a non-drag single-pointer route** (Resize… command/popover with width slider or preset sizes) and keyboard resizing on platforms that support it; exact numeric width may remain advanced rather than permanently visible;
+- panel sizing: **visually discoverable direct splitter/grip** for pointer speed plus a non-drag single-pointer route (Resize… command/popover with width slider or preset sizes) and keyboard resizing on platforms that support it; exact numeric width may remain advanced rather than permanently visible;
+- direct resize must preview live and expose its resize state through cursor/grip/focus treatment rather than an invisible edge-only gesture;
+- structural Workspace customization uses the explicit Customize Workspace transaction defined in `WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md`, with Done/Cancel and Workspace-only layout Undo/Redo;
 - workspace preset: **C8 visual preset cards** for built-in/recent presets plus **C3 searchable picker** when the library exceeds the visible set;
 - Left/Right mirror: C5;
 - UI scale: N1 + numeric `%`;
