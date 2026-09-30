@@ -118,3 +118,17 @@ test('interactive Region evaluator loads, classifies, and accepts touch correcti
   await page.getByRole('button', { name: 'そのまま使える' }).click();
   await expect(page.locator('#recordState')).toContainText('記録しました');
 });
+
+
+test('standalone Region evaluator opens and classifies from touch input', async ({ page }) => {
+  await page.goto(`${origin}/real-art/interactive-region-standalone.html`);
+  await expect(page.getByRole('heading', { name: 'Region / Fill 実使用評価' })).toBeVisible();
+
+  const png = await syntheticPng(page);
+  await page.locator('#imageInput').setInputFiles({ name: 'standalone-region.png', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('#fileName')).toHaveText('standalone-region.png');
+
+  await dispatchTouchStroke(page, '#overlayCanvas', [[0.50, 0.50], [0.50, 0.50]]);
+  await expect(page.locator('#statusPill')).not.toHaveText('未判定');
+  await expect(page.locator('#statusText')).toContainText('自動判定:');
+});
