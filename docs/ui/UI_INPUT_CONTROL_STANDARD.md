@@ -117,6 +117,7 @@ A partially exposed custom widget that announces the wrong value or accepts poin
 | C7 | One-shot operation | **Button / menu command** | shortcut/search alternative | Reset, Reverse gradient, Rasterize, Merge |
 | C8 | Visual single selection | **Swatch/card/grid presentation with real selection semantics**: small sets use radio semantics; large always-visible simple sets use listbox-style selection; search is C3 | every option has a text/accessibility name | palette color, brush preset, workspace/theme preset |
 | C9 | Spatial reference point | **3×3 anchor grid with radio-group semantics + textual position names** | Arrow-key selection / coordinates when exposed | resize anchor, transform origin |
+| C10 | Selectable collection / tree / timeline | **Standard selectable list/tree/timeline with focus separate from selection** | Search/filter; explicit activation for destructive navigation | Layers, Documents, History, Recovery candidates, References |
 | T1 | Short text | **Text field** | — | layer name, preset name, document name |
 | T2 | Search/filter | **Search field + suggestions/filter results** | category browsing remains available | commands, brushes, assets, fonts |
 | T3 | Keyboard shortcut | **Chord capture field** | Clear / Reset / conflict resolver | shortcut settings |
@@ -796,7 +797,13 @@ Open documents use C10-equivalent tabs/list semantics:
 - dirty-state Save / Discard / Cancel uses explicit consequence actions;
 - compact UI may present the same semantics in a sheet rather than tabs.
 
-### 23.9 Input-method completion boundary
+### 23.9 Reference display/sampling modes
+
+If Reference grayscale sampling behavior is exposed, use a **C1 two-choice control**: Source Color / Displayed Grayscale. Grayscale display itself remains C6.
+
+Reference presentation modes such as inline overlay / fullscreen use **C1** while the set remains small and mutually exclusive; if future modes grow beyond a compact visible set, migrate presentation to C2 without changing the semantic state.
+
+### 23.10 Input-method completion boundary
 
 The catalog-wide traceability matrix is `UI_INPUT_COVERAGE_MATRIX.md`.
 
