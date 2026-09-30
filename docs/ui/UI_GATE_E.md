@@ -234,7 +234,7 @@ Canonical Right UI: **SEMANTIC / INTERACTION / LAYOUT DESIGN COMPLETE**
 Applied cross-domain professional UI principles:
 
 - Canvas remains the primary content region;
-- all semantic Right Boxes remain represented in the Right Workspace; collapse is the primary density-control mechanism;
+- all semantic Right Boxes remain registered and discoverable; the factory/default stack shows all 12, while explicit user customization may Park a Box without deleting its semantic registration; collapse remains the primary default density-control mechanism;
 - Boxes keep stable semantic identity while location changes;
 - Properties / Inspector follows context by default and supports Lock Context;
 - flexible layouts require Reset Location / Reset Workspace Layout;
@@ -276,7 +276,7 @@ Canonical authority:
 Completed:
 
 - all 12 Box ownership and content
-- persistent all-Box presence
+- persistent all-Box registration/discoverability with explicit user Park/Restore customization
 - collapse-first density model
 - default order and expansion profile
 - precise PC/touch geometry tokens
@@ -326,7 +326,7 @@ This is a prototype reference size, not a fixed product requirement.
 - minimal top document/app strip for non-drawing application/document operations such as Home and Save; Undo/Redo do not live here
 - stable icon-first left universal access surface using the canonical default Rail + fixed All Features
 - central Canvas
-- right magnetic Workspace/PiP stack with all semantic Boxes present and collapsible
+- right magnetic Workspace/PiP stack with all 12 semantic Boxes present by default; explicit user customization may Park/Restore Boxes while keeping them registered/searchable
 - compact fixed bottom-right command strip: Layer Page / Undo / Redo / Horizontal Flip / Vertical Flip
 - transient Context Surface inside the Canvas working region
 - optional detached Workspace Blocks over/near unused Canvas margin
