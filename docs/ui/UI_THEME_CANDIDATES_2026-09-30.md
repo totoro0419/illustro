@@ -198,3 +198,17 @@ Current main Aurora flow candidate:
 This remains **CANDIDATE / USER VISUAL REVIEW PENDING**. It is not a final/canonical token decision.
 
 Runtime re-check at 1440x900 confirmed no viewport overflow, Right Workspace 344 px, the same 12 Box order/default expansion, unchanged core geometry, and zero JavaScript runtime exceptions.
+
+
+## 11. Aurora visual-direction approval
+
+User decision after the narrowed-hue Aurora review:
+
+> 合格。次はインプットのUIを作っていきます。
+
+Recorded conservatively:
+
+- **Aurora visual direction / hue-range correction is USER APPROVED as the current visual baseline for subsequent UI design work.**
+- This does **not** approve all six themes as canonical production themes.
+- Halo / Bloom / Cosmo / Simple / Mono remain candidates unless separately approved.
+- Production implementation remains locked.
