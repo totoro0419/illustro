@@ -1,0 +1,32 @@
+{
+  "schema": "illustro.workspace-visual-customization-verification.v1",
+  "date": "2026-09-30",
+  "branch": "design/ui-gate-e-2026-09-29",
+  "result": "STATIC_CONTRACT_CHECKS_FAILED",
+  "checks": {
+    "spec_exists": true,
+    "visible_direct_resize": true,
+    "touch_pen_grip": true,
+    "live_preview": false,
+    "customize_mode": true,
+    "workspace_undo_redo": true,
+    "non_drag_route": true,
+    "park_restore": true,
+    "layout_lock": true,
+    "right_interaction_link": true,
+    "right_ui_link": true,
+    "gate_link": true,
+    "input_standard_link": true,
+    "completion_reclosed": true,
+    "persistence_parked": true,
+    "default_all_12": true,
+    "gate_no_old_persistent_presence": true,
+    "gate_registered_discoverable": true,
+    "artwork_undo_separate": true
+  },
+  "limitations": [
+    "No production UI implementation was performed.",
+    "Pointer/pen/touch acquisition and false-positive resize behavior remain runtime-UNVERIFIED.",
+    "Exact grip artwork, thresholds, motion and responsive behavior remain runtime/visual calibration."
+  ]
+}
