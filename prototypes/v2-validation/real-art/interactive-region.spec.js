@@ -103,12 +103,12 @@ test('interactive Region evaluator loads, classifies, and accepts touch correcti
   await page.getByRole('button', { name: 'つなぐ' }).click();
   await dispatchTouchStroke(page, '#overlayCanvas', [[0.42, 0.35], [0.50, 0.35], [0.58, 0.35]]);
   await expect(page.locator('#sessionLine')).toContainText('つなぐ 1回');
-  await expect(page.getByRole('button', { name: '戻す' })).toBeEnabled();
+  await expect(page.locator('#undo')).toBeEnabled();
 
-  await page.getByRole('button', { name: '戻す' }).click();
+  await page.locator('#undo').click();
   await expect(page.locator('#sessionLine')).toContainText('つなぐ 0回');
-  await expect(page.getByRole('button', { name: 'やり直す' })).toBeEnabled();
-  await page.getByRole('button', { name: 'やり直す' }).click();
+  await expect(page.locator('#redo')).toBeEnabled();
+  await page.locator('#redo').click();
   await expect(page.locator('#sessionLine')).toContainText('つなぐ 1回');
 
   await page.getByRole('button', { name: '切る' }).click();
