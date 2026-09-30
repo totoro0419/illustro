@@ -193,3 +193,8 @@ Current open state = Session only.
 - user pins remain stable despite context
 - unavailable command explains why
 - touch-only activation path exists
+
+
+## Input-standard closure note
+
+The exact default shortcut/pen-button/touch gesture remains a device-prototype decision. The semantic routes are fixed: a discoverable on-screen entry is mandatory, keyboard capture uses T3, custom gestures use T4, and configurable hardware controls use T5.
