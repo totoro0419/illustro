@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#101318" />
+  <title>Illustro 端点のつながり評価</title>
+  <style>
+    :root { color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#0d1015; color:#f5f7fb; --panel:#171b22; --panel2:#202630; --border:#333b48; --muted:#aeb7c5; --accent:#77a7ff; --auto:#5be09a; --truth:#55c8ff; --candidate:#f2bd55; }
+    *{box-sizing:border-box} html,body{margin:0;min-height:100%;background:#0d1015} body{overscroll-behavior:none} button,input{font:inherit} button{color:inherit}
+    .app{min-height:100dvh;display:grid;grid-template-rows:auto auto minmax(360px,1fr) auto;gap:10px;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+    .topbar,.toolbar,.panel,.footerbar{border:1px solid var(--border);background:var(--panel);border-radius:14px;box-shadow:0 8px 24px rgb(0 0 0/.18)}
+    .topbar{padding:12px;display:flex;gap:12px;align-items:center;justify-content:space-between} h1{margin:0;font-size:16px}.summary{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+    .toolbar{padding:8px;display:grid;gap:8px}.mode-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.adjust-row{display:grid;grid-template-columns:auto minmax(90px,1fr) 34px auto auto;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+    .button{min-height:42px;border:1px solid var(--border);border-radius:11px;background:var(--panel2);padding:8px 10px;cursor:pointer;user-select:none;-webkit-user-select:none}.button.active{border-color:rgb(119 167 255/.75);background:rgb(119 167 255/.17);color:#d5e3ff}.button:disabled{opacity:.42;cursor:default}
+    input[type="range"]{width:100%;accent-color:var(--accent)}
+    .canvas-shell{position:relative;min-height:360px;overflow:hidden;border:1px solid var(--border);border-radius:14px;background:linear-gradient(45deg,#151a21 25%,transparent 25%) 0 0/20px 20px,linear-gradient(-45deg,#151a21 25%,transparent 25%) 0 10px/20px 20px,linear-gradient(45deg,transparent 75%,#151a21 75%) 10px -10px/20px 20px,linear-gradient(-45deg,transparent 75%,#151a21 75%) -10px 0/20px 20px,#10141a;touch-action:none}
+    canvas{display:block;width:100%;height:100%;min-height:360px;touch-action:none}.hint{position:absolute;inset:0;display:grid;place-items:center;padding:28px;pointer-events:none;color:var(--muted);text-align:center;line-height:1.7}.hint.hidden{display:none}
+    .details{display:grid;gap:10px}.panel{padding:11px;display:grid;gap:10px}.panel h2{margin:0;font-size:14px}.status-line{color:var(--muted);font-size:13px;line-height:1.55;min-height:20px}
+    .metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.metric{border:1px solid #2b323d;background:#11151b;border-radius:10px;padding:8px;min-width:0}.metric small{display:block;color:var(--muted);font-size:11px;line-height:1.35}.metric b{display:block;margin-top:3px;font-size:16px;font-variant-numeric:tabular-nums}
+    .legend{display:flex;flex-wrap:wrap;gap:8px 12px;color:var(--muted);font-size:12px}.legend span{display:inline-flex;gap:5px;align-items:center}.swatch{width:11px;height:4px;border-radius:999px}.swatch.auto{background:var(--auto)}.swatch.truth{background:var(--truth)}.swatch.candidate{background:var(--candidate)}
+    .checks{display:flex;flex-wrap:wrap;gap:8px 14px;color:var(--muted);font-size:12px}.checks label{display:inline-flex;align-items:center;gap:5px}.footerbar{padding:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.note{margin:0;color:var(--muted);font-size:12px;line-height:1.55}
+    @media(min-width:900px){.app{grid-template-columns:minmax(600px,1fr) 340px;grid-template-rows:auto auto minmax(560px,1fr) auto}.topbar,.toolbar,.canvas-shell,.footerbar{grid-column:1}.details{grid-column:2;grid-row:1/5;align-content:start}.canvas-shell,canvas{min-height:560px}.metric-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar"><h1>端点のつながり評価</h1><div id="summary" class="summary">線 0本 / 端点 0個 / 自動接続 0個</div></section>
+    <section class="toolbar" aria-label="操作">
+      <div class="mode-row"><button id="drawMode" class="button active" type="button">線を描く</button><button id="truthMode" class="button" type="button">正解を指定</button></div>
+      <div class="adjust-row"><span>太さ</span><input id="brushSize" type="range" min="1" max="28" value="4" step="1" /><span id="brushValue">4</span><button id="undoStroke" class="button" type="button" disabled>1本戻す</button><button id="clearAll" class="button" type="button" disabled>全部消す</button></div>
+    </section>
+    <section class="canvas-shell" id="canvasShell" aria-label="線を描く場所"><canvas id="canvas"></canvas><div id="hint" class="hint">指・ペン・マウスで複数の線を描いてください。<br />描き終わるたびに、各端点へ番号と自動接続が表示されます。</div></section>
+    <section class="details" aria-label="評価結果">
+      <div class="panel"><h2>正解の指定</h2><div id="truthStatus" class="status-line">線を描いたあと「正解を指定」を押し、つながっている端点を2つ順にタップしてください。</div><button id="finalizeTruth" class="button" type="button" disabled>この正解で採点</button><p class="note">選ばなかった端点同士は「つながっていない」として扱います。正解は、描く前の意図ではなく、出来上がった線を見て判断してください。</p></div>
+      <div class="panel"><h2>自動判定と正解の比較</h2><div class="metric-grid">
+        <div class="metric"><small>自動でつないだ中で正しかった割合</small><b id="precisionMetric">—</b></div>
+        <div class="metric"><small>本当につながる場所を見つけた割合</small><b id="recallMetric">—</b></div>
+        <div class="metric"><small>上の2つを合わせた値</small><b id="f1Metric">—</b></div>
+        <div class="metric"><small>全部の接続が完全に一致</small><b id="exactMetric">—</b></div>
+        <div class="metric"><small>間違ってつないだ数</small><b id="falseMetric">—</b></div>
+        <div class="metric"><small>つなぐべきなのに見逃した数</small><b id="missedMetric">—</b></div>
+      </div></div>
+      <div class="panel"><h2>表示</h2><div class="legend"><span><i class="swatch auto"></i>自動で接続</span><span><i class="swatch truth"></i>人が指定した正解</span><span><i class="swatch candidate"></i>接続候補</span></div><div class="checks"><label><input id="showAuto" type="checkbox" checked />自動接続</label><label><input id="showTruth" type="checkbox" checked />正解</label><label><input id="showCandidates" type="checkbox" />候補</label></div></div>
+      <div class="panel"><h2>記録</h2><button id="exportJson" class="button" type="button" disabled>結果をJSONで書き出す</button><div id="exportStatus" class="status-line">描いた点・線幅・筆圧・端点・全候補の内部得点も一緒に保存します。</div></div>
+    </section>
+    <section class="footerbar"><button id="drawModeFooter" class="button active" type="button">線を描く</button><button id="truthModeFooter" class="button" type="button">正解を指定</button><button id="finalizeFooter" class="button" type="button" disabled>採点</button></section>
+  </main>
+  <script type="module" src="./interactive-connectivity.js"></script>
+</body>
+</html>
