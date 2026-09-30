@@ -170,3 +170,31 @@ Confirmed:
 - zero JavaScript runtime exceptions during the render verification.
 
 This remains **CANDIDATE / USER VISUAL REVIEW PENDING** and is not a canonical/final theme decision.
+
+
+## 10. Aurora hue-range correction
+
+User feedback on the strong-identity pass:
+
+> オーロラはそんなに色相たくさん取らない
+
+The Aurora candidate was therefore narrowed without changing any layout or semantics.
+
+Previous issue:
+- the core Aurora flow distributed blue / violet / pink / warm orange / mint around the same semantic indicators and Quick Controller ring;
+- this read too close to a broad rainbow-spectrum theme rather than a restrained aurora identity.
+
+Revised Aurora grammar:
+- **primary range:** blue -> periwinkle / blue-violet -> violet;
+- **secondary edge:** a small amount of violet-pink only near one end of the flow;
+- warm orange and mint are removed from the main visible gradient/ring/ambient Canvas-light system;
+- Canvas ambient light now uses only blue, blue-violet and a faint violet-pink edge;
+- Quick Controller ring uses the same narrow range and loops back to blue rather than traversing warm/mint hues.
+
+Current main Aurora flow candidate:
+
+`#5EA8FF -> #708FFF -> #8B7CFF -> #C681DE`
+
+This remains **CANDIDATE / USER VISUAL REVIEW PENDING**. It is not a final/canonical token decision.
+
+Runtime re-check at 1440x900 confirmed no viewport overflow, Right Workspace 344 px, the same 12 Box order/default expansion, unchanged core geometry, and zero JavaScript runtime exceptions.
