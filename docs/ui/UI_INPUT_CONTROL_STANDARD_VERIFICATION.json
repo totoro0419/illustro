@@ -37,5 +37,19 @@
     "Assets, presets, search, shortcuts and automation": true
   },
   "all_required_sections_present": true,
-  "browser_runtime": "UNVERIFIED: local file/http navigation was blocked by the container browser administrator policy; source/JS checks completed instead."
+  "browser_runtime": "UNVERIFIED: local file/http navigation was blocked by the container browser administrator policy; source/JS/static semantic checks completed instead.",
+  "semantic_ambiguity_scan": {
+    "patterns_checked": [
+      "C5/C6",
+      "C1/C5",
+      "C1/C2",
+      "C8/C2",
+      "N1/N2",
+      "N1/N3",
+      "depending surface",
+      "according to final",
+      "depending scale"
+    ],
+    "unresolved_matches": []
+  }
 }
