@@ -126,3 +126,8 @@ Stroke result/resource version: Document history/canonical dependencies.
 - eraser temporary mode returns correctly
 - one stroke one undo
 - brush switch does not cause visible long stall
+
+
+## Input-standard closure note
+
+The possible explicit stroke-cancel gesture remains an **optional accelerator under prototype evaluation**. Core Brush use and recovery/cancel safety do not depend on that gesture. Custom gesture assignment follows `UI_INPUT_CONTROL_STANDARD.md` T4.
