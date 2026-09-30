@@ -251,12 +251,15 @@ Supporting references:
 
 - [Right Workspace — Box Taxonomy](RIGHT_WORKSPACE_BOX_TAXONOMY.md)
 - [Right Workspace — General UI Research](RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md)
+- [Workspace Visual Customization](WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md)
 
 Layer Page is a separate expanded surface from the Layers Box, but both share the same Layer model and semantic commands.
 
 Default Box order and default expansion/collapse state are now fixed in `RIGHT_WORKSPACE_DEFAULT_LAYOUT.md`.
 
 Right Box manipulation semantics are now complete: header anatomy, collapse, reorder, detach, re-dock, magnetic targets, resize, Workspace Layout Lock, recovery and non-drag alternatives are fixed in `RIGHT_WORKSPACE_INTERACTION_SPEC.md`.
+
+Visual customization is also fixed at the interaction level in `WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md`: the Right Workspace boundary is visibly/directly resizable, structural edits have an explicit Customize Workspace mode, and reorder/resize/show-park/detach operations expose live preview plus recoverable alternatives.
 
 Layer Page semantic/interaction behavior is fixed and integrated into `RIGHT_UI_SPEC.md`, using an ibisPaint-like expanded layer-management surface while sharing the same Layer model/commands as the Layers Box.
 
