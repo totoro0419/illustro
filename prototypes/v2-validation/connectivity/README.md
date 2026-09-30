@@ -2,17 +2,24 @@
 
 Prototype only; no Production integration or merge. Both endpoint↔endpoint and endpoint↔stroke-interior are implemented. No Closed/Open or Fill grading is performed here.
 
-## Human evaluation
+## Quick human review (default)
 
-Open `interactive-connectivity-standalone.html` in a browser (no server/module dependencies). Choose width and round/butt/square cap; draw with pen/finger/mouse. Endpoint numbers appear. After looking at the completed linework:
+Open `interactive-connectivity-standalone.html` in a browser. No server is required.
 
-1. Choose **正解を指定**.
-2. For endpoint pairs, tap two endpoints or choose their numbers.
-3. For a T junction or similar, tap an endpoint and the other line's interior; overlapping targets can instead be specified with source endpoint, target line and position from its start in percent.
-4. Confirm all actual connections have been reviewed, then **この正解で採点**. Unselected pairs/attachments are absent connections.
-5. **この絵の採点を記録**; clear the canvas and repeat. Export JSON after several independent drawings. Records survive normal reload when browser local storage is available. If saving fails, export is still possible.
+1. Draw several strokes. Connection sites automatically share a color and group number. Endpoint numbers remain readable; an interior attachment has a diamond, target line number and position. Distinct junctions on one stroke retain different colors. Dashed `?` connectors retain ambiguity.
+2. Type unacceptable false joins, missed joins, incorrect junction positions, or other defects into the memo below. Endpoint/group/line numbers are useful, but no structured pair selection is required.
+3. Press **記録して次の試験**. The strokes, displayed groups, connection geometry, model scores, input provenance and memo are saved together; the next canvas is empty. **前の絵を戻す** recovers the previous drawing and its memo. Recording an edited previous trial updates that trial rather than duplicating it.
+4. Repeat, then **全試験を書き出す**. Send the JSON for defect analysis.
 
-Include T/Y/crossing vicinity, curve attachments, variable widths, near-but-separated targets, dense linework, short gaps, continuation/corners, parallel closed tips and deliberately open parallel boundaries, fast/rough/jittery endpoints. Use actual finger and pen sessions separately. The current report contains **zero actual human native-stroke truth records**; automated pointer events only verify the UI.
+Interrupted drawings and notes are locally preserved on normal reload. A saving error keeps the current work on screen and offers JSON export. Memo-only feedback is a blocking-defect report; blank memos do not mean the automatic graph is correct. Quick review produces no fabricated Precision/Recall/F1.
+
+Optional complete-truth scoring remains under **詳しく採点する（必要な場合のみ）**. It supports endpoint pairs and endpoint-to-interior targets and only computes accuracy after explicit complete post-drawing labels. Default automatic color preview is exposed before annotation and is recorded as such. This is not blind labeling.
+
+## Connection-point rule
+
+For an accepted endpoint pair, if one robust outward extension meets actual original segments near the other endpoint, that intersection is the join point. Collinear continuation attaches to the first actual ink point. If neither single extension reaches the other stroke, the endpoints are linked directly; a crossing of two hypothetical extensions is not the join point. The actual connector is used in crossing-conflict checks, and interior intersection anchors split the target stroke spans. This geometry policy does not by itself infer a new accepted connection.
+
+The current implementation report is `CONNECTIVITY_QUICK_REVIEW_REPORT_2026-10-01.md`. Actual finger/pen precision and the latest UI's browser rendering remain unverified; use the report's explicit evidence scopes.
 
 ## Recompute evidence
 

@@ -51,7 +51,7 @@ async function tapEndpointById(page,endpointId){
   },endpointId);
 }
 async function exerciseEvaluator(page,url){
-  await page.goto(url);await expect(page.getByRole('heading',{name:'端点のつながり評価'})).toBeVisible();
+  await page.goto(url);await page.locator('#advancedReview > summary').click();await expect(page.getByRole('heading',{name:'つながり試験'})).toBeVisible();
   await drawPointerStroke(page,[[.15,.45],[.28,.45],[.40,.45]]);
   await drawPointerStroke(page,[[.405,.45],[.53,.45],[.66,.45]]);
   const snapshot=await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot());
@@ -78,7 +78,7 @@ test('dense endpoint labeling, save, export, reload and clear recovery are reach
   const payload=JSON.parse(await readFile(await download.path(),'utf8'));
   expect(payload.records.length).toBe(1);expect(payload.records[0].session.reviewedAfterDrawing).toBe(true);
   expect(payload.records[0].session.inputCounts.untrusted).toBeGreaterThan(0);
-  expect(payload.records[0].session.automaticPreviewBeforeTruth).toBe(false);
+  expect(payload.records[0].session.automaticPreviewBeforeTruth).toBe(true);
   await page.locator('#clearAll').click();expect((await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot())).strokeCount).toBe(0);
   await page.locator('#restoreClear').click();expect((await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot())).strokeCount).toBe(2);
   await page.reload();await expect(page.locator('#archiveStatus')).toContainText('1枚');expect(errors).toEqual([]);
@@ -86,7 +86,7 @@ test('dense endpoint labeling, save, export, reload and clear recovery are reach
 
 test('resize preserves stroke coordinates; narrow and intermediate layouts do not overflow',async({page})=>{
   for(const width of [320,600,900,1100,1440]){
-    await page.setViewportSize({width,height:900});await page.goto(`${origin}/connectivity/interactive-connectivity.html`);
+    await page.setViewportSize({width,height:900});await page.goto(`${origin}/connectivity/interactive-connectivity.html`);await page.locator('#advancedReview > summary').click();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   }
   await drawPointerStroke(page,[[.2,.4],[.3,.4],[.4,.4]],'pen');
@@ -97,7 +97,7 @@ test('resize preserves stroke coordinates; narrow and intermediate layouts do no
 });
 
 test('pointer cancel retains real samples; wrong pointer cannot add a phantom endpoint',async({page})=>{
-  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);
+  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);await page.locator('#advancedReview > summary').click();
   await page.evaluate(()=>{
     const c=document.querySelector('#canvas'),r=c.getBoundingClientRect();
     const emit=(type,id,x)=>c.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'pen',isPrimary:true,buttons:1,clientX:r.left+x,clientY:r.top+100}));
@@ -108,7 +108,7 @@ test('pointer cancel retains real samples; wrong pointer cannot add a phantom en
 });
 
 test('keyboard can label and finalize; empty truth and edits invalidate metrics',async({page})=>{
-  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);await drawPointerStroke(page,[[.2,.4],[.3,.4],[.4,.4]]);
+  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);await page.locator('#advancedReview > summary').click();await drawPointerStroke(page,[[.2,.4],[.3,.4],[.4,.4]]);
   await page.locator('#truthMode').focus();await page.keyboard.press('Enter');
   await page.locator('#endpointA').focus();await page.keyboard.press('Home');await page.locator('#endpointB').focus();await page.keyboard.press('End');
   await page.locator('#togglePair').focus();await page.keyboard.press('Enter');await expect(page.locator('#truthStatus')).toContainText('1組');
@@ -119,7 +119,7 @@ test('keyboard can label and finalize; empty truth and edits invalidate metrics'
 });
 
 test('T junction truth can select a segment, score it, export it and restore it',async({page})=>{
-  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);
+  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);await page.locator('#advancedReview > summary').click();
   await drawPointerStroke(page,[[.15,.4],[.5,.4],[.85,.4]],'pen');
   await drawPointerStroke(page,[[.5,.4],[.5,.55],[.5,.7]],'touch');
   const g=await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot().graph);
@@ -136,7 +136,7 @@ test('T junction truth can select a segment, score it, export it and restore it'
 });
 
 test('canvas endpoint then segment tap is a second complete T labeling path',async({page})=>{
-  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);
+  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);await page.locator('#advancedReview > summary').click();
   await drawPointerStroke(page,[[.15,.4],[.5,.4],[.85,.4]]);await drawPointerStroke(page,[[.5,.4],[.5,.55],[.5,.7]]);
   await page.locator('#truthMode').click();await tapEndpointById(page,'stroke-2:start');
   await page.evaluate(()=>{const c=document.querySelector('#canvas'),r=c.getBoundingClientRect();c.dispatchEvent(new PointerEvent('pointerdown',{isPrimary:true,pointerType:'touch',clientX:r.left+r.width*.55,clientY:r.top+r.height*.4}));});
@@ -145,10 +145,42 @@ test('canvas endpoint then segment tap is a second complete T labeling path',asy
 
 test('all rendered cap choices enter native stroke geometry and storage failure remains exportable',async({page})=>{
   await page.addInitScript(()=>{Storage.prototype.setItem=function(){throw new DOMException('blocked','QuotaExceededError');};});
-  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);
-  for(const [i,cap] of ['round','butt','square'].entries()){await page.locator('#brushCap').selectOption(cap);await drawPointerStroke(page,[[.15,.2+i*.2],[.3,.2+i*.2],[.45,.2+i*.2]],'pen');}
+  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);await page.locator('#advancedReview > summary').click();
+  for(const [i,cap] of ['round','butt','square'].entries()){await page.getByText('線の設定',{exact:true}).click();await page.locator('#brushCap').selectOption(cap);await page.getByText('線の設定',{exact:true}).click();await drawPointerStroke(page,[[.15,.2+i*.2],[.3,.2+i*.2],[.45,.2+i*.2]],'pen');}
   expect((await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot())).currentRecord.strokes.map(s=>s.cap)).toEqual(['round','butt','square']);
   await page.locator('#reviewed').check();await page.locator('#finalizeTruth').click();await page.locator('#saveScene').click();
   await expect(page.locator('#archiveStatus')).toContainText('保存は失敗');await expect(page.locator('#exportJson')).toBeEnabled();
   const pending=page.waitForEvent('download');await page.locator('#exportJson').click();const download=await pending;const payload=JSON.parse(await readFile(await download.path(),'utf8'));expect(payload.records).toHaveLength(1);
+});
+
+test('quick review colors two independent T sites, saves only a note, and advances without truth controls',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await page.goto(`${origin}/connectivity/interactive-connectivity.html`);
+  await expect(page.locator('#advancedReview')).not.toHaveAttribute('open','');
+  await drawPointerStroke(page,[[.12,.4],[.5,.4],[.88,.4]]);
+  await drawPointerStroke(page,[[.30,.4],[.30,.55],[.30,.7]]);
+  await drawPointerStroke(page,[[.70,.4],[.70,.55],[.70,.7]]);
+  const before=await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot());
+  expect(before.display.groups).toHaveLength(2);expect(before.display.groups[0].color).not.toBe(before.display.groups[1].color);expect(before.display.groups.every(g=>g.members.some(m=>m.kind==='segment'))).toBe(true);
+  await expect(page.locator('#connectionGroups')).toContainText('線1の途中');
+  await page.locator('#feedbackNote').fill('組1：端点3と線1の途中が違う。妥協できない不具合。');await page.locator('#nextTrial').click();
+  const next=await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot());expect(next.strokeCount).toBe(0);expect(next.archiveCount).toBe(1);expect(next.metrics).toBeNull();await expect(page.locator('#feedbackNote')).toHaveValue('');
+  await page.locator('#restoreClear').click();await expect(page.locator('#feedbackNote')).toHaveValue('組1：端点3と線1の途中が違う。妥協できない不具合。');
+  expect((await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot())).strokeCount).toBe(3);
+  await page.locator('#feedbackNote').fill('メモを修正');await page.locator('#nextTrial').click();expect((await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot())).archiveCount).toBe(1);
+});
+
+test('quick memo and unfinished strokes survive reload and exporting gives no fabricated accuracy',async({page})=>{
+  await page.goto(`${origin}/connectivity/interactive-connectivity.html`);await drawPointerStroke(page,[[.2,.3],[.35,.3],[.5,.3]]);
+  await page.locator('#feedbackNote').fill('端点2と線1の途中\n長いメモ🚫');await page.reload();await expect(page.locator('#feedbackNote')).toHaveValue('端点2と線1の途中\n長いメモ🚫');expect((await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot())).strokeCount).toBe(1);
+  await page.locator('#nextTrial').click();await drawPointerStroke(page,[[.2,.6],[.35,.6],[.5,.6]]);await page.locator('#nextTrial').click();
+  const pending=page.waitForEvent('download');await page.locator('#exportJson').click();const download=await pending;const payload=JSON.parse(await readFile(await download.path(),'utf8'));
+  expect(payload.records).toHaveLength(2);expect(payload.records[0].feedback.note).toContain('長いメモ');expect(payload.records[1].feedback.note).toBe('');expect(payload.aggregate.sceneCount).toBe(0);
+});
+
+test('quick review keeps work on failed saving and reflows at narrow widths and doubled text',async({page})=>{
+  await page.addInitScript(()=>{Storage.prototype.setItem=function(){throw new DOMException('blocked','QuotaExceededError');};});
+  await page.setViewportSize({width:320,height:850});await page.goto(`${origin}/connectivity/interactive-connectivity.html`);
+  await drawPointerStroke(page,[[.2,.3],[.35,.3],[.5,.3]]);await page.locator('#feedbackNote').fill('不具合'.repeat(200));await page.locator('#nextTrial').click();
+  await expect(page.locator('#reviewStatus')).toContainText('保存に失敗');expect((await page.evaluate(()=>window.__illustroConnectivityEval.getSnapshot())).strokeCount).toBe(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.addStyleTag({content:'h1{font-size:40px!important}h2{font-size:32px!important}.note,.status-line,.summary,summary,.group-chip,label{font-size:28px!important}.button,textarea{font-size:32px!important}'});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

@@ -1,5 +1,5 @@
 export const CONNECTIVITY_SCHEMA = 'illustro.stroke-connectivity.v1';
-export const CONNECTIVITY_ALGORITHM_VERSION = 'stroke-geometry-0.3.0';
+export const CONNECTIVITY_ALGORITHM_VERSION = 'stroke-geometry-0.3.1';
 
 const EPS = 1e-9;
 const clamp01 = value => Math.max(0, Math.min(1, value));
@@ -39,6 +39,44 @@ function quantile(values, q) {
 export function targetKey(target) { return target.kind === 'endpoint' ? target.endpointId : `@${target.strokeId}:${target.arcFraction.toFixed(6)}`; }
 export function connectionKey(endpointA, target) { return target.kind === 'endpoint' ? pairKey(endpointA,target.endpointId) : `${endpointA}|${targetKey(target)}`; }
 function pairKey(a, b) { return a < b ? `${a}|${b}` : `${b}|${a}`; }
+
+// Geometry of an already accepted connection. This never adds an edge or
+// changes its confidence. One outward ray must meet actual, nearby ink;
+// intersections of two hypothetical extensions are deliberately not used.
+export function connectionGeometry(a, b, strokes) {
+  const gap = distance(a.position, b.position);
+  const bound = gap + Math.max(a.width, b.width);
+  const hits = [];
+  for (const [source, target] of [[a,b],[b,a]]) {
+    const stroke = strokes.find(s => s.strokeId === target.strokeId);
+    if (!stroke) continue;
+    const points = stroke.points;
+    const lengths = cumulativeLengths(points), total = lengths.at(-1);
+    const ray = source.outwardTangent ?? source.tangent;
+    if (!ray || !total) continue;
+    for (let i=1;i<points.length;i++) {
+      const p=points[i-1], v=sub(points[i],p), den=cross(ray,v);
+      const q=sub(p,source.position);let t,u;
+      if (Math.abs(den) <= EPS * Math.max(1,length(v))) {
+        if(Math.abs(cross(q,ray))>EPS*Math.max(1,length(q)))continue;
+        const t0=dot(q,ray),t1=dot(sub(points[i],source.position),ray);
+        if(Math.max(t0,t1)<-EPS)continue;
+        t=Math.max(0,Math.min(t0,t1));u=Math.abs(t1-t0)>EPS?(t-t0)/(t1-t0):0;
+      } else {t=cross(q,v)/den;u=cross(q,ray)/den;}
+      if (t < -EPS || t > bound+EPS || u < -EPS || u > 1+EPS) continue;
+      const arc = lengths[i-1] + clamp01(u)*length(v);
+      const terminalArc = target.end === 'start' ? arc : total-arc;
+      if (terminalArc > Math.min(target.localArcLength,bound)+EPS) continue;
+      hits.push({ extension:t, sourceEndpoint:source.endpointId,
+        point:add(source.position,mul(ray,Math.max(0,t))),
+        target:{kind:'segment',strokeId:stroke.strokeId,arcFraction:arc/total,position:add(p,mul(v,clamp01(u)))},
+        path:[{...source.position},add(source.position,mul(ray,Math.max(0,t)))] });
+    }
+  }
+  hits.sort((x,y)=>x.extension-y.extension || x.sourceEndpoint.localeCompare(y.sourceEndpoint));
+  if (hits.length) return {policy:'one-sided-extension-v1',kind:'one-sided-extension',...hits[0]};
+  return {policy:'one-sided-extension-v1',kind:'direct-endpoint-link',point:null,path:[{...a.position},{...b.position}]};
+}
 
 // Explicit validation adapter: width must come from the renderer's known
 // pressure/brush policy. Predicted samples must never become canonical ends.
@@ -615,15 +653,17 @@ function enforceGraphConsistency(candidates,endpoints,strokes) {
     c.graphConflicts=[];
     if(!c.connected || c.footprintOverlap || c.decisionReason==='manual-connect') continue;
     const a=byId.get(c.endpointA), b=c.endpointB?byId.get(c.endpointB):{position:c.target.position,strokeId:c.target.strokeId};
+    const path=c.geometry?.path??[a.position,b.position];
     for(const s of strokes) {
       if(s.strokeId===a.strokeId || s.strokeId===b.strokeId) continue;
-      for(let i=1;i<s.points.length;i++) if(properIntersection(a.position,b.position,s.points[i-1],s.points[i])) {
+      for(let i=1;i<s.points.length;i++) if(properIntersection(path[0],path[1],s.points[i-1],s.points[i])) {
         c.graphConflicts.push({kind:'segment-crossing',strokeId:s.strokeId,segmentIndex:i-1});
       }
     }
     for(const previous of accepted) {
       if([previous.endpointA,previous.endpointB].filter(Boolean).some(id=>id===c.endpointA || id===c.endpointB)) continue;
-      if(properIntersection(a.position,b.position,byId.get(previous.endpointA).position,(previous.endpointB?byId.get(previous.endpointB).position:previous.target.position))) {
+      const previousPath=previous.geometry?.path??[byId.get(previous.endpointA).position,(previous.endpointB?byId.get(previous.endpointB).position:previous.target.position)];
+      if(properIntersection(path[0],path[1],previousPath[0],previousPath[1])) {
         c.graphConflicts.push({kind:'connector-crossing',candidateId:previous.candidateId});
         if(Math.abs(previous.confidence-c.confidence)<0.075) {
           previous.connected=false;previous.decisionReason='graph-conflict';
@@ -663,6 +703,10 @@ export function resolveStrokeConnectivity(strokes, options = {}) {
   }
   const byEndpoint = annotateCompetition(candidates);
   resolveDecisions(candidates, byEndpoint, options);
+  const endpointMap=new Map(endpoints.map(e=>[e.endpointId,e]));
+  for(const candidate of candidates)if(candidate.connected)candidate.geometry=candidate.target.kind==='endpoint'
+    ? connectionGeometry(endpointMap.get(candidate.endpointA),endpointMap.get(candidate.endpointB),built.strokes)
+    : {policy:'one-sided-extension-v1',kind:'endpoint-segment',point:{...candidate.target.position},target:{...candidate.target},path:[{...endpointMap.get(candidate.endpointA).position},{...candidate.target.position}]};
   enforceGraphConsistency(candidates,endpoints,built.strokes);
   for(const c of candidates){c.ambiguous??=!c.connected&&['competition-ambiguous','graph-conflict'].includes(c.decisionReason);c.decision=c.connected?'connected':c.ambiguous?'ambiguous':'disconnected';c.alternativeExplanations=c.connectionModel==='cap'?['parallel-open-boundaries-geometrically-indistinguishable']:[];}
   candidates.sort((a, b) => b.confidence - a.confidence);
@@ -674,9 +718,11 @@ export function resolveStrokeConnectivity(strokes, options = {}) {
     model: candidate.connectionModel,
     confidence: candidate.confidence,
     decisionReason: candidate.decisionReason,
+    geometry: candidate.geometry,
   }));
   const anchors=new Map();
   for(const edge of edges)if(edge.to.kind==='segment')anchors.set(targetKey(edge.to),{anchorId:targetKey(edge.to),...edge.to});
+  for(const edge of edges){const t=edge.geometry?.kind==='one-sided-extension'?edge.geometry.target:null;if(t&&t.arcFraction>EPS&&t.arcFraction<1-EPS)anchors.set(targetKey(t),{anchorId:targetKey(t),...t});}
   const strokeSpans=[];
   for(const stroke of built.strokes){const nodes=[{nodeId:`${stroke.strokeId}:start`,arcFraction:0},...[...anchors.values()].filter(a=>a.strokeId===stroke.strokeId).map(a=>({nodeId:a.anchorId,arcFraction:a.arcFraction})),{nodeId:`${stroke.strokeId}:end`,arcFraction:1}].sort((a,b)=>a.arcFraction-b.arcFraction);for(let i=1;i<nodes.length;i++)strokeSpans.push({kind:'stroke-span',strokeId:stroke.strokeId,fromNode:nodes[i-1].nodeId,toNode:nodes[i].nodeId,startArcFraction:nodes[i-1].arcFraction,endArcFraction:nodes[i].arcFraction});}
   return {
