@@ -274,3 +274,9 @@ Please judge in plain terms:
 - Does the UI still feel like the approved Aurora direction without the controls becoming decorative?
 
 No input-control pattern is canonical until user review.
+
+## Supersession note
+
+The semantic input-method selection phase has now been completed in [UI_INPUT_CONTROL_STANDARD.md](UI_INPUT_CONTROL_STANDARD.md).
+
+This document remains as the historical first interactive-lab draft. Where this draft and the new standard differ, **UI_INPUT_CONTROL_STANDARD.md is authoritative for input-method semantics**. Exact engine-dependent ranges, increments, nonlinear mappings, device metrics and production runtime validation remain pending.
