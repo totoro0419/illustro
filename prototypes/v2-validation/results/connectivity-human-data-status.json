@@ -1,0 +1,122 @@
+{
+  "schema": "illustro.stroke-connectivity-dataset-analysis.v2",
+  "algorithmVersion": "stroke-geometry-0.3.0",
+  "generatedAt": "2026-09-30T11:06:50.996Z",
+  "aggregate": {
+    "sceneCount": 0,
+    "trueConnection": 0,
+    "falseConnection": 0,
+    "missedConnection": 0,
+    "precision": null,
+    "recall": null,
+    "f1": null,
+    "graphExactMatchRate": null,
+    "candidateGenerationMisses": 0,
+    "modelStats": {},
+    "conditionStats": {},
+    "confidenceCalibration": {
+      "status": "uncalibrated",
+      "scope": "generated-candidates-plus-missed-truth",
+      "brier": null,
+      "bins": [
+        {
+          "low": 0,
+          "high": 0.2,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        },
+        {
+          "low": 0.2,
+          "high": 0.4,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        },
+        {
+          "low": 0.4,
+          "high": 0.6,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        },
+        {
+          "low": 0.6,
+          "high": 0.8,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        },
+        {
+          "low": 0.8,
+          "high": 1,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        }
+      ],
+      "expectedCalibrationError": null
+    }
+  },
+  "trustedInputSubset": {
+    "sceneCount": 0,
+    "trueConnection": 0,
+    "falseConnection": 0,
+    "missedConnection": 0,
+    "precision": null,
+    "recall": null,
+    "f1": null,
+    "graphExactMatchRate": null,
+    "candidateGenerationMisses": 0,
+    "modelStats": {},
+    "conditionStats": {},
+    "confidenceCalibration": {
+      "status": "uncalibrated",
+      "scope": "generated-candidates-plus-missed-truth",
+      "brier": null,
+      "bins": [
+        {
+          "low": 0,
+          "high": 0.2,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        },
+        {
+          "low": 0.2,
+          "high": 0.4,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        },
+        {
+          "low": 0.4,
+          "high": 0.6,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        },
+        {
+          "low": 0.6,
+          "high": 0.8,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        },
+        {
+          "low": 0.8,
+          "high": 1,
+          "count": 0,
+          "meanConfidence": null,
+          "observedRate": null
+        }
+      ],
+      "expectedCalibrationError": null
+    }
+  },
+  "note": "Trusted browser events do not independently prove human input. Human authorship and labels require provenance review; untrusted events are not real-device accuracy evidence.",
+  "records": [],
+  "excluded": [],
+  "status": "UNVERIFIED",
+  "reason": "No human-authored native-stroke connectivity labels have been collected for this prototype. Existing Fill judgments are not endpoint or segment ground truth."
+}

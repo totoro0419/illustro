@@ -1,0 +1,89 @@
+{
+  "schema": "illustro.quick-review-verification.v1",
+  "algorithmVersion": "stroke-geometry-0.3.1",
+  "createdAt": "2026-09-30T23:18:12.702Z",
+  "scope": "validation-only",
+  "nodeTests": {
+    "status": "PASS",
+    "executed": true,
+    "total": 73,
+    "evidence": "connectivity-quick-review-node-tests.txt"
+  },
+  "newGeometryTests": {
+    "status": "PASS",
+    "executed": true,
+    "total": 9
+  },
+  "domEventContractTests": {
+    "status": "PASS",
+    "executed": true,
+    "total": 5,
+    "note": "Node mocks, not browser rendering or physical input"
+  },
+  "declarationSyntax": {
+    "status": "PASS",
+    "executed": true
+  },
+  "standaloneSourceMatch": {
+    "status": "PASS",
+    "executed": true
+  },
+  "browserRendering": {
+    "status": "UNVERIFIED",
+    "executed": false,
+    "reason": "Cloud browser rejected local HTTP access (ERR_BLOCKED_BY_CLIENT) and file protocol by policy. No bypass attempted. Browser fixtures were updated but not executed."
+  },
+  "humanFingerPenAccuracy": {
+    "status": "UNVERIFIED",
+    "records": 0
+  },
+  "productionIntegration": false,
+  "merge": false,
+  "synthetic": {
+    "combined": {
+      "scenes": 24,
+      "TP": 28,
+      "FP": 4,
+      "FN": 0,
+      "precision": 0.875,
+      "recall": 1,
+      "f1": 0.9333333333333333,
+      "exact": 0.9166666666666666
+    },
+    "variants": {
+      "scenes": 864,
+      "TP": 1008,
+      "FP": 144,
+      "FN": 0,
+      "precision": 0.875,
+      "recall": 1,
+      "f1": 0.9333333333333333,
+      "exact": 0.9166666666666666
+    },
+    "endpointBaseline": {
+      "scenes": 24,
+      "TP": 17,
+      "FP": 0,
+      "FN": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "exact": 1
+    },
+    "endpointAdversarial": {
+      "scenes": 18,
+      "TP": 17,
+      "FP": 0,
+      "FN": 1,
+      "precision": 1,
+      "recall": 0.9444444444444444,
+      "f1": 0.9714285714285714,
+      "exact": 0.9444444444444444
+    }
+  },
+  "knownFailures": [
+    "Four false Cap connections on 24 combined base scenes",
+    "One acute corner missed in 18 endpoint adversarial scenes",
+    "Physical rendering, device input, narrow layout and AT remain unverified for this UI revision"
+  ]
+}

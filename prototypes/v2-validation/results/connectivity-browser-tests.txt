@@ -1,0 +1,18 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+Running 9 tests using 1 worker
+
+(node:55096) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/9] connectivity/interactive-connectivity.spec.js:69:1 › connectivity evaluator accepts touch strokes and human endpoint truth
+[2/9] connectivity/interactive-connectivity.spec.js:70:1 › standalone connectivity evaluator opens from file URL
+[3/9] connectivity/interactive-connectivity.spec.js:72:1 › dense endpoint labeling, save, export, reload and clear recovery are reachable
+[4/9] connectivity/interactive-connectivity.spec.js:87:1 › resize preserves stroke coordinates; narrow and intermediate layouts do not overflow
+[5/9] connectivity/interactive-connectivity.spec.js:99:1 › pointer cancel retains real samples; wrong pointer cannot add a phantom endpoint
+[6/9] connectivity/interactive-connectivity.spec.js:110:1 › keyboard can label and finalize; empty truth and edits invalidate metrics
+[7/9] connectivity/interactive-connectivity.spec.js:121:1 › T junction truth can select a segment, score it, export it and restore it
+[8/9] connectivity/interactive-connectivity.spec.js:138:1 › canvas endpoint then segment tap is a second complete T labeling path
+[9/9] connectivity/interactive-connectivity.spec.js:146:1 › all rendered cap choices enter native stroke geometry and storage failure remains exportable
+  9 passed (4.9s)

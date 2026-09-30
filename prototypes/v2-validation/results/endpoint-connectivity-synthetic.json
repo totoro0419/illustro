@@ -1,0 +1,557 @@
+{
+  "schema": "illustro.stroke-connectivity-synthetic-benchmark.v1",
+  "sceneCount": 24,
+  "trueConnection": 17,
+  "falseConnection": 0,
+  "missedConnection": 0,
+  "precision": 1,
+  "recall": 1,
+  "f1": 1,
+  "graphExactMatchRate": 1,
+  "category": {
+    "contact": {
+      "scenes": 3,
+      "exact": 3,
+      "tp": 3,
+      "fp": 0,
+      "fn": 0
+    },
+    "continuation": {
+      "scenes": 3,
+      "exact": 3,
+      "tp": 3,
+      "fp": 0,
+      "fn": 0
+    },
+    "jittered-continuation": {
+      "scenes": 2,
+      "exact": 2,
+      "tp": 2,
+      "fp": 0,
+      "fn": 0
+    },
+    "corner-45": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "corner-90": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "corner-120": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "cap": {
+      "scenes": 3,
+      "exact": 3,
+      "tp": 3,
+      "fp": 0,
+      "fn": 0
+    },
+    "slender-closure": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 2,
+      "fp": 0,
+      "fn": 0
+    },
+    "competition-many": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "negative-far": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "negative-near": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "negative-parallel": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "t-junction": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "crossing": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "competition": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    },
+    "width-normalization": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "width-normalization-negative": {
+      "scenes": 1,
+      "exact": 1,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0
+    }
+  },
+  "scenes": [
+    {
+      "name": "contact-w1",
+      "category": "contact",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "contact",
+          "confidence": 0.9967203265306123
+        }
+      ]
+    },
+    {
+      "name": "contact-w2",
+      "category": "contact",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "contact",
+          "confidence": 0.9834693877551021
+        }
+      ]
+    },
+    {
+      "name": "contact-w6",
+      "category": "contact",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "contact",
+          "confidence": 0.980498866213152
+        }
+      ]
+    },
+    {
+      "name": "continuation-gap0.25",
+      "category": "continuation",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "continuation",
+          "confidence": 0.9266377402760745
+        }
+      ]
+    },
+    {
+      "name": "continuation-gap0.7",
+      "category": "continuation",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "continuation",
+          "confidence": 0.8324888637240552
+        }
+      ]
+    },
+    {
+      "name": "continuation-gap1.2",
+      "category": "continuation",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "continuation",
+          "confidence": 0.739054913332613
+        }
+      ]
+    },
+    {
+      "name": "continuation-thin-fast-jitter",
+      "category": "jittered-continuation",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "continuation",
+          "confidence": 0.8438900737537194
+        }
+      ]
+    },
+    {
+      "name": "continuation-thick-jitter",
+      "category": "jittered-continuation",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "corner",
+          "confidence": 0.772460423414016
+        }
+      ]
+    },
+    {
+      "name": "corner-45",
+      "category": "corner-45",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "corner",
+          "confidence": 0.8291026345930662
+        }
+      ]
+    },
+    {
+      "name": "corner-90",
+      "category": "corner-90",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "corner",
+          "confidence": 0.8208203922783911
+        }
+      ]
+    },
+    {
+      "name": "corner-120",
+      "category": "corner-120",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "corner",
+          "confidence": 0.815816817355023
+        }
+      ]
+    },
+    {
+      "name": "cap-thin",
+      "category": "cap",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "upper:end",
+            "lower:end"
+          ],
+          "model": "cap",
+          "confidence": 0.8402766170133498
+        }
+      ]
+    },
+    {
+      "name": "cap-medium",
+      "category": "cap",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "upper:end",
+            "lower:end"
+          ],
+          "model": "cap",
+          "confidence": 0.8338519952774496
+        }
+      ]
+    },
+    {
+      "name": "cap-jittered",
+      "category": "cap",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "upper:end",
+            "lower:end"
+          ],
+          "model": "cap",
+          "confidence": 0.7797916015747862
+        }
+      ]
+    },
+    {
+      "name": "slender-closed-strip",
+      "category": "slender-closure",
+      "truth": 2,
+      "predicted": 2,
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "upper:start",
+            "lower:start"
+          ],
+          "model": "cap",
+          "confidence": 0.8354837773600944
+        },
+        {
+          "pair": [
+            "upper:end",
+            "lower:end"
+          ],
+          "model": "cap",
+          "confidence": 0.8354837773600944
+        }
+      ]
+    },
+    {
+      "name": "dense-many-endpoints",
+      "category": "competition-many",
+      "truth": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": []
+    },
+    {
+      "name": "far-disconnected",
+      "category": "negative-far",
+      "truth": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": []
+    },
+    {
+      "name": "near-back-facing",
+      "category": "negative-near",
+      "truth": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": []
+    },
+    {
+      "name": "parallel-staggered-open",
+      "category": "negative-parallel",
+      "truth": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": []
+    },
+    {
+      "name": "t-junction-endpoint-to-segment-not-yet-resolved",
+      "category": "t-junction",
+      "truth": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": []
+    },
+    {
+      "name": "crossing-no-endpoint-pair",
+      "category": "crossing",
+      "truth": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": []
+    },
+    {
+      "name": "dense-equal-competition",
+      "category": "competition",
+      "truth": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": []
+    },
+    {
+      "name": "thick-small-gap",
+      "category": "width-normalization",
+      "truth": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": [
+        {
+          "pair": [
+            "a:end",
+            "b:start"
+          ],
+          "model": "contact",
+          "confidence": 0.9582766439909297
+        }
+      ]
+    },
+    {
+      "name": "thin-same-center-gap",
+      "category": "width-normalization-negative",
+      "truth": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "exact": true,
+      "edges": []
+    }
+  ],
+  "generatedAt": "2026-09-30T23:17:01.806Z",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "note": "Synthetic geometry only; this is not a human-input accuracy claim."
+}

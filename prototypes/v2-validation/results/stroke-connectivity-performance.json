@@ -1,0 +1,168 @@
+{
+  "schema": "illustro.stroke-connectivity-performance.v1",
+  "algorithmVersion": "stroke-geometry-0.3.0",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "note": "CPU wall time in this execution environment, not an Android device or frame-time claim. Three warm samples per layout; dense worst-case remains important.",
+  "results": [
+    {
+      "layout": "spaced",
+      "strokes": 20,
+      "pointsPerStroke": 80,
+      "unfiltered": {
+        "medianMs": 12.612088999999997,
+        "samplesMs": [
+          20.109765000000003,
+          12.612088999999997,
+          12.173057
+        ],
+        "candidates": 38,
+        "edges": 0
+      },
+      "filtered": {
+        "medianMs": 4.000025999999991,
+        "samplesMs": [
+          4.000025999999991,
+          4.365396000000004,
+          3.851011999999997
+        ],
+        "candidates": 38,
+        "edges": 0
+      },
+      "sameGraph": true
+    },
+    {
+      "layout": "spaced",
+      "strokes": 100,
+      "pointsPerStroke": 80,
+      "unfiltered": {
+        "medianMs": 245.94320900000002,
+        "samplesMs": [
+          279.26390899999996,
+          233.866988,
+          245.94320900000002
+        ],
+        "candidates": 198,
+        "edges": 0
+      },
+      "filtered": {
+        "medianMs": 13.6832330000002,
+        "samplesMs": [
+          12.91902200000004,
+          13.6832330000002,
+          15.448522000000139
+        ],
+        "candidates": 198,
+        "edges": 0
+      },
+      "sameGraph": true
+    },
+    {
+      "layout": "spaced",
+      "strokes": 300,
+      "pointsPerStroke": 80,
+      "unfiltered": {
+        "medianMs": 2013.42033,
+        "samplesMs": [
+          2318.2676750000005,
+          2013.42033,
+          2002.7733610000005
+        ],
+        "candidates": 598,
+        "edges": 0
+      },
+      "filtered": {
+        "medianMs": 54.20533400000022,
+        "samplesMs": [
+          56.48327000000063,
+          54.20533400000022,
+          51.59715999999935
+        ],
+        "candidates": 598,
+        "edges": 0
+      },
+      "sameGraph": true
+    },
+    {
+      "layout": "dense",
+      "strokes": 20,
+      "pointsPerStroke": 80,
+      "unfiltered": {
+        "medianMs": 11.541140999999698,
+        "samplesMs": [
+          11.286573000001226,
+          11.696078999999372,
+          11.541140999999698
+        ],
+        "candidates": 380,
+        "edges": 108
+      },
+      "filtered": {
+        "medianMs": 11.37375400000019,
+        "samplesMs": [
+          11.37375400000019,
+          10.365364999999656,
+          11.988199999999779
+        ],
+        "candidates": 380,
+        "edges": 108
+      },
+      "sameGraph": true
+    },
+    {
+      "layout": "dense",
+      "strokes": 100,
+      "pointsPerStroke": 80,
+      "unfiltered": {
+        "medianMs": 289.5431430000008,
+        "samplesMs": [
+          347.3012899999994,
+          289.5431430000008,
+          285.07242700000097
+        ],
+        "candidates": 7323,
+        "edges": 588
+      },
+      "filtered": {
+        "medianMs": 218.8819370000001,
+        "samplesMs": [
+          222.76463800000056,
+          218.8819370000001,
+          203.85462000000007
+        ],
+        "candidates": 7323,
+        "edges": 588
+      },
+      "sameGraph": true
+    },
+    {
+      "layout": "dense",
+      "strokes": 300,
+      "pointsPerStroke": 80,
+      "unfiltered": {
+        "medianMs": 2270.1281359999994,
+        "samplesMs": [
+          2314.4041780000007,
+          2270.1281359999994,
+          2151.811924999998
+        ],
+        "candidates": 26523,
+        "edges": 1788
+      },
+      "filtered": {
+        "medianMs": 835.8044779999982,
+        "samplesMs": [
+          911.3061300000008,
+          800.4630370000013,
+          835.8044779999982
+        ],
+        "candidates": 26523,
+        "edges": 1788
+      },
+      "sameGraph": true
+    }
+  ]
+}

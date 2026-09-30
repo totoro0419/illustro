@@ -1,0 +1,22 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro-v2-validation@0.0.2 test
+> node --test src/*.test.js
+
+✔ src/brush.test.js (507.020778ms)
+✔ src/endpointConnectivity.test.js (133.853431ms)
+✔ src/endpointConnectivityRobustness.test.js (115.660735ms)
+✔ src/endpointConnectivitySynthetic.test.js (89.341478ms)
+✔ src/endpointSegmentConnectivity.test.js (440.772177ms)
+✔ src/evidenceV3.test.js (210.691381ms)
+✔ src/integration.test.js (106.886399ms)
+✔ src/philox.test.js (69.253608ms)
+✔ src/region.test.js (3007.751058ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3135.762886
