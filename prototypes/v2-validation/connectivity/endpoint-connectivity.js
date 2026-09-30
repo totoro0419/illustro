@@ -360,6 +360,12 @@ export function scoreEndpointPair(a, b, options = {}) {
     effectiveGap: gap.effectiveGap,
     normalizedGap: gap.normalizedGap,
     widthScale: gap.widthScale,
+    endpointWidthA: a.width,
+    endpointWidthB: b.width,
+    localCurvatureA: a.localCurvature,
+    localCurvatureB: b.localCurvature,
+    endpointJitterA: a.jitterNormalized,
+    endpointJitterB: b.jitterNormalized,
     connectionModel: best.model,
     modelScores,
     modelMargin,
@@ -487,11 +493,12 @@ export function connectionSet(graph) {
 
 function conditionBucket(candidate) {
   const gap = candidate.normalizedGap;
-  const curvature = candidate.modelScores.find(m => m.model === 'corner')?.diagnostics ?? {};
-  const bend = (curvature.bendA ?? 0) + (curvature.bendB ?? 0);
+  const width = candidate.widthScale;
+  const curvature = 0.5 * ((candidate.localCurvatureA ?? 0) + (candidate.localCurvatureB ?? 0));
   return {
     gap: gap <= 0 ? 'contact' : gap <= 1 ? 'gap<=1w' : gap <= 3 ? 'gap<=3w' : 'gap>3w',
-    bend: bend <= Math.PI / 6 ? 'near-straight' : bend <= Math.PI * 2 / 3 ? 'moderate-bend' : 'strong-bend',
+    width: width <= 1.5 ? 'thin<=1.5px' : width <= 6 ? 'medium<=6px' : 'thick>6px',
+    curvature: curvature <= 0.05 ? 'curvature<=0.05rad' : curvature <= 0.18 ? 'curvature<=0.18rad' : 'curvature>0.18rad',
     model: candidate.connectionModel,
   };
 }
@@ -520,7 +527,7 @@ export function evaluateConnectivity(graph, truthPairs, options = {}) {
     const predictedPositive = candidate.connected ? 1 : 0;
     const model = candidate.connectionModel;
     const bucket = conditionBucket(candidate);
-    const conditionKey = `${bucket.model}/${bucket.gap}/${bucket.bend}`;
+    const conditionKey = `${bucket.model}/${bucket.gap}/${bucket.width}/${bucket.curvature}`;
     for (const [key, target] of [[model, modelStats], [conditionKey, conditionStats]]) {
       target[key] ??= { total: 0, trueConnection: 0, predictedConnection: 0, tp: 0, fp: 0, fn: 0 };
       const row = target[key];

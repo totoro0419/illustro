@@ -5,7 +5,7 @@ import { runSyntheticBenchmark } from '../connectivity/synthetic-connectivity-be
 
 test('Stroke-native endpoint connectivity synthetic corpus has no false or missed connection regressions', () => {
   const result = runSyntheticBenchmark();
-  assert.equal(result.sceneCount, 22);
+  assert.equal(result.sceneCount, 24);
   assert.equal(result.falseConnection, 0, JSON.stringify(result.scenes.filter(scene => scene.fp), null, 2));
   assert.equal(result.missedConnection, 0, JSON.stringify(result.scenes.filter(scene => scene.fn), null, 2));
   assert.equal(result.precision, 1);

@@ -87,6 +87,23 @@ export function buildSyntheticScenes() {
   scenes.push(capScene('cap-thin', 1.5, 4.2));
   scenes.push(capScene('cap-medium', 2.5, 7));
   scenes.push(capScene('cap-jittered', 3, 8, 0.22));
+  scenes.push({
+    name:'slender-closed-strip', category:'slender-closure',
+    strokes:[line('upper',0,0,40,0,2),line('lower',0,6,40,6,2)],
+    truth:[['upper:start','lower:start'],['upper:end','lower:end']],
+  });
+  scenes.push({
+    name:'dense-many-endpoints', category:'competition-many',
+    strokes:[
+      line('a',0,0,20,0,0.8),
+      ...Array.from({length:8},(_,i)=>{
+        const angle=i*Math.PI/4;
+        const cx=20+Math.cos(angle)*3.5, cy=Math.sin(angle)*3.5;
+        return line(`d${i}`,cx,cy,cx+Math.cos(angle)*18,cy+Math.sin(angle)*18,0.8);
+      }),
+    ],
+    truth:[],
+  });
   scenes.push({ name:'far-disconnected', category:'negative-far', strokes:[line('a',0,0,15,0,1),line('b',35,0,50,0,1)], truth:[] });
   scenes.push({ name:'near-back-facing', category:'negative-near', strokes:[line('a',0,0,15,0,1),line('b',18,1,30,1,1)], truth:[] });
   scenes.push({ name:'parallel-staggered-open', category:'negative-parallel', strokes:[line('a',0,0,30,0,1.5),line('b',18,5,42,5,1.5)], truth:[] });
