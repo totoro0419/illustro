@@ -19,6 +19,7 @@ export default defineConfig({
   use: {
     browserName: 'chromium',
     headless: true,
+    launchOptions: process.env.ILLUSTRO_TEST_BROWSER ? { executablePath: process.env.ILLUSTRO_TEST_BROWSER } : {},
   },
   reporter: [['line']],
 });

@@ -1,0 +1,1993 @@
+{
+  "schema": "illustro.connectivity-verification.v1",
+  "scope": "validation-only endpoint-endpoint and endpoint-segment",
+  "productionIntegration": false,
+  "merge": false,
+  "algorithmVersion": "stroke-geometry-0.3.0",
+  "repositoryAuditedHead": "c4e29fbb7efde54e3b7531cef24c373040dcfd1d",
+  "checks": {
+    "nodeValidationFiles": {
+      "status": "PASS",
+      "executed": true,
+      "files": 9,
+      "evidence": "connectivity-node-tests.txt"
+    },
+    "coreTypecheck": {
+      "status": "PASS",
+      "executed": true,
+      "evidence": "connectivity-core-check.txt"
+    },
+    "coreTestFiles": {
+      "status": "PASS",
+      "executed": true,
+      "files": 8,
+      "evidence": "connectivity-core-check.txt"
+    },
+    "browserFlows": {
+      "status": "PASS",
+      "executed": true,
+      "cases": 9,
+      "browser": "Chromium 134",
+      "playwright": "1.63.0",
+      "evidence": "connectivity-browser-tests.txt"
+    },
+    "declarationSyntax": {
+      "status": "PASS",
+      "executed": true,
+      "command": "tsc --noEmit --strict --skipLibCheck --lib es2022,dom connectivity/endpoint-connectivity.d.ts"
+    },
+    "humanFingerPenAccuracy": {
+      "status": "UNVERIFIED",
+      "executed": false,
+      "records": 0,
+      "reason": "Human-created native stroke truth not yet collected"
+    },
+    "actualAndroidPalmPressureOrientation": {
+      "status": "UNVERIFIED",
+      "executed": false
+    },
+    "assistiveTechnology": {
+      "status": "UNVERIFIED",
+      "executed": false
+    },
+    "confidenceCalibration": {
+      "status": "UNVERIFIED",
+      "executed": false,
+      "reason": "Synthetic calibration diagnostics exist; real human calibration absent"
+    }
+  },
+  "combinedSynthetic": {
+    "status": "MEASURED_WITH_FAILURES",
+    "beforeEndpointOnlyAblation": {
+      "sceneCount": 24,
+      "trueConnection": 3,
+      "falseConnection": 4,
+      "missedConnection": 25,
+      "precision": 0.42857142857142855,
+      "recall": 0.10714285714285714,
+      "f1": 0.17142857142857143,
+      "graphExactMatchRate": 0.20833333333333334,
+      "candidateGenerationMisses": 25,
+      "modelStats": {
+        "not-generated": {
+          "total": 25,
+          "tp": 0,
+          "fp": 0,
+          "fn": 25,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        },
+        "contact": {
+          "total": 34,
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap": {
+          "total": 16,
+          "tp": 0,
+          "fp": 4,
+          "fn": 0,
+          "precision": 0,
+          "recall": 1,
+          "f1": 0
+        }
+      },
+      "conditionStats": {
+        "not-generated/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 25,
+          "tp": 0,
+          "fp": 0,
+          "fn": 25,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        },
+        "contact/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 20,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thick>6px/curvature<=0.05rad": {
+          "total": 8,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/medium<=6px/curvature<=0.05rad": {
+          "total": 3,
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 6,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 6,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 4,
+          "tp": 0,
+          "fp": 4,
+          "fn": 0,
+          "precision": 0,
+          "recall": 1,
+          "f1": 0
+        },
+        "contact/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 3,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      },
+      "confidenceCalibration": {
+        "status": "uncalibrated",
+        "scope": "generated-candidates-plus-missed-truth",
+        "brier": 0.3708264102086888,
+        "bins": [
+          {
+            "low": 0,
+            "high": 0.2,
+            "count": 68,
+            "meanConfidence": 0.000976433978609313,
+            "observedRate": 0.36764705882352944
+          },
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "count": 0,
+            "meanConfidence": null,
+            "observedRate": null
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "count": 0,
+            "meanConfidence": null,
+            "observedRate": null
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "count": 0,
+            "meanConfidence": null,
+            "observedRate": null
+          },
+          {
+            "low": 0.8,
+            "high": 1,
+            "count": 7,
+            "meanConfidence": 0.9004771133740604,
+            "observedRate": 0.42857142857142855
+          }
+        ],
+        "expectedCalibrationError": 0.37649256377430657
+      }
+    },
+    "after": {
+      "sceneCount": 24,
+      "trueConnection": 28,
+      "falseConnection": 4,
+      "missedConnection": 0,
+      "precision": 0.875,
+      "recall": 1,
+      "f1": 0.9333333333333333,
+      "graphExactMatchRate": 0.9166666666666666,
+      "candidateGenerationMisses": 0,
+      "modelStats": {
+        "contact": {
+          "total": 86,
+          "tp": 28,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap": {
+          "total": 16,
+          "tp": 0,
+          "fp": 4,
+          "fn": 0,
+          "precision": 0,
+          "recall": 1,
+          "f1": 0
+        },
+        "termination": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      },
+      "conditionStats": {
+        "contact/contact/medium<=6px/curvature<=0.05rad": {
+          "total": 17,
+          "tp": 17,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/medium<=6px/curvature<=0.05rad": {
+          "total": 3,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 29,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thick>6px/curvature<=0.05rad": {
+          "total": 8,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 6,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/thin<=1.5px/curvature<=0.05rad": {
+          "total": 9,
+          "tp": 9,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 6,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 12,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/medium<=6px/curvature<=0.18rad": {
+          "total": 1,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 4,
+          "tp": 0,
+          "fp": 4,
+          "fn": 0,
+          "precision": 0,
+          "recall": 1,
+          "f1": 0
+        },
+        "termination/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "termination/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/thick>6px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 4,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      },
+      "confidenceCalibration": {
+        "status": "uncalibrated",
+        "scope": "generated-candidates-plus-missed-truth",
+        "brier": 0.06324471826568011,
+        "bins": [
+          {
+            "low": 0,
+            "high": 0.2,
+            "count": 66,
+            "meanConfidence": 0.003457360265617815,
+            "observedRate": 0
+          },
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "count": 0,
+            "meanConfidence": null,
+            "observedRate": null
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "count": 1,
+            "meanConfidence": 0.4170223626915834,
+            "observedRate": 0
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "count": 1,
+            "meanConfidence": 0.630090001612942,
+            "observedRate": 0
+          },
+          {
+            "low": 0.8,
+            "high": 1,
+            "count": 36,
+            "meanConfidence": 0.9599988321350131,
+            "observedRate": 0.7777777777777778
+          }
+        ],
+        "expectedCalibrationError": 0.07533900094899783
+      }
+    },
+    "transforms": {
+      "sceneCount": 864,
+      "trueConnection": 1008,
+      "falseConnection": 144,
+      "missedConnection": 0,
+      "precision": 0.875,
+      "recall": 1,
+      "f1": 0.9333333333333333,
+      "graphExactMatchRate": 0.9166666666666666,
+      "candidateGenerationMisses": 0,
+      "modelStats": {
+        "contact": {
+          "total": 3096,
+          "tp": 1008,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap": {
+          "total": 576,
+          "tp": 0,
+          "fp": 144,
+          "fn": 0,
+          "precision": 0,
+          "recall": 1,
+          "f1": 0
+        },
+        "termination": {
+          "total": 72,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      },
+      "conditionStats": {
+        "contact/contact/thin<=1.5px/curvature<=0.05rad": {
+          "total": 420,
+          "tp": 420,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/medium<=6px/curvature<=0.05rad": {
+          "total": 228,
+          "tp": 228,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/thick>6px/curvature<=0.05rad": {
+          "total": 324,
+          "tp": 324,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 84,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/medium<=6px/curvature<=0.05rad": {
+          "total": 36,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/thick>6px/curvature<=0.05rad": {
+          "total": 60,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 696,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 384,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thick>6px/curvature<=0.05rad": {
+          "total": 684,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 216,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 72,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thick>6px/curvature<=0.05rad": {
+          "total": 144,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/thin<=1.5px/curvature<=0.18rad": {
+          "total": 12,
+          "tp": 12,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/medium<=6px/curvature<=0.18rad": {
+          "total": 12,
+          "tp": 12,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/thick>6px/curvature<=0.18rad": {
+          "total": 12,
+          "tp": 12,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 96,
+          "tp": 0,
+          "fp": 96,
+          "fn": 0,
+          "precision": 0,
+          "recall": 1,
+          "f1": 0
+        },
+        "termination/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 24,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 48,
+          "tp": 0,
+          "fp": 48,
+          "fn": 0,
+          "precision": 0,
+          "recall": 1,
+          "f1": 0
+        },
+        "termination/gap<=1w/thick>6px/curvature<=0.05rad": {
+          "total": 12,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "termination/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 24,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "termination/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 12,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/medium<=6px/curvature<=0.05rad": {
+          "total": 48,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 96,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      },
+      "confidenceCalibration": {
+        "status": "uncalibrated",
+        "scope": "generated-candidates-plus-missed-truth",
+        "brier": 0.06324471826133962,
+        "bins": [
+          {
+            "low": 0,
+            "high": 0.2,
+            "count": 2376,
+            "meanConfidence": 0.0034573602639641574,
+            "observedRate": 0
+          },
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "count": 0,
+            "meanConfidence": null,
+            "observedRate": null
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "count": 36,
+            "meanConfidence": 0.4170223626915847,
+            "observedRate": 0
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "count": 36,
+            "meanConfidence": 0.6300900012828614,
+            "observedRate": 0
+          },
+          {
+            "low": 0.8,
+            "high": 1,
+            "count": 1296,
+            "meanConfidence": 0.9599988321350151,
+            "observedRate": 0.7777777777777778
+          }
+        ],
+        "expectedCalibrationError": 0.07533900094477523
+      }
+    },
+    "independentSceneCount": 24,
+    "failures": [
+      {
+        "scene": "dense-separated-lines",
+        "falseConnections": [
+          "bar:start|near:start",
+          "bar:end|near:end"
+        ],
+        "missedConnections": []
+      },
+      {
+        "scene": "dense-contact-and-false-neighbor",
+        "falseConnections": [
+          "bar:start|near:start",
+          "bar:end|near:end"
+        ],
+        "missedConnections": []
+      }
+    ]
+  },
+  "endpointOnlyRegression": {
+    "baseline": {
+      "sceneCount": 24,
+      "trueConnection": 17,
+      "falseConnection": 0,
+      "missedConnection": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "graphExactMatchRate": 1,
+      "candidateGenerationMisses": 0,
+      "modelStats": {
+        "contact": {
+          "total": 17,
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap": {
+          "total": 13,
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation": {
+          "total": 10,
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner": {
+          "total": 26,
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      },
+      "conditionStats": {
+        "contact/contact/thin<=1.5px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/medium<=6px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/medium<=6px/curvature<=0.05rad": {
+          "total": 5,
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/medium<=6px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=1w/medium<=6px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=3w/medium<=6px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 3,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thick>6px/curvature>0.18rad": {
+          "total": 1,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thick>6px/curvature>0.18rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thick>6px/curvature<=0.18rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thick>6px/curvature>0.18rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 4,
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/medium<=6px/curvature<=0.18rad": {
+          "total": 1,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/medium<=6px/curvature<=0.18rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 3,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 13,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 8,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/thick>6px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/thick>6px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 3,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      },
+      "confidenceCalibration": {
+        "status": "uncalibrated",
+        "scope": "generated-candidates-plus-missed-truth",
+        "brier": 0.07760006922358074,
+        "bins": [
+          {
+            "low": 0,
+            "high": 0.2,
+            "count": 21,
+            "meanConfidence": 0.023441487268814905,
+            "observedRate": 0
+          },
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "count": 21,
+            "meanConfidence": 0.3116401767442034,
+            "observedRate": 0
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "count": 5,
+            "meanConfidence": 0.47341413576743435,
+            "observedRate": 0
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "count": 3,
+            "meanConfidence": 0.7637689794404717,
+            "observedRate": 1
+          },
+          {
+            "low": 0.8,
+            "high": 1,
+            "count": 16,
+            "meanConfidence": 0.8719510982584605,
+            "observedRate": 0.875
+          }
+        ],
+        "expectedCalibrationError": 0.15395850170687533
+      }
+    },
+    "adversarial": {
+      "sceneCount": 18,
+      "trueConnection": 17,
+      "falseConnection": 0,
+      "missedConnection": 1,
+      "precision": 1,
+      "recall": 0.9444444444444444,
+      "f1": 0.9714285714285714,
+      "graphExactMatchRate": 0.9444444444444444,
+      "candidateGenerationMisses": 0,
+      "modelStats": {
+        "continuation": {
+          "total": 9,
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap": {
+          "total": 5,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact": {
+          "total": 16,
+          "tp": 9,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner": {
+          "total": 4,
+          "tp": 3,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1,
+          "recall": 0.75,
+          "f1": 0.8571428571428571
+        }
+      },
+      "conditionStats": {
+        "continuation/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 3,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/medium<=6px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/thin<=1.5px/curvature<=0.05rad": {
+          "total": 6,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 8,
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thin<=1.5px/curvature<=0.18rad": {
+          "total": 2,
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thin<=1.5px/curvature<=0.18rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thin<=1.5px/curvature<=0.18rad": {
+          "total": 2,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/medium<=6px/curvature<=0.05rad": {
+          "total": 3,
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 1,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 2,
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1,
+          "recall": 0.5,
+          "f1": 0.6666666666666666
+        }
+      },
+      "confidenceCalibration": {
+        "status": "uncalibrated",
+        "scope": "generated-candidates-plus-missed-truth",
+        "brier": 0.0922113087667346,
+        "bins": [
+          {
+            "low": 0,
+            "high": 0.2,
+            "count": 12,
+            "meanConfidence": 5.252895531871052e-05,
+            "observedRate": 0
+          },
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "count": 1,
+            "meanConfidence": 0.38518487347849484,
+            "observedRate": 0
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "count": 1,
+            "meanConfidence": 0.5393085432521327,
+            "observedRate": 1
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "count": 2,
+            "meanConfidence": 0.7879179337162582,
+            "observedRate": 0.5
+          },
+          {
+            "low": 0.8,
+            "high": 1,
+            "count": 18,
+            "meanConfidence": 0.9354417459781731,
+            "observedRate": 0.8888888888888888
+          }
+        ],
+        "expectedCalibrationError": 0.06647923449205351
+      }
+    },
+    "transforms": {
+      "sceneCount": 756,
+      "trueConnection": 612,
+      "falseConnection": 0,
+      "missedConnection": 18,
+      "precision": 1,
+      "recall": 0.9714285714285714,
+      "f1": 0.9855072463768115,
+      "graphExactMatchRate": 0.9761904761904762,
+      "candidateGenerationMisses": 0,
+      "modelStats": {
+        "contact": {
+          "total": 594,
+          "tp": 234,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap": {
+          "total": 348,
+          "tp": 90,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation": {
+          "total": 344,
+          "tp": 162,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner": {
+          "total": 514,
+          "tp": 126,
+          "fp": 0,
+          "fn": 18,
+          "precision": 1,
+          "recall": 0.875,
+          "f1": 0.9333333333333333
+        }
+      },
+      "conditionStats": {
+        "contact/contact/thin<=1.5px/curvature<=0.05rad": {
+          "total": 120,
+          "tp": 120,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/thick>6px/curvature<=0.05rad": {
+          "total": 84,
+          "tp": 84,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/contact/medium<=6px/curvature<=0.05rad": {
+          "total": 30,
+          "tp": 30,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 42,
+          "tp": 30,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 46,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 26,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/medium<=6px/curvature<=0.05rad": {
+          "total": 30,
+          "tp": 18,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/medium<=6px/curvature<=0.05rad": {
+          "total": 18,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 18,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 36,
+          "tp": 24,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 70,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thick>6px/curvature<=0.05rad": {
+          "total": 20,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 142,
+          "tp": 84,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=1w/medium<=6px/curvature<=0.05rad": {
+          "total": 18,
+          "tp": 18,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=1w/thick>6px/curvature<=0.05rad": {
+          "total": 72,
+          "tp": 42,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 20,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=3w/medium<=6px/curvature<=0.05rad": {
+          "total": 6,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 12,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thin<=1.5px/curvature>0.18rad": {
+          "total": 6,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thin<=1.5px/curvature>0.18rad": {
+          "total": 6,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thin<=1.5px/curvature<=0.18rad": {
+          "total": 30,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thin<=1.5px/curvature>0.18rad": {
+          "total": 12,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thick>6px/curvature>0.18rad": {
+          "total": 12,
+          "tp": 12,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thick>6px/curvature>0.18rad": {
+          "total": 12,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thick>6px/curvature<=0.18rad": {
+          "total": 24,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=3w/thick>6px/curvature>0.18rad": {
+          "total": 24,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 72,
+          "tp": 48,
+          "fp": 0,
+          "fn": 12,
+          "precision": 1,
+          "recall": 0.8,
+          "f1": 0.888888888888889
+        },
+        "corner/gap<=1w/thick>6px/curvature<=0.05rad": {
+          "total": 36,
+          "tp": 24,
+          "fp": 0,
+          "fn": 6,
+          "precision": 1,
+          "recall": 0.8,
+          "f1": 0.888888888888889
+        },
+        "cap/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 74,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/thick>6px/curvature<=0.05rad": {
+          "total": 46,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap>3w/medium<=6px/curvature<=0.05rad": {
+          "total": 30,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thin<=1.5px/curvature<=0.18rad": {
+          "total": 6,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thin<=1.5px/curvature<=0.18rad": {
+          "total": 36,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/medium<=6px/curvature<=0.18rad": {
+          "total": 6,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/medium<=6px/curvature<=0.18rad": {
+          "total": 12,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "cap/gap<=3w/thick>6px/curvature<=0.18rad": {
+          "total": 6,
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap>3w/thick>6px/curvature<=0.18rad": {
+          "total": 24,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 52,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap>3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 132,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=3w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 96,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/thin<=1.5px/curvature<=0.05rad": {
+          "total": 24,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "continuation/gap>3w/thick>6px/curvature<=0.05rad": {
+          "total": 22,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap>3w/thick>6px/curvature<=0.05rad": {
+          "total": 76,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=3w/thick>6px/curvature<=0.05rad": {
+          "total": 48,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "contact/gap<=1w/thick>6px/curvature<=0.05rad": {
+          "total": 30,
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thin<=1.5px/curvature<=0.18rad": {
+          "total": 24,
+          "tp": 24,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "corner/gap<=1w/thick>6px/curvature<=0.18rad": {
+          "total": 12,
+          "tp": 12,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        }
+      },
+      "confidenceCalibration": {
+        "status": "uncalibrated",
+        "scope": "generated-candidates-plus-missed-truth",
+        "brier": 0.08203184325353126,
+        "bins": [
+          {
+            "low": 0,
+            "high": 0.2,
+            "count": 618,
+            "meanConfidence": 0.014618940496125507,
+            "observedRate": 0
+          },
+          {
+            "low": 0.2,
+            "high": 0.4,
+            "count": 372,
+            "meanConfidence": 0.3220160222946798,
+            "observedRate": 0
+          },
+          {
+            "low": 0.4,
+            "high": 0.6,
+            "count": 108,
+            "meanConfidence": 0.48434528832172175,
+            "observedRate": 0.16666666666666666
+          },
+          {
+            "low": 0.6,
+            "high": 0.8,
+            "count": 90,
+            "meanConfidence": 0.7734285605123847,
+            "observedRate": 0.8
+          },
+          {
+            "low": 0.8,
+            "high": 1,
+            "count": 612,
+            "meanConfidence": 0.9055637934759299,
+            "observedRate": 0.8823529411764706
+          }
+        ],
+        "expectedCalibrationError": 0.09985012656673715
+      }
+    },
+    "failures": [
+      {
+        "scene": "corner-turn-150",
+        "falseConnections": [],
+        "missedConnections": [
+          "a:end|b:start"
+        ]
+      }
+    ]
+  },
+  "performance": {
+    "schema": "illustro.stroke-connectivity-performance.v1",
+    "algorithmVersion": "stroke-geometry-0.3.0",
+    "environment": {
+      "node": "v24.19.0",
+      "platform": "linux",
+      "arch": "x64"
+    },
+    "note": "CPU wall time in this execution environment, not an Android device or frame-time claim. Three warm samples per layout; dense worst-case remains important.",
+    "results": [
+      {
+        "layout": "spaced",
+        "strokes": 20,
+        "pointsPerStroke": 80,
+        "unfiltered": {
+          "medianMs": 12.612088999999997,
+          "samplesMs": [
+            20.109765000000003,
+            12.612088999999997,
+            12.173057
+          ],
+          "candidates": 38,
+          "edges": 0
+        },
+        "filtered": {
+          "medianMs": 4.000025999999991,
+          "samplesMs": [
+            4.000025999999991,
+            4.365396000000004,
+            3.851011999999997
+          ],
+          "candidates": 38,
+          "edges": 0
+        },
+        "sameGraph": true
+      },
+      {
+        "layout": "spaced",
+        "strokes": 100,
+        "pointsPerStroke": 80,
+        "unfiltered": {
+          "medianMs": 245.94320900000002,
+          "samplesMs": [
+            279.26390899999996,
+            233.866988,
+            245.94320900000002
+          ],
+          "candidates": 198,
+          "edges": 0
+        },
+        "filtered": {
+          "medianMs": 13.6832330000002,
+          "samplesMs": [
+            12.91902200000004,
+            13.6832330000002,
+            15.448522000000139
+          ],
+          "candidates": 198,
+          "edges": 0
+        },
+        "sameGraph": true
+      },
+      {
+        "layout": "spaced",
+        "strokes": 300,
+        "pointsPerStroke": 80,
+        "unfiltered": {
+          "medianMs": 2013.42033,
+          "samplesMs": [
+            2318.2676750000005,
+            2013.42033,
+            2002.7733610000005
+          ],
+          "candidates": 598,
+          "edges": 0
+        },
+        "filtered": {
+          "medianMs": 54.20533400000022,
+          "samplesMs": [
+            56.48327000000063,
+            54.20533400000022,
+            51.59715999999935
+          ],
+          "candidates": 598,
+          "edges": 0
+        },
+        "sameGraph": true
+      },
+      {
+        "layout": "dense",
+        "strokes": 20,
+        "pointsPerStroke": 80,
+        "unfiltered": {
+          "medianMs": 11.541140999999698,
+          "samplesMs": [
+            11.286573000001226,
+            11.696078999999372,
+            11.541140999999698
+          ],
+          "candidates": 380,
+          "edges": 108
+        },
+        "filtered": {
+          "medianMs": 11.37375400000019,
+          "samplesMs": [
+            11.37375400000019,
+            10.365364999999656,
+            11.988199999999779
+          ],
+          "candidates": 380,
+          "edges": 108
+        },
+        "sameGraph": true
+      },
+      {
+        "layout": "dense",
+        "strokes": 100,
+        "pointsPerStroke": 80,
+        "unfiltered": {
+          "medianMs": 289.5431430000008,
+          "samplesMs": [
+            347.3012899999994,
+            289.5431430000008,
+            285.07242700000097
+          ],
+          "candidates": 7323,
+          "edges": 588
+        },
+        "filtered": {
+          "medianMs": 218.8819370000001,
+          "samplesMs": [
+            222.76463800000056,
+            218.8819370000001,
+            203.85462000000007
+          ],
+          "candidates": 7323,
+          "edges": 588
+        },
+        "sameGraph": true
+      },
+      {
+        "layout": "dense",
+        "strokes": 300,
+        "pointsPerStroke": 80,
+        "unfiltered": {
+          "medianMs": 2270.1281359999994,
+          "samplesMs": [
+            2314.4041780000007,
+            2270.1281359999994,
+            2151.811924999998
+          ],
+          "candidates": 26523,
+          "edges": 1788
+        },
+        "filtered": {
+          "medianMs": 835.8044779999982,
+          "samplesMs": [
+            911.3061300000008,
+            800.4630370000013,
+            835.8044779999982
+          ],
+          "candidates": 26523,
+          "edges": 1788
+        },
+        "sameGraph": true
+      }
+    ]
+  },
+  "limitations": [
+    "Parallel open boundaries may be falsely closed by Cap model",
+    "Acute 150-degree turn remains missed in endpoint-only adversarial fixture",
+    "Positive segment gaps are withheld by default and may cause human-data false negatives",
+    "Dense 300-stroke full recomputation remains about 836ms in this environment",
+    "Interior-only segment crossing and same-stroke interior attachment unimplemented",
+    "Renderer footprint contract is variable-width polyline tube with round interior joins"
+  ]
+}

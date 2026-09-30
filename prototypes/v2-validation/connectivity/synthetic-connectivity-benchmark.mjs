@@ -124,7 +124,7 @@ export function runSyntheticBenchmark() {
   let tp = 0, fp = 0, fn = 0, exact = 0;
   const category = {}, rows = [];
   for (const scene of scenes) {
-    const graph = resolveStrokeConnectivity(scene.strokes);
+    const graph = resolveStrokeConnectivity(scene.strokes,{endpointToSegment:false});
     const metrics = evaluateConnectivity(graph, scene.truth);
     tp += metrics.trueConnection; fp += metrics.falseConnection; fn += metrics.missedConnection;
     exact += metrics.graphExactMatch ? 1 : 0;

@@ -1,123 +1,50 @@
-# Illustro Stroke-native Endpoint Connectivity Resolver — Prototype Contract
+# Illustro Stroke-native Connectivity — prototype contract 0.3
 
-Status: validation prototype only. This document does **not** authorize Production integration or merge.
+Validation only. No Production integration or merge authorization. Scope: **endpoint↔endpoint and endpoint↔another stroke interior**. Closed/Open/Fill metrics are not the objective.
 
-## Responsibility boundary
+## Canonical input
 
-The resolver consumes Illustro stroke geometry directly. It does not rasterize a stroke and then rediscover endpoints from pixels.
+Ordered `strokeId`, `points[]`, known rendered width per point, cap (`round|butt|square`), optional pressure/time/order/input metadata and geometryRevision. A stroke ID must be unique, nonempty and not contain `|`. A single-point stroke keeps its real coordinate; no fabricated second point. Unknown telemetry remains null.
 
-Input responsibility:
-- stroke identity and ordered `points[]`
-- point coordinates
-- stroke/point width
-- optional pressure and timestamp/order
-- brush cap when known
+Reconstructed semantic records can enter through `strokeFromSemanticRecord()`, requiring an explicit renderer width mapping. Predicted preview samples are excluded by the caller's canonical-record contract. The resolver itself never searches raster pixels for endpoints. Production does not yet have a verified durable canonical stroke store; see the audit.
 
-Output responsibility:
-- explicit endpoint descriptors for every stroke start/end
-- endpoint-to-endpoint connection candidates
-- per-model costs/scores and diagnostics
-- competition information around each endpoint
-- final endpoint graph edges
-- manual connect/disconnect overrides without destroying automatic diagnostics
+## Endpoint and target descriptors
 
-The existing Region V3/V4 pipeline remains responsible for raster-derived line/boundary evidence and Region classification. Endpoint Connectivity is upstream structure, not a replacement name for V3/V4 image bridging.
+Start and end get stable `{strokeId}:start|end` identities. Position is the actual endpoint. Arc-length neighborhoods produce robust outward direction, local turning, jitter, sampled trace, neighborhood width, quality, pressure summary and terminal pressure/time. **Terminal width**, rather than neighborhood median width, determines its footprint. Terminal cap orientation uses the actual final segment; geometric explanations use the robust neighborhood tangent.
 
-## Endpoint descriptor
+Segment targets retain `strokeId`, `segmentIndex`, `t`, arcLength/arcFraction, position, interpolated width, actual segment tangent, neighborhood robust tangent/curvature/trace, and geometryRevision when supplied. Target identity is stroke ID + arc fraction; segmentIndex is a current-geometry lookup, not a persistent revision-independent identity. Editing a stroke requires recomputation.
 
-Each endpoint is a local stroke shape, not one `(x,y)` sample. The prototype records:
-- `endpointId`, `strokeId`, `start|end`
-- position
-- robust outward tangent estimated from a width-scaled local arc
-- local curvature diagnostic
-- local arc length
-- local median width and endpoint radius
-- pressure summary when present
-- brush cap
-- normalized endpoint jitter
-- descriptor quality
-- an inward trace sampled at multiple arc fractions
+## Vector footprints and models
 
-The local arc length is derived from stroke length and line width. Direction is not taken from only the last two input points.
+Prototype shape contract: variable-width polyline tube; round internal joins. Terminal round disc / oriented butt patch / square patch. Segment body is a width-interpolated trapezoid with adjacent round interior join discs. Actual vector footprint separation is used for contact; directional support projections remain diagnostics, not collision proof. Width-normalized gap is used for explanations. Textured, elliptical, nonround joins or custom dab brushes require renderer footprint support before integration; this prototype does not claim universal rendered-brush contact.
 
-## Effective gap
+Endpoint models are Contact, Continuation, Corner, Cap/Closure. Their scores remain separate and the strongest explanation supplies the pair cost. Corner can use short forward tangent extensions relative to observed local arc, so acute and 90° corners do not fail an angle-equality condition. Cap uses parallelism, spacing stability, transverse join, side consistency, run length and convergence without semantic hair recognition. Angle difference alone never rejects a connection.
 
-For endpoint pair A/B:
+Interior models are Contact and Termination. Termination evaluates endpoint approach toward the actual target; it does not require matching the target tangent. **Default interior policy accepts physical footprint contact. A positive-gap segment candidate retains ambiguity and diagnostics instead of silently inventing contact.** `inferSegmentGaps:true` is an experimental policy, not the human-validated default.
 
-`effectiveGap = centerDistance - endpointReachA - endpointReachB`
+## Candidate generation, competition and graph
 
-`normalizedGap = effectiveGap / meanEndpointWidth`
+Both target types compete in each endpoint's candidate list. Interior targets are projected local minima along the target stroke; adjacent segment samples at the same arc are deduplicated. The terminal half-width zone canonicalizes proximity through endpoint candidates rather than duplicate interior nodes. Same-stroke interior attachment is out of this first implemented contract; same-stroke start/end closure is included.
 
-Endpoint reach depends on the cap model. Connection decisions therefore do not use a fixed-pixel gap cutoff.
+Contact is junction-compatible; there is no universal one-connection-per-endpoint constraint. Inferred endpoint connections require a mutual best candidate and sufficient competing margin. High score never permits an exact score tie. Endpoint↔segment gap inference, when enabled, competes at its source endpoint. Guessed connectors crossing a third stroke or another connector retain graph-conflict diagnostics. Interior-only crossings are not automatically resolved.
 
-## Connection models
+Manual endpoint pairs and `{endpointA,target:{kind:'segment',strokeId,arcFraction}}` may force a connection/disconnection, including outside automatic search. Disconnect has precedence; raw scores/competition stay available.
 
-Every candidate is evaluated by multiple independent explanations and the strongest explanation is retained.
+Output includes typed connection edges, descriptors, every generated candidate, scores/costs, uncalibrated confidence, final `connected|disconnected|ambiguous`, reasons, competition, graph conflicts, and alternative Cap explanations. Connected interior targets become anchors; `strokeSpans` split each source stroke's arc at anchors so a later boundary graph can consume connectivity without rediscovering it from a bitmap. No region or fill is calculated here.
 
-### Contact
+## Evaluation
 
-High score when rendered endpoint footprints already touch/overlap. Contact edges are junction-compatible: more than one contact edge may share an endpoint.
+Human truth is entered **after drawing and observing the visible result**, using endpoint IDs or endpoint + target stroke + arc position. The evaluator accepts touch/pen/mouse, preserves actual/coalesced sample timestamps, supports dense-label selection by native controls, and keeps logical geometry stable on resize. Automatic overlays are hidden by default until scoring; earlier exposure is recorded. Pointer cancel retains received data without inventing a terminal sample; wrong pointer IDs cannot modify a stroke.
 
-### Continuation
+Confirmation means all unselected connections are labeled absent. Blank/unfinished work is not a perfect score. The JSON export includes strokes, caps, telemetry provenance, graph, truth, candidate scores and per-scene/cumulative metrics. Saved scenes are unique by record ID; exported data can be independently recomputed with `evaluate-connectivity-records.mjs`, which ignores reported scores and excludes unfinished/unconfirmed/duplicate records. Untrusted generated pointer events are UI evidence, not actual human device accuracy. Trusted browser events alone also do not prove human authorship.
 
-High score for a small normalized gap where both local outward tangents face the gap and the two tangent directions support one continuing stroke. Curvature and endpoint jitter soften confidence rather than acting as absolute rejection rules.
+Metrics: TP/FP/FN, Precision/Recall/F1, exact graph match, model and normalized gap/width/curvature strata, candidate generation misses, Brier and calibration bins/ECE. Missing generated truth contributes FN and score-zero calibration errors. Calibration is explicitly scoped to generated candidates plus missed positive truth, not the infinite set of possible segment locations. Values remain uncalibrated geometric scores. Segment labels match source endpoint + target stroke + half-target-width arc tolerance, not just any location on the same stroke.
 
-### Corner
+## Known unresolved quality
 
-High score when a short connector falls naturally in the forward side of both endpoints. Tangent angle difference is diagnostic only; 45°, 90°, and other corners are not rejected because of angle mismatch.
+- Two locally parallel boundaries with aligned terminals can represent a closed tip or an open pair. The current Cap model still produces measured false positives on open parallel lines; do not declare it high precision from passing contact tests.
+- Default segment gap withholding can miss genuine intended near-contact junctions. Both FP and FN are measured; manual correction does not remove the need for human-data calibration.
+- Whole-graph full recomputation and endpoint pair enumeration remain costly for dense drawings. Spatial bounding-box rejection is an optimization, not a changed decision policy. Incremental indexing/updates, Workers and device latency checks remain required.
+- Interior-only crossings, same-stroke interior intersections, brush footprint generalization, actual device/palm behavior and confidence calibration are unverified or unimplemented as specified.
 
-### Cap / Closure
-
-Intended for geometries such as hair tips, ribbons, and narrow strips. It evaluates:
-- same-direction local tangents
-- connector being mostly transverse to those tangents
-- stable separation while tracing backward along both strokes
-- limited longitudinal offset
-- non-crossing side consistency
-- endpoint separation relative to the observed local run
-- optional convergence toward the terminal pair
-
-It uses geometry only; there is no `hair` semantic class.
-
-## Candidate competition and graph decision
-
-Pair scores are not independently thresholded into edges.
-
-For each endpoint the resolver stores top competing candidates. A non-contact edge normally needs:
-- confidence above the policy threshold
-- mutual-best status
-- a sufficient margin over competing alternatives
-
-Very high confidence can relax the margin, but does not impose a global one-edge-per-endpoint rule. Contact junctions explicitly allow multiple edges.
-
-## Graph extensibility
-
-Current prototype edges are:
-
-```text
-{ kind: "endpoint", endpointId } -> { kind: "endpoint", endpointId }
-```
-
-The graph schema advertises both `endpoint` and `segment` target kinds. Endpoint-to-segment resolution is intentionally not implemented in this first prototype; T-junction/crossing tests instead verify that the endpoint-only stage does not invent endpoint-endpoint links merely because a segment interior is nearby.
-
-A future segment target should use a stable segment reference plus parametric position, e.g. `{ kind: "segment", strokeId, segmentIndex, t }`, without changing endpoint identity.
-
-## Evaluation contract
-
-Human ground truth is assigned **after drawing**, from the visible result rather than pre-draw intent.
-
-The interactive evaluator:
-1. records pointer/touch/pen strokes with point coordinates, width, pressure when available, pointer type, and timestamps;
-2. labels every endpoint on canvas;
-3. visualizes automatic connections and optional candidate links;
-4. lets the evaluator choose true endpoint pairs by tapping two endpoint labels;
-5. treats unselected pairs as disconnected when the evaluator confirms the truth set;
-6. reports true connection, false connection, missed connection, Precision, Recall, F1, exact graph match, and confidence calibration diagnostics;
-7. exports strokes, descriptors, all candidate/model diagnostics, truth pairs, and metrics as JSON.
-
-## Known limits of this prototype
-
-- Endpoint-to-segment T-junction resolution is schema-ready but not implemented.
-- Cap/Closure has a fundamental geometry ambiguity: two parallel strokes that terminate together can be geometrically indistinguishable from an intended closed tip without semantic/contextual evidence. The prototype preserves confidence and competition diagnostics so human-data calibration can quantify this case instead of hiding it.
-- Confidence values are **not yet claimed to be calibrated**. Calibration is measured by the evaluator after human labels exist.
-- Synthetic tests verify invariants and regression behavior only. Human pointer/pen evaluation is required before any claim of production-level accuracy.
+Pointer input reference: [W3C Pointer Events Level 3, coalesced events](https://www.w3.org/TR/pointerevents3/#coalesced-events). This is input API guidance, not evidence for resolver accuracy.

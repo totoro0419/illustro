@@ -1,0 +1,33 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 core:check
+> npm run core:typecheck && npm run core:test
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 core:typecheck
+> npm --workspace @illustro/core run typecheck
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> @illustro/core@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 core:test
+> npm --workspace @illustro/core run test
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> @illustro/core@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.2 /workspace/scratch/34ff3f74c43b/illustro/packages/core
+
+
+ Test Files  8 passed (8)
+      Tests  8 passed (8)
+   Start at  18:43:36
+   Duration  324ms (transform 76%, import 17%, tests 4%, worker 3%)
