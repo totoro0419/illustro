@@ -1,7 +1,7 @@
 # Illustro Input Control Standard
 
 > Date: 2026-09-30  
-> Status: **INPUT-METHOD DESIGN COMPLETE / VISUAL + RUNTIME VALIDATION PENDING**  
+> Status: **INPUT-METHOD SEMANTICS COMPLETE / VISUAL INTEGRATION + RUNTIME VALIDATION PENDING**  
 > Scope: PC / tablet / compact input semantics for Illustro UI Gate E  
 > Production implementation: **LOCKED**  
 > Theme baseline for examples: **Aurora — approved visual direction**
@@ -66,7 +66,7 @@ Selected/current/focus/disabled/error states are not communicated by hue alone. 
 
 ### 3.5 Units
 
-A unit is shown inside or immediately adjacent to the numeric value. If a value supports unit conversion, the unit label may open a unit menu. Changing display units changes the representation, not the underlying semantic value.
+A unit is shown inside or immediately adjacent to the numeric value. If a value supports unit conversion, the unit control is a **C2 select/popover** adjacent to the field. Changing display units changes the representation, not the underlying semantic value.
 
 ### 3.6 Reset/default
 
@@ -124,6 +124,19 @@ Examples:
 
 These use numeric/spinbutton controls instead.
 
+### 4.3 Surface-resolution rule — no semantic ambiguity
+
+The same semantic state may be represented differently only when the surface role is different, and that mapping is fixed:
+
+- **C5 Switch** = labeled preference/setting row whose job is to persist an on/off state.
+- **C6 Toggle button** = compact immediate tool/view state in Context UI, Box headers or tool property rows.
+- When both surfaces expose the same state (for example Gamut Warning or a guide visibility preference), they are synchronized views of one value.
+- **C1** is used only when 2–5 choices should remain simultaneously visible for comparison.
+- **C2** is used for a fixed list that should not occupy permanent space.
+- **C3** is used once search/filtering materially improves a long list.
+- A feature does not switch between these arbitrarily based on aesthetics or available pixels.
+
+
 ## 5. Numeric-control details
 
 ### 5.1 Slider row anatomy
@@ -132,7 +145,7 @@ Standard scalar row:
 
 `Label | Slider | Numeric value | Unit`
 
-Optional status/dynamics button may follow the value where relevant.
+For a modulatable Brush property in the full Brush editor, a compact **C6 Dynamics toggle button** follows the value. The near-Canvas basic Context Surface omits this advanced button and keeps Size/Opacity fast.
 
 Rules:
 
@@ -205,7 +218,7 @@ Long-press may exist on touch only as an optional shortcut, never the only route
 - rendering intent: fixed select;
 - Black Point Compensation: switch;
 - Soft Proof: switch;
-- Gamut Warning: switch/toggle button depending surface density.
+- Gamut Warning: **C6 toggle button** in Canvas/View surfaces; the same state is exposed as a **C5 switch** only inside Settings. Both edit one view-state value.
 
 ## 7. Brush input standard
 
@@ -235,7 +248,7 @@ Each modulatable target uses one shared mapping editor:
 - response curve: **E1**;
 - input range: **N5**;
 - output range: **N5**;
-- Invert: **C5/C6** depending presentation;
+- Invert: **C5 switch** in the labeled mapping editor row;
 - influence amount, if the engine exposes it: **N4**;
 - multiple-source combination mode, if enabled by the brush engine: **C2**.
 
@@ -283,10 +296,10 @@ Context fields:
 - X, Y: numeric fields;
 - W, H: linked N6 fields with aspect-lock toggle;
 - Rotation: N7 / numeric degree field;
-- transform mode: C1/C2 according to available mode count;
+- transform mode: **C2 labeled mode picker** (Move / Scale / Rotate / Free Transform / Perspective-Distort / Warp);
 - interpolation: C2;
 - Snap: C5;
-- Flip H / Flip V: C7 commands/toggle buttons as view/session semantics require;
+- Flip H / Flip V inside a Transform preview: **C7 command buttons**; Canvas view flips outside Transform use **C6 toggle buttons** because they are persistent view state;
 - reference point: C9 anchor grid plus direct canvas origin handle;
 - **Apply / Cancel** always visible in preview state.
 
@@ -298,7 +311,7 @@ Direct manipulation is primary, but Procreate and Clip Studio Paint both provide
 - width/height = N6 exact fields;
 - aspect ratio = preset picker + custom ratio fields;
 - rotation/straighten = N7;
-- anchor where relevant = C9;
+- anchor = **C9** whenever the crop/resize operation exposes an anchor or transform origin;
 - Apply/Cancel.
 
 ### 9.3 Canvas Size / Image Size
@@ -310,7 +323,7 @@ Precision-first; no decorative slider.
 - resolution/DPI: N3;
 - anchor: C9 for Canvas Size;
 - interpolation: C2 for Image Size;
-- aspect link: C5/C6;
+- aspect link: **C6 compact toggle button** placed between/adjacent to Width and Height;
 - preview where relevant.
 
 ## 10. Selection and Fill inputs
@@ -330,7 +343,7 @@ Precision-first; no decorative slider.
 - Gap Closing: N1 + numeric, with visual preview of bridged gaps when possible;
 - Boundary Expand/Contract: N4 + numeric;
 - reference source: C2;
-- ignore/use selection and similar immediate state: C5/C6;
+- Ignore/Use Selection and similar tool-session states: **C6 toggle button**;
 - long computation: progress + Cancel; stale result never silently applies.
 
 ## 11. Layer / compositing inputs
@@ -349,15 +362,15 @@ Precision-first; no decorative slider.
 
 - node and handles on Canvas: D1;
 - selected node X/Y: numeric fields;
-- handle angle/length where exposed: N7 + N1/N3;
-- node type: C1/C2;
+- handle angle: **N7 + degree field**; handle length: **N1 slider + exact numeric/unit field**;
+- node type: **C1 segmented/radio group** for the small fixed set (corner / smooth / symmetric or equivalent);
 - Add/Delete/Convert node: C7 commands.
 
 ### Shapes
 
-- shape type: C8/C2;
+- shape type: **C8 visual preset grid** for common shapes, with **C3 searchable picker** for the full shape library;
 - fill/stroke: Color swatches;
-- stroke width: N1/N2 + numeric;
+- stroke width: **N2 nonlinear slider + numeric field** when the range spans sub-pixel to very large strokes;
 - polygon sides: N9;
 - corner radius: N1 + numeric;
 - cap/join: C1 icon+label choices;
@@ -367,10 +380,10 @@ Precision-first; no decorative slider.
 
 - direct guide position on Canvas + exact position field;
 - angle: N7;
-- grid spacing: N1/N3 depending scale semantics;
+- grid spacing: **N2 nonlinear slider + exact numeric/unit field** because practical spacing spans a wide range;
 - row/column/subdivision count: N9;
 - symmetry count: N9;
-- visibility/lock/snap: C5/C6;
+- visibility / lock / snap in the active guide tool: **C6 toggle buttons**; equivalent long-lived preferences in Settings use **C5 switches** but edit the same states;
 - presets: C8.
 
 ## 13. Text input standard
@@ -390,7 +403,7 @@ All filters use the semantic primitive that fits the parameter; they do not inve
 
 | Adjustment | Standard inputs |
 |---|---|
-| Brightness / Contrast / Exposure / Vibrance | N4 or N1 + numeric |
+| Brightness / Contrast / Exposure / Vibrance | **Brightness/Contrast/Exposure = N4 centered slider + signed numeric; Vibrance = N4 centered slider + signed numeric** |
 | Hue / Saturation / Lightness | Hue=N4 angle-like signed value; Saturation/Lightness=N4 + numeric |
 | Temperature / Tint | two N4 sliders + numeric |
 | Color Balance | Shadows/Midtones/Highlights C1 + three N4 axes |
@@ -401,7 +414,7 @@ All filters use the semantic primitive that fits the parameter; they do not inve
 | Selective Color | target-color C2 + signed channel sliders/numerics + mode C1 |
 | Gradient Map | E2 gradient editor |
 | LUT / Color Lookup | F1/C3 asset/file picker |
-| Blur radius / sharpening amount | N1/N2 + numeric |
+| Blur radius / sharpening amount | **Blur radius = N2 nonlinear slider + numeric; sharpening amount = N1 slider + numeric** |
 | Blend If / tone range | N5 multi-thumb range + exact endpoints; split handles get numeric alternatives |
 
 Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants update non-destructive parameters immediately and retain ordinary Undo/history semantics.
@@ -416,7 +429,7 @@ Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants up
 - DPI: N3;
 - color profile: searchable C3;
 - bit depth: C1 (small supported set);
-- background/transparency: C1/C5 according to final model;
+- background at creation: **C1 radio/segmented choice** = Transparent / White / Current Background Color; choosing the color opens the standard Color Picker;
 - advanced color settings: disclosure, not a separate hidden-only path.
 
 ### Export
@@ -435,7 +448,7 @@ Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants up
 
 - move/scale/rotate: D1 + exact X/Y/scale/angle fields in Inspector;
 - opacity: N1 + numeric;
-- grayscale: C6/C5;
+- grayscale display: **C6 toggle button** in Reference controls; any default-behavior preference in Settings uses C5 but does not create a second state;
 - pin: C6;
 - hide: C6;
 - flip: C7 command;
@@ -450,7 +463,7 @@ Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants up
 ### Workspace / settings
 
 - panel sizing: direct splitter; exact numeric width is not a primary user task and is omitted unless an advanced use case appears;
-- workspace preset: C3/C8;
+- workspace preset: **C8 visual preset cards** for built-in/recent presets plus **C3 searchable picker** when the library exceeds the visible set;
 - Left/Right mirror: C5;
 - UI scale: N1 + numeric `%`;
 - theme: C8 radio-card selection;
@@ -462,7 +475,7 @@ Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants up
 ### Assets / Brush presets
 
 - search: T2;
-- category/tag filters: C4 or filter chips with explicit selected state;
+- category/tag filters: **C4 checkbox semantics rendered as filter chips with explicit selected state**;
 - single asset/preset choice: C8;
 - long resource lists: virtualized list/grid;
 - import: F1;
