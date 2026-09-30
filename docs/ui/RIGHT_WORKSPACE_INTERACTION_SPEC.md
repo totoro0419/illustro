@@ -535,3 +535,21 @@ For PC/tablet Right Box manipulation, the following are fixed:
 - tablet semantic projection.
 
 Visual/runtime validation remains pending.
+
+
+## 21. Visual customization affordance
+
+The direct manipulation rules in this document are projected through the canonical [Workspace Visual Customization Specification](WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md).
+
+Additional fixed behavior:
+
+- Right Workspace width must expose a visually discoverable resize affordance rather than relying on an invisible edge;
+- pointer proximity/focus strengthens the resize boundary and grip;
+- touch/pen uses an explicit grip so Canvas drawing is not stolen by a broad invisible edge target;
+- width and Box-height changes preview live;
+- structural editing can enter **Customize Workspace**, which temporarily exposes reorder/resize/show-park/detach affordances;
+- customization uses Done/Cancel and a Workspace-only layout undo/redo path;
+- Artwork Undo/Redo never absorbs Workspace rearrangement;
+- factory layout still registers all 12 Boxes; explicitly parked Boxes remain discoverable/restorable through Customize Workspace and Search.
+
+Exact grip artwork and runtime acquisition thresholds remain visual/runtime calibration.
