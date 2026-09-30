@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 let server;
@@ -121,7 +121,7 @@ test('interactive Region evaluator loads, classifies, and accepts touch correcti
 
 
 test('standalone Region evaluator opens and classifies from touch input', async ({ page }) => {
-  await page.goto(`${origin}/real-art/interactive-region-standalone.html`);
+  await page.goto(pathToFileURL(path.join(ROOT, 'real-art/interactive-region-standalone.html')).href);
   await expect(page.getByRole('heading', { name: 'Region / Fill 実使用評価' })).toBeVisible();
 
   const png = await syntheticPng(page);
