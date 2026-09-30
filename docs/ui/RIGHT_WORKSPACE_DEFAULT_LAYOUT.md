@@ -361,6 +361,7 @@ If available height is insufficient, the Right stack scrolls rather than auto-co
 Workspace-persistent:
 
 - Box order;
+- active/parked Box state after explicit customization;
 - expanded/collapsed state;
 - Box size;
 - dock/detach state;
