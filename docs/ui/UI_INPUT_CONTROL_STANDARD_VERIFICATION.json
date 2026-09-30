@@ -1,0 +1,41 @@
+{
+  "html_parse": true,
+  "nav_pages": [
+    "numbers",
+    "choices",
+    "color",
+    "geometry",
+    "editors",
+    "appio"
+  ],
+  "page_ids": [
+    "numbers",
+    "choices",
+    "color",
+    "geometry",
+    "editors",
+    "appio"
+  ],
+  "nav_page_match": true,
+  "page_count": 6,
+  "card_count": 26,
+  "duplicate_ids": [],
+  "js_syntax_ok": true,
+  "js_syntax_stderr": "",
+  "standard_required_sections": {
+    "Brush input standard": true,
+    "Color input standard": true,
+    "Gradient input standard": true,
+    "Transform / geometry input standard": true,
+    "Selection and Fill inputs": true,
+    "Layer / compositing inputs": true,
+    "Vector / shape / guide inputs": true,
+    "Text input standard": true,
+    "Adjustment / filter input standard": true,
+    "Document / export inputs": true,
+    "Reference / navigator / workspace inputs": true,
+    "Assets, presets, search, shortcuts and automation": true
+  },
+  "all_required_sections_present": true,
+  "browser_runtime": "UNVERIFIED: local file/http navigation was blocked by the container browser administrator policy; source/JS checks completed instead."
+}
