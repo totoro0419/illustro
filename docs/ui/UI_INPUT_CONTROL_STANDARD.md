@@ -1,7 +1,7 @@
 # Illustro Input Control Standard
 
 > Date: 2026-09-30  
-> Status: **INPUT-METHOD SEMANTICS COMPLETE / VISUAL INTEGRATION + RUNTIME VALIDATION PENDING**  
+> Status: **INPUT-METHOD SEMANTICS AUDITED / VISUAL INTEGRATION + DEVICE/AT VALIDATION PENDING**  
 > Scope: PC / tablet / compact input semantics for Illustro UI Gate E  
 > Production implementation: **LOCKED**  
 > Theme baseline for examples: **Aurora — approved visual direction**
@@ -72,12 +72,34 @@ A unit is shown inside or immediately adjacent to the numeric value. If a value 
 
 A changed parameter exposes a keyboard/pointer-accessible **Reset** action. Double-click or gesture reset may exist only as an accelerator. Reset is not hover-only.
 
+### 3.7 Validation and unavailable states
+
+Typed numeric/text input follows the UI Implementation Quality form/error rules:
+
+- keep the field identity visible while editing; placeholder alone is never the only label;
+- allow harmless intermediate typing states while the field has focus instead of flashing premature errors;
+- on commit, normalize safe equivalent formats (for example locale-appropriate decimal formatting) before rejecting them;
+- if a value is invalid or outside an allowed range, keep the user's entry visible long enough to correct it and identify the field/range clearly;
+- do not silently convert an invalid value into an unrelated value;
+- disabled/unavailable controls remain discoverable when users reasonably need them, with a visible/focusable route to the reason or prerequisite.
+
+### 3.8 Custom direct-manipulation surfaces
+
+Color planes, curve editors, gradient handles, transform/crop handles, splitters and other custom pointer surfaces are accelerators over the same semantic values, not separate states.
+
+For each custom surface Illustro must choose one of two valid accessibility strategies before production:
+
+1. implement the full keyboard/focus/name/state/value contract for that custom control; **or**
+2. keep the custom surface out of the keyboard/AT interaction model and expose the same complete operation through adjacent standard controls/commands.
+
+A partially exposed custom widget that announces the wrong value or accepts pointer input without an equivalent route is not acceptable.
+
 ## 4. Canonical input primitives
 
 | ID | Semantic task | Illustro standard | Exact / alternative path | Typical use |
 |---|---|---|---|---|
 | N1 | Bounded continuous scalar | **Slider + numeric field + unit** | Type exact value; keyboard range stepping | Opacity, Flow, Hardness, tolerance, effect strength |
-| N2 | Very wide continuous scalar | **Nonlinear/log-like slider + numeric field** | Exact value field | Brush Size, blur radius, very large scale ranges |
+| N2 | Very wide continuous scalar | **Nonlinear/log-like slider surface + numeric field**; accessibility exposes the real parameter value, never an internal track coordinate | Exact value field; tap/click-to-position where applicable | Brush Size, blur radius, very large scale ranges |
 | N3 | Precision-first numeric | **Numeric / spinbutton** | Up/Down step; optional +/- buttons on touch | Font size, polygon sides, copy count, DPI |
 | N4 | Signed/bipolar scalar | **Centered slider + signed numeric field** | Exact field | Hue shift, temperature/tint, color balance, boundary expand/contract |
 | N5 | Min/max interval | **Two-thumb range + two numeric fields** | Min/Max fields; focusable thumbs | tone range, input/output range, Blend If |
@@ -86,15 +108,15 @@ A changed parameter exposes a keyboard/pointer-accessible **Reset** action. Doub
 | N8 | 2D continuous plane | **2D pad/plane + two exact fields** | X/Y or S/V fields | SV picker, texture offset, vector coordinate pair |
 | N9 | Small discrete count | **Spinbutton + numeric field** | Type value | polygon sides, symmetry count, grid subdivisions |
 | N10 | Desktop rapid adjustment | **Label scrub** as optional accelerator | Slider/field remains primary/alternative | scalar/angle fields on PC |
-| C1 | One of 2–5 visible choices | **Segmented/radio group** | keyboard selection | Replace/Add/Subtract/Intersect, alignment, small mode sets |
+| C1 | One of 2–5 visible choices | **Segmented visual treatment with radio-group semantics** | Arrow-key/focus navigation + explicit selected state | Replace/Add/Subtract/Intersect, alignment, small mode sets |
 | C2 | One of a medium fixed list | **Select-only popover/list** | keyboard/type-ahead where useful | interpolation, units, reference source |
 | C3 | Large/searchable list | **Searchable combobox / picker** | browse categories | font family, blend mode, assets, color profiles |
 | C4 | Independent multiple options | **Checkbox group** | keyboard toggle | export metadata, independent feature flags |
-| C5 | Immediate labeled binary state | **Switch** | keyboard/tap | snapping, reduced motion, soft proof, global setting |
-| C6 | Compact immediate mode state | **Toggle button (`pressed` state)** | same command in menus/search | Alpha Lock, clipping, visibility, pin, flip-view |
+| C5 | Immediate labeled binary state | **Switch**; native/platform switch semantics where available | keyboard/tap; state announced as on/off | reduced motion, soft proof, global settings |
+| C6 | Compact immediate mode state | **Toggle button with stable accessible name + `pressed` state** | same command in menus/search | Alpha Lock, clipping, visibility, pin, flip-view |
 | C7 | One-shot operation | **Button / menu command** | shortcut/search alternative | Reset, Reverse gradient, Rasterize, Merge |
-| C8 | Visual single selection | **Selectable swatch/card/grid** | text label / search where needed | palette color, brush preset, workspace/theme preset |
-| C9 | Spatial reference point | **3×3 anchor grid + textual/numeric semantics** | keyboard grid / coordinates | resize anchor, transform origin |
+| C8 | Visual single selection | **Swatch/card/grid presentation with real selection semantics**: small sets use radio semantics; large always-visible simple sets use listbox-style selection; search is C3 | every option has a text/accessibility name | palette color, brush preset, workspace/theme preset |
+| C9 | Spatial reference point | **3×3 anchor grid with radio-group semantics + textual position names** | Arrow-key selection / coordinates when exposed | resize anchor, transform origin |
 | T1 | Short text | **Text field** | — | layer name, preset name, document name |
 | T2 | Search/filter | **Search field + suggestions/filter results** | category browsing remains available | commands, brushes, assets, fonts |
 | T3 | Keyboard shortcut | **Chord capture field** | Clear / Reset / conflict resolver | shortcut settings |
@@ -135,6 +157,10 @@ The same semantic state may be represented differently only when the surface rol
 - **C2** is used for a fixed list that should not occupy permanent space.
 - **C3** is used once search/filtering materially improves a long list.
 - A feature does not switch between these arbitrarily based on aesthetics or available pixels.
+- **C1** uses a real radio-group contract even when visually styled as a segmented control; generic toggle buttons are not substituted.
+- **C5** keeps a stable visible/accessibility label while on/off is represented by switch state.
+- **C6** keeps a stable accessible name; `pressed` communicates state rather than changing the control into a differently named command.
+- **C8** is a visual presentation family, not an accessibility role: the underlying radio/listbox/button semantics are chosen from the actual selection behavior.
 
 
 ## 5. Numeric-control details
@@ -151,7 +177,7 @@ Rules:
 
 - current value always visible;
 - min/max are available to semantics and shown when needed for comprehension;
-- low-value brush-size precision uses a nonlinear mapping, while the stored value remains linear/meaningful;
+- low-value brush-size precision may use a nonlinear visual/physical mapping, while the stored value remains linear/meaningful; **the control's programmatic min/max/current/value text must describe the real Brush Size in px, not the internal normalized track position**;
 - keyboard stepping and endpoints follow the platform/native control contract;
 - touch/pen can use a visually compact slider with a larger effective hit area;
 - scrolling the page/panel must not accidentally change a hovered value.
@@ -173,14 +199,16 @@ On pointer-oriented PC UI, dragging a numeric parameter label horizontally may s
 
 ### 6.1 Current foreground color — default Color Box
 
-The default Color Box has four peer pages:
+The default Color Box has four peer pages implemented as **Tabs** (one visible peer section at a time; selection and keyboard focus remain distinct):
 
 1. **Picker** — outer Hue ring + inner Saturation/Value square; Current/Previous swatches.
 2. **Values** — synchronized channel sliders + numeric fields.
 3. **Palette** — persistent swatches / palette organization.
 4. **History** — bounded recent colors.
 
-A small model selector inside **Values** exposes:
+The Color Box tab bar preserves the current tab across resize/presentation substitution. On Web, Arrow-key tab navigation and programmatic selected state follow the Tabs contract.
+
+A small **C1 radio-group** model selector inside **Values** exposes:
 
 - HSV;
 - HSL;
@@ -206,7 +234,8 @@ Long-press may exist on touch only as an optional shortcut, never the only route
 
 ### 6.3 Color history and palette
 
-- one tap/click chooses a swatch;
+- one tap/click chooses a swatch; a small palette/history group uses radio semantics, while a large virtualized swatch collection uses one explicit composite selection model;
+- every swatch has a text/accessibility name (for example a user swatch name and/or color value), and the current match is not color-only;
 - palette editing requires explicit edit mode;
 - reorder uses drag plus move commands;
 - swatch state uses border/check/indicator in addition to color.
@@ -214,7 +243,7 @@ Long-press may exist on touch only as an optional shortcut, never the only route
 ### 6.4 Color-management inputs
 
 - working/display profile: searchable profile picker;
-- bit depth: segmented/radio for the small supported set;
+- bit depth: **C1 segmented visual treatment with radio-group semantics** for the small supported set;
 - rendering intent: fixed select;
 - Black Point Compensation: switch;
 - Soft Proof: switch;
@@ -237,7 +266,7 @@ Long-press may exist on touch only as an optional shortcut, never the only route
 | Texture offset | **N8 2D + X/Y fields** |
 | Texture rotation | **N7** |
 | Random seed when exposed | **N3 numeric + Randomize command** |
-| Preset | **C8 searchable preset grid/list** |
+| Preset | **C3 search/filter + C8 visual selection grid/list** |
 | Dynamics enable per property | compact **C6 toggle button** beside the property |
 
 ### 7.1 Dynamics Mapping
@@ -245,7 +274,7 @@ Long-press may exist on touch only as an optional shortcut, never the only route
 Each modulatable target uses one shared mapping editor:
 
 - source picker: Pressure / Tilt / Azimuth / Speed / Direction / Distance / Time / Stroke phase / Random / supported custom sources;
-- response curve: **E1**;
+- response curve: **E1**; selected points always have exact Input/Output fields so curve dragging is not required;
 - input range: **N5**;
 - output range: **N5**;
 - Invert: **C5 switch** in the labeled mapping editor row;
@@ -269,7 +298,8 @@ Gradient uses both canvas-direct and panel controls.
 
 - start/end handles define placement;
 - center/focal handle appears for radial/shape modes as needed;
-- direct manipulation previews live.
+- direct manipulation previews live;
+- the same placement is reachable without drag through exact geometry fields: Linear uses Start X/Y + End X/Y (with derived angle/length visible as useful); Radial/shape modes expose Center X/Y + Radius/scale and focal-offset fields where applicable.
 
 ### Gradient Box
 
@@ -280,7 +310,7 @@ Gradient uses both canvas-direct and panel controls.
 - midpoint: visual handle + numeric `%` field;
 - Delete Stop explicit button; dragging a stop off the bar may be an accelerator only;
 - Reverse = command button;
-- gradient type = small segmented/radio when only a few common types are exposed, otherwise select;
+- gradient type = **C1 radio-group** when 2–5 common types remain visible together, otherwise **C2 select**;
 - repeat/edge behavior = select;
 - angle = N7 when it is not already fully determined by canvas handles;
 - dithering = switch.
@@ -298,7 +328,7 @@ Context fields:
 - Rotation: N7 / numeric degree field;
 - transform mode: **C2 labeled mode picker** (Move / Scale / Rotate / Free Transform / Perspective-Distort / Warp);
 - interpolation: C2;
-- Snap: C5;
+- Snap in the compact Transform Context UI: **C6 toggle button**; the same default behavior may appear as a labeled **C5 switch** in Settings, synchronized to one state;
 - Flip H / Flip V inside a Transform preview: **C7 command buttons**; Canvas view flips outside Transform use **C6 toggle buttons** because they are persistent view state;
 - reference point: C9 anchor grid plus direct canvas origin handle;
 - **Apply / Cancel** always visible in preview state.
@@ -308,7 +338,7 @@ Direct manipulation is primary, but Procreate and Clip Studio Paint both provide
 ### 9.2 Crop
 
 - canvas crop handles = primary;
-- width/height = N6 exact fields;
+- X/Y (or Left/Top) + Width/Height = exact fields so crop-frame placement is possible without dragging;
 - aspect ratio = preset picker + custom ratio fields;
 - rotation/straighten = N7;
 - anchor = **C9** whenever the crop/resize operation exposes an anchor or transform origin;
@@ -330,11 +360,11 @@ Precision-first; no decorative slider.
 
 ### Selection
 
-- Replace / Add / Subtract / Intersect: **C1 segmented**;
+- Replace / Add / Subtract / Intersect: **C1 segmented visual treatment backed by radio-group semantics**;
 - Feather: N1 + numeric;
 - Expand/Contract: signed N4 + numeric;
 - Color/Similarity or Luminance range: scalar/range controls plus exact values;
-- saved selections: searchable C8/list.
+- saved selections: **C3 searchable named-selection picker/list**; thumbnail previews may supplement the rows but do not change the selection semantics.
 
 ### Smart Fill
 
@@ -350,7 +380,7 @@ Precision-first; no decorative slider.
 
 - Layer opacity: N1 + numeric;
 - Blend Mode: **searchable C3 picker** with categories/recent choices; typing optional but useful for long list;
-- Visibility, lock, alpha lock, clipping: compact C6 toggle buttons with state text/tooltips where needed;
+- Visibility, lock, alpha lock, clipping: compact C6 toggle buttons with stable accessible names and explicit pressed state; tooltips may supplement but never supply the only essential label/state;
 - layer name: T1 inline rename;
 - color tag: C8 swatch grid;
 - reorder: D2 drag + Move Earlier/Later/Start/End/Move To;
@@ -363,7 +393,7 @@ Precision-first; no decorative slider.
 - node and handles on Canvas: D1;
 - selected node X/Y: numeric fields;
 - handle angle: **N7 + degree field**; handle length: **N1 slider + exact numeric/unit field**;
-- node type: **C1 segmented/radio group** for the small fixed set (corner / smooth / symmetric or equivalent);
+- node type: **C1 segmented visual treatment with radio-group semantics** for the small fixed set (corner / smooth / symmetric or equivalent);
 - Add/Delete/Convert node: C7 commands.
 
 ### Shapes
@@ -423,7 +453,7 @@ Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants up
 
 ### New Document
 
-- preset: C8 searchable preset grid;
+- preset: **C8 visual preset cards/grid** with **C3 search/filter** when the preset library exceeds the visible set;
 - width/height: N6;
 - unit: C2;
 - DPI: N3;
@@ -462,7 +492,7 @@ Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants up
 
 ### Workspace / settings
 
-- panel sizing: direct splitter; exact numeric width is not a primary user task and is omitted unless an advanced use case appears;
+- panel sizing: direct splitter for pointer speed **plus a non-drag single-pointer route** (Resize… command/popover with width slider or preset sizes) and keyboard resizing on platforms that support it; exact numeric width may remain advanced rather than permanently visible;
 - workspace preset: **C8 visual preset cards** for built-in/recent presets plus **C3 searchable picker** when the library exceeds the visible set;
 - Left/Right mirror: C5;
 - UI scale: N1 + numeric `%`;
@@ -490,7 +520,8 @@ Destructive variants use Apply/Cancel preview. Live/Adjustment Layer variants up
 ### Shortcut editor
 
 - command search C3/T2;
-- shortcut capture T3;
+- shortcut capture T3: the field clearly enters/leaves capture mode, Escape cancels capture, and the capture surface must not create a keyboard trap;
+- platform-reserved/unavailable chords are rejected or explained before save;
 - conflict state lists both commands and offers Replace / Keep existing / Cancel as explicit choices;
 - Clear and Restore Default commands are explicit.
 
@@ -535,12 +566,12 @@ Semantics stay constant; geometry adapts.
 ## 19. Accessibility and implementation constraints
 
 - use standard/native controls when they meet the semantic requirement;
-- custom sliders/curves/color fields must recreate keyboard/focus/value semantics and be manually tested;
-- sliders expose min/max/current and human-readable units;
-- focus is visually distinct from selected/current state;
-- selected/current state never relies only on color;
+- custom sliders/curves/color fields must follow the strategy in §3.8: either recreate the complete keyboard/focus/name/state/value contract or defer interaction to complete adjacent standard controls;
+- sliders expose **semantic** min/max/current and human-readable units; internal normalized/logarithmic positions are never announced as the user value;
+- focus is visually distinct from selected/current state; the focus indicator itself must remain perceptible against adjacent colors in every supported theme;
+- selected/current state never relies only on color; radio/listbox/switch/toggle states are programmatically synchronized with the visible state;
 - touch assistive technology must be tested for custom slider-like widgets before production;
-- dragging functionality gets a single-pointer non-drag alternative where applicable;
+- dragging functionality gets a **single-pointer non-drag alternative** where applicable; a keyboard-only alternative does not satisfy that requirement by itself;
 - pointer success does not imply keyboard/touch/stylus/AT success;
 - target-size values are platform/standard scoped, not one universal pixel token.
 
@@ -614,7 +645,7 @@ Official references:
 
 ## 21. Design status
 
-The **choice of input method for each semantic class is complete** in this document.
+The **choice of input method for each semantic class has passed the UI Implementation Quality semantic audit after the repairs recorded below**. This is not a production/runtime accessibility PASS.
 
 Still pending before production:
 
@@ -626,3 +657,21 @@ Still pending before production:
 - user visual/interaction review of the Input Atlas.
 
 Those pending items do not reopen the semantic decision unless testing reveals a concrete usability or accessibility defect.
+
+
+## 22. UI Implementation Quality audit repairs
+
+Audit date: 2026-09-30. Skill: UI Implementation Quality v0.3.
+
+Repairs incorporated into this standard:
+
+- nonlinear slider semantics must expose the real parameter value rather than a normalized track coordinate (`RANGE.02`, `A11Y.03`);
+- segmented one-of-many choices are explicitly radio groups (`CHOICE.01`, `PATTERN.RADIO_GROUP`);
+- switch/toggle labels and states are separated and synchronized (`PATTERN.SWITCH`, `A11Y.03`);
+- Color peer pages are explicit Tabs;
+- Gradient placement, Crop placement and Workspace splitters now have non-drag pointer alternatives (`INPUT.03`);
+- C8 visual grids now resolve to an actual semantic pattern instead of inventing a generic visual role;
+- validation, persistent labels, disabled-state explanations and locale-normalizable numeric input are explicit (`FORM.01`–`FORM.04`, `ERROR.01`–`ERROR.03`);
+- custom direct-manipulation widgets must either implement the complete semantic/input contract or defer to complete adjacent standard controls (`INPUT.06`, `A11Y.03`, `A11Y.04`).
+
+Still UNVERIFIED until production/device testing: representative screen-reader behavior, touch assistive technology for risky custom controls, stylus/coarse-pointer target acquisition, 200% text scaling in final surfaces, virtual-keyboard occlusion, and performance of live previews.
