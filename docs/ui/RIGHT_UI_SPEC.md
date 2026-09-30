@@ -1140,6 +1140,7 @@ Drag:
 Workspace-persistent:
 
 - Box order
+- active/parked Box state
 - expanded/collapsed
 - Box heights
 - Right width
@@ -1224,7 +1225,7 @@ For PC/tablet, Right UI **semantic, interaction and layout design is complete**.
 No open product-semantic decisions remain for:
 
 - Box taxonomy
-- all-Box presence
+- all-Box registration/discoverability and explicit Park/Restore customization
 - default order
 - default collapse profile
 - collapsed summaries
