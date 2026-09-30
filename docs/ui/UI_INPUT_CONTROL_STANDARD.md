@@ -120,6 +120,8 @@ A partially exposed custom widget that announces the wrong value or accepts poin
 | T1 | Short text | **Text field** | — | layer name, preset name, document name |
 | T2 | Search/filter | **Search field + suggestions/filter results** | category browsing remains available | commands, brushes, assets, fonts |
 | T3 | Keyboard shortcut | **Chord capture field** | Clear / Reset / conflict resolver | shortcut settings |
+| T4 | Gesture binding capture | **Explicit Record/Learn/Test gesture area** | Clear / Reset / conflict resolver; command remains reachable without gesture | custom touch/pen gestures |
+| T5 | Hardware input binding | **Device control selector + searchable action picker + Trigger/Hold/Toggle behavior** | Test / Clear / Reset | stylus barrel button, eraser-end assignment where configurable |
 | D1 | Spatial transform | **Direct canvas manipulation + exact property fields** | numeric fields, nudge commands | move/scale/rotate/crop/vector/reference |
 | D2 | Reorder | **Drag + explicit move commands** | Earlier/Later/Start/End/Move To | layers, palettes, workspace pages, gradient stops where applicable |
 | F1 | File/resource choice | **System/file picker or asset browser** | explicit Import/Open button; drag-drop accelerator | open/place/reference/LUT/texture/palette |
@@ -675,3 +677,148 @@ Repairs incorporated into this standard:
 - custom direct-manipulation widgets must either implement the complete semantic/input contract or defer to complete adjacent standard controls (`INPUT.06`, `A11Y.03`, `A11Y.04`).
 
 Still UNVERIFIED until production/device testing: representative screen-reader behavior, touch assistive technology for risky custom controls, stylus/coarse-pointer target acquisition, 200% text scaling in final surfaces, virtual-keyboard occlusion, and performance of live previews.
+
+## 23. Coverage closure decisions
+
+This section closes input-bearing areas that were not explicit enough in the first semantic standard.
+
+### 23.1 Selectable collections — C10
+
+Use C10 for Layers, open Documents, History entries, Snapshots/Layer Comps, Recovery candidates, References and other ordered collections.
+
+Rules:
+
+- keyboard/focus position and selected/current item are separate states;
+- merely focusing or hovering an older History/Recovery item does not activate it;
+- destructive/navigation consequences use an explicit Restore/Navigate/Open/Apply command when previewing alone could cause data loss;
+- multi-select follows ordinary list/tree semantics and never depends on modifier keys on touch-only devices;
+- virtualization may change rendering strategy but not selection semantics.
+
+### 23.2 Custom gesture binding — T4
+
+Custom gestures use an explicit **Record/Learn** mode:
+
+1. choose the command/action through C3 search;
+2. choose gesture scope/context if applicable;
+3. enter visibly labelled Record/Learn mode;
+4. perform the gesture in a bounded test area;
+5. show recognized gesture and conflicts;
+6. Test, Accept, Record Again or Cancel;
+7. Clear and Restore Default remain explicit.
+
+Core commands remain reachable without the gesture. Recognition thresholds are deferred to device prototype evidence.
+
+### 23.3 Stylus / hardware binding — T5
+
+Configurable pen buttons and similar device inputs use:
+
+- device/control selector;
+- searchable action picker;
+- Trigger / Hold / Toggle behavior selector;
+- Test;
+- Clear;
+- Restore Default;
+- conflict/unavailable-capability explanation.
+
+Physical availability is a capability check, not a reason to hide the corresponding command from other input routes.
+
+### 23.4 Region / linked-color controls
+
+- Region source Layers/Groups: C10 multi-selection.
+- Linked Coloring enable: C5.
+- Auto-follow policy: C2 with conservative default.
+- Follow strength: N1 + exact numeric.
+- Additional independent conditions: C4; mutually exclusive policy choices: C2/C1.
+- Ambiguous candidates: C8/C10 candidate selection.
+- Large/conflicting remap: preview + explicit Apply/Cancel.
+- Manual correction actions: C7 commands executed through direct Canvas targeting.
+
+Algorithmic confidence thresholds are not exposed as arbitrary expert sliders unless validation proves that a user-facing threshold is meaningful.
+
+### 23.5 History / Snapshot / Layer Comp / Timelapse
+
+History:
+- C10 chronological list/timeline;
+- selection/focus previews only;
+- Navigate/Restore is explicit.
+
+Snapshot:
+- T1 optional name/note;
+- C10 snapshot list;
+- C7 Create / Restore / Create Branch / Delete.
+
+Layer Comp:
+- T1 name;
+- C10 list;
+- C7 Capture / Apply / Update / Delete.
+
+Timelapse:
+- C7 Play/Pause/Jump transport;
+- N1 timeline seek control with semantic time value;
+- N3 exact frame pace/FPS plus C2 useful presets;
+- export reuses Document/Export controls.
+
+Work-time inactivity exclusion:
+- C5 enable;
+- N3 exact timeout.
+
+### 23.6 Recovery and save-conflict resolution
+
+Recovery candidate choice uses C10 with enough identity/timestamp/relation metadata to distinguish entries.
+
+Actions are explicit C7 commands:
+
+- Restore;
+- Compare where available;
+- Open Saved Version;
+- Save Recovery Copy / Export Backup;
+- Discard only with the appropriate consequence confirmation.
+
+External-file conflicts expose explicit Reload / Compare / Save Copy / Overwrite / Cancel actions. No radio/switch silently commits a destructive resolution.
+
+### 23.7 Smart Assist / AI-style candidate results
+
+Color, Region, Selection, organization and repair assistance uses **candidate selection + preview + explicit Apply**:
+
+- visual color/palette candidates: C8;
+- region/object/result lists: C10;
+- method/category choice: C2 where necessary;
+- Apply/Cancel for document-changing results.
+
+Suggestions never apply silently. The same contract is used whether the candidate source is deterministic, heuristic or AI-assisted.
+
+### 23.8 Document switching
+
+Open documents use C10-equivalent tabs/list semantics:
+
+- selecting a document switches view without modifying artwork;
+- close is a C7 command;
+- dirty-state Save / Discard / Cancel uses explicit consequence actions;
+- compact UI may present the same semantics in a sheet rather than tabs.
+
+### 23.9 Input-method completion boundary
+
+The catalog-wide traceability matrix is `UI_INPUT_COVERAGE_MATRIX.md`.
+
+Current result:
+
+- every current Feature Catalog row is classified;
+- every input-bearing current-scope feature points to a canonical input primitive/contract;
+- engine/system/status/policy features are explicitly marked as having no standalone user input;
+- Future/Out-of-scope features are separated from current completion;
+- engine/device-dependent numeric values are tracked in `UI_INPUT_DEFERRED_VALUES.md`.
+
+## 24. Input-design completion definition
+
+For the **implementation-preparation phase**, semantic input design is considered complete when all of the following remain true:
+
+1. Feature Catalog UNMAPPED count is zero.
+2. Every user-editable value/state/choice maps to a canonical primitive or documented composite.
+3. Direct manipulation has a non-drag/single-pointer alternative where applicable.
+4. Gesture/shortcut/hardware accelerators do not remove an explicit route to Core commands.
+5. Precision-sensitive continuous values have exact entry.
+6. Destructive or ambiguous preview workflows have explicit Apply/Cancel or equivalent consequence actions.
+7. Pending items are only engine/device/product **values or capabilities**, not unidentified interaction methods.
+8. Any new feature added to Feature Catalog must add/update its row in the coverage matrix before UI implementation begins.
+
+This completion status is a **design/traceability result**, not a production accessibility/runtime PASS.
