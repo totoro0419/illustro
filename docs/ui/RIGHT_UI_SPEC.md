@@ -150,7 +150,11 @@ The user may override with a Workspace Preset if the resulting layout remains op
 
 Dock width is shared by all docked Boxes.
 
-Resize from the Canvas-facing edge.
+Resize directly from the Canvas-facing edge. The edge is not an invisible expert-only gesture: it exposes the visual affordance defined in [WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md](WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md).
+
+Pointer proximity/focus strengthens the boundary/grip and uses the horizontal-resize cursor. Touch/pen uses an explicit grip with a larger effective target so normal Canvas strokes are not stolen.
+
+During drag, Workspace reflow and Canvas allocation preview live. Release commits one Workspace-layout change; Esc/pointer-cancel restores the pre-drag width.
 
 Rules:
 
@@ -166,8 +170,11 @@ Non-drag alternatives:
 - Narrower
 - Wider
 - Reset Width
+- Resize Right Workspace… when a slider/preset chooser is useful
 
 available through Workspace commands.
+
+Structural layout editing is also available through **Customize Workspace**, which exposes temporary resize/reorder/show-park/detach handles without permanently cluttering normal painting UI.
 
 ## 7. Scroll architecture
 
@@ -920,14 +927,23 @@ Do not force OS file pickers inside the Box.
 Expanded order:
 
 1. active Workspace Preset
-2. Save / Update / Duplicate Preset
-3. Lock Workspace Layout
-4. mirror side
-5. Left UI customization
-6. Quick Controller profile
-7. Reset Workspace Layout
+2. **Customize Workspace**
+3. Save / Update / Duplicate Preset
+4. Lock Workspace Layout
+5. mirror side
+6. Left UI customization
+7. Quick Controller profile
+8. Reset Workspace Layout
+
+Customize Workspace is the visual structural-edit mode defined in [WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md](WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md). It keeps the real Canvas and Workspace visible while exposing temporary resize/reorder/show-park/detach affordances.
 
 Global application settings such as language/accessibility/global shortcuts remain in the dedicated Settings surface.
+
+### Parked Boxes
+
+Factory/default state still includes all 12 Right Boxes.
+
+An explicitly customized Workspace may **Park** a Box from the active stack. Parked Boxes remain registered, appear in Customize Workspace's Available Boxes list, remain reachable from Command Search/deep-links, and can be restored with one click/tap. Parking never deletes the semantic Box or its owning feature.
 
 ## 29. Loading / empty / error / disabled states
 
