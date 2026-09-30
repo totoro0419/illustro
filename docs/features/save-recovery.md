@@ -189,3 +189,8 @@ Workspace may remember recent file handles/locations only where platform allows 
 - saved/protected state is never overstated
 - abrupt mobile kill restores last protected revision
 - direct picker absence does not block portable project workflow
+
+
+## Input-standard closure note
+
+Recovery/branch-conflict selection uses `UI_INPUT_CONTROL_STANDARD.md` C10 for the candidate list and explicit C7 actions for Restore / Compare / Save Copy / Overwrite / Discard / Cancel as applicable. Merely selecting or focusing a recovery candidate does not perform a destructive resolution.

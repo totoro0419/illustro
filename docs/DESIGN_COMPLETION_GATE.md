@@ -145,21 +145,42 @@ The Library Section 9 draft is reference-only.
 
 ## 9. UI Gate E
 
-### Status: **USER DECISION PENDING**
+### Definition: **IN REVISION**
+### Left UI semantic / interaction subgate: **COMPLETE**
+### Right UI semantic / interaction / layout subgate: **COMPLETE**
+### Visual prototype/user review: **PARTIAL PASS — EXPANDED / MEDIUM APPROVED; COMPACT PENDING**
 
-Not formally adopted yet:
+Canonical Gate E specification:
 
-- PiP / Detachable Workspace concrete form
-- Quick Controller geometry/form
-- Panel layout
-- Color UI
-- Brush Settings UI
-- Desktop / Tablet / Smartphone concrete layout
-- icons / hierarchy / theme / Canvas presentation
+- [UI Gate E — Core UI Surface & Workspace](ui/UI_GATE_E.md)
+- [Left UI — Canonical Specification](ui/LEFT_UI_SPEC.md)
+- [Right UI — Canonical Specification](ui/RIGHT_UI_SPEC.md)
+- [Expanded / Medium Visual Review Record](ui/UI_GATE_E_VISUAL_REVIEW_2026-09-29.md)
+- [Compact / Smartphone UI Candidate](ui/COMPACT_UI_SPEC.md)
+- [Right UI Feature Coverage](ui/RIGHT_UI_FEATURE_COVERAGE.md)
+- [Right UI Quality Review](ui/RIGHT_UI_QUALITY_REVIEW.md)
+- [Right Workspace — Default Layout & Collapse](ui/RIGHT_WORKSPACE_DEFAULT_LAYOUT.md)
+- [Right Workspace — Box Interaction Specification](ui/RIGHT_WORKSPACE_INTERACTION_SPEC.md)
+- [Right UI — Layer Page Specification](ui/RIGHT_LAYER_PAGE_SPEC.md)
 
-Core V2 only fixes the capabilities these UIs may call.
+Confirmed / currently recorded decisions include:
 
-Visual prototyping must use the dedicated UI Design Skill.
+- Canvas-dominant shell
+- completed PC/tablet Left Access Surface semantics: creation-first default Rail, fixed All Features, 12 categories, stable overflow, Pin/Stack/Search/customization, and Canvas/Command/Right-PiP routing
+- top bar reserved for application/document operations rather than drawing controls
+- magnetic detachable/reorderable right Workspace/PiP blocks
+- PC/tablet pen-following six-slot Quick Controller
+- Context Surface
+- device-specific projections
+- Focus Mode
+- Command Search / discovery hierarchy
+- UI performance and persistence boundaries
+
+The default left-tool set, several controller details, and remaining device-specific composition are still being refined.
+
+Expanded and Medium visual composition have been rendered, corrected, inspected, and **approved by the user on 2026-09-29**.
+
+Gate E is not yet overall PASS. Compact / smartphone now has a documented candidate architecture (`COMPACT_UI_SPEC.md`), but its toolbar allocation, page organizer, PiP geometry and visual composition still require HTML prototype review. Runtime-only behavior remains unverified where applicable.
 
 ## 10. Production authorization Gate F
 
@@ -193,5 +214,4 @@ They still require their own subsystem gate before implementation.
 
 The correct project phase is:
 
-> **CORE V2 DESIGN READY FOR USER REVIEW / BENCHMARK PHASE AVAILABLE / PRODUCTION LOCKED**
-
+> **CORE V2 DESIGN READY / LEFT UI DESIGN COMPLETE / RIGHT UI DESIGN COMPLETE / EXPANDED+MEDIUM VISUAL APPROVED / COMPACT VISUAL PENDING / PRODUCTION LOCKED**

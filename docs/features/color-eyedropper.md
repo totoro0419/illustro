@@ -110,3 +110,8 @@ Applied artwork pixels: Document.
 - soft-proof overlay does not silently alter sampled document color
 - reference sampling works without import
 - touch-only color selection practical
+
+
+## Input-standard closure note
+
+Touch long-press eyedropper remains an optional accelerator under gesture-conflict testing. Eyedropper remains reachable through the explicit tool/control and temporary binding routes; no color-acquisition function is long-press-only.

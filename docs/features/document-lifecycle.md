@@ -156,3 +156,8 @@ Smartphone:
 - in-app close can cancel
 - mobile kill does not rely on close dialog
 - multiple documents do not multiply inactive background work without bound
+
+
+## Input-standard closure note
+
+Multi-document switching semantics are fixed by `UI_INPUT_CONTROL_STANDARD.md` C10: selectable document collection + explicit New/Open/Close commands. PC tabs/windows vs compact list/sheet is an adaptive presentation decision, not an unresolved input method.

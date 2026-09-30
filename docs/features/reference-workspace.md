@@ -124,3 +124,8 @@ History UIではReference操作であることを明示し、Artwork Pixel edit�
 - direct eyedropper works
 - pin prevents accidental transform
 - phoneでReferenceを見ながら描画可能
+
+
+## Input-standard closure note
+
+If sampling the displayed grayscale Reference is exposed, it uses a C1 two-choice control: **Source Color / Displayed Grayscale**. Reference presentation modes such as overlay/fullscreen use C1 while the set is small. These presentation choices do not alter Reference resource semantics.
