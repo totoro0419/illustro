@@ -22,7 +22,7 @@ Production Vertical Slice 001は基礎Infrastructureとして存在するが、�
 - PiP / Detachable Workspace
 - Brush Engine First
 - Quick Controller / Spatial Memory
-- Lineart / Region as a core differentiator
+- Lineart Layer / area-based Fill as a core differentiator
 - Shared Region Resolver
 - Confidence / Ambiguity
 - Live Preview / Non-destructive
@@ -70,9 +70,10 @@ UI-bearing subsystems additionally require user co-design and dedicated UI Desig
 - Brush Engine final algorithm contract
 - Renderer production contract
 - Production Persistence / Recovery integration
-- Shared Region Resolver
-- Lineart Region production algorithm
-- Selection/Region shared semantics
+- Lineart Layer canonical data representation
+- Raster lineart → Lineart Layer extraction / connection algorithm
+- Lineart Layer manual correction semantics
+- Lineart Layer → Fill / Selection integration
 - advanced Color/ICC implementation
 - Wet Media
 - advanced Effect/Filter system

@@ -210,78 +210,79 @@ Undo/Redo、Timelapse、保存/再開のため、同一State/Commandから再現
 
 ---
 
-## 6. Lineart Region System
+## 6. Lineart Layer — 線画レイヤー
 
-### DR-REGION-001 Region
+> **Design reset:** 旧 Lineart Region / Persistent Region ID / Stable Identity / 自動色再マッピングの設計は破棄し、現在の要件として扱わない。ここではユーザーが確定した完成目標だけを定義する。
 
-RegionをDocument内の明示的なデータ概念として扱える構造を持つ。
+### DR-LINEART-001 Dedicated structural layer
 
-### DR-REGION-002 Region Properties
+線画レイヤーは通常のRaster Layerとは別種の専用レイヤーとして扱う。
 
-Regionは少なくとも以下を持てる。
+通常のストローク中心Raster線画から、ユーザーが「複製する」感覚で線画レイヤーを生成できることを基本操作とする。
 
-- Region ID
-- Boundary
-- adjacency
-- source/reference information
-- validity/confidence state
-- mapping metadata
+### DR-LINEART-002 Region partition is the canonical purpose
 
-### FR-REGION-001 Closed Region Detection
+線画レイヤーの主データは描画線そのものではなく、**領域分けの構造データ**である。
 
-線画から閉領域を検出できなければならない。
+内部の境界は描画上の太さを持つ線として定義しない。表示上の見せ方とは分離し、「ここを越えると別の領域になる」という境界・接続・分割情報を表す。
 
-### FR-REGION-002 Gap Tolerance
+### FR-LINEART-001 Generate from raster lineart
 
-小さな線の隙間を設定に応じて閉領域として扱える。
+ストローク中心のRaster線画を入力として線画レイヤーを生成できる。
 
-### FR-REGION-003 Stable Identity
+生成処理は元Rasterを破壊してはならない。
 
-線画の軽微な変更後も、可能な限り同一Regionとして対応付ける。
+### FR-LINEART-002 Editable correction
 
-単純な配列index等をRegion identityとして使用してはならない。
+自動抽出した接続や領域分けに誤りがある場合、線画レイヤーを選択中にユーザーが修正できなければならない。
 
-### FR-REGION-004 Adjacency
+必要な最終操作体系はUI設計とアルゴリズム設計で確定する。
 
-Region間の隣接関係を取得可能にする。
+### FR-LINEART-003 Area-based consumers
 
-### FR-REGION-005 Region Selection / Fill
+線画レイヤーで定義した領域分けを、少なくともFillとSelectionの基準として利用可能にする。
 
-RegionはSelection、Fill、Color Assistの入力として利用可能にする。
+色差や現在のピクセル色だけに依存せず、線画レイヤー上の領域を直接対象にできることを要求する。
 
-### FR-REGION-006 User Override
+### FR-LINEART-004 Separation from rendered stroke width
 
-誤認識が発生した場合、ユーザーがRegionの結合・分離・無視・再計算等を制御できる方式を持つ。
+元線画のブラシ太さ・アンチエイリアス・表示上の線幅と、線画レイヤー上の領域境界の意味を分離する。
 
-### FR-REGION-007 Optional Semantics
+線画レイヤーの境界を「太さ付きRaster線」として正本化してはならない。
 
-Hair/Skin等の意味ラベルは将来拡張可能にするが、基本Region機能は意味認識なしで成立しなければならない。
+### FR-LINEART-005 Algorithm status
 
----
+以下は**未設計**であり、旧成果物を根拠に確定扱いしてはならない。
 
-## 7. Lineart-linked Coloring
+- Raster線画から境界・接続を抽出する具体アルゴリズム
+- 端点同士、端点と線途中、交差、近接、隙間の判定規則
+- 内部データ構造
+- 領域IDの有無と寿命
+- 隣接情報の保持方式
+- 元Raster編集後の自動追従・再生成・独立保持の方針
+- gap補完の方針
+- exact thresholds / weights / confidence model
 
-### FR-LINKCOLOR-001 Boundary Recalculation
+接続判定は最終目的ではなく、**編集可能な正しい領域分けデータを生成するための一工程**として設計する。
 
-Lineart変更後、影響するRegion境界を再評価する。
+## 7. Lineart Layer area-based coloring
 
-### FR-LINKCOLOR-002 Color Remapping
+### FR-LINEARTCOLOR-001 Area reference
 
-既存Color情報を、新しいRegionへ可能な範囲で再マッピングできる。
+Fillは参照基準として線画レイヤーを選択でき、クリック位置が属する線画レイヤー上の領域を対象にできる。
 
-### FR-LINKCOLOR-003 Preview
+### FR-LINEARTCOLOR-002 Manual structure takes precedence
 
-自動追従による大きな変更はユーザーが結果を確認可能でなければならない。
+ユーザーが線画レイヤー上で修正した接続・領域分けは、自動判定結果より優先されなければならない。
 
-### FR-LINKCOLOR-004 Undo
+自動再解析がユーザー修正を無断で上書きする設計は禁止する。
 
-追従処理全体をUndo可能なCommandとして記録する。
+### FR-LINEARTCOLOR-003 Source-edit behavior is open
 
-### FR-LINKCOLOR-005 Control
+元Raster線画を生成後に編集した場合の挙動は未決定とする。
 
-追従のON/OFF、強度、対象、条件を設定可能にする。
+自動追従、明示再生成、差分更新、独立保持のいずれも現時点では確定しない。
 
----
 
 ## 8. Fill / Coloring
 
@@ -297,7 +298,7 @@ Fillは以下を参照元として選択できる設計にする。
 - selected layers
 - reference-designated layers
 - visible composite
-- Region model
+- Lineart Layer area model
 
 ### FR-FILL-003 Gap Closing
 
@@ -311,7 +312,7 @@ Fill結果のExpand/Contractを設定可能にする。
 
 以下をバラバラな独立アプリ機能として散在させず、一貫したFill Familyとして設計する。
 
-- Region Fill
+- Lineart Layer Area Fill
 - Enclose and Fill
 - Trace and Fill
 - Drag Fill
@@ -319,7 +320,7 @@ Fill結果のExpand/Contractを設定可能にする。
 
 ### FR-COLORASSIST-001 Smart Color Assist
 
-Smart Color Assistはユーザーの既存Artwork/Region/Paletteを入力とする補助機能として動作する。
+Smart Color Assistはユーザーの既存Artwork/Lineart Layer area/Paletteを入力とする補助機能として動作する。
 
 ### FR-COLORASSIST-002 Deterministic-first
 
@@ -483,7 +484,7 @@ Vectorを明示的にRasterizeできる。
 
 ### FR-VECTOR-006 Region Integration
 
-Vector LineartをRegion Boundary Sourceとして利用できる方式を検討する。
+Vector Lineartを線画レイヤー生成元として利用する方式は未設計であり、別途検討する。
 
 ---
 
@@ -536,7 +537,7 @@ TextをVector Pathへ変換する機能を提供する。
 - Polygon
 - Color/Similarity
 - Luminance/Color Range
-- Region-based
+- Lineart Layer area-based
 - Layer-content
 
 ### FR-SELECT-002 Boolean Operations
@@ -1273,7 +1274,7 @@ Native Formatは **.illustro** とする。
 - Vector
 - Text
 - Brush/document-specific brush data
-- Region
+- Lineart Layer area data
 - References
 - Snapshot
 - Layer Comp
@@ -1395,7 +1396,7 @@ GPU Feature差によって基本編集不能にならないFallback戦略を持�
 
 例:
 
-- Region解析はRegion依存機能を使用しないDocumentでは常時実行しない
+- 線画レイヤー解析は線画レイヤー機能を使用しないDocumentでは常時実行しない
 - Soft Proof OFF時はProof変換を実行しない
 - Wet Media未使用時はWet stateを確保しない
 - PSD/EXR等のCodecは必要になるまでロードしない
@@ -1498,7 +1499,7 @@ Plugin/Extension APIは本体完成前の必須機能にしない。
 - Blend Mode exact formula
 - brush graph data model
 - wet-media simulation
-- Region matching algorithm
+- Lineart Layer extraction / connection algorithm
 - Vector stroke representation
 - text shaping engine
 - selection antialiasing
@@ -1598,7 +1599,7 @@ PC / Tablet / Smartphone全体の正常動作・性能・Fallback検証は、該
 - exact memory/cache budgets
 - 128↔256 Tile profile switch threshold
 - brush stabilizer/resampling constants
-- Region thresholds
+- Lineart Layer extraction thresholds
 - ICC implementation/library
 - portable .illustro physical encoding/compression/hash
 - PSD mapping

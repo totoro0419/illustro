@@ -32,7 +32,7 @@ V1で確定しないもの:
 - PC / Tablet / SmartphoneすべてのSupport認定
 - WebGPUがすべての端末で動くという前提
 - Production bundleの最終startup SLA
-- Region / ICC / Wet Media等の最終Algorithm定数
+- Lineart Layer / ICC / Wet Media等の最終Algorithm・定数
 - portable .illustroのphysical container encoding
 
 ## 2. Realtime runtime placement
@@ -45,7 +45,7 @@ Default:
 - active stroke ownership / reconstruction coordination: **Main Thread**
 - lightweight render submission: **Main Thread**
 - Persistence: **Dedicated Worker**
-- Region / codec / heavy filter / expensive compute: **bounded utility Worker lanes**
+- Lineart Layer analysis / codec / heavy filter / expensive compute: **bounded utility Worker lanes**
 - full Realtime Worker: **optional measured fast path only**
 
 Xiaomi tablet + Xiaomi penの実測ではMain / Workerに意味のある体感差がなく、Main pathのinput→next RAF proxyが低かった。
@@ -271,7 +271,7 @@ First Draw critical pathへ不要なModuleを入れない。
 
 First Strokeをblockしてはならない候補:
 
-- Region
+- Lineart Layer analysis
 - general ICC engine
 - PSD / TIFF / EXR codec
 - Wet Media
@@ -300,7 +300,7 @@ TypeScriptをDefault implementation languageとする。
 
 Rust / WASMは次のようなProduction-like heavy kernelが存在した時点で比較する。
 
-- Region topology
+- Lineart Layer extraction / structural analysis
 - computational geometry
 - ICC
 - codec
@@ -378,7 +378,7 @@ Core implementation開始を止めない未確定事項:
 - device-specific 128 / 256 Tile profile switch threshold
 - brush stabilization / resampling constants
 - PRNG implementation
-- Region matching thresholds
+- Lineart Layer extraction / connection / representation decisions
 - ICC library
 - exact blend compatibility formulas
 - portable .illustro physical container encoding / compression / hash

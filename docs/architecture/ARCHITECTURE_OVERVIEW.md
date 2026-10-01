@@ -13,7 +13,7 @@
 1. Canvas First / Direct Manipulationを妨げない低遅延
 2. 巨大Canvas・大量Layerでも局所更新できる
 3. Undo / Snapshot / Timelapse / Autosave / Recoveryを混同しない
-4. Raster / Vector / Text / Region / Effectを非破壊に保持できる
+4. Raster / Vector / Text / Lineart Layer / Effectを非破壊に保持できる
 5. GPUを積極利用しつつ、作品のCanonical StateをGPU固有挙動へ依存させない
 6. Offline First
 7. PC / Tablet / Smartphoneへ適応可能
@@ -63,7 +63,7 @@ Web prototypeを先に使う理由:
 - battery
 - platform distribution/maintenance cost
 
-Web APIへCore semanticsを直接埋め込まず、Native hostを選んでもDocument/Brush/Region/Historyの意味を再設計しない構造にする。
+Web APIへCore semanticsを直接埋め込まず、Native hostを選んでもDocument/Brush/Lineart Layer/Historyの意味を再設計しない構造にする。
 
 ### 2.2 Language / module placement
 
@@ -72,12 +72,12 @@ Web APIへCore semanticsを直接埋め込まず、Native hostを選んでもDoc
 Baseline policy:
 
 - **TypeScript**: UI、DOM、Platform adapter、Command orchestration、軽量metadata処理
-- **Rust → WebAssembly候補**: Computational geometry、Region、codec、reference raster、ICC等、実測で利益があるCPU-heavy / correctness-critical kernel
+- **Rust → WebAssembly候補**: Computational geometry、Lineart Layer analysis、codec、reference raster、ICC等、実測で利益があるCPU-heavy / correctness-critical kernel
 - **WGSL**: WebGPU fast path
 
 Canonical data structureのすべてをWASMへ入れることは要求しない。JS↔WASM copy/serializationやstartup costが利益を上回る場合はTypeScript側へ置く。
 
-WASM利用時も境界は粗粒度にし、Buffer ownershipを明確化する。Region、PSD、advanced ICC等の大きなModuleは可能な限りlazy-loadする。
+WASM利用時も境界は粗粒度にし、Buffer ownershipを明確化する。Lineart Layer analysis、PSD、advanced ICC等の大きなModuleは可能な限りlazy-loadする。
 
 Rustは有力実装候補だが、**性能測定前の無条件採用範囲は固定しない。**
 
@@ -98,7 +98,7 @@ IllustroはStateを次の5種類へ明示的に分類する。
 - Text content/style
 - Masks
 - Effect parameters
-- Region topology/identity/assignments
+- Lineart Layer area-partition data and manual corrections（exact representation TBD）
 - Color profile
 - Guides
 - References metadata
@@ -116,7 +116,7 @@ IllustroはStateを次の5種類へ明示的に分類する。
 - transform command
 - structural layer edit
 - effect parameter edit
-- region identity decision
+- Lineart Layer structure edit
 
 ### C. Derived State
 
@@ -125,7 +125,7 @@ Canonical Stateから再計算可能だが、ユーザーが見る結果へ必�
 例:
 
 - composited layer tile
-- Region spatial index
+- Lineart Layer derived analysis cache/index
 - effect dependency summary
 - mip pyramid
 
@@ -172,7 +172,7 @@ Preview-only stateをSave/Exportの正解として扱わない。
               ▼                      ▼
 ┌──────────────────────┐   ┌──────────────────────────────────┐
 │ Bounded Compute Pool │   │ Persistence Worker               │
-│ Region / strict CPU  │   │ OPFS / journal / block store     │
+│ Lineart analysis / strict CPU  │   │ OPFS / journal / block store     │
 │ ICC / filter / codec │   │ save/export snapshot             │
 └──────────────────────┘   └──────────────────────────────────┘
               │                      │
@@ -183,7 +183,7 @@ Preview-only stateをSave/Exportの正解として扱わない。
 
 これは**論理的な役割分離**であり、物理Thread/Worker配置ではない。
 
-V1ではPointer intake / active Stroke coordination / lightweight render submissionをMain Thread defaultとする。Full Realtime Workerは実測で明確な利点が出るProfileだけに限定する。PersistenceはDedicated Worker、Region/codec/heavy filter等はbounded utility Worker lanesへ分離する。
+V1ではPointer intake / active Stroke coordination / lightweight render submissionをMain Thread defaultとする。Full Realtime Workerは実測で明確な利点が出るProfileだけに限定する。PersistenceはDedicated Worker、Lineart analysis/codec/heavy filter等はbounded utility Worker lanesへ分離する。
 
 利用可能CPU、Memory、cross-origin isolation、Platform制約に応じてCompute Pool数は変える。必要ならRoleを統合し、逆にDesktopでは分離する。
 
@@ -261,29 +261,37 @@ presentation surface
 
 必要なTool/Document featureが有効になった時点でlazy initializeする。
 
-Region source editは原則としてdirty generationを記録するだけで、通常Stroke commitをTopology再構築待ちにしない。
+線画レイヤー生成・再解析は通常Stroke commitの必須同期処理にしない。元Raster編集後の追従方式は未決定であり、旧Topology更新方式を前提にしない。
 
-## 8. Data flow: Lineart Region
+## 8. Data flow: Lineart Layer
+
+> **Design reset:** 旧 Evidence → Boundary → Topology → Stable Identity → Persistent Fill の具体設計は現在のArchitecture決定ではない。
+
+現在確定している完成目標だけを示す。
 
 ```text
-Source Layers
+Raster lineart layer
+  ↓ explicit "create Lineart Layer"
+lineart extraction / connection inference
   ↓
-Evidence extraction
+editable, thickness-free area-partition structure
+  ↓ user correction of wrong connections / partitions
+confirmed Lineart Layer structure
   ↓
-Boundary model
-  ↓
-Gap hypotheses / manual corrections
-  ↓
-Planar topology
-  ↓
-Regions
-  ↓
-Stable identity reconciliation
-  ↓
-Persistent color/selection assistance
+Area-based Fill / Selection
 ```
 
-Selection Maskとは別Subsystemとする。
+未決定:
+- extraction algorithm
+- exact connection rules
+- internal graph/region representation
+- identity lifetime
+- source-raster edit tracking
+- incremental update strategy
+- gap handling and thresholds
+
+通常Brushの描画経路へこの未確定解析を常駐させない、という性能方針だけは維持する。
+
 
 ## 9. Persistence model
 
@@ -335,7 +343,7 @@ Queueは件数だけでなくbytes / estimated work / memory reservationでBound
 
 ### Must be reproducible
 
-- Entity/Region identity decision
+- Entity / Lineart Layer structure decision
 - command ordering
 - generated stroke semantic record
 - random sequence used by committed stroke
@@ -379,10 +387,10 @@ Cross-origin isolationを利用可能なDeploymentではRing Buffer等に利用�
 - RealtimeとFinalで意味を変えない
 - Canonical stateとGPU working/cacheを分ける
 - Randomを再現可能にする
-- RegionをEvidence→Boundary→Topology→Identityへ分解する
+- Lineart Layerの抽出・接続・領域表現は設計リセット済みとしてゼロから決める
 - Undo/Recovery/Persistenceを分離する
 - unbounded replay/history/cacheを避ける
-- ambiguous Regionを正常値として強制確定しない
+- 線画レイヤーの自動判定結果をユーザー修正より優先しない
 
 継承していない具体事項:
 
@@ -421,7 +429,7 @@ Cross-origin isolationを利用可能なDeploymentではRing Buffer等に利用�
 - heavy-kernel TS/WASM split
 - pointerrawupdate crossover if introduced
 - ICC implementation
-- brush/Region numerical constants
+- brush / Lineart Layer extraction numerical constants
 - portable .illustro physical encoding
 
 These are Runtime/Profile or feature-specific calibration decisions, not missing Core architecture.
@@ -432,7 +440,7 @@ These are Runtime/Profile or feature-specific calibration decisions, not missing
 2. Tile Canvas / Render Pipeline — **Designed**
 3. Command / Undo / Snapshot — **Designed**
 4. Input / Brush Engine — **Designed**
-5. Lineart Region System — **Designed**
+5. Lineart Layer — **Design reset / not designed**
 6. Color Pipeline — **Designed**
 7. Selection / Transform / Effects — **Designed**
 8. Native Format / Autosave / Recovery — **Designed**

@@ -9,7 +9,7 @@ Fill familyは1つの主要Toolとして扱い、Context UIからmodeを切り�
 Modes:
 
 - Flood Fill
-- Region Fill
+- Lineart Layer Area Fill
 - Enclose and Fill
 - Trace and Fill
 - Drag Fill
@@ -63,18 +63,16 @@ Userが線/軌跡をなぞり、対象領域を指定。
 
 Gestureの意味が曖昧な場合は結果previewを優先。
 
-## Region Fill
+## Lineart Layer Area Fill
 
-Lineart RegionがCurrentならRegion IDを利用。
+Lineart Layer Area Fill部分は**Design reset**中であり、旧Region ID / Current / Updating / Ambiguous状態を現在仕様として扱わない。
 
-RegionがUpdating:
--古いRegionを無条件に使わない
--短時間ならpending state
--Userが待つ/旧結果で暫定実行する等のpolicyはRegion specに従う
+現時点で確定しているのは次のみ。
+- activeな線画レイヤーの領域分けをFill基準として利用できる
+- ユーザーが線画レイヤー上で修正した領域分けを優先する
+- 線画レイヤーが未生成・無効・編集中の場合に、別の基準へ黙って切り替えない
 
-Ambiguous:
--確定Fillをsilent applyしない
--候補/修正導線を出す
+元Raster編集後の追従、再解析中状態、領域IDの扱いは未設計。
 
 ## Reference source
 
@@ -84,7 +82,7 @@ Context UIで少なくとも次を選べる。
 - Visible Composite
 - Selected Layers
 - Reference Layers
-- Region Model
+- Lineart Layer
 
 Reference Layer指定はLayer側からも設定可能。
 
@@ -135,7 +133,7 @@ Phone:
 
 - no closed target
 - invalid reference source
-- Region ambiguous
+- Lineart Layer area unavailable / invalid
 - memory/resource limit
 - stale computation
 
@@ -145,7 +143,7 @@ Phone:
 
 Fill tool settings = Workspace。
 Applied pixels/assignments = Document。
-Region assignment = Region subsystem。
+Lineart Layer area data = Lineart Layer subsystem。
 
 ## Performance
 
@@ -153,7 +151,7 @@ Region assignment = Region subsystem。
 - no whole-document scan when avoidable
 - long fill is worker/background capable
 - cancel/stale result safe
-- Region analysis is demand-driven
+- Lineart Layer analysis must not burden the normal Brush path; exact scheduling is TBD
 
 ## Acceptance
 
