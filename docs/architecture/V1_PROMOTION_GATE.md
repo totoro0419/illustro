@@ -63,7 +63,7 @@ This validates browser/API behavior, not physical power-loss guarantees.
 
 PASS requires:
 
-- canvas becomes usable without loading Region, general ICC, codecs, Wet Media, advanced filter, benchmark/GPU diagnostic modules
+- canvas becomes usable without loading Lineart Layer analysis, general ICC, codecs, Wet Media, advanced filter, benchmark/GPU diagnostic modules
 - Persistence Worker is lazy before first persistence use
 - startup and first-stroke proxy timings are measured in served Chromium
 - first stroke works before any advanced module is requested

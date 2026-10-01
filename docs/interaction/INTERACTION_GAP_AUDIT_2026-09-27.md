@@ -1,5 +1,7 @@
 # Interaction Specification Gap Audit — 2026-09-27
 
+> **Lineart Layer reset notice (2026-10-01):** 旧 Lineart Region / Lineart-linked Coloring の評価・バックログは現在の進捗として無効。線画レイヤーとして再設計する。
+
 > Scope: PRODUCT_SPEC / FEATURE_SPEC / FEATURE_CATALOG / Architecture v0.2 / existing feature specs  
 > Audit question: **実装者またはUI designerが重要挙動を勝手に決めずに済むか**  
 > Result: **Product/Architecture PASS, Interaction specification INCOMPLETE**  
@@ -35,8 +37,8 @@ FEATURE_SPECは35章・210個のRequirementを持ち、能力範囲はかなり�
 | Input | B | P0 | arbitration mostly architecture-only | detail spec/inherit ADR |
 | Brush Engine | C | P0 | brush select, size/opacity adjustment, temporary eraser, cancel/undo | detail spec |
 | Dynamic Wet Media | C | P1 | wet-state UX, dry action, sampling/mixing interactions | detail spec later |
-| Lineart Region | B- | P0 | enable/source setup, updating/ambiguous UX, manual correction | detail spec |
-| Lineart-linked Coloring | C | P0 | when tracking occurs, preview/conflict/accept flow | detail spec |
+| Lineart Layer | RESET | P0 | dedicated structural area-partition layer; interaction redesign required | new design |
+| Lineart Layer Area Fill | RESET | P0 | use corrected Lineart Layer areas as fill basis; details open | new design |
 | Fill / Coloring | C | P0 | tool modes, drag semantics, long fill/cancel, reference source UX | detail spec |
 | Color System | B- | P0 | picker model, recent/palette interaction, eyedropper hold behavior | detail spec |
 | Layers | C | P0 | selection/reorder/clipping/group gestures, rename, context behavior | detail spec |
@@ -67,18 +69,18 @@ FEATURE_SPECは35章・210個のRequirementを持ち、能力範囲はかなり�
 
 ## 3. Critical finding: architecture-detail ≠ interaction-detail
 
-Input, Region, Persistence等はADRが詳細でも、ユーザーから見た挙動は別途必要。
+Input, Lineart Layer, Persistence等はADRが詳細でも、ユーザーから見た挙動は別途必要。
 
 例:
 
 Architecture:
-- Region is Updating / Ambiguous
+- Lineart Layer state model is not yet designed
 
 Interaction still needed:
 - Updatingをどこに表示するか
 - Userは描画を続けられるか
-- Fill click時に古いRegionを使うか待つか
-- Ambiguousをどう修正するか
+- Fill時に線画レイヤーが未生成・編集中の場合の挙動
+- 接続・領域分けの誤りをどう直感的に修正するか
 - correctionがUndoできるか
 
 したがってADRをInteraction Specの代替にしない。
@@ -110,7 +112,7 @@ P0:
 - Transform
 - Liquify/Warp
 - Gradient
-- Region correction
+- Lineart Layer correction
 - Fill long operation
 - adjustment/filter editing
 - snapshot branch
@@ -132,7 +134,7 @@ INTERACTION_MODELのTool Switching ruleを共通規則として採用し、例�
 
 ## 7. Critical finding: navigation during active tools
 
-Canvas Firstのため、Transform/Selection/Fill/Gradient/Region correction中でも可能な限りPan/Zoomを許す必要がある。
+Canvas Firstのため、Transform/Selection/Fill/Gradient/Lineart Layer correction中でも可能な限りPan/Zoomを許す必要がある。
 
 TabletではPen Toolを維持したままTouch NavigationできることをDefaultとする。
 
@@ -173,7 +175,7 @@ P0 detailed specsでは必ず各Device入口を記述する。
 - Fill
 - Layers
 - Selection/Transform
-- Region
+- Lineart Layer
 - Reference Workspace
 - History/Snapshot
 - Save/Recovery
@@ -201,7 +203,7 @@ Before full UI generation:
 4. Color / Eyedropper
 5. Smart Fill
 6. Selection / Transform
-7. Region / linked coloring
+7. Lineart Layer / Area Fill
 8. Reference Workspace
 9. History / Snapshot / Layer Comp
 10. Quick Menu / Command Search

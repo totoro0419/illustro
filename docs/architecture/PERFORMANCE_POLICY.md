@@ -23,7 +23,7 @@ Illustroでは、正確性・データ安全性・要求されたユーザー体
 
 対象例:
 
-- Lineart Region analysis
+- Lineart Layer extraction / analysis
 - Dynamic Wet Media
 - general ICC profile transforms
 - Soft Proof
@@ -53,7 +53,7 @@ Hot Pathへ次を持ち込まない。
 - whole-history scans
 - general-purpose serialization
 - large compression
-- global Region solve
+- full-document Lineart Layer analysis (if the future design requires it)
 - codec initialization
 - general ICC compilation
 - unnecessary cryptographic/content hashing
@@ -134,7 +134,7 @@ WASMは目的ではなく手段。
 - buffer copyが増える
 - TS/JIT pathで十分速い
 
-Region/codec/ICC等はlazy module化を優先する。
+Lineart Layer analysis/codec/ICC等はlazy module化を優先する。
 
 ## 9. GPU policy
 
@@ -150,18 +150,19 @@ GPUは大量並列処理へ積極利用するが、GPUへ載せること自体�
 
 Shader/pipelineは必要時compileし、可能ならcacheする。
 
-## 10. Region policy
+## 10. Lineart Layer performance policy
 
-Region Systemは通常Stroke Hot Pathをblockしない。
+線画レイヤーの抽出・接続判定・領域分け処理は、通常StrokeのHot Pathをblockしてはならない。
 
-Source edit:
+ただし、旧Region Systemで定義していた「毎Stroke dirty更新」「Updating状態」「Persistent Fill追従」などの具体ライフサイクルは撤回する。
 
-1. dirty bounds/generationを記録
-2. foreground drawingを完了
-3. Region-dependent operationが必要なら要求
-4. background budgetがあればcoalesced update
+現時点で維持する性能原則は次のみ。
 
-Persistent Fill利用中でも、解析が追いつかない場合はUpdating状態を明示し、Stroke latencyを犠牲にしない。
+1. 線画レイヤーを使わない通常描画へ恒常コストを課さない
+2. 線画レイヤー生成・再解析は明示的または必要時に実行できる構造にする
+3. 大きな解析が必要ならforeground drawingを優先する
+4. 正確な更新単位・キャッシュ・Worker配置は新アルゴリズム設計後に決める
+
 
 ## 11. Color policy
 
@@ -218,7 +219,7 @@ Startupで原則不要:
 
 - PSD codec
 - EXR codec
-- Region solver
+- Lineart Layer analyzer
 - Wet Media simulator
 - Soft Proof engine
 - advanced filter library

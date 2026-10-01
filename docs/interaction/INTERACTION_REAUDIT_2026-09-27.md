@@ -1,5 +1,7 @@
 # Interaction Precision Re-audit — 2026-09-27
 
+> **Lineart Layer reset notice (2026-10-01):** 旧 Region / Linked Coloring に関する改善済み・確定済み判定は撤回され、現在の進捗に数えない。
+
 > Stage: after P0 interaction remediation  
 > Result: **Core interaction baseline PASS / Full-product interaction INCOMPLETE**  
 > Scope: Product, Feature, Architecture, Device, Performance, Interaction, and P0 feature specifications
@@ -112,7 +114,7 @@ Added:
 - unified modes
 - default Auto reference source
 - gap behavior
-- Region Updating/Ambiguous interaction
+- Lineart Layer interaction (redesign required)
 - long-running cancellation
 - stale job handling
 - selection interaction
@@ -134,18 +136,14 @@ Added:
 
 Current grade: **A-**
 
-### Region / Linked Coloring
+### Lineart Layer / Area Fill
 
-Added:
-- explicit source configuration
-- user-visible Current/Updating/Ambiguous states
-- manual correction
-- conservative tracking
-- auto-remap causal History grouping
-- separate manual resolution Undo
-- performance/pay-for-use
+**Design reset.** 旧Region interaction specificationは現在の仕様ではない。
 
-Current grade: **A-**
+現在確定しているのは、線画レイヤーを選択して接続・領域分けの誤りを修正できることと、その領域分けをFillへ利用できることだけである。
+
+具体的な操作、状態表示、再解析、元Raster編集後の挙動は未設計。
+
 
 ### Reference Workspace
 
@@ -261,71 +259,12 @@ Clarified:
 - empty tree is valid
 - first Raster Brush stroke creates a Raster Layer in the same user-intent group.
 
-### Region automatic remap history
+### Lineart Layer history
 
-Clarified:
-- high-confidence automatic remap is causally grouped with the source Lineart edit.
-- later manual ambiguity resolution is separate.
+旧automatic remap設計は撤回した。
 
-## 5. Interaction decisions intentionally left to visual UI design
+線画レイヤー生成・手動修正・Area Fill・元Raster変更とのHistory groupingは未設計。
 
-These are not semantic gaps.
-
-Examples:
-
-- radial vs grid Quick Menu appearance
-- exact iconography
-- panel dimensions
-- bottom sheet vs popover visual composition
-- colors/typography
-- exact animation
-- location of Context UI within safe ergonomic constraints
-- exact factory canvas preset numeric dimensions
-- exact default Quick Menu keyboard key
-
-These must be decided using the dedicated UI design skill.
-
-## 6. Decisions intentionally left to prototype/benchmark
-
-These are not UI gaps.
-
-- tile size
-- worker placement
-- TypeScript/WASM split
-- pointerrawupdate profile
-- cache budgets
-- region thresholds
-- exact brush stabilization coefficients
-- exact default brush preset tuning
-- exact performance numeric targets
-- ICC implementation library
-- transform kernels
-
-They must be decided from measurements/current official specifications, not UI intuition.
-
-## 7. Remaining interaction gaps
-
-Not blocking the core painting shell, but blocking final UI for those features:
-
-- Dynamic Wet Media
-- Vector editing
-- Text editing
-- Guides/Rulers/Shapes/Gradients
-- Blend If detailed interaction
-- Adjustment/Live Filter editing
-- Healing/Patch/Clone
-- Macro/Automation
-- Asset Library
-- Navigator/Multi-view
-- Work Time
-- Gesture customization
-- advanced Workspace layout
-- per-feature Accessibility QA
-- file compatibility/loss-report UI
-
-Tracked in REMAINING_INTERACTION_BACKLOG.md.
-
-## 8. UI readiness judgment
 
 ### Core painting UI
 

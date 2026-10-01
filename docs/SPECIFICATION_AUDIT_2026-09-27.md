@@ -1,5 +1,7 @@
 # Illustro Specification Precision Audit — 2026-09-27
 
+> **Lineart Layer reset notice (2026-10-01):** この監査内の旧 Region / Lineart-linked Coloring に関する達成度・解決済み判定は現在の進捗として扱わない。該当設計は破棄され、線画レイヤーとしてゼロから再設計する。
+
 > Scope: 現時点の新Illustro全仕様・Architecture・Interaction・Device/Performance policy  
 > Result: **Core specification baseline is coherent and interaction-ready; advanced features and runtime performance remain incomplete/unverified.**  
 > Important: 本報告は実装動作PASSではない。
@@ -74,7 +76,7 @@ Current P0 set:
 - Color / Eyedropper
 - Smart Fill
 - Selection / Transform
-- Region / Linked Coloring
+- Lineart Layer / Area Fill — design reset
 - Reference Workspace
 - History / Snapshot / Layer Comp
 - Quick Menu / Command Search
@@ -125,7 +127,7 @@ Corrected:
 
 Status: **FIXED**
 
-### H-03 Region interaction under-specified
+### H-03 Lineart Layer — historical Region finding superseded
 
 Risk:
 Architecture had Current/Updating/Ambiguous, but UX response was undefined.
@@ -215,7 +217,7 @@ Status: **FIXED**
 - Fill default source fixed to Auto: Reference Layers when designated, otherwise Current Layer
 - Autosave / Recovery default fixed to ON
 - Reference manipulation Cancel/Undo defined
-- Region automatic remap Undo grouping defined
+- 旧Region automatic remapのUndo設計は撤回。Lineart Layer固有のUndoは未設計
 - Layer visibility Undo defined
 - Layer inline rename fixed as Primary
 - Recent Color History scope fixed to Workspace/local
@@ -261,7 +263,7 @@ Aligned at design level:
 - pay-for-use
 - inactive advanced features near-zero recurring cost goal
 - mutable active transactions / immutable published revisions
-- lazy Region/ICC/codec/effects
+- lazy Lineart Layer analysis/ICC/codec/effects
 - hot/cold History
 - adaptive workers/language/backend
 - GPU cache not canonical
@@ -296,7 +298,7 @@ Artwork meaning is not defined by GPU cache or UI preview.
 
 Remain separate concepts.
 
-### Selection vs Region
+### Selection vs Lineart Layer — design reset
 
 Remain separate concepts.
 
@@ -412,7 +414,7 @@ Still intentionally unresolved:
 - TS vs WASM kernel placement
 - WebGPU/compat crossover
 - cache budgets
-- Region thresholds/weights
+- Lineart Layer extraction / connection decisions
 - Brush stabilizer coefficients
 - PRNG implementation
 - ICC library

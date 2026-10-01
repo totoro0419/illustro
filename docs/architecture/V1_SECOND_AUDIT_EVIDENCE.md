@@ -188,7 +188,7 @@ Before and immediately after first stroke:
 
 Decision:
 
-First Draw critical path does not require Persistence, Region, advanced GPU diagnostics, WASM benchmarks or other advanced modules.
+First Draw critical path does not require Persistence, Lineart Layer analysis, advanced GPU diagnostics, WASM benchmarks or other advanced modules.
 
 Absolute production startup targets remain a later real-application measurement, not a CI-number lock.
 

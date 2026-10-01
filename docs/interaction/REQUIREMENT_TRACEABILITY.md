@@ -10,9 +10,9 @@
 | Input | INTERACTION_MODEL; brush-eraser.md | ADR-0004; ADR-0010 | A- / prototype numeric details pending |
 | Brush Engine | brush-eraser.md | ADR-0004; PERFORMANCE_POLICY | A- |
 | Dynamic Wet Media | backlog §1 | ADR-0002/0004 principles | C / P1 |
-| Lineart Region | region-linked-coloring.md | ADR-0005 | A- |
-| Lineart-linked Coloring | region-linked-coloring.md | ADR-0005; ADR-0003 | A- |
-| Fill / Coloring | smart-fill.md | ADR-0005; ADR-0007 | A- |
+| Lineart Layer | no current interaction spec | no active ADR | OPEN / reset |
+| Lineart Layer Area Fill | smart-fill.md (concept only) | no active Lineart ADR | OPEN / reset |
+| Fill / Coloring | smart-fill.md | ADR-0007 | A- (Lineart Layer path excluded) |
 | Color / Color Management | color-eyedropper.md | ADR-0006 | A- |
 | Layers | layers.md | ADR-0001; ADR-0003 | A- |
 | Vector | backlog §2 | ADR-0001; ADR-0007 | C / P1 |

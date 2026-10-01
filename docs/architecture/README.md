@@ -27,7 +27,7 @@ Historical prototype/audit records remain available:
 2. [ADR-0002 — Tile Canvas / Render Pipeline](ADR-0002-tile-render-pipeline.md)
 3. [ADR-0003 — Command / Undo / Redo / Snapshot](ADR-0003-history-command-snapshot.md)
 4. [ADR-0004 — Input / Brush Engine](ADR-0004-input-brush-engine.md)
-5. [ADR-0005 — Lineart Region System](ADR-0005-lineart-region.md)
+5. Lineart Layer — **no active ADR; design reset / pending redesign**
 6. [ADR-0006 — Color Pipeline / ICC](ADR-0006-color-pipeline.md)
 7. [ADR-0007 — Selection / Transform / Effects](ADR-0007-selection-transform-effects.md)
 8. [ADR-0008 — .illustro / Autosave / Recovery](ADR-0008-persistence-recovery.md)
@@ -76,7 +76,7 @@ These do **not** block Core implementation.
 - worker pool size / queue deadlines
 - brush resampling/stabilizer constants
 - PRNG implementation
-- Region matching weights/thresholds
+- Lineart Layer extraction / connection / representation decisions
 - ICC engine/library
 - exact blend compatibility formulas
 - persistence batch timing/size calibration

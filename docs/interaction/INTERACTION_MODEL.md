@@ -162,7 +162,7 @@ Requirements:
 
 ## 8. Long-running operation policy
 
-Fill、Region、large Filter、save/export等が即時完了しない場合:
+Fill、Lineart Layer analysis、large Filter、save/export等が即時完了しない場合:
 
 - Canvas全体を不要にModal lockしない
 - progress/stateを表示
@@ -217,7 +217,7 @@ Fill:
 - tolerance
 - gap close
 - reference source
-- region mode
+- Lineart Layer area mode
 
 Context UIから高度設定へdrill-down可能だが、高頻度項目をdeep settingsへ追いやらない。
 

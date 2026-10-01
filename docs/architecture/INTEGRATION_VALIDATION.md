@@ -22,7 +22,7 @@
 1. Canonical ownership
 2. Undo/Save/Recovery responsibility
 3. GPU/CPU consistency
-4. Region/Selection separation
+4. Lineart Layer/Selection separation
 5. color/alpha correctness
 6. long-session boundedness
 7. offline persistence
@@ -41,7 +41,7 @@ v0.2で以下を修正した。
 - Web-first product lock → WebはPrototype baseline
 - pointerrawupdate優先 → measured fast path
 - active pure-immutable risk → mutable active transaction
-- Region常時更新risk → lazy/demand-driven
+- Lineart Layer解析が通常描画をblockするrisk → 通常Brush hot pathから分離
 - general ICC常時path risk → common fast path + lazy general fallback
 - effect chain repeated evaluation → derived checkpoint/cache
 - deep history RAM residency → hot/cold separation
@@ -97,7 +97,7 @@ Canonical:
 - stable entity identity
 - committed raster valuesまたはbounded deterministic records
 - vector/text
-- region identity/topology decisions
+- future Lineart Layer structural edits
 - effect parameters
 - color metadata
 - command/revision roots
@@ -144,21 +144,14 @@ Prototype必須。
 
 同一概念への混同なし。
 
-## 5. Selection vs Region — PASS
+## 5. Selection vs Lineart Layer — NOT VALIDATED
 
-Selection:
-- grayscale coverage
-- arbitrary editing mask
-- saved/active
+旧Region設計に対するPASS判定は撤回する。
 
-Region:
-- lineart topology
-- stable identity
-- lineage/assignments
+現在確定しているのは、Selectionと線画レイヤーの領域分けデータを同一概念として扱わないことだけである。
 
-Region→Selectionは可能。
+線画レイヤーからSelectionを生成する具体方式、内部データ共有、領域IDの有無は未設計。
 
-SelectionをStable Regionとして自動採用しない。
 
 ## 6. Raster / Tile / History integration — PASS for V1
 
@@ -203,15 +196,19 @@ Thread/Tile/GPU orderingによるRandom変化を禁止。
 
 具体PRNG未決定はArchitecture矛盾ではなくPrototype項目。
 
-## 8. Region / History / Persistent Fill — PASS
+## 8. Lineart Layer / History / Area Fill — NOT VALIDATED
 
-Topology updateとRegion identity decisionはTransactionに含められる。
+旧Topology / Stable Region / Persistent Fill設計に対するPASS判定は撤回する。
 
-Persistent FillはRegion assignment。
+現行Core Historyが将来の線画レイヤー編集をUndo可能にできる一般的なTransaction基盤を持つことと、線画レイヤー固有のHistory設計が完成していることは別である。
 
-Ambiguous/Conflictを明示Stateとして保持できる。
+以下は未設計:
+- 線画レイヤー生成のUndo単位
+- 接続・領域分け修正のUndo単位
+- 元Raster編集後の追従方式
+- Lineart Layer Area Fillとの履歴連携
+- 保存形式と復元時の再解析方針
 
-Undoで新Matcherを再実行せず、当時のdecisionを復元可能な設計。
 
 ## 9. Color / Render / Export — PASS with implementation research
 
@@ -337,7 +334,7 @@ Command/Context/Direct ManipulationをUIから呼べるAPI境界を持てる。
 - fixed gap thresholds
 - fixed history retention counts
 - fixed materialization count
-- fixed worker count/topology
+- fixed worker count / Lineart Layer analysis
 - fixed recovery time
 - fixed CBOR encoding
 - fixed PRNG
@@ -361,7 +358,7 @@ Command/Context/Direct ManipulationをUIから呼べるAPI境界を持てる。
 - brush dynamics constants
 - ICC engine accuracy/performance
 - effect halo/dirty graph tuning
-- Region incremental repair thresholds
+- Lineart Layer extraction / update policy
 - portable .illustro physical encoding
 - PSD mapping/loss report
 
@@ -390,7 +387,7 @@ Workloads:
 - 100 / 1000+ layers
 - blur/effect stack
 - flood fill
-- Region update
+- Lineart Layer analysis/update
 - Undo spam
 - continuous 1h synthetic edit
 - save/export while painting

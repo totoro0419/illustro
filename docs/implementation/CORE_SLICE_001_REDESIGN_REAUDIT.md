@@ -8,7 +8,7 @@
 
 Slice 001は現時点で撤回を必要とする重大矛盾は確認できない。
 
-ただし、これはBrush/Renderer/Persistence/RegionのProduction設計が完成したことを意味しない。
+ただし、これはBrush/Renderer/Persistence/Lineart LayerのProduction設計が完成したことを意味しない。
 
 Slice 001は以下の低位Infrastructureとしてのみ扱う。
 
@@ -56,7 +56,7 @@ Core Document操作自体にNetwork dependencyがない。
 
 Commandはtyped/versionedになっている。
 
-**Directionally compatible**, but Brush/Fill/Region等のsemantic record設計は未実装。
+**Directionally compatible**, but Brush/Fill/Lineart Layer等のsemantic record設計は未実装。
 
 ## 3. Design constraints before Brush implementation
 
@@ -126,20 +126,20 @@ Production Persistenceでは少なくとも:
 
 Legacy資料にも同様の警告があるが、具体packet形式は継承しない。
 
-## 5. Region / Shared Resolver implications
+## 5. Lineart Layer implications
 
-Slice 001はRegionを実装していないため直接衝突しない。
+Slice 001は線画レイヤーを実装していないため、今回の設計リセットによる削除対象コードはない。
 
-ただし後続で:
+一方で、旧 Shared Region Resolver / Persistent Region Entity / topology / assignment を将来前提として扱ってはならない。
 
-- Selection coverage
-- Flood Fill query/result
-- Lineart Region topology
-- Persistent Region assignment
+今後、線画レイヤー設計が確定した時点で、Slice 001に必要な追加点を改めて監査する。
 
-をLayer/Rasterだけへ押し込めない。
+現時点では以下のみ要求する。
 
-Shared Region ResolverとPersistent Region Entityは別責務として追加可能な構造を維持する。
+- 新しいLineart Layer entityを追加できる拡張余地を壊さない
+- 線画レイヤー生成・修正操作を将来Transactionへ載せられること
+- 具体的なRegion ID、topology、assignment形式を先回りしてCoreへ固定しない
+
 
 ## 6. Signed / overscan coordinate question
 
