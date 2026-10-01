@@ -24,7 +24,7 @@
     {
       "name": "crossing boundaries are split and all four faces exist",
       "status": "PASS",
-      "ms": 1
+      "ms": 2
     },
     {
       "name": "overlapping segments do not duplicate boundaries",
@@ -34,12 +34,12 @@
     {
       "name": "subpixel region is retained in authoritative graph",
       "status": "PASS",
-      "ms": 1
+      "ms": 0
     },
     {
       "name": "three nested loops attach negative cycles correctly",
       "status": "PASS",
-      "ms": 1
+      "ms": 2
     },
     {
       "name": "independent loops share one exterior",
@@ -49,12 +49,12 @@
     {
       "name": "all foreground pixels can be analyzed without nontermination",
       "status": "PASS",
-      "ms": 32
+      "ms": 28
     },
     {
       "name": "same raster repeats with identical geometry and labels",
       "status": "PASS",
-      "ms": 11
+      "ms": 13
     },
     {
       "name": "transparent empty raster and unsupported sizes",
@@ -64,7 +64,7 @@
     {
       "name": "512 exhaustive 3x3 raster topology configurations",
       "status": "PASS",
-      "ms": 31
+      "ms": 62
     }
   ]
 }

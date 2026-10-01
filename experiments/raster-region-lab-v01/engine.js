@@ -1,4 +1,4 @@
-/* Illustro Region Lab 0.1. Independent raster input; no stroke-history access. */
+/* Illustro Region Lab 0.2. Independent raster input; no stroke-history access. */
 function RegionEngine() {
   'use strict';
   const EPS=1e-7, cross=(a,b)=>a.x*b.y-a.y*b.x;
@@ -56,35 +56,66 @@ function RegionEngine() {
   function infer(ex,opt){
     const gap=opt.gap??12,mode=opt.mode??'balanced',blocked=new Set(opt.blocked||[]);let candidates=[];const grid=new Grid();ex.segments.forEach((s,i)=>grid.add(i,s.a,s.b));
     const endByID=new Map(ex.endpoints.map(e=>[e.id,e]));
+    const contextBudget=opt.contourClosure!==false?gap*1.5:gap;
+    // Measure the approach at two longer scales, not only the last few pixels.
+    // Separate pen strokes may still form the two sides of one taper.
+    function backAt(e,reach){let cur=e.id,prev=-1,length=0;while(length<reach){let next=ex.adj[cur].filter(t=>t.v!==prev);if(next.length!==1)break;let v=next[0].v;length+=dist(ex.points[cur],ex.points[v]);prev=cur;cur=v;}return length>=reach?ex.points[cur]:null;}
+    function taper(a,b,d){
+      const near=Math.max(12,d*1.5),far=Math.max(24,d*3),an=backAt(a,near),bn=backAt(b,near),af=backAt(a,far),bf=backAt(b,far);
+      if(!an||!bn||!af||!bf)return null;
+      const na=unit(sub(a.p,an)),nb=unit(sub(b.p,bn)),fa=unit(sub(a.p,af)),fb=unit(sub(b.p,bf)),direction=unit(sub(b.p,a.p));
+      const nearWidth=dist(an,bn),farWidth=dist(af,bf),flow=unit({x:fa.x+fb.x,y:fa.y+fb.y});
+      if(dot(na,nb)<.5||dot(fa,fb)<.5||nearWidth<d*1.2||farWidth<nearWidth*1.1||Math.abs(dot(flow,direction))>.82)return null;
+      return {tipWidth:d,nearWidth,farWidth,nearReach:near,farReach:far};
+    }
+    function sharedBoundaryAhead(a,b,evidence){
+      if(!evidence||a.comp===b.comp)return null;
+      function first(e){let back=backAt(e,evidence.farReach),u=unit(sub(e.p,back)),range=Math.min(160,evidence.farReach*2),end={x:e.p.x+u.x*range,y:e.p.y+u.y*range},best=null;
+        for(const si of grid.query(e.p,end)){let s=ex.segments[si],comp=ex.comp[s.va];if(comp===a.comp||comp===b.comp)continue;let hit=intersection(e.p,end,s.a,s.b);if(hit&&hit.t>EPS&&(!best||hit.t<best.t))best={t:hit.t,comp};}return best;
+      }
+      const x=first(a),y=first(b);return x&&y&&x.comp===y.comp?{component:x.comp}:null;
+    }
     function make(e,target,other,kind,tier,path){
-      let d=dist(e.p,target);if(d<.01||d>gap+Math.min(e.radius+(other?.radius||0),12))return;
+      const budget=kind==='線の続き'?contextBudget:gap;
+      let d=dist(e.p,target);if(d<.01||d>budget+Math.min(e.radius+(other?.radius||0),12))return;
       // White gap measured on source Raster; width cannot inflate unlimited search.
       let white=0;for(let k=0;k<=Math.ceil(d*2);k++){let p=mix(e.p,target,k/Math.ceil(d*2)),i=(Math.floor(p.y)+1)*ex.pw+Math.floor(p.x)+1;if(!ex.mask[i])white+=.5;}
-      if(white>gap)return;
+      if(white>budget)return;
       const id=linkKey(e.p,target);if(candidates.some(c=>c.id===id))return;
-      let crosses=false;for(const si of grid.query(e.p,target)){let s=ex.segments[si],hit=intersection(e.p,target,s.a,s.b);if(hit&&hit.t>0.02&&hit.t<.98){crosses=true;break;}}
+      let crosses=false,landing=null;const hits=[];
+      for(const si of grid.query(e.p,target)){let s=ex.segments[si],hit=intersection(e.p,target,s.a,s.b);if(hit&&hit.t>0.02&&hit.t<.98)hits.push({s,hit});}
+      hits.sort((a,b)=>a.hit.t-b.hit.t);
+      if(hits.length){const {s,hit}=hits[0];
+        // An overshooting tip may naturally land on the other side just before its endpoint.
+        // Restrict the landing to that endpoint's terminal chain; never jump a third boundary.
+        let terminal=false;if(other&&kind==='先端を閉じる'){let cur=other.id,prev=-1,length=0;while(length<Math.max(d,other.length)){let next=ex.adj[cur].filter(t=>t.v!==prev);if(next.length!==1)break;let t=next[0];if((cur===s.va&&t.v===s.vb)||(cur===s.vb&&t.v===s.va)){terminal=true;break;}length+=dist(ex.points[cur],ex.points[t.v]);prev=cur;cur=t.v;}}
+        if(terminal)landing={x:hit.x,y:hit.y};else crosses=true;
+      }
       let area=path?Math.abs(signedArea([...path,target])):null;
-      let c={id,a:e.p,b:target,ends:other?[e.id,other.id]:[e.id],kind,tier,distance:d,whiteGap:white,newArea:area,status:'eligible',reason:'',polyline:[e.p,target]};
+      let c={id,a:e.p,b:target,ends:other?[e.id,other.id]:[e.id],kind,tier:white>gap?3:tier,distance:d,whiteGap:white,requiresClosure:white>gap,newArea:area,status:'eligible',reason:'',polyline:[e.p,target]};
+      if(landing){c.polyline=[e.p,landing];c.kind+='（線の途中へ）';}
       if(crosses){c.status='rejected';c.reason='途中の別の境界を横切る';}
       else if(area!==null&&area<.25){c.status='rejected';c.reason='閉鎖で面積を作れない';}
       else if(blocked.has(id)){c.status='blocked';c.reason='人間がこの補助接続を無効化';}
       candidates.push(c);
     }
     const endpointGrid=new Grid(32);ex.endpoints.forEach((e,i)=>endpointGrid.add(i,e.p,e.p));
-    for(let i=0;i<ex.endpoints.length;i++){let a=ex.endpoints[i],range=gap+Math.min(a.radius+12,12);
+    for(let i=0;i<ex.endpoints.length;i++){let a=ex.endpoints[i],range=contextBudget+12;
       for(const j of endpointGrid.query(a.p,a.p,range)){if(j<=i)continue;let b=ex.endpoints[j],d=dist(a.p,b.p);if(d<.01||d>range)continue;let direction=unit(sub(b.p,a.p)),da=dot(a.tangent,direction),db=dot(b.tangent,{x:-direction.x,y:-direction.y});let same=a.comp===b.comp,path=same?pathBetween(ex,a.id,b.id):null,route=path?path.reduce((v,p,k)=>k?v+dist(p,path[k-1]):0,0):0;
         if(da>.65&&db>.65)make(a,b.p,b,'線の続き',0,path);
-        else if(same&&route>Math.max(d*4,24)&&dot(a.tangent,b.tangent)>.25&&dist(a.back,b.back)>d*1.12&&da>-.55&&db>-.55)make(a,b.p,b,'先端を閉じる',1,path);
+        else if((same&&route>Math.max(d*4,24)&&dot(a.tangent,b.tangent)>.25&&dist(a.back,b.back)>d*1.12&&da>-.55&&db>-.55)||taper(a,b,d)){
+          make(a,b.p,b,'先端を閉じる',1,path);let c=candidates.find(c=>c.id===linkKey(a.p,b.p));if(c){c.taper=taper(a,b,d);c.boundaryAhead=sharedBoundaryAhead(a,b,c.taper);if(c.status==='eligible'&&c.boundaryAhead){c.status='pending';c.reason='両端の先に同じ別境界があり、先端か根元か不明';}}
+        }
         else if((da>.72&&db>-.25)||(db>.72&&da>-.25))make(a,b.p,b,'曲がり角',2,path);
       }
       // A forward ray should hit the first available interior, not the closest parallel line.
-      let rayEnd={x:a.p.x+a.tangent.x*range,y:a.p.y+a.tangent.y*range},hits=[];
-      for(const si of grid.query(a.p,rayEnd,1)){let s=ex.segments[si];if(s.va===a.id||s.vb===a.id)continue;let hit=intersection(a.p,rayEnd,s.a,s.b);if(!hit||hit.t*range<Math.max(2,a.radius*.6))continue;if(dist(a.p,s.a)<2||dist(a.p,s.b)<2)continue;hits.push({hit,s,si,d:hit.t*range});}
+      const rayRange=gap+12;let rayEnd={x:a.p.x+a.tangent.x*rayRange,y:a.p.y+a.tangent.y*rayRange},hits=[];
+      for(const si of grid.query(a.p,rayEnd,1)){let s=ex.segments[si];if(s.va===a.id||s.vb===a.id)continue;let hit=intersection(a.p,rayEnd,s.a,s.b);if(!hit||hit.t*rayRange<Math.max(2,a.radius*.6))continue;if(dist(a.p,s.a)<2||dist(a.p,s.b)<2)continue;hits.push({hit,s,si,d:hit.t*rayRange});}
       hits.sort((a,b)=>a.d-b.d||a.si-b.si);
       if(hits.length){let {hit,s}=hits[0];let other=endByID.get(s.va)||endByID.get(s.vb);if(!other){let path=a.comp===ex.comp[s.va]?pathBetween(ex,a.id,s.va):null;make(a,{x:hit.x,y:hit.y},null,'線の途中へ',0,path);}}
     }
     // Honor a one-sided continuation landing on the other endpoint's backward chain.
-    for(const c of candidates)if(c.ends.length===2&&c.status==='eligible'&&c.kind!=='先端を閉じる'){
+    for(const c of candidates)if(c.ends.length===2&&c.status==='eligible'&&!c.kind.startsWith('先端を閉じる')){
       const a=endByID.get(c.ends[0]),b=endByID.get(c.ends[1]);let possibilities=[];
       for(const [s,t] of [[a,b],[b,a]]){let end={x:s.p.x+s.tangent.x*(gap+12),y:s.p.y+s.tangent.y*(gap+12)},hit=intersection(s.p,end,t.p,t.back);if(hit&&hit.t*(gap+12)>0&&hit.t*(gap+12)<=gap+Math.min(s.radius+t.radius,12)&&hit.s>=0&&hit.s<=1)possibilities.push({p:{x:hit.x,y:hit.y},s,t});}
       if(possibilities.length===1){let h=possibilities[0];let rayEnd={x:h.s.p.x+h.s.tangent.x*(gap+12),y:h.s.p.y+h.s.tangent.y*(gap+12)},hits=[];for(const si of grid.query(h.t.p,h.t.back,2)){let edge=ex.segments[si];if(ex.comp[edge.va]!==h.t.comp)continue;let hit=intersection(h.s.p,rayEnd,edge.a,edge.b);if(hit&&hit.t>EPS&&dist(hit,h.t.p)<=h.t.length+2)hits.push(hit);}hits.sort((a,b)=>a.t-b.t);if(hits.length){c.polyline=[h.s.p,{x:hits[0].x,y:hits[0].y}];c.kind+='（片側延長）';}}
@@ -93,15 +124,26 @@ function RegionEngine() {
     function compare(a,b){return a.tier-b.tier||a.whiteGap-b.whiteGap||a.distance-b.distance||a.id.localeCompare(b.id);}
     const choices=new Map();for(const c of eligible)for(const e of c.ends){if(!choices.has(e))choices.set(e,[]);choices.get(e).push(c);}for(const list of choices.values())list.sort(compare);
     const used=new Set(),accepted=[];
+    function closureEvidence(c){
+      // Only already accepted links can provide support for the larger budget.
+      // Attach interior hits to their actual edge, so endpoint labels are not mistaken for geometry.
+      const points=ex.points.slice(),adj=ex.adj.map(list=>list.slice()),ids=new Map(points.map((p,i)=>[key(p),i]));
+      function node(p){let k=key(p);if(ids.has(k))return ids.get(k);let id=points.length;points.push(p);adj.push([]);ids.set(k,id);for(const si of grid.query(p,p,1)){let s=ex.segments[si];if(dist(p,project(p,s.a,s.b))<1e-5){for(const v of [s.va,s.vb]){adj[id].push({v});adj[v].push({v:id});}}}return id;}
+      for(const link of accepted){for(let i=1;i<link.polyline.length;i++){let a=node(link.polyline[i-1]),b=node(link.polyline[i]);adj[a].push({v:b});adj[b].push({v:a});}}
+      const a=node(c.polyline[0]),b=node(c.polyline[c.polyline.length-1]),path=pathBetween({points,adj},a,b);
+      if(!path)return null;let route=path.reduce((v,p,k)=>k?v+dist(p,path[k-1]):0,0),area=Math.abs(signedArea(path));
+      return route>Math.max(c.distance*4,24)&&area>c.distance*c.distance?{route,area}:null;
+    }
     for(const c of eligible.sort(compare)){
       if(mode==='none'){c.status='pending';c.reason='補助接続なし';continue;}
       if(mode==='conservative'&&c.tier>0){c.status='pending';c.reason='慎重モードでは先端・角を保留';continue;}
       let competing=false,loses=false;for(const e of c.ends){const list=choices.get(e);if(list[0]!==c)loses=true;let other=list.find(x=>x!==c&&x.tier===c.tier);if(other&&other.distance<=c.distance*1.35+1&&Math.abs(other.whiteGap-c.whiteGap)<Math.max(2,gap*.25))competing=true;}
       if(used.has(c.ends[0])||c.ends.some(e=>used.has(e))||loses){c.status='pending';c.reason='同じ端点の別候補を優先';continue;}
       if(competing){c.status='pending';c.reason='根拠が近い候補が複数ある';continue;}
+      if(c.requiresClosure){let evidence=closureEvidence(c);if(!evidence){c.status='pending';c.reason='拡張した隙間には閉じる輪郭の根拠が必要';continue;}c.closureEvidence=evidence;c.newArea=evidence.area;}
       let collision=accepted.some(o=>c.polyline.slice(1).some((p,i)=>o.polyline.slice(1).some((q,j)=>{let h=intersection(c.polyline[i],p,o.polyline[j],q);return h&&h.t>EPS&&h.t<1-EPS&&h.s>EPS&&h.s<1-EPS;})));
       if(collision){c.status='pending';c.reason='別の補助接続と交差';continue;}
-      c.status='accepted';c.reason='形の条件と候補競合を通過';c.ends.forEach(e=>used.add(e));accepted.push(c);
+      c.status='accepted';c.reason=c.requiresClosure?'輪郭が閉じる根拠を確認（隙間上限の1.5倍以内）':'形の条件と候補競合を通過';c.ends.forEach(e=>used.add(e));accepted.push(c);
     }
     return candidates;
   }
@@ -145,7 +187,7 @@ function RegionEngine() {
     for(const m of options.manual||[])if(dist(m.a,m.b)>EPS)segments.push({a:m.a,b:m.b,source:'manual',connection:m.id});
     progress('閉じた領域・穴・外側を求めています');const graph=planarize(segments,ex.points.filter((p,i)=>ex.adj[i].length===0)),partition=faces(graph,w,h);
     let hash=2166136261;for(const l of partition.labels){hash^=l;hash=Math.imul(hash,16777619);}
-    return {...partition,width:w,height:h,schema:'illustro-region-partition/0.1',candidates,endpoints:ex.endpoints.map(e=>({x:e.p.x,y:e.p.y,tangent:e.tangent})),junctions:partition.vertices.filter(v=>v.out.length>=3).map(v=>({x:v.x,y:v.y,degree:v.out.length})),provenance:{input:'raster',options,thresholds:{low:options.low??.18,high:options.high??.42},extraction:'hysteresis + Zhang-Suen; chamfer radius for inference only'},edits:{blocked:options.blocked||[],manual:options.manual||[],futureRangePatches:[]},diagnostics:{...partition.diagnostics,hash:(hash>>>0).toString(16),milliseconds:Date.now()-start,extractionTopology:ex.topology,skeletonPoints:ex.points.length,iterations:ex.iteration,accepted:candidates.filter(c=>c.status==='accepted').length,pending:candidates.filter(c=>c.status==='pending').length,quality:'人間による実線画検査待ち'}};
+    return {...partition,width:w,height:h,schema:'illustro-region-partition/0.1',candidates,endpoints:ex.endpoints.map(e=>({x:e.p.x,y:e.p.y,tangent:e.tangent})),junctions:partition.vertices.filter(v=>v.out.length>=3).map(v=>({x:v.x,y:v.y,degree:v.out.length})),provenance:{input:'raster',algorithmVersion:'0.2',options,thresholds:{low:options.low??.18,high:options.high??.42},extraction:'hysteresis + Zhang-Suen; chamfer radius for inference only'},edits:{blocked:options.blocked||[],manual:options.manual||[],futureRangePatches:[]},diagnostics:{...partition.diagnostics,hash:(hash>>>0).toString(16),milliseconds:Date.now()-start,extractionTopology:ex.topology,skeletonPoints:ex.points.length,iterations:ex.iteration,accepted:candidates.filter(c=>c.status==='accepted').length,pending:candidates.filter(c=>c.status==='pending').length,quality:'人間による実線画検査待ち'}};
   }
   return {analyze,extract,infer,planarize,faces,intersection,pointIn,linkKey};
 }

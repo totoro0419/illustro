@@ -47,6 +47,31 @@ img = make(); d = ImageDraw.Draw(img)
 for i, r in enumerate([5,9,13,20,28,40]):
     d.ellipse((75+i*135-r,350-r,75+i*135+r,350+r), outline='black', width=4)
 save('tiny-loops', img, 'small areas')
+def feedback_lines(name, lines, category):
+    img=make();d=ImageDraw.Draw(img)
+    for line in lines:d.line([(x*4,y*4) for x,y in line],fill='black',width=12,joint='curve')
+    save(name,img,category)
+feedback_lines('feedback-taper',[
+    [(48,15),(44,42),(47,75),(58,112),(72,141),(84,150)],
+    [(97,22),(88,54),(85,91),(89,131),(99,148),(99,154)]
+], 'separate converging sides with overshoot')
+feedback_lines('feedback-contour',[
+    [(110,152),(78,140),(45,102),(40,40),(67,18)],
+    [(71,15),(135,15),(195,38),(190,100),(159,135),(128,156)]
+], 'continuation closes contour after short root link')
+feedback_lines('feedback-open-continuation',[
+    [(25,82),(90,82)],[(104,82),(200,82)]
+], 'same gap without a closing contour')
+feedback_lines('feedback-competing-tips',[
+    [(30,20),(40,75),(58,126),(80,150)],
+    [(83,20),(77,85),(80,130),(90,151)],
+    [(108,20),(103,80),(99,127),(100,150)]
+], 'multiple comparable terminal candidates')
+feedback_lines('feedback-taper-with-boundary-ahead',[
+    [(48,15),(44,42),(47,75),(58,112),(72,141),(84,150)],
+    [(97,22),(88,54),(85,91),(89,131),(99,148),(99,154)],
+    [(20,170),(200,170)]
+], 'same taper facing a shared nearby boundary')
 for seed in range(50):
     rng = random.Random(seed); img = make(); d = ImageDraw.Draw(img)
     for k in range(15):
