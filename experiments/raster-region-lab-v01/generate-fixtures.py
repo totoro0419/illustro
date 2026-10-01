@@ -72,6 +72,18 @@ feedback_lines('feedback-taper-with-boundary-ahead',[
     [(97,22),(88,54),(85,91),(89,131),(99,148),(99,154)],
     [(20,170),(200,170)]
 ], 'same taper facing a shared nearby boundary')
+feedback_lines('extension-both-forward',[
+    [(20,75),(80,90)],[(100,20),(100,80)]
+], 'both forward rays meet; join endpoints directly')
+feedback_lines('extension-one-to-interior',[
+    [(20,70),(85,85)],[(100,30),(100,140)]
+], 'one extended side lands inside another boundary')
+feedback_lines('extension-obstructed',[
+    [(20,75),(80,90)],[(100,20),(100,80)],[(90,10),(90,150)]
+], 'a third boundary blocks virtual meeting')
+feedback_lines('relaxed-short-taper',[
+    [(40,30),(45,50),(50,65)],[(75,30),(68,50),(64,65)]
+], 'short converging sides previously lack long tangent samples')
 for seed in range(50):
     rng = random.Random(seed); img = make(); d = ImageDraw.Draw(img)
     for k in range(15):

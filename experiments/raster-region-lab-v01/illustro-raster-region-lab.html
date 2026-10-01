@@ -3,7 +3,7 @@
 <style>
 :root{color-scheme:light;font-family:system-ui,sans-serif;color:#17263a;background:#eaf0f5}*{box-sizing:border-box}body{margin:0}header{background:#182b40;color:white;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px}h1{font-size:19px;margin:0}header p{font-size:13px;margin:5px 0 0;color:#d5e2ee}.badge{border:1px solid #b9c9d8;padding:6px 10px;border-radius:6px;font-size:13px}main{padding:16px;max-width:1600px;margin:auto}.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:white;padding:10px;border:1px solid #cbd6e2;border-radius:8px;margin-bottom:10px}button,select,input,textarea{font:inherit}button,select,input[type=number]{border:1px solid #9babbd;border-radius:5px;background:white;color:#17263a;padding:8px 10px;min-height:36px}button{cursor:pointer}button:hover{background:#edf4fa}button[aria-pressed=true]{background:#d9ecff;border-color:#286093;box-shadow:inset 0 0 0 1px #286093}button.primary{background:#236091;color:white;border-color:#236091;font-weight:650}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:3px solid #c25200;outline-offset:2px}label{font-size:14px;display:inline-flex;gap:6px;align-items:center}input[type=range]{width:110px;accent-color:#236091}input[type=number]{width:76px}input[type=checkbox]{width:17px;height:17px}input[type=file]{max-width:220px;font-size:12px}.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}.work{min-width:0}.stage{height: min(72vh,720px);min-height:300px;overflow:auto;background:#b8c4d1;border:1px solid #8c9bad;border-radius:7px;overscroll-behavior:contain;position:relative}canvas{display:block;background:white;touch-action:none;cursor:crosshair;max-width:none;margin:0;box-shadow:0 3px 20px #24374d33}aside{background:white;border:1px solid #cbd6e2;border-radius:8px;padding:14px;overflow:auto;max-height:850px;font-size:13px}aside h2{font-size:15px;margin:0 0 8px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}.stat{background:#f0f5fa;border-radius:6px;padding:9px}.stat strong{display:block;font-size:23px}.stat span{font-size:12px;color:#42556a}#status{padding:10px 12px;border-left:4px solid #236091;background:#f8fbff;margin-bottom:10px;min-height:42px;font-size:14px}.muted{color:#455b72;font-size:13px}small{display:block;color:#455b72;line-height:1.6}details{border-top:1px solid #dce4ec;padding-top:12px;margin-top:12px}summary{cursor:pointer;font-weight:600}aside ol,aside ul{padding-left:20px;line-height:1.7}#candidates{max-height:250px;overflow:auto}#candidates button{display:block;width:100%;text-align:left;margin-top:5px;font-size:12px}.note-area{background:white;padding:14px;border:1px solid #cbd6e2;border-radius:8px;margin-top:12px}textarea{width:100%;min-height:95px;padding:10px;border:1px solid #9babbd;border-radius:5px;resize:vertical}.note-area h2{font-size:15px;margin:0 0 8px}#regionInfo{padding:10px;background:#eef5fb;border-radius:6px;line-height:1.8;min-height:60px}#legend{font-size:12px;margin-top:8px}code{font-size:12px}a{color:#205a86}.divider{height:28px;width:1px;background:#cbd6e2;margin:0 3px}.hidden{display:none} @media(max-width:850px){.layout{grid-template-columns:1fr}aside{max-height:none}.stage{height:60vh}header{align-items:flex-start;padding:12px}.badge{max-width:150px}main{padding:8px}}
 </style></head><body>
-<header><div><h1>Illustro — Raster線画の領域検査 v0.2</h1><p>自由に描く → 解析する → 色分けを目で確かめる</p></div><span class="badge">人間による実線画検査待ち</span></header>
+<header><div><h1>Illustro — Raster線画の領域検査 v0.3</h1><p>自由に描く → 解析する → 色分けを目で確かめる</p></div><span class="badge">人間による実線画検査待ち</span></header>
 <main>
 <div class="bar" aria-label="描画操作">
 <button id="pen" aria-pressed="true">ペン B</button><button id="eraser" aria-pressed="false">消しゴム E</button><button id="inspect" aria-pressed="false">領域を選ぶ V</button><button id="pan" aria-pressed="false">移動 H</button>
@@ -12,19 +12,19 @@
 </div>
 <div class="bar" aria-label="解析設定">
 <button class="primary" id="analyze">領域を解析する</button><button id="cancel" disabled>解析を中止</button>
-<label>隙間の上限 <input id="gap" type="number" min="0" max="40" value="12">px</label>
-<label title="向かい合う線が既存の輪郭を閉じる場合だけ、隙間の上限を1.5倍まで広げます"><input id="contourClosure" type="checkbox" checked>閉じる輪郭は1.5倍まで補う</label>
-<label>補い方 <select id="mode"><option value="balanced">形から補う</option><option value="conservative">慎重に補う</option><option value="none">補助接続なし</option></select></label>
+<label>隙間の上限 <input id="gap" type="number" min="0" max="80" value="24">px</label>
+<label title="輪郭が閉じる根拠がある場合は上限を広げます。補いやすく：2倍、以前の判定：1.5倍。"><input id="contourClosure" type="checkbox" checked>輪郭が閉じる場合は広めに補う</label>
+<label>補い方 <select id="mode"><option value="generous">補いやすく</option><option value="balanced">以前の判定</option><option value="conservative">慎重に補う</option><option value="none">補助接続なし</option></select></label>
 <label>線の濃さ <select id="threshold"><option value="normal">通常</option><option value="faint">薄い線</option><option value="strict">濃い部分を優先</option></select></label>
 <button id="resetLinks">接続の拒否を解除</button>
 </div>
 <div class="bar" aria-label="表示操作">
 <label>表示 <select id="view"><option value="original">元線画</option><option value="regions">領域の色分け</option><option value="overlay">元線画＋色分け</option></select></label>
-<label><input id="boundaries" type="checkbox" checked>境界</label><label><input id="junctions" type="checkbox">接続点</label><label><input id="helpers" type="checkbox" checked>補助接続</label><label><input id="pending" type="checkbox">保留候補</label>
+<label><input id="boundaries" type="checkbox" checked>境界</label><label><input id="junctions" type="checkbox">接続点</label><label><input id="helpers" type="checkbox" checked>補助接続</label><label><input id="extensions" type="checkbox">判定に使った延長線</label><label><input id="pending" type="checkbox">保留候補</label>
 <label>拡大 <select id="zoom"><option value="fit">画面に合わせる</option><option value="1">100%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option><option value="4">400%</option></select></label>
 </div>
 <div id="status" role="status" aria-live="polite">白い画面に線を描いて、「領域を解析する」を押してください。</div>
-<div class="layout"><section class="work" aria-label="線画キャンバス"><div id="stage" class="stage" tabindex="0" aria-label="描画画面。移動はスクロールまたは移動ツール"><canvas id="canvas" width="960" height="640" aria-label="自由に線画を描くキャンバス">キャンバス対応ブラウザで開いてください。</canvas></div><div id="legend">境界：青い線 ／ 自動補助：赤い破線 ／ 保留：橙の破線 ／ 接続点：紫の点。表示の線幅は検査用です。</div></section>
+<div class="layout"><section class="work" aria-label="線画キャンバス"><div id="stage" class="stage" tabindex="0" aria-label="描画画面。移動はスクロールまたは移動ツール"><canvas id="canvas" width="960" height="640" aria-label="自由に線画を描くキャンバス">キャンバス対応ブラウザで開いてください。</canvas></div><div id="legend">境界：青い線 ／ 自動補助：赤い破線 ／ 保留：橙の破線 ／ 延長の予想：紫の破線（境界にはしません）。表示の線幅は検査用です。</div></section>
 <aside><h2>今回の解析</h2><div class="stats"><div class="stat"><strong id="regionCount">—</strong><span>閉じた領域</span></div><div class="stat"><strong id="linkCount">—</strong><span>補った接続</span></div></div><p id="metrics" class="muted">まだ解析していません。</p><div id="regionInfo">「領域を選ぶ」で色のついた場所をクリックすると、その領域を強調します。</div>
 <details open><summary>試してほしい形</summary><ol><li>細長い毛束と、少し開いた毛先</li><li>近くに並ぶ別々の毛束</li><li>T字、線の途中への描き損ね</li><li>目・指などの小さい領域</li><li>太い線、太さが変わる線</li><li>意図的に開けた小さな隙間</li></ol><small>補助接続なしと比較してください。意図した隙間と描き損ねを画像だけで必ず区別できるわけではありません。</small></details>
 <details><summary>補助接続を個別に確認</summary><small>赤い補助接続の項目を押すと無効化し、再解析します。元線画は変えません。</small><div id="candidates"></div></details>
@@ -35,7 +35,7 @@
 <section class="note-area"><h2>間違っている場所のメモ</h2><small>例：「領域3と4は同じはず」「右の毛束が隣とつながった」「この隙間は閉じないで」。領域番号は再解析で変わることがあります。位置も添えてください。</small><textarea id="notes" aria-label="検査メモ" placeholder="妥協できない間違いや、次に試したい形を書いてください。"></textarea><div class="bar" style="padding:0;border:0;margin:8px 0 0"><button id="mark">選んだ場所をメモへ追加</button><span id="noteStatus" class="muted">メモは「線画＋メモを保存」で持ち出せます。</span></div></section>
 </main>
 <script>
-/* Illustro Region Lab 0.2. Independent raster input; no stroke-history access. */
+/* Illustro Region Lab 0.3. Independent raster input; no stroke-history access. */
 function RegionEngine() {
   'use strict';
   const EPS=1e-7, cross=(a,b)=>a.x*b.y-a.y*b.x;
@@ -91,18 +91,33 @@ function RegionEngine() {
   }
   function pathBetween(ex,a,b){const prev=new Int32Array(ex.points.length).fill(-1),q=[a];prev[a]=a;for(let k=0;k<q.length;k++){let v=q[k];if(v===b)break;for(const t of ex.adj[v])if(prev[t.v]<0){prev[t.v]=v;q.push(t.v);}}if(prev[b]<0)return null;let path=[b];while(path[path.length-1]!==a)path.push(prev[path[path.length-1]]);path.reverse();return path.map(i=>ex.points[i]);}
   function infer(ex,opt){
-    const gap=opt.gap??12,mode=opt.mode??'balanced',blocked=new Set(opt.blocked||[]);let candidates=[];const grid=new Grid();ex.segments.forEach((s,i)=>grid.add(i,s.a,s.b));
+    const mode=opt.mode??'generous',generous=mode==='generous',gap=opt.gap??(generous?24:12),blocked=new Set(opt.blocked||[]);let candidates=[];const grid=new Grid();ex.segments.forEach((s,i)=>grid.add(i,s.a,s.b));
     const endByID=new Map(ex.endpoints.map(e=>[e.id,e]));
-    const contextBudget=opt.contourClosure!==false?gap*1.5:gap;
+    const contextBudget=opt.contourClosure!==false?gap*(generous?2:1.5):gap;
     // Measure the approach at two longer scales, not only the last few pixels.
     // Separate pen strokes may still form the two sides of one taper.
     function backAt(e,reach){let cur=e.id,prev=-1,length=0;while(length<reach){let next=ex.adj[cur].filter(t=>t.v!==prev);if(next.length!==1)break;let v=next[0].v;length+=dist(ex.points[cur],ex.points[v]);prev=cur;cur=v;}return length>=reach?ex.points[cur]:null;}
+    // Hypothetical continuation at several scales. These rays provide evidence;
+    // they do not become authoritative boundaries until a candidate is accepted.
+    const directions=new Map();
+    function extensionDirections(e){if(directions.has(e.id))return directions.get(e.id);let out=[{u:e.tangent,reach:e.length}];for(const reach of [12,24,40]){let back=backAt(e,reach);if(!back)continue;let u=unit(sub(e.p,back));if(!out.some(d=>dot(d.u,u)>.997))out.push({u,reach});}directions.set(e.id,out);return out;}
+    function firstExtensionHit(e,u,range){const end={x:e.p.x+u.x*range,y:e.p.y+u.y*range},hits=[];
+      for(const si of grid.query(e.p,end,1)){let s=ex.segments[si];if(s.va===e.id||s.vb===e.id)continue;let h=intersection(e.p,end,s.a,s.b);if(h&&h.t*range>=Math.max(2,e.radius*.6)&&dist(e.p,s.a)>=2&&dist(e.p,s.b)>=2)hits.push({hit:h,s,si,d:h.t*range});}
+      hits.sort((a,b)=>a.d-b.d||a.si-b.si);return hits[0]||null;
+    }
+    function extensionMeeting(a,b){let best=null,range=contextBudget+12;
+      for(const da of extensionDirections(a))for(const db of extensionDirections(b)){
+        let ea={x:a.p.x+da.u.x*range,y:a.p.y+da.u.y*range},eb={x:b.p.x+db.u.x*range,y:b.p.y+db.u.y*range},h=intersection(a.p,ea,b.p,eb);if(!h||h.t<.02||h.s<.02)continue;
+        let ha=firstExtensionHit(a,da.u,range),hb=firstExtensionHit(b,db.u,range);if(ha&&ha.d<h.t*range-1||hb&&hb.d<h.s*range-1)continue;
+        const span=Math.max(h.t,h.s)*range;if(!best||span<best.span)best={point:{x:h.x,y:h.y},span,distances:[h.t*range,h.s*range],sampleLengths:[da.reach,db.reach]};
+      }return best;
+    }
     function taper(a,b,d){
-      const near=Math.max(12,d*1.5),far=Math.max(24,d*3),an=backAt(a,near),bn=backAt(b,near),af=backAt(a,far),bf=backAt(b,far);
+      const near=generous?Math.max(6,d*.75):Math.max(12,d*1.5),far=generous?Math.max(12,d*1.5):Math.max(24,d*3),an=backAt(a,near),bn=backAt(b,near),af=backAt(a,far),bf=backAt(b,far);
       if(!an||!bn||!af||!bf)return null;
       const na=unit(sub(a.p,an)),nb=unit(sub(b.p,bn)),fa=unit(sub(a.p,af)),fb=unit(sub(b.p,bf)),direction=unit(sub(b.p,a.p));
       const nearWidth=dist(an,bn),farWidth=dist(af,bf),flow=unit({x:fa.x+fb.x,y:fa.y+fb.y});
-      if(dot(na,nb)<.5||dot(fa,fb)<.5||nearWidth<d*1.2||farWidth<nearWidth*1.1||Math.abs(dot(flow,direction))>.82)return null;
+      if(dot(na,nb)<(generous?.15:.5)||dot(fa,fb)<(generous?.15:.5)||nearWidth<d*(generous?1.03:1.2)||farWidth<nearWidth*(generous?1.02:1.1)||Math.abs(dot(flow,direction))>(generous?.96:.82))return null;
       return {tipWidth:d,nearWidth,farWidth,nearReach:near,farReach:far};
     }
     function sharedBoundaryAhead(a,b,evidence){
@@ -113,7 +128,7 @@ function RegionEngine() {
       const x=first(a),y=first(b);return x&&y&&x.comp===y.comp?{component:x.comp}:null;
     }
     function make(e,target,other,kind,tier,path){
-      const budget=kind==='線の続き'?contextBudget:gap;
+      const budget=kind==='線の続き'||kind==='延長すると合流'?contextBudget:gap;
       let d=dist(e.p,target);if(d<.01||d>budget+Math.min(e.radius+(other?.radius||0),12))return;
       // White gap measured on source Raster; width cannot inflate unlimited search.
       let white=0;for(let k=0;k<=Math.ceil(d*2);k++){let p=mix(e.p,target,k/Math.ceil(d*2)),i=(Math.floor(p.y)+1)*ex.pw+Math.floor(p.x)+1;if(!ex.mask[i])white+=.5;}
@@ -129,7 +144,8 @@ function RegionEngine() {
         if(terminal)landing={x:hit.x,y:hit.y};else crosses=true;
       }
       let area=path?Math.abs(signedArea([...path,target])):null;
-      let c={id,a:e.p,b:target,ends:other?[e.id,other.id]:[e.id],kind,tier:white>gap?3:tier,distance:d,whiteGap:white,requiresClosure:white>gap,newArea:area,status:'eligible',reason:'',polyline:[e.p,target]};
+      const onBoundary=grid.query(target,target,1).find(si=>dist(target,project(target,ex.segments[si].a,ex.segments[si].b))<1e-5);
+      let c={id,a:e.p,b:target,ends:other?[e.id,other.id]:[e.id],targetComponent:other?.comp??(onBoundary===undefined?null:ex.comp[ex.segments[onBoundary].va]),kind,tier:white>gap?3:tier,distance:d,whiteGap:white,requiresClosure:white>gap,newArea:area,status:'eligible',reason:'',polyline:[e.p,target]};
       if(landing){c.polyline=[e.p,landing];c.kind+='（線の途中へ）';}
       if(crosses){c.status='rejected';c.reason='途中の別の境界を横切る';}
       else if(area!==null&&area<.25){c.status='rejected';c.reason='閉鎖で面積を作れない';}
@@ -139,27 +155,33 @@ function RegionEngine() {
     const endpointGrid=new Grid(32);ex.endpoints.forEach((e,i)=>endpointGrid.add(i,e.p,e.p));
     for(let i=0;i<ex.endpoints.length;i++){let a=ex.endpoints[i],range=contextBudget+12;
       for(const j of endpointGrid.query(a.p,a.p,range)){if(j<=i)continue;let b=ex.endpoints[j],d=dist(a.p,b.p);if(d<.01||d>range)continue;let direction=unit(sub(b.p,a.p)),da=dot(a.tangent,direction),db=dot(b.tangent,{x:-direction.x,y:-direction.y});let same=a.comp===b.comp,path=same?pathBetween(ex,a.id,b.id):null,route=path?path.reduce((v,p,k)=>k?v+dist(p,path[k-1]):0,0):0;
-        if(da>.65&&db>.65)make(a,b.p,b,'線の続き',0,path);
+        if(da>(generous?.35:.65)&&db>(generous?.35:.65))make(a,b.p,b,'線の続き',0,path);
         else if((same&&route>Math.max(d*4,24)&&dot(a.tangent,b.tangent)>.25&&dist(a.back,b.back)>d*1.12&&da>-.55&&db>-.55)||taper(a,b,d)){
-          make(a,b.p,b,'先端を閉じる',1,path);let c=candidates.find(c=>c.id===linkKey(a.p,b.p));if(c){c.taper=taper(a,b,d);c.boundaryAhead=sharedBoundaryAhead(a,b,c.taper);if(c.status==='eligible'&&c.boundaryAhead){c.status='pending';c.reason='両端の先に同じ別境界があり、先端か根元か不明';}}
+          make(a,b.p,b,'先端を閉じる',1,path);let c=candidates.find(c=>c.id===linkKey(a.p,b.p));if(c){c.taper=taper(a,b,d);c.boundaryAhead=sharedBoundaryAhead(a,b,c.taper);if(!generous&&c.status==='eligible'&&c.boundaryAhead){c.status='pending';c.reason='両端の先に同じ別境界があり、先端か根元か不明';}}
         }
         else if((da>.72&&db>-.25)||(db>.72&&da>-.25))make(a,b.p,b,'曲がり角',2,path);
+        if(generous){let meeting=extensionMeeting(a,b);if(meeting){if(!candidates.some(c=>c.id===linkKey(a.p,b.p)))make(a,b.p,b,'延長すると合流',1,path);let c=candidates.find(c=>c.id===linkKey(a.p,b.p));if(c)c.extensionEvidence={type:'both-forward',...meeting};}}
       }
       // A forward ray should hit the first available interior, not the closest parallel line.
       const rayRange=gap+12;let rayEnd={x:a.p.x+a.tangent.x*rayRange,y:a.p.y+a.tangent.y*rayRange},hits=[];
       for(const si of grid.query(a.p,rayEnd,1)){let s=ex.segments[si];if(s.va===a.id||s.vb===a.id)continue;let hit=intersection(a.p,rayEnd,s.a,s.b);if(!hit||hit.t*rayRange<Math.max(2,a.radius*.6))continue;if(dist(a.p,s.a)<2||dist(a.p,s.b)<2)continue;hits.push({hit,s,si,d:hit.t*rayRange});}
       hits.sort((a,b)=>a.d-b.d||a.si-b.si);
       if(hits.length){let {hit,s}=hits[0];let other=endByID.get(s.va)||endByID.get(s.vb);if(!other){let path=a.comp===ex.comp[s.va]?pathBetween(ex,a.id,s.va):null;make(a,{x:hit.x,y:hit.y},null,'線の途中へ',0,path);}}
+      if(generous)for(const direction of extensionDirections(a)){
+        let h=firstExtensionHit(a,direction.u,gap+12);if(!h)continue;const other=endByID.get(h.s.va)||endByID.get(h.s.vb),target={x:h.hit.x,y:h.hit.y},path=a.comp===ex.comp[h.s.va]?pathBetween(ex,a.id,h.s.va):null;
+        make(a,target,other&&other.id!==a.id?other:null,'延長して線へ',0,path);let c=candidates.find(c=>c.id===linkKey(a.p,target));if(c)c.extensionEvidence={type:'one-forward',sampleLength:direction.reach,distance:h.d};
+      }
     }
     // Honor a one-sided continuation landing on the other endpoint's backward chain.
-    for(const c of candidates)if(c.ends.length===2&&c.status==='eligible'&&!c.kind.startsWith('先端を閉じる')){
+    for(const c of candidates)if(c.ends.length===2&&c.status==='eligible'&&!c.kind.startsWith('先端を閉じる')&&c.kind!=='延長して線へ'){
       const a=endByID.get(c.ends[0]),b=endByID.get(c.ends[1]);let possibilities=[];
       for(const [s,t] of [[a,b],[b,a]]){let end={x:s.p.x+s.tangent.x*(gap+12),y:s.p.y+s.tangent.y*(gap+12)},hit=intersection(s.p,end,t.p,t.back);if(hit&&hit.t*(gap+12)>0&&hit.t*(gap+12)<=gap+Math.min(s.radius+t.radius,12)&&hit.s>=0&&hit.s<=1)possibilities.push({p:{x:hit.x,y:hit.y},s,t});}
       if(possibilities.length===1){let h=possibilities[0];let rayEnd={x:h.s.p.x+h.s.tangent.x*(gap+12),y:h.s.p.y+h.s.tangent.y*(gap+12)},hits=[];for(const si of grid.query(h.t.p,h.t.back,2)){let edge=ex.segments[si];if(ex.comp[edge.va]!==h.t.comp)continue;let hit=intersection(h.s.p,rayEnd,edge.a,edge.b);if(hit&&hit.t>EPS&&dist(hit,h.t.p)<=h.t.length+2)hits.push(hit);}hits.sort((a,b)=>a.t-b.t);if(hits.length){c.polyline=[h.s.p,{x:hits[0].x,y:hits[0].y}];c.kind+='（片側延長）';}}
     }
     const eligible=candidates.filter(c=>c.status==='eligible');
-    function compare(a,b){return a.tier-b.tier||a.whiteGap-b.whiteGap||a.distance-b.distance||a.id.localeCompare(b.id);}
+    function compare(a,b){const landing=c=>generous&&c.extensionEvidence?.type==='one-forward'?0:1;return a.tier-b.tier||landing(a)-landing(b)||a.whiteGap-b.whiteGap||a.distance-b.distance||a.id.localeCompare(b.id);}
     const choices=new Map();for(const c of eligible)for(const e of c.ends){if(!choices.has(e))choices.set(e,[]);choices.get(e).push(c);}for(const list of choices.values())list.sort(compare);
+    function equivalent(a,b){return linkKey(a.polyline[0],a.polyline.at(-1))===linkKey(b.polyline[0],b.polyline.at(-1))||a.ends.length===2&&b.ends.length===2&&a.ends.every(id=>b.ends.includes(id))||a.ends.length===1&&b.ends.length===1&&a.ends[0]===b.ends[0]&&a.targetComponent!==null&&a.targetComponent===b.targetComponent&&dist(a.polyline.at(-1),b.polyline.at(-1))<=Math.max(2,endByID.get(a.ends[0]).radius);}
     const used=new Set(),accepted=[];
     function closureEvidence(c){
       // Only already accepted links can provide support for the larger budget.
@@ -169,18 +191,18 @@ function RegionEngine() {
       for(const link of accepted){for(let i=1;i<link.polyline.length;i++){let a=node(link.polyline[i-1]),b=node(link.polyline[i]);adj[a].push({v:b});adj[b].push({v:a});}}
       const a=node(c.polyline[0]),b=node(c.polyline[c.polyline.length-1]),path=pathBetween({points,adj},a,b);
       if(!path)return null;let route=path.reduce((v,p,k)=>k?v+dist(p,path[k-1]):0,0),area=Math.abs(signedArea(path));
-      return route>Math.max(c.distance*4,24)&&area>c.distance*c.distance?{route,area}:null;
+      return route>Math.max(c.distance*(generous?2.5:4),generous?12:24)&&area>Math.max(.25,c.distance*c.distance*(generous?.2:1))?{route,area}:null;
     }
     for(const c of eligible.sort(compare)){
       if(mode==='none'){c.status='pending';c.reason='補助接続なし';continue;}
       if(mode==='conservative'&&c.tier>0){c.status='pending';c.reason='慎重モードでは先端・角を保留';continue;}
-      let competing=false,loses=false;for(const e of c.ends){const list=choices.get(e);if(list[0]!==c)loses=true;let other=list.find(x=>x!==c&&x.tier===c.tier);if(other&&other.distance<=c.distance*1.35+1&&Math.abs(other.whiteGap-c.whiteGap)<Math.max(2,gap*.25))competing=true;}
+      let competing=false,loses=false;for(const e of c.ends){const list=choices.get(e);if(list[0]!==c)loses=true;let other=list.find(x=>x!==c&&x.tier===c.tier&&!(generous&&equivalent(x,c)));if(other&&other.distance<=c.distance*(generous?1.12:1.35)+1&&Math.abs(other.whiteGap-c.whiteGap)<Math.max(generous?1:2,gap*(generous?.1:.25)))competing=true;}
       if(used.has(c.ends[0])||c.ends.some(e=>used.has(e))||loses){c.status='pending';c.reason='同じ端点の別候補を優先';continue;}
       if(competing){c.status='pending';c.reason='根拠が近い候補が複数ある';continue;}
       if(c.requiresClosure){let evidence=closureEvidence(c);if(!evidence){c.status='pending';c.reason='拡張した隙間には閉じる輪郭の根拠が必要';continue;}c.closureEvidence=evidence;c.newArea=evidence.area;}
       let collision=accepted.some(o=>c.polyline.slice(1).some((p,i)=>o.polyline.slice(1).some((q,j)=>{let h=intersection(c.polyline[i],p,o.polyline[j],q);return h&&h.t>EPS&&h.t<1-EPS&&h.s>EPS&&h.s<1-EPS;})));
       if(collision){c.status='pending';c.reason='別の補助接続と交差';continue;}
-      c.status='accepted';c.reason=c.requiresClosure?'輪郭が閉じる根拠を確認（隙間上限の1.5倍以内）':'形の条件と候補競合を通過';c.ends.forEach(e=>used.add(e));accepted.push(c);
+      c.status='accepted';c.reason=c.requiresClosure?`輪郭が閉じる根拠を確認（隙間上限の${generous?2:1.5}倍以内）`:'形の条件と候補競合を通過';c.ends.forEach(e=>used.add(e));accepted.push(c);
     }
     return candidates;
   }
@@ -253,6 +275,7 @@ function render(){ctx.clearRect(0,0,W,H);ctx.fillStyle='white';ctx.fillRect(0,0,
  if(valid&&v!=='original'){
    if($('boundaries').checked){ctx.beginPath();for(const e of result.edges){const a=result.vertices[e.a],b=result.vertices[e.b];ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);}ctx.strokeStyle='#174e89';ctx.lineWidth=.9;ctx.stroke();}
    if($('helpers').checked)for(const c of result.candidates.filter(c=>c.status==='accepted'))drawPolyline(c.polyline,'#c02831',[4,3],2);
+   if($('extensions').checked)for(const c of result.candidates.filter(c=>c.status==='accepted'&&c.extensionEvidence)){let e=c.extensionEvidence;if(e.type==='both-forward'){drawPolyline([c.a,e.point],'#8654a5',[3,5],1);drawPolyline([c.b,e.point],'#8654a5',[3,5],1);}else drawPolyline(c.polyline,'#8654a5',[3,5],1);}
    if($('pending').checked)for(const c of result.candidates.filter(c=>c.status==='pending'))drawPolyline(c.polyline,'#ad5700',[2,3],1.5);
    if($('junctions').checked){ctx.fillStyle='#8d2ea6';for(const p of result.junctions){ctx.beginPath();ctx.arc(p.x,p.y,2.8,0,Math.PI*2);ctx.fill();}}
    if(focusedCandidate){drawPolyline(focusedCandidate.polyline,'#ff6900',[],4);}
@@ -268,8 +291,8 @@ canvas.addEventListener('pointerup',endStroke);canvas.addEventListener('pointerc
 for(const t of ['pen','eraser','inspect','pan'])$(t).onclick=()=>choose(t);
 $('undo').onclick=undo;$('redo').onclick=redo;$('clear').onclick=()=>{pushHistory();rctx.clearRect(0,0,W,H);blocked=[];dirty();$('view').value='original';render();setStatus('全消去しました。「戻す」で復元できます。');};
 $('brush').oninput=()=>{$('brushValue').textContent=$('brush').value+' px';};
-for(const id of ['view','boundaries','junctions','helpers','pending'])$(id).onchange=render;$('zoom').onchange=fit;new ResizeObserver(fit).observe($('stage'));
-function settings(){const thresholds={normal:[.18,.42],faint:[.08,.2],strict:[.32,.6]},t=thresholds[$('threshold').value];let gap=Math.max(0,Math.min(40,Number($('gap').value)||0));$('gap').value=gap;return {gap,contourClosure:$('contourClosure').checked,mode:$('mode').value,low:t[0],high:t[1],blocked:blocked.slice()};}
+for(const id of ['view','boundaries','junctions','helpers','extensions','pending'])$(id).onchange=render;$('zoom').onchange=fit;new ResizeObserver(fit).observe($('stage'));
+function settings(){const thresholds={normal:[.18,.42],faint:[.08,.2],strict:[.32,.6]},t=thresholds[$('threshold').value];let gap=Math.max(0,Math.min(80,Number($('gap').value)||0));$('gap').value=gap;return {gap,contourClosure:$('contourClosure').checked,mode:$('mode').value,low:t[0],high:t[1],blocked:blocked.slice()};}
 function cancelAnalysis(){job++;if(worker){worker.terminate();worker=null;}busy=false;$('cancel').disabled=true;$('analyze').disabled=false;}
 function showCandidates(){let box=$('candidates');box.replaceChildren();for(const c of result.candidates.filter(c=>c.status==='accepted'||c.status==='blocked'||c.status==='pending').slice(0,150)){let b=document.createElement('button');b.textContent=`${c.status==='accepted'?'補助':c.status==='blocked'?'無効':'保留'}：${c.kind} (${Math.round(c.a.x)},${Math.round(c.a.y)}) → (${Math.round(c.b.x)},${Math.round(c.b.y)})`;b.title=c.reason;b.onmouseenter=()=>{focusedCandidate=c;render();};b.onmouseleave=()=>{focusedCandidate=null;render();};b.onclick=()=>{if(c.status==='pending'){focusedCandidate=c;$('view').value='overlay';$('pending').checked=true;render();setStatus('保留理由：'+c.reason);return;}if(c.status==='accepted')blocked.push(c.id);else blocked=blocked.filter(id=>id!==c.id);runAnalysis();};box.appendChild(b);}if(result.candidates.length>150){let p=document.createElement('p');p.textContent='表示は最初の150件まで。全候補は領域データに含まれます。';box.appendChild(p);}}
 function consume(r,rev){result=r;resultRevision=rev;selected=-1;selectedPoint=null;focusedCandidate=null;buildColors();$('view').value='overlay';$('regionCount').textContent=r.regions.length-1;$('linkCount').textContent=r.diagnostics.accepted;$('metrics').textContent=`保留 ${r.diagnostics.pending} ／ ${r.diagnostics.milliseconds} ms ／ ${W}×${H} px ／ 結果 ${r.diagnostics.hash}`;$('regionInfo').textContent='「領域を選ぶ」でクリックすると、領域番号と位置を確認できます。';$('savePartition').disabled=false;showCandidates();render();setStatus(`解析結果を表示しました。構造検査は一致。精度は人間による実線画検査待ちです。`);}
@@ -285,7 +308,7 @@ $('mark').onclick=()=>{if(!selectedPoint){setStatus('「領域を選ぶ」で、
 async function decodeImage(src){return new Promise((resolve,reject)=>{let img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error('画像を読み込めません'));img.src=src;});}
 function setImage(img,w,h){pushHistory();W=w;H=h;raster.width=canvas.width=colors.width=W;raster.height=canvas.height=colors.height=H;rctx.drawImage(img,0,0,W,H);blocked=[];dirty();$('view').value='original';fit();render();buttons();}
 $('imageFile').onchange=async e=>{let file=e.target.files[0];if(!file)return;if(file.size>30*1024*1024){setStatus('画像は30 MB以下にしてください。');return;}let url=URL.createObjectURL(file);try{let img=await decodeImage(url),ratio=Math.min(1,1600/Math.max(img.width,img.height));setImage(img,Math.max(1,Math.round(img.width*ratio)),Math.max(1,Math.round(img.height*ratio)));setStatus(`画像を開きました：${img.width}×${img.height} → ${W}×${H} px。解析を実行してください。`);}catch(e){setStatus(e.message);}finally{URL.revokeObjectURL(url);e.target.value='';}};
-$('caseFile').onchange=async e=>{let file=e.target.files[0];if(!file)return;try{if(file.size>40*1024*1024)throw Error('検査ファイルが大きすぎます');let c=JSON.parse(await file.text());if(c.schema!=='illustro-human-raster-case/0.1'||!Number.isInteger(c.width)||!Number.isInteger(c.height)||c.width<1||c.height<1||c.width>1600||c.height>1600||typeof c.raster!=='string'||!c.raster.startsWith('data:image/png;base64,'))throw Error('対応する検査データではありません');let img=await decodeImage(c.raster);setImage(img,c.width,c.height);$('gap').value=Math.max(0,Math.min(40,c.settings?.gap??12));$('contourClosure').checked=c.settings?.contourClosure!==false;$('mode').value=['none','balanced','conservative'].includes(c.settings?.mode)?c.settings.mode:'balanced';$('threshold').value=['normal','faint','strict'].includes(c.threshold)?c.threshold:'normal';blocked=Array.isArray(c.settings?.blocked)?c.settings.blocked.filter(x=>typeof x==='string'):[];$('notes').value=typeof c.notes==='string'?c.notes:'';setStatus('検査データを開きました。再解析して確認してください。');}catch(err){setStatus('開けませんでした：'+err.message);}finally{e.target.value='';}};
+$('caseFile').onchange=async e=>{let file=e.target.files[0];if(!file)return;try{if(file.size>40*1024*1024)throw Error('検査ファイルが大きすぎます');let c=JSON.parse(await file.text());if(c.schema!=='illustro-human-raster-case/0.1'||!Number.isInteger(c.width)||!Number.isInteger(c.height)||c.width<1||c.height<1||c.width>1600||c.height>1600||typeof c.raster!=='string'||!c.raster.startsWith('data:image/png;base64,'))throw Error('対応する検査データではありません');let img=await decodeImage(c.raster);setImage(img,c.width,c.height);$('gap').value=Math.max(0,Math.min(80,c.settings?.gap??24));$('contourClosure').checked=c.settings?.contourClosure!==false;$('mode').value=['none','balanced','conservative','generous'].includes(c.settings?.mode)?c.settings.mode:'generous';$('threshold').value=['normal','faint','strict'].includes(c.threshold)?c.threshold:'normal';blocked=Array.isArray(c.settings?.blocked)?c.settings.blocked.filter(x=>typeof x==='string'):[];$('notes').value=typeof c.notes==='string'?c.notes:'';setStatus('検査データを開きました。再解析して確認してください。');}catch(err){setStatus('開けませんでした：'+err.message);}finally{e.target.value='';}};
 function example(name){pushHistory();W=960;H=640;raster.width=canvas.width=colors.width=W;raster.height=canvas.height=colors.height=H;blocked=[];rctx.strokeStyle='#101010';rctx.lineWidth=4;rctx.lineCap='round';rctx.lineJoin='round';const path=pts=>{rctx.beginPath();rctx.moveTo(...pts[0]);for(const p of pts.slice(1))rctx.lineTo(...p);rctx.stroke();};
  if(name==='tips'){path([[130,410],[90,130],[155,90],[210,130],[146,410]]);path([[285,408],[260,135],[320,95],[375,130],[303,408]]);path([[510,390],[470,155],[530,110],[590,155],[519,393]]);path([[740,400],[700,120],[825,120],[755,405]]);}
  if(name==='t'){path([[120,120],[120,450],[420,450],[420,120],[120,120]]);path([[120,270],[410,270]]);path([[650,150],[850,150],[850,450],[650,450],[650,150]]);path([[650,300],[830,300]]);path([[750,160],[750,290]]);}
