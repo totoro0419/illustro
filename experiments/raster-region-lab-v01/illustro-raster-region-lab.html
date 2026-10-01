@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Illustro | Raster 領域検査</title>
+<style>
+:root{color-scheme:light;font-family:system-ui,sans-serif;color:#17263a;background:#eaf0f5}*{box-sizing:border-box}body{margin:0}header{background:#182b40;color:white;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px}h1{font-size:19px;margin:0}header p{font-size:13px;margin:5px 0 0;color:#d5e2ee}.badge{border:1px solid #b9c9d8;padding:6px 10px;border-radius:6px;font-size:13px}main{padding:16px;max-width:1600px;margin:auto}.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:white;padding:10px;border:1px solid #cbd6e2;border-radius:8px;margin-bottom:10px}button,select,input,textarea{font:inherit}button,select,input[type=number]{border:1px solid #9babbd;border-radius:5px;background:white;color:#17263a;padding:8px 10px;min-height:36px}button{cursor:pointer}button:hover{background:#edf4fa}button[aria-pressed=true]{background:#d9ecff;border-color:#286093;box-shadow:inset 0 0 0 1px #286093}button.primary{background:#236091;color:white;border-color:#236091;font-weight:650}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:3px solid #c25200;outline-offset:2px}label{font-size:14px;display:inline-flex;gap:6px;align-items:center}input[type=range]{width:110px;accent-color:#236091}input[type=number]{width:76px}input[type=checkbox]{width:17px;height:17px}input[type=file]{max-width:220px;font-size:12px}.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}.work{min-width:0}.stage{height: min(72vh,720px);min-height:300px;overflow:auto;background:#b8c4d1;border:1px solid #8c9bad;border-radius:7px;overscroll-behavior:contain;position:relative}canvas{display:block;background:white;touch-action:none;cursor:crosshair;max-width:none;margin:0;box-shadow:0 3px 20px #24374d33}aside{background:white;border:1px solid #cbd6e2;border-radius:8px;padding:14px;overflow:auto;max-height:850px;font-size:13px}aside h2{font-size:15px;margin:0 0 8px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}.stat{background:#f0f5fa;border-radius:6px;padding:9px}.stat strong{display:block;font-size:23px}.stat span{font-size:12px;color:#42556a}#status{padding:10px 12px;border-left:4px solid #236091;background:#f8fbff;margin-bottom:10px;min-height:42px;font-size:14px}.muted{color:#455b72;font-size:13px}small{display:block;color:#455b72;line-height:1.6}details{border-top:1px solid #dce4ec;padding-top:12px;margin-top:12px}summary{cursor:pointer;font-weight:600}aside ol,aside ul{padding-left:20px;line-height:1.7}#candidates{max-height:250px;overflow:auto}#candidates button{display:block;width:100%;text-align:left;margin-top:5px;font-size:12px}.note-area{background:white;padding:14px;border:1px solid #cbd6e2;border-radius:8px;margin-top:12px}textarea{width:100%;min-height:95px;padding:10px;border:1px solid #9babbd;border-radius:5px;resize:vertical}.note-area h2{font-size:15px;margin:0 0 8px}#regionInfo{padding:10px;background:#eef5fb;border-radius:6px;line-height:1.8;min-height:60px}#legend{font-size:12px;margin-top:8px}code{font-size:12px}a{color:#205a86}.divider{height:28px;width:1px;background:#cbd6e2;margin:0 3px}.hidden{display:none} @media(max-width:850px){.layout{grid-template-columns:1fr}aside{max-height:none}.stage{height:60vh}header{align-items:flex-start;padding:12px}.badge{max-width:150px}main{padding:8px}}
+</style></head><body>
+<header><div><h1>Illustro — Raster線画の領域検査</h1><p>自由に描く → 解析する → 色分けを目で確かめる</p></div><span class="badge">人間による実線画検査待ち</span></header>
+<main>
+<div class="bar" aria-label="描画操作">
+<button id="pen" aria-pressed="true">ペン B</button><button id="eraser" aria-pressed="false">消しゴム E</button><button id="inspect" aria-pressed="false">領域を選ぶ V</button><button id="pan" aria-pressed="false">移動 H</button>
+<label>太さ <input id="brush" type="range" min="1" max="48" value="4"><output id="brushValue">4 px</output></label><label><input id="pressure" type="checkbox">筆圧を使う</label>
+<button id="undo" disabled>戻す</button><button id="redo" disabled>やり直す</button><button id="clear">全消去</button>
+</div>
+<div class="bar" aria-label="解析設定">
+<button class="primary" id="analyze">領域を解析する</button><button id="cancel" disabled>解析を中止</button>
+<label>隙間の上限 <input id="gap" type="number" min="0" max="40" value="12">px</label>
+<label>補い方 <select id="mode"><option value="balanced">形から補う</option><option value="conservative">慎重に補う</option><option value="none">補助接続なし</option></select></label>
+<label>線の濃さ <select id="threshold"><option value="normal">通常</option><option value="faint">薄い線</option><option value="strict">濃い部分を優先</option></select></label>
+<button id="resetLinks">接続の拒否を解除</button>
+</div>
+<div class="bar" aria-label="表示操作">
+<label>表示 <select id="view"><option value="original">元線画</option><option value="regions">領域の色分け</option><option value="overlay">元線画＋色分け</option></select></label>
+<label><input id="boundaries" type="checkbox" checked>境界</label><label><input id="junctions" type="checkbox">接続点</label><label><input id="helpers" type="checkbox" checked>補助接続</label><label><input id="pending" type="checkbox">保留候補</label>
+<label>拡大 <select id="zoom"><option value="fit">画面に合わせる</option><option value="1">100%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option><option value="4">400%</option></select></label>
+</div>
+<div id="status" role="status" aria-live="polite">白い画面に線を描いて、「領域を解析する」を押してください。</div>
+<div class="layout"><section class="work" aria-label="線画キャンバス"><div id="stage" class="stage" tabindex="0" aria-label="描画画面。移動はスクロールまたは移動ツール"><canvas id="canvas" width="960" height="640" aria-label="自由に線画を描くキャンバス">キャンバス対応ブラウザで開いてください。</canvas></div><div id="legend">境界：青い線 ／ 自動補助：赤い破線 ／ 保留：橙の破線 ／ 接続点：紫の点。表示の線幅は検査用です。</div></section>
+<aside><h2>今回の解析</h2><div class="stats"><div class="stat"><strong id="regionCount">—</strong><span>閉じた領域</span></div><div class="stat"><strong id="linkCount">—</strong><span>補った接続</span></div></div><p id="metrics" class="muted">まだ解析していません。</p><div id="regionInfo">「領域を選ぶ」で色のついた場所をクリックすると、その領域を強調します。</div>
+<details open><summary>試してほしい形</summary><ol><li>細長い毛束と、少し開いた毛先</li><li>近くに並ぶ別々の毛束</li><li>T字、線の途中への描き損ね</li><li>目・指などの小さい領域</li><li>太い線、太さが変わる線</li><li>意図的に開けた小さな隙間</li></ol><small>補助接続なしと比較してください。意図した隙間と描き損ねを画像だけで必ず区別できるわけではありません。</small></details>
+<details><summary>補助接続を個別に確認</summary><small>赤い補助接続の項目を押すと無効化し、再解析します。元線画は変えません。</small><div id="candidates"></div></details>
+<details><summary>画像・検査データ</summary><p><label>線画画像を開く <input type="file" id="imageFile" accept="image/png,image/jpeg,image/webp,image/bmp"></label></p><small>白地の暗い線／透明地の暗い線。最大辺1600 pxへ縮小します。色付き背景や明るい色の線は対象外です。</small><p><button id="saveCase">線画＋メモを保存</button></p><p><label>検査データを開く <input type="file" id="caseFile" accept=".json"></label></p><button id="savePartition" disabled>領域データを保存</button><small>検査データには元の線画、設定、接続の拒否、メモが入ります。ページを閉じる前に保存してください。</small></details>
+<details><summary>任意の見本を読み込む</summary><select id="example"><option value="tips">毛先・別の束</option><option value="t">T字・線の途中</option><option value="nested">穴・隣り合う領域</option><option value="pressure">太さ変化・小領域</option></select> <button id="loadExample">読み込む</button><small>見本の合格は自由な線画での品質を証明しません。読み込み前の線画は「戻す」で復元できます。</small></details>
+<details><summary>操作・現在の制限</summary><small>B：ペン / E：消しゴム / V：領域選択 / H：移動 / Ctrl+Z：戻す / Ctrl+Shift+Z：やり直す / Ctrl+Enter：解析。移動時は矢印キー・通常のスクロールも使えます。<br>線の変更後は解析結果が古くなります。再解析してください。筆圧の実機動作は使用するペンで確認してください。<br>元画像ですでに潰れた隙間、濃い塗り、太い交差付近、極小形状、競合する接続は弱点です。画面端は自動で閉じません。</small></details>
+</aside></div>
+<section class="note-area"><h2>間違っている場所のメモ</h2><small>例：「領域3と4は同じはず」「右の毛束が隣とつながった」「この隙間は閉じないで」。領域番号は再解析で変わることがあります。位置も添えてください。</small><textarea id="notes" aria-label="検査メモ" placeholder="妥協できない間違いや、次に試したい形を書いてください。"></textarea><div class="bar" style="padding:0;border:0;margin:8px 0 0"><button id="mark">選んだ場所をメモへ追加</button><span id="noteStatus" class="muted">メモは「線画＋メモを保存」で持ち出せます。</span></div></section>
+</main>
+<script>
+/* Illustro Region Lab 0.1. Independent raster input; no stroke-history access. */
+function RegionEngine() {
+  'use strict';
+  const EPS=1e-7, cross=(a,b)=>a.x*b.y-a.y*b.x;
+  const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
+  const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  const unit=a=>{let d=Math.hypot(a.x,a.y)||1;return {x:a.x/d,y:a.y/d};};
+  const dot=(a,b)=>a.x*b.x+a.y*b.y;
+  const mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+  const key=p=>`${Math.round(p.x*1e6)},${Math.round(p.y*1e6)}`;
+  const linkKey=(a,b)=>[key(a),key(b)].sort().join('|');
+  function project(p,a,b){const v=sub(b,a),q=sub(p,a);let t=Math.max(0,Math.min(1,dot(q,v)/(dot(v,v)||1)));return {...mix(a,b,t),t};}
+  function intersection(a,b,c,d){let u=sub(b,a),v=sub(d,c),w=sub(c,a),den=cross(u,v);if(Math.abs(den)<EPS)return null;let t=cross(w,v)/den,s=cross(w,u)/den;return t>=-EPS&&t<=1+EPS&&s>=-EPS&&s<=1+EPS?{t:Math.max(0,Math.min(1,t)),s:Math.max(0,Math.min(1,s)),...mix(a,b,t)}:null;}
+  function pointIn(p,poly){let yes=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a.y>p.y)!=(b.y>p.y)&&p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)yes=!yes;}return yes;}
+  function signedArea(poly){let a=0;for(let i=0;i<poly.length;i++)a+=cross(poly[i],poly[(i+1)%poly.length]);return a/2;}
+  class Grid {
+    constructor(size=16){this.size=size;this.map=new Map();}
+    cells(a,b,pad=0){let out=[];for(let y=Math.floor((Math.min(a.y,b.y)-pad)/this.size);y<=Math.floor((Math.max(a.y,b.y)+pad)/this.size);y++)for(let x=Math.floor((Math.min(a.x,b.x)-pad)/this.size);x<=Math.floor((Math.max(a.x,b.x)+pad)/this.size);x++)out.push(`${x},${y}`);return out;}
+    add(i,a,b){for(const k of this.cells(a,b)){if(!this.map.has(k))this.map.set(k,[]);this.map.get(k).push(i);}}
+    query(a,b,pad=0){let s=new Set();for(const k of this.cells(a,b,pad))for(const i of this.map.get(k)||[])s.add(i);return [...s];}
+  }
+  function countHoles(mask,w,h){const seen=new Uint8Array(mask.length),queue=new Int32Array(mask.length);let holes=0;for(let i=0;i<mask.length;i++){if(mask[i]||seen[i])continue;let head=0,tail=1,outer=false;queue[0]=i;seen[i]=1;while(head<tail){const j=queue[head++],x=j%w,y=(j/w)|0;if(x===0||y===0||x===w-1||y===h-1)outer=true;for(const o of [-w,w,-1,1]){let n=j+o;if(n<0||n>=mask.length||o===-1&&x===0||o===1&&x===w-1)continue;if(!mask[n]&&!seen[n]){seen[n]=1;queue[tail++]=n;}}}if(!outer)holes++;}return holes;}
+  function extract(rgba,w,h,options){
+    const pw=w+2,ph=h+2,n=pw*ph,coverage=new Float32Array(n),mask=new Uint8Array(n),queue=new Int32Array(n);
+    let lo=options.low??0.18,hi=options.high??0.42,tail=0,head=0;
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){const r=(y*w+x)*4,i=(y+1)*pw+x+1;coverage[i]=(1-(rgba[r]*.2126+rgba[r+1]*.7152+rgba[r+2]*.0722)/255)*rgba[r+3]/255;if(coverage[i]>=hi){mask[i]=1;queue[tail++]=i;}}
+    const offsets=[-pw,-pw+1,1,pw+1,pw,pw-1,-1,-pw-1];
+    while(head<tail){const i=queue[head++];for(const o of offsets){let j=i+o;if(!mask[j]&&coverage[j]>=lo){mask[j]=1;queue[tail++]=j;}}}
+    // Chamfer distance, separate from the width-free partition.
+    let radius=new Float32Array(n);for(let i=0;i<n;i++)radius[i]=mask[i]?1e6:0;
+    for(let y=1;y<ph-1;y++)for(let x=1;x<pw-1;x++){let i=y*pw+x;if(mask[i])radius[i]=Math.min(radius[i],radius[i-1]+1,radius[i-pw]+1,radius[i-pw-1]+Math.SQRT2,radius[i-pw+1]+Math.SQRT2);}
+    for(let y=ph-2;y>0;y--)for(let x=pw-2;x>0;x--){let i=y*pw+x;if(mask[i])radius[i]=Math.min(radius[i],radius[i+1]+1,radius[i+pw]+1,radius[i+pw-1]+Math.SQRT2,radius[i+pw+1]+Math.SQRT2);}
+    const skeleton=mask.slice();let iteration=0,changed=true;const remove=[];
+    while(changed){changed=false;iteration++;if(iteration>Math.max(w,h)+2)throw Error('中心線化が収束しませんでした');for(let pass=0;pass<2;pass++){
+      remove.length=0;
+      for(let y=1;y<ph-1;y++)for(let x=1;x<pw-1;x++){let i=y*pw+x;if(!skeleton[i])continue;const p=offsets.map(o=>skeleton[i+o]);let B=p.reduce((a,b)=>a+b,0),A=0;for(let k=0;k<8;k++)if(!p[k]&&p[(k+1)%8])A++;
+        const m1=pass===0?p[0]*p[2]*p[4]:p[0]*p[2]*p[6],m2=pass===0?p[2]*p[4]*p[6]:p[0]*p[4]*p[6];
+        if(A===1&&B>=2&&B<=6&&!m1&&!m2)remove.push(i);
+      }if(remove.length)changed=true;for(const i of remove)skeleton[i]=0;
+    }}
+    const points=[],index=new Int32Array(n).fill(-1);
+    for(let y=1;y<ph-1;y++)for(let x=1;x<pw-1;x++){let i=y*pw+x;if(skeleton[i]){index[i]=points.length;points.push({x:x-.5,y:y-.5,pixel:i});}}
+    if(points.length>150000)throw Error('線が多すぎます（中心線15万点まで）。小さな画像で再試行してください。');
+    let segments=[],adj=points.map(()=>[]);
+    for(let a=0;a<points.length;a++){const i=points[a].pixel;for(const o of [1,pw,pw+1,pw-1]){const j=i+o,b=index[j];if(b<0)continue;// A fully occupied 2x2 ink cell has no white hole. Omit its bottom edge to avoid a false unit face.
+      if(o===1&&skeleton[i-pw]&&skeleton[i-pw+1])continue;const diag=o===pw+1||o===pw-1;if(diag&&(skeleton[i+pw]||skeleton[i+(o===pw+1?1:-1)]))continue;let id=segments.length;segments.push({a:points[a],b:points[b],source:'raster',va:a,vb:b});adj[a].push({v:b,e:id});adj[b].push({v:a,e:id});}}
+    const comp=new Int32Array(points.length).fill(-1);let components=0;
+    for(let i=0;i<points.length;i++)if(comp[i]<0){let q=[i];comp[i]=components;for(let k=0;k<q.length;k++)for(const {v} of adj[q[k]])if(comp[v]<0){comp[v]=components;q.push(v);}components++;}
+    const endpoints=[];
+    for(let id=0;id<points.length;id++)if(adj[id].length===1){let path=[id],prev=-1,cur=id,length=0,reach=Math.max(7,Math.min(24,radius[points[id].pixel]*3));while(length<reach){let next=adj[cur].filter(a=>a.v!==prev);if(next.length!==1)break;let v=next[0].v;length+=dist(points[cur],points[v]);path.push(v);prev=cur;cur=v;}let p=points[id],back=points[cur];if(length>=2)endpoints.push({id,p,back,tangent:unit(sub(p,back)),radius:radius[p.pixel],length,comp:comp[id]});}
+    const rasterHoles=countHoles(mask,pw,ph),skeletonHoles=countHoles(skeleton,pw,ph),graphHoles=segments.length-points.length+components;
+    if(rasterHoles!==skeletonHoles||skeletonHoles!==graphHoles)throw Error('境界抽出で領域数が変わりました。線の濃さを変えて再試行してください。');
+    return {mask,skeleton,radius,coverage,pw,ph,points,segments,adj,comp,components,endpoints,iteration,topology:{rasterHoles,skeletonHoles,graphHoles}};
+  }
+  function pathBetween(ex,a,b){const prev=new Int32Array(ex.points.length).fill(-1),q=[a];prev[a]=a;for(let k=0;k<q.length;k++){let v=q[k];if(v===b)break;for(const t of ex.adj[v])if(prev[t.v]<0){prev[t.v]=v;q.push(t.v);}}if(prev[b]<0)return null;let path=[b];while(path[path.length-1]!==a)path.push(prev[path[path.length-1]]);path.reverse();return path.map(i=>ex.points[i]);}
+  function infer(ex,opt){
+    const gap=opt.gap??12,mode=opt.mode??'balanced',blocked=new Set(opt.blocked||[]);let candidates=[];const grid=new Grid();ex.segments.forEach((s,i)=>grid.add(i,s.a,s.b));
+    const endByID=new Map(ex.endpoints.map(e=>[e.id,e]));
+    function make(e,target,other,kind,tier,path){
+      let d=dist(e.p,target);if(d<.01||d>gap+Math.min(e.radius+(other?.radius||0),12))return;
+      // White gap measured on source Raster; width cannot inflate unlimited search.
+      let white=0;for(let k=0;k<=Math.ceil(d*2);k++){let p=mix(e.p,target,k/Math.ceil(d*2)),i=(Math.floor(p.y)+1)*ex.pw+Math.floor(p.x)+1;if(!ex.mask[i])white+=.5;}
+      if(white>gap)return;
+      const id=linkKey(e.p,target);if(candidates.some(c=>c.id===id))return;
+      let crosses=false;for(const si of grid.query(e.p,target)){let s=ex.segments[si],hit=intersection(e.p,target,s.a,s.b);if(hit&&hit.t>0.02&&hit.t<.98){crosses=true;break;}}
+      let area=path?Math.abs(signedArea([...path,target])):null;
+      let c={id,a:e.p,b:target,ends:other?[e.id,other.id]:[e.id],kind,tier,distance:d,whiteGap:white,newArea:area,status:'eligible',reason:'',polyline:[e.p,target]};
+      if(crosses){c.status='rejected';c.reason='途中の別の境界を横切る';}
+      else if(area!==null&&area<.25){c.status='rejected';c.reason='閉鎖で面積を作れない';}
+      else if(blocked.has(id)){c.status='blocked';c.reason='人間がこの補助接続を無効化';}
+      candidates.push(c);
+    }
+    const endpointGrid=new Grid(32);ex.endpoints.forEach((e,i)=>endpointGrid.add(i,e.p,e.p));
+    for(let i=0;i<ex.endpoints.length;i++){let a=ex.endpoints[i],range=gap+Math.min(a.radius+12,12);
+      for(const j of endpointGrid.query(a.p,a.p,range)){if(j<=i)continue;let b=ex.endpoints[j],d=dist(a.p,b.p);if(d<.01||d>range)continue;let direction=unit(sub(b.p,a.p)),da=dot(a.tangent,direction),db=dot(b.tangent,{x:-direction.x,y:-direction.y});let same=a.comp===b.comp,path=same?pathBetween(ex,a.id,b.id):null,route=path?path.reduce((v,p,k)=>k?v+dist(p,path[k-1]):0,0):0;
+        if(da>.65&&db>.65)make(a,b.p,b,'線の続き',0,path);
+        else if(same&&route>Math.max(d*4,24)&&dot(a.tangent,b.tangent)>.25&&dist(a.back,b.back)>d*1.12&&da>-.55&&db>-.55)make(a,b.p,b,'先端を閉じる',1,path);
+        else if((da>.72&&db>-.25)||(db>.72&&da>-.25))make(a,b.p,b,'曲がり角',2,path);
+      }
+      // A forward ray should hit the first available interior, not the closest parallel line.
+      let rayEnd={x:a.p.x+a.tangent.x*range,y:a.p.y+a.tangent.y*range},hits=[];
+      for(const si of grid.query(a.p,rayEnd,1)){let s=ex.segments[si];if(s.va===a.id||s.vb===a.id)continue;let hit=intersection(a.p,rayEnd,s.a,s.b);if(!hit||hit.t*range<Math.max(2,a.radius*.6))continue;if(dist(a.p,s.a)<2||dist(a.p,s.b)<2)continue;hits.push({hit,s,si,d:hit.t*range});}
+      hits.sort((a,b)=>a.d-b.d||a.si-b.si);
+      if(hits.length){let {hit,s}=hits[0];let other=endByID.get(s.va)||endByID.get(s.vb);if(!other){let path=a.comp===ex.comp[s.va]?pathBetween(ex,a.id,s.va):null;make(a,{x:hit.x,y:hit.y},null,'線の途中へ',0,path);}}
+    }
+    // Honor a one-sided continuation landing on the other endpoint's backward chain.
+    for(const c of candidates)if(c.ends.length===2&&c.status==='eligible'&&c.kind!=='先端を閉じる'){
+      const a=endByID.get(c.ends[0]),b=endByID.get(c.ends[1]);let possibilities=[];
+      for(const [s,t] of [[a,b],[b,a]]){let end={x:s.p.x+s.tangent.x*(gap+12),y:s.p.y+s.tangent.y*(gap+12)},hit=intersection(s.p,end,t.p,t.back);if(hit&&hit.t*(gap+12)>0&&hit.t*(gap+12)<=gap+Math.min(s.radius+t.radius,12)&&hit.s>=0&&hit.s<=1)possibilities.push({p:{x:hit.x,y:hit.y},s,t});}
+      if(possibilities.length===1){let h=possibilities[0];let rayEnd={x:h.s.p.x+h.s.tangent.x*(gap+12),y:h.s.p.y+h.s.tangent.y*(gap+12)},hits=[];for(const si of grid.query(h.t.p,h.t.back,2)){let edge=ex.segments[si];if(ex.comp[edge.va]!==h.t.comp)continue;let hit=intersection(h.s.p,rayEnd,edge.a,edge.b);if(hit&&hit.t>EPS&&dist(hit,h.t.p)<=h.t.length+2)hits.push(hit);}hits.sort((a,b)=>a.t-b.t);if(hits.length){c.polyline=[h.s.p,{x:hits[0].x,y:hits[0].y}];c.kind+='（片側延長）';}}
+    }
+    const eligible=candidates.filter(c=>c.status==='eligible');
+    function compare(a,b){return a.tier-b.tier||a.whiteGap-b.whiteGap||a.distance-b.distance||a.id.localeCompare(b.id);}
+    const choices=new Map();for(const c of eligible)for(const e of c.ends){if(!choices.has(e))choices.set(e,[]);choices.get(e).push(c);}for(const list of choices.values())list.sort(compare);
+    const used=new Set(),accepted=[];
+    for(const c of eligible.sort(compare)){
+      if(mode==='none'){c.status='pending';c.reason='補助接続なし';continue;}
+      if(mode==='conservative'&&c.tier>0){c.status='pending';c.reason='慎重モードでは先端・角を保留';continue;}
+      let competing=false,loses=false;for(const e of c.ends){const list=choices.get(e);if(list[0]!==c)loses=true;let other=list.find(x=>x!==c&&x.tier===c.tier);if(other&&other.distance<=c.distance*1.35+1&&Math.abs(other.whiteGap-c.whiteGap)<Math.max(2,gap*.25))competing=true;}
+      if(used.has(c.ends[0])||c.ends.some(e=>used.has(e))||loses){c.status='pending';c.reason='同じ端点の別候補を優先';continue;}
+      if(competing){c.status='pending';c.reason='根拠が近い候補が複数ある';continue;}
+      let collision=accepted.some(o=>c.polyline.slice(1).some((p,i)=>o.polyline.slice(1).some((q,j)=>{let h=intersection(c.polyline[i],p,o.polyline[j],q);return h&&h.t>EPS&&h.t<1-EPS&&h.s>EPS&&h.s<1-EPS;})));
+      if(collision){c.status='pending';c.reason='別の補助接続と交差';continue;}
+      c.status='accepted';c.reason='形の条件と候補競合を通過';c.ends.forEach(e=>used.add(e));accepted.push(c);
+    }
+    return candidates;
+  }
+  function planarize(segments,isolated=[]){
+    const grid=new Grid(),cuts=segments.map(()=>[0,1]);segments.forEach((s,i)=>grid.add(i,s.a,s.b));
+    for(let i=0;i<segments.length;i++){const s=segments[i];if(s.source==='raster')continue;for(const j of grid.query(s.a,s.b)){if(i===j||segments[j].source!=='raster'&&j<i)continue;let t=segments[j],hit=intersection(s.a,s.b,t.a,t.b);if(hit){cuts[i].push(hit.t);cuts[j].push(hit.s);}else if(Math.abs(cross(sub(s.b,s.a),sub(t.a,s.a)))<EPS&&Math.abs(cross(sub(s.b,s.a),sub(t.b,s.a)))<EPS){for(const p of [t.a,t.b]){let q=project(p,s.a,s.b);if(dist(p,q)<EPS)cuts[i].push(q.t);}for(const p of [s.a,s.b]){let q=project(p,t.a,t.b);if(dist(p,q)<EPS)cuts[j].push(q.t);}}}}
+    const vertices=[],edges=[],vm=new Map(),em=new Map();
+    function vertex(p){let k=key(p);if(!vm.has(k)){vm.set(k,vertices.length);vertices.push({id:vertices.length,x:Math.round(p.x*1e6)/1e6,y:Math.round(p.y*1e6)/1e6,out:[]});}return vm.get(k);}
+    for(let i=0;i<segments.length;i++){let s=segments[i],ts=[...new Set(cuts[i].map(t=>Math.round(t*1e10)/1e10))].sort((a,b)=>a-b);for(let k=1;k<ts.length;k++){let a=vertex(mix(s.a,s.b,ts[k-1])),b=vertex(mix(s.a,s.b,ts[k]));if(a===b)continue;let ek=[a,b].sort((a,b)=>a-b).join(',');if(em.has(ek))continue;em.set(ek,edges.length);edges.push({id:edges.length,a,b,source:s.source,connection:s.connection??null});}}
+    isolated.forEach(vertex);return {vertices,edges};
+  }
+  function faces(graph,w,h){
+    const {vertices,edges}=graph,halfedges=[];
+    for(const e of edges){const id=halfedges.length;halfedges.push({id,from:e.a,to:e.b,twin:id+1,edge:e.id,next:-1,cycle:-1,region:-1},{id:id+1,from:e.b,to:e.a,twin:id,edge:e.id,next:-1,cycle:-1,region:-1});vertices[e.a].out.push(id);vertices[e.b].out.push(id+1);}
+    for(const v of vertices)v.out.sort((a,b)=>{let p=vertices[halfedges[a].to],q=vertices[halfedges[b].to];return Math.atan2(p.y-v.y,p.x-v.x)-Math.atan2(q.y-v.y,q.x-v.x)||a-b;});
+    for(const he of halfedges){let out=vertices[he.to].out,k=out.indexOf(he.twin);he.next=out[(k-1+out.length)%out.length];}
+    const cycles=[];
+    for(const he of halfedges)if(he.cycle<0){let hs=[],poly=[],cur=he.id;do{let e=halfedges[cur];if(e.cycle>=0)throw Error('境界の周回が衝突しました');e.cycle=cycles.length;hs.push(cur);poly.push(vertices[e.from]);cur=e.next;if(hs.length>halfedges.length+1)throw Error('境界の周回が閉じません');}while(cur!==he.id);cycles.push({id:cycles.length,halfedges:hs,polygon:poly,signedArea:signedArea(poly),region:-1});}
+    const regions=[{id:0,outer:null,holes:[],slits:[],neighbors:[],area:null,unbounded:true,pixels:0}];
+    for(const c of cycles)if(c.signedArea>EPS){c.region=regions.length;regions.push({id:regions.length,outer:c.id,holes:[],slits:[],neighbors:[],area:c.signedArea,unbounded:false,pixels:0});}
+    function owner(p){let result=0,size=Infinity;for(const r of regions.slice(1)){const c=cycles[r.outer];if(c.signedArea<size&&pointIn(p,c.polygon)){result=r.id;size=c.signedArea;}}return result;}
+    for(const c of cycles)if(c.region<0){const he=halfedges[c.halfedges[0]],a=vertices[he.from],b=vertices[he.to],u=unit(sub(b,a)),sample={x:(a.x+b.x)/2-u.y*.05,y:(a.y+b.y)/2+u.x*.05};c.region=owner(sample);let r=regions[c.region];if(c.signedArea<-EPS){r.holes.push(c.id);if(r.area!==null)r.area+=c.signedArea;}else r.slits.push(c.id);}
+    for(const c of cycles)for(const hi of c.halfedges)halfedges[hi].region=c.region;
+    const adj=regions.map(()=>new Set());for(const e of edges){let a=halfedges[e.id*2].region,b=halfedges[e.id*2+1].region;e.regions=[a,b];if(a!==b){adj[a].add(b);adj[b].add(a);}}regions.forEach((r,i)=>r.neighbors=[...adj[i]].sort((a,b)=>a-b));
+    const labels=new Int32Array(w*h);
+    // Scanline fill, larger outer loops first; nested loops overwrite their interior.
+    for(const r of regions.slice(1).sort((a,b)=>cycles[b.outer].signedArea-cycles[a.outer].signedArea)){
+      const poly=cycles[r.outer].polygon,buckets=new Map();for(let i=0;i<poly.length;i++){let a=poly[i],b=poly[(i+1)%poly.length];if(a.y===b.y)continue;let start=Math.max(0,Math.ceil(Math.min(a.y,b.y)-.5)),end=Math.min(h-1,Math.ceil(Math.max(a.y,b.y)-.5)-1);for(let y=start;y<=end;y++){if(!buckets.has(y))buckets.set(y,[]);let x=a.x+(y+.5-a.y)*(b.x-a.x)/(b.y-a.y);buckets.get(y).push(x);}}
+      for(const [y,xs] of buckets){xs.sort((a,b)=>a-b);if(xs.length%2)throw Error('領域の走査線交点が奇数です');for(let i=0;i<xs.length;i+=2){let left=Math.max(0,Math.ceil(xs[i]-.5)),right=Math.min(w-1,Math.ceil(xs[i+1]-.5)-1);for(let x=left;x<=right;x++)labels[y*w+x]=r.id;}}
+    }
+    for(const l of labels)regions[l].pixels++;
+    let seen=new Uint8Array(vertices.length),components=0;for(let i=0;i<vertices.length;i++)if(!seen[i]){components++;const q=[i];seen[i]=1;for(let j=0;j<q.length;j++)for(const hi of vertices[q[j]].out){let v=halfedges[hi].to;if(!seen[v]){seen[v]=1;q.push(v);}}}
+    const checks={euler:vertices.length-edges.length+regions.length===1+components,twins:halfedges.every(e=>halfedges[e.twin].twin===e.id&&halfedges[e.twin].from===e.to),cycles:halfedges.every(e=>e.cycle>=0&&e.region>=0&&halfedges[e.next].from===e.to),adjacency:regions.every(r=>r.neighbors.every(n=>regions[n].neighbors.includes(r.id))),pixelCoverage:regions.reduce((a,r)=>a+r.pixels,0)===w*h,nonnegativeArea:regions.slice(1).every(r=>r.area>=-EPS)};
+    if(Object.values(checks).some(v=>!v))throw Error('領域データの整合性検査に失敗: '+JSON.stringify(checks));
+    return {vertices,edges,halfedges,cycles,regions,labels,diagnostics:{checks,components,eulerValue:vertices.length-edges.length+regions.length}};
+  }
+  function analyze(rgba,w,h,options={},progress=()=>{}){
+    if(!Number.isInteger(w)||!Number.isInteger(h)||w<1||h<1||w*h>2600000||rgba.length!==w*h*4)throw Error('入力画像サイズが範囲外です');
+    const start=Date.now();progress('線の形を取り出しています');const ex=extract(rgba,w,h,options);progress('補助接続の候補を比較しています');const candidates=infer(ex,options);
+    let segments=ex.segments.slice();for(const c of candidates.filter(c=>c.status==='accepted'))for(let i=1;i<c.polyline.length;i++)segments.push({a:c.polyline[i-1],b:c.polyline[i],source:'inferred',connection:c.id});
+    for(const m of options.manual||[])if(dist(m.a,m.b)>EPS)segments.push({a:m.a,b:m.b,source:'manual',connection:m.id});
+    progress('閉じた領域・穴・外側を求めています');const graph=planarize(segments,ex.points.filter((p,i)=>ex.adj[i].length===0)),partition=faces(graph,w,h);
+    let hash=2166136261;for(const l of partition.labels){hash^=l;hash=Math.imul(hash,16777619);}
+    return {...partition,width:w,height:h,schema:'illustro-region-partition/0.1',candidates,endpoints:ex.endpoints.map(e=>({x:e.p.x,y:e.p.y,tangent:e.tangent})),junctions:partition.vertices.filter(v=>v.out.length>=3).map(v=>({x:v.x,y:v.y,degree:v.out.length})),provenance:{input:'raster',options,thresholds:{low:options.low??.18,high:options.high??.42},extraction:'hysteresis + Zhang-Suen; chamfer radius for inference only'},edits:{blocked:options.blocked||[],manual:options.manual||[],futureRangePatches:[]},diagnostics:{...partition.diagnostics,hash:(hash>>>0).toString(16),milliseconds:Date.now()-start,extractionTopology:ex.topology,skeletonPoints:ex.points.length,iterations:ex.iteration,accepted:candidates.filter(c=>c.status==='accepted').length,pending:candidates.filter(c=>c.status==='pending').length,quality:'人間による実線画検査待ち'}};
+  }
+  return {analyze,extract,infer,planarize,faces,intersection,pointIn,linkKey};
+}
+if(typeof module!=='undefined')module.exports=RegionEngine();
+
+</script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),canvas=$('canvas'),ctx=canvas.getContext('2d'),raster=document.createElement('canvas'),rctx=raster.getContext('2d',{willReadFrequently:true}),colors=document.createElement('canvas'),cctx=colors.getContext('2d');
+raster.width=canvas.width; raster.height=canvas.height;colors.width=canvas.width;colors.height=canvas.height;
+let W=canvas.width,H=canvas.height,tool='pen',result=null,revision=0,resultRevision=-1,selected=-1,selectedPoint=null,history=[],future=[],blocked=[],active=null,worker=null,job=0,busy=false,scale=1,focusedCandidate=null;
+let engine=RegionEngine();
+function setStatus(s){$('status').textContent=s;}
+function dirty(){revision++;selected=-1;selectedPoint=null;focusedCandidate=null;cancelAnalysis();$('savePartition').disabled=true;if(result)setStatus('線画を変更しました。表示中の解析は古い結果です。もう一度解析してください。');}
+function snapshot(){return {w:W,h:H,data:rctx.getImageData(0,0,W,H),blocked:blocked.slice()};}
+function pushHistory(){history.push(snapshot());if(history.length>24)history.shift();future=[];buttons();}
+function restore(s){W=s.w;H=s.h;raster.width=canvas.width=colors.width=W;raster.height=canvas.height=colors.height=H;rctx.putImageData(s.data,0,0);blocked=s.blocked;dirty();fit();render();buttons();}
+function buttons(){ $('undo').disabled=!history.length;$('redo').disabled=!future.length; }
+function undo(){if(!history.length)return;future.push(snapshot());restore(history.pop());}
+function redo(){if(!future.length)return;history.push(snapshot());restore(future.pop());}
+function choose(t){tool=t;for(const id of ['pen','eraser','inspect','pan'])$(id).setAttribute('aria-pressed',String(id===t));canvas.style.cursor=t==='pan'?'grab':t==='inspect'?'pointer':'crosshair';}
+function fit(){scale=$('zoom').value==='fit'?Math.min(1,($('stage').clientWidth-2)/W):Number($('zoom').value);canvas.style.width=W*scale+'px';canvas.style.height=H*scale+'px';}
+function buildColors(){if(!result)return;let image=cctx.createImageData(W,H),palette=result.regions.map(r=>{if(r.id===0)return [244,247,250];let hue=((r.id*137.508)%360)/60,c=.52,x=c*(1-Math.abs(hue%2-1)),m=.42;let rgb=hue<1?[c,x,0]:hue<2?[x,c,0]:hue<3?[0,c,x]:hue<4?[0,x,c]:hue<5?[x,0,c]:[c,0,x];return rgb.map(v=>Math.round((v+m)*255));});for(let i=0;i<result.labels.length;i++){let id=result.labels[i],rgb=palette[id],alpha=255;if(selected>=0&&id!==selected)rgb=rgb.map(v=>Math.round(v*.32+255*.68));if(id===selected)rgb=rgb.map(v=>Math.max(0,v-35));image.data.set([...rgb,alpha],i*4);}cctx.putImageData(image,0,0);}
+function drawPolyline(poly,color,dash,width){ctx.beginPath();ctx.moveTo(poly[0].x,poly[0].y);for(const p of poly.slice(1))ctx.lineTo(p.x,p.y);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([]);}
+function render(){ctx.clearRect(0,0,W,H);ctx.fillStyle='white';ctx.fillRect(0,0,W,H);let v=$('view').value,valid=result&&result.width===W&&result.height===H;if(valid&&v!=='original')ctx.drawImage(colors,0,0);if(v==='original'||v==='overlay'||!valid){ctx.globalAlpha=v==='overlay'?.78:1;ctx.drawImage(raster,0,0);ctx.globalAlpha=1;}
+ if(valid&&v!=='original'){
+   if($('boundaries').checked){ctx.beginPath();for(const e of result.edges){const a=result.vertices[e.a],b=result.vertices[e.b];ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);}ctx.strokeStyle='#174e89';ctx.lineWidth=.9;ctx.stroke();}
+   if($('helpers').checked)for(const c of result.candidates.filter(c=>c.status==='accepted'))drawPolyline(c.polyline,'#c02831',[4,3],2);
+   if($('pending').checked)for(const c of result.candidates.filter(c=>c.status==='pending'))drawPolyline(c.polyline,'#ad5700',[2,3],1.5);
+   if($('junctions').checked){ctx.fillStyle='#8d2ea6';for(const p of result.junctions){ctx.beginPath();ctx.arc(p.x,p.y,2.8,0,Math.PI*2);ctx.fill();}}
+   if(focusedCandidate){drawPolyline(focusedCandidate.polyline,'#ff6900',[],4);}
+   if(selectedPoint){ctx.strokeStyle='#111';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(selectedPoint.x,selectedPoint.y,6,0,Math.PI*2);ctx.stroke();}
+ }
+}
+function position(e){let rect=canvas.getBoundingClientRect();return {x:Math.max(0,Math.min(W-.001,(e.clientX-rect.left)*W/rect.width)),y:Math.max(0,Math.min(H-.001,(e.clientY-rect.top)*H/rect.height)),pressure:e.pointerType==='pen'&&$('pressure').checked?Math.max(.08,e.pressure):1};}
+function stroke(a,b){let size=Number($('brush').value),width=size*(a.pressure+b.pressure)/2;rctx.globalCompositeOperation=tool==='eraser'?'destination-out':'source-over';rctx.strokeStyle='#101010';rctx.fillStyle='#101010';rctx.lineCap='round';rctx.lineJoin='round';rctx.lineWidth=width;rctx.beginPath();rctx.moveTo(a.x,a.y);rctx.lineTo(b.x,b.y);rctx.stroke();rctx.beginPath();rctx.arc(b.x,b.y,width/2,0,Math.PI*2);rctx.fill();rctx.globalCompositeOperation='source-over';}
+canvas.addEventListener('pointerdown',e=>{if(active||e.button!==0)return;e.preventDefault();canvas.setPointerCapture(e.pointerId);const p=position(e);if(tool==='pan'){active={id:e.pointerId,pan:true,x:e.clientX,y:e.clientY,left:$('stage').scrollLeft,top:$('stage').scrollTop};return;}if(tool==='inspect'){if(!result||resultRevision!==revision){setStatus('現在の線画を解析してから領域を選んでください。');return;}selected=result.labels[Math.floor(p.y)*W+Math.floor(p.x)];selectedPoint={x:Math.round(p.x),y:Math.round(p.y)};let r=result.regions[selected];$('regionInfo').textContent=`${selected===0?'外側領域':'領域 '+selected} ／ 穴 ${r.holes.length} ／ 隣り合う領域 ${r.neighbors.join(', ')||'なし'} ／ 位置 (${selectedPoint.x}, ${selectedPoint.y})`;buildColors();render();return;}pushHistory();dirty();$('view').value='original';active={id:e.pointerId,p};stroke(p,p);render();});
+canvas.addEventListener('pointermove',e=>{if(!active||active.id!==e.pointerId)return;if(active.pan){$('stage').scrollLeft=active.left-(e.clientX-active.x);$('stage').scrollTop=active.top-(e.clientY-active.y);return;}for(const sample of e.getCoalescedEvents?.().length?e.getCoalescedEvents():[e]){let p=position(sample);stroke(active.p,p);active.p=p;}render();});
+function endStroke(e){if(active?.id===e.pointerId){active=null;buttons();}}
+canvas.addEventListener('pointerup',endStroke);canvas.addEventListener('pointercancel',endStroke);canvas.addEventListener('lostpointercapture',endStroke);
+for(const t of ['pen','eraser','inspect','pan'])$(t).onclick=()=>choose(t);
+$('undo').onclick=undo;$('redo').onclick=redo;$('clear').onclick=()=>{pushHistory();rctx.clearRect(0,0,W,H);blocked=[];dirty();$('view').value='original';render();setStatus('全消去しました。「戻す」で復元できます。');};
+$('brush').oninput=()=>{$('brushValue').textContent=$('brush').value+' px';};
+for(const id of ['view','boundaries','junctions','helpers','pending'])$(id).onchange=render;$('zoom').onchange=fit;new ResizeObserver(fit).observe($('stage'));
+function settings(){const thresholds={normal:[.18,.42],faint:[.08,.2],strict:[.32,.6]},t=thresholds[$('threshold').value];let gap=Math.max(0,Math.min(40,Number($('gap').value)||0));$('gap').value=gap;return {gap,mode:$('mode').value,low:t[0],high:t[1],blocked:blocked.slice()};}
+function cancelAnalysis(){job++;if(worker){worker.terminate();worker=null;}busy=false;$('cancel').disabled=true;$('analyze').disabled=false;}
+function showCandidates(){let box=$('candidates');box.replaceChildren();for(const c of result.candidates.filter(c=>c.status==='accepted'||c.status==='blocked'||c.status==='pending').slice(0,150)){let b=document.createElement('button');b.textContent=`${c.status==='accepted'?'補助':c.status==='blocked'?'無効':'保留'}：${c.kind} (${Math.round(c.a.x)},${Math.round(c.a.y)}) → (${Math.round(c.b.x)},${Math.round(c.b.y)})`;b.title=c.reason;b.onmouseenter=()=>{focusedCandidate=c;render();};b.onmouseleave=()=>{focusedCandidate=null;render();};b.onclick=()=>{if(c.status==='pending'){focusedCandidate=c;$('view').value='overlay';$('pending').checked=true;render();setStatus('保留理由：'+c.reason);return;}if(c.status==='accepted')blocked.push(c.id);else blocked=blocked.filter(id=>id!==c.id);runAnalysis();};box.appendChild(b);}if(result.candidates.length>150){let p=document.createElement('p');p.textContent='表示は最初の150件まで。全候補は領域データに含まれます。';box.appendChild(p);}}
+function consume(r,rev){result=r;resultRevision=rev;selected=-1;selectedPoint=null;focusedCandidate=null;buildColors();$('view').value='overlay';$('regionCount').textContent=r.regions.length-1;$('linkCount').textContent=r.diagnostics.accepted;$('metrics').textContent=`保留 ${r.diagnostics.pending} ／ ${r.diagnostics.milliseconds} ms ／ ${W}×${H} px ／ 結果 ${r.diagnostics.hash}`;$('regionInfo').textContent='「領域を選ぶ」でクリックすると、領域番号と位置を確認できます。';$('savePartition').disabled=false;showCandidates();render();setStatus(`解析結果を表示しました。構造検査は一致。精度は人間による実線画検査待ちです。`);}
+function runAnalysis(){cancelAnalysis();let rev=revision,myJob=job;const data=rctx.getImageData(0,0,W,H).data,opt=settings();busy=true;$('analyze').disabled=true;$('cancel').disabled=false;setStatus('解析を開始しています…');
+ try{const source=`const engine=(${RegionEngine.toString()})();onmessage=e=>{try{let r=engine.analyze(e.data.rgba,e.data.w,e.data.h,e.data.options,s=>postMessage({progress:s}));postMessage({result:r},[r.labels.buffer]);}catch(err){postMessage({error:err.message});}};`;let url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));worker=new Worker(url);URL.revokeObjectURL(url);worker.onmessage=e=>{if(job!==myJob)return;if(e.data.progress){setStatus(e.data.progress);return;}let r=e.data.result,err=e.data.error;cancelAnalysis();if(err){setStatus('解析できませんでした：'+err+'。元線画は保持しています。');return;}consume(r,rev);};worker.onerror=e=>{cancelAnalysis();setStatus('解析処理を起動できませんでした。ブラウザの設定または画像サイズを確認してください。元線画は保持しています。');};worker.postMessage({rgba:data,w:W,h:H,options:opt},[data.buffer]);}catch(e){cancelAnalysis();setStatus('解析を起動できませんでした：'+e.message);}}
+$('analyze').onclick=runAnalysis;$('cancel').onclick=()=>{cancelAnalysis();setStatus('解析を中止しました。元線画は保持しています。');};$('resetLinks').onclick=()=>{blocked=[];runAnalysis();};
+for(const id of ['gap','mode','threshold'])$(id).onchange=()=>{cancelAnalysis();resultRevision=-1;$('savePartition').disabled=true;setStatus('解析条件を変えました。「領域を解析する」で更新してください。');};
+function download(name,text,type='application/json'){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([text],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function caseData(){return {schema:'illustro-human-raster-case/0.1',created:new Date().toISOString(),width:W,height:H,raster:raster.toDataURL('image/png'),settings:settings(),threshold:$('threshold').value,notes:$('notes').value,resultSummary:result&&resultRevision===revision?{hash:result.diagnostics.hash,regions:result.regions.length-1,accepted:result.diagnostics.accepted}:null,quality:'人間による実線画検査待ち'};}
+$('saveCase').onclick=()=>{download('illustro-raster-case-'+Date.now()+'.json',JSON.stringify(caseData()));$('noteStatus').textContent='保存用ファイルを作成しました。ブラウザのダウンロードを確認してください。';};
+$('savePartition').onclick=()=>{if(!result||resultRevision!==revision)return;download('illustro-region-partition-'+Date.now()+'.json',JSON.stringify({...result,labels:Array.from(result.labels)}));};
+$('mark').onclick=()=>{if(!selectedPoint){setStatus('「領域を選ぶ」で、メモする場所を先にクリックしてください。');return;}$('notes').value+=($('notes').value?'\n':'')+`[結果 ${result.diagnostics.hash}] 領域${selected}、位置(${selectedPoint.x},${selectedPoint.y})：`;$('notes').focus();};
+async function decodeImage(src){return new Promise((resolve,reject)=>{let img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error('画像を読み込めません'));img.src=src;});}
+function setImage(img,w,h){pushHistory();W=w;H=h;raster.width=canvas.width=colors.width=W;raster.height=canvas.height=colors.height=H;rctx.drawImage(img,0,0,W,H);blocked=[];dirty();$('view').value='original';fit();render();buttons();}
+$('imageFile').onchange=async e=>{let file=e.target.files[0];if(!file)return;if(file.size>30*1024*1024){setStatus('画像は30 MB以下にしてください。');return;}let url=URL.createObjectURL(file);try{let img=await decodeImage(url),ratio=Math.min(1,1600/Math.max(img.width,img.height));setImage(img,Math.max(1,Math.round(img.width*ratio)),Math.max(1,Math.round(img.height*ratio)));setStatus(`画像を開きました：${img.width}×${img.height} → ${W}×${H} px。解析を実行してください。`);}catch(e){setStatus(e.message);}finally{URL.revokeObjectURL(url);e.target.value='';}};
+$('caseFile').onchange=async e=>{let file=e.target.files[0];if(!file)return;try{if(file.size>40*1024*1024)throw Error('検査ファイルが大きすぎます');let c=JSON.parse(await file.text());if(c.schema!=='illustro-human-raster-case/0.1'||!Number.isInteger(c.width)||!Number.isInteger(c.height)||c.width<1||c.height<1||c.width>1600||c.height>1600||typeof c.raster!=='string'||!c.raster.startsWith('data:image/png;base64,'))throw Error('対応する検査データではありません');let img=await decodeImage(c.raster);setImage(img,c.width,c.height);$('gap').value=Math.max(0,Math.min(40,c.settings?.gap??12));$('mode').value=['none','balanced','conservative'].includes(c.settings?.mode)?c.settings.mode:'balanced';$('threshold').value=['normal','faint','strict'].includes(c.threshold)?c.threshold:'normal';blocked=Array.isArray(c.settings?.blocked)?c.settings.blocked.filter(x=>typeof x==='string'):[];$('notes').value=typeof c.notes==='string'?c.notes:'';setStatus('検査データを開きました。再解析して確認してください。');}catch(err){setStatus('開けませんでした：'+err.message);}finally{e.target.value='';}};
+function example(name){pushHistory();W=960;H=640;raster.width=canvas.width=colors.width=W;raster.height=canvas.height=colors.height=H;blocked=[];rctx.strokeStyle='#101010';rctx.lineWidth=4;rctx.lineCap='round';rctx.lineJoin='round';const path=pts=>{rctx.beginPath();rctx.moveTo(...pts[0]);for(const p of pts.slice(1))rctx.lineTo(...p);rctx.stroke();};
+ if(name==='tips'){path([[130,410],[90,130],[155,90],[210,130],[146,410]]);path([[285,408],[260,135],[320,95],[375,130],[303,408]]);path([[510,390],[470,155],[530,110],[590,155],[519,393]]);path([[740,400],[700,120],[825,120],[755,405]]);}
+ if(name==='t'){path([[120,120],[120,450],[420,450],[420,120],[120,120]]);path([[120,270],[410,270]]);path([[650,150],[850,150],[850,450],[650,450],[650,150]]);path([[650,300],[830,300]]);path([[750,160],[750,290]]);}
+ if(name==='nested'){for(const [x,y,r] of [[300,300,210],[300,300,110],[300,300,35]]){rctx.beginPath();rctx.arc(x,y,r,0,Math.PI*2);rctx.stroke();}path([[600,130],[870,130],[870,460],[600,460],[600,130]]);path([[600,295],[870,295]]);}
+ if(name==='pressure'){const points=[];for(let k=0;k<=300;k++){let t=k/300*Math.PI*2;points.push({x:300+180*Math.cos(t),y:300+180*Math.sin(t),pressure:.15+.85*(Math.sin(t)+1)/2});}let original=tool;tool='pen';$('brush').value=28;$('brushValue').textContent='28 px';for(let i=1;i<points.length;i++)stroke(points[i-1],points[i]);tool=original;rctx.lineWidth=2;for(let j=0;j<6;j++){rctx.beginPath();rctx.arc(610+j*36,260,3+j,0,Math.PI*2);rctx.stroke();}rctx.lineWidth=16;path([[610,410],[820,410],[820,445],[610,445],[610,410]]);}
+ dirty();$('view').value='original';fit();render();buttons();setStatus('見本を読み込みました。自由に描き加えて、解析してください。');}
+$('loadExample').onclick=()=>example($('example').value);
+document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();}else if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runAnalysis();}else if(!e.ctrlKey&&!e.metaKey){let map={b:'pen',e:'eraser',v:'inspect',h:'pan'};if(map[e.key.toLowerCase()])choose(map[e.key.toLowerCase()]);}});
+// Exposed only for reproducible structural/UI checks. No quality classifier is used.
+window.lab={engine,raster,runAnalysis,example,caseData,get result(){return result},get revision(){return revision},get busy(){return busy},get scale(){return scale}};
+fit();render();
+</script></body></html>
