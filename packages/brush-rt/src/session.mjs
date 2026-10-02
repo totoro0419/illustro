@@ -1,0 +1,24 @@
+import {CanonicalBuilder,Stabilizer,predict,taper,continuous,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
+import {makeDab} from '@legacy/dynamics';
+export class RealtimeSession {
+ constructor(renderer,workerUrl){this.renderer=renderer;this.worker=new Worker(workerUrl,{type:'module'});this.records=[];this.redoRecords=[];this.id=0;this.active=null;this.pending=[];this.resolvers=new Map;this.recordIds=new Map;this.prediction=true;this.browserPredictions=0;this.rawAccepted=0;this.lastRaw=null;this.errors=[];this.worker.onmessage=({data:m})=>{if(m.type==='commands'){this.renderer.document.append(m.id,m.preset,m.commands);}else if(m.type==='record'){this.renderer.document.end(m.id,m.record.preset);this.recordIds.set(m.id,m.record);this.records.push(m.record);this.resolvers.get(m.id)?.resolve(m.record);this.resolvers.delete(m.id);}else if(m.type==='error'){this.errors.push(m.message);this.resolvers.get(m.id)?.reject(Error(m.message));this.resolvers.delete(m.id);}};}
+ begin(p,fast=0){if(this.active)throw Error('stroke already active');const id=++this.id,seed=[0x12345678,id>>>0];this.active={id,preset:structuredClone(p),seed,fast,builder:new CanonicalBuilder(p,seed,fast),stablePending:[],points:[],raw:[],distance:0,start:0,predicted:[]};this.pending=[];this.redoRecords=[];this.worker.postMessage({type:'begin',id,preset:p,seed,fast});return id;}
+ accept(s){const a=this.active;if(!a||s.predicted)return;const last=a.raw.at(-1);if(last&&s.t<last.t)return;if(last&&s.t===last.t&&s.x===last.x&&s.y===last.y&&s.pressure===last.pressure)return;a.builder.accept(s);const q=a.builder.geometry.at(-1),prev=a.points.at(-1);a.stablePending.push(...a.builder.ready());if(prev)a.distance+=Math.hypot(q.x-prev.x,q.y-prev.y);else a.start=q.t;a.raw.push({...s});a.points.push(q);if(a.points.length>500000)throw Error('input retention limit');this.pending.push({...s});this.rawAccepted++;this.lastRaw=s;this.updateLive(performance.now());}
+ predictions(samples){if(!this.active)return;this.active.predicted=samples;this.browserPredictions+=samples.length;}
+ flush(){if(this.pending.length&&this.active){this.worker.postMessage({type:'samples',id:this.active.id,samples:this.pending});this.pending=[];}}
+ updateLive(now,finished=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
+  const total=b.distance,tail=b.commands.slice(b.published).slice(-64).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
+  const q=this.prediction&&!finished?predict(a.points.slice(-3),now,a.predicted):null;
+  if(q){const prev=a.points.at(-1),dir=Math.atan2(q.y-prev.y,q.x-prev.x),dab=makeDab(q,p,b.index,a.seed,total,Math.hypot(q.x-prev.x,q.y-prev.y)/Math.max(.001,(q.t-prev.t)/1000),dir,q.t-a.start),c=new Float64Array(STRIDE);c.set(dab);c[16]=continuous(p)?prev.x:q.x;c[17]=continuous(p)?prev.y:q.y;c[18]=dab[2]/2;c[19]=continuous(p)?1:0;c[20]=q.t;tail.push(c);}
+  this.renderer.setLive({id:a.id,preset:p,stableCommands:a.stablePending.slice(-64),commands:tail,tip:a.points.at(-1),previewTip:q??a.points.at(-1),predicted:!!q,rawTip:a.raw.at(-1),finished});
+ }
+
+ end(){const a=this.active;if(!a)return Promise.resolve(null);this.flush();a.stablePending.push(...a.builder.finish());this.updateLive(performance.now(),true);this.renderer.markEnded(a.id);this.worker.postMessage({type:'end',id:a.id});this.active=null;return new Promise((resolve,reject)=>{this.resolvers.set(a.id,{resolve,reject});}).then(record=>{this.renderer.needsFrame=true;return record;});}
+ async cancel(){if(!this.active)return;this.worker.postMessage({type:'cancel',id:this.active.id});this.active=null;this.pending=[];await this.rebuild();}
+ async rebuild(){await this.renderer.reset();for(const r of this.records){const id=++this.id;this.renderer.document.append(id,r.preset,r.commands);this.renderer.document.end(id,r.preset);}await this.renderer.drain();}
+ async undo(){if(this.active)await this.end();if(this.records.length)this.redoRecords.push(this.records.pop());await this.rebuild();}
+ async redo(){if(this.redoRecords.length)this.records.push(this.redoRecords.pop());await this.rebuild();}
+ export(){if(this.active||this.resolvers.size)throw Error('finish active strokes before export');return {format:'illustro-rt-document-2',width:this.renderer.document.width,height:this.renderer.document.height,strokes:this.records};}
+ async load(doc){if(doc.format!=='illustro-rt-document-2'||doc.width!==this.renderer.document.width||doc.height!==this.renderer.document.height||!Array.isArray(doc.strokes)||doc.strokes.length>10000)throw Error('unsupported document');const records=doc.strokes.map(validateRecord);this.records=records;this.redoRecords=[];await this.rebuild();}
+ destroy(){this.worker.terminate();this.renderer.destroy();}
+}

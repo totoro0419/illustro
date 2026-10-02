@@ -1,0 +1,66 @@
+name: Realtime Brush Candidate
+on:
+  push:
+    branches: ['brush/realtime-redesign-2026-10-03']
+    paths: ['packages/brush-rt/**', 'prototypes/brush-rt/**', 'docs/brush-rt/**', '.github/workflows/brush-rt-candidate.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: brush-rt-candidate
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build without third-party bundler
+        run: node prototypes/brush-rt/build.mjs
+      - name: Verify canonical data and scheduling
+        run: node --test packages/brush-rt/test/*.test.mjs
+      - name: Install browser test runtime
+        run: |
+          npm install --prefix /tmp/rt-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/rt-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: GPU shader, pixel, input and sustained proxy tests
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/rt-browser/node_modules/playwright
+          RT_LONG_TEST: '1'
+        run: node prototypes/brush-rt/browser-check.mjs | tee docs/brush-rt/evidence/browser-console.txt
+      - name: Preserve evidence including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brush-rt-evidence
+          path: docs/brush-rt/evidence
+      - name: Preserve existing architecture harness and add brush candidate
+        if: always()
+        run: |
+          cd prototypes/p0-architecture
+          npm install --no-audit --no-fund
+          npm run build:pages
+          mkdir -p dist/brush-rt
+          cp ../brush-rt/dist/illustro-brush-rt.html dist/brush-rt/index.html
+          cp -R ../../docs/brush-rt/evidence dist/brush-rt/evidence
+      - uses: actions/configure-pages@v5
+        if: always()
+      - uses: actions/upload-pages-artifact@v4
+        if: always()
+        with:
+          path: prototypes/p0-architecture/dist
+  deploy:
+    if: always()
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

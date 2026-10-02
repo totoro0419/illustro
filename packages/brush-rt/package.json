@@ -1,0 +1,1 @@
+{"name":"@illustro/brush-rt","private":true,"type":"module","version":"0.1.0","scripts":{"build":"node ../../prototypes/brush-rt/build.mjs","test":"node --test test/*.test.mjs","browser":"node ../../prototypes/brush-rt/browser-check.mjs"}}
