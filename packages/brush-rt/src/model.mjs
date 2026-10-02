@@ -3,7 +3,7 @@ import {makeDab,curve} from '@legacy/dynamics';
 import {validatePreset} from '@legacy/record';
 import {coverage} from '@legacy/coverage';
 
-export const VERSION='illustro-rt-2.2';
+export const VERSION='illustro-rt-2.3';
 export const STRIDE=24;
 export const TILE=128;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
@@ -19,7 +19,7 @@ export class Stabilizer {
   const dir=len>0?[dx/len,dy/len]:this.direction;
   const corner=!!(len>6&&dir&&this.direction&&dir[0]*this.direction[0]+dir[1]*this.direction[1]<.5);
   if(corner)this.window=[];
-  this.window.push(q); this.window=this.window.filter(a=>q.t-a.t<=24).slice(-8);
+  this.window.push(q); const period=this.last?Math.max(0,q.t-this.last.t):0,horizon=Math.max(24,Math.min(48,period*2.1));this.window=this.window.filter(a=>q.t-a.t<=horizon).slice(-8);
   const speed=this.last?len/Math.max(1,q.t-this.last.t):0;
   const strength=clamp(this.p.stabilization+this.fast*clamp(speed/2));
   let x=q.x,y=q.y;
@@ -65,7 +65,7 @@ export class CanonicalBuilder {
  emit(q,a,speed,dir){if(this.commands.length>=2000000)throw Error('command limit');const dab=makeDab(q,this.p,this.index++,this.seed,this.distance,speed,dir,q.t-this.start);const c=new Float64Array(STRIDE);c.set(dab);c[16]=a?.x??q.x;c[17]=a?.y??q.y;c[18]=a?this.lastRadius:dab[2]/2;c[19]=this.solid?1:0;c[20]=q.t;c[21]=this.distance;c[22]=a?this.lastDistance:this.distance;c[23]=dab[2]/2;this.lastRadius=dab[2]/2;this.lastDistance=this.distance;this.spacing=dab[2]*dab[14];this.commands.push(c);}
  ready(finish=false){let n=this.published;while(n<this.commands.length&&(finish||this.commands[n][21]<=this.distance-this.p.taperEnd))n++;const out=[];for(;this.published<n;this.published++){const c=this.commands[this.published].slice();c[2]*=taper(this.p,c[21],this.distance,finish);c[18]*=taper(this.p,c[22],this.distance,finish);out.push(c);}return out;}
  finish(){if(this.finished)throw Error('closed');this.finished=true;return this.ready(true);}
- record(){if(!this.finished)throw Error('not finalized');return {version:2,engine:VERSION,smoothing:'local-regression-24ms-bounded-1',fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;})};}
+ record(){if(!this.finished)throw Error('not finalized');return {version:2,engine:VERSION,smoothing:'local-regression-adaptive-48ms-bounded-2',fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;})};}
 }
 export function commandBounds(c){const solid=c[19]===1,r=Math.max(c[2]/2,c[18])*(solid?1:Math.SQRT2)+2,ax=solid?c[16]:c[0],ay=solid?c[17]:c[1];return {x0:Math.min(c[0],ax)-r,y0:Math.min(c[1],ay)-r,x1:Math.max(c[0],ax)+r,y1:Math.max(c[1],ay)+r};}
 export function keysFor(c,width,height){const b=commandBounds(c),out=[];for(let y=Math.max(0,Math.floor(b.y0/TILE));y<=Math.min(Math.ceil(height/TILE)-1,Math.floor(b.y1/TILE));y++)for(let x=Math.max(0,Math.floor(b.x0/TILE));x<=Math.min(Math.ceil(width/TILE)-1,Math.floor(b.x1/TILE));x++)out.push(x+','+y);return out;}
@@ -77,7 +77,7 @@ export function cpuReference(record,width,height,base=new Uint8ClampedArray(widt
  const out=base.slice();for(let i=0;i<out.length;i+=4){const sa=accum[i+3],da=base[i+3]/255;if(!sa)continue;if(p.blend==='erase'){out[i+3]=Math.round(da*(1-sa)*255);if(!out[i+3])out[i]=out[i+1]=out[i+2]=0;continue;}const a=sa+da*(1-sa);for(let j=0;j<3;j++){const s=accum[i+j]/sa,d=base[i+j]/255,b=p.blend==='multiply'?s*d:p.blend==='screen'?1-(1-s)*(1-d):s;out[i+j]=Math.round(clamp(((1-sa)*da*d+(1-da)*sa*s+sa*da*b)/a)*255);}out[i+3]=Math.round(a*255);if(!out[i+3])out[i]=out[i+1]=out[i+2]=0;}return out;
 }
 export class LatestMailbox{constructor(){this.value=null;this.revision=0;this.obsolete=0;}set(v){if(this.value)this.obsolete++;this.value={...v,revision:++this.revision};}take(){const v=this.value;this.value=null;return v;}}
-export function validateRecord(r){if(!r||r.version!==2||r.engine!==VERSION||r.random!=='philox4x32-10'||r.smoothing!=='local-regression-24ms-bounded-1'||!Array.isArray(r.raw)||r.raw.length>500000)throw Error('unsupported record');validatePreset(r.preset);const b=new CanonicalBuilder(r.preset,r.seed,r.fast);for(const s of r.raw)b.accept(s);b.finish();const regenerated=b.record();if(JSON.stringify(regenerated.geometry)!==JSON.stringify(r.geometry)||JSON.stringify(regenerated.commands)!==JSON.stringify(r.commands))throw Error('record replay mismatch');return regenerated;}
+export function validateRecord(r){if(!r||r.version!==2||r.engine!==VERSION||r.random!=='philox4x32-10'||r.smoothing!=='local-regression-adaptive-48ms-bounded-2'||!Array.isArray(r.raw)||r.raw.length>500000)throw Error('unsupported record');validatePreset(r.preset);const b=new CanonicalBuilder(r.preset,r.seed,r.fast);for(const s of r.raw)b.accept(s);b.finish();const regenerated=b.record();if(JSON.stringify(regenerated.geometry)!==JSON.stringify(r.geometry)||JSON.stringify(regenerated.commands)!==JSON.stringify(r.commands))throw Error('record replay mismatch');return regenerated;}
 
 export function solidTileCovered(c,key){
  if(c[19]!==1||c[18]!==c[2]/2||c[18]<1)return false;
