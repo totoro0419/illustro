@@ -26,7 +26,10 @@ jobs:
       - run: npm run brush:benchmark
       - run: npx playwright-core install --with-deps chromium
       - run: npm run brush:latency
+      - run: npm run brush:thick
       - run: npm run brush:throughput
+      - run: npm run brush:overload
+      - run: npm run brush:paced
       - run: npm run brush:browser
       - uses: actions/upload-artifact@v7
         if: always()

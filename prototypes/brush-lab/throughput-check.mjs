@@ -104,6 +104,7 @@ for (const id of ["clean-ink", "rough-pencil"])
           document.getElementById("live") ?? document.getElementById("draw")
         ).getContext("webgl2");
         l.begin();
+        g.bindFramebuffer(g.FRAMEBUFFER, null);
         g.finish();
         g.readPixels(0, 0, 1, 1, g.RGBA, g.UNSIGNED_BYTE, new Uint8Array(4));
         window.__gpuWork = window.__resetGPUWork();
@@ -121,6 +122,7 @@ for (const id of ["clean-ink", "rough-pencil"])
           tipGap = Math.max(tipGap, Math.hypot(q.x - x, q.y - y));
         }
         const sent = performance.now() - start;
+        g.bindFramebuffer(g.FRAMEBUFFER, null);
         g.finish();
         g.readPixels(0, 0, 1, 1, g.RGBA, g.UNSIGNED_BYTE, new Uint8Array(4));
         const complete = performance.now() - start,
@@ -159,10 +161,12 @@ for (const size of [16, 128, 512]) {
       document.getElementById("live") ?? document.getElementById("draw")
     ).getContext("webgl2");
     l.begin();
+    g.bindFramebuffer(g.FRAMEBUFFER, null);
     const windows = [];
     let times = [];
     for (let i = 0; i < 4096; i++) {
       if (i === 256 || i === 3968) {
+        g.bindFramebuffer(g.FRAMEBUFFER, null);
         g.finish();
         g.readPixels(0, 0, 1, 1, g.RGBA, g.UNSIGNED_BYTE, new Uint8Array(4));
         window.__gpuWork = window.__resetGPUWork();
@@ -180,6 +184,7 @@ for (const size of [16, 128, 512]) {
         times.push(performance.now() - start);
       if (i === 383 || i === 4095) {
         const waitStart = performance.now();
+        g.bindFramebuffer(g.FRAMEBUFFER, null);
         g.finish();
         g.readPixels(0, 0, 1, 1, g.RGBA, g.UNSIGNED_BYTE, new Uint8Array(4));
         const wait = performance.now() - waitStart,

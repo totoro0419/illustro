@@ -34,14 +34,17 @@ liveCanvas.height = H;
 liveCanvas.id = "live";
 diagnosticCanvas.before(liveCanvas);
 let immediate: ImmediateRenderer | ImmediateCPU;
+let rendererFailure = "";
 try {
   immediate = new ImmediateRenderer(liveCanvas);
+  immediate.warm(PRESETS[0]!);
   diagnosticCanvas.id = "diagnostics";
   diagnosticCanvas.hidden = true;
   liveCanvas.id = "draw";
   liveCanvas.setAttribute("aria-label", "描画用の検証キャンバス");
   canvas = liveCanvas;
-} catch {
+} catch (error) {
+  rendererFailure = String(error);
   liveCanvas.remove();
   immediate = new ImmediateCPU(canvas);
 }
@@ -173,6 +176,7 @@ function lock(on: boolean) {
     on || auto || completedSequence !== sequence || !redo.length;
 }
 function abort() {
+  cancelPresent();
   active?.cancel();
   active = null;
   pointer = null;
@@ -223,11 +227,12 @@ function choices() {
   }
 }
 function load(p: Preset) {
+  if (immediate instanceof ImmediateRenderer) immediate.prepare(p);
   basePreset = p;
   el("purpose").textContent = p.purpose;
   for (const key of ["size", "opacity", "flow", "stabilization"] as const) {
     input(key).value = String(p[key]);
-    input(key + "Number").value = input(key).value;
+    input(key + "Number").value = String(p[key]);
   }
   input("pressureCurve").value = "default";
   input("tip").value = p.tip;
@@ -321,25 +326,91 @@ function accept(s: Sample) {
       (Math.hypot(s.x - previous.x, s.y - previous.y) / (s.t - previous.t)) *
       1000;
   previous = s;
-  received = performance.now();
+  received = latestDisplayReceived = performance.now();
+  if (!oldestReceived) oldestReceived = received;
   keep(telemetry.processing, performance.now() - start);
 }
-function present() {
-  if (!active || !received) return;
+let presentTimer: ReturnType<typeof setTimeout> | undefined;
+let oldestReceived = 0;
+let latestDisplayReceived = 0;
+let presentationObserver:
+  | ((
+      oldest: number,
+      latest: number,
+      inputTime: number,
+      refinement: boolean,
+    ) => void)
+  | undefined;
+function cancelPresent() {
+  if (presentTimer !== undefined) clearTimeout(presentTimer);
+  presentTimer = undefined;
+  oldestReceived = 0;
+}
+// force is a test-only escape for independent snapshots and isolated throughput.
+function present(force = true) {
+  if (
+    !active ||
+    (!received &&
+      !(immediate instanceof ImmediateRenderer && immediate.hasPendingCommit))
+  )
+    return;
+  if (
+    !force &&
+    immediate instanceof ImmediateRenderer &&
+    !immediate.canPresent()
+  ) {
+    if (presentTimer === undefined)
+      presentTimer = setTimeout(() => {
+        presentTimer = undefined;
+        try {
+          present(false);
+        } catch (error) {
+          fail(error);
+        }
+      }, 0);
+    return;
+  }
+  if (presentTimer !== undefined) {
+    clearTimeout(presentTimer);
+    presentTimer = undefined;
+  }
   const start = performance.now();
   active.publishStable();
-  immediate.present(active.preview());
+  const preview = active.preview();
+  if (immediate instanceof ImmediateRenderer) immediate.present(preview, force);
+  else immediate.present(preview);
+  presentationObserver?.(
+    oldestReceived || received || latestDisplayReceived,
+    received || latestDisplayReceived,
+    previous?.t ?? 0,
+    !received,
+  );
   if (input("raw").checked || input("processed").checked) paint(image);
   keep(telemetry.render, performance.now() - start);
-  keep(telemetry.receiveToRAF, performance.now() - received);
-  received = 0;
+  if (received) keep(telemetry.receiveToRAF, performance.now() - received);
+  received = oldestReceived = 0;
+  if (
+    !force &&
+    immediate instanceof ImmediateRenderer &&
+    immediate.hasPendingCommit
+  )
+    presentTimer = setTimeout(() => {
+      presentTimer = undefined;
+      try {
+        present(false);
+      } catch (error) {
+        fail(error);
+      }
+    }, 0);
 }
 function finish() {
   if (!active) return;
+  cancelPresent();
   const start = performance.now();
   active.finish();
   const record = active.record();
-  immediate.finish();
+  if (immediate instanceof ImmediateRenderer) immediate.finish(false);
+  else immediate.finish();
   active = null;
   records.push(record);
   redo = [];
@@ -412,7 +483,7 @@ function frame(now: number) {
       active.expose(Math.max(previous?.t ?? 0, now));
       if (active.metrics.commands !== before) {
         received = performance.now();
-        present();
+        present(false);
       }
     }
   } catch (e) {
@@ -450,7 +521,7 @@ function intake(e: PointerEvent) {
       }),
     });
   }
-  present();
+  present(false);
 }
 surface.addEventListener("pointerdown", (e) => {
   if (pointer !== null || auto || e.button !== 0) return;
@@ -729,7 +800,7 @@ async function sustained(duration = 180000) {
             pointerType: "pen",
           });
         }
-        present();
+        present(false);
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
       }
       finish();
@@ -775,6 +846,15 @@ requestAnimationFrame(frame);
     active: !!active,
     release: completedSequence !== sequence,
     renderer: rendererKind,
+    rendererFailure,
+    livePending:
+      !!active &&
+      (!!received ||
+        (immediate instanceof ImmediateRenderer && immediate.hasPendingCommit)),
+    pipeline:
+      immediate instanceof ImmediateRenderer
+        ? immediate.pipeline
+        : { inFlight: 0, coalesced: 0, paced: false },
     desynchronized:
       immediate instanceof ImmediateRenderer
         ? immediate.gl.getContextAttributes()?.desynchronized
@@ -789,6 +869,9 @@ requestAnimationFrame(frame);
   begin,
   accept,
   present,
+  observePresentation(observer: typeof presentationObserver) {
+    presentationObserver = observer;
+  },
   finish,
   abort,
   settled,
