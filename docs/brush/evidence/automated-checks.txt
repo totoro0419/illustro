@@ -1,0 +1,31 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:check
+> npm run brush:typecheck && npm run brush:test && npm run core:check
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:typecheck
+> npm --workspace @illustro/brush run typecheck
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> @illustro/brush@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:test
+> npm --workspace @illustro/brush run test
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> @illustro/brush@0.1.0 test
+> vitest run
+
+
+Captured follow-up terminal result (the initial redirected log ended before the test report):
+npm run brush:check — exit 0
+Brush TypeScript PASS. Brush tests: 2 files, 163 passed, start 21:58:04, duration 29.46s.
+Core TypeScript PASS. Core tests: 8 files, 8 passed, start 21:58:34, duration 394ms.
+Includes latest-endpoint moving/held-airbrush regression and async Core stale/cancel/yield checks.

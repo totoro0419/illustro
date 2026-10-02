@@ -2,10 +2,28 @@
   "name": "illustro",
   "private": true,
   "version": "0.0.0",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "core:typecheck": "npm --workspace @illustro/core run typecheck",
     "core:test": "npm --workspace @illustro/core run test",
-    "core:check": "npm run core:typecheck && npm run core:test"
+    "core:check": "npm run core:typecheck && npm run core:test",
+    "brush:typecheck": "npm --workspace @illustro/brush run typecheck",
+    "brush:test": "npm --workspace @illustro/brush run test",
+    "brush:lab": "node prototypes/brush-lab/build.mjs",
+    "brush:benchmark": "node prototypes/brush-lab/build-benchmark.mjs && node --expose-gc benchmark-dist/benchmark.mjs",
+    "brush:browser": "node prototypes/brush-lab/browser-check.mjs",
+    "brush:check": "npm run brush:typecheck && npm run brush:test && npm run core:check",
+    "brush:atlas": "node prototypes/brush-lab/build-atlas.mjs",
+    "brush:latency": "node prototypes/brush-lab/latency-check.mjs",
+    "brush:throughput": "BRUSH_THROUGHPUT_VERIFY=1 node prototypes/brush-lab/throughput-check.mjs",
+    "brush:thick": "node prototypes/brush-lab/thick-check.mjs",
+    "brush:paced": "node prototypes/brush-lab/paced-check.mjs",
+    "brush:overload": "node prototypes/brush-lab/overload-check.mjs"
+  },
+  "devDependencies": {
+    "vite": "8.3.1",
+    "playwright-core": "1.63.0"
   }
 }

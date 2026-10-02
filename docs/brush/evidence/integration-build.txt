@@ -1,0 +1,15 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:lab
+> node prototypes/brush-lab/build.mjs
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 17 modules transformed.
+rendering chunks...
+computing gzip size...
+prototypes/brush-lab/dist/index.html                 8.51 kB │ gzip:  3.47 kB
+prototypes/brush-lab/dist/assets/index-CM0_g7ra.js  48.33 kB │ gzip: 18.30 kB
+
+✓ built in 66ms
+Built offline HTML
