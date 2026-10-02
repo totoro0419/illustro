@@ -74,7 +74,7 @@ forced-GC input workload heap before 7,231,336bytes / after 7,522,064bytes。obs
 
 ## 9. 再現・レビュー用ファイル
 
-[README](README.md)のコマンドで再実行。[オフラインラボ](../../prototypes/brush-lab/illustro-brush-lab.html)、[desktop](evidence/browser-desktop.png)、[mobile](evidence/browser-mobile.png)。日本語inspection fontは出荷物と計測から独立。CI定義を追加したが、GitHub Actionsの実行結果はローカルPASSとは別に確認する。dd35のCIではvitestが解決できず失敗した。lockに一時workspaceへの相対リンクが入っていたため、通常のregistry依存として作り直し、クリーンインストール後の167件と8件、型・buildを検査した。生成HTMLは3分試験したファイルとbyte一致した。修正後CIの結果はまだ未確認。
+[README](README.md)のコマンドで再実行。[オフラインラボ](../../prototypes/brush-lab/illustro-brush-lab.html)、[desktop](evidence/browser-desktop.png)、[mobile](evidence/browser-mobile.png)。日本語inspection fontは出荷物と計測から独立。mobile画像はinspection fontを加えた別の画面確認で撮り直し、文字と線を視認した。CI定義を追加したが、GitHub Actionsの実行結果はローカルPASSとは別に確認する。dd35のCIではvitestが解決できず失敗した。lockに一時workspaceへの相対リンクが入っていたため、通常のregistry依存として作り直し、クリーンインストール後の167件と8件、型・buildを検査した。生成HTMLは3分試験したファイルとbyte一致した。修正後の実装コミット `ad3258d28451613e0353947cf260da048914660a` では [Brush CI](https://github.com/totoro0419/illustro/actions/runs/36989102014) と [Core CI](https://github.com/totoro0419/illustro/actions/runs/36989102039) が成功。型・単体/統合・P0・build・benchmark・3分を含むブラウザ検査がリモートでも通った。これは競合への総合優位や実機認証ではない。
 
 ## 10. 完成条件と残作業
 

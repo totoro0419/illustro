@@ -7,5 +7,8 @@
   "cause": "package-lock linked dependencies to an earlier scratch workspace",
   "fix": "regenerated registry lock and verified npm ci; no external scratch dependencies",
   "localAfterFix": "167 Brush and 8 Core tests PASS, typechecks PASS, rebuilt offline HTML byte-identical to browser-tested artifact",
-  "remoteAfterFix": "PENDING"
+  "remoteAfterFix": "PASS",
+  "verifiedCommit": "ad3258d28451613e0353947cf260da048914660a",
+  "verifiedBrushRun": 36989102014,
+  "verifiedCoreRun": 36989102039
 }
