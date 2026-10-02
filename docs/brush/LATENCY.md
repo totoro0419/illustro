@@ -40,3 +40,7 @@ native入力の測定値は「入力の受取→描画命令の送信」であ�
 追加の通常ブラウザ検査17項目もPASS。3分の定期240Hz入力は180312ms、42478入力、36線、script error 0。描画送信p95は0.4ms、max 11.3ms。frame間隔p95は33.2ms、max 133.4msであり、このsoftware GPU環境が常時60/120Hzで表示できたという結果ではない。[3分の記録](evidence/browser-sustained.json)。送信時間とframe間隔を分けて評価する。
 
 物理ペン、実GPUでのqueue滞留・pen-to-photon、高リフレッシュレート、4K文書、4096px先端、端末別の長時間性能は未確認。GLへの即時送信だけで画面までの低遅延を認証しない。製品のLayer/Selection/UIへの統合と、主要アプリとの同条件比較も未完了。
+
+## 検証コードの実行費用
+
+最初のリモートCIでは既存の全画素deep equalityが5秒の上限に当たった。全7先端・48条件・96×96の走査とbyte比較を維持し、配列の長さと最初の不一致を直接検査する形に変えた。timeoutは引き上げていない。Brushの169件は約8秒でPASSし、Coreの8件もPASS。[再実行ログ](evidence/latency-unit-checks.txt)。描画コードとオフラインHTMLはこの検証コード修正で変えていない。

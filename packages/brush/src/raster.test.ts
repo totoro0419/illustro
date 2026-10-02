@@ -71,7 +71,14 @@ describe("tip bounds independent reference", () => {
               const reference = new StrokeRaster(96, 96, 16);
               for (let y = 0; y < 96; y++)
                 for (let x = 0; x < 96; x++) reference.deposit(d, 0, x, y, p);
-              expect(bytes(actual, p)).toEqual(bytes(reference, p));
+              const observed = bytes(actual, p),
+                expected = bytes(reference, p);
+              expect(observed.length).toBe(expected.length);
+              const mismatch = observed.findIndex((v, i) => v !== expected[i]);
+              expect(
+                mismatch,
+                `${kind}: size=${size}, aspect=${aspect}, angle=${angle}`,
+              ).toBe(-1);
             }
       },
     );
