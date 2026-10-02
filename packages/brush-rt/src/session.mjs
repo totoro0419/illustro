@@ -6,6 +6,7 @@ export class RealtimeSession {
  accept(s){const a=this.active;if(!a||s.predicted)return;const last=a.raw.at(-1);if(last&&s.t<last.t)return;if(last&&s.t===last.t&&s.x===last.x&&s.y===last.y&&s.pressure===last.pressure)return;a.builder.accept(s);const q=a.builder.geometry.at(-1),prev=a.points.at(-1);a.stablePending.push(...a.builder.ready());if(prev)a.distance+=Math.hypot(q.x-prev.x,q.y-prev.y);else a.start=q.t;a.raw.push({...s});a.points.push(q);if(a.points.length>500000)throw Error('input retention limit');this.pending.push({...s});this.rawAccepted++;this.lastRaw=s;this.updateLive(performance.now());}
  predictions(samples){if(!this.active)return;this.active.predicted=samples;this.browserPredictions+=samples.length;}
  flush(){if(this.pending.length&&this.active){this.worker.postMessage({type:'samples',id:this.active.id,samples:this.pending});this.pending=[];}}
+ frame(now){this.flush();this.updateLive(now);return this.renderer.frame(now);}
  updateLive(now,finished=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
   const total=b.distance,tail=b.commands.slice(b.published).slice(-64).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
   const q=this.prediction&&!finished?predict(a.points.slice(-3),now,a.predicted):null;
