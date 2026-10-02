@@ -3,7 +3,7 @@ import {makeDab,curve} from '@legacy/dynamics';
 import {validatePreset} from '@legacy/record';
 import {coverage} from '@legacy/coverage';
 
-export const VERSION='illustro-rt-2';
+export const VERSION='illustro-rt-2.1';
 export const STRIDE=24;
 export const TILE=128;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
@@ -51,16 +51,19 @@ export function predict(points,now,browser=[]){
 export function taper(p,d,total,finished){let f=1;if(p.taperStart)f=Math.min(f,clamp(d/p.taperStart,p.taperMinimum));if(finished&&p.taperEnd)f=Math.min(f,clamp((total-d)/p.taperEnd,p.taperMinimum));return f;}
 export class CanonicalBuilder {
  constructor(p,seed=[0x12345678,0x9abcdef0],fast=0){validatePreset(p);if(!Number.isFinite(fast)||fast<0||fast>1)throw Error('invalid fast stabilization');if(!Array.isArray(seed)||seed.length!==2||seed.some(x=>!Number.isInteger(x)||x<0||x>0xffffffff))throw Error('invalid seed');this.p=structuredClone(p);this.seed=[...seed];this.fast=fast;this.filter=new Stabilizer(p,fast);this.raw=[];this.geometry=[];this.commands=[];this.distance=0;this.index=0;this.carry=0;this.finished=false;this.published=0;this.solid=continuous(p);}
- accept(s){if(this.finished)throw Error('closed');if(s.predicted)throw Error('prediction cannot be canonical');if(this.raw.length>=500000)throw Error('input limit');const q=this.filter.accept(s),a=this.geometry.at(-1);this.raw.push({...s});this.geometry.push(q);if(!a){this.start=q.t;this.emit(q,null,0,0);return;}const len=Math.hypot(q.x-a.x,q.y-a.y),speed=len/Math.max(.001,(q.t-a.t)/1000),dir=Math.atan2(q.y-a.y,q.x-a.x);
+ accept(s){if(this.finished)throw Error('closed');if(s.predicted)throw Error('prediction cannot be canonical');if(this.raw.length>=500000)throw Error('input limit');const q=this.filter.accept(s),a=this.geometry.at(-1);this.raw.push({...s});this.geometry.push(q);if(!a){this.start=q.t;this.nextExposure=q.t+this.p.exposureMs;this.emit(q,null,0,0);return;}const len=Math.hypot(q.x-a.x,q.y-a.y),speed=len/Math.max(.001,(q.t-a.t)/1000),dir=Math.atan2(q.y-a.y,q.x-a.x);
  if(this.solid){this.distance+=len;this.emit(q,a,speed,dir);return;}
- let traveled=0;
- while(traveled<len){const step=Math.max(.25,this.spacing??this.p.size*this.p.spacing),needed=step-this.carry;if(len-traveled<needed){this.carry+=len-traveled;break;}traveled+=needed;this.carry=0;const f=traveled/Math.max(.001,len);this.distance+=needed;const r={...q,x:a.x+(q.x-a.x)*f,y:a.y+(q.y-a.y)*f,p:a.p+(q.p-a.p)*f,t:a.t+(q.t-a.t)*f,tilt:a.tilt+(q.tilt-a.tilt)*f,azimuth:a.azimuth+(q.azimuth-a.azimuth)*f,twist:a.twist+(q.twist-a.twist)*f};this.emit(r,null,speed,dir);}
- // Arc length is independent of resampling; carry is part of the next interval.
- this.distance=this.geometryDistance=(this.geometryDistance??0)+len;
- if(len===0&&q.p!==a.p)this.emit(q,null,0,dir);
+ const startDistance=this.geometryDistance??0,dt=q.t-a.t;let traveled=0;
+ const at=f=>({...q,x:a.x+(q.x-a.x)*f,y:a.y+(q.y-a.y)*f,p:a.p+(q.p-a.p)*f,t:a.t+dt*f,tilt:a.tilt+(q.tilt-a.tilt)*f,azimuth:a.azimuth+(q.azimuth-a.azimuth)*f,twist:a.twist+(q.twist-a.twist)*f});
+ // Distance and elapsed-time deposits are ordered by two actual input timestamps.
+ // Derived time deposits are deterministic commands, never predicted input.
+ while(true){const step=Math.max(.25,this.spacing??this.p.size*this.p.spacing),needed=Math.max(0,step-this.carry),spatial=len>0?(traveled+needed)/len:Infinity,temporal=this.p.exposureMs>0&&dt>0?(this.nextExposure-a.t)/dt:Infinity,f=Math.min(spatial,temporal);if(!Number.isFinite(f)||f>1)break;this.distance=startDistance+len*f;this.emit(at(f),null,speed,dir);if(spatial<=temporal){traveled+=needed;this.carry=0;}else this.nextExposure+=this.p.exposureMs;}
+ this.carry+=len-traveled;this.distance=this.geometryDistance=startDistance+len;
+ if(len===0&&q.p!==a.p&&this.commands.at(-1)?.[20]!==q.t)this.emit(q,null,0,dir);
  }
+
  emit(q,a,speed,dir){if(this.commands.length>=2000000)throw Error('command limit');const dab=makeDab(q,this.p,this.index++,this.seed,this.distance,speed,dir,q.t-this.start);const c=new Float64Array(STRIDE);c.set(dab);c[16]=a?.x??q.x;c[17]=a?.y??q.y;c[18]=a?this.lastRadius:dab[2]/2;c[19]=this.solid?1:0;c[20]=q.t;c[21]=this.distance;c[22]=a?this.lastDistance:this.distance;c[23]=dab[2]/2;this.lastRadius=dab[2]/2;this.lastDistance=this.distance;this.spacing=dab[2]*dab[14];this.commands.push(c);}
- ready(finish=false){const end=finish?this.commands.length:this.commands.findIndex((c,i)=>i>=this.published&&c[21]>this.distance-this.p.taperEnd);const n=end<0?this.commands.length:end;const out=[];for(;this.published<n;this.published++){const c=this.commands[this.published].slice();c[2]*=taper(this.p,c[21],this.distance,finish);c[18]*=taper(this.p,c[22],this.distance,finish);out.push(c);}return out;}
+ ready(finish=false){let n=this.published;while(n<this.commands.length&&(finish||this.commands[n][21]<=this.distance-this.p.taperEnd))n++;const out=[];for(;this.published<n;this.published++){const c=this.commands[this.published].slice();c[2]*=taper(this.p,c[21],this.distance,finish);c[18]*=taper(this.p,c[22],this.distance,finish);out.push(c);}return out;}
  finish(){if(this.finished)throw Error('closed');this.finished=true;return this.ready(true);}
  record(){if(!this.finished)throw Error('not finalized');return {version:2,engine:VERSION,smoothing:'local-regression-24ms-bounded-1',fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;})};}
 }

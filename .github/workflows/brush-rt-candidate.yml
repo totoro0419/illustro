@@ -12,14 +12,16 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Build without third-party bundler
-        run: node prototypes/brush-rt/build.mjs
+      - name: Check syntax and build without third-party bundler
+        run: |
+          for source in packages/brush-rt/src/*.mjs prototypes/brush-rt/*.mjs; do node --check "$source"; done
+          node prototypes/brush-rt/build.mjs
       - name: Verify canonical data and scheduling
         run: node --test packages/brush-rt/test/*.test.mjs
       - name: Install browser test runtime

@@ -17,3 +17,10 @@ await fs.writeFile(path.join(out,'illustro-brush-rt.html'),html);
 // Node tests use the same source transpilation without browser-specific import maps.
 for(const [id,code]of sources){const target=path.join(out,id.slice(1)+'.mjs');await fs.mkdir(path.dirname(target),{recursive:true});const local=code.replace(/from\s+["'](@(?:rt|legacy)\/[\w-]+)["']/g,(_,dep)=>`from '${path.relative(path.dirname(target),path.join(out,dep.slice(1)+'.mjs')).replaceAll('\\','/').replace(/^(?!\.)/,'./')}'`);await fs.writeFile(target,local);}
 console.log('Built self-contained HTML:',(await fs.stat(path.join(out,'illustro-brush-rt.html'))).size,'bytes');
+
+const bundle=await fs.readFile(path.join(out,'illustro-brush-rt.html'));
+const {createHash}=await import('node:crypto');
+const blobHash=createHash('sha1').update(Buffer.from('blob '+bundle.length+'\\0')).update(bundle).digest('hex');
+const encoded=bundle.toString('base64');
+console.log('RT_BUNDLE_META:'+JSON.stringify({bytes:bundle.length,base64Length:encoded.length,blobHash}));
+for(let i=0;i<encoded.length;i+=4000)console.log('RT_BUNDLE:'+i+':'+encoded.slice(i,i+4000));

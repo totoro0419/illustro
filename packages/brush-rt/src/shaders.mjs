@@ -36,7 +36,7 @@ export const glLive=`#version 300 es
 precision highp float;precision highp int;
 uniform vec4 params[16];uniform sampler2D maskImage,grainImage;flat in vec4 oa,ob,oc,oe,os;out vec4 result;
 ${glMath}
-void main(){vec2 xy=vec2(gl_FragCoord.x,params[5].y-gl_FragCoord.y)*params[4].xy/params[5].xy;float k=cov(oa,ob,oc,oe,os,xy)*ob.z;float a=ob.y*k;result=vec4(oc.rgb*a,a);}`;
+void main(){vec2 xy=vec2(gl_FragCoord.x,params[5].y-gl_FragCoord.y)*params[4].xy/params[5].xy;float k=cov(oa,ob,oc,oe,os,xy)*ob.z;if(params[0].w==1.&&k<1.)discard;float a=ob.y*k;result=vec4(oc.rgb*a,a);}`;
 export const glDisplayVertex=`#version 300 es
 uniform vec4 params[16];out vec2 doc;
 void main(){vec2 corner=vec2((gl_VertexID==1||gl_VertexID==2||gl_VertexID==4)?1.:0.,(gl_VertexID==2||gl_VertexID==4||gl_VertexID==5)?1.:0.);doc=params[0].xy+corner*128.;vec2 p=doc/params[4].xy;gl_Position=vec4(p.x*2.-1.,1.-p.y*2.,0,1);}`;
@@ -95,7 +95,8 @@ struct Params{v:array<vec4f,16>};struct Commands{v:array<vec4f>};
 ${wgMath}
 struct VOut{@builtin(position)position:vec4f,@location(0)@interpolate(flat)a:vec4f,@location(1)@interpolate(flat)b:vec4f,@location(2)@interpolate(flat)c:vec4f,@location(3)@interpolate(flat)e:vec4f,@location(4)@interpolate(flat)s:vec4f};
 @vertex fn vertex(@builtin(vertex_index)v:u32,@builtin(instance_index)n:u32)->VOut{let a=commands.v[n*6u];let s=commands.v[n*6u+4u];let corner=vec2f(select(0.,1.,v==1u||v==2u||v==4u),select(0.,1.,v==2u||v==4u||v==5u));let r=max(a.z*.5,s.z)*1.414213562+2.;let xy=mix(min(a.xy,s.xy)-r,max(a.xy,s.xy)+r,corner)/p.v[4].xy;var o:VOut;o.position=vec4f(xy.x*2.-1.,1.-xy.y*2.,0,1);o.a=a;o.b=commands.v[n*6u+1u];o.c=commands.v[n*6u+2u];o.e=commands.v[n*6u+3u];o.s=s;return o;}
-@fragment fn fragment(v:VOut)->@location(0)vec4f{let xy=v.position.xy*p.v[4].xy/p.v[5].xy;let k=cov(v.a,v.b,v.c,v.e,v.s,xy)*v.b.z;let a=v.b.y*k;return vec4f(v.c.rgb*a,a);}`;
+@fragment fn fragment(v:VOut)->@location(0)vec4f{let xy=v.position.xy*p.v[4].xy/p.v[5].xy;let k=cov(v.a,v.b,v.c,v.e,v.s,xy)*v.b.z;let a=v.b.y*k;return vec4f(v.c.rgb*a,a);}
+@fragment fn fragmentOpaque(v:VOut)->@location(0)vec4f{let xy=v.position.xy*p.v[4].xy/p.v[5].xy;let k=cov(v.a,v.b,v.c,v.e,v.s,xy)*v.b.z;if(k<1.){discard;}return vec4f(v.c.rgb*v.b.y,v.b.y);}`;
 export const wgDisplay=`
 struct Params{v:array<vec4f,16>};
 @group(0)@binding(0)var<uniform>p:Params;

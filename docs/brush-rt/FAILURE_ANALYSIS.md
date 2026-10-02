@@ -28,3 +28,11 @@ New implementation iterations:
 - Run 37033518263: WebGL2 preset 13 (tilted pencil) differs at one channel by 6/255. This remains a pixel gate failure; expanded diagnostic output records exact coordinates and RGBA values. Tests continue to collect other failures and benchmarks rather than abort coverage at the first mismatch.
 - Undo/Redo test clicked Redo while Undo was still refining. Buttons are now disabled until each history operation completes; the test waits for that visible state.
 - Candidate-branch Pages deployment was rejected by the existing github-pages branch protection. Those rules are preserved. The candidate workflow now verifies and retains downloadable artifacts without attempting that deployment.
+
+
+## Sustained GPU-proxy failure and revised design
+Run 37034137600 (headless software GPU, 512 × 384 document) failed: WebGL2 512/240Hz grew from 81.7ms to 952.3ms; 1024/240Hz grew from 79.3ms to 954.0ms. Confirmed replay after the long run timed out. This is a failed candidate, not a successful low-latency result.
+Two causes were identified by code inspection: readiness scanned the whole command history each time (quadratic total work), and the confirmed quantum controller compared a RAF-polled fence with sub-frame thresholds, keeping it at one chunk on a 60Hz loop. Wide opaque preview capsules also repeatedly shaded already fully covered areas.
+The next candidate uses an incremental publication cursor, starts with four confirmed chunks and adapts using thresholds that account for RAF polling (still a proxy), and adds a depth cache for eligible constant-pigment/flow solid prefixes. Fully covered pixels are skipped by later preview geometry; AA edges remain mutable. Complex strokes and mutable/predicted tails bypass that cache. This is an Illustro optimization, not an assertion about a competitor's internals.
+The elapsed-time exposure requirement in two existing airbrush presets was also restored. It is derived from actual input timestamps. The engine identifier advances to illustro-rt-2.1 so older candidate records cannot silently replay with changed command semantics.
+Local execution disconnected before these revisions could be validated; new checks must execute in GitHub CI. No unexecuted local test is counted as PASS.
