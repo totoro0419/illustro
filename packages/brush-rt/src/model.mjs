@@ -57,7 +57,7 @@ export class CanonicalBuilder {
  const at=f=>({...q,x:a.x+(q.x-a.x)*f,y:a.y+(q.y-a.y)*f,p:a.p+(q.p-a.p)*f,t:a.t+dt*f,tilt:a.tilt+(q.tilt-a.tilt)*f,azimuth:a.azimuth+(q.azimuth-a.azimuth)*f,twist:a.twist+(q.twist-a.twist)*f});
  // Distance and elapsed-time deposits are ordered by two actual input timestamps.
  // Derived time deposits are deterministic commands, never predicted input.
- while(true){const step=Math.max(.25,this.spacing??this.p.size*this.p.spacing),needed=Math.max(0,step-this.carry),spatial=len>0?(traveled+needed)/len:Infinity,temporal=this.p.exposureMs>0&&dt>0?(this.nextExposure-a.t)/dt:Infinity,f=Math.min(spatial,temporal);if(!Number.isFinite(f)||f>1)break;this.distance=startDistance+len*f;this.emit(at(f),null,speed,dir);if(spatial<=temporal){traveled+=needed;this.carry=0;}else this.nextExposure+=this.p.exposureMs;}
+ while(true){const step=Math.max(.25,this.spacing??this.p.size*this.p.spacing),needed=Math.max(0,step-this.carry),spatial=len>0?(traveled+needed)/len:Infinity,temporal=this.p.exposureMs>0&&dt>0?(this.nextExposure-a.t)/dt:Infinity,f=Math.min(spatial,temporal);if(!Number.isFinite(f)||f>1)break;this.distance=startDistance+len*f;const sample=at(f);if(temporal<spatial&&len===0){sample.p=a.p;sample.tilt=a.tilt;sample.azimuth=a.azimuth;sample.twist=a.twist;}this.emit(sample,null,speed,dir);if(spatial<=temporal){traveled+=needed;this.carry=0;}else this.nextExposure+=this.p.exposureMs;}
  this.carry+=len-traveled;this.distance=this.geometryDistance=startDistance+len;
  if(len===0&&q.p!==a.p&&this.commands.at(-1)?.[20]!==q.t)this.emit(q,null,0,dir);
  }
@@ -67,7 +67,7 @@ export class CanonicalBuilder {
  finish(){if(this.finished)throw Error('closed');this.finished=true;return this.ready(true);}
  record(){if(!this.finished)throw Error('not finalized');return {version:2,engine:VERSION,smoothing:'local-regression-24ms-bounded-1',fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;})};}
 }
-export function commandBounds(c){const r=Math.max(c[2]/2,c[18])*Math.SQRT2+2;return {x0:Math.min(c[0],c[16])-r,y0:Math.min(c[1],c[17])-r,x1:Math.max(c[0],c[16])+r,y1:Math.max(c[1],c[17])+r};}
+export function commandBounds(c){const solid=c[19]===1,r=Math.max(c[2]/2,c[18])*(solid?1:Math.SQRT2)+2,ax=solid?c[16]:c[0],ay=solid?c[17]:c[1];return {x0:Math.min(c[0],ax)-r,y0:Math.min(c[1],ay)-r,x1:Math.max(c[0],ax)+r,y1:Math.max(c[1],ay)+r};}
 export function keysFor(c,width,height){const b=commandBounds(c),out=[];for(let y=Math.max(0,Math.floor(b.y0/TILE));y<=Math.min(Math.ceil(height/TILE)-1,Math.floor(b.y1/TILE));y++)for(let x=Math.max(0,Math.floor(b.x0/TILE));x<=Math.min(Math.ceil(width/TILE)-1,Math.floor(b.x1/TILE));x++)out.push(x+','+y);return out;}
 export function capsuleCoverage(c,x,y){const ax=c[16],ay=c[17],dx=c[0]-ax,dy=c[1]-ay;const t=clamp(((x-ax)*dx+(y-ay)*dy)/Math.max(.000001,dx*dx+dy*dy));const r=c[18]+(c[2]/2-c[18])*t;return clamp(r+.5-Math.hypot(x-ax-dx*t,y-ay-dy*t));}
 export function cpuReference(record,width,height,base=new Uint8ClampedArray(width*height*4)){

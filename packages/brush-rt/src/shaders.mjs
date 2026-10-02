@@ -31,7 +31,7 @@ void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(p*2.-
 export const glLiveVertex=`#version 300 es
 layout(location=0)in vec4 a;layout(location=1)in vec4 b;layout(location=2)in vec4 c;layout(location=3)in vec4 e;layout(location=4)in vec4 s;layout(location=5)in vec4 t;
 uniform vec4 params[16];flat out vec4 oa,ob,oc,oe,os;
-void main(){vec2 corner=vec2((gl_VertexID==1||gl_VertexID==2||gl_VertexID==4)?1.:0.,(gl_VertexID==2||gl_VertexID==4||gl_VertexID==5)?1.:0.);float r=max(a.z*.5,s.z)*1.414213562+2.;vec2 lo=min(a.xy,s.xy)-r,hi=max(a.xy,s.xy)+r;vec2 p=mix(lo,hi,corner)/params[4].xy;gl_Position=vec4(p.x*2.-1.,1.-p.y*2.,0,1);oa=a;ob=b;oc=c;oe=e;os=s;}`;
+void main(){vec2 corner=vec2((gl_VertexID==1||gl_VertexID==2||gl_VertexID==4)?1.:0.,(gl_VertexID==2||gl_VertexID==4||gl_VertexID==5)?1.:0.);float r=max(a.z*.5,s.z)*(s.w==1.?1.:1.414213562)+2.;vec2 start=s.w==1.?s.xy:a.xy;vec2 lo=min(a.xy,start)-r,hi=max(a.xy,start)+r;vec2 p=mix(lo,hi,corner)/params[4].xy;gl_Position=vec4(p.x*2.-1.,1.-p.y*2.,0,1);oa=a;ob=b;oc=c;oe=e;os=s;}`;
 export const glLive=`#version 300 es
 precision highp float;precision highp int;
 uniform vec4 params[16];uniform sampler2D maskImage,grainImage;flat in vec4 oa,ob,oc,oe,os;out vec4 result;
@@ -94,7 +94,7 @@ struct Params{v:array<vec4f,16>};struct Commands{v:array<vec4f>};
 @group(0)@binding(3)var grainImage:texture_2d<f32>;
 ${wgMath}
 struct VOut{@builtin(position)position:vec4f,@location(0)@interpolate(flat)a:vec4f,@location(1)@interpolate(flat)b:vec4f,@location(2)@interpolate(flat)c:vec4f,@location(3)@interpolate(flat)e:vec4f,@location(4)@interpolate(flat)s:vec4f};
-@vertex fn vertex(@builtin(vertex_index)v:u32,@builtin(instance_index)n:u32)->VOut{let a=commands.v[n*6u];let s=commands.v[n*6u+4u];let corner=vec2f(select(0.,1.,v==1u||v==2u||v==4u),select(0.,1.,v==2u||v==4u||v==5u));let r=max(a.z*.5,s.z)*1.414213562+2.;let xy=mix(min(a.xy,s.xy)-r,max(a.xy,s.xy)+r,corner)/p.v[4].xy;var o:VOut;o.position=vec4f(xy.x*2.-1.,1.-xy.y*2.,0,1);o.a=a;o.b=commands.v[n*6u+1u];o.c=commands.v[n*6u+2u];o.e=commands.v[n*6u+3u];o.s=s;return o;}
+@vertex fn vertex(@builtin(vertex_index)v:u32,@builtin(instance_index)n:u32)->VOut{let a=commands.v[n*6u];let s=commands.v[n*6u+4u];let corner=vec2f(select(0.,1.,v==1u||v==2u||v==4u),select(0.,1.,v==2u||v==4u||v==5u));let r=max(a.z*.5,s.z)*select(1.414213562,1.,s.w==1.)+2.;let start=select(a.xy,s.xy,s.w==1.);let xy=mix(min(a.xy,start)-r,max(a.xy,start)+r,corner)/p.v[4].xy;var o:VOut;o.position=vec4f(xy.x*2.-1.,1.-xy.y*2.,0,1);o.a=a;o.b=commands.v[n*6u+1u];o.c=commands.v[n*6u+2u];o.e=commands.v[n*6u+3u];o.s=s;return o;}
 @fragment fn fragment(v:VOut)->@location(0)vec4f{let xy=v.position.xy*p.v[4].xy/p.v[5].xy;let k=cov(v.a,v.b,v.c,v.e,v.s,xy)*v.b.z;let a=v.b.y*k;return vec4f(v.c.rgb*a,a);}
 @fragment fn fragmentOpaque(v:VOut)->@location(0)vec4f{let xy=v.position.xy*p.v[4].xy/p.v[5].xy;let k=cov(v.a,v.b,v.c,v.e,v.s,xy)*v.b.z;if(k<1.){discard;}return vec4f(v.c.rgb*v.b.y,v.b.y);}`;
 export const wgDisplay=`
