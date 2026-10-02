@@ -19,3 +19,12 @@ New implementation iterations:
 - First regression trial reset at every adjacent direction change, so alternating small jitter was not smoothed. The new test exposed this. Immediate resets now require motion >6px as well as a large angle; smaller changes remain bounded by the local window/displacement cap. This tradeoff still needs small-circle/real-pen review.
 - Constant-speed test initially required exact binary equality for a floating result (20.000000000000004). The assertion now uses 1e-6 tolerance; this is a numerical test correction, not a behavior claim.
 - An initial tail-only preview would disappear on lift before confirmed work caught up. It was replaced with persistent immutable prefix plus a separately cleared mutable tail; ended strokes stay visible until their own confirmed tiles commit. Four unfinished strokes can currently be staged; exceeding this is an explicit candidate limitation, not a production gate pass.
+
+## New candidate failures actually observed
+
+- Run 37032959431: frame lifecycle method missing. Browser initialization alone did not detect it. New frame integration added; the mouse-reference check had passed, while Undo/Redo timed out.
+- WGSL rejected an unparenthesized integer hash expression. Parentheses now specify multiplication before XOR; both shaders compile on the second run.
+- The first workflow pipeline returned the exit status of `tee`, hiding the browser failure. Explicit `pipefail` now makes the verification job fail. This old CI success is invalid evidence.
+- Run 37033518263: WebGL2 preset 13 (tilted pencil) differs at one channel by 6/255. This remains a pixel gate failure; expanded diagnostic output records exact coordinates and RGBA values. Tests continue to collect other failures and benchmarks rather than abort coverage at the first mismatch.
+- Undo/Redo test clicked Redo while Undo was still refining. Buttons are now disabled until each history operation completes; the test waits for that visible state.
+- Candidate-branch Pages deployment was rejected by the existing github-pages branch protection. Those rules are preserved. The candidate workflow now verifies and retains downloadable artifacts without attempting that deployment.

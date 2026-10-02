@@ -6,8 +6,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  pages: write
-  id-token: write
 concurrency:
   group: brush-rt-candidate
   cancel-in-progress: true
@@ -42,28 +40,3 @@ jobs:
         with:
           name: brush-rt-evidence
           path: docs/brush-rt/evidence
-      - name: Preserve existing architecture harness and add brush candidate
-        if: always()
-        run: |
-          cd prototypes/p0-architecture
-          npm install --no-audit --no-fund
-          npm run build:pages
-          mkdir -p dist/brush-rt
-          cp ../brush-rt/dist/illustro-brush-rt.html dist/brush-rt/index.html
-          cp -R ../../docs/brush-rt/evidence dist/brush-rt/evidence
-      - uses: actions/configure-pages@v5
-        if: always()
-      - uses: actions/upload-pages-artifact@v4
-        if: always()
-        with:
-          path: prototypes/p0-architecture/dist
-  deploy:
-    if: always()
-    needs: verify
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/deploy-pages@v4
-        id: deployment
