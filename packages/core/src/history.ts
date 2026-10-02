@@ -1,5 +1,5 @@
 import {revisionId,type LayerId,type RevisionId,type TransactionId} from './ids';
-export type CommandOperation=Readonly<{kind:'raster.tiles';layerId:LayerId;tileCount:number}>|Readonly<{kind:'layer.metadata';layerId:LayerId}>;
+export type CommandOperation=Readonly<{kind:'raster.tiles';layerId:LayerId;tileCount:number}>|Readonly<{kind:'layer.metadata';layerId:LayerId}>|Readonly<{kind:'brush.stroke';layerId:LayerId;recordJson:string}>;
 export type Command=Readonly<{version:1;kind:'core.transaction';label:string;operations:readonly CommandOperation[]}>;
 export type Revision<T>=Readonly<{id:RevisionId;parentIds:readonly RevisionId[];transactionId:TransactionId|null;root:T;command:Command|null;committedAt:number}>;
 export class RevisionHistory<T>{

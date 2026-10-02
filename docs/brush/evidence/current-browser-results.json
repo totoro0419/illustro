@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-02T02:05:28.509Z",
+  "chromium": "133.0.6943.0",
+  "scope": "Headless software browser; synthetic pen and emulated mobile are not physical device certification",
+  "results": [
+    {
+      "name": "loads 56 pens, meaningful controls, no error overlay",
+      "status": "PASS"
+    },
+    {
+      "name": "test draw -> record -> strict replay -> exact image",
+      "status": "PASS"
+    },
+    {
+      "name": "Undo/Redo exact image; reset reversible",
+      "status": "PASS"
+    },
+    {
+      "name": "mouse captured outside surface and finalized",
+      "status": "PASS"
+    },
+    {
+      "name": "cancel/lost capture leaves no recorded stroke",
+      "status": "PASS"
+    },
+    {
+      "name": "synthetic pressure/tilt/twist affect recorded data",
+      "status": "PASS"
+    },
+    {
+      "name": "search no-result and recovery",
+      "status": "PASS"
+    },
+    {
+      "name": "corrupt stroke import shows error and preserves pixels",
+      "status": "PASS"
+    },
+    {
+      "name": "custom preset validation rejects malformed curve",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard settings, focus and input numeric invalid recovery",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile touch high DPI and 4x CPU workflow",
+      "status": "PASS"
+    },
+    {
+      "name": "320/760/1024/1440 reflow, text 200%, portrait/landscape",
+      "status": "PASS"
+    },
+    {
+      "name": "offline single HTML loads without external requests and draws",
+      "status": "PASS"
+    },
+    {
+      "name": "no uncaught page errors",
+      "status": "PASS"
+    }
+  ],
+  "errors": []
+}

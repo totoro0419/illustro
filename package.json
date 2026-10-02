@@ -2,10 +2,26 @@
   "name": "illustro",
   "private": true,
   "version": "0.0.0",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "core:typecheck": "npm --workspace @illustro/core run typecheck",
     "core:test": "npm --workspace @illustro/core run test",
-    "core:check": "npm run core:typecheck && npm run core:test"
+    "core:check": "npm run core:typecheck && npm run core:test",
+    "brush:typecheck": "npm --workspace @illustro/brush run typecheck",
+    "brush:test": "npm --workspace @illustro/brush run test",
+    "brush:check": "npm run brush:typecheck && npm run brush:test",
+    "brush:lab": "vite prototypes/brush-lab --host 127.0.0.1",
+    "brush:build": "node prototypes/brush-lab/build.mjs",
+    "brush:browser": "node prototypes/brush-lab/test/browser.mjs",
+    "brush:benchmark": "node packages/brush/test/run-benchmark.mjs",
+    "brush:lab:typecheck": "tsc -p prototypes/brush-lab/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.9",
+    "vite": "^8.3.1"
   }
 }

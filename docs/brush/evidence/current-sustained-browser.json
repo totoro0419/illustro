@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-02T02:09:57.169Z",
+  "status": "PASS",
+  "scope": "Real three-minute browser timer with synthetic samples; not a physical stylus/thermal test",
+  "browser": "133.0.6943.0",
+  "before": {
+    "heap": 10000000,
+    "time": 259.40000000037253
+  },
+  "after": {
+    "heap": 10000000,
+    "time": 180514.40000000037,
+    "history": 40,
+    "errors": []
+  },
+  "elapsedMs": 180255,
+  "report": {
+    "version": 1,
+    "date": "2026-10-02T02:09:57.161Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/133.0.6943.0 Safari/537.36",
+    "dpr": 1,
+    "viewport": [
+      1024,
+      768
+    ],
+    "acceptedInputCount": 40800,
+    "completedStrokes": 340,
+    "trustedPenSamples": 0,
+    "generatedPenSamples": 40800,
+    "inputTimingSamples": 4096,
+    "inputP95": 0.09999999962747097,
+    "renderP95": 3.2000000001862645,
+    "releaseP95": 0.20000000018626451,
+    "receiveToNextFrameP95": 2.900000000183354,
+    "frameP95": 16.70000000001164,
+    "frameOver25ms": 0,
+    "maxRasterBytes": 1572864,
+    "sensors": {
+      "tilt": false,
+      "azimuth": false,
+      "twist": false
+    },
+    "trustedPen": 0,
+    "syntheticPen": 0,
+    "errors": [],
+    "memo": "",
+    "humanFeel": "UNVERIFIED",
+    "physicalInputToDisplay": "UNVERIFIED"
+  },
+  "errors": []
+}

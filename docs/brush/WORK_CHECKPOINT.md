@@ -1,3 +1,5 @@
+> 再開時の注記 — 2026-10-02：これは中断時点の履歴資料です。現在の実装・測定・未完了事項は [README](README.md) と [VALIDATION](VALIDATION.md) を参照してください。前回の実装本体は回収できず、旧Git成果とこの記録から再構成しました。以前の253件の結果を現在のコードのPASS根拠にはしません。
+
 # Brush Engine work checkpoint — blocked by execution environment disconnection
 
 Status: **WIP / NOT PRACTICALLY COMPLETE / IMPLEMENTATION NOT YET PUBLISHED**

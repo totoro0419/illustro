@@ -4,11 +4,13 @@ import {RasterWorkingSet} from './raster/working';
 import type {CoreDocument} from './coreDocument';
 import {commitTransaction,type CommitReceipt} from './commit';
 import {CORE_INTERNAL,type CoreInternalToken} from './internal';
+import type {CommandOperation} from './history';
 
 export class DocumentTransaction{
  private readonly baseValue:RevisionId;private readonly rootValue;private readonly idValue:TransactionId;
  private readonly workingValue=new Map<LayerId,RasterWorkingSet>();private readonly updatesValue=new Map<LayerId,LayerNode>();
  private closed=false;private failed=false;
+ private readonly semanticValue:CommandOperation[]=[];
  constructor(private readonly doc:CoreDocument,readonly label:string){
   if(!label.trim())throw new Error('empty transaction label');
   this.baseValue=doc.head;this.rootValue=doc.root;this.idValue=doc._internal(CORE_INTERNAL).ids.transaction();
@@ -27,11 +29,12 @@ export class DocumentTransaction{
   this.editTile(layerId,tx,ty,b=>{b[p]=rgba[0];b[p+1]=rgba[1];b[p+2]=rgba[2];b[p+3]=rgba[3];});
  }
  renameLayer(id:LayerId,name:string){this.meta(id,{name:name.trim()});}
+ recordBrushStroke(layerId:LayerId,recordJson:string){this.open();this.rootValue.getLayer(layerId);if(!recordJson.length||recordJson.length>32*1024*1024)throw new Error('invalid brush record size');this.semanticValue.push(Object.freeze({kind:'brush.stroke',layerId,recordJson}));}
  setLayerVisibility(id:LayerId,visible:boolean){this.meta(id,{visible});}
  commit():CommitReceipt{this.open();try{return commitTransaction(this);}catch(e){this.failed=true;throw e;}}
  cancel(){if(this.closed)throw new Error('transaction closed');this.workingValue.clear();this.updatesValue.clear();this.closed=true;}
- _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
- private hasChanges(){return this.updatesValue.size>0||[...this.workingValue.values()].some(w=>w.changedTileCount>0);}
+ _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,semantics:this.semanticValue,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
+ private hasChanges(){return this.semanticValue.length>0||this.updatesValue.size>0||[...this.workingValue.values()].some(w=>w.changedTileCount>0);}
  private meta(id:LayerId,p:Partial<Pick<LayerNode,'name'|'visible'>>){
   this.open();const b=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(p.name!==undefined&&!p.name)throw new Error('empty layer name');
   if((p.name===undefined||p.name===b.name)&&(p.visible===undefined||p.visible===b.visible))return;

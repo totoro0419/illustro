@@ -1,0 +1,29 @@
+name: Brush Candidate CI
+on:
+  pull_request:
+    paths: ['packages/brush/**', 'packages/core/**', 'prototypes/brush-lab/**', 'package.json', 'package-lock.json', '.github/workflows/brush-ci.yml']
+  push:
+    branches: ['brush/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.22.0'
+          package-manager-cache: false
+      - run: npm ci --no-audit --no-fund
+      - run: npm run brush:check && npm run core:check && npm run brush:lab:typecheck
+      - run: npm run brush:build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run brush:browser
+      - run: npm run brush:benchmark
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brush-candidate-evidence
+          path: docs/brush/evidence/current-*
