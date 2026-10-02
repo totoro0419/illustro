@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import {CanonicalBuilder,Stabilizer,predict,LatestMailbox,validateRecord,cpuReference,continuous,keysFor,VERSION,liveAccumulation,referenceCoverage} from '../../../prototypes/brush-rt/dist/rt/model.mjs';
-import {TileDocument,GpuRenderer} from '../../../prototypes/brush-rt/dist/rt/renderer.mjs';
+import {TileDocument,GpuRenderer,previewDirty,previewBatches} from '../../../prototypes/brush-rt/dist/rt/renderer.mjs';
 import {RealtimeSession} from '../../../prototypes/brush-rt/dist/rt/session.mjs';
 const presets=JSON.parse(fs.readFileSync(new URL('../../../docs/brush/evidence/presets.json',import.meta.url)));
 const ink={...presets.find(p=>p.id==='fine-ink'),size:16,stabilization:1,pressureSmoothing:0};
@@ -35,3 +35,7 @@ test('complex density mode keeps varying flow but rejects varying pigment or str
 
 test('hard ellipse AA stays continuous across Float32 command rounding',()=>{const p=presets[50],c=new Array(24).fill(0);c[0]=32.000001;c[1]=32;c[2]=20;c[3]=.45;c[4]=.41;for(let y=24;y<42;y++)for(let x=20;x<45;x++){const a=referenceCoverage(c,x+.5,y+.5,p),b=referenceCoverage(c.map(Math.fround),x+.5,y+.5,p);assert.ok(Math.abs(a-b)<.0001);}});
 test('quantized zero alpha never retains hidden reference pigment',()=>{const b=new CanonicalBuilder({...ink,size:16,opacity:.0001,color:[.7,.2,.1]});b.accept({x:16,y:16,t:0,pointerType:'mouse'});b.finish();const pixels=cpuReference(b.record(),32,32);assert.ok(pixels.every(v=>v===0));});
+
+test('completed cached feedback is archived before a fifth pending stroke, without halting latest input',()=>{const backend={previews:new Map([1,2,3,4].map(id=>[id,{}])),archivedThrough:-1,obsoleteFinished:0},states=[1,2,3,4,5].map(id=>({id,finished:id<5})),b=previewBatches(backend,states);assert.equal(b[0].archive,true);assert.deepEqual(b[0].states.map(s=>s.id),[1,2,3,4]);assert.deepEqual(b[1].states.map(s=>s.id),[5]);assert.equal(backend.obsoleteFinished,0);});
+test('never displayed obsolete snapshots have bounded work while the newest stroke is selected',()=>{const backend={previews:new Map,archivedThrough:-1,obsoleteFinished:0},states=Array.from({length:20},(_,i)=>({id:i+1,finished:i<19})),b=previewBatches(backend,states);assert.deepEqual(b[0].states.map(s=>s.id),[17,18,19,20]);assert.equal(backend.obsoleteFinished,16);assert.equal(backend.archivedThrough,16);assert.equal(states.length,20);});
+test('predicted-only tiles cannot become feedback archive coverage and are dirtied on prediction removal',()=>{const c=t=>{const a=new Array(24).fill(0);a[0]=a[16]=t>10?400:20;a[1]=a[17]=20;a[2]=16;a[18]=8;a[19]=1;a[20]=t;return a;},v={preset:ink,keys:new Set},dirty=new Set;previewDirty(v,[c(10)],[c(12)],512,384,dirty,10);assert.ok(v.keys.has('3,0'));assert.ok(!v.realKeys.has('3,0'));dirty.clear();previewDirty(v,[],[],512,384,dirty,10);assert.ok(dirty.has('3,0'));});

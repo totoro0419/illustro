@@ -44,6 +44,7 @@ void main(){vec2 corner=vec2((gl_VertexID==1||gl_VertexID==2||gl_VertexID==4)?1.
 export const glDisplay=`#version 300 es
 precision highp float;precision highp int;
 uniform vec4 params[16];uniform sampler2D layer,src,maskImage,grainImage;in vec2 doc;out vec4 result;
+uniform sampler2D archiveImage;
 uniform sampler2D liveImage0;
 uniform sampler2D liveImage1;
 uniform sampler2D liveImage2;
@@ -54,7 +55,7 @@ uniform sampler2D liveImage6;
 uniform sampler2D liveImage7;
 ${glMath}
 vec4 preview(int i,ivec2 pos){if(i==0)return texelFetch(liveImage0,pos,0);if(i==1)return texelFetch(liveImage1,pos,0);if(i==2)return texelFetch(liveImage2,pos,0);if(i==3)return texelFetch(liveImage3,pos,0);if(i==4)return texelFetch(liveImage4,pos,0);if(i==5)return texelFetch(liveImage5,pos,0);if(i==6)return texelFetch(liveImage6,pos,0);if(i==7)return texelFetch(liveImage7,pos,0);return vec4(0);}
-void main(){ivec2 q=ivec2(doc-params[0].xy),pos=ivec2(gl_FragCoord.xy);vec4 d=texelFetch(layer,q,0),s=texelFetch(src,q,0);bool applied=false;for(int i=0;i<8;i+=2){if(i>=int(params[6].z))break;float id=params[8+i].x;if(id<=params[6].y)continue;vec4 a=preview(i,pos),b=preview(i+1,pos);vec4 l=params[8+i].w==1.?(a+b*(1.-a.a))*params[8+i].z:max(a,b);if(id==params[6].x){float delta=max(0.,l.a-s.a);s+=vec4(l.a>0.?l.rgb/l.a:vec3(0),1.)*delta;d=compose(d,s,int(params[3].y));applied=true;}else{if(!applied&&params[6].x>params[6].y&&params[6].x<id){d=compose(d,s,int(params[3].y));applied=true;}d=compose(d,l,int(params[8+i].y));}}if(!applied)d=compose(d,s,int(params[3].y));result=vec4(d.rgb*d.a,d.a);}`;
+void main(){ivec2 q=ivec2(doc-params[0].xy),pos=ivec2(gl_FragCoord.xy);vec4 d=texelFetch(layer,q,0),s=texelFetch(src,q,0);float base=params[7].x,through=max(base,params[6].y);if(base>params[6].y){d=texelFetch(archiveImage,pos,0);d.rgb=d.a>0.?d.rgb/d.a:vec3(0);if(params[6].x<=base)s=vec4(0);}bool applied=false;for(int i=0;i<8;i+=2){if(i>=int(params[6].z))break;float id=params[8+i].x;if(id<=through)continue;vec4 a=preview(i,pos),b=preview(i+1,pos);vec4 l=params[8+i].w==1.?(a+b*(1.-a.a))*params[8+i].z:max(a,b);if(id==params[6].x){float delta=max(0.,l.a-s.a);s+=vec4(l.a>0.?l.rgb/l.a:vec3(0),1.)*delta;d=compose(d,s,int(params[3].y));applied=true;}else{if(!applied&&params[6].x>params[6].y&&params[6].x<id){d=compose(d,s,int(params[3].y));applied=true;}d=compose(d,l,int(params[8+i].y));}}if(!applied)d=compose(d,s,int(params[3].y));result=vec4(d.rgb*d.a,d.a);}`;
 
 // WGSL equations are explicitly matched to the Float64 reference. Integer grain
 // hashing uses wrapping u32 arithmetic; geometry is intentionally f32 on GPU.
@@ -112,10 +113,11 @@ struct Params{v:array<vec4f,16>};
 @group(0)@binding(8)var liveImage5:texture_2d<f32>;
 @group(0)@binding(9)var liveImage6:texture_2d<f32>;
 @group(0)@binding(10)var liveImage7:texture_2d<f32>;
+@group(0)@binding(11)var archiveImage:texture_2d<f32>;
 
 // The shared math references mask/grain even when display only uses composition.
 fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}if(mode==3){let a=floor(d.a*(1.-s.a)*255.+.5)/255.;if(a==0.){return vec4f(0);}return vec4f(d.rgb,a);}let sc=s.rgb/s.a;var b=sc;if(mode==1){b=sc*d.rgb;}else if(mode==2){b=1.-(1.-sc)*(1.-d.rgb);}let a=s.a+d.a*(1.-s.a);let c=((1.-s.a)*d.a*d.rgb+(1.-d.a)*s.a*sc+s.a*d.a*b)/max(a,.000001);let q=floor(clamp(vec4f(c,a),vec4f(0),vec4f(1))*255.+.5)/255.;if(q.a==0.){return vec4f(0);}return q;}
 fn preview(i:i32,pos:vec2i)->vec4f{if(i==0){return textureLoad(liveImage0,pos,0);}if(i==1){return textureLoad(liveImage1,pos,0);}if(i==2){return textureLoad(liveImage2,pos,0);}if(i==3){return textureLoad(liveImage3,pos,0);}if(i==4){return textureLoad(liveImage4,pos,0);}if(i==5){return textureLoad(liveImage5,pos,0);}if(i==6){return textureLoad(liveImage6,pos,0);}if(i==7){return textureLoad(liveImage7,pos,0);}return vec4f(0);}
 struct VOut{@builtin(position)position:vec4f,@location(0)doc:vec2f};
 @vertex fn vertex(@builtin(vertex_index)v:u32)->VOut{let corner=vec2f(select(0.,1.,v==1u||v==2u||v==4u),select(0.,1.,v==2u||v==4u||v==5u));var o:VOut;o.doc=p.v[0].xy+corner*128.;let xy=o.doc/p.v[4].xy;o.position=vec4f(xy.x*2.-1.,1.-xy.y*2.,0,1);return o;}
-@fragment fn fragment(v:VOut)->@location(0)vec4f{let q=vec2i(v.doc-p.v[0].xy);var d=textureLoad(layer,q,0);var s=textureLoad(src,q,0);var applied=false;for(var i=0;i<8;i+=2){if(i>=i32(p.v[6].z)){break;}let id=p.v[8+i].x;if(id<=p.v[6].y){continue;}let a=preview(i,vec2i(v.position.xy));let b=preview(i+1,vec2i(v.position.xy));let l=select(max(a,b),(a+b*(1.-a.a))*p.v[8+i].z,p.v[8+i].w==1.);if(id==p.v[6].x){let delta=max(0.,l.a-s.a);s+=vec4f(l.rgb/max(l.a,.000001),1.)*delta;d=compose(d,s,i32(p.v[3].y));applied=true;}else{if(!applied&&p.v[6].x>p.v[6].y&&p.v[6].x<id){d=compose(d,s,i32(p.v[3].y));applied=true;}d=compose(d,l,i32(p.v[8+i].y));}}if(!applied){d=compose(d,s,i32(p.v[3].y));}return vec4f(d.rgb*d.a,d.a);}`;
+@fragment fn fragment(v:VOut)->@location(0)vec4f{let q=vec2i(v.doc-p.v[0].xy);var d=textureLoad(layer,q,0);var s=textureLoad(src,q,0);let base=p.v[7].x;let through=max(base,p.v[6].y);if(base>p.v[6].y){d=textureLoad(archiveImage,vec2i(v.position.xy),0);d=vec4f(d.rgb/max(d.a,.000001),d.a);if(p.v[6].x<=base){s=vec4f(0);}}var applied=false;for(var i=0;i<8;i+=2){if(i>=i32(p.v[6].z)){break;}let id=p.v[8+i].x;if(id<=through){continue;}let a=preview(i,vec2i(v.position.xy));let b=preview(i+1,vec2i(v.position.xy));let l=select(max(a,b),(a+b*(1.-a.a))*p.v[8+i].z,p.v[8+i].w==1.);if(id==p.v[6].x){let delta=max(0.,l.a-s.a);s+=vec4f(l.rgb/max(l.a,.000001),1.)*delta;d=compose(d,s,i32(p.v[3].y));applied=true;}else{if(!applied&&p.v[6].x>p.v[6].y&&p.v[6].x<id){d=compose(d,s,i32(p.v[3].y));applied=true;}d=compose(d,l,i32(p.v[8+i].y));}}if(!applied){d=compose(d,s,i32(p.v[3].y));}return vec4f(d.rgb*d.a,d.a);}`;
