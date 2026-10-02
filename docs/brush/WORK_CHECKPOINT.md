@@ -1,3 +1,15 @@
+# 最新の再開点：512px以上の最新先端優先
+
+2026-10-02。PR #8の正本は `brush/production-engine-2026-10-02`、ソース実装は `f7bc76747c73490370011ee4cac72e9040e471f0`。mainへmergeしない。新しい文書・証拠追記はsource/単一HTMLを変えない。ローカルの別WIP worktreeをreset/混在させない。
+
+最新のユーザー優先順位：現行構造に固執せず、512px以上でGPU queueが蓄積しpen-to-visible-tipが累積悪化する構造をなくす。全入力の確定保存を保持し、obsolete previewを送信前に破棄する。旧Illustroとの比較を品質基準にしない。
+
+実装・参照元・測定・既知の限界は [THICK_LATENCY.md](THICK_LATENCY.md)。通常入力は `present(false)`、force snapshotは検査専用。連続入力のcore GPU表示は1フレーム、1回2dab以内。確定CPU仕事は保持し、releaseでGPU一括投入しない。過負荷時は暫定baseの後にworkerの厳密画像へ更新する。
+
+Brush CI 37021120903、Core CI 37021120899はsuccess。512/1024pxの実効設定をassertし、3秒8条件と過負荷2条件をローカルでも確認。10秒512pxの初回はp95=161.7msの絶対時間gateにFAIL、再試行は512/1024pxで60.5/33.5ms。失敗を削除しない。累積成長は観測せず、全入力・保存再生一致。実機/競合優越は未認証で、長時間の絶対遅延の安定性、暫定表示の変化、連続短strokeのrelease滞留、巨大文書・製品統合は次の評価対象。
+
+以下は以前の再開記録。
+
 > **Historical checkpoint — superseded by the verified continuation.**
 > The pending bounds correction below has now been implemented and retested. Old test/performance numbers remain historical; use [VALIDATION.md](VALIDATION.md) and current raw evidence for this code.
 
