@@ -1,0 +1,39 @@
+{
+  "scope": "scheduled software input; not physical pen, thermal or display certification",
+  "durationMs": 180227,
+  "accepted": 42873,
+  "strokes": 36,
+  "errorCount": 0,
+  "peakRasterBytes": 11534336,
+  "ringRetention": 8192,
+  "physicalDevice": "UNVERIFIED",
+  "metrics": {
+    "processing": {
+      "retainedCount": 8192,
+      "p95Ms": 0.09999999962747097,
+      "maxMs": 1.7999999998137355
+    },
+    "render": {
+      "retainedCount": 8192,
+      "p95Ms": 7.1000000005587935,
+      "maxMs": 20.199999999254942
+    },
+    "receiveToRAF": {
+      "retainedCount": 5861,
+      "p95Ms": 13.500000000189175,
+      "maxMs": 15.599999999816646
+    },
+    "release": {
+      "retainedCount": 36,
+      "p95Ms": 0.5,
+      "maxMs": 1.6000000005587935
+    },
+    "frames": {
+      "retainedCount": 8192,
+      "p95Ms": 16.79999999998836,
+      "maxMs": 216.69999999998254
+    }
+  },
+  "retainedFrameIntervalsOver25Ms": 31,
+  "retainedFrameIntervalsOver50Ms": 24
+}

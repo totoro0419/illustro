@@ -1,3 +1,6 @@
+> **Historical checkpoint — superseded by the verified continuation.**
+> The pending bounds correction below has now been implemented and retested. Old test/performance numbers remain historical; use [VALIDATION.md](VALIDATION.md) and current raw evidence for this code.
+
 # Brush Engine work checkpoint — blocked by execution environment disconnection
 
 Status: **WIP / NOT PRACTICALLY COMPLETE / IMPLEMENTATION NOT YET PUBLISHED**
