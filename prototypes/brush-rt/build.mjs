@@ -20,7 +20,7 @@ console.log('Built self-contained HTML:',(await fs.stat(path.join(out,'illustro-
 
 const bundle=await fs.readFile(path.join(out,'illustro-brush-rt.html'));
 const {createHash}=await import('node:crypto');
-const blobHash=createHash('sha1').update(Buffer.from('blob '+bundle.length+'\\0')).update(bundle).digest('hex');
+const blobHash=createHash('sha1').update(Buffer.from('blob '+bundle.length+String.fromCharCode(0))).update(bundle).digest('hex');
 const encoded=bundle.toString('base64');
 console.log('RT_BUNDLE_META:'+JSON.stringify({bytes:bundle.length,base64Length:encoded.length,blobHash}));
 for(let i=0;i<encoded.length;i+=4000)console.log('RT_BUNDLE:'+i+':'+encoded.slice(i,i+4000));

@@ -25,7 +25,7 @@ export const glDeposit=`#version 300 es
 precision highp float;precision highp int;
 uniform vec4 params[16],commands[96];uniform sampler2D src,layer,maskImage,grainImage;out vec4 result;
 ${glMath}
-void main(){ivec2 pos=ivec2(gl_FragCoord.xy);vec4 old=texelFetch(src,pos,0);if(params[0].w==1.){result=compose(texelFetch(layer,pos,0),old,int(params[3].y));return;}vec2 xy=gl_FragCoord.xy+params[0].xy;for(int j=0;j<16;j++){if(j>=int(params[0].z))break;int i=j*6;vec4 a=commands[i],b=commands[i+1],color=commands[i+2],extra=commands[i+3],seg=commands[i+4];if(old.a>=b.y)continue;float k=cov(a,b,color,extra,seg,xy)*b.z;float d=max(0.,b.y-old.a)*k;old+=vec4(color.rgb,1.)*d;}result=old;}`;
+void main(){ivec2 pos=ivec2(gl_FragCoord.xy);vec4 old=texelFetch(src,pos,0);if(params[0].w==1.){result=compose(texelFetch(layer,pos,0),old,int(params[3].y));return;}vec2 xy=gl_FragCoord.xy+params[0].xy;for(int j=0;j<16;j++){if(j>=int(params[0].z))break;int i=j*6;vec4 a=commands[i],b=commands[i+1],color=commands[i+2],extra=commands[i+3],seg=commands[i+4];if(old.a>=b.y)continue;float k=cov(a,b,color,extra,seg,xy)*b.z;float d=seg.w==1.?max(0.,b.y*k-old.a):max(0.,b.y-old.a)*k;old+=vec4(color.rgb,1.)*d;}result=old;}`;
 export const glQuad=`#version 300 es
 void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(p*2.-1.,0,1);}`;
 export const glLiveVertex=`#version 300 es
@@ -85,7 +85,7 @@ struct Params{v:array<vec4f,16>};struct Commands{v:array<vec4f>};
 @group(0)@binding(6)var layer:texture_2d<f32>;
 @group(0)@binding(7)var layerOut:texture_storage_2d<rgba8unorm,write>;
 ${wgMath}
-@compute @workgroup_size(8,8)fn main(@builtin(global_invocation_id)id:vec3u){if(any(id.xy>=vec2u(128))){return;}let pos=vec2i(id.xy);var old=textureLoad(src,pos,0);if(p.v[0].w==1.){textureStore(layerOut,pos,compose(textureLoad(layer,pos,0),old,i32(p.v[3].y)));return;}let xy=vec2f(id.xy)+.5+p.v[0].xy;for(var j=0u;j<u32(p.v[0].z);j++){let i=j*6u;let a=commands.v[i];let b=commands.v[i+1u];let color=commands.v[i+2u];let extra=commands.v[i+3u];let seg=commands.v[i+4u];if(old.a>=b.y){continue;}let k=cov(a,b,color,extra,seg,xy)*b.z;let delta=max(0.,b.y-old.a)*k;old+=vec4f(color.rgb,1.)*delta;}textureStore(dst,pos,old);}`;
+@compute @workgroup_size(8,8)fn main(@builtin(global_invocation_id)id:vec3u){if(any(id.xy>=vec2u(128))){return;}let pos=vec2i(id.xy);var old=textureLoad(src,pos,0);if(p.v[0].w==1.){textureStore(layerOut,pos,compose(textureLoad(layer,pos,0),old,i32(p.v[3].y)));return;}let xy=vec2f(id.xy)+.5+p.v[0].xy;for(var j=0u;j<u32(p.v[0].z);j++){let i=j*6u;let a=commands.v[i];let b=commands.v[i+1u];let color=commands.v[i+2u];let extra=commands.v[i+3u];let seg=commands.v[i+4u];if(old.a>=b.y){continue;}let k=cov(a,b,color,extra,seg,xy)*b.z;let delta=select(max(0.,b.y-old.a)*k,max(0.,b.y*k-old.a),seg.w==1.);old+=vec4f(color.rgb,1.)*delta;}textureStore(dst,pos,old);}`;
 export const wgLive=`
 struct Params{v:array<vec4f,16>};struct Commands{v:array<vec4f>};
 @group(0)@binding(0)var<uniform>p:Params;
