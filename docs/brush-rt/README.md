@@ -1,6 +1,6 @@
 # Illustro realtime brush candidate v2
 
-New implementation built after primary-source research. Production is **not promoted**; see VALIDATION.md for all open gates and candidate limits.
+New implementation built after primary-source research. Earlier GPU-proxy trials failed; fixes are being tested and are recorded rather than presented as success. Production is **not promoted**; see VALIDATION.md for all open gates and candidate limits.
 
 - [Research](RESEARCH.md) — documented facts, design judgments, unknown internals.
 - [Architecture](ARCHITECTURE.md) — multi-option comparison and chosen input/preview/canonical/tile/history split.
