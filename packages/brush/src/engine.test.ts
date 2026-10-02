@@ -168,6 +168,27 @@ describe("reconstruction", () => {
     e.finish();
     expect(e.record()).toEqual(expected);
   });
+  it("input-time publication sends every stable command exactly once without changing record pages", () => {
+    const preset = { ...base, taperEnd: 12, sizeJitter: 0.4 };
+    const samples = fixture("s", 400),
+      published: number[] = [];
+    const e = new BrushEngine(preset, {
+      seed: [3, 4],
+      sink: (p) => published.push(...p),
+    });
+    for (const s of samples) {
+      e.accept(s);
+      e.publishStable();
+      e.publishStable();
+      expect(e.pendingPrefix().length).toBe(0);
+      e.preview();
+    }
+    e.finish();
+    const expected = generate(preset, samples, [3, 4]);
+    expect(e.record()).toEqual(expected);
+    expect(published).toEqual(expected.commands.flat());
+    expect(() => deserialize(serialize(e.record()))).not.toThrow();
+  });
   it("tap has finite visible size", () => {
     const r = generate({ ...base, taperStart: 10, taperEnd: 10 }, [
       { x: 40, y: 40, t: 0, pressure: 0.5 },

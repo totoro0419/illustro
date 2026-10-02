@@ -1,10 +1,10 @@
+/// <reference types="vite/client" />
+import { ImmediateRenderer } from "./immediate";
+import { ImmediateCPU } from "./immediate-cpu";
+import ReferenceWorker from "./reference.worker?worker&inline";
 import { BrushEngine } from "../../packages/brush/src/engine";
 import { PRESETS } from "../../packages/brush/src/presets";
-import {
-  StrokeRaster,
-  RasterQueue,
-  rasterize,
-} from "../../packages/brush/src/raster";
+import { rasterize } from "../../packages/brush/src/raster";
 import { capturePointer, penSensors } from "../../packages/brush/src/input";
 import {
   serialize,
@@ -14,6 +14,7 @@ import {
 import { fixture } from "../../packages/brush/src/fixtures";
 import type {
   Preset,
+  Point,
   Sample,
   StrokeRecord,
 } from "../../packages/brush/src/types";
@@ -25,20 +26,65 @@ const el = <T extends HTMLElement>(id: string) =>
   W = 768,
   H = 512,
   blank = () => new Uint8ClampedArray(W * H * 4);
+const liveCanvas = document.createElement("canvas");
+liveCanvas.width = W;
+liveCanvas.height = H;
+liveCanvas.id = "live";
+canvas.before(liveCanvas);
+let immediate: ImmediateRenderer | ImmediateCPU;
+try {
+  immediate = new ImmediateRenderer(liveCanvas);
+} catch {
+  liveCanvas.remove();
+  immediate = new ImmediateCPU(canvas);
+}
+let rendererKind = immediate instanceof ImmediateRenderer ? "webgl2" : "cpu";
+const worker = new ReferenceWorker();
+let epoch = 0,
+  sequence = 0,
+  completedSequence = 0;
+worker.onmessage = ({ data }) => {
+  if (data.epoch !== epoch) return;
+  if (data.error) {
+    fail(data.error);
+    return;
+  }
+  completedSequence = data.sequence;
+  if (data.sequence !== sequence) return;
+  image = data.bytes;
+  // Do not replace the base under an active stroke. Its base is already visible.
+  if (!active) {
+    paint(image);
+    immediate.setBase(image);
+  }
+  lock(!!active);
+};
+worker.onerror = (e) => fail(e.message);
+function syncReference() {
+  epoch++;
+  sequence = completedSequence = 0;
+  worker.postMessage({ epoch, sequence, image: image.slice() });
+  immediate.setBase(image);
+}
 let image = blank(),
   records: StrokeRecord[] = [],
   redo: StrokeRecord[] = [],
   basePreset = PRESETS[0]!,
   active: BrushEngine | null = null,
-  raster: StrokeRaster | null = null,
-  queue: RasterQueue | null = null,
-  release: StrokeRecord | null = null,
-  previewRaster: StrokeRaster | null = null,
-  previewQueue: RasterQueue | null = null,
-  previewVersion = -1,
-  version = 0,
   pointer: number | null = null,
-  penSeen = false;
+  penSeen = false,
+  rawSeen = false;
+liveCanvas.addEventListener("webglcontextlost", (e) => {
+  e.preventDefault();
+  active?.cancel();
+  active = null;
+  pointer = null;
+  liveCanvas.remove();
+  immediate = new ImmediateCPU(canvas);
+  rendererKind = "cpu";
+  rebuild();
+  status("描画を復旧しました。描画中だった線は取り消しました。", true);
+});
 let diagnostic: Sample[] = [],
   lastDiagnostic: Sample[] = [],
   lastRecord: StrokeRecord | null = null,
@@ -46,6 +92,7 @@ let diagnostic: Sample[] = [],
   pressure = 0,
   velocity = 0,
   previous: Sample | undefined,
+  corrected: Point | undefined,
   auto = false,
   stopAuto = false,
   trustedPenSamples = 0;
@@ -106,21 +153,24 @@ function lock(on: boolean) {
     "test",
     "sustained",
   ])
-    (el(id) as HTMLInputElement).disabled = on || auto;
-  el<HTMLButtonElement>("undo").disabled = on || auto || !records.length;
-  el<HTMLButtonElement>("redo").disabled = on || auto || !redo.length;
+    (el(id) as HTMLInputElement).disabled =
+      on ||
+      auto ||
+      (completedSequence !== sequence && !editingIds.includes(id));
+  el<HTMLButtonElement>("undo").disabled =
+    on || auto || completedSequence !== sequence || !records.length;
+  el<HTMLButtonElement>("redo").disabled =
+    on || auto || completedSequence !== sequence || !redo.length;
 }
 function abort() {
   active?.cancel();
   active = null;
-  release = null;
-  raster = null;
-  queue = null;
-  previewQueue = null;
-  previewRaster = null;
   pointer = null;
   lock(false);
+  if (completedSequence === sequence) immediate.setBase(image);
+  else immediate.cancel();
   paint(image);
+  scheduleSave();
 }
 function fail(e: unknown) {
   const message = e instanceof Error ? e.message : String(e);
@@ -231,18 +281,22 @@ function settings(): Preset {
   return p;
 }
 function begin() {
-  if (active || release) throw new Error("前の線を確定中です");
+  if (active) throw new Error("描画中です");
   const p = settings();
   diagnostic = [];
   previous = undefined;
-  raster = new StrokeRaster(W, H);
-  queue = new RasterQueue(raster, p);
+  corrected = undefined;
+  rawSeen = false;
+  clearTimeout(saveTimer);
+  immediate.begin(p);
   active = new BrushEngine(p, {
     seed: [1, 2],
-    sink: (page) => queue!.enqueue(page),
+    sink: (page) => immediate.append(page),
+    geometrySink: (point) => {
+      corrected = point;
+    },
   });
   received = performance.now();
-  version++;
   lock(true);
 }
 function accept(s: Sample) {
@@ -258,22 +312,49 @@ function accept(s: Sample) {
       1000;
   previous = s;
   received = performance.now();
-  version++;
   keep(telemetry.processing, performance.now() - start);
+}
+function present() {
+  if (!active || !received) return;
+  const start = performance.now();
+  active.publishStable();
+  immediate.present(active.preview());
+  if (input("raw").checked || input("processed").checked) paint(image);
+  keep(telemetry.render, performance.now() - start);
+  keep(telemetry.receiveToRAF, performance.now() - received);
+  received = 0;
 }
 function finish() {
   if (!active) return;
   const start = performance.now();
   active.finish();
-  release = active.record();
-  keep(telemetry.release, performance.now() - start);
+  const record = active.record();
+  immediate.finish();
   active = null;
-  previewRaster = null;
-  previewQueue = null;
-  status("線を確定しています…");
+  records.push(record);
+  redo = [];
+  lastRecord = record;
+  lastDiagnostic = [...diagnostic];
+  telemetry.strokes++;
+  const pages = record.commands.map((page) => Float64Array.from(page));
+  worker.postMessage(
+    {
+      epoch,
+      sequence: ++sequence,
+      record: { ...record, geometry: [], commands: pages },
+    },
+    pages.map((page) => page.buffer),
+  );
+  keep(telemetry.release, performance.now() - start);
+  compare();
+  lock(false);
+  status("線を確定しました。");
+  scheduleSave();
 }
 function paint(bytes: Uint8ClampedArray) {
-  ctx.putImageData(new ImageData(new Uint8ClampedArray(bytes), W, H), 0, 0);
+  if (rendererKind === "webgl2") ctx.clearRect(0, 0, W, H);
+  else
+    ctx.putImageData(new ImageData(new Uint8ClampedArray(bytes), W, H), 0, 0);
   const sources = [
     [input("raw").checked, active ? diagnostic : lastDiagnostic, "#367ccb"],
     [
@@ -307,72 +388,28 @@ function compare() {
     c.stroke();
   }
 }
-function complete() {
-  if (!release || !raster) return;
-  image = raster.composite(image, release.preset);
-  records.push(release);
-  redo = [];
-  lastRecord = release;
-  lastDiagnostic = [...diagnostic];
-  telemetry.strokes++;
-  release = null;
-  raster = null;
-  queue = null;
-  paint(image);
-  compare();
-  lock(false);
-  status("線を確定しました。");
-  scheduleSave();
-}
 let lastFrame = performance.now(),
   lastStats = 0;
 function frame(now: number) {
   keep(telemetry.frames, now - lastFrame);
   lastFrame = now;
-  const start = performance.now();
   try {
-    if (active || release) {
-      if (active && active.preset.exposureMs) {
-        const before = active.metrics.commands;
-        active.expose(Math.max(previous?.t ?? 0, now));
-        if (active.metrics.commands !== before) version++;
+    if (active?.preset.exposureMs) {
+      const before = active.metrics.commands;
+      active.expose(Math.max(previous?.t ?? 0, now));
+      if (active.metrics.commands !== before) {
+        received = performance.now();
+        present();
       }
-      queue?.run(16384, 2);
-      if (release && queue?.remaining === 0) complete();
-      else if (active && queue?.remaining === 0) {
-        if (previewVersion !== version) {
-          previewVersion = version;
-          previewRaster = raster!.clone();
-          previewQueue = new RasterQueue(previewRaster, active.preset);
-          const prefix = active.pendingPrefix();
-          if (prefix.length) previewQueue.enqueue(prefix);
-          previewQueue.enqueue(active.preview());
-        }
-        previewQueue?.run(16384, 2);
-        if (previewQueue?.remaining === 0 && previewRaster) {
-          paint(previewRaster.composite(image, active.preset));
-          if (received) {
-            keep(telemetry.receiveToRAF, now - received);
-            received = 0;
-          }
-        }
-      } else if (raster)
-        paint(raster.composite(image, active?.preset ?? release!.preset));
-      telemetry.peakRasterBytes = Math.max(
-        telemetry.peakRasterBytes,
-        (raster?.allocatedBytes ?? 0) + (previewRaster?.allocatedBytes ?? 0),
-      );
     }
   } catch (e) {
     fail(e);
   }
-  keep(telemetry.render, performance.now() - start);
-  if (now - lastStats > 300) {
+  // Sorting history and formatting diagnostics must not interrupt drawing.
+  if (!active && now - lastStats > 300) {
     lastStats = now;
-    const frames = telemetry.frames.slice(-30),
-      fps = 1000 / (frames.reduce((a, b) => a + b, 0) / frames.length);
     el("metrics").textContent =
-      `画面更新 ${fps.toFixed(0)} FPS · 筆圧 ${pressure.toFixed(3)} · 速さ ${velocity.toFixed(0)} px/s\n入力処理 p95 ${p95(telemetry.processing).toFixed(2)} ms · 描画処理 p95 ${p95(telemetry.render).toFixed(2)} ms\n受取→画面更新 p95 ${p95(telemetry.receiveToRAF).toFixed(2)} ms（実機の全遅延ではありません）\n${telemetry.accepted} 入力 · ${records.length} 本 · 描画中の画素領域 ${(telemetry.peakRasterBytes / 1048576).toFixed(1)} MB · 待ち ${queue?.remaining ?? 0} 個`;
+      `筆圧 ${pressure.toFixed(3)} · 速さ ${velocity.toFixed(0)} px/s\n入力処理 p95 ${p95(telemetry.processing).toFixed(2)} ms · 描画送信 p95 ${p95(telemetry.render).toFixed(2)} ms\n受取→描画送信 p95 ${p95(telemetry.receiveToRAF).toFixed(2)} ms（実機の全遅延ではありません）\n${telemetry.accepted} 入力 · ${records.length} 本`;
   }
   requestAnimationFrame(frame);
 }
@@ -383,9 +420,14 @@ const transform = (x: number, y: number) => {
 function intake(e: PointerEvent) {
   if (e.isTrusted && e.pointerType === "pen") trustedPenSamples++;
   const events = e.getCoalescedEvents?.() ?? [],
-    list = capturePointer(e, transform, 0);
+    captured = capturePointer(e, transform, 0),
+    list =
+      rawSeen && e.type === "pointermove"
+        ? captured.filter((s) => s.t > (previous?.t ?? -Infinity))
+        : captured;
+  if (!list.length) return;
   for (let i = 0; i < list.length; i++) {
-    const v = events.length ? events[i]! : e;
+    const v = events.length ? events[captured.indexOf(list[i]!)]! : e;
     accept({
       ...list[i]!,
       ...penSensors(v, {
@@ -395,9 +437,10 @@ function intake(e: PointerEvent) {
       }),
     });
   }
+  present();
 }
 canvas.addEventListener("pointerdown", (e) => {
-  if (pointer !== null || release || auto || e.button !== 0) return;
+  if (pointer !== null || auto || e.button !== 0) return;
   if (e.pointerType === "touch" && penSeen && !input("finger").checked) return;
   if (e.pointerType === "pen") penSeen = true;
   try {
@@ -410,6 +453,18 @@ canvas.addEventListener("pointerdown", (e) => {
     fail(err);
   }
 });
+// Consume unaligned device updates when provided; pointermove remains the fallback.
+if ("onpointerrawupdate" in window)
+  canvas.addEventListener("pointerrawupdate", (event) => {
+    const e = event as PointerEvent;
+    if (e.pointerId !== pointer || e.buttons === 0) return;
+    try {
+      rawSeen = true;
+      intake(e);
+    } catch (err) {
+      fail(err);
+    }
+  });
 canvas.addEventListener("pointermove", (e) => {
   if (e.pointerId === pointer)
     try {
@@ -470,7 +525,7 @@ for (const id of ["raw", "processed"])
   input(id).addEventListener("change", () => paint(image));
 input("compare").addEventListener("change", compare);
 async function settled() {
-  while (active || release)
+  while (active || completedSequence !== sequence)
     await new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 async function pattern(kind: Parameters<typeof fixture>[0]) {
@@ -493,6 +548,7 @@ function rebuild() {
     image = rasterize(r, W, H).composite(image, r.preset);
   lastRecord = records.at(-1) ?? null;
   paint(image);
+  syncReference();
   compare();
   lock(false);
   scheduleSave();
@@ -569,6 +625,7 @@ input("file").addEventListener("change", async () => {
     image = next;
     lastRecord = records.at(-1) ?? null;
     paint(image);
+    syncReference();
     compare();
     lock(false);
     scheduleSave();
@@ -583,6 +640,10 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
+    if (active || completedSequence !== sequence) {
+      scheduleSave();
+      return;
+    }
     try {
       const json = JSON.stringify(bundle());
       if (json.length > 4 * 1024 * 1024)
@@ -655,6 +716,7 @@ async function sustained(duration = 180000) {
             pointerType: "pen",
           });
         }
+        present();
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
       }
       finish();
@@ -698,10 +760,21 @@ requestAnimationFrame(frame);
     records: records.length,
     redo: redo.length,
     active: !!active,
-    release: !!release,
+    release: completedSequence !== sequence,
+    renderer: rendererKind,
+    inputSource: rawSeen ? "pointerrawupdate" : "pointermove",
+    presentations: immediate.presentations,
+    corrected,
     telemetry,
     preset: settings(),
   }),
+  begin,
+  accept,
+  present,
+  finish,
+  abort,
+  settled,
+  visibleBytes: () => Array.from(immediate.readPixels()),
   bytes: () => Array.from(image),
   replayEqual: () => {
     let expected = blank();
@@ -710,6 +783,13 @@ requestAnimationFrame(frame);
     return expected.every((v, i) => v === image[i]);
   },
   bundle,
+  presets: PRESETS,
+  referenceBytes: () => {
+    let expected = blank();
+    for (const r of records)
+      expected = rasterize(r, W, H).composite(expected, r.preset);
+    return Array.from(expected);
+  },
   load,
   reset: () => {
     records = [];

@@ -10,9 +10,14 @@ export type RasterTile = { x: number; y: number; values: Float64Array };
 export class StrokeRaster {
   readonly tiles = new Map<string, RasterTile>();
   private bytes = 0;
+  private shared = new Set<string>();
+  private dirty = new Set<string>();
   private cachedX = -1;
   private cachedY = -1;
   private cachedTile: RasterTile | undefined;
+  private cachedKey = "";
+  private cachedOwned = true;
+  private cachedDirty = false;
   constructor(
     readonly width: number,
     readonly height: number,
@@ -25,6 +30,30 @@ export class StrokeRaster {
   }
   get allocatedBytes() {
     return this.bytes;
+  }
+  // Both owners copy a tile before mutation; unchanged stroke history is shared.
+  fork() {
+    const n = new StrokeRaster(
+      this.width,
+      this.height,
+      this.tileSize,
+      this.maxBytes,
+    );
+    for (const [k, t] of this.tiles) {
+      n.tiles.set(k, t);
+      n.shared.add(k);
+      this.shared.add(k);
+    }
+    n.bytes = this.bytes;
+    this.cachedTile = undefined;
+    this.cachedX = this.cachedY = -1;
+    return n;
+  }
+  takeDirty() {
+    const keys = [...this.dirty];
+    this.dirty.clear();
+    this.cachedDirty = false;
+    return keys;
   }
   clone() {
     const n = new StrokeRaster(
@@ -49,13 +78,17 @@ export class StrokeRaster {
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) return;
     const tx = Math.floor(x / this.tileSize),
       ty = Math.floor(y / this.tileSize);
-    let tile =
-      this.cachedX === tx && this.cachedY === ty
-        ? this.cachedTile
-        : this.tiles.get(tx + "," + ty);
-    this.cachedX = tx;
-    this.cachedY = ty;
-    this.cachedTile = tile;
+    let tile: RasterTile | undefined;
+    if (this.cachedX === tx && this.cachedY === ty) tile = this.cachedTile;
+    else {
+      this.cachedKey = tx + "," + ty;
+      tile = this.tiles.get(this.cachedKey);
+      this.cachedX = tx;
+      this.cachedY = ty;
+      this.cachedTile = tile;
+      this.cachedOwned = !this.shared.has(this.cachedKey);
+      this.cachedDirty = this.dirty.has(this.cachedKey);
+    }
     const i = ((y % this.tileSize) * this.tileSize + (x % this.tileSize)) * 4;
     // A saturated stroke pixel cannot take any more deposit, regardless of tip/grain/color.
     if (tile && tile.values[i + 3]! >= d[o + C.OPACITY]!) return;
@@ -71,10 +104,22 @@ export class StrokeRaster {
       this.cachedTile = tile;
       this.bytes += bytes;
     }
+    const key = this.cachedKey;
+    if (!this.cachedOwned) {
+      this.shared.delete(key);
+      this.cachedOwned = true;
+      tile = { x: tx, y: ty, values: tile.values.slice() };
+      this.tiles.set(key, tile);
+      this.cachedTile = tile;
+    }
     const v = tile.values,
       a = v[i + 3]!,
       delta = Math.max(0, d[o + C.OPACITY]! - a) * amount;
     if (delta <= 0) return;
+    if (!this.cachedDirty) {
+      this.dirty.add(key);
+      this.cachedDirty = true;
+    }
     v[i] = v[i]! + delta * d[o + C.R]!;
     v[i + 1] = v[i + 1]! + delta * d[o + C.G]!;
     v[i + 2] = v[i + 2]! + delta * d[o + C.B]!;

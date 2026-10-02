@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "measuredAt": "2026-10-02T09:10:52.188Z",
+  "measuredAt": "2026-10-02T10:17:55.200Z",
   "browser": "133.0.6943.0",
-  "durationMs": 191099,
+  "durationMs": 191115,
   "checks": [
     {
       "name": "offline initialization, 56 brushes, no HTTP dependency",
@@ -91,8 +91,8 @@
       "name": "three-minute scheduled 240Hz input run",
       "status": "PASS",
       "observed": {
-        "durationMs": 180216,
-        "accepted": 42868,
+        "durationMs": 180332,
+        "accepted": 42478,
         "strokes": 36
       }
     },

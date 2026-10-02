@@ -6,6 +6,14 @@
 
 保存時に別更新 `dd35eb8` を検出したため、その履歴・コードを保ち、描画計算再利用/末尾メモリ/入力検証/設定固定の修正を統合した。1344本の記録と56本の画像をdd35と照合し完全一致。これは回帰検査で、競合に対する品質合格ではない。[一致記録](evidence/integration-equivalence.json)。元の報告は[dd35時点](https://github.com/totoro0419/illustro/blob/dd35eb845c954399060a31651414070b7495b8fc/docs/brush/VALIDATION.md)に保存。別の再構成候補の証拠は現行のPASSに含めない。
 
+## 描画遅延の修正（今回の判定）
+
+以前のPASSは、軌跡が入力後に遅れて現れる欠陥を見逃した。連続入力で約1.7秒の描画停止を再現し、表示を入力ハンドラー内で行うGPU/差分CPU経路へ変更した。補正済みの最新位置を表示し、保存用の厳密計算はworkerへ移した。次の線をその計算待ちで止めない。
+
+[変更・表示画素の検査・残る限界](LATENCY.md)。Brush 169件、Core 8件の型・テストがPASS。追加した7ゲートで、接触初点、補正OFF/中/強の最新位置、native移動全イベント、次の線、56Presetと画像・4合成、GPU喪失、CPU代替を確認した。GPU表示には輪郭の一部にfloat境界差があり、保存後の再現は完全一致。物理ペンでの実表示遅延や、主要アプリへの優越は未認証。
+
+以下は以前のチェックポイントの監査・比較・数値を保持する記録。現行の表示遅延の判断には上の表示検査と最新のブラウザ証拠を使う。旧167件や旧CPUラボの性能値を新GPUの実測として流用しない。
+
 ## 1. 現行実装の監査
 
 [AUDIT](AUDIT.md)に基点・継承・修正を記載。main `bdc7135`、PR #8 checkpoint `dad1be0` から別branchで継続し、Region/Connectivity/UIの他作業を混ぜていない。今回の判定対象は `packages/brush`、Core semantic adapter、`prototypes/brush-lab`。
@@ -103,6 +111,6 @@ forced-GC input workload heap before 7,231,336bytes / after 7,522,064bytes。obs
 | 19 | 実機ペン/熱/物理遅延/描き心地 | UNVERIFIED、ユーザー端末で実描画が必要 |
 | 20 | mainを保ちreview可能なpublication | 別branch/Draft PRに保存。mergeなし。完成宣言なし |
 
-次に行う作業：独立Dual/Multi-brush、既存pixel混色/Smudge/ぼかし、画像素材の視覚編集・整理、初期ペンの制作評価。Renderer側はtile差分previewとworker/GPU評価、large-brushのprofile別budget、resource hash/packed persistence/OPFS/crash tests、Selection/Layer/UIとの統合。製品UXのtemporary eraser、hover cursor、touch navigationも未接続。
+次に行う作業：独立Dual/Multi-brush、既存pixel混色/Smudge/ぼかし、画像素材の視覚編集・整理、初期ペンの制作評価。Renderer側は実GPUのqueue/表示遅延、large-brushのprofile別budget、resource hash/packed persistence/OPFS/crash tests、Selection/Layer/UIとの統合。製品UXのtemporary eraser、hover cursor、touch navigationも未接続。
 
 実機プロトコル：このラボで端末/OS/browser/penを記録し、圧力線・速描き・小ループ・逆方向・低筆圧・保持airbrush・大径/質感・3分描画を実行。RAW/補正の比較と本人の感想、観測sensor range、エラー、保存後のbyte replay、温度/OS状態を別に記録する。機器のinput-to-displayは外部撮影等で計測し、受取→次RAFと混同しない。合成イベントや旧Xiaomi記録を現在の物理PASSへ置換しない。

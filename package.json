@@ -15,7 +15,8 @@
     "brush:benchmark": "node prototypes/brush-lab/build-benchmark.mjs && node --expose-gc benchmark-dist/benchmark.mjs",
     "brush:browser": "node prototypes/brush-lab/browser-check.mjs",
     "brush:check": "npm run brush:typecheck && npm run brush:test && npm run core:check",
-    "brush:atlas": "node prototypes/brush-lab/build-atlas.mjs"
+    "brush:atlas": "node prototypes/brush-lab/build-atlas.mjs",
+    "brush:latency": "node prototypes/brush-lab/latency-check.mjs"
   },
   "devDependencies": {
     "vite": "8.3.1",

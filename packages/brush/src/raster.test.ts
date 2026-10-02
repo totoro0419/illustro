@@ -111,6 +111,30 @@ describe("replay, batching and blending", () => {
       bytes(rasterize(deserialize(serialize(r)), 320, 180), r.preset),
     ).toEqual(expected);
   });
+  it("forks isolate both owners and report only changed tiles", () => {
+    const p = { ...base, grain: 0, flow: 1 },
+      a = new StrokeRaster(256, 256, 32);
+    const q = new RasterQueue(a, p);
+    q.enqueue(command(12));
+    while (q.remaining) q.run(100000);
+    const original = bytes(a, p),
+      fork = a.fork();
+    expect(fork.takeDirty()).toEqual([]);
+    const d = command(20);
+    d[C.X] = 170;
+    d[C.Y] = 170;
+    const fq = new RasterQueue(fork, p);
+    fq.enqueue(d);
+    while (fq.remaining) fq.run(100000);
+    expect(bytes(a, p)).toEqual(original);
+    expect(fork.takeDirty().length).toBeGreaterThan(0);
+    const forkBefore = bytes(fork, p);
+    const other = command(30);
+    other[C.R] = 1;
+    q.enqueue(other);
+    while (q.remaining) q.run(100000);
+    expect(bytes(fork, p)).toEqual(forkBefore);
+  });
   it("a single large dab is sliced to the requested pixel limit", () => {
     const p = { ...base, size: 512 },
       a = new StrokeRaster(256, 256, 32),

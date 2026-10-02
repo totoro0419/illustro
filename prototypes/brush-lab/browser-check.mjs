@@ -17,7 +17,9 @@ const browser = await chromium.launch({
   args: [
     "--no-sandbox",
     "--disable-dev-shm-usage",
-    "--disable-gpu",
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader",
     "--no-zygote",
   ],
 });
@@ -26,6 +28,24 @@ const target = pathToFileURL(
   ).href,
   out = resolve("docs/brush/evidence");
 mkdirSync(out, { recursive: true });
+// Optional inspection-only font injection. It is not shipped and is excluded from timing evidence.
+async function inspectFont(page) {
+  if (process.env.BRUSH_INSPECTION_FONT_ROOT) {
+    const font = process.env.BRUSH_INSPECTION_FONT_ROOT;
+    let css = readFileSync(resolve(font, "400.css"), "utf8");
+    css = css.replace(
+      /src: url\(\.\/files\/([^)]*\.woff2)\)[^;]*;/g,
+      (_, name) =>
+        `src:url(data:font/woff2;base64,${readFileSync(resolve(font, "files", name)).toString("base64")}) format('woff2');`,
+    );
+    await page.addStyleTag({
+      content:
+        css +
+        'html,input,button,select,textarea,pre,#metrics{font-family:"Noto Sans JP",sans-serif!important}',
+    });
+    await page.evaluate(() => document.fonts.ready);
+  }
+}
 const checks = [],
   errors = [],
   network = [];
@@ -171,13 +191,11 @@ await check("JSON save/import and reload restoration", async () => {
   const file = await page.evaluate(() =>
     JSON.stringify(window.__brushLab.bundle()),
   );
-  await page
-    .locator("#file")
-    .setInputFiles({
-      name: "stroke.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(file),
-    });
+  await page.locator("#file").setInputFiles({
+    name: "stroke.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(file),
+  });
   await page.waitForFunction(() =>
     document.querySelector("#status").textContent.includes("開きました"),
   );
@@ -185,13 +203,11 @@ await check("JSON save/import and reload restoration", async () => {
 });
 await check("corrupt imports retain current artwork", async () => {
   const before = (await state()).records;
-  await page
-    .locator("#file")
-    .setInputFiles({
-      name: "invalid.json",
-      mimeType: "application/json",
-      buffer: Buffer.from('{"version":99}'),
-    });
+  await page.locator("#file").setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from('{"version":99}'),
+  });
   await page.waitForFunction(() =>
     document.querySelector("#status").textContent.includes("保持"),
   );
@@ -310,6 +326,7 @@ await check(
     await m.touchscreen.tap(b.x + 80, b.y + 70);
     await m.waitForFunction(() => window.__brushLab.state().records === 1);
     assert.equal(await m.evaluate(() => window.__brushLab.replayEqual()), true);
+    await inspectFont(m);
     await m.screenshot({ path: out + "/browser-mobile.png", fullPage: true });
     await mobile.close();
     return {
@@ -371,22 +388,7 @@ await page.waitForFunction(() => !!window.__brushLab);
 await page.evaluate(() => window.__brushLab.reset());
 await page.locator("#brush").selectOption("clean-ink");
 await page.evaluate(() => window.__brushLab.pattern("curve"));
-// Optional inspection-only font injection. It is not shipped and is excluded from timing evidence.
-if (process.env.BRUSH_INSPECTION_FONT_ROOT) {
-  const font = process.env.BRUSH_INSPECTION_FONT_ROOT;
-  let css = readFileSync(resolve(font, "400.css"), "utf8");
-  css = css.replace(
-    /src: url\(\.\/files\/([^)]*\.woff2)\)[^;]*;/g,
-    (_, name) =>
-      `src:url(data:font/woff2;base64,${readFileSync(resolve(font, "files", name)).toString("base64")}) format('woff2');`,
-  );
-  await page.addStyleTag({
-    content:
-      css +
-      'html,input,button,select,textarea,pre,#metrics{font-family:"Noto Sans JP",sans-serif!important}',
-  });
-  await page.evaluate(() => document.fonts.ready);
-}
+await inspectFont(page);
 await page.screenshot({ path: out + "/browser-desktop.png", fullPage: true });
 await check("no browser script errors or HTTP requests", async () => {
   assert.deepEqual(errors, []);

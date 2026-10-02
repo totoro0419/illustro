@@ -25,6 +25,7 @@ jobs:
       - run: npm --prefix prototypes/p0-architecture run test && npm --prefix prototypes/p0-architecture run build
       - run: npm run brush:benchmark
       - run: npx playwright-core install --with-deps chromium
+      - run: npm run brush:latency
       - run: npm run brush:browser
       - uses: actions/upload-artifact@v7
         if: always()

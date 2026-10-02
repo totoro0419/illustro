@@ -31,6 +31,7 @@ export class BrushEngine {
   private tailLength = 0;
   private page = new Float64Array(LIMITS.pageCommands * STRIDE);
   private pageLength = 0;
+  private publishedLength = 0;
   private savedPages: (readonly number[])[] = [];
   private geometry: Point[] = [];
   private closed = false;
@@ -204,11 +205,12 @@ export class BrushEngine {
     };
     const scratch = new Float64Array(this.tail);
     const savedPage = this.page,
-      savedLength = this.pageLength;
+      savedLength = this.pageLength,
+      savedPublished = this.publishedLength;
     const savedPages = this.savedPages;
     const output: number[] = [];
     this.page = new Float64Array(LIMITS.pageCommands * STRIDE);
-    this.pageLength = 0;
+    this.pageLength = this.publishedLength = 0;
     this.savedPages = [];
     this.previewSink = (page) => output.push(...page);
     try {
@@ -229,12 +231,29 @@ export class BrushEngine {
       this.stable = state.stable;
       this.page = savedPage;
       this.pageLength = savedLength;
+      this.publishedLength = savedPublished;
       this.savedPages = savedPages;
       this.previewSink = undefined;
     }
   }
+  // Publish immutable ink once per input batch, without waiting for a full page.
+  publishStable() {
+    this.open();
+    if (this.options.sink && this.pageLength > this.publishedLength) {
+      this.options.sink(
+        this.page.slice(
+          this.publishedLength * STRIDE,
+          this.pageLength * STRIDE,
+        ),
+      );
+      this.publishedLength = this.pageLength;
+    }
+  }
   pendingPrefix() {
-    return this.page.slice(0, this.pageLength * STRIDE);
+    return this.page.slice(
+      this.publishedLength * STRIDE,
+      this.pageLength * STRIDE,
+    );
   }
   private previewSink: PageSink | undefined;
   private finishPath() {
@@ -363,13 +382,14 @@ export class BrushEngine {
     const owned = this.page.slice(0, this.pageLength * STRIDE);
     if (this.previewSink) this.previewSink(owned);
     else {
-      this.options.sink?.(owned.slice());
+      if (this.pageLength > this.publishedLength)
+        this.options.sink?.(owned.slice(this.publishedLength * STRIDE));
       if (this.options.retain !== false)
         (this.savedPages as (readonly number[])[]).push(
           Object.freeze(Array.from(owned)),
         );
     }
-    this.pageLength = 0;
+    this.pageLength = this.publishedLength = 0;
   }
   private open() {
     if (this.closed) throw new Error("stroke closed");
