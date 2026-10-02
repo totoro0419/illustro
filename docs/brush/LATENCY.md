@@ -44,3 +44,7 @@ native入力の測定値は「入力の受取→描画命令の送信」であ�
 ## 検証コードの実行費用
 
 最初のリモートCIでは既存の全画素deep equalityが5秒の上限に当たった。全7先端・48条件・96×96の走査とbyte比較を維持し、配列の長さと最初の不一致を直接検査する形に変えた。timeoutは引き上げていない。Brushの169件は約8秒でPASSし、Coreの8件もPASS。[再実行ログ](evidence/latency-unit-checks.txt)。描画コードとオフラインHTMLはこの検証コード修正で変えていない。
+
+## リモート検証
+
+実装・検証コードのcommit `437b987f8dcab521e1f6238b52ee6fb84070e85b` で、[Brush Engine CI](https://github.com/totoro0419/illustro/actions/runs/36995862426)と[Core CI](https://github.com/totoro0419/illustro/actions/runs/36995862441)が成功した。型・169/8テスト、P0、build、benchmark、新しい表示検査7項目、3分を含む通常ブラウザ検査をリモートでも実行した。これは物理ペンや競合優越の認証ではない。最新の追記は報告だけで、描画コードと生成HTMLを変えていない。HTMLのSHA-256は `0c00a6c51bc4b5366336069a6c67a1d90221f8f3245c3a60f35f733edbf81d4e`。
