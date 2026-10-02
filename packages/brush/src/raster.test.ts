@@ -142,6 +142,35 @@ describe("replay, batching and blending", () => {
     while (q.remaining) q.run(100000);
     expect(bytes(fork, p)).toEqual(forkBefore);
   });
+  it("a regional fork visits only requested tiles and isolates subsequent writes", () => {
+    const p = { ...base, grain: 0, flow: 0.3 },
+      a = new StrokeRaster(256, 256, 32),
+      q = new RasterQueue(a, p);
+    q.enqueue(command(120));
+    while (q.remaining) q.run(100000);
+    const count = a.tiles.size,
+      original = bytes(a, p);
+    // A preview must never enumerate the growing stable prefix.
+    a.tiles.keys = () => {
+      throw new Error("history enumerated");
+    };
+    a.tiles[Symbol.iterator] = () => {
+      throw new Error("history enumerated");
+    };
+    const b = a.fork(["1,1", "1,1"]);
+    expect(count).toBeGreaterThan(1);
+    expect(b.tiles.size).toBe(1);
+    expect(b.allocatedBytes).toBe(32 * 32 * 4 * 8);
+    const d = command(12),
+      previewQueue = new RasterQueue(b, p);
+    previewQueue.enqueue(d);
+    while (previewQueue.remaining) previewQueue.run(100000);
+    expect(bytes(a, p)).toEqual(original);
+    const previewTile = b.tiles.get("1,1")!.values.slice();
+    q.enqueue(d);
+    while (q.remaining) q.run(100000);
+    expect(b.tiles.get("1,1")!.values).toEqual(previewTile);
+  });
   it("a single large dab is sliced to the requested pixel limit", () => {
     const p = { ...base, size: 512 },
       a = new StrokeRaster(256, 256, 32),

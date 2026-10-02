@@ -21,19 +21,26 @@ import type {
 const el = <T extends HTMLElement>(id: string) =>
     document.getElementById(id) as T,
   input = (id: string) => el<HTMLInputElement>(id),
-  canvas = el<HTMLCanvasElement>("draw"),
-  ctx = canvas.getContext("2d")!,
+  diagnosticCanvas = el<HTMLCanvasElement>("draw"),
+  ctx = diagnosticCanvas.getContext("2d")!,
   W = 768,
   H = 512,
   blank = () => new Uint8ClampedArray(W * H * 4);
+let canvas = diagnosticCanvas;
+const surface = el("surface");
 const liveCanvas = document.createElement("canvas");
 liveCanvas.width = W;
 liveCanvas.height = H;
 liveCanvas.id = "live";
-canvas.before(liveCanvas);
+diagnosticCanvas.before(liveCanvas);
 let immediate: ImmediateRenderer | ImmediateCPU;
 try {
   immediate = new ImmediateRenderer(liveCanvas);
+  diagnosticCanvas.id = "diagnostics";
+  diagnosticCanvas.hidden = true;
+  liveCanvas.id = "draw";
+  liveCanvas.setAttribute("aria-label", "描画用の検証キャンバス");
+  canvas = liveCanvas;
 } catch {
   liveCanvas.remove();
   immediate = new ImmediateCPU(canvas);
@@ -80,6 +87,9 @@ liveCanvas.addEventListener("webglcontextlost", (e) => {
   active = null;
   pointer = null;
   liveCanvas.remove();
+  canvas = diagnosticCanvas;
+  canvas.id = "draw";
+  canvas.hidden = false;
   immediate = new ImmediateCPU(canvas);
   rendererKind = "cpu";
   rebuild();
@@ -352,8 +362,11 @@ function finish() {
   scheduleSave();
 }
 function paint(bytes: Uint8ClampedArray) {
-  if (rendererKind === "webgl2") ctx.clearRect(0, 0, W, H);
-  else
+  if (rendererKind === "webgl2") {
+    diagnosticCanvas.hidden =
+      !input("raw").checked && !input("processed").checked;
+    ctx.clearRect(0, 0, W, H);
+  } else
     ctx.putImageData(new ImageData(new Uint8ClampedArray(bytes), W, H), 0, 0);
   const sources = [
     [input("raw").checked, active ? diagnostic : lastDiagnostic, "#367ccb"],
@@ -439,7 +452,7 @@ function intake(e: PointerEvent) {
   }
   present();
 }
-canvas.addEventListener("pointerdown", (e) => {
+surface.addEventListener("pointerdown", (e) => {
   if (pointer !== null || auto || e.button !== 0) return;
   if (e.pointerType === "touch" && penSeen && !input("finger").checked) return;
   if (e.pointerType === "pen") penSeen = true;
@@ -455,7 +468,7 @@ canvas.addEventListener("pointerdown", (e) => {
 });
 // Consume unaligned device updates when provided; pointermove remains the fallback.
 if ("onpointerrawupdate" in window)
-  canvas.addEventListener("pointerrawupdate", (event) => {
+  surface.addEventListener("pointerrawupdate", (event) => {
     const e = event as PointerEvent;
     if (e.pointerId !== pointer || e.buttons === 0) return;
     try {
@@ -465,7 +478,7 @@ if ("onpointerrawupdate" in window)
       fail(err);
     }
   });
-canvas.addEventListener("pointermove", (e) => {
+surface.addEventListener("pointermove", (e) => {
   if (e.pointerId === pointer)
     try {
       intake(e);
@@ -473,7 +486,7 @@ canvas.addEventListener("pointermove", (e) => {
       fail(err);
     }
 });
-canvas.addEventListener("pointerup", (e) => {
+surface.addEventListener("pointerup", (e) => {
   if (e.pointerId !== pointer) return;
   try {
     if (e.pressure !== 0) intake(e);
@@ -494,7 +507,7 @@ canvas.addEventListener("pointerup", (e) => {
   }
 });
 for (const type of ["pointercancel", "lostpointercapture"])
-  canvas.addEventListener(type, () => {
+  surface.addEventListener(type, () => {
     if (pointer !== null) {
       abort();
       status("描画を中止しました。");
@@ -762,6 +775,11 @@ requestAnimationFrame(frame);
     active: !!active,
     release: completedSequence !== sequence,
     renderer: rendererKind,
+    desynchronized:
+      immediate instanceof ImmediateRenderer
+        ? immediate.gl.getContextAttributes()?.desynchronized
+        : false,
+    engine: active?.metrics,
     inputSource: rawSeen ? "pointerrawupdate" : "pointermove",
     presentations: immediate.presentations,
     corrected,
@@ -784,6 +802,15 @@ requestAnimationFrame(frame);
   },
   bundle,
   presets: PRESETS,
+  // Test-only independent replay of the current sample prefix; never called by input handlers.
+  previewReferenceBytes: () => {
+    if (!active) throw new Error("No active stroke");
+    const reference = new BrushEngine(active.preset, { seed: active.seed });
+    for (const sample of diagnostic) reference.accept(sample);
+    reference.finish();
+    const record = reference.record();
+    return Array.from(rasterize(record, W, H).composite(image, record.preset));
+  },
   referenceBytes: () => {
     let expected = blank();
     for (const r of records)

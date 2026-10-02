@@ -36,6 +36,28 @@ await page.goto(
 );
 await page.waitForFunction(() => window.__brushLab);
 await check(
+  "visible GPU canvas receives input directly without a transparent DOM overlay",
+  async () => {
+    const r = await page.evaluate(() => {
+      const c = document.getElementById("draw"),
+        b = c.getBoundingClientRect();
+      return {
+        top: document.elementFromPoint(
+          b.left + b.width / 2,
+          b.top + b.height / 2,
+        )?.id,
+        context: !!c.getContext("webgl2"),
+        diagnosticsHidden: document.getElementById("diagnostics").hidden,
+        desynchronized: window.__brushLab.state().desynchronized,
+      };
+    });
+    assert.equal(r.top, "draw");
+    assert.equal(r.context, true);
+    assert.equal(r.diagnosticsHidden, true);
+    return r;
+  },
+);
+await check(
   "GPU active; no reference completion required for first point or latest corrected endpoint",
   async () => {
     const result = await page.evaluate(() => {
@@ -127,6 +149,72 @@ await check(
       results.push(result);
     }
     return results;
+  },
+);
+await check(
+  "partial preview restores old mutable ink across reversals and overlaps",
+  async () => {
+    const cases = await page.evaluate(() => {
+      const l = window.__brushLab,
+        results = [];
+      for (const variableOpacity of [false, true]) {
+        l.reset();
+        l.load({
+          ...l.presets.find((p) => p.id === "clean-ink"),
+          size: 36,
+          taperEnd: 96,
+          stabilization: 0.5,
+          ...(variableOpacity
+            ? {
+                mappings: [
+                  {
+                    source: "pressure",
+                    target: "opacity",
+                    min: 0.1,
+                    max: 1,
+                    curve: [
+                      [0, 0],
+                      [1, 1],
+                    ],
+                    mode: "multiply",
+                  },
+                ],
+              }
+            : {}),
+        });
+        l.begin();
+        let over2 = 0,
+          max = 0;
+        for (let i = 0; i < 80; i++) {
+          l.accept({
+            x: 140 + 210 * Math.sin(i / 13),
+            y: 240 + 100 * Math.sin(i / 7),
+            t: 1 + i * 4,
+            pressure: 0.2 + (0.7 * (i % 17)) / 17,
+          });
+          l.present();
+          if (i % 10 === 9) {
+            const visible = l.visibleBytes(),
+              reference = l.previewReferenceBytes();
+            for (let c = 0; c < visible.length; c++) {
+              const d = Math.abs(visible[c] - reference[c]);
+              max = Math.max(max, d);
+              if (d > 2) over2++;
+            }
+          }
+        }
+        l.abort();
+        results.push({
+          variableOpacity,
+          snapshots: 8,
+          maxChannelError: max,
+          channelsOver2: over2,
+        });
+      }
+      return results;
+    });
+    for (const c of cases) assert.equal(c.channelsOver2, 0);
+    return cases;
   },
 );
 await check(
@@ -355,7 +443,7 @@ await check(
       l.accept({ x: 50, y: 50, t: 300, pressure: 1 });
       l.present();
       document
-        .getElementById("live")
+        .getElementById("draw")
         .dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
       return {
         before,

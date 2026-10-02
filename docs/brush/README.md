@@ -23,6 +23,7 @@ npm run brush:atlas
 npm run brush:benchmark
 npx playwright-core install chromium
 npm run brush:latency
+npm run brush:throughput
 npm run brush:browser
 npm --prefix prototypes/p0-architecture run test
 npm --prefix prototypes/p0-architecture run build

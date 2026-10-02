@@ -1,4 +1,6 @@
 import { StrokeRaster, RasterQueue } from "../../packages/brush/src/raster";
+import { dabBounds } from "../../packages/brush/src/coverage";
+import { STRIDE } from "../../packages/brush/src/types";
 import type { Preset } from "../../packages/brush/src/types";
 /** Exact arithmetic fallback, with only changed tiles repainted at input time. */
 export class ImmediateCPU {
@@ -30,7 +32,24 @@ export class ImmediateCPU {
     this.draw(this.raster, d);
   }
   present(d: ArrayLike<number>) {
-    const r = this.raster.fork();
+    // Copy-on-write only where the mutable tip can touch; never scan the prefix.
+    const keys = new Set<string>(),
+      size = this.raster.tileSize;
+    for (let o = 0; o < d.length; o += STRIDE) {
+      const b = dabBounds(d, o, this.preset);
+      for (
+        let y = Math.max(0, Math.floor(b.y0 / size));
+        y < Math.ceil(Math.min(this.canvas.height, b.y1) / size);
+        y++
+      )
+        for (
+          let x = Math.max(0, Math.floor(b.x0 / size));
+          x < Math.ceil(Math.min(this.canvas.width, b.x1) / size);
+          x++
+        )
+          keys.add(x + "," + y);
+    }
+    const r = this.raster.fork(keys);
     this.draw(r, d);
     const tail = r.takeDirty();
     this.patch(r, [
@@ -58,7 +77,7 @@ export class ImmediateCPU {
           ),
           row * size * 4,
         );
-      const tile = r.tiles.get(key);
+      const tile = r.tiles.get(key) ?? this.raster.tiles.get(key);
       if (tile) r.compositeTile(tile, dst, this.preset);
       const patch = new Uint8ClampedArray(width * height * 4);
       for (let row = 0; row < height; row++) {

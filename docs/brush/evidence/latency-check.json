@@ -1,6 +1,16 @@
 {
   "checks": [
     {
+      "name": "visible GPU canvas receives input directly without a transparent DOM overlay",
+      "status": "PASS",
+      "observed": {
+        "top": "draw",
+        "context": true,
+        "diagnosticsHidden": true,
+        "desynchronized": true
+      }
+    },
+    {
       "name": "GPU active; no reference completion required for first point or latest corrected endpoint",
       "status": "PASS",
       "observed": {
@@ -37,13 +47,31 @@
       ]
     },
     {
+      "name": "partial preview restores old mutable ink across reversals and overlaps",
+      "status": "PASS",
+      "observed": [
+        {
+          "variableOpacity": false,
+          "snapshots": 8,
+          "maxChannelError": 1,
+          "channelsOver2": 0
+        },
+        {
+          "variableOpacity": true,
+          "snapshots": 8,
+          "maxChannelError": 0,
+          "channelsOver2": 0
+        }
+      ]
+    },
+    {
       "name": "native contact and every native motion submit visible ink before returning from the event",
       "status": "PASS",
       "observed": {
         "events": 82,
         "firstAlpha": 255,
         "everyMovePresented": true,
-        "submissionP95Ms": 0.40000000037252903,
+        "submissionP95Ms": 0.30000000074505806,
         "errors": [],
         "inputSource": "pointerrawupdate",
         "nativeGeometry": 82

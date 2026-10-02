@@ -31,20 +31,23 @@ export class StrokeRaster {
   get allocatedBytes() {
     return this.bytes;
   }
-  // Both owners copy a tile before mutation; unchanged stroke history is shared.
-  fork() {
+  // Both owners copy a tile before mutation. A regional fork includes only the requested tiles;
+  // its caller reads untouched regions from the stable parent.
+  fork(keys: Iterable<string> = this.tiles.keys()) {
     const n = new StrokeRaster(
       this.width,
       this.height,
       this.tileSize,
       this.maxBytes,
     );
-    for (const [k, t] of this.tiles) {
+    for (const k of keys) {
+      const t = this.tiles.get(k);
+      if (!t || n.tiles.has(k)) continue;
       n.tiles.set(k, t);
       n.shared.add(k);
       this.shared.add(k);
+      n.bytes += t.values.byteLength;
     }
-    n.bytes = this.bytes;
     this.cachedTile = undefined;
     this.cachedX = this.cachedY = -1;
     return n;
