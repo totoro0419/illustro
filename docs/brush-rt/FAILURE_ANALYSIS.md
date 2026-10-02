@@ -38,3 +38,7 @@ The elapsed-time exposure requirement in two existing airbrush presets was also 
 Local execution disconnected before these revisions could be validated; new checks must execute in GitHub CI. No unexecuted local test is counted as PASS.
 
 Continuous solid capsules now use coverage union, including AA, rather than repeated stamp-flow accumulation. Their constant pigment/opacity/flow eligibility makes MAX union the appropriate geometry operation. This intentionally removes input-frequency-dependent AA darkening. Complex stamp brushes retain flow accumulation. A cross-frequency pixel test covers the new semantics.
+
+
+The revised confirmed path also proves full coverage from the four corners of a tile for constant-radius capsules, with a one-pixel safety margin. Only eligible constant-pigment, constant-opacity, flow=1 strokes can elide later GPU deposits on a saturated tile. Canonical commands remain intact. Other tiles/stamps retain ordered deposition. This reduces redundant *exact* work, rather than enlarging the queue budget or lowering final quality. A new test rejects this shortcut for flow<1.
+Image mask cache keys are now computed once per mask object; worker command batches reuse a main-thread frozen preset instead of repeatedly serializing brush image data. An unused record-ID map that retained undone/cleared records was removed.

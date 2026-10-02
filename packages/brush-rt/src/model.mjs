@@ -77,3 +77,10 @@ export function cpuReference(record,width,height,base=new Uint8ClampedArray(widt
 }
 export class LatestMailbox{constructor(){this.value=null;this.revision=0;this.obsolete=0;}set(v){if(this.value)this.obsolete++;this.value={...v,revision:++this.revision};}take(){const v=this.value;this.value=null;return v;}}
 export function validateRecord(r){if(!r||r.version!==2||r.engine!==VERSION||r.random!=='philox4x32-10'||r.smoothing!=='local-regression-24ms-bounded-1'||!Array.isArray(r.raw)||r.raw.length>500000)throw Error('unsupported record');validatePreset(r.preset);const b=new CanonicalBuilder(r.preset,r.seed,r.fast);for(const s of r.raw)b.accept(s);b.finish();const regenerated=b.record();if(JSON.stringify(regenerated.geometry)!==JSON.stringify(r.geometry)||JSON.stringify(regenerated.commands)!==JSON.stringify(r.commands))throw Error('record replay mismatch');return regenerated;}
+
+export function solidTileCovered(c,key){
+ if(c[19]!==1||c[18]!==c[2]/2||c[18]<1)return false;
+ const [tx,ty]=key.split(',').map(n=>Number(n)*TILE),dx=c[0]-c[16],dy=c[1]-c[17],den=dx*dx+dy*dy,r=c[18]-1;
+ for(const x of [tx+.5,tx+TILE-.5])for(const y of [ty+.5,ty+TILE-.5]){const t=clamp(((x-c[16])*dx+(y-c[17])*dy)/Math.max(1e-12,den));if((x-c[16]-dx*t)**2+(y-c[17]-dy*t)**2>r*r)return false;}
+ return true;
+}
