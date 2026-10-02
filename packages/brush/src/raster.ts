@@ -1,10 +1,18 @@
 import { C, LIMITS, STRIDE } from "./types";
 import type { Preset, StrokeRecord } from "./types";
-import { coverage, dabBounds } from "./coverage";
+import {
+  coverage,
+  dabBounds,
+  prepareCoverage,
+  type CoverageContext,
+} from "./coverage";
 export type RasterTile = { x: number; y: number; values: Float64Array };
 export class StrokeRaster {
   readonly tiles = new Map<string, RasterTile>();
   private bytes = 0;
+  private cachedX = -1;
+  private cachedY = -1;
+  private cachedTile: RasterTile | undefined;
   constructor(
     readonly width: number,
     readonly height: number,
@@ -30,23 +38,37 @@ export class StrokeRaster {
     n.bytes = this.bytes;
     return n;
   }
-  deposit(d: ArrayLike<number>, o: number, x: number, y: number, p: Preset) {
+  deposit(
+    d: ArrayLike<number>,
+    o: number,
+    x: number,
+    y: number,
+    p: Preset,
+    prepared?: CoverageContext,
+  ) {
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) return;
     const tx = Math.floor(x / this.tileSize),
-      ty = Math.floor(y / this.tileSize),
-      key = tx + "," + ty;
-    let tile = this.tiles.get(key);
+      ty = Math.floor(y / this.tileSize);
+    let tile =
+      this.cachedX === tx && this.cachedY === ty
+        ? this.cachedTile
+        : this.tiles.get(tx + "," + ty);
+    this.cachedX = tx;
+    this.cachedY = ty;
+    this.cachedTile = tile;
     const i = ((y % this.tileSize) * this.tileSize + (x % this.tileSize)) * 4;
     // A saturated stroke pixel cannot take any more deposit, regardless of tip/grain/color.
     if (tile && tile.values[i + 3]! >= d[o + C.OPACITY]!) return;
-    const amount = coverage(d, o, x + 0.5, y + 0.5, p) * d[o + C.FLOW]!;
+    const amount =
+      coverage(d, o, x + 0.5, y + 0.5, p, prepared) * d[o + C.FLOW]!;
     if (!amount) return;
     if (!tile) {
       const bytes = this.tileSize * this.tileSize * 4 * 8;
       if (this.bytes + bytes > this.maxBytes)
         throw new Error("raster working memory limit reached");
       tile = { x: tx, y: ty, values: new Float64Array(bytes / 8) };
-      this.tiles.set(key, tile);
+      this.tiles.set(tx + "," + ty, tile);
+      this.cachedTile = tile;
       this.bytes += bytes;
     }
     const v = tile.values,
@@ -133,6 +155,7 @@ export class RasterQueue {
   private x = 0;
   private y = 0;
   private pending = 0;
+  private prepared: CoverageContext | undefined;
   constructor(
     readonly raster: StrokeRaster,
     readonly preset: Preset,
@@ -165,6 +188,7 @@ export class RasterQueue {
     while (this.head < this.jobs.length && pixels < pixelBudget) {
       const job = this.jobs[this.head]!;
       if (!this.active) {
+        this.prepared = prepareCoverage(job.data, job.offset, this.preset);
         const b = dabBounds(job.data, job.offset, this.preset);
         this.active = {
           x0: Math.max(0, b.x0),
@@ -182,7 +206,14 @@ export class RasterQueue {
         continue;
       }
       while (this.y < b.y1 && pixels < pixelBudget) {
-        this.raster.deposit(job.data, job.offset, this.x, this.y, this.preset);
+        this.raster.deposit(
+          job.data,
+          job.offset,
+          this.x,
+          this.y,
+          this.preset,
+          this.prepared,
+        );
         pixels++;
         if (++this.x >= b.x1) {
           this.x = b.x0;

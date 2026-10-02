@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "measuredAt": "2026-10-02T02:01:34.865Z",
+  "measuredAt": "2026-10-02T09:10:52.188Z",
   "browser": "133.0.6943.0",
-  "durationMs": 191808,
+  "durationMs": 191099,
   "checks": [
     {
       "name": "offline initialization, 56 brushes, no HTTP dependency",
@@ -91,8 +91,8 @@
       "name": "three-minute scheduled 240Hz input run",
       "status": "PASS",
       "observed": {
-        "durationMs": 180238,
-        "accepted": 42873,
+        "durationMs": 180216,
+        "accepted": 42868,
         "strokes": 36
       }
     },
@@ -105,7 +105,5 @@
   "errors": [],
   "network": [],
   "physicalDeviceStatus": "UNVERIFIED",
-  "humanDrawingQuality": "UNVERIFIED",
-  "standaloneSha256": "7f0ac8d3b8445c99e05ec5659dc7e5227d02ca06b32cdbe5846225434da16b63",
-  "buildHashNote": "hash recorded after the successful latest-source run"
+  "humanDrawingQuality": "UNVERIFIED"
 }

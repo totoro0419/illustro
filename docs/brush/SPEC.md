@@ -40,7 +40,7 @@ normal/multiply/screen/erase。現在のCore RGBA8値に対する演算で、lin
 
 | 上限 | 値と対象 |
 |---|---|
-| active packed staging | tail8192×16 + page256×16 Float64、1,081,344 bytes |
+| active packed staging | tail容量は `min(8192, ceil(taperEnd/0.25)+512)`、page256。最大1,081,344 bytes、taperEnd=0は98,304 bytes |
 | canonical commands | 2,000,000コマンド。容量超過で明示失敗 |
 | retained geometry | 500,000点。retain:falseの受信側保持は別責任 |
 | CPU raster working | 128MiB。tileはFloat64 RGBA |
@@ -50,5 +50,7 @@ normal/multiply/screen/erase。現在のCore RGBA8値に対する演算で、lin
 これらは製品全体RAMの保証ではない。preset/画像、履歴JSON、preview copy、入力object、queue job、保存I/Oが別に必要。`retain:false` とgeometry/page sinksは本当の受信側保存が必要で、現状にdisk spillはない。
 
 RasterQueueはFIFOの同一演算をpixel/time budgetで分割し、一つの巨大dabも分割する。2ms等は候補budgetで、128画素ごとの時計確認やGC/OSにより超過し得る。負荷時もsample/commandを静かに間引かず、admission/capacity failureでstrokeを拒否する。同期replayは参照・小さな用途向け。Undo/reopenはラボで同期replayするため長い履歴では重くなり得る。
+
+角度とgrainRotationの三角関数をdabごとに準備し、queueの分割をまたいで再利用する。作業tileの参照を最近の一枚だけ保持し、画素ごとの同じMap検索・文字列生成を減らす。色の蓄積式と丸めは変更していない。`StrokeRaster.tiles` の外部からの削除・差替えは作業中に行わず、device loss等ではrasterを作り直す。PresetとpressureCurveはストローク開始時に複製・固定し、後の編集を現在の線へ反映しない。
 
 安定prefixを全再描画しない一方、ラボpreviewはactive rasterをcloneする。これが大きな制限で、tile差分preview/cache、worker/GPUの後続改善を要する。

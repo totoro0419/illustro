@@ -38,13 +38,17 @@ export class Reconstructor {
     if (prev && p.t < prev.t) throw new Error("out-of-order input");
     const dt = prev ? Math.max(1e-6, (p.t - prev.t) / 1000) : 1 / 120;
     const x =
-        p.x +
-        (this.fx.next(p.x, dt, this.strength) - p.x) *
-          Math.min(1, this.strength * 2),
+        this.strength === 0
+          ? p.x
+          : p.x +
+            (this.fx.next(p.x, dt, this.strength) - p.x) *
+              Math.min(1, this.strength * 2),
       y =
-        p.y +
-        (this.fy.next(p.y, dt, this.strength) - p.y) *
-          Math.min(1, this.strength * 2);
+        this.strength === 0
+          ? p.y
+          : p.y +
+            (this.fy.next(p.y, dt, this.strength) - p.y) *
+              Math.min(1, this.strength * 2);
     p = { ...p, p: curve(this.pressureCurve, p.p) };
     const pa = alpha(30 / (1 + this.pressureSmoothing * 8), dt);
     const pressure = prev ? prev.p + (p.p - prev.p) * pa : p.p;

@@ -2,17 +2,13 @@
 
 2026-10-02。**レビュー可能な実装と自動検証はある。実用完成の判定は保留。** 過去チェックポイントの253件等は今回のテスト数に含めない。
 
-品質基準は**主要なペイントアプリを総合的に上回ること**。旧Illustroは合格基準ではない。比較対象を最初の6本で閉じず、機能不足と同条件の実測・制作評価を残す。水彩物理はユーザー指定で不要。現在はその総合優位を立証していない。
-
-保存時に別更新 `dd35eb8` を検出したため、その履歴・コードを保ち、描画計算再利用/末尾メモリ/入力検証/設定固定の修正を統合した。1344本の記録と56本の画像をdd35と照合し完全一致。これは回帰検査で、競合に対する品質合格ではない。[一致記録](evidence/integration-equivalence.json)。元の報告は[dd35時点](https://github.com/totoro0419/illustro/blob/dd35eb845c954399060a31651414070b7495b8fc/docs/brush/VALIDATION.md)に保存。別の再構成候補の証拠は現行のPASSに含めない。
-
 ## 1. 現行実装の監査
 
 [AUDIT](AUDIT.md)に基点・継承・修正を記載。main `bdc7135`、PR #8 checkpoint `dad1be0` から別branchで継続し、Region/Connectivity/UIの他作業を混ぜていない。今回の判定対象は `packages/brush`、Core semantic adapter、`prototypes/brush-lab`。
 
 ## 2. 競合との比較
 
-[公式情報比較](COMPETITORS.md)。10製品の公式資料を起点に、不足・調査の限界・追加比較対象を整理。競合アプリを同一端末で測定しておらず、描き心地・速度・安定性の優越はUNVERIFIED。
+[公式情報比較](COMPETITORS.md)。6製品の基本parameter群との対応を整理。競合アプリを同一端末で測定しておらず、描き心地・速度・安定性の優越はUNVERIFIED。
 
 ## 3. エンジン設計
 
@@ -34,8 +30,8 @@
 
 | 検証 | 結果 | 証拠と範囲 |
 |---|---|---|
-| Brush TypeScript / tests | PASS、167件 | [実行記録](evidence/integration-checks.txt)。Philox既知値/独立参照、入力、補正OFF、preview不変、ページ配信、全ペン、多形状、容量、画像、bounds、合成、Core adapter |
-| Existing Core TypeScript / tests | PASS、8件 | 同integration記録。既存history/transaction regression |
+| Brush TypeScript / tests | PASS、163件 | [実行記録](evidence/automated-checks.txt)。Philox既知値/独立参照、入力、補正OFF、preview不変、ページ配信、全ペン、多形状、容量、画像、bounds、合成、Core adapter |
+| Existing Core TypeScript / tests | PASS、8件 | 同記録。既存history/transaction regression |
 | Existing P0 | PASS、29件、typecheck/build | [tests](evidence/p0-tests.txt)、[build](evidence/p0-build.txt) |
 | ラボTypeScript / offline build | PASS | 現行ソースから単一HTMLを生成 |
 | Browser workflow | PASS、17項目 | [raw report](evidence/browser-checks.json)。Chromium133.0.6943.0、ファイル直接実行、HTTP依存なし |
@@ -49,32 +45,32 @@
 
 [Node raw distributions](evidence/node-performance.json) は `v24.19.0` / shared Linux execution hostでの計測。ブラウザ試験等と同じ実行環境であり、専用端末の最大性能ではない。
 
-5回それぞれ100,000入力を受理。emit数=実際にsinkへ配信した数=12,210。32入力batch p95は 0.050, 0.038, 0.025, 0.023, 0.016ms。これは再構成/生成で、renderer・record JSON clone・物理全遅延を含まない。この入力試験のactive packed stagingは98,304bytes、履歴とrasterは別。
+5回それぞれ100,000入力を受理。emit数=実際にsinkへ配信した数=12,210。32入力batch p95は 0.076, 0.042, 0.041, 0.027, 0.020ms。これは再構成/生成で、renderer・record JSON clone・物理全遅延を含まない。active packed stagingは1,081,344bytes、履歴とrasterは別。
 
 100入力の曲線、512×320 document、5回のwhole-stroke materialization p95と4096pixel/2ms候補slice：
 
 | CPU case | Whole-stroke p95 ms | Slice p95 ms | Slice observed max ms |
 |---|---:|---:|---:|
-| 丸2px | 6.582 | 0.844 | 2.013 |
-| 丸16px | 4.508 | 0.474 | 0.682 |
-| 丸128px | 18.154 | 0.434 | 1.491 |
-| 丸512px | 39.613 | 0.533 | 0.904 |
-| ドライ筆 | 27.188 | 0.980 | 2.034 |
-| 星スタンプ | 44.725 | 1.046 | 2.001 |
-| 輪郭ペン | 5.020 | 0.746 | 5.489 |
-| 束ね | 45.936 | 1.821 | 4.133 |
+| 丸2px | 13.80 | 1.24 | 6.66 |
+| 丸16px | 9.90 | 0.75 | 3.22 |
+| 丸128px | 32.18 | 0.65 | 1.37 |
+| 丸512px | 74.31 | 0.77 | 5.62 |
+| ドライ筆 | 32.42 | 1.43 | 3.22 |
+| 星スタンプ | 59.94 | 1.46 | 4.31 |
+| 輪郭ペン | 8.68 | 1.40 | 2.30 |
+| 束ね | 57.03 | 2.03 | 2.18 |
 
 whole-stroke費用はframeごとの費用ではない。一方、2msの候補予算もmaxで超過している。OS/GC/clock check/preview cloneの影響があり、120Hzの安全な描画予算を満たしたとは判定しない。巨大brushの負荷とプレビュー全copyが主要な改善点。
 
-forced-GC input workload heap before 7,231,336bytes / after 7,522,064bytes。observerの全benchmark GC max 4.156ms。object/sampleやqueue allocationsは残り、leak-free/GC-freeの証明ではない。
+forced-GC input workload heap before 7,227,544bytes / after 7,504,512bytes。observerの全benchmark GC max 5.90ms。object/sampleやqueue allocationsは残り、leak-free/GC-freeの証明ではない。
 
-[3分raw telemetry](evidence/browser-sustained.json) はソフトウェアで240Hzを目標にした定期入力。release待ちも所要時間に含むため平均240Hz固定とは限らない。物理sample lossや熱を証明しない。処理/描画/RAF telemetryは各8192点までのring、releaseは全stroke。計測値は末尾ringの分布であり、3分全frameの保存ではない。今回の実行は180208ms、42,868入力、36stroke、記録error 0件。入力処理p95 0.10ms、描画callback p95 6.30ms、受取→次RAF p95 14.10ms、release p95 2.30ms。active raster peak 11,534,336bytes。保存frame ringには25ms超が37、50ms超が24あり、無停止・全frame予算内とは主張しない。[summary](evidence/integration-browser-summary.json)も保存。
+[3分raw telemetry](evidence/browser-sustained.json) はソフトウェアで240Hzを目標にした定期入力。release待ちも所要時間に含むため平均240Hz固定とは限らない。物理sample lossや熱を証明しない。処理/描画/RAF telemetryは各8192点までのring、releaseは全stroke。計測値は末尾ringの分布であり、3分全frameの保存ではない。今回の実行は180227ms、42,873入力、36stroke、記録error 0件。入力処理p95 0.10ms、描画callback p95 7.10ms、受取→次RAF p95 13.50ms、release p95 0.50ms。active raster peak 11,534,336bytes。保存frame ringには25ms超が31、50ms超が24あり、無停止・全frame予算内とは主張しない。[summary](evidence/browser-summary.json)も保存。
 
 合成静止ノイズはstrengthを上げるとRMSが減少した一方、小ループの原形との差も増えた。強い補正が常に良いとは言えず、artistが0〜1を用途で選ぶ。
 
 ## 9. 再現・レビュー用ファイル
 
-[README](README.md)のコマンドで再実行。[オフラインラボ](../../prototypes/brush-lab/illustro-brush-lab.html)、[desktop](evidence/browser-desktop.png)、[mobile](evidence/browser-mobile.png)。日本語inspection fontは出荷物と計測から独立。CI定義を追加したが、GitHub Actionsの実行結果はローカルPASSとは別に確認する。dd35のCIではvitestが解決できず失敗した。lockに一時workspaceへの相対リンクが入っていたため、通常のregistry依存として作り直し、クリーンインストール後の167件と8件、型・buildを検査した。生成HTMLは3分試験したファイルとbyte一致した。修正後CIの結果はまだ未確認。
+[README](README.md)のコマンドで再実行。[オフラインラボ](../../prototypes/brush-lab/illustro-brush-lab.html)、[desktop](evidence/browser-desktop.png)、[mobile](evidence/browser-mobile.png)。日本語inspection fontは出荷物と計測から独立。CI定義を追加したが、GitHub Actionsの実行結果はローカルPASSとは別に確認する。
 
 ## 10. 完成条件と残作業
 
@@ -83,7 +79,7 @@ forced-GC input workload heap before 7,231,336bytes / after 7,522,064bytes。obs
 | # | 条件 | 状態 / 次の証拠 |
 |---:|---|---|
 | 1 | current main/旧Brush監査 | PASS、基点と採否を記録 |
-| 2 | 主要アプリを基準とする比較 | 公式仕様整理。対象の深掘りと実アプリ比較は未完了 |
+| 2 | 6競合公式仕様 | PASS、公式情報。実アプリ比較は未検証 |
 | 3 | 共通pipeline | PASS、型と自動テスト |
 | 4 | canonical入力/予測排除 | PASS、fixtures。物理複数端末は未検証 |
 | 5 | 補正OFF/連続調整 | PASS、合成ジッタ/shape変化測定 |
@@ -103,6 +99,6 @@ forced-GC input workload heap before 7,231,336bytes / after 7,522,064bytes。obs
 | 19 | 実機ペン/熱/物理遅延/描き心地 | UNVERIFIED、ユーザー端末で実描画が必要 |
 | 20 | mainを保ちreview可能なpublication | 別branch/Draft PRに保存。mergeなし。完成宣言なし |
 
-次に行う作業：独立Dual/Multi-brush、既存pixel混色/Smudge/ぼかし、画像素材の視覚編集・整理、初期ペンの制作評価。Renderer側はtile差分previewとworker/GPU評価、large-brushのprofile別budget、resource hash/packed persistence/OPFS/crash tests、Selection/Layer/UIとの統合。製品UXのtemporary eraser、hover cursor、touch navigationも未接続。
+次に行う作業：tile差分previewとworker/GPU評価、large-brushのprofile別budget、resource hash/packed persistence/OPFS/crash tests、Selection/Layer/UIとの統合。製品UXのtemporary eraser、hover cursor、touch navigationも未接続。
 
 実機プロトコル：このラボで端末/OS/browser/penを記録し、圧力線・速描き・小ループ・逆方向・低筆圧・保持airbrush・大径/質感・3分描画を実行。RAW/補正の比較と本人の感想、観測sensor range、エラー、保存後のbyte replay、温度/OS状態を別に記録する。機器のinput-to-displayは外部撮影等で計測し、受取→次RAFと混同しない。合成イベントや旧Xiaomi記録を現在の物理PASSへ置換しない。

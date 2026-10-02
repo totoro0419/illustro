@@ -25,7 +25,8 @@ export class BrushEngine {
   private exposureTime = 0;
   private direction = 0;
   private dabScratch = new Float64Array(STRIDE);
-  private tail = new Float64Array(LIMITS.maxTailCommands * STRIDE);
+  private readonly tailCapacity: number;
+  private tail: Float64Array;
   private tailHead = 0;
   private tailLength = 0;
   private page = new Float64Array(LIMITS.pageCommands * STRIDE);
@@ -43,6 +44,11 @@ export class BrushEngine {
     private readonly options: EngineOptions = {},
   ) {
     validatePreset(preset);
+    this.tailCapacity = Math.min(
+      LIMITS.maxTailCommands,
+      Math.ceil(preset.taperEnd / 0.25) + 512,
+    );
+    this.tail = new Float64Array(this.tailCapacity * STRIDE);
     if (
       options.seed &&
       (!options.seed.every(
@@ -51,14 +57,14 @@ export class BrushEngine {
         options.seed.length !== 2)
     )
       throw new Error("invalid seed");
-    this.preset = JSON.parse(JSON.stringify(preset)) as Preset;
+    this.preset = freezePreset(JSON.parse(JSON.stringify(preset)) as Preset);
     this.seed = Object.freeze([
       ...(options.seed ?? [0x12345678, 0x9abcdef0]),
     ]) as readonly [number, number];
     this.filter = new Reconstructor(
-      preset.stabilization,
-      preset.pressureSmoothing,
-      preset.pressureCurve,
+      this.preset.stabilization,
+      this.preset.pressureSmoothing,
+      this.preset.pressureCurve,
     );
   }
   get metrics() {
@@ -299,7 +305,7 @@ export class BrushEngine {
   ) {
     if (this.index >= LIMITS.maxCommands)
       throw new Error("command capacity reached");
-    if (this.tailLength >= LIMITS.maxTailCommands)
+    if (this.tailLength >= this.tailCapacity)
       throw new Error("mutable tail capacity reached");
     const dab = makeDab(
       p,
@@ -316,7 +322,7 @@ export class BrushEngine {
       0.25,
       dab[C.SIZE]! * dab[C.ASPECT]! * dab[C.RESERVED1]!,
     );
-    const slot = (this.tailHead + this.tailLength) % LIMITS.maxTailCommands;
+    const slot = (this.tailHead + this.tailLength) % this.tailCapacity;
     this.tail.set(dab, slot * STRIDE);
     this.tailLength++;
     this.flushTail(false);
@@ -345,7 +351,7 @@ export class BrushEngine {
             Math.max(this.preset.taperMinimum, Math.min(start, end)),
         );
       }
-      this.tailHead = (this.tailHead + 1) % LIMITS.maxTailCommands;
+      this.tailHead = (this.tailHead + 1) % this.tailCapacity;
       this.tailLength--;
       this.pageLength++;
       this.stable++;
@@ -375,6 +381,14 @@ export function deepFreeze<T>(value: T): T {
     Object.freeze(value);
     for (const v of Object.values(value))
       if (v && typeof v === "object" && !Object.isFrozen(v)) deepFreeze(v);
+  }
+  return value;
+}
+
+function freezePreset<T>(value: T): T {
+  if (value && typeof value === "object") {
+    for (const child of Object.values(value)) freezePreset(child);
+    Object.freeze(value);
   }
   return value;
 }

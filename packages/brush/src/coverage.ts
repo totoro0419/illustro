@@ -108,18 +108,37 @@ function shape(
     }
   return sum / 4;
 }
+export type CoverageContext = Readonly<{
+  cos: number;
+  sin: number;
+  grainCos: number;
+  grainSin: number;
+}>;
+export function prepareCoverage(
+  d: ArrayLike<number>,
+  o: number,
+  p: Preset,
+): CoverageContext {
+  return {
+    cos: Math.cos(d[o + C.ANGLE]!),
+    sin: Math.sin(d[o + C.ANGLE]!),
+    grainCos: Math.cos(p.grainRotation),
+    grainSin: Math.sin(p.grainRotation),
+  };
+}
 export function coverage(
   d: ArrayLike<number>,
   o: number,
   x: number,
   y: number,
   p: Preset,
+  prepared?: CoverageContext,
 ): number {
   const dx = x - d[o + C.X]!,
     dy = y - d[o + C.Y]!,
     a = d[o + C.ANGLE]!,
-    c = Math.cos(a),
-    s = Math.sin(a),
+    c = prepared?.cos ?? Math.cos(a),
+    s = prepared?.sin ?? Math.sin(a),
     lx = dx * c + dy * s,
     ly = -dx * s + dy * c,
     rx = d[o + C.SIZE]! / 2,
@@ -134,8 +153,8 @@ export function coverage(
     value *= shape(p.dual, lx, ly, rx, rx * (p.dualAspect ?? p.aspect), p);
   const grain = d[o + C.GRAIN]!;
   if (grain && value) {
-    const gc = Math.cos(p.grainRotation),
-      gs = Math.sin(p.grainRotation),
+    const gc = prepared?.grainCos ?? Math.cos(p.grainRotation),
+      gs = prepared?.grainSin ?? Math.sin(p.grainRotation),
       gx = (gc * x + gs * y) / p.grainScale,
       gy = (-gs * x + gc * y) / p.grainScale;
     let texture: number;

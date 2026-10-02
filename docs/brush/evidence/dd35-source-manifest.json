@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "integrationParent": "dd35eb845c954399060a31651414070b7495b8fc",
+  "checkpointParent": "dad1be006a77777487a4adba65bed36f53c261bf",
   "mainBase": "bdc7135b51033982d90ea5dad104bb04fc107df2",
-  "scope": "current integration source and offline HTML; excludes result documents and this manifest",
+  "scope": "source and generated HTML for current evidence; excludes this manifest and result documents",
   "files": [
     {
       "path": "package-lock.json",
-      "bytes": 48202,
-      "sha256": "88a92965733172767cc05d35dbf62cd3bb0fd69f652ffedbb63195e33ab571eb"
+      "bytes": 36318,
+      "sha256": "4302047d695ef49ec61e1782a5a81668a864ea9edce31ea0d2a0e6f6a36d7345"
     },
     {
       "path": "package.json",
@@ -26,8 +26,8 @@
     },
     {
       "path": "packages/brush/src/coverage.ts",
-      "bytes": 5256,
-      "sha256": "afd80041509eb4dba7489471105de522b3a86c5a55504235cb9da308a503dbbd"
+      "bytes": 4757,
+      "sha256": "52282d73ccfaef97a20f48aa0d8ed7b4f7884bd0e2dcb2d4815dc1e79a50dba1"
     },
     {
       "path": "packages/brush/src/dynamics.ts",
@@ -41,8 +41,8 @@
     },
     {
       "path": "packages/brush/src/engine.ts",
-      "bytes": 12290,
-      "sha256": "cdc9489c96ebbae4a52d6f745daf4010b52157ecf3416a33c44f67ae23e00a4d"
+      "bytes": 11893,
+      "sha256": "879d8e1b2b4ad74e99da2bb874e06cd5361891aeda68aef24fe23508ff30e91f"
     },
     {
       "path": "packages/brush/src/fixtures.ts",
@@ -56,18 +56,13 @@
     },
     {
       "path": "packages/brush/src/input.ts",
-      "bytes": 2724,
-      "sha256": "d2f74ddb797d108811266bb9acb3e10442f7748c96dcd7e51006755968545c71"
+      "bytes": 2245,
+      "sha256": "785732963df0597c9dcdc89ca805cbaea91a8e80bfd9f21e746c112ec6887f50"
     },
     {
       "path": "packages/brush/src/math.ts",
       "bytes": 1689,
       "sha256": "8e0468ad6a1ac34d51b6f21e28732a771be13d1db6dc9c06e68bbc8fb427953d"
-    },
-    {
-      "path": "packages/brush/src/optimization.test.ts",
-      "bytes": 2024,
-      "sha256": "869ddf947c1ea86a939f315c8abedbf2edf0b77390c5d306cfeca27f58e39235"
     },
     {
       "path": "packages/brush/src/presets.ts",
@@ -86,13 +81,13 @@
     },
     {
       "path": "packages/brush/src/raster.ts",
-      "bytes": 8130,
-      "sha256": "23a5869faed8c8443ac6877fd710437fa2e4c0343bc7de5869f41e04ab1725e8"
+      "bytes": 7522,
+      "sha256": "f9ecc7a5516de4f567974df888b9cf43e2d143c87a790f5a529bd6aa211613fd"
     },
     {
       "path": "packages/brush/src/reconstruction.ts",
-      "bytes": 2883,
-      "sha256": "75d2834918469585b3f18eb7c9df79b265a3544c58cc5ad17edcce839bdc9cd3"
+      "bytes": 2771,
+      "sha256": "ba33397a323cefe342124b55e1a2a583e678e35c4a66650ce1d12b4284887e64"
     },
     {
       "path": "packages/brush/src/record.ts",
@@ -120,9 +115,24 @@
       "sha256": "641a24446a50df416e2a27b04c30581ce1a458780480614bb4eb07a25b986fb0"
     },
     {
+      "path": "prototypes/brush-lab/atlas.mts",
+      "bytes": 3283,
+      "sha256": "dbc64c93ad74451161710601c6b978e05d32534a3e5409fc30947aa93031f049"
+    },
+    {
       "path": "prototypes/brush-lab/browser-check.mjs",
       "bytes": 13724,
       "sha256": "2583cd88e57e443a2eb090af02b511ca4745a54a457efb645c2ea0e242239ba9"
+    },
+    {
+      "path": "prototypes/brush-lab/build-atlas.mjs",
+      "bytes": 284,
+      "sha256": "a88941f919bae25d81bd3ebf52c80635ee94bfb9e2da703f551135369b32ef0d"
+    },
+    {
+      "path": "prototypes/brush-lab/build-benchmark.mjs",
+      "bytes": 230,
+      "sha256": "8b17d64e4061e662558136cb9b847681e0e71f39e155e7f8487e2f1d29de7ff2"
     },
     {
       "path": "prototypes/brush-lab/build.mjs",
@@ -131,8 +141,13 @@
     },
     {
       "path": "prototypes/brush-lab/illustro-brush-lab.html",
-      "bytes": 56803,
-      "sha256": "9c7b35af2df1e18d34f2d05eba4c93b01555e89e08575bcfa8cca10cf2d8efab"
+      "bytes": 55723,
+      "sha256": "7f0ac8d3b8445c99e05ec5659dc7e5227d02ca06b32cdbe5846225434da16b63"
+    },
+    {
+      "path": "prototypes/brush-lab/index.html",
+      "bytes": 8493,
+      "sha256": "4fa5d276c3cd2c9c768e5ff16b9205336c603f36d0a0c0873926c0612862957a"
     },
     {
       "path": "prototypes/brush-lab/main.ts",

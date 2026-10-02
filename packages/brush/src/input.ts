@@ -7,6 +7,7 @@ export function normalize(s: Sample): Point {
     !Number.isFinite(s.y) ||
     !Number.isFinite(s.t) ||
     s.t < 0 ||
+    s.t > 1e15 ||
     Math.abs(s.x) > LIMITS.maxCoordinate ||
     Math.abs(s.y) > LIMITS.maxCoordinate
   )
@@ -14,6 +15,19 @@ export function normalize(s: Sample): Point {
   for (const v of [s.pressure, s.tilt, s.azimuth, s.twist])
     if (v !== undefined && !Number.isFinite(v))
       throw new Error("invalid sensor");
+  for (const v of [s.azimuth, s.twist])
+    if (v !== undefined && Math.abs(v) > 100)
+      throw new Error("invalid sensor range");
+  if (
+    s.pointerType !== undefined &&
+    !["", "pen", "mouse", "touch", "unknown"].includes(s.pointerType)
+  )
+    throw new Error("invalid pointer type");
+  if (
+    s.viewGeneration !== undefined &&
+    (!Number.isSafeInteger(s.viewGeneration) || s.viewGeneration < 0)
+  )
+    throw new Error("invalid view generation");
   const pen = s.pointerType === undefined || s.pointerType === "pen";
   let valid = 0;
   const p =
