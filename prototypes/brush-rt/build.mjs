@@ -5,7 +5,7 @@ const root=path.resolve(import.meta.dirname,'../..'),out=path.join(root,'prototy
 await fs.mkdir(out,{recursive:true});
 const sources=new Map;
 for(const name of ['types','input','dynamics','random','math','coverage','record']){let code=stripTypeScriptTypes(await fs.readFile(path.join(root,'packages/brush/src',name+'.ts'),'utf8'));code=code.replace(/from\s+["']\.\/(\w+)["']/g,(_,n)=>`from '@legacy/${n}'`);sources.set('@legacy/'+name,code);}
-for(const name of ['model','shaders','renderer','session','ui'])sources.set('@rt/'+name,await fs.readFile(path.join(root,name==='ui'?'prototypes/brush-rt/ui.mjs':'packages/brush-rt/src/'+name+'.mjs'),'utf8'));
+for(const name of ['model','shaders','renderer','session','index','canonical.worker','ui'])sources.set('@rt/'+name,await fs.readFile(path.join(root,name==='ui'?'prototypes/brush-rt/ui.mjs':'packages/brush-rt/src/'+name+'.mjs'),'utf8'));
 // Blob module graph assembled topologically for a self-contained downloaded HTML.
 // Worker modules cannot use document import maps, so their graph is resolved separately.
 function moduleGraph(code,registry,cache=new Map){return code.replace(/from\s+["'](@(?:rt|legacy)\/[\w-]+)["']/g,(_,id)=>{if(!cache.has(id)){const source=registry.get(id);if(!source)throw Error('missing module '+id);cache.set(id,'data:text/javascript;base64,'+Buffer.from(moduleGraph(source,registry,cache)).toString('base64'));}return `from '${cache.get(id)}'`;});}
@@ -15,7 +15,7 @@ let html=await fs.readFile(path.join(root,'prototypes/brush-rt/index.html'),'utf
 html=html.replace('<!-- MODULES -->',`<script type="importmap">${JSON.stringify({imports:map}).replaceAll('<','\\u003c')}</script><script>window.__workerSource=${JSON.stringify(worker).replaceAll('<','\\u003c')};</script><script type="module">import {boot} from '@rt/ui';boot();</script>`);
 await fs.writeFile(path.join(out,'illustro-brush-rt.html'),html);
 // Node tests use the same source transpilation without browser-specific import maps.
-for(const [id,code]of sources){const target=path.join(out,id.slice(1)+'.mjs');await fs.mkdir(path.dirname(target),{recursive:true});const local=code.replace(/from\s+["'](@(?:rt|legacy)\/[\w-]+)["']/g,(_,dep)=>`from '${path.relative(path.dirname(target),path.join(out,dep.slice(1)+'.mjs')).replaceAll('\\','/').replace(/^(?!\.)/,'./')}'`);await fs.writeFile(target,local);}
+for(const base of [out,path.join(root,'packages/brush-rt/dist')])for(const [id,code]of sources){const target=path.join(base,id.slice(1)+'.mjs');await fs.mkdir(path.dirname(target),{recursive:true});const local=code.replace(/from\s+["'](@(?:rt|legacy)\/[\w-]+)["']/g,(_,dep)=>`from '${path.relative(path.dirname(target),path.join(base,dep.slice(1)+'.mjs')).replaceAll('\\','/').replace(/^(?!\.)/,'./')}'`);await fs.writeFile(target,local);}
 console.log('Built self-contained HTML:',(await fs.stat(path.join(out,'illustro-brush-rt.html'))).size,'bytes');
 
 const bundle=await fs.readFile(path.join(out,'illustro-brush-rt.html'));

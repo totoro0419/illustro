@@ -2,7 +2,7 @@ name: Realtime Brush Candidate
 on:
   push:
     branches: ['brush/realtime-redesign-2026-10-03']
-    paths: ['packages/brush-rt/**', 'prototypes/brush-rt/**', 'docs/brush-rt/**', '.github/workflows/brush-rt-candidate.yml']
+    paths: ['packages/brush-rt/**', 'prototypes/brush-rt/*.mjs', 'prototypes/brush-rt/index.html', '.github/workflows/brush-rt-candidate.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +12,11 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [webgl2, webgpu]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,7 +27,10 @@ jobs:
           for source in packages/brush-rt/src/*.mjs prototypes/brush-rt/*.mjs; do node --check "$source"; done
           node prototypes/brush-rt/build.mjs
       - name: Verify canonical data and scheduling
-        run: node --test packages/brush-rt/test/*.test.mjs
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test packages/brush-rt/test/*.test.mjs | tee docs/brush-rt/evidence/node-tests.txt
       - name: Install browser test runtime
         run: |
           npm install --prefix /tmp/rt-browser playwright@1.62.1 --no-audit --no-fund
@@ -32,6 +39,7 @@ jobs:
         env:
           RT_PLAYWRIGHT_PATH: /tmp/rt-browser/node_modules/playwright
           RT_LONG_TEST: '1'
+          RT_BACKEND: '${{ matrix.backend }}'
         shell: bash
         run: |
           set -o pipefail
@@ -40,5 +48,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: brush-rt-evidence
+          name: brush-rt-evidence-${{ matrix.backend }}
           path: docs/brush-rt/evidence

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
-import {CanonicalBuilder,Stabilizer,predict,LatestMailbox,validateRecord,cpuReference,continuous,keysFor,VERSION} from '../../../prototypes/brush-rt/dist/rt/model.mjs';
+import {CanonicalBuilder,Stabilizer,predict,LatestMailbox,validateRecord,cpuReference,continuous,keysFor,VERSION,liveAccumulation,referenceCoverage} from '../../../prototypes/brush-rt/dist/rt/model.mjs';
 import {TileDocument,GpuRenderer} from '../../../prototypes/brush-rt/dist/rt/renderer.mjs';
 import {RealtimeSession} from '../../../prototypes/brush-rt/dist/rt/session.mjs';
 const presets=JSON.parse(fs.readFileSync(new URL('../../../docs/brush/evidence/presets.json',import.meta.url)));
@@ -28,3 +28,10 @@ test('airbrush time deposits replay from two real stationary timestamps',()=>{fo
 test('continuous solid AA union is independent of input sampling density',()=>{let reference=null;for(const hz of [60,120,240]){const b=new CanonicalBuilder({...ink,size:16,opacity:.4,stabilization:0,mappings:[]});for(let i=0;i<=hz;i++)b.accept({x:12+72*i/hz,y:24,t:i*1000/hz,pressure:1,pointerType:'pen'});b.finish();const pixels=cpuReference(b.record(),96,48);if(reference)for(let i=0;i<pixels.length;i++)assert.ok(Math.abs(pixels[i]-reference[i])<=1);else reference=pixels;}});
 
 test('only provably saturated constant-pigment tiles elide further GPU work',()=>{const p={...ink,size:1024,stabilization:0},b=new CanonicalBuilder(p);for(let i=0;i<100;i++)b.accept({x:64+Math.sin(i)*2,y:64,t:i,pressure:1,pointerType:'pen'});b.finish();const d=new TileDocument(128,128);d.append(1,p,b.record().commands);const first=d.peekMany(1);d.complete(first[0]);const next=d.peekMany(1);assert.equal(next[0].skip,true);assert.ok(next[0].commands.length>16);const soft={...p,flow:.5};const x=new TileDocument(128,128);x.append(1,soft,b.record().commands);x.complete(x.peekMany(1)[0]);assert.notEqual(x.peekMany(1)[0].skip,true);});
+
+test('already saturated solid tiles do not grow the formal queue on later actual input',()=>{const p={...ink,size:1024,stabilization:0},b=new CanonicalBuilder(p);b.accept({x:64,y:64,t:0,pointerType:'mouse'});b.finish();const d=new TileDocument(128,128);d.append(1,p,b.record().commands);d.complete(d.peekMany(1)[0]);for(let i=1;i<1000;i++)d.append(1,p,b.record().commands.map(c=>{const a=c.slice();a[20]=i;return a;}));assert.equal(d.jobs.length,0);assert.equal(d.count,0);assert.equal(d.knownTime,999);d.end(1,p);assert.equal(d.peek().commit,true);});
+
+test('complex density mode keeps varying flow but rejects varying pigment or stroke opacity',()=>{assert.ok(liveAccumulation(presets[0]));assert.ok(liveAccumulation(presets[13]));assert.ok(!liveAccumulation(presets[11]));assert.ok(!liveAccumulation(presets[44]));assert.ok(!liveAccumulation(ink));});
+
+test('hard ellipse AA stays continuous across Float32 command rounding',()=>{const p=presets[50],c=new Array(24).fill(0);c[0]=32.000001;c[1]=32;c[2]=20;c[3]=.45;c[4]=.41;for(let y=24;y<42;y++)for(let x=20;x<45;x++){const a=referenceCoverage(c,x+.5,y+.5,p),b=referenceCoverage(c.map(Math.fround),x+.5,y+.5,p);assert.ok(Math.abs(a-b)<.0001);}});
+test('quantized zero alpha never retains hidden reference pigment',()=>{const b=new CanonicalBuilder({...ink,size:16,opacity:.0001,color:[.7,.2,.1]});b.accept({x:16,y:16,t:0,pointerType:'mouse'});b.finish();const pixels=cpuReference(b.record(),32,32);assert.ok(pixels.every(v=>v===0));});
