@@ -1,4 +1,24 @@
-# 引き継ぎ状態 — 2026-10-03（JST）
+# 現在の状態 — 2026-10-03（JST）
+
+作業を再開し、WebGPUの共通MAX合成・通知を必要最小限修正した。7ブラシは共通Foundationの設定として維持し、ブラシID専用の分岐を追加していない。WebGL2の入力更新間隔は合格済み方式を維持する。保存・読み込み/Undo/Redo後の画面が空になる既存不具合を両方式で再現し、確定タイルの合成を修正した。
+
+- Repository/branch/PR: https://github.com/totoro0419/illustro / `brush/foundation-2026-10-03` / https://github.com/totoro0419/illustro/pull/10 (Draftのまま、mergeしない)。
+- 現行ソース: `7ecdf9b4283e0d8f2b850845a7f6675f11e818f4`。
+- 正本HTML: `prototypes/brush-rt/dist/illustro-brush-rt.html`、523,272 bytes、Git blob `925804bf751b4a6b9066cb5c89f59849dc89091e`。
+- Node: 72/72 PASS。最終ソースのCI37119396194は実行中。
+- ローカル最終版: WebGPU反復15/15 PASS。WebGL2鉛筆の旧版との交互比較は現行3/3 PASS、旧版2/3で1FAIL。復元後の画像は両方式PASS。
+- 前のソース65e1937のfull: 両方式222比較PASS。WebGL2性能38/38 PASS、WebGPU37/38で旧fine-ink1024/240/reversal FAIL (56.30ms)。詳細はVALIDATIONとevidence。
+- 元のhard erase41.30ms、pencil21.17ms、続行中の新たなFAILをすべて残した。+20ms基準/入力保持/必要サンプル数を変更していない。
+- 実ペン・実画面はUNVERIFIED。全体完成・本番採用を宣言しない。
+- 同じ所有者限定ページ https://illustro-realtime-brush-test.ibukioike2009.chatgpt.site の更新を準備済み。最終CI結果を受けてsource-evidence.json/表示文とGitHub文書を同期し、既存Sites projectへ反映する。新規ページは作らない。
+
+続きの担当はCI37119396194の最新状態とraw artifactを回収し、PASS/FAIL/未完了を別々に記録する。旧細線の折返しは元版と現行版の交互GPU比較で原因を切り分ける。現行コードの軽さを壊す広い変更を行わない。機械検査が通っても実ペン確認はHUMAN_CHECKSを使う。
+
+現在のcheckout: `/workspace/scratch/d6b9dda68ba2/illustro`、Sites checkout: `/workspace/scratch/d6b9dda68ba2/brush-rt-site`。Node24、Playwright1.62.1。ローカルはChromium153/SwiftShader、CIは別のChromium151/SwiftShader環境であり実GPUではない。`baseline-shaders.mjs` のGit blob `e40effdb2802d9a3df70f928351fb389ed9d25f5` と、Sitesのbaseline.html全文SHA-256 `4886168f381fb832b3c38900e8b8ce2350bfeb52a679b648e01e4999b5bf679e` を維持した。
+
+以下は以前の状態を比較・追跡するための履歴であり、現行ソース/検査中状態を上書きしない。
+
+# 以前の引き継ぎ記録 — 2026-10-03（JST）
 
 ユーザーは別チャットへの引き継ぎを希望した。追加の性能修正・再検査を始めず、現在の実装・成功・失敗を保存した。元の目標は51項目のBrush Foundation要求を満たすこと。詳細は `REQUIREMENT_COVERAGE.md` を読む。
 

@@ -1,4 +1,18 @@
-# Validation state
+# Current continuation validation
+
+Current source: `7ecdf9b4283e0d8f2b850845a7f6675f11e818f4`. Canonical HTML: `prototypes/brush-rt/dist/illustro-brush-rt.html`, 523,272 bytes, Git blob `925804bf751b4a6b9066cb5c89f59849dc89091e`. Node 72/72 PASS locally. Latest-source full CI [37119396194](https://github.com/totoro0419/illustro/actions/runs/37119396194) is IN_PROGRESS; no full PASS is declared yet.
+
+Latest-source local Chromium 153/SwiftShader: WebGPU targeted 15/15 PASS (five conditions × three repetitions), including pencil and hard erase512/240; input counts and unchanged +20ms growth limits were recomputed. Paired WebGL2 pencil check passed candidate3/3; the handoff engine passed2/3, with one retained failure. Both restore-view checks have zero channels above3/255 after Undo/Redo and load, with exact canonical data. These local runs are not physical GPU/pen certification.
+
+Previous complete source65e1937, [run37117836111](https://github.com/totoro0419/illustro/actions/runs/37117836111): both full backends passed222 image/behavior checks, including two additional visible-restoration checks and seven brushes × five sizes with restored viewport comparisons. WebGL2 passed38/38 proxies. WebGPU passed37/38, failing legacy fine-ink1024/240/reversal at56.30ms total growth (steady−193.70ms). Targeted WebGPU15/15 passed; WebGL2 failed first pencil repetition at32.27ms total/33.37ms steady, later two repetitions passed. Both full raw artifacts were downloaded, SHA-256 matched, and counters/gate arithmetic independently verified. No pixel/transition/input-generator/console failure occurred. This failed repetition prompted restoring accepted WebGL2 RAF cadence in the latest source; WebGPU notification suppression remains.
+
+Earlier source26a5f86 full WebGL2 passed220/38; WebGPU passed220/37 with legacy reversal growth43.77ms FAIL. Targeted both backends15/15 passed. Local failures on original, source26 and source65 remain in evidence, including interruption from missing FontConfig. The initial hard-erase41.30ms steady failure and pencil21.17ms total failure are retained below and in the historical evidence. No threshold was relaxed.
+
+UNVERIFIED: real stylus pressure and entry/exit feel, visible switching on the physical screen, physical GPU/display latency, high-DPI/compositor effects, optional stylus sensors, device loss and VRAM pressure. Current software-runtime repeatability also remains a separate concern; passing the latest repetition does not erase prior failures. Keep PR10 Draft and do not declare the overall Foundation accepted until these gates are resolved.
+
+## Historical pre-continuation record
+
+### Validation state
 
 Accepted baseline: user-confirmed lightness/tracking, as stated in this request. No device or physical latency number was supplied. Preserve the previous branch/HTML/source for comparison.
 
