@@ -33,13 +33,13 @@ test('predicted release metadata is rejected just like predicted paint input',()
 
 test('swept pencil and soft erase always publish the latest contact, independent of spacing',()=>{for(const source of [referenceBrushes[4],referenceBrushes[6]]){const p=structuredClone(source);p.size=1024;const b=new CanonicalBuilder(p);for(let i=0;i<480;i++)b.accept(point(100+i*.1,i*1000/240));assert.ok(b.commands.length>0&&b.commands.length<=480);assert.equal(b.commands.at(-1)[20],b.geometry.at(-1).t);assert.equal(b.commands.at(-1)[0],b.geometry.at(-1).x);const before=b.commands.map(c=>Array.from(c));b.finish();assert.deepEqual(b.record().commands,before);}});
 
-test('pending sweep input is displayed on completion with one submission and intact formal geometry',async()=>{
- const p=compilePreset(referenceBrushes[6]),document=new TileDocument(256,256),builder=new CanonicalBuilder(referenceBrushes[6]);
+for(const source of [referenceBrushes[0],referenceBrushes[3],referenceBrushes[5],referenceBrushes[4],referenceBrushes[6]])test('pending '+source.id+' input is displayed on completion with one submission and intact formal geometry',async()=>{
+ const p=compilePreset(source),document=new TileDocument(256,256),builder=new CanonicalBuilder(source);
  for(let i=0;i<8;i++)builder.accept({...point(20+i*10,i*5),y:30+(i%2)*10});builder.finish();assert.ok(builder.commands.length>=3);
  document.append(1,p,builder.commands);const retained=document.count,seen=[],pending=[];let inFlight=0,maxInFlight=0;
  const backend={immediatePreview:true,render(snapshot,jobs){inFlight++;maxInFlight=Math.max(maxInFlight,inFlight);seen.push({end:snapshot.stableEnd,jobs:jobs.length});return new Promise(resolve=>pending.push(()=>{inFlight--;resolve();}));},destroy(){}};
- const renderer=new GpuRenderer(backend,256,256),source=builder.commands;renderer.document=document;
- const send=end=>renderer.setLive({id:1,preset:p,stableSource:source,stableEnd:end,commands:[],tip:{x:30,y:30,t:performance.now()},finished:false});
+ const renderer=new GpuRenderer(backend,256,256),prefixSource=builder.commands;renderer.document=document;
+ const send=end=>renderer.setLive({id:1,preset:p,stableSource:prefixSource,stableEnd:end,commands:[],tip:{x:30,y:30,t:performance.now()},finished:false});
  send(1);renderer.frame(performance.now());send(2);send(3);assert.equal(seen.length,1);
  pending.shift()();await new Promise(resolve=>setImmediate(resolve));
  assert.deepEqual(seen,[{end:1,jobs:0},{end:3,jobs:0}]);assert.equal(maxInFlight,1);assert.equal(document.count,retained);

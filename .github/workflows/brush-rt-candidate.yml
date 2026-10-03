@@ -73,6 +73,7 @@ jobs:
           RT_PLAYWRIGHT_PATH: /tmp/rt-browser/node_modules/playwright
           RT_QUICK_TEST: '1'
           RT_PERF_ONLY: '1'
+          RT_PERF_REPEATS: '3'
           RT_BACKEND: '${{ matrix.backend }}'
         shell: bash
         run: |
