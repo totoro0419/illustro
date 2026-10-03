@@ -1,3 +1,30 @@
+# 実機受入候補の判定 — 2026-10-04 JST
+
+## 機械検査で確認済み
+
+- Node 78/78 PASS
+- WebGL2 full: 229比較・38性能条件 PASS
+- WebGPU full: 229比較・38性能条件 PASS
+- 3分間試験: 43,200 / 43,200入力保持
+- WebGPU反復: 18/18 PASS
+- WebGL2反復: 17/18 PASS
+
+## 既知の未解決結果
+
+WebGL2反復の鉛筆512px / 240Hzで、最初の1回のみ total growth +32.33ms が既存の+20ms基準を超えた。後2回はPASS。ローカルの直前版/最新版交互比較では再現しなかった。原因と再現性は未確定であり、このFAILは保持する。
+
+## 実機で未確認
+
+- ペン先から実画面の線までの追従
+- 実ペン筆圧の自然さ
+- Gペンの入り・抜き
+- 表示中の線から正式線への切替が見えないこと
+- 512px / 1024pxで以前の軽さを維持すること
+- 7基準ブラシの描き味
+- Undo / Redo / 保存 / 読み込み後の見た目
+
+したがって現在の結論は **実機受入候補・ユーザー確認待ち**。Brush Foundation完成ではない。
+
 # Current Foundation contract validation — 2026-10-03 UTC
 
 Current implementation source: `6bfc95f5e8451074234b3b8a79a423833b825153`. Git tree `207aab925161989d016f113b1398d32f4733a28c` exactly matches the tested local02a5957 implementation; only commit metadata differs. Canonical HTML:526,008bytes, Git blob `036b69675d9016eafb04bac3573731d9069267fb`.
