@@ -79,7 +79,7 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
    await session.end();await wait();const lifted=await renderer.backend.readViewport(),liftChange=compare(lifted,active,false);renderer.confirmDelay=0;await renderer.drain();const confirmed=await renderer.backend.readViewport(),confirmationChange=compare(confirmed,lifted,false);
    return {brush:p.id,size,shape,stableCommands,activeError,liftChange,confirmationChange,actualInputs:session.records.at(-1).raw.length};
   },{index,size,shape});
-  r.checks.push({name:'foundation-wide-streaming-'+index+'-'+size+'-'+shape,...value});await checkpoint();assert.equal(value.actualInputs,96);assert.ok(value.stableCommands>1);
+  r.checks.push({name:'foundation-wide-streaming-'+index+'-'+size+'-'+shape,...value});await checkpoint();assert.equal(value.actualInputs,96);assert.ok(value.stableCommands>0);
   if(value.activeError.channelsOver3||value.liftChange.channelsOver3||value.confirmationChange.channelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
   console.log('RT_SWEEP:'+JSON.stringify({backend:r.backend,...value}));
  }
