@@ -1,0 +1,2083 @@
+{
+  "format": "illustro-brush-pack",
+  "version": 1,
+  "presets": [
+    {
+      "format": "illustro-brush-preset",
+      "version": 2,
+      "engine": "illustro-foundation-1",
+      "id": "foundation-g-pen",
+      "name": "Gペン",
+      "category": "基準ブラシ",
+      "purpose": "筆圧で太さ・入り・抜きを作る。人工的な入りも設定から選べます。",
+      "kind": "mono",
+      "renderer": "auto",
+      "size": 16,
+      "opacity": 1,
+      "flow": 1,
+      "color": [
+        0.12,
+        0.15,
+        0.2
+      ],
+      "blend": "normal",
+      "paint": "saturated",
+      "tip": {
+        "shape": "round",
+        "resource": null,
+        "aspect": 1,
+        "hardness": 1,
+        "angle": 0,
+        "direction": false,
+        "azimuth": false,
+        "twist": false
+      },
+      "spacing": {
+        "unit": "relative",
+        "value": 0.09,
+        "minimum": 0.25,
+        "maximum": 32,
+        "exposureMs": 0
+      },
+      "pressure": {
+        "deviceCurve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "smoothing": 0.2,
+        "fallback": 1
+      },
+      "stabilization": {
+        "scope": "brush",
+        "constant": 0.25,
+        "fast": 0,
+        "speedMode": "increase",
+        "post": 0
+      },
+      "prediction": {
+        "enabled": false,
+        "source": "auto",
+        "horizon": 6,
+        "maxDistance": 0.75,
+        "turnCos": 0.95
+      },
+      "dynamics": [
+        {
+          "source": "pressure",
+          "target": "size",
+          "mode": "multiply",
+          "min": 0.03,
+          "max": 1,
+          "curve": [
+            [
+              0,
+              0
+            ],
+            [
+              0.25,
+              0.12
+            ],
+            [
+              0.6,
+              0.55
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ],
+      "limits": {
+        "size": [
+          0.01,
+          4096
+        ],
+        "opacity": [
+          0,
+          1
+        ],
+        "flow": [
+          0,
+          1
+        ]
+      },
+      "taper": {
+        "size": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 1.5,
+            "minimum": 0.15,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "opacity": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "flow": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "grain": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        }
+      },
+      "texture": {
+        "tip": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "paper": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "stroke": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        }
+      },
+      "scatter": {
+        "enabled": false,
+        "radius": 0,
+        "radiusMode": "relative",
+        "particleSize": 1,
+        "sizeMode": "relative",
+        "density": 1,
+        "bias": 0,
+        "rotation": "tip"
+      },
+      "random": [],
+      "resources": {},
+      "extensions": {}
+    },
+    {
+      "format": "illustro-brush-preset",
+      "version": 2,
+      "engine": "illustro-foundation-1",
+      "id": "foundation-round-pen",
+      "name": "丸ペン",
+      "category": "基準ブラシ",
+      "purpose": "細い曲線・小さい形・短線を筆圧で描く。",
+      "kind": "mono",
+      "renderer": "auto",
+      "size": 4,
+      "opacity": 1,
+      "flow": 1,
+      "color": [
+        0.12,
+        0.15,
+        0.2
+      ],
+      "blend": "normal",
+      "paint": "saturated",
+      "tip": {
+        "shape": "round",
+        "resource": null,
+        "aspect": 1,
+        "hardness": 1,
+        "angle": 0,
+        "direction": false,
+        "azimuth": false,
+        "twist": false
+      },
+      "spacing": {
+        "unit": "relative",
+        "value": 0.09,
+        "minimum": 0.25,
+        "maximum": 32,
+        "exposureMs": 0
+      },
+      "pressure": {
+        "deviceCurve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "smoothing": 0.25,
+        "fallback": 1
+      },
+      "stabilization": {
+        "scope": "brush",
+        "constant": 0.25,
+        "fast": 0,
+        "speedMode": "increase",
+        "post": 0
+      },
+      "prediction": {
+        "enabled": false,
+        "source": "auto",
+        "horizon": 6,
+        "maxDistance": 0.75,
+        "turnCos": 0.95
+      },
+      "dynamics": [
+        {
+          "source": "pressure",
+          "target": "size",
+          "mode": "multiply",
+          "min": 0.12,
+          "max": 1,
+          "curve": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ],
+      "limits": {
+        "size": [
+          0.01,
+          4096
+        ],
+        "opacity": [
+          0,
+          1
+        ],
+        "flow": [
+          0,
+          1
+        ]
+      },
+      "taper": {
+        "size": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "opacity": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "flow": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "grain": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        }
+      },
+      "texture": {
+        "tip": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "paper": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "stroke": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        }
+      },
+      "scatter": {
+        "enabled": false,
+        "radius": 0,
+        "radiusMode": "relative",
+        "particleSize": 1,
+        "sizeMode": "relative",
+        "density": 1,
+        "bias": 0,
+        "rotation": "tip"
+      },
+      "random": [],
+      "resources": {},
+      "extensions": {}
+    },
+    {
+      "format": "illustro-brush-preset",
+      "version": 2,
+      "engine": "illustro-foundation-1",
+      "id": "foundation-technical",
+      "name": "ミリペン / 製図ペン",
+      "category": "基準ブラシ",
+      "purpose": "太さと濃さが一定の線を描く。",
+      "kind": "mono",
+      "renderer": "auto",
+      "size": 4,
+      "opacity": 1,
+      "flow": 1,
+      "color": [
+        0.12,
+        0.15,
+        0.2
+      ],
+      "blend": "normal",
+      "paint": "saturated",
+      "tip": {
+        "shape": "round",
+        "resource": null,
+        "aspect": 1,
+        "hardness": 1,
+        "angle": 0,
+        "direction": false,
+        "azimuth": false,
+        "twist": false
+      },
+      "spacing": {
+        "unit": "relative",
+        "value": 0.09,
+        "minimum": 0.25,
+        "maximum": 32,
+        "exposureMs": 0
+      },
+      "pressure": {
+        "deviceCurve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "smoothing": 0.15,
+        "fallback": 1
+      },
+      "stabilization": {
+        "scope": "brush",
+        "constant": 0.25,
+        "fast": 0,
+        "speedMode": "increase",
+        "post": 0
+      },
+      "prediction": {
+        "enabled": false,
+        "source": "auto",
+        "horizon": 6,
+        "maxDistance": 0.75,
+        "turnCos": 0.95
+      },
+      "dynamics": [],
+      "limits": {
+        "size": [
+          0.01,
+          4096
+        ],
+        "opacity": [
+          0,
+          1
+        ],
+        "flow": [
+          0,
+          1
+        ]
+      },
+      "taper": {
+        "size": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "opacity": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "flow": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "grain": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        }
+      },
+      "texture": {
+        "tip": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "paper": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "stroke": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        }
+      },
+      "scatter": {
+        "enabled": false,
+        "radius": 0,
+        "radiusMode": "relative",
+        "particleSize": 1,
+        "sizeMode": "relative",
+        "density": 1,
+        "bias": 0,
+        "rotation": "tip"
+      },
+      "random": [],
+      "resources": {},
+      "extensions": {}
+    },
+    {
+      "format": "illustro-brush-preset",
+      "version": 2,
+      "engine": "illustro-foundation-1",
+      "id": "foundation-marker",
+      "name": "マーカー",
+      "category": "基準ブラシ",
+      "purpose": "一筆の濃さを一定に保ち、別の線とは重なります。",
+      "kind": "mono",
+      "renderer": "auto",
+      "size": 128,
+      "opacity": 0.45,
+      "flow": 1,
+      "color": [
+        0.12,
+        0.15,
+        0.2
+      ],
+      "blend": "normal",
+      "paint": "saturated",
+      "tip": {
+        "shape": "round",
+        "resource": null,
+        "aspect": 1,
+        "hardness": 1,
+        "angle": 0,
+        "direction": false,
+        "azimuth": false,
+        "twist": false
+      },
+      "spacing": {
+        "unit": "relative",
+        "value": 0.09,
+        "minimum": 0.25,
+        "maximum": 32,
+        "exposureMs": 0
+      },
+      "pressure": {
+        "deviceCurve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "smoothing": 0.15,
+        "fallback": 1
+      },
+      "stabilization": {
+        "scope": "brush",
+        "constant": 0.25,
+        "fast": 0,
+        "speedMode": "increase",
+        "post": 0
+      },
+      "prediction": {
+        "enabled": false,
+        "source": "auto",
+        "horizon": 6,
+        "maxDistance": 0.75,
+        "turnCos": 0.95
+      },
+      "dynamics": [],
+      "limits": {
+        "size": [
+          0.01,
+          4096
+        ],
+        "opacity": [
+          0,
+          1
+        ],
+        "flow": [
+          0,
+          1
+        ]
+      },
+      "taper": {
+        "size": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "opacity": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "flow": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "grain": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        }
+      },
+      "texture": {
+        "tip": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "paper": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "stroke": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        }
+      },
+      "scatter": {
+        "enabled": false,
+        "radius": 0,
+        "radiusMode": "relative",
+        "particleSize": 1,
+        "sizeMode": "relative",
+        "density": 1,
+        "bias": 0,
+        "rotation": "tip"
+      },
+      "random": [],
+      "resources": {},
+      "extensions": {}
+    },
+    {
+      "format": "illustro-brush-preset",
+      "version": 2,
+      "engine": "illustro-foundation-1",
+      "id": "foundation-pencil",
+      "name": "鉛筆",
+      "category": "基準ブラシ",
+      "purpose": "筆圧で太さ・濃さ・かすれが変わる。質感は最初から描きます。",
+      "kind": "mono",
+      "renderer": "sweep",
+      "size": 4,
+      "opacity": 1,
+      "flow": 0.8,
+      "color": [
+        0.12,
+        0.15,
+        0.2
+      ],
+      "blend": "normal",
+      "paint": "saturated",
+      "tip": {
+        "shape": "round",
+        "resource": null,
+        "aspect": 1,
+        "hardness": 0.9,
+        "angle": 0,
+        "direction": false,
+        "azimuth": false,
+        "twist": false
+      },
+      "spacing": {
+        "unit": "relative",
+        "value": 0.12,
+        "minimum": 0.25,
+        "maximum": 32,
+        "exposureMs": 0
+      },
+      "pressure": {
+        "deviceCurve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "smoothing": 0.15,
+        "fallback": 1
+      },
+      "stabilization": {
+        "scope": "brush",
+        "constant": 0.25,
+        "fast": 0,
+        "speedMode": "increase",
+        "post": 0
+      },
+      "prediction": {
+        "enabled": false,
+        "source": "auto",
+        "horizon": 6,
+        "maxDistance": 0.75,
+        "turnCos": 0.95
+      },
+      "dynamics": [
+        {
+          "source": "pressure",
+          "target": "size",
+          "mode": "multiply",
+          "min": 0.2,
+          "max": 1,
+          "curve": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        },
+        {
+          "source": "pressure",
+          "target": "opacity",
+          "mode": "multiply",
+          "min": 0.1,
+          "max": 1,
+          "curve": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        },
+        {
+          "source": "pressure",
+          "target": "grain",
+          "mode": "multiply",
+          "min": 1,
+          "max": 1.8,
+          "curve": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      ],
+      "limits": {
+        "size": [
+          0.01,
+          4096
+        ],
+        "opacity": [
+          0,
+          1
+        ],
+        "flow": [
+          0,
+          1
+        ]
+      },
+      "taper": {
+        "size": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "opacity": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "flow": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "grain": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        }
+      },
+      "texture": {
+        "tip": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "paper": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0.65,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "stroke": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        }
+      },
+      "scatter": {
+        "enabled": false,
+        "radius": 0,
+        "radiusMode": "relative",
+        "particleSize": 1,
+        "sizeMode": "relative",
+        "density": 1,
+        "bias": 0,
+        "rotation": "tip"
+      },
+      "random": [],
+      "resources": {},
+      "extensions": {}
+    },
+    {
+      "format": "illustro-brush-preset",
+      "version": 2,
+      "engine": "illustro-foundation-1",
+      "id": "foundation-hard-eraser",
+      "name": "硬い消しゴム",
+      "category": "基準ブラシ",
+      "purpose": "丸い輪郭で消す。線画と同じ連続描画を使います。",
+      "kind": "mono",
+      "renderer": "auto",
+      "size": 128,
+      "opacity": 1,
+      "flow": 1,
+      "color": [
+        0.12,
+        0.15,
+        0.2
+      ],
+      "blend": "erase",
+      "paint": "saturated",
+      "tip": {
+        "shape": "round",
+        "resource": null,
+        "aspect": 1,
+        "hardness": 1,
+        "angle": 0,
+        "direction": false,
+        "azimuth": false,
+        "twist": false
+      },
+      "spacing": {
+        "unit": "relative",
+        "value": 0.09,
+        "minimum": 0.25,
+        "maximum": 32,
+        "exposureMs": 0
+      },
+      "pressure": {
+        "deviceCurve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "smoothing": 0.15,
+        "fallback": 1
+      },
+      "stabilization": {
+        "scope": "brush",
+        "constant": 0.25,
+        "fast": 0,
+        "speedMode": "increase",
+        "post": 0
+      },
+      "prediction": {
+        "enabled": false,
+        "source": "auto",
+        "horizon": 6,
+        "maxDistance": 0.75,
+        "turnCos": 0.95
+      },
+      "dynamics": [],
+      "limits": {
+        "size": [
+          0.01,
+          4096
+        ],
+        "opacity": [
+          0,
+          1
+        ],
+        "flow": [
+          0,
+          1
+        ]
+      },
+      "taper": {
+        "size": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "opacity": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "flow": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "grain": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        }
+      },
+      "texture": {
+        "tip": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "paper": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "stroke": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        }
+      },
+      "scatter": {
+        "enabled": false,
+        "radius": 0,
+        "radiusMode": "relative",
+        "particleSize": 1,
+        "sizeMode": "relative",
+        "density": 1,
+        "bias": 0,
+        "rotation": "tip"
+      },
+      "random": [],
+      "resources": {},
+      "extensions": {}
+    },
+    {
+      "format": "illustro-brush-preset",
+      "version": 2,
+      "engine": "illustro-foundation-1",
+      "id": "foundation-soft-eraser",
+      "name": "柔らかい消しゴム",
+      "category": "基準ブラシ",
+      "purpose": "柔らかい輪郭で少しずつ消す。",
+      "kind": "mono",
+      "renderer": "sweep",
+      "size": 128,
+      "opacity": 1,
+      "flow": 0.65,
+      "color": [
+        0.12,
+        0.15,
+        0.2
+      ],
+      "blend": "erase",
+      "paint": "saturated",
+      "tip": {
+        "shape": "round",
+        "resource": null,
+        "aspect": 1,
+        "hardness": 0.05,
+        "angle": 0,
+        "direction": false,
+        "azimuth": false,
+        "twist": false
+      },
+      "spacing": {
+        "unit": "relative",
+        "value": 0.12,
+        "minimum": 0.25,
+        "maximum": 32,
+        "exposureMs": 0
+      },
+      "pressure": {
+        "deviceCurve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "smoothing": 0.15,
+        "fallback": 1
+      },
+      "stabilization": {
+        "scope": "brush",
+        "constant": 0.25,
+        "fast": 0,
+        "speedMode": "increase",
+        "post": 0
+      },
+      "prediction": {
+        "enabled": false,
+        "source": "auto",
+        "horizon": 6,
+        "maxDistance": 0.75,
+        "turnCos": 0.95
+      },
+      "dynamics": [],
+      "limits": {
+        "size": [
+          0.01,
+          4096
+        ],
+        "opacity": [
+          0,
+          1
+        ],
+        "flow": [
+          0,
+          1
+        ]
+      },
+      "taper": {
+        "size": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "opacity": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "flow": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        "grain": {
+          "start": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "end": {
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        }
+      },
+      "texture": {
+        "tip": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "paper": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        },
+        "stroke": {
+          "kind": "paper",
+          "resource": null,
+          "strength": 0,
+          "minimum": 0,
+          "scale": 2,
+          "sizeMode": "absolute",
+          "space": "paper",
+          "rotation": 0,
+          "followDirection": false,
+          "invert": false,
+          "aa": false
+        }
+      },
+      "scatter": {
+        "enabled": false,
+        "radius": 0,
+        "radiusMode": "relative",
+        "particleSize": 1,
+        "sizeMode": "relative",
+        "density": 1,
+        "bias": 0,
+        "rotation": "tip"
+      },
+      "random": [],
+      "resources": {},
+      "extensions": {}
+    }
+  ]
+}
