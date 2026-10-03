@@ -10,10 +10,10 @@
 - 最新Node78/78合格。両GPUでFoundation34画像/挙動比較+4性能条件合格。点の可視性をCPU/GPU一致とは独立に検査する。実ペン/画面の自然さは未確認。
 - 直前25ac91eの全検査37128925258はSUCCESS。両GPU228画像/挙動比較・38性能条件・18反復条件すべて合格。raw ZIP4つのSHA-256とゲート計算/入力保持/同時投入1を独立照合済み。計算の時間窓は記録されたサンプル数を使用し、その境界時刻は独立に記録されていない。
 - 同じ25ac91eで共通合成16条件×両GPU、ブラシ読み込みの失敗/成功、保存/履歴、幅320/800/1200も合格。最新変更はGペンの設定と可視点検査のみ。
-- 最新実装の全検査37131153403は再実行中。反復検査はWebGPU18/18合格、WebGL2 17/18合格で最初の鉛筆512/240が32.33ms増加FAIL。後の2回はPASS。raw ZIP2つのdigest/ゲート/入力保持は照合済み。ローカルで直前版と最新を交互3回ずつ比較すると両版3/3PASS。原因/再現性は未解決であり、直前全PASSを最新全PASSとして転記しない。全検査の結果を取得してVALIDATIONとページを更新する。
+- 最新実装のCI37131153403はCOMPLETED。両GPUのfull jobは229画像/挙動比較・38性能条件・78Node検査がすべてPASS。3分間2条件も43,200/43,200入力を保持。反復はWebGPU18/18PASS、WebGL2 17/18PASSで最初の鉛筆512/240が32.33ms増加FAIL、後の2回はPASS。workflow全体はこの1件によりFAILURE。full PASSと反復FAILを区別する。raw ZIP4つのdigest/ゲート/入力保持/同時投入1を照合済み。ローカルの直前版/最新版交互比較は両版3/3PASS。原因と再現性は未解決。
 - 拡張検査は時間間隔+重ね塗り、画像先端+模様+散布、別提供者をmainと実workerに登録して同じ記録を生成するところまで実行。水彩/色付き画像/複数質感層/カーソル表示/静止時間の自動入力などは未実装。追加する契約と効果完成を区別する。
 - 前の6f72a2c全検査37121144408も両GPU226比較・38性能条件・18反復条件すべて合格。以前のFAILは消さず保存している。
-- ページ更新は成功。Sites source `eff03687805171e3ee1e4e9221211b11be7b3f35`、deployment `appgdep_6ac117b778b881919d1de5bd3f803fcf`。この後の新しいFAIL/全検査結果を表示と同期する。
+- ページとsource-evidence.jsonは最新版・full PASS・反復FAIL・実機未確認を区別して同期済み。Sites source `6c075a79b5ff2b8606b473eeb2a0990a199aa852`、deployment `appgdep_6ac11e324fec8191a895379730497835` はsucceeded。所有者限定の同じページと比較版を維持する。
 - 正式な試し描きページは https://illustro-realtime-brush-test.ibukioike2009.chatgpt.site 。既存project `appgprj_6ac0517d1104819194de23404ff9b3a0`、所有者限定を維持する。ページのsource-evidence.jsonで実装/正本blob/検査を確認できる。
 - 現checkout `/workspace/scratch/1cb77f0be138/illustro`、Sites `/workspace/scratch/1cb77f0be138/brush-rt-site`。継続環境に同じパスがあるとは仮定せずGitHubを正本にする。
 - 実機受入は `HUMAN_CHECKS.md`。自然な入り抜き、見えない切替、旧合格版の軽さ維持が確認されるまで全体完成・本番採用・mergeを宣言しない。
