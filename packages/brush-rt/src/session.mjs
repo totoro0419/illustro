@@ -19,7 +19,10 @@ export class RealtimeSession {
  accept(s){const a=this.active;if(!a||s.predicted)return;const last=a.raw.at(-1);if(last&&s.t<last.t)return;if(last&&s.t===last.t&&['x','y','pressure','pointerType','tilt','azimuth','twist'].every(k=>s[k]===last[k]))return;a.builder.accept(s);const q=a.builder.geometry.at(-1),prev=a.points.at(-1);for(const c of a.builder.ready())a.stableSource.push(c);if(prev)a.distance+=Math.hypot(q.x-prev.x,q.y-prev.y);else a.start=q.t;a.raw.push({...s});a.points.push(q);if(a.points.length>500000)throw Error('input retention limit');this.pending.push({...s});this.rawAccepted++;this.lastRaw=s;this.updateLive(performance.now());}
  predictions(samples){if(!this.active)return;this.active.predicted=samples;this.browserPredictions+=samples.length;}
  flush(){if(this.pending.length&&this.active){this.worker.postMessage({type:'samples',id:this.active.id,samples:this.pending});this.pending=[];}}
- frame(now){this.flush();this.updateLive(now);return this.renderer.frame(now);}
+ // Actual input already publishes its complete current appearance in accept().
+ // Only a time-dependent prediction needs a new notification between inputs.
+ // Preserve the legacy session's publication cadence.
+ frame(now){this.flush();const a=this.active;if(!a?.builder.foundation||this.prediction&&a.preset.__foundation.preset.prediction.enabled)this.updateLive(now);return this.renderer.frame(now);}
  updateLive(now,finished=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
   const total=b.distance,tail=b.commands.slice(b.published).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
   const q=this.prediction&&!finished?(b.foundation?predictFoundation(a.points.slice(-3),now,a.predicted,p):predict(a.points.slice(-3),now,a.predicted)):null;

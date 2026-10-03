@@ -17,11 +17,11 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
    await wait();const active=await renderer.backend.readViewport(),activeError=compare(active,ref);
    await session.end();await wait();const lifted=await renderer.backend.readViewport(),liftChange=compare(lifted,active,false);
    renderer.confirmDelay=0;await renderer.drain();await new Promise(r=>requestAnimationFrame(r));await renderer.drain();const confirmed=await renderer.backend.readViewport(),confirmationChange=compare(confirmed,lifted,false);
-   const final=await window.__rt.compare();const saved=JSON.stringify(session.export());await session.undo();await session.redo();const historyExact=JSON.stringify(session.export())===saved;await session.load(JSON.parse(saved));const loadExact=JSON.stringify(session.export())===saved;
-   return {brush:p.id,size,activeError,liftChange,confirmationChange,final,historyExact,loadExact,actualInputs:session.records.at(-1).raw.length,measurement:'GPU viewport readback; physical presentation/perceptibility unverified'};
+   const final=await window.__rt.compare();const saved=JSON.stringify(session.export());await session.undo();await session.redo();const historyExact=JSON.stringify(session.export())===saved,historyError=compare(await renderer.backend.readViewport(),ref);await session.load(JSON.parse(saved));const loadExact=JSON.stringify(session.export())===saved,loadError=compare(await renderer.backend.readViewport(),ref);
+   return {brush:p.id,size,activeError,liftChange,confirmationChange,final,historyExact,loadExact,historyError,loadError,actualInputs:session.records.at(-1).raw.length,measurement:'GPU viewport readback; physical presentation/perceptibility unverified'};
   },{index,size});
   r.checks.push({name:'foundation-transition-'+index+'-'+size,...value});await checkpoint();
-  if(value.activeError.channelsOver3||value.liftChange.channelsOver3||value.confirmationChange.channelsOver3||value.final.visualChannelsOver3||!value.historyExact||!value.loadExact)r.previewDifferences=(r.previewDifferences??[]).concat(value);
+  if(value.activeError.channelsOver3||value.liftChange.channelsOver3||value.confirmationChange.channelsOver3||value.final.visualChannelsOver3||!value.historyExact||!value.loadExact||value.historyError.channelsOver3||value.loadError.channelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
   console.log('RT_FOUNDATION:'+JSON.stringify({backend:r.backend,...value}));assert.equal(value.actualInputs,32);
  }
  // Image tip, rotated/relative/inverted filtered texture, variable color and scatter.

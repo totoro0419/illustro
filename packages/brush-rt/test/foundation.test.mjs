@@ -2,7 +2,8 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {referenceBrushes,createPreset,compilePreset,evaluateDynamics,exportPresets,importPresets,PresetState,cursorState,correctGeometry,geometryContext,predictFoundation,interpolateAngle} from '../dist/rt/foundation.mjs';
 import {CanonicalBuilder,validateRecord,cpuReference,continuous,liveAccumulation} from '../dist/rt/model.mjs';
-import {sweepPrefixCommands,GpuRenderer,TileDocument} from '../dist/rt/renderer.mjs';
+import {sweepPrefixCommands,GpuRenderer,TileDocument,previewBatches} from '../dist/rt/renderer.mjs';
+import {RealtimeSession} from '../dist/rt/session.mjs';
 const point=(x,t,p=.7)=>({x,y:30,t,pressure:p,pointerType:'pen',origin:'coalesced',tilt:.3,azimuth:.4,twist:.5});
 test('wide constant sweep feedback uses bounded strips/joins without mutating canonical paint or dropping endpoint caps',()=>{const p=structuredClone(referenceBrushes[6]);p.size=512;const b=new CanonicalBuilder(p);for(let i=0;i<16;i++)b.accept({...point(20+i*10,i*5),y:30+i*i});const canonical=b.commands.map(c=>Array.from(c));const v={};const out=sweepPrefixCommands(v,b.p,b.commands.slice(0,-1),b.commands.slice(-1));assert.ok(out.stable.some(c=>c[23]===-2));assert.equal(out.stable[0][23],b.commands[0][23]);assert.deepEqual(b.commands.map(c=>Array.from(c)),canonical);const end=sweepPrefixCommands(v,b.p,b.commands.slice(-1),[]);assert.ok(end.stable.every(c=>c[23]!==-2));const textured={...b.p,__foundation:{...b.p.__foundation,texture:{...b.p.__foundation.texture,followDirection:true}}};assert.ok(sweepPrefixCommands({},textured,b.commands,[]).stable.every(c=>c[23]!==-2));});
 test('saved version-three strokes from the pre-sweep implementation retain all seven brush results',()=>{const fixture=JSON.parse(readFileSync(new URL('./fixtures/pre-sweep-foundation-v3.json',import.meta.url),'utf8'));assert.equal(fixture.source,'b18e2b0d66906454cc95aa9d8b2319cb053897f1');assert.equal(fixture.records.length,7);for(const record of fixture.records)assert.deepEqual(validateRecord(record),record);});
@@ -43,5 +44,25 @@ for(const source of [referenceBrushes[0],referenceBrushes[3],referenceBrushes[5]
  send(1);renderer.frame(performance.now());send(2);send(3);assert.equal(seen.length,1);
  pending.shift()();await new Promise(resolve=>setImmediate(resolve));
  assert.deepEqual(seen,[{end:1,jobs:0},{end:3,jobs:0}]);assert.equal(maxInFlight,1);assert.equal(document.count,retained);
- pending.shift()();await new Promise(resolve=>setImmediate(resolve));assert.equal(seen.length,2);assert.ok(document.jobs.length>0);renderer.destroy();
+ pending.shift()();await new Promise(resolve=>setImmediate(resolve));assert.equal(seen.length,2);
+ send(4);send(5);assert.equal(seen.length,2);await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(seen.at(-1),{end:5,jobs:0});assert.equal(maxInFlight,1);assert.equal(document.count,retained);
+ pending.shift()();await new Promise(resolve=>setImmediate(resolve));assert.ok(document.jobs.length>0);renderer.destroy();
+});
+
+// A notification without changed artwork can make RAF submit an old tip just
+// before the actual input batch, needlessly occupying the only GPU slot.
+test('Foundation without prediction publishes changed input, not identical RAF notifications',()=>{
+ const PreviousWorker=globalThis.Worker;globalThis.Worker=class{postMessage(){}terminate(){}};
+ try{for(const source of referenceBrushes){
+  const snapshots=[],backend={setLive:s=>snapshots.push(s),frame:()=>false,destroy(){}};const session=new RealtimeSession(backend);
+  session.begin(source);session.accept({...point(20,0),y:30});
+  for(let i=1;i<20;i++)session.frame(i);assert.equal(snapshots.length,1,source.id);
+  session.accept({...point(21,20),y:31});session.frame(21);assert.equal(snapshots.length,2,source.id);assert.equal(session.active.raw.length,2);
+  session.destroy();
+ }}finally{globalThis.Worker=PreviousWorker;}
+});
+
+test("committed artwork gets a viewport pass without pending live feedback",()=>{
+ assert.deepEqual(previewBatches({archivedThrough:-1},[]),[{states:[],archive:false}]);
+ assert.deepEqual(previewBatches({archivedThrough:2},[{id:1,finished:true},{id:2,finished:true}]),[{states:[],archive:false}]);
 });

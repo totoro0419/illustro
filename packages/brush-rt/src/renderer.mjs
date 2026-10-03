@@ -32,6 +32,9 @@ export function livePrefixCommands(v,p,published,width,height,live=[]){const pre
 function tileViewport(key,width,height,cw,ch){const [x,y]=key.split(',').map(Number),x0=Math.max(0,Math.floor(x*TILE*cw/width)),y0=Math.max(0,Math.floor(y*TILE*ch/height)),x1=Math.min(cw,Math.ceil((x+1)*TILE*cw/width)),y1=Math.min(ch,Math.ceil((y+1)*TILE*ch/height));return [x0,y0,Math.max(0,x1-x0),Math.max(0,y1-y0)];}
 export function previewBatches(backend,states){
  const pending=states.filter(s=>s.id>backend.archivedThrough),batches=[];
+ // Rebuild/undo/load can have committed tiles with no live feedback.
+ // Still run the viewport compositor once so restored artwork becomes visible.
+ if(!pending.length)return [{states:[],archive:false}];
  // Completed artwork is necessary scene geometry, not an obsolete display notification.
  // Keep every stroke; fold chronological groups into the archive in this submission.
  for(let i=0;i<pending.length;i+=4){const group=pending.slice(i,i+4),archive=i+4<pending.length;if(archive&&group.some(s=>!s.finished))throw Error('only ended feedback can be archived');batches.push({states:group,archive});}
@@ -60,13 +63,16 @@ export class GpuRenderer {
   if(backend==='webgpu')throw Error('WebGPU adapter unavailable');return new GpuRenderer(new WebGlBackend(canvas,width,height),width,height);
  }
  constructor(backend,width,height){this.backend=backend;this.document=new TileDocument(width,height);this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;}
- setLive(s){this.previewStates.set(s.id,s);this.mailbox.set(s);}
+ setLive(s){this.previewStates.set(s.id,s);this.mailbox.set(s);this.requestPreview();}
+ // One deferred request consumes the newest notification after an input batch.
+ // Do not launch a GPU submission for every coalesced input sample.
+ requestPreview(){if(this.disposed||this.inflight||this.previewRequested||!this.backend.immediatePreview||!foundationUnion(this.mailbox.value?.preset)||this.mailbox.value.finished)return;this.previewRequested=true;queueMicrotask(()=>{this.previewRequested=false;this.frame(performance.now());});}
  markEnded(id){this.ended.add(id);}
 
  frame(now){if(this.disposed)return false;this.backend.poll?.();if(this.inflight)return false;const latest=this.mailbox.take();if(latest)this.snapshot=latest;const jobs=now-this.lastConfirmed>=this.confirmDelay?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[],job=jobs[0]??null;if(!latest&&!job&&!this.needsFrame)return false;this.needsFrame=false;const s=this.snapshot;this.inflight=true;
   try{const submittedAt=performance.now();this.backend.render(s,jobs,[...this.previewStates.values()]).then(()=>{if(this.disposed)return;const end=performance.now();for(const j of jobs){this.document.complete(j);if(j.t!==null)this.confirmedTime=Math.max(this.confirmedTime,j.commands.at(-1)?.[20]??0);}if(job)this.lastConfirmed=end;const work=end-submittedAt;this.lastGpuWork=work;this.formalQuantum=work>50?Math.max(1,Math.floor(this.formalQuantum/2)):work<34?Math.min(8,this.formalQuantum+1):this.formalQuantum;
    if(s&&s.tip){const m={stage:'gpu-complete-proxy',revision:s.revision,completedAt:end,inputAge:end-s.tip.t,latestInputAge:end-(s.inputTip??s.tip).t,tip:{...s.tip},previewTip:{...(s.previewTip??s.tip)},previewQueueAge:this.mailbox.value?.tip?Math.max(0,end-(this.mailbox.value.inputTip??this.mailbox.value.tip).t):0,oldestQueueAge:Number.isFinite(this.document.oldestTime)?Math.max(0,end-this.document.oldestTime):0,confirmedLag:Math.max(0,(s.inputTip??s.tip).t-Math.min(this.document.knownTime,this.document.oldestTime)),obsoletePreviewCount:this.mailbox.obsolete+(this.backend.obsoleteFinished??0),formalJobs:this.document.jobs.length,inFlightSubmissions:1,gpuWorkMs:work,...(this.backend.lastSubmission?{submission:{...this.backend.lastSubmission}}:{})};this.completions.push(m);if(this.completions.length>24000)this.completions.splice(0,12000);this.onComplete?.(m);}for(const j of jobs)if(j.commit&&this.ended.has(j.id)&&!this.document.jobs.some(q=>q.id===j.id)){this.backend.retirePreview(j.id);this.previewStates.delete(j.id);this.ended.delete(j.id);if(this.snapshot?.id===j.id)this.snapshot=null;}
-   this.inflight=false;this.needsFrame=!!job;if(this.backend.immediatePreview&&foundationUnion(this.mailbox.value?.preset)&&!this.mailbox.value.finished)queueMicrotask(()=>this.frame(performance.now()));}).catch(e=>{this.errors.push(e.message);this.inflight=false;this.disposed=true;});return true;
+   this.inflight=false;this.needsFrame=!!job;this.requestPreview();}).catch(e=>{this.errors.push(e.message);this.inflight=false;this.disposed=true;});return true;
   }catch(e){this.errors.push(e.message);this.inflight=false;this.disposed=true;return false;}
  }
  async drain(){const start=performance.now();while(this.inflight||this.document.jobs.length){if(performance.now()-start>120000)throw Error('confirmed renderer drain timeout');await new Promise(r=>requestAnimationFrame(r));this.frame(performance.now());}this.needsFrame=true;this.frame(performance.now());while(this.inflight){await new Promise(r=>requestAnimationFrame(r));this.backend.poll?.();}if(this.errors.length)throw Error(this.errors.join(';'));}
