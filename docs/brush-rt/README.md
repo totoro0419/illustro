@@ -21,3 +21,8 @@
 `npm run build --workspace=@illustro/brush-rt`でパッケージとHTMLを生成します。`@illustro/brush-rt`はGpuRenderer、RealtimeSession、TileDocument、参照描画、型定義を公開します。Illustro本体の複数レイヤー・保存・履歴への接続と、メモリ管理・GPU喪失からの自動復帰は未実装です。
 
 候補ブランチへのGitHub Pages配置は既存の保護規則で禁止されていたため、保護を変更していません。描ける検証ページを別途用意し、エンジンのソース・調査・検証資料はこのリポジトリに保存します。
+
+
+## 最新の完成条件
+
+[最上位の描画体験条件](EXPERIENCE_CONTRACT.md)に従い、点線の後補完、線の位置・幅・色・質感の後変更を失敗として扱う。8f8ef5cfでは、密な鉛筆の表示形状を64個で捨てる経路を削除した。Node41件成功。描画中・終了直後・正式描画後の画像検査と細線240/480Hz試験は[CI37089526671](https://github.com/totoro0419/illustro/actions/runs/37089526671)で実行中。過去のPASSを今回の見え方の証拠にしない。

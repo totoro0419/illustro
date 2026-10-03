@@ -1,7 +1,7 @@
 import {summarize} from '../../../prototypes/brush-rt/dist/rt/ui.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import {CanonicalBuilder,Stabilizer,predict,LatestMailbox,validateRecord,cpuReference,continuous,keysFor,VERSION,liveAccumulation,referenceCoverage} from '../../../prototypes/brush-rt/dist/rt/model.mjs';
-import {TileDocument,GpuRenderer,previewDirty,previewBatches,livePrefixCommands,publishedCommands} from '../../../prototypes/brush-rt/dist/rt/renderer.mjs';
+import {TileDocument,GpuRenderer,previewDirty,previewBatches,livePrefixCommands,publishedCommands,pack} from '../../../prototypes/brush-rt/dist/rt/renderer.mjs';
 import {RealtimeSession,predictedCommand} from '../../../prototypes/brush-rt/dist/rt/session.mjs';
 const presets=JSON.parse(fs.readFileSync(new URL('../../../docs/brush/evidence/presets.json',import.meta.url)));
 const ink={...presets.find(p=>p.id==='fine-ink'),size:16,stabilization:1,pressureSmoothing:0};
@@ -65,3 +65,6 @@ test('hard star AA remains continuous under Float32 rounding at large coordinate
 
 
 test('superseded thin pencil snapshots retain every unseen dab and freeze their end',()=>{const original=globalThis.Worker,snapshots=[];globalThis.Worker=class{postMessage(){}terminate(){}};try{for(const size of [1,4,16]){const session=new RealtimeSession({setLive:s=>snapshots.push(s)},'mock');session.prediction=false;session.begin({...presets[0],size,stabilization:0,mappings:[],taperStart:0,taperEnd:0});session.accept({x:20,y:30,t:0,pointerType:'mouse'});const first=snapshots.at(-1);for(let i=1;i<=12;i++)session.accept({x:20+i*40,y:30,t:i,pointerType:'mouse'});const last=snapshots.at(-1),v={index:-1};assert.ok(last.stableEnd>64);assert.equal(publishedCommands(first,v).length,first.stableEnd);const unseen=publishedCommands(last,v);assert.equal(unseen.length,last.stableEnd-first.stableEnd);assert.equal(publishedCommands(last,v).length,0);assert.equal(last.stableEnd,session.active.builder.published);assert.deepEqual(last.stableSource.map(c=>c[13]),session.active.builder.commands.slice(0,last.stableEnd).map(c=>c[13]));assert.equal(last.commands.length,session.active.builder.commands.length-last.stableEnd);}}finally{globalThis.Worker=original;}});
+
+
+test('GPU rotation packing preserves canonical data and rounds coefficients once per dab',()=>{const b=new CanonicalBuilder(presets[55]);for(let i=0;i<8;i++)b.accept(point(i));b.finish();const cs=b.record().commands,before=JSON.stringify(cs),gpu=pack(cs);for(let i=0;i<cs.length;i++){assert.equal(gpu[i*24+12],Math.fround(Math.cos(cs[i][4])));assert.equal(gpu[i*24+15],Math.fround(Math.sin(cs[i][4])));assert.equal(gpu[i*24+13],cs[i][13]);}assert.equal(JSON.stringify(cs),before);});

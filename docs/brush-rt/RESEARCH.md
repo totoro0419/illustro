@@ -34,3 +34,13 @@ This investigation precedes the new implementation. Product behavior documented 
 4. Use continuous capsules for eligible hard round/constant color brushes; instanced shapes for transient complex feedback; accurate shader stamp deposition for complex confirmed output. This is an Illustro decision, not a claim about ibis/CSP internals.
 5. A bounded local regression smoother, corner reset, optional speed component and short guarded prediction are evaluated against raw geometry; no One-Euro dependency. Strong smoothing cannot preserve every raw detail while suppressing jitter; deviations must be bounded and visible.
 6. GPU completion/readback and a following animation frame are software proxies. Actual visible-tip / pen-to-photon needs real GPU, stylus and high-speed camera; software results never close that gate.
+
+
+## 2026-10-03：見た目の連続性を優先した再確認
+
+公式資料を再度確認した。[ibisPaint 14.1.0](https://ibispaint.com/newFeature.jsp?lang=en)は高速追従に加えてFade、太さ、不透明度の自然さを改善点としている。[CLIP STUDIO公式](https://support.clip-studio.com/en-us/faq/articles/20250039)は予測線の一時表示と端末依存を明記し、サイズ・補正・ツール・snapによる適用制限を持つ。[Krita公式](https://docs.krita.org/en/reference_manual/instant_preview.html)はtextureやdensity等による終了時のpoppingを説明している。
+
+確認済み事実とIllustroの判断は分ける。大手の内部キュー・補正式・置換アルゴリズムは公開資料から確定できない。Illustroはこれらをコピーしたとは主張しない。ユーザー要求に従い、低解像度を先に見せるだけの方式を細線の解決策にしない。最新通知を省略する際も形状を失わない増分表示を選び、描画中と確定後の画像差を新しいGateにする。詳細は[完成条件](EXPERIENCE_CONTRACT.md)。
+
+
+[WebGPU仕様](https://www.w3.org/TR/webgpu/#async-pipeline-creation)は同期APIがハンドルを返しても実際のpipeline作成完了を意味せず、初使用やsubmit時にstallし得ると説明する。非同期APIは使用可能な状態まで待つ。これを踏まえ、初筆の処理待ちを避けるためpipelineの非同期作成完了後に描画ページを使用可能にする候補へ変更した。GPUキュー全体の遅延を解決する保証ではなく、独立した初回コスト対策である。

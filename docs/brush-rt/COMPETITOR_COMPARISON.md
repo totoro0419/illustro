@@ -9,3 +9,10 @@ Krita: explicit smaller foreground feedback/background accurate computation supp
 libmypaint/Procreate/Photoshop: distance/time dab semantics, stamp/shape/grain controls and documented complexity/spacing costs informed preset routing and CPU reference tests. Affinity's rope/window tradeoffs motivated avoiding a long dragged tail by default. Concepts' editable strokes informed journaling; its120Hz feature does not establish our performance.
 
 No application was exercised here with the same stylus/hardware/brush. Draw-feel comparison and speed ranking remain UNVERIFIED.
+
+
+## 最新の見え方の基準
+
+ibisPaintの公開する高速追従と自然な太さ・不透明度変化、CLIP STUDIOの条件付き予測表示を参考に、Illustroでは一筆の途中・終了・確定の連続性を評価する。内部アルゴリズムを再現したという意味ではない。Kritaが公開するLODのpoppingの制約は、今回の要件では許容しない。
+
+最新通知を捨てる際に鉛筆の途中形状まで64個で切り捨てていたのはIllustro実装の失敗であり、競合の方式を理由に正当化しない。同条件の実機比較は未実施で、速度の優位性を主張しない。

@@ -30,3 +30,13 @@ RT_PLAYWRIGHT_PATH=/path/to/playwright RT_LONG_TEST=1 node prototypes/brush-rt/b
 `RT_BACKEND=webgl2` or `webgpu` selects one backend. CI runs both as independent jobs and preserves failures. Backend metadata keeps hardwareVerified=false. Pointer API availability and observed predicted samples are distinct; synthesized test prediction is not real pen prediction.
 
 A formal chunk remains one128px tile and up to16 commands;1–8 ordinary chunks per GPU batch follow live feedback. Exact covered-tile no-ops can be consumed without GPU deposition. This work bound cannot promise arbitrary hardware milliseconds or GPU preemption.
+
+
+## 密な鉛筆の追加試験：CI37089526671 WebGL2
+
+4秒高速曲線、rough-pencil、予測OFF、240/480Hz。1px開始p95=86.9/67.9ms→終了53.4/52.9ms、4px開始68.2/68.1ms→終了55.5/55.5ms。16pxを含む6条件は開始・中間・終了を比較する累積proxy Gateを成功。これらはSwiftShaderでのGPU完了代用値であり、実GPUやpen-to-photon値ではない。絶対遅延の良さは主張しない。
+
+描画中・終了直後・正式描画後の12鉛筆画像試験も追加した。完全な結果は`evidence/run-37089526671-webgl2-results.json`。全体には星型512pxのFAILが残る。
+
+
+同実行のWebGPUでも細線6件を含む20件の短時間proxyと12鉛筆画像Gateは成功。ただし180秒は開始1秒のサンプルが1件のみでFAIL_OR_INSUFFICIENT。開始623.1ms→終了91.4msという減少を理由に合格へ変更しない。全43200入力保持、開始時の不足を結果に記録する。
