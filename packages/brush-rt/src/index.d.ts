@@ -1,10 +1,10 @@
 import type {Preset,Sample,Point} from '../../brush/src/types';
 export type {Preset,Sample,Point};
 export type BackendName = 'auto'|'webgpu'|'webgl2';
-export type StrokeRecord = Readonly<{version:2;engine:'illustro-rt-2.4';smoothing:'local-regression-adaptive-48ms-bounded-2';fast:number;random:'philox4x32-10';seed:readonly [number,number];preset:Preset;raw:readonly Sample[];geometry:readonly Point[];commands:readonly (readonly number[])[]}>;
+export type StrokeRecord = Readonly<{version:2;engine:'illustro-rt-2.4'|'illustro-rt-2.5';smoothing:'local-regression-adaptive-48ms-bounded-2';fast:number;random:'philox4x32-10';seed:readonly [number,number];preset:Preset;raw:readonly Sample[];geometry:readonly Point[];commands:readonly (readonly number[])[]}>;
 export type StrokeDocument = {format:'illustro-rt-document-2';width:number;height:number;strokes:StrokeRecord[]};
 export type CompletionProxy = {stage:'gpu-complete-proxy';revision:number;completedAt:number;inputAge:number;latestInputAge:number;tip:Point;previewTip:Point;previewQueueAge:number;oldestQueueAge:number;confirmedLag:number;obsoletePreviewCount:number;formalJobs:number;inFlightSubmissions:1};
-export const VERSION:'illustro-rt-2.4';export const TILE:128;export const STRIDE:24;
+export const VERSION:'illustro-rt-2.5';export const TILE:128;export const STRIDE:24;
 export class Stabilizer {constructor(preset:Preset,fast?:number);accept(sample:Sample):Point;}
 export class CanonicalBuilder {constructor(preset:Preset,seed?:[number,number],fast?:number);raw:Sample[];geometry:Point[];commands:Float64Array[];accept(sample:Sample):void;ready(finish?:boolean):Float64Array[];finish():Float64Array[];record():StrokeRecord;}
 export class LatestMailbox<T=unknown> {value:(T&{revision:number})|null;revision:number;obsolete:number;set(value:T):void;take():(T&{revision:number})|null;}

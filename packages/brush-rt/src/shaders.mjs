@@ -8,6 +8,7 @@ float shape(int kind,vec2 xy,vec2 r){
  if(kind==0&&r.x*r.y<.08)return 0.;
  if(kind==2||kind==3){float a=sat(.5-max(abs(xy.x)-r.x,abs(xy.y)-r.y));if(kind==3)a*=.3+.7*pow(abs(sin(xy.y/max(.35,r.y/max(1.,params[1].y))*3.141592653589793)),.5);return a;}
  if(kind==0&&r.x==r.y){float d=length(xy),h=r.x*params[1].x;if(d<=h)return 1.;return params[1].x==1.?sat(r.x+.5-d):sat((r.x+.5-d)/max(.5,r.x-h));}
+ if(kind==4&&params[1].x==1.&&params[2].w<0.&&params[7].z==0.){vec2 uv=xy/r;float len=length(uv),theta=atan(uv.y,uv.x),a=1.75*sin(theta*5.)/max(len,1e-12),gradient=length(vec2((cos(theta)-a*sin(theta))/r.x,(sin(theta)+a*cos(theta))/r.y));return len>1e-12?sat(.5-(len-.65-.35*cos(theta*5.))/max(gradient,1e-12)):sat(.5+.3*min(r.x,r.y));}
  if(kind==1&&params[1].x==1.&&params[2].z==1.&&params[2].w<0.){float k0=length(xy/r),k1=length(xy/(r*r));return k1>1e-12?sat(.5-k0*(k0-1.)/k1):sat(.5+min(r.x,r.y));}
  float sum=0.;for(int x=0;x<2;x++)for(int y=0;y<2;y++){vec2 uv=(xy+vec2(float(x)*.5-.25,float(y)*.5-.25))/r;float d=length(uv);if(kind==6)sum+=img(maskImage,uv/2.+.5,false);else if(kind==0||kind==1)sum+=d<1.?(params[1].x==1.?1.:sat((1.-d)/max(.001,1.-params[1].x))):0.;else if(kind==4)sum+=d<.65+.35*cos(atan(uv.y,uv.x)*5.)?1.:0.;else if(kind==5)sum+=abs(uv.y)<sqrt(max(0.,1.-uv.x*uv.x))*(1.-abs(uv.x)*.7)?1.:0.;}return sum/4.;
 }
@@ -15,7 +16,7 @@ float cov(vec4 a,vec4 b,vec4 color,vec4 extra,vec4 seg,vec2 xy){
  vec2 delta=xy-a.xy;vec2 r=vec2(a.z,a.z*a.w)*.5;
  if(seg.w==1.){vec2 d=a.xy-seg.xy;float f=sat(dot(xy-seg.xy,d)/max(.000001,dot(d,d)));return sat(mix(seg.z,r.x,f)+.5-length(xy-seg.xy-d*f));}
  float cs=cos(b.x),sn=sin(b.x);vec2 local=vec2(dot(delta,vec2(cs,sn)),dot(delta,vec2(-sn,cs)));
- int kind=int(params[2].z);float v=(kind==0&&r.x*r.y<.08)?max(0.,1.-abs(delta.x))*max(0.,1.-abs(delta.y))*min(1.,3.141592653589793*r.x*r.y):shape(kind,local,r);
+ int kind=int(params[2].z);float v=((kind==0||(kind==4&&params[1].x==1.&&params[2].w<0.&&params[7].z==0.))&&r.x*r.y<.08)?max(0.,1.-abs(delta.x))*max(0.,1.-abs(delta.y))*min(1.,3.141592653589793*r.x*r.y*(kind==4?.48375:1.)):shape(kind,local,r);
  if(params[2].w>=0.)v*=shape(int(params[2].w),local,vec2(r.x,r.x*params[1].z));
  if(b.w>0.&&v>0.){vec2 g=vec2(dot(xy,params[2].xy),dot(xy,vec2(-params[2].y,params[2].x)))/params[1].w;float t;int k=int(params[3].x);if(k==3)t=img(grainImage,g,true);else if(k==1)t=.15+.85*pow(abs(sin((g.x+g.y)*3.141592653589793)),.7);else{uint hash=(uint(int(floor(g.x))*73856093)^uint(int(floor(g.y))*19349663))*83492791u;t=float(hash)/4294967295.;if(k==0)t=.25+.75*t;}v*=1.-b.w+b.w*t;}
  return sat(v);
@@ -70,13 +71,14 @@ fn shape(kind:i32,xy:vec2f,r:vec2f)->f32{
  if(kind==0&&r.x*r.y<.08){return 0.;}
  if(kind==2||kind==3){var a=sat(.5-max(abs(xy.x)-r.x,abs(xy.y)-r.y));if(kind==3){a*=.3+.7*pow(abs(sin(xy.y/max(.35,r.y/max(1.,p.v[1].y))*3.141592653589793)),.5);}return a;}
  if(kind==0&&r.x==r.y){let d=length(xy);let h=r.x*p.v[1].x;if(d<=h){return 1.;}if(p.v[1].x==1.){return sat(r.x+.5-d);}return sat((r.x+.5-d)/max(.5,r.x-h));}
+ if(kind==4&&p.v[1].x==1.&&p.v[2].w<0.&&p.v[7].z==0.){let uv=xy/r;let len=length(uv);let theta=atan2(uv.y,uv.x);let a=1.75*sin(theta*5.)/max(len,1e-12);let gradient=length(vec2f((cos(theta)-a*sin(theta))/r.x,(sin(theta)+a*cos(theta))/r.y));if(len>1e-12){return sat(.5-(len-.65-.35*cos(theta*5.))/max(gradient,1e-12));}return sat(.5+.3*min(r.x,r.y));}
  if(kind==1&&p.v[1].x==1.&&p.v[2].z==1.&&p.v[2].w<0.){let k0=length(xy/r);let k1=length(xy/(r*r));if(k1>1e-12){return sat(.5-k0*(k0-1.)/k1);}return sat(.5+min(r.x,r.y));}
  var sum=0.;for(var x=0;x<2;x++){for(var y=0;y<2;y++){let uv=(xy+vec2f(f32(x)*.5-.25,f32(y)*.5-.25))/r;let d=length(uv);if(kind==6){sum+=img(maskImage,uv/2.+.5,false);}else if(kind==0||kind==1){if(d<1.){if(p.v[1].x==1.){sum+=1.;}else{sum+=sat((1.-d)/max(.001,1.-p.v[1].x));}}}else if(kind==4){if(d<.65+.35*cos(atan2(uv.y,uv.x)*5.)){sum+=1.;}}else if(kind==5){if(abs(uv.y)<sqrt(max(0.,1.-uv.x*uv.x))*(1.-abs(uv.x)*.7)){sum+=1.;}}}}return sum/4.;
 }
 fn cov(a:vec4f,b:vec4f,color:vec4f,extra:vec4f,seg:vec4f,xy:vec2f)->f32{
  let delta=xy-a.xy;let r=vec2f(a.z,a.z*a.w)*.5;
  if(seg.w==1.){let d=a.xy-seg.xy;let f=sat(dot(xy-seg.xy,d)/max(.000001,dot(d,d)));return sat(mix(seg.z,r.x,f)+.5-length(xy-seg.xy-d*f));}
- let cs=cos(b.x);let sn=sin(b.x);let local=vec2f(dot(delta,vec2f(cs,sn)),dot(delta,vec2f(-sn,cs)));let kind=i32(p.v[2].z);var v=0.;if(kind==0&&r.x*r.y<.08){v=max(0.,1.-abs(delta.x))*max(0.,1.-abs(delta.y))*min(1.,3.141592653589793*r.x*r.y);}else{v=shape(kind,local,r);}if(p.v[2].w>=0.){v*=shape(i32(p.v[2].w),local,vec2f(r.x,r.x*p.v[1].z));}
+ let cs=cos(b.x);let sn=sin(b.x);let local=vec2f(dot(delta,vec2f(cs,sn)),dot(delta,vec2f(-sn,cs)));let kind=i32(p.v[2].z);var v=0.;if((kind==0||(kind==4&&p.v[1].x==1.&&p.v[2].w<0.&&p.v[7].z==0.))&&r.x*r.y<.08){v=max(0.,1.-abs(delta.x))*max(0.,1.-abs(delta.y))*min(1.,3.141592653589793*r.x*r.y*select(1.,.48375,kind==4));}else{v=shape(kind,local,r);}if(p.v[2].w>=0.){v*=shape(i32(p.v[2].w),local,vec2f(r.x,r.x*p.v[1].z));}
  if(b.w>0.&&v>0.){let g=vec2f(dot(xy,p.v[2].xy),dot(xy,vec2f(-p.v[2].y,p.v[2].x)))/p.v[1].w;var t=0.;let k=i32(p.v[3].x);if(k==3){t=img(grainImage,g,true);}else if(k==1){t=.15+.85*pow(abs(sin((g.x+g.y)*3.141592653589793)),.7);}else{let hash=((bitcast<u32>(i32(floor(g.x)))*73856093u) ^ (bitcast<u32>(i32(floor(g.y)))*19349663u))*83492791u;t=f32(hash)/4294967295.;if(k==0){t=.25+.75*t;}}v*=1.-b.w+b.w*t;}return sat(v);
 }
 fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}if(mode==3){let a=floor(d.a*(1.-s.a)*255.+.5)/255.;if(a==0.){return vec4f(0);}return vec4f(d.rgb,a);}let sc=s.rgb/s.a;var b=sc;if(mode==1){b=sc*d.rgb;}else if(mode==2){b=1.-(1.-sc)*(1.-d.rgb);}let a=s.a+d.a*(1.-s.a);let c=((1.-s.a)*d.a*d.rgb+(1.-d.a)*s.a*sc+s.a*d.a*b)/max(a,.000001);let q=floor(clamp(vec4f(c,a),vec4f(0),vec4f(1))*255.+.5)/255.;if(q.a==0.){return vec4f(0);}return q;}
