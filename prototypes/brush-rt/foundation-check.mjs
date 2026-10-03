@@ -42,6 +42,10 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
    session.begin(p);const t=performance.now();for(let i=0;i<16;i++)session.accept({x:variant==='airbrush-contract'?80:50+i*5,y:variant==='airbrush-contract'?100:100+Math.sin(i/4)*10,t:t+i*5,pressure:i<8?.2:.9,pointerType:'pen'});await session.end();const deadline=performance.now()+30000,revision=renderer.mailbox.revision;while(!renderer.completions.some(m=>m.revision>=revision)){if(performance.now()>deadline)throw Error('advanced live timeout');await new Promise(r=>requestAnimationFrame(r));}const live=await window.__rt.compareLive();renderer.confirmDelay=0;return {variant,live,final:await window.__rt.compare()};
   },variant);r.checks.push({name:'foundation-advanced-'+variant,...value});await checkpoint();if(value.live.channelsOver3||value.final.visualChannelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
  }
+ // Tap visibility is independent of canonical retention and CPU/GPU agreement.
+ await fresh(128);
+ const tap=await page.evaluate(async()=>{const {session,renderer,foundationPresets}=window.__rt;session.prediction=false;const p=structuredClone(foundationPresets[0]);p.size=4;session.begin(p);session.accept({x:20,y:20,t:performance.now(),pressure:.7,pointerType:'pen'});await session.end();const saved=JSON.stringify(session.export()),pixels=await renderer.read();let maxAlpha=0;for(let i=3;i<pixels.length;i+=4)maxAlpha=Math.max(maxAlpha,pixels[i]);await session.undo();await session.redo();return {maxAlpha,canonicalExact:JSON.stringify(session.export())===saved,final:await window.__rt.compare()};});
+ r.checks.push({name:'foundation-g-pen-tap-visible',...tap});await checkpoint();assert.ok(tap.maxAlpha>8);assert.ok(tap.canonicalExact);assert.equal(tap.final.visualChannelsOver3,0);
  // Repeat small curves and rapid taps/2px/5px strokes on the new Foundation,
  // with formal rendering held back. No legacy PASS stands in for these cases.
  for(let index=0;index<7;index++){

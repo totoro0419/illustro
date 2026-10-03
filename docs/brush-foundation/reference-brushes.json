@@ -9,7 +9,7 @@
       "id": "foundation-g-pen",
       "name": "Gペン",
       "category": "基準ブラシ",
-      "purpose": "筆圧で太さを変える。抜きは描画中の筆圧をそのまま使います。",
+      "purpose": "筆圧で太さ・入り・抜きを作る。人工的な入りも設定から選べます。",
       "kind": "mono",
       "renderer": "auto",
       "size": 16,
@@ -121,7 +121,7 @@
       "taper": {
         "size": {
           "start": {
-            "mode": "ramp",
+            "mode": "none",
             "unit": "distance",
             "length": 1.5,
             "minimum": 0.15,

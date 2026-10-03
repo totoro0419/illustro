@@ -1,9 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createPreset,referenceBrushes,PresetState,exportPresets,importPresets,compilePreset,cursorState,rendererRegistry} from '../dist/rt/foundation.mjs';
-import {CanonicalBuilder,validateRecord} from '../dist/rt/model.mjs';
+import {CanonicalBuilder,validateRecord,cpuReference} from '../dist/rt/model.mjs';
 import {Worker} from 'node:worker_threads';
 import {registerTestMaterial} from './fixtures/test-material-provider.mjs';
+
+test('reference G-pen taps at 4px remain visibly painted at ordinary pressure without pen-up changes',()=>{
+ for(const pressure of [.5,.7,.9])for(const fraction of [0,.25,.5,.75]){
+  const p=structuredClone(referenceBrushes[0]);p.size=4;const b=new CanonicalBuilder(p);b.accept({x:20+fraction,y:20+fraction,t:0,pressure,pointerType:'pen'});const before=b.commands.map(c=>Array.from(c));b.finish();const r=b.record(),pixels=cpuReference(r,40,40);
+  assert.ok(pixels.some((v,i)=>i%4===3&&v>8),'tap must visibly paint, not only retain a command');assert.deepEqual(r.commands,before);assert.deepEqual(validateRecord(r),r);
+ }
+});
 
 test('rejected temporary settings preserve both shared and per-brush state',()=>{
  for(const policy of ['restore','per-brush','shared']){

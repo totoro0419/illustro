@@ -146,7 +146,7 @@ export function textureFactor(c,x,y,p){
 }
 const pressureSize=(minimum,curvePoints=linear)=>({source:'pressure',target:'size',mode:'multiply',min:minimum,max:1,curve:curvePoints});
 export const referenceBrushes=[
- createPreset('foundation-g-pen','Gペン',{size:16,dynamics:[pressureSize(.03,[[0,0],[.25,.12],[.6,.55],[1,1]])],pressure:{smoothing:.2},taper:{size:{start:{mode:'ramp',length:1.5,minimum:.15}}},purpose:'筆圧で太さを変える。抜きは描画中の筆圧をそのまま使います。'}),
+ createPreset('foundation-g-pen','Gペン',{size:16,dynamics:[pressureSize(.03,[[0,0],[.25,.12],[.6,.55],[1,1]])],pressure:{smoothing:.2},taper:{size:{start:{mode:'none',length:1.5,minimum:.15}}},purpose:'筆圧で太さ・入り・抜きを作る。人工的な入りも設定から選べます。'}),
  createPreset('foundation-round-pen','丸ペン',{size:4,dynamics:[pressureSize(.12)],pressure:{smoothing:.25},purpose:'細い曲線・小さい形・短線を筆圧で描く。'}),
  createPreset('foundation-technical','ミリペン / 製図ペン',{size:4,purpose:'太さと濃さが一定の線を描く。'}),
  createPreset('foundation-marker','マーカー',{size:128,opacity:.45,purpose:'一筆の濃さを一定に保ち、別の線とは重なります。'}),
