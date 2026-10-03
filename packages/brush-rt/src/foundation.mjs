@@ -59,7 +59,7 @@ export function compilePreset(input,context={}){
  if(p.stabilization.scope==='common'&&context.commonStabilization){keys(context.commonStabilization,['constant','fast','speedMode','post'],'common stabilization');p.stabilization={...p.stabilization,...context.commonStabilization};}
  for(const k of ['knownLength','knownDuration'])if(context[k]!==undefined)finite(context[k],0,1e9,k);
  validateFoundation(p);
- if(p.kind!=='mono'||!['auto','continuous','stamp','soft'].includes(p.renderer))return rendererRegistry.compile(p,context);
+ if(p.kind!=='mono'||!['auto','continuous','stamp','soft','sweep'].includes(p.renderer))return rendererRegistry.compile(p,context);
  if(Object.keys(p.extensions).length)throw Error('material extension requires a renderer provider');
  choice(p.tip.shape,['round','ellipse','rect','mask','bristle','star','leaf'],'tip shape');
  if(p.stabilization.post)throw Error('post correction requires explicit correctGeometry(), not live finalization');
@@ -68,12 +68,14 @@ export function compilePreset(input,context={}){
  const texture=active[0]??p.texture.paper;
  const solid=p.paint==='saturated'&&p.limits.opacity[1]===1&&p.limits.flow[1]===1&&p.renderer!=='stamp'&&p.renderer!=='soft'&&p.tip.shape==='round'&&p.tip.hardness===1&&p.tip.aspect===1&&p.flow===1&&!texture.strength&&!p.scatter.enabled&&!p.random.length&&p.dynamics.every(m=>m.target==='size')&&['opacity','flow','grain'].every(t=>Object.values(p.taper[t]).every(e=>e.mode==='none'));
  if(p.renderer==='continuous'&&!solid)throw Error('continuous material requires round solid size-only dynamics');
+ const coverageUnion=['soft','sweep'].includes(p.renderer)&&p.paint==='saturated'&&p.tip.shape==='round'&&p.tip.aspect===1&&!p.scatter.enabled&&!p.random.length&&p.dynamics.every(m=>['size','opacity','flow','grain'].includes(m.target));
+ if(['soft','sweep'].includes(p.renderer)&&!coverageUnion)throw Error('swept coverage requires round saturated single-color material');
  const image=id=>{const r=p.resources[id];if(!r)return undefined;return {width:r.width,height:r.height,alpha:r.alpha.map(v=>Math.round(v*255)/255)};};
  const out={...copy(baseLegacy),id:p.id,name:p.name,category:p.category,purpose:p.purpose,size:p.size,opacity:p.opacity,flow:p.flow,spacing:solid?.09:Math.max(.01,Math.min(4,p.spacing.unit==='relative'?p.spacing.value:p.spacing.value/p.size)),rotation:p.tip.angle,follow:p.tip.direction,aspect:p.tip.aspect,hardness:p.tip.hardness,tip:p.tip.shape,grain:texture.strength,grainKind:texture.kind,grainScale:texture.scale,grainRotation:texture.rotation,stabilization:p.stabilization.constant,pressureSmoothing:p.pressure.smoothing,pressureCurve:p.pressure.curve,blend:p.blend,color:p.color,exposureMs:p.spacing.exposureMs,mappings:solid?p.dynamics.map(m=>({...m,source:'pressure',curve:linear})):[]};
  if(out.tip==='mask')out.mask=image(p.tip.resource);if(texture.kind==='image')out.texture=image(texture.resource);
  // Validate the compatibility surface before adding private renderer metadata.
  const forValidation={...out,mappings:[]};validatePreset(forValidation);
- out.__foundation={version:1,preset:p,context:copy(context),solid,material:!solid,texture,opacity:solid?1:p.paint==='saturated'?p.opacity:1};return out;
+ out.__foundation={version:1,preset:p,context:copy(context),solid,coverageUnion,material:!solid,texture,opacity:solid?1:p.paint==='saturated'?p.opacity:1};return out;
 }
 function sourceValue(m,q,speed,dir,distance,time,seed,index){
  let raw;switch(m.source){case 'pressure':raw=q.valid&1?q.p:(m.fallback??q.p);break;case 'velocity':raw=speed;break;case 'tilt':raw=q.valid&2?q.tilt:(m.fallback??0);break;case 'azimuth':raw=q.valid&4?((q.azimuth%tau+tau)%tau):((m.fallback??0)*tau);break;case 'twist':raw=q.valid&8?((q.twist%tau+tau)%tau):((m.fallback??0)*tau);break;case 'direction':raw=(dir+tau)%tau;break;case 'distance':raw=distance;break;case 'time':raw=time;break;case 'random':raw=random(seed,index,100+pseudoStream(m));break;}
@@ -128,7 +130,7 @@ export class PresetState {
 }
 export function exportPresets(presets){presets.forEach(validateFoundation);return JSON.stringify({format:'illustro-brush-pack',version:1,presets},null,2);}
 export function importPresets(json){if(typeof json!=='string'||json.length>32*1024*1024)throw Error('invalid brush pack');const pack=JSON.parse(json);keys(pack,['format','version','presets'],'brush pack');if(pack.format!=='illustro-brush-pack'||pack.version!==1||!Array.isArray(pack.presets)||pack.presets.length>256)throw Error('unsupported brush pack');const ids=new Set;for(const p of pack.presets){validateFoundation(p);if(ids.has(p.id))throw Error('duplicate brush');ids.add(p.id);}return copy(pack.presets);}
-export function cursorState(preset,sample,context={}){const p=compilePreset(preset,context),q=normalize(sample);q.p=curve(p.pressureCurve,curve(p.__foundation.preset.pressure.deviceCurve,q.p));const v=evaluateDynamics(q,p,0,[0,0],0,0,0,0,false);return {shape:p.tip,resource:p.__foundation.preset.tip.resource,size:v.size,aspect:v.aspect,rotation:v.rotation,color:[...p.color],opacity:p.opacity*v.opacity,barrelRoll:q.valid&8?q.twist:null};}
+export function cursorState(preset,sample,context={}){const p=compilePreset(preset,context),q=normalize(sample),f=p.__foundation;q.p=curve(p.pressureCurve,q.valid&1?curve(f.preset.pressure.deviceCurve,q.p):f.preset.pressure.fallback);const v=evaluateDynamics(q,p,0,[0,0],0,0,0,0,false),mappings=['hue','saturation','value'].map(target=>({source:'pressure',target,mode:'replace',min:v[target],max:v[target],curve:linear})),dab=makeDab(q,{...p,size:v.size,aspect:v.aspect,rotation:v.rotation,follow:false,mappings},0,[0,0],0,0,0,0);return {shape:p.tip,resource:f.preset.tip.resource,size:v.size,aspect:v.aspect,rotation:v.rotation,color:Array.from(dab.slice(8,11)),opacity:f.preset.paint==='build-up'?v.opacity:p.opacity*v.opacity,barrelRoll:q.valid&8?q.twist:null};}
 export function geometryContext(samples){const points=samples.map(normalize);let distance=0;for(let i=1;i<points.length;i++)distance+=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);return {knownLength:distance,knownDuration:points.length?points.at(-1).t-points[0].t:0};}
 /** Explicit edit operation. It does not run on pointerup or mutate saved artwork. */
 export function correctGeometry(samples,strength=0){finite(strength,0,1,'post correction');samples.forEach(normalize);return samples.map((s,i)=>{if(!i||i===samples.length-1)return {...s};const a=samples[i-1],b=samples[i+1],dx=(a.x+b.x)*.5-s.x,dy=(a.y+b.y)*.5-s.y,scale=Math.min(strength,1/Math.max(1,Math.hypot(dx,dy)));return {...s,x:s.x+dx*scale,y:s.y+dy*scale};});}
@@ -147,9 +149,9 @@ export const referenceBrushes=[
  createPreset('foundation-round-pen','丸ペン',{size:4,dynamics:[pressureSize(.12)],pressure:{smoothing:.25},purpose:'細い曲線・小さい形・短線を筆圧で描く。'}),
  createPreset('foundation-technical','ミリペン / 製図ペン',{size:4,purpose:'太さと濃さが一定の線を描く。'}),
  createPreset('foundation-marker','マーカー',{size:128,opacity:.45,purpose:'一筆の濃さを一定に保ち、別の線とは重なります。'}),
- createPreset('foundation-pencil','鉛筆',{size:4,flow:.3,renderer:'stamp',tip:{hardness:.9},texture:{paper:{strength:.65,scale:2}},dynamics:[pressureSize(.2),{source:'pressure',target:'opacity',mode:'multiply',min:.1,max:1,curve:linear},{source:'pressure',target:'grain',mode:'multiply',min:1,max:1.8,curve:[[0,1],[1,0]]}],spacing:{value:.12},purpose:'筆圧で太さ・濃さ・かすれが変わる。質感は最初から描きます。'}),
+ createPreset('foundation-pencil','鉛筆',{size:4,flow:.8,renderer:'sweep',tip:{hardness:.9},texture:{paper:{strength:.65,scale:2}},dynamics:[pressureSize(.2),{source:'pressure',target:'opacity',mode:'multiply',min:.1,max:1,curve:linear},{source:'pressure',target:'grain',mode:'multiply',min:1,max:1.8,curve:[[0,1],[1,0]]}],spacing:{value:.12},purpose:'筆圧で太さ・濃さ・かすれが変わる。質感は最初から描きます。'}),
  createPreset('foundation-hard-eraser','硬い消しゴム',{size:128,blend:'erase',purpose:'丸い輪郭で消す。線画と同じ連続描画を使います。'}),
- createPreset('foundation-soft-eraser','柔らかい消しゴム',{size:128,blend:'erase',renderer:'soft',tip:{hardness:.05},flow:.22,spacing:{value:.12},purpose:'柔らかい輪郭で少しずつ消す。'}),
+ createPreset('foundation-soft-eraser','柔らかい消しゴム',{size:128,blend:'erase',renderer:'soft',tip:{hardness:.05},flow:.65,spacing:{value:.12},purpose:'柔らかい輪郭で少しずつ消す。'}),
 ];
 
 export function interpolateAngle(a,b,f){return a+((b-a+Math.PI)%tau+tau)%tau*f-Math.PI*f;}

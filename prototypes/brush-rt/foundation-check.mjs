@@ -40,10 +40,32 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
    session.begin(p);const t=performance.now();for(let i=0;i<16;i++)session.accept({x:50+i*5,y:100+Math.sin(i/4)*10,t:t+i*5,pressure:i<8?.2:.9,pointerType:'pen'});await session.end();const deadline=performance.now()+30000,revision=renderer.mailbox.revision;while(!renderer.completions.some(m=>m.revision>=revision)){if(performance.now()>deadline)throw Error('advanced live timeout');await new Promise(r=>requestAnimationFrame(r));}const live=await window.__rt.compareLive();renderer.confirmDelay=0;return {variant,live,final:await window.__rt.compare()};
   },variant);r.checks.push({name:'foundation-advanced-'+variant,...value});await checkpoint();if(value.live.channelsOver3||value.final.visualChannelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
  }
+ // Repeat small curves and rapid taps/2px/5px strokes on the new Foundation,
+ // with formal rendering held back. No legacy PASS stands in for these cases.
+ for(let index=0;index<7;index++){
+  await fresh(512);
+  for(const shape of ['line','small-circle','s','zigzag','reversal','taper','short-burst']){
+   const value=await page.evaluate(async({index,shape})=>{
+    const {session,renderer,foundationPresets,pattern}=window.__rt;
+    session.records=[];await session.rebuild();renderer.confirmDelay=Infinity;session.prediction=false;
+    const p=structuredClone(foundationPresets[index]);p.size=16;p.stabilization.constant=.75;p.prediction.enabled=false;
+    if(p.blend==='erase'){const under=structuredClone(foundationPresets[2]);under.size=1024;session.begin(under);session.accept({x:256,y:192,t:performance.now(),pointerType:'mouse'});await session.end();}
+    const t=performance.now();let expected=0;
+    if(shape==='short-burst'){
+     for(let i=0;i<24;i++){session.begin(p);session.accept({x:50+(i%8)*50,y:80+Math.floor(i/8)*80,t:t+i*10,pressure:.7,pointerType:'pen'});if(i%3)session.accept({x:50+(i%8)*50+(i%3===1?2:5),y:80+Math.floor(i/8)*80,t:t+i*10+1,pressure:.7,pointerType:'pen'});await session.end();expected+=i%3?2:1;}
+    }else{session.begin(p);for(let i=0;i<48;i++)session.accept({...pattern(shape,i/47,512,384),t:t+i*1000/240});await session.end();expected=48;}
+    const deadline=performance.now()+30000,revision=renderer.mailbox.revision;while(!renderer.completions.some(m=>m.revision>=revision)){if(performance.now()>deadline)throw Error('foundation curve display timeout');await new Promise(r=>requestAnimationFrame(r));}
+    const live=await window.__rt.compareLive(),records=session.records.filter(v=>v.foundation?.id===p.id),actual=records.reduce((n,v)=>n+v.raw.length,0);renderer.confirmDelay=0;const final=await window.__rt.compare();return {brush:p.id,shape,expected,actual,strokes:records.length,live,final};
+   },{index,shape});
+   r.checks.push({name:'foundation-shape-'+index+'-'+shape,...value});await checkpoint();assert.equal(value.actual,value.expected);if(shape==='short-burst')assert.equal(value.strokes,24);
+   if(value.live.channelsOver3||value.final.visualChannelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
+  }
+ }
  // New foundation performance runs use the same generator and latency-growth gate.
  if(process.env.RT_LONG_TEST==='1')await benchmark({size:1024,hz:240,duration:180000,shape:'long',brushIndex:'f:3',prediction:false});
- for(const size of sizes)await benchmark({size,hz:240,duration:4000,shape:'pressure-step',brushIndex:'f:0',prediction:false,stabilization:size<=16?0:1});
+ for(const size of sizes)await benchmark({size,hz:240,duration:4000,shape:'fast-curve',brushIndex:'f:0',prediction:false,stabilization:size<=16?0:1});
  for(const hz of [60,120,240])await benchmark({size:512,hz,duration:4000,shape:'fast-curve',brushIndex:'f:3',prediction:false});
  for(const brushIndex of ['f:4','f:5','f:6'])await benchmark({size:512,hz:240,duration:4000,shape:'fast-curve',brushIndex,prediction:false});
  await benchmark({size:16,hz:240,duration:4000,shape:'reversal',brushIndex:'f:0',prediction:true});
+ for(const stabilization of [0,1])for(const prediction of [false,true])await benchmark({size:16,hz:240,duration:4000,shape:'small-circle',brushIndex:'f:1',prediction,stabilization});
 }

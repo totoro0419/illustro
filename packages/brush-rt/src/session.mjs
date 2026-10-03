@@ -5,13 +5,13 @@ import {makeDab} from '@legacy/dynamics';
 // The builder, random index and all canonical input remain unchanged.
 export function predictedCommand(b,q){
  const prev=b.geometry.at(-1),p=b.p;if(!prev||!q)return null;
- const dx=q.x-prev.x,dy=q.y-prev.y,len=Math.hypot(dx,dy),dt=q.t-prev.t,solid=continuous(p);
+ const dx=q.x-prev.x,dy=q.y-prev.y,len=Math.hypot(dx,dy),dt=q.t-prev.t,solid=continuous(p),sweep=!!p.__foundation?.coverageUnion,segment=solid||sweep;
  const needed=Math.max(0,Math.max(.25,b.spacing??p.size*p.spacing)-b.carry);
  const spatial=len>0?needed/len:Infinity,temporal=p.exposureMs>0&&dt>0?(b.nextExposure-prev.t)/dt:Infinity;
- const f=solid?1:Math.min(spatial,temporal);if(!Number.isFinite(f)||f<0||f>1)return null;
+ const f=segment?1:Math.min(spatial,temporal);if(!Number.isFinite(f)||f<0||f>1)return null;
  const sample={...q,x:prev.x+dx*f,y:prev.y+dy*f,t:prev.t+dt*f},distance=b.distance+len*f;
  const dab=b.foundation?foundationDabs(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start).dabs[0]:makeDab(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start),c=new Float64Array(STRIDE);c.set(dab);
- c[16]=solid?prev.x:dab[0];c[17]=solid?prev.y:dab[1];c[18]=solid?b.lastRadius:dab[2]/2;c[19]=solid?1:0;c[20]=sample.t;c[21]=distance;c[22]=b.foundation&&!solid?Math.atan2(dy,dx):b.distance;c[23]=dab[2]/2;return c;
+ c[16]=segment?prev.x:dab[0];c[17]=segment?prev.y:dab[1];c[18]=segment?b.lastRadius:dab[2]/2;c[19]=solid?1:sweep?2:0;c[20]=sample.t;c[21]=distance;c[22]=b.foundation&&!solid?Math.atan2(dy,dx):b.distance;c[23]=dab[2]/2;return c;
 }
 export class RealtimeSession {
  constructor(renderer,workerUrl=new URL('./canonical.worker.mjs',import.meta.url)){this.renderer=renderer;this.worker=new Worker(workerUrl,{type:'module'});this.records=[];this.redoRecords=[];this.id=0;this.active=null;this.pending=[];this.resolvers=new Map;this.strokePresets=new Map;this.cancelledIds=new Set;this.prediction=true;this.browserPredictions=0;this.rawAccepted=0;this.lastRaw=null;this.errors=[];this.worker.onmessage=({data:m})=>{if(this.cancelledIds.has(m.id))return;if(m.type==='commands'){this.renderer.document.append(m.id,this.strokePresets.get(m.id),m.commands);}else if(m.type==='record'){this.renderer.document.end(m.id,m.record.preset);this.records.push(m.record);this.strokePresets.delete(m.id);this.resolvers.get(m.id)?.resolve(m.record);this.resolvers.delete(m.id);}else if(m.type==='error'){this.errors.push(m.message);this.resolvers.get(m.id)?.reject(Error(m.message));this.resolvers.delete(m.id);}};}
