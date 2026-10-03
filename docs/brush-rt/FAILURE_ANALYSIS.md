@@ -1,0 +1,126 @@
+# Failure analysis
+
+Baseline source: branch `brush/production-engine-2026-10-02`, commit `dc1f1ffead0c7601b9d23e81ba1eb8dcb643b279`. Uploaded `illustro-brush-lab.html` is a bundled earlier artifact (56,803 bytes); it is used only as failure evidence, not a renderer dependency.
+
+Code inspection independently confirms `StrokeRaster.deposit` computes coverage at every affected pixel, `RasterQueue` is FIFO, raster cloning/forking exists, and the earlier lab contains CPU image transfer/preview construction. A width increase grows footprint area quadratically until document clipping. FIFO display of every historical input can convert insufficient throughput into cumulative lag.
+
+The repository also contains a newer GPU implementation (`immediate.ts`) with instancing, mutable tail textures and GPU fences. It is inaccurate to describe *all* existing code as CPU-only. Nonetheless `main.ts` constructs `active.preview()` before presenting, and the renderer maintains preview/prefix copy and refinement paths. Historical PASS files are not accepted as proof of the new live-tip requirement.
+
+Rejected designs before implementation:
+- Simply move the old FIFO to GPU: GPU can accumulate work as well.
+- Cancel every full preview rebuild: continuous input can starve presentation.
+- Separate GPU contexts and assume hardware priority: the browser provides no such scheduling guarantee.
+- Render all active history every live frame: work grows with stroke duration.
+- Call submission, a fence or requestAnimationFrame a photon measurement: each observes a different stage.
+
+New-design limits are recorded in VALIDATION.md and measured evidence; failed test iterations will be appended instead of hidden.
+
+New implementation iterations:
+- First regression trial reset at every adjacent direction change, so alternating small jitter was not smoothed. The new test exposed this. Immediate resets now require motion >6px as well as a large angle; smaller changes remain bounded by the local window/displacement cap. This tradeoff still needs small-circle/real-pen review.
+- Constant-speed test initially required exact binary equality for a floating result (20.000000000000004). The assertion now uses 1e-6 tolerance; this is a numerical test correction, not a behavior claim.
+- An initial tail-only preview would disappear on lift before confirmed work caught up. It was replaced with persistent immutable prefix plus a separately cleared mutable tail; ended strokes stay visible until their own confirmed tiles commit. Four unfinished strokes can currently be staged; exceeding this is an explicit candidate limitation, not a production gate pass.
+
+## New candidate failures actually observed
+
+- Run 37032959431: frame lifecycle method missing. Browser initialization alone did not detect it. New frame integration added; the mouse-reference check had passed, while Undo/Redo timed out.
+- WGSL rejected an unparenthesized integer hash expression. Parentheses now specify multiplication before XOR; both shaders compile on the second run.
+- The first workflow pipeline returned the exit status of `tee`, hiding the browser failure. Explicit `pipefail` now makes the verification job fail. This old CI success is invalid evidence.
+- Run 37033518263: WebGL2 preset 13 (tilted pencil) differs at one channel by 6/255. This remains a pixel gate failure; expanded diagnostic output records exact coordinates and RGBA values. Tests continue to collect other failures and benchmarks rather than abort coverage at the first mismatch.
+- Undo/Redo test clicked Redo while Undo was still refining. Buttons are now disabled until each history operation completes; the test waits for that visible state.
+- Candidate-branch Pages deployment was rejected by the existing github-pages branch protection. Those rules are preserved. The candidate workflow now verifies and retains downloadable artifacts without attempting that deployment.
+
+
+## Sustained GPU-proxy failure and revised design
+Run 37034137600 (headless software GPU, 512 × 384 document) failed: WebGL2 512/240Hz grew from 81.7ms to 952.3ms; 1024/240Hz grew from 79.3ms to 954.0ms. Confirmed replay after the long run timed out. This is a failed candidate, not a successful low-latency result.
+Two causes were identified by code inspection: readiness scanned the whole command history each time (quadratic total work), and the confirmed quantum controller compared a RAF-polled fence with sub-frame thresholds, keeping it at one chunk on a 60Hz loop. Wide opaque preview capsules also repeatedly shaded already fully covered areas.
+The next candidate uses an incremental publication cursor, starts with four confirmed chunks and adapts using thresholds that account for RAF polling (still a proxy), and adds a depth cache for eligible constant-pigment/flow solid prefixes. Fully covered pixels are skipped by later preview geometry; AA edges remain mutable. Complex strokes and mutable/predicted tails bypass that cache. This is an Illustro optimization, not an assertion about a competitor's internals.
+The elapsed-time exposure requirement in two existing airbrush presets was also restored. It is derived from actual input timestamps. The engine identifier advances to illustro-rt-2.1 so older candidate records cannot silently replay with changed command semantics.
+Local execution disconnected before these revisions could be validated; new checks must execute in GitHub CI. No unexecuted local test is counted as PASS.
+
+Continuous solid capsules now use coverage union, including AA, rather than repeated stamp-flow accumulation. Their constant pigment/opacity/flow eligibility makes MAX union the appropriate geometry operation. This intentionally removes input-frequency-dependent AA darkening. Complex stamp brushes retain flow accumulation. A cross-frequency pixel test covers the new semantics.
+
+
+The revised confirmed path also proves full coverage from the four corners of a tile for constant-radius capsules, with a one-pixel safety margin. Only eligible constant-pigment, constant-opacity, flow=1 strokes can elide later GPU deposits on a saturated tile. Canonical commands remain intact. Other tiles/stamps retain ordered deposition. This reduces redundant *exact* work, rather than enlarging the queue budget or lowering final quality. A new test rejects this shortcut for flow<1.
+Image mask cache keys are now computed once per mask object; worker command batches reuse a main-thread frozen preset instead of repeatedly serializing brush image data. An unused record-ID map that retained undone/cleared records was removed.
+
+Capsule dirty bounds now use the actual circular radius, while rotated complex stamps retain conservative diagonal bounds. Scattered stamps no longer pretend to span from the original unscattered pointer point. Live footprint quads use the same distinction. Stationary airbrush time deposits hold the last measured pressure/tilt until the next actual sample; pen-up pressure does not retroactively fade the whole stationary interval.
+
+A second exact saturation optimization removes later proven no-op deposits during tile-job construction as well as during GPU submission. This prevents a growing CPU list of jobs that the GPU would subsequently skip. The all-real-input canonical journal is unaffected. A new test verifies that 999 later inputs on a fully covered tile add no formal jobs and still advance the known canonical timestamp.
+The synthetic wall-clock input generator now emits any final scheduled samples missed when its last RAF crossed the requested duration, and reports the maximum scheduling lateness. A sample-count success is not evidence of a physical 240Hz device or a timely input generator.
+
+MAX accumulation understated repeated low-flow complex stamps. For complex presets with constant stroke opacity and pigment, live accumulation now stores normalized source-over density and applies stroke opacity during display composition. Variable flow, grain, masks and shape dynamics remain supported. Prefix and mutable tail merge by source-over in this mode. Presets with varying opacity/pigment retain an explicitly approximate path and remain an open fidelity gate; this change is tested against the visible GPU canvas before formal refinement.
+
+The display shader now visits each prefix/tail pair directly instead of nesting an eight-item search for each overlay. It performs the same coverage/color composition with fewer texture reads and branches. The browser validation runs the two backends as independent CI matrix jobs, so one failed/slow backend does not erase evidence for the other.
+
+Run 37040087180 also failed on the full 2048 ×1536 document: growth occurred even with a narrow brush, and confirmed drains timed out before the wide matrix completed. All 56 preset final comparisons executed on both backends: preset 50 had one alpha-channel mismatch of18/255; all others were within1. Blend checks exposed nonzero RGB beneath zero alpha in the CPU reference. The broad GPU-proxy gate remains failed.
+Inspection showed the confirmed solid path still iterated up to16 capsules at every pixel of each entire tile. Eligible solids now use instanced capsule geometry for confirmed tiles too, with coverage MAX into blendable RGBA16F; complex accumulation remains RGBA32F. RGBA16F is bounded numerical storage, not a lower-resolution final image; CPU comparisons and opacity/blend gates cover its quantization. Canonical data is still Float64.
+
+The viewport compositor is now persistent. It recomposes only tiles changed by new prefix geometry, the old/new mutable tail, confirmed deposition or preview retirement, then performs a GPU viewport copy for presentation. Solid full-coverage proofs also elide unchanged live-composition tiles. A viewport copy is a GPU presentation transfer, not a cloned CPU document raster or a full-document brush calculation. This directly removes display shader work that previously grew as more tiles were touched.
+
+Pixel failure classification: the fixed-timestamp silk mismatch is consistent with discontinuous four-sample hard-ellipse AA crossing a Float32 boundary; this is an inference from the equations and identical two-backend result, not a captured per-command trace (same18-alpha-unit error on both APIs). The v2.2 renderer intentionally changes eligible hard-ellipse AA to a continuous one-pixel signed-distance approximation in GPU and Float64 reference; texture/grain is retained. This is a documented AA change, not a relaxed pixel threshold. Dual tips keep their original coverage path. Engine identity advances to illustro-rt-2.2. A rounding-continuity regression accompanies the GPU pixel test.
+The zero-alpha RGB differences in blend tests are a reference normalization bug: almost-zero alpha rounded to0 after leaving pigment in straight RGB. CPU and both GPU composition paths now normalize zero-alpha pixels to zero RGBA. An explicit tiny-opacity test checks this invariant. Those differences were invisible colors under full transparency; the normalization improves serialized image consistency.
+
+The former four-unfinished-stroke hard failure is replaced by a bounded GPU feedback archive. Before evicting already displayed ended strokes, their latest actual tails are rendered (prediction is removed), then the cached composite is copied to one viewport archive. A per-tile last-real-stroke ID lets exact confirmed tiles replace that archive without double painting. Archive tags use only real geometry; predicted-only regions are cleared and never claim canonical tile coverage. Four editable prefix/tail pairs remain the working set. If more than four never-displayed completed strokes arrive before a frame, obsolete intermediate feedback is omitted and counted; all their real input and canonical commands remain pending. This is a latest-state display choice, not discarded artwork. Peak allocation during one archive transition can include the retired and new working sets until GPU completion; memory-pressure spill remains open.
+
+Run 37043019906:24 Node tests passed; all56 final preset checks were collected on both backends. Hard-ellipse AA mismatch disappeared without changing the three-unit threshold. Confetti now exposed a one-unit alpha quantization difference with large straight-RGB difference under alpha1, which requires a premultiplied visual gate while retaining raw pixel diagnostics. WebGL2's ten tested live-before-confirmed images were within the pixel gate. WebGPU Canvas2D drawImage returned a discarded presentation backing buffer, so its large blank-image differences did not establish a viewport shader failure. The new diagnostic reads the persistent GPU viewport that is copied for presentation; its label still explicitly excludes compositor/physical presentation.
+The full-size wide matrix failed again. New solid-prefix work is now rejected before drawing if all its tiles were already fully covered, and remaining solid work is scissored to uncovered tiles. This preserves exact MAX coverage rather than degrading brush resolution or final quality. Complex source-over stamps are not subjected to overlapping tile scissors, which would otherwise double-deposit flow.
+
+Final pixel diagnostics now retain raw straight-RGBA differences while applying a separate visual gate: alpha is always compared directly; RGB beneath either alpha<8 is compared after premultiplication, otherwise straight RGB retains the original3-unit limit. Confetti's alpha0↔1 rounding difference produces a raw RGB242 error but a premultiplied error<1. This is classified as low-alpha numerical quantization, not hidden by increasing the limit. An18-unit alpha error, visible density/shape differences and larger premultiplied errors still fail.
+
+The24ms fitting history contained only two samples at60Hz, which means the latest-time linear fit did not reduce jitter there. The v2.3 stabilizer adapts its *past* history to two sample periods, capped48ms and8points, while continuing to evaluate at the latest actual timestamp with a6px maximum displacement. It waits for no future sample. Constant-speed phase and jitter reduction now have separate60/120/240/480Hz tests. Engine/smoothing identifiers change explicitly; older records are not silently reinterpreted.
+
+Run37045562556:27 Node tests passed; all56 final visual gates and both backends' ten small live density cases passed. The12-stroke formal-stall archive check retained96 real samples/12records, with48 formal jobs still waiting and maximum premultiplied error1.40. Wide cumulative proxy and drain gates still failed.
+The feedback workload had positive feedback: a slower frame accumulated more overlapping capsules for the next latest snapshot (up to64), making that snapshot slower again. New eligible constant-radius live capsules rasterize a conservative forward annular band plus the swept forward boundary of the preceding circle; already filled interiors are not rasterized repeatedly. The original capsule SDF still determines pixels, so tessellation does not change the intended union. It is used only when the preceding actual circle is known to exist, never across an unknown gap or varying radius, and leaves canonical commands unchanged. Scissors and full-tile proofs remain in use.
+Confirmed eligible geometry also elides exact duplicate Float32 GPU shape tuples within a stroke, ignoring only timestamp/index metadata unused by solid coverage. This is idempotent MAX union of identical GPU primitives, not input removal; raw/Float64 commands and known canonical time are retained. The cache is released on stroke end/reset. Complex flow/pigment never uses this shortcut.
+During active feedback, confirmed work is limited to one ordinary chunk, and deferred when the preceding GPU-completion proxy exceeds32ms. On lift it resumes with the bounded adaptive quantum. This makes live priority explicit; it does not claim GPU preemption. Older submitted work remains bounded by one batch.
+
+Browser workloads now start independent documents and execute the180s run before the size matrix. A prior failed canonical drain can no longer prevent all long/pattern coverage. Pending formal work is reported explicitly; this test isolation is not a product fix for slow Undo/export. All12 pattern trials additionally compare final pixels. Two wide1:1 live-before-formal image tests guard the incremental band geometry.
+
+
+Run37049012748 (aef36b62) collected all56 preset, ten live-density, two wide live-image, archive,12-pattern and14 sustained cases on both backends. WebGL2 passed the growth-only proxy gate; its1024px/240Hz four-second p95 changed314.3→120.2ms and180s changed332.9→53.2ms. Those absolute software-adapter delays are not acceptable evidence of production pen latency. WebGPU still failed wide growth (1024px/240Hz768.0→1787.7ms), despite passing the180s recurring-path growth gate. A recurring path saturating already touched tiles cannot alone establish new-region performance.
+
+Inspection found live prefix geometry still replayed the entire instance batch once per uncovered tile and twice for color/depth. Wide fast paths grew that union of clips and multiplied vertex work, especially the768-vertex incremental band. v2.4 draws the prefix batch once over the viewport; its persistent opaque depth rejects already filled interiors. Dirty tiles continue to bound display recomposition. This removes duplicate draws rather than lowering brush resolution. Both wide-before-formal reference tests must pass again.
+
+CPU/GPU agreement missed a preset-intent error: spaced round dot presets45/46 had been classified as continuous. v2.4 requires spacing≤.25 for the continuous route and keeps widely spaced dots as ordered stamps. Independent zero-alpha-gap tests now guard both CPU and GPU results. Engine identity advances explicitly toillustro-rt-2.4; older candidate records are rejected rather than silently redrawn with changed spacing semantics.
+
+Prediction for complex stamps formerly emitted a dab at every predicted cursor endpoint, ignoring the next distance/time deposit. It now predicts only the next due canonical-style deposit without advancing random index, carry, commands or input. Tip diagnostics use the last actual/predicted deposited stamp center; latest real-input age is separate. Sparse brush spacing therefore appears as intentional distance/input-support age, not an invented tip at an empty cursor position. The diagnostics still do not measure the optical stroke outline or browser presentation.
+
+
+Run37083561667 (546f9857):33 Node tests and both backends' image/intent/archive/pattern gates passed. WebGL2 passed all14 growth-proxy trials again, but WebGPU still failed five. Selected1024px/240Hz p95:WebGL2474.1→416.4ms; WebGPU671.4→1219.0ms. Removing repeated scissors improved some WebGPU cases without closing the gate. Shader inspection found simple capsules shared the generic dynamic tip/grain/dual shader. A dedicated solid fragment entry now uses only capsule distance/opacity. Incremental-band tessellation becomes radius-dependent (16/32/64 sectors) with a conservative outer-chord proof covering the original .5px AA boundary through4096px. It keeps the exact SDF; it does not approximate coverage or reduce final resolution. A geometry-bound test and the wide GPU image gates accompany this change.
+
+
+Run37084395526 (7e13b7bb) passed both GPU backends'14 sustained growth-proxy cases and image checks. Run37084846924 (6a0301a) also passed the strengthened first/middle/final-window gate, with35 Node tests. At240Hz, WebGPU512px middle→end166.5→168.3ms and1024px242.1→220.7ms; WebGL2512px102.0→100.4ms and1024px136.6→118.6ms. Absolute software-GPU delays remain too high to claim production pen latency. The added middle window prevents cold shader/allocation cost from concealing later growth; each window needs at least two observations.
+
+History/export correctness review found that Undo could choose a previous record before the latest ended worker record arrived, and PNG could read layer tiles before an active stroke was committed. Session.settle now finishes active input and awaits pending canonical records before save/history/load. A delayed-worker regression checks the latest-stroke Undo selection. Additional final-image trials cover six complex presets at128/512px, large document coordinates and abrupt sensor/pressure changes; a4096×3072 document adds a1024px/240Hz trial.
+
+
+Run37085312706 (ab42c5c8):36 Node tests passed. Both backends passed all15 strengthened latency-growth proxies, including4096×3072/1024px/240Hz. Ten of12 new high-coordinate complex-image cases passed; hard star preset55 failed at128px (maximum alpha64) and512px (127). Both APIs produced identical failures. The old four-subpixel binary test amplified Float32 command/angle threshold changes at the boundary into quarter-alpha steps. This is a real visual correctness failure, not dismissed as harmless floating point.
+
+v2.5 deliberately changes eligible hard single-star AA to a continuous polar-boundary/gradient distance approximation with one-pixel support. The underlying radial star contour, spacing, grain and dynamics remain; subpixel stars use the analytic area factor. The three-unit pixel gate is unchanged. Float64/GPU equations and a large-coordinate rounding-continuity regression are matched. Dual/soft stars retain the original kernel. Old v2.4 files retain their commands and original star AA through an explicit compatibility flag during replay; they are validated independently rather than silently upgraded.
+
+Two input/geometry correctness failures were also found: duplicate suppression ignored same-timestamp tilt/azimuth/twist changes, and a zero-length varying-radius capsule used only the preceding radius, hiding a stationary pressure increase. Deduplication now checks every preserved sensor; newly emitted stationary solid commands use the union of preceding/current radii. Saved engine identity advances toillustro-rt-2.5, with explicit v2.4 replay preserving its earlier radius/AA behavior. New Node and GPU assertions cover stationary pressure.
+
+
+Run37086151388 (61cfe15a):40 Node checks passed; both GPU backends passed all15 strengthened latency-growth proxy trials, including the180s1024px/240Hz and4096×3072-document cases. The only remaining image gate was hard-star preset55 at512px:538 visual channels exceeded3/255; maximum alpha error9/255 on both APIs. This is retained as FAIL, not classified away as low-alpha pigment. Other103 image/input/history/layout checks passed.
+
+The continuous star contour still used GPU atan2 followed by sin/cos of five times that angle. An angular approximation in the software GPU can grow into a substantial boundary-distance error at radius256. This diagnosis is an inference from the radius scaling, two-backend agreement and equations; it is not an instrumented driver instruction trace. The new shader computes equivalent cos(5θ)/sin(5θ) harmonics from normalized Cartesian coordinates with polynomial arithmetic, without changing the intended star contour or the pixel threshold. The Float64 reference retains its independent trigonometric equation. The same high-coordinate128/512px GPU regression must establish whether this fix actually works.
+
+
+## 細い鉛筆の後補完（2026-10-03追加）
+
+表示用stablePendingと可変末尾を64形状に切った設計が、一筆の必要な形状を失わせた。最新通知だけを残すことと、描画形状を捨てることを混同していた。短い48点の既存テストでは検出できなかった。追記形状列と固定終端のスナップショット、描画済みカーソルへ変更し、1/4/16px・4鉛筆・正式描画停止・描画中と終了後の差を新しいGateへ加えた。Nodeの形状保持検査は41件中41件成功。ブラウザの画像・遅延結果は別途実行するまで未確認。
+
+31450の星型AAの代数的な五倍角への変更も512pxの最大alpha差9を解消しなかった。単一の原因説明として採用しない。未解決の画像差があるため本番合格ではない。
+
+
+8f8ef5cfの両GPUで密な鉛筆12条件は欠落0、終了直後の差0、正式描画後最大2/255以内だった。星型512pxは依然alpha差9。WebGPUの180秒試験は開始サンプル1件しかなく評価不足。次の候補では描画開始前にWebGPUのpipeline作成完了を非同期で待ち、初筆時のコンパイル待ちを避ける。星型は回転係数をCPUで一形状につき一度計算してGPUへ渡す。これらの効果は次の実行結果で判定し、原因を断定しない。
+
+
+最新方針との追加矛盾として、初回表示前に5本以上終了した場合、古い未表示の線を省略するarchive方式があった。これは表示通知の省略ではなく作品形状の欠落なので廃止。4本ずつ全体を合成し、20本を正式描画前に比較する検査を追加した。大量の同時終了では必要なGPU作業・一時VRAMが増える制約は残り、無条件に低遅延を保証しない。
+
+
+## 最新候補の実行結果
+
+f20a028a / CI37090457149では両backendの42 Node・117検査・21proxyを成功。512px星型は回転係数を一形状につきCPUで計算してGPUに渡す変更で最大alpha差が1/255まで減少した。代数的五倍角だけでは差9を解消できなかった履歴も残す。GPUの特定ドライバの不具合とまでは断定しない。20本の未表示短線も正式描画前に保持できた。初筆pipeline対策後は180秒試験の開始窓で必要な2サンプルを取得したが、実機で低遅延になったことの証明ではない。
+
+変動opacity/pigmentの表示近似、距離式taperEnd、予測の修正と知覚、縮小表示・高DPI、同時終了時の一時GPU資源、実ペンの自然さが残る。これらを研究・設計・検証の次の課題として明示し、本番の合格にはしない。
