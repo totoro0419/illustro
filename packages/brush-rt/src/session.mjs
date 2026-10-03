@@ -29,12 +29,13 @@ export class RealtimeSession {
   this.renderer.setLive({id:a.id,preset:p,stableCommands:a.stablePending.slice(-64),commands:tail,tip,inputTip,previewTip,predicted:!!predicted,rawTip:a.raw.at(-1),finished});
  }
 
- end(){const a=this.active;if(!a)return Promise.resolve(null);this.flush();a.stablePending.push(...a.builder.finish());this.updateLive(performance.now(),true);this.renderer.markEnded(a.id);this.worker.postMessage({type:'end',id:a.id});this.active=null;return new Promise((resolve,reject)=>{this.resolvers.set(a.id,{resolve,reject});}).then(record=>{this.renderer.needsFrame=true;return record;});}
+ end(){const a=this.active;if(!a)return Promise.resolve(null);this.flush();a.stablePending.push(...a.builder.finish());this.updateLive(performance.now(),true);this.renderer.markEnded(a.id);this.worker.postMessage({type:'end',id:a.id});this.active=null;const promise=new Promise((resolve,reject)=>{this.resolvers.set(a.id,{resolve,reject});});this.resolvers.get(a.id).promise=promise;return promise.then(record=>{this.renderer.needsFrame=true;return record;});}
  async cancel(){if(!this.active)return;this.cancelledIds.add(this.active.id);this.worker.postMessage({type:'cancel',id:this.active.id});this.active=null;this.pending=[];await this.rebuild();}
  async rebuild(){await this.renderer.reset();for(const r of this.records){const id=++this.id;this.renderer.document.append(id,r.preset,r.commands);this.renderer.document.end(id,r.preset);}await this.renderer.drain();}
- async undo(){if(this.active)await this.end();if(this.records.length)this.redoRecords.push(this.records.pop());await this.rebuild();}
- async redo(){if(this.redoRecords.length)this.records.push(this.redoRecords.pop());await this.rebuild();}
+ async settle(){if(this.active)await this.end();await Promise.all([...this.resolvers.values()].map(r=>r.promise));}
+ async undo(){await this.settle();if(this.records.length)this.redoRecords.push(this.records.pop());await this.rebuild();}
+ async redo(){await this.settle();if(this.redoRecords.length)this.records.push(this.redoRecords.pop());await this.rebuild();}
  export(){if(this.active||this.resolvers.size)throw Error('finish active strokes before export');return {format:'illustro-rt-document-2',width:this.renderer.document.width,height:this.renderer.document.height,strokes:this.records};}
- async load(doc){if(doc.format!=='illustro-rt-document-2'||doc.width!==this.renderer.document.width||doc.height!==this.renderer.document.height||!Array.isArray(doc.strokes)||doc.strokes.length>10000)throw Error('unsupported document');const records=doc.strokes.map(validateRecord);this.records=records;this.redoRecords=[];await this.rebuild();}
+ async load(doc){await this.settle();if(doc.format!=='illustro-rt-document-2'||doc.width!==this.renderer.document.width||doc.height!==this.renderer.document.height||!Array.isArray(doc.strokes)||doc.strokes.length>10000)throw Error('unsupported document');const records=doc.strokes.map(validateRecord);this.records=records;this.redoRecords=[];await this.rebuild();}
  destroy(){this.worker.terminate();this.renderer.destroy();}
 }
