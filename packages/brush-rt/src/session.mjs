@@ -1,5 +1,17 @@
 import {CanonicalBuilder,Stabilizer,predict,taper,continuous,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
 import {makeDab} from '@legacy/dynamics';
+// A predicted stamp is emitted only when the next spatial/time deposit is due.
+// The builder, random index and all canonical input remain unchanged.
+export function predictedCommand(b,q){
+ const prev=b.geometry.at(-1),p=b.p;if(!prev||!q)return null;
+ const dx=q.x-prev.x,dy=q.y-prev.y,len=Math.hypot(dx,dy),dt=q.t-prev.t,solid=continuous(p);
+ const needed=Math.max(0,Math.max(.25,b.spacing??p.size*p.spacing)-b.carry);
+ const spatial=len>0?needed/len:Infinity,temporal=p.exposureMs>0&&dt>0?(b.nextExposure-prev.t)/dt:Infinity;
+ const f=solid?1:Math.min(spatial,temporal);if(!Number.isFinite(f)||f<0||f>1)return null;
+ const sample={...q,x:prev.x+dx*f,y:prev.y+dy*f,t:prev.t+dt*f},distance=b.distance+len*f;
+ const dab=makeDab(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start),c=new Float64Array(STRIDE);c.set(dab);
+ c[16]=solid?prev.x:dab[0];c[17]=solid?prev.y:dab[1];c[18]=solid?b.lastRadius:dab[2]/2;c[19]=solid?1:0;c[20]=sample.t;c[21]=distance;c[22]=b.distance;c[23]=dab[2]/2;return c;
+}
 export class RealtimeSession {
  constructor(renderer,workerUrl=new URL('./canonical.worker.mjs',import.meta.url)){this.renderer=renderer;this.worker=new Worker(workerUrl,{type:'module'});this.records=[];this.redoRecords=[];this.id=0;this.active=null;this.pending=[];this.resolvers=new Map;this.strokePresets=new Map;this.cancelledIds=new Set;this.prediction=true;this.browserPredictions=0;this.rawAccepted=0;this.lastRaw=null;this.errors=[];this.worker.onmessage=({data:m})=>{if(this.cancelledIds.has(m.id))return;if(m.type==='commands'){this.renderer.document.append(m.id,this.strokePresets.get(m.id),m.commands);}else if(m.type==='record'){this.renderer.document.end(m.id,m.record.preset);this.records.push(m.record);this.strokePresets.delete(m.id);this.resolvers.get(m.id)?.resolve(m.record);this.resolvers.delete(m.id);}else if(m.type==='error'){this.errors.push(m.message);this.resolvers.get(m.id)?.reject(Error(m.message));this.resolvers.delete(m.id);}};}
  begin(p,fast=0){if(this.active)throw Error('stroke already active');const id=++this.id,seed=[0x12345678,id>>>0];this.active={id,preset:structuredClone(p),seed,fast,builder:new CanonicalBuilder(p,seed,fast),stablePending:[],points:[],raw:[],distance:0,start:0,predicted:[]};this.strokePresets.set(id,this.active.preset);this.pending=[];this.redoRecords=[];this.worker.postMessage({type:'begin',id,preset:p,seed,fast});return id;}
@@ -10,8 +22,11 @@ export class RealtimeSession {
  updateLive(now,finished=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
   const total=b.distance,tail=b.commands.slice(b.published).slice(-64).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
   const q=this.prediction&&!finished?predict(a.points.slice(-3),now,a.predicted):null;
-  if(q){const prev=a.points.at(-1),dir=Math.atan2(q.y-prev.y,q.x-prev.x),dab=makeDab(q,p,b.index,a.seed,total,Math.hypot(q.x-prev.x,q.y-prev.y)/Math.max(.001,(q.t-prev.t)/1000),dir,q.t-a.start),c=new Float64Array(STRIDE);c.set(dab);c[16]=continuous(p)?prev.x:q.x;c[17]=continuous(p)?prev.y:q.y;c[18]=dab[2]/2;c[19]=continuous(p)?1:0;c[20]=q.t;tail.push(c);}
-  this.renderer.setLive({id:a.id,preset:p,stableCommands:a.stablePending.slice(-64),commands:tail,tip:a.points.at(-1),previewTip:q??a.points.at(-1),predicted:!!q,rawTip:a.raw.at(-1),finished});
+  const predicted=predictedCommand(b,q);if(predicted)tail.push(predicted);
+  const inputTip=a.points.at(-1),actual=b.commands.at(-1),drawn=predicted??actual;
+  const tip=actual?{...inputTip,x:actual[0],y:actual[1],t:predicted?inputTip.t:actual[20]}:inputTip;
+  const previewTip=drawn?{...tip,x:drawn[0],y:drawn[1]}:tip;
+  this.renderer.setLive({id:a.id,preset:p,stableCommands:a.stablePending.slice(-64),commands:tail,tip,inputTip,previewTip,predicted:!!predicted,rawTip:a.raw.at(-1),finished});
  }
 
  end(){const a=this.active;if(!a)return Promise.resolve(null);this.flush();a.stablePending.push(...a.builder.finish());this.updateLive(performance.now(),true);this.renderer.markEnded(a.id);this.worker.postMessage({type:'end',id:a.id});this.active=null;return new Promise((resolve,reject)=>{this.resolvers.set(a.id,{resolve,reject});}).then(record=>{this.renderer.needsFrame=true;return record;});}

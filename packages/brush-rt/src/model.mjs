@@ -3,11 +3,11 @@ import {makeDab,curve} from '@legacy/dynamics';
 import {validatePreset} from '@legacy/record';
 import {coverage} from '@legacy/coverage';
 
-export const VERSION='illustro-rt-2.3';
+export const VERSION='illustro-rt-2.4';
 export const STRIDE=24;
 export const TILE=128;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
-export function continuous(p){return p.tip==='round' && p.aspect===1 && p.hardness===1 && p.flow===1 && !p.grain && !p.dual && !p.scatter && !p.sizeJitter && !p.opacityJitter && !p.flowJitter && !p.hueJitter && !p.exposureMs && p.mappings.every(m=>m.target==='size');}
+export function continuous(p){return p.tip==='round' && p.spacing<=.25 && p.aspect===1 && p.hardness===1 && p.flow===1 && !p.grain && !p.dual && !p.scatter && !p.sizeJitter && !p.opacityJitter && !p.flowJitter && !p.hueJitter && !p.exposureMs && p.mappings.every(m=>m.target==='size');}
 // Weighted local linear regression evaluated at the latest real sample. Unlike a
 // trailing position average it preserves constant-velocity lines without phase lag.
 export class Stabilizer {
