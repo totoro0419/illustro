@@ -50,3 +50,36 @@ jobs:
         with:
           name: brush-rt-evidence-${{ matrix.backend }}
           path: docs/brush-rt/evidence
+  targeted-feedback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [webgl2, webgpu]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build exact candidate
+        run: node prototypes/brush-rt/build.mjs
+      - name: Install browser test runtime
+        run: |
+          npm install --prefix /tmp/rt-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/rt-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Wide sweep correctness and performance feedback
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/rt-browser/node_modules/playwright
+          RT_QUICK_TEST: '1'
+          RT_BACKEND: '${{ matrix.backend }}'
+        shell: bash
+        run: |
+          set -o pipefail
+          node prototypes/brush-rt/foundation-quick-check.mjs 2>&1 | tee docs/brush-rt/evidence/foundation-quick-console.txt
+      - name: Preserve targeted feedback including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundation-quick-evidence-${{ matrix.backend }}
+          path: docs/brush-rt/evidence

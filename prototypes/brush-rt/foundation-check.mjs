@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
- const sizes=[4,16,128,512,1024];
+ const quick=process.env.RT_QUICK_TEST==='1',sizes=quick?[4,512]:[4,16,128,512,1024];
  for(let index=0;index<7;index++)for(const size of sizes){
   await fresh(1024);
   const value=await page.evaluate(async({index,size})=>{
@@ -43,8 +43,9 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
  // Repeat small curves and rapid taps/2px/5px strokes on the new Foundation,
  // with formal rendering held back. No legacy PASS stands in for these cases.
  for(let index=0;index<7;index++){
+  if(quick&&![4,6].includes(index))continue;
   await fresh(512);
-  for(const shape of ['line','small-circle','s','zigzag','reversal','taper','short-burst']){
+  for(const shape of (quick?['small-circle','zigzag','short-burst']:['line','small-circle','s','zigzag','reversal','taper','short-burst'])){
    const value=await page.evaluate(async({index,shape})=>{
     const {session,renderer,foundationPresets,pattern}=window.__rt;
     session.records=[];await session.rebuild();renderer.confirmDelay=Infinity;session.prediction=false;
@@ -61,6 +62,28 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
    if(value.live.channelsOver3||value.final.visualChannelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
   }
  }
+ // Wide sweep joins must remain exact while the replaceable endpoint advances.
+ for(const index of [4,6])for(const size of (quick?[512]:[512,1024]))for(const shape of (quick?['slow-curve','reversal']:['slow-curve','zigzag','reversal'])){
+  await fresh(1024);
+  const value=await page.evaluate(async({index,size,shape})=>{
+   const {session,renderer,foundationPresets,pattern}=window.__rt,{CanonicalBuilder,cpuReference}=await import('@rt/model');
+   const p=structuredClone(foundationPresets[index]);p.size=size;p.stabilization.constant=0;p.stabilization.fast=0;p.prediction.enabled=false;session.prediction=false;
+   let base=new Uint8ClampedArray(1024*768*4);
+   if(p.blend==='erase'){const under=structuredClone(foundationPresets[2]);under.size=1024;session.begin(under);session.accept({x:512,y:384,t:performance.now(),pointerType:'mouse'});await session.end();base=await renderer.read();}
+   renderer.confirmDelay=Infinity;session.begin(p);const t=performance.now();
+   const wait=async()=>{const revision=renderer.mailbox.revision,deadline=performance.now()+30000;while(!renderer.completions.some(m=>m.revision>=revision)){if(performance.now()>deadline)throw Error('wide sweep streaming timeout');await new Promise(r=>requestAnimationFrame(r));}};
+   for(let i=0;i<96;i++){session.accept({...pattern(shape,i/96,1024,768),t:t+i*1000/240,pressure:.8,pointerType:'pen'});if(i%8===7)await wait();}
+   const b=new CanonicalBuilder(p,session.active.seed);for(const raw of session.active.raw)b.accept(raw);b.finish();const ref=cpuReference(b.record(),1024,768,base);
+   const compare=(got,expected,premultiply)=>{let max=0,bad=0,missing=0;for(let i=0;i<got.length;i+=4){if(expected[i+3]>8&&got[i+3]<expected[i+3]-3)missing++;for(let j=0;j<4;j++){const d=Math.abs(got[i+j]-(premultiply&&j<3?expected[i+j]*expected[i+3]/255:expected[i+j]));max=Math.max(max,d);if(d>3)bad++;}}return {maxChannelError:max,channelsOver3:bad,missingPixels:missing};};
+   await wait();const active=await renderer.backend.readViewport(),activeError=compare(active,ref,true),stableCommands=session.active.stableSource.length;
+   await session.end();await wait();const lifted=await renderer.backend.readViewport(),liftChange=compare(lifted,active,false);renderer.confirmDelay=0;await renderer.drain();const confirmed=await renderer.backend.readViewport(),confirmationChange=compare(confirmed,lifted,false);
+   return {brush:p.id,size,shape,stableCommands,activeError,liftChange,confirmationChange,actualInputs:session.records.at(-1).raw.length};
+  },{index,size,shape});
+  r.checks.push({name:'foundation-wide-streaming-'+index+'-'+size+'-'+shape,...value});await checkpoint();assert.equal(value.actualInputs,96);assert.ok(value.stableCommands>1);
+  if(value.activeError.channelsOver3||value.liftChange.channelsOver3||value.confirmationChange.channelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
+  console.log('RT_SWEEP:'+JSON.stringify({backend:r.backend,...value}));
+ }
+ if(quick){for(const brushIndex of ['f:4','f:6'])await benchmark({size:512,hz:240,duration:4000,shape:'fast-curve',brushIndex,prediction:false});for(const brushIndex of ['f:3',4])await benchmark({size:1024,hz:240,duration:4000,shape:'fast-curve',brushIndex,prediction:false});return;}
  // New foundation performance runs use the same generator and latency-growth gate.
  if(process.env.RT_LONG_TEST==='1')await benchmark({size:1024,hz:240,duration:180000,shape:'long',brushIndex:'f:3',prediction:false});
  for(const size of sizes)await benchmark({size,hz:240,duration:4000,shape:'fast-curve',brushIndex:'f:0',prediction:false,stabilization:size<=16?0:1});
