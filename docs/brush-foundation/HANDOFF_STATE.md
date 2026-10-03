@@ -3,7 +3,7 @@
 現在版は **Brush Foundation完成** ではなく、**ユーザー実機確認に出す受入候補** として固定する。
 
 - 実装本体: `6bfc95f5e8451074234b3b8a79a423833b825153`。今回、描画方式・性能最適化・基準値は変更していない。
-- 正本HTML: `prototypes/brush-rt/dist/illustro-brush-rt.html`。受入確認文だけを同期し、現行blobは `6e1aad41187c2f91a47e2f5ccf572b1eddaebe25`。
+- 正本HTML: `prototypes/brush-rt/dist/illustro-brush-rt.html`。描画・UIとも固定し、現行blobは `036b69675d9016eafb04bac3573731d9069267fb`。既存の試し描きページもこの候補実装を使用する。
 - Node 78/78 PASS。
 - WebGL2 full: 229比較・38性能条件 PASS。
 - WebGPU full: 229比較・38性能条件 PASS。
