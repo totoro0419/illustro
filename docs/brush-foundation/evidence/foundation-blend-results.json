@@ -1,0 +1,724 @@
+{
+  "source": "25ac91eaf8bd741cdff8007abe268e12b88960e2",
+  "environment": "software GPU; physical display unverified",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "status": "PASS",
+      "checks": [
+        {
+          "renderer": "auto",
+          "paint": "saturated",
+          "blend": "normal",
+          "active": {
+            "channelsOver3": 0,
+            "max": 0.9882352941176435
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 0.9882352941176435
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9882352941176435
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9882352941176435
+          },
+          "exact": true
+        },
+        {
+          "renderer": "auto",
+          "paint": "saturated",
+          "blend": "erase",
+          "active": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "exact": true
+        },
+        {
+          "renderer": "auto",
+          "paint": "saturated",
+          "blend": "multiply",
+          "active": {
+            "channelsOver3": 0,
+            "max": 0.9019607843137223
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 0.9019607843137223
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9019607843137223
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9019607843137223
+          },
+          "exact": true
+        },
+        {
+          "renderer": "auto",
+          "paint": "saturated",
+          "blend": "screen",
+          "active": {
+            "channelsOver3": 0,
+            "max": 0.9686274509803923
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 0.9686274509803923
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9686274509803923
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9686274509803923
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "saturated",
+          "blend": "normal",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.3058823529411754
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.3058823529411754
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "saturated",
+          "blend": "erase",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.2000000000000028
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.2000000000000028
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "saturated",
+          "blend": "multiply",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.2627450980392183
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.2627450980392183
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "saturated",
+          "blend": "screen",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.2156862745098067
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.2156862745098067
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "build-up",
+          "blend": "normal",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.352941176470587
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.352941176470587
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "build-up",
+          "blend": "erase",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.2000000000000028
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.2000000000000028
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "build-up",
+          "blend": "multiply",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.3921568627450966
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.3921568627450966
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "build-up",
+          "blend": "screen",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.4588235294117737
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.4588235294117737
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "exact": true
+        },
+        {
+          "renderer": "sweep",
+          "paint": "saturated",
+          "blend": "normal",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.0705882352941174
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.0705882352941174
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "exact": true
+        },
+        {
+          "renderer": "sweep",
+          "paint": "saturated",
+          "blend": "erase",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.4901960784313726
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.4901960784313726
+          },
+          "exact": true
+        },
+        {
+          "renderer": "sweep",
+          "paint": "saturated",
+          "blend": "multiply",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.0352941176470551
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.0352941176470551
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "exact": true
+        },
+        {
+          "renderer": "sweep",
+          "paint": "saturated",
+          "blend": "screen",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.0117647058823565
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.0117647058823565
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "exact": true
+        }
+      ],
+      "consoleErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "status": "PASS",
+      "checks": [
+        {
+          "renderer": "auto",
+          "paint": "saturated",
+          "blend": "normal",
+          "active": {
+            "channelsOver3": 0,
+            "max": 0.9882352941176435
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 0.9882352941176435
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9882352941176435
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9882352941176435
+          },
+          "exact": true
+        },
+        {
+          "renderer": "auto",
+          "paint": "saturated",
+          "blend": "erase",
+          "active": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "exact": true
+        },
+        {
+          "renderer": "auto",
+          "paint": "saturated",
+          "blend": "multiply",
+          "active": {
+            "channelsOver3": 0,
+            "max": 0.9019607843137223
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 0.9019607843137223
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9019607843137223
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9019607843137223
+          },
+          "exact": true
+        },
+        {
+          "renderer": "auto",
+          "paint": "saturated",
+          "blend": "screen",
+          "active": {
+            "channelsOver3": 0,
+            "max": 0.9686274509803923
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 0.9686274509803923
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9686274509803923
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9686274509803923
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "saturated",
+          "blend": "normal",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.3058823529411754
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.3058823529411754
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "saturated",
+          "blend": "erase",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.2000000000000028
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.2000000000000028
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "saturated",
+          "blend": "multiply",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.2627450980392183
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.2627450980392183
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "saturated",
+          "blend": "screen",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.2156862745098067
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.2156862745098067
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.764705882352942
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "build-up",
+          "blend": "normal",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.352941176470587
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.352941176470587
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "build-up",
+          "blend": "erase",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.2000000000000028
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.2000000000000028
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.4980392156862745
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "build-up",
+          "blend": "multiply",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.3921568627450966
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.3921568627450966
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "exact": true
+        },
+        {
+          "renderer": "stamp",
+          "paint": "build-up",
+          "blend": "screen",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.4588235294117737
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.4588235294117737
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.9490196078431374
+          },
+          "exact": true
+        },
+        {
+          "renderer": "sweep",
+          "paint": "saturated",
+          "blend": "normal",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.0705882352941174
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.0705882352941174
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "exact": true
+        },
+        {
+          "renderer": "sweep",
+          "paint": "saturated",
+          "blend": "erase",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.4901960784313726
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.4901960784313726
+          },
+          "exact": true
+        },
+        {
+          "renderer": "sweep",
+          "paint": "saturated",
+          "blend": "multiply",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.0352941176470551
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.0352941176470551
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "exact": true
+        },
+        {
+          "renderer": "sweep",
+          "paint": "saturated",
+          "blend": "screen",
+          "active": {
+            "channelsOver3": 0,
+            "max": 1.0117647058823565
+          },
+          "lifted": {
+            "channelsOver3": 0,
+            "max": 1.0117647058823565
+          },
+          "confirmed": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "loaded": {
+            "channelsOver3": 0,
+            "max": 0.7098039215686276
+          },
+          "exact": true
+        }
+      ],
+      "consoleErrors": []
+    }
+  ]
+}
