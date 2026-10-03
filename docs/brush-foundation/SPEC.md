@@ -5,7 +5,7 @@ Preset: `{format:"illustro-brush-preset", version:2, engine:"illustro-foundation
 | Group | Implemented fields / semantics |
 |---|---|
 | identity | id/name/category/purpose; brush kind and renderer provider ID; extensions namespace |
-| material | size, stroke opacity, deposit flow, RGB color, normal/erase/multiply/screen; saturated or build-up; continuous single-color coverage union via sweep/soft renderer |
+| material | size, stroke opacity, deposit flow, RGB color, normal/erase/multiply/screen; saturated or build-up; continuous single-color coverage union via sweep renderer |
 | tip | round/ellipse/rect/mask/bristle/star/leaf, resource reference, hardness/aspect; fixed + line + optional azimuth + optional twist rotation |
 | spacing | relative diameter or absolute px; minimum/maximum px; optional time exposure |
 | pressure | device curve, brush curve, independent smoothing, unsupported-device fallback |
@@ -29,4 +29,4 @@ Reference presets are exported to `reference-brushes.json`, generated from the s
 
 Current builtin limitations are explicit: one active texture layer, mono material, 8-bit final layer storage, no color-stamp/pigment/mixing simulation, no automatic hardware capability inference for optional sensors. Those are extension/resource/backend contracts, not completed effects.
 
-`renderer:"sweep"` and `renderer:"soft"` require round, aspect-one, saturated, single-color settings without scatter/random color. They use a coverage-union field (local flow × mapped opacity, stroke opacity at composition), not ordered additive paint. For build-up/particles/image/color variation use `stamp`. Swept pencil and soft eraser always reach the latest contact; spacing is retained as a future deposit setting but does not punctuate continuous coverage. Raw/stabilized samples are exact; render geometry has at most 0.05px reduction error before freezing, with a 64-point bound.
+`renderer:"sweep"` requires round, aspect-one, saturated, single-color settings without scatter/random color. They use a coverage-union field (local flow × mapped opacity, stroke opacity at composition), not ordered additive paint. For build-up/particles/image/color variation use `stamp`. Swept pencil and soft eraser always reach the latest contact; spacing is retained as a future deposit setting but does not punctuate continuous coverage. Raw/stabilized samples are exact; render geometry has at most 0.05px reduction error before freezing, with a 64-point bound.

@@ -66,16 +66,16 @@ export function compilePreset(input,context={}){
  for(const value of Object.values(p.taper))if(value.end.mode==='known'&&context[value.end.unit==='time'?'knownDuration':'knownLength']===undefined)throw Error('known endpoint taper requires geometry context');
  const active=Object.values(p.texture).filter(t=>t.strength>0);if(active.length>1)throw Error('multiple texture layers require a material provider');
  const texture=active[0]??p.texture.paper;
- const solid=p.paint==='saturated'&&p.limits.opacity[1]===1&&p.limits.flow[1]===1&&p.renderer!=='stamp'&&p.renderer!=='soft'&&p.tip.shape==='round'&&p.tip.hardness===1&&p.tip.aspect===1&&p.flow===1&&!texture.strength&&!p.scatter.enabled&&!p.random.length&&p.dynamics.every(m=>m.target==='size')&&['opacity','flow','grain'].every(t=>Object.values(p.taper[t]).every(e=>e.mode==='none'));
+ const solid=p.paint==='saturated'&&p.limits.opacity[1]===1&&p.limits.flow[1]===1&&!['stamp','soft','sweep'].includes(p.renderer)&&p.tip.shape==='round'&&p.tip.hardness===1&&p.tip.aspect===1&&p.flow===1&&!texture.strength&&!p.scatter.enabled&&!p.random.length&&p.dynamics.every(m=>m.target==='size')&&['opacity','flow','grain'].every(t=>Object.values(p.taper[t]).every(e=>e.mode==='none'));
  if(p.renderer==='continuous'&&!solid)throw Error('continuous material requires round solid size-only dynamics');
- const coverageUnion=['soft','sweep'].includes(p.renderer)&&p.paint==='saturated'&&p.tip.shape==='round'&&p.tip.aspect===1&&!p.scatter.enabled&&!p.random.length&&p.dynamics.every(m=>['size','opacity','flow','grain'].includes(m.target));
- if(['soft','sweep'].includes(p.renderer)&&!coverageUnion)throw Error('swept coverage requires round saturated single-color material');
+ const coverageUnion=p.renderer==='sweep'&&p.paint==='saturated'&&p.tip.shape==='round'&&p.tip.aspect===1&&!p.scatter.enabled&&!p.random.length&&p.dynamics.every(m=>['size','opacity','flow','grain'].includes(m.target));
+ if(p.renderer==='sweep'&&!coverageUnion)throw Error('swept coverage requires round saturated single-color material');
  const image=id=>{const r=p.resources[id];if(!r)return undefined;return {width:r.width,height:r.height,alpha:r.alpha.map(v=>Math.round(v*255)/255)};};
  const out={...copy(baseLegacy),id:p.id,name:p.name,category:p.category,purpose:p.purpose,size:p.size,opacity:p.opacity,flow:p.flow,spacing:solid?.09:Math.max(.01,Math.min(4,p.spacing.unit==='relative'?p.spacing.value:p.spacing.value/p.size)),rotation:p.tip.angle,follow:p.tip.direction,aspect:p.tip.aspect,hardness:p.tip.hardness,tip:p.tip.shape,grain:texture.strength,grainKind:texture.kind,grainScale:texture.scale,grainRotation:texture.rotation,stabilization:p.stabilization.constant,pressureSmoothing:p.pressure.smoothing,pressureCurve:p.pressure.curve,blend:p.blend,color:p.color,exposureMs:p.spacing.exposureMs,mappings:solid?p.dynamics.map(m=>({...m,source:'pressure',curve:linear})):[]};
  if(out.tip==='mask')out.mask=image(p.tip.resource);if(texture.kind==='image')out.texture=image(texture.resource);
  // Validate the compatibility surface before adding private renderer metadata.
  const forValidation={...out,mappings:[]};validatePreset(forValidation);
- out.__foundation={version:1,preset:p,context:copy(context),solid,coverageUnion,material:!solid,texture,opacity:solid?1:p.paint==='saturated'?p.opacity:1};return out;
+ out.__foundation={version:1,preset:p,context:copy(context),solid,...(coverageUnion?{coverageUnion:true}:{}),material:!solid,texture,opacity:solid?1:p.paint==='saturated'?p.opacity:1};return out;
 }
 function sourceValue(m,q,speed,dir,distance,time,seed,index){
  let raw;switch(m.source){case 'pressure':raw=q.valid&1?q.p:(m.fallback??q.p);break;case 'velocity':raw=speed;break;case 'tilt':raw=q.valid&2?q.tilt:(m.fallback??0);break;case 'azimuth':raw=q.valid&4?((q.azimuth%tau+tau)%tau):((m.fallback??0)*tau);break;case 'twist':raw=q.valid&8?((q.twist%tau+tau)%tau):((m.fallback??0)*tau);break;case 'direction':raw=(dir+tau)%tau;break;case 'distance':raw=distance;break;case 'time':raw=time;break;case 'random':raw=random(seed,index,100+pseudoStream(m));break;}
@@ -151,7 +151,7 @@ export const referenceBrushes=[
  createPreset('foundation-marker','マーカー',{size:128,opacity:.45,purpose:'一筆の濃さを一定に保ち、別の線とは重なります。'}),
  createPreset('foundation-pencil','鉛筆',{size:4,flow:.8,renderer:'sweep',tip:{hardness:.9},texture:{paper:{strength:.65,scale:2}},dynamics:[pressureSize(.2),{source:'pressure',target:'opacity',mode:'multiply',min:.1,max:1,curve:linear},{source:'pressure',target:'grain',mode:'multiply',min:1,max:1.8,curve:[[0,1],[1,0]]}],spacing:{value:.12},purpose:'筆圧で太さ・濃さ・かすれが変わる。質感は最初から描きます。'}),
  createPreset('foundation-hard-eraser','硬い消しゴム',{size:128,blend:'erase',purpose:'丸い輪郭で消す。線画と同じ連続描画を使います。'}),
- createPreset('foundation-soft-eraser','柔らかい消しゴム',{size:128,blend:'erase',renderer:'soft',tip:{hardness:.05},flow:.65,spacing:{value:.12},purpose:'柔らかい輪郭で少しずつ消す。'}),
+ createPreset('foundation-soft-eraser','柔らかい消しゴム',{size:128,blend:'erase',renderer:'sweep',tip:{hardness:.05},flow:.65,spacing:{value:.12},purpose:'柔らかい輪郭で少しずつ消す。'}),
 ];
 
 export function interpolateAngle(a,b,f){return a+((b-a+Math.PI)%tau+tau)%tau*f-Math.PI*f;}
