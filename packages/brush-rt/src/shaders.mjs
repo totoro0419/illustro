@@ -1,6 +1,8 @@
 export const kinds={round:0,ellipse:1,rect:2,bristle:3,star:4,leaf:5,mask:6};
 export const grainKinds={paper:0,hatch:1,noise:2,image:3};
 export const blends={normal:0,multiply:1,screen:2,erase:3};
+// Hard-star harmonics use algebraic cos(5θ)/sin(5θ). Transcendental GPU
+// approximations otherwise magnify angular error by the brush radius.
 export const glMath=`
 float sat(float x){return clamp(x,0.,1.);}
 float img(sampler2D t,vec2 uv,bool repeatImage){if(repeatImage)uv=fract(uv);else if(any(lessThan(uv,vec2(0)))||any(greaterThan(uv,vec2(1))))return 0.;ivec2 sz=textureSize(t,0);return texelFetch(t,min(sz-1,ivec2(floor(uv*vec2(sz)))),0).r;}
@@ -8,7 +10,7 @@ float shape(int kind,vec2 xy,vec2 r){
  if(kind==0&&r.x*r.y<.08)return 0.;
  if(kind==2||kind==3){float a=sat(.5-max(abs(xy.x)-r.x,abs(xy.y)-r.y));if(kind==3)a*=.3+.7*pow(abs(sin(xy.y/max(.35,r.y/max(1.,params[1].y))*3.141592653589793)),.5);return a;}
  if(kind==0&&r.x==r.y){float d=length(xy),h=r.x*params[1].x;if(d<=h)return 1.;return params[1].x==1.?sat(r.x+.5-d):sat((r.x+.5-d)/max(.5,r.x-h));}
- if(kind==4&&params[1].x==1.&&params[2].w<0.&&params[7].z==0.){vec2 uv=xy/r;float len=length(uv),theta=atan(uv.y,uv.x),a=1.75*sin(theta*5.)/max(len,1e-12),gradient=length(vec2((cos(theta)-a*sin(theta))/r.x,(sin(theta)+a*cos(theta))/r.y));return len>1e-12?sat(.5-(len-.65-.35*cos(theta*5.))/max(gradient,1e-12)):sat(.5+.3*min(r.x,r.y));}
+ if(kind==4&&params[1].x==1.&&params[2].w<0.&&params[7].z==0.){vec2 uv=xy/r;float len=length(uv);vec2 u=uv/max(len,1e-12);float xx=u.x*u.x,yy=u.y*u.y,c5=u.x*(xx*xx-10.*xx*yy+5.*yy*yy),s5=u.y*(5.*xx*xx-10.*xx*yy+yy*yy),a=1.75*s5/max(len,1e-12),gradient=length(vec2((u.x-a*u.y)/r.x,(u.y+a*u.x)/r.y));return len>1e-12?sat(.5-(len-.65-.35*c5)/max(gradient,1e-12)):sat(.5+.3*min(r.x,r.y));}
  if(kind==1&&params[1].x==1.&&params[2].z==1.&&params[2].w<0.){float k0=length(xy/r),k1=length(xy/(r*r));return k1>1e-12?sat(.5-k0*(k0-1.)/k1):sat(.5+min(r.x,r.y));}
  float sum=0.;for(int x=0;x<2;x++)for(int y=0;y<2;y++){vec2 uv=(xy+vec2(float(x)*.5-.25,float(y)*.5-.25))/r;float d=length(uv);if(kind==6)sum+=img(maskImage,uv/2.+.5,false);else if(kind==0||kind==1)sum+=d<1.?(params[1].x==1.?1.:sat((1.-d)/max(.001,1.-params[1].x))):0.;else if(kind==4)sum+=d<.65+.35*cos(atan(uv.y,uv.x)*5.)?1.:0.;else if(kind==5)sum+=abs(uv.y)<sqrt(max(0.,1.-uv.x*uv.x))*(1.-abs(uv.x)*.7)?1.:0.;}return sum/4.;
 }
@@ -71,7 +73,7 @@ fn shape(kind:i32,xy:vec2f,r:vec2f)->f32{
  if(kind==0&&r.x*r.y<.08){return 0.;}
  if(kind==2||kind==3){var a=sat(.5-max(abs(xy.x)-r.x,abs(xy.y)-r.y));if(kind==3){a*=.3+.7*pow(abs(sin(xy.y/max(.35,r.y/max(1.,p.v[1].y))*3.141592653589793)),.5);}return a;}
  if(kind==0&&r.x==r.y){let d=length(xy);let h=r.x*p.v[1].x;if(d<=h){return 1.;}if(p.v[1].x==1.){return sat(r.x+.5-d);}return sat((r.x+.5-d)/max(.5,r.x-h));}
- if(kind==4&&p.v[1].x==1.&&p.v[2].w<0.&&p.v[7].z==0.){let uv=xy/r;let len=length(uv);let theta=atan2(uv.y,uv.x);let a=1.75*sin(theta*5.)/max(len,1e-12);let gradient=length(vec2f((cos(theta)-a*sin(theta))/r.x,(sin(theta)+a*cos(theta))/r.y));if(len>1e-12){return sat(.5-(len-.65-.35*cos(theta*5.))/max(gradient,1e-12));}return sat(.5+.3*min(r.x,r.y));}
+ if(kind==4&&p.v[1].x==1.&&p.v[2].w<0.&&p.v[7].z==0.){let uv=xy/r;let len=length(uv);let u=uv/max(len,1e-12);let xx=u.x*u.x;let yy=u.y*u.y;let c5=u.x*(xx*xx-10.*xx*yy+5.*yy*yy);let s5=u.y*(5.*xx*xx-10.*xx*yy+yy*yy);let a=1.75*s5/max(len,1e-12);let gradient=length(vec2f((u.x-a*u.y)/r.x,(u.y+a*u.x)/r.y));if(len>1e-12){return sat(.5-(len-.65-.35*c5)/max(gradient,1e-12));}return sat(.5+.3*min(r.x,r.y));}
  if(kind==1&&p.v[1].x==1.&&p.v[2].z==1.&&p.v[2].w<0.){let k0=length(xy/r);let k1=length(xy/(r*r));if(k1>1e-12){return sat(.5-k0*(k0-1.)/k1);}return sat(.5+min(r.x,r.y));}
  var sum=0.;for(var x=0;x<2;x++){for(var y=0;y<2;y++){let uv=(xy+vec2f(f32(x)*.5-.25,f32(y)*.5-.25))/r;let d=length(uv);if(kind==6){sum+=img(maskImage,uv/2.+.5,false);}else if(kind==0||kind==1){if(d<1.){if(p.v[1].x==1.){sum+=1.;}else{sum+=sat((1.-d)/max(.001,1.-p.v[1].x));}}}else if(kind==4){if(d<.65+.35*cos(atan2(uv.y,uv.x)*5.)){sum+=1.;}}else if(kind==5){if(abs(uv.y)<sqrt(max(0.,1.-uv.x*uv.x))*(1.-abs(uv.x)*.7)){sum+=1.;}}}}return sum/4.;
 }
