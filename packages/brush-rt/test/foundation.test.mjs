@@ -37,7 +37,7 @@ test('pending sweep input is displayed on completion with one submission and int
  const p=compilePreset(referenceBrushes[6]),document=new TileDocument(256,256),builder=new CanonicalBuilder(referenceBrushes[6]);
  for(let i=0;i<8;i++)builder.accept({...point(20+i*10,i*5),y:30+(i%2)*10});builder.finish();assert.ok(builder.commands.length>=3);
  document.append(1,p,builder.commands);const retained=document.count,seen=[],pending=[];let inFlight=0,maxInFlight=0;
- const backend={render(snapshot,jobs){inFlight++;maxInFlight=Math.max(maxInFlight,inFlight);seen.push({end:snapshot.stableEnd,jobs:jobs.length});return new Promise(resolve=>pending.push(()=>{inFlight--;resolve();}));},destroy(){}};
+ const backend={immediatePreview:true,render(snapshot,jobs){inFlight++;maxInFlight=Math.max(maxInFlight,inFlight);seen.push({end:snapshot.stableEnd,jobs:jobs.length});return new Promise(resolve=>pending.push(()=>{inFlight--;resolve();}));},destroy(){}};
  const renderer=new GpuRenderer(backend,256,256),source=builder.commands;renderer.document=document;
  const send=end=>renderer.setLive({id:1,preset:p,stableSource:source,stableEnd:end,commands:[],tip:{x:30,y:30,t:performance.now()},finished:false});
  send(1);renderer.frame(performance.now());send(2);send(3);assert.equal(seen.length,1);
