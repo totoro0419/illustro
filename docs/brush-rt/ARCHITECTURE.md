@@ -1,4 +1,4 @@
-# Realtime brush architecture — v2.4 candidate
+# Realtime brush architecture — v2.5 candidate
 
 Production is not promoted. Software GPU gates and physical device gates are separate; see VALIDATION.md and measured failures.
 
@@ -36,7 +36,7 @@ Select raw-update or pointer-move as the physical movement stream, never count b
 
 The local stabilizer fits a weighted linear model over at most8 points, adaptive past history24–48ms, evaluated at the newest actual timestamp. Constant velocity has no trailing-average phase delay. Its displacement is bounded; major corners reset the window. Pressure smoothing is independent. Constant and speed-dependent strength are evaluated from actual input; the `fast` setting is saved. This is an Illustro design informed by published feature behavior, not a reconstruction of ibis/CSP internals. Post-correction was evaluated but is not added as a second spatial-delay stage; end taper is finalized independently.
 
-The canonical worker regenerates the same geometry and deterministic Philox commands, including distance/time exposure. A publication cursor scans only newly ready commands. The journal stores every accepted actual input, frozen preset, seed, smoothing/engine versions, geometry and commands. Record validation independently replays it. All56 preset configurations remain available. V1 records and earlier candidate engine versions are not silently interpreted as v2.4.
+The canonical worker regenerates the same geometry and deterministic Philox commands, including distance/time exposure. A publication cursor scans only newly ready commands. The journal stores every accepted actual input, frozen preset, seed, smoothing/engine versions, geometry and commands. Record validation independently replays it. All56 preset configurations remain available. V1 records and earlier candidate engine versions are not silently interpreted as v2.5; explicit v2.4 replay preserves its original radius/AA semantics.
 
 ## Work scheduling and rendering
 
@@ -52,6 +52,11 @@ Ended feedback can be archived to one GPU viewport surface before reusing four e
 
 ## Final images and integration
 
-CPU Float64 loops run only as a final reference. Hard-ellipse AA intentionally uses a continuous signed-distance approximation in v2.2; dual tips retain their previous coverage. Zero-alpha pixels normalize to zero RGBA. GPU numerical differences, intentional AA changes and bugs are recorded separately. PNG waits for confirmed tiles; Canvas2D image transfer is limited to export. Undo/Redo rebuild from canonical records.
+CPU Float64 loops run only as a final reference. Hard-ellipse AA intentionally uses a continuous signed-distance approximation in v2.2; dual tips retain their previous coverage. Hard single-star AA in v2.5 uses a continuous polar-boundary/gradient distance with algebraic GPU harmonics; the Float64 reference independently evaluates the corresponding trigonometric equation. This is an intentional AA change from v2.4, whose original kernel is retained for replay. Zero-alpha pixels normalize to zero RGBA. GPU numerical differences, intentional AA changes and bugs are recorded separately. PNG waits for confirmed tiles; Canvas2D image transfer is limited to export. Save, PNG, Undo/Redo and load first settle pending ended-worker records, then rebuild or read canonical tiles. Same-timestamp tilt/azimuth/twist changes remain actual input. A stationary pressure increase paints the union of the preceding and current solid radii immediately.
 
 Build the package to import `@illustro/brush-rt`. It exports RealtimeSession, GpuRenderer, TileDocument, canonical/prediction/reference utilities and TypeScript declarations. The standalone page is the interactive harness. The existing Illustro core/layer/history adapter, memory spill and device-recreation lifecycle are still required; this candidate is not described as fully integrated production code.
+
+
+## 表示通知と形状保持（最新方針）
+
+[最上位の描画体験条件](EXPERIENCE_CONTRACT.md)を全ての性能・品質判定に優先する。stableSourceは追記専用の確定形状列、stableEndは通知作成時の固定終端。GPUはstableCursorからstableEndまでだけを読む。通知を置き換えても間の形状は失わない。可変末尾にも64形状の切り捨てを適用しない。正式描画待ちとは独立しているが、GPUに必要な全形状を処理できるかは別途遅延と描画中の画像で検査する。

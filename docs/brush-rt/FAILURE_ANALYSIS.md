@@ -99,3 +99,15 @@ Run37085312706 (ab42c5c8):36 Node tests passed. Both backends passed all15 stren
 v2.5 deliberately changes eligible hard single-star AA to a continuous polar-boundary/gradient distance approximation with one-pixel support. The underlying radial star contour, spacing, grain and dynamics remain; subpixel stars use the analytic area factor. The three-unit pixel gate is unchanged. Float64/GPU equations and a large-coordinate rounding-continuity regression are matched. Dual/soft stars retain the original kernel. Old v2.4 files retain their commands and original star AA through an explicit compatibility flag during replay; they are validated independently rather than silently upgraded.
 
 Two input/geometry correctness failures were also found: duplicate suppression ignored same-timestamp tilt/azimuth/twist changes, and a zero-length varying-radius capsule used only the preceding radius, hiding a stationary pressure increase. Deduplication now checks every preserved sensor; newly emitted stationary solid commands use the union of preceding/current radii. Saved engine identity advances toillustro-rt-2.5, with explicit v2.4 replay preserving its earlier radius/AA behavior. New Node and GPU assertions cover stationary pressure.
+
+
+Run37086151388 (61cfe15a):40 Node checks passed; both GPU backends passed all15 strengthened latency-growth proxy trials, including the180s1024px/240Hz and4096×3072-document cases. The only remaining image gate was hard-star preset55 at512px:538 visual channels exceeded3/255; maximum alpha error9/255 on both APIs. This is retained as FAIL, not classified away as low-alpha pigment. Other103 image/input/history/layout checks passed.
+
+The continuous star contour still used GPU atan2 followed by sin/cos of five times that angle. An angular approximation in the software GPU can grow into a substantial boundary-distance error at radius256. This diagnosis is an inference from the radius scaling, two-backend agreement and equations; it is not an instrumented driver instruction trace. The new shader computes equivalent cos(5θ)/sin(5θ) harmonics from normalized Cartesian coordinates with polynomial arithmetic, without changing the intended star contour or the pixel threshold. The Float64 reference retains its independent trigonometric equation. The same high-coordinate128/512px GPU regression must establish whether this fix actually works.
+
+
+## 細い鉛筆の後補完（2026-10-03追加）
+
+表示用stablePendingと可変末尾を64形状に切った設計が、一筆の必要な形状を失わせた。最新通知だけを残すことと、描画形状を捨てることを混同していた。短い48点の既存テストでは検出できなかった。追記形状列と固定終端のスナップショット、描画済みカーソルへ変更し、1/4/16px・4鉛筆・正式描画停止・描画中と終了後の差を新しいGateへ加えた。Nodeの形状保持検査は41件中41件成功。ブラウザの画像・遅延結果は別途実行するまで未確認。
+
+31450の星型AAの代数的な五倍角への変更も512pxの最大alpha差9を解消しなかった。単一の原因説明として採用しない。未解決の画像差があるため本番合格ではない。
