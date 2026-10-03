@@ -1,3 +1,22 @@
+# 実機受入候補 — 2026-10-04 JST
+
+現在版は **Brush Foundation完成** ではなく、**ユーザー実機確認に出す受入候補** として固定する。
+
+- 実装本体: `6bfc95f5e8451074234b3b8a79a423833b825153`。今回、描画方式・性能最適化・基準値は変更していない。
+- 正本HTML: `prototypes/brush-rt/dist/illustro-brush-rt.html`。受入確認文だけを同期し、現行blobは `6e1aad41187c2f91a47e2f5ccf572b1eddaebe25`。
+- Node 78/78 PASS。
+- WebGL2 full: 229比較・38性能条件 PASS。
+- WebGPU full: 229比較・38性能条件 PASS。
+- 3分間試験: 43,200 / 43,200入力保持。
+- WebGPU反復: 18/18 PASS。
+- WebGL2反復: 17/18 PASS。鉛筆512px / 240Hzの最初の反復だけ total growth +32.33ms でFAIL。後2回はPASS。ローカル交互比較では再現せず、原因・再現性は未確定。
+- 実ペンでの筆圧、入り抜き、表示中の線から正式線への切替、実画面追従は **UNVERIFIED**。
+- 上記1件のFAILは削除・丸め・基準緩和をせず、既知の未解決結果として保持する。
+- 新しいbenchmark / fixture / diagnostic / artifactは、具体的な実機問題が出るまで原則追加しない。
+- PR #10はDraftのまま。mainへmergeせず、ユーザー実機確認待ちで停止する。
+
+次に行うことは `HUMAN_CHECKS.md` と試し描きページでの実ペン確認だけ。問題が再現した場合のみ、その具体的な問題に絞って修正する。
+
 # 現在の状態 — 2026-10-03（UTC）
 
 最終目標は `COMPLETION_CONTRACT.md`。実機で合格した軽さ・追従を保ち、今後のほぼすべてのブラシの共通基盤を完成させる。CI/7本/HTMLだけを目的にしない。
