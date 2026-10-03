@@ -1,3 +1,22 @@
+# 現在保持する未解決FAIL — 2026-10-04 JST
+
+受入候補固定時点で削除してはいけない未解決結果は次の1件。
+
+- CI run `37131153403`
+- WebGL2 targeted repeat
+- Foundation pencil
+- 512px / 240Hz
+- 1回目: start 152.73ms / middle 169.67ms / end 185.07ms
+- total growth: +32.33ms → FAIL（既存基準 +20ms）
+- steady growth: +15.40ms → PASS
+- 2回目・3回目: PASS
+- 960/960入力保持
+- ローカル交互比較: 最新版3/3 PASS、直前版3/3 PASS
+- 原因: 未確定
+- 再現性: 未確定
+
+この結果だけを消すための基準緩和、同一試験の無期限反復、大規模Renderer変更は行わない。実機で具体的な問題が確認された場合にのみ、その問題へ戻る。
+
 # Failure analysis
 
 Past failures remain relevant regression cases, not design templates: CPU pixel scanning scales with brush area; full raster clones and image transfers delay presentation; a raster or GPU preview FIFO makes latest position wait behind obsolete work; truncated stamp publication makes thin pencil dotted until later catch-up. The accepted engine already removed those causes. Foundation preserves its capacity-one display notification and append-only scene geometry.
