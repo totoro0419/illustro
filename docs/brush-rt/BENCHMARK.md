@@ -40,3 +40,55 @@ A formal chunk remains one128px tile and up to16 commands;1–8 ordinary chunks 
 
 
 同実行のWebGPUでも細線6件を含む20件の短時間proxyと12鉛筆画像Gateは成功。ただし180秒は開始1秒のサンプルが1件のみでFAIL_OR_INSUFFICIENT。開始623.1ms→終了91.4msという減少を理由に合格へ変更しない。全43200入力保持、開始時の不足を結果に記録する。
+
+
+## 最新の全条件：f20a028a / CI37090457149
+
+SwiftShader/headless Chromium、GPU-completion proxy。画面提示・実ペン・光学測定ではない。Preset全設定、seed、fast補正、入力発生の遅れ、正式待ちを完全なJSONへ記録した。開始・中間・終了のp95差を比較し、各窓2件未満は成功にしない。
+
+|Backend|px|Hz|時間s|形状/紙|開始p95 ms|中間p95 ms|終了p95 ms|Gate|
+|---|---:|---:|---:|---|---:|---:|---:|---|
+|webgl2|1024|240|180.0|long|389.4|117.1|67.7|PASS_PROXY|
+|webgl2|1|240|4.0|fast-curve|119.8|70.6|69.9|PASS_PROXY|
+|webgl2|1|480|4.0|fast-curve|115.3|71.0|69.6|PASS_PROXY|
+|webgl2|4|240|4.0|fast-curve|103.9|70.9|70.9|PASS_PROXY|
+|webgl2|4|480|4.0|fast-curve|119.6|69.0|69.4|PASS_PROXY|
+|webgl2|16|240|4.0|fast-curve|103.8|70.7|71.3|PASS_PROXY|
+|webgl2|16|480|4.0|fast-curve|100.3|69.4|70.5|PASS_PROXY|
+|webgl2|16|60|4.0|fast-curve|93.2|79.2|78.3|PASS_PROXY|
+|webgl2|16|120|4.0|fast-curve|109.4|75.4|75.4|PASS_PROXY|
+|webgl2|16|240|4.0|fast-curve|99.9|71.2|70.3|PASS_PROXY|
+|webgl2|128|60|4.0|fast-curve|106.7|75.3|76.3|PASS_PROXY|
+|webgl2|128|120|4.0|fast-curve|108.5|72.0|75.4|PASS_PROXY|
+|webgl2|128|240|4.0|fast-curve|135.6|84.4|70.1|PASS_PROXY|
+|webgl2|512|60|4.0|fast-curve|159.1|93.4|92.4|PASS_PROXY|
+|webgl2|512|120|4.0|fast-curve|174.4|93.1|95.5|PASS_PROXY|
+|webgl2|512|240|4.0|fast-curve|183.5|89.7|100.0|PASS_PROXY|
+|webgl2|1024|60|4.0|fast-curve|191.8|124.9|125.7|PASS_PROXY|
+|webgl2|1024|120|4.0|fast-curve|206.4|124.1|107.4|PASS_PROXY|
+|webgl2|1024|240|4.0|fast-curve|219.1|122.4|117.8|PASS_PROXY|
+|webgl2|1024|240|5.0|reversal|282.7|220.7|183.9|PASS_PROXY|
+|webgl2|1024|240|4.0|fast-curve/4K|166.8|86.0|86.3|PASS_PROXY|
+|webgpu|1024|240|180.0|long|458.2|667.2|66.8|PASS_PROXY|
+|webgpu|1|240|4.0|fast-curve|214.3|84.6|92.3|PASS_PROXY|
+|webgpu|1|480|4.0|fast-curve|218.8|81.7|87.1|PASS_PROXY|
+|webgpu|4|240|4.0|fast-curve|216.3|90.8|90.9|PASS_PROXY|
+|webgpu|4|480|4.0|fast-curve|216.4|83.8|88.4|PASS_PROXY|
+|webgpu|16|240|4.0|fast-curve|226.9|88.8|86.2|PASS_PROXY|
+|webgpu|16|480|4.0|fast-curve|226.7|84.4|91.6|PASS_PROXY|
+|webgpu|16|60|4.0|fast-curve|210.5|87.3|95.9|PASS_PROXY|
+|webgpu|16|120|4.0|fast-curve|209.0|82.7|86.6|PASS_PROXY|
+|webgpu|16|240|4.0|fast-curve|214.3|81.0|86.0|PASS_PROXY|
+|webgpu|128|60|4.0|fast-curve|216.0|122.0|120.8|PASS_PROXY|
+|webgpu|128|120|4.0|fast-curve|217.3|114.2|115.3|PASS_PROXY|
+|webgpu|128|240|4.0|fast-curve|220.3|114.4|120.9|PASS_PROXY|
+|webgpu|512|60|4.0|fast-curve|290.3|188.2|188.1|PASS_PROXY|
+|webgpu|512|120|4.0|fast-curve|289.9|197.3|177.7|PASS_PROXY|
+|webgpu|512|240|4.0|fast-curve|290.9|186.3|180.2|PASS_PROXY|
+|webgpu|1024|60|4.0|fast-curve|416.9|299.7|251.1|PASS_PROXY|
+|webgpu|1024|120|4.0|fast-curve|421.5|318.4|244.9|PASS_PROXY|
+|webgpu|1024|240|4.0|fast-curve|419.3|293.1|243.7|PASS_PROXY|
+|webgpu|1024|240|5.0|reversal|463.0|496.0|343.3|PASS_PROXY|
+|webgpu|1024|240|4.0|fast-curve/4K|288.0|135.6|138.1|PASS_PROXY|
+
+両backendとも21条件を成功。1024px長時間では43200入力を保持した。開始時の大きい絶対値や最大距離を隠さず、実機の良い描き味を証明したとは主張しない。値の全体は`evidence/run-37090457149-results.json`。全条件は新しい書式のため過去の試験結果と混同しない。

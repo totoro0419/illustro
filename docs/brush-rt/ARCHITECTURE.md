@@ -48,7 +48,7 @@ Eligible solid geometry requires dense spacing≤.25, hard round tips, constant 
 
 The viewport compositor persists. Only new prefix tiles, old/new tail tiles, changed confirmed tiles and retired feedback tiles are recomposed. A GPU viewport copy presents the cached surface; no CPU document clone, pixel walk or putImageData occurs in that path.
 
-Ended feedback can be archived to one GPU viewport surface before reusing four editable prefix/tail pairs. Actual final tails are refreshed before archive; predicted-only regions do not acquire canonical archive tags. Per-tile real-stroke IDs let confirmed layers replace the archive without double deposition. Never-displayed obsolete completed snapshots can be omitted from feedback, counted and later rendered canonically. A transition can temporarily retain old/new GPU resources until completion; memory-pressure management remains open.
+Ended feedback is folded into one GPU viewport surface in chronological groups of up to four editable prefix/tail pairs. Actual final tails are refreshed before archive; predicted-only regions do not acquire canonical archive tags. Per-tile real-stroke IDs let confirmed layers replace the archive without double deposition. Never-displayed completed strokes are retained in immediate feedback; only obsolete state notifications may be omitted. A transition can temporarily retain old/new GPU resources until completion; memory-pressure management remains open.
 
 ## Final images and integration
 
@@ -60,3 +60,8 @@ Build the package to import `@illustro/brush-rt`. It exports RealtimeSession, Gp
 ## 表示通知と形状保持（最新方針）
 
 [最上位の描画体験条件](EXPERIENCE_CONTRACT.md)を全ての性能・品質判定に優先する。stableSourceは追記専用の確定形状列、stableEndは通知作成時の固定終端。GPUはstableCursorからstableEndまでだけを読む。通知を置き換えても間の形状は失わない。可変末尾にも64形状の切り捨てを適用しない。正式描画待ちとは独立しているが、GPUに必要な全形状を処理できるかは別途遅延と描画中の画像で検査する。
+
+
+## Executed candidate f20a028a
+
+CPU computes rotation sine/cosine once per command into GPU-only packed slots12/15; canonical data is unchanged. Both shader languages read those coefficients. This changed the512px star reference error from9/255 to1/255 in CI37090457149. WebGPU pipelines are created asynchronously before drawing becomes ready, following the WebGPU specification, so pipeline compilation is not deliberately left for the first stroke. Full executed HTML blob: e4352a885c39e480f8972daaa1e8dda13c34e48e.
