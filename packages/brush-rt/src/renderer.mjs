@@ -16,13 +16,13 @@ export function previewDirty(v,stable,live,width,height,dirty,tipTime=Infinity){
 export function sweepPrefixCommands(v,p,published,live=[]){
  const texture=p.__foundation.texture,stable=[],worldFixed=texture.space==='paper'&&texture.sizeMode==='absolute'&&!texture.followDirection;
  const same=(a,b)=>a&&b&&a[19]===2&&b[19]===2&&a[2]>=128&&a[18]===a[2]/2&&b[18]===a[18]&&a[0]===b[16]&&a[1]===b[17]&&[2,3,5,6,7,8,9,10].every(i=>a[i]===b[i]);
- let previous=v.sweepPrevious,r=0;
+ let previous=v.sweepPrevious,r=0,required=1;
  for(let i=0;i<published.length;i++){const c=published[i],next=published[i+1]??live[0],length=next?Math.hypot(next[0]-next[16],next[1]-next[17]):0;
-  if(worldFixed&&same(previous,c)&&same(c,next)&&length>.2&&Math.hypot(c[0]-c[16],c[1]-c[17])>.2){const q=c.slice();q[23]=-2;q[11]=Math.atan2(next[1]-next[17],next[0]-next[16]);q[20]=Math.asin(Math.min(1,.05/length))+.001;stable.push(q);r=Math.max(r,c[2]/2);}else stable.push(c);
+  if(worldFixed&&same(previous,c)&&same(c,next)&&length>.2&&Math.hypot(c[0]-c[16],c[1]-c[17])>.2){const q=c.slice();q[23]=-2;q[11]=Math.atan2(next[1]-next[17],next[0]-next[16]);q[20]=Math.asin(Math.min(1,.05/length))+.001;stable.push(q);r=Math.max(r,c[2]/2);const incoming=Math.atan2(c[1]-c[17],c[0]-c[16]),turn=((q[11]-incoming+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI,extent=Math.abs(turn)+q[20]*2;required=Math.max(required,Math.ceil(extent/(2*Math.acos((c[2]/2+.5)/(c[2]/2+2)))));}else stable.push(c);
   previous=c;
  }
  v.sweepPrevious=previous;
- const required=r?Math.ceil(Math.PI/Math.acos((r+.5)/(r+2))):0,sectors=Math.max(16,2**Math.ceil(Math.log2(Math.max(1,required))));
+ const sectors=2**Math.ceil(Math.log2(required));
  return {stable,prefixKeys:new Set,sectors,vertexCount:r?6+sectors*3:6};
 }
 export function livePrefixCommands(v,p,published,width,height,live=[]){const prefixKeys=new Set,stable=[];if(p.__foundation?.coverageUnion)return sweepPrefixCommands(v,p,published,live);if(!continuous(p))return {stable:published,prefixKeys,vertexCount:6};let old=v.circle;for(const c of published){let changed=false;for(const key of keysFor(c,width,height))if(!v.fullTiles?.has(key)){prefixKeys.add(key);changed=true;}if(changed){const incremental=c[2]>=256&&c[18]===c[2]/2&&old?.guaranteed&&old.x===c[16]&&old.y===c[17]&&old.r===c[18];if(incremental){const q=c.slice();q[23]=-1;stable.push(q);}else stable.push(c);}old={x:c[0],y:c[1],r:c[2]/2,guaranteed:!changed||c[18]===c[2]/2};}v.circle=old;const radii=stable.filter(c=>c[23]===-1).map(c=>c[2]/2),r=Math.max(0,...radii),required=r?Math.ceil(Math.PI/(2*Math.acos((r+.5)/(r+2)))):0,sectors=Math.max(16,2**Math.ceil(Math.log2(Math.max(1,required))));return {stable,prefixKeys,sectors,vertexCount:radii.length?sectors*12:6};}
