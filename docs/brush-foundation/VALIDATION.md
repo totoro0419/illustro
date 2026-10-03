@@ -1,4 +1,19 @@
-# Current continuation validation
+# Current Foundation contract validation — 2026-10-03
+
+Current implementation source: `25ac91eaf8bd741cdff8007abe268e12b88960e2`. Its Git tree `c711a0b41d8ceedd19ade504bf9c89986643603f` exactly matches local tested commit `2e3698d42f6aebd64eb66f451d79ac2afa648061`; only commit metadata differs. Canonical HTML: 525,988 bytes, Git blob `f73d6360c1ee9ca8f25ebbbc12fc6c79fe418491`.
+
+- Node: 77/77 PASS, including atomic temporary settings, symmetric pack validation, resource-kind validation, composed image/time/scatter examples, and an actual separate canonical worker with a registered material provider.
+- Local current-source Chromium153/SwiftShader: both backends passed 33 Foundation image/behavior comparisons and four performance conditions. These include new timed build-up and image-tip + grain + scatter combinations; all live/lift/confirmed and restored pixels remained within the existing 3/255 tolerance. Inputs and +20ms limits are unchanged.
+- Browser interaction: both backends preserve all original settings after rejecting an unsupported pack, correctly update loaded names/size, recover drawing after an invalid size, preserve save/undo/redo/load, and export a valid pack. Widths320/800/1200 have no horizontal page overflow. Real stylus, screen reader and physical-device behavior remain UNVERIFIED.
+- New full CI [37128925258](https://github.com/totoro0419/illustro/actions/runs/37128925258) is IN_PROGRESS. Its result must be recorded separately from the completed previous-source suite below.
+
+Previous complete source `6f72a2c19b8a1c20f4017fb6e5bf0579cee9d8b6`, [run37121144408](https://github.com/totoro0419/illustro/actions/runs/37121144408): both backends passed226 image/behavior comparisons,38/38 full performance conditions and18/18 targeted repeated conditions, including legacy1024px reversal. Both three-minute workloads retained43,200/43,200 inputs. All four ZIPs were downloaded independently and their SHA-256 digests matched GitHub. p95 values and both growth gates were recalculated from chronological samples using the recorded phase counts; the capture-window timestamps themselves are not independently stored. Audit summaries preserve that limitation. Source25 changes validation/settings/IO, not rendering, scheduling or coverage equations.
+
+The initially failing eraser/pencil/legacy reversal observations remain historical failures. A current passing run does not erase them or certify every future runtime. The accepted baseline shader blob remains `e40effdb2802d9a3df70f928351fb389ed9d25f5`; the comparison page remains SHA-256 `4886168f381fb832b3c38900e8b8ce2350bfeb52a679b648e01e4999b5bf679e`.
+
+Overall physical acceptance remains UNVERIFIED: natural pen pressure/entry/exit, imperceptible switching, and preservation of accepted tracking on the user's device. Also unverified are real GPU/display latency, optional hardware sensors, device loss and memory pressure. See `COMPLETION_CONTRACT.md` and `HUMAN_CHECKS.md`. PR10 remains Draft; no merge or overall completion is declared.
+
+# Earlier continuation validation (historical)
 
 Current source: `7ecdf9b4283e0d8f2b850845a7f6675f11e818f4`. Canonical HTML: `prototypes/brush-rt/dist/illustro-brush-rt.html`, 523,272 bytes, Git blob `925804bf751b4a6b9066cb5c89f59849dc89091e`. Node 72/72 PASS locally. Latest-source full CI [37119396194](https://github.com/totoro0419/illustro/actions/runs/37119396194) is IN_PROGRESS; no full PASS is declared yet.
 

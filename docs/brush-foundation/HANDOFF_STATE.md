@@ -1,5 +1,22 @@
 # 現在の状態 — 2026-10-03（JST）
 
+最終目標は `COMPLETION_CONTRACT.md`。実機で合格した軽さ・追従を保ち、今後のほぼすべてのブラシの共通基盤を完成させる。CI/7本/HTMLだけを目的にしない。
+
+- 作業ブランチ `brush/foundation-2026-10-03`、Draft PR10。main/元の合格版は変更していない。
+- 現行実装 `25ac91eaf8bd741cdff8007abe268e12b88960e2`。検査したローカル2e3698dとGit tree `c711a0b41d8ceedd19ade504bf9c89986643603f` が完全一致。
+- 正本HTML `prototypes/brush-rt/dist/illustro-brush-rt.html`、525,988bytes、blob `f73d6360c1ee9ca8f25ebbbc12fc6c79fe418491`。
+- 今回は設定変更の拒否後に不正値が残る不具合、packの重複ID/資源種別検査、ページの読み込み前の利用可否確認・名前表示・不正な太さからの復帰を修正。描画/補正/予測/合成/通知方式は変更していない。
+- Node77/77合格。両GPUでFoundation33画像/挙動比較+4性能条件合格。ブラシ読込みの失敗/成功、再描画、保存/履歴、幅320/800/1200の検査も合格。実ペン/画面の自然さは未確認。
+- 拡張検査は、時間間隔+重ね塗り、画像先端+模様+散布、別提供者をmainと実workerに登録して同じ記録を生成するところまで実行。水彩/色付き画像/複数質感層/カーソル表示/静止時間の自動入力などは未実装。追加する契約と効果完成を区別する。
+- 前の6f72a2c全検査37121144408は両GPU226比較・38性能条件・18反復条件すべて合格。raw ZIP4つを取得しSHA-256と入力保持/ゲート計算を照合。`evidence/run-37121144408-*-audit.json`。
+- 現行実装の全検査37128925258は実行中。最新状態を確認し、raw結果を保存してこの状態とVALIDATIONを更新する。実機受入は `HUMAN_CHECKS.md` を使い、それまでは全体完成を宣言しない。
+- 正式な試し描きページは既存 https://illustro-realtime-brush-test.ibukioike2009.chatgpt.site 。同じproject `appgprj_6ac0517d1104819194de23404ff9b3a0` を使用し、所有者限定を維持する。
+- 現checkout `/workspace/scratch/1cb77f0be138/illustro`、Sites `/workspace/scratch/1cb77f0be138/brush-rt-site`。継続環境に同じパスがあるとは仮定せずGitHubを正本にする。
+
+以下は以前の状態であり、上の現行状態を上書きしない。
+
+# 以前の続行状態（履歴）
+
 作業を再開し、WebGPUの共通MAX合成・通知を必要最小限修正した。7ブラシは共通Foundationの設定として維持し、ブラシID専用の分岐を追加していない。WebGL2の入力更新間隔は合格済み方式を維持する。保存・読み込み/Undo/Redo後の画面が空になる既存不具合を両方式で再現し、確定タイルの合成を修正した。
 
 - Repository/branch/PR: https://github.com/totoro0419/illustro / `brush/foundation-2026-10-03` / https://github.com/totoro0419/illustro/pull/10 (Draftのまま、mergeしない)。
