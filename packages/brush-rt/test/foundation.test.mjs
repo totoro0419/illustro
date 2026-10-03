@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {referenceBrushes,createPreset,compilePreset,evaluateDynamics,exportPresets,importPresets,PresetState,cursorState,correctGeometry,geometryContext,predictFoundation,interpolateAngle} from '../dist/rt/foundation.mjs';
 import {CanonicalBuilder,validateRecord,cpuReference,continuous,liveAccumulation} from '../dist/rt/model.mjs';
-import {sweepPrefixCommands} from '../dist/rt/renderer.mjs';
+import {sweepPrefixCommands,GpuRenderer,TileDocument} from '../dist/rt/renderer.mjs';
 const point=(x,t,p=.7)=>({x,y:30,t,pressure:p,pointerType:'pen',origin:'coalesced',tilt:.3,azimuth:.4,twist:.5});
 test('wide constant sweep feedback uses bounded strips/joins without mutating canonical paint or dropping endpoint caps',()=>{const p=structuredClone(referenceBrushes[6]);p.size=512;const b=new CanonicalBuilder(p);for(let i=0;i<16;i++)b.accept({...point(20+i*10,i*5),y:30+i*i});const canonical=b.commands.map(c=>Array.from(c));const v={};const out=sweepPrefixCommands(v,b.p,b.commands.slice(0,-1),b.commands.slice(-1));assert.ok(out.stable.some(c=>c[23]===-2));assert.equal(out.stable[0][23],b.commands[0][23]);assert.deepEqual(b.commands.map(c=>Array.from(c)),canonical);const end=sweepPrefixCommands(v,b.p,b.commands.slice(-1),[]);assert.ok(end.stable.every(c=>c[23]!==-2));const textured={...b.p,__foundation:{...b.p.__foundation,texture:{...b.p.__foundation.texture,followDirection:true}}};assert.ok(sweepPrefixCommands({},textured,b.commands,[]).stable.every(c=>c[23]!==-2));});
 test('saved version-three strokes from the pre-sweep implementation retain all seven brush results',()=>{const fixture=JSON.parse(readFileSync(new URL('./fixtures/pre-sweep-foundation-v3.json',import.meta.url),'utf8'));assert.equal(fixture.source,'b18e2b0d66906454cc95aa9d8b2319cb053897f1');assert.equal(fixture.records.length,7);for(const record of fixture.records)assert.deepEqual(validateRecord(record),record);});
@@ -32,3 +32,16 @@ test('cursor matches pressure fallback, mapped color and build-up opacity withou
 test('predicted release metadata is rejected just like predicted paint input',()=>{const b=new CanonicalBuilder(referenceBrushes[0]);b.accept(point(20,0));assert.throws(()=>b.release({...point(20,5,0),origin:'predicted'}),/prediction/);assert.throws(()=>b.release({...point(20,5,0),predicted:true}),/predict/);});
 
 test('swept pencil and soft erase always publish the latest contact, independent of spacing',()=>{for(const source of [referenceBrushes[4],referenceBrushes[6]]){const p=structuredClone(source);p.size=1024;const b=new CanonicalBuilder(p);for(let i=0;i<480;i++)b.accept(point(100+i*.1,i*1000/240));assert.ok(b.commands.length>0&&b.commands.length<=480);assert.equal(b.commands.at(-1)[20],b.geometry.at(-1).t);assert.equal(b.commands.at(-1)[0],b.geometry.at(-1).x);const before=b.commands.map(c=>Array.from(c));b.finish();assert.deepEqual(b.record().commands,before);}});
+
+test('pending sweep input is displayed on completion with one submission and intact formal geometry',async()=>{
+ const p=compilePreset(referenceBrushes[6]),document=new TileDocument(256,256),builder=new CanonicalBuilder(referenceBrushes[6]);
+ for(let i=0;i<3;i++)builder.accept(point(20+i*10,i*5));builder.finish();
+ document.append(1,p,builder.commands);const retained=document.count,seen=[],pending=[];let inFlight=0,maxInFlight=0;
+ const backend={render(snapshot,jobs){inFlight++;maxInFlight=Math.max(maxInFlight,inFlight);seen.push({end:snapshot.stableEnd,jobs:jobs.length});return new Promise(resolve=>pending.push(()=>{inFlight--;resolve();}));},destroy(){}};
+ const renderer=new GpuRenderer(backend,document),source=builder.commands;
+ const send=end=>renderer.setLive({id:1,preset:p,stableSource:source,stableEnd:end,commands:[],tip:{x:30,y:30,t:performance.now()},finished:false});
+ send(1);renderer.frame(performance.now());send(2);send(3);assert.equal(seen.length,1);
+ pending.shift()();await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(seen,[{end:1,jobs:0},{end:3,jobs:0}]);assert.equal(maxInFlight,1);assert.equal(document.count,retained);
+ pending.shift()();await new Promise(resolve=>setImmediate(resolve));assert.equal(seen.length,2);assert.ok(document.jobs.length>0);renderer.destroy();
+});
