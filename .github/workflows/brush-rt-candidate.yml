@@ -1,7 +1,7 @@
 name: Realtime Brush Candidate
 on:
   push:
-    branches: ['brush/realtime-redesign-2026-10-03']
+    branches: ['brush/realtime-redesign-2026-10-03', 'brush/foundation-2026-10-03']
     paths: ['packages/brush-rt/**', 'prototypes/brush-rt/*.mjs', 'prototypes/brush-rt/index.html', '.github/workflows/brush-rt-candidate.yml']
   workflow_dispatch:
 permissions:

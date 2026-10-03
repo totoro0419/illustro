@@ -2,7 +2,7 @@
   "name": "@illustro/brush-rt",
   "private": true,
   "type": "module",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "exports": {
     ".": {
       "types": "./src/index.d.ts",
