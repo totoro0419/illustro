@@ -26,7 +26,7 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
  }
  // Image tip, rotated/relative/inverted filtered texture, variable color and scatter.
  await fresh(512);
- for(const variant of ['mask','texture','scatter','color','phase','absolute']){
+ for(const variant of ['mask','texture','scatter','color','phase','absolute','build-up']){
   const value=await page.evaluate(async variant=>{
    const {createPreset}=await import('@rt/foundation'),{session,renderer}=window.__rt;session.records=[];await session.rebuild();renderer.confirmDelay=Infinity;session.prediction=false;
    const p=createPreset('advanced-'+variant,variant,{renderer:'stamp',size:24,opacity:.6,flow:.4});
@@ -35,13 +35,14 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
    if(variant==='scatter'){p.scatter={...p.scatter,enabled:true,density:4,radius:.3,particleSize:.3,bias:-.3,rotation:'center'};p.random=[{target:'size',amount:.2},{target:'rotation',amount:1}];}
    if(variant==='color')p.dynamics=[{source:'pressure',target:'opacity',mode:'multiply',min:.05,max:1,curve:[[0,0],[1,1]]},{source:'distance',target:'hue',mode:'add',min:0,max:.5,curve:[[0,0],[1,1]],input:[0,50]}];
    if(variant==='phase'){p.taper.opacity.start={mode:'ramp',unit:'distance',length:10,minimum:.1,curve:[[0,0],[1,1]]};p.taper.flow.end={mode:'fade',unit:'distance',length:80,minimum:.1,curve:[[0,0],[1,1]]};}
+   if(variant==='build-up')p.paint='build-up';
    if(variant==='absolute')p.spacing={...p.spacing,unit:'absolute',value:4};
    session.begin(p);const t=performance.now();for(let i=0;i<16;i++)session.accept({x:50+i*5,y:100+Math.sin(i/4)*10,t:t+i*5,pressure:i<8?.2:.9,pointerType:'pen'});await session.end();const deadline=performance.now()+30000,revision=renderer.mailbox.revision;while(!renderer.completions.some(m=>m.revision>=revision)){if(performance.now()>deadline)throw Error('advanced live timeout');await new Promise(r=>requestAnimationFrame(r));}const live=await window.__rt.compareLive();renderer.confirmDelay=0;return {variant,live,final:await window.__rt.compare()};
   },variant);r.checks.push({name:'foundation-advanced-'+variant,...value});await checkpoint();if(value.live.channelsOver3||value.final.visualChannelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
  }
  // New foundation performance runs use the same generator and latency-growth gate.
  if(process.env.RT_LONG_TEST==='1')await benchmark({size:1024,hz:240,duration:180000,shape:'long',brushIndex:'f:3',prediction:false});
- for(const size of sizes)await benchmark({size,hz:240,duration:4000,shape:'pressure-step',brushIndex:'f:0',prediction:false});
+ for(const size of sizes)await benchmark({size,hz:240,duration:4000,shape:'pressure-step',brushIndex:'f:0',prediction:false,stabilization:size<=16?0:1});
  for(const hz of [60,120,240])await benchmark({size:512,hz,duration:4000,shape:'fast-curve',brushIndex:'f:3',prediction:false});
  for(const brushIndex of ['f:4','f:5','f:6'])await benchmark({size:512,hz:240,duration:4000,shape:'fast-curve',brushIndex,prediction:false});
  await benchmark({size:16,hz:240,duration:4000,shape:'reversal',brushIndex:'f:0',prediction:true});

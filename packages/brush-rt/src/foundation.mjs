@@ -66,26 +66,26 @@ export function compilePreset(input,context={}){
  for(const value of Object.values(p.taper))if(value.end.mode==='known'&&context[value.end.unit==='time'?'knownDuration':'knownLength']===undefined)throw Error('known endpoint taper requires geometry context');
  const active=Object.values(p.texture).filter(t=>t.strength>0);if(active.length>1)throw Error('multiple texture layers require a material provider');
  const texture=active[0]??p.texture.paper;
- const solid=p.renderer!=='stamp'&&p.renderer!=='soft'&&p.tip.shape==='round'&&p.tip.hardness===1&&p.tip.aspect===1&&p.flow===1&&!texture.strength&&!p.scatter.enabled&&!p.random.length&&p.dynamics.every(m=>m.target==='size')&&['opacity','flow','grain'].every(t=>Object.values(p.taper[t]).every(e=>e.mode==='none'));
+ const solid=p.paint==='saturated'&&p.limits.opacity[1]===1&&p.limits.flow[1]===1&&p.renderer!=='stamp'&&p.renderer!=='soft'&&p.tip.shape==='round'&&p.tip.hardness===1&&p.tip.aspect===1&&p.flow===1&&!texture.strength&&!p.scatter.enabled&&!p.random.length&&p.dynamics.every(m=>m.target==='size')&&['opacity','flow','grain'].every(t=>Object.values(p.taper[t]).every(e=>e.mode==='none'));
  if(p.renderer==='continuous'&&!solid)throw Error('continuous material requires round solid size-only dynamics');
  const image=id=>{const r=p.resources[id];if(!r)return undefined;return {width:r.width,height:r.height,alpha:r.alpha.map(v=>Math.round(v*255)/255)};};
  const out={...copy(baseLegacy),id:p.id,name:p.name,category:p.category,purpose:p.purpose,size:p.size,opacity:p.opacity,flow:p.flow,spacing:solid?.09:Math.max(.01,Math.min(4,p.spacing.unit==='relative'?p.spacing.value:p.spacing.value/p.size)),rotation:p.tip.angle,follow:p.tip.direction,aspect:p.tip.aspect,hardness:p.tip.hardness,tip:p.tip.shape,grain:texture.strength,grainKind:texture.kind,grainScale:texture.scale,grainRotation:texture.rotation,stabilization:p.stabilization.constant,pressureSmoothing:p.pressure.smoothing,pressureCurve:p.pressure.curve,blend:p.blend,color:p.color,exposureMs:p.spacing.exposureMs,mappings:solid?p.dynamics.map(m=>({...m,source:'pressure',curve:linear})):[]};
  if(out.tip==='mask')out.mask=image(p.tip.resource);if(texture.kind==='image')out.texture=image(texture.resource);
  // Validate the compatibility surface before adding private renderer metadata.
  const forValidation={...out,mappings:[]};validatePreset(forValidation);
- out.__foundation={version:1,preset:p,context:copy(context),solid,material:!solid,texture,opacity:p.paint==='saturated'?p.opacity:1};return out;
+ out.__foundation={version:1,preset:p,context:copy(context),solid,material:!solid,texture,opacity:solid?1:p.paint==='saturated'?p.opacity:1};return out;
 }
 function sourceValue(m,q,speed,dir,distance,time,seed,index){
- const raw={pressure:q.valid&1?q.p:(m.fallback??q.p),velocity:speed,tilt:q.valid&2?q.tilt:(m.fallback??0),azimuth:q.valid&4?((q.azimuth%tau+tau)%tau):((m.fallback??0)*tau),twist:q.valid&8?((q.twist%tau+tau)%tau):((m.fallback??0)*tau),direction:(dir+tau)%tau,distance,time,random:random(seed,index,100+pseudoStream(m))}[m.source];
+ let raw;switch(m.source){case 'pressure':raw=q.valid&1?q.p:(m.fallback??q.p);break;case 'velocity':raw=speed;break;case 'tilt':raw=q.valid&2?q.tilt:(m.fallback??0);break;case 'azimuth':raw=q.valid&4?((q.azimuth%tau+tau)%tau):((m.fallback??0)*tau);break;case 'twist':raw=q.valid&8?((q.twist%tau+tau)%tau):((m.fallback??0)*tau);break;case 'direction':raw=(dir+tau)%tau;break;case 'distance':raw=distance;break;case 'time':raw=time;break;case 'random':raw=random(seed,index,100+pseudoStream(m));break;}
  const ranges={pressure:[0,1],velocity:[0,1500],tilt:[0,1],azimuth:[0,tau],twist:[0,tau],direction:[0,tau],distance:[0,500],time:[0,1000],random:[0,1]},r=m.input??ranges[m.source];let v=(raw-r[0])/(r[1]-r[0]);if(m.repeat)v=(v%1+1)%1;return m.min+(m.max-m.min)*curve(m.curve,v);
 }
 function pseudoStream(m){return targets.indexOf(m.target)*16+sources.indexOf(m.source);}
 function envelope(e,phase,q,distance,time,context){if(e.mode==='none')return 1;let v=1;const x=e.unit==='time'?time:distance;if(phase==='start')v=e.length?x/e.length:1;else if(e.mode==='pressure')v=q.valid&1?q.p:1;else if(e.mode==='fade')v=e.length?1-x/e.length:0;else{const total=context[e.unit==='time'?'knownDuration':'knownLength'];v=e.length?(total-x)/e.length:1;}return e.minimum+(1-e.minimum)*curve(e.curve,clamp(v));}
-export function evaluateDynamics(q,renderPreset,index,seed,distance,speed,direction,time){
+export function evaluateDynamics(q,renderPreset,index,seed,distance,speed,direction,time,applyEnvelopes=true){
  const f=renderPreset.__foundation,p=f.preset,values={size:p.size,opacity:1,flow:p.flow,spacing:p.spacing.value,rotation:p.tip.angle+(p.tip.direction?direction:0)+(p.tip.azimuth&&q.valid&4?q.azimuth:0)+(p.tip.twist&&q.valid&8?q.twist:0),aspect:p.tip.aspect,scatter:p.scatter.radius,density:p.scatter.density,grain:f.texture.strength,hue:0,saturation:1,value:1};
  for(const m of p.dynamics){const n=sourceValue(m,q,speed,direction,distance,time,seed,index);values[m.target]=m.mode==='multiply'?values[m.target]*n:m.mode==='add'?values[m.target]+n:n;}
  for(let i=0;i<p.random.length;i++){const r=p.random[i];if(r.target==='position')continue;const n=(random(seed,index,400+i)*2-1)*r.amount;values[r.target]=['rotation','hue'].includes(r.target)?values[r.target]+n:values[r.target]*(1+n);}
- for(const target of Object.keys(p.taper))for(const phase of ['start','end'])values[target]*=envelope(p.taper[target][phase],phase,q,distance,time,f.context);
+ if(applyEnvelopes)for(const target of Object.keys(p.taper))for(const phase of ['start','end'])values[target]*=envelope(p.taper[target][phase],phase,q,distance,time,f.context);
  values.size=clamp(values.size,...p.limits.size);values.opacity=clamp(values.opacity,...p.limits.opacity);values.flow=clamp(values.flow,...p.limits.flow);values.grain=clamp(values.grain);values.aspect=clamp(values.aspect,.01,1);
  values.spacing=clamp(p.spacing.unit==='relative'?values.spacing*values.size:values.spacing,p.spacing.minimum,p.spacing.maximum);
  if(p.paint==='build-up')values.opacity*=p.opacity;
@@ -96,7 +96,7 @@ export function foundationDabs(q,p,index,seed,distance,speed,dir,time){
  const particle=b.scatter.enabled,count=particle?Math.max(1,Math.min(64,Math.round(v.density))):1,dabs=[];
  for(let j=0;j<count;j++){
   const size=particle?(b.scatter.sizeMode==='absolute'?b.scatter.particleSize:b.scatter.particleSize*v.size):v.size;
-  const settings={...p,size,aspect:v.aspect,rotation:v.rotation,follow:false,opacity:f.solid?p.opacity:v.opacity,flow:v.flow,grain:v.grain,mappings:[{source:'pressure',target:'hue',mode:'replace',min:v.hue,max:v.hue,curve:linear},{source:'pressure',target:'saturation',mode:'replace',min:v.saturation,max:v.saturation,curve:linear},{source:'pressure',target:'value',mode:'replace',min:v.value,max:v.value,curve:linear}]};
+  const settings={...p,size,aspect:v.aspect,rotation:v.rotation,follow:false,opacity:f.solid?p.opacity:v.opacity,flow:v.flow,grain:v.grain,mappings:v.hue===0&&v.saturation===1&&v.value===1?[]:[{source:'pressure',target:'hue',mode:'replace',min:v.hue,max:v.hue,curve:linear},{source:'pressure',target:'saturation',mode:'replace',min:v.saturation,max:v.saturation,curve:linear},{source:'pressure',target:'value',mode:'replace',min:v.value,max:v.value,curve:linear}]};
   const d=makeDab(q,settings,index+j,seed,distance,speed,dir,time);d[14]=v.spacing/Math.max(.01,size);
   const r=stream=>random(seed,index+j,stream),position=b.random.find(a=>a.target==='position')?.amount??0;
   if(particle){const angle=r(700)*tau,u=r(701),exponent=b.scatter.bias>=0?.5+b.scatter.bias*3:.5/(1-b.scatter.bias*3),radius=(b.scatter.radiusMode==='absolute'?v.scatter:v.scatter*v.size)*u**exponent;d[0]+=Math.cos(angle)*radius;d[1]+=Math.sin(angle)*radius;if(b.scatter.rotation==='direction')d[4]+=dir;else if(b.scatter.rotation==='center')d[4]+=angle+Math.PI;}
@@ -106,17 +106,17 @@ export function foundationDabs(q,p,index,seed,distance,speed,dir,time){
 }
 /** Prediction uses actual points only; browser endpoints pass the same safety gate. */
 export function predictFoundation(points,now,browser,preset){
- const p=preset.__foundation.preset.prediction;if(!p.enabled||!p.horizon||!p.maxDistance)return null;const b=points.at(-1),a=points.at(-2),c=points.at(-3);if(!c||now-b.t>Math.min(20,p.horizon*2)||b.valid&1&&b.p<.15)return null;
+ const p=preset.__foundation.preset.prediction;if(!p.enabled||!p.horizon||!p.maxDistance||preset.__foundation.preset.scatter.enabled)return null;const b=points.at(-1),a=points.at(-2),c=points.at(-3);if(!c||now-b.t>Math.min(20,p.horizon*2)||b.valid&1&&b.p<.15)return null;
  const dt=b.t-a.t,prior=a.t-c.t;if(dt<=0||dt>40||prior<=0)return null;
  const vx=(b.x-a.x)/dt,vy=(b.y-a.y)/dt,speed=Math.hypot(vx,vy),ux=(a.x-c.x)/prior,uy=(a.y-c.y)/prior,previous=Math.hypot(ux,uy),cos=(ux*vx+uy*vy)/Math.max(1e-9,previous*speed);
  if(speed<.05||previous<.05||cos<p.turnCos||speed<previous*.7||speed>previous*1.5)return null;
- let next=p.source!=='linear'?browser.find(v=>v.t>b.t&&v.t-b.t<=p.horizon):null;if(!next&&p.source==='browser')return null;
+ let next=p.source!=='linear'?browser.find(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.t)&&v.t>b.t&&v.t-b.t<=p.horizon):null;if(!next&&p.source==='browser')return null;
  const h=Math.min(p.horizon,Math.max(0,now-b.t+2));next??={x:b.x+vx*h,y:b.y+vy*h,t:b.t+h};const dx=next.x-b.x,dy=next.y-b.y,d=Math.hypot(dx,dy);if(!d||(dx*vx+dy*vy)/(d*speed)<p.turnCos)return null;
  // Prediction never changes pressure, thickness or material state; max 0.75px by default.
  const limit=Math.min(p.maxDistance,speed*p.horizon);return {...b,x:b.x+dx*Math.min(1,limit/d),y:b.y+dy*Math.min(1,limit/d),t:next.t,predicted:true};
 }
 export function captureInput(e,transform=(x,y)=>[x,y],capabilities={},origin='raw'){
- const samples=e.getCoalescedEvents?.()??[],events=samples.length?samples:[e];return events.map(v=>{const [x,y]=transform(v.clientX,v.clientY);return {x,y,t:v.timeStamp,pressure:v.pressure,pointerType:v.pointerType,origin:samples.length?'coalesced':origin,...(capabilities.tilt?{tilt:Math.min(1,Math.hypot(v.tiltX??0,v.tiltY??0)/90)}:{}),...(capabilities.azimuth?{azimuth:v.azimuthAngle}:{}),...(capabilities.twist?{twist:(v.twist??0)*Math.PI/180}:{})};});
+ const samples=e.getCoalescedEvents?.()??[],events=samples.length?samples:[e];return events.map(v=>{const [x,y]=transform(v.clientX,v.clientY);return {x,y,t:v.timeStamp,pressure:v.pressure,pointerType:v.pointerType,origin:origin==='predicted'?'predicted':samples.length?'coalesced':origin,...(origin==='predicted'?{predicted:true}:{}),...(capabilities.tilt?{tilt:Math.min(1,Math.hypot(v.tiltX??0,v.tiltY??0)/90)}:{}),...(capabilities.azimuth?{azimuth:v.azimuthAngle}:{}),...(capabilities.twist?{twist:(v.twist??0)*Math.PI/180}:{})};});
 }
 /** Saved settings and temporary overrides are separate; select never edits saved values. */
 export class PresetState {
@@ -128,7 +128,7 @@ export class PresetState {
 }
 export function exportPresets(presets){presets.forEach(validateFoundation);return JSON.stringify({format:'illustro-brush-pack',version:1,presets},null,2);}
 export function importPresets(json){if(typeof json!=='string'||json.length>32*1024*1024)throw Error('invalid brush pack');const pack=JSON.parse(json);keys(pack,['format','version','presets'],'brush pack');if(pack.format!=='illustro-brush-pack'||pack.version!==1||!Array.isArray(pack.presets)||pack.presets.length>256)throw Error('unsupported brush pack');const ids=new Set;for(const p of pack.presets){validateFoundation(p);if(ids.has(p.id))throw Error('duplicate brush');ids.add(p.id);}return copy(pack.presets);}
-export function cursorState(preset,sample,context={}){const p=compilePreset(preset,context),q=normalize(sample);q.p=curve(p.pressureCurve,curve(p.__foundation.preset.pressure.deviceCurve,q.p));const v=evaluateDynamics(q,p,0,[0,0],0,0,0,0);return {shape:p.tip,resource:p.__foundation.preset.tip.resource,size:v.size,aspect:v.aspect,rotation:v.rotation,color:[...p.color],opacity:p.opacity*v.opacity,barrelRoll:q.valid&8?q.twist:null};}
+export function cursorState(preset,sample,context={}){const p=compilePreset(preset,context),q=normalize(sample);q.p=curve(p.pressureCurve,curve(p.__foundation.preset.pressure.deviceCurve,q.p));const v=evaluateDynamics(q,p,0,[0,0],0,0,0,0,false);return {shape:p.tip,resource:p.__foundation.preset.tip.resource,size:v.size,aspect:v.aspect,rotation:v.rotation,color:[...p.color],opacity:p.opacity*v.opacity,barrelRoll:q.valid&8?q.twist:null};}
 export function geometryContext(samples){const points=samples.map(normalize);let distance=0;for(let i=1;i<points.length;i++)distance+=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);return {knownLength:distance,knownDuration:points.length?points.at(-1).t-points[0].t:0};}
 /** Explicit edit operation. It does not run on pointerup or mutate saved artwork. */
 export function correctGeometry(samples,strength=0){finite(strength,0,1,'post correction');samples.forEach(normalize);return samples.map((s,i)=>{if(!i||i===samples.length-1)return {...s};const a=samples[i-1],b=samples[i+1],dx=(a.x+b.x)*.5-s.x,dy=(a.y+b.y)*.5-s.y,scale=Math.min(strength,1/Math.max(1,Math.hypot(dx,dy)));return {...s,x:s.x+dx*scale,y:s.y+dy*scale};});}
@@ -151,3 +151,5 @@ export const referenceBrushes=[
  createPreset('foundation-hard-eraser','硬い消しゴム',{size:128,blend:'erase',purpose:'丸い輪郭で消す。線画と同じ連続描画を使います。'}),
  createPreset('foundation-soft-eraser','柔らかい消しゴム',{size:128,blend:'erase',renderer:'soft',tip:{hardness:.05},flow:.22,spacing:{value:.12},purpose:'柔らかい輪郭で少しずつ消す。'}),
 ];
+
+export function interpolateAngle(a,b,f){return a+((b-a+Math.PI)%tau+tau)%tau*f-Math.PI*f;}
