@@ -1,38 +1,48 @@
-# Validation and promotion gates
+# 検証と本番採用条件
 
-Status: **production incomplete**. Old brush-lab PASS reports are not evidence for this engine.
+**状態：本番採用は未完了。** 旧brush-labのPASSは、この新エンジンの成功根拠にしていません。
 
-## Executed evidence
+## 実行済みの検証
 
-- Local original candidate:15 new Node tests passed. Later local additions also ran before the execution environment disconnected; the preserved local log is not treated as evidence for unexecuted revisions.
-- CI run37040087180:20 Node tests passed. Both shader backends, mouse input, canonical Undo/Redo and all56 final reference cases executed. The GPU latency/drain gate failed.
-- CI run37043019906, tree2ed147bfc7ffee1be96b1a28f24d0d86ec507add:24 Node tests passed. Both backends compiled and exercised all56 presets and blends. Hard-ellipse/reference transparency fixes removed earlier failures. Confetti had alpha0↔1 numerical quantization with large straight-RGB difference under alpha1. Ten WebGL2 live-before-confirmed cases were within the original pixel gate. WebGPU Canvas2D readback observed a discarded presentation buffer, so that diagnostic is replaced with explicitly labeled persistent GPU viewport readback.
-- The same run failed wide-brush sustained proxy gates and final-drain timeouts. Neither a narrow-brush proxy pass nor successful shader compilation establishes low physical latency.
-- Latest archive/scissor/persistent-readback revision is being tested in a new CI run. Do not infer its verdict from the preceding24 tests.
+| 対象 | 確認したこと | 限界 |
+|---|---|---|
+| Node34項目 | 全56Presetの再生、全実入力保持、予測の保存禁止、センサー、距離／時間Stamp、Undo用記録、入力頻度別補正、表示容量1、間隔、帯の境界 | GPUや実際の画面遅延は測らない |
+| CI37049012748／aef36b62 | 両GPUの56Preset最終画像、10種類の正式描画前画像、512／1024px画像、12線形状、blend、archive | WebGL2は14の累積proxy試験PASS、WebGPUは太線等でFAIL |
+| CI37083561667／546f9857 | 上記＋点状ブラシ45／46の隙間を独立に確認。両GPUの画像ゲートPASS、33 Node PASS | WebGL2は14 proxy PASS、WebGPUは5試験FAIL |
+| 180秒GPU試験 | 両backendで実時間180秒、1024px／240Hz、43200入力を保持して完走 | 繰り返す経路は覆い済み領域が増える。新しい領域への追従をこれだけで証明できない |
+| 専用capsule shader／可変分割数 | 34 Node PASS。新たなGPU試行で確認中 | 前のPASSを、この変更の画像／速度の証拠にしない |
 
-Evidence summaries in `evidence/run-*-summary.json` retain failed results. Full artifacts include samples, console logs and screenshots. Check the commit/tree and document dimensions before comparing iterations.
+具体的な失敗を含むJSONを`evidence/run-*-results.json`、過去の要約を`evidence/run-*-summary.json`へ残します。完全なCI成果物にはフレームごとの代用値、ログ、スクリーンショットがあります。
 
-## What the measurements mean
+## 計測の意味
 
-`inputAge`: completion time minus the actual timestamp represented by the completed preview tip. `rawDistance`: current raw input versus that preview centerline. `previewQueueAge`: age of the latest pending feedback snapshot. `oldestQueueAge`: oldest non-elided confirmed work. `confirmedLag`: latest preview input versus the older of known canonical time and unfinished confirmed time. Obsolete feedback is counted separately; it need not be zero.
-
-These are GPU completion/geometry **proxies**, not proof of compositor presentation or the optically visible outline. Viewport readback validates pixels copied for display, not photons. Screenshots and input synthesis cannot establish a real stylus's prediction behavior.
-
-Final reference comparison retains raw RGBA errors. Alpha always keeps the3-unit gate. RGB with either alpha<8 uses a premultiplied visual comparison; other RGB keeps the original straight3-unit gate. This distinguishes low-alpha numerical quantization from meaningful density/shape/color errors without raising the threshold. Preview viewport comparison uses premultiplied RGBA.
-
-## Production requirements still open
-
-| Gate | State / limit |
+| 値 | 意味 |
 |---|---|
-| 512/1024px cumulative live latency | Earlier full-size software runs FAIL. Latest targeted revision requires new evidence; physical hardware is unverified. |
-| Actual pen-to-visible-tip | UNVERIFIED. Requires GPU + pen trials, ideally filmed initial/final seconds. |
-| All-preset live→confirmed fidelity | Constant-opacity/pigment density path has new coverage; variable opacity/pigment remains approximate. No all-preset human transition PASS. |
-| Many ended strokes behind formal stall | New bounded GPU archive replaces the old four-stroke hard error. Twelve-stroke stalled-formal pixel/record test added; GPU outcome pending. |
-| All final pixels | New v2.2 reference comparison is implemented. Eligible capsules and hard-ellipse AA are intentional semantic/AA changes; old v1 visual identity is not asserted. |
-| Long GPU run |180s real-wall-clock test exists; earlier attempts failed preceding drain gates. Completion/result must be inspected, not inferred from synthetic180s Node tests. |
-| 4K, 4096px brushes, many layers, memory pressure | Full-resolution sparse tiles + bounded viewport exist. Multi-layer adapter, eviction/spill and hardware pressure tests remain open;1024 confirmed tile cap. |
-| Device/context loss | Error surfaced and canonical data retained; automatic renderer recreation/replay not yet wired. |
-| Core integration | Buildable typed package surface exists; product layer/history/save adapter still required. |
-| ibis/CSP advantage | No matched-device comparison; no superiority claim. |
+| inputAge | GPU完了時刻－表示用の描かれた先端を支える実入力時刻。予測の未来時刻で小さく見せない |
+| latestInputAge | GPU完了時刻－最新実入力時刻。間隔の広いStampの入力時刻と区別 |
+| visible-tip distance相当 | 最新raw位置－実際の描画命令の先端中心。空のカーソル位置を先端としない |
+| previewQueueAge | 未送信の最新表示状態がどれだけ古いか |
+| queue age | 正式描画の未処理仕事の最古入力の古さ |
+| obsolete preview count | 最新状態に置き換えた表示回数。多いことだけで失敗としない |
+| confirmed lag | 最新実入力と、Worker到着・正式描画の未処理時刻の差 |
 
-Human checks on the page use ordinary Japanese: does the tip separate, does lag grow, does a512px line start chasing, does a direction change leave a strange line, does lifting jump? Record device/stylus/browser/settings and observations separately from software proxies.
+**これらはGPU完了・幾何形状の代用値です。画面に出た時刻、輪郭の実測、pen-to-photonではありません。** GPU viewport readbackは表示へコピーする画素の検証であり、ブラウザの表示完了を証明しません。Headlessの予測API存在と、実際のペンから予測点が返ることも別です。
+
+最終画像はαを直接3/255以内で比較します。αが8未満のRGBはpremultiplied値を比較し、他のRGBは元の3/255を維持します。raw RGBA差も保存します。Confettiのα0↔1差・透明下RGB差は数値差として記録し、目に見える大きな形／濃さの差を隠しません。
+
+## 残る条件
+
+| 本番採用条件 | 状態 |
+|---|---|
+| 512／1024pxで累積しない表示 | WebGL2のソフトウェアproxyは複数回PASS。WebGPUはFAIL例あり。実GPUは未確認 |
+| 実GPU・実ペンでの追従 | 未確認。ソフトウェアの絶対遅延には数百msの例もあり、合格扱いにしない |
+| 複雑ブラシのlive→confirmed | 一定opacity／pigmentの10種類は画像確認済み。変化するopacity／pigmentはlive近似であり、全56本の置換の描き味は未確認 |
+| 正式描画を止めても最新表示 | 容量1＋GPU送信1の構造と、12線／96実入力／正式描画48jobs待ちのarchive画像を確認 |
+| 正式描画・保存・Undo | 両GPUの56Presetと4blend、canonical Undo／Redo、再生・改ざん拒否を確認。古い方式との完全な見た目同一は主張しない |
+| 長時間 | 両GPUの180秒試験を実行。最初／最後1秒だけでなく途中の最大値・入力生成遅れも保存 |
+| 4K／4096px／多数レイヤー／メモリ圧迫 | full-resolution sparse tilesとviewport上限は実装。自動退避、多数レイヤー接続、実機負荷は未確認。正式tileは1024個上限 |
+| GPU喪失からの復帰 | エラー表示とcanonical記録保持は実装。rendererの自動再生成・再生は未実装 |
+| 本体への組込み | build可能な型付きAPIを提供。本体のlayer／history／save adapterは未実装 |
+| ibisPaint／CSPとの実機比較 | 同条件比較は未実施。速さ・描き味の優位性を主張しない |
+
+実機では「ペン先から線が離れませんか」「続けるとだんだん遅れませんか」「512pxで途中から追いかけてきませんか」「折り返しで変な線が残りませんか」「離すと跳ねませんか」を確認し、端末・ペン・ブラウザ・設定と一緒に記録してください。
