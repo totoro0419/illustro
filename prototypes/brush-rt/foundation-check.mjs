@@ -26,7 +26,7 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
  }
  // Image tip, rotated/relative/inverted filtered texture, variable color and scatter.
  await fresh(512);
- for(const variant of ['mask','texture','scatter','color','phase','absolute','build-up']){
+ for(const variant of ['mask','texture','scatter','color','phase','absolute','build-up','airbrush-contract','image-pattern-contract']){
   const value=await page.evaluate(async variant=>{
    const {createPreset}=await import('@rt/foundation'),{session,renderer}=window.__rt;session.records=[];await session.rebuild();renderer.confirmDelay=Infinity;session.prediction=false;
    const p=createPreset('advanced-'+variant,variant,{renderer:'stamp',size:24,opacity:.6,flow:.4});
@@ -37,7 +37,9 @@ export async function verifyFoundation(page,r,checkpoint,fresh,benchmark){
    if(variant==='phase'){p.taper.opacity.start={mode:'ramp',unit:'distance',length:10,minimum:.1,curve:[[0,0],[1,1]]};p.taper.flow.end={mode:'fade',unit:'distance',length:80,minimum:.1,curve:[[0,0],[1,1]]};}
    if(variant==='build-up')p.paint='build-up';
    if(variant==='absolute')p.spacing={...p.spacing,unit:'absolute',value:4};
-   session.begin(p);const t=performance.now();for(let i=0;i<16;i++)session.accept({x:50+i*5,y:100+Math.sin(i/4)*10,t:t+i*5,pressure:i<8?.2:.9,pointerType:'pen'});await session.end();const deadline=performance.now()+30000,revision=renderer.mailbox.revision;while(!renderer.completions.some(m=>m.revision>=revision)){if(performance.now()>deadline)throw Error('advanced live timeout');await new Promise(r=>requestAnimationFrame(r));}const live=await window.__rt.compareLive();renderer.confirmDelay=0;return {variant,live,final:await window.__rt.compare()};
+   if(variant==='airbrush-contract'){p.paint='build-up';p.flow=.05;p.tip.hardness=0;p.spacing.exposureMs=5;}
+   if(variant==='image-pattern-contract'){p.tip={...p.tip,shape:'mask',resource:'mask',direction:true,aspect:.6};p.resources.mask={kind:'mask',width:4,height:4,alpha:Array.from({length:16},(_,i)=>i%3?1:0)};p.texture.paper={...p.texture.paper,kind:'hatch',strength:.5,scale:3};p.scatter={...p.scatter,enabled:true,density:3,radius:.3,particleSize:.5};p.random=[{target:'rotation',amount:.5},{target:'hue',amount:.1}];}
+   session.begin(p);const t=performance.now();for(let i=0;i<16;i++)session.accept({x:variant==='airbrush-contract'?80:50+i*5,y:variant==='airbrush-contract'?100:100+Math.sin(i/4)*10,t:t+i*5,pressure:i<8?.2:.9,pointerType:'pen'});await session.end();const deadline=performance.now()+30000,revision=renderer.mailbox.revision;while(!renderer.completions.some(m=>m.revision>=revision)){if(performance.now()>deadline)throw Error('advanced live timeout');await new Promise(r=>requestAnimationFrame(r));}const live=await window.__rt.compareLive();renderer.confirmDelay=0;return {variant,live,final:await window.__rt.compare()};
   },variant);r.checks.push({name:'foundation-advanced-'+variant,...value});await checkpoint();if(value.live.channelsOver3||value.final.visualChannelsOver3)r.previewDifferences=(r.previewDifferences??[]).concat(value);
  }
  // Repeat small curves and rapid taps/2px/5px strokes on the new Foundation,
