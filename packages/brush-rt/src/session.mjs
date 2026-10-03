@@ -21,8 +21,8 @@ export class RealtimeSession {
  flush(){if(this.pending.length&&this.active){this.worker.postMessage({type:'samples',id:this.active.id,samples:this.pending});this.pending=[];}}
  // Actual input already publishes its complete current appearance in accept().
  // Only a time-dependent prediction needs a new notification between inputs.
- // Preserve the legacy session's publication cadence.
- frame(now){this.flush();const a=this.active;if(!a?.builder.foundation||this.prediction&&a.preset.__foundation.preset.prediction.enabled)this.updateLive(now);return this.renderer.frame(now);}
+ // Preserve WebGL2 and legacy publication cadence.
+ frame(now){this.flush();const a=this.active;if(!this.renderer.backend?.immediatePreview||!a?.builder.foundation||this.prediction&&a.preset.__foundation.preset.prediction.enabled)this.updateLive(now);return this.renderer.frame(now);}
  updateLive(now,finished=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
   const total=b.distance,tail=b.commands.slice(b.published).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
   const q=this.prediction&&!finished?(b.foundation?predictFoundation(a.points.slice(-3),now,a.predicted,p):predict(a.points.slice(-3),now,a.predicted)):null;

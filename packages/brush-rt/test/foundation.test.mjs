@@ -51,10 +51,10 @@ for(const source of [referenceBrushes[0],referenceBrushes[3],referenceBrushes[5]
 
 // A notification without changed artwork can make RAF submit an old tip just
 // before the actual input batch, needlessly occupying the only GPU slot.
-test('Foundation without prediction publishes changed input, not identical RAF notifications',()=>{
+test('WebGPU Foundation without prediction publishes changed input, not identical RAF notifications',()=>{
  const PreviousWorker=globalThis.Worker;globalThis.Worker=class{postMessage(){}terminate(){}};
  try{for(const source of referenceBrushes){
-  const snapshots=[],backend={setLive:s=>snapshots.push(s),frame:()=>false,destroy(){}};const session=new RealtimeSession(backend);
+  const snapshots=[],backend={backend:{immediatePreview:true},setLive:s=>snapshots.push(s),frame:()=>false,destroy(){}};const session=new RealtimeSession(backend);
   session.begin(source);session.accept({...point(20,0),y:30});
   for(let i=1;i<20;i++)session.frame(i);assert.equal(snapshots.length,1,source.id);
   session.accept({...point(21,20),y:31});session.frame(21);assert.equal(snapshots.length,2,source.id);assert.equal(session.active.raw.length,2);
@@ -65,4 +65,12 @@ test('Foundation without prediction publishes changed input, not identical RAF n
 test("committed artwork gets a viewport pass without pending live feedback",()=>{
  assert.deepEqual(previewBatches({archivedThrough:-1},[]),[{states:[],archive:false}]);
  assert.deepEqual(previewBatches({archivedThrough:2},[{id:1,finished:true},{id:2,finished:true}]),[{states:[],archive:false}]);
+});
+
+test('WebGL2 Foundation keeps the accepted RAF publication cadence',()=>{
+ const PreviousWorker=globalThis.Worker;globalThis.Worker=class{postMessage(){}terminate(){}};
+ try{const snapshots=[],renderer={backend:{immediatePreview:false},setLive:s=>snapshots.push(s),frame:()=>false,destroy(){}};
+ const session=new RealtimeSession(renderer);session.begin(referenceBrushes[4]);session.accept(point(20,0));session.frame(1);session.frame(2);
+ assert.equal(snapshots.length,3);assert.equal(session.active.raw.length,1);session.destroy();
+ }finally{globalThis.Worker=PreviousWorker;}
 });
