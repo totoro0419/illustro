@@ -46,7 +46,7 @@ This review was completed before changing the three user-reported brush-quality 
 
 | Problem | CLIP STUDIO PAINT | ibisPaint | Procreate | Krita | Illustro decision |
 |---|---|---|---|---|---|
-| G-pen start/end | Brush Size dynamics are separate from Starting/Ending; Starting/Ending can change brush size/density to a minimum value. | Thickness Start/End and pressure-driven Thickness are separate; Force Fade Out is exposed. | Pressure Size is separate from Pressure Taper; taper exposes Size, Pressure and Tip controls. | Size can be pressure/sensor driven; Distance/Time/Fade sensors are separate controls. | Keep pressure→size, add an independent causal start ramp and a bounded release-tail size taper. |
+| G-pen start/end | Brush Size dynamics are separate from Starting/Ending; Starting/Ending can change brush size/density to a minimum value. | Brush Fade exposes start/end thickness and opacity plus Force Fade Out; Stabilizer Force Fade is a separate system. | Pressure Size is separate from Pressure Taper; taper exposes Size, Pressure and Tip controls. | Size can be pressure/sensor driven; Distance/Time/Fade sensors are separate controls. | Keep live pressure dynamics separate from brush fade, and model Stabilizer Force Fade as a post-stroke operation using final stroke length. |
 | Wide-line tip / round marks | Stroke interval is explicit; tighter intervals are smoother but heavier. | “Max Spacing for 30 px Thick” explicitly reduces visible brush-pattern artifacts on line brushes such as Dip Pen. | Stroke Path spacing controls whether individual Shape stamps are visible or merge into a fluid stroke. | Pixel Brush is dab based; spacing plus Smooth Lines/Auto Spacing are exposed for inking quality. | Do not solve by spacing alone. Continuous ink keeps its accepted path renderer and additionally limits diameter change per travelled pixel so a single large sample cannot appear as an isolated round lobe. |
 | Pencil density | Texture and brush density are distinct from opacity/size dynamics. | Pattern/opacity/dynamics are distinct controls. | Pencil library explicitly uses unique paper textures; Apple Pencil pressure can control Size, Opacity and Flow, and Grain is a separate brush component. | Opacity is whole-stroke transparency while Flow is per-dab transparency; Texture is separate and build-up behavior is explicit. | Remove pressure→whole-stroke opacity from the reference pencil. Use pressure→deposit flow plus stronger low-pressure grain modulation so weak pressure is visibly particulate rather than only transparent gray. |
 
@@ -60,6 +60,24 @@ Primary sources:
 
 The existing continuous G-pen command already interpolates radius between input positions, but a sudden diameter jump can still expose a large round endpoint around a sample. Illustro therefore adds a general preset parameter, `pressure.sizeSlope`, which caps diameter change by travelled distance. The G-pen value is below the geometric threshold where radius can grow faster than path length, while other brushes remain unchanged by the default value `0`.
 
-The artificial ending is deliberately bounded by time (64 ms) rather than by brush diameter. Only that recent tail stays provisional and visible in the live overlay; older commands keep the already accepted formal path. At release, only the provisional tail is narrowed. This avoids a whole-stroke redraw and prevents the cost of a very large brush from reserving a proportionally huge path.
+The previous 64 ms release-tail interpretation was rejected after deeper ibisPaint research. ibisPaint documents brush Fade (start/end thickness/opacity and brush-side Force Fade Out) separately from Stabilizer Force Fade. The latter has start/end length controls and current versions allow it to be stored per brush. Therefore Illustro keeps pressure and brush fade live, but applies Force Fade only after stroke length is known; it may intentionally rewrite a broad part of a stroke on pointer-up. Exact ibis interpolation math is not public and is not claimed.
 
 The reference pencil keeps continuous sweep rendering for the accepted large-brush performance path. Its low-pressure appearance now combines lower deposit flow with stronger deterministic grain. This is intentionally not described as a copy of any proprietary pencil algorithm.
+
+
+## ibisPaint forced in/out deep review — 2026-10-04
+
+Only public ibisPaint documentation and release notes are treated as authority here. No private interpolation formula is inferred.
+
+- Brush parameters and Stabilizer Force Fade are separate systems. The brush Fade tab exposes start/end thickness and opacity and a brush-side Force Fade Out. The Dynamic tab independently maps speed/pressure to thickness, opacity and blur. Source: https://ibispaint.com/lecture/index.jsp?lang=ja&no=118
+- ibisPaint explicitly supports a line-brush option that caps spacing at the value for 30 px thickness to reduce visible brush-pattern units at 30 px and above. This is a spacing rule, not evidence that G-pen maximum selectable thickness is 30 px. Illustro's 30 px G-pen UI maximum is a project choice.
+- ibisPaint 6.0.0 raised start/end thickness and opacity upper limits to 200%, allowing endpoint ink-pooling/thickening. Source: https://ibispaint.com/historyAndRights.jsp?lang=ja&newsID=9733003
+- ibisPaint release notes document a touch-up bug where, with pre-correction and brush Force Fade Out, most of a stroke could incorrectly become the start thickness. The bug is not copied, but it confirms endpoint finalization can interact with a broad portion of the stroke. Source: https://ibispaint.com/historyAndRights.jsp?lang=ja&newsID=13065392
+- ibisPaint 14.1.0 (2026-09-07) added per-brush Stabilizer and Force Fade customization, Constant/Fast Strokes real-time stabilization modes, improved tracking/fade-length consistency, and Fade Start Time / Fade End Time parameters. Source: https://ibispaint.com/historyAndRights.jsp?newsID=303340270
+- The exact internal curve, time/distance normalization, prediction filter and rendering schedule are not public. Illustro therefore adopts the documented behavioral contract, not a claimed code-level replica.
+
+Illustro representation:
+- `taper`: brush-intrinsic endpoint behavior. Thickness ratios may be 0–200%.
+- `forceFade`: separate per-brush/common finalization setting. `start` and `end` are 0–100% fractions of final stroke length and are applied after pointer-up.
+- pressure/velocity dynamics remain live and independent.
+- G-pen defaults (`start=12%`, `end=40%`) are Illustro defaults, not published ibis defaults.

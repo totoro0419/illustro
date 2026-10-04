@@ -34,9 +34,14 @@ Current builtin limitations are explicit: one active texture layer, mono materia
 Save compatibility: the original `soft` renderer keeps its ordered stamp semantics. Continuous soft/pencil fields use the newly added `sweep` ID, so existing version-3 presets/strokes are not reinterpreted. The archived seven-brush fixture comes from source b18e2b0 and must regenerate exactly.
 
 
-Release-tail rule: a size taper with `end.mode:"release"` keeps only the configured recent time/distance window provisional. It remains visible in live feedback, is not committed early, and is narrowed only when the stroke ends. Already published commands are immutable. Continuous ink can set `pressure.sizeSlope` (diameter change per travelled pixel, 0 = disabled); this applies to actual and predicted geometry and is replay deterministic.
+Brush fade and forced in/out are separate contracts.
 
-Release-tail display rule: forced release is an endpoint effect. While the pen remains down, the current endpoint is not treated as finished and the still-uncommitted tail is shown with ordinary pressure-driven geometry. After pointer-up, finalization applies forced release only to the bounded recent tail. Natural pressure thinning remains live.
+- Brush fade lives in `taper`. It can affect size/opacity/flow/grain during ordinary stroke generation. For size and opacity, endpoint ratios may extend to 200% so an endpoint may be thinner or thicker than the base value. The legacy `end.mode:"release"` remains readable for old presets and can coexist with the new force-fade finalizer.
+- Stabilizer-style forced in/out lives in `forceFade`. `start` and `end` are fractions of the final stroke length from 0 to 1. It is evaluated only after pointer-up, because the final stroke length is then known. A 100% ending is allowed to alter a broad portion of the visible stroke; that change at pointer-up is intentional.
+- Live pressure/speed dynamics remain live while drawing and are not replaced by forced in/out.
+- A single-point tap is never rewritten by forced in/out. Very short marks keep a non-zero minimum so they remain visible.
+- Legacy records that do not contain `forceFade` keep their exact prior preset shape and replay semantics; compilation must not inject a default field into them.
+- The G-pen reference uses Illustro defaults of 12% forced-in and 40% forced-out. These are project defaults, not asserted ibisPaint defaults.
 
 ## Brush-specific thickness range
 
