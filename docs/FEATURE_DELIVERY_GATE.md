@@ -75,7 +75,7 @@ The feature has defined and verified behavior for relevant:
 The feature passes:
 
 - automated correctness checks;
-- performance/resource checks;
+- performance/resource checks, including the applicable Feature Cost Contract and the cross-feature performance resolution;
 - device-appropriate interaction checks;
 - visual/user-visible verification where result quality is visual;
 - regression checks against affected subsystems.
