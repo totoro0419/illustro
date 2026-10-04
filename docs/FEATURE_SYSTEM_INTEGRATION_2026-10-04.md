@@ -5,6 +5,7 @@
 > Scope: user-facing feature families 1–12, reachability, cross-feature semantics, completion gate
 > Authority: PRODUCT_SPEC > REDESIGN_PRINCIPLES / CREATION_PROXIMITY_PRINCIPLES > accepted Architecture V2 / Interaction specs / UI Gate E > this integration baseline > older draft proposals
 > Important: this document integrates existing accepted decisions. It does not authorize Production implementation by itself.
+> Performance resolution: [architecture/FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md](architecture/FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md) is authoritative for cross-feature lightweight/runtime cost constraints.
 
 ## 0. Purpose
 
