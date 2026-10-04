@@ -35,3 +35,5 @@ Save compatibility: the original `soft` renderer keeps its ordered stamp semanti
 
 
 Release-tail rule: a size taper with `end.mode:"release"` keeps only the configured recent time/distance window provisional. It remains visible in live feedback, is not committed early, and is narrowed only when the stroke ends. Already published commands are immutable. Continuous ink can set `pressure.sizeSlope` (diameter change per travelled pixel, 0 = disabled); this applies to actual and predicted geometry and is replay deterministic.
+
+Release-tail display rule: while drawing, the current endpoint is treated as a provisional endpoint and the same release-tail transform used at finalization is applied only to the still-uncommitted tail. As the stroke advances this tapered window moves forward. Pen-up must therefore not reshape already visible pixels; finalization only freezes the currently visible provisional tail.

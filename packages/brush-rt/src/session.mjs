@@ -1,5 +1,5 @@
 import {foundationDabs,predictFoundation,cursorState,geometryContext} from '@rt/foundation';
-import {CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
+import {CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,previewFoundationReleaseTail,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
 import {makeDab} from '@legacy/dynamics';
 // A predicted stamp is emitted only when the next spatial/time deposit is due.
 // The builder, random index and all canonical input remain unchanged.
@@ -24,7 +24,7 @@ export class RealtimeSession {
  // Preserve WebGL2 and legacy publication cadence.
  frame(now){this.flush();const a=this.active;if(!this.renderer.backend?.immediatePreview||!a?.builder.foundation||this.prediction&&a.preset.__foundation.preset.prediction.enabled)this.updateLive(now);return this.renderer.frame(now);}
  updateLive(now,finished=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
-  const total=b.distance,tail=b.commands.slice(b.published).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
+  const total=b.distance,endTime=b.commands.at(-1)?.[20]??0,releaseTail=!finished?previewFoundationReleaseTail(b.commands,b.published,p,total,endTime):null,tail=releaseTail??b.commands.slice(b.published).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
   const q=this.prediction&&!finished?(b.foundation?predictFoundation(a.points.slice(-3),now,a.predicted,p):predict(a.points.slice(-3),now,a.predicted)):null;
   const predicted=predictedCommand(b,q);if(predicted)tail.push(predicted);
   const inputTip=a.points.at(-1),actual=b.commands.at(-1),drawn=predicted??actual;
