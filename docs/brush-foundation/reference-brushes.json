@@ -326,12 +326,11 @@
       },
       "random": [],
       "resources": {},
-      "extensions": {
-        "uiSizeRange": [
-          0.75,
-          120
-        ]
-      }
+      "extensions": {},
+      "uiSizeRange": [
+        0.75,
+        120
+      ]
     },
     {
       "format": "illustro-brush-preset",
@@ -633,12 +632,11 @@
       },
       "random": [],
       "resources": {},
-      "extensions": {
-        "uiSizeRange": [
-          0.3,
-          60
-        ]
-      }
+      "extensions": {},
+      "uiSizeRange": [
+        0.3,
+        60
+      ]
     },
     {
       "format": "illustro-brush-preset",
@@ -922,12 +920,11 @@
       },
       "random": [],
       "resources": {},
-      "extensions": {
-        "uiSizeRange": [
-          0.3,
-          60
-        ]
-      }
+      "extensions": {},
+      "uiSizeRange": [
+        0.3,
+        60
+      ]
     },
     {
       "format": "illustro-brush-preset",
@@ -1211,12 +1208,11 @@
       },
       "random": [],
       "resources": {},
-      "extensions": {
-        "uiSizeRange": [
-          1,
-          500
-        ]
-      }
+      "extensions": {},
+      "uiSizeRange": [
+        1,
+        500
+      ]
     },
     {
       "format": "illustro-brush-preset",
@@ -1556,12 +1552,11 @@
       },
       "random": [],
       "resources": {},
-      "extensions": {
-        "uiSizeRange": [
-          0.3,
-          120
-        ]
-      }
+      "extensions": {},
+      "uiSizeRange": [
+        0.3,
+        120
+      ]
     },
     {
       "format": "illustro-brush-preset",
@@ -1845,12 +1840,11 @@
       },
       "random": [],
       "resources": {},
-      "extensions": {
-        "uiSizeRange": [
-          1,
-          1000
-        ]
-      }
+      "extensions": {},
+      "uiSizeRange": [
+        1,
+        1000
+      ]
     },
     {
       "format": "illustro-brush-preset",
@@ -2134,12 +2128,11 @@
       },
       "random": [],
       "resources": {},
-      "extensions": {
-        "uiSizeRange": [
-          1,
-          1000
-        ]
-      }
+      "extensions": {},
+      "uiSizeRange": [
+        1,
+        1000
+      ]
     }
   ]
 }

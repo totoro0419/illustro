@@ -40,7 +40,7 @@ Release-tail display rule: while drawing, the current endpoint is treated as a p
 
 ## Brush-specific thickness range
 
-Each Foundation preset may own `extensions.uiSizeRange = [minPx, maxPx]`. This range controls the thickness slider, direct numeric entry, quick-size buttons, and base brush size selection only. It must not clamp the pressure/taper result after dynamics are evaluated. `limits.size` remains a renderer/dynamics safety range.
+Each Foundation preset may own `uiSizeRange = [minPx, maxPx]`. This range controls the thickness slider, direct numeric entry, quick-size buttons, and base brush size selection only. It must not clamp the pressure/taper result after dynamics are evaluated. `limits.size` remains a renderer/dynamics safety range. `uiSizeRange` is UI metadata and must not be stored in `extensions`, because `extensions` is reserved for renderer-provider features.
 
 Reference UI defaults: G pen 0.75–120 px; Round pen 0.3–60 px; Technical pen 0.3–60 px; Marker 1–500 px; Pencil 0.3–120 px; Hard/Soft Eraser 1–1000 px.
 
