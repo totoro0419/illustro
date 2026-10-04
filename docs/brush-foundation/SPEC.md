@@ -36,14 +36,18 @@ Save compatibility: the original `soft` renderer keeps its ordered stamp semanti
 
 Release-tail rule: a size taper with `end.mode:"release"` keeps only the configured recent time/distance window provisional. It remains visible in live feedback, is not committed early, and is narrowed only when the stroke ends. Already published commands are immutable. Continuous ink can set `pressure.sizeSlope` (diameter change per travelled pixel, 0 = disabled); this applies to actual and predicted geometry and is replay deterministic.
 
-Release-tail display rule: while drawing, the current endpoint is treated as a provisional endpoint and the same release-tail transform used at finalization is applied only to the still-uncommitted tail. As the stroke advances this tapered window moves forward. Pen-up must therefore not reshape already visible pixels; finalization only freezes the currently visible provisional tail.
+Release-tail display rule: forced release is an endpoint effect. While the pen remains down, the current endpoint is not treated as finished and the still-uncommitted tail is shown with ordinary pressure-driven geometry. After pointer-up, finalization applies forced release only to the bounded recent tail. Natural pressure thinning remains live.
 
 ## Brush-specific thickness range
 
 Each Foundation preset may own `uiSizeRange = [minPx, maxPx]`. This range controls the thickness slider, direct numeric entry, quick-size buttons, and base brush size selection only. It must not clamp the pressure/taper result after dynamics are evaluated. `limits.size` remains a renderer/dynamics safety range. `uiSizeRange` is UI metadata and must not be stored in `extensions`, because `extensions` is reserved for renderer-provider features.
 
-Reference UI defaults: G pen 0.75–120 px; Round pen 0.3–60 px; Technical pen 0.3–60 px; Marker 1–500 px; Pencil 0.3–120 px; Hard/Soft Eraser 1–1000 px.
+Reference UI defaults: G pen 0.75–30 px; Round pen 0.3–60 px; Technical pen 0.3–60 px; Marker 1–500 px; Pencil 0.3–120 px; Hard/Soft Eraser 1–1000 px.
 
 ### Range source note
 
 The engine-wide maximum is not the same thing as a sensible per-brush UI range. ibisPaint documents per-brush Min Thickness / Max Thickness controls. Its official history records Dip Pen minimum thickness being reduced to 0.3 px, and Dip Pen (Soft) plus Pencil #1/#2 maximum thickness being set to 120 px. Current exact default limits for every ibis built-in preset are not published in the official manual, so Illustro does not claim to copy them. Illustro uses those verified values as anchors, then chooses narrower line-art defaults by intended use. Global renderer capability remains separate from these UI defaults.
+
+### 30 px spacing cap reference
+
+ibisPaint documents a separate line-brush option that caps spacing behavior at the value used for 30 px thickness, specifically to reduce visible brush-pattern repetition on line brushes such as Dip Pen when drawing at 30 px or thicker. This is not the same as a documented global maximum brush thickness. Illustro's continuous G-pen geometry does not depend on repeated round stamps, but the same design principle applies: increasing nominal thickness must not reveal circular brush units.
