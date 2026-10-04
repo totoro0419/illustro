@@ -37,7 +37,7 @@ Save compatibility: the original `soft` renderer keeps its ordered stamp semanti
 Brush fade and forced in/out are separate contracts.
 
 - Brush fade lives in `taper`. It can affect size/opacity/flow/grain during ordinary stroke generation. For size and opacity, endpoint ratios may extend to 200% so an endpoint may be thinner or thicker than the base value. The legacy `end.mode:"release"` remains readable for old presets and can coexist with the new force-fade finalizer.
-- Stabilizer-style forced in/out lives in `forceFade`. `start` and `end` are fractions of the final stroke length from 0 to 1. It is evaluated only after pointer-up, because the final stroke length is then known. A 100% ending is allowed to alter a broad portion of the visible stroke; that change at pointer-up is intentional.
+- Stabilizer-style forced in/out lives in `forceFade`. `start` and `end` are fractions of the final stroke length from 0 to 1. It is evaluated only after pointer-up, because the final stroke length is then known. A 100% ending is allowed to alter a broad portion of the visible stroke; that change at pointer-up is intentional. Its spatial result is based on final stroke distance, not drawing duration or velocity: for the same geometry and pressure, slow and fast input must produce the same forced in/out after pointer-up.
 - Live pressure/speed dynamics remain live while drawing and are not replaced by forced in/out.
 - A single-point tap is never rewritten by forced in/out. Very short marks keep a non-zero minimum so they remain visible.
 - Legacy records that do not contain `forceFade` keep their exact prior preset shape and replay semantics; compilation must not inject a default field into them.
