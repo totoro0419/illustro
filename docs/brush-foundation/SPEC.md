@@ -42,4 +42,8 @@ Release-tail display rule: while drawing, the current endpoint is treated as a p
 
 Each Foundation preset owns `limits.size = [minPx, maxPx]`. The UI must use this pair as the minimum and maximum of both the thickness slider and direct numeric entry, and must clamp quick-size buttons and programmatic UI configuration to the same range. These are brush defaults, not global renderer limits; custom brushes may store their own range within the engine-wide 0.01–4096 px capability.
 
-Reference defaults: G pen 0.75–1024 px; Round pen 0.25–256 px; Technical pen 0.5–256 px; Marker 1–2048 px; Pencil 0.5–512 px; Hard/Soft Eraser 1–4096 px.
+Reference defaults: G pen 0.3–120 px; Round pen 0.3–60 px; Technical pen 0.3–60 px; Marker 1–500 px; Pencil 0.3–120 px; Hard/Soft Eraser 1–1000 px.
+
+### Range source note
+
+The engine-wide maximum is not the same thing as a sensible per-brush UI range. ibisPaint documents per-brush Min Thickness / Max Thickness controls. Its official history records Dip Pen minimum thickness being reduced to 0.3 px, and Dip Pen (Soft) plus Pencil #1/#2 maximum thickness being set to 120 px. Current exact default limits for every ibis built-in preset are not published in the official manual, so Illustro does not claim to copy them. Illustro uses those verified values as anchors, then chooses narrower line-art defaults by intended use. Global renderer capability remains separate from these UI defaults.
