@@ -9,7 +9,7 @@
       "id": "foundation-g-pen",
       "name": "Gペン",
       "category": "基準ブラシ",
-      "purpose": "筆圧の太さに、開始・終了の細い先端と急な太さ変化の抑制を重ねる。",
+      "purpose": "筆圧の太さに、ブラシ自身の入りとペンアップ後の強制入り抜きを重ねる。",
       "kind": "mono",
       "renderer": "auto",
       "size": 16,
@@ -125,7 +125,7 @@
             "mode": "ramp",
             "unit": "distance",
             "length": 12,
-            "minimum": 0.03,
+            "minimum": 0.08,
             "curve": [
               [
                 0,
@@ -146,22 +146,14 @@
             ]
           },
           "end": {
-            "mode": "release",
-            "unit": "time",
-            "length": 64,
-            "minimum": 0.03,
+            "mode": "none",
+            "unit": "distance",
+            "length": 0,
+            "minimum": 1,
             "curve": [
               [
                 0,
                 0
-              ],
-              [
-                0.35,
-                0.12
-              ],
-              [
-                0.7,
-                0.55
               ],
               [
                 1,
@@ -330,7 +322,32 @@
       "uiSizeRange": [
         0.75,
         30
-      ]
+      ],
+      "forceFade": {
+        "scope": "brush",
+        "enabled": true,
+        "start": 0.12,
+        "end": 0.4,
+        "minimum": 0.03,
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            0.35,
+            0.1
+          ],
+          [
+            0.7,
+            0.55
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
     },
     {
       "format": "illustro-brush-preset",
@@ -636,7 +653,24 @@
       "uiSizeRange": [
         0.3,
         60
-      ]
+      ],
+      "forceFade": {
+        "scope": "brush",
+        "enabled": false,
+        "start": 0,
+        "end": 0,
+        "minimum": 0.03,
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
     },
     {
       "format": "illustro-brush-preset",
@@ -924,7 +958,24 @@
       "uiSizeRange": [
         0.3,
         60
-      ]
+      ],
+      "forceFade": {
+        "scope": "brush",
+        "enabled": false,
+        "start": 0,
+        "end": 0,
+        "minimum": 0.03,
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
     },
     {
       "format": "illustro-brush-preset",
@@ -1212,7 +1263,24 @@
       "uiSizeRange": [
         1,
         500
-      ]
+      ],
+      "forceFade": {
+        "scope": "brush",
+        "enabled": false,
+        "start": 0,
+        "end": 0,
+        "minimum": 0.03,
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
     },
     {
       "format": "illustro-brush-preset",
@@ -1556,7 +1624,24 @@
       "uiSizeRange": [
         0.3,
         120
-      ]
+      ],
+      "forceFade": {
+        "scope": "brush",
+        "enabled": false,
+        "start": 0,
+        "end": 0,
+        "minimum": 0.03,
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
     },
     {
       "format": "illustro-brush-preset",
@@ -1844,7 +1929,24 @@
       "uiSizeRange": [
         1,
         1000
-      ]
+      ],
+      "forceFade": {
+        "scope": "brush",
+        "enabled": false,
+        "start": 0,
+        "end": 0,
+        "minimum": 0.03,
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
     },
     {
       "format": "illustro-brush-preset",
@@ -2132,7 +2234,24 @@
       "uiSizeRange": [
         1,
         1000
-      ]
+      ],
+      "forceFade": {
+        "scope": "brush",
+        "enabled": false,
+        "start": 0,
+        "end": 0,
+        "minimum": 0.03,
+        "curve": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
     }
   ]
 }
