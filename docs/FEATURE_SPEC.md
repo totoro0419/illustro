@@ -4,6 +4,8 @@
 > 目的: `PRODUCT_SPEC.md` と `FEATURE_CATALOG.md` を、実装・UI・アーキテクチャ設計で参照できる要求単位へ落とす。  
 > 優先順位: `PRODUCT_SPEC.md` > 本書 > 個別機能仕様 > UI/実装仕様。  
 > 注意: 本書は「実装済み」を意味しない。内部アルゴリズムが未決定でも、ユーザーから見た能力・制約・品質要件を固定する。
+>
+> 2026-10-04 cross-feature integration: [FEATURE_SYSTEM_INTEGRATION_2026-10-04.md](FEATURE_SYSTEM_INTEGRATION_2026-10-04.md) defines the integrated user-route/cross-feature baseline for families 1–12. User-facing completion is governed by [FEATURE_DELIVERY_GATE.md](FEATURE_DELIVERY_GATE.md).
 
 ## 1. 要求の表記
 
