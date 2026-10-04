@@ -147,7 +147,7 @@ export function textureFactor(c,x,y,p){
 }
 const pressureSize=(minimum,curvePoints=linear)=>({source:'pressure',target:'size',mode:'multiply',min:minimum,max:1,curve:curvePoints});
 export const referenceBrushes=[
- createPreset('foundation-g-pen','Gペン',{size:16,uiSizeRange:[.75,120],limits:{size:[.75,4096]},dynamics:[pressureSize(.03,[[0,0],[.25,.12],[.6,.55],[1,1]])],pressure:{smoothing:.2,sizeSlope:1.75},taper:{size:{start:{mode:'ramp',unit:'distance',length:12,minimum:.03,curve:[[0,0],[.3,.1],[.7,.55],[1,1]]},end:{mode:'release',unit:'time',length:64,minimum:.03,curve:[[0,0],[.35,.12],[.7,.55],[1,1]]}}},purpose:'筆圧の太さに、開始・終了の細い先端と急な太さ変化の抑制を重ねる。'}),
+ createPreset('foundation-g-pen','Gペン',{size:16,uiSizeRange:[.75,30],limits:{size:[.75,4096]},dynamics:[pressureSize(.03,[[0,0],[.25,.12],[.6,.55],[1,1]])],pressure:{smoothing:.2,sizeSlope:1.75},taper:{size:{start:{mode:'ramp',unit:'distance',length:12,minimum:.03,curve:[[0,0],[.3,.1],[.7,.55],[1,1]]},end:{mode:'release',unit:'time',length:64,minimum:.03,curve:[[0,0],[.35,.12],[.7,.55],[1,1]]}}},purpose:'筆圧の太さに、開始・終了の細い先端と急な太さ変化の抑制を重ねる。'}),
  createPreset('foundation-round-pen','丸ペン',{size:4,uiSizeRange:[.3,60],dynamics:[pressureSize(.12)],pressure:{smoothing:.25},purpose:'細い曲線・小さい形・短線を筆圧で描く。'}),
  createPreset('foundation-technical','ミリペン / 製図ペン',{size:4,uiSizeRange:[.3,60],purpose:'太さと濃さが一定の線を描く。'}),
  createPreset('foundation-marker','マーカー',{size:128,uiSizeRange:[1,500],opacity:.45,purpose:'一筆の濃さを一定に保ち、別の線とは重なります。'}),
