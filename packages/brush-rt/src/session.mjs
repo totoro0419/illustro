@@ -23,7 +23,7 @@ export class RealtimeSession {
  // Only a time-dependent prediction needs a new notification between inputs.
  // Preserve WebGL2 and legacy publication cadence.
  frame(now){this.flush();const a=this.active;if(!this.renderer.backend?.immediatePreview||!a?.builder.foundation||this.prediction&&a.preset.__foundation.preset.prediction.enabled)this.updateLive(now);return this.renderer.frame(now);}
- updateLive(now,finished=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
+ updateLive(now,finished=false,resetPreview=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
   // Forced release is an endpoint effect. While the pen is down, show only pressure-driven geometry.
   // finish() applies the forced release taper to the reserved tail after pointer-up.
   const total=b.distance,tail=b.commands.slice(b.published).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
@@ -32,10 +32,10 @@ export class RealtimeSession {
   const inputTip=a.points.at(-1),actual=b.commands.at(-1),drawn=predicted??actual;
   const tip=actual?{...inputTip,x:actual[0],y:actual[1],t:predicted?inputTip.t:actual[20]}:inputTip;
   const previewTip=drawn?{...tip,x:drawn[0],y:drawn[1]}:tip;
-  this.renderer.setLive({id:a.id,preset:p,stableSource:a.stableSource,stableEnd:a.stableSource.length,commands:tail,tip,inputTip,previewTip,predicted:!!predicted,rawTip:a.raw.at(-1),finished});
+  this.renderer.setLive({id:a.id,preset:p,stableSource:a.stableSource,stableEnd:a.stableSource.length,commands:tail,tip,inputTip,previewTip,predicted:!!predicted,rawTip:a.raw.at(-1),finished,resetPreview});
  }
 
- end(release=null){const a=this.active;if(!a)return Promise.resolve(null);this.flush();const finalized=a.builder.finish(),forceFade=!!a.builder.p.__foundation?.preset.forceFade?.enabled;if(forceFade){const commands=a.builder.record().commands.map(c=>Float64Array.from(c));a.stableSource.length=0;a.stableSource.push(...commands);a.builder.published=a.builder.commands.length;}else for(const c of finalized)a.stableSource.push(c);this.updateLive(performance.now(),true);this.renderer.markEnded(a.id);this.worker.postMessage({type:'end',id:a.id,release});this.active=null;const promise=new Promise((resolve,reject)=>{this.resolvers.set(a.id,{resolve,reject});});this.resolvers.get(a.id).promise=promise;return promise.then(record=>{this.renderer.needsFrame=true;return record;});}
+ end(release=null){const a=this.active;if(!a)return Promise.resolve(null);this.flush();const finalized=a.builder.finish(),forceFade=!!a.builder.p.__foundation?.preset.forceFade?.enabled;if(forceFade){const commands=a.builder.record().commands.map(c=>Float64Array.from(c));a.stableSource.length=0;a.stableSource.push(...commands);a.builder.published=a.builder.commands.length;}else for(const c of finalized)a.stableSource.push(c);this.updateLive(performance.now(),true,forceFade);this.renderer.markEnded(a.id);this.worker.postMessage({type:'end',id:a.id,release});this.active=null;const promise=new Promise((resolve,reject)=>{this.resolvers.set(a.id,{resolve,reject});});this.resolvers.get(a.id).promise=promise;return promise.then(record=>{this.renderer.needsFrame=true;return record;});}
  async cancel(){if(!this.active)return;this.cancelledIds.add(this.active.id);this.worker.postMessage({type:'cancel',id:this.active.id});this.active=null;this.pending=[];await this.rebuild();}
  async rebuild(){await this.renderer.reset();for(const r of this.records){const id=++this.id;const preset={...r.preset,__legacyStarAa:r.engine==='illustro-rt-2.4'};this.renderer.document.append(id,preset,r.commands);this.renderer.document.end(id,preset);}await this.renderer.drain();}
  async settle(){if(this.active)await this.end();await Promise.all([...this.resolvers.values()].map(r=>r.promise));}
