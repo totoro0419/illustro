@@ -8,12 +8,12 @@ Preset: `{format:"illustro-brush-preset", version:2, engine:"illustro-foundation
 | material | size, stroke opacity, deposit flow, RGB color, normal/erase/multiply/screen; saturated or build-up; continuous single-color coverage union via sweep renderer |
 | tip | round/ellipse/rect/mask/bristle/star/leaf, resource reference, hardness/aspect; fixed + line + optional azimuth + optional twist rotation |
 | spacing | relative diameter or absolute px; minimum/maximum px; optional time exposure |
-| pressure | device curve, brush curve, independent smoothing, unsupported-device fallback |
+| pressure | device curve, brush curve, independent smoothing, unsupported-device fallback; optional sizeSlope limits diameter change per travelled pixel for continuous ink |
 | stabilization | brush/common scope, constant, fast, increase/reduce speed mode; post amount reserved for explicit geometry edit |
 | prediction | enabled, auto/browser/linear, horizon ms, maximum px, turn cosine |
 | dynamics | ordered source/target/min/max/curve/multiply-add-replace; physical input range and explicit repeat; optional sensor fallback |
 | limits | size/opacity/flow output intervals |
-| taper | size/opacity/flow/grain; start/end mode, distance/time, length, minimum and curve. start ramp; end pressure/forward fade/known endpoint |
+| taper | size/opacity/flow/grain; start/end mode, distance/time, length, minimum and curve. start ramp; end pressure/forward fade/known endpoint; size-only release tail for bounded freehand ending |
 | texture | independent tip/paper/stroke slots; paper/hatch/noise/image, resource, strength/floor, absolute/relative scale, paper/tip space, angle, direction, invert, image AA |
 | scatter | disk radius, absolute/relative radius and particle size, particles per spacing location 1–64, center/outer bias, tip/line/center rotation |
 | random | reproducible per-deposit changes to position, size, opacity, flow, spacing, rotation, aspect, scatter, density, grain, hue/saturation/value |
@@ -32,3 +32,6 @@ Current builtin limitations are explicit: one active texture layer, mono materia
 `renderer:"sweep"` requires round, aspect-one, saturated, single-color settings without scatter/random color. They use a coverage-union field (local flow × mapped opacity, stroke opacity at composition), not ordered additive paint. For build-up/particles/image/color variation use `stamp`. Swept pencil and soft eraser always reach the latest contact; spacing is retained as a future deposit setting but does not punctuate continuous coverage. Raw/stabilized samples are exact; render geometry has at most 0.05px reduction error before freezing, with a 64-point bound.
 
 Save compatibility: the original `soft` renderer keeps its ordered stamp semantics. Continuous soft/pencil fields use the newly added `sweep` ID, so existing version-3 presets/strokes are not reinterpreted. The archived seven-brush fixture comes from source b18e2b0 and must regenerate exactly.
+
+
+Release-tail rule: a size taper with `end.mode:"release"` keeps only the configured recent time/distance window provisional. It remains visible in live feedback, is not committed early, and is narrowed only when the stroke ends. Already published commands are immutable. Continuous ink can set `pressure.sizeSlope` (diameter change per travelled pixel, 0 = disabled); this applies to actual and predicted geometry and is replay deterministic.

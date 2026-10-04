@@ -38,3 +38,28 @@ Decision: keep the existing shared pressure/dynamics/settings and full-resolutio
 Further continuation measurement found a duplicated unchanged-work notification: with prediction disabled, each Foundation `accept` already publishes the new real tip, but `frame` published it again before the generator's next RAF input batch. This can occupy the only GPU slot with an unchanged older tip. Decision: real-input-driven notifications for Foundation with prediction disabled, and one coalesced WebGPU idle/completion request. Prediction-enabled time updates and legacy publication remain unchanged. This follows the documented actual/predicted-input distinction; it does not claim any closed-source application's internal method.
 
 Paired testing after implementation exposed a WebGL2 repetition regression, so input-driven RAF suppression is limited to WebGPU and the accepted WebGL2 publication cadence is preserved. Both original and candidate local software-GPU runs can vary; the recorded failed limits remain failures. This conservative backend boundary follows measured evidence, without claiming the new cadence alone explains all variance.
+
+
+## Issue-specific primary-source review — 2026-10-04
+
+This review was completed before changing the three user-reported brush-quality problems. Closed-source internals are not inferred.
+
+| Problem | CLIP STUDIO PAINT | ibisPaint | Procreate | Krita | Illustro decision |
+|---|---|---|---|---|---|
+| G-pen start/end | Brush Size dynamics are separate from Starting/Ending; Starting/Ending can change brush size/density to a minimum value. | Thickness Start/End and pressure-driven Thickness are separate; Force Fade Out is exposed. | Pressure Size is separate from Pressure Taper; taper exposes Size, Pressure and Tip controls. | Size can be pressure/sensor driven; Distance/Time/Fade sensors are separate controls. | Keep pressure→size, add an independent causal start ramp and a bounded release-tail size taper. |
+| Wide-line tip / round marks | Stroke interval is explicit; tighter intervals are smoother but heavier. | “Max Spacing for 30 px Thick” explicitly reduces visible brush-pattern artifacts on line brushes such as Dip Pen. | Stroke Path spacing controls whether individual Shape stamps are visible or merge into a fluid stroke. | Pixel Brush is dab based; spacing plus Smooth Lines/Auto Spacing are exposed for inking quality. | Do not solve by spacing alone. Continuous ink keeps its accepted path renderer and additionally limits diameter change per travelled pixel so a single large sample cannot appear as an isolated round lobe. |
+| Pencil density | Texture and brush density are distinct from opacity/size dynamics. | Pattern/opacity/dynamics are distinct controls. | Pencil library explicitly uses unique paper textures; Apple Pencil pressure can control Size, Opacity and Flow, and Grain is a separate brush component. | Opacity is whole-stroke transparency while Flow is per-dab transparency; Texture is separate and build-up behavior is explicit. | Remove pressure→whole-stroke opacity from the reference pencil. Use pressure→deposit flow plus stronger low-pressure grain modulation so weak pressure is visibly particulate rather than only transparent gray. |
+
+Primary sources:
+- CSP: https://help.clip-studio.com/en-us/manual_en/240_brushes/Customizing_brush_tools.htm and https://help.clip-studio.com/en-us/manual_en/810_subtools/S.htm
+- ibisPaint: https://ibispaint.com/lecture/index.jsp?lang=en&no=118
+- Procreate: https://help.procreate.com/procreate/handbook/brushes/brush-studio-settings and https://help.procreate.com/procreate/handbook/brushes/brush-library
+- Krita: https://docs.krita.org/en/reference_manual/brushes/brush_engines/pixel_brush_engine.html, https://docs.krita.org/en/reference_manual/brushes/brush_settings/brush_tips.html and https://docs.krita.org/en/reference_manual/brushes/brush_settings/opacity_and_flow.html
+
+### Why this implementation
+
+The existing continuous G-pen command already interpolates radius between input positions, but a sudden diameter jump can still expose a large round endpoint around a sample. Illustro therefore adds a general preset parameter, `pressure.sizeSlope`, which caps diameter change by travelled distance. The G-pen value is below the geometric threshold where radius can grow faster than path length, while other brushes remain unchanged by the default value `0`.
+
+The artificial ending is deliberately bounded by time (64 ms) rather than by brush diameter. Only that recent tail stays provisional and visible in the live overlay; older commands keep the already accepted formal path. At release, only the provisional tail is narrowed. This avoids a whole-stroke redraw and prevents the cost of a very large brush from reserving a proportionally huge path.
+
+The reference pencil keeps continuous sweep rendering for the accepted large-brush performance path. Its low-pressure appearance now combines lower deposit flow with stronger deterministic grain. This is intentionally not described as a copy of any proprietary pencil algorithm.

@@ -9,7 +9,7 @@
       "id": "foundation-g-pen",
       "name": "Gペン",
       "category": "基準ブラシ",
-      "purpose": "筆圧で太さ・入り・抜きを作る。人工的な入りも設定から選べます。",
+      "purpose": "筆圧の太さに、開始・終了の細い先端と急な太さ変化の抑制を重ねる。",
       "kind": "mono",
       "renderer": "auto",
       "size": 16,
@@ -61,7 +61,8 @@
           ]
         ],
         "smoothing": 0.2,
-        "fallback": 1
+        "fallback": 1,
+        "sizeSlope": 1.75
       },
       "stabilization": {
         "scope": "brush",
@@ -121,14 +122,22 @@
       "taper": {
         "size": {
           "start": {
-            "mode": "none",
+            "mode": "ramp",
             "unit": "distance",
-            "length": 1.5,
-            "minimum": 0.15,
+            "length": 12,
+            "minimum": 0.03,
             "curve": [
               [
                 0,
                 0
+              ],
+              [
+                0.3,
+                0.1
+              ],
+              [
+                0.7,
+                0.55
               ],
               [
                 1,
@@ -137,14 +146,22 @@
             ]
           },
           "end": {
-            "mode": "none",
-            "unit": "distance",
-            "length": 0,
-            "minimum": 1,
+            "mode": "release",
+            "unit": "time",
+            "length": 64,
+            "minimum": 0.03,
             "curve": [
               [
                 0,
                 0
+              ],
+              [
+                0.35,
+                0.12
+              ],
+              [
+                0.7,
+                0.55
               ],
               [
                 1,
@@ -370,7 +387,8 @@
           ]
         ],
         "smoothing": 0.25,
-        "fallback": 1
+        "fallback": 1,
+        "sizeSlope": 0
       },
       "stabilization": {
         "scope": "brush",
@@ -671,7 +689,8 @@
           ]
         ],
         "smoothing": 0.15,
-        "fallback": 1
+        "fallback": 1,
+        "sizeSlope": 0
       },
       "stabilization": {
         "scope": "brush",
@@ -954,7 +973,8 @@
           ]
         ],
         "smoothing": 0.15,
-        "fallback": 1
+        "fallback": 1,
+        "sizeSlope": 0
       },
       "stabilization": {
         "scope": "brush",
@@ -1185,12 +1205,12 @@
       "id": "foundation-pencil",
       "name": "鉛筆",
       "category": "基準ブラシ",
-      "purpose": "筆圧で太さ・濃さ・かすれが変わる。質感は最初から描きます。",
+      "purpose": "筆圧で太さと黒鉛の付着量・粒状感が変わる。薄い筆圧を透明度だけで表現しない。",
       "kind": "mono",
       "renderer": "sweep",
       "size": 4,
       "opacity": 1,
-      "flow": 0.8,
+      "flow": 1,
       "color": [
         0.12,
         0.15,
@@ -1237,7 +1257,8 @@
           ]
         ],
         "smoothing": 0.15,
-        "fallback": 1
+        "fallback": 1,
+        "sizeSlope": 0
       },
       "stabilization": {
         "scope": "brush",
@@ -1273,14 +1294,18 @@
         },
         {
           "source": "pressure",
-          "target": "opacity",
+          "target": "flow",
           "mode": "multiply",
-          "min": 0.1,
+          "min": 0.35,
           "max": 1,
           "curve": [
             [
               0,
               0
+            ],
+            [
+              0.3,
+              0.12
             ],
             [
               1,
@@ -1292,8 +1317,8 @@
           "source": "pressure",
           "target": "grain",
           "mode": "multiply",
-          "min": 1,
-          "max": 1.8,
+          "min": 0.55,
+          "max": 1.1,
           "curve": [
             [
               0,
@@ -1473,11 +1498,11 @@
           "aa": false
         },
         "paper": {
-          "kind": "paper",
+          "kind": "noise",
           "resource": null,
-          "strength": 0.65,
+          "strength": 0.9,
           "minimum": 0,
-          "scale": 2,
+          "scale": 1.6,
           "sizeMode": "absolute",
           "space": "paper",
           "rotation": 0,
@@ -1572,7 +1597,8 @@
           ]
         ],
         "smoothing": 0.15,
-        "fallback": 1
+        "fallback": 1,
+        "sizeSlope": 0
       },
       "stabilization": {
         "scope": "brush",
@@ -1855,7 +1881,8 @@
           ]
         ],
         "smoothing": 0.15,
-        "fallback": 1
+        "fallback": 1,
+        "sizeSlope": 0
       },
       "stabilization": {
         "scope": "brush",

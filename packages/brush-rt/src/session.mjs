@@ -1,5 +1,5 @@
 import {foundationDabs,predictFoundation,cursorState,geometryContext} from '@rt/foundation';
-import {CanonicalBuilder,Stabilizer,predict,taper,continuous,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
+import {CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
 import {makeDab} from '@legacy/dynamics';
 // A predicted stamp is emitted only when the next spatial/time deposit is due.
 // The builder, random index and all canonical input remain unchanged.
@@ -10,7 +10,7 @@ export function predictedCommand(b,q){
  const spatial=len>0?needed/len:Infinity,temporal=p.exposureMs>0&&dt>0?(b.nextExposure-prev.t)/dt:Infinity;
  const f=segment?1:Math.min(spatial,temporal);if(!Number.isFinite(f)||f<0||f>1)return null;
  const sample={...q,x:prev.x+dx*f,y:prev.y+dy*f,t:prev.t+dt*f},distance=b.distance+len*f;
- const dab=b.foundation?foundationDabs(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start).dabs[0]:makeDab(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start),c=new Float64Array(STRIDE);c.set(dab);
+ const dab=b.foundation?foundationDabs(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start).dabs[0]:makeDab(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start);if(b.foundation&&solid)dab[2]=limitFoundationDiameter(p,dab[2],b.lastRadius,len);const c=new Float64Array(STRIDE);c.set(dab);
  c[16]=segment?prev.x:dab[0];c[17]=segment?prev.y:dab[1];c[18]=segment?b.lastRadius:dab[2]/2;c[19]=solid?1:sweep?2:0;c[20]=sample.t;c[21]=distance;c[22]=b.foundation&&!solid?Math.atan2(dy,dx):b.distance;c[23]=dab[2]/2;return c;
 }
 export class RealtimeSession {
