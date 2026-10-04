@@ -37,3 +37,9 @@ Save compatibility: the original `soft` renderer keeps its ordered stamp semanti
 Release-tail rule: a size taper with `end.mode:"release"` keeps only the configured recent time/distance window provisional. It remains visible in live feedback, is not committed early, and is narrowed only when the stroke ends. Already published commands are immutable. Continuous ink can set `pressure.sizeSlope` (diameter change per travelled pixel, 0 = disabled); this applies to actual and predicted geometry and is replay deterministic.
 
 Release-tail display rule: while drawing, the current endpoint is treated as a provisional endpoint and the same release-tail transform used at finalization is applied only to the still-uncommitted tail. As the stroke advances this tapered window moves forward. Pen-up must therefore not reshape already visible pixels; finalization only freezes the currently visible provisional tail.
+
+## Brush-specific thickness range
+
+Each Foundation preset owns `limits.size = [minPx, maxPx]`. The UI must use this pair as the minimum and maximum of both the thickness slider and direct numeric entry, and must clamp quick-size buttons and programmatic UI configuration to the same range. These are brush defaults, not global renderer limits; custom brushes may store their own range within the engine-wide 0.01–4096 px capability.
+
+Reference defaults: G pen 0.75–1024 px; Round pen 0.25–256 px; Technical pen 0.5–256 px; Marker 1–2048 px; Pencil 0.5–512 px; Hard/Soft Eraser 1–4096 px.

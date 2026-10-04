@@ -146,13 +146,13 @@ export function textureFactor(c,x,y,p){
 }
 const pressureSize=(minimum,curvePoints=linear)=>({source:'pressure',target:'size',mode:'multiply',min:minimum,max:1,curve:curvePoints});
 export const referenceBrushes=[
- createPreset('foundation-g-pen','Gペン',{size:16,limits:{size:[.75,4096]},dynamics:[pressureSize(.03,[[0,0],[.25,.12],[.6,.55],[1,1]])],pressure:{smoothing:.2,sizeSlope:1.75},taper:{size:{start:{mode:'ramp',unit:'distance',length:12,minimum:.03,curve:[[0,0],[.3,.1],[.7,.55],[1,1]]},end:{mode:'release',unit:'time',length:64,minimum:.03,curve:[[0,0],[.35,.12],[.7,.55],[1,1]]}}},purpose:'筆圧の太さに、開始・終了の細い先端と急な太さ変化の抑制を重ねる。'}),
- createPreset('foundation-round-pen','丸ペン',{size:4,dynamics:[pressureSize(.12)],pressure:{smoothing:.25},purpose:'細い曲線・小さい形・短線を筆圧で描く。'}),
- createPreset('foundation-technical','ミリペン / 製図ペン',{size:4,purpose:'太さと濃さが一定の線を描く。'}),
- createPreset('foundation-marker','マーカー',{size:128,opacity:.45,purpose:'一筆の濃さを一定に保ち、別の線とは重なります。'}),
- createPreset('foundation-pencil','鉛筆',{size:4,flow:1,renderer:'sweep',tip:{hardness:.9},texture:{paper:{kind:'noise',strength:.9,scale:1.6}},dynamics:[pressureSize(.2),{source:'pressure',target:'flow',mode:'multiply',min:.35,max:1,curve:[[0,0],[.3,.12],[1,1]]},{source:'pressure',target:'grain',mode:'multiply',min:.55,max:1.1,curve:[[0,1],[1,0]]}],spacing:{value:.12},purpose:'筆圧で太さと黒鉛の付着量・粒状感が変わる。薄い筆圧を透明度だけで表現しない。'}),
- createPreset('foundation-hard-eraser','硬い消しゴム',{size:128,blend:'erase',purpose:'丸い輪郭で消す。線画と同じ連続描画を使います。'}),
- createPreset('foundation-soft-eraser','柔らかい消しゴム',{size:128,blend:'erase',renderer:'sweep',tip:{hardness:.05},flow:.65,spacing:{value:.12},purpose:'柔らかい輪郭で少しずつ消す。'}),
+ createPreset('foundation-g-pen','Gペン',{size:16,limits:{size:[.75,1024]},dynamics:[pressureSize(.03,[[0,0],[.25,.12],[.6,.55],[1,1]])],pressure:{smoothing:.2,sizeSlope:1.75},taper:{size:{start:{mode:'ramp',unit:'distance',length:12,minimum:.03,curve:[[0,0],[.3,.1],[.7,.55],[1,1]]},end:{mode:'release',unit:'time',length:64,minimum:.03,curve:[[0,0],[.35,.12],[.7,.55],[1,1]]}}},purpose:'筆圧の太さに、開始・終了の細い先端と急な太さ変化の抑制を重ねる。'}),
+ createPreset('foundation-round-pen','丸ペン',{size:4,limits:{size:[.25,256]},dynamics:[pressureSize(.12)],pressure:{smoothing:.25},purpose:'細い曲線・小さい形・短線を筆圧で描く。'}),
+ createPreset('foundation-technical','ミリペン / 製図ペン',{size:4,limits:{size:[.5,256]},purpose:'太さと濃さが一定の線を描く。'}),
+ createPreset('foundation-marker','マーカー',{size:128,limits:{size:[1,2048]},opacity:.45,purpose:'一筆の濃さを一定に保ち、別の線とは重なります。'}),
+ createPreset('foundation-pencil','鉛筆',{size:4,limits:{size:[.5,512]},flow:1,renderer:'sweep',tip:{hardness:.9},texture:{paper:{kind:'noise',strength:.9,scale:1.6}},dynamics:[pressureSize(.2),{source:'pressure',target:'flow',mode:'multiply',min:.35,max:1,curve:[[0,0],[.3,.12],[1,1]]},{source:'pressure',target:'grain',mode:'multiply',min:.55,max:1.1,curve:[[0,1],[1,0]]}],spacing:{value:.12},purpose:'筆圧で太さと黒鉛の付着量・粒状感が変わる。薄い筆圧を透明度だけで表現しない。'}),
+ createPreset('foundation-hard-eraser','硬い消しゴム',{size:128,limits:{size:[1,4096]},blend:'erase',purpose:'丸い輪郭で消す。線画と同じ連続描画を使います。'}),
+ createPreset('foundation-soft-eraser','柔らかい消しゴム',{size:128,limits:{size:[1,4096]},blend:'erase',renderer:'sweep',tip:{hardness:.05},flow:.65,spacing:{value:.12},purpose:'柔らかい輪郭で少しずつ消す。'}),
 ];
 
 export function interpolateAngle(a,b,f){return a+((b-a+Math.PI)%tau+tau)%tau*f-Math.PI*f;}
