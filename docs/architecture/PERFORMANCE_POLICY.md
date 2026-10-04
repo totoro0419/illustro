@@ -3,6 +3,8 @@
 > Status: **Canonical engineering policy**  
 > Date: 2026-09-27  
 > Applies to: architecture, feature design, implementation, review, benchmark, UI runtime behavior
+>
+> Cross-feature resolution: [FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md](FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md) applies this policy concretely to integrated feature families 1–12.
 
 ## 1. Priority
 
