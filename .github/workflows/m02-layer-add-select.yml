@@ -52,7 +52,9 @@ jobs:
       - name: Build M02 editor
         env:
           VITE_COMMIT_SHA: ${{ github.sha }}
-        run: npm run editor:build
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
       - name: Install browser verifier
         run: |
           npm install --prefix /tmp/m02-browser playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
