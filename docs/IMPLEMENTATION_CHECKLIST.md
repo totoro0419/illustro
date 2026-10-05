@@ -18,53 +18,68 @@
 - Brush Foundationは固定基盤として扱う。別マイルストーン都合でRenderer/Input/補正/GPU構造を理由なく再設計しない。
 - Region / Lineartは採用予定試作であり、製品統合済みではない。
 - 現在のEditorはBrush表示まで接続済みだが、一筆は正式Document/Layerへ未確定。Layer追加、文書Undo/Redo、Save/Recovery/Reload/Exportも未接続。
-- M01を `milestone/M01-stroke-commit` / Draft PR #13 で実装中。M02以降は未着手のまま維持する。
+- M01を `milestone/M01-stroke-commit` / Draft PR #13 で実装中。M02以降は未着手。
 - M01では「一筆を選択Layerへ正式確定」を成立させるために必要な範囲だけ、既存CoreをArchitecture V2へ整合させる。M02以降の機能を先取りしない。
+
+## 固定QA URL運用
+
+各マイルストーンは、実装とユーザー確認ページをセットで管理する。
+
+- M01 → `https://totoro0419.github.io/illustro/qa/m01/`
+- M02 → `https://totoro0419.github.io/illustro/qa/m02/`
+- M03 → `https://totoro0419.github.io/illustro/qa/m03/`
+- 以降も `/qa/mNN/` の固定規則を使う。
+- 新しいマイルストーンの公開で過去QAページを削除・上書きしない。
+- 同一マイルストーンの修正中は専用URLを更新してよい。✅合格・固定後はそのURLの内容も固定成果として扱う。
+- QAページには今回確認する内容だけを表示し、後続機能を混ぜない。
+- 実装チャットはQAページのGitHub Pages公開まで行い、Managerは完了判定時に実URLを独立確認する。
+- 専用QA URLが開けなければ「ユーザー確認待ち」へ進めない。
+- 現在のPagesは単一artifact方式のため、新しい公開処理は過去QAと既存公開物を保持する構成を必須とする。
 
 ## マイルストーン
 
-| ID | 名前 | 状態 | 開始commit | 終了commit | branch / PR | 自動検査 | ユーザー確認 | 参考にした主要アプリ | 未解決事項 |
-|---|---|---|---|---|---|---|---|---|---|
-| M01 | 一筆を選択Layerへ正式確定 | 🛠 | `cb95bd2` | — | `milestone/M01-stroke-commit` / Draft PR #13 | 実施中 | 必須 | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | 実装・自動検査後に実機QAが必要 |
-| M02 | Layer追加・選択 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M05 | Save | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M06 | Reload / Recovery | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M07 | PNG Export | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M08 | Color UI | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M09 | Brush UI | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M10 | Layer Page基本 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M11 | Smudge / Blend / Eyedropper | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M12 | Selection基礎 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M13 | Selection高度機能 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M14 | Transform | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M15 | Group / Folder Transform | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M16 | 通常Fill | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M17 | 囲って塗る等のFill拡張 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M18 | Lineart Layer / Region統合 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | 実装開始前に小マイルストーンへ分割する |
-| M19 | Effects / Adjustments | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M20 | Liquify | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M21 | Folder Liquify | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M22 | Motion System完成 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | 共通Motion基盤は必要最小限を前段から導入可 |
-| M23 | Workspace Motion | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M24 | Quick Controller | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M25 | Layer Motion | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M26 | Tool / Color Motion | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M27 | Reference | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M28 | Navigator | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M29 | Assets | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M30 | Automation | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M31 | Compact基本UI | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M32 | Compact制作UI | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M33 | Landscape / Safe Area / Keyboard等 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M34 | Aurora Visual Polish | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M35 | Motion Polish | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M36 | Performance Hardening | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M37 | Save / Recovery破壊試験 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M38 | Device QA | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
-| M39 | Illustroだけで一枚絵を最初から最後まで制作 | ⬜ | — | — | — | 未実施 | 必須 | 主要比較対象を再確認 | — |
-| M40 | Illustro v1 Release Candidate | ⬜ | — | — | — | 未実施 | 必須 | 主要比較対象を再確認 | M01〜M39消化だけでは自動合格にしない |
+| ID | 名前 | 状態 | 開始commit | 終了commit | branch / PR | 自動検査 | ユーザー確認 | 専用QA URL | 参考にした主要アプリ | 未解決事項 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| M01 | 一筆を選択Layerへ正式確定 | 🛠 | `cb95bd2` | — | `milestone/M01-stroke-commit` / Draft PR #13 | 実施中 | 必須 | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | 固定QA URL公開と実機確認が必要 |
+| M02 | Layer追加・選択 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m02/ | 未調査 | — |
+| M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査 | — |
+| M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 未調査 | — |
+| M05 | Save | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m05/ | 未調査 | — |
+| M06 | Reload / Recovery | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m06/ | 未調査 | — |
+| M07 | PNG Export | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m07/ | 未調査 | — |
+| M08 | Color UI | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m08/ | 未調査 | — |
+| M09 | Brush UI | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m09/ | 未調査 | — |
+| M10 | Layer Page基本 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m10/ | 未調査 | — |
+| M11 | Smudge / Blend / Eyedropper | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m11/ | 未調査 | — |
+| M12 | Selection基礎 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m12/ | 未調査 | — |
+| M13 | Selection高度機能 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m13/ | 未調査 | — |
+| M14 | Transform | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m14/ | 未調査 | — |
+| M15 | Group / Folder Transform | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m15/ | 未調査 | — |
+| M16 | 通常Fill | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m16/ | 未調査 | — |
+| M17 | 囲って塗る等のFill拡張 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m17/ | 未調査 | — |
+| M18 | Lineart Layer / Region統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m18/ | 未調査 | 実装開始前に小マイルストーンへ分割する |
+| M19 | Effects / Adjustments | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m19/ | 未調査 | — |
+| M20 | Liquify | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m20/ | 未調査 | — |
+| M21 | Folder Liquify | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m21/ | 未調査 | — |
+| M22 | Motion System完成 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m22/ | 未調査 | 共通Motion基盤は必要最小限を前段から導入可 |
+| M23 | Workspace Motion | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m23/ | 未調査 | — |
+| M24 | Quick Controller | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m24/ | 未調査 | — |
+| M25 | Layer Motion | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m25/ | 未調査 | — |
+| M26 | Tool / Color Motion | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m26/ | 未調査 | — |
+| M27 | Reference | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m27/ | 未調査 | — |
+| M28 | Navigator | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m28/ | 未調査 | — |
+| M29 | Assets | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m29/ | 未調査 | — |
+| M30 | Automation | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m30/ | 未調査 | — |
+| M31 | Compact基本UI | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m31/ | 未調査 | — |
+| M32 | Compact制作UI | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m32/ | 未調査 | — |
+| M33 | Landscape / Safe Area / Keyboard等 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m33/ | 未調査 | — |
+| M34 | Aurora Visual Polish | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m34/ | 未調査 | — |
+| M35 | Motion Polish | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m35/ | 未調査 | — |
+| M36 | Performance Hardening | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m36/ | 未調査 | — |
+| M37 | Save / Recovery破壊試験 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m37/ | 未調査 | — |
+| M38 | Device QA | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m38/ | 未調査 | — |
+| M39 | Illustroだけで一枚絵を最初から最後まで制作 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m39/ | 主要比較対象を再確認 | — |
+| M40 | Illustro v1 Release Candidate | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m40/ | 主要比較対象を再確認 | M01〜M39消化だけでは自動合格にしない |
 
 ## Stage Checkpoints
 
@@ -102,7 +117,7 @@ M34〜M40。
 
 各マイルストーン開始時に開始commit、branch/PR、調査対象を記入する。実装チャットが完了を申告してもManagerがGitHubを独立確認するまで状態を進めない。
 
-自動検査が通っただけなら最大で🧪。人間の感覚が重要な機能は、QA Modeを用意してユーザーが明確に合格と判断するまで✅にしない。
+自動検査が通っただけなら最大で🧪。人間の感覚が重要な機能は、専用QA URLをGitHub Pagesへ公開し、Managerが実URL到達を確認した後に👤へ進める。ユーザーが明確に合格と判断するまで✅にしない。
 
 ✅になった機能は固定成果として扱い、別機能の都合で理由なく変更しない。変更が不可避なら影響範囲と回帰検査を明記する。
 
