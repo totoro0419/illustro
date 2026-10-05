@@ -1632,6 +1632,10 @@
     {
       "path": "docs/implementation/M01_STROKE_COMMIT_DESIGN.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_CHECKLIST.md",
+      "status": "CANONICAL"
     }
   ]
 }
