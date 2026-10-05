@@ -18,14 +18,14 @@
 - Brush Foundationは固定基盤として扱う。別マイルストーン都合でRenderer/Input/補正/GPU構造を理由なく再設計しない。
 - Region / Lineartは採用予定試作であり、製品統合済みではない。
 - 現在のEditorはBrush表示まで接続済みだが、一筆は正式Document/Layerへ未確定。Layer追加、文書Undo/Redo、Save/Recovery/Reload/Exportも未接続。
-- よって次の実装対象はM01。
+- M01を `milestone/M01-stroke-commit` / Draft PR #13 で実装中。M02以降は未着手のまま維持する。
 - M01では「一筆を選択Layerへ正式確定」を成立させるために必要な範囲だけ、既存CoreをArchitecture V2へ整合させる。M02以降の機能を先取りしない。
 
 ## マイルストーン
 
 | ID | 名前 | 状態 | 開始commit | 終了commit | branch / PR | 自動検査 | ユーザー確認 | 参考にした主要アプリ | 未解決事項 |
 |---|---|---|---|---|---|---|---|---|---|
-| M01 | 一筆を選択Layerへ正式確定 | ⬜ | `6e102e5` 機能基準 | — | `milestone/M01-stroke-commit` / PR未作成 | 未実施 | 必須 | 未調査。実装前に必須 | V2最小整合、Preview→正式Raster確定、dirty範囲、失敗時の原子性 |
+| M01 | 一筆を選択Layerへ正式確定 | 🛠 | `cb95bd2` | — | `milestone/M01-stroke-commit` / Draft PR #13 | 実施中 | 必須 | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | 実装・自動検査後に実機QAが必要 |
 | M02 | Layer追加・選択 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
 | M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
 | M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | 未調査 | — |
