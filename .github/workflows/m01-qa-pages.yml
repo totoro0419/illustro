@@ -1,0 +1,68 @@
+name: Publish M01 QA Preview
+
+on:
+  push:
+    branches: ['milestone/M01-stroke-commit']
+    paths:
+      - 'apps/editor/**'
+      - 'packages/core/**'
+      - '.github/workflows/m01-qa-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: m01-qa-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout M01 source
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build frozen Brush runtime
+        run: npm run brush:build > /tmp/m01-brush-build.log
+      - name: Build M01 editor for Pages subdirectory
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Checkout current public Pages snapshot
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+      - name: Preserve existing Pages and add M01
+        run: |
+          rm -rf site/.git site/m01
+          mkdir -p site/m01
+          cp -a apps/editor/dist/. site/m01/
+          touch site/.nojekyll
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload combined Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}m01/?qa=1
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy preserved site plus M01
+        id: deployment
+        uses: actions/deploy-pages@v4
