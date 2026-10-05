@@ -1,5 +1,5 @@
 import {foundationDabs,predictFoundation,cursorState,geometryContext} from '@rt/foundation';
-import {CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
+import {CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,forceFadePreviewCommands,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
 import {makeDab} from '@legacy/dynamics';
 // A predicted stamp is emitted only when the next spatial/time deposit is due.
 // The builder, random index and all canonical input remain unchanged.
@@ -11,12 +11,12 @@ export function predictedCommand(b,q){
  const f=segment?1:Math.min(spatial,temporal);if(!Number.isFinite(f)||f<0||f>1)return null;
  const sample={...q,x:prev.x+dx*f,y:prev.y+dy*f,t:prev.t+dt*f},distance=b.distance+len*f;
  const dab=b.foundation?foundationDabs(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start).dabs[0]:makeDab(sample,p,b.index,b.seed,distance,len/Math.max(.001,dt/1000),Math.atan2(dy,dx),sample.t-b.start);if(b.foundation&&solid)dab[2]=limitFoundationDiameter(p,dab[2],b.lastRadius,len);const c=new Float64Array(STRIDE);c.set(dab);
- c[16]=segment?prev.x:dab[0];c[17]=segment?prev.y:dab[1];c[18]=segment?b.lastRadius:dab[2]/2;c[19]=solid?1:sweep?2:0;c[20]=sample.t;c[21]=distance;c[22]=b.foundation&&!solid?Math.atan2(dy,dx):b.distance;c[23]=dab[2]/2;return c;
+ c[16]=segment?prev.x:dab[0];c[17]=segment?prev.y:dab[1];c[18]=segment?b.lastRadius:dab[2]/2;c[19]=solid?1:sweep?2:0;c[20]=sample.t;c[21]=distance;c[22]=b.foundation&&!solid?Math.atan2(dy,dx):b.distance;c[23]=dab[2]/2;const forced=forceFadePreviewCommands([c],p);return forced?.[0]??c;
 }
 export class RealtimeSession {
  constructor(renderer,workerUrl=new URL('./canonical.worker.mjs',import.meta.url)){this.renderer=renderer;this.worker=new Worker(workerUrl,{type:'module'});this.records=[];this.redoRecords=[];this.id=0;this.active=null;this.pending=[];this.resolvers=new Map;this.strokePresets=new Map;this.cancelledIds=new Set;this.prediction=true;this.browserPredictions=0;this.rawAccepted=0;this.lastRaw=null;this.errors=[];this.worker.onmessage=({data:m})=>{if(this.cancelledIds.has(m.id))return;if(m.type==='commands'){this.renderer.document.append(m.id,this.strokePresets.get(m.id),m.commands);}else if(m.type==='record'){this.renderer.document.end(m.id,m.record.preset);this.records.push(m.record);this.strokePresets.delete(m.id);this.resolvers.get(m.id)?.resolve(m.record);this.resolvers.delete(m.id);}else if(m.type==='error'){this.errors.push(m.message);this.resolvers.get(m.id)?.reject(Error(m.message));this.resolvers.delete(m.id);}};}
  begin(p,fast=0,context={}){if(this.active)throw Error('stroke already active');const id=++this.id,seed=[0x12345678,id>>>0],builder=new CanonicalBuilder(p,seed,fast,context);this.active={id,preset:builder.p,seed,fast:builder.fast,builder,stableSource:[],points:[],raw:[],distance:0,start:0,predicted:[]};this.strokePresets.set(id,this.active.preset);this.pending=[];this.redoRecords=[];this.worker.postMessage({type:'begin',id,preset:p,seed,fast,context});return id;}
- accept(s){const a=this.active;if(!a||s.predicted)return;const last=a.raw.at(-1);if(last&&s.t<last.t)return;if(last&&s.t===last.t&&['x','y','pressure','pointerType','tilt','azimuth','twist'].every(k=>s[k]===last[k]))return;a.builder.accept(s);const q=a.builder.geometry.at(-1),prev=a.points.at(-1);for(const c of a.builder.ready())a.stableSource.push(c);if(prev)a.distance+=Math.hypot(q.x-prev.x,q.y-prev.y);else a.start=q.t;a.raw.push({...s});a.points.push(q);if(a.points.length>500000)throw Error('input retention limit');this.pending.push({...s});this.rawAccepted++;this.lastRaw=s;this.updateLive(performance.now());}
+ accept(s){const a=this.active;if(!a||s.predicted)return;const last=a.raw.at(-1);if(last&&s.t<last.t)return;if(last&&s.t===last.t&&['x','y','pressure','pointerType','tilt','azimuth','twist'].every(k=>s[k]===last[k]))return;a.builder.accept(s);const q=a.builder.geometry.at(-1),prev=a.points.at(-1);const ready=a.builder.ready(),forcePreview=forceFadePreviewCommands(ready,a.preset);for(const c of forcePreview??ready)a.stableSource.push(c);if(prev)a.distance+=Math.hypot(q.x-prev.x,q.y-prev.y);else a.start=q.t;a.raw.push({...s});a.points.push(q);if(a.points.length>500000)throw Error('input retention limit');this.pending.push({...s});this.rawAccepted++;this.lastRaw=s;this.updateLive(performance.now());}
  predictions(samples){if(!this.active)return;this.active.predicted=samples;this.browserPredictions+=samples.length;}
  flush(){if(this.pending.length&&this.active){this.worker.postMessage({type:'samples',id:this.active.id,samples:this.pending});this.pending=[];}}
  // Actual input already publishes its complete current appearance in accept().
@@ -26,7 +26,7 @@ export class RealtimeSession {
  updateLive(now,finished=false,resetPreview=false){const a=this.active;if(!a)return;const b=a.builder,p=a.preset;
   // Forced release is an endpoint effect. While the pen is down, show only pressure-driven geometry.
   // finish() applies the forced release taper to the reserved tail after pointer-up.
-  const total=b.distance,tail=b.commands.slice(b.published).map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
+  const total=b.distance,sourceTail=b.commands.slice(b.published),forcedTail=forceFadePreviewCommands(sourceTail,p),tail=forcedTail??sourceTail.map(c=>{const d=c.slice();d[2]*=taper(p,d[21],total,finished);d[18]*=taper(p,d[22],total,finished);return d;});
   const q=this.prediction&&!finished?(b.foundation?predictFoundation(a.points.slice(-3),now,a.predicted,p):predict(a.points.slice(-3),now,a.predicted)):null;
   const predicted=predictedCommand(b,q);if(predicted)tail.push(predicted);
   const inputTip=a.points.at(-1),actual=b.commands.at(-1),drawn=predicted??actual;
