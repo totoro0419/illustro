@@ -22,6 +22,18 @@
 - 次の実装対象はM02「Layer追加・選択」。M03以降は未着手。
 - M01では「一筆を選択Layerへ正式確定」を成立させるために必要な範囲だけ、既存CoreをArchitecture V2へ整合させる。M02以降の機能を先取りしない。
 
+## マイルストーン開始前ゲート
+
+各マイルストーンは、実装開始前に以下を確認する。
+
+- `docs/IMPLEMENTATION_BASELINE.md` を読む。
+- `docs/CANONICAL_INDEX.md` を読む。
+- 対象分野のCANONICAL ownerを特定して読む。
+- 現行の仮実装を最終仕様として扱わない。
+- UI対象では該当するLeft UI / Right UI / Layer Page / Input Control / Workspace Customization / Compact UI正本を確認する。
+- 対象の正本設計を独自解釈で変更しない。重大な矛盾のみ未確認事項として記録する。
+- 実装プロンプトにもこの開始ゲートを必ず明記する。
+
 ## 固定QA URL運用
 
 各マイルストーンは、実装とユーザー確認ページをセットで管理する。
@@ -116,7 +128,7 @@ M34〜M40。
 
 ## 更新ルール
 
-各マイルストーン開始時に開始commit、branch/PR、調査対象を記入する。実装チャットが完了を申告してもManagerがGitHubを独立確認するまで状態を進めない。
+各マイルストーン開始時に開始commit、branch/PR、調査対象を記入する。その前に `IMPLEMENTATION_BASELINE.md`、`CANONICAL_INDEX.md`、対象分野のCANONICAL ownerを確認したことを前提とする。実装チャットが完了を申告してもManagerがGitHubを独立確認するまで状態を進めない。
 
 自動検査が通っただけなら最大で🧪。人間の感覚が重要な機能は、専用QA URLをGitHub Pagesへ公開し、Managerが実URL到達を確認した後に👤へ進める。ユーザーが明確に合格と判断するまで✅にしない。
 
