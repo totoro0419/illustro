@@ -1640,6 +1640,14 @@
     {
       "path": "docs/implementation/M01_STROKE_COMMIT_VERIFICATION.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M02_LAYER_ADD_SELECT_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M02_LAYER_ADD_SELECT_DESIGN.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }
