@@ -52,11 +52,14 @@ export function predict(points,now,browser=[]){
 export function taper(p,d,total,finished){let f=1;if(p.taperStart)f=Math.min(f,clamp(d/p.taperStart,p.taperMinimum));if(finished&&p.taperEnd)f=Math.min(f,clamp((total-d)/p.taperEnd,p.taperMinimum));return f;}
 export function limitFoundationDiameter(p,desired,lastRadius,travel){const slope=p.__foundation?.preset.pressure.sizeSlope??0;if(!slope||!Number.isFinite(lastRadius))return desired;const previous=lastRadius*2,maxDelta=slope*Math.max(.25,travel);return clamp(desired,Math.max(.01,previous-maxDelta),previous+maxDelta);}
 function forceFadeConfig(p){const f=p.__foundation?.preset.forceFade;return f?.enabled?f:null;}
-// Force Fade length controls are adaptive rather than literal whole-stroke percentages.
-// Short strokes stay close to the old percentage behavior, while long strokes
-// smoothly approach a bounded reach so a very long line does not taper for meters.
-const FORCE_FADE_AUTO_SPAN=400;
-export function forceFadeLengths(f,total){if(!(total>0))return {start:0,end:0};const effective=FORCE_FADE_AUTO_SPAN*Math.tanh(total/FORCE_FADE_AUTO_SPAN);let start=effective*f.start,end=effective*f.end,sum=start+end;if(sum>total&&sum>0){const k=total/sum;start*=k;end*=k;}return {start,end};}
+// Force Fade starts from the user's percentage-like intended distance and only
+// soft-limits that distance when it becomes very large. This keeps short and
+// medium strokes close to the requested reach while preventing extreme lines
+// from tapering over an unbounded distance. Stronger settings are allowed a
+// longer maximum reach than subtle settings.
+const forceFadeReach=level=>500+700*clamp(level);
+const softFadeDistance=(raw,level)=>{const cap=forceFadeReach(level);return cap*Math.tanh(raw/cap);};
+export function forceFadeLengths(f,total){if(!(total>0))return {start:0,end:0};let start=softFadeDistance(total*f.start,f.start),end=softFadeDistance(total*f.end,f.end),sum=start+end;if(sum>total&&sum>0){const k=total/sum;start*=k;end*=k;}return {start,end};}
 function forceFadeScale(f,d,total){if(!(total>0))return 1;let scale=1;const {start,end}=forceFadeLengths(f,total);if(start>0)scale=Math.min(scale,f.minimum+(1-f.minimum)*curve(f.curve,clamp(d/start)));if(end>0)scale=Math.min(scale,f.minimum+(1-f.minimum)*curve(f.curve,clamp((total-d)/end)));return scale;}
 export function forceFadePreviewCommands(commands,p){if(!forceFadeConfig(p))return null;const base=Math.max(.01,p.__foundation?.preset.size??p.size);return commands.map(source=>{const c=source.slice();c[2]=base;c[18]=base/2;c[23]=base/2;return c;});}
 function finalizeForceFade(commands,p,total){const f=commands.length>1?forceFadeConfig(p):null;if(!f||!(total>.5))return commands.map(c=>c.slice());const base=Math.max(.01,p.__foundation?.preset.size??p.size),out=[];let previous=null;for(const source of commands){const c=source.slice(),desired=Math.max(.01,base*forceFadeScale(f,c[21],total));c[18]=(previous??desired)/2;c[2]=desired;c[23]=desired/2;previous=desired;out.push(c);}return out;}
