@@ -9,6 +9,7 @@ on:
       - 'scripts/editor-m02-smoke.mjs'
       - 'docs/research/M02_LAYER_ADD_SELECT_COMPETITOR_RESEARCH.md'
       - 'docs/implementation/M02_LAYER_ADD_SELECT_DESIGN.md'
+      - 'docs/CANONICAL_INDEX.json'
       - 'package*.json'
       - '.github/workflows/m02-layer-add-select.yml'
   workflow_dispatch:
