@@ -81,3 +81,8 @@ Illustro representation:
 - `forceFade`: separate per-brush/common finalization setting. `start` and `end` are 0–100% fractions of final stroke length and are applied after pointer-up.
 - pressure/velocity dynamics remain live and independent.
 - G-pen defaults (`start=12%`, `end=40%`) are Illustro defaults, not published ibis defaults.
+
+
+### Force Fade as a separate final geometry mode
+
+Official ibisPaint documentation separates Stabilizer Force Fade from the brush's own Fade tab and from Dynamic mappings such as pressure/speed-to-thickness. The exact proprietary width formula is not published. Illustro therefore follows the documented separation plus the observed target behavior supplied during real-device comparison: when Force Fade is ON, final width is rebuilt from base brush size and final trajectory only; live pressure/speed/native taper widths are not reused. When Force Fade is OFF, ordinary brush dynamics remain unchanged.
