@@ -37,7 +37,7 @@
 
 - Product / Featureの目的を維持し、1–12統合仕様を具体的な機能挙動に使う。
 - Architecture V2のIdentity / Raster / Brush境界 / Persistence / Region責務を採用する。
-- Brush Foundationは採用試作として固定。Renderer・補正・入力保持・シェーダーを作り直さない。
+- Brush Foundationは採用試作として固定。Renderer・補正・入力保持・シェーダーを理由なく作り直さない。ただし、実機で確認された共通表示不具合は端末別回避で隠さず、作品データを変えない表示段だけを根本修正し、source lock更新・Brush回帰・WebGL2/WebGPU・実機QAをやり直して昇格する。
 - PC/Tablet UIは承認されたLeft / Right / Layer Page / 入力標準 / カスタマイズ仕様を維持する。
 - Compactは[実装骨格](ui/COMPACT_IMPLEMENTATION_BASELINE.md)で未決事項のみ解消する。最終見た目の承認とは区別する。
 - LineartはRaster入力から太さなし境界・接続・領域構造を得る。[統合境界](architecture/REGION_ADOPTION.md)を守る。旧ADR-0005は移植しない。
