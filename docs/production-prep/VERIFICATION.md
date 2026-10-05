@@ -10,13 +10,13 @@
 | 現在のBrush | source `4a7b488`、文書同期後head `d9b325e`。code/test/HTML差分なし。HTML blob `548736458cf0d51a73e8c6b7e31d3fd056936ab0`、549706bytes |
 | Brush Node | 91/91 PASS、ローカルとCI。既存の強制入り抜き独立性/長線/短線/再生を含む |
 | Brush CI | [37286523766](https://github.com/totoro0419/illustro/actions/runs/37286523766) completed/success。両方式各229比較・38性能条件、targeted各18/18、各3分試験43200/43200入力保持。ログから独立抽出 |
-| 旧Brush / Core | 旧Brush170/170、Core8/8、各TypeScript型検査PASS。Coreに必要な元branchの3ファイル依存を補い再検査 |
+| 旧Brush / Core | 旧Brush170/170、Core8/8、P0既存29/29、各Core/Brush TypeScript型検査PASS。Coreに必要な元branchの3ファイル依存を補い再検査 |
 | Source整合 | 65成果のSHA-256と元commitのGit objectを独立byte比較。HTMLを再buildして元blobと一致。旧設計branchが祖先でなく旧ADR-0005不在 |
 | 本番骨格 | Editor TypeScript/Vite build PASS。Worker実bundleを含む。CI [37291492186](https://github.com/totoro0419/illustro/actions/runs/37291492186) source `11fe2a9` completed/success |
 | ブラウザ | WebGL2/WebGPUで実描画画素を確認。7選択肢、太さSlider/数値、強制入り抜きON/OFF、消しゴム/Brush表示同期、幅変更、Drawer開閉/Focus復帰、未接続Save無効を確認 |
 | 画面サイズ | 両方式で1024×768、760×700、390×844、320×640、740×390。横はみ出しなし。1440×900とCompactの実スクリーンショットを回収・目視確認 |
 | ブラウザ実行エラー | 両方式ともconsole/pageerrorなし |
-| 文書の整合 | 401分類path、14owner、重複owner/pathなし、正本Markdownリンク切れ0。既存停止指示を現在の正本から除外。検証記録追加後は新件数を再検査 |
+| 文書の整合 | 402分類path、14owner、重複owner/pathなし、正本Markdownリンク切れ0。既存停止指示を現在の正本から除外。最終件数を再検査済み |
 | Raster Lab | 元sourceを維持。13構造群、225 Raster条件（各2回）、10延長群、9緩和群PASS。fixtures生成後に実行し、出力を元の記録と混同せず別保存。人間精度合格を代用しない |
 
 ## 修正して再確認したこと
@@ -38,6 +38,8 @@
 - 6社比較の総合優位性は未検証。
 
 ローカルのChromium取得は非ZIP応答で失敗したため、ローカルGPU/画面検査をPASS扱いせず、GitHub Actionsの実ブラウザで確認した。回収ZIP SHA-256は `f05b304c50d5f47ab78c4e3b5f572765b019534313aa6b4f2497394e2bb171df` とartifact digestに一致。
+
+最終文書整合を含む [CI37292097873](https://github.com/totoro0419/illustro/actions/runs/37292097873) は commit `4bd6571250fc704a1a68ed1cb975481e191cc857` で completed/success。Core CI37292105444もsuccess。この後の更新はこの検証報告のみで、apps/packages/scripts/package/CI定義は検証済みコードから不変。
 
 ## 判定
 
