@@ -18,7 +18,8 @@
 - Brush Foundationは固定基盤として扱う。別マイルストーン都合でRenderer/Input/補正/GPU構造を理由なく再設計しない。
 - Region / Lineartは採用予定試作であり、製品統合済みではない。
 - 現在のEditorは一筆の正式Document/Layer確定まで接続済み。Layer追加、文書Undo/Redo、Save/Recovery/Reload/Exportは未接続。
-- M01は強制入り抜きのタイミング問題をBrush Foundationの最小修正で解消し、自動検査・固定QA再公開・ユーザー実機再確認まで完了。2026-10-05にユーザーが修正版を合格判定。M02以降は未着手。
+- M01は✅合格・固定。実機合格、固定QA、PR #13統合、統合後Core CI / Production PreparationまでPASS済み。現在の統合基準commitは `f58de8c4a0650c6fdd32c4b17a40a2021cd79145`。
+- 次の実装対象はM02「Layer追加・選択」。M03以降は未着手。
 - M01では「一筆を選択Layerへ正式確定」を成立させるために必要な範囲だけ、既存CoreをArchitecture V2へ整合させる。M02以降の機能を先取りしない。
 
 ## 固定QA URL運用
@@ -40,8 +41,8 @@
 
 | ID | 名前 | 状態 | 開始commit | 終了commit | branch / PR | 自動検査 | ユーザー確認 | 専用QA URL | 参考にした主要アプリ | 未解決事項 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| M01 | 一筆を選択Layerへ正式確定 | ✅ | `cb95bd2` | `6a99a60` | `milestone/M01-stroke-commit` / Draft PR #13 | PASS（Core / adapter / Brush 93 tests / WebGL2 / WebGPU / 公開QA） | PASS（2026-10-05 修正版を実機合格） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。固定QAを回帰基準として保持 |
-| M02 | Layer追加・選択 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m02/ | 未調査 | — |
+| M01 | 一筆を選択Layerへ正式確定 | ✅ | `cb95bd2` | `c4fa55d` | `milestone/M01-stroke-commit` / PR #13 merged | PASS（Core / adapter / Brush 93 tests / WebGL2 / WebGPU / 公開QA / 統合後回帰） | PASS（2026-10-05 修正版を実機合格） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。固定QAを回帰基準として保持 |
+| M02 | Layer追加・選択 | ⬜ | `f58de8c` | — | `milestone/M02-layer-add-select` / PR未作成 | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m02/ | 未調査。実装前に必須 | M01固定成果を壊さず、Layerモデルを単一正本として追加・選択を成立させる |
 | M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査 | — |
 | M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 未調査 | — |
 | M05 | Save | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m05/ | 未調査 | — |
