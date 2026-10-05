@@ -2,6 +2,18 @@
 
 唯一の開始入口は [IMPLEMENTATION_BASELINE](IMPLEMENTATION_BASELINE.md)。文書の優先関係をそこで固定する。機械検査用の [全ファイル分類](CANONICAL_INDEX.json) は一つのpathを一つの分類に割り当てる。
 
+## 実装開始時の読み方
+
+マイルストーン実装者は毎回、コード変更前に次を確認する。
+
+1. `IMPLEMENTATION_BASELINE.md`
+2. この `CANONICAL_INDEX.md`
+3. 下表で対象分野の「唯一の入口」として指定されたCANONICAL文書
+
+現行コード、QAページ、skeleton、試作、過去PRは、CANONICAL設計を上書きしない。特にUIは仮UIを最終仕様とせず、Left UI / Right UI / Layer Page / Input Control / Workspace Customization / Compact UIの該当正本を確認して実装する。
+
+対象の正本と現行実装が食い違う場合は、独自解釈で正本を変更せず、正本を基準に最小限の統合方法を選ぶ。重大な矛盾は未確認事項として明示する。
+
 | 分類 | 意味 |
 |---|---|
 | CANONICAL | 現在の本番仕様。分野ごとの唯一のownerを下に示す |
