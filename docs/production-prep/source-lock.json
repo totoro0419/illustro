@@ -311,21 +311,7 @@
       "path": "experiments/raster-region-lab-v01/test-structure.cjs",
       "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
-    },
-    {
-      "path": "packages/core/src/commit.ts",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "eb89cf19fb6cb9f75b86ae77506678128c8f0179d089c017101bb91585378d36"
-    },
-    {
-      "path": "packages/core/src/history.ts",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "229f3b8815178e9103f90894d95083feda864fae01d545cefb129ff11ef6e05e"
-    },
-    {
-      "path": "packages/core/src/transaction.ts",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "641a24446a50df416e2a27b04c30581ce1a458780480614bb4eb07a25b986fb0"
     }
-  ]
+  ],
+  "corePolicy": "M01 owns packages/core under Architecture V2; provisional Core source-lock entries were retired. Frozen Brush and accepted Raster Lab artifacts remain hash-locked."
 }
