@@ -1,0 +1,331 @@
+{
+  "baseMain": "bdc7135b51033982d90ea5dad104bb04fc107df2",
+  "integrationBranch": "integration/production-prep-2026-10-05",
+  "artifacts": [
+    {
+      "path": "packages/brush-rt/package.json",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "47c72d0aa875ddc417fdffcf6e710bc8bb13139ee378c4fe0aee1f7e19594689"
+    },
+    {
+      "path": "packages/brush-rt/src/baseline-shaders.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "b22105f057e19d4156cb42dd8d314d2cd7779d6328bf122a0e22eaf8e3048177"
+    },
+    {
+      "path": "packages/brush-rt/src/canonical.worker.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "f28bfb396c7fffa11e6f64943d3fc4cd1eb8a3488140626071cc3bde4aabed80"
+    },
+    {
+      "path": "packages/brush-rt/src/foundation.d.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "dece507d1ef15bec981b839307532f9e50fbb0985e2151eb88b84f23fae60dc6"
+    },
+    {
+      "path": "packages/brush-rt/src/foundation.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "4f6c509804fa97eb99803b6df53f36dde11e677b1e6a2321cd8a8ec549e4fec6"
+    },
+    {
+      "path": "packages/brush-rt/src/index.d.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "2dc6d0910f119271de4934183c7da0803b00e7f1faac4f8aa24cefd3c2fce52d"
+    },
+    {
+      "path": "packages/brush-rt/src/index.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "4c6ed3a047d7c593c0bda640ca0039e44fc553f05beba5690683af30e4d9ef18"
+    },
+    {
+      "path": "packages/brush-rt/src/model.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "9a63d4d01ef9b1e2d2f190e38c2590fd682a3d1717adf8cbed1b66deb7f0b1fe"
+    },
+    {
+      "path": "packages/brush-rt/src/renderer.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "1685032f02ba33ea128f7e14d30209f3bf55a78cda384090a7c0acd8ace62b6b"
+    },
+    {
+      "path": "packages/brush-rt/src/session.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "378b9aa74588d7a75e0313939a548c9ee18e73daa79a9bed5a481c5cab1dab74"
+    },
+    {
+      "path": "packages/brush-rt/src/shaders.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "23d0f8fbb5242605e34b6e28500d05addb75f0519fe163badfb00defefb49a87"
+    },
+    {
+      "path": "packages/brush-rt/test/fixtures/pre-sweep-foundation-v3.json",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "c8c119bda7d241fac8b3b9ba2e3eee6bba8aeea66fc356a2880d89bae8fd1009"
+    },
+    {
+      "path": "packages/brush-rt/test/fixtures/provider-worker.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "05c30b99e6cd3b47180526ee43d3df13f3d4bbd8a522e1b1aac0486fe9167826"
+    },
+    {
+      "path": "packages/brush-rt/test/fixtures/test-material-provider.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "3821a62c1b9f363e4d4e614363919e800cdb1dea3ab5b12bf5f8a8f9072b2609"
+    },
+    {
+      "path": "packages/brush-rt/test/foundation-contract.test.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "e286ed85b0b7305165519b4b3ed032144a2b1308876fe5c3520c1aaa53cac7aa"
+    },
+    {
+      "path": "packages/brush-rt/test/foundation.test.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "3a860610baed46f12b0604693ac0d26c2930346c5a2d696b7e0d2a0805fe8563"
+    },
+    {
+      "path": "packages/brush-rt/test/model.test.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "7b43870de1e0b75fdc3173811c6e9aba38fb2fb3c2e8a354ae12d329e769694e"
+    },
+    {
+      "path": "packages/brush/package.json",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "27a67e8b638d78252b87520a27790558d1961533814953df3c06b21f68c8bf91"
+    },
+    {
+      "path": "packages/brush/src/benchmark.mts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "e56bdaa759652bd57be966ab9789ffd091e12561fa2231444e50377e82847814"
+    },
+    {
+      "path": "packages/brush/src/coreSession.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "e69d6dcf3d23d0e876824bf92f7e18153e51a7c64bf34a604043061ed6da0cea"
+    },
+    {
+      "path": "packages/brush/src/coverage.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "afd80041509eb4dba7489471105de522b3a86c5a55504235cb9da308a503dbbd"
+    },
+    {
+      "path": "packages/brush/src/dynamics.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "187136e25b57419e9fe40c5b8e21db526b50bd5ae89df56ab266a1a692c63db8"
+    },
+    {
+      "path": "packages/brush/src/engine.test.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "e019bd00b18cd326e79d1b47f9594582e4891593bf35a2420246d9e77f55651d"
+    },
+    {
+      "path": "packages/brush/src/engine.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "e146aee79c2a62345ee6e51df219469f9d8598be99616fb351da2c2468771396"
+    },
+    {
+      "path": "packages/brush/src/fixtures.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "bc97ebcd6981d14b2cb406c979016f2dde70045481d8973a241ceb907d206120"
+    },
+    {
+      "path": "packages/brush/src/index.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "6047c155d1ebe836f34101502a0d698d607fc496dafbb6d11396398c2e97e44f"
+    },
+    {
+      "path": "packages/brush/src/input.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "d2f74ddb797d108811266bb9acb3e10442f7748c96dcd7e51006755968545c71"
+    },
+    {
+      "path": "packages/brush/src/math.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "8e0468ad6a1ac34d51b6f21e28732a771be13d1db6dc9c06e68bbc8fb427953d"
+    },
+    {
+      "path": "packages/brush/src/optimization.test.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "869ddf947c1ea86a939f315c8abedbf2edf0b77390c5d306cfeca27f58e39235"
+    },
+    {
+      "path": "packages/brush/src/presets.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "717000704e8e567acc62afe8e5560d812bdf352252ab40f891904ff6953d56f7"
+    },
+    {
+      "path": "packages/brush/src/random.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "ac3020e62ebf437e521552424373dd3494f1fccd27cb314205e8fee87ef6fbce"
+    },
+    {
+      "path": "packages/brush/src/raster.test.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "995e420e52dc3be09dd6fdcf64cba309d26a8c8a98addadfe3d42f2516c467cb"
+    },
+    {
+      "path": "packages/brush/src/raster.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "930963b4da6c685c5a776c077fddf12888a083fabcb52b733a56ca373e8e56b4"
+    },
+    {
+      "path": "packages/brush/src/reconstruction.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "75d2834918469585b3f18eb7c9df79b265a3544c58cc5ad17edcce839bdc9cd3"
+    },
+    {
+      "path": "packages/brush/src/record.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "26b58f6f436cfd3526a656cc3fa788d7b4eebfcd3b83d04b27a8e0eb320e9d7d"
+    },
+    {
+      "path": "packages/brush/src/types.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "c84497b2c4f0ee8a4ffa6f8798a79ee11acd596bf2618d2ddfd70f7695934fa4"
+    },
+    {
+      "path": "packages/brush/tsconfig.json",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "baed93029ca3b7287a96dbfb91d2174acd218a661d1506073025ee780c560d3d"
+    },
+    {
+      "path": "prototypes/brush-rt/browser-check.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "c274a063a55907247cf3723c9f827066b4f7a97f12843101e140a1955feff6b3"
+    },
+    {
+      "path": "prototypes/brush-rt/build.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "e40a51f4091010591ed4ce12e97d639a961d2ecc3cb186712087628a347649d1"
+    },
+    {
+      "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "51dc62778467915f25e1f94a93f4458d9160104f128da04db1f934ba1e75f66b"
+    },
+    {
+      "path": "prototypes/brush-rt/foundation-check.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "eb390b206d0ac2649ed4841cb319bcbea6bb392fdbd879dea7853075b0bbbb78"
+    },
+    {
+      "path": "prototypes/brush-rt/foundation-quick-check.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "bd3b29180fcf4376c2b28f873311b8375f235c564e02ea62471a2b0213d3a5bc"
+    },
+    {
+      "path": "prototypes/brush-rt/index.html",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "09272fd66fd41cfbe62e476bbae92db21dbc4c27eb58af54366fbec92791fcc9"
+    },
+    {
+      "path": "prototypes/brush-rt/ui.mjs",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "10a66e3408c6a4add74d3f38099d10cd1a573478dc757127694e0ffda45863af"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/DESIGN.md",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "90b6b869166f153586bbe843a90a8a5f6758a02096e869a6aca7a462eea2a6e8"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/README.md",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "df95d50bc34c0fe1c9e5e712250d87affb55dd2f64ef75e41e74396881816343"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/browser-extension-verification.json",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "db1d9fc95c75651047bc3577ef47acb7a81f1df91d9f35a67ddcf1ca432d1e65"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/browser-feedback-verification.json",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "93a387bf5a15079680ac4d916ed90c05eb1cd79708f12045a6d66d627ca2c4c1"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/browser-verification.json",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "700248d5e99e7cfe818353fe9ed6174cecc4971a50aad890853c57d72c88da0f"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/build-html.py",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "daf2fd17abe4002ca498f2b3dbd0f0be52f56c8feabd02d984d092e236ae6887"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/engine.js",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "0ef9887b1ffabede365e808a139aab2950405328db807f8b9d6de185a1bb1adc"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/extension-verification.json",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "5c3cd5037740e53272b7f319a54d076e14dc1fa5bdf0f2742589040900be1bcd"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/feedback-verification.json",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "a46125a913da402071b398dc5d2e39e3ced709524d782f63626f785c7cd796f6"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/generate-fixtures.py",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "98092a2c39ad00def72265c3f25bc9c4e000c6d749f6bd8f81539d9b1146536c"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/illustro-raster-region-lab.html",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "720014a4fd30c24e84fd5c82fe1822ebca063025f680ce80a62f6a6868811cbb"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/raster-verification.json",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "8ef6ee5252e313500c0e604c67917c995e3ae82ce8787c956fbd2683a3e69349"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/structure-verification.json",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "3de32d0a256feda5c768a2b18eaefeb5a8a4524ff6b4d8975d2f04a3fce20aa6"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/template.html",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "12ebe4fbec2aad7fa4df6f27c26310a3ab0adcd4fd77b23504a56af5b70ecb0c"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/test-extension.cjs",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "a18bd178955c62527858ba7047fb0b2a9f1f616ca0f95c6e4cf7c92aa72b1843"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/test-feedback.cjs",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "0ec544cf314976f6e09c74fef95133879e0541344b231b55bc7f9e6a3b285d1b"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/test-raster.cjs",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "df35d1a18685b1a9482f9dd351145d11d251a8837fd3d6be7bcfc506d232dd26"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/test-structure.cjs",
+      "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
+    },
+    {
+      "path": "packages/core/src/commit.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "eb89cf19fb6cb9f75b86ae77506678128c8f0179d089c017101bb91585378d36"
+    },
+    {
+      "path": "packages/core/src/history.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "229f3b8815178e9103f90894d95083feda864fae01d545cefb129ff11ef6e05e"
+    },
+    {
+      "path": "packages/core/src/transaction.ts",
+      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "sha256": "641a24446a50df416e2a27b04c30581ce1a458780480614bb4eb07a25b986fb0"
+    }
+  ]
+}
