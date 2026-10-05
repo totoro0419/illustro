@@ -1,0 +1,44 @@
+name: Production Preparation
+on:
+  push:
+    branches: ['integration/production-prep-2026-10-05']
+    paths: ['apps/**', 'packages/**', 'scripts/**', 'package*.json', 'docs/CANONICAL_INDEX*', 'docs/production-prep/source-lock.json', '.github/workflows/production-prep.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Existing core and brush regression
+        run: |
+          npm run core:check
+          npm run brush:typecheck
+          npm run brush:test
+          npm run brush:build > /tmp/brush-build.log
+          npm run brush:regression
+          npm run prep:check
+          npm run editor:build
+      - name: Browser runtime
+        run: |
+          npm install --prefix /tmp/editor-browser playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
+          /tmp/editor-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Actual skeleton display and worker integration
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/editor-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/editor-browser/node_modules/pngjs
+          PREP_EVIDENCE_DIRECTORY: /tmp/editor-evidence
+        run: node scripts/editor-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-preparation-evidence
+          path: /tmp/editor-evidence
