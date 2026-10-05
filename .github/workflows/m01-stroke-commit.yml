@@ -5,6 +5,7 @@ on:
     paths:
       - 'apps/editor/**'
       - 'packages/core/**'
+      - 'packages/brush-rt/**'
       - 'scripts/editor-m01-smoke.mjs'
       - 'docs/IMPLEMENTATION_CHECKLIST.md'
       - 'docs/research/M01_STROKE_COMMIT_COMPETITOR_RESEARCH.md'
@@ -34,10 +35,10 @@ jobs:
           npm run prep:check
       - name: Stroke adapter tests
         run: npx vitest run apps/editor/src/strokeCommit.test.ts
-      - name: Frozen Brush Foundation light regression
+      - name: Brush Foundation regression
         run: |
           npm run brush:build > /tmp/m01-brush-build.log
-          node --test packages/brush-rt/test/foundation-contract.test.mjs packages/brush-rt/test/model.test.mjs
+          node --test packages/brush-rt/test/*.test.mjs
       - name: Editor build
         env:
           VITE_COMMIT_SHA: ${{ github.sha }}
