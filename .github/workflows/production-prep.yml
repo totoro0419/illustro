@@ -21,13 +21,15 @@ jobs:
       - name: Core and active Brush Foundation regression
         run: |
           npm run core:check
+          # Verify checked-in frozen artifacts before brush:build rewrites generated
+          # prototype output in the CI working tree.
+          npm run prep:check
           # Production Editor uses @illustro/brush-rt. The legacy @illustro/brush
           # package remains source-locked as historical accepted material, but its
           # old Core adapter is intentionally not a production build target after
           # the Architecture V2 Core migration.
           npm run brush:build > /tmp/brush-build.log
           npm run brush:regression
-          npm run prep:check
           npm run editor:build
       - name: Browser runtime
         run: |
