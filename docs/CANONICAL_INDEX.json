@@ -1636,6 +1636,10 @@
     {
       "path": "docs/IMPLEMENTATION_CHECKLIST.md",
       "status": "CANONICAL"
+    },
+    {
+      "path": "docs/implementation/M01_STROKE_COMMIT_VERIFICATION.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }
