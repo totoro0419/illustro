@@ -1,0 +1,63 @@
+{
+  "scope": "Adversarial burst, 512/1024px. Actual pixel at latest corrected endpoint checked with test-only readback while commit debt remains. Production display capped at one in-flight frame and two dabs; release retains bounded provisional ink and canonical worker replaces it. All geometry/replay exact. This is not physical pen-to-photon evidence.",
+  "cases": [
+    {
+      "size": 512,
+      "accepted": 82,
+      "debtAtEnd": 1791,
+      "peakDabs": 1,
+      "tip": {
+        "alpha": 255,
+        "point": {
+          "x": 700,
+          "y": 450,
+          "t": 400,
+          "p": 0.2,
+          "tilt": 0,
+          "azimuth": 0,
+          "twist": 0,
+          "valid": 1
+        },
+        "pendingCommitDabs": 1839,
+        "liveDabs": 2
+      },
+      "releaseDabs": 1,
+      "blockingQueries": 0,
+      "provisional": 1,
+      "liveDabBudget": 2,
+      "canonicalGeometrySamples": 82,
+      "canonicalReplayExact": true,
+      "errors": [],
+      "glError": 0
+    },
+    {
+      "size": 1024,
+      "accepted": 82,
+      "debtAtEnd": 767,
+      "peakDabs": 1,
+      "tip": {
+        "alpha": 255,
+        "point": {
+          "x": 700,
+          "y": 450,
+          "t": 400,
+          "p": 0.2,
+          "tilt": 0,
+          "azimuth": 0,
+          "twist": 0,
+          "valid": 1
+        },
+        "pendingCommitDabs": 919,
+        "liveDabs": 2
+      },
+      "releaseDabs": 1,
+      "blockingQueries": 0,
+      "provisional": 1,
+      "liveDabBudget": 2,
+      "canonicalGeometrySamples": 82,
+      "canonicalReplayExact": true,
+      "errors": [],
+      "glError": 0
+    }
+  ]
+}
