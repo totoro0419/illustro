@@ -1,11 +1,34 @@
-import {revisionId,type LayerId,type RevisionId,type TransactionId} from './ids';
-export type CommandOperation=Readonly<{kind:'raster.tiles';layerId:LayerId;tileCount:number}>|Readonly<{kind:'layer.metadata';layerId:LayerId}>|Readonly<{kind:'brush.stroke';layerId:LayerId;recordJson:string}>;
-export type Command=Readonly<{version:1;kind:'core.transaction';label:string;operations:readonly CommandOperation[]}>;
-export type Revision<T>=Readonly<{id:RevisionId;parentIds:readonly RevisionId[];transactionId:TransactionId|null;root:T;command:Command|null;committedAt:number}>;
+import {operationKey,type IdFactory,type LayerId,type OperationKey,type ResourceId,type RevisionId,type TransactionId,type WriterEpochId} from './ids';
+import type {LocalDirtyRect} from './raster/surface';
+
+export type CommitStamp=Readonly<{writerEpochId:WriterEpochId;commitSequence:bigint}>;
+export type DirtyFootprintHint=Readonly<{layerId:LayerId;tileX:number;tileY:number;bounds:LocalDirtyRect}>;
+export type SemanticOperation=Readonly<{
+  key:OperationKey;kind:string;schemaVersion:number;targetEntityIds:readonly LayerId[];parameters:Readonly<Record<string,unknown>>;
+  algorithmVersionRefs:readonly string[];resourceRefs:readonly ResourceId[];sourceRevisionIds:readonly RevisionId[];
+  selectionSnapshotRefs:readonly string[];resultValueRefs:readonly string[];dirtyFootprint:readonly DirtyFootprintHint[];
+}>;
+export type SemanticOperationDraft=Omit<SemanticOperation,'key'>;
+export type Command=Readonly<{version:2;kind:'core.transaction.v2';label:string;operations:readonly SemanticOperation[]}>;
+export type Revision<T>=Readonly<{id:RevisionId;parentIds:readonly RevisionId[];transactionId:TransactionId|null;root:T;command:Command|null;commitStamp:CommitStamp|null;committedAt:number}>;
+
 export class RevisionHistory<T>{
- private revisions=new Map<RevisionId,Revision<T>>();private h=revisionId(0);private next=1;private redoIds:RevisionId[]=[];
- constructor(root:T,at=0){this.revisions.set(this.h,Object.freeze({id:this.h,parentIds:Object.freeze([]),transactionId:null,root,command:null,committedAt:at}));}
- get head(){return this.h;}get current(){const r=this.revisions.get(this.h);if(!r)throw new Error('missing revision');return r;}get count(){return this.revisions.size;}has(id:RevisionId){return this.revisions.has(id);}assertHead(id:RevisionId){if(id!==this.h)throw new Error('stale transaction');}
- publish(base:RevisionId,tx:TransactionId,root:T,command:Command,at:number){this.assertHead(base);const id=revisionId(this.next++),cmd=Object.freeze({...command,operations:Object.freeze([...command.operations])});const r=Object.freeze({id,parentIds:Object.freeze([this.h]),transactionId:tx,root,command:cmd,committedAt:at}) as Revision<T>;this.revisions.set(id,r);this.h=id;this.redoIds=[];return r;}
- undo(){const p=this.current.parentIds[0];if(p===undefined)return this.current;this.redoIds.push(this.h);this.h=p;return this.current;}redo(){const n=this.redoIds.pop();if(n===undefined)return this.current;this.h=n;return this.current;}
+  private readonly revisions=new Map<RevisionId,Revision<T>>();private headValue:RevisionId;private readonly redoIds:RevisionId[]=[];
+  constructor(root:T,private readonly ids:IdFactory,at=0){const id=ids.revision();this.headValue=id;this.revisions.set(id,Object.freeze({id,parentIds:Object.freeze([]),transactionId:null,root,command:null,commitStamp:null,committedAt:at}));}
+  get head(){return this.headValue;}get current(){const r=this.revisions.get(this.headValue);if(!r)throw new Error('missing revision');return r;}get count(){return this.revisions.size;}
+  has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
+  assertHead(id:RevisionId){if(id!==this.headValue)throw new Error('stale transaction');}
+  publish(base:RevisionId,tx:TransactionId,root:T,command:Command,at:number,commitStamp:CommitStamp){this.assertHead(base);const id=this.ids.revision();
+    const operations=Object.freeze(command.operations.map(x=>Object.freeze(x)));const cmd=Object.freeze({...command,operations});
+    const revision=Object.freeze({id,parentIds:Object.freeze([this.headValue]),transactionId:tx,root,command:cmd,commitStamp,committedAt:at}) as Revision<T>;
+    this.revisions.set(id,revision);this.headValue=id;this.redoIds.length=0;return revision;}
+  undo(){const parent=this.current.parentIds[0];if(parent===undefined)return this.current;this.redoIds.push(this.headValue);this.headValue=parent;return this.current;}
+  redo(){const next=this.redoIds.pop();if(next===undefined)return this.current;this.headValue=next;return this.current;}
+}
+export function finalizeOperation(transactionId:TransactionId,operationOrdinal:number,draft:SemanticOperationDraft):SemanticOperation{
+  if(!draft.kind.trim()||!Number.isSafeInteger(draft.schemaVersion)||draft.schemaVersion<=0)throw new Error('invalid semantic operation');
+  return Object.freeze({...draft,key:operationKey(transactionId,operationOrdinal),targetEntityIds:Object.freeze([...draft.targetEntityIds]),
+    parameters:Object.freeze({...draft.parameters}),algorithmVersionRefs:Object.freeze([...draft.algorithmVersionRefs]),resourceRefs:Object.freeze([...draft.resourceRefs]),
+    sourceRevisionIds:Object.freeze([...draft.sourceRevisionIds]),selectionSnapshotRefs:Object.freeze([...draft.selectionSnapshotRefs]),
+    resultValueRefs:Object.freeze([...draft.resultValueRefs]),dirtyFootprint:Object.freeze(draft.dirtyFootprint.map(x=>Object.freeze({...x,bounds:Object.freeze({...x.bounds})})))});
 }

@@ -39,8 +39,8 @@
     },
     {
       "path": "packages/brush-rt/src/model.mjs",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "9a63d4d01ef9b1e2d2f190e38c2590fd682a3d1717adf8cbed1b66deb7f0b1fe"
+      "sourceCommit": "95f13a0d70194b86f201bd90635a2fc18a9ec4d9",
+      "sha256": "0596706a8d2450f1e7366ad8f2ba113ecc1f363e0641520e29268a6a034178eb"
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
@@ -79,8 +79,8 @@
     },
     {
       "path": "packages/brush-rt/test/foundation.test.mjs",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "3a860610baed46f12b0604693ac0d26c2930346c5a2d696b7e0d2a0805fe8563"
+      "sourceCommit": "95f13a0d70194b86f201bd90635a2fc18a9ec4d9",
+      "sha256": "490e5c446f8df14bb6749f097b88309fdc9d025f08089ee90c2bafa2c4a90a2b"
     },
     {
       "path": "packages/brush-rt/test/model.test.mjs",
@@ -311,21 +311,7 @@
       "path": "experiments/raster-region-lab-v01/test-structure.cjs",
       "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
-    },
-    {
-      "path": "packages/core/src/commit.ts",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "eb89cf19fb6cb9f75b86ae77506678128c8f0179d089c017101bb91585378d36"
-    },
-    {
-      "path": "packages/core/src/history.ts",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "229f3b8815178e9103f90894d95083feda864fae01d545cefb129ff11ef6e05e"
-    },
-    {
-      "path": "packages/core/src/transaction.ts",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "641a24446a50df416e2a27b04c30581ce1a458780480614bb4eb07a25b986fb0"
     }
-  ]
+  ],
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation remains frozen except for the user-reported forced-fade timing corrections adopted from PR #10; start reaches normal width sooner and end thinning begins later, while accepted Brush and Raster Lab artifacts remain hash-locked."
 }
