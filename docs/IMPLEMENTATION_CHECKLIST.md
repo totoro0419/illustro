@@ -17,8 +17,8 @@
 - 本番実装開始基準は検証済み。ただしCore Drawing Sliceは未完成。
 - Brush Foundationは固定基盤として扱う。別マイルストーン都合でRenderer/Input/補正/GPU構造を理由なく再設計しない。
 - Region / Lineartは採用予定試作であり、製品統合済みではない。
-- 現在のEditorはBrush表示まで接続済みだが、一筆は正式Document/Layerへ未確定。Layer追加、文書Undo/Redo、Save/Recovery/Reload/Exportも未接続。
-- M01は実装・自動検査・固定QA公開まで完了し、現在は👤ユーザー実機確認待ち。M02以降は未着手。
+- 現在のEditorは一筆の正式Document/Layer確定まで接続済み。Layer追加、文書Undo/Redo、Save/Recovery/Reload/Exportは未接続。
+- M01は強制入り抜きの抜き形状について追加問題が見つかり、Brush Foundationを最小修正して自動検査・固定QA再公開まで完了。現在は👤ユーザー実機再確認待ち。M02以降は未着手。
 - M01では「一筆を選択Layerへ正式確定」を成立させるために必要な範囲だけ、既存CoreをArchitecture V2へ整合させる。M02以降の機能を先取りしない。
 
 ## 固定QA URL運用
@@ -40,7 +40,7 @@
 
 | ID | 名前 | 状態 | 開始commit | 終了commit | branch / PR | 自動検査 | ユーザー確認 | 専用QA URL | 参考にした主要アプリ | 未解決事項 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| M01 | 一筆を選択Layerへ正式確定 | ✅ | `cb95bd2` | `3320a72` | `milestone/M01-stroke-commit` / Draft PR #13 | PASS（Core / adapter / Brush回帰 / WebGL2 / WebGPU / 公開QA） | PASS（2026-10-05 実機「問題なし」） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。QAページを固定回帰基準として保持 |
+| M01 | 一筆を選択Layerへ正式確定 | 👤 | `cb95bd2` | — | `milestone/M01-stroke-commit` / Draft PR #13 | PASS（Core / adapter / Brush 92 tests / WebGL2 / WebGPU / 公開QA） | 再確認必須（旧合格は追加問題報告により撤回） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | 強制入り抜き修正版の実機再確認のみ未完了 |
 | M02 | Layer追加・選択 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m02/ | 未調査 | — |
 | M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査 | — |
 | M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 未調査 | — |
