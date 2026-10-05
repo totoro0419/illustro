@@ -40,7 +40,7 @@
 
 | ID | 名前 | 状態 | 開始commit | 終了commit | branch / PR | 自動検査 | ユーザー確認 | 専用QA URL | 参考にした主要アプリ | 未解決事項 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| M01 | 一筆を選択Layerへ正式確定 | 👤 | `cb95bd2` | — | `milestone/M01-stroke-commit` / Draft PR #13 | PASS（Core / adapter / Brush回帰 / WebGL2 / WebGPU / 公開QA） | 必須・未実施 | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | ユーザー実機確認のみ未完了 |
+| M01 | 一筆を選択Layerへ正式確定 | ✅ | `cb95bd2` | `3320a72` | `milestone/M01-stroke-commit` / Draft PR #13 | PASS（Core / adapter / Brush回帰 / WebGL2 / WebGPU / 公開QA） | PASS（2026-10-05 実機「問題なし」） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。QAページを固定回帰基準として保持 |
 | M02 | Layer追加・選択 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m02/ | 未調査 | — |
 | M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査 | — |
 | M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 未調査 | — |
