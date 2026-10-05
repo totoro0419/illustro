@@ -2,7 +2,8 @@ import './style.css';
 import {EditorController} from './controller';
 import {BrushSurface} from './brushSurface';
 
-const qaMode=new URLSearchParams(location.search).get('qa')==='1'||/\/qa\/m02\/(?:index\.html)?$/.test(location.pathname);
+const qaPath=location.pathname.replace(/\/+$/,'');
+const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWith('/qa/m02')||qaPath.endsWith('/qa/m02/index.html');
 const qaStartedAt=new Date().toISOString();
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=`
