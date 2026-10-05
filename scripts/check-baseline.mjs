@@ -12,6 +12,8 @@ const seen=new Set(),byPath=new Map;
 for(const e of index.entries){assert.ok(statuses.has(e.status),e.path);assert.ok(!seen.has(e.path),'duplicate classification '+e.path);
   seen.add(e.path);byPath.set(e.path,e.status);assert.ok(fs.existsSync(e.path),'missing classified path '+e.path);}
 for(const p of Object.values(index.owners))assert.equal(byPath.get(p),'CANONICAL',p);
+function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
+for(const p of files('docs'))assert.ok(seen.has(p),'unclassified document '+p);
 assert.equal(new Set(Object.values(index.owners)).size,Object.values(index.owners).length,'duplicate canonical owner');
 assert.equal(index.authority,'docs/IMPLEMENTATION_BASELINE.md');
 for(const e of lock.artifacts){assert.equal(createHash('sha256').update(fs.readFileSync(e.path)).digest('hex'),e.sha256,'frozen artifact changed: '+e.path);}
@@ -28,6 +30,7 @@ const broken=[];
 // availability is researched independently, and historical evidence is separate.
 for(const e of index.entries.filter(e=>e.status==='CANONICAL'&&e.path.endsWith('.md'))){
   const text=fs.readFileSync(e.path,'utf8');
+  assert.ok(!/Production implementation:\s*\*\*LOCKED|Production implementation remains prohibited|Production remains stopped/.test(text),'stale implementation lock '+e.path);
   for(const m of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)){
     const target=m[1].split('#')[0];if(!target||/^(?:https?:|mailto:)/.test(target))continue;
     if(!fs.existsSync(path.resolve(path.dirname(e.path),target)))broken.push(`${e.path}: ${target}`);

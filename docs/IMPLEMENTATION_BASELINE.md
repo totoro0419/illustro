@@ -19,6 +19,10 @@
 
 ## 最初に作る一連の操作
 
+UIの固定骨格: 左にBrush/Eraser/Smudge/Eyedropper/Fill/Selection/Transform/Moveと固定All Features、右は12Box、上はHome/Save。Undo/Redoを上に置かない。右下固定はLayer Page/Undo/Redo/左右反転/上下反転。Boxは折畳み・並べ替え、PCでは切離し/再ドック、Workspace幅はドラッグと数値/直接操作で変更。Layer Pageは同じLayerモデルを読む。
+
+Quick Controllerはpen-up後に現れ描画中は隠れる半透明ドーナツと6ボタン。左Undo/右Redo、全slotをカスタム可能。承認済みPC/Tabletの見た目は112px footprint、外径100/穴44/ボタン径28/中心配置半径36を維持。Auroraを基準とする明るいUI、オレンジ寄り黄色のアクセント、控えめな色相変化とグラデーション。色は色相環+HSV、数値系は直感操作と正確な数値入力を併用する。Skeletonの仮ボタン/未実装Colorを最終UIへ昇格しない。
+
 起動 → 新規キャンバス → Brush選択 → 描画 → Eraser → Layer追加・選択 → Undo → Redo → Save → 再読み込み → 復元 → PNG Export。
 
 実装順は以下。各段階で前の動作を維持する。

@@ -1596,6 +1596,30 @@
     {
       "path": "docs/CANONICAL_INDEX.md",
       "status": "CANONICAL"
+    },
+    {
+      "path": "docs/CANONICAL_INDEX.json",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/production-prep/editor-smoke.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-extension-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-feedback-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-raster-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-structure-verification.json",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

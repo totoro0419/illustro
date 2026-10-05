@@ -30,7 +30,7 @@ app.innerHTML=`
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const controller=new EditorController();
 const surface=new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;});
-let brushIndex=0;
+let paintIndex=0,eraseIndex=5;
 const workspace=byId('workspace'),drawer=byId<HTMLButtonElement>('drawer');
 function openBox(id:string){workspace.classList.add('open');drawer.setAttribute('aria-expanded','true');
   const box=byId<HTMLDetailsElement>(id);box.open=true;box.scrollIntoView({block:'nearest'});}
@@ -58,12 +58,15 @@ byId<HTMLButtonElement>('new').onclick=async()=>{
     syncPreset();byId('status').textContent='描画を確認できます。レイヤー・取消・保存は準備中です。';
   }catch{surface.destroy();byId('status').textContent='描画を開始できませんでした。ページを再読み込みしてください。';}
 };
-byId<HTMLSelectElement>('brush').onchange=e=>{brushIndex=Number((e.target as HTMLSelectElement).value);surface.select(brushIndex);syncPreset();};
+function selectBrush(index:number){surface.select(index);byId<HTMLSelectElement>('brush').value=String(index);
+  const erasing=index>=5;if(erasing)eraseIndex=index;else paintIndex=index;
+  byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));syncPreset();}
+byId<HTMLSelectElement>('brush').onchange=e=>selectBrush(Number((e.target as HTMLSelectElement).value));
 for(const id of ['size','sizeNumber'])byId<HTMLInputElement>(id).oninput=e=>{
   const input=e.target as HTMLInputElement,value=Number(input.value);if(!input.validity.valid||input.value==='')return;
   surface.setSize(value);syncPreset();};
 byId<HTMLInputElement>('force').onchange=e=>surface.setForceFade((e.target as HTMLInputElement).checked);
 byId<HTMLInputElement>('finger').onchange=e=>surface.fingerDrawing=(e.target as HTMLInputElement).checked;
-byId('erase').onclick=()=>{surface.select(5);syncPreset();byId('erase').setAttribute('aria-pressed','true');byId('paint').setAttribute('aria-pressed','false');};
-byId('paint').onclick=()=>{surface.select(brushIndex);syncPreset();byId('paint').setAttribute('aria-pressed','true');byId('erase').setAttribute('aria-pressed','false');};
+byId('erase').onclick=()=>selectBrush(eraseIndex);
+byId('paint').onclick=()=>selectBrush(paintIndex);
 addEventListener('pagehide',()=>surface.destroy());
