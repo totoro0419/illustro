@@ -35,7 +35,9 @@ jobs:
       - name: Stroke adapter tests
         run: npx vitest run apps/editor/src/strokeCommit.test.ts
       - name: Frozen Brush Foundation light regression
-        run: node --test packages/brush-rt/test/foundation-contract.test.mjs packages/brush-rt/test/model.test.mjs
+        run: |
+          npm run brush:build > /tmp/m01-brush-build.log
+          node --test packages/brush-rt/test/foundation-contract.test.mjs packages/brush-rt/test/model.test.mjs
       - name: Editor build
         env:
           VITE_COMMIT_SHA: ${{ github.sha }}
