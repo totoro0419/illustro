@@ -25,6 +25,7 @@ if(!publicBase){
 const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface']});
 const report={milestone:'M02',mode:publicBase?'public':'local',url:base,status:'FAIL',backends:[]};
 function darkIn(buffer,rect){const png=PNG.sync.read(buffer);let n=0;const x0=Math.max(0,Math.floor(rect.x0*png.width)),x1=Math.min(png.width,Math.ceil(rect.x1*png.width)),y0=Math.max(0,Math.floor(rect.y0*png.height)),y1=Math.min(png.height,Math.ceil(rect.y1*png.height));for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const i=(y*png.width+x)*4;if(png.data[i]<170&&png.data[i+1]<170&&png.data[i+2]<170&&png.data[i+3]>0)n++;}return n;}
+function lightRatio(buffer){const png=PNG.sync.read(buffer);let light=0,total=png.width*png.height;for(let i=0;i<png.data.length;i+=4)if(png.data[i]>225&&png.data[i+1]>225&&png.data[i+2]>225)light++;return total?light/total:0;}
 async function draw(page,box,a,b,steps=24){await page.mouse.move(box.x+a[0]*box.width,box.y+a[1]*box.height);await page.mouse.down();await page.mouse.move(box.x+b[0]*box.width,box.y+b[1]*box.height,{steps});await page.mouse.up();}
 function pageUrl(backend){if(publicBase)return base+`?backend=${backend}&qa-public-check=1`;return base+`?qa=1&backend=${backend}`;}
 try{
@@ -37,7 +38,7 @@ try{
     const layer1=page.locator('.layer-row').filter({hasText:'Layer 1'});assert.equal(await layer1.getAttribute('aria-pressed'),'true','initial Layer is not selected');
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await page.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
     const add=page.getByRole('button',{name:'レイヤー追加',exact:true});assert.equal(await add.isDisabled(),false,'Layer add is unavailable after canvas start');
-    const canvas=page.locator('canvas'),box=await canvas.boundingBox();assert.ok(box);const initialRevision=await canvas.getAttribute('data-revision-id');assert.ok(initialRevision);
+    const canvas=page.locator('canvas'),box=await canvas.boundingBox();assert.ok(box);const blankShot=await canvas.screenshot();assert.ok(lightRatio(blankShot)>.92,'blank canvas is globally dark instead of white');const initialRevision=await canvas.getAttribute('data-revision-id');assert.ok(initialRevision);
     assert.equal(await canvas.getAttribute('data-layer-count'),'1');assert.equal(await canvas.getAttribute('data-selected-layer-name'),'Layer 1');
 
     await draw(page,box,[.12,.20],[.36,.28],22);await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});
@@ -58,7 +59,7 @@ try{
 
     await draw(page,box,[.14,.66],[.40,.76],22);await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='3',{timeout:15000});
     const afterThird=await canvas.getAttribute('data-revision-id');assert.ok(afterThird&&afterThird!==afterLayer2,'return stroke on Layer 1 did not advance Revision');
-    const finalShot=await canvas.screenshot();assert.ok(darkIn(finalShot,{x0:.08,y0:.12,x1:.42,y1:.35})>25,'first Layer 1 stroke disappeared');assert.ok(darkIn(finalShot,{x0:.56,y0:.12,x1:.92,y1:.36})>25,'Layer 2 stroke disappeared');assert.ok(darkIn(finalShot,{x0:.08,y0:.58,x1:.46,y1:.82})>25,'second Layer 1 stroke is not visible');
+    const finalShot=await canvas.screenshot();assert.ok(lightRatio(finalShot)>.75,'canvas became globally dark after drawing');assert.ok(darkIn(finalShot,{x0:.08,y0:.12,x1:.42,y1:.35})>25,'first Layer 1 stroke disappeared');assert.ok(darkIn(finalShot,{x0:.56,y0:.12,x1:.92,y1:.36})>25,'Layer 2 stroke disappeared');assert.ok(darkIn(finalShot,{x0:.08,y0:.58,x1:.46,y1:.82})>25,'second Layer 1 stroke is not visible');
 
     await layer2.click();await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.selectedLayerName==='Layer 2');
     assert.equal(await canvas.getAttribute('data-revision-id'),afterThird,'second selection changed Artwork Revision');
@@ -73,7 +74,8 @@ try{
     if(expectedCommit)assert.equal(auto.commit,expectedCommit,'public QA is not the expected commit');
     assert.deepEqual(errors,[]);
     await page.screenshot({path:path.join(evidence,`${backend}-m02-${publicBase?'public':'local'}.png`),fullPage:true});
-    report.backends.push({backend,status:'PASS',layerCount:2,selectedLayer:'Layer 2',strokesByLayer:{'Layer 1':2,'Layer 2':1},selectionRevisionStable:true,pointerCancelNoCommit:true,commit:auto.commit,consoleErrors:errors});
+    const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true}),mobileErrors=[];mobile.on('pageerror',e=>mobileErrors.push(e.message));mobile.on('console',m=>{if(m.type()==='error')mobileErrors.push(m.text());});await mobile.goto(pageUrl(backend),{waitUntil:'networkidle',timeout:45000});await mobile.getByRole('button',{name:'新規キャンバス',exact:true}).click();await mobile.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});const mobileCanvas=mobile.locator('canvas'),mobileBlank=await mobileCanvas.screenshot();assert.ok(lightRatio(mobileBlank)>.92,'compact/mobile blank canvas is globally dark');const mobileBox=await mobileCanvas.boundingBox();assert.ok(mobileBox);await draw(mobile,mobileBox,[.15,.35],[.82,.55],18);await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});const mobileDrawn=await mobileCanvas.screenshot();assert.ok(lightRatio(mobileDrawn)>.72,'compact/mobile canvas became globally dark after drawing');assert.ok(darkIn(mobileDrawn,{x0:.08,y0:.20,x1:.90,y1:.70})>25,'compact/mobile stroke is not visible');assert.deepEqual(mobileErrors,[]);await mobile.screenshot({path:path.join(evidence,`${backend}-m02-${publicBase?'public':'local'}-compact.png`),fullPage:true});await mobile.close();
+    report.backends.push({backend,status:'PASS',layerCount:2,selectedLayer:'Layer 2',strokesByLayer:{'Layer 1':2,'Layer 2':1},selectionRevisionStable:true,pointerCancelNoCommit:true,blankCanvasLight:true,compactCanvasLight:true,commit:auto.commit,consoleErrors:errors});
     await page.close();
   }
   report.status='PASS';
