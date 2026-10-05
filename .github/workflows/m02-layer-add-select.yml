@@ -41,7 +41,7 @@ jobs:
           npm run core:check
           npm run prep:check
       - name: M01 adapter and M02 Layer integration tests
-        run: npx vitest run apps/editor/src/strokeCommit.test.ts apps/editor/src/layerSelection.test.ts
+        run: npx vitest run apps/editor/src/strokeCommit.test.ts apps/editor/src/layerSelection.test.ts apps/editor/src/rendererBackend.test.ts
       - name: Brush Foundation 93-test regression
         run: |
           npm run brush:build > /tmp/m02-brush-build.log
