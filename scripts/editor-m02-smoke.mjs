@@ -78,6 +78,12 @@ try{
     report.backends.push({backend,status:'PASS',layerCount:2,selectedLayer:'Layer 2',strokesByLayer:{'Layer 1':2,'Layer 2':1},selectionRevisionStable:true,pointerCancelNoCommit:true,blankCanvasLight:true,compactCanvasLight:true,commit:auto.commit,consoleErrors:errors});
     await page.close();
   }
+  const androidErrors=[],androidUrl=publicBase?base+'?qa-public-check=android-auto':base+'?qa=1';
+  const android=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'});
+  android.on('pageerror',e=>androidErrors.push(e.message));android.on('console',m=>{if(m.type()==='error')androidErrors.push(m.text());});
+  await android.goto(androidUrl,{waitUntil:'networkidle',timeout:45000});await android.locator('#qaPanel > summary').click();await android.getByRole('button',{name:'新規キャンバス',exact:true}).click();await android.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
+  const androidAuto=JSON.parse((await android.locator('#qaAuto').textContent())??'{}');assert.ok(String(androidAuto.backend).toLowerCase().includes('webgl2'),'Android automatic renderer did not fall back to WebGL2');const androidCanvas=android.locator('canvas'),androidShot=await androidCanvas.screenshot();assert.ok(lightRatio(androidShot)>.92,'Android automatic blank canvas is globally dark');assert.deepEqual(androidErrors,[]);await android.screenshot({path:path.join(evidence,`android-auto-m02-${publicBase?'public':'local'}.png`),fullPage:true});await android.close();
+  report.androidAuto={status:'PASS',backend:'WebGL2',blankCanvasLight:true};
   report.status='PASS';
 }finally{
   await fs.writeFile(path.join(evidence,`m02-${publicBase?'public':'local'}-smoke.json`),JSON.stringify(report,null,2));
