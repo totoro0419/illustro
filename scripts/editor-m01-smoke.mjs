@@ -13,7 +13,8 @@ await fs.mkdir(evidence,{recursive:true});
 const server=http.createServer(async(q,r)=>{
   try{
     const relative=decodeURIComponent((q.url??'/').split('?')[0]);
-    const file=path.resolve(root,'.'+(relative==='/'?'/index.html':relative));
+    const virtual=relative==='/qa/m01/'||relative==='/qa/m01/index.html'?'/index.html':relative;
+    const file=path.resolve(root,'.'+(virtual==='/'?'/index.html':virtual));
     if(!file.startsWith(root+path.sep)){r.writeHead(403);r.end();return;}
     const data=await fs.readFile(file);
     r.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');
