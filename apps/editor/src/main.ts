@@ -2,7 +2,7 @@ import './style.css';
 import {EditorController} from './controller';
 import {BrushSurface} from './brushSurface';
 
-const qaMode=new URLSearchParams(location.search).get('qa')==='1';
+const qaMode=new URLSearchParams(location.search).get('qa')==='1'||/\/qa\/m01\/(?:index\.html)?$/.test(location.pathname);
 const qaStartedAt=new Date().toISOString();
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=`
