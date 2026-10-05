@@ -10,6 +10,7 @@ on:
       - 'docs/research/M01_STROKE_COMMIT_COMPETITOR_RESEARCH.md'
       - 'docs/implementation/M01_STROKE_COMMIT_DESIGN.md'
       - 'docs/CANONICAL_INDEX.json'
+      - 'docs/production-prep/source-lock.json'
       - 'package*.json'
       - '.github/workflows/m01-stroke-commit.yml'
   workflow_dispatch:
