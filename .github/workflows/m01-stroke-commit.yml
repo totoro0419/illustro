@@ -31,6 +31,8 @@ jobs:
         run: |
           npm run core:check
           npm run prep:check
+      - name: Stroke adapter tests
+        run: npx vitest run apps/editor/src/strokeCommit.test.ts
       - name: Frozen Brush Foundation light regression
         run: node --test packages/brush-rt/test/foundation-contract.test.mjs packages/brush-rt/test/model.test.mjs
       - name: Editor build
