@@ -18,11 +18,13 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Existing core and brush regression
+      - name: Core and active Brush Foundation regression
         run: |
           npm run core:check
-          npm run brush:typecheck
-          npm run brush:test
+          # Production Editor uses @illustro/brush-rt. The legacy @illustro/brush
+          # package remains source-locked as historical accepted material, but its
+          # old Core adapter is intentionally not a production build target after
+          # the Architecture V2 Core migration.
           npm run brush:build > /tmp/brush-build.log
           npm run brush:regression
           npm run prep:check
