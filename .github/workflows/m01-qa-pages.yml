@@ -6,6 +6,7 @@ on:
     paths:
       - 'apps/editor/**'
       - 'packages/core/**'
+      - 'packages/brush-rt/**'
       - 'scripts/editor-m01-public-smoke.mjs'
       - '.github/workflows/m01-qa-pages.yml'
   workflow_dispatch:
