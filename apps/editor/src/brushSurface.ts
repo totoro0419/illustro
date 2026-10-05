@@ -1,13 +1,12 @@
 import type {FoundationPreset,GpuRenderer,RealtimeSession,Sample} from '@illustro/brush-rt';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import type {EditorController} from './controller';
-import {chooseEditorRendererBackend} from './rendererBackend';
 export class BrushSurface{
   private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{}){}
-  async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;const backend=chooseEditorRendererBackend(location.search,navigator.userAgent);
-    this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend);this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);
+  async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;const backend=new URLSearchParams(location.search).get('backend');
+    this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend==='webgl2'||backend==='webgpu'?backend:'auto');this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);
     const options={signal:this.abort.signal};this.canvas.addEventListener('pointerdown',this.down,options);this.canvas.addEventListener('pointermove',this.move,options);this.canvas.addEventListener('pointerup',this.up,options);this.canvas.addEventListener('pointercancel',this.cancel,options);this.canvas.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);}
   private sample(e:PointerEvent):Sample{const r=this.canvas.getBoundingClientRect(),target=this.target??this.controller.target();return {x:(e.clientX-r.left)/r.width*target.width,y:(e.clientY-r.top)/r.height*target.height,t:e.timeStamp,pressure:e.pressure,pointerType:e.pointerType,tilt:Math.min(1,Math.hypot(e.tiltX,e.tiltY)/90),azimuth:Math.atan2(e.tiltY,e.tiltX),twist:e.twist/360};}
   private down=(e:PointerEvent)=>{if(e.button!==0||this.pointer!==null||this.finishing||!this.session||!this.preset)return;if(e.pointerType==='touch'&&!this.fingerDrawing)return;e.preventDefault();
