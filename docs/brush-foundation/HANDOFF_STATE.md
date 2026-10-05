@@ -4,9 +4,9 @@ Source固定: 4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5。正本HTML: prototypes/
 
 最新CI37286523766はcompleted/success、WebGPU/WebGL2 full・targetedの4job success。Node91/91、元HTMLとのbyte一致を独立確認。旧WebGL2鉛筆512/240初回反復FAILは履歴として保持し、原因解消と断定しない。
 
-ユーザーが合格とした軽さ・追従・太い線の非累積遅延・基本Gペン・最新強制入り抜きを受入情報として記録。全7本/全端末/高DPI/本体Layer/History/Saveの実機合格は未確認。
+ユーザーが合格とした軽さ・追従・太い線の非累積遅延・基本Gペンは受入情報として維持する。一方、2026-10-05の再確認で「強制入り抜きの抜きが早い段階で細くなりすぎる」と報告があり、強制入り抜きだけ受入を再開した。全7本/全端末/高DPI/本体Layer/History/Saveの実機合格は未確認。
 
-強制入り抜きは独立ON/OFF、ON中は基準太さと軌跡、pen-up後の全軌跡から最終形状。長さは cap=500+700*level、cap*tanh(total*level/cap)、左右合計が全長を超えたら比例縮小。長さ式はsizeを直接参照しない。合格済み挙動を固定しRenderer/Worker/補正/予測/入力保持を作り直さない。
+強制入り抜きは独立ON/OFF、ON中は基準太さと軌跡、pen-up後の全軌跡から最終形状。長さは cap=500+700*level、cap*tanh(total*level/cap)、左右合計が全長を超えたら比例縮小。長さ式はsizeを直接参照しない。今回の修正は抜きの長さを短くせず、抜き区間前半の太さをより保って終端側で強く細くする形状調整だけに限定する。Renderer/Worker/補正/予測/入力保持は作り直さない。
 
 本番準備PR: https://github.com/totoro0419/illustro/pull/12 。mainから選別移植し固定sourceをbyte一致で保存。正本入口: https://github.com/totoro0419/illustro/blob/integration/production-prep-2026-10-05/docs/IMPLEMENTATION_BASELINE.md 。旧依存branchごとmergeしない。この更新は文書のみ。
 
