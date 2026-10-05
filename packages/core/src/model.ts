@@ -11,10 +11,17 @@ export class DocumentRoot{
     this.rootLayerIds=Object.freeze([...rootLayerIds]);Object.freeze(this);
   }
   getLayer(id:LayerId){const value=this.layers.get(id);if(!value)throw new Error('missing layer');return value;}
+  hasLayer(id:LayerId){return this.layers.get(id)!==undefined;}
   withLayers(changes:ReadonlyMap<LayerId,LayerNode>){if(!changes.size)return this;const e=this.layers.edit();for(const [k,v] of changes)e.set(k,v);
     return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,e.commit(),this.rootLayerIds);}
+  withLayerState(changes:ReadonlyMap<LayerId,LayerNode>,rootLayerIds:readonly LayerId[]){
+    if(!changes.size&&sameOrder(rootLayerIds,this.rootLayerIds))return this;const e=this.layers.edit();for(const [k,v] of changes)e.set(k,v);const layers=e.commit(),seen=new Set<LayerId>();
+    for(const id of rootLayerIds){if(seen.has(id))throw new Error('duplicate root layer');if(!layers.get(id))throw new Error('root layer is missing');seen.add(id);}
+    return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,layers,rootLayerIds);
+  }
 }
-export function rasterLayer(id:LayerId,surfaceId:RasterSurfaceId,workingColorSpaceRef:string,sampleEncoding:RasterSampleEncoding):LayerNode{
-  const descriptor=createRasterSurfaceDescriptor(surfaceId,sampleEncoding,workingColorSpaceRef);
-  return Object.freeze({id,kind:'raster' as const,name:'Layer 1',visible:true,opacity:1,locked:false,surface:new RasterSurfaceManifest(descriptor)});
+export function rasterLayer(id:LayerId,surfaceId:RasterSurfaceId,workingColorSpaceRef:string,sampleEncoding:RasterSampleEncoding,name='Layer 1'):LayerNode{
+  if(!name.trim())throw new Error('empty layer name');const descriptor=createRasterSurfaceDescriptor(surfaceId,sampleEncoding,workingColorSpaceRef);
+  return Object.freeze({id,kind:'raster' as const,name:name.trim(),visible:true,opacity:1,locked:false,surface:new RasterSurfaceManifest(descriptor)});
 }
+function sameOrder(a:readonly LayerId[],b:readonly LayerId[]){return a.length===b.length&&a.every((id,index)=>id===b[index]);}
