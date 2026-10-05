@@ -99,16 +99,28 @@ jobs:
             git commit -m 'qa: publish M02 fixed review page'
             git push origin HEAD:gh-pages
           fi
-      - name: Wait for M02 and confirm M01 remains reachable
+      - name: Wait for this exact M02 build and confirm M01 remains reachable
+        env:
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: |
           ok=0
-          for i in $(seq 1 36); do
-            m02=$(curl -L -sS -o /tmp/m02.html -w '%{http_code}' https://totoro0419.github.io/illustro/qa/m02/ || true)
-            m01=$(curl -L -sS -o /tmp/m01.html -w '%{http_code}' https://totoro0419.github.io/illustro/qa/m01/ || true)
-            if [ "$m02" = '200' ] && [ "$m01" = '200' ] && grep -q '<title>Illustro</title>' /tmp/m02.html && grep -q '<title>Illustro</title>' /tmp/m01.html; then ok=1; break; fi
+          for i in $(seq 1 60); do
+            m02=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m02.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m02/?build=$EXPECTED_COMMIT_SHA" || true)
+            m01=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m01.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m01/?m02-check=$EXPECTED_COMMIT_SHA" || true)
+            asset=$(sed -n 's#.*src="\./\([^"]*\.js\)".*#\1#p' /tmp/m02.html | head -n 1)
+            if [ "$m02" = '200' ] && [ "$m01" = '200' ] && [ -n "$asset" ]; then
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m02.js -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m02/$asset?build=$EXPECTED_COMMIT_SHA" || true)
+              if [ "$code" = '200' ] && grep -q "$EXPECTED_COMMIT_SHA" /tmp/m02.js && grep -q '<title>Illustro</title>' /tmp/m01.html; then
+                ok=1
+                break
+              fi
+            fi
             sleep 5
           done
-          test "$ok" = '1'
+          if [ "$ok" != '1' ]; then
+            echo 'The exact M02 build did not become publicly reachable.'
+            exit 1
+          fi
       - name: Verify actual public M02 with WebGL2 and WebGPU
         env:
           RT_PLAYWRIGHT_PATH: /tmp/m02-browser/node_modules/playwright
