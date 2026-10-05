@@ -18,7 +18,7 @@
 - Brush Foundationは固定基盤として扱う。別マイルストーン都合でRenderer/Input/補正/GPU構造を理由なく再設計しない。
 - Region / Lineartは採用予定試作であり、製品統合済みではない。
 - 現在のEditorはBrush表示まで接続済みだが、一筆は正式Document/Layerへ未確定。Layer追加、文書Undo/Redo、Save/Recovery/Reload/Exportも未接続。
-- M01を `milestone/M01-stroke-commit` / Draft PR #13 で実装中。M02以降は未着手。
+- M01は実装・自動検査・固定QA公開まで完了し、現在は👤ユーザー実機確認待ち。M02以降は未着手。
 - M01では「一筆を選択Layerへ正式確定」を成立させるために必要な範囲だけ、既存CoreをArchitecture V2へ整合させる。M02以降の機能を先取りしない。
 
 ## 固定QA URL運用
@@ -40,7 +40,7 @@
 
 | ID | 名前 | 状態 | 開始commit | 終了commit | branch / PR | 自動検査 | ユーザー確認 | 専用QA URL | 参考にした主要アプリ | 未解決事項 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| M01 | 一筆を選択Layerへ正式確定 | 🛠 | `cb95bd2` | — | `milestone/M01-stroke-commit` / Draft PR #13 | 実施中 | 必須 | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | 固定QA URL公開と実機確認が必要 |
+| M01 | 一筆を選択Layerへ正式確定 | 👤 | `cb95bd2` | — | `milestone/M01-stroke-commit` / Draft PR #13 | PASS（Core / adapter / Brush回帰 / WebGL2 / WebGPU / 公開QA） | 必須・未実施 | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | ユーザー実機確認のみ未完了 |
 | M02 | Layer追加・選択 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m02/ | 未調査 | — |
 | M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査 | — |
 | M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 未調査 | — |
