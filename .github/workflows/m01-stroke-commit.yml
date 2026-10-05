@@ -1,0 +1,54 @@
+name: M01 Stroke Commit
+on:
+  push:
+    branches: ['milestone/M01-stroke-commit']
+    paths:
+      - 'apps/editor/**'
+      - 'packages/core/**'
+      - 'scripts/editor-m01-smoke.mjs'
+      - 'docs/IMPLEMENTATION_CHECKLIST.md'
+      - 'docs/research/M01_STROKE_COMMIT_COMPETITOR_RESEARCH.md'
+      - 'docs/implementation/M01_STROKE_COMMIT_DESIGN.md'
+      - 'docs/CANONICAL_INDEX.json'
+      - 'package*.json'
+      - '.github/workflows/m01-stroke-commit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Core M01 and baseline checks
+        run: |
+          npm run core:check
+          npm run prep:check
+      - name: Frozen Brush Foundation light regression
+        run: node --test packages/brush-rt/test/foundation-contract.test.mjs packages/brush-rt/test/model.test.mjs
+      - name: Editor build
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: npm run editor:build
+      - name: Browser runtime
+        run: |
+          npm install --prefix /tmp/m01-browser playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
+          /tmp/m01-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: M01 WebGL2 and WebGPU browser integration
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m01-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/m01-browser/node_modules/pngjs
+          M01_EVIDENCE_DIRECTORY: /tmp/m01-evidence
+        run: node scripts/editor-m01-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m01-stroke-commit-evidence
+          path: /tmp/m01-evidence
