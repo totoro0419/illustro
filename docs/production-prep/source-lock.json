@@ -39,8 +39,8 @@
     },
     {
       "path": "packages/brush-rt/src/model.mjs",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "9a63d4d01ef9b1e2d2f190e38c2590fd682a3d1717adf8cbed1b66deb7f0b1fe"
+      "sourceCommit": "483abaadaac9965286b7f6b209d301656ae4aa10",
+      "sha256": "9cb4b450a6246fa4c9a1fb3aa42439f35c08af7c26d671e27cafe4496b6ce405"
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
@@ -79,8 +79,8 @@
     },
     {
       "path": "packages/brush-rt/test/foundation.test.mjs",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "3a860610baed46f12b0604693ac0d26c2930346c5a2d696b7e0d2a0805fe8563"
+      "sourceCommit": "483abaadaac9965286b7f6b209d301656ae4aa10",
+      "sha256": "61683fe2802bd8722b6395c1fcb85615dae9183fe8086fbdf0696cde955119d5"
     },
     {
       "path": "packages/brush-rt/test/model.test.mjs",
@@ -313,5 +313,5 @@
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
     }
   ],
-  "corePolicy": "M01 owns packages/core under Architecture V2; provisional Core source-lock entries were retired. Frozen Brush and accepted Raster Lab artifacts remain hash-locked."
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation remains frozen except for the user-reported forced-fade tail-profile correction adopted from PR #10; all accepted Brush and Raster Lab artifacts remain hash-locked."
 }
