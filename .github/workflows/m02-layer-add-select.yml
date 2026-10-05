@@ -46,7 +46,9 @@ jobs:
         run: |
           npm run brush:build > /tmp/m02-brush-build.log
           node --test packages/brush-rt/test/*.test.mjs | tee /tmp/m02-brush-regression.log
-          grep -Eq '# tests +93' /tmp/m02-brush-regression.log
+          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/m02-brush-regression.log
+          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/m02-brush-regression.log
+          grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/m02-brush-regression.log
       - name: Build M02 editor
         env:
           VITE_COMMIT_SHA: ${{ github.sha }}
