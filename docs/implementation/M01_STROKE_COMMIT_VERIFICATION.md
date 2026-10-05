@@ -1,7 +1,7 @@
 # M01 Stroke Commit — Verification
 
 > Milestone: M01「一筆を選択Layerへ正式確定」
-> Status: USER REVIEW REQUIRED
+> Status: ✅ USER ACCEPTED / FIXED
 > Fixed QA URL: https://totoro0419.github.io/illustro/qa/m01/
 > Public QA build source commit: `5e79cfd32c6c8cb99543d1c68e2b7e0f92e50a96`
 
@@ -102,10 +102,18 @@ M02 and later work remains intentionally unimplemented:
 - final Color/Brush/Layer UI;
 - Quick Controller / Compact / final Motion/Aurora polish.
 
-## Human verification still required
+## Human verification
 
-Automated browser checks cannot certify physical pen feel, perceived continuity at pen-up, or whether the previously accepted low-latency feel remains acceptable on the user's actual device.
+The user completed real-device review on 2026-10-05 using the fixed QA URL:
 
-Therefore M01 is **not ✅**.
+- https://totoro0419.github.io/illustro/qa/m01/
+- result: **問題なし（合格）**
+- acceptance record: PR #13 issue comment `5993804867`
 
-Current handoff state: **👤 ユーザー実機確認待ち / USER REVIEW REQUIRED**.
+The public QA build was sourced from commit `5e79cfd32c6c8cb99543d1c68e2b7e0f92e50a96`. Comparison from that QA source to implementation head `3320a72f67d90141061c32fa71a3c9205c7fd0b0` shows only documentation/classification changes; no Editor/Core/Brush implementation changed after the reviewed QA build.
+
+Therefore M01 Human Review is **PASS** and the implementation is accepted as a fixed milestone. The M01 QA page must remain available as the regression reference for later milestones.
+
+Accepted implementation head: `3320a72f67d90141061c32fa71a3c9205c7fd0b0`.
+Published QA snapshot: `gh-pages@9c4c05ac526771cda2b6c2dd3140e25f122ac701`.
+
