@@ -1620,6 +1620,10 @@
     {
       "path": "docs/production-prep/region-structure-verification.json",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/brush-verification.json",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

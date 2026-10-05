@@ -72,5 +72,19 @@
     "headSha": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
     "status": "in_progress",
     "conclusion": null
+  },
+  "snapshotMeaning": "Initial GitHub audit; later direct confirmation is recorded below.",
+  "finalConfirmation": {
+    "main": "bdc7135b51033982d90ea5dad104bb04fc107df2",
+    "integrationPr": 12,
+    "verifiedCodeHead": "11fe2a9a915e64dc2fc3f3d610cfd41f9a059c36",
+    "foundationHead": "d9b325e2ab933688039e23d72fefb1b9d890e18b",
+    "foundationRuntimeSource": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+    "foundationRun": 37286523766,
+    "foundationConclusion": "success",
+    "editorRun": 37291492186,
+    "editorConclusion": "success",
+    "mainUnchanged": true,
+    "existingPrsRemainOpenDraft": true
   }
 }
