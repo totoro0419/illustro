@@ -6,6 +6,31 @@
 
 一枚絵の制作体験を主要ペイントアプリより良くする。直感的操作 → 使いやすさ・軽さ・追従 → 多機能。公開された優れた方式は積極的に採用する。内部実装は推測しない。機能名だけの実装を完成扱いにしない。
 
+## 各マイルストーン開始時の必須確認
+
+すべてのマイルストーン実装は、コード変更より先に次の順序で開始する。
+
+1. `docs/IMPLEMENTATION_BASELINE.md` を読む。
+2. `docs/CANONICAL_INDEX.md` を読む。
+3. 対象分野について `CANONICAL_INDEX.md` が示す **CANONICAL（正本）owner** を特定する。
+4. その正本設計を読んで、今回の実装範囲・既存仕様・変更禁止事項を確認する。
+5. 正本と現行コードに差がある場合、現行の仮実装を最終仕様とみなさず、正本との整合方法を決めてから実装する。
+
+対象の正本設計を確認せず、現行コードや仮UIだけを見て独自解釈で仕様を変更してはならない。正本同士に重大な矛盾がある場合は推測で補完せず、矛盾箇所を明示する。
+
+特にUIでは、現在のEditor skeleton / QA UI / 仮配置を最終仕様として扱わない。対象に応じて少なくとも以下の確定済み正本を確認し、最終統合時に反映する。
+
+- Left UI: `docs/ui/LEFT_UI_SPEC.md`
+- Right UI: `docs/ui/RIGHT_UI_SPEC.md`
+- Layer Page: `docs/ui/RIGHT_LAYER_PAGE_SPEC.md`
+- Input Control: `docs/ui/UI_INPUT_CONTROL_STANDARD.md`
+- Workspace Customization: `docs/ui/WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md`
+- Compact UI: `docs/ui/COMPACT_IMPLEMENTATION_BASELINE.md`
+
+マイルストーンが上記UI全体の完成を対象にしていない場合、未対象機能を先取りして全面実装する必要はない。ただし、今回作るUIやデータ境界が正本の最終統合を妨げる構造にならないようにする。
+
+各実装チャット用プロンプトには、必ず **「`IMPLEMENTATION_BASELINE.md` と `CANONICAL_INDEX.md` を最初に確認し、対象分野のCANONICAL設計を読み、独自解釈で変更しない」** という要件を含める。
+
 ## 正本と優先関係
 
 この文書 → 分野別正本（[一覧](CANONICAL_INDEX.md)）→ 採用試作 → 過去の検査資料。矛盾はこの順で解決する。カタログのInvestigateや水彩物理・高度な自動化等は今回の必須範囲へ昇格させない。
