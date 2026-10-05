@@ -35,7 +35,10 @@ try{
     const box=await page.locator('canvas').boundingBox();assert.ok(box);
     await page.mouse.move(box.x+80,box.y+100);await page.mouse.down();
     await page.mouse.move(box.x+320,box.y+160,{steps:24});await page.mouse.up();
-    await page.waitForFunction(()=>document.getElementById('status').textContent.includes('取消・保存'));
+    // M01 publishes the formal Document commit after pointer-up. Wait for that
+    // state rather than a historical status-message phrase.
+    await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});
+    assert.match(await page.locator('#status').textContent(),/作品に反映/);
     // Poll actual presented pixels; notification text alone is not evidence.
     let painted=0;for(let i=0;i<30;i++){painted=dark(await page.locator('canvas').screenshot());if(painted>before+50)break;await page.waitForTimeout(50);}
     assert.ok(painted>before+50,'stroke did not produce visible pixels');
