@@ -58,7 +58,7 @@ jobs:
 
   deploy:
     environment:
-      name: github-pages
+      name: m01-qa-preview
       url: ${{ steps.deployment.outputs.page_url }}m01/?qa=1
     runs-on: ubuntu-latest
     needs: build
