@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run brush:build && VITE_COMMIT_SHA=$VERCEL_GIT_COMMIT_SHA npm run editor:build",
+  "outputDirectory": "apps/editor/dist",
+  "installCommand": "npm ci --ignore-scripts --no-audit --no-fund"
+}
