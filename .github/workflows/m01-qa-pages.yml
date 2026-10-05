@@ -45,9 +45,9 @@ jobs:
           path: site
       - name: Preserve existing Pages and add M01
         run: |
-          rm -rf site/.git site/m01
-          mkdir -p site/m01
-          cp -a apps/editor/dist/. site/m01/
+          rm -rf site/.git site/qa/m01
+          mkdir -p site/qa/m01
+          cp -a apps/editor/dist/. site/qa/m01/
           touch site/.nojekyll
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -58,8 +58,8 @@ jobs:
 
   deploy:
     environment:
-      name: m01-qa-preview
-      url: ${{ steps.deployment.outputs.page_url }}m01/?qa=1
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}qa/m01/
     runs-on: ubuntu-latest
     needs: build
     steps:
