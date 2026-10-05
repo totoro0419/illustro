@@ -17,10 +17,10 @@
 - 本番実装開始基準は検証済み。ただしCore Drawing Sliceは未完成。
 - Brush Foundationは固定基盤として扱う。別マイルストーン都合でRenderer/Input/補正/GPU構造を理由なく再設計しない。
 - Region / Lineartは採用予定試作であり、製品統合済みではない。
-- 現在のEditorは一筆の正式Document/Layer確定まで接続済み。Layer追加、文書Undo/Redo、Save/Recovery/Reload/Exportは未接続。
+- 現在のEditorは一筆の正式Document/Layer確定に加え、M02でRaster Layer追加・現在Layer選択・選択Layerへの次ストローク確定まで接続済み。文書Undo/Redo、Save/Recovery/Reload/Exportは未接続。
 - M01は✅合格・固定。実機合格、固定QA、PR #13統合、統合後Core CI / Production PreparationまでPASS済み。現在の統合基準commitは `f58de8c4a0650c6fdd32c4b17a40a2021cd79145`。
-- 次の実装対象はM02「Layer追加・選択」。M03以降は未着手。
-- M01では「一筆を選択Layerへ正式確定」を成立させるために必要な範囲だけ、既存CoreをArchitecture V2へ整合させる。M02以降の機能を先取りしない。
+- M02「Layer追加・選択」は固定QA公開・公開URL自動検査まで完了し、👤ユーザー確認待ち。M03以降は未着手。
+- M02ではLayer追加・選択に必要な範囲だけを実装し、M03 Undo / RedoやM10 Layer Page基本は先取りしていない。
 
 ## マイルストーン開始前ゲート
 
@@ -54,7 +54,7 @@
 | ID | 名前 | 状態 | 開始commit | 終了commit | branch / PR | 自動検査 | ユーザー確認 | 専用QA URL | 参考にした主要アプリ | 未解決事項 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | M01 | 一筆を選択Layerへ正式確定 | ✅ | `cb95bd2` | `c4fa55d` | `milestone/M01-stroke-commit` / PR #13 merged | PASS（Core / adapter / Brush 93 tests / WebGL2 / WebGPU / 公開QA / 統合後回帰） | PASS（2026-10-05 修正版を実機合格） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。固定QAを回帰基準として保持 |
-| M02 | Layer追加・選択 | ⬜ | `f58de8c` | — | `milestone/M02-layer-add-select` / PR未作成 | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m02/ | 未調査。実装前に必須 | M01固定成果を壊さず、Layerモデルを単一正本として追加・選択を成立させる |
+| M02 | Layer追加・選択 | 👤 | `15bc917` | `60fc759` | `milestone/M02-layer-add-select` / PR #14 Draft | PASS（Core / production-prep / M01 adapter / M02統合 / Brush 93 tests / Editor build / production smoke / WebGL2・WebGPU local+public / console errorなし） | USER REVIEW REQUIRED | https://totoro0419.github.io/illustro/qa/m02/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | ユーザー実機確認のみ未完了。M03は未着手 |
 | M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査 | — |
 | M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 未調査 | — |
 | M05 | Save | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m05/ | 未調査 | — |
