@@ -63,7 +63,21 @@ Layer選択時のCanvas全体readback、全Layer copy、Document serialize、Ren
 
 ## 表示基盤との境界
 
-M02で正式に保証するのは各StrokeのLayer ownership、Layer順序、選択、保持である。Visibility / reorder / full Layer Pageは対象外。Brush Foundationの既存描画表示経路は変更せず、Layer都合でRendererを作り直さない。
+M02で正式に保証するのは各StrokeのLayer ownership、Layer順序、選択、保持である。Visibility / reorder / full Layer Pageは対象外。Layer都合でRendererを作り直さない。
+
+ただしユーザーAndroid実機で、指を触れた瞬間にCanvas全体が黒くなり、ページ切替時だけ正常に見える共通表示不具合が確認された。この不具合はM02固有のLayer処理ではなく、Brush Foundation Rendererの**画面へ出す最後の段**にあったため、M01固定基盤の例外修正として扱った。
+
+最終方針は端末別fallbackではない。
+
+- AndroidだけWebGL2へ切り替える分岐は撤去。
+- CSSで白背景を被せるだけの回避も撤去。
+- canonical artwork / tile / StrokeRecordは従来どおり透明度を保持する。
+- WebGL2 / WebGPUとも、透明な表示用textureをそのままCanvasへ渡さず、最後のpresentation passで明示的に白いpaperへ合成し、画面にはalpha=1の不透明結果を出す。
+- 初期の空Canvasも同じpresentation passを一度通す。
+- 保存用Rasterやreadbackの透明度は変更しない。白紙化は画面表示だけ。
+- M01 Brush 93件、production-prep、WebGL2/WebGPU、compact、高DPI、CSS背景を黒にした検査、実touchを押したままの検査を回帰条件とする。
+
+MDNのWebGL context属性では `premultipliedAlpha` はページcompositorがdrawing bufferをどう解釈するかを指定し、WebGPUの `alphaMode: premultiplied` もCanvasの合成方法を決める。Illustroは作品表示の紙色をこのブラウザ合成へ依存させず、Renderer自身のpresentation責務として固定する。
 
 ## Stop boundary
 
