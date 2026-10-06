@@ -33,6 +33,15 @@ async function touchStroke(page,canvas,box,a,b){
   const cdp=await page.context().newCDPSession(page),start={x:box.x+a[0]*box.width,y:box.y+a[1]*box.height,id:1,radiusX:2,radiusY:2,force:.5},end={x:box.x+b[0]*box.width,y:box.y+b[1]*box.height,id:1,radiusX:2,radiusY:2,force:.5};
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[start]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[end]});await page.waitForTimeout(90);const held=await canvas.screenshot();await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();return held;
 }
+async function penStroke(page,canvas,box,a,b){
+  const cdp=await page.context().newCDPSession(page),sx=box.x+a[0]*box.width,sy=box.y+a[1]*box.height,ex=box.x+b[0]*box.width,ey=box.y+b[1]*box.height;
+  await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:sx,y:sy,pointerType:'pen'});
+  await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',x:sx,y:sy,button:'left',buttons:1,clickCount:1,force:.5,pointerType:'pen'});
+  for(let i=1;i<=12;i++){const t=i/12;await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:sx+(ex-sx)*t,y:sy+(ey-sy)*t,button:'left',buttons:1,force:.5,pointerType:'pen'});}
+  await page.waitForTimeout(90);const held=await canvas.screenshot();
+  await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:ex,y:ey,button:'left',buttons:0,clickCount:1,pointerType:'pen'});
+  await cdp.detach();return held;
+}
 function pageUrl(backend){if(publicBase)return base+`?backend=${backend}&m03-public-check=1&build=${encodeURIComponent(expectedCommit)}`;return base+`?qa=1&backend=${backend}`;}
 try{
   for(const backend of ['webgl2','webgpu']){
@@ -102,10 +111,11 @@ try{
     const workspaceCoversCenter=await mobile.evaluate(()=>{const c=document.querySelector('canvas'),w=document.getElementById('workspace');if(!c||!w)return true;const r=c.getBoundingClientRect();return document.elementsFromPoint(r.left+r.width*.5,r.top+r.height*.5).some(el=>el===w||w.contains(el));});
     assert.equal(workspaceCoversCenter,false,'closed compact Workspace still participates in Canvas hit testing');
     await mobile.waitForTimeout(80);assert.ok(lightRatio(await mc.screenshot())>.92,'closing Workspace invalidated canvas presentation');
-    const held=await touchStroke(mobile,mc,mb,[.15,.35],[.82,.55]);assert.ok(lightRatio(held)>.72,'compact live stroke after Workspace close did not update');await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});await waitIdle(mobile);
+    const penHeld=await penStroke(mobile,mc,mb,[.15,.35],[.82,.55]);assert.equal(await mc.getAttribute('data-last-pointer-target'),'canvas','pen pointerdown after Workspace close did not target Canvas');assert.equal(await mc.getAttribute('data-last-pointer-type'),'pen','pen route changed pointer type');assert.ok(lightRatio(penHeld)>.72,'compact live pen stroke after Workspace close did not update');await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});await waitIdle(mobile);
     assert.equal(await mobile.locator('#compactUndo').isDisabled(),false);await mobile.locator('#compactUndo').click();await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='0');await waitIdle(mobile);assert.ok(darkIn(await mc.screenshot(),{x0:.08,y0:.20,x1:.90,y1:.70})<8,'compact Undo left stroke visible');
     assert.equal(await mobile.locator('#compactRedo').isDisabled(),false);await mobile.locator('#compactRedo').click();await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1');await waitIdle(mobile);assert.ok(darkIn(await mc.screenshot(),{x0:.08,y0:.20,x1:.90,y1:.70})>25,'compact Redo did not restore stroke');
-    for(const [index,line] of [[[.12,.70],[.42,.76]],[[.52,.70],[.82,.76]]].entries()){const heldMore=await touchStroke(mobile,mc,mb,line[0],line[1]);assert.ok(lightRatio(heldMore)>.68,'later compact live stroke after Workspace close stopped updating');await mobile.waitForFunction(expected=>document.querySelector('canvas')?.dataset.committedStrokes===String(expected),index+2,{timeout:15000});await waitIdle(mobile);}
+    const touchHeld=await touchStroke(mobile,mc,mb,[.12,.70],[.42,.76]);assert.equal(await mc.getAttribute('data-last-pointer-target'),'canvas','touch pointerdown after Workspace close was retargeted to UI');assert.equal(await mc.getAttribute('data-last-pointer-type'),'touch','touch route changed pointer type');assert.ok(lightRatio(touchHeld)>.68,'compact live touch stroke after Workspace close stopped updating');await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='2',{timeout:15000});await waitIdle(mobile);
+    const heldMore=await touchStroke(mobile,mc,mb,[.52,.70],[.82,.76]);assert.equal(await mc.getAttribute('data-last-pointer-target'),'canvas','later touch pointerdown after Workspace close was retargeted to UI');assert.ok(lightRatio(heldMore)>.68,'later compact live stroke after Workspace close stopped updating');await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='3',{timeout:15000});await waitIdle(mobile);
     assert.deepEqual(mobileErrors,[]);await mobile.screenshot({path:path.join(evidence,`${backend}-m03-${publicBase?'public':'local'}-compact.png`),fullPage:true});await mobile.close();
 
     report.backends.push({backend,status:'PASS',strokeUndoRedo:true,layerUndoRedo:true,identityStable:true,selectionValid:true,redoBranchDiscard:true,keyboard:true,activeStrokeBlocked:true,pointerCancelNoHistory:true,rapidHistorySafe:true,compactUndoRedo:true,historyPatchHits:state.historyPatchHits,historyReplayFallbacks:state.historyReplayFallbacks,workspaceCloseDrawing:true,androidPresentationRegression:true,commit:state.commit,consoleErrors:errors});
