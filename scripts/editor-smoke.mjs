@@ -54,16 +54,15 @@ try{
     for(const viewport of [{width:1024,height:768},{width:760,height:700},{width:390,height:844},{width:320,height:640},{width:740,height:390}]){
       await page.setViewportSize(viewport);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'horizontal overflow');
-      if(viewport.width<=760){await page.locator('#drawer').click();assert.equal(await page.locator('#workspace').isVisible(),true);
+      if(viewport.width<=760){const root=page.locator('#compactWorkspaceRoot'),workspace=page.locator('#workspaceCompact');await page.locator('#drawer').click();assert.equal(await root.getAttribute('data-open'),'true');assert.equal(await workspace.isVisible(),true);
         assert.equal(await page.locator('.bottom').getByRole('button',{name:'Undo',exact:true}).isVisible(),true);
-        await page.locator('#close').click();assert.equal(await page.locator('#workspace').evaluate(el=>el.classList.contains('open')),false);
-        assert.equal(await page.locator('#workspace').evaluate(el=>el.inert),true,'closed compact Workspace must be inert');
-        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','closed compact Workspace must remain mounted for stable composition');
-        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).opacity),'0','closed compact Workspace must be visually hidden');
-        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).pointerEvents),'none','closed compact Workspace must not steal Canvas input');
-        const workspaceCoversCenter=await page.evaluate(()=>{const c=document.querySelector('canvas'),w=document.getElementById('workspace');if(!c||!w)return true;const r=c.getBoundingClientRect();return document.elementsFromPoint(r.left+r.width*.5,r.top+r.height*.5).some(el=>el===w||w.contains(el));});
-        assert.equal(workspaceCoversCenter,false,'closed compact Workspace still participates in Canvas hit testing');
-        assert.equal(await page.locator('#workspace').evaluate(el=>el.contains(document.activeElement)),false,'closed Workspace retained focus');
+        await page.locator('#compactClose').click();assert.equal(await root.getAttribute('data-open'),'false');
+        assert.equal(await workspace.evaluate(el=>el.inert),true,'closed compact Workspace must be inert');
+        assert.equal(await root.evaluate(el=>getComputedStyle(el).display),'block','compact Workspace overlay root must remain mounted');
+        assert.equal(await workspace.evaluate(el=>getComputedStyle(el).display),'none','closed rebuilt Workspace drawer must not paint');
+        const workspaceCoversCenter=await page.evaluate(()=>{const c=document.querySelector('canvas'),w=document.getElementById('workspaceCompact'),root=document.getElementById('compactWorkspaceRoot');if(!c||!w||!root)return true;const r=c.getBoundingClientRect();return document.elementsFromPoint(r.left+r.width*.5,r.top+r.height*.5).some(el=>el===w||w.contains(el)||el===root);});
+        assert.equal(workspaceCoversCenter,false,'closed rebuilt Workspace still participates in Canvas hit testing');
+        assert.equal(await workspace.evaluate(el=>el.contains(document.activeElement)),false,'closed Workspace retained focus');
       }
       report.layouts.push({backend,...viewport,horizontalOverflow:false});
       if(viewport.width===390)await page.screenshot({path:path.join(evidence,backend+'-compact.png')});
