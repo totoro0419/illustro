@@ -38,7 +38,6 @@ export class BrushSurface{
     return [...keys];
   }
   select(index:number){const p=this.brushes[index];if(p)this.preset=structuredClone(p);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
-  refreshPresentation(){if(!this.renderer||this.disposed)return;requestAnimationFrame(()=>{if(!this.renderer||this.disposed)return;void this.renderer.drain().catch(()=>this.status('描画表示を更新できませんでした。'));});}
   get backend(){return String(this.renderer?.info.backend??'未取得');}get brushName(){return this.preset?.name??'未選択';}get brushSize(){return this.preset?.size??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
   destroy(){this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();this.session?.destroy();}
 }
