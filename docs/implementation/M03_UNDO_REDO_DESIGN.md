@@ -62,6 +62,17 @@ RealtimeSessionに以下の派生indexを保持する。
 
 Document側のStrokeRecordとSession側の末尾Recordが一致しない場合は同期エラーとして拒否する。「似た線を再生成」しない。
 
+### 4.1 軽さのための履歴キャッシュ方針
+
+M03では、各Strokeについて128pxタイルの「変更前」「変更後」をGPU上へ無制限に保存する方式を採用しない。
+
+理由:
+- Document側に正式なStrokeRecordとRevision履歴が既にあり、同じ履歴をGPU画像として二重保持すると作品が長くなるほどGPUメモリ使用量が増える。
+- Undo/Redoは上記のruntime tile -> StrokeRecord indexを使い、**影響したタイルだけ**を現在有効なStrokeRecordから作り直せる。
+- したがって通常のUndo/Redoで全Canvas、全Layer、全Strokeを再計算する必要はない。
+
+将来、実機計測で密集タイルの再構築が明確なボトルネックになった場合のみ、上限付きのタイルcheckpoint/cacheを別マイルストーンで検討する。無制限の履歴画像保持を性能対策として導入しない。
+
 ## 5. Redo branch
 
 Coreの`publish()`が通常Redo列を消す既存仕様を使用する。
