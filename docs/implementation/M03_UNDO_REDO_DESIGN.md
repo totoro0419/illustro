@@ -43,12 +43,17 @@ Stroke RevisionにはM01で保存済みの正式`StrokeRecord`とcanonical 256px
 Undo / Redo時は:
 
 1. Document Revision headを先に移動する。
-2. 対象Revisionの`brush.stroke` Semantic Operationを読む。
-3. 256px canonical dirty footprintを128px Brush runtime tileへ変換する。
-4. 影響した128px tileだけGPU派生キャッシュを無効化する。
-5. そのtileに関係する、現在有効な正式StrokeRecordだけを元の順序で再投影する。
+2. 対象Revisionの`brush.stroke` Semantic Operationを読み、影響した範囲を特定する。
+3. 最近の履歴が高速キャッシュに残っていれば、影響した128px tileを直接切り替える。
+4. キャッシュから外れた古い履歴・大きな履歴だけ、影響した128px tileを現在有効な正式StrokeRecordから裏側で再構築する。
+5. 再構築中は直前の完成画面を表示し続け、途中のStrokeや空のtileを画面へ一切出さない。全対象tileが完成した時点で1回だけ画面を更新する。
 
-禁止している全Canvas readback、全Document serialize、常時全Layer再描画は行わない。
+禁止事項:
+- 全Canvas readback
+- 全Document serialize
+- Undoごとの全Layer再描画
+- ユーザーに見えるStroke単位の再描画
+- 一瞬でも未完成のHistory状態を表示すること
 
 ## 4. Renderer側の派生index
 
@@ -62,16 +67,27 @@ RealtimeSessionに以下の派生indexを保持する。
 
 Document側のStrokeRecordとSession側の末尾Recordが一致しない場合は同期エラーとして拒否する。「似た線を再生成」しない。
 
-### 4.1 軽さのための履歴キャッシュ方針
+### 4.1 軽さと即応性を両立する履歴キャッシュ
 
-M03では、各Strokeについて128pxタイルの「変更前」「変更後」をGPU上へ無制限に保存する方式を採用しない。
+正式な履歴はDocument側だけを正本とする。そのうえで、ユーザーが頻繁に使う直近のUndo / Redoを待たせないため、Rendererには**16 MiBを上限とする高速tile cache**だけを持たせる。
 
-理由:
-- Document側に正式なStrokeRecordとRevision履歴が既にあり、同じ履歴をGPU画像として二重保持すると作品が長くなるほどGPUメモリ使用量が増える。
-- Undo/Redoは上記のruntime tile -> StrokeRecord indexを使い、**影響したタイルだけ**を現在有効なStrokeRecordから作り直せる。
-- したがって通常のUndo/Redoで全Canvas、全Layer、全Strokeを再計算する必要はない。
+- cacheはStroke単位の無制限画像履歴ではなく、最近変更された128px tileの変更前 / 変更後だけを保持する。
+- 合計予約量が16 MiBを超える前に古いcacheを破棄する。作品を描き続けてもGPU Historyメモリが増え続けない。
+- cacheに残る最近のUndo / RedoはStroke再投影を行わず、該当tileを直接切り替える。
+- 1操作がcache上限を超える場合や古い履歴が破棄済みの場合は、正式StrokeRecordから影響tileだけを再構築する。
+- pointercancel等でRendererを作り直した場合はStrokeRecordとRenderer内IDの対応も更新し、通常Undoが不要に再構築経路へ落ちないようにする。
 
-将来、実機計測で密集タイルの再構築が明確なボトルネックになった場合のみ、上限付きのタイルcheckpoint/cacheを別マイルストーンで検討する。無制限の履歴画像保持を性能対策として導入しない。
+### 4.2 Atomic History Presentation
+
+cache miss時の再構築は内部では複数Strokeを利用し得るが、その途中結果は**一切表示しない**。
+
+1. Undo / Redo開始時点の完成Canvasを表示したまま固定する。
+2. 対象tileだけを裏側で最後まで再構築する。
+3. 全対象tileの完成後、最終状態を1回だけpresentする。
+
+これにより、線が1本ずつ消える・戻る、tileが一瞬白くなる、History操作時にちらつく、といった途中状態をUIへ出さない。
+
+高速cacheとAtomic fallbackの両方を使う理由は、即応性だけを優先してGPU履歴を無制限に保持することも、軽さだけを優先して毎回Stroke再投影することも避けるためである。
 
 ## 5. Redo branch
 
