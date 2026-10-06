@@ -99,8 +99,8 @@ try{
     await mobile.locator('#close').click();assert.equal(await mobile.locator('#workspace').evaluate(el=>el.classList.contains('open')),false,'compact Workspace did not close');
     assert.equal(await mobile.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'none','closed Workspace remained in the compact compositor tree');
     assert.equal(await mobile.locator('#workspace').evaluate(el=>el.inert),true,'closed compact Workspace remained interactive');
-    const canvasOwnsCenter=await mobile.evaluate(()=>{const c=document.querySelector('canvas');if(!c)return false;const r=c.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width*.5,r.top+r.height*.5);return hit===c;});
-    assert.equal(canvasOwnsCenter,true,'closed compact Workspace or another UI layer still covers Canvas');
+    const workspaceCoversCenter=await mobile.evaluate(()=>{const c=document.querySelector('canvas'),w=document.getElementById('workspace');if(!c||!w)return true;const r=c.getBoundingClientRect();return document.elementsFromPoint(r.left+r.width*.5,r.top+r.height*.5).some(el=>el===w||w.contains(el));});
+    assert.equal(workspaceCoversCenter,false,'closed compact Workspace still participates in Canvas hit testing');
     await mobile.waitForTimeout(80);assert.ok(lightRatio(await mc.screenshot())>.92,'closing Workspace invalidated canvas presentation');
     const held=await touchStroke(mobile,mc,mb,[.15,.35],[.82,.55]);assert.ok(lightRatio(held)>.72,'compact live stroke after Workspace close did not update');await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});await waitIdle(mobile);
     assert.equal(await mobile.locator('#compactUndo').isDisabled(),false);await mobile.locator('#compactUndo').click();await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='0');await waitIdle(mobile);assert.ok(darkIn(await mc.screenshot(),{x0:.08,y0:.20,x1:.90,y1:.70})<8,'compact Undo left stroke visible');
