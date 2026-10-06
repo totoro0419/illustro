@@ -97,10 +97,10 @@ try{
     const mc=mobile.locator('canvas'),mb=await mc.boundingBox();assert.ok(mb);await mc.evaluate(el=>el.style.background='#000');await mobile.waitForTimeout(80);assert.ok(lightRatio(await mc.screenshot())>.92,'compact blank presentation is dark');
     await mobile.locator('#drawer').click();assert.equal(await mobile.locator('#workspace').evaluate(el=>el.classList.contains('open')),true,'compact Workspace did not open');
     await mobile.locator('#close').click();assert.equal(await mobile.locator('#workspace').evaluate(el=>el.classList.contains('open')),false,'compact Workspace did not close');
-    assert.equal(await mobile.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','closing Workspace removed its compositor subtree');
-    assert.equal(await mobile.locator('#workspace').evaluate(el=>getComputedStyle(el).visibility),'hidden','closed Workspace remained visually active');
-    assert.equal(await mobile.locator('#workspace').evaluate(el=>getComputedStyle(el).opacity),'0','closed Workspace still covered Canvas');
+    assert.equal(await mobile.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'none','closed Workspace remained in the compact compositor tree');
     assert.equal(await mobile.locator('#workspace').evaluate(el=>el.inert),true,'closed compact Workspace remained interactive');
+    const canvasOwnsCenter=await mobile.evaluate(()=>{const c=document.querySelector('canvas');if(!c)return false;const r=c.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width*.5,r.top+r.height*.5);return hit===c;});
+    assert.equal(canvasOwnsCenter,true,'closed compact Workspace or another UI layer still covers Canvas');
     await mobile.waitForTimeout(80);assert.ok(lightRatio(await mc.screenshot())>.92,'closing Workspace invalidated canvas presentation');
     const held=await touchStroke(mobile,mc,mb,[.15,.35],[.82,.55]);assert.ok(lightRatio(held)>.72,'compact live stroke after Workspace close did not update');await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});await waitIdle(mobile);
     assert.equal(await mobile.locator('#compactUndo').isDisabled(),false);await mobile.locator('#compactUndo').click();await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='0');await waitIdle(mobile);assert.ok(darkIn(await mc.screenshot(),{x0:.08,y0:.20,x1:.90,y1:.70})<8,'compact Undo left stroke visible');
