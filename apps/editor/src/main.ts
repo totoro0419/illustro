@@ -26,9 +26,9 @@ app.innerHTML=`
   </details>
   ${['プロパティ','資料','素材','効果','ナビゲーター','履歴','自動化','文書','Workspace設定'].map(name=>`<details><summary>${name}</summary><p>準備中</p></details>`).join('')}
   <label class="width-control">Workspaceの幅<input id="width" type="range" min="240" max="440" value="344"></label>
-  <div class="commands"><button id="layer">レイヤー</button><button id="undo" disabled aria-label="元に戻す">Undo</button><button id="redo" disabled aria-label="やり直す">Redo</button><button disabled>左右反転</button><button disabled>上下反転</button></div>
+  <div class="commands"><button id="layer">レイヤー</button><button id="undo" disabled title="元に戻す">Undo</button><button id="redo" disabled title="やり直す">Redo</button><button disabled>左右反転</button><button disabled>上下反転</button></div>
 </aside>
-<div class="compact-only bottom"><button id="compactUndo" disabled aria-label="元に戻す">Undo</button><button id="compactRedo" disabled aria-label="やり直す">Redo</button><button id="drawer" aria-controls="workspace" aria-expanded="false">Workspace</button></div>
+<div class="compact-only bottom"><button id="compactUndo" disabled title="元に戻す">Undo</button><button id="compactRedo" disabled title="やり直す">Redo</button><button id="drawer" aria-controls="workspace" aria-expanded="false">Workspace</button></div>
 ${qaMode?qaMarkup():''}`;
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
