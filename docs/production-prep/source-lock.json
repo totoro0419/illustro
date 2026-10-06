@@ -29,8 +29,8 @@
     },
     {
       "path": "packages/brush-rt/src/index.d.ts",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "2dc6d0910f119271de4934183c7da0803b00e7f1faac4f8aa24cefd3c2fce52d"
+      "sourceCommit": "bbd3bcf187c6d911d548847bf6e5d0a974bf38c6",
+      "sha256": "9ed34f4b112d4b169c63f2d7ed91870c72f13260c0fbd84cfa54acb1c04aa120"
     },
     {
       "path": "packages/brush-rt/src/index.mjs",
@@ -44,13 +44,13 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "1650e065054c8ee4fab9de8cd7623e03bdb02454",
-      "sha256": "c874b1bbbc345d494d105e859165d946ca50624f0625aa43fa8b7ebd80e3043e"
+      "sourceCommit": "bbd3bcf187c6d911d548847bf6e5d0a974bf38c6",
+      "sha256": "8397b9a2c024eb301fe309c29fba147660a1c6b128b87e1ead36264ed35f7546"
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "378b9aa74588d7a75e0313939a548c9ee18e73daa79a9bed5a481c5cab1dab74"
+      "sourceCommit": "bbd3bcf187c6d911d548847bf6e5d0a974bf38c6",
+      "sha256": "d37e75e2d9e09e6fea5c7b2349a072ef7e3994bbe570c654c079bd9d742a3622"
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
@@ -313,5 +313,5 @@
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
     }
   ],
-  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation remains frozen except for accepted forced-fade timing corrections and the presentation-only renderer correction promoted after the Android black-canvas defect: canonical transparent artwork stays unchanged, while WebGL2/WebGPU screen presentation composites it onto an explicit opaque white paper."
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Accepted renderer exceptions are the M02 presentation-only opaque-paper correction and the M03 history-only dirty-tile derived replay path; M03 does not alter brush semantics."
 }
