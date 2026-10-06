@@ -44,13 +44,13 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "b74cd4d448a674c74866fd2e99a1fd9a7530eb81",
-      "sha256": "f40646a28abce1911e9a3737afbf802ebbf78253f49b1372d6bb7d094cbb3f3a"
+      "sourceCommit": "8bacf2272d1687cfb89aa3955e1f14c71075f884",
+      "sha256": "666114a4236f97928315eef53b3a7228cac9ff6800d753d816635f563d7b7c98"
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
-      "sourceCommit": "4af084f955200b740cad48d68736cf6c252b06fb",
-      "sha256": "200cadb02769757f60bb0fb3d89e0d8862c9695daae62ce5ed24b5c0425feb44"
+      "sourceCommit": "8cad9e65b75bf9de336320273eb0f8c9b7c51e70",
+      "sha256": "d3a6eae8984438f196f420190053c8d3511e9e0661c0ee3c88f17049b99ddfba"
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
@@ -313,5 +313,5 @@
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
     }
   ],
-  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Accepted renderer exceptions are the M02 opaque-paper presentation correction and M03 history-only GPU dirty-tile before/after patch switching; M03 normal Undo/Redo must not replay prior strokes. UI Workspace visibility changes must not invoke Renderer work."
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. The M02 opaque-paper presentation correction remains accepted. M03 History is Document-owned: Undo/Redo invalidates only affected 128px runtime tiles and rebuilds them from the currently-active formal StrokeRecords indexed for those tiles. M03 must not retain an unbounded per-stroke GPU before/after snapshot history, perform full-canvas readback, or rebuild unrelated tiles. UI Workspace visibility changes must not invoke Renderer work."
 }
