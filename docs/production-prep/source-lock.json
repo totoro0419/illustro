@@ -44,8 +44,8 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "8bacf2272d1687cfb89aa3955e1f14c71075f884",
-      "sha256": "666114a4236f97928315eef53b3a7228cac9ff6800d753d816635f563d7b7c98"
+      "sourceCommit": "37b40ccf160f97bac338f3d7da28b8c0871f3b31",
+      "sha256": "761108536943473ae6d6850b926a8486ba3e45170599e7c3368e1f21470dc886"
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
