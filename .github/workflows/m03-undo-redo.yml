@@ -1,0 +1,36 @@
+name: M03 Undo Redo Development
+
+on:
+  push:
+    branches: ['milestone/M03-undo-redo']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: M03 Brush extension hashes
+        run: sha256sum packages/brush-rt/src/index.d.ts packages/brush-rt/src/renderer.mjs packages/brush-rt/src/session.mjs
+      - name: Core checks
+        run: npm run core:check
+      - name: Editor M01-M03 unit tests
+        run: npx vitest run apps/editor/src/strokeCommit.test.ts apps/editor/src/layerSelection.test.ts apps/editor/src/historyController.test.ts
+      - name: Brush Foundation 93-test regression
+        run: |
+          npm run brush:build > /tmp/m03-brush-build.log
+          node --test packages/brush-rt/test/*.test.mjs | tee /tmp/m03-brush-regression.log
+          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/m03-brush-regression.log
+          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/m03-brush-regression.log
+          grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/m03-brush-regression.log
+      - name: Editor typecheck and build
+        run: npm run editor:build
