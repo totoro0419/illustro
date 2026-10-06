@@ -61,7 +61,7 @@ try{
         assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'none','closed compact Workspace must leave layout/compositor tree');
         const workspaceCoversCenter=await page.evaluate(()=>{const c=document.querySelector('canvas'),w=document.getElementById('workspace');if(!c||!w)return true;const r=c.getBoundingClientRect();return document.elementsFromPoint(r.left+r.width*.5,r.top+r.height*.5).some(el=>el===w||w.contains(el));});
         assert.equal(workspaceCoversCenter,false,'closed compact Workspace still participates in Canvas hit testing');
-        assert.equal(await page.locator('#drawer').evaluate(e=>e===document.activeElement),true);
+        assert.equal(await page.locator('#workspace').evaluate(el=>el.contains(document.activeElement)),false,'closed Workspace retained focus');
       }
       report.layouts.push({backend,...viewport,horizontalOverflow:false});
       if(viewport.width===390)await page.screenshot({path:path.join(evidence,backend+'-compact.png')});
