@@ -55,7 +55,7 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | M01 | 一筆を選択Layerへ正式確定 | ✅ | `cb95bd2` | `c4fa55d` | `milestone/M01-stroke-commit` / PR #13 merged | PASS（Core / adapter / Brush 93 tests / WebGL2 / WebGPU / 公開QA / 統合後回帰） | PASS（2026-10-05 修正版を実機合格） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。固定QAを回帰基準として保持 |
 | M02 | Layer追加・選択 | ✅ | `15bc917` | `4189484` | `milestone/M02-layer-add-select` / PR #14 | PASS（run `37384158243`: Core / production-prep / M01 adapter / M02統合 / Brush 93 tests / Editor build / production smoke / WebGL2・WebGPU local+public / 390×844・DPR2 / CSS背景黒でも白紙表示 / 実touch保持中も全体黒化なし / Android UA auto=WebGPUでもPASS / console errorなし / M01 QA保持） | PASS（2026-10-06 実機でM02完了確認） | https://totoro0419.github.io/illustro/qa/m02/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。M02固定QAを回帰基準として保持 |
-| M03 | Undo / Redo | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査。実装前に必須 | M01/M02固定成果を壊さずDocument履歴のUndo/RedoをUIへ接続する |
+| M03 | Undo / Redo | ⬜ | `786aea1` | — | `milestone/M03-undo-redo` / PR未作成 | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査。実装前に必須 | M01/M02固定成果を壊さずDocument履歴のUndo/RedoをUIへ接続する |
 | M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 未調査 | — |
 | M05 | Save | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m05/ | 未調査 | — |
 | M06 | Reload / Recovery | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m06/ | 未調査 | — |
