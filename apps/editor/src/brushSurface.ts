@@ -9,7 +9,7 @@ export class BrushSurface{
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;
     const requested=new URLSearchParams(location.search).get('backend'),compact=matchMedia('(max-width:760px)').matches,canBridge=compact&&typeof OffscreenCanvas!=='undefined';
-    let renderTarget:HTMLCanvasElement|OffscreenCanvas=this.canvas,backend=requested==='webgl2'||requested==='webgpu'?requested:'auto',webglDesynchronized=true;
+    let renderTarget:HTMLCanvasElement|OffscreenCanvas=this.canvas,backend:'auto'|'webgl2'|'webgpu'=requested==='webgl2'||requested==='webgpu'?requested:'auto',webglDesynchronized=true;
     if(canBridge){
       this.renderCanvas=new OffscreenCanvas(target.width,target.height);
       this.bitmapContext=this.canvas.getContext('bitmaprenderer');
