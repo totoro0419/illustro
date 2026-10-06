@@ -33,7 +33,7 @@ ${qaMode?qaMarkup():''}`;
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const controller=new EditorController();
-let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0;
+let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,lastPointerDownTarget:EventTarget|null=null;
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
 const renderLayers=()=>{
@@ -54,6 +54,7 @@ function updateHistoryButtons(){
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
 }
 
+document.addEventListener('pointerdown',e=>{lastPointerDownTarget=e.target;},{capture:true});
 if(qaMode){document.addEventListener('pointerdown',e=>{const canvas=byId<HTMLCanvasElement>('canvas'),target=e.target instanceof HTMLElement?e.target:null;canvas.dataset.lastPointerTarget=target?.id||target?.tagName.toLowerCase()||'unknown';canvas.dataset.lastPointerType=e.pointerType;canvas.dataset.lastPointerX=String(Math.round(e.clientX));canvas.dataset.lastPointerY=String(Math.round(e.clientY));queueMicrotask(updateQa);},{capture:true});}
 const updateQa=()=>{
   const canvas=byId<HTMLCanvasElement>('canvas'),selected=controller.selectedLayer;
@@ -63,7 +64,7 @@ const updateQa=()=>{
   if(!qaMode)return;
   const data={milestone:'M03',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
     layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:controller.canUndo,canRedo:controller.canRedo,
-    undoCount,redoCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,latencyPreviewEnabled:surface?.latencyPreviewEnabled??false,latencyPreviewFrames:surface?.latencyPreviewFrames??0,latencyPredictionPoints:surface?.latencyPredictionPoints??0,
+    undoCount,redoCount,blockedHistoryGhostClicks,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,latencyPreviewEnabled:surface?.latencyPreviewEnabled??false,latencyPreviewFrames:surface?.latencyPreviewFrames??0,latencyPredictionPoints:surface?.latencyPredictionPoints??0,
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
     activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:workspace.classList.contains('open'),workspaceDisplay:getComputedStyle(workspace).display,
     visualViewport:window.visualViewport?{width:Math.round(window.visualViewport.width),height:Math.round(window.visualViewport.height),offsetTop:Math.round(window.visualViewport.offsetTop),offsetLeft:Math.round(window.visualViewport.offsetLeft),scale:window.visualViewport.scale}:null,
@@ -105,7 +106,11 @@ async function performHistory(direction:'undo'|'redo'){
     renderLayers();byId('status').textContent='Undo / Redoを安全に反映できなかったため、操作を戻しました。';
   }finally{historyPending=false;updateHistoryButtons();updateQa();}
 }
-byId('undo').onclick=()=>void performHistory('undo');byId('compactUndo').onclick=()=>void performHistory('undo');byId('redo').onclick=()=>void performHistory('redo');byId('compactRedo').onclick=()=>void performHistory('redo');
+function bindHistoryButton(id:string,direction:'undo'|'redo'){
+  const button=byId<HTMLButtonElement>(id);
+  button.onclick=e=>{if(e.detail>0&&lastPointerDownTarget!==button){blockedHistoryGhostClicks++;e.preventDefault();updateQa();return;}void performHistory(direction);};
+}
+bindHistoryButton('undo','undo');bindHistoryButton('compactUndo','undo');bindHistoryButton('redo','redo');bindHistoryButton('compactRedo','redo');
 
 function isTextEditingTarget(target:EventTarget|null){if(!(target instanceof HTMLElement))return false;if(target.isContentEditable||target instanceof HTMLTextAreaElement||target instanceof HTMLSelectElement)return true;if(target instanceof HTMLInputElement){return !['button','checkbox','radio','range','submit','reset'].includes(target.type);}return false;}
 document.addEventListener('keydown',e=>{
