@@ -58,7 +58,9 @@ try{
         assert.equal(await page.locator('.bottom').getByRole('button',{name:'Undo',exact:true}).isVisible(),true);
         await page.locator('#close').click();assert.equal(await page.locator('#workspace').evaluate(el=>el.classList.contains('open')),false);
         assert.equal(await page.locator('#workspace').evaluate(el=>el.inert),true,'closed compact Workspace must be inert');
-        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'none','closed compact Workspace must leave layout/compositor tree');
+        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','closed compact Workspace must remain mounted for stable composition');
+        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).opacity),'0','closed compact Workspace must be visually hidden');
+        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).pointerEvents),'none','closed compact Workspace must not steal Canvas input');
         const workspaceCoversCenter=await page.evaluate(()=>{const c=document.querySelector('canvas'),w=document.getElementById('workspace');if(!c||!w)return true;const r=c.getBoundingClientRect();return document.elementsFromPoint(r.left+r.width*.5,r.top+r.height*.5).some(el=>el===w||w.contains(el));});
         assert.equal(workspaceCoversCenter,false,'closed compact Workspace still participates in Canvas hit testing');
         assert.equal(await page.locator('#workspace').evaluate(el=>el.contains(document.activeElement)),false,'closed Workspace retained focus');
