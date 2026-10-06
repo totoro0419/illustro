@@ -58,7 +58,9 @@ try{
         assert.equal(await page.locator('.bottom').getByRole('button',{name:'Undo',exact:true}).isVisible(),true);
         await page.locator('#close').click();assert.equal(await page.locator('#workspace').evaluate(el=>el.classList.contains('open')),false);
         assert.equal(await page.locator('#workspace').evaluate(el=>el.inert),true,'closed compact Workspace must be inert');
-        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).transform==='none'),false,'closed compact Workspace must be moved off-canvas without display:none');
+        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','closed compact Workspace must stay in layout/compositor tree');
+        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).visibility),'hidden','closed compact Workspace must be visually hidden');
+        assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).opacity),'0','closed compact Workspace must not cover Canvas');
         assert.equal(await page.locator('#drawer').evaluate(e=>e===document.activeElement),true);
       }
       report.layouts.push({backend,...viewport,horizontalOverflow:false});
