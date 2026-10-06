@@ -111,6 +111,7 @@ try{
     await page.close();
   }
   report.status='PASS';
+}catch(e){report.failure=e?.stack??String(e);throw e;
 }finally{
   await fs.writeFile(path.join(evidence,`m03-${publicBase?'public':'local'}-smoke.json`),JSON.stringify(report,null,2));await browser.close();if(server)await new Promise(resolve=>server.close(resolve));
 }
