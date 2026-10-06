@@ -29,8 +29,8 @@
     },
     {
       "path": "packages/brush-rt/src/index.d.ts",
-      "sourceCommit": "bbd3bcf187c6d911d548847bf6e5d0a974bf38c6",
-      "sha256": "9ed34f4b112d4b169c63f2d7ed91870c72f13260c0fbd84cfa54acb1c04aa120"
+      "sourceCommit": "1d0242fb49b5c49beb955a02d1f8cd4b9f77fffc",
+      "sha256": "e0ef85277f465307930a1f4c69e058370e02384472fd1bfb70ee84e847f7dd0c"
     },
     {
       "path": "packages/brush-rt/src/index.mjs",
@@ -44,13 +44,13 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "bbd3bcf187c6d911d548847bf6e5d0a974bf38c6",
-      "sha256": "8397b9a2c024eb301fe309c29fba147660a1c6b128b87e1ead36264ed35f7546"
+      "sourceCommit": "b74cd4d448a674c74866fd2e99a1fd9a7530eb81",
+      "sha256": "f40646a28abce1911e9a3737afbf802ebbf78253f49b1372d6bb7d094cbb3f3a"
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
-      "sourceCommit": "bbd3bcf187c6d911d548847bf6e5d0a974bf38c6",
-      "sha256": "d37e75e2d9e09e6fea5c7b2349a072ef7e3994bbe570c654c079bd9d742a3622"
+      "sourceCommit": "d61df575808572f86bd7d883c8c88e8cca7fd40d",
+      "sha256": "b88ed5d1397eceeded5f546c3ad045c15ee2788679e57febc724760d9f31d04c"
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
@@ -313,5 +313,5 @@
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
     }
   ],
-  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Accepted renderer exceptions are the M02 presentation-only opaque-paper correction and the M03 history-only dirty-tile derived replay path; M03 does not alter brush semantics."
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Accepted renderer exceptions are the M02 opaque-paper presentation correction and M03 history-only GPU dirty-tile before/after patch switching; M03 normal Undo/Redo must not replay prior strokes. UI Workspace visibility changes must not invoke Renderer work."
 }
