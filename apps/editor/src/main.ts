@@ -68,11 +68,12 @@ const updateQa=()=>{
 renderLayers();
 
 surface=new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();});
-let paintIndex=0,eraseIndex=5;const workspace=byId('workspace'),drawer=byId<HTMLButtonElement>('drawer');
-function openBox(id:string){workspace.classList.add('open');drawer.setAttribute('aria-expanded','true');const box=byId<HTMLDetailsElement>(id);box.open=true;box.scrollIntoView({block:'nearest'});}
+let paintIndex=0,eraseIndex=5;const workspace=byId('workspace'),drawer=byId<HTMLButtonElement>('drawer'),compactWorkspace=matchMedia('(max-width:760px)');
+function syncWorkspaceState(){const open=workspace.classList.contains('open'),hidden=compactWorkspace.matches&&!open;drawer.setAttribute('aria-expanded',String(open));workspace.inert=hidden;workspace.setAttribute('aria-hidden',String(hidden));surface?.refreshPresentation();}
+function openBox(id:string){workspace.classList.add('open');syncWorkspaceState();const box=byId<HTMLDetailsElement>(id);box.open=true;box.scrollIntoView({block:'nearest'});}
 byId('layer').onclick=()=>openBox('layersBox');byId('layersPage').onclick=()=>openBox('layersBox');byId('colorPage').onclick=()=>openBox('colorBox');byId('brushPage').onclick=()=>openBox('brushBox');
-drawer.onclick=()=>{workspace.classList.toggle('open');drawer.setAttribute('aria-expanded',String(workspace.classList.contains('open')));};
-function close(){workspace.classList.remove('open');drawer.setAttribute('aria-expanded','false');drawer.focus();}byId('close').onclick=close;
+drawer.onclick=()=>{workspace.classList.toggle('open');syncWorkspaceState();};
+function close(){workspace.classList.remove('open');syncWorkspaceState();drawer.focus();}byId('close').onclick=close;compactWorkspace.addEventListener('change',syncWorkspaceState);syncWorkspaceState();
 
 function setWidth(value:number){const width=Math.max(240,Math.min(440,value));document.documentElement.style.setProperty('--workspace',`${width}px`);byId<HTMLInputElement>('width').value=String(width);byId('splitter').setAttribute('aria-valuenow',String(width));}
 byId<HTMLInputElement>('width').oninput=e=>setWidth(Number((e.target as HTMLInputElement).value));const splitter=byId('splitter');let resizePointer:number|null=null;
