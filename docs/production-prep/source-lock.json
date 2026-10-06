@@ -29,8 +29,8 @@
     },
     {
       "path": "packages/brush-rt/src/index.d.ts",
-      "sourceCommit": "1d0242fb49b5c49beb955a02d1f8cd4b9f77fffc",
-      "sha256": "e0ef85277f465307930a1f4c69e058370e02384472fd1bfb70ee84e847f7dd0c"
+      "sourceCommit": "0271e4d927cddf781a27e53c5a2fee1b585aa878",
+      "sha256": "4ef817b28fa9ae9a083a935475e6bf384bb6ad10aab3672895df055039d2b916"
     },
     {
       "path": "packages/brush-rt/src/index.mjs",
@@ -49,8 +49,8 @@
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
-      "sourceCommit": "d61df575808572f86bd7d883c8c88e8cca7fd40d",
-      "sha256": "b88ed5d1397eceeded5f546c3ad045c15ee2788679e57febc724760d9f31d04c"
+      "sourceCommit": "4af084f955200b740cad48d68736cf6c252b06fb",
+      "sha256": "200cadb02769757f60bb0fb3d89e0d8862c9695daae62ce5ed24b5c0425feb44"
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
