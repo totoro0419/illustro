@@ -1,13 +1,13 @@
-import {CANONICAL_TILE_SIZE,CoreDocument,type DirtyTileHint} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,CoreDocument,type DirtyTileHint,type LayerId} from '@illustro/core';
 import type {StrokeRecord} from '@illustro/brush-rt';
 import type {DocumentPort,DrawingTarget,StrokeCommitResult} from './ports';
 
 type Bounds={x0:number;y0:number;x1:number;y1:number};
 type Accum={bounds:Bounds;commands:number[]};
 export class CoreStrokeDocumentPort implements DocumentPort{
-  constructor(readonly document:CoreDocument){}
+  constructor(readonly document:CoreDocument,private readonly selectedLayer:()=>LayerId=()=>document.defaultRasterLayerId){}
   target():DrawingTarget{
-    const root=this.document.root,layer=root.getLayer(this.document.defaultRasterLayerId);
+    const root=this.document.root,layer=root.getLayer(this.selectedLayer());
     if(layer.kind!=='raster')throw new Error('選択中のレイヤーには描けません。');
     if(layer.locked)throw new Error('選択中のレイヤーはロックされています。');
     return Object.freeze({documentId:root.documentId,layerId:layer.id,surfaceId:layer.surface.descriptor.surfaceId,width:root.width,height:root.height,baseRevision:this.document.head});

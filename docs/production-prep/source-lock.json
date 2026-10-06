@@ -44,8 +44,8 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "1685032f02ba33ea128f7e14d30209f3bf55a78cda384090a7c0acd8ace62b6b"
+      "sourceCommit": "1650e065054c8ee4fab9de8cd7623e03bdb02454",
+      "sha256": "c874b1bbbc345d494d105e859165d946ca50624f0625aa43fa8b7ebd80e3043e"
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
@@ -313,5 +313,5 @@
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
     }
   ],
-  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation remains frozen except for the user-reported forced-fade timing corrections adopted from PR #10; start reaches normal width sooner and end thinning begins later, while accepted Brush and Raster Lab artifacts remain hash-locked."
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation remains frozen except for accepted forced-fade timing corrections and the presentation-only renderer correction promoted after the Android black-canvas defect: canonical transparent artwork stays unchanged, while WebGL2/WebGPU screen presentation composites it onto an explicit opaque white paper."
 }

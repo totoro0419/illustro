@@ -14,11 +14,13 @@ export class CoreDocument{
   readonly writerEpochId:WriterEpochId;readonly defaultRasterLayerId:LayerId;
   constructor(o:CoreOptions){validSize(o.width);validSize(o.height);this.idsValue=o.ids??cryptoIdFactory;this.clockValue=o.clock??(()=>Date.now());this.writerEpochId=this.idsValue.writerEpoch();
     const sampleEncoding=o.sampleEncoding??'rgba.unorm8.v1';this.tileBytes=CANONICAL_TILE_SIZE*CANONICAL_TILE_SIZE*bytesPerPixel(sampleEncoding);this.storeValue=new CanonicalTileStore(this.idsValue,o.transfer);
-    const id=this.idsValue.layer(),layer=rasterLayer(id,this.idsValue.surface(),o.colorProfileId??'srgb',sampleEncoding),e=PagedMap.empty<LayerId,typeof layer>().edit();e.set(id,layer);
+    const id=this.idsValue.layer(),layer=rasterLayer(id,this.idsValue.surface(),o.colorProfileId??'srgb',sampleEncoding,'Layer 1'),e=PagedMap.empty<LayerId,typeof layer>().edit();e.set(id,layer);
     const root=new DocumentRoot(this.idsValue.document(),o.width,o.height,o.name??'Untitled',o.colorProfileId??'srgb',e.commit(),[id]);this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.idsValue,this.clockValue());}
   get root(){return this.historyValue.current.root;}get head(){return this.historyValue.head;}get revisionCount(){return this.historyValue.count;}get currentRevision(){return this.historyValue.current;}
   get commitSequence(){return this.commitSequenceValue;}get canonicalBlockCount(){return this.storeValue.blockCount;}get canonicalRasterBytes(){return this.storeValue.allocatedBytes;}
-  begin(label:string){return new DocumentTransaction(this,label);}undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}
+  begin(label:string){return new DocumentTransaction(this,label);}
+  addRasterLayerAbove(referenceId:LayerId){const tx=this.begin('Add raster layer'),layerId=tx.addRasterLayerAbove(referenceId),receipt=tx.commit();return Object.freeze({layerId,receipt});}
+  undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}
   getTileValue(layerId:LayerId,tileX:number,tileY:number){return this.root.getLayer(layerId).surface.getValue(tileX,tileY);}
   readPixel(layerId:LayerId,x:number,y:number){if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y))throw new Error('invalid pixel coordinate');const l=this.root.getLayer(layerId);
     if(l.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('readPixel helper only supports rgba.unorm8.v1');const tx=pixelToTile(x),ty=pixelToTile(y),value=l.surface.getValue(tx.tile,ty.tile);

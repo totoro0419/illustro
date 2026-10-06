@@ -20,6 +20,6 @@ export class BrushSurface{
   private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;try{await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{this.finishing=false;}}
   private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   select(index:number){const p=this.brushes[index];if(p)this.preset=structuredClone(p);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
-  get backend(){return String(this.renderer?.info.backend??'未取得');}get brushName(){return this.preset?.name??'未選択';}get brushSize(){return this.preset?.size??0;}
+  get backend(){return String(this.renderer?.info.backend??'未取得');}get brushName(){return this.preset?.name??'未選択';}get brushSize(){return this.preset?.size??0;}get busy(){return this.pointer!==null||this.finishing;}
   destroy(){this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();this.session?.destroy();}
 }
