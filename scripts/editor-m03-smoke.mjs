@@ -88,7 +88,7 @@ try{
 
     // Rapid button attempts must serialize instead of throwing or corrupting state.
     await page.locator('#undo').evaluate(el=>{for(let i=0;i<8;i++)el.click();});await waitIdle(page);await page.locator('#redo').evaluate(el=>{for(let i=0;i<8;i++)el.click();});await waitIdle(page);
-    state=await qa(page);assert.ok(state.layers.some(x=>x.id===state.selectedLayerId),'rapid History left invalid selected layer');assert.ok(state.historyPatchHits>=4,'normal Stroke Undo/Redo did not use direct GPU tile patches');assert.equal(state.historyReplayFallbacks,0,'normal Stroke Undo/Redo fell back to Stroke replay');assert.deepEqual(errors,[]);
+    state=await qa(page);assert.ok(state.layers.some(x=>x.id===state.selectedLayerId),'rapid History left invalid selected layer');assert.equal(state.historyPatchHits,0,'M03 retained a parallel GPU snapshot history');assert.ok(state.historyReplayFallbacks>=4,'normal Stroke Undo/Redo did not rebuild affected tiles from active formal strokes');assert.deepEqual(errors,[]);
     await page.screenshot({path:path.join(evidence,`${backend}-m03-${publicBase?'public':'local'}.png`),fullPage:true});
 
     // Compact direct Undo/Redo and Android-black regression on same backend.
@@ -105,6 +105,7 @@ try{
     const held=await touchStroke(mobile,mc,mb,[.15,.35],[.82,.55]);assert.ok(lightRatio(held)>.72,'compact live stroke after Workspace close did not update');await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});await waitIdle(mobile);
     assert.equal(await mobile.locator('#compactUndo').isDisabled(),false);await mobile.locator('#compactUndo').click();await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='0');await waitIdle(mobile);assert.ok(darkIn(await mc.screenshot(),{x0:.08,y0:.20,x1:.90,y1:.70})<8,'compact Undo left stroke visible');
     assert.equal(await mobile.locator('#compactRedo').isDisabled(),false);await mobile.locator('#compactRedo').click();await mobile.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1');await waitIdle(mobile);assert.ok(darkIn(await mc.screenshot(),{x0:.08,y0:.20,x1:.90,y1:.70})>25,'compact Redo did not restore stroke');
+    for(const [index,line] of [[[.12,.70],[.42,.76]],[[.52,.70],[.82,.76]]].entries()){const heldMore=await touchStroke(mobile,mc,mb,line[0],line[1]);assert.ok(lightRatio(heldMore)>.68,'later compact live stroke after Workspace close stopped updating');await mobile.waitForFunction(expected=>document.querySelector('canvas')?.dataset.committedStrokes===String(expected),index+2,{timeout:15000});await waitIdle(mobile);}
     assert.deepEqual(mobileErrors,[]);await mobile.screenshot({path:path.join(evidence,`${backend}-m03-${publicBase?'public':'local'}-compact.png`),fullPage:true});await mobile.close();
 
     report.backends.push({backend,status:'PASS',strokeUndoRedo:true,layerUndoRedo:true,identityStable:true,selectionValid:true,redoBranchDiscard:true,keyboard:true,activeStrokeBlocked:true,pointerCancelNoHistory:true,rapidHistorySafe:true,compactUndoRedo:true,historyPatchHits:state.historyPatchHits,historyReplayFallbacks:state.historyReplayFallbacks,workspaceCloseDrawing:true,androidPresentationRegression:true,commit:state.commit,consoleErrors:errors});
