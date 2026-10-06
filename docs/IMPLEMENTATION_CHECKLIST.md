@@ -19,7 +19,7 @@
 - Region / Lineartは採用予定試作であり、製品統合済みではない。
 - 現在のEditorは一筆の正式Document/Layer確定に加え、M02でRaster Layer追加・現在Layer選択・選択Layerへの次ストローク確定まで接続済み。文書Undo/Redo、Save/Recovery/Reload/Exportは未接続。
 - M01は✅合格・固定。実機合格、固定QA、PR #13統合、統合後Core CI / Production PreparationまでPASS済み。現在の統合基準commitは `f58de8c4a0650c6fdd32c4b17a40a2021cd79145`。
-- M02「Layer追加・選択」は固定QA公開・公開URL自動検査まで完了し、👤ユーザー確認待ち。Android実機で報告された黒画面は端末別fallbackを撤回し、WebGL2/WebGPU共通の最終表示段で透明な作品を明示的に白紙へ合成する根本修正を公開済み。2026-10-06に報告元Android実機で黒画面解消をユーザー確認済み。M03以降は未着手。
+- M02「Layer追加・選択」は固定QA公開・公開URL自動検査まで完了し、👤ユーザー確認待ち。Android実機で報告された黒画面は端末別fallbackを撤回し、WebGL2/WebGPU共通の最終表示段で透明な作品を明示的に白紙へ合成する根本修正を公開済み。2026-10-06に報告元Android実機で黒画面解消をユーザー確認済み。M03「Undo / Redo」は実装中。M01/M02固定成果を保持したままDocument HistoryとRenderer派生表示の同期を接続している。M04以降は未着手。
 - M02ではLayer追加・選択に必要な範囲だけを実装し、M03 Undo / RedoやM10 Layer Page基本は先取りしていない。
 
 ## マイルストーン開始前ゲート
@@ -55,7 +55,7 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | M01 | 一筆を選択Layerへ正式確定 | ✅ | `cb95bd2` | `c4fa55d` | `milestone/M01-stroke-commit` / PR #13 merged | PASS（Core / adapter / Brush 93 tests / WebGL2 / WebGPU / 公開QA / 統合後回帰） | PASS（2026-10-05 修正版を実機合格） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。固定QAを回帰基準として保持 |
 | M02 | Layer追加・選択 | ✅ | `15bc917` | `e7bf30b` | `milestone/M02-layer-add-select` / PR #14 merged | PASS（run `37384158243`: Core / production-prep / M01 adapter / M02統合 / Brush 93 tests / Editor build / production smoke / WebGL2・WebGPU local+public / 390×844・DPR2 / CSS背景黒でも白紙表示 / 実touch保持中も全体黒化なし / Android UA auto=WebGPUでもPASS / console errorなし / M01 QA保持 / 統合後Core CI・Production Preparation） | PASS（2026-10-06 実機でM02完了確認） | https://totoro0419.github.io/illustro/qa/m02/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。M02固定QAを回帰基準として保持 |
-| M03 | Undo / Redo | ⬜ | `786aea1` | — | `milestone/M03-undo-redo` / PR未作成 | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | 未調査。実装前に必須 | M01/M02固定成果を壊さずDocument履歴のUndo/RedoをUIへ接続する |
+| M03 | Undo / Redo | 🛠 | `1d1eb23` | — | `milestone/M03-undo-redo` / PR #15 Draft | 実施中（Core / Editor / Brush 93 / Editor buildは途中commitでPASS。Browser/Pagesは未完了） | 必須 | https://totoro0419.github.io/illustro/qa/m03/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | 固定QA公開とWebGL2/WebGPU実URL検査が未完了 |
 | M04 | Eraser正式統合 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 未調査 | — |
 | M05 | Save | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m05/ | 未調査 | — |
 | M06 | Reload / Recovery | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m06/ | 未調査 | — |

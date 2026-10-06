@@ -1648,6 +1648,14 @@
     {
       "path": "docs/implementation/M02_LAYER_ADD_SELECT_DESIGN.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M03_UNDO_REDO_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M03_UNDO_REDO_DESIGN.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }
