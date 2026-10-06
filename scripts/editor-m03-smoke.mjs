@@ -104,7 +104,7 @@ try{
     // Compact direct Undo/Redo and Android-black regression on same backend.
     const mobileErrors=[],mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'});
     mobile.on('pageerror',e=>mobileErrors.push(e.message));mobile.on('console',m=>{if(m.type()==='error')mobileErrors.push(m.text());});await mobile.goto(pageUrl(backend),{waitUntil:'networkidle',timeout:45000});await mobile.locator('#qaPanel > summary').click();await mobile.getByRole('button',{name:'新規キャンバス',exact:true}).click();await mobile.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
-    const mc=mobile.locator('canvas'),mb=await mc.boundingBox();assert.ok(mb);const compactStart=await qa(mobile);assert.equal(compactStart.rendererAlpha,true,'compact renderer must preserve Canvas alpha');assert.equal(compactStart.rendererPremultipliedAlpha,true,'compact renderer must use premultiplied alpha presentation');await mc.evaluate(el=>el.style.background='#000');await mobile.waitForTimeout(80);assert.ok(darkIn(await mc.screenshot(),{x0:0,y0:0,x1:1,y1:1})>mb.width*mb.height*.8,'compact blank renderer is not transparent');await mc.evaluate(el=>el.style.background='#fff');await mobile.waitForTimeout(80);assert.ok(lightRatio(await mc.screenshot())>.92,'compact Canvas view paper is not white');
+    const mc=mobile.locator('canvas'),mb=await mc.boundingBox();assert.ok(mb);const compactStart=await qa(mobile);assert.equal(compactStart.rendererAlpha,true,'compact renderer must preserve Canvas alpha');assert.equal(compactStart.rendererPremultipliedAlpha,true,'compact renderer must use premultiplied alpha presentation');if(backend==='webgl2')assert.equal(compactStart.rendererDesynchronized,false,'compact WebGL2 must not use the desynchronized compositor path');await mc.evaluate(el=>el.style.background='#000');await mobile.waitForTimeout(80);assert.ok(darkIn(await mc.screenshot(),{x0:0,y0:0,x1:1,y1:1})>mb.width*mb.height*.8,'compact blank renderer is not transparent');await mc.evaluate(el=>el.style.background='#fff');await mobile.waitForTimeout(80);assert.ok(lightRatio(await mc.screenshot())>.92,'compact Canvas view paper is not white');
     await mobile.locator('#drawer').click();assert.equal(await mobile.locator('#workspace').evaluate(el=>el.classList.contains('open')),true,'compact Workspace did not open');
     await mobile.locator('#close').click();assert.equal(await mobile.locator('#workspace').evaluate(el=>el.classList.contains('open')),false,'compact Workspace did not close');
     assert.equal(await mobile.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'none','closed Workspace remained in the compact compositor tree');
@@ -121,6 +121,20 @@ try{
 
     report.backends.push({backend,status:'PASS',strokeUndoRedo:true,layerUndoRedo:true,identityStable:true,selectionValid:true,redoBranchDiscard:true,keyboard:true,activeStrokeBlocked:true,pointerCancelNoHistory:true,rapidHistorySafe:true,compactUndoRedo:true,historyPatchHits:state.historyPatchHits,historyReplayFallbacks:state.historyReplayFallbacks,workspaceCloseDrawing:true,transparentPresentation:true,canvasViewPaper:true,androidPresentationRegression:true,commit:state.commit,consoleErrors:errors});
     await page.close();
+  }
+
+  // Production-like compact route: no backend query. Mobile must choose the
+  // synchronized WebGL2 path so Workspace visibility cannot switch the Canvas
+  // into Chromium's desynchronized/direct presentation path.
+  {
+    const autoErrors=[],auto=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'});
+    auto.on('pageerror',e=>autoErrors.push(e.message));auto.on('console',m=>{if(m.type()==='error')autoErrors.push(m.text());});
+    const autoUrl=publicBase?base+`?m03-public-check=1&build=${encodeURIComponent(expectedCommit)}`:base+'?qa=1';
+    await auto.goto(autoUrl,{waitUntil:'networkidle',timeout:45000});await auto.locator('#qaPanel > summary').click();await auto.getByRole('button',{name:'新規キャンバス',exact:true}).click();await auto.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
+    const state=await qa(auto);assert.equal(state.backend,'WebGL2','compact production route must use stable WebGL2');assert.equal(state.rendererDesynchronized,false,'compact production route must use synchronized Canvas presentation');assert.equal(state.rendererAlpha,true);assert.equal(state.rendererPremultipliedAlpha,true);
+    const canvas=auto.locator('canvas'),box=await canvas.boundingBox();assert.ok(box);await auto.locator('#drawer').click();await auto.locator('#close').click();
+    const held=await penStroke(auto,canvas,box,[.18,.32],[.78,.50]);assert.equal(await canvas.getAttribute('data-last-pointer-target'),'canvas');assert.ok(lightRatio(held)>.72,'production compact stroke did not update while Workspace was closed');await auto.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});await waitIdle(auto);
+    assert.deepEqual(autoErrors,[]);report.compactProductionRoute={backend:state.backend,rendererDesynchronized:state.rendererDesynchronized,workspaceCloseDrawing:true};await auto.close();
   }
   report.status='PASS';
 }catch(e){report.failure=e?.stack??String(e);throw e;
