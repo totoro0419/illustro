@@ -44,13 +44,13 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "37b40ccf160f97bac338f3d7da28b8c0871f3b31",
-      "sha256": "761108536943473ae6d6850b926a8486ba3e45170599e7c3368e1f21470dc886"
+      "sourceCommit": "60a6968dff86274f7e38b0c1d134b7bfaa25607c",
+      "sha256": "28da38c08bc1a1854754f8cd6c8e9fc73b91d09817fb289652647f6406a05e91"
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
-      "sourceCommit": "8cad9e65b75bf9de336320273eb0f8c9b7c51e70",
-      "sha256": "d3a6eae8984438f196f420190053c8d3511e9e0661c0ee3c88f17049b99ddfba"
+      "sourceCommit": "c0148bc785f19a15700e48a6397a8e2d27371b7b",
+      "sha256": "200cadb02769757f60bb0fb3d89e0d8862c9695daae62ce5ed24b5c0425feb44"
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
@@ -313,5 +313,5 @@
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
     }
   ],
-  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. The M02 opaque-paper presentation correction remains accepted. M03 History is Document-owned: Undo/Redo invalidates only affected 128px runtime tiles and rebuilds them from the currently-active formal StrokeRecords indexed for those tiles. M03 must not retain an unbounded per-stroke GPU before/after snapshot history, perform full-canvas readback, or rebuild unrelated tiles. UI Workspace visibility changes must not invoke Renderer work."
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. The M02 opaque-paper presentation correction remains accepted. M03 History is Document-owned. Recent Stroke Undo/Redo may use a strictly bounded 16 MiB GPU hot tile cache for one-frame-class response. Cache memory never grows beyond the fixed budget; evicted/oversized history falls back to rebuilding only affected 128px runtime tiles from active formal StrokeRecords. Fallback rebuild presentation is atomic: the old completed canvas remains visible until the rebuilt dirty tiles are complete, then the result is presented once. Full-canvas readback, visible stroke-by-stroke replay, unbounded GPU history, and rebuilding unrelated tiles are forbidden. UI Workspace visibility changes must not invoke Renderer work."
 }
