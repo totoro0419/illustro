@@ -4,7 +4,7 @@ import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?w
 import type {EditorController,EditorHistoryChange} from './controller';
 
 export class BrushSurface{
-  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private renderCanvas:OffscreenCanvas|null=null;private bitmapContext:ImageBitmapRenderingContext|null=null;private fallback2d:CanvasRenderingContext2D|null=null;private presentationPending=false;private presentedFrames=0;private lastPresentedAt=0;
+  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private renderCanvas:OffscreenCanvas|null=null;private bitmapContext:ImageBitmapRenderingContext|null=null;private fallback2d:CanvasRenderingContext2D|null=null;private presentedFrames=0;private lastPresentedAt=0;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;
@@ -19,7 +19,7 @@ export class BrushSurface{
     }
     if(compact&&renderTarget===this.canvas){backend=requested==='webgl2'||requested==='webgpu'?requested:'webgl2';webglDesynchronized=false;}
     this.renderer=await engine.GpuRenderer.create(renderTarget as HTMLCanvasElement,target.width,target.height,backend,{webglDesynchronized});
-    if(this.renderCanvas)this.renderer.onComplete=()=>{this.presentationPending=true;};
+    if(this.renderCanvas)this.renderer.onComplete=()=>this.presentLatestFrame();
     this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);
     const options={signal:this.abort.signal};this.canvas.addEventListener('pointerdown',this.down,options);this.canvas.addEventListener('pointermove',this.move,options);this.canvas.addEventListener('pointerup',this.up,options);this.canvas.addEventListener('pointercancel',this.cancel,options);this.canvas.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
   private sample(e:PointerEvent):Sample{const r=this.canvas.getBoundingClientRect(),target=this.target??this.controller.target();return {x:(e.clientX-r.left)/r.width*target.width,y:(e.clientY-r.top)/r.height*target.height,t:e.timeStamp,pressure:e.pressure,pointerType:e.pointerType,tilt:Math.min(1,Math.hypot(e.tiltX,e.tiltY)/90),azimuth:Math.atan2(e.tiltY,e.tiltX),twist:e.twist/360};}
@@ -31,14 +31,14 @@ export class BrushSurface{
       catch{try{await session.rollbackLatest(record);}catch{}this.status('線を確定できなかったため、作品には残していません。');}})
       .catch(()=>{this.status('線を確定できませんでした。');}).finally(()=>{this.finishing=false;this.onStateChanged();});};
   private cancel=(e:PointerEvent)=>{if(e.pointerId===this.pointer)void this.cancelStroke();};
-  private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();try{await this.session?.cancel();this.presentationPending=false;this.presentLatestFrame();}catch{this.status('描画を取り消せませんでした。');}finally{this.finishing=false;this.onStateChanged();}}
-  private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.presentationPending){this.presentationPending=false;this.presentLatestFrame();}if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
+  private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();try{await this.session?.cancel();this.presentLatestFrame();}catch{this.status('描画を取り消せませんでした。');}finally{this.finishing=false;this.onStateChanged();}}
+  private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   private presentLatestFrame(){const source=this.renderCanvas;if(!source||this.disposed)return;try{if(this.bitmapContext){const bitmap=source.transferToImageBitmap();this.bitmapContext.transferFromImageBitmap(bitmap);}else if(this.fallback2d){this.fallback2d.clearRect(0,0,this.canvas.width,this.canvas.height);this.fallback2d.drawImage(source,0,0);}this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;}catch{this.status('画面への表示更新に失敗しました。');}}
   async syncHistory(change:EditorHistoryChange){
     if(!change.changed)return;if(!this.session)throw new Error('Renderer is not initialized');if(this.pointer!==null||this.finishing||this.historySyncing)throw new Error('History is busy');
     this.historySyncing=true;this.onStateChanged();try{const operations=change.direction==='undo'?[...change.operations].reverse():change.operations;
       for(const operation of operations){if(operation.kind!=='brush.stroke')continue;const record=this.strokeRecord(operation),keys=this.runtimeKeys(operation);if(change.direction==='undo')await this.session.undoDerived(record,keys);else await this.session.redoDerived(record,keys);}
-      this.presentationPending=false;this.presentLatestFrame();
+      this.presentLatestFrame();
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
   discardRedoProjection(){this.session?.discardRedo();}
