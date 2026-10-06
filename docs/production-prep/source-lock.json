@@ -49,8 +49,8 @@
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
-      "sourceCommit": "c0148bc785f19a15700e48a6397a8e2d27371b7b",
-      "sha256": "200cadb02769757f60bb0fb3d89e0d8862c9695daae62ce5ed24b5c0425feb44"
+      "sourceCommit": "ce1f1e9760ce6daac514b02547f45d89b03b466d",
+      "sha256": "f05db979fd56b97e812728f274ecf6806011ece8402499c74a1cbe7e3dcd3a82"
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
