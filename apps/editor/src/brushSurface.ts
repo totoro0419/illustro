@@ -7,25 +7,20 @@ type LatencyPoint={x:number;y:number;t:number;size:number;color:[number,number,n
 type DirtyRect={x:number;y:number;w:number;h:number};
 
 export class BrushSurface{
-  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private renderCanvas:OffscreenCanvas|null=null;private fallback2d:CanvasRenderingContext2D|null=null;private latencyCanvas:HTMLCanvasElement|null=null;private latencyCtx:CanvasRenderingContext2D|null=null;private latencyAnchor:LatencyPoint|null=null;private latencyActual:LatencyPoint[]=[];private latencyPredicted:LatencyPoint[]=[];private latencyDirty:DirtyRect|null=null;private _latencyPreviewFrames=0;private _latencyPredictionPoints=0;private presentedFrames=0;private lastPresentedAt=0;
+  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private latencyCanvas:HTMLCanvasElement|null=null;private latencyCtx:CanvasRenderingContext2D|null=null;private latencyAnchor:LatencyPoint|null=null;private latencyActual:LatencyPoint[]=[];private latencyPredicted:LatencyPoint[]=[];private latencyDirty:DirtyRect|null=null;private _latencyPreviewFrames=0;private _latencyPredictionPoints=0;private presentedFrames=0;private lastPresentedAt=0;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;
-    const requested=new URLSearchParams(location.search).get('backend'),compact=matchMedia('(max-width:760px)').matches,canBridge=compact&&typeof OffscreenCanvas!=='undefined';
-    let renderTarget:HTMLCanvasElement|OffscreenCanvas=this.canvas,backend:'auto'|'webgl2'|'webgpu'=requested==='webgl2'||requested==='webgpu'?requested:(compact?'webgl2':'auto'),webglDesynchronized=true;
-    if(canBridge){
-      this.renderCanvas=new OffscreenCanvas(target.width,target.height);
-      // Keep the visible canvas as a normal alpha-capable 2D surface. alpha:false
-      // starts from opaque black by specification, which is unacceptable for the
-      // paper view and caused the Android black-canvas failure.
-      this.fallback2d=this.canvas.getContext('2d',{alpha:true,desynchronized:false});
-      if(this.fallback2d){this.paintPaper();renderTarget=this.renderCanvas;webglDesynchronized=false;}
-      else this.renderCanvas=null;
-    }
-    if(compact&&renderTarget===this.canvas){backend=requested==='webgl2'||requested==='webgpu'?requested:'webgl2';webglDesynchronized=false;}
-    this.renderer=await engine.GpuRenderer.create(renderTarget as HTMLCanvasElement,target.width,target.height,backend,{webglDesynchronized});
-    if(this.renderCanvas){
-      this.renderer.onComplete=metric=>{this.presentLatestFrame();this.ackLatency(metric.tip?.t??Infinity);};
+    const requested=new URLSearchParams(location.search).get('backend'),compact=matchMedia('(max-width:760px)').matches;
+    const backend:'auto'|'webgl2'|'webgpu'=requested==='webgl2'||requested==='webgpu'?requested:(compact?'webgl2':'auto');
+    // Compact/mobile keeps the GPU canvas in the DOM. The previous OffscreenCanvas
+    // presentation bridge depended on Android preserving alpha while copying a GPU
+    // canvas into a 2D canvas; real devices did not do that reliably and could turn
+    // the whole paper black. WebGL2 is the compact default because it was already
+    // stable while the Workspace remained in the compositor tree.
+    this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:!compact});
+    if(compact){
+      this.renderer.onComplete=metric=>{this.markPresented();this.ackLatency(metric.tip?.t??Infinity);};
       this.latencyCanvas=document.createElement('canvas');this.latencyCanvas.className='latency-preview';this.latencyCanvas.width=target.width;this.latencyCanvas.height=target.height;this.latencyCanvas.setAttribute('aria-hidden','true');this.canvas.insertAdjacentElement('afterend',this.latencyCanvas);
       this.latencyCtx=this.latencyCanvas.getContext('2d',{alpha:true,desynchronized:true});
     }
@@ -40,10 +35,9 @@ export class BrushSurface{
       catch{try{await session.rollbackLatest(record);}catch{}this.status('線を確定できなかったため、作品には残していません。');}})
       .catch(()=>{this.status('線を確定できませんでした。');}).finally(()=>{this.finishing=false;this.onStateChanged();});};
   private cancel=(e:PointerEvent)=>{if(e.pointerId===this.pointer)void this.cancelStroke();};
-  private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();try{await this.session?.cancel();this.presentLatestFrame();this.resetLatency();}catch{this.status('描画を取り消せませんでした。');}finally{this.finishing=false;this.onStateChanged();}}
+  private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();try{await this.session?.cancel();this.resetLatency();}catch{this.status('描画を取り消せませんでした。');}finally{this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
-  private paintPaper(){const ctx=this.fallback2d;if(!ctx)return;ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='copy';ctx.fillStyle='#fff';ctx.fillRect(0,0,this.canvas.width,this.canvas.height);ctx.restore();}
-  private presentLatestFrame(){const source=this.renderCanvas;if(!source||this.disposed)return;try{if(this.fallback2d){this.paintPaper();this.fallback2d.save();this.fallback2d.setTransform(1,0,0,1,0,0);this.fallback2d.globalAlpha=1;this.fallback2d.globalCompositeOperation='source-over';this.fallback2d.drawImage(source,0,0);this.fallback2d.restore();}this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number;__illustroLatencyPreviewFrames?:number;__illustroLatencyPredictionPoints?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;diagnostic.__illustroLatencyPreviewFrames=this._latencyPreviewFrames;diagnostic.__illustroLatencyPredictionPoints=this._latencyPredictionPoints;}catch{this.status('画面への表示更新に失敗しました。');}}
+  private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number;__illustroLatencyPreviewFrames?:number;__illustroLatencyPredictionPoints?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;diagnostic.__illustroLatencyPreviewFrames=this._latencyPreviewFrames;diagnostic.__illustroLatencyPredictionPoints=this._latencyPredictionPoints;}
   private previewPoint(sample:Sample,predicted=false):LatencyPoint|null{if(!this.latencyCtx||!this.session||!this.preset||this.preset.blend!=='normal')return null;const state=this.session.cursor(this.preset,sample),color=state.color.map(v=>Math.max(0,Math.min(1,v))) as [number,number,number];return{x:sample.x,y:sample.y,t:sample.t,size:Math.max(.25,state.size),color,opacity:Math.max(0,Math.min(1,state.opacity)),predicted};}
   private clampPredicted(last:Sample,predicted:Sample[]){if(!predicted.length)return[];const r=this.canvas.getBoundingClientRect(),target=this.target??this.controller.target(),maxLead=Math.max(1,target.width/Math.max(1,r.width)*3),out:Sample[]=[];let anchor=last;for(const p of predicted){let x=p.x,y=p.y;const dx=x-anchor.x,dy=y-anchor.y,d=Math.hypot(dx,dy);if(d>maxLead){const k=maxLead/d;x=anchor.x+dx*k;y=anchor.y+dy*k;}out.push({...p,x,y});anchor={...p,x,y};}return out;}
   private appendLatency(actual:Sample[],predicted:Sample[]){if(!this.latencyCtx||!this.preset||this.preset.blend!=='normal')return;for(const s of actual){const p=this.previewPoint(s,false);if(p)this.latencyActual.push(p);}if(this.latencyActual.length>24)this.latencyActual.splice(0,this.latencyActual.length-24);this.latencyPredicted=predicted.map(s=>this.previewPoint(s,true)).filter((p):p is LatencyPoint=>!!p);this._latencyPredictionPoints+=this.latencyPredicted.length;this.drawLatency();}
@@ -54,7 +48,7 @@ export class BrushSurface{
     if(!change.changed)return;if(!this.session)throw new Error('Renderer is not initialized');if(this.pointer!==null||this.finishing||this.historySyncing)throw new Error('History is busy');
     this.historySyncing=true;this.onStateChanged();try{const operations=change.direction==='undo'?[...change.operations].reverse():change.operations;
       for(const operation of operations){if(operation.kind!=='brush.stroke')continue;const record=this.strokeRecord(operation),keys=this.runtimeKeys(operation);if(change.direction==='undo')await this.session.undoDerived(record,keys);else await this.session.redoDerived(record,keys);}
-      this.presentLatestFrame();this.resetLatency();
+      this.resetLatency();
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
   discardRedoProjection(){this.session?.discardRedo();}
@@ -66,6 +60,6 @@ export class BrushSurface{
     return [...keys];
   }
   select(index:number){const p=this.brushes[index];if(p)this.preset=structuredClone(p);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
-  get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get presentationMode(){return this.renderCanvas?'offscreen-2d-paper':'direct';}get presentationAlpha(){return this.fallback2d?.getContextAttributes?.().alpha??null;}get presentationDesynchronized(){return this.fallback2d?.getContextAttributes?.().desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get latencyPreviewEnabled(){return !!this.latencyCtx;}get latencyPreviewFrames(){return this._latencyPreviewFrames;}get latencyPredictionPoints(){return this._latencyPredictionPoints;}get brushName(){return this.preset?.name??'未選択';}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
-  destroy(){this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onComplete=null;this.session?.destroy();this.resetLatency();this.latencyCanvas?.remove();this.latencyCanvas=null;this.latencyCtx=null;this.renderCanvas=null;this.fallback2d=null;}
+  get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get presentationMode(){return this.latencyCanvas?'direct-gpu-compact':'direct-gpu';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get latencyPreviewEnabled(){return !!this.latencyCtx;}get latencyPreviewFrames(){return this._latencyPreviewFrames;}get latencyPredictionPoints(){return this._latencyPredictionPoints;}get brushName(){return this.preset?.name??'未選択';}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
+  destroy(){this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onComplete=null;this.session?.destroy();this.resetLatency();this.latencyCanvas?.remove();this.latencyCanvas=null;this.latencyCtx=null;}
 }
