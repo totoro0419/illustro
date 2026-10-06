@@ -88,7 +88,7 @@ try{
 
     // Rapid button attempts must serialize instead of throwing or corrupting state.
     await page.locator('#undo').evaluate(el=>{for(let i=0;i<8;i++)el.click();});await waitIdle(page);await page.locator('#redo').evaluate(el=>{for(let i=0;i<8;i++)el.click();});await waitIdle(page);
-    state=await qa(page);assert.ok(state.layers.some(x=>x.id===state.selectedLayerId),'rapid History left invalid selected layer');assert.equal(state.historyPatchHits,0,'M03 retained a parallel GPU snapshot history');assert.ok(state.historyReplayFallbacks>=4,'normal Stroke Undo/Redo did not rebuild affected tiles from active formal strokes');assert.deepEqual(errors,[]);
+    state=await qa(page);assert.ok(state.layers.some(x=>x.id===state.selectedLayerId),'rapid History left invalid selected layer');assert.ok(state.historyPatchHits>=4,'recent Stroke Undo/Redo missed bounded hot tile cache');assert.equal(state.historyReplayFallbacks,0,'recent Stroke Undo/Redo replayed strokes instead of using hot cache');assert.deepEqual(errors,[]);
     await page.screenshot({path:path.join(evidence,`${backend}-m03-${publicBase?'public':'local'}.png`),fullPage:true});
 
     // Compact direct Undo/Redo and Android-black regression on same backend.
