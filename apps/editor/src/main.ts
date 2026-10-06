@@ -16,7 +16,7 @@ app.innerHTML=`
 </nav>
 <main><p id="status" role="status">新規キャンバスを開いてください。保存はまだ利用できません。</p><button id="new">新規キャンバス</button><div class="surface"><canvas id="canvas" aria-label="描画キャンバス" data-committed-strokes="0"></canvas></div></main>
 <div id="splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Workspaceの幅" aria-valuemin="240" aria-valuemax="440" aria-valuenow="344"></div>
-<aside id="workspace" aria-label="Workspace"><button id="close" class="compact-only">閉じる</button>
+<aside id="workspaceDesktop" class="workspace-desktop" aria-label="Workspace">
   <details open id="layersBox"><summary>レイヤー</summary><div id="layerList" class="layer-list" aria-label="レイヤー一覧"></div><button id="addLayer" type="button" disabled>レイヤー追加</button></details>
   <details open id="colorBox"><summary>カラー</summary><p>カラー調整は準備中です。</p></details>
   <details open id="brushBox"><summary>ブラシ</summary><label>種類<select id="brush" disabled></select></label>
@@ -28,7 +28,29 @@ app.innerHTML=`
   <label class="width-control">Workspaceの幅<input id="width" type="range" min="240" max="440" value="344"></label>
   <div class="commands"><button id="layer">レイヤー</button><button id="undo" disabled title="元に戻す">Undo</button><button id="redo" disabled title="やり直す">Redo</button><button disabled>左右反転</button><button disabled>上下反転</button></div>
 </aside>
-<div class="compact-only bottom"><button id="compactUndo" disabled title="元に戻す">Undo</button><button id="compactRedo" disabled title="やり直す">Redo</button><button id="drawer" aria-controls="workspace" aria-expanded="false">Workspace</button></div>
+<div class="compact-only bottom"><button id="compactUndo" disabled title="元に戻す">Undo</button><button id="compactRedo" disabled title="やり直す">Redo</button><button id="drawer" aria-controls="workspaceCompact" aria-expanded="false">Workspace</button></div>
+<div id="compactWorkspaceRoot" class="compact-workspace-root compact-only" aria-hidden="true">
+  <section id="workspaceCompact" class="compact-workspace-drawer" aria-label="Workspace" aria-modal="false">
+    <div class="compact-workspace-head"><strong>Workspace</strong><button id="compactClose" type="button">閉じる</button></div>
+    <nav class="compact-workspace-pages" aria-label="Workspaceページ">
+      <button id="compactPageLayers" type="button" aria-pressed="true">レイヤー</button>
+      <button id="compactPageBrush" type="button" aria-pressed="false">ブラシ</button>
+      <button id="compactPageColor" type="button" aria-pressed="false">カラー</button>
+    </nav>
+    <section id="compactLayersPanel" class="compact-workspace-page" data-active="true">
+      <div id="compactLayerList" class="layer-list" aria-label="レイヤー一覧"></div>
+      <button id="compactAddLayer" type="button" disabled>レイヤー追加</button>
+    </section>
+    <section id="compactBrushPanel" class="compact-workspace-page" data-active="false">
+      <label>種類<select id="compactBrush" disabled></select></label>
+      <label>太さ<input id="compactSize" type="range" min="0.1" max="1024" step="0.1" value="16" disabled></label>
+      <label>太さの数値<input id="compactSizeNumber" type="number" min="0.1" max="1024" step="0.1" value="16" disabled></label>
+      <label><input id="compactForce" type="checkbox" disabled>強制入り抜き</label>
+      <label><input id="compactFinger" type="checkbox">指で描く</label>
+    </section>
+    <section id="compactColorPanel" class="compact-workspace-page" data-active="false"><p>カラー調整は準備中です。</p></section>
+  </section>
+</div>
 ${qaMode?qaMarkup():''}`;
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
@@ -36,14 +58,15 @@ const controller=new EditorController();
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0;
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
-const renderLayers=()=>{
-  const list=byId<HTMLDivElement>('layerList');const rows=[...controller.layers].reverse();list.replaceChildren(...rows.map(layer=>{
+const renderLayerRows=(list:HTMLDivElement)=>{
+  const rows=[...controller.layers].reverse();list.replaceChildren(...rows.map(layer=>{
     const selected=layer.id===controller.selectedLayerId,row=document.createElement('button'),name=document.createElement('span'),state=document.createElement('span');
     row.type='button';row.className='layer-row';row.dataset.layerId=layer.id;row.setAttribute('aria-pressed',String(selected));row.setAttribute('aria-label',`${layer.name}${selected?'、選択中':''}`);
     name.className='layer-name';name.textContent=layer.name;state.className='layer-state';state.textContent=selected?'選択中':'';
     row.append(name,state);row.onclick=()=>{try{controller.selectLayer(layer.id);renderLayers();byId('status').textContent=`${layer.name}を選びました。次の線はこのレイヤーに入ります。`;updateHistoryButtons();updateQa();}catch{byId('status').textContent='そのレイヤーを選択できませんでした。';}};return row;
   }));
 };
+const renderLayers=()=>{renderLayerRows(byId<HTMLDivElement>('layerList'));renderLayerRows(byId<HTMLDivElement>('compactLayerList'));};
 
 function updateHistoryButtons(){
   const ready=!!surface,blocked=!ready||historyPending||surface?.busy===true;
@@ -65,7 +88,7 @@ const updateQa=()=>{
     layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:controller.canUndo,canRedo:controller.canRedo,
     undoCount,redoCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
-    activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:workspace.classList.contains('open'),workspaceDisplay:getComputedStyle(workspace).display,workspaceOpacity:getComputedStyle(workspace).opacity,workspacePointerEvents:getComputedStyle(workspace).pointerEvents,
+    activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:compactWorkspace.matches?compactWorkspaceRoot.dataset.open==='true':true,workspaceDisplay:getComputedStyle(compactWorkspace.matches?workspaceCompact:workspaceDesktop).display,workspaceOverlayDisplay:getComputedStyle(compactWorkspaceRoot).display,
     visualViewport:window.visualViewport?{width:Math.round(window.visualViewport.width),height:Math.round(window.visualViewport.height),offsetTop:Math.round(window.visualViewport.offsetTop),offsetLeft:Math.round(window.visualViewport.offsetLeft),scale:window.visualViewport.scale}:null,
     layers:controller.layers.map(layer=>({id:layer.id,surfaceId:layer.surface.descriptor.surfaceId,name:layer.name,committedStrokes:controller.strokeCountForLayer(layer.id)})),qaStartedAt};
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
@@ -73,23 +96,34 @@ const updateQa=()=>{
 renderLayers();
 
 surface=new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();});
-let paintIndex=0,eraseIndex=5;const workspace=byId('workspace'),drawer=byId<HTMLButtonElement>('drawer'),compactWorkspace=matchMedia('(max-width:760px)');
-function syncWorkspaceState(){const open=workspace.classList.contains('open'),hidden=compactWorkspace.matches&&!open;drawer.setAttribute('aria-expanded',String(open));workspace.inert=hidden;workspace.setAttribute('aria-hidden',String(hidden));}
-function openBox(id:string){workspace.classList.add('open');syncWorkspaceState();const box=byId<HTMLDetailsElement>(id);box.open=true;box.scrollIntoView({block:'nearest'});}
-byId('layer').onclick=()=>openBox('layersBox');byId('layersPage').onclick=()=>openBox('layersBox');byId('colorPage').onclick=()=>openBox('colorBox');byId('brushPage').onclick=()=>openBox('brushBox');
-drawer.onclick=()=>{workspace.classList.toggle('open');syncWorkspaceState();};
-function close(restoreKeyboardFocus=false){workspace.classList.remove('open');syncWorkspaceState();const active=document.activeElement;if(active instanceof HTMLElement&&workspace.contains(active))active.blur();if(restoreKeyboardFocus)drawer.focus({preventScroll:true});}
-byId('close').onclick=e=>close(e.detail===0);compactWorkspace.addEventListener('change',syncWorkspaceState);syncWorkspaceState();
+let paintIndex=0,eraseIndex=5;const workspaceDesktop=byId('workspaceDesktop'),compactWorkspaceRoot=byId('compactWorkspaceRoot'),workspaceCompact=byId('workspaceCompact'),drawer=byId<HTMLButtonElement>('drawer'),compactWorkspace=matchMedia('(max-width:760px)');
+type CompactPage='layers'|'brush'|'color';
+function setCompactPage(page:CompactPage){
+  const map={layers:'compactLayersPanel',brush:'compactBrushPanel',color:'compactColorPanel'} as const;
+  const buttons={layers:'compactPageLayers',brush:'compactPageBrush',color:'compactPageColor'} as const;
+  for(const key of Object.keys(map) as CompactPage[]){byId(map[key]).dataset.active=String(key===page);byId(buttons[key]).setAttribute('aria-pressed',String(key===page));}
+}
+function openCompactWorkspace(page:CompactPage='layers'){setCompactPage(page);compactWorkspaceRoot.dataset.open='true';compactWorkspaceRoot.setAttribute('aria-hidden','false');workspaceCompact.inert=false;drawer.setAttribute('aria-expanded','true');updateQa();}
+function closeCompactWorkspace(restoreKeyboardFocus=false){compactWorkspaceRoot.dataset.open='false';compactWorkspaceRoot.setAttribute('aria-hidden','true');workspaceCompact.inert=true;drawer.setAttribute('aria-expanded','false');const active=document.activeElement;if(active instanceof HTMLElement&&workspaceCompact.contains(active))active.blur();if(restoreKeyboardFocus)drawer.focus({preventScroll:true});updateQa();}
+function openDesktopBox(id:string){const box=byId<HTMLDetailsElement>(id);box.open=true;box.scrollIntoView({block:'nearest'});}
+function openWorkspacePage(page:CompactPage,desktopBox:string){if(compactWorkspace.matches)openCompactWorkspace(page);else openDesktopBox(desktopBox);}
+byId('layer').onclick=()=>openWorkspacePage('layers','layersBox');byId('layersPage').onclick=()=>openCompactWorkspace('layers');byId('colorPage').onclick=()=>openCompactWorkspace('color');byId('brushPage').onclick=()=>openCompactWorkspace('brush');
+byId('compactPageLayers').onclick=()=>setCompactPage('layers');byId('compactPageBrush').onclick=()=>setCompactPage('brush');byId('compactPageColor').onclick=()=>setCompactPage('color');
+drawer.onclick=()=>compactWorkspaceRoot.dataset.open==='true'?closeCompactWorkspace():openCompactWorkspace('layers');
+byId('compactClose').onclick=e=>closeCompactWorkspace(e.detail===0);
+compactWorkspace.addEventListener('change',()=>{if(!compactWorkspace.matches)closeCompactWorkspace();});
+closeCompactWorkspace();
 
 function setWidth(value:number){const width=Math.max(240,Math.min(440,value));document.documentElement.style.setProperty('--workspace',`${width}px`);byId<HTMLInputElement>('width').value=String(width);byId('splitter').setAttribute('aria-valuenow',String(width));}
 byId<HTMLInputElement>('width').oninput=e=>setWidth(Number((e.target as HTMLInputElement).value));const splitter=byId('splitter');let resizePointer:number|null=null;
 splitter.onpointerdown=e=>{resizePointer=e.pointerId;splitter.setPointerCapture(e.pointerId);e.preventDefault();};splitter.onpointermove=e=>{if(e.pointerId===resizePointer)setWidth(innerWidth-e.clientX);};splitter.onpointerup=splitter.onpointercancel=()=>{resizePointer=null;};
 splitter.onkeydown=e=>{const current=Number(splitter.getAttribute('aria-valuenow'));if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();setWidth(current+(e.key==='ArrowLeft'?10:-10));}};
 
-function syncPreset(){if(!surface?.preset)return;byId<HTMLInputElement>('size').value=String(surface.preset.size);byId<HTMLInputElement>('sizeNumber').value=String(surface.preset.size);byId<HTMLInputElement>('force').checked=surface.preset.forceFade?.enabled??false;updateQa();}
-byId<HTMLButtonElement>('new').onclick=async()=>{if(!surface)return;byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';try{await surface.initialize();const select=byId<HTMLSelectElement>('brush');surface.brushes.forEach((p,i)=>select.add(new Option(p.name,String(i))));for(const id of ['brush','size','sizeNumber','force','addLayer'])(byId(id) as HTMLInputElement).disabled=false;syncPreset();renderLayers();updateHistoryButtons();byId('status').textContent='描画できます。Undo / Redoとレイヤー追加・選択を試せます。';updateQa();}catch{surface.destroy();byId('status').textContent='描画を開始できませんでした。ページを再読み込みしてください。';}};
+function syncPreset(){if(!surface?.preset)return;for(const id of ['size','sizeNumber','compactSize','compactSizeNumber'])byId<HTMLInputElement>(id).value=String(surface.preset.size);for(const id of ['force','compactForce'])byId<HTMLInputElement>(id).checked=surface.preset.forceFade?.enabled??false;for(const id of ['brush','compactBrush'])byId<HTMLSelectElement>(id).value=String(selectedBrushIndex);updateQa();}
+byId<HTMLButtonElement>('new').onclick=async()=>{if(!surface)return;byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';try{await surface.initialize();for(const selectId of ['brush','compactBrush']){const select=byId<HTMLSelectElement>(selectId);surface.brushes.forEach((p,i)=>select.add(new Option(p.name,String(i))));}for(const id of ['brush','size','sizeNumber','force','addLayer','compactBrush','compactSize','compactSizeNumber','compactForce','compactAddLayer'])(byId(id) as HTMLInputElement).disabled=false;syncPreset();renderLayers();updateHistoryButtons();byId('status').textContent='描画できます。Undo / Redoとレイヤー追加・選択を試せます。';updateQa();}catch{surface.destroy();byId('status').textContent='描画を開始できませんでした。ページを再読み込みしてください。';}};
 
-byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.busy||historyPending){byId('status').textContent='今の操作が終わってからレイヤーを追加してください。';return;}try{const id=controller.addRasterLayer(),layer=controller.document.root.getLayer(id);surface.discardRedoProjection();renderLayers();updateHistoryButtons();byId('status').textContent=`${layer.name}を追加して選択しました。`;updateQa();}catch{byId('status').textContent='レイヤーを追加できませんでした。';}};
+const addLayer=()=>{if(!surface)return;if(surface.busy||historyPending){byId('status').textContent='今の操作が終わってからレイヤーを追加してください。';return;}try{const id=controller.addRasterLayer(),layer=controller.document.root.getLayer(id);surface.discardRedoProjection();renderLayers();updateHistoryButtons();byId('status').textContent=`${layer.name}を追加して選択しました。`;updateQa();}catch{byId('status').textContent='レイヤーを追加できませんでした。';}};
+byId<HTMLButtonElement>('addLayer').onclick=addLayer;byId<HTMLButtonElement>('compactAddLayer').onclick=addLayer;
 
 async function performHistory(direction:'undo'|'redo'){
   if(!surface||surface.busy||historyPending)return;const available=direction==='undo'?controller.canUndo:controller.canRedo;if(!available)return;
@@ -109,7 +143,7 @@ byId('undo').onclick=()=>void performHistory('undo');byId('compactUndo').onclick
 
 function isTextEditingTarget(target:EventTarget|null){if(!(target instanceof HTMLElement))return false;if(target.isContentEditable||target instanceof HTMLTextAreaElement||target instanceof HTMLSelectElement)return true;if(target instanceof HTMLInputElement){return !['button','checkbox','radio','range','submit','reset'].includes(target.type);}return false;}
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&workspace.classList.contains('open')){close(true);return;}
+  if(e.key==='Escape'&&compactWorkspaceRoot.dataset.open==='true'){closeCompactWorkspace(true);return;}
   if(isTextEditingTarget(e.target)||e.altKey)return;
   const primary=e.ctrlKey||e.metaKey;if(!primary)return;const key=e.key.toLowerCase();
   const undo=key==='z'&&!e.shiftKey,redo=(key==='z'&&e.shiftKey)||(key==='y'&&e.ctrlKey&&!e.metaKey);
@@ -117,9 +151,11 @@ document.addEventListener('keydown',e=>{
   if(!surface||surface.busy||historyPending||!available)return;e.preventDefault();void performHistory(direction);
 });
 
-function selectBrush(index:number){if(!surface)return;surface.select(index);byId<HTMLSelectElement>('brush').value=String(index);const erasing=index>=5;if(erasing)eraseIndex=index;else paintIndex=index;byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));syncPreset();}
-byId<HTMLSelectElement>('brush').onchange=e=>selectBrush(Number((e.target as HTMLSelectElement).value));for(const id of ['size','sizeNumber'])byId<HTMLInputElement>(id).oninput=e=>{if(!surface)return;const input=e.target as HTMLInputElement,value=Number(input.value);if(!input.validity.valid||input.value==='')return;surface.setSize(value);syncPreset();};
-byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectBrush(eraseIndex);byId('paint').onclick=()=>selectBrush(paintIndex);
+let selectedBrushIndex=0;
+function selectBrush(index:number){if(!surface)return;surface.select(index);selectedBrushIndex=index;for(const id of ['brush','compactBrush'])byId<HTMLSelectElement>(id).value=String(index);const erasing=index>=5;if(erasing)eraseIndex=index;else paintIndex=index;byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));syncPreset();}
+for(const id of ['brush','compactBrush'])byId<HTMLSelectElement>(id).onchange=e=>selectBrush(Number((e.target as HTMLSelectElement).value));for(const id of ['size','sizeNumber','compactSize','compactSizeNumber'])byId<HTMLInputElement>(id).oninput=e=>{if(!surface)return;const input=e.target as HTMLInputElement,value=Number(input.value);if(!input.validity.valid||input.value==='')return;surface.setSize(value);syncPreset();};
+for(const id of ['force','compactForce'])byId<HTMLInputElement>(id).onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);syncPreset();};
+for(const id of ['finger','compactFinger'])byId<HTMLInputElement>(id).onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;for(const other of ['finger','compactFinger'])byId<HTMLInputElement>(other).checked=surface?.fingerDrawing??false;};byId('erase').onclick=()=>selectBrush(eraseIndex);byId('paint').onclick=()=>selectBrush(paintIndex);
 
 if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLabelElement>('qaNoteLabel'),note=byId<HTMLTextAreaElement>('qaNote');const sync=()=>{const problem=state.value==='problem';noteLabel.hidden=!problem;note.disabled=!problem;updateQa();};state.onchange=sync;sync();byId<HTMLButtonElement>('qaCopy').onclick=async()=>{const result={result:state.value,note:state.value==='problem'?note.value:'',automatic:JSON.parse(byId('qaAuto').textContent||'{}')};try{await navigator.clipboard.writeText(JSON.stringify(result,null,2));byId('qaCopy').textContent='コピーしました';}catch{byId('qaCopy').textContent='コピーできませんでした';}};}
 updateHistoryButtons();updateQa();addEventListener('resize',updateQa);addEventListener('pagehide',()=>surface?.destroy());
