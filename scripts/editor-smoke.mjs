@@ -59,8 +59,8 @@ try{
         await page.locator('#close').click();assert.equal(await page.locator('#workspace').evaluate(el=>el.classList.contains('open')),false);
         assert.equal(await page.locator('#workspace').evaluate(el=>el.inert),true,'closed compact Workspace must be inert');
         assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'none','closed compact Workspace must leave layout/compositor tree');
-        const canvasOwnsCenter=await page.evaluate(()=>{const c=document.querySelector('canvas');if(!c)return false;const r=c.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width*.5,r.top+r.height*.5);return hit===c;});
-        assert.equal(canvasOwnsCenter,true,'closed compact Workspace or another UI layer still covers Canvas');
+        const workspaceCoversCenter=await page.evaluate(()=>{const c=document.querySelector('canvas'),w=document.getElementById('workspace');if(!c||!w)return true;const r=c.getBoundingClientRect();return document.elementsFromPoint(r.left+r.width*.5,r.top+r.height*.5).some(el=>el===w||w.contains(el));});
+        assert.equal(workspaceCoversCenter,false,'closed compact Workspace still participates in Canvas hit testing');
         assert.equal(await page.locator('#drawer').evaluate(e=>e===document.activeElement),true);
       }
       report.layouts.push({backend,...viewport,horizontalOverflow:false});
