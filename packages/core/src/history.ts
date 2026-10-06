@@ -15,7 +15,7 @@ export type Revision<T>=Readonly<{id:RevisionId;parentIds:readonly RevisionId[];
 export class RevisionHistory<T>{
   private readonly revisions=new Map<RevisionId,Revision<T>>();private headValue:RevisionId;private readonly redoIds:RevisionId[]=[];
   constructor(root:T,private readonly ids:IdFactory,at=0){const id=ids.revision();this.headValue=id;this.revisions.set(id,Object.freeze({id,parentIds:Object.freeze([]),transactionId:null,root,command:null,commitStamp:null,committedAt:at}));}
-  get head(){return this.headValue;}get current(){const r=this.revisions.get(this.headValue);if(!r)throw new Error('missing revision');return r;}get count(){return this.revisions.size;}
+  get head(){return this.headValue;}get current(){const r=this.revisions.get(this.headValue);if(!r)throw new Error('missing revision');return r;}get count(){return this.revisions.size;}\n  get canUndo(){return this.current.parentIds[0]!==undefined;}get canRedo(){return this.redoIds.length>0;}
   has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
   assertHead(id:RevisionId){if(id!==this.headValue)throw new Error('stale transaction');}
   publish(base:RevisionId,tx:TransactionId,root:T,command:Command,at:number,commitStamp:CommitStamp){this.assertHead(base);const id=this.ids.revision();

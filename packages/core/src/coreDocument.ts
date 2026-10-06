@@ -16,7 +16,7 @@ export class CoreDocument{
     const sampleEncoding=o.sampleEncoding??'rgba.unorm8.v1';this.tileBytes=CANONICAL_TILE_SIZE*CANONICAL_TILE_SIZE*bytesPerPixel(sampleEncoding);this.storeValue=new CanonicalTileStore(this.idsValue,o.transfer);
     const id=this.idsValue.layer(),layer=rasterLayer(id,this.idsValue.surface(),o.colorProfileId??'srgb',sampleEncoding,'Layer 1'),e=PagedMap.empty<LayerId,typeof layer>().edit();e.set(id,layer);
     const root=new DocumentRoot(this.idsValue.document(),o.width,o.height,o.name??'Untitled',o.colorProfileId??'srgb',e.commit(),[id]);this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.idsValue,this.clockValue());}
-  get root(){return this.historyValue.current.root;}get head(){return this.historyValue.head;}get revisionCount(){return this.historyValue.count;}get currentRevision(){return this.historyValue.current;}
+  get root(){return this.historyValue.current.root;}get head(){return this.historyValue.head;}get revisionCount(){return this.historyValue.count;}get currentRevision(){return this.historyValue.current;}\n  get canUndo(){return this.historyValue.canUndo;}get canRedo(){return this.historyValue.canRedo;}
   get commitSequence(){return this.commitSequenceValue;}get canonicalBlockCount(){return this.storeValue.blockCount;}get canonicalRasterBytes(){return this.storeValue.allocatedBytes;}
   begin(label:string){return new DocumentTransaction(this,label);}
   addRasterLayerAbove(referenceId:LayerId){const tx=this.begin('Add raster layer'),layerId=tx.addRasterLayerAbove(referenceId),receipt=tx.commit();return Object.freeze({layerId,receipt});}
