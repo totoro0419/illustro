@@ -4,7 +4,7 @@ import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?w
 import type {EditorController,EditorHistoryChange} from './controller';
 
 export class BrushSurface{
-  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private redoBackup:StrokeRecord[]|null=null;
+  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;const backend=new URLSearchParams(location.search).get('backend');
@@ -12,16 +12,14 @@ export class BrushSurface{
     const options={signal:this.abort.signal};this.canvas.addEventListener('pointerdown',this.down,options);this.canvas.addEventListener('pointermove',this.move,options);this.canvas.addEventListener('pointerup',this.up,options);this.canvas.addEventListener('pointercancel',this.cancel,options);this.canvas.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
   private sample(e:PointerEvent):Sample{const r=this.canvas.getBoundingClientRect(),target=this.target??this.controller.target();return {x:(e.clientX-r.left)/r.width*target.width,y:(e.clientY-r.top)/r.height*target.height,t:e.timeStamp,pressure:e.pressure,pointerType:e.pointerType,tilt:Math.min(1,Math.hypot(e.tiltX,e.tiltY)/90),azimuth:Math.atan2(e.tiltY,e.tiltX),twist:e.twist/360};}
   private down=(e:PointerEvent)=>{if(e.button!==0||this.pointer!==null||this.finishing||this.historySyncing||!this.session||!this.preset)return;if(e.pointerType==='touch'&&!this.fingerDrawing)return;e.preventDefault();
-    this.redoBackup=[...this.session.redoRecords];
-    try{this.target=this.controller.target();this.session.begin(this.preset);this.session.accept(this.sample(e));this.pointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.restoreRedo();this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
+    try{this.target=this.controller.target();this.session.begin(this.preset);this.session.accept(this.sample(e));this.pointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();const samples=e.getCoalescedEvents?.()??[];for(const sample of samples.length?samples:[e])this.session.accept(this.sample(sample));};
   private up=(e:PointerEvent)=>{if(e.pointerId!==this.pointer||!this.session||!this.target)return;const session=this.session,target=this.target;this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();
-    void session.end({...this.sample(e),origin:'release'}).then(async record=>{if(!record){this.restoreRedo();return;}try{await this.controller.finishStroke(target,record);this.redoBackup=null;this.status('線を作品に反映しました。');this.onCommitted();}
-      catch{try{await session.undo();this.restoreRedo();}catch{}this.status('線を確定できなかったため、作品には残していません。');}})
-      .catch(()=>{this.restoreRedo();this.status('線を確定できませんでした。');}).finally(()=>{this.finishing=false;this.onStateChanged();});};
+    void session.end({...this.sample(e),origin:'release'}).then(async record=>{if(!record)return;try{await this.controller.finishStroke(target,record);session.discardRedo();this.status('線を作品に反映しました。');this.onCommitted();}
+      catch{try{await session.rollbackLatest(record);}catch{}this.status('線を確定できなかったため、作品には残していません。');}})
+      .catch(()=>{this.status('線を確定できませんでした。');}).finally(()=>{this.finishing=false;this.onStateChanged();});};
   private cancel=(e:PointerEvent)=>{if(e.pointerId===this.pointer)void this.cancelStroke();};
-  private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();try{await this.session?.cancel();this.restoreRedo();}catch{this.restoreRedo();this.status('描画を取り消せませんでした。');}finally{this.finishing=false;this.onStateChanged();}}
-  private restoreRedo(){if(this.session&&this.redoBackup)this.session.redoRecords=[...this.redoBackup];this.redoBackup=null;}
+  private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();try{await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   async syncHistory(change:EditorHistoryChange){
     if(!change.changed)return;if(!this.session)throw new Error('Renderer is not initialized');if(this.pointer!==null||this.finishing||this.historySyncing)throw new Error('History is busy');
