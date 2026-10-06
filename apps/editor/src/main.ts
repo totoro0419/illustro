@@ -54,6 +54,7 @@ function updateHistoryButtons(){
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
 }
 
+if(qaMode){document.addEventListener('pointerdown',e=>{const canvas=byId<HTMLCanvasElement>('canvas'),target=e.target instanceof HTMLElement?e.target:null;canvas.dataset.lastPointerTarget=target?.id||target?.tagName.toLowerCase()||'unknown';canvas.dataset.lastPointerType=e.pointerType;canvas.dataset.lastPointerX=String(Math.round(e.clientX));canvas.dataset.lastPointerY=String(Math.round(e.clientY));},{capture:true});}
 const updateQa=()=>{
   const canvas=byId<HTMLCanvasElement>('canvas'),selected=controller.selectedLayer;
   canvas.dataset.committedStrokes=String(controller.committedStrokeCount);canvas.dataset.revisionId=controller.document.head;canvas.dataset.dirtyTiles=String(controller.lastCommit?.dirtyTileCount??0);
@@ -73,7 +74,8 @@ function syncWorkspaceState(){const open=workspace.classList.contains('open'),hi
 function openBox(id:string){workspace.classList.add('open');syncWorkspaceState();const box=byId<HTMLDetailsElement>(id);box.open=true;box.scrollIntoView({block:'nearest'});}
 byId('layer').onclick=()=>openBox('layersBox');byId('layersPage').onclick=()=>openBox('layersBox');byId('colorPage').onclick=()=>openBox('colorBox');byId('brushPage').onclick=()=>openBox('brushBox');
 drawer.onclick=()=>{workspace.classList.toggle('open');syncWorkspaceState();};
-function close(){workspace.classList.remove('open');syncWorkspaceState();drawer.focus();}byId('close').onclick=close;compactWorkspace.addEventListener('change',syncWorkspaceState);syncWorkspaceState();
+function close(restoreKeyboardFocus=false){workspace.classList.remove('open');syncWorkspaceState();const active=document.activeElement;if(active instanceof HTMLElement&&workspace.contains(active))active.blur();if(restoreKeyboardFocus)drawer.focus({preventScroll:true});}
+byId('close').onclick=e=>close(e.detail===0);compactWorkspace.addEventListener('change',syncWorkspaceState);syncWorkspaceState();
 
 function setWidth(value:number){const width=Math.max(240,Math.min(440,value));document.documentElement.style.setProperty('--workspace',`${width}px`);byId<HTMLInputElement>('width').value=String(width);byId('splitter').setAttribute('aria-valuenow',String(width));}
 byId<HTMLInputElement>('width').oninput=e=>setWidth(Number((e.target as HTMLInputElement).value));const splitter=byId('splitter');let resizePointer:number|null=null;
@@ -103,7 +105,7 @@ byId('undo').onclick=()=>void performHistory('undo');byId('compactUndo').onclick
 
 function isTextEditingTarget(target:EventTarget|null){if(!(target instanceof HTMLElement))return false;if(target.isContentEditable||target instanceof HTMLTextAreaElement||target instanceof HTMLSelectElement)return true;if(target instanceof HTMLInputElement){return !['button','checkbox','radio','range','submit','reset'].includes(target.type);}return false;}
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&workspace.classList.contains('open')){close();return;}
+  if(e.key==='Escape'&&workspace.classList.contains('open')){close(true);return;}
   if(isTextEditingTarget(e.target)||e.altKey)return;
   const primary=e.ctrlKey||e.metaKey;if(!primary)return;const key=e.key.toLowerCase();
   const undo=key==='z'&&!e.shiftKey,redo=(key==='z'&&e.shiftKey)||(key==='y'&&e.ctrlKey&&!e.metaKey);
