@@ -123,7 +123,12 @@ try{
     const heldPen=await penStroke(mobile,mc,mb,[.35,.45],[.65,.45]);assert.ok(darkCount(heldPen,{x0:.35,y0:.38,x1:.65,y1:.52})<darkCount(beforePenErase,{x0:.35,y0:.38,x1:.65,y1:.52}),'live pen Eraser did not visibly update within 90ms with Workspace closed');
     await waitStroke(mobile,2);assert.equal(await mc.getAttribute('data-last-pointer-target'),'canvas');assert.equal(await mc.getAttribute('data-last-pointer-type'),'pen');
     await mobile.locator('#paint').click();await penStroke(mobile,mc,mb,[.12,.72],[.88,.72]);await waitStroke(mobile,3);const beforeTouchErase=await mc.screenshot();await mobile.locator('#erase').click();
-    const heldTouch=await touchStroke(mobile,mc,mb,[.35,.72],[.65,.72]);assert.ok(darkCount(heldTouch,{x0:.35,y0:.65,x1:.65,y1:.79})<darkCount(beforeTouchErase,{x0:.35,y0:.65,x1:.65,y1:.79}),'live touch Eraser did not visibly update within 90ms with Workspace closed');
+    const framesBeforeTouch=await mobile.evaluate(()=>document.querySelector('#canvas')?.__illustroPresentationFrames??0);
+    const heldTouch=await touchStroke(mobile,mc,mb,[.35,.72],[.65,.72]);
+    const touchRect={x0:.35,y0:.65,x1:.65,y1:.79},touchBeforeDark=darkCount(beforeTouchErase,touchRect),touchHeldDark=darkCount(heldTouch,touchRect);
+    const touchDebug={beforeDark:touchBeforeDark,heldDark:touchHeldDark,framesBefore:framesBeforeTouch,framesHeld:await mobile.evaluate(()=>document.querySelector('#canvas')?.__illustroPresentationFrames??0),lastPointerTarget:await mc.getAttribute('data-last-pointer-target'),lastPointerType:await mc.getAttribute('data-last-pointer-type'),committedStrokes:await mc.getAttribute('data-committed-strokes'),historyBusy:await mc.getAttribute('data-history-busy')};
+    await fs.writeFile(path.join(evidence,`${backend}-touch-debug.json`),JSON.stringify(touchDebug,null,2));await fs.writeFile(path.join(evidence,`${backend}-touch-before.png`),beforeTouchErase);await fs.writeFile(path.join(evidence,`${backend}-touch-held.png`),heldTouch);
+    assert.ok(touchHeldDark<touchBeforeDark,'live touch Eraser did not visibly update within 90ms with Workspace closed');
     await waitStroke(mobile,4);const ms=await qa(mobile);assert.equal(ms.eraserCommittedStrokeCount,2);assert.equal(await mc.getAttribute('data-last-pointer-target'),'canvas');assert.equal(await mc.getAttribute('data-last-pointer-type'),'touch');assert.equal(ms.presentationMode,'direct-gpu');assert.equal(await mobile.locator('.latency-preview').count(),0);assert.deepEqual(mobileErrors,[]);
     await mobile.screenshot({path:path.join(evidence,`${backend}-m04-${publicBase?'public':'local'}-compact.png`),fullPage:true});await mobile.close();
 
