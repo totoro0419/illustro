@@ -34,7 +34,10 @@ export async function createPortableDocument(input:Readonly<{
 }
 
 export async function openPortableDocument(bytes:Uint8Array):Promise<PortableOpenResult>{
-  const decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:KNOWN_REQUIRED_TYPES});
+  const decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:KNOWN_REQUIRED_TYPES});return openDecodedPortableDocument(decoded);
+}
+
+export function openDecodedPortableDocument(decoded:DecodedPortableFile):PortableOpenResult{
   const coreSections=[...decoded.sections.values()].filter(s=>s.descriptor.type===CORE_TYPE);if(coreSections.length!==1||coreSections[0]?.descriptor.id!==CORE_SECTION)throw new Error('exactly one core document section is required');
   let rawSnapshot:unknown;try{rawSnapshot=JSON.parse(textDecoder.decode(coreSections[0].bytes));}catch{throw new Error('malformed core document section');}
   validateM05SemanticDependencies(rawSnapshot);
