@@ -54,6 +54,7 @@ try{
     await canvas.evaluate(el=>el.style.background='#000');await page.waitForTimeout(80);assert.ok(lightRatio(await canvas.screenshot())>.92,'visible paper incorrectly depends on CSS/transparent Canvas compositing');
     await page.locator('#qaPanel').evaluate(el=>el.open=true);await page.locator('#qaDiagInitial').evaluate(el=>el.closest('details').open=true);await page.locator('#qaDiagInitial').click();await page.waitForFunction(()=>document.querySelector('#qaGpuReport')?.textContent?.includes('"gpuArtwork"'),{timeout:10000});
     const initialGpu=JSON.parse((await page.locator('#qaGpuReport').textContent())??'{}');assert.equal(initialGpu.gpuArtwork.corner[3],0,'blank internal artwork is not transparent');assert.ok(initialGpu.gpuVisibleCanvas.corner[0]>245&&initialGpu.gpuVisibleCanvas.corner[1]>245&&initialGpu.gpuVisibleCanvas.corner[2]>245&&initialGpu.gpuVisibleCanvas.corner[3]>245,'visible blank paper is not opaque white');
+    await page.locator('#qaPanel').evaluate(el=>el.open=false);
     await canvas.evaluate(el=>el.style.background='#fff');
     assert.equal(await page.locator('#undo').isDisabled(),true);assert.equal(await page.locator('#redo').isDisabled(),true);
 
