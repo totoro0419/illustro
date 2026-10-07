@@ -138,17 +138,36 @@ try{
     await page.close();
   }
 
-  // Production-like compact route: no backend query. Rendering must remain a
-  // single authoritative GPU canvas with no secondary presentation surface.
+  // Production route with no backend query. Compact and desktop must share the
+  // same certified WebGL2 direct-GPU presentation with no secondary surface.
   {
     const autoErrors=[],auto=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'});
     auto.on('pageerror',e=>autoErrors.push(e.message));auto.on('console',m=>{if(m.type()==='error')autoErrors.push(m.text());});
     const autoUrl=publicBase?base+`?m03-public-check=1&build=${encodeURIComponent(expectedCommit)}`:base+'?qa=1';
     await auto.goto(autoUrl,{waitUntil:'networkidle',timeout:45000});await auto.locator('#qaPanel > summary').click();await auto.getByRole('button',{name:'新規キャンバス',exact:true}).click();await auto.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
     const canvas=auto.locator('#canvas'),preview=auto.locator('.latency-preview'),box=await canvas.boundingBox();assert.ok(box);
-    const state=await qa(auto);assert.ok(['webgpu','webgl2'].some(x=>String(state.backend).toLowerCase().includes(x)),'production auto route did not select a supported GPU backend');assert.equal(state.presentationMode,'direct-gpu','production route must use the same direct DOM GPU presentation on every device');assert.equal(state.presentationAlpha,true,'production GPU Canvas must preserve alpha');assert.equal(state.rendererAlpha,true);assert.equal(state.rendererPremultipliedAlpha,true);assert.equal(await preview.count(),0,'production compact route must not create any secondary latency canvas');assert.ok(lightRatio(await canvas.screenshot())>.92,'production compact direct GPU Canvas starts black');await auto.locator('#drawer').click();await auto.locator('#close').click();assert.equal(await auto.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','production compact close removed Workspace from compositor tree');assert.ok(lightRatio(await canvas.screenshot())>.92,'production compact Workspace close blackened Canvas');
+    const state=await qa(auto);assert.ok(String(state.backend).toLowerCase().includes('webgl2'),'production route must use the certified WebGL2 backend');assert.equal(state.presentationMode,'direct-gpu','production route must use the same direct DOM GPU presentation on every device');assert.equal(state.presentationAlpha,true,'production GPU Canvas must preserve alpha');assert.equal(state.presentationDesynchronized,false,'production WebGL2 presentation must use the certified synchronized path');assert.equal(state.rendererAlpha,true);assert.equal(state.rendererPremultipliedAlpha,true);assert.equal(await preview.count(),0,'production compact route must not create any secondary latency canvas');assert.ok(lightRatio(await canvas.screenshot())>.92,'production compact direct GPU Canvas starts black');await auto.locator('#drawer').click();await auto.locator('#close').click();assert.equal(await auto.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','production compact close removed Workspace from compositor tree');assert.ok(lightRatio(await canvas.screenshot())>.92,'production compact Workspace close blackened Canvas');
     const framesBefore=await auto.evaluate(()=>document.querySelector('#canvas')?.__illustroPresentationFrames??0);const held=await penStroke(auto,canvas,box,[.18,.32],[.78,.50]);assert.ok(lightRatio(held)>.75,'production compact direct GPU Canvas turned mostly black while drawing');assert.equal(await canvas.getAttribute('data-last-pointer-target'),'canvas');assert.ok(darkIn(held,{x0:.12,y0:.25,x1:.84,y1:.58})>20,'production compact stroke was not visible within 90ms while Workspace was closed');await auto.waitForFunction(f=>(document.querySelector('canvas')?.__illustroPresentationFrames??0)>f,framesBefore,{timeout:2000});await auto.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});await waitIdle(auto);
     assert.deepEqual(autoErrors,[]);report.compactProductionRoute={backend:state.backend,presentationMode:state.presentationMode,presentationAlpha:state.presentationAlpha,presentationDesynchronized:state.presentationDesynchronized,rendererDesynchronized:state.rendererDesynchronized,workspaceCloseDrawing:true,gpuPredictionPath:true,directGpuPresentation:true,stableWorkspaceCompositor:true};await auto.close();
+  }
+
+  // The production backend policy must be identical on desktop and compact:
+  // direct DOM WebGL2 with the synchronized compositor-safe presentation path.
+  {
+    const desktop=await browser.newPage({viewport:{width:1280,height:900}});
+    const url=publicBase?base+'?m03-public-check=1&build='+encodeURIComponent(expectedCommit):base+'?qa=1';
+    await desktop.goto(url,{waitUntil:'networkidle',timeout:45000});
+    await desktop.locator('#qaPanel > summary').click();
+    await desktop.getByRole('button',{name:'新規キャンバス',exact:true}).click();
+    await desktop.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
+    const desktopState=await qa(desktop);
+    assert.ok(String(desktopState.backend).toLowerCase().includes('webgl2'),'desktop production route differs from compact backend policy');
+    assert.equal(desktopState.presentationMode,'direct-gpu','desktop production route is not direct GPU');
+    assert.equal(desktopState.presentationDesynchronized,false,'desktop production route is not compositor-safe synchronized WebGL2');
+    assert.equal(await desktop.locator('.latency-preview').count(),0,'desktop production route created a secondary canvas');
+    assert.ok(lightRatio(await desktop.locator('#canvas').screenshot())>.92,'desktop production canvas starts black');
+    report.productionBackendPolicy={desktop:'webgl2-synchronized',compact:'webgl2-synchronized',sameArchitecture:true};
+    await desktop.close();
   }
   // Historical regression: even an old latency query must not be able to
   // resurrect the removed secondary Canvas.
