@@ -50,7 +50,7 @@ try{
     assert.equal(await page.locator('#qaPanel').count(),1,'M03 QA panel missing');await page.locator('#qaPanel > summary').click();
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await page.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
     const canvas=page.locator('canvas'),box=await canvas.boundingBox();assert.ok(box);
-    const start=await qa(page);assert.equal(start.milestone,'M03');assert.equal(start.layerCount,1);assert.equal(start.canUndo,false);assert.equal(start.canRedo,false);assert.ok(String(start.backend).toLowerCase().includes(backend));assert.equal(start.rendererArtworkAlpha,true,'internal artwork alpha must remain preserved');assert.equal(start.presentationOpaque,true,'visible GPU presentation must be opaque');assert.equal(start.rendererAlpha,false,'visible GPU Canvas must not depend on browser alpha compositing');assert.equal(start.presentationAlpha,false,'visible presentation alpha contract must be opaque');if(expectedCommit)assert.equal(start.commit,expectedCommit);
+    const start=await qa(page);assert.equal(start.milestone,'M03');assert.equal(start.layerCount,1);assert.equal(start.canUndo,false);assert.equal(start.canRedo,false);assert.ok(String(start.backend).toLowerCase().includes(backend));assert.equal(start.backendSelection.requested,backend);assert.equal(start.backendSelection.selected,backend);assert.equal(start.backendSelection.fallbackUsed,false);if(backend==='webgpu'){assert.equal(start.backendSelection.webgpu.usable,true,'explicit WebGPU initialized but was not marked usable');assert.equal(start.backendSelection.webgpu.stage,'ready');}else{assert.equal(start.backendSelection.webgpu.attempted,false,'explicit WebGL2 unexpectedly probed WebGPU');}assert.equal(start.rendererArtworkAlpha,true,'internal artwork alpha must remain preserved');assert.equal(start.presentationOpaque,true,'visible GPU presentation must be opaque');assert.equal(start.rendererAlpha,false,'visible GPU Canvas must not depend on browser alpha compositing');assert.equal(start.presentationAlpha,false,'visible presentation alpha contract must be opaque');if(expectedCommit)assert.equal(start.commit,expectedCommit);
     await canvas.evaluate(el=>el.style.background='#000');await page.waitForTimeout(80);assert.ok(lightRatio(await canvas.screenshot())>.92,'visible paper incorrectly depends on CSS/transparent Canvas compositing');
     await page.locator('#qaPanel').evaluate(el=>el.open=true);await page.locator('#qaDiagInitial').evaluate(el=>el.closest('details').open=true);await page.locator('#qaDiagInitial').click();await page.waitForFunction(()=>document.querySelector('#qaGpuReport')?.textContent?.includes('"gpuArtwork"'),{timeout:10000});
     const initialGpu=JSON.parse((await page.locator('#qaGpuReport').textContent())??'{}');assert.equal(initialGpu.gpuArtwork.corner[3],0,'blank internal artwork is not transparent');
@@ -144,21 +144,21 @@ try{
     await page.close();
   }
 
-  // Production route with no backend query. Compact and desktop must share the
-  // same certified WebGL2 direct-GPU presentation with no secondary surface.
+  // Production route with no backend query. Backend selection is capability-based:
+  // fully usable WebGPU wins; otherwise the recorded failure falls back to WebGL2.
   {
     const autoErrors=[],auto=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'});
     auto.on('pageerror',e=>autoErrors.push(e.message));auto.on('console',m=>{if(m.type()==='error')autoErrors.push(m.text());});
     const autoUrl=publicBase?base+`?m03-public-check=1&build=${encodeURIComponent(expectedCommit)}`:base+'?qa=1';
     await auto.goto(autoUrl,{waitUntil:'networkidle',timeout:45000});await auto.locator('#qaPanel > summary').click();await auto.getByRole('button',{name:'新規キャンバス',exact:true}).click();await auto.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
     const canvas=auto.locator('#canvas'),preview=auto.locator('.latency-preview'),box=await canvas.boundingBox();assert.ok(box);
-    const state=await qa(auto);assert.ok(String(state.backend).toLowerCase().includes('webgl2'),'production route must use the certified WebGL2 backend');assert.equal(state.presentationMode,'direct-gpu','production route must use the same direct DOM GPU presentation on every device');assert.equal(state.rendererArtworkAlpha,true,'production internal artwork must preserve alpha');assert.equal(state.presentationOpaque,true,'production visible presentation must be opaque');assert.equal(state.presentationAlpha,false,'production GPU Canvas must not depend on compositor transparency');assert.equal(state.presentationDesynchronized,false,'production WebGL2 presentation must use the certified synchronized path');assert.equal(state.rendererAlpha,false);assert.equal(await preview.count(),0,'production compact route must not create any secondary latency canvas');assert.ok(lightRatio(await canvas.screenshot())>.92,'production compact direct GPU Canvas starts black');await auto.locator('#drawer').click();await auto.locator('#close').click();assert.equal(await auto.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','production compact close removed Workspace from compositor tree');assert.ok(lightRatio(await canvas.screenshot())>.92,'production compact Workspace close blackened Canvas');
+    const state=await qa(auto);assert.equal(state.backendSelection.requested,'auto','production route did not use capability-based auto selection');assert.equal(state.backendSelection.selected,String(state.backend).toLowerCase().includes('webgpu')?'webgpu':'webgl2');if(state.backendSelection.webgpu.usable){assert.ok(String(state.backend).toLowerCase().includes('webgpu'),'usable WebGPU was incorrectly bypassed');assert.equal(state.backendSelection.fallbackUsed,false,'usable WebGPU incorrectly fell back');assert.equal(state.backendSelection.webgpu.stage,'ready');}else{assert.ok(String(state.backend).toLowerCase().includes('webgl2'),'unusable WebGPU did not fall back to WebGL2');assert.equal(state.backendSelection.fallbackUsed,true,'WebGPU failure was not recorded as fallback');assert.ok(state.backendSelection.webgpu.error,'WebGPU fallback has no recorded reason');}assert.equal(state.presentationMode,'direct-gpu','production route must use the same direct DOM GPU presentation on every device');assert.equal(state.rendererArtworkAlpha,true,'production internal artwork must preserve alpha');assert.equal(state.presentationOpaque,true,'production visible presentation must be opaque');assert.equal(state.presentationAlpha,false,'production GPU Canvas must not depend on compositor transparency');assert.equal(state.rendererAlpha,false);assert.equal(await preview.count(),0,'production compact route must not create any secondary latency canvas');assert.ok(lightRatio(await canvas.screenshot())>.92,'production compact direct GPU Canvas starts black');await auto.locator('#drawer').click();await auto.locator('#close').click();assert.equal(await auto.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','production compact close removed Workspace from compositor tree');assert.ok(lightRatio(await canvas.screenshot())>.92,'production compact Workspace close blackened Canvas');
     const framesBefore=await auto.evaluate(()=>document.querySelector('#canvas')?.__illustroPresentationFrames??0);const held=await penStroke(auto,canvas,box,[.18,.32],[.78,.50]);assert.ok(lightRatio(held)>.75,'production compact direct GPU Canvas turned mostly black while drawing');assert.equal(await canvas.getAttribute('data-last-pointer-target'),'canvas');assert.ok(darkIn(held,{x0:.12,y0:.25,x1:.84,y1:.58})>20,'production compact stroke was not visible within 90ms while Workspace was closed');await auto.waitForFunction(f=>(document.querySelector('canvas')?.__illustroPresentationFrames??0)>f,framesBefore,{timeout:2000});await auto.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:15000});await waitIdle(auto);
     assert.deepEqual(autoErrors,[]);report.compactProductionRoute={backend:state.backend,presentationMode:state.presentationMode,presentationAlpha:state.presentationAlpha,presentationDesynchronized:state.presentationDesynchronized,rendererDesynchronized:state.rendererDesynchronized,workspaceCloseDrawing:true,gpuPredictionPath:true,directGpuPresentation:true,stableWorkspaceCompositor:true};await auto.close();
   }
 
-  // The production backend policy must be identical on desktop and compact:
-  // direct DOM WebGL2 with the synchronized compositor-safe presentation path.
+  // Desktop and compact share the same capability decision; viewport size must not
+  // force a backend or bypass a WebGPU implementation that actually initializes.
   {
     const desktop=await browser.newPage({viewport:{width:1280,height:900}});
     const url=publicBase?base+'?m03-public-check=1&build='+encodeURIComponent(expectedCommit):base+'?qa=1';
@@ -167,17 +167,42 @@ try{
     await desktop.getByRole('button',{name:'新規キャンバス',exact:true}).click();
     await desktop.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
     const desktopState=await qa(desktop);
-    assert.ok(String(desktopState.backend).toLowerCase().includes('webgl2'),'desktop production route differs from compact backend policy');
+    assert.equal(desktopState.backendSelection.requested,'auto','desktop production route did not use auto selection');
+    if(desktopState.backendSelection.webgpu.usable){assert.ok(String(desktopState.backend).toLowerCase().includes('webgpu'),'desktop bypassed usable WebGPU');assert.equal(desktopState.backendSelection.fallbackUsed,false);}else{assert.ok(String(desktopState.backend).toLowerCase().includes('webgl2'),'desktop failed to fall back from unusable WebGPU');assert.equal(desktopState.backendSelection.fallbackUsed,true);assert.ok(desktopState.backendSelection.webgpu.error);}
     assert.equal(desktopState.presentationMode,'direct-gpu','desktop production route is not direct GPU');
     assert.equal(desktopState.rendererArtworkAlpha,true,'desktop internal artwork lost alpha');
     assert.equal(desktopState.presentationOpaque,true,'desktop visible presentation is not opaque');
     assert.equal(desktopState.presentationAlpha,false,'desktop visible Canvas still depends on alpha compositing');
-    assert.equal(desktopState.presentationDesynchronized,false,'desktop production route is not compositor-safe synchronized WebGL2');
     assert.equal(await desktop.locator('.latency-preview').count(),0,'desktop production route created a secondary canvas');
     assert.ok(lightRatio(await desktop.locator('#canvas').screenshot())>.92,'desktop production canvas starts black');
-    report.productionBackendPolicy={desktop:'webgl2-synchronized',compact:'webgl2-synchronized',sameArchitecture:true};
+    report.productionBackendPolicy={desktop:desktopState.backend,compact:state?.backend??'checked-separately',capabilityBased:true,usableWebGpuNeverBypassed:true};
     await desktop.close();
   }
+  // Capability fallback: navigator.gpu exists, but no adapter can be acquired.
+  // This must fall back in auto mode, and only in this case.
+  {
+    const fallback=await browser.newPage({viewport:{width:900,height:700}});
+    await fallback.addInitScript(()=>{Object.defineProperty(navigator,'gpu',{configurable:true,value:{requestAdapter:async()=>null}});});
+    const url=publicBase?base+'?m03-public-check=1&build='+encodeURIComponent(expectedCommit):base+'?qa=1';
+    await fallback.goto(url,{waitUntil:'networkidle',timeout:45000});
+    await fallback.locator('#qaPanel').evaluate(el=>el.open=true);
+    await fallback.getByRole('button',{name:'新規キャンバス',exact:true}).click();
+    await fallback.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});
+    const fallbackState=await qa(fallback);
+    assert.ok(String(fallbackState.backend).toLowerCase().includes('webgl2'),'auto mode did not fall back when requestAdapter returned null');
+    assert.equal(fallbackState.backendSelection.requested,'auto');
+    assert.equal(fallbackState.backendSelection.selected,'webgl2');
+    assert.equal(fallbackState.backendSelection.fallbackUsed,true);
+    assert.equal(fallbackState.backendSelection.webgpu.apiAvailable,true);
+    assert.equal(fallbackState.backendSelection.webgpu.attempted,true);
+    assert.equal(fallbackState.backendSelection.webgpu.usable,false);
+    assert.equal(fallbackState.backendSelection.webgpu.stage,'request-adapter');
+    assert.match(fallbackState.backendSelection.webgpu.error,/requestAdapter returned null/);
+    assert.ok(lightRatio(await fallback.locator('#canvas').screenshot())>.92,'fallback WebGL2 canvas is not usable');
+    report.webGpuFallbackProbe={status:'PASS',apiVisible:true,adapterUnavailable:true,selected:'webgl2',reasonRecorded:true};
+    await fallback.close();
+  }
+
   // Historical regression: even an old latency query must not be able to
   // resurrect the removed secondary Canvas.
   {
