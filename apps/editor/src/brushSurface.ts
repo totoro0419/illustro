@@ -1,4 +1,4 @@
-import {TILE,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
+import {TILE,validateRecord,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
 import {CANONICAL_TILE_SIZE,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import type {EditorController,EditorHistoryChange} from './controller';
@@ -85,6 +85,14 @@ export class BrushSurface{
     if(!change.changed)return;if(!this.session)throw new Error('Renderer is not initialized');if(this.pointer!==null||this.finishing||this.historySyncing)throw new Error('History is busy');
     this.historySyncing=true;this.onStateChanged();try{this.syncLayerStack();const operations=change.direction==='undo'?[...change.operations].reverse():change.operations;
       for(const operation of operations){if(operation.kind!=='brush.stroke')continue;const record=this.strokeRecord(operation),keys=this.runtimeKeys(operation),surfaceId=this.surfaceForOperation(operation);if(change.direction==='undo')await this.session.undoDerived(record,keys,surfaceId);else await this.session.redoDerived(record,keys,surfaceId);}
+    }finally{this.historySyncing=false;this.onStateChanged();}
+  }
+  async restoreDocumentProjection(){
+    if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
+    this.historySyncing=true;this.onStateChanged();try{this.syncLayerStack();await this.renderer.reset();this.session.discardRedo();
+      for(const operation of this.controller.document.operationsTo()){if(operation.kind==='brush.stroke'){const record=validateRecord(operation.parameters.strokeRecord);await this.session.redoDerived(record,this.runtimeKeys(operation),this.surfaceForOperation(operation));}
+        else if(operation.kind==='raster.strict-delta')throw new Error('This saved strict Raster delta cannot yet be projected by the M05 editor renderer');}
+      await this.renderer.drain();
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);}
