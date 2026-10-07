@@ -31,6 +31,17 @@
 
 各実装チャット用プロンプトには、必ず **「`IMPLEMENTATION_BASELINE.md` と `CANONICAL_INDEX.md` を最初に確認し、対象分野のCANONICAL設計を読み、独自解釈で変更しない」** という要件を含める。
 
+## 正式ロードマップ
+
+本番実装のマイルストーン番号・名称・順序は、`docs/IMPLEMENTATION_CHECKLIST.md` の **M01〜M47** を正本とする。
+
+- M01〜M03は合格・固定済み。
+- 現在の実装対象はM04「Eraser正式統合」。
+- M05以降は、M05 Save基盤 → M06 基本Export → M07 本番PC/Tablet UI骨格 … → M46 v1 Release Candidate → M47 Illustro v1.0 Release Gate の順で進める。
+- 過去のM05〜M40ロードマップは廃止する。過去文書内に旧番号が残っていても、現在の実装順序の根拠にはしない。
+- Managerや実装チャットは、ユーザー承認なしにM01〜M47を改番・統合・順序変更しない。内部サブタスクへ分解しても外側のマイルストーンIDは維持する。
+- **M47の合格をv1.0最終完成判定とする。** M46まで完了しても自動的にv1.0完成とは扱わない。
+
 ## 正本と優先関係
 
 この文書 → 分野別正本（[一覧](CANONICAL_INDEX.md)）→ 採用試作 → 過去の検査資料。矛盾はこの順で解決する。カタログのInvestigateや水彩物理・高度な自動化等は今回の必須範囲へ昇格させない。
@@ -50,14 +61,13 @@ Quick Controllerはpen-up後に現れ描画中は隠れる半透明ドーナツ�
 
 起動 → 新規キャンバス → Brush選択 → 描画 → Eraser → Layer追加・選択 → Undo → Redo → Save → 再読み込み → 復元 → PNG Export。
 
-実装順は以下。各段階で前の動作を維持する。
+マイルストーンの正式な実装順は `IMPLEMENTATION_CHECKLIST.md` のM01〜M47に従う。以下は番号とは独立した技術上の順序原則であり、ロードマップを上書きしない。
 
 1. **文書・履歴・保存形式のV2整合**。既存Coreの疎な格納、変更部分だけの複製、取消、古い操作の拒否は再利用する。数値Revision / Blockの永続ID、max Revision方式のRecovery、RGBA8・正座標限定、可変canonical tileは本番ファイルに固定しない。UUIDと独立CommitSequence、256pxの論理区画、Surface形式、依存データ付き操作記録へ段階的に合わせる。
-2. **一筆を選択Layerへ確定**。既存Foundationの実入力と最終StrokeRecordを使い、一筆一Transactionを発行する。128pxの描画処理区画を256pxの保存区画へdirty範囲のみ変換する。入力中に全体読出し・全画面コピーを行わない。Previewと正式Rasterの関係を明確にする。
-3. **Layer追加・選択と取消**。一つのモデルをLayers BoxとLayer Pageで共有。確定前にLayer/History操作を直列化し、取り消した遅いWorker結果を採用しない。
-4. **Save / Recovery / 復元 / PNG**。保存時点のRevisionを固定。依存データの書込みと確認が終わって初めて「保存済み」。途中失敗で前の保存を壊さない。再読込して画素・Layer・選択と保存Revisionを照合する。Recovery保護状態はSaveと別。
-5. **基本経路の実機確認**。筆圧・追従・太い線・Undo後の表示・復元を確認する。CIを実機合格の代用にしない。
-6. Selection → Transform → 通常Fill → Region連携 → Effects → Liquify → 高度Layer → Assets / Reference / Navigator → Automation。各機能は[Feature Delivery Gate](FEATURE_DELIVERY_GATE.md)で実操作・取消・保存まで検証する。
+2. **描画・Layer・Historyを同じ正式Document経路へ通す**。既存Foundationの実入力と最終StrokeRecordを使い、一筆一Transactionを発行する。128pxの描画処理区画を256pxの保存区画へdirty範囲のみ変換する。入力中に全体読出し・全画面コピーを行わない。
+3. **Save系はM05、基本画像ExportはM06で分離する**。M05では `.illustro`、Autosave、Reload、Recovery、Offline、Document Metadataを扱い、M06ではPNG/JPEG/WebPと保存・書き出しUIを扱う。保存時点のRevision固定、依存データの書込み検証、途中失敗で前の保存を壊さない原則を維持する。
+4. **各後続機能は既存の正式Document / History / Save境界へ接続する**。Selection、Transform、Fill、Region、Effects、Liquify、Layer、Asset等を別系統の作品正本にしない。
+5. **実機確認を各段階で行う**。CIを実機合格の代用にしない。各機能は[Feature Delivery Gate](FEATURE_DELIVERY_GATE.md)で実操作・Undo/Redo・保存/復元など対象範囲に応じて検証する。
 
 ## 実装境界
 
