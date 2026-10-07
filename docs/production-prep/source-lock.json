@@ -29,8 +29,8 @@
     },
     {
       "path": "packages/brush-rt/src/index.d.ts",
-      "sourceCommit": "3956ec0d03b136f45c9f91658016120086610dc5",
-      "sha256": "151391fc45f8f919f3e1d8bcda978f26f36f3fe90a81e2b1af4aeb5b391aa1bd"
+      "sourceCommit": "0509c684d4d946795511c4619ec8edb01b5bb1ec",
+      "sha256": "63dc4d7bc5c3b8c2cd049d76cf285cd4eeb06ae5d47a7705eff62a947139ec14"
     },
     {
       "path": "packages/brush-rt/src/index.mjs",
