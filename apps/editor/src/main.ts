@@ -94,9 +94,34 @@ splitter.onpointerdown=e=>{resizePointer=e.pointerId;splitter.setPointerCapture(
 splitter.onkeydown=e=>{const current=Number(splitter.getAttribute('aria-valuenow'));if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();setWidth(current+(e.key==='ArrowLeft'?10:-10));}};
 
 function syncPreset(){if(!surface?.preset)return;byId<HTMLInputElement>('size').value=String(surface.preset.size);byId<HTMLInputElement>('sizeNumber').value=String(surface.preset.size);byId<HTMLInputElement>('force').checked=surface.preset.forceFade?.enabled??false;updateQa();}
-byId<HTMLButtonElement>('new').onclick=async()=>{if(!surface)return;byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';try{await surface.initialize();const select=byId<HTMLSelectElement>('brush');surface.brushes.forEach(p=>select.add(new Option(p.name,p.id)));lastBrushPresetId=surface.brushes.find(p=>p.blend!=='erase')?.id??surface.brushes[0]?.id??lastBrushPresetId;lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;selectPreset(lastBrushPresetId);for(const id of ['brush','size','sizeNumber','force','addLayer'])(byId(id) as HTMLInputElement).disabled=false;syncPreset();renderLayers();updateHistoryButtons();const selection=surface.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;byId('status').textContent=selection?.fallbackUsed?`描画できます。WebGPUは${selection.webgpu?.stage??'初期化'}で利用できなかったためWebGL2を使用しています。`:'描画できます。Undo / Redoとレイヤー追加・選択を試せます。';updateQa();}catch(error){const message=surface.initializationError||(error instanceof Error?error.message:String(error));updateQa();surface.destroy();byId('status').textContent='描画を開始できませんでした。'+message;}};
+async function initializeCurrentSurface(replay:boolean){
+  if(!surface)throw new Error('描画面がありません。');
+  await surface.initialize();
+  const select=byId<HTMLSelectElement>('brush');select.replaceChildren();surface.brushes.forEach(p=>select.add(new Option(p.name,p.id)));
+  lastBrushPresetId=surface.brushes.find(p=>p.blend!=='erase')?.id??surface.brushes[0]?.id??lastBrushPresetId;
+  lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
+  selectPreset(lastBrushPresetId);
+  if(replay)await surface.restoreDocumentProjection();
+  for(const id of ['brush','size','sizeNumber','force','addLayer','save','saveCopy'])(byId(id) as HTMLInputElement).disabled=false;
+  syncPreset();renderLayers();updateHistoryButtons();documentReady=true;
+}
+async function activateOpened(opened:PortableOpenResult,recovered=false,savedRevision=opened.snapshotRevisionId){
+  surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;surface=makeSurface();
+  await initializeCurrentSurface(true);await persistence.initialize(controller,savedRevision,opened.preserved,recovered);updatePersistenceDisplay();updateQa();
+}
+byId<HTMLButtonElement>('new').onclick=async()=>{
+  byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';
+  try{
+    if(documentReady){surface?.destroy();controller=new EditorController();lastQueuedRevision=null;surface=makeSurface();}
+    await initializeCurrentSurface(false);await persistence.initialize(controller,null,undefined,false);
+    const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
+    byId('status').textContent=selection?.fallbackUsed?`描画できます。WebGPUは${selection.webgpu?.stage??'初期化'}で利用できなかったためWebGL2を使用しています。`:'描画できます。作業内容は自動的に保護されます。';
+    updateQa();
+  }catch(error){const message=surface?.initializationError||(error instanceof Error?error.message:String(error));updateQa();surface?.destroy();documentReady=false;byId('status').textContent='描画を開始できませんでした。'+message;}
+  finally{byId<HTMLButtonElement>('new').disabled=false;}
+};
 
-byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.busy||historyPending){byId('status').textContent='今の操作が終わってからレイヤーを追加してください。';return;}try{const id=controller.addRasterLayer(),layer=controller.document.root.getLayer(id);surface.syncLayerStack();surface.discardRedoProjection();renderLayers();updateHistoryButtons();byId('status').textContent=`${layer.name}を追加して選択しました。`;updateQa();}catch{byId('status').textContent='レイヤーを追加できませんでした。';}};
+byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.busy||historyPending){byId('status').textContent='今の操作が終わってからレイヤーを追加してください。';return;}try{const id=controller.addRasterLayer(),layer=controller.document.root.getLayer(id);surface.syncLayerStack();surface.discardRedoProjection();queueLatestCommit();renderLayers();updateHistoryButtons();byId('status').textContent=`${layer.name}を追加して選択しました。`;updateQa();}catch{byId('status').textContent='レイヤーを追加できませんでした。';}};
 
 async function performHistory(direction:'undo'|'redo'){
   if(!surface||surface.busy||historyPending)return;const available=direction==='undo'?controller.canUndo:controller.canRedo;if(!available)return;
@@ -104,7 +129,7 @@ async function performHistory(direction:'undo'|'redo'){
   try{
     change=direction==='undo'?controller.undo():controller.redo();if(!change.changed)return;
     await surface.syncHistory(change);if(direction==='undo')undoCount++;else redoCount++;
-    renderLayers();byId('status').textContent=direction==='undo'?'ひとつ前の状態に戻しました。':'取り消した操作をやり直しました。';
+    renderLayers();persistence.noteNavigation(controller.document);byId('status').textContent=direction==='undo'?'ひとつ前の状態に戻しました。':'取り消した操作をやり直しました。';
   }catch{
     if(change?.changed){
       try{const rollback=direction==='undo'?controller.redo():controller.undo();if(rollback.changed)await surface.syncHistory(rollback);}catch{}
