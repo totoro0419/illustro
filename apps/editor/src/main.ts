@@ -3,11 +3,11 @@ import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 
 const qaPath=location.pathname.replace(/\/+$/,'');
-const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWith('/qa/m03')||qaPath.endsWith('/qa/m03/index.html');
+const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWith('/qa/m04')||qaPath.endsWith('/qa/m04/index.html');
 const qaStartedAt=new Date().toISOString();
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=`
-<header><strong>Illustro</strong><button disabled title="ホーム画面は準備中">Home</button><button disabled title="保存は準備中">Save</button><span>${qaMode?'M03 実機確認':'描画確認用'}</span></header>
+<header><strong>Illustro</strong><button disabled title="ホーム画面は準備中">Home</button><button disabled title="保存は準備中">Save</button><span>${qaMode?'M04 実機確認':'描画確認用'}</span></header>
 <nav class="rail" aria-label="メインツール">
   <button id="paint" aria-pressed="true">ブラシ</button><button id="erase" aria-pressed="false">消しゴム</button>
   <button disabled>ぼかし</button><button disabled>スポイト</button><button disabled>塗り</button><button disabled>選択</button><button disabled>変形</button><button disabled>移動</button>
@@ -33,7 +33,7 @@ ${qaMode?qaMarkup():''}`;
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const controller=new EditorController();
-let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,lastPointerDownTarget:EventTarget|null=null;
+let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,lastPointerDownTarget:EventTarget|null=null,selectedTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser';
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
 const renderLayers=()=>{
@@ -60,11 +60,12 @@ const updateQa=()=>{
   const canvas=byId<HTMLCanvasElement>('canvas'),selected=controller.selectedLayer;
   canvas.dataset.committedStrokes=String(controller.committedStrokeCount);canvas.dataset.revisionId=controller.document.head;canvas.dataset.dirtyTiles=String(controller.lastCommit?.dirtyTileCount??0);
   canvas.dataset.layerCount=String(controller.layers.length);canvas.dataset.selectedLayerId=controller.selectedLayerId;canvas.dataset.selectedLayerName=selected.name;
-  canvas.dataset.canUndo=String(controller.canUndo);canvas.dataset.canRedo=String(controller.canRedo);canvas.dataset.historyBusy=String(historyPending||surface?.busy===true);canvas.dataset.historyPatchHits=String(surface?.historyPatchHits??0);canvas.dataset.historyReplayFallbacks=String(surface?.historyReplayFallbacks??0);
+  canvas.dataset.canUndo=String(controller.canUndo);canvas.dataset.canRedo=String(controller.canRedo);canvas.dataset.historyBusy=String(historyPending||surface?.busy===true);canvas.dataset.historyPatchHits=String(surface?.historyPatchHits??0);canvas.dataset.historyReplayFallbacks=String(surface?.historyReplayFallbacks??0);canvas.dataset.selectedTool=selectedTool;canvas.dataset.selectedPresetId=surface?.brushId??'未選択';canvas.dataset.selectedBlend=surface?.blendMode??'normal';canvas.dataset.eraserStrokes=String(controller.committedEraserStrokeCount);
   if(!qaMode)return;
-  const data={milestone:'M03',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',backendSelection:surface?.backendSelection??null,initializationError:surface?.initializationError??null,viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
+  const data={milestone:'M04',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',backendSelection:surface?.backendSelection??null,initializationError:surface?.initializationError??null,viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
+    selectedTool,selectedPresetId:surface?.brushId??'未選択',selectedPresetName:surface?.brushName??'未選択',blendMode:surface?.blendMode??'normal',eraserType:surface?.eraserType,size:surface?.brushSize??0,
     layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:controller.canUndo,canRedo:controller.canRedo,
-    undoCount,redoCount,blockedHistoryGhostClicks,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,rendererArtworkAlpha:surface?.rendererArtworkAlpha??false,presentationOpaque:surface?.presentationOpaque??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,browserPredictionSamples:surface?.browserPredictionSamples??0,
+    undoCount,redoCount,blockedHistoryGhostClicks,eraserCommittedStrokeCount:controller.committedEraserStrokeCount,totalStrokeCount:controller.committedStrokeCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,rendererArtworkAlpha:surface?.rendererArtworkAlpha??false,presentationOpaque:surface?.presentationOpaque??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,browserPredictionSamples:surface?.browserPredictionSamples??0,
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
     activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:workspace.classList.contains('open'),workspaceDisplay:getComputedStyle(workspace).display,
     visualViewport:window.visualViewport?{width:Math.round(window.visualViewport.width),height:Math.round(window.visualViewport.height),offsetTop:Math.round(window.visualViewport.offsetTop),offsetLeft:Math.round(window.visualViewport.offsetLeft),scale:window.visualViewport.scale}:null,
@@ -73,8 +74,7 @@ const updateQa=()=>{
 };
 renderLayers();
 
-surface=new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();});
-let paintIndex=0,eraseIndex=5;const workspace=byId('workspace'),drawer=byId<HTMLButtonElement>('drawer'),compactWorkspace=matchMedia('(max-width:760px)');
+surface=new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();});const workspace=byId('workspace'),drawer=byId<HTMLButtonElement>('drawer'),compactWorkspace=matchMedia('(max-width:760px)');
 function syncWorkspaceState(){const open=workspace.classList.contains('open'),hidden=compactWorkspace.matches&&!open;drawer.setAttribute('aria-expanded',String(open));workspace.inert=hidden;workspace.setAttribute('aria-hidden',String(hidden));}
 function openBox(id:string){workspace.classList.add('open');syncWorkspaceState();const box=byId<HTMLDetailsElement>(id);box.open=true;box.scrollIntoView({block:'nearest'});}
 byId('layer').onclick=()=>openBox('layersBox');byId('layersPage').onclick=()=>openBox('layersBox');byId('colorPage').onclick=()=>openBox('colorBox');byId('brushPage').onclick=()=>openBox('brushBox');
@@ -88,9 +88,9 @@ splitter.onpointerdown=e=>{resizePointer=e.pointerId;splitter.setPointerCapture(
 splitter.onkeydown=e=>{const current=Number(splitter.getAttribute('aria-valuenow'));if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();setWidth(current+(e.key==='ArrowLeft'?10:-10));}};
 
 function syncPreset(){if(!surface?.preset)return;byId<HTMLInputElement>('size').value=String(surface.preset.size);byId<HTMLInputElement>('sizeNumber').value=String(surface.preset.size);byId<HTMLInputElement>('force').checked=surface.preset.forceFade?.enabled??false;updateQa();}
-byId<HTMLButtonElement>('new').onclick=async()=>{if(!surface)return;byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';try{await surface.initialize();const select=byId<HTMLSelectElement>('brush');surface.brushes.forEach((p,i)=>select.add(new Option(p.name,String(i))));for(const id of ['brush','size','sizeNumber','force','addLayer'])(byId(id) as HTMLInputElement).disabled=false;syncPreset();renderLayers();updateHistoryButtons();const selection=surface.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;byId('status').textContent=selection?.fallbackUsed?`描画できます。WebGPUは${selection.webgpu?.stage??'初期化'}で利用できなかったためWebGL2を使用しています。`:'描画できます。Undo / Redoとレイヤー追加・選択を試せます。';updateQa();}catch(error){const message=surface.initializationError||(error instanceof Error?error.message:String(error));updateQa();surface.destroy();byId('status').textContent='描画を開始できませんでした。'+message;}};
+byId<HTMLButtonElement>('new').onclick=async()=>{if(!surface)return;byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';try{await surface.initialize();const select=byId<HTMLSelectElement>('brush');surface.brushes.forEach(p=>select.add(new Option(p.name,p.id)));lastBrushPresetId=surface.brushes.find(p=>p.blend!=='erase')?.id??surface.brushes[0]?.id??lastBrushPresetId;lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;selectPreset(lastBrushPresetId);for(const id of ['brush','size','sizeNumber','force','addLayer'])(byId(id) as HTMLInputElement).disabled=false;syncPreset();renderLayers();updateHistoryButtons();const selection=surface.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;byId('status').textContent=selection?.fallbackUsed?`描画できます。WebGPUは${selection.webgpu?.stage??'初期化'}で利用できなかったためWebGL2を使用しています。`:'描画できます。Undo / Redoとレイヤー追加・選択を試せます。';updateQa();}catch(error){const message=surface.initializationError||(error instanceof Error?error.message:String(error));updateQa();surface.destroy();byId('status').textContent='描画を開始できませんでした。'+message;}};
 
-byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.busy||historyPending){byId('status').textContent='今の操作が終わってからレイヤーを追加してください。';return;}try{const id=controller.addRasterLayer(),layer=controller.document.root.getLayer(id);surface.discardRedoProjection();renderLayers();updateHistoryButtons();byId('status').textContent=`${layer.name}を追加して選択しました。`;updateQa();}catch{byId('status').textContent='レイヤーを追加できませんでした。';}};
+byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.busy||historyPending){byId('status').textContent='今の操作が終わってからレイヤーを追加してください。';return;}try{const id=controller.addRasterLayer(),layer=controller.document.root.getLayer(id);surface.syncLayerStack();surface.discardRedoProjection();renderLayers();updateHistoryButtons();byId('status').textContent=`${layer.name}を追加して選択しました。`;updateQa();}catch{byId('status').textContent='レイヤーを追加できませんでした。';}};
 
 async function performHistory(direction:'undo'|'redo'){
   if(!surface||surface.busy||historyPending)return;const available=direction==='undo'?controller.canUndo:controller.canRedo;if(!available)return;
@@ -122,9 +122,9 @@ document.addEventListener('keydown',e=>{
   if(!surface||surface.busy||historyPending||!available)return;e.preventDefault();void performHistory(direction);
 });
 
-function selectBrush(index:number){if(!surface)return;surface.select(index);byId<HTMLSelectElement>('brush').value=String(index);const erasing=index>=5;if(erasing)eraseIndex=index;else paintIndex=index;byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));syncPreset();}
-byId<HTMLSelectElement>('brush').onchange=e=>selectBrush(Number((e.target as HTMLSelectElement).value));for(const id of ['size','sizeNumber'])byId<HTMLInputElement>(id).oninput=e=>{if(!surface)return;const input=e.target as HTMLInputElement,value=Number(input.value);if(!input.validity.valid||input.value==='')return;surface.setSize(value);syncPreset();};
-byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectBrush(eraseIndex);byId('paint').onclick=()=>selectBrush(paintIndex);
+function selectPreset(id:string){if(!surface)return;surface.selectById(id);const erasing=surface.blendMode==='erase';selectedTool=erasing?'eraser':'brush';if(erasing)lastEraserPresetId=surface.brushId;else lastBrushPresetId=surface.brushId;byId<HTMLSelectElement>('brush').value=surface.brushId;byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));syncPreset();}
+byId<HTMLSelectElement>('brush').onchange=e=>selectPreset((e.target as HTMLSelectElement).value);for(const id of ['size','sizeNumber'])byId<HTMLInputElement>(id).oninput=e=>{if(!surface)return;const input=e.target as HTMLInputElement,value=Number(input.value);if(!input.validity.valid||input.value==='')return;surface.setSize(value);syncPreset();};
+byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
 
 if(qaMode){
   const out=byId<HTMLPreElement>('qaGpuReport');
@@ -144,25 +144,29 @@ if(qaMode){
 if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLabelElement>('qaNoteLabel'),note=byId<HTMLTextAreaElement>('qaNote');const sync=()=>{const problem=state.value==='problem';noteLabel.hidden=!problem;note.disabled=!problem;updateQa();};state.onchange=sync;sync();byId<HTMLButtonElement>('qaCopy').onclick=async()=>{const result={result:state.value,note:state.value==='problem'?note.value:'',automatic:JSON.parse(byId('qaAuto').textContent||'{}')};try{await navigator.clipboard.writeText(JSON.stringify(result,null,2));byId('qaCopy').textContent='コピーしました';}catch{byId('qaCopy').textContent='コピーできませんでした';}};}
 updateHistoryButtons();updateQa();addEventListener('resize',updateQa);addEventListener('pagehide',()=>surface?.destroy());
 
-function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M03 今回の確認</summary><ol>
+function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M04 今回の確認</summary><ol>
 <li>「新規キャンバス」を押してください。</li>
-<li>線を2〜3本描いてください。</li>
-<li>Undoを1回押し、一番新しい線だけ消えるか確認してください。</li>
-<li>もう一度Undoし、その前の線が消えるか確認してください。</li>
-<li>Redoを押し、消した線が順番どおり戻るか確認してください。</li>
+<li>ブラシで太めの線を描いてください。</li>
+<li>「消しゴム」を選んでください。</li>
+<li>線の中央を消してください。</li>
+<li>白で塗ったようにならず、線がきちんと消えるか確認してください。</li>
+<li>Undoを押して線が元に戻るか確認してください。</li>
+<li>Redoを押してまた消えるか確認してください。</li>
 <li>新しいレイヤーを追加してください。</li>
-<li>そのレイヤーに線を描いてください。</li>
-<li>Undoでまず線だけ消えるか確認してください。</li>
-<li>もう一度Undoして追加したレイヤーが消えるか確認してください。</li>
-<li>Redoでレイヤーが戻るか確認してください。</li>
-<li>さらにRedoして線が戻るか確認してください。</li>
-<li>Undoしたあと新しい線を描き、Redoができなくなるか確認してください。</li>
-<li>Undo / Redoを数回素早く押しても表示がおかしくならないか確認してください。</li>
-<li>レイヤーや線が突然別の場所へ移らないか確認してください。</li>
-<li>M01/M02で合格した描き心地が悪化していないか確認してください。</li>
-<li>問題なし / 問題ありを選択してください。</li>
+<li>新しいレイヤーに線を描いてください。</li>
+<li>その線だけを消してください。</li>
+<li>別のレイヤーの線まで消えていないか確認してください。</li>
+<li>種類から「硬い消しゴム」を選んで試してください。</li>
+<li>種類から「柔らかい消しゴム」を選び、少しずつ消えるか試してください。</li>
+<li>消しゴムを大きくして素早く動かしてください。</li>
+<li>ペンに表示が遅れてついてこないか確認してください。</li>
+<li>消しゴムからブラシへ戻し、普通に描けるか確認してください。</li>
+<li>Undo / Redoを何度か繰り返しても表示がおかしくならないか確認してください。</li>
+<li>スマホ・タブレットではWorkspaceを閉じた状態でも正常に消せるか確認してください。</li>
+<li>M01〜M03で合格した描き心地や軽さが悪化していないか確認してください。</li>
+<li>「問題なし / 問題あり」を選択してください。</li>
 </ol><details class="qa-auto"><summary>GPU状態（問題がある場合のみ）</summary>
-<p>黒画面などが出た場合に、描画エンジン内部と表示Canvasの状態を確認します。</p>
+<p>黒画面や消し跡の異常が出た場合に、作品データと表示の状態を確認します。</p>
 <button id="qaDiagInitial" type="button">GPU状態を記録する</button>
 <button id="qaDiagCopy" type="button">診断結果をコピーする</button>
 <pre id="qaGpuReport" style="font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere"></pre>

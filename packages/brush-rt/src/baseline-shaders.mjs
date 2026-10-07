@@ -23,7 +23,7 @@ float cov(vec4 a,vec4 b,vec4 color,vec4 extra,vec4 seg,vec2 xy){
  if(b.w>0.&&v>0.){vec2 g=vec2(dot(xy,params[2].xy),dot(xy,vec2(-params[2].y,params[2].x)))/params[1].w;float t;int k=int(params[3].x);if(k==3)t=img(grainImage,g,true);else if(k==1)t=.15+.85*pow(abs(sin((g.x+g.y)*3.141592653589793)),.7);else{uint hash=(uint(int(floor(g.x))*73856093)^uint(int(floor(g.y))*19349663))*83492791u;t=float(hash)/4294967295.;if(k==0)t=.25+.75*t;}v*=1.-b.w+b.w*t;}
  return sat(v);
 }
-vec4 compose(vec4 d,vec4 s,int mode){if(s.a<=0.)return d;if(mode==3){float a=floor(d.a*(1.-s.a)*255.+.5)/255.;return a==0.?vec4(0):vec4(d.rgb,a);}vec3 sc=s.rgb/s.a,b=sc;if(mode==1)b=sc*d.rgb;else if(mode==2)b=1.-(1.-sc)*(1.-d.rgb);float a=s.a+d.a*(1.-s.a);vec3 c=((1.-s.a)*d.a*d.rgb+(1.-d.a)*s.a*sc+s.a*d.a*b)/max(a,.000001);vec4 q=floor(clamp(vec4(c,a),0.,1.)*255.+.5)/255.;return q.a==0.?vec4(0):q;}
+vec4 compose(vec4 d,vec4 s,int mode){if(s.a<=0.)return d;if(mode==3){float a=floor(d.a*(1.-s.a)*255.+.5)/255.;return vec4(d.rgb,a);}vec3 sc=s.rgb/s.a,b=sc;if(mode==1)b=sc*d.rgb;else if(mode==2)b=1.-(1.-sc)*(1.-d.rgb);float a=s.a+d.a*(1.-s.a);vec3 c=((1.-s.a)*d.a*d.rgb+(1.-d.a)*s.a*sc+s.a*d.a*b)/max(a,.000001);vec4 q=floor(clamp(vec4(c,a),0.,1.)*255.+.5)/255.;return q.a==0.?vec4(0):q;}
 `;
 export const glDeposit=`#version 300 es
 precision highp float;precision highp int;
@@ -83,7 +83,7 @@ fn cov(a:vec4f,b:vec4f,color:vec4f,extra:vec4f,seg:vec4f,xy:vec2f)->f32{
  let cs=extra.x;let sn=extra.w;let local=vec2f(dot(delta,vec2f(cs,sn)),dot(delta,vec2f(-sn,cs)));let kind=i32(p.v[2].z);var v=0.;if((kind==0||(kind==4&&p.v[1].x==1.&&p.v[2].w<0.&&p.v[7].z==0.))&&r.x*r.y<.08){v=max(0.,1.-abs(delta.x))*max(0.,1.-abs(delta.y))*min(1.,3.141592653589793*r.x*r.y*select(1.,.48375,kind==4));}else{v=shape(kind,local,r);}if(p.v[2].w>=0.){v*=shape(i32(p.v[2].w),local,vec2f(r.x,r.x*p.v[1].z));}
  if(b.w>0.&&v>0.){let g=vec2f(dot(xy,p.v[2].xy),dot(xy,vec2f(-p.v[2].y,p.v[2].x)))/p.v[1].w;var t=0.;let k=i32(p.v[3].x);if(k==3){t=img(grainImage,g,true);}else if(k==1){t=.15+.85*pow(abs(sin((g.x+g.y)*3.141592653589793)),.7);}else{let hash=((bitcast<u32>(i32(floor(g.x)))*73856093u) ^ (bitcast<u32>(i32(floor(g.y)))*19349663u))*83492791u;t=f32(hash)/4294967295.;if(k==0){t=.25+.75*t;}}v*=1.-b.w+b.w*t;}return sat(v);
 }
-fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}if(mode==3){let a=floor(d.a*(1.-s.a)*255.+.5)/255.;if(a==0.){return vec4f(0);}return vec4f(d.rgb,a);}let sc=s.rgb/s.a;var b=sc;if(mode==1){b=sc*d.rgb;}else if(mode==2){b=1.-(1.-sc)*(1.-d.rgb);}let a=s.a+d.a*(1.-s.a);let c=((1.-s.a)*d.a*d.rgb+(1.-d.a)*s.a*sc+s.a*d.a*b)/max(a,.000001);let q=floor(clamp(vec4f(c,a),vec4f(0),vec4f(1))*255.+.5)/255.;if(q.a==0.){return vec4f(0);}return q;}
+fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}if(mode==3){let a=floor(d.a*(1.-s.a)*255.+.5)/255.;return vec4f(d.rgb,a);}let sc=s.rgb/s.a;var b=sc;if(mode==1){b=sc*d.rgb;}else if(mode==2){b=1.-(1.-sc)*(1.-d.rgb);}let a=s.a+d.a*(1.-s.a);let c=((1.-s.a)*d.a*d.rgb+(1.-d.a)*s.a*sc+s.a*d.a*b)/max(a,.000001);let q=floor(clamp(vec4f(c,a),vec4f(0),vec4f(1))*255.+.5)/255.;if(q.a==0.){return vec4f(0);}return q;}
 `;
 export const wgDeposit=`
 struct Params{v:array<vec4f,16>};struct Commands{v:array<vec4f>};
@@ -128,7 +128,7 @@ struct Params{v:array<vec4f,16>};
 @group(0)@binding(11)var archiveImage:texture_2d<f32>;
 
 // The shared math references mask/grain even when display only uses composition.
-fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}if(mode==3){let a=floor(d.a*(1.-s.a)*255.+.5)/255.;if(a==0.){return vec4f(0);}return vec4f(d.rgb,a);}let sc=s.rgb/s.a;var b=sc;if(mode==1){b=sc*d.rgb;}else if(mode==2){b=1.-(1.-sc)*(1.-d.rgb);}let a=s.a+d.a*(1.-s.a);let c=((1.-s.a)*d.a*d.rgb+(1.-d.a)*s.a*sc+s.a*d.a*b)/max(a,.000001);let q=floor(clamp(vec4f(c,a),vec4f(0),vec4f(1))*255.+.5)/255.;if(q.a==0.){return vec4f(0);}return q;}
+fn compose(d:vec4f,s:vec4f,mode:i32)->vec4f{if(s.a<=0.){return d;}if(mode==3){let a=floor(d.a*(1.-s.a)*255.+.5)/255.;return vec4f(d.rgb,a);}let sc=s.rgb/s.a;var b=sc;if(mode==1){b=sc*d.rgb;}else if(mode==2){b=1.-(1.-sc)*(1.-d.rgb);}let a=s.a+d.a*(1.-s.a);let c=((1.-s.a)*d.a*d.rgb+(1.-d.a)*s.a*sc+s.a*d.a*b)/max(a,.000001);let q=floor(clamp(vec4f(c,a),vec4f(0),vec4f(1))*255.+.5)/255.;if(q.a==0.){return vec4f(0);}return q;}
 fn preview(i:i32,pos:vec2i)->vec4f{if(i==0){return textureLoad(liveImage0,pos,0);}if(i==1){return textureLoad(liveImage1,pos,0);}if(i==2){return textureLoad(liveImage2,pos,0);}if(i==3){return textureLoad(liveImage3,pos,0);}if(i==4){return textureLoad(liveImage4,pos,0);}if(i==5){return textureLoad(liveImage5,pos,0);}if(i==6){return textureLoad(liveImage6,pos,0);}if(i==7){return textureLoad(liveImage7,pos,0);}return vec4f(0);}
 struct VOut{@builtin(position)position:vec4f,@location(0)doc:vec2f};
 @vertex fn vertex(@builtin(vertex_index)v:u32)->VOut{let corner=vec2f(select(0.,1.,v==1u||v==2u||v==4u),select(0.,1.,v==2u||v==4u||v==5u));var o:VOut;o.doc=p.v[0].xy+corner*128.;let xy=o.doc/p.v[4].xy;o.position=vec4f(xy.x*2.-1.,1.-xy.y*2.,0,1);return o;}
