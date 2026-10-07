@@ -1,8 +1,9 @@
 import type {BlockId,DocumentId,IdFactory,LayerId,OperationKey,RasterSurfaceId,ResourceId,RevisionId,TransactionId,WriterEpochId} from './ids';
 import type {Command,CommitStamp,Revision,RevisionHistoryState,SemanticOperation} from './history';
+import type {PersistenceHandoff} from './recovery';
 import {DocumentRoot,type LayerNode} from './model';
 import {PagedMap} from './pagedMap';
-import {RasterSurfaceManifest,parseTileKey,type DirtyTileHint,type RasterSampleEncoding,type RasterSurfaceDescriptor,type RasterTileValue,type TileKey} from './raster/surface';
+import {RasterSurfaceManifest,parseTileKey,type DirtyTileHint,type RasterSampleEncoding,type RasterSurfaceDescriptor,type RasterTileValue,type RasterMutationRef,type TileKey} from './raster/surface';
 import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
@@ -156,3 +157,98 @@ function textArray(value:unknown,name:string,maxItems:number,maxText:number){if(
 function integer(value:unknown,name:string,min:number){if(typeof value!=='number'||!Number.isSafeInteger(value)||value<min)throw new Error('invalid '+name);return value;}
 function dimension(value:unknown){const n=integer(value,'dimension',1);if(n>MAX_DIMENSION)throw new Error('dimension too large');return n;}
 function tileCoord(value:unknown){const n=integer(value,'tile coordinate',-2147483648);if(n>2147483647)throw new Error('invalid tile coordinate');return n;}
+
+
+export type PersistedPersistenceHandoff=Readonly<{
+  schemaVersion:2;writerEpochId:string;commitSequence:string;transactionId:string;parentRevisionIds:readonly string[];resultRevisionId:string;
+  documentId:string;semanticOperationRefs:readonly Readonly<{transactionId:string;operationOrdinal:number}>[];requiredBlockIds:readonly string[];
+  requiredResourceIds:readonly string[];requiredAlgorithmVersionRefs:readonly string[];
+}>;
+export type RecoveryTileChange=Readonly<
+  {mode:'append-mutation';layerId:string;key:string;mutation:RasterMutationRef}|
+  {mode:'set-block';layerId:string;key:string;blockId:string}
+>;
+export type RecoveryLayerState=Readonly<{id:string;name:string;visible:boolean;opacity:number;locked:boolean;surfaceDescriptor:RasterSurfaceDescriptor}>;
+export type CoreRecoveryPacketV1=Readonly<{
+  schema:'illustro.core.recovery-packet';schemaVersion:1;handoff:PersistedPersistenceHandoff;
+  revision:Readonly<{id:string;parentIds:readonly string[];transactionId:string;command:Command;commitStamp:Readonly<{writerEpochId:string;commitSequence:string}>;committedAt:number}>;
+  modifiedAt:number;layerStates:readonly RecoveryLayerState[];rootLayerIds:readonly string[]|null;tileChanges:readonly RecoveryTileChange[];blocks:readonly PersistedBlockDescriptor[];
+}>;
+
+export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentRoot>,store:CanonicalTileStore,handoff:PersistenceHandoff):CoreRecoveryPacketV1{
+  const revision=history.revisions.find(item=>item.id===handoff.resultRevisionId);if(!revision||!revision.command||!revision.commitStamp)throw new Error('recovery revision missing');
+  if(revision.commitStamp.writerEpochId!==handoff.commitStamp.writerEpochId||revision.commitStamp.commitSequence!==handoff.commitStamp.commitSequence)throw new Error('recovery handoff stamp mismatch');
+  if(revision.parentIds.length!==handoff.parentRevisionIds.length||revision.parentIds.some((id,i)=>id!==handoff.parentRevisionIds[i]))throw new Error('recovery parent mismatch');
+  const layerStates:RecoveryLayerState[]=[],layerStateIds=new Set<string>(),tileChanges:RecoveryTileChange[]=[];let structural=false;
+  for(const operation of revision.command.operations){
+    const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
+    if(operation.kind==='layer.metadata'||operation.kind==='layer.add-raster'){
+      if(!layerStateIds.has(layerId)){layerStateIds.add(layerId);layerStates.push(Object.freeze({id:layer.id,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,surfaceDescriptor:layer.surface.descriptor}));}
+      if(operation.kind==='layer.add-raster')structural=true;
+    }else if(operation.kind==='brush.stroke'){
+      for(const footprint of operation.dirtyFootprint){const key=`${footprint.tileX},${footprint.tileY}`,value=layer.surface.tiles.get(key);if(!value)throw new Error('recovery brush tile missing');
+        const mutation=[...value.mutations].reverse().find(item=>operationKeyText(item.operationKey)===operationKeyText(operation.key));if(!mutation)throw new Error('recovery brush mutation missing');
+        tileChanges.push(Object.freeze({mode:'append-mutation' as const,layerId,key,mutation}));}
+    }else if(operation.kind==='raster.strict-delta'){
+      for(const footprint of operation.dirtyFootprint){const key=`${footprint.tileX},${footprint.tileY}`,value=layer.surface.tiles.get(key);if(!value?.baseBlockId||value.mutations.length)throw new Error('recovery strict block missing');
+        tileChanges.push(Object.freeze({mode:'set-block' as const,layerId,key,blockId:value.baseBlockId}));}
+    }else throw new Error('unsupported recovery operation');
+  }
+  const blocks=Object.freeze(handoff.requiredBlockIds.map(id=>Object.freeze({id,descriptor:store.descriptor(id)})));
+  const persistedHandoff:PersistedPersistenceHandoff=Object.freeze({schemaVersion:2 as const,writerEpochId:handoff.commitStamp.writerEpochId,commitSequence:handoff.commitStamp.commitSequence.toString(),
+    transactionId:handoff.transactionId,parentRevisionIds:Object.freeze([...handoff.parentRevisionIds]),resultRevisionId:handoff.resultRevisionId,documentId:handoff.documentRootRef.documentId,
+    semanticOperationRefs:Object.freeze(handoff.semanticOperationRefs.map(key=>Object.freeze({transactionId:key.transactionId,operationOrdinal:key.operationOrdinal}))),requiredBlockIds:Object.freeze([...handoff.requiredBlockIds]),
+    requiredResourceIds:Object.freeze([...handoff.requiredResourceIds]),requiredAlgorithmVersionRefs:Object.freeze([...handoff.requiredAlgorithmVersionRefs])});
+  return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff:persistedHandoff,
+    revision:Object.freeze({id:revision.id,parentIds:Object.freeze([...revision.parentIds]),transactionId:revision.transactionId!,command:revision.command,
+      commitStamp:Object.freeze({writerEpochId:revision.commitStamp.writerEpochId,commitSequence:revision.commitStamp.commitSequence.toString()}),committedAt:revision.committedAt}),
+    modifiedAt:revision.root.metadata.modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds:structural?Object.freeze([...revision.root.rootLayerIds]):null,tileChanges:Object.freeze(tileChanges),blocks});
+}
+
+export function mergeCoreRecovery(baseValue:unknown,packetValues:readonly unknown[],headRevisionId?:string):CorePersistenceSnapshotV1{
+  const base=record(baseValue,'recovery base') as unknown as CorePersistenceSnapshotV1;if(base.schema!=='illustro.core.snapshot'||base.schemaVersion!==1||!Array.isArray(base.revisions)||!Array.isArray(base.blocks))throw new Error('invalid recovery base');
+  const revisions:PersistedRevision[]=[...base.revisions],revisionMap=new Map<string,PersistedRevision>(revisions.map(item=>[item.id,item])),blocks:PersistedBlockDescriptor[]=[...base.blocks],blockIds=new Set(blocks.map(item=>item.id));
+  let latest=base.snapshotRevisionId,lastSequence=0n,epoch:string|null=null;
+  for(const packetValue of packetValues){
+    const packet=parseRecoveryPacket(packetValue);const seq=BigInt(packet.handoff.commitSequence);if(epoch===null)epoch=packet.handoff.writerEpochId;else if(epoch!==packet.handoff.writerEpochId)throw new Error('mixed recovery writer epochs');
+    if(seq!==lastSequence+1n)throw new Error('recovery packet sequence gap');lastSequence=seq;if(revisionMap.has(packet.revision.id))throw new Error('duplicate recovery revision');
+    const parentId=packet.revision.parentIds[0];if(!parentId)throw new Error('recovery revision parent missing');const parent=revisionMap.get(parentId);if(!parent)throw new Error('recovery parent unavailable');
+    const root=applyRootDelta(parent.root,packet);const revision:Object=Object.freeze({...packet.revision,root});
+    revisions.push(revision as PersistedRevision);revisionMap.set(packet.revision.id,revision as PersistedRevision);
+    for(const block of packet.blocks){if(blockIds.has(block.id))continue;blockIds.add(block.id);blocks.push(block);}
+    latest=packet.revision.id;
+  }
+  const selectedHead=headRevisionId&&revisionMap.has(headRevisionId)?headRevisionId:latest;
+  return Object.freeze({schema:'illustro.core.snapshot' as const,schemaVersion:1 as const,snapshotRevisionId:selectedHead,revisions:Object.freeze(revisions),blocks:Object.freeze(blocks)});
+}
+
+function parseRecoveryPacket(value:unknown):CoreRecoveryPacketV1{
+  const p=record(value,'recovery packet');if(p.schema!=='illustro.core.recovery-packet'||p.schemaVersion!==1)throw new Error('unsupported recovery packet');const h=record(p.handoff,'recovery handoff');
+  if(h.schemaVersion!==2)throw new Error('unsupported recovery handoff');const writerEpochId=uuid(h.writerEpochId,'writer epoch'),commitSequence=text(h.commitSequence,'commit sequence',1,32);if(!/^[1-9][0-9]*$/.test(commitSequence))throw new Error('invalid recovery commit sequence');
+  const transactionId=uuid(h.transactionId,'transaction id'),resultRevisionId=uuid(h.resultRevisionId,'result revision'),documentId=uuid(h.documentId,'document id'),parentRevisionIds=uuidArray(h.parentRevisionIds,'parent revision');
+  if(!Array.isArray(h.requiredBlockIds)||!Array.isArray(h.requiredResourceIds)||!Array.isArray(h.requiredAlgorithmVersionRefs)||!Array.isArray(h.semanticOperationRefs))throw new Error('invalid recovery dependency list');
+  const requiredBlockIds=h.requiredBlockIds.map(x=>uuid(x,'required block')),requiredResourceIds=h.requiredResourceIds.map(x=>uuid(x,'required resource')),requiredAlgorithmVersionRefs=h.requiredAlgorithmVersionRefs.map(x=>text(x,'required algorithm',1,4096));
+  const semanticOperationRefs=h.semanticOperationRefs.map(x=>{const k=parseOperationKey(x);return Object.freeze({transactionId:k.transactionId,operationOrdinal:k.operationOrdinal});});
+  const revision=record(p.revision,'recovery revision');if(uuid(revision.id,'revision id')!==resultRevisionId||revision.transactionId!==transactionId)throw new Error('recovery revision identity mismatch');
+  const revisionParentIds=uuidArray(revision.parentIds,'revision parent');if(revisionParentIds.length!==parentRevisionIds.length||revisionParentIds.some((id,i)=>id!==parentRevisionIds[i]))throw new Error('recovery parent mismatch');
+  const stamp=record(revision.commitStamp,'recovery commit stamp');if(stamp.writerEpochId!==writerEpochId||stamp.commitSequence!==commitSequence)throw new Error('recovery stamp mismatch');
+  const committedAt=integer(revision.committedAt,'committedAt',0),command=revision.command as Command;if(!command||command.version!==2||command.kind!=='core.transaction.v2')throw new Error('invalid recovery command');
+  const modifiedAt=integer(p.modifiedAt,'modifiedAt',0);if(!Array.isArray(p.layerStates)||!Array.isArray(p.tileChanges)||!Array.isArray(p.blocks))throw new Error('invalid recovery delta');
+  const layerStates=p.layerStates.map(x=>{const s=record(x,'recovery layer state'),id=uuid(s.id,'layer id'),name=text(s.name,'layer name',1,4096);if(typeof s.visible!=='boolean'||typeof s.locked!=='boolean'||typeof s.opacity!=='number'||s.opacity<0||s.opacity>1)throw new Error('invalid recovery layer state');return Object.freeze({id,name,visible:s.visible,opacity:s.opacity,locked:s.locked,surfaceDescriptor:parseSurfaceDescriptor(s.surfaceDescriptor)});});
+  const rootLayerIds=p.rootLayerIds===null?null:Object.freeze(uuidArray(p.rootLayerIds,'root layer'));
+  const tileChanges=p.tileChanges.map(x=>{const t=record(x,'recovery tile change'),layerId=uuid(t.layerId,'layer id'),key=text(t.key,'tile key',1,64);parseTileKey(key as TileKey);
+    if(t.mode==='set-block')return Object.freeze({mode:'set-block' as const,layerId,key,blockId:uuid(t.blockId,'block id')});if(t.mode==='append-mutation'){const m=record(t.mutation,'mutation'),mutation:Object=Object.freeze({operationKey:parseOperationKey(m.operationKey),bounds:parseBounds(m.bounds),workUnits:integer(m.workUnits,'workUnits',1),commandIndices:Object.freeze(Array.isArray(m.commandIndices)?m.commandIndices.map(i=>integer(i,'command index',0)):(()=>{throw new Error('invalid command indices')})())});return Object.freeze({mode:'append-mutation' as const,layerId,key,mutation:mutation as RasterMutationRef});}throw new Error('invalid recovery tile change');});
+  const packetBlocks=p.blocks.map(x=>{const b=record(x,'recovery block'),id=uuid(b.id,'block id'),descriptor=parseBlockDescriptor(b.descriptor);return Object.freeze({id,descriptor});});
+  const handoff=Object.freeze({schemaVersion:2 as const,writerEpochId,commitSequence,transactionId,parentRevisionIds:Object.freeze(parentRevisionIds),resultRevisionId,documentId,semanticOperationRefs:Object.freeze(semanticOperationRefs),requiredBlockIds:Object.freeze(requiredBlockIds),requiredResourceIds:Object.freeze(requiredResourceIds),requiredAlgorithmVersionRefs:Object.freeze(requiredAlgorithmVersionRefs)});
+  return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff,revision:Object.freeze({id:resultRevisionId,parentIds:Object.freeze(revisionParentIds),transactionId,command,commitStamp:Object.freeze({writerEpochId,commitSequence}),committedAt}),modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds,tileChanges:Object.freeze(tileChanges),blocks:Object.freeze(packetBlocks)});
+}
+
+function applyRootDelta(parent:PersistedRoot,packet:CoreRecoveryPacketV1):PersistedRoot{
+  const layers=parent.layers.map(layer=>({...layer,surface:{descriptor:layer.surface.descriptor,tiles:[...layer.surface.tiles]}})) as Array<{id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;surface:{descriptor:RasterSurfaceDescriptor;tiles:Array<{key:string;value:RasterTileValue}>}}>;
+  for(const state of packet.layerStates){let layer=layers.find(x=>x.id===state.id);if(!layer){layer={id:state.id,kind:'raster',name:state.name,visible:state.visible,opacity:state.opacity,locked:state.locked,surface:{descriptor:state.surfaceDescriptor,tiles:[]}};layers.push(layer);}
+    else{layer.name=state.name;layer.visible=state.visible;layer.opacity=state.opacity;layer.locked=state.locked;if(layer.surface.descriptor.surfaceId!==state.surfaceDescriptor.surfaceId)throw new Error('recovery surface identity changed');}}
+  for(const change of packet.tileChanges){const layer=layers.find(x=>x.id===change.layerId);if(!layer)throw new Error('recovery tile layer missing');const index=layer.surface.tiles.findIndex(x=>x.key===change.key),previous=index>=0?layer.surface.tiles[index]!.value:Object.freeze({baseBlockId:null,mutations:Object.freeze([])});
+    let value:RasterTileValue;if(change.mode==='set-block')value=Object.freeze({baseBlockId:change.blockId as BlockId,mutations:Object.freeze([])});else value=Object.freeze({baseBlockId:previous.baseBlockId,mutations:Object.freeze([...previous.mutations,change.mutation])});
+    const entry={key:change.key,value};if(index>=0)layer.surface.tiles[index]=entry;else layer.surface.tiles.push(entry);}
+  const rootLayerIds=packet.rootLayerIds??parent.rootLayerIds;return Object.freeze({...parent,modifiedAt:packet.modifiedAt,rootLayerIds:Object.freeze([...rootLayerIds]),layers:Object.freeze(layers.map(layer=>Object.freeze({...layer,surface:Object.freeze({descriptor:layer.surface.descriptor,tiles:Object.freeze(layer.surface.tiles.map(item=>Object.freeze(item)))})})))});
+}
