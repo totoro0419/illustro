@@ -14,7 +14,8 @@
     "workspaceCustomization": "docs/ui/WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md",
     "brushAdoption": "docs/brush-foundation/ADOPTION_BASELINE.md",
     "regionAdoption": "docs/architecture/REGION_ADOPTION.md",
-    "performance": "docs/architecture/FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md"
+    "performance": "docs/architecture/FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md",
+    "roadmap": "docs/IMPLEMENTATION_CHECKLIST.md"
   },
   "entries": [
     {
