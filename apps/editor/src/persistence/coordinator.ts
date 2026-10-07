@@ -35,8 +35,8 @@ export class PersistenceCoordinator{
       storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false});
   }
   noteCommit(document:CoreDocument,handoff:PersistenceHandoff){
-    try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),supportedAlgorithms=supportedAlgorithms(packet);
-      this.queue.push(Object.freeze({packet,blocks:Object.freeze(blocks),supportedAlgorithms}));this.patch({currentRevision:document.head,dirty:this.stateValue.savedRevision!==document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
+    try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),algorithms=runtimeSupportedAlgorithms(packet);
+      this.queue.push(Object.freeze({packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms}));this.patch({currentRevision:document.head,dirty:this.stateValue.savedRevision!==document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
@@ -88,19 +88,19 @@ export class PersistenceCoordinator{
   private async writeExternal(handle:unknown,bytes:Uint8Array,checkConflict:boolean){
     const h=handle as {getFile:()=>Promise<File>;createWritable:()=>Promise<{write:(b:Blob|BufferSource|string)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>}>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
     if(checkConflict&&this.externalFingerprint){const current=await fingerprintHandle(handle);if(current!==this.externalFingerprint&&!confirm('保存先のファイルが外部で変更されています。上書きしますか？\nキャンセルした場合は「別名保存」を使えます。'))throw new Error('外部変更を検出したため上書きを中止しました。');}
-    const writable=await h.createWritable();try{await writable.write(new Blob([bytes],{type:'application/octet-stream'}));await writable.close();}catch(error){try{await writable.abort?.();}catch{}throw error;}
+    const writable=await h.createWritable();try{await writable.write(new Blob([bytes.slice().buffer as ArrayBuffer],{type:'application/octet-stream'}));await writable.close();}catch(error){try{await writable.abort?.();}catch{}throw error;}
     const file=await h.getFile(),written=new Uint8Array(await file.arrayBuffer());if(!(await sameDigest(bytes,written)))throw new Error('保存先の検証に失敗しました。');
   }
   private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared();};private pagehide=()=>{void this.flushPrepared();};private onlineState=()=>this.patch({offline:!navigator.onLine});
 }
 
-function supportedAlgorithms(packet:CoreRecoveryPacketV1){
+function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){
   const supported=new Set<string>();for(const operation of packet.revision.command.operations){if(operation.kind!=='brush.stroke')continue;const record=validateRecord(operation.parameters.strokeRecord);supported.add('engine:'+record.engine);supported.add('reconstruction:'+record.smoothing);supported.add('prng:'+record.random);supported.add('stroke-schema:'+record.version);}
   return Object.freeze([...supported]);
 }
 async function fingerprintHandle(handle:unknown){const file=await (handle as {getFile:()=>Promise<File>}).getFile(),bytes=new Uint8Array(await file.arrayBuffer()),hash=await hashHex(bytes);return file.size+':'+file.lastModified+':'+hash;}
 async function sameDigest(a:Uint8Array,b:Uint8Array){if(a.byteLength!==b.byteLength)return false;return await hashHex(a)===await hashHex(b);}
 async function hashHex(bytes:Uint8Array){const copy=bytes.byteOffset===0&&bytes.byteLength===bytes.buffer.byteLength?bytes:bytes.slice(),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy as Uint8Array<ArrayBuffer>));return [...hash].map(x=>x.toString(16).padStart(2,'0')).join('');}
-function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
+function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes.slice().buffer as ArrayBuffer],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
 function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
 function message(error:unknown){return error instanceof Error?error.message:String(error);}
