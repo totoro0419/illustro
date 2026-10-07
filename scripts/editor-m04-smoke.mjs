@@ -120,11 +120,11 @@ try{
     const mc=mobile.locator('#canvas'),mb=await mc.boundingBox();assert.ok(mb);await mobile.locator('#paint').click();await setSize(mobile,140);await penStroke(mobile,mc,mb,[.12,.45],[.88,.45]);await waitStroke(mobile,1);
     const beforePenErase=await mc.screenshot();await mobile.locator('#erase').click();await setSize(mobile,180);await mobile.locator('#drawer').click();await mobile.locator('#close').click();
     assert.equal(await mobile.locator('#workspace').evaluate(el=>getComputedStyle(el).pointerEvents),'none');
-    const heldPen=await penStroke(mobile,mc,mb,[.35,.45],[.65,.45]);assert.ok(darkCount(heldPen,{x0:.35,y0:.38,x1:.65,y1:.52})<darkCount(beforePenErase,{x0:.35,y0:.38,x1:.65,y1:.52}),'live pen Eraser did not visibly update within 90ms with Workspace closed');
+    const closedBox=await mc.boundingBox();assert.ok(closedBox);const heldPen=await penStroke(mobile,mc,closedBox,[.35,.45],[.65,.45]);assert.ok(darkCount(heldPen,{x0:.35,y0:.38,x1:.65,y1:.52})<darkCount(beforePenErase,{x0:.35,y0:.38,x1:.65,y1:.52}),'live pen Eraser did not visibly update within 90ms with Workspace closed');
     await waitStroke(mobile,2);assert.equal(await mc.getAttribute('data-last-pointer-target'),'canvas');assert.equal(await mc.getAttribute('data-last-pointer-type'),'pen');
-    await mobile.locator('#paint').click();await penStroke(mobile,mc,mb,[.12,.72],[.88,.72]);await waitStroke(mobile,3);const beforeTouchErase=await mc.screenshot();await mobile.locator('#erase').click();
-    const framesBeforeTouch=await mobile.evaluate(()=>document.querySelector('#canvas')?.__illustroPresentationFrames??0);
-    const heldTouch=await touchStroke(mobile,mc,mb,[.35,.72],[.65,.72]);
+    await mobile.locator('#paint').click();const lowerPaintBox=await mc.boundingBox();assert.ok(lowerPaintBox);await penStroke(mobile,mc,lowerPaintBox,[.12,.72],[.88,.72]);await waitStroke(mobile,3);const beforeTouchErase=await mc.screenshot();await mobile.locator('#erase').click();
+    const framesBeforeTouch=await mobile.evaluate(()=>document.querySelector('#canvas')?.__illustroPresentationFrames??0),touchBox=await mc.boundingBox();assert.ok(touchBox);
+    const heldTouch=await touchStroke(mobile,mc,touchBox,[.35,.72],[.65,.72]);
     const touchRect={x0:.35,y0:.65,x1:.65,y1:.79},touchBeforeDark=darkCount(beforeTouchErase,touchRect),touchHeldDark=darkCount(heldTouch,touchRect);
     const touchDebug={beforeDark:touchBeforeDark,heldDark:touchHeldDark,framesBefore:framesBeforeTouch,framesHeld:await mobile.evaluate(()=>document.querySelector('#canvas')?.__illustroPresentationFrames??0),lastPointerTarget:await mc.getAttribute('data-last-pointer-target'),lastPointerType:await mc.getAttribute('data-last-pointer-type'),committedStrokes:await mc.getAttribute('data-committed-strokes'),historyBusy:await mc.getAttribute('data-history-busy')};
     await fs.writeFile(path.join(evidence,`${backend}-touch-debug.json`),JSON.stringify(touchDebug,null,2));await fs.writeFile(path.join(evidence,`${backend}-touch-before.png`),beforeTouchErase);await fs.writeFile(path.join(evidence,`${backend}-touch-held.png`),heldTouch);
