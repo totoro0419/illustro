@@ -1,11 +1,12 @@
-export {CoreDocument,type CoreOptions} from './coreDocument';
+export {CoreDocument,type CoreOptions,type CoreRestoreOptions} from './coreDocument';
 export {DocumentTransaction,type RasterSemanticMutation} from './transaction';
 export type {CommitReceipt} from './commit';
 export {cryptoIdFactory} from './ids';
 export type {BlockId,DocumentId,IdFactory,LayerId,OperationKey,RasterSurfaceId,ResourceId,RevisionId,TransactionId,WriterEpochId} from './ids';
-export {DocumentRoot,type LayerNode} from './model';
-export type {Revision,Command,SemanticOperation,CommitStamp} from './history';
-export type {OwnershipTransfer} from './raster/store';
+export {DocumentRoot,type LayerNode,type DocumentMetadata} from './model';
+export type {Revision,Command,SemanticOperation,CommitStamp,RevisionHistoryState} from './history';
+export type {OwnershipTransfer,RasterBlockDescriptor} from './raster/store';
 export type {PersistenceHandoff} from './recovery';
 export {ProtectionTracker} from './recovery';
+export {CORE_PERSISTENCE_SCHEMA_VERSION,type CorePersistenceSnapshotV1,type PersistedBlockDescriptor} from './persistence';
 export {CANONICAL_TILE_SIZE,createRasterSurfaceDescriptor,pixelToTile,tileKey,type DirtyTileHint,type LocalDirtyRect,type RasterSampleEncoding,type RasterSurfaceDescriptor,type RasterTileValue} from './raster/surface';
