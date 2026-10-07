@@ -7,11 +7,11 @@ type LatencyPoint={x:number;y:number;t:number;size:number;color:[number,number,n
 type DirtyRect={x:number;y:number;w:number;h:number};
 
 export class BrushSurface{
-  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private latencyCanvas:HTMLCanvasElement|null=null;private latencyCtx:CanvasRenderingContext2D|null=null;private latencyAnchor:LatencyPoint|null=null;private latencyActual:LatencyPoint[]=[];private latencyPredicted:LatencyPoint[]=[];private latencyDirty:DirtyRect|null=null;private _latencyPreviewFrames=0;private _latencyPredictionPoints=0;private presentedFrames=0;private lastPresentedAt=0;
+  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private latencyCanvas:HTMLCanvasElement|null=null;private latencyCtx:CanvasRenderingContext2D|null=null;private latencyAnchor:LatencyPoint|null=null;private latencyActual:LatencyPoint[]=[];private latencyPredicted:LatencyPoint[]=[];private latencyDirty:DirtyRect|null=null;private _latencyPreviewFrames=0;private _latencyPredictionPoints=0;private presentedFrames=0;private lastPresentedAt=0;private compactRendering=false;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;
-    const requested=new URLSearchParams(location.search).get('backend'),compact=matchMedia('(max-width:760px)').matches;
+    const requested=new URLSearchParams(location.search).get('backend'),compact=matchMedia('(max-width:760px)').matches;this.compactRendering=compact;const latencyMode=new URLSearchParams(location.search).get('latency');
     const backend:'auto'|'webgl2'|'webgpu'=requested==='webgl2'||requested==='webgpu'?requested:(compact?'webgl2':'auto');
     // Compact/mobile keeps the GPU canvas in the DOM. The previous OffscreenCanvas
     // presentation bridge depended on Android preserving alpha while copying a GPU
@@ -21,8 +21,13 @@ export class BrushSurface{
     this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:!compact});
     if(compact){
       this.renderer.onComplete=metric=>{this.markPresented();this.ackLatency(metric.tip?.t??Infinity);};
-      this.latencyCanvas=document.createElement('canvas');this.latencyCanvas.className='latency-preview';this.latencyCanvas.width=target.width;this.latencyCanvas.height=target.height;this.latencyCanvas.setAttribute('aria-hidden','true');this.canvas.insertAdjacentElement('afterend',this.latencyCanvas);
-      this.latencyCtx=this.latencyCanvas.getContext('2d',{alpha:true,desynchronized:true});
+      if(latencyMode!=='off'){
+        this.latencyCanvas=document.createElement('canvas');this.latencyCanvas.className='latency-preview';this.latencyCanvas.width=target.width;this.latencyCanvas.height=target.height;this.latencyCanvas.setAttribute('aria-hidden','true');this.canvas.insertAdjacentElement('afterend',this.latencyCanvas);
+        // Chromium 450752884 reports opaque-black rendering from translucent
+        // desynchronized 2D canvases. The overlay must follow the DOM compositor.
+        // ?latency=legacy is a diagnostic-only A/B reproducer; not the default.
+        this.latencyCtx=this.latencyCanvas.getContext('2d',{alpha:true,desynchronized:latencyMode==='legacy'});
+      }
     }
     this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);
     const options={signal:this.abort.signal};this.canvas.addEventListener('pointerdown',this.down,options);this.canvas.addEventListener('pointermove',this.move,options);this.canvas.addEventListener('pointerup',this.up,options);this.canvas.addEventListener('pointercancel',this.cancel,options);this.canvas.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
@@ -38,6 +43,58 @@ export class BrushSurface{
   private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();try{await this.session?.cancel();this.resetLatency();}catch{this.status('描画を取り消せませんでした。');}finally{this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number;__illustroLatencyPreviewFrames?:number;__illustroLatencyPredictionPoints?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;diagnostic.__illustroLatencyPreviewFrames=this._latencyPreviewFrames;diagnostic.__illustroLatencyPredictionPoints=this._latencyPredictionPoints;}
+  toggleLatencyPreview(){
+    if(!this.latencyCanvas)return false;
+    this.latencyCanvas.style.visibility=this.latencyVisible?'hidden':'visible';
+    return this.latencyVisible;
+  }
+  async inspectRendering(){
+    const backend=(this.renderer as unknown as {backend?:{
+      readViewport?:()=>Uint8ClampedArray|Promise<Uint8ClampedArray>;
+      gl?:WebGL2RenderingContext;
+    }}|null)?.backend;
+    const summarize=(data:Uint8ClampedArray|Uint8Array,width:number,height:number)=>{
+      let sampled=0,transparent=0,opaque=0,blackOpaque=0,whiteOpaque=0,painted=0,sumAlpha=0;
+      for(let i=0;i<data.length;i+=4*16){
+        const r=data[i]??0,g=data[i+1]??0,b=data[i+2]??0,a=data[i+3]??0;
+        sampled++;sumAlpha+=a;
+        if(a<8)transparent++;
+        if(a>247)opaque++;
+        if(a>247&&r<20&&g<20&&b<20)blackOpaque++;
+        if(a>247&&r>235&&g>235&&b>235)whiteOpaque++;
+        if(a>24&&r<170&&g<170&&b<170)painted++;
+      }
+      const pixel=(x:number,y:number)=>{const i=(y*width+x)*4;return Array.from(data.slice(i,i+4));};
+      return {width,height,sampled,transparent,opaque,blackOpaque,whiteOpaque,painted,meanAlpha:Math.round(sumAlpha/Math.max(1,sampled)),
+        corner:pixel(0,0),center:pixel(Math.floor(width/2),Math.floor(height/2))};
+    };
+    const diagnostics:Record<string,unknown>={
+      time:new Date().toISOString(),backend:this.backend,rendererInfo:this.renderer?.info,
+      rendererErrors:[...(this.renderer?.errors??[])].slice(-8),sessionErrors:[...(this.session?.errors??[])].slice(-8),
+      committedStrokes:this.controller.committedStrokeCount,rawAccepted:this.session?.rawAccepted??0,
+      completeFrames:this.presentedFrames,latestGpuMetrics:this.renderer?.completions.slice(-2),
+      fingerDrawing:this.fingerDrawing,previewPresent:!!this.latencyCanvas,previewVisible:this.latencyVisible,
+      previewContext:this.latencyCtx?.getContextAttributes?.()??null,
+      canvasCss:{background:getComputedStyle(this.canvas).backgroundColor,opacity:getComputedStyle(this.canvas).opacity},
+      previewCss:this.latencyCanvas?{background:getComputedStyle(this.latencyCanvas).backgroundColor,
+        opacity:getComputedStyle(this.latencyCanvas).opacity,visibility:getComputedStyle(this.latencyCanvas).visibility}:null
+    };
+    if(backend?.gl){diagnostics.webglContext=backend.gl.getContextAttributes();diagnostics.webglLost=backend.gl.isContextLost();diagnostics.webglError=backend.gl.getError();}
+    try{if(backend?.readViewport){const p=await backend.readViewport();diagnostics.gpuArtwork=summarize(p,this.canvas.width,this.canvas.height);}}
+    catch(e){diagnostics.gpuArtworkError=String(e);}
+    try{
+      const bitmap=await createImageBitmap(this.canvas);
+      const tmp=document.createElement('canvas');tmp.width=this.canvas.width;tmp.height=this.canvas.height;
+      const ctx=tmp.getContext('2d',{willReadFrequently:true});
+      if(ctx){ctx.drawImage(bitmap,0,0);diagnostics.gpuVisibleCanvas=summarize(ctx.getImageData(0,0,tmp.width,tmp.height).data,tmp.width,tmp.height);}
+      bitmap.close();
+    }catch(e){diagnostics.gpuVisibleCanvasError=String(e);}
+    try{if(this.latencyCtx&&this.latencyCanvas)diagnostics.previewPixels=summarize(
+      this.latencyCtx.getImageData(0,0,this.latencyCanvas.width,this.latencyCanvas.height).data,
+      this.latencyCanvas.width,this.latencyCanvas.height);
+    }catch(e){diagnostics.previewPixelsError=String(e);}
+    return diagnostics;
+  }
   private previewPoint(sample:Sample,predicted=false):LatencyPoint|null{if(!this.latencyCtx||!this.session||!this.preset||this.preset.blend!=='normal')return null;const state=this.session.cursor(this.preset,sample),color=state.color.map(v=>Math.max(0,Math.min(1,v))) as [number,number,number];return{x:sample.x,y:sample.y,t:sample.t,size:Math.max(.25,state.size),color,opacity:Math.max(0,Math.min(1,state.opacity)),predicted};}
   private clampPredicted(last:Sample,predicted:Sample[]){if(!predicted.length)return[];const r=this.canvas.getBoundingClientRect(),target=this.target??this.controller.target(),maxLead=Math.max(1,target.width/Math.max(1,r.width)*3),out:Sample[]=[];let anchor=last;for(const p of predicted){let x=p.x,y=p.y;const dx=x-anchor.x,dy=y-anchor.y,d=Math.hypot(dx,dy);if(d>maxLead){const k=maxLead/d;x=anchor.x+dx*k;y=anchor.y+dy*k;}out.push({...p,x,y});anchor={...p,x,y};}return out;}
   private appendLatency(actual:Sample[],predicted:Sample[]){if(!this.latencyCtx||!this.preset||this.preset.blend!=='normal')return;for(const s of actual){const p=this.previewPoint(s,false);if(p)this.latencyActual.push(p);}if(this.latencyActual.length>24)this.latencyActual.splice(0,this.latencyActual.length-24);this.latencyPredicted=predicted.map(s=>this.previewPoint(s,true)).filter((p):p is LatencyPoint=>!!p);this._latencyPredictionPoints+=this.latencyPredicted.length;this.drawLatency();}
@@ -60,6 +117,6 @@ export class BrushSurface{
     return [...keys];
   }
   select(index:number){const p=this.brushes[index];if(p)this.preset=structuredClone(p);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
-  get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get presentationMode(){return this.latencyCanvas?'direct-gpu-compact':'direct-gpu';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get latencyPreviewEnabled(){return !!this.latencyCtx;}get latencyPreviewFrames(){return this._latencyPreviewFrames;}get latencyPredictionPoints(){return this._latencyPredictionPoints;}get brushName(){return this.preset?.name??'未選択';}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
+  get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get presentationMode(){return this.compactRendering?'direct-gpu-compact':'direct-gpu';}get latencyVisible(){return !!this.latencyCanvas&&this.latencyCanvas.style.visibility!=='hidden';}get latencyContextDesynchronized(){return this.latencyCtx?.getContextAttributes?.().desynchronized??null;}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get latencyPreviewEnabled(){return !!this.latencyCtx;}get latencyPreviewFrames(){return this._latencyPreviewFrames;}get latencyPredictionPoints(){return this._latencyPredictionPoints;}get brushName(){return this.preset?.name??'未選択';}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
   destroy(){this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onComplete=null;this.session?.destroy();this.resetLatency();this.latencyCanvas?.remove();this.latencyCanvas=null;this.latencyCtx=null;}
 }
