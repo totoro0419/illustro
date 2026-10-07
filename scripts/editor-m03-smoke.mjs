@@ -175,7 +175,7 @@ try{
     assert.equal(desktopState.presentationAlpha,false,'desktop visible Canvas still depends on alpha compositing');
     assert.equal(await desktop.locator('.latency-preview').count(),0,'desktop production route created a secondary canvas');
     assert.ok(lightRatio(await desktop.locator('#canvas').screenshot())>.92,'desktop production canvas starts black');
-    report.productionBackendPolicy={desktop:desktopState.backend,compact:state?.backend??'checked-separately',capabilityBased:true,usableWebGpuNeverBypassed:true};
+    report.productionBackendPolicy={desktop:desktopState.backend,compact:'auto-capability',capabilityBased:true,usableWebGpuNeverBypassed:true};
     await desktop.close();
   }
   // Capability fallback: navigator.gpu exists, but no adapter can be acquired.
@@ -201,6 +201,22 @@ try{
     assert.ok(lightRatio(await fallback.locator('#canvas').screenshot())>.92,'fallback WebGL2 canvas is not usable');
     report.webGpuFallbackProbe={status:'PASS',apiVisible:true,adapterUnavailable:true,selected:'webgl2',reasonRecorded:true};
     await fallback.close();
+  }
+
+  // Explicit WebGPU is diagnostic/strict: failure must be surfaced, never hidden by fallback.
+  {
+    const forced=await browser.newPage({viewport:{width:900,height:700}});
+    await forced.addInitScript(()=>{Object.defineProperty(navigator,'gpu',{configurable:true,value:{requestAdapter:async()=>null}});});
+    const url=(publicBase?base+'?m03-public-check=1&build='+encodeURIComponent(expectedCommit)+'&':base+'?qa=1&')+'backend=webgpu';
+    await forced.goto(url,{waitUntil:'networkidle',timeout:45000});
+    await forced.locator('#qaPanel').evaluate(el=>el.open=true);
+    await forced.getByRole('button',{name:'新規キャンバス',exact:true}).click();
+    await forced.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('WebGPU unavailable at request-adapter'),{timeout:10000});
+    assert.equal(await forced.locator('#brush').isDisabled(),true,'forced unusable WebGPU silently fell back instead of failing');
+    const forcedText=await forced.locator('#status').textContent();
+    assert.match(forcedText??'',/request-adapter/);
+    report.webGpuForcedFailure={status:'PASS',fallbackForbidden:true,stageVisible:'request-adapter'};
+    await forced.close();
   }
 
   // Historical regression: even an old latency query must not be able to
