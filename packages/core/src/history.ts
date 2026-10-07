@@ -11,13 +11,25 @@ export type SemanticOperation=Readonly<{
 export type SemanticOperationDraft=Omit<SemanticOperation,'key'>;
 export type Command=Readonly<{version:2;kind:'core.transaction.v2';label:string;operations:readonly SemanticOperation[]}>;
 export type Revision<T>=Readonly<{id:RevisionId;parentIds:readonly RevisionId[];transactionId:TransactionId|null;root:T;command:Command|null;commitStamp:CommitStamp|null;committedAt:number}>;
+export type RevisionHistoryState<T>=Readonly<{revisions:readonly Revision<T>[];head:RevisionId;redoIds:readonly RevisionId[]}>;
 
 export class RevisionHistory<T>{
   private readonly revisions=new Map<RevisionId,Revision<T>>();private headValue:RevisionId;private readonly redoIds:RevisionId[]=[];
-  constructor(root:T,private readonly ids:IdFactory,at=0){const id=ids.revision();this.headValue=id;this.revisions.set(id,Object.freeze({id,parentIds:Object.freeze([]),transactionId:null,root,command:null,commitStamp:null,committedAt:at}));}
+  constructor(root:T,private readonly ids:IdFactory,at=0,hydrate?:RevisionHistoryState<T>){
+    if(hydrate){
+      if(!hydrate.revisions.length)throw new Error('history is empty');
+      for(const revision of hydrate.revisions){if(this.revisions.has(revision.id))throw new Error('duplicate revision id');this.revisions.set(revision.id,freezeRevision(revision));}
+      if(!this.revisions.has(hydrate.head))throw new Error('history head missing');this.headValue=hydrate.head;
+      for(const id of hydrate.redoIds){if(!this.revisions.has(id))throw new Error('redo revision missing');this.redoIds.push(id);}
+      validateGraph(this.revisions);return;
+    }
+    const id=ids.revision();this.headValue=id;this.revisions.set(id,Object.freeze({id,parentIds:Object.freeze([]),transactionId:null,root,command:null,commitStamp:null,committedAt:at}));
+  }
+  static hydrate<T>(state:RevisionHistoryState<T>,ids:IdFactory){const seed=state.revisions[0];if(!seed)throw new Error('history is empty');return new RevisionHistory(seed.root,ids,0,state);}
   get head(){return this.headValue;}get current(){const r=this.revisions.get(this.headValue);if(!r)throw new Error('missing revision');return r;}get count(){return this.revisions.size;}
   get canUndo(){return this.current.parentIds[0]!==undefined;}get canRedo(){return this.redoIds.length>0;}
   has(id:RevisionId){return this.revisions.has(id);}get(id:RevisionId){const r=this.revisions.get(id);if(!r)throw new Error('missing revision');return r;}
+  snapshot():RevisionHistoryState<T>{return Object.freeze({revisions:Object.freeze([...this.revisions.values()]),head:this.headValue,redoIds:Object.freeze([...this.redoIds])});}
   assertHead(id:RevisionId){if(id!==this.headValue)throw new Error('stale transaction');}
   publish(base:RevisionId,tx:TransactionId,root:T,command:Command,at:number,commitStamp:CommitStamp){this.assertHead(base);const id=this.ids.revision();
     const operations=Object.freeze(command.operations.map(x=>Object.freeze(x)));const cmd=Object.freeze({...command,operations});
@@ -32,4 +44,11 @@ export function finalizeOperation(transactionId:TransactionId,operationOrdinal:n
     parameters:Object.freeze({...draft.parameters}),algorithmVersionRefs:Object.freeze([...draft.algorithmVersionRefs]),resourceRefs:Object.freeze([...draft.resourceRefs]),
     sourceRevisionIds:Object.freeze([...draft.sourceRevisionIds]),selectionSnapshotRefs:Object.freeze([...draft.selectionSnapshotRefs]),
     resultValueRefs:Object.freeze([...draft.resultValueRefs]),dirtyFootprint:Object.freeze(draft.dirtyFootprint.map(x=>Object.freeze({...x,bounds:Object.freeze({...x.bounds})})))});
+}
+function freezeRevision<T>(revision:Revision<T>):Revision<T>{return Object.freeze({...revision,parentIds:Object.freeze([...revision.parentIds]),command:revision.command?Object.freeze({...revision.command,operations:Object.freeze([...revision.command.operations])}):null,commitStamp:revision.commitStamp?Object.freeze({...revision.commitStamp}):null});}
+function validateGraph<T>(revisions:ReadonlyMap<RevisionId,Revision<T>>){
+  for(const revision of revisions.values())for(const parent of revision.parentIds){if(parent===revision.id)throw new Error('revision self-parent');if(!revisions.has(parent))throw new Error('revision parent missing');}
+  const visiting=new Set<RevisionId>(),done=new Set<RevisionId>();
+  const visit=(id:RevisionId)=>{if(done.has(id))return;if(visiting.has(id))throw new Error('revision cycle');visiting.add(id);const revision=revisions.get(id);if(!revision)throw new Error('revision missing');for(const parent of revision.parentIds)visit(parent);visiting.delete(id);done.add(id);};
+  for(const id of revisions.keys())visit(id);
 }
