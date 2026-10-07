@@ -29,8 +29,8 @@
     },
     {
       "path": "packages/brush-rt/src/index.d.ts",
-      "sourceCommit": "99196c823748f2a3a32608230df6f86bdd43e218",
-      "sha256": "f4b7132040c7c8875c3aa106b253b5f008979ab742aebf2aa2579a8b376d034a"
+      "sourceCommit": "3956ec0d03b136f45c9f91658016120086610dc5",
+      "sha256": "151391fc45f8f919f3e1d8bcda978f26f36f3fe90a81e2b1af4aeb5b391aa1bd"
     },
     {
       "path": "packages/brush-rt/src/index.mjs",
@@ -44,13 +44,13 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "9f9fd53e4d27d362b796554f2c37caa841f513bb",
-      "sha256": "5bdaa98a05f0435c3e220ceac1adecd58d7d08d0a0719f906590034bdf58b361"
+      "sourceCommit": "1efe9f5e1d1c883e640cca867cdf63bf30542068",
+      "sha256": "bbf5fdf66044c5bc8274bbd9c100f7289d393365fe725b2cf57c6169b3a10aa4"
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
-      "sourceCommit": "ce1f1e9760ce6daac514b02547f45d89b03b466d",
-      "sha256": "f05db979fd56b97e812728f274ecf6806011ece8402499c74a1cbe7e3dcd3a82"
+      "sourceCommit": "9e83ea37cff1671b264b3e1e988061fff964480a",
+      "sha256": "d82e3f998c861735ce16ea5bc148cc7af17c3c6a4d6fffe1316411095d19c46f"
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
@@ -313,5 +313,5 @@
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
     }
   ],
-  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Artwork alpha remains preserved in internal renderer targets and read/export results. Visible presentation must not depend on browser compositing of a transparent GPU canvas over CSS paper: the final GPU presentation pass composites the transparent artwork over the current paper background and writes an opaque frame. WebGL2 and WebGPU share this rule. No secondary full-size presentation/latency Canvas or OffscreenCanvas bridge is allowed. Browser predicted events feed the existing GPU preview path. Backend selection must not depend on viewport size. Production uses capability-based auto selection: WebGPU is selected only after adapter acquisition, device creation, renderer pipeline initialization, canvas configuration, and initial presentation all succeed; otherwise the failure stage/reason is recorded and the renderer falls back to WebGL2. A fully initialized WebGPU path must never be bypassed merely because of device class or viewport. Explicit backend QA remains available and explicit WebGPU failure must not silently fall back. Workspace open/close must never change Renderer settings, Canvas ownership, or Document state. M03 History is Document-owned. Recent Stroke Undo/Redo may use a strictly bounded 16 MiB GPU hot tile cache for one-frame-class response. Cache memory never grows beyond the fixed budget; evicted/oversized history falls back to rebuilding only affected 128px runtime tiles from active formal StrokeRecords. Fallback rebuild presentation is atomic: the old completed canvas remains visible until the rebuilt dirty tiles are complete, then the result is presented once. Full-canvas readback, visible stroke-by-stroke replay, unbounded GPU history, and rebuilding unrelated tiles are forbidden."
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Artwork alpha remains preserved in internal renderer targets and read/export results. Visible presentation must not depend on browser compositing of a transparent GPU canvas over CSS paper: the final GPU presentation pass composites the transparent artwork over the current paper background and writes an opaque frame. WebGL2 and WebGPU share this rule. No secondary full-size presentation/latency Canvas or OffscreenCanvas bridge is allowed. Browser predicted events feed the existing GPU preview path. Live preview scheduling is latest-state/coalesced: WebGL2 and WebGPU may submit the newest Foundation preview immediately after an input batch instead of waiting for the next RAF, and coalesced pointer samples preserve every canonical input while publishing only one GPU preview notification for the batch. Backend selection must not depend on viewport size. Production uses capability-based auto selection: WebGPU is selected only after adapter acquisition, device creation, renderer pipeline initialization, canvas configuration, and initial presentation all succeed; otherwise the failure stage/reason is recorded and the renderer falls back to WebGL2. A fully initialized WebGPU path must never be bypassed merely because of device class or viewport. Explicit backend QA remains available and explicit WebGPU failure must not silently fall back. Workspace open/close must never change Renderer settings, Canvas ownership, or Document state. M03 History is Document-owned. Recent Stroke Undo/Redo may use a strictly bounded 16 MiB GPU hot tile cache for one-frame-class response. Cache memory never grows beyond the fixed budget; evicted/oversized history falls back to rebuilding only affected 128px runtime tiles from active formal StrokeRecords. Fallback rebuild presentation is atomic: the old completed canvas remains visible until the rebuilt dirty tiles are complete, then the result is presented once. Full-canvas readback, visible stroke-by-stroke replay, unbounded GPU history, and rebuilding unrelated tiles are forbidden."
 }
