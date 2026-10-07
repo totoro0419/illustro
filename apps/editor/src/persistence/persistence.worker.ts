@@ -23,7 +23,7 @@ async function handle(message:RequestMessage){
       if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid recovery base snapshot');
       const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};
       await writeBlocks(store,path,blocks);await putVerified(store,path+'/base.frame',await frameJson(snapshot));
-      const now=Date.now(),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId:null};
+      const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId};
       await putVerified(store,path+'/meta.frame',await frameJson(meta));
       const storage=await storageInfo();reply(message.id,true,{backend:store.mode,protectedThrough:'0',storage});break;
     }
@@ -69,6 +69,12 @@ async function handle(message:RequestMessage){
       await putVerified(store,candidatePath,bytes);const previous=await store.get(lastPath);if(previous){await decodeIllustroFile(previous,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});await putVerified(store,previousPath,previous);}
       await putVerified(store,lastPath,bytes);const verified=await store.get(lastPath);if(!verified)throw new Error('Last Good activation missing');await decodeIllustroFile(verified,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
       await store.remove(candidatePath);await touchMeta(store,session,String(message.savedRevisionId??''));reply(message.id,true,{lastGood:true,previousGood:Boolean(previous),backend:store.mode});break;
+    }
+    case 'load-last-good':{
+      const session=requireSession(message),last=await store.get(session.path+'/saves/last.illustro'),previous=await store.get(session.path+'/saves/previous.illustro');let chosen:Uint8Array|null=null,source:'last'|'previous'|null=null;
+      if(last)try{await decodeIllustroFile(last,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});chosen=last;source='last';}catch{}
+      if(!chosen&&previous)try{await decodeIllustroFile(previous,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});chosen=previous;source='previous';}catch{}
+      if(!chosen)throw new Error('正常に保存できた作品がありません。');reply(message.id,true,{bytes:chosen,source},undefined,[chosen.buffer as ArrayBuffer]);break;
     }
     case 'decode-portable':{
       const bytes=uint8(message.bytes,'portable bytes'),decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
