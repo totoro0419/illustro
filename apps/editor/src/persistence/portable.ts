@@ -29,7 +29,7 @@ export async function createPortableDocument(input:Readonly<{
   sections.push(Object.freeze({id:EDITOR_SECTION,type:EDITOR_TYPE,required:false,bytes:textEncoder.encode(JSON.stringify({version:1,selectedLayerId:selected}))}));
   for(const section of input.preserved?.optionalSections??[]){if(section.required)throw new Error('cannot preserve unknown required section');if(sections.some(x=>x.id===section.id))continue;sections.push(Object.freeze({...section,bytes:section.bytes.slice(),required:false}));}
   const generationId=input.generationId??crypto.randomUUID(),createdAt=input.createdAt??Date.now(),root=input.document.revision(revisionId).root;
-  const bytes=await encodeIllustroFile({generationId,documentId:root.documentId,snapshotRevisionId:revisionId,createdAt,sections,manifestExtras:input.preserved?.manifestExtras});
+  const manifestExtras=input.preserved?.manifestExtras;const bytes=await encodeIllustroFile({generationId,documentId:root.documentId,snapshotRevisionId:revisionId,createdAt,sections,...(manifestExtras?{manifestExtras}:{})});
   return Object.freeze({bytes,generationId,revisionId,snapshot,createdAt});
 }
 
