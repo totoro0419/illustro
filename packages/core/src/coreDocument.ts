@@ -1,5 +1,5 @@
 import {cryptoIdFactory,type IdFactory,type LayerId,type RevisionId,type WriterEpochId} from './ids';
-import {RevisionHistory} from './history';
+import {RevisionHistory,type Command} from './history';
 import {DocumentRoot,rasterLayer} from './model';
 import {PagedMap} from './pagedMap';
 import {blockPayloadsForSnapshot,captureCoreSnapshot,parseCoreSnapshot,restoreBlocks,type CorePersistenceSnapshotV1} from './persistence';
@@ -34,7 +34,7 @@ export class CoreDocument{
   capturePersistenceSnapshot(revisionId:RevisionId=this.head):CorePersistenceSnapshotV1{return captureCoreSnapshot(this.historyValue.snapshot(),this.storeValue,revisionId);}
   persistenceBlockPayloads(snapshot:CorePersistenceSnapshotV1){return blockPayloadsForSnapshot(snapshot,this.storeValue);}
   operationsTo(revisionId:RevisionId=this.head){
-    const commands:NonNullable<typeof current.command>[]=[],visiting=new Set<RevisionId>();let current=this.historyValue.get(revisionId);
+    const commands:Command[]=[],visiting=new Set<RevisionId>();let current=this.historyValue.get(revisionId);
     while(current.parentIds[0]){if(visiting.has(current.id))throw new Error('revision cycle');visiting.add(current.id);if(current.command)commands.push(current.command);current=this.historyValue.get(current.parentIds[0]);}
     commands.reverse();return Object.freeze(commands.flatMap(command=>command.operations));
   }
