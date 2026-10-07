@@ -20,7 +20,7 @@
 - 現在のEditorは一筆の正式Document/Layer確定、M02のRaster Layer追加・現在Layer選択・選択Layerへの次ストローク確定、M03の正式Document HistoryによるUndo/Redoまで接続済み。Save/Recovery/Reload/Exportは未接続。
 - M01は✅合格・固定。実機合格、固定QA、PR #13統合、統合後Core CI / Production PreparationまでPASS済み。現在の統合基準commitは `f58de8c4a0650c6fdd32c4b17a40a2021cd79145`。
 - M01〜M03は✅合格・固定。M01の正式Stroke、M02のLayer追加・選択、M03のDocument History Undo / Redoまでproduction integrationへ統合済み。
-- 現在の実装対象はM04「Eraser正式統合」。M04作業branchは `milestone/M04-eraser-integration`。2026-10-07時点ではproduction integrationとの差分0で、まだ製品実装差分はない。
+- M01〜M04は✅合格・固定。M04「Eraser正式統合」は専用branch `milestone/M04-eraser-integration` / PR #16で自動検査・固定QA公開・実機確認まで完了。M05以降は未着手。
 - M05以降の正式ロードマップは下表のM05〜M47。旧M05〜M40の番号・順序は廃止し、この表を今後の進行基準とする。
 
 ## マイルストーン開始前ゲート
@@ -65,7 +65,7 @@
 | M01 | 一筆を選択Layerへ正式確定 | ✅ | `cb95bd2` | `c4fa55d` | `milestone/M01-stroke-commit` / PR #13 merged | PASS（Core / adapter / Brush 93 tests / WebGL2 / WebGPU / 公開QA / 統合後回帰） | PASS（2026-10-05 修正版を実機合格） | https://totoro0419.github.io/illustro/qa/m01/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。固定QAを回帰基準として保持 |
 | M02 | Layer追加・選択 | ✅ | `15bc917` | `e7bf30b` | `milestone/M02-layer-add-select` / PR #14 merged | PASS（run `37384158243`: Core / production-prep / M01 adapter / M02統合 / Brush 93 tests / Editor build / production smoke / WebGL2・WebGPU local+public / 390×844・DPR2 / CSS背景黒でも白紙表示 / 実touch保持中も全体黒化なし / Android UA auto=WebGPUでもPASS / console errorなし / M01 QA保持 / 統合後Core CI・Production Preparation） | PASS（2026-10-06 実機でM02完了確認） | https://totoro0419.github.io/illustro/qa/m02/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。M02固定QAを回帰基準として保持 |
 | M03 | Undo / Redo | ✅ | `1d1eb23` | `5af86f4` | `milestone/M03-undo-redo` / PR #15 merged | PASS（run `37629222977`: source lock / M01-M03 Editor unit / Brush 93 / Editor build / production regression / WebGL2・WebGPU local+public / Stroke・Layer Undo/Redo / LayerId・SurfaceId保持 / Redo破棄 / Keyboard / active stroke競合 / pointercancel / rapid History / Compact / Workspace閉鎖後Pen・Touch live描画 / M01・M02固定QA保持 / exact HEAD公開 / 統合後Core CI・Production Preparation） | PASS（2026-10-07 実機でM03完了確認） | https://totoro0419.github.io/illustro/qa/m03/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。M03固定QAを回帰基準として保持 |
-| M04 | Eraser正式統合 | ⬜ | `166ffae` | — | `milestone/M04-eraser-integration` / PR未作成 | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m04/ | 実装前に必須 | 現在の実装対象。M01〜M03固定成果を壊さず正式Document/History経路へ統合 |
+| M04 | Eraser正式統合 | ✅ | `166ffae` | `c4dc2a47` | `milestone/M04-eraser-integration` / PR #16 | PASS（run `37642310811` attempt 3: source lock / Core / M01-M04 Editor / Brush 93/93 / production regression / WebGL2・WebGPU local+public / Layer分離 / alpha erase / hidden RGB / Hard・Soft / Undo・Redo hot cache / Redo破棄 / pointercancel / 大サイズ / Compact Workspace閉鎖Pen・Touch / M01-M03固定QA保持） | PASS（2026-10-08 実機でM04完了確認） | https://totoro0419.github.io/illustro/qa/m04/ | ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity | なし。M04固定QAを回帰基準として保持 |
 | M05 | Save基盤 — .illustro、Autosave、Reload、Recovery、Offline、Document Metadata | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m05/ | 実装前に必須 | — |
 | M06 | 基本Export — PNG / JPEG / WebP、保存・書き出しUI | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m06/ | 実装前に必須 | — |
 | M07 | 本番PC/Tablet UI骨格 — Left UI、Right UI、Layer Page入口、上部・下部固定UI、Aurora基礎 | ⬜ | — | — | — | 未実施 | 必須 | https://totoro0419.github.io/illustro/qa/m07/ | 実装前に必須 | 仮UIを最終仕様にしない |

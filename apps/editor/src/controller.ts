@@ -9,7 +9,7 @@ export type EditorHistoryChange=Readonly<{
 }>;
 
 export class EditorController{
-  readonly document:CoreDocument;readonly ports:EditorPorts;committedStrokeCount=0;lastCommit:StrokeCommitResult|null=null;
+  readonly document:CoreDocument;readonly ports:EditorPorts;committedStrokeCount=0;committedEraserStrokeCount=0;lastCommit:StrokeCommitResult|null=null;
   private selectedLayerIdValue:LayerId;private readonly committedByLayer=new Map<LayerId,number>();
   constructor(width=512,height=384,ports:EditorPorts={}){
     this.document=new CoreDocument({width,height,name:'新しい作品'});this.selectedLayerIdValue=this.document.defaultRasterLayerId;
@@ -25,7 +25,7 @@ export class EditorController{
   target():DrawingTarget{const port=this.ports.document;if(!port)throw new Error('Document connection unavailable');return port.target();}
   async finishStroke(target:DrawingTarget,record:StrokeRecord){
     const port=this.ports.document;if(!port)throw new Error('Document connection unavailable');const result=await port.commitStroke(target,record);
-    this.committedStrokeCount++;this.committedByLayer.set(target.layerId,this.strokeCountForLayer(target.layerId)+1);this.lastCommit=result;return result;
+    this.committedStrokeCount++;if(record.preset.blend==='erase')this.committedEraserStrokeCount++;this.committedByLayer.set(target.layerId,this.strokeCountForLayer(target.layerId)+1);this.lastCommit=result;return result;
   }
   undo():EditorHistoryChange{
     const from=this.document.currentRevision,oldRoot=this.document.root,operations=from.command?.operations??[];
@@ -46,6 +46,6 @@ export class EditorController{
   private adjustStrokeCounters(direction:'undo'|'redo',operations:readonly SemanticOperation[]){
     const delta=direction==='undo'?-1:1;
     for(const operation of operations){if(operation.kind!=='brush.stroke')continue;const layerId=operation.targetEntityIds[0];if(layerId===undefined)continue;
-      this.committedStrokeCount=Math.max(0,this.committedStrokeCount+delta);this.committedByLayer.set(layerId,Math.max(0,this.strokeCountForLayer(layerId)+delta));}
+      this.committedStrokeCount=Math.max(0,this.committedStrokeCount+delta);if(operation.parameters.action==='erase')this.committedEraserStrokeCount=Math.max(0,this.committedEraserStrokeCount+delta);this.committedByLayer.set(layerId,Math.max(0,this.strokeCountForLayer(layerId)+delta));}
   }
 }

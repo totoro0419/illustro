@@ -44,10 +44,10 @@ try{
     assert.ok(painted>before+50,'stroke did not produce visible pixels');
     await page.locator('#sizeNumber').fill('512');assert.equal(await page.locator('#size').inputValue(),'512');
     await page.locator('#force').check();assert.equal(await page.locator('#force').isChecked(),true);
-    await page.locator('#brush').selectOption('4');await page.getByRole('button',{name:'消しゴム',exact:true}).click();
+    await page.locator('#brush').selectOption('foundation-pencil');await page.getByRole('button',{name:'消しゴム',exact:true}).click();
     assert.equal(await page.locator('#erase').getAttribute('aria-pressed'),'true');
-    assert.equal(await page.locator('#brush').inputValue(),'5','brush picker contradicts active eraser');
-    await page.locator('#paint').click();assert.equal(await page.locator('#brush').inputValue(),'4');
+    assert.equal(await page.locator('#brush').inputValue(),'foundation-hard-eraser','brush picker contradicts active eraser');
+    await page.locator('#paint').click();assert.equal(await page.locator('#brush').inputValue(),'foundation-pencil');
     await page.locator('#splitter').focus();await page.keyboard.press('ArrowLeft');
     assert.equal(await page.locator('#splitter').getAttribute('aria-valuenow'),'354');
     await page.screenshot({path:path.join(evidence,backend+'-desktop.png')});

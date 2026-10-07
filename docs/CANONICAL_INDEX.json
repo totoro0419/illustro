@@ -19,56 +19,40 @@
   },
   "entries": [
     {
-      "path": "docs/CREATION_PROXIMITY_PRINCIPLES.md",
+      "path": "apps/editor/index.html",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/package.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/brushSurface.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/controller.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/main.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ports.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/style.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/tsconfig.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/architecture/ADR_TEMPLATE.md",
       "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/DESIGN_COMPLETION_GATE.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/FEATURE_CATALOG.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/FEATURE_DELIVERY_GATE.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/FEATURE_SPEC.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/FEATURE_SYSTEM_INTEGRATION_2026-10-04.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/FUTURE.md",
-      "status": "FUTURE"
-    },
-    {
-      "path": "docs/IMPLEMENTATION_BASELINE.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/LEGACY_REFERENCE_POLICY.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/PRODUCT_SPEC.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/REDESIGN_PRINCIPLES.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/STATUS.md",
-      "status": "CANONICAL"
     },
     {
       "path": "docs/architecture/ADR-0001-document-layer-model.md",
@@ -104,10 +88,6 @@
     },
     {
       "path": "docs/architecture/ADR-0010-device-capability-adaptation.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/architecture/ADR_TEMPLATE.md",
       "status": "OBSOLETE"
     },
     {
@@ -187,39 +167,383 @@
       "status": "OBSOLETE"
     },
     {
+      "path": "docs/brush-foundation/ADOPTION_BASELINE.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/brush-foundation/ARCHITECTURE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/COMPLETION_CONTRACT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/continuation-seven-brush-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/foundation-blend-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/foundation-blend-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/g-pen-tap-before-after.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/history-viewport-after.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/history-viewport-before.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/history-viewport-cadence-restored.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-baseline-repeated-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-candidate-repeated-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-contract-25ac91e-webgl2.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-contract-25ac91e-webgpu.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-initial-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-paired-webgl2-65e1937-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-paired-webgl2-cadence-restored-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-paired-webgl2-latest.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-paired-webgpu-legacy-7ecdf9b-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-source-26a5f86-webgpu-full-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-source-65e1937-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-source-65e1937-visual-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-source-7ecdf9b-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-tap-default-webgl2.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-tap-default-webgpu.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-webgpu-font-interruption.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/node-contract-25ac91e.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/node-tap-default.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/paired-brush-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/preset-io-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37095147652-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37101405455-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37101405455-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37103851111-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37103851111-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-attempt1-webgpu-interrupted-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-attempt2-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37111369583-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37111369583-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37111369583-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37111369583-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37117836111-full-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37117836111-full-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37117836111-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37117836111-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37119396194-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37119396194-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37121144408-brush-rt-evidence-webgl2-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37121144408-brush-rt-evidence-webgpu-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37121144408-foundation-quick-evidence-webgl2-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37121144408-foundation-quick-evidence-webgpu-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37128925258-brush-rt-evidence-webgl2-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37128925258-brush-rt-evidence-webgpu-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37128925258-foundation-quick-evidence-webgl2-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37128925258-foundation-quick-evidence-webgpu-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37131153403-webgl2-full-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37131153403-webgl2-targeted-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37131153403-webgpu-full-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37131153403-webgpu-targeted-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/ui-contract-25ac91e.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/FAILURE_ANALYSIS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/HANDOFF_STATE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/HUMAN_CHECKS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/package_handoff.py",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/reference-brushes.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/REQUIREMENT_COVERAGE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/VALIDATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/ARCHITECTURE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/BENCHMARK.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/COMPETITOR_COMPARISON.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/node-tests.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37040087180-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37043019906-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37045562556-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37049012748-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37083561667-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37084846924-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37085312706-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37089526671-webgl2-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37089526671-webgpu-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37090457149-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/EXPERIENCE_CONTRACT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/FAILURE_ANALYSIS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/VALIDATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/brush/AUDIT.md",
       "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/brush/COMPETITORS.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/LATENCY.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/PRESETS.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/README.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/SPEC.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/THICK_LATENCY.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/VALIDATION.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/WORK_CHECKPOINT.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -435,376 +759,64 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/brush-foundation/ADOPTION_BASELINE.md",
+      "path": "docs/brush/LATENCY.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/PRESETS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/THICK_LATENCY.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/VALIDATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/WORK_CHECKPOINT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/CANONICAL_INDEX.json",
       "status": "CANONICAL"
     },
     {
-      "path": "docs/brush-foundation/ARCHITECTURE.md",
-      "status": "EXPERIMENTAL"
+      "path": "docs/CANONICAL_INDEX.md",
+      "status": "CANONICAL"
     },
     {
-      "path": "docs/brush-foundation/COMPLETION_CONTRACT.md",
-      "status": "EXPERIMENTAL"
+      "path": "docs/CREATION_PROXIMITY_PRINCIPLES.md",
+      "status": "OBSOLETE"
     },
     {
-      "path": "docs/brush-foundation/FAILURE_ANALYSIS.md",
-      "status": "EXPERIMENTAL"
+      "path": "docs/DESIGN_COMPLETION_GATE.md",
+      "status": "OBSOLETE"
     },
     {
-      "path": "docs/brush-foundation/HANDOFF_STATE.md",
-      "status": "EXPERIMENTAL"
+      "path": "docs/FEATURE_CATALOG.md",
+      "status": "CANONICAL"
     },
     {
-      "path": "docs/brush-foundation/HUMAN_CHECKS.md",
-      "status": "EXPERIMENTAL"
+      "path": "docs/FEATURE_DELIVERY_GATE.md",
+      "status": "CANONICAL"
     },
     {
-      "path": "docs/brush-foundation/README.md",
-      "status": "EXPERIMENTAL"
+      "path": "docs/FEATURE_SPEC.md",
+      "status": "CANONICAL"
     },
     {
-      "path": "docs/brush-foundation/REQUIREMENT_COVERAGE.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/RESEARCH.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/SPEC.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/VALIDATION.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/README.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/continuation-seven-brush-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/foundation-blend-check.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/foundation-blend-results.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/g-pen-tap-before-after.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/history-viewport-after.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/history-viewport-before.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/history-viewport-cadence-restored.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-baseline-repeated-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-candidate-repeated-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-contract-25ac91e-webgl2.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-contract-25ac91e-webgpu.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-initial-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-paired-webgl2-65e1937-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-paired-webgl2-cadence-restored-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-paired-webgl2-latest.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-paired-webgpu-legacy-7ecdf9b-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-source-26a5f86-webgpu-full-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-source-65e1937-quick-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-source-65e1937-visual-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-source-7ecdf9b-quick-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-tap-default-webgl2.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-tap-default-webgpu.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/local-webgpu-font-interruption.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/node-contract-25ac91e.txt",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/node-tap-default.txt",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/paired-brush-check.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/preset-io-check.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37095147652-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37101405455-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37101405455-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37103851111-quick-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37103851111-quick-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37107164670-attempt1-webgpu-interrupted-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37107164670-attempt2-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37107164670-quick-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37107164670-quick-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37107164670-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37111369583-quick-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37111369583-quick-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37111369583-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37111369583-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37117836111-full-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37117836111-full-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37117836111-quick-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37117836111-quick-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37119396194-quick-webgl2-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37119396194-quick-webgpu-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37121144408-brush-rt-evidence-webgl2-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37121144408-brush-rt-evidence-webgpu-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37121144408-foundation-quick-evidence-webgl2-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37121144408-foundation-quick-evidence-webgpu-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37128925258-brush-rt-evidence-webgl2-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37128925258-brush-rt-evidence-webgpu-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37128925258-foundation-quick-evidence-webgl2-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37128925258-foundation-quick-evidence-webgpu-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37131153403-webgl2-full-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37131153403-webgl2-targeted-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37131153403-webgpu-full-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/run-37131153403-webgpu-targeted-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/ui-contract-25ac91e.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/package_handoff.py",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/reference-brushes.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/ARCHITECTURE.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/BENCHMARK.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/COMPETITOR_COMPARISON.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/EXPERIENCE_CONTRACT.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/FAILURE_ANALYSIS.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/README.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/RESEARCH.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/VALIDATION.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/node-tests.txt",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37040087180-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37043019906-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37045562556-summary.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37049012748-results.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37083561667-results.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37084846924-results.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37085312706-results.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37089526671-webgl2-results.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37089526671-webgpu-results.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/evidence/run-37090457149-results.json",
-      "status": "EXPERIMENTAL"
+      "path": "docs/FEATURE_SYSTEM_INTEGRATION_2026-10-04.md",
+      "status": "CANONICAL"
     },
     {
       "path": "docs/features/brush-eraser.md",
@@ -859,6 +871,18 @@
       "status": "OBSOLETE"
     },
     {
+      "path": "docs/FUTURE.md",
+      "status": "FUTURE"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_BASELINE.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_CHECKLIST.md",
+      "status": "CANONICAL"
+    },
+    {
       "path": "docs/implementation/CORE_SLICE_001_FINAL_DISPOSITION.md",
       "status": "CANONICAL"
     },
@@ -869,6 +893,26 @@
     {
       "path": "docs/implementation/CORE_VERTICAL_SLICE_001.md",
       "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/implementation/M01_STROKE_COMMIT_DESIGN.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M01_STROKE_COMMIT_VERIFICATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M02_LAYER_ADD_SELECT_DESIGN.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M03_UNDO_REDO_DESIGN.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M04_ERASER_INTEGRATION.md",
+      "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/interaction/INTERACTION_GAP_AUDIT_2026-09-27.md",
@@ -899,6 +943,30 @@
       "status": "OBSOLETE"
     },
     {
+      "path": "docs/LEGACY_REFERENCE_POLICY.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/PRODUCT_SPEC.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/production-prep/brush-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/canonical-paths.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/editor-smoke.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/github-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/production-prep/PR_DISPOSITION.md",
       "status": "EXPERIMENTAL"
     },
@@ -907,15 +975,19 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/production-prep/VERIFICATION.md",
+      "path": "docs/production-prep/region-extension-verification.json",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/production-prep/canonical-paths.json",
+      "path": "docs/production-prep/region-feedback-verification.json",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/production-prep/github-audit.json",
+      "path": "docs/production-prep/region-raster-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-structure-verification.json",
       "status": "EXPERIMENTAL"
     },
     {
@@ -923,7 +995,15 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "docs/production-prep/VERIFICATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/prototypes/P0_ARCHITECTURE_PROTOTYPE.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/REDESIGN_PRINCIPLES.md",
       "status": "OBSOLETE"
     },
     {
@@ -933,6 +1013,30 @@
     {
       "path": "docs/research/COMPETITOR_PASS2.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M01_STROKE_COMMIT_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M02_LAYER_ADD_SELECT_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M03_UNDO_REDO_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M04_ERASER_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/STATUS.md",
+      "status": "CANONICAL"
     },
     {
       "path": "docs/ui/COMPACT_IMPLEMENTATION_BASELINE.md",
@@ -995,15 +1099,15 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/ui/UI_GATE_E.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "docs/ui/UI_GATE_E_VISUAL_BRIEF.md",
       "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/ui/UI_GATE_E_VISUAL_REVIEW_2026-09-29.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_GATE_E.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1023,12 +1127,12 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/ui/UI_INPUT_CONTROL_STANDARD.md",
-      "status": "CANONICAL"
-    },
-    {
       "path": "docs/ui/UI_INPUT_CONTROL_STANDARD_VERIFICATION.json",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_CONTROL_STANDARD.md",
+      "status": "CANONICAL"
     },
     {
       "path": "docs/ui/UI_INPUT_CONTROL_VERIFICATION.json",
@@ -1067,46 +1171,6 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "apps/editor/index.html",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/package.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/brushSurface.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/controller.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/main.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/ports.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/style.css",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/tsconfig.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "experiments/raster-region-lab-v01/DESIGN.md",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "experiments/raster-region-lab-v01/README.md",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
       "path": "experiments/raster-region-lab-v01/browser-extension-verification.json",
       "status": "ACCEPTED PROTOTYPE"
     },
@@ -1120,6 +1184,10 @@
     },
     {
       "path": "experiments/raster-region-lab-v01/build-html.py",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/DESIGN.md",
       "status": "ACCEPTED PROTOTYPE"
     },
     {
@@ -1147,6 +1215,10 @@
       "status": "ACCEPTED PROTOTYPE"
     },
     {
+      "path": "experiments/raster-region-lab-v01/README.md",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
       "path": "experiments/raster-region-lab-v01/structure-verification.json",
       "status": "ACCEPTED PROTOTYPE"
     },
@@ -1168,6 +1240,62 @@
     },
     {
       "path": "experiments/raster-region-lab-v01/test-structure.cjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/package.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/baseline-shaders.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/canonical.worker.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/foundation.d.ts",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/foundation.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/index.d.ts",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/index.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/model.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/renderer.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/session.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/shaders.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/test/foundation-contract.test.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/test/foundation.test.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/test/model.test.mjs",
       "status": "ACCEPTED PROTOTYPE"
     },
     {
@@ -1249,62 +1377,6 @@
     {
       "path": "packages/brush/tsconfig.json",
       "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "packages/brush-rt/package.json",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/baseline-shaders.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/canonical.worker.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/foundation.d.ts",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/foundation.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/index.d.ts",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/index.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/model.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/renderer.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/session.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/src/shaders.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/test/foundation-contract.test.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/test/foundation.test.mjs",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "packages/brush-rt/test/model.test.mjs",
-      "status": "ACCEPTED PROTOTYPE"
     },
     {
       "path": "packages/core/package.json",
@@ -1411,6 +1483,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
       "path": "prototypes/brush-rt/foundation-check.mjs",
       "status": "EXPERIMENTAL"
     },
@@ -1431,10 +1507,6 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "prototypes/p0-architecture/PROTOTYPE.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "prototypes/p0-architecture/index.html",
       "status": "EXPERIMENTAL"
     },
@@ -1444,6 +1516,10 @@
     },
     {
       "path": "prototypes/p0-architecture/playwright.config.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/PROTOTYPE.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1588,74 +1664,6 @@
     },
     {
       "path": "prototypes/p0-architecture/vitest.config.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "docs/CANONICAL_INDEX.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/CANONICAL_INDEX.json",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/production-prep/editor-smoke.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/region-extension-verification.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/region-feedback-verification.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/region-raster-verification.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/region-structure-verification.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/brush-verification.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/M01_STROKE_COMMIT_COMPETITOR_RESEARCH.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/implementation/M01_STROKE_COMMIT_DESIGN.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/IMPLEMENTATION_CHECKLIST.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/implementation/M01_STROKE_COMMIT_VERIFICATION.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/M02_LAYER_ADD_SELECT_COMPETITOR_RESEARCH.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/implementation/M02_LAYER_ADD_SELECT_DESIGN.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/M03_UNDO_REDO_COMPETITOR_RESEARCH.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/implementation/M03_UNDO_REDO_DESIGN.md",
       "status": "EXPERIMENTAL"
     }
   ]
