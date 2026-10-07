@@ -198,6 +198,7 @@ try{
     assert.equal(fallbackState.backendSelection.webgpu.usable,false);
     assert.equal(fallbackState.backendSelection.webgpu.stage,'request-adapter');
     assert.match(fallbackState.backendSelection.webgpu.error,/requestAdapter returned null/);
+    await fallback.locator('#qaPanel').evaluate(el=>el.open=false);
     assert.ok(lightRatio(await fallback.locator('#canvas').screenshot())>.92,'fallback WebGL2 canvas is not usable');
     report.webGpuFallbackProbe={status:'PASS',apiVisible:true,adapterUnavailable:true,selected:'webgl2',reasonRecorded:true};
     await fallback.close();
