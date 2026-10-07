@@ -21,12 +21,13 @@ export class BrushSurface{
     this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:!compact});
     if(compact){
       this.renderer.onComplete=metric=>{this.markPresented();this.ackLatency(metric.tip?.t??Infinity);};
-      if(latencyMode!=='off'){
+      // Real-device Android A/B verification proved that the M03 full-size
+      // translucent latency overlay is what turns the composed canvas black.
+      // Production compact rendering therefore never creates that overlay.
+      // Keep only an explicit legacy reproducer for diagnostics/regression work.
+      if(latencyMode==='legacy'){
         this.latencyCanvas=document.createElement('canvas');this.latencyCanvas.className='latency-preview';this.latencyCanvas.width=target.width;this.latencyCanvas.height=target.height;this.latencyCanvas.setAttribute('aria-hidden','true');this.canvas.insertAdjacentElement('afterend',this.latencyCanvas);
-        // Chromium 450752884 reports opaque-black rendering from translucent
-        // desynchronized 2D canvases. The overlay must follow the DOM compositor.
-        // ?latency=legacy is a diagnostic-only A/B reproducer; not the default.
-        this.latencyCtx=this.latencyCanvas.getContext('2d',{alpha:true,desynchronized:latencyMode==='legacy'});
+        this.latencyCtx=this.latencyCanvas.getContext('2d',{alpha:true,desynchronized:true});
       }
     }
     this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);
