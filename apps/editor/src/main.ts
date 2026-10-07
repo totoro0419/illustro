@@ -64,7 +64,7 @@ const updateQa=()=>{
   if(!qaMode)return;
   const data={milestone:'M03',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
     layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:controller.canUndo,canRedo:controller.canRedo,
-    undoCount,redoCount,blockedHistoryGhostClicks,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,latencyPreviewEnabled:surface?.latencyPreviewEnabled??false,latencyPreviewVisible:surface?.latencyVisible??false,latencyContextDesynchronized:surface?.latencyContextDesynchronized??null,latencyPreviewFrames:surface?.latencyPreviewFrames??0,latencyPredictionPoints:surface?.latencyPredictionPoints??0,
+    undoCount,redoCount,blockedHistoryGhostClicks,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,browserPredictionSamples:surface?.browserPredictionSamples??0,
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
     activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:workspace.classList.contains('open'),workspaceDisplay:getComputedStyle(workspace).display,
     visualViewport:window.visualViewport?{width:Math.round(window.visualViewport.width),height:Math.round(window.visualViewport.height),offsetTop:Math.round(window.visualViewport.offsetTop),offsetLeft:Math.round(window.visualViewport.offsetLeft),scale:window.visualViewport.scale}:null,
@@ -127,24 +127,15 @@ byId<HTMLSelectElement>('brush').onchange=e=>selectBrush(Number((e.target as HTM
 byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectBrush(eraseIndex);byId('paint').onclick=()=>selectBrush(paintIndex);
 
 if(qaMode){
-  const findings:{step:string;log:unknown}[]=[];
   const out=byId<HTMLPreElement>('qaGpuReport');
   byId<HTMLButtonElement>('qaDiagInitial').onclick=async()=>{
-    out.textContent='画面とGPUの状態を確認しています…';
-    try{const log=await surface?.inspectRendering();findings.push({step:'先端表示あり',log});out.textContent=JSON.stringify(findings,null,2);}
+    out.textContent='GPUの状態を確認しています…';
+    try{out.textContent=JSON.stringify(await surface?.inspectRendering(),null,2);}
     catch(e){out.textContent='診断失敗: '+String(e);}
-  };
-  byId<HTMLButtonElement>('qaDiagHide').onclick=async()=>{
-    surface?.toggleLatencyPreview();
-    out.textContent='先端表示を隠した状態を確認しています…';
-    try{const log=await surface?.inspectRendering();findings.push({step:'先端表示を切替え後',log});out.textContent=JSON.stringify(findings,null,2);}
-    catch(e){out.textContent='診断失敗: '+String(e);}
-    updateQa();
   };
   byId<HTMLButtonElement>('qaDiagCopy').onclick=async()=>{
-    const result={commits:(import.meta.env.VITE_COMMIT_SHA??'unknown'),
-      whatHappened:byId<HTMLSelectElement>('qaDiagVisual').value,
-      steps:findings,qa:JSON.parse(byId('qaAuto').textContent||'{}')};
+    const result={commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),
+      gpu:await surface?.inspectRendering(),qa:JSON.parse(byId('qaAuto').textContent||'{}')};
     const txt=JSON.stringify(result,null,2);out.textContent=txt;
     try{await navigator.clipboard.writeText(txt);byId('qaDiagCopy').textContent='診断結果をコピーしました';}
     catch{byId('qaDiagCopy').textContent='下の結果を長押ししてコピーしてください';}
@@ -170,15 +161,9 @@ function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary
 <li>レイヤーや線が突然別の場所へ移らないか確認してください。</li>
 <li>M01/M02で合格した描き心地が悪化していないか確認してください。</li>
 <li>問題なし / 問題ありを選択してください。</li>
-</ol><details class="qa-auto" open><summary>黒画面の原因を調べる（スマホ用）</summary>
-<p>「指で描く」をONにして1本描いたあと、①→②を順に押してください。</p>
-<button id="qaDiagInitial" type="button">① 今の画面とGPUを記録する</button>
-<button id="qaDiagHide" type="button">② 先端表示を隠して再調査する</button>
-<label>②を押したら画面は？<select id="qaDiagVisual">
-<option value="unseen">まだ確認していない</option>
-<option value="white">黒から白に戻った</option>
-<option value="black">黒いままだった</option>
-<option value="other">それ以外</option></select></label>
-<button id="qaDiagCopy" type="button">③ 診断結果をコピーする</button>
+</ol><details class="qa-auto"><summary>GPU状態（問題がある場合のみ）</summary>
+<p>黒画面などが出た場合に、描画エンジン内部と表示Canvasの状態を確認します。</p>
+<button id="qaDiagInitial" type="button">GPU状態を記録する</button>
+<button id="qaDiagCopy" type="button">診断結果をコピーする</button>
 <pre id="qaGpuReport" style="font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
 </details><label>結果<select id="qaState"><option value="unchecked">未確認</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3" placeholder="短く書いてください"></textarea></label><button id="qaCopy" type="button">結果をコピー</button><details class="qa-auto"><summary>自動記録</summary><pre id="qaAuto"></pre></details></details>`;}
