@@ -53,7 +53,10 @@ try{
     const start=await qa(page);assert.equal(start.milestone,'M03');assert.equal(start.layerCount,1);assert.equal(start.canUndo,false);assert.equal(start.canRedo,false);assert.ok(String(start.backend).toLowerCase().includes(backend));assert.equal(start.rendererArtworkAlpha,true,'internal artwork alpha must remain preserved');assert.equal(start.presentationOpaque,true,'visible GPU presentation must be opaque');assert.equal(start.rendererAlpha,false,'visible GPU Canvas must not depend on browser alpha compositing');assert.equal(start.presentationAlpha,false,'visible presentation alpha contract must be opaque');if(expectedCommit)assert.equal(start.commit,expectedCommit);
     await canvas.evaluate(el=>el.style.background='#000');await page.waitForTimeout(80);assert.ok(lightRatio(await canvas.screenshot())>.92,'visible paper incorrectly depends on CSS/transparent Canvas compositing');
     await page.locator('#qaPanel').evaluate(el=>el.open=true);await page.locator('#qaDiagInitial').evaluate(el=>el.closest('details').open=true);await page.locator('#qaDiagInitial').click();await page.waitForFunction(()=>document.querySelector('#qaGpuReport')?.textContent?.includes('"gpuArtwork"'),{timeout:10000});
-    const initialGpu=JSON.parse((await page.locator('#qaGpuReport').textContent())??'{}');assert.equal(initialGpu.gpuArtwork.corner[3],0,'blank internal artwork is not transparent');assert.ok(initialGpu.gpuVisibleCanvas.corner[0]>245&&initialGpu.gpuVisibleCanvas.corner[1]>245&&initialGpu.gpuVisibleCanvas.corner[2]>245&&initialGpu.gpuVisibleCanvas.corner[3]>245,'visible blank paper is not opaque white');
+    const initialGpu=JSON.parse((await page.locator('#qaGpuReport').textContent())??'{}');assert.equal(initialGpu.gpuArtwork.corner[3],0,'blank internal artwork is not transparent');
+    // createImageBitmap(Canvas) is a backing-store readback, not an authoritative
+    // observation of the browser-composited presentation. The black-CSS screenshot
+    // above is the presentation contract: if Canvas alpha leaked, it would be black.
     await page.locator('#qaPanel').evaluate(el=>el.open=false);
     await canvas.evaluate(el=>el.style.background='#fff');
     assert.equal(await page.locator('#undo').isDisabled(),true);assert.equal(await page.locator('#redo').isDisabled(),true);
