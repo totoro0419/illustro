@@ -9,6 +9,7 @@
 1. `IMPLEMENTATION_BASELINE.md`
 2. この `CANONICAL_INDEX.md`
 3. 下表で対象分野の「唯一の入口」として指定されたCANONICAL文書
+4. 実装順・現在地点を判断する場合は `IMPLEMENTATION_CHECKLIST.md` のM01〜M47
 
 現行コード、QAページ、skeleton、試作、過去PRは、CANONICAL設計を上書きしない。特にUIは仮UIを最終仕様とせず、Left UI / Right UI / Layer Page / Input Control / Workspace Customization / Compact UIの該当正本を確認して実装する。
 
@@ -26,6 +27,7 @@
 |---|---|
 | product | [PRODUCT_SPEC.md](PRODUCT_SPEC.md) |
 | implementation | [IMPLEMENTATION_BASELINE.md](IMPLEMENTATION_BASELINE.md) |
+| roadmap | [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md) |
 | features | [FEATURE_SPEC.md](FEATURE_SPEC.md) |
 | families | [FEATURE_SYSTEM_INTEGRATION_2026-10-04.md](FEATURE_SYSTEM_INTEGRATION_2026-10-04.md) |
 | architecture | [ARCHITECTURE_V2.md](architecture/ARCHITECTURE_V2.md) |
