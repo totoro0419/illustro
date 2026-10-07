@@ -34,9 +34,9 @@ export class CoreDocument{
   capturePersistenceSnapshot(revisionId:RevisionId=this.head):CorePersistenceSnapshotV1{return captureCoreSnapshot(this.historyValue.snapshot(),this.storeValue,revisionId);}
   persistenceBlockPayloads(snapshot:CorePersistenceSnapshotV1){return blockPayloadsForSnapshot(snapshot,this.storeValue);}
   operationsTo(revisionId:RevisionId=this.head){
-    const out=[],visiting=new Set<RevisionId>();let current=this.historyValue.get(revisionId);
-    while(current.parentIds[0]){if(visiting.has(current.id))throw new Error('revision cycle');visiting.add(current.id);if(current.command)out.push(...current.command.operations);current=this.historyValue.get(current.parentIds[0]);}
-    return Object.freeze(out.reverse());
+    const commands:NonNullable<typeof current.command>[]=[],visiting=new Set<RevisionId>();let current=this.historyValue.get(revisionId);
+    while(current.parentIds[0]){if(visiting.has(current.id))throw new Error('revision cycle');visiting.add(current.id);if(current.command)commands.push(current.command);current=this.historyValue.get(current.parentIds[0]);}
+    commands.reverse();return Object.freeze(commands.flatMap(command=>command.operations));
   }
   getTileValue(layerId:LayerId,tileX:number,tileY:number){return this.root.getLayer(layerId).surface.getValue(tileX,tileY);}
   readPixel(layerId:LayerId,x:number,y:number){if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y))throw new Error('invalid pixel coordinate');const l=this.root.getLayer(layerId);
