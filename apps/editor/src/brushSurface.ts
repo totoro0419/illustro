@@ -10,11 +10,12 @@ export class BrushSurface{
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;
     const requested=new URLSearchParams(location.search).get('backend');
-    const backend:'auto'|'webgl2'|'webgpu'=requested==='webgl2'||requested==='webgpu'?requested:'auto';
-    // One rendering architecture for every device: the authoritative DOM GPU canvas.
-    // Backend selection is capability-based (WebGPU first, WebGL2 fallback), never
-    // viewport/device based. Browser predictions are fed into the engine's GPU preview.
-    this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend);
+    // One rendering architecture for every device: one authoritative DOM GPU canvas.
+    // Production uses the real-device-certified WebGL2 presentation path. WebGPU stays
+    // available only when explicitly requested for QA until its transparent direct
+    // presentation is certified across affected Android devices.
+    const backend:'webgl2'|'webgpu'=requested==='webgpu'?'webgpu':'webgl2';
+    this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:false});
     this.renderer.onComplete=()=>this.markPresented();
     this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);
     const options={signal:this.abort.signal};this.canvas.addEventListener('pointerdown',this.down,options);this.canvas.addEventListener('pointermove',this.move,options);this.canvas.addEventListener('pointerup',this.up,options);this.canvas.addEventListener('pointercancel',this.cancel,options);this.canvas.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
