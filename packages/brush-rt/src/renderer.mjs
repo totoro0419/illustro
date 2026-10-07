@@ -81,8 +81,28 @@ export class TileDocument {
 }
 export class GpuRenderer {
  static async create(canvas,width,height,backend='auto',options={}){
-  if(backend!=='webgl2'&&navigator.gpu){try{const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});if(adapter){const device=await adapter.requestDevice();const r=new WebGpuBackend(canvas,width,height,device,adapter);await r.initialize();return new GpuRenderer(r,width,height);}}catch(e){if(backend==='webgpu')throw e;}}
-  if(backend==='webgpu')throw Error('WebGPU adapter unavailable');return new GpuRenderer(new WebGlBackend(canvas,width,height,options.webglDesynchronized??true),width,height);
+  const requested=backend,selection={requested,selected:null,fallbackUsed:false,webgpu:{apiAvailable:!!navigator.gpu,attempted:false,usable:false,stage:'not-attempted',error:null}};
+  if(backend!=='webgl2'){
+   if(!navigator.gpu){
+    selection.webgpu.stage='api-unavailable';selection.webgpu.error='navigator.gpu unavailable';
+    if(backend==='webgpu')throw Error('WebGPU unavailable at api stage: navigator.gpu unavailable');
+   }else{
+    selection.webgpu.attempted=true;let stage='request-adapter';
+    try{
+     selection.webgpu.stage=stage;const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+     if(!adapter)throw Error('requestAdapter returned null');
+     stage='request-device';selection.webgpu.stage=stage;const device=await adapter.requestDevice();
+     stage='initialize-renderer';selection.webgpu.stage=stage;const r=new WebGpuBackend(canvas,width,height,device,adapter);await r.initialize();
+     stage='ready';selection.webgpu.stage=stage;selection.webgpu.usable=true;selection.selected='webgpu';r.info.selection=selection;return new GpuRenderer(r,width,height);
+    }catch(e){
+     const message=e instanceof Error?e.message:String(e);selection.webgpu.stage=stage;selection.webgpu.error=message;
+     if(backend==='webgpu')throw Error('WebGPU unavailable at '+stage+': '+message,{cause:e});
+    }
+   }
+  }
+  selection.fallbackUsed=backend==='auto';selection.selected='webgl2';
+  try{const r=new WebGlBackend(canvas,width,height,options.webglDesynchronized??true);r.info.selection=selection;return new GpuRenderer(r,width,height);}
+  catch(e){const message=e instanceof Error?e.message:String(e);throw Error((selection.fallbackUsed?'WebGPU unavailable ('+selection.webgpu.stage+': '+selection.webgpu.error+'); ':'')+'WebGL2 initialization failed: '+message,{cause:e});}
  }
  constructor(backend,width,height){this.backend=backend;this.document=new TileDocument(width,height);this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;this.needsFrame=true;}
  setLive(s){this.previewStates.set(s.id,s);this.mailbox.set(s);this.requestPreview();}
