@@ -1,0 +1,34 @@
+name: M05 Save Foundation
+
+on:
+  push:
+    branches: ['milestone/M05-save-foundation']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: m05-save-foundation
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source lock and Core
+        run: |
+          npm run prep:check
+          npm run core:check
+      - name: M01-M05 editor unit tests
+        run: npx vitest run apps/editor/src/strokeCommit.test.ts apps/editor/src/layerSelection.test.ts apps/editor/src/historyController.test.ts apps/editor/src/eraserIntegration.test.ts apps/editor/src/persistence/format.test.ts
+      - name: Editor typecheck
+        run: npm --workspace @illustro/editor exec -- tsc --noEmit
