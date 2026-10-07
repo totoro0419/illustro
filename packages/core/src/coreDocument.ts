@@ -2,10 +2,11 @@ import {cryptoIdFactory,type IdFactory,type LayerId,type RevisionId,type WriterE
 import {RevisionHistory,type Command} from './history';
 import {DocumentRoot,rasterLayer} from './model';
 import {PagedMap} from './pagedMap';
-import {blockPayloadsForSnapshot,captureCoreSnapshot,parseCoreSnapshot,restoreBlocks,type CorePersistenceSnapshotV1} from './persistence';
+import {blockPayloadsForSnapshot,captureCoreRecoveryPacket,captureCoreSnapshot,parseCoreSnapshot,restoreBlocks,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from './persistence';
 import {CanonicalTileStore,type OwnershipTransfer} from './raster/store';
 import {bytesPerPixel,CANONICAL_TILE_SIZE,pixelToTile,type RasterSampleEncoding} from './raster/surface';
 import {DocumentTransaction} from './transaction';
+import type {PersistenceHandoff} from './recovery';
 import {CORE_INTERNAL,type CoreInternalToken} from './internal';
 
 export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
@@ -33,6 +34,8 @@ export class CoreDocument{
   undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}
   capturePersistenceSnapshot(revisionId:RevisionId=this.head):CorePersistenceSnapshotV1{return captureCoreSnapshot(this.historyValue.snapshot(),this.storeValue,revisionId);}
   persistenceBlockPayloads(snapshot:CorePersistenceSnapshotV1){return blockPayloadsForSnapshot(snapshot,this.storeValue);}
+  captureRecoveryPacket(handoff:PersistenceHandoff):CoreRecoveryPacketV1{return captureCoreRecoveryPacket(this.historyValue.snapshot(),this.storeValue,handoff);}
+  recoveryBlockPayloads(packet:CoreRecoveryPacketV1){const out=new Map<string,Uint8Array>();for(const block of packet.blocks)out.set(block.id,this.storeValue.readCopy(block.id as never));return out;}
   operationsTo(revisionId:RevisionId=this.head){
     const commands:Command[]=[],visiting=new Set<RevisionId>();let current=this.historyValue.get(revisionId);
     while(current.parentIds[0]){if(visiting.has(current.id))throw new Error('revision cycle');visiting.add(current.id);if(current.command)commands.push(current.command);current=this.historyValue.get(current.parentIds[0]);}
