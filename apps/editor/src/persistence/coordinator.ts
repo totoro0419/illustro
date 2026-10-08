@@ -17,7 +17,7 @@ type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=
 
 export class PersistenceCoordinator{
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
-  private queue:Pending[]=[];private idleHandle:number|null=null;private draining=false;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
+  private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
   private preserved:PreservedPortableData|undefined;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
     currentRevision:null,savedRevision:null,dirty:true,protectionPending:false,protectedThrough:'0',saving:false,recovered:false,storageError:null,backend:'未初期化',
     storagePersisted:null,storageUsage:null,storageQuota:null,queueLength:0,lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,reloadDurationMs:null,recoveryDurationMs:null,lastGood:false,previousGood:false,offline:!navigator.onLine,
@@ -29,7 +29,7 @@ export class PersistenceCoordinator{
   }
   get state(){return this.stateValue;}get preservedData(){return this.preserved;}
   async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false){
-    this.controller=controller;this.preserved=preserved;this.queue=[];this.cancelIdle();const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
+    this.cancelIdle();await this.drain();this.queue=[];this.controller=controller;this.preserved=preserved;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
     const storage=await this.storageStatus(true);const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
     this.patch({currentRevision:document.head,savedRevision,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
       storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false,saving:false,
@@ -80,10 +80,14 @@ export class PersistenceCoordinator{
     this.patch({storagePersisted:persisted,storageUsage:usage,storageQuota:quota});return {persisted,usage,quota};
   }
   destroy(){this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
-  private schedule(){if(this.idleHandle!==null||this.draining)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:750});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},120);}
+  private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:750});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},120);}
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
-  private async drain(){if(this.draining)return;this.draining=true;try{while(this.queue.length){const item=this.queue.shift()!,transfers=item.blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{packet:item.packet,blocks:item.blocks,supportedAlgorithms:item.supportedAlgorithms},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
-        catch(error){this.patch({storageError:message(error)});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.draining=false;this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});if(this.queue.length)this.schedule();}}
+  private async drain(){
+    if(this.activeDrain)return this.activeDrain;
+    const run=(async()=>{try{while(this.queue.length){const item=this.queue.shift()!,transfers=item.blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{packet:item.packet,blocks:item.blocks,supportedAlgorithms:item.supportedAlgorithms},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
+      catch(error){this.patch({storageError:message(error)});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
+    this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length)this.schedule();}
+  }
   private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
   private patch(patch:Partial<PersistenceState>){
     const next={...this.stateValue,...patch,offline:!navigator.onLine};
