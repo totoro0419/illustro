@@ -71,7 +71,7 @@ async function handle(message:RequestMessage){
       await store.remove(candidatePath);await touchMeta(store,session,String(message.savedRevisionId??''));reply(message.id,true,{lastGood:true,previousGood:Boolean(previous),backend:store.mode});break;
     }
     case 'load-last-good':{
-      const session=requireSession(message),last=await store.get(session.path+'/saves/last.illustro'),previous=await store.get(session.path+'/saves/previous.illustro');let chosen:Uint8Array|null=null,source:'last'|'previous'|null=null;
+      const session=readSession(message),last=await store.get(session.path+'/saves/last.illustro'),previous=await store.get(session.path+'/saves/previous.illustro');let chosen:Uint8Array|null=null,source:'last'|'previous'|null=null;
       if(last)try{await decodeIllustroFile(last,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});chosen=last;source='last';}catch{}
       if(!chosen&&previous)try{await decodeIllustroFile(previous,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});chosen=previous;source='previous';}catch{}
       if(!chosen)throw new Error('正常に保存できた作品がありません。');reply(message.id,true,{bytes:chosen,source},undefined,[chosen.buffer as ArrayBuffer]);break;
@@ -88,6 +88,13 @@ async function handle(message:RequestMessage){
 function requireSession(message:RequestMessage):Session{
   if(!currentSession)throw new Error('persistence session not initialized');const documentId=String(message.documentId??currentSession.documentId),writerEpochId=String(message.writerEpochId??currentSession.writerEpochId);
   if(documentId!==currentSession.documentId||writerEpochId!==currentSession.writerEpochId)throw new Error('session isolation mismatch');return currentSession;
+}
+function readSession(message:RequestMessage):Session{
+  if(message.documentId!==undefined||message.writerEpochId!==undefined){
+    if(message.documentId===undefined||message.writerEpochId===undefined)throw new Error('incomplete persisted session identity');
+    const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch');return {documentId,writerEpochId,path:sessionPath(documentId,writerEpochId)};
+  }
+  if(!currentSession)throw new Error('persistence session not initialized');return currentSession;
 }
 function validateClosure(packet:CoreRecoveryPacketV1,blocks:readonly {id:string;bytes:Uint8Array}[],supported:Set<string>){
   if(!packet||packet.schema!=='illustro.core.recovery-packet'||packet.schemaVersion!==1)throw new Error('invalid recovery packet');if(!currentSession||packet.handoff.documentId!==currentSession.documentId||packet.handoff.writerEpochId!==currentSession.writerEpochId)throw new Error('recovery session mismatch');
@@ -116,7 +123,8 @@ async function listRecoveryCandidates(store:WorkingStore){
   const out:Array<Record<string,unknown>>=[],root='m05/sessions';for(const doc of await store.entries(root)){if(doc.kind!=='directory'||!isUuid(doc.name))continue;for(const epoch of await store.entries(root+'/'+doc.name)){if(epoch.kind!=='directory'||!isUuid(epoch.name))continue;
       const session={documentId:doc.name,writerEpochId:epoch.name,path:root+'/'+doc.name+'/'+epoch.name};try{const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)continue;const base=await unframeJson(baseBytes) as CorePersistenceSnapshotV1,protectedThrough=await scanProtected(store,session);
         const target=base.revisions.find(x=>x.id===base.snapshotRevisionId),metaBytes=await store.get(session.path+'/meta.frame'),meta=metaBytes?await unframeJson(metaBytes) as Record<string,unknown>:{};
-        out.push({documentId:session.documentId,writerEpochId:session.writerEpochId,title:target?.root.name??'作品',protectedThrough:protectedThrough.toString(),updatedAt:typeof meta.updatedAt==='number'?meta.updatedAt:0,savedRevisionId:typeof meta.savedRevisionId==='string'?meta.savedRevisionId:null});}catch{} }}
+        const lastGood=await store.exists(session.path+'/saves/last.illustro'),previousGood=await store.exists(session.path+'/saves/previous.illustro');
+        out.push({documentId:session.documentId,writerEpochId:session.writerEpochId,title:target?.root.name??'作品',protectedThrough:protectedThrough.toString(),updatedAt:typeof meta.updatedAt==='number'?meta.updatedAt:0,savedRevisionId:typeof meta.savedRevisionId==='string'?meta.savedRevisionId:null,lastGood,previousGood});}catch{} }}
   return out.sort((a,b)=>(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0));
 }
 async function writeHead(store:WorkingStore,session:Session,revisionId:string){await putVerified(store,session.path+'/head.frame',await frameJson({version:1,revisionId:uuid(revisionId,'revision id')}));}
@@ -137,6 +145,7 @@ class WorkingStore{
       const writable=await handle.createWritable();await writable.write(bytes as unknown as FileSystemWriteChunkType);await writable.close();this.mode='opfs-async';return;}
     await idbPut(this.db!,path,bytes);}
   async get(path:string):Promise<Uint8Array|null>{if(this.root){try{const file=await (await this.file(path,false)).getFile();return new Uint8Array(await file.arrayBuffer());}catch{return null;}}return idbGet(this.db!,path);}
+  async exists(path:string){if(this.root){try{await this.file(path,false);return true;}catch{return false;}}return idbHas(this.db!,path);}
   async remove(path:string){if(this.root){const parts=split(path),name=parts.pop()!,dir=await this.dir(parts,false);try{await dir.removeEntry(name);}catch{}return;}await idbDelete(this.db!,path);}
   async entries(path:string):Promise<Entry[]>{if(this.root){try{const dir=await this.dir(split(path),false),result:Entry[]=[];for await(const value of (dir as unknown as {values:()=>AsyncIterableIterator<FileSystemHandle>}).values())result.push({name:value.name,kind:value.kind});return result;}catch{return [];}}
     return idbEntries(this.db!,path);}
@@ -166,5 +175,6 @@ function reply(id:number,ok:boolean,result?:unknown,error?:unknown,transfer:Tran
 function openDb():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const request=indexedDB.open('illustro-m05-working',1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('files'))request.result.createObjectStore('files');};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
 function idbPut(db:IDBDatabase,key:string,value:Uint8Array){return new Promise<void>((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(value.slice(),key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
 function idbGet(db:IDBDatabase,key:string){return new Promise<Uint8Array|null>((resolve,reject)=>{const tx=db.transaction('files','readonly'),request=tx.objectStore('files').get(key);request.onsuccess=()=>{const value=request.result;resolve(value instanceof Uint8Array?value:value instanceof ArrayBuffer?new Uint8Array(value):null);};request.onerror=()=>reject(request.error);});}
+function idbHas(db:IDBDatabase,key:string){return new Promise<boolean>((resolve,reject)=>{const tx=db.transaction('files','readonly'),request=tx.objectStore('files').count(key);request.onsuccess=()=>resolve(request.result>0);request.onerror=()=>reject(request.error);});}
 function idbDelete(db:IDBDatabase,key:string){return new Promise<void>((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
 function idbEntries(db:IDBDatabase,path:string){return new Promise<Entry[]>((resolve,reject)=>{const prefix=path.replace(/\/+$/,'')+'/',entries=new Map<string,'file'|'directory'>(),tx=db.transaction('files','readonly'),request=tx.objectStore('files').openKeyCursor();request.onsuccess=()=>{const cursor=request.result;if(!cursor){resolve([...entries].map(([name,kind])=>({name,kind})));return;}const key=String(cursor.key);if(key.startsWith(prefix)){const rest=key.slice(prefix.length),slash=rest.indexOf('/'),name=slash<0?rest:rest.slice(0,slash);if(name)entries.set(name,slash<0?'file':'directory');}cursor.continue();};request.onerror=()=>reject(request.error);});}
