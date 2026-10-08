@@ -1,11 +1,12 @@
 import {TILE,validateRecord,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
-import {CANONICAL_TILE_SIZE,type SemanticOperation} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import type {EditorController,EditorHistoryChange} from './controller';
+import type {ProjectionCacheV1} from './persistence/projectionCache';
 
 
 export class BrushSurface{
-  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private presentedFrames=0;private lastPresentedAt=0;private _initializationError:string|null=null;private _projectionRestoreMs=0;
+  private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private presentedFrames=0;private lastPresentedAt=0;private _initializationError:string|null=null;private _projectionRestoreMs=0;private _projectionRestoreMode:'none'|'cache'|'replay-fallback'='none';private _projectionCacheRevision:string|null=null;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.canvas.width=target.width;this.canvas.height=target.height;
@@ -87,27 +88,71 @@ export class BrushSurface{
       for(const operation of operations){if(operation.kind!=='brush.stroke')continue;const record=this.strokeRecord(operation),keys=this.runtimeKeys(operation),surfaceId=this.surfaceForOperation(operation);if(change.direction==='undo')await this.session.undoDerived(record,keys,surfaceId);else await this.session.redoDerived(record,keys,surfaceId);}
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
-  async restoreDocumentProjection(){
+  async captureProjectionCache(revisionId:string):Promise<ProjectionCacheV1>{
+    if(!this.renderer||!this.session)throw new Error('Renderer is not initialized');if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection cache capture is stale');
+    const root=this.controller.document.root,layers:Array<{surfaceId:string;pixels:Uint8Array}>=[];
+    for(const layer of this.controller.layers){
+      if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection cache capture is stale');
+      const pixels=await this.renderer.read(layer.surface.descriptor.surfaceId);layers.push({surfaceId:layer.surface.descriptor.surfaceId,pixels:new Uint8Array(pixels)});
+    }
+    if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection cache capture is stale');
+    return Object.freeze({version:1 as const,revisionId,width:root.width,height:root.height,layers:Object.freeze(layers.map(layer=>Object.freeze(layer)))});
+  }
+  async restoreDocumentProjection(cache?:ProjectionCacheV1){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
     const started=performance.now();this.historySyncing=true;this.onStateChanged();let held=false,complete=false;
-    const renderer=this.renderer as unknown as {backend?:{setPresentationHeld?:(held:boolean)=>void;presentCurrent?:()=>Promise<void>|void};formalQuantum?:number;frame:(now:number)=>boolean};
+    const renderer=this.renderer as unknown as {backend?:any;formalQuantum?:number;frame:(now:number)=>boolean;document:{append:(id:number,preset:unknown,commands:readonly Float64Array[],filter:Set<string>|null,surfaceKey:string)=>void;end:(id:number,preset:unknown,surfaceKey:string)=>readonly string[]};drain:(finalFrame?:boolean)=>Promise<void>;reset:()=>Promise<void>;needsFrame:boolean};
+    const runtime=this.session as unknown as {records:StrokeRecord[];redoRecords:StrokeRecord[];id:number;recordSurfaces:WeakMap<StrokeRecord,string>;recordTiles:WeakMap<StrokeRecord,string[]>;recordIds:WeakMap<StrokeRecord,number>;recordOrder:WeakMap<StrokeRecord,number>;tileRecords:Map<string,StrokeRecord[]>;nextRecordOrder:number;indexRecord:(record:StrokeRecord,keys:readonly string[],surfaceKey:string)=>void;presetForRecord:(record:StrokeRecord)=>unknown;rebuild:()=>Promise<void>};
     const originalFrame=renderer.frame;
     try{
-      this.syncLayerStack();const entries:Array<{record:StrokeRecord;surfaceKey:string}>=[];
-      for(const operation of this.controller.document.operationsTo()){if(operation.kind==='brush.stroke')entries.push({record:validateRecord(operation.parameters.strokeRecord),surfaceKey:this.surfaceForOperation(operation)});
-        else if(operation.kind==='raster.strict-delta')throw new Error('This saved strict Raster delta cannot yet be projected by the M05 editor renderer');}
-      const runtime=this.session as unknown as {records:StrokeRecord[];redoRecords:StrokeRecord[];recordSurfaces:WeakMap<StrokeRecord,string>;rebuild:()=>Promise<void>};
-      runtime.records=entries.map(entry=>entry.record);runtime.redoRecords=[];for(const entry of entries)runtime.recordSurfaces.set(entry.record,entry.surfaceKey);
-      // Restores are not live drawing. Keep the partially rebuilt image off-screen and
-      // feed larger confirmed batches to the existing renderer, then present once.
+      this.syncLayerStack();const entries:Array<{operation:SemanticOperation;record:StrokeRecord;surfaceKey:string;keys:string[]}>=[];for(const operation of this.controller.document.operationsTo()){
+        if(operation.kind==='brush.stroke')entries.push({operation,record:validateRecord(operation.parameters.strokeRecord),surfaceKey:this.surfaceForOperation(operation),keys:this.runtimeKeys(operation)});
+        else if(operation.kind==='raster.strict-delta')throw new Error('This saved strict Raster delta cannot yet be projected by the M05 editor renderer');
+      }
+      const validCache=this.validProjectionCache(cache);
       if(renderer.backend?.setPresentationHeld){renderer.backend.setPresentationHeld(true);held=true;}
-      renderer.frame=(now:number)=>{renderer.formalQuantum=Math.max(128,renderer.formalQuantum??0);return originalFrame.call(renderer,now);};
-      await runtime.rebuild();complete=true;
+      renderer.frame=(now:number)=>{renderer.formalQuantum=Math.max(256,renderer.formalQuantum??0);return originalFrame.call(renderer,now);};
+      if(validCache){
+        await renderer.reset();this.syncLayerStack();this.resetDerivedRuntime(runtime);
+        const cachedKeys=new Set(this.controller.document.operationsTo(validCache.revisionId as RevisionId).filter(operation=>operation.kind==='brush.stroke').map(operation=>operation.key));
+        await this.seedProjectionCache(validCache,renderer.backend);
+        runtime.records=entries.map(entry=>entry.record);runtime.redoRecords=[];
+        for(const entry of entries){
+          const id=++runtime.id;runtime.recordIds.set(entry.record,id);runtime.recordSurfaces.set(entry.record,entry.surfaceKey);runtime.indexRecord(entry.record,entry.keys,entry.surfaceKey);
+          if(!cachedKeys.has(entry.operation.key)){const preset=runtime.presetForRecord(entry.record);renderer.document.append(id,preset,entry.record.commands,null,entry.surfaceKey);renderer.document.end(id,preset,entry.surfaceKey);}
+        }
+        renderer.needsFrame=true;await renderer.drain();this._projectionRestoreMode='cache';this._projectionCacheRevision=validCache.revisionId;
+      }else{
+        runtime.records=entries.map(entry=>entry.record);runtime.redoRecords=[];for(const entry of entries)runtime.recordSurfaces.set(entry.record,entry.surfaceKey);
+        await runtime.rebuild();this._projectionRestoreMode='replay-fallback';this._projectionCacheRevision=null;
+      }
+      complete=true;
     }finally{
       renderer.frame=originalFrame;if(held)renderer.backend?.setPresentationHeld?.(false);
       if(complete)await renderer.backend?.presentCurrent?.();
       this._projectionRestoreMs=performance.now()-started;this.historySyncing=false;this.onStateChanged();
     }
+  }
+  private validProjectionCache(cache?:ProjectionCacheV1){
+    if(!cache||cache.version!==1||cache.width!==this.controller.document.root.width||cache.height!==this.controller.document.root.height||!this.controller.document.hasRevision(cache.revisionId as RevisionId))return null;
+    const root=this.controller.document.revision(cache.revisionId as RevisionId).root,expected=new Set(root.rootLayerIds.map(id=>root.getLayer(id).surface.descriptor.surfaceId)),seen=new Set<string>(),bytes=cache.width*cache.height*4;
+    for(const layer of cache.layers){if(!expected.has(layer.surfaceId)||seen.has(layer.surfaceId)||layer.pixels.byteLength!==bytes)return null;seen.add(layer.surfaceId);}if(seen.size!==expected.size)return null;return cache;
+  }
+  private resetDerivedRuntime(runtime:{id:number;recordSurfaces:WeakMap<StrokeRecord,string>;recordTiles:WeakMap<StrokeRecord,string[]>;recordIds:WeakMap<StrokeRecord,number>;recordOrder:WeakMap<StrokeRecord,number>;tileRecords:Map<string,StrokeRecord[]>;nextRecordOrder:number}){
+    runtime.recordSurfaces=new WeakMap();runtime.recordTiles=new WeakMap();runtime.recordIds=new WeakMap();runtime.recordOrder=new WeakMap();runtime.tileRecords=new Map();runtime.nextRecordOrder=0;runtime.id=0;
+  }
+  private async seedProjectionCache(cache:ProjectionCacheV1,backend:any){
+    if(!backend?.tile||!backend?.dirtyConfirmed)throw new Error('Projection cache upload unavailable');const width=cache.width,height=cache.height;
+    for(const layer of cache.layers){for(let ty=0;ty<Math.ceil(height/TILE);ty++)for(let tx=0;tx<Math.ceil(width/TILE);tx++){
+      const tile=new Uint8Array(TILE*TILE*4);let nonEmpty=false;const copyW=Math.min(TILE,width-tx*TILE),copyH=Math.min(TILE,height-ty*TILE);
+      for(let y=0;y<copyH;y++){const source=((ty*TILE+y)*width+tx*TILE)*4,target=y*TILE*4,row=layer.pixels.subarray(source,source+copyW*4);tile.set(row,target);for(let i=3;i<row.length;i+=4)if(row[i]!==0){nonEmpty=true;break;}}
+      if(!nonEmpty)continue;const key=tx+','+ty,t=backend.tile(key,layer.surfaceId),target=t.layer[t.l];
+      if(backend.gl){const g=backend.gl;g.bindTexture(g.TEXTURE_2D,target.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,tile);}
+      else if(backend.device){backend.device.queue.writeTexture({texture:target},tile,{bytesPerRow:TILE*4},[TILE,TILE]);}
+      else throw new Error('Projection cache upload backend unsupported');
+      t.committedId=-1;backend.dirtyConfirmed.add(key);
+    }}
+    if(backend.device)await backend.device.queue.onSubmittedWorkDone();
   }
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);}
   discardRedoProjection(){this.session?.discardRedo();}
@@ -121,6 +166,6 @@ export class BrushSurface{
     return [...keys];
   }
   select(index:number){const p=this.brushes[index];if(p)this.preset=structuredClone(p);}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
-  get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'direct-gpu';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
+  get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'direct-gpu';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get projectionRestoreMode(){return this._projectionRestoreMode;}get projectionCacheRevision(){return this._projectionCacheRevision;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
   destroy(){this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onComplete=null;this.session?.destroy();}
 }
