@@ -5,7 +5,7 @@ import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortab
 import type {DecodedPortableFile,PortableManifestSection} from './format';
 
 type WorkerReply={id:number;ok:boolean;result?:unknown;error?:string};
-type Candidate=Readonly<{documentId:string;writerEpochId:string;title:string;protectedThrough:string;updatedAt:number;savedRevisionId:string|null}>;
+export type Candidate=Readonly<{documentId:string;writerEpochId:string;title:string;protectedThrough:string;updatedAt:number;savedRevisionId:string|null;lastGood:boolean;previousGood:boolean}>;
 export type PersistenceState=Readonly<{
   currentRevision:RevisionId|null;savedRevision:RevisionId|null;dirty:boolean;protectionPending:boolean;protectedThrough:string;saving:boolean;recovered:boolean;
   storageError:string|null;backend:string;storagePersisted:boolean|null;storageUsage:number|null;storageQuota:number|null;queueLength:number;
@@ -51,7 +51,7 @@ export class PersistenceCoordinator{
     const document=CoreDocument.restore({snapshot:result.snapshot,blockPayloads:blocks}),selected=document.root.rootLayerIds[0];if(!selected)throw new Error('回復した作品にレイヤーがありません。');
     const controller={document,selectedLayerId:selected};this.patch({recoveryDurationMs:performance.now()-started,recovered:true});return Object.freeze({document,selectedLayerId:selected,savedRevision:(candidate.savedRevisionId&&document.hasRevision(candidate.savedRevisionId as RevisionId)?candidate.savedRevisionId as RevisionId:null)});
   }
-  async reloadLastGood(){const raw=await this.request('load-last-good',{}) as any;return this.decodePortable(raw.bytes as Uint8Array);}
+  async reloadLastGood(candidate?:Pick<Candidate,'documentId'|'writerEpochId'>){const payload=candidate?{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}:{};const raw=await this.request('load-last-good',payload) as any;return this.decodePortable(raw.bytes as Uint8Array);}
   async decodePortable(bytes:Uint8Array):Promise<PortableOpenResult>{
     const started=performance.now(),copy=bytes.slice(),raw=await this.request('decode-portable',{bytes:copy},[copy.buffer as ArrayBuffer]) as any;
     const sections=new Map<string,{descriptor:PortableManifestSection;bytes:Uint8Array}>();for(const item of raw.sections as {descriptor:PortableManifestSection;bytes:Uint8Array}[])sections.set(item.descriptor.id,item);
