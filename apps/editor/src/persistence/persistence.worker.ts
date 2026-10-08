@@ -191,7 +191,7 @@ async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowed
     const layers=new Map<string,Uint8Array>();for(const surfaceId of index.surfaceIds)layers.set(surfaceId,new Uint8Array(index.width*index.height*4));
     for(const descriptor of index.tiles){
       const target=layers.get(descriptor.surfaceId);if(!target)return null;const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key)+'.bin');if(!bytes)return null;
-      const pixels=await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength),[tx,ty]=parseTileKey(descriptor.key),copyW=Math.min(index.tileSize,index.width-tx*index.tileSize),copyH=Math.min(index.tileSize,index.height-ty*index.tileSize);
+      const pixels=await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength),coords=parseTileKey(descriptor.key),tx=coords[0],ty=coords[1],copyW=Math.min(index.tileSize,index.width-tx*index.tileSize),copyH=Math.min(index.tileSize,index.height-ty*index.tileSize);
       for(let y=0;y<copyH;y++){const from=y*index.tileSize*4,to=((ty*index.tileSize+y)*index.width+tx*index.tileSize)*4;target.set(pixels.subarray(from,from+copyW*4),to);}
     }
     return Object.freeze({version:1 as const,revisionId:index.revisionId,width:index.width,height:index.height,layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,pixels:layers.get(surfaceId)!})))});
@@ -208,7 +208,7 @@ function projectionTileInputs(value:unknown,tileSize:number){
   return value.map(item=>{if(!item||typeof item!=='object')throw new Error('invalid projection tile');const x=item as {surfaceId?:unknown;key?:unknown;pixels?:unknown},surfaceId=uuid(x.surfaceId,'projection surface'),key=tileKey(x.key),pixels=uint8(x.pixels,'projection tile pixels'),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection tile');seen.add(id);if(pixels.byteLength!==expected)throw new Error('projection tile payload mismatch');return {surfaceId,key,pixels};});
 }
 function tileKey(value:unknown){if(typeof value!=='string'||!/^\d+,\d+$/.test(value))throw new Error('invalid projection tile key');return value;}
-function parseTileKey(key:string){const [x,y]=key.split(',').map(Number);if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0)throw new Error('invalid projection tile key');return [x,y] as const;}
+function parseTileKey(key:string){const parts=key.split(','),x=Number(parts[0]),y=Number(parts[1]);if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0)throw new Error('invalid projection tile key');return [x,y] as const;}
 function tileFileName(key:string){return key.replace(',',':');}
 function isTransparent(bytes:Uint8Array){for(let i=3;i<bytes.length;i+=4)if(bytes[i]!==0)return false;return true;}
 
