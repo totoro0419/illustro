@@ -5,6 +5,9 @@ type RequestMessage={id:number;type:string;[key:string]:unknown};
 type Session={documentId:string;writerEpochId:string;path:string};
 type Entry={name:string;kind:'file'|'directory'};
 type StoreMode='opfs-sync'|'opfs-async'|'indexeddb';
+type ProjectionEncoding='raw-rgba8'|'gzip-rgba8';
+type ProjectionIndex=Readonly<{version:1;generationId:string;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
+type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>;
 
 const out=self as unknown as {postMessage:(value:unknown,transfer?:Transferable[])=>void};
 const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
@@ -43,13 +46,19 @@ async function handle(message:RequestMessage){
     case 'flush':{
       reply(message.id,true,{protectedThrough:currentSession?(await scanProtected(store,currentSession)).toString():'0',backend:store.mode});break;
     }
+    case 'store-projection-checkpoint':{
+      const session=requireSession(message),revisionId=uuid(message.revisionId,'projection revision'),width=dimension(message.width,'projection width'),height=dimension(message.height,'projection height'),layers=projectionLayerInputs(message.layers,width,height);
+      await storeProjectionCheckpoint(store,session,revisionId,width,height,layers);await touchMeta(store,session);
+      reply(message.id,true,{backend:store.mode,revisionId});break;
+    }
     case 'list-recovery':{
       const candidates=await listRecoveryCandidates(store);reply(message.id,true,{candidates,backend:store.mode,storage:await storageInfo()});break;
     }
     case 'load-recovery':{
       const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch'),session={documentId,writerEpochId,path:sessionPath(documentId,writerEpochId)};
-      const loaded=await loadRecovery(store,session);const transfers:Transferable[]=[];for(const block of loaded.blocks)transfers.push(block.bytes.buffer as ArrayBuffer);
-      reply(message.id,true,loaded,undefined,transfers);break;
+      const loaded=await loadRecovery(store,session),projectionCache=await loadProjectionCheckpointRaw(store,session,new Set((loaded.snapshot.revisions as readonly {id:string}[]).map(r=>r.id)));const transfers:Transferable[]=[];
+      for(const block of loaded.blocks)transfers.push(block.bytes.buffer as ArrayBuffer);for(const layer of projectionCache?.layers??[])transfers.push(layer.pixels.buffer as ArrayBuffer);
+      reply(message.id,true,{...loaded,projectionCache},undefined,transfers);break;
     }
     case 'encode-save':{
       const snapshot=message.snapshot as CorePersistenceSnapshotV1;if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid save snapshot');
@@ -59,6 +68,14 @@ async function handle(message:RequestMessage){
       sectionInputs.push({id:'editor-state',type:'editor.state.v1',required:false,bytes:encoder.encode(JSON.stringify({version:1,selectedLayerId}))});
       const preserved=preservedSections(message.preserved);for(const section of preserved.sections){if(section.required)throw new Error('unknown preserved section cannot be required');if(sectionInputs.some(x=>x.id===section.id))continue;sectionInputs.push(section);}
       const target=snapshot.revisions.find(r=>r.id===snapshot.snapshotRevisionId);if(!target)throw new Error('save target missing');
+      if(currentSession&&currentSession.documentId===target.root.documentId){
+        const checkpoint=await loadProjectionCheckpointEncoded(store,currentSession,new Set(snapshot.revisions.map(r=>r.id)));
+        if(checkpoint){
+          const index={version:1,revisionId:checkpoint.index.revisionId,width:checkpoint.index.width,height:checkpoint.index.height,layers:checkpoint.index.layers.map(layer=>({surfaceId:layer.surfaceId,encoding:layer.encoding,rawLength:layer.rawLength,sectionId:'render-cache-layer:'+layer.surfaceId}))};
+          sectionInputs.push({id:'render-cache',type:'render.cache.index.v1',required:false,bytes:encoder.encode(JSON.stringify(index))});
+          for(const layer of checkpoint.layers)sectionInputs.push({id:'render-cache-layer:'+layer.surfaceId,type:'render.cache.layer.v1',required:false,bytes:layer.bytes});
+        }
+      }
       const bytes=await encodeIllustroFile({generationId,documentId:target.root.documentId,snapshotRevisionId:snapshot.snapshotRevisionId,createdAt,sections:sectionInputs,manifestExtras:preserved.manifestExtras});
       await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
       const transfers=[bytes.buffer as ArrayBuffer];reply(message.id,true,{bytes,durationMs:0},undefined,transfers);break;
@@ -77,9 +94,10 @@ async function handle(message:RequestMessage){
       if(!chosen)throw new Error('正常に保存できた作品がありません。');reply(message.id,true,{bytes:chosen,source},undefined,[chosen.buffer as ArrayBuffer]);break;
     }
     case 'decode-portable':{
-      const bytes=uint8(message.bytes,'portable bytes'),decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
+      const bytes=uint8(message.bytes,'portable bytes'),decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])}),projectionCache=await decodeProjectionCache(decoded);
       const sections=[...decoded.sections.values()].map(({descriptor,bytes})=>({descriptor,bytes})),transfers=sections.map(x=>x.bytes.buffer as ArrayBuffer);
-      reply(message.id,true,{manifest:decoded.manifest,sections},undefined,transfers);break;
+      for(const layer of projectionCache?.layers??[])transfers.push(layer.pixels.buffer as ArrayBuffer);
+      reply(message.id,true,{manifest:decoded.manifest,sections,projectionCache},undefined,transfers);break;
     }
     default:throw new Error('unknown persistence worker request');
   }
@@ -119,6 +137,68 @@ async function loadRecovery(store:WorkingStore,session:Session){
   for(const descriptor of snapshot.blocks){const bytes=await store.get(session.path+'/blocks/'+descriptor.id+'.bin');if(!bytes)throw new Error('recovery block dependency missing');blocks.push({id:descriptor.id,bytes});}
   return {snapshot,blocks,protectedThrough:protectedThrough.toString(),documentId:session.documentId,writerEpochId:session.writerEpochId};
 }
+async function storeProjectionCheckpoint(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,layers:readonly {surfaceId:string;pixels:Uint8Array}[]){
+  const generationId=crypto.randomUUID(),indexLayers:Array<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number}>=[];
+  for(const layer of layers){const encoded=await encodeProjectionPixels(layer.pixels),file=session.path+'/projection-data/'+generationId+'/'+layer.surfaceId+'.bin';await putVerified(store,file,encoded.bytes);indexLayers.push({surfaceId:layer.surfaceId,encoding:encoded.encoding,rawLength:layer.pixels.byteLength});}
+  const index:ProjectionIndex=Object.freeze({version:1,generationId,revisionId,width,height,layers:Object.freeze(indexLayers.map(x=>Object.freeze(x)))});
+  await putVerified(store,session.path+'/projection.frame',await frameJson(index));
+}
+async function loadProjectionCheckpointEncoded(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>){
+  const frame=await store.get(session.path+'/projection.frame');if(!frame)return null;
+  try{
+    const index=parseProjectionIndex(await unframeJson(frame));if(!allowedRevisions.has(index.revisionId))return null;
+    const layers:Array<{surfaceId:string;bytes:Uint8Array}>=[];
+    for(const layer of index.layers){const bytes=await store.get(session.path+'/projection-data/'+index.generationId+'/'+layer.surfaceId+'.bin');if(!bytes)return null;layers.push({surfaceId:layer.surfaceId,bytes});}
+    return {index,layers};
+  }catch{return null;}
+}
+async function loadProjectionCheckpointRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
+  const encoded=await loadProjectionCheckpointEncoded(store,session,allowedRevisions);if(!encoded)return null;
+  try{
+    const layers=[] as Array<{surfaceId:string;pixels:Uint8Array}>;
+    for(const descriptor of encoded.index.layers){const item=encoded.layers.find(x=>x.surfaceId===descriptor.surfaceId);if(!item)return null;const pixels=await decodeProjectionPixels(item.bytes,descriptor.encoding,descriptor.rawLength);layers.push({surfaceId:descriptor.surfaceId,pixels});}
+    return Object.freeze({version:1 as const,revisionId:encoded.index.revisionId,width:encoded.index.width,height:encoded.index.height,layers:Object.freeze(layers.map(x=>Object.freeze(x)))});
+  }catch{return null;}
+}
+async function decodeProjectionCache(decoded:Awaited<ReturnType<typeof decodeIllustroFile>>):Promise<ProjectionCache|null>{
+  const section=decoded.sections.get('render-cache');if(!section||section.descriptor.type!=='render.cache.index.v1'||section.descriptor.required)return null;
+  try{
+    const raw=JSON.parse(decoder.decode(section.bytes)) as Record<string,unknown>,version=raw.version;if(version!==1) return null;
+    const revisionId=uuid(raw.revisionId,'projection revision'),width=dimension(raw.width,'projection width'),height=dimension(raw.height,'projection height'),list=raw.layers;
+    if(!Array.isArray(list)||list.length>100000)return null;const seen=new Set<string>(),layers:Array<{surfaceId:string;pixels:Uint8Array}>=[];
+    for(const item of list){if(!item||typeof item!=='object')return null;const x=item as Record<string,unknown>,surfaceId=uuid(x.surfaceId,'projection surface');if(seen.has(surfaceId))return null;seen.add(surfaceId);
+      const encoding=projectionEncoding(x.encoding),rawLength=integer(x.rawLength,'projection raw length',0),sectionId=String(x.sectionId??'');if(rawLength!==width*height*4||sectionId!=='render-cache-layer:'+surfaceId)return null;
+      const payload=decoded.sections.get(sectionId);if(!payload||payload.descriptor.type!=='render.cache.layer.v1'||payload.descriptor.required)return null;
+      layers.push({surfaceId,pixels:await decodeProjectionPixels(payload.bytes,encoding,rawLength)});
+    }
+    return Object.freeze({version:1 as const,revisionId,width,height,layers:Object.freeze(layers.map(x=>Object.freeze(x)))});
+  }catch{return null;}
+}
+function parseProjectionIndex(value:unknown):ProjectionIndex{
+  if(!value||typeof value!=='object')throw new Error('invalid projection index');const x=value as Record<string,unknown>;if(x.version!==1)throw new Error('unsupported projection index');
+  const generationId=uuid(x.generationId,'projection generation'),revisionId=uuid(x.revisionId,'projection revision'),width=dimension(x.width,'projection width'),height=dimension(x.height,'projection height');
+  if(!Array.isArray(x.layers)||x.layers.length>100000)throw new Error('invalid projection layers');const seen=new Set<string>(),layers=x.layers.map(value=>{if(!value||typeof value!=='object')throw new Error('invalid projection layer');const item=value as Record<string,unknown>,surfaceId=uuid(item.surfaceId,'projection surface');if(seen.has(surfaceId))throw new Error('duplicate projection surface');seen.add(surfaceId);
+    const encoding=projectionEncoding(item.encoding),rawLength=integer(item.rawLength,'projection raw length',0);if(rawLength!==width*height*4)throw new Error('projection size mismatch');return Object.freeze({surfaceId,encoding,rawLength});});
+  return Object.freeze({version:1 as const,generationId,revisionId,width,height,layers:Object.freeze(layers)});
+}
+function projectionLayerInputs(value:unknown,width:number,height:number){
+  if(!Array.isArray(value)||value.length>100000)throw new Error('invalid projection layer list');const expected=width*height*4,seen=new Set<string>();
+  return value.map(item=>{if(!item||typeof item!=='object')throw new Error('invalid projection layer');const x=item as {surfaceId?:unknown;pixels?:unknown},surfaceId=uuid(x.surfaceId,'projection surface'),pixels=uint8(x.pixels,'projection pixels');if(seen.has(surfaceId))throw new Error('duplicate projection surface');seen.add(surfaceId);if(pixels.byteLength!==expected)throw new Error('projection pixel size mismatch');return {surfaceId,pixels};});
+}
+async function encodeProjectionPixels(bytes:Uint8Array):Promise<{encoding:ProjectionEncoding;bytes:Uint8Array}>{
+  const Compression=(globalThis as unknown as {CompressionStream?:new(format:'gzip')=>TransformStream<Uint8Array,Uint8Array>}).CompressionStream;
+  if(!Compression)return {encoding:'raw-rgba8',bytes:bytes.slice()};
+  try{const stream=new Blob([bytes.slice().buffer as ArrayBuffer]).stream().pipeThrough(new Compression('gzip')),compressed=new Uint8Array(await new Response(stream).arrayBuffer());if(compressed.byteLength+64<bytes.byteLength)return {encoding:'gzip-rgba8',bytes:compressed};}catch{}
+  return {encoding:'raw-rgba8',bytes:bytes.slice()};
+}
+async function decodeProjectionPixels(bytes:Uint8Array,encoding:ProjectionEncoding,rawLength:number){
+  if(encoding==='raw-rgba8'){if(bytes.byteLength!==rawLength)throw new Error('projection raw size mismatch');return bytes.slice();}
+  const Decompression=(globalThis as unknown as {DecompressionStream?:new(format:'gzip')=>TransformStream<Uint8Array,Uint8Array>}).DecompressionStream;if(!Decompression)throw new Error('gzip projection cache unsupported');
+  const stream=new Blob([bytes.slice().buffer as ArrayBuffer]).stream().pipeThrough(new Decompression('gzip')),out=new Uint8Array(await new Response(stream).arrayBuffer());if(out.byteLength!==rawLength)throw new Error('projection inflate size mismatch');return out;
+}
+function projectionEncoding(value:unknown):ProjectionEncoding{if(value==='raw-rgba8'||value==='gzip-rgba8')return value;throw new Error('invalid projection encoding');}
+function dimension(value:unknown,name:string){const n=integer(value,name,1);if(n>8192)throw new Error(name+' too large');return n;}
+
 async function listRecoveryCandidates(store:WorkingStore){
   const out:Array<Record<string,unknown>>=[],root='m05/sessions';for(const doc of await store.entries(root)){if(doc.kind!=='directory'||!isUuid(doc.name))continue;for(const epoch of await store.entries(root+'/'+doc.name)){if(epoch.kind!=='directory'||!isUuid(epoch.name))continue;
       const session={documentId:doc.name,writerEpochId:epoch.name,path:root+'/'+doc.name+'/'+epoch.name};try{const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)continue;const base=await unframeJson(baseBytes) as CorePersistenceSnapshotV1,protectedThrough=await scanProtected(store,session);
