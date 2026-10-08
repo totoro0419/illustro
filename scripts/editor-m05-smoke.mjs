@@ -69,6 +69,17 @@ async function removeOpfsEntry(page,doc,epoch,relative){
     await dir.removeEntry(name);
   },{doc,epoch,relative});
 }
+async function waitForOpfsEntry(page,doc,epoch,relative,timeout=15000){
+  await page.waitForFunction(async({doc,epoch,relative})=>{
+    try{
+      let dir=await navigator.storage.getDirectory();
+      for(const name of ['m05','sessions',doc,epoch])dir=await dir.getDirectoryHandle(name);
+      const parts=relative.split('/'),name=parts.pop();if(!name)return false;
+      for(const part of parts)dir=await dir.getDirectoryHandle(part);
+      await dir.getFileHandle(name);return true;
+    }catch{return false;}
+  },{doc,epoch,relative},{timeout});
+}
 async function corruptOpfsFile(page,doc,epoch,relative){
   await page.evaluate(async({doc,epoch,relative})=>{
     let dir=await navigator.storage.getDirectory();
@@ -134,7 +145,7 @@ try{
   {
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     await draw(page,[.14,.25],[.84,.25],5);await waitStroke(page,1);await draw(page,[.14,.50],[.84,.50],5);await waitStroke(page,2);await draw(page,[.14,.75],[.84,.75],5);await waitStroke(page,3);await waitProtected(page,3);await page.waitForTimeout(1200);
-    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;await corruptOpfsFile(page,doc,epoch,'projection.frame');await page.close();
+    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;await waitForOpfsEntry(page,doc,epoch,'projection.frame');await corruptOpfsFile(page,doc,epoch,'projection.frame');await page.close();
     const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('作業途中の保護状態から戻しました'),{timeout:30000});await waitReady(restoredPage);
     const repaired=await qa(restoredPage);assert.equal(repaired.currentRevision,head);assert.equal(repaired.totalStrokeCount,3);assert.equal(repaired.projectionRestoreMode,'replay-fallback');report.repairFallback={status:'PASS',cacheCorrupted:true,strategy:'stroke-replay',strokeCount:3};await context.close();
   }
