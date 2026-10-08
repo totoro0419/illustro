@@ -34,7 +34,7 @@ export class PersistenceCoordinator{
     const storage=await this.storageStatus(true);const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
     this.patch({currentRevision:document.head,savedRevision,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
       storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false,saving:false,
-      lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,recoveryDurationMs:null,lastGood:false,previousGood:false});
+      lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,recoveryDurationMs:null,lastGood:Boolean(result.lastGood),previousGood:Boolean(result.previousGood)});
   }
   noteCommit(document:CoreDocument,handoff:PersistenceHandoff){
     try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),algorithms=runtimeSupportedAlgorithms(packet);
@@ -70,7 +70,7 @@ export class PersistenceCoordinator{
       const activationBytes=bytes.slice(),activation=await this.request('activate-last-good',{bytes:activationBytes,savedRevisionId:saveRevision},[activationBytes.buffer as ArrayBuffer]) as any;
       this.patch({savedRevision:saveRevision,currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,
         lastGood:Boolean(activation.lastGood),previousGood:Boolean(activation.previousGood),backend:String(activation.backend??this.stateValue.backend),saving:false});
-      return Object.freeze({revisionId:saveRevision,bytes,output,generationId});
+      return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId});
     }catch(error){this.patch({saving:false,storageError:message(error),saveDurationMs:performance.now()-started});throw error;}
   }
   async saveCopy(document:CoreDocument,selectedLayerId:LayerId){return this.save(document,selectedLayerId,true);}
