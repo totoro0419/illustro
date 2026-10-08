@@ -80,6 +80,15 @@ async function waitForOpfsEntry(page,doc,epoch,relative,timeout=15000){
     }catch{return false;}
   },{doc,epoch,relative},{timeout});
 }
+async function corruptDocumentSave(page,doc,relative){
+  await page.evaluate(async({doc,relative})=>{
+    let dir=await navigator.storage.getDirectory();
+    for(const name of ['m05','documents',doc,'saves'])dir=await dir.getDirectoryHandle(name);
+    const parts=relative.split('/'),name=parts.pop();if(!name)throw new Error('bad test path');
+    for(const part of parts)dir=await dir.getDirectoryHandle(part);
+    const file=await dir.getFileHandle(name),w=await file.createWritable();await w.write(new Uint8Array([0,1,2,3]));await w.truncate(4);await w.close();
+  },{doc,relative});
+}
 async function corruptOpfsFile(page,doc,epoch,relative){
   await page.evaluate(async({doc,epoch,relative})=>{
     let dir=await navigator.storage.getDirectory();
@@ -165,7 +174,7 @@ try{
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     await draw(page,[.15,.30],[.85,.30]);await waitStroke(page,1);await waitProtected(page,1);const saveA=await saveDownload(page);void saveA;
     await draw(page,[.15,.60],[.85,.60]);await waitStroke(page,2);await waitProtected(page,2);const saveB=await saveDownload(page);void saveB;
-    const state=await qa(page);assert.equal(state.persistence.previousGood,true);const doc=state.documentId,epoch=state.writerEpoch;await corruptOpfsFile(page,doc,epoch,'saves/last.illustro');
+    const state=await qa(page);assert.equal(state.persistence.previousGood,true);const doc=state.documentId;await corruptDocumentSave(page,doc,'last.illustro');
     await page.locator('#reloadSaved').click();await page.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('最後に正常保存できた状態を開き直しました')||text.includes('保存版を開き直せませんでした');},{timeout:30000});await waitReady(page);const fallback=await qa(page);assert.equal(fallback.totalStrokeCount,1);
     report.lastGood={status:'PASS',corruptedLastRejected:true,previousGoodRecovered:true};await context.close();
   }
