@@ -3,7 +3,7 @@ import {validateRecord} from '@illustro/brush-rt';
 import workerUrl from './persistence.worker.ts?worker&url';
 import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortableData} from './portable';
 import type {DecodedPortableFile,PortableManifestSection} from './format';
-import type {ProjectionCacheV1} from './projectionCache';
+import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
 
 type WorkerReply={id:number;ok:boolean;result?:unknown;error?:string};
 export type Candidate=Readonly<{documentId:string;writerEpochId:string;title:string;protectedThrough:string;updatedAt:number;savedRevisionId:string|null;lastGood:boolean;previousGood:boolean}>;
@@ -67,9 +67,7 @@ export class PersistenceCoordinator{
       let output:'picker'|'download';if(handlePromise){const handle=await handlePromise;const fingerprint=await this.writeExternal(handle,bytes,false);this.fileHandle=handle;this.externalFingerprint=fingerprint;output='picker';}
       else if(this.fileHandle&&!forceSaveCopy){this.externalFingerprint=await this.writeExternal(this.fileHandle,bytes,true);output='picker';}
       else{downloadBlob(bytes,safeFileName(document.root.name)+'.illustro');output='download';}
-      const activationBytes=bytes.slice(),activation=await this.request('activate-last-good',{bytes:activationBytes,savedRevisionId:saveRevision},[activationBytes.buffer as ArrayBuffer]) as any;
-      this.patch({savedRevision:saveRevision,currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,
-        lastGood:Boolean(activation.lastGood),previousGood:Boolean(activation.previousGood),backend:String(activation.backend??this.stateValue.backend),saving:false});
+      this.patch({currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
       return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId});
     }catch(error){this.patch({saving:false,storageError:message(error),saveDurationMs:performance.now()-started});throw error;}
   }
@@ -80,6 +78,12 @@ export class PersistenceCoordinator{
     const layers=cache.layers.map(layer=>({surfaceId:layer.surfaceId,pixels:layer.pixels.slice()})),transfer=layers.map(layer=>layer.pixels.buffer as ArrayBuffer);
     await this.request('store-projection-checkpoint',{revisionId:cache.revisionId,width:cache.width,height:cache.height,layers},transfer);return true;
   }
+  async storeProjectionDelta(delta:ProjectionCheckpointDeltaV2){
+    if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
+    await this.flushPrepared();if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
+    const tiles=delta.tiles.map(tile=>({surfaceId:tile.surfaceId,key:tile.key,pixels:tile.pixels.slice()})),transfer=tiles.map(tile=>tile.pixels.buffer as ArrayBuffer);
+    await this.request('store-projection-delta',{revisionId:delta.revisionId,width:delta.width,height:delta.height,tileSize:delta.tileSize,surfaceIds:[...delta.surfaceIds],tiles},transfer);return true;
+  }
   async storageStatus(requestPersistence=false){
     const storage=navigator.storage;let persisted:boolean|null=null,usage:number|null=null,quota:number|null=null;
     try{persisted=storage?.persisted?await storage.persisted():null;if(requestPersistence&&persisted===false&&storage?.persist){try{persisted=await storage.persist();}catch{}}}catch{}
@@ -87,7 +91,7 @@ export class PersistenceCoordinator{
     this.patch({storagePersisted:persisted,storageUsage:usage,storageQuota:quota});return {persisted,usage,quota};
   }
   destroy(){this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
-  private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:750});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},120);}
+  private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:250});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
   private async drain(){
     if(this.activeDrain)return this.activeDrain;
