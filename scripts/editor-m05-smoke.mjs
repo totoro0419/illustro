@@ -57,7 +57,8 @@ async function init(page,backend='webgl2'){
 async function saveDownload(page){
   const [download]=await Promise.all([page.waitForEvent('download',{timeout:30000}),page.locator('#save').click()]);
   const filePath=await download.path();assert.ok(filePath);await page.waitForFunction(()=>document.getElementById('saveState')?.dataset.saving==='false',{timeout:30000});
-  return {download,filePath};
+  const stat=await fs.stat(filePath);assert.ok(stat.size>128,`saved .illustro unexpectedly tiny: ${stat.size} bytes`);assert.equal(await page.locator('#reloadSaved').isEnabled(),true,'saved-version button stayed disabled after successful save');
+  return {download,filePath,size:stat.size};
 }
 async function removeOpfsEntry(page,doc,epoch,relative){
   await page.evaluate(async({doc,epoch,relative})=>{
@@ -103,6 +104,18 @@ try{
     const opened=await qa(page);assert.equal(opened.currentRevision,savedRevision);assert.equal(opened.layerCount,2);assert.equal(opened.totalStrokeCount,3);assert.equal(opened.projectionRestoreMode,'cache');assert.deepEqual(errors,[]);
     report.backends.push({backend,status:'PASS',opfs:opened.persistence.backend,roundTrip:true,snapshotIsolation:true,saveDurationMs:afterSave.persistence.saveDurationMs,snapshotCaptureMs:afterSave.persistence.snapshotCaptureMs});
     await page.screenshot({path:path.join(evidence,`${backend}-m05.png`),fullPage:true});await context.close();
+  }
+
+  // Explicit save is independent from recovery-journal progress. Even a fresh document
+  // with protectedThrough=0 must expose Last Good after reload.
+  {
+    const context=await freshContext(),page=await context.newPage({viewport:{width:900,height:700}});await init(page);
+    const before=await qa(page);assert.equal(before.persistence.protectedThrough,'0');
+    const saved=await saveDownload(page);assert.ok(saved.size>128);await page.close();
+    const reopened=await context.newPage({viewport:{width:900,height:700}});await reopened.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});
+    await reopened.waitForFunction(()=>!(document.getElementById('reloadSaved')?.disabled),{timeout:30000});
+    await reopened.locator('#reloadSaved').click();await reopened.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('最後に正常保存できた状態を開き直しました'),{timeout:30000});await waitReady(reopened);
+    const state=await qa(reopened);assert.equal(state.totalStrokeCount,0);report.explicitSaveWithoutRecovery={status:'PASS',protectedThrough:'0',fileBytes:saved.size,reloadEnabled:true};await context.close();
   }
 
   // Normal crash/reload recovery must restore a finished artwork checkpoint, not redraw every stroke.
