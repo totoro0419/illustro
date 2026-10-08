@@ -85,7 +85,7 @@ try{
     await page.locator('#addLayer').click();await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.layerCount==='2');
     await draw(page,[.12,.52],[.82,.52]);await waitStroke(page,2);
     await page.locator('#erase').click();await page.locator('#brush').selectOption('foundation-hard-eraser');await draw(page,[.43,.52],[.57,.52],10);await waitStroke(page,3);
-    await waitProtected(page,4);
+    await waitProtected(page,4);await page.waitForTimeout(1200);
     const beforeSave=await qa(page),savedRevision=beforeSave.currentRevision;
     const saved=await saveDownload(page),afterSave=await qa(page);assert.equal(afterSave.persistence.savedRevision,savedRevision);assert.equal(afterSave.persistence.dirty,false);assert.equal(afterSave.persistence.lastGood,true);
     await fs.copyFile(saved.filePath,path.join(evidence,`${backend}-roundtrip.illustro`));
@@ -98,24 +98,32 @@ try{
     await page.locator('#paint').click();await draw(page,[.15,.72],[.85,.72]);await waitStroke(page,4);
     const changed=await qa(page);assert.equal(changed.persistence.savedRevision,savedRevision);assert.notEqual(changed.currentRevision,savedRevision);assert.equal(changed.persistence.dirty,true);assert.match(await page.locator('#saveState').textContent(),/保存後の変更あり/);
     await page.locator('#reloadSaved').click();await page.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('最後に正常保存できた状態を開き直しました')||text.includes('保存版を開き直せませんでした');},{timeout:30000});await waitReady(page);
-    const reloaded=await qa(page),reloadStatus=await page.locator('#status').textContent();await fs.writeFile(path.join(evidence,`${backend}-reload-debug.json`),JSON.stringify({savedRevision,reloadStatus,reloaded},null,2));assert.match(reloadStatus??'',/最後に正常保存できた状態を開き直しました/);assert.equal(reloaded.currentRevision,savedRevision);assert.equal(reloaded.persistence.savedRevision,savedRevision);assert.equal(reloaded.layerCount,2);assert.equal(reloaded.totalStrokeCount,3);assert.equal(reloaded.persistence.dirty,false);
+    const reloaded=await qa(page),reloadStatus=await page.locator('#status').textContent();await fs.writeFile(path.join(evidence,`${backend}-reload-debug.json`),JSON.stringify({savedRevision,reloadStatus,reloaded},null,2));assert.match(reloadStatus??'',/最後に正常保存できた状態を開き直しました/);assert.equal(reloaded.currentRevision,savedRevision);assert.equal(reloaded.persistence.savedRevision,savedRevision);assert.equal(reloaded.layerCount,2);assert.equal(reloaded.totalStrokeCount,3);assert.equal(reloaded.persistence.dirty,false);assert.equal(reloaded.projectionRestoreMode,'cache');
     await page.locator('#openFile').setInputFiles(saved.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('保存した作品を開きました'),{timeout:30000});await waitReady(page);
-    const opened=await qa(page);assert.equal(opened.currentRevision,savedRevision);assert.equal(opened.layerCount,2);assert.equal(opened.totalStrokeCount,3);assert.deepEqual(errors,[]);
+    const opened=await qa(page);assert.equal(opened.currentRevision,savedRevision);assert.equal(opened.layerCount,2);assert.equal(opened.totalStrokeCount,3);assert.equal(opened.projectionRestoreMode,'cache');assert.deepEqual(errors,[]);
     report.backends.push({backend,status:'PASS',opfs:opened.persistence.backend,roundTrip:true,snapshotIsolation:true,saveDurationMs:afterSave.persistence.saveDurationMs,snapshotCaptureMs:afterSave.persistence.snapshotCaptureMs});
     await page.screenshot({path:path.join(evidence,`${backend}-m05.png`),fullPage:true});await context.close();
   }
 
-  // Crash/reload equivalent: recover the last fully protected sequence from OPFS.
-  // Use enough strokes to catch slow one-by-one visible replay regressions.
+  // Normal crash/reload recovery must restore a finished artwork checkpoint, not redraw every stroke.
   {
-    const context=await freshContext(),page=await context.newPage({viewport:{width:1100,height:800}}),errors=await init(page),strokeTotal=24;
-    for(let i=0;i<strokeTotal;i++){const y=.08+(i%12)*.07,x0=.10+(i%2)*.04,x1=.86-(i%3)*.03;await draw(page,[x0,y],[x1,y],4);await waitStroke(page,i+1);}
-    await waitProtected(page,strokeTotal);
+    const context=await freshContext(),page=await context.newPage({viewport:{width:1100,height:800}}),errors=await init(page),strokeTotal=180;
+    for(let i=0;i<strokeTotal;i++){const y=.06+(i%14)*.062,x0=.08+(i%5)*.018,x1=.90-(i%7)*.016;await draw(page,[x0,y],[x1,y],3);await waitStroke(page,i+1);}
+    await waitProtected(page,strokeTotal);await page.waitForTimeout(1400);
     const before=await qa(page),doc=before.documentId,head=before.currentRevision;await page.close();
     const restoredPage=await context.newPage({viewport:{width:1100,height:800}});restoredPage.on('pageerror',e=>errors.push(e.message));await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});
     await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});const clickAt=Date.now();await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('作業途中の保護状態から戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
-    const recovered=await qa(restoredPage),wallMs=Date.now()-clickAt;assert.equal(recovered.documentId,doc);assert.equal(recovered.currentRevision,head);assert.equal(recovered.persistence.recovered,true);assert.equal(recovered.totalStrokeCount,strokeTotal);assert.ok(recovered.projectionRestoreMs<1000,`projection restore too slow: ${recovered.projectionRestoreMs}ms`);assert.deepEqual(errors,[]);
-    report.recovery={status:'PASS',protectedThrough:before.persistence.protectedThrough,recoveredRevision:recovered.currentRevision,workerDurationMs:recovered.persistence.recoveryDurationMs,projectionRestoreMs:recovered.projectionRestoreMs,wallMs,strokeTotal};await context.close();
+    const recovered=await qa(restoredPage),wallMs=Date.now()-clickAt;assert.equal(recovered.documentId,doc);assert.equal(recovered.currentRevision,head);assert.equal(recovered.persistence.recovered,true);assert.equal(recovered.totalStrokeCount,strokeTotal);assert.equal(recovered.projectionRestoreMode,'cache');assert.equal(recovered.projectionCacheRevision,head);assert.ok(recovered.projectionRestoreMs<500,`cached projection restore too slow: ${recovered.projectionRestoreMs}ms`);assert.deepEqual(errors,[]);
+    report.recovery={status:'PASS',strategy:'finished-state-cache',protectedThrough:before.persistence.protectedThrough,recoveredRevision:recovered.currentRevision,workerDurationMs:recovered.persistence.recoveryDurationMs,projectionRestoreMs:recovered.projectionRestoreMs,wallMs,strokeTotal};await context.close();
+  }
+
+  // If the finished-state cache is damaged, the journal/stroke history is the repair fallback.
+  {
+    const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
+    await draw(page,[.14,.25],[.84,.25],5);await waitStroke(page,1);await draw(page,[.14,.50],[.84,.50],5);await waitStroke(page,2);await draw(page,[.14,.75],[.84,.75],5);await waitStroke(page,3);await waitProtected(page,3);await page.waitForTimeout(1200);
+    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;await corruptOpfsFile(page,doc,epoch,'projection.frame');await page.close();
+    const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('作業途中の保護状態から戻しました'),{timeout:30000});await waitReady(restoredPage);
+    const repaired=await qa(restoredPage);assert.equal(repaired.currentRevision,head);assert.equal(repaired.totalStrokeCount,3);assert.equal(repaired.projectionRestoreMode,'replay-fallback');report.repairFallback={status:'PASS',cacheCorrupted:true,strategy:'stroke-replay',strokeCount:3};await context.close();
   }
 
   // Missing sequence 2 must stop protection at sequence 1; sequence 3 cannot be skipped over.
