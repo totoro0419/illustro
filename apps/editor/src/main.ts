@@ -70,7 +70,7 @@ function updatePersistenceDisplay(){
   indicator.textContent=state.saving?'保存中':state.storageError?'保護エラー':state.dirty?(state.savedRevision?'保存後の変更あり':'未保存'):'保存済み';
   indicator.dataset.dirty=String(state.dirty);indicator.dataset.saving=String(state.saving);indicator.dataset.protectedThrough=state.protectedThrough;
   byId<HTMLButtonElement>('reloadSaved').disabled=!state.lastGood&&!persistedSaveCandidate();
-  byId<HTMLButtonElement>('recover').disabled=recoveryCandidates.length===0;
+  byId<HTMLButtonElement>('recover').disabled=!recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n);
 }
 
 document.addEventListener('pointerdown',e=>{lastPointerDownTarget=e.target;},{capture:true});
@@ -208,7 +208,7 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
 };
 byId<HTMLButtonElement>('save').onclick=async()=>{
   if(!documentReady)return;byId('status').textContent='保存しています。保存中も描けます。';
-  try{const result=await persistence.save(controller.document,controller.selectedLayerId);byId('status').textContent=result.output==='download'?'作品ファイルを端末へ保存しました。':'作品を保存しました。';void refreshRecoveryCandidates();}
+  try{const result=await persistence.save(controller.document,controller.selectedLayerId),size=formatFileSize(result.byteLength);byId<HTMLButtonElement>('reloadSaved').disabled=false;byId('status').textContent=result.output==='download'?'作品ファイルを端末へ保存しました（'+size+'）。':'作品を保存しました（'+size+'）。';void refreshRecoveryCandidates();}
   catch(error){byId('status').textContent='保存できませんでした。'+(error instanceof Error?error.message:String(error));}
   updateQa();
 };
@@ -224,7 +224,7 @@ byId<HTMLButtonElement>('reloadSaved').onclick=async()=>{
   updateQa();
 };
 byId<HTMLButtonElement>('recover').onclick=async()=>{
-  const candidate=recoveryCandidates[0];if(!candidate)return;byId('status').textContent='作業途中の状態を確認しています。';
+  const candidate=recoveryCandidates.find(item=>BigInt(item.protectedThrough)>0n);if(!candidate)return;byId('status').textContent='作業途中の状態を確認しています。';
   try{
     const recovered=await persistence.recover(candidate),opened={document:recovered.document,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},generationId:'recovery',snapshotRevisionId:recovered.document.head,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})} as PortableOpenResult;
     await activateOpened(opened,true,recovered.savedRevision??undefined);recoveryCandidates=[];byId('status').textContent='作業途中の保護状態から戻しました。';
@@ -232,7 +232,7 @@ byId<HTMLButtonElement>('recover').onclick=async()=>{
   updatePersistenceDisplay();updateQa();
 };
 async function refreshRecoveryCandidates(){
-  try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values.filter(candidate=>BigInt(candidate.protectedThrough)>0n);updatePersistenceDisplay();if(recoveryCandidates.length&&!documentReady)byId('status').textContent='作業途中から戻せる作品があります。';}catch{}
+  try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values;updatePersistenceDisplay();if(recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n)&&!documentReady)byId('status').textContent='作業途中から戻せる作品があります。';}catch{}
 }
 void refreshRecoveryCandidates();
 if('serviceWorker' in navigator){const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});}
@@ -255,6 +255,7 @@ if(qaMode){
 if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLabelElement>('qaNoteLabel'),note=byId<HTMLTextAreaElement>('qaNote');const sync=()=>{const problem=state.value==='problem';noteLabel.hidden=!problem;note.disabled=!problem;updateQa();};state.onchange=sync;sync();byId<HTMLButtonElement>('qaCopy').onclick=async()=>{const result={result:state.value,note:state.value==='problem'?note.value:'',automatic:JSON.parse(byId('qaAuto').textContent||'{}')};try{await navigator.clipboard.writeText(JSON.stringify(result,null,2));byId('qaCopy').textContent='コピーしました';}catch{byId('qaCopy').textContent='コピーできませんでした';}};}
 updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('resize',updateQa);addEventListener('pagehide',()=>{if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);surface?.destroy();});
 
+function formatFileSize(bytes:number){if(!Number.isFinite(bytes)||bytes<0)return 'サイズ不明';if(bytes<1024)return Math.round(bytes)+' B';if(bytes<1024*1024)return (bytes/1024).toFixed(bytes<10*1024?1:0)+' KB';return (bytes/(1024*1024)).toFixed(bytes<10*1024*1024?1:0)+' MB';}
 function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M05 今回の確認</summary><ol>
 <li>線を描き、レイヤー追加や消しゴムも使った状態で「保存」してください。</li>
 <li>保存後にさらに描き、「保存後の変更あり」と表示されるか確認してください。</li>
