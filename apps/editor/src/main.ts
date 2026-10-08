@@ -57,6 +57,14 @@ function updateHistoryButtons(){
   byId<HTMLButtonElement>('compactRedo').disabled=blocked||!controller.canRedo;
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
 }
+function updatePersistenceDisplay(){
+  const state=persistenceState,indicator=byId('saveState');
+  if(!state){indicator.textContent='未保存';return;}
+  indicator.textContent=state.saving?'保存中':state.storageError?'保護エラー':state.dirty?(state.savedRevision?'保存後の変更あり':'未保存'):'保存済み';
+  indicator.dataset.dirty=String(state.dirty);indicator.dataset.saving=String(state.saving);indicator.dataset.protectedThrough=state.protectedThrough;
+  byId<HTMLButtonElement>('reloadSaved').disabled=!state.lastGood;
+  byId<HTMLButtonElement>('recover').disabled=recoveryCandidates.length===0;
+}
 
 document.addEventListener('pointerdown',e=>{lastPointerDownTarget=e.target;},{capture:true});
 if(qaMode){document.addEventListener('pointerdown',e=>{const canvas=byId<HTMLCanvasElement>('canvas'),target=e.target instanceof HTMLElement?e.target:null;canvas.dataset.lastPointerTarget=target?.id||target?.tagName.toLowerCase()||'unknown';canvas.dataset.lastPointerType=e.pointerType;canvas.dataset.lastPointerX=String(Math.round(e.clientX));canvas.dataset.lastPointerY=String(Math.round(e.clientY));queueMicrotask(updateQa);},{capture:true});}
@@ -157,6 +165,45 @@ function selectPreset(id:string){if(!surface)return;surface.selectById(id);const
 byId<HTMLSelectElement>('brush').onchange=e=>selectPreset((e.target as HTMLSelectElement).value);for(const id of ['size','sizeNumber'])byId<HTMLInputElement>(id).oninput=e=>{if(!surface)return;const input=e.target as HTMLInputElement,value=Number(input.value);if(!input.validity.valid||input.value==='')return;surface.setSize(value);syncPreset();};
 byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
 
+byId<HTMLButtonElement>('open').onclick=()=>byId<HTMLInputElement>('openFile').click();
+byId<HTMLInputElement>('openFile').onchange=async e=>{
+  const input=e.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file)return;
+  byId('status').textContent='作品を確認して開いています。';
+  try{const opened=await persistence.decodePortable(new Uint8Array(await file.arrayBuffer()));await activateOpened(opened,false,opened.snapshotRevisionId);byId('status').textContent='保存した作品を開きました。';}
+  catch(error){byId('status').textContent='この作品は安全に開けませんでした。'+(error instanceof Error?error.message:String(error));}
+  updateQa();
+};
+byId<HTMLButtonElement>('save').onclick=async()=>{
+  if(!documentReady)return;byId('status').textContent='保存しています。保存中も描けます。';
+  try{const result=await persistence.save(controller.document,controller.selectedLayerId);byId('status').textContent=result.output==='download'?'作品ファイルを端末へ保存しました。':'作品を保存しました。';}
+  catch(error){byId('status').textContent='保存できませんでした。'+(error instanceof Error?error.message:String(error));}
+  updateQa();
+};
+byId<HTMLButtonElement>('saveCopy').onclick=async()=>{
+  if(!documentReady)return;
+  try{await persistence.saveCopy(controller.document,controller.selectedLayerId);byId('status').textContent='別名の作品として保存しました。';}
+  catch(error){byId('status').textContent='別名保存できませんでした。'+(error instanceof Error?error.message:String(error));}
+  updateQa();
+};
+byId<HTMLButtonElement>('reloadSaved').onclick=async()=>{
+  try{const opened=await persistence.reloadLastGood();await activateOpened(opened,false,opened.snapshotRevisionId);byId('status').textContent='最後に正常保存できた状態を開き直しました。';}
+  catch(error){byId('status').textContent='保存版を開き直せませんでした。'+(error instanceof Error?error.message:String(error));}
+  updateQa();
+};
+byId<HTMLButtonElement>('recover').onclick=async()=>{
+  const candidate=recoveryCandidates[0];if(!candidate)return;byId('status').textContent='作業途中の状態を確認しています。';
+  try{
+    const recovered=await persistence.recover(candidate),opened={document:recovered.document,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},generationId:'recovery',snapshotRevisionId:recovered.document.head} as PortableOpenResult;
+    await activateOpened(opened,true,recovered.savedRevision??undefined);recoveryCandidates=[];byId('status').textContent='作業途中の保護状態から戻しました。';
+  }catch(error){byId('status').textContent='作業途中の状態を戻せませんでした。'+(error instanceof Error?error.message:String(error));}
+  updatePersistenceDisplay();updateQa();
+};
+async function refreshRecoveryCandidates(){
+  try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values.filter(candidate=>BigInt(candidate.protectedThrough)>0n);updatePersistenceDisplay();if(recoveryCandidates.length&&!documentReady)byId('status').textContent='作業途中から戻せる作品があります。';}catch{}
+}
+void refreshRecoveryCandidates();
+if('serviceWorker' in navigator){const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});}
+
 if(qaMode){
   const out=byId<HTMLPreElement>('qaGpuReport');
   byId<HTMLButtonElement>('qaDiagInitial').onclick=async()=>{
@@ -173,32 +220,28 @@ if(qaMode){
   };
 }
 if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLabelElement>('qaNoteLabel'),note=byId<HTMLTextAreaElement>('qaNote');const sync=()=>{const problem=state.value==='problem';noteLabel.hidden=!problem;note.disabled=!problem;updateQa();};state.onchange=sync;sync();byId<HTMLButtonElement>('qaCopy').onclick=async()=>{const result={result:state.value,note:state.value==='problem'?note.value:'',automatic:JSON.parse(byId('qaAuto').textContent||'{}')};try{await navigator.clipboard.writeText(JSON.stringify(result,null,2));byId('qaCopy').textContent='コピーしました';}catch{byId('qaCopy').textContent='コピーできませんでした';}};}
-updateHistoryButtons();updateQa();addEventListener('resize',updateQa);addEventListener('pagehide',()=>surface?.destroy());
+updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('resize',updateQa);addEventListener('pagehide',()=>surface?.destroy());
 
-function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M04 今回の確認</summary><ol>
+function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M05 今回の確認</summary><ol>
 <li>「新規キャンバス」を押してください。</li>
-<li>ブラシで太めの線を描いてください。</li>
-<li>「消しゴム」を選んでください。</li>
-<li>線の中央を消してください。</li>
-<li>白で塗ったようにならず、線がきちんと消えるか確認してください。</li>
-<li>Undoを押して線が元に戻るか確認してください。</li>
-<li>Redoを押してまた消えるか確認してください。</li>
-<li>新しいレイヤーを追加してください。</li>
-<li>新しいレイヤーに線を描いてください。</li>
-<li>その線だけを消してください。</li>
-<li>別のレイヤーの線まで消えていないか確認してください。</li>
-<li>種類から「硬い消しゴム」を選んで試してください。</li>
-<li>種類から「柔らかい消しゴム」を選び、少しずつ消えるか試してください。</li>
-<li>消しゴムを大きくして素早く動かしてください。</li>
-<li>ペンに表示が遅れてついてこないか確認してください。</li>
-<li>消しゴムからブラシへ戻し、普通に描けるか確認してください。</li>
-<li>Undo / Redoを何度か繰り返しても表示がおかしくならないか確認してください。</li>
-<li>スマホ・タブレットではWorkspaceを閉じた状態でも正常に消せるか確認してください。</li>
-<li>M01〜M03で合格した描き心地や軽さが悪化していないか確認してください。</li>
+<li>線を数本描いてください。</li>
+<li>レイヤーを追加し、別レイヤーにも描いてください。</li>
+<li>消しゴムで一部を消してください。</li>
+<li>「保存」を押してください。</li>
+<li>保存後にも新しい線を描き、「保存後の変更あり」と表示されるか確認してください。</li>
+<li>「保存版を開き直す」で、保存した時点の線・レイヤー・消した場所へ戻るか確認してください。</li>
+<li>もう一度描いて、ページを再読み込みしてください。</li>
+<li>「作業途中から戻す」が使える場合、押して直前までの作業へ戻れるか確認してください。</li>
+<li>Undo / Redoを何度か試してください。</li>
+<li>硬い消しゴムと柔らかい消しゴムを試してください。</li>
+<li>保存中にも線を描き、表示が大きく遅れないか確認してください。</li>
+<li>端末をオフラインにして再読み込みし、キャンバスが開けるか確認してください。</li>
+<li>オフラインのまま描画・消しゴム・レイヤー・Undo / Redo・保存を試してください。</li>
+<li>オフラインのまま保存した作品を「開く」から読み直せるか確認してください。</li>
 <li>「問題なし / 問題あり」を選択してください。</li>
-</ol><details class="qa-auto"><summary>GPU状態（問題がある場合のみ）</summary>
-<p>黒画面や消し跡の異常が出た場合に、作品データと表示の状態を確認します。</p>
-<button id="qaDiagInitial" type="button">GPU状態を記録する</button>
+</ol><details class="qa-auto"><summary>描画と保存の状態（問題がある場合のみ）</summary>
+<p>黒画面、保存後の表示差、復元失敗がある場合に状態を記録します。</p>
+<button id="qaDiagInitial" type="button">状態を記録する</button>
 <button id="qaDiagCopy" type="button">診断結果をコピーする</button>
 <pre id="qaGpuReport" style="font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
 </details><label>結果<select id="qaState"><option value="unchecked">未確認</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3" placeholder="短く書いてください"></textarea></label><button id="qaCopy" type="button">結果をコピー</button><details class="qa-auto"><summary>自動記録</summary><pre id="qaAuto"></pre></details></details>`;}
