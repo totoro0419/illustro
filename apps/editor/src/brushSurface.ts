@@ -125,7 +125,7 @@ export class BrushSurface{
     if(!backend?.tile)throw new Error('Projection checkpoint readback unavailable');const t=backend.tile(key,surfaceId),target=t.layer[t.l],out=new Uint8Array(TILE*TILE*4);
     if(backend.gl){const g=backend.gl;g.bindFramebuffer(g.FRAMEBUFFER,target.f);g.readPixels(0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,out);return out;}
     if(backend.device){
-      const d=backend.device,b=d.createBuffer({size:out.byteLength,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ}),e=d.createCommandEncoder();e.copyTextureToBuffer({texture:target},{buffer:b,bytesPerRow:TILE*4},[TILE,TILE]);d.queue.submit([e.finish()]);await b.mapAsync(GPUMapMode.READ);out.set(new Uint8Array(b.getMappedRange()));b.unmap();b.destroy();return out;
+      const d=backend.device,gpu=globalThis as unknown as {GPUBufferUsage:{COPY_DST:number;MAP_READ:number};GPUMapMode:{READ:number}},b=d.createBuffer({size:out.byteLength,usage:gpu.GPUBufferUsage.COPY_DST|gpu.GPUBufferUsage.MAP_READ}),e=d.createCommandEncoder();e.copyTextureToBuffer({texture:target},{buffer:b,bytesPerRow:TILE*4},[TILE,TILE]);d.queue.submit([e.finish()]);await b.mapAsync(gpu.GPUMapMode.READ);out.set(new Uint8Array(b.getMappedRange()));b.unmap();b.destroy();return out;
     }
     throw new Error('Projection checkpoint readback backend unsupported');
   }
