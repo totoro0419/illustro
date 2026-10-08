@@ -92,7 +92,7 @@ async function init(page,backend='webgl2'){
 async function saveDownload(page){
   const [download]=await Promise.all([page.waitForEvent('download',{timeout:30000}),page.locator('#save').click()]);
   const filePath=await download.path();assert.ok(filePath);await page.waitForFunction(()=>document.getElementById('saveState')?.dataset.saving==='false',{timeout:30000});
-  const stat=await fs.stat(filePath);assert.ok(stat.size>128,`saved .illustro unexpectedly tiny: ${stat.size} bytes`);assert.equal(await page.locator('#reloadSaved').isEnabled(),true,'saved-version button stayed disabled after successful save');
+  const stat=await fs.stat(filePath);assert.ok(stat.size>128,`saved .illustro unexpectedly tiny: ${stat.size} bytes`);
   return {download,filePath,size:stat.size};
 }
 async function removeOpfsEntry(page,doc,epoch,relative){
@@ -142,22 +142,20 @@ try{
     await draw(page,[.12,.52],[.82,.52]);await waitStroke(page,2);
     await page.locator('#erase').click();await page.locator('#brush').selectOption('foundation-hard-eraser');await draw(page,[.43,.52],[.57,.52],10);await waitStroke(page,3);
     await waitProtected(page,4);await page.waitForTimeout(1200);
-    const beforeSave=await qa(page),savedRevision=beforeSave.currentRevision;
-    const saved=await saveDownload(page),afterSave=await qa(page);assert.equal(afterSave.persistence.savedRevision,savedRevision);assert.equal(afterSave.persistence.dirty,false);assert.equal(afterSave.persistence.lastGood,true);
+    const beforeSave=await qa(page),savedRevision=beforeSave.currentRevision,protectedBeforeFile=beforeSave.persistence.protectedThrough;assert.equal(beforeSave.autosaveCheckpoint.fullSeedPending,false);assert.equal(await page.locator('#saveState').textContent(),'自動保存済み');
+    const saved=await saveDownload(page),afterSave=await qa(page);assert.equal(afterSave.persistence.savedRevision,null);assert.equal(afterSave.persistence.protectedThrough,protectedBeforeFile);assert.equal(afterSave.persistence.lastGood,false);
     await fs.copyFile(saved.filePath,path.join(evidence,`${backend}-roundtrip.illustro`));
     const restart=await context.newPage({viewport:{width:820,height:700}}),restartErrors=[];
     restart.on('pageerror',e=>restartErrors.push(e.message));restart.on('console',m=>{if(m.type()==='error')restartErrors.push(m.text());});
     await restart.goto(pageUrl(backend),{waitUntil:'networkidle',timeout:45000});
-    await restart.waitForFunction(()=>!(document.getElementById('reloadSaved')?.disabled),{timeout:30000});
-    await restart.locator('#reloadSaved').click();await restart.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('最後に正常保存できた状態を開き直しました'),{timeout:30000});await waitReady(restart);
-    const restarted=await qa(restart);assert.equal(restarted.currentRevision,savedRevision);assert.equal(restarted.totalStrokeCount,3);assert.deepEqual(restartErrors,[]);await restart.close();
-    await page.locator('#paint').click();await draw(page,[.15,.72],[.85,.72]);await waitStroke(page,4);
-    const changed=await qa(page);assert.equal(changed.persistence.savedRevision,savedRevision);assert.notEqual(changed.currentRevision,savedRevision);assert.equal(changed.persistence.dirty,true);assert.match(await page.locator('#saveState').textContent(),/保存後の変更あり/);
-    await page.locator('#reloadSaved').click();await page.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('最後に正常保存できた状態を開き直しました')||text.includes('保存版を開き直せませんでした');},{timeout:30000});await waitReady(page);
-    const reloaded=await qa(page),reloadStatus=await page.locator('#status').textContent();await fs.writeFile(path.join(evidence,`${backend}-reload-debug.json`),JSON.stringify({savedRevision,reloadStatus,reloaded},null,2));assert.match(reloadStatus??'',/最後に正常保存できた状態を開き直しました/);assert.equal(reloaded.currentRevision,savedRevision);assert.equal(reloaded.persistence.savedRevision,savedRevision);assert.equal(reloaded.layerCount,2);assert.equal(reloaded.totalStrokeCount,3);assert.equal(reloaded.persistence.dirty,false);assert.equal(reloaded.projectionRestoreMode,'cache');
-    await page.locator('#openFile').setInputFiles(saved.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('保存した作品を開きました'),{timeout:30000});await waitReady(page);
+    await restart.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});
+    await restart.locator('#recover').click();await restart.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('自動保存された最新の作業状態へ戻しました'),{timeout:30000});await waitReady(restart);
+    const restarted=await qa(restart);assert.equal(restarted.currentRevision,savedRevision);assert.equal(restarted.totalStrokeCount,3);assert.equal(restarted.projectionRestoreMode,'cache');assert.deepEqual(restartErrors,[]);await restart.close();
+    await page.locator('#paint').click();await draw(page,[.15,.72],[.85,.72]);await waitStroke(page,4);await waitProtected(page,5);await page.waitForTimeout(900);
+    const changed=await qa(page);assert.notEqual(changed.currentRevision,savedRevision);assert.equal(changed.persistence.savedRevision,null);assert.equal(await page.locator('#saveState').textContent(),'自動保存済み');
+    await page.locator('#openFile').setInputFiles(saved.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('作品ファイルを開きました。自動保存を開始しました。'),{timeout:30000});await waitReady(page);
     const opened=await qa(page);assert.equal(opened.currentRevision,savedRevision);assert.equal(opened.layerCount,2);assert.equal(opened.totalStrokeCount,3);assert.equal(opened.projectionRestoreMode,'cache');assert.deepEqual(errors,[]);
-    report.backends.push({backend,status:'PASS',opfs:opened.persistence.backend,roundTrip:true,snapshotIsolation:true,saveDurationMs:afterSave.persistence.saveDurationMs,snapshotCaptureMs:afterSave.persistence.snapshotCaptureMs});
+    report.backends.push({backend,status:'PASS',opfs:opened.persistence.backend,autosaveIndependentFromPortable:true,roundTrip:true,snapshotIsolation:true,saveDurationMs:afterSave.persistence.saveDurationMs,snapshotCaptureMs:afterSave.persistence.snapshotCaptureMs});
     await page.screenshot({path:path.join(evidence,`${backend}-m05.png`),fullPage:true});await context.close();
   }
 
@@ -169,24 +167,31 @@ try{
     await draw(page,[.15,.35],[.85,.35]);await waitStroke(page,1);await waitProtected(page,1);
     await page.locator('#save').click();await page.waitForFunction(()=>document.getElementById('saveState')?.dataset.saving==='false',{timeout:30000});
     const firstStatus=await page.locator('#status').textContent(),first=await qa(page),picker1=await page.evaluate(()=>{const s=window.__m05PickerState;return {size:s?.bytes?.byteLength??0,reads:s?.reads??0,writes:s?.writes??0};});
-    assert.match(firstStatus??'',/作品を保存しました（.+ (?:B|KB|MB)）。/);assert.ok(!firstStatus?.includes('保存できませんでした'));assert.equal(first.persistence.lastGood,true);assert.equal(await page.locator('#reloadSaved').isEnabled(),true);assert.ok(picker1.size>128);assert.equal(picker1.writes,1);assert.ok(picker1.reads>3,'direct-save verifier did not retry stale readback');
+    assert.match(firstStatus??'',/作品ファイルを保存しました（.+ (?:B|KB|MB)）。自動保存状態には影響しません。/);assert.ok(!firstStatus?.includes('保存できませんでした'));assert.equal(first.persistence.lastGood,false);assert.equal(first.persistence.savedRevision,null);assert.ok(picker1.size>128);assert.equal(picker1.writes,1);assert.ok(picker1.reads>3,'direct-save verifier did not retry stale readback');
     await page.locator('#paint').click();await draw(page,[.15,.65],[.85,.65]);await waitStroke(page,2);await waitProtected(page,2);
     await page.locator('#save').click();await page.waitForFunction(()=>document.getElementById('saveState')?.dataset.saving==='false',{timeout:30000});
     const secondStatus=await page.locator('#status').textContent(),picker2=await page.evaluate(()=>{const s=window.__m05PickerState;return {size:s?.bytes?.byteLength??0,reads:s?.reads??0,writes:s?.writes??0};});
-    assert.match(secondStatus??'',/作品を保存しました（.+ (?:B|KB|MB)）。/);assert.equal(picker2.writes,2);assert.ok(picker2.size>picker1.size);assert.deepEqual(errors,[]);
-    report.directPicker={status:'PASS',staleReadsSimulated:3,verificationRetried:true,firstBytes:picker1.size,secondBytes:picker2.size,reloadEnabled:true};await context.close();
+    assert.match(secondStatus??'',/作品ファイルを保存しました（.+ (?:B|KB|MB)）。自動保存状態には影響しません。/);assert.equal(picker2.writes,2);assert.ok(picker2.size>picker1.size);assert.deepEqual(errors,[]);
+    report.directPicker={status:'PASS',staleReadsSimulated:3,verificationRetried:true,firstBytes:picker1.size,secondBytes:picker2.size,autosaveIndependent:true};await context.close();
   }
 
-  // Explicit save is independent from recovery-journal progress. Even a fresh document
-  // with protectedThrough=0 must expose Last Good after reload.
+  // Portable .illustro output is deliberately independent from internal autosave.
+  // Saving a brand-new untouched document must not create a fake recovery commit.
   {
     const context=await freshContext(),page=await context.newPage({viewport:{width:900,height:700}});await init(page);
-    const before=await qa(page);assert.equal(before.persistence.protectedThrough,'0');
-    const saved=await saveDownload(page);assert.ok(saved.size>128);await page.close();
+    const before=await qa(page);assert.equal(before.persistence.protectedThrough,'0');assert.equal(await page.locator('#reloadSaved').count(),0);
+    const saved=await saveDownload(page),after=await qa(page);assert.ok(saved.size>128);assert.equal(after.persistence.protectedThrough,'0');assert.equal(after.persistence.savedRevision,null);assert.equal(after.persistence.lastGood,false);await page.close();
     const reopened=await context.newPage({viewport:{width:900,height:700}});await reopened.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});
-    await reopened.waitForFunction(()=>!(document.getElementById('reloadSaved')?.disabled),{timeout:30000});
-    await reopened.locator('#reloadSaved').click();await reopened.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('最後に正常保存できた状態を開き直しました'),{timeout:30000});await waitReady(reopened);
-    const state=await qa(reopened);assert.equal(state.totalStrokeCount,0);report.explicitSaveWithoutRecovery={status:'PASS',protectedThrough:'0',fileBytes:saved.size,reloadEnabled:true};await context.close();
+    assert.equal(await reopened.locator('#recover').isDisabled(),true);report.explicitSaveWithoutRecovery={status:'PASS',protectedThrough:'0',fileBytes:saved.size,createdRecoveryCommit:false};await context.close();
+  }
+
+  // Checkpoint policy: every operation is journaled; finished-state checkpoint is forced
+  // at 12 operations even without an idle gap.
+  {
+    const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
+    for(let i=0;i<12;i++){const y=.10+(i%10)*.075;await draw(page,[.12,y],[.82,y],2);await waitStroke(page,i+1);}
+    await waitProtected(page,12);await page.waitForFunction(()=>{try{const q=JSON.parse(document.querySelector('#qaAuto')?.textContent??'{}');return q.autosaveCheckpoint?.fullSeedPending===false&&q.autosaveCheckpoint?.lastCheckpointAt!==null;}catch{return false;}},{timeout:30000});
+    const state=await qa(page);assert.equal(state.autosaveCheckpoint.operationInterval,12);assert.equal(state.autosaveCheckpoint.idleMs,800);assert.equal(state.autosaveCheckpoint.opsSinceLast,0);report.checkpointCadence={status:'PASS',operationInterval:12,idleMs:800,protectedThrough:state.persistence.protectedThrough};await context.close();
   }
 
   // Normal crash/reload recovery must restore a finished artwork checkpoint, not redraw every stroke.
@@ -196,7 +201,7 @@ try{
     await waitProtected(page,strokeTotal);await page.waitForTimeout(1400);
     const before=await qa(page),doc=before.documentId,head=before.currentRevision;await page.close();
     const restoredPage=await context.newPage({viewport:{width:1100,height:800}});restoredPage.on('pageerror',e=>errors.push(e.message));await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});
-    await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});const clickAt=Date.now();await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('作業途中の保護状態から戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
+    await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});const clickAt=Date.now();await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('自動保存された最新の作業状態へ戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
     const recovered=await qa(restoredPage),wallMs=Date.now()-clickAt;assert.equal(recovered.documentId,doc);assert.equal(recovered.currentRevision,head);assert.equal(recovered.persistence.recovered,true);assert.equal(recovered.totalStrokeCount,strokeTotal);assert.equal(recovered.projectionRestoreMode,'cache');assert.equal(recovered.projectionCacheRevision,head);assert.ok(recovered.projectionRestoreMs<500,`cached projection restore too slow: ${recovered.projectionRestoreMs}ms`);assert.deepEqual(errors,[]);
     report.recovery={status:'PASS',strategy:'finished-state-cache',protectedThrough:before.persistence.protectedThrough,recoveredRevision:recovered.currentRevision,workerDurationMs:recovered.persistence.recoveryDurationMs,projectionRestoreMs:recovered.projectionRestoreMs,wallMs,strokeTotal};await context.close();
   }
@@ -205,8 +210,8 @@ try{
   {
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     await draw(page,[.14,.25],[.84,.25],5);await waitStroke(page,1);await draw(page,[.14,.50],[.84,.50],5);await waitStroke(page,2);await draw(page,[.14,.75],[.84,.75],5);await waitStroke(page,3);await waitProtected(page,3);await page.waitForTimeout(1200);
-    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;await waitForOpfsEntry(page,doc,epoch,'projection.frame');await corruptOpfsFile(page,doc,epoch,'projection.frame');await page.close();
-    const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('作業途中の保護状態から戻しました'),{timeout:30000});await waitReady(restoredPage);
+    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;await waitForOpfsEntry(page,doc,epoch,'projection-v2.frame');await corruptOpfsFile(page,doc,epoch,'projection-v2.frame');await page.close();
+    const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('自動保存された最新の作業状態へ戻しました'),{timeout:30000});await waitReady(restoredPage);
     const repaired=await qa(restoredPage);assert.equal(repaired.currentRevision,head);assert.equal(repaired.totalStrokeCount,3);assert.equal(repaired.projectionRestoreMode,'replay-fallback');report.repairFallback={status:'PASS',cacheCorrupted:true,strategy:'stroke-replay',strokeCount:3};await context.close();
   }
 
@@ -215,19 +220,9 @@ try{
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     await draw(page,[.12,.25],[.82,.25]);await waitStroke(page,1);await draw(page,[.12,.50],[.82,.50]);await waitStroke(page,2);await draw(page,[.12,.75],[.82,.75]);await waitStroke(page,3);await waitProtected(page,3);
     const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch;await removeOpfsEntry(page,doc,epoch,'commits/00000000000000000002.frame');await page.close();
-    const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('作業途中の保護状態から戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
+    const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('自動保存された最新の作業状態へ戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
     const recovered=await qa(restoredPage);assert.equal(recovered.totalStrokeCount,1);assert.equal(recovered.persistence.recovered,true);
     report.gap={status:'PASS',deletedSequence:2,recoveredStrokeCount:1};await context.close();
-  }
-
-  // A corrupted Last Good must not replace a valid Previous Good.
-  {
-    const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
-    await draw(page,[.15,.30],[.85,.30]);await waitStroke(page,1);await waitProtected(page,1);const saveA=await saveDownload(page);void saveA;
-    await draw(page,[.15,.60],[.85,.60]);await waitStroke(page,2);await waitProtected(page,2);const saveB=await saveDownload(page);void saveB;
-    const state=await qa(page);assert.equal(state.persistence.previousGood,true);const doc=state.documentId;await corruptDocumentSave(page,doc,'last.illustro');
-    await page.locator('#reloadSaved').click();await page.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('最後に正常保存できた状態を開き直しました')||text.includes('保存版を開き直せませんでした');},{timeout:30000});await waitReady(page);const fallback=await qa(page);assert.equal(fallback.totalStrokeCount,1);
-    report.lastGood={status:'PASS',corruptedLastRejected:true,previousGoodRecovered:true};await context.close();
   }
 
   // Service Worker app shell + dynamic brush/worker assets remain usable offline after normal online use.
@@ -240,7 +235,7 @@ try{
     const onlineSave=await saveDownload(page);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded',timeout:45000});assert.ok((await page.locator('body').innerText()).includes('Illustro'));
     const offlineQaPanel=page.locator('#qaPanel');if(await offlineQaPanel.count())await offlineQaPanel.evaluate(el=>{el.open=false;});
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await waitReady(page);await draw(page,[.18,.45],[.82,.45]);await waitStroke(page,1);await waitProtected(page,1);
-    const offlineSave=await saveDownload(page);assert.ok(offlineSave.filePath);await page.locator('#openFile').setInputFiles(onlineSave.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('保存した作品を開きました'),{timeout:30000});await waitReady(page);
+    const offlineSave=await saveDownload(page);assert.ok(offlineSave.filePath);await page.locator('#openFile').setInputFiles(onlineSave.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('作品ファイルを開きました。自動保存を開始しました。'),{timeout:30000});await waitReady(page);
     assert.deepEqual(errors,[],'Offline app operations produced a browser error before the intentional network probe');
     const networkUnavailable=await page.evaluate(async()=>{try{await fetch('./__m05_network_probe__?t='+Date.now(),{cache:'no-store'});return false;}catch{return true;}});
     const navigatorOnline=await page.evaluate(()=>navigator.onLine),offlineState=await qa(page);assert.equal(networkUnavailable,true);
