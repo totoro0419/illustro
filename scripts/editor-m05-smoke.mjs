@@ -91,7 +91,7 @@ try{
     await fs.copyFile(saved.filePath,path.join(evidence,`${backend}-roundtrip.illustro`));
     await page.locator('#paint').click();await draw(page,[.15,.72],[.85,.72]);await waitStroke(page,4);
     const changed=await qa(page);assert.equal(changed.persistence.savedRevision,savedRevision);assert.notEqual(changed.currentRevision,savedRevision);assert.equal(changed.persistence.dirty,true);assert.match(await page.locator('#saveState').textContent(),/保存後の変更あり/);
-    await page.locator('#reloadSaved').click();await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='3',{timeout:30000});await waitReady(page);
+    await page.locator('#reloadSaved').click();await page.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('最後に正常保存できた状態を開き直しました')||text.includes('保存版を開き直せませんでした');},{timeout:30000});await waitReady(page);
     const reloaded=await qa(page),reloadStatus=await page.locator('#status').textContent();await fs.writeFile(path.join(evidence,`${backend}-reload-debug.json`),JSON.stringify({savedRevision,reloadStatus,reloaded},null,2));assert.match(reloadStatus??'',/最後に正常保存できた状態を開き直しました/);assert.equal(reloaded.currentRevision,savedRevision);assert.equal(reloaded.persistence.savedRevision,savedRevision);assert.equal(reloaded.layerCount,2);assert.equal(reloaded.totalStrokeCount,3);assert.equal(reloaded.persistence.dirty,false);
     await page.locator('#openFile').setInputFiles(saved.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('保存した作品を開きました'),{timeout:30000});await waitReady(page);
     const opened=await qa(page);assert.equal(opened.currentRevision,savedRevision);assert.equal(opened.layerCount,2);assert.equal(opened.totalStrokeCount,3);assert.deepEqual(errors,[]);
@@ -105,7 +105,7 @@ try{
     await draw(page,[.15,.25],[.80,.25]);await waitStroke(page,1);await draw(page,[.15,.45],[.80,.45]);await waitStroke(page,2);await draw(page,[.15,.65],[.80,.65]);await waitStroke(page,3);await waitProtected(page,3);
     const before=await qa(page),doc=before.documentId,head=before.currentRevision;await page.close();
     const restoredPage=await context.newPage({viewport:{width:1100,height:800}});restoredPage.on('pageerror',e=>errors.push(e.message));await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});
-    await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await waitReady(restoredPage);await restoredPage.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='3',{timeout:30000});
+    await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('作業途中の保護状態から戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
     const recovered=await qa(restoredPage);assert.equal(recovered.documentId,doc);assert.equal(recovered.currentRevision,head);assert.equal(recovered.persistence.recovered,true);assert.equal(recovered.totalStrokeCount,3);assert.deepEqual(errors,[]);
     report.recovery={status:'PASS',protectedThrough:before.persistence.protectedThrough,recoveredRevision:recovered.currentRevision,durationMs:recovered.persistence.recoveryDurationMs};await context.close();
   }
@@ -115,8 +115,8 @@ try{
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     await draw(page,[.12,.25],[.82,.25]);await waitStroke(page,1);await draw(page,[.12,.50],[.82,.50]);await waitStroke(page,2);await draw(page,[.12,.75],[.82,.75]);await waitStroke(page,3);await waitProtected(page,3);
     const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch;await removeOpfsEntry(page,doc,epoch,'commits/00000000000000000002.frame');await page.close();
-    const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await waitReady(restoredPage);
-    await restoredPage.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:30000});const recovered=await qa(restoredPage);assert.equal(recovered.totalStrokeCount,1);assert.equal(recovered.persistence.recovered,true);
+    const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('作業途中の保護状態から戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
+    const recovered=await qa(restoredPage);assert.equal(recovered.totalStrokeCount,1);assert.equal(recovered.persistence.recovered,true);
     report.gap={status:'PASS',deletedSequence:2,recoveredStrokeCount:1};await context.close();
   }
 
@@ -126,7 +126,7 @@ try{
     await draw(page,[.15,.30],[.85,.30]);await waitStroke(page,1);await waitProtected(page,1);const saveA=await saveDownload(page);void saveA;
     await draw(page,[.15,.60],[.85,.60]);await waitStroke(page,2);await waitProtected(page,2);const saveB=await saveDownload(page);void saveB;
     const state=await qa(page);assert.equal(state.persistence.previousGood,true);const doc=state.documentId,epoch=state.writerEpoch;await corruptOpfsFile(page,doc,epoch,'saves/last.illustro');
-    await page.locator('#reloadSaved').click();await waitReady(page);await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',{timeout:30000});const fallback=await qa(page);assert.equal(fallback.totalStrokeCount,1);
+    await page.locator('#reloadSaved').click();await page.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('最後に正常保存できた状態を開き直しました')||text.includes('保存版を開き直せませんでした');},{timeout:30000});await waitReady(page);const fallback=await qa(page);assert.equal(fallback.totalStrokeCount,1);
     report.lastGood={status:'PASS',corruptedLastRejected:true,previousGoodRecovered:true};await context.close();
   }
 
