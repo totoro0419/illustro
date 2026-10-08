@@ -223,22 +223,12 @@ if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLab
 updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('resize',updateQa);addEventListener('pagehide',()=>surface?.destroy());
 
 function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M05 今回の確認</summary><ol>
-<li>「新規キャンバス」を押してください。</li>
-<li>線を数本描いてください。</li>
-<li>レイヤーを追加し、別レイヤーにも描いてください。</li>
-<li>消しゴムで一部を消してください。</li>
-<li>「保存」を押してください。</li>
-<li>保存後にも新しい線を描き、「保存後の変更あり」と表示されるか確認してください。</li>
-<li>「保存版を開き直す」で、保存した時点の線・レイヤー・消した場所へ戻るか確認してください。</li>
-<li>もう一度描いて、ページを再読み込みしてください。</li>
-<li>「作業途中から戻す」が使える場合、押して直前までの作業へ戻れるか確認してください。</li>
-<li>Undo / Redoを何度か試してください。</li>
-<li>硬い消しゴムと柔らかい消しゴムを試してください。</li>
-<li>保存中にも線を描き、表示が大きく遅れないか確認してください。</li>
-<li>端末をオフラインにして再読み込みし、キャンバスが開けるか確認してください。</li>
-<li>オフラインのまま描画・消しゴム・レイヤー・Undo / Redo・保存を試してください。</li>
-<li>オフラインのまま保存した作品を「開く」から読み直せるか確認してください。</li>
-<li>「問題なし / 問題あり」を選択してください。</li>
+<li>線を描き、レイヤー追加や消しゴムも使った状態で「保存」してください。</li>
+<li>保存後にさらに描き、「保存後の変更あり」と表示されるか確認してください。</li>
+<li>「保存版を開き直す」で、保存した時点の絵とレイヤー状態へ正しく戻るか確認してください。</li>
+<li>もう一度描き、保存せずページを再読み込みしてください。</li>
+<li>「作業途中から戻す」が使える場合、直前の作業まで正しく戻るか確認してください。</li>
+<li>最後に「問題なし / 問題あり」を選択してください。</li>
 </ol><details class="qa-auto"><summary>描画と保存の状態（問題がある場合のみ）</summary>
 <p>黒画面、保存後の表示差、復元失敗がある場合に状態を記録します。</p>
 <button id="qaDiagInitial" type="button">状態を記録する</button>
