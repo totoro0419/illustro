@@ -7,6 +7,7 @@ type Entry={name:string;kind:'file'|'directory'};
 type StoreMode='opfs-sync'|'opfs-async'|'indexeddb';
 type ProjectionEncoding='raw-rgba8'|'gzip-rgba8';
 type ProjectionIndex=Readonly<{version:1;generationId:string;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
+type ProjectionDeltaIndex=Readonly<{version:2;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
 type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>;
 
 const out=self as unknown as {postMessage:(value:unknown,transfer?:Transferable[])=>void};
@@ -51,6 +52,11 @@ async function handle(message:RequestMessage){
       await storeProjectionCheckpoint(store,session,revisionId,width,height,layers);await touchMeta(store,session);
       reply(message.id,true,{backend:store.mode,revisionId});break;
     }
+    case 'store-projection-delta':{
+      const session=requireSession(message),revisionId=uuid(message.revisionId,'projection revision'),width=dimension(message.width,'projection width'),height=dimension(message.height,'projection height'),tileSize=integer(message.tileSize,'projection tile size',1),surfaceIds=stringArray(message.surfaceIds,'projection surfaces').map(x=>uuid(x,'projection surface')),tiles=projectionTileInputs(message.tiles,tileSize);
+      await storeProjectionDelta(store,session,revisionId,width,height,tileSize,surfaceIds,tiles);await touchMeta(store,session);
+      reply(message.id,true,{backend:store.mode,revisionId,tileCount:tiles.length});break;
+    }
     case 'list-recovery':{
       const candidates=await listRecoveryCandidates(store);reply(message.id,true,{candidates,backend:store.mode,storage:await storageInfo()});break;
     }
@@ -69,11 +75,13 @@ async function handle(message:RequestMessage){
       const preserved=preservedSections(message.preserved);for(const section of preserved.sections){if(section.required)throw new Error('unknown preserved section cannot be required');if(sectionInputs.some(x=>x.id===section.id))continue;sectionInputs.push(section);}
       const target=snapshot.revisions.find(r=>r.id===snapshot.snapshotRevisionId);if(!target)throw new Error('save target missing');
       if(currentSession&&currentSession.documentId===target.root.documentId){
-        const checkpoint=await loadProjectionCheckpointEncoded(store,currentSession,new Set(snapshot.revisions.map(r=>r.id)));
+        const checkpoint=await loadProjectionCheckpointRaw(store,currentSession,new Set(snapshot.revisions.map(r=>r.id)));
         if(checkpoint){
-          const index={version:1,revisionId:checkpoint.index.revisionId,width:checkpoint.index.width,height:checkpoint.index.height,layers:checkpoint.index.layers.map(layer=>({surfaceId:layer.surfaceId,encoding:layer.encoding,rawLength:layer.rawLength,sectionId:'render-cache-layer:'+layer.surfaceId}))};
+          const encodedLayers=[] as Array<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number;bytes:Uint8Array}>;
+          for(const layer of checkpoint.layers){const encoded=await encodeProjectionPixels(layer.pixels);encodedLayers.push({surfaceId:layer.surfaceId,encoding:encoded.encoding,rawLength:layer.pixels.byteLength,bytes:encoded.bytes});}
+          const index={version:1,revisionId:checkpoint.revisionId,width:checkpoint.width,height:checkpoint.height,layers:encodedLayers.map(layer=>({surfaceId:layer.surfaceId,encoding:layer.encoding,rawLength:layer.rawLength,sectionId:'render-cache-layer:'+layer.surfaceId}))};
           sectionInputs.push({id:'render-cache',type:'render.cache.index.v1',required:false,bytes:encoder.encode(JSON.stringify(index))});
-          for(const layer of checkpoint.layers)sectionInputs.push({id:'render-cache-layer:'+layer.surfaceId,type:'render.cache.layer.v1',required:false,bytes:layer.bytes});
+          for(const layer of encodedLayers)sectionInputs.push({id:'render-cache-layer:'+layer.surfaceId,type:'render.cache.layer.v1',required:false,bytes:layer.bytes});
         }
       }
       const bytes=await encodeIllustroFile({generationId,documentId:target.root.documentId,snapshotRevisionId:snapshot.snapshotRevisionId,createdAt,sections:sectionInputs,manifestExtras:preserved.manifestExtras});
@@ -155,6 +163,7 @@ async function loadProjectionCheckpointEncoded(store:WorkingStore,session:Sessio
   }catch{return null;}
 }
 async function loadProjectionCheckpointRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
+  const delta=await loadProjectionDeltaRaw(store,session,allowedRevisions);if(delta)return delta;
   const encoded=await loadProjectionCheckpointEncoded(store,session,allowedRevisions);if(!encoded)return null;
   try{
     const layers=[] as Array<{surfaceId:string;pixels:Uint8Array}>;
@@ -162,6 +171,47 @@ async function loadProjectionCheckpointRaw(store:WorkingStore,session:Session,al
     return Object.freeze({version:1 as const,revisionId:encoded.index.revisionId,width:encoded.index.width,height:encoded.index.height,layers:Object.freeze(layers.map(x=>Object.freeze(x)))});
   }catch{return null;}
 }
+async function storeProjectionDelta(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,tileSize:number,surfaceIds:readonly string[],tiles:readonly {surfaceId:string;key:string;pixels:Uint8Array}[]){
+  const path=session.path+'/projection-v2.frame',old=await store.get(path);let previous:ProjectionDeltaIndex|null=null;
+  if(old)try{previous=parseProjectionDeltaIndex(await unframeJson(old));}catch{}
+  const map=new Map<string,{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number}>();
+  if(previous&&previous.width===width&&previous.height===height&&previous.tileSize===tileSize)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
+  for(const tile of tiles){
+    if(!surfaceIds.includes(tile.surfaceId))continue;const id=tile.surfaceId+'\u0000'+tile.key,file=session.path+'/projection-v2/'+tile.surfaceId+'/'+tileFileName(tile.key)+'.bin';
+    if(isTransparent(tile.pixels)){await store.remove(file);map.delete(id);continue;}
+    const encoded=await encodeProjectionPixels(tile.pixels);await putVerified(store,file,encoded.bytes);map.set(id,{surfaceId:tile.surfaceId,key:tile.key,encoding:encoded.encoding,rawLength:tile.pixels.byteLength});
+  }
+  const index:ProjectionDeltaIndex=Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
+  await putVerified(store,path,await frameJson(index));
+}
+async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
+  const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
+  try{
+    const index=parseProjectionDeltaIndex(await unframeJson(frame));if(!allowedRevisions.has(index.revisionId))return null;
+    const layers=new Map<string,Uint8Array>();for(const surfaceId of index.surfaceIds)layers.set(surfaceId,new Uint8Array(index.width*index.height*4));
+    for(const descriptor of index.tiles){
+      const target=layers.get(descriptor.surfaceId);if(!target)return null;const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key)+'.bin');if(!bytes)return null;
+      const pixels=await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength),[tx,ty]=parseTileKey(descriptor.key),copyW=Math.min(index.tileSize,index.width-tx*index.tileSize),copyH=Math.min(index.tileSize,index.height-ty*index.tileSize);
+      for(let y=0;y<copyH;y++){const from=y*index.tileSize*4,to=((ty*index.tileSize+y)*index.width+tx*index.tileSize)*4;target.set(pixels.subarray(from,from+copyW*4),to);}
+    }
+    return Object.freeze({version:1 as const,revisionId:index.revisionId,width:index.width,height:index.height,layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,pixels:layers.get(surfaceId)!})))});
+  }catch{return null;}
+}
+function parseProjectionDeltaIndex(value:unknown):ProjectionDeltaIndex{
+  if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2)throw new Error('unsupported projection delta index');
+  const revisionId=uuid(x.revisionId,'projection revision'),width=dimension(x.width,'projection width'),height=dimension(x.height,'projection height'),tileSize=integer(x.tileSize,'projection tile size',1),surfaceIds=stringArray(x.surfaceIds,'projection surfaces').map(v=>uuid(v,'projection surface'));
+  if(tileSize>1024||!Array.isArray(x.tiles)||x.tiles.length>1000000)throw new Error('invalid projection delta tiles');const seen=new Set<string>(),tiles=x.tiles.map(value=>{if(!value||typeof value!=='object')throw new Error('invalid projection delta tile');const item=value as Record<string,unknown>,surfaceId=uuid(item.surfaceId,'projection surface'),key=tileKey(item.key),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection delta tile');seen.add(id);const encoding=projectionEncoding(item.encoding),rawLength=integer(item.rawLength,'projection tile length',0);if(rawLength!==tileSize*tileSize*4)throw new Error('projection tile size mismatch');return Object.freeze({surfaceId,key,encoding,rawLength});});
+  return Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze(surfaceIds),tiles:Object.freeze(tiles)});
+}
+function projectionTileInputs(value:unknown,tileSize:number){
+  if(!Array.isArray(value)||value.length>1000000)throw new Error('invalid projection tile list');const expected=tileSize*tileSize*4,seen=new Set<string>();
+  return value.map(item=>{if(!item||typeof item!=='object')throw new Error('invalid projection tile');const x=item as {surfaceId?:unknown;key?:unknown;pixels?:unknown},surfaceId=uuid(x.surfaceId,'projection surface'),key=tileKey(x.key),pixels=uint8(x.pixels,'projection tile pixels'),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection tile');seen.add(id);if(pixels.byteLength!==expected)throw new Error('projection tile payload mismatch');return {surfaceId,key,pixels};});
+}
+function tileKey(value:unknown){if(typeof value!=='string'||!/^\d+,\d+$/.test(value))throw new Error('invalid projection tile key');return value;}
+function parseTileKey(key:string){const [x,y]=key.split(',').map(Number);if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0)throw new Error('invalid projection tile key');return [x,y] as const;}
+function tileFileName(key:string){return key.replace(',',':');}
+function isTransparent(bytes:Uint8Array){for(let i=3;i<bytes.length;i+=4)if(bytes[i]!==0)return false;return true;}
+
 async function decodeProjectionCache(decoded:Awaited<ReturnType<typeof decodeIllustroFile>>):Promise<ProjectionCache|null>{
   const section=decoded.sections.get('render-cache');if(!section||section.descriptor.type!=='render.cache.index.v1'||section.descriptor.required)return null;
   try{
