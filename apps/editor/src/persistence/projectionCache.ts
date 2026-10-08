@@ -7,3 +7,19 @@ export type ProjectionCacheV1=Readonly<{
   height:number;
   layers:readonly ProjectionCacheLayerV1[];
 }>;
+
+export type ProjectionTileDeltaV2=Readonly<{
+  surfaceId:string;
+  key:string;
+  pixels:Uint8Array;
+}>;
+
+export type ProjectionCheckpointDeltaV2=Readonly<{
+  version:2;
+  revisionId:string;
+  width:number;
+  height:number;
+  tileSize:number;
+  surfaceIds:readonly string[];
+  tiles:readonly ProjectionTileDeltaV2[];
+}>;
