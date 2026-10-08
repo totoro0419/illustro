@@ -3,6 +3,7 @@ import {validateRecord} from '@illustro/brush-rt';
 import workerUrl from './persistence.worker.ts?worker&url';
 import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortableData} from './portable';
 import type {DecodedPortableFile,PortableManifestSection} from './format';
+import type {ProjectionCacheV1} from './projectionCache';
 
 type WorkerReply={id:number;ok:boolean;result?:unknown;error?:string};
 export type Candidate=Readonly<{documentId:string;writerEpochId:string;title:string;protectedThrough:string;updatedAt:number;savedRevisionId:string|null;lastGood:boolean;previousGood:boolean}>;
@@ -49,13 +50,13 @@ export class PersistenceCoordinator{
     const started=performance.now(),result=await this.request('load-recovery',{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}) as any,blocks=new Map<string,Uint8Array>();
     for(const item of result.blocks as {id:string;bytes:Uint8Array}[])blocks.set(item.id,item.bytes);
     const document=CoreDocument.restore({snapshot:result.snapshot,blockPayloads:blocks}),selected=document.root.rootLayerIds[0];if(!selected)throw new Error('回復した作品にレイヤーがありません。');
-    const controller={document,selectedLayerId:selected};this.patch({recoveryDurationMs:performance.now()-started,recovered:true});return Object.freeze({document,selectedLayerId:selected,savedRevision:(candidate.savedRevisionId&&document.hasRevision(candidate.savedRevisionId as RevisionId)?candidate.savedRevisionId as RevisionId:null)});
+    const controller={document,selectedLayerId:selected},projectionCache=isProjectionCache(result.projectionCache)?result.projectionCache:undefined;this.patch({recoveryDurationMs:performance.now()-started,recovered:true});return Object.freeze({document,selectedLayerId:selected,savedRevision:(candidate.savedRevisionId&&document.hasRevision(candidate.savedRevisionId as RevisionId)?candidate.savedRevisionId as RevisionId:null),projectionCache});
   }
   async reloadLastGood(candidate?:Pick<Candidate,'documentId'|'writerEpochId'>){const payload=candidate?{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}:{};const raw=await this.request('load-last-good',payload) as any;return this.decodePortable(raw.bytes as Uint8Array);}
   async decodePortable(bytes:Uint8Array):Promise<PortableOpenResult>{
     const started=performance.now(),copy=bytes.slice(),raw=await this.request('decode-portable',{bytes:copy},[copy.buffer as ArrayBuffer]) as any;
     const sections=new Map<string,{descriptor:PortableManifestSection;bytes:Uint8Array}>();for(const item of raw.sections as {descriptor:PortableManifestSection;bytes:Uint8Array}[])sections.set(item.descriptor.id,item);
-    const decoded:Object={manifest:raw.manifest,sections},opened=openDecodedPortableDocument(decoded as DecodedPortableFile);this.patch({reloadDurationMs:performance.now()-started});return opened;
+    const decoded:Object={manifest:raw.manifest,sections},opened=openDecodedPortableDocument(decoded as DecodedPortableFile),projectionCache=isProjectionCache(raw.projectionCache)?raw.projectionCache:undefined;this.patch({reloadDurationMs:performance.now()-started});return Object.freeze({...opened,...(projectionCache?{projectionCache}:{})});
   }
   async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false){
     if(this.stateValue.saving)throw new Error('保存中です。');this.patch({saving:true,storageError:null});const started=performance.now();
@@ -73,6 +74,12 @@ export class PersistenceCoordinator{
     }catch(error){this.patch({saving:false,storageError:message(error),saveDurationMs:performance.now()-started});throw error;}
   }
   async saveCopy(document:CoreDocument,selectedLayerId:LayerId){return this.save(document,selectedLayerId,true);}
+  async storeProjectionCheckpoint(cache:ProjectionCacheV1){
+    if(!this.controller||this.controller.document.head!==cache.revisionId)return false;
+    await this.flushPrepared();if(!this.controller||this.controller.document.head!==cache.revisionId)return false;
+    const layers=cache.layers.map(layer=>({surfaceId:layer.surfaceId,pixels:layer.pixels.slice()})),transfer=layers.map(layer=>layer.pixels.buffer as ArrayBuffer);
+    await this.request('store-projection-checkpoint',{revisionId:cache.revisionId,width:cache.width,height:cache.height,layers},transfer);return true;
+  }
   async storageStatus(requestPersistence=false){
     const storage=navigator.storage;let persisted:boolean|null=null,usage:number|null=null,quota:number|null=null;
     try{persisted=storage?.persisted?await storage.persisted():null;if(requestPersistence&&persisted===false&&storage?.persist){try{persisted=await storage.persist();}catch{}}}catch{}
@@ -114,3 +121,8 @@ async function hashHex(bytes:Uint8Array){const copy=bytes.byteOffset===0&&bytes.
 function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes.slice().buffer as ArrayBuffer],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
 function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
 function message(error:unknown){return error instanceof Error?error.message:String(error);}
+
+function isProjectionCache(value:unknown):value is ProjectionCacheV1{
+  if(!value||typeof value!=='object')return false;const x=value as ProjectionCacheV1;
+  return x.version===1&&typeof x.revisionId==='string'&&Number.isSafeInteger(x.width)&&Number.isSafeInteger(x.height)&&x.width>0&&x.height>0&&Array.isArray(x.layers)&&x.layers.every(layer=>typeof layer?.surfaceId==='string'&&layer.pixels instanceof Uint8Array&&layer.pixels.byteLength===x.width*x.height*4);
+}
