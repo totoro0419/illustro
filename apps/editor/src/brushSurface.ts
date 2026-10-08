@@ -89,10 +89,10 @@ export class BrushSurface{
   }
   async restoreDocumentProjection(){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
-    this.historySyncing=true;this.onStateChanged();try{this.syncLayerStack();await this.renderer.reset();this.session.discardRedo();
-      for(const operation of this.controller.document.operationsTo()){if(operation.kind==='brush.stroke'){const record=validateRecord(operation.parameters.strokeRecord);await this.session.redoDerived(record,this.runtimeKeys(operation),this.surfaceForOperation(operation));}
+    this.historySyncing=true;this.onStateChanged();try{this.syncLayerStack();const entries=[];
+      for(const operation of this.controller.document.operationsTo()){if(operation.kind==='brush.stroke')entries.push({record:validateRecord(operation.parameters.strokeRecord),surfaceKey:this.surfaceForOperation(operation)});
         else if(operation.kind==='raster.strict-delta')throw new Error('This saved strict Raster delta cannot yet be projected by the M05 editor renderer');}
-      await this.renderer.drain();
+      await this.session.loadDerived(entries);await this.renderer.drain();
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);}
