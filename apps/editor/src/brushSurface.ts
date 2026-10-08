@@ -98,10 +98,13 @@ export class BrushSurface{
     if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection cache capture is stale');
     return Object.freeze({version:1 as const,revisionId,width:root.width,height:root.height,layers:Object.freeze(layers.map(layer=>Object.freeze(layer)))});
   }
-  async captureProjectionDelta(revisionId:string,operations:readonly SemanticOperation[]):Promise<ProjectionCheckpointDeltaV2>{
+  async captureProjectionDelta(revisionId:string,operations?:readonly SemanticOperation[]):Promise<ProjectionCheckpointDeltaV2>{
     if(!this.renderer||!this.session)throw new Error('Renderer is not initialized');if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection checkpoint capture is stale');
     const root=this.controller.document.root,bySurface=new Map<string,Set<string>>();
-    for(const operation of operations){
+    if(operations===undefined){
+      const maxX=Math.ceil(root.width/TILE),maxY=Math.ceil(root.height/TILE);
+      for(const layer of this.controller.layers){const set=new Set<string>();for(let y=0;y<maxY;y++)for(let x=0;x<maxX;x++)set.add(x+','+y);bySurface.set(layer.surface.descriptor.surfaceId,set);}
+    }else for(const operation of operations){
       for(const footprint of operation.dirtyFootprint){
         if(!root.hasLayer(footprint.layerId))continue;
         const surfaceId=root.getLayer(footprint.layerId).surface.descriptor.surfaceId,set=bySurface.get(surfaceId)??new Set<string>();bySurface.set(surfaceId,set);
