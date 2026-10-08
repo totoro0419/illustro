@@ -33,6 +33,8 @@
 - 現行の仮実装を最終仕様として扱わない。
 - UI対象では該当するLeft UI / Right UI / Layer Page / Input Control / Workspace Customization / Compact UI正本を確認する。
 - 対象の正本設計を独自解釈で変更しない。重大な矛盾のみ未確認事項として記録する。
+- 主要アプリの公式仕様を先に調査し、良い方式は積極採用する。我流で仕様・UI・操作方法を決めない。
+- 調査では ibisPaint / CLIP STUDIO PAINT / Procreate / Krita / Photoshop / Affinity を対象機能に応じて基本比較対象とし、採用点・非採用点・理由を記録する。
 - 実装プロンプトにもこの開始ゲートを必ず明記する。
 
 ## 固定QA URL運用
