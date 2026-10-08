@@ -12,14 +12,29 @@ self.addEventListener('install',event=>{
     if(!response.ok)throw new Error('M05 app shell fetch failed');
     await cache.put(scopeUrl,response.clone());
     await cache.put(indexUrl,response.clone());
-    const html=await response.text(),urls=new Set([scopeUrl,indexUrl]);
+    const html=await response.text(),urls=new Set([scopeUrl,indexUrl,new URL('./offline-assets.json',scopeUrl).href]);
     for(const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)){
       const raw=match[1];if(!raw||raw.startsWith('data:')||raw.startsWith('#'))continue;
       const url=new URL(raw,scopeUrl);if(url.origin===self.location.origin&&url.href.startsWith(scopeUrl))urls.add(url.href);
     }
+    const manifestUrl=new URL('./offline-assets.json',scopeUrl).href;
+    try{
+      const manifestResponse=await fetch(manifestUrl,{cache:'reload'});
+      if(!manifestResponse.ok)throw new Error('M05 offline asset manifest fetch failed');
+      const manifest=await manifestResponse.clone().json();
+      if(!manifest||manifest.version!==1||!Array.isArray(manifest.assets))throw new Error('M05 offline asset manifest is invalid');
+      await cache.put(manifestUrl,manifestResponse);
+      for(const name of manifest.assets){
+        if(typeof name!=='string'||name.includes('..'))throw new Error('M05 offline asset path is invalid');
+        const url=new URL(name,scopeUrl);if(url.origin!==self.location.origin||!url.href.startsWith(scopeUrl))throw new Error('M05 offline asset escaped scope');
+        urls.add(url.href);
+      }
+    }catch(error){
+      throw error;
+    }
     await Promise.all([...urls].map(async url=>{
-      if(url===scopeUrl||url===indexUrl)return;
-      try{const asset=await fetch(url,{cache:'reload'});if(asset.ok)await cache.put(url,asset);}catch{}
+      if(url===scopeUrl||url===indexUrl||url===manifestUrl)return;
+      const asset=await fetch(url,{cache:'reload'});if(!asset.ok)throw new Error('M05 offline asset fetch failed: '+url);await cache.put(url,asset);
     }));
     await self.skipWaiting();
   })());
