@@ -282,7 +282,7 @@ class WorkingStore{
     await idbPut(this.db!,path,bytes);}
   async get(path:string):Promise<Uint8Array|null>{if(this.root){try{const file=await (await this.file(path,false)).getFile();return new Uint8Array(await file.arrayBuffer());}catch{return null;}}return idbGet(this.db!,path);}
   async exists(path:string){if(this.root){try{await this.file(path,false);return true;}catch{return false;}}return idbHas(this.db!,path);}
-  async remove(path:string){if(this.root){const parts=split(path),name=parts.pop()!,dir=await this.dir(parts,false);try{await dir.removeEntry(name);}catch{}return;}await idbDelete(this.db!,path);}
+  async remove(path:string){if(this.root){try{const parts=split(path),name=parts.pop()!,dir=await this.dir(parts,false);await dir.removeEntry(name);}catch{}return;}await idbDelete(this.db!,path);}
   async entries(path:string):Promise<Entry[]>{if(this.root){try{const dir=await this.dir(split(path),false),result:Entry[]=[];for await(const value of (dir as unknown as {values:()=>AsyncIterableIterator<FileSystemHandle>}).values())result.push({name:value.name,kind:value.kind});return result;}catch{return [];}}
     return idbEntries(this.db!,path);}
   private async file(path:string,create:boolean){const parts=split(path),name=parts.pop();if(!name)throw new Error('invalid working path');return (await this.dir(parts,create)).getFileHandle(name,{create});}
