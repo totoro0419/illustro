@@ -93,7 +93,7 @@ const updateQa=()=>{
 renderLayers();
 
 function queueLatestCommit(){const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;persistence.noteCommit(controller.document,handoff);}
-function makeSurface(){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();});}
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();},backendOverride);}
 surface=makeSurface();const workspace=byId('workspace'),drawer=byId<HTMLButtonElement>('drawer'),compactWorkspace=matchMedia('(max-width:760px)');
 function syncWorkspaceState(){const open=workspace.classList.contains('open'),hidden=compactWorkspace.matches&&!open;drawer.setAttribute('aria-expanded',String(open));workspace.inert=hidden;workspace.setAttribute('aria-hidden',String(hidden));}
 function openBox(id:string){workspace.classList.add('open');syncWorkspaceState();const box=byId<HTMLDetailsElement>(id);box.open=true;box.scrollIntoView({block:'nearest'});}
@@ -121,7 +121,14 @@ async function initializeCurrentSurface(replay:boolean){
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,savedRevision=opened.snapshotRevisionId){
   surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;surface=makeSurface();
-  await initializeCurrentSurface(true);await persistence.initialize(controller,savedRevision,opened.preserved,recovered);updatePersistenceDisplay();updateQa();
+  try{await initializeCurrentSurface(true);}
+  catch(error){
+    const requested=new URLSearchParams(location.search).get('backend'),selection=surface?.backendSelection as {selected?:string}|null;
+    if(requested!=='webgpu'&&requested!=='webgl2'&&selection?.selected==='webgpu'){
+      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(true);
+    }else throw error;
+  }
+  await persistence.initialize(controller,savedRevision,opened.preserved,recovered);updatePersistenceDisplay();updateQa();
 }
 byId<HTMLButtonElement>('new').onclick=async()=>{
   byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';
