@@ -89,10 +89,12 @@ export class BrushSurface{
   }
   async restoreDocumentProjection(){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
-    this.historySyncing=true;this.onStateChanged();try{this.syncLayerStack();const entries=[];
+    this.historySyncing=true;this.onStateChanged();try{this.syncLayerStack();const entries:Array<{record:StrokeRecord;surfaceKey:string}>=[];
       for(const operation of this.controller.document.operationsTo()){if(operation.kind==='brush.stroke')entries.push({record:validateRecord(operation.parameters.strokeRecord),surfaceKey:this.surfaceForOperation(operation)});
         else if(operation.kind==='raster.strict-delta')throw new Error('This saved strict Raster delta cannot yet be projected by the M05 editor renderer');}
-      await this.session.loadDerived(entries);await this.renderer.drain();
+      const runtime=this.session as unknown as {records:StrokeRecord[];redoRecords:StrokeRecord[];recordSurfaces:WeakMap<StrokeRecord,string>;rebuild:()=>Promise<void>};
+      runtime.records=entries.map(entry=>entry.record);runtime.redoRecords=[];for(const entry of entries)runtime.recordSurfaces.set(entry.record,entry.surfaceKey);
+      await runtime.rebuild();await this.renderer.drain();
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);}
