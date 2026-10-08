@@ -119,7 +119,7 @@ export class BrushSurface{
         runtime.records=entries.map(entry=>entry.record);runtime.redoRecords=[];
         for(const entry of entries){
           const id=++runtime.id;runtime.recordIds.set(entry.record,id);runtime.recordSurfaces.set(entry.record,entry.surfaceKey);runtime.indexRecord(entry.record,entry.keys,entry.surfaceKey);
-          if(!cachedKeys.has(entry.operation.key)){const preset=runtime.presetForRecord(entry.record);renderer.document.append(id,preset,entry.record.commands,null,entry.surfaceKey);renderer.document.end(id,preset,entry.surfaceKey);}
+          if(!cachedKeys.has(entry.operation.key)){const preset=runtime.presetForRecord(entry.record);renderer.document.append(id,preset,entry.record.commands as unknown as readonly Float64Array[],null,entry.surfaceKey);renderer.document.end(id,preset,entry.surfaceKey);}
         }
         renderer.needsFrame=true;await renderer.drain();this._projectionRestoreMode='cache';this._projectionCacheRevision=validCache.revisionId;
       }else{
@@ -135,7 +135,7 @@ export class BrushSurface{
   }
   private validProjectionCache(cache?:ProjectionCacheV1){
     if(!cache||cache.version!==1||cache.width!==this.controller.document.root.width||cache.height!==this.controller.document.root.height||!this.controller.document.hasRevision(cache.revisionId as RevisionId))return null;
-    const root=this.controller.document.revision(cache.revisionId as RevisionId).root,expected=new Set(root.rootLayerIds.map(id=>root.getLayer(id).surface.descriptor.surfaceId)),seen=new Set<string>(),bytes=cache.width*cache.height*4;
+    const root=this.controller.document.revision(cache.revisionId as RevisionId).root,expected=new Set<string>(root.rootLayerIds.map(id=>root.getLayer(id).surface.descriptor.surfaceId)),seen=new Set<string>(),bytes=cache.width*cache.height*4;
     for(const layer of cache.layers){if(!expected.has(layer.surfaceId)||seen.has(layer.surfaceId)||layer.pixels.byteLength!==bytes)return null;seen.add(layer.surfaceId);}if(seen.size!==expected.size)return null;return cache;
   }
   private resetDerivedRuntime(runtime:{id:number;recordSurfaces:WeakMap<StrokeRecord,string>;recordTiles:WeakMap<StrokeRecord,string[]>;recordIds:WeakMap<StrokeRecord,number>;recordOrder:WeakMap<StrokeRecord,number>;tileRecords:Map<string,StrokeRecord[]>;nextRecordOrder:number}){
