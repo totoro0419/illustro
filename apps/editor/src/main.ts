@@ -36,6 +36,7 @@ app.innerHTML=`
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,lastPointerDownTarget:EventTarget|null=null,selectedTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
+let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false;
 let persistenceState:PersistenceState|null=null;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();updateQa();});
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
@@ -83,7 +84,7 @@ const updateQa=()=>{
   const data={milestone:'M05',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',backendSelection:surface?.backendSelection??null,initializationError:surface?.initializationError??null,viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
     selectedTool,selectedPresetId:surface?.brushId??'未選択',selectedPresetName:surface?.brushName??'未選択',blendMode:surface?.blendMode??'normal',eraserType:surface?.eraserType,size:surface?.brushSize??0,
     layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:controller.canUndo,canRedo:controller.canRedo,
-    undoCount,redoCount,blockedHistoryGhostClicks,eraserCommittedStrokeCount:controller.committedEraserStrokeCount,totalStrokeCount:controller.committedStrokeCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,rendererArtworkAlpha:surface?.rendererArtworkAlpha??false,presentationOpaque:surface?.presentationOpaque??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,projectionRestoreMs:surface?.projectionRestoreMs??0,browserPredictionSamples:surface?.browserPredictionSamples??0,
+    undoCount,redoCount,blockedHistoryGhostClicks,eraserCommittedStrokeCount:controller.committedEraserStrokeCount,totalStrokeCount:controller.committedStrokeCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,rendererArtworkAlpha:surface?.rendererArtworkAlpha??false,presentationOpaque:surface?.presentationOpaque??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,projectionRestoreMs:surface?.projectionRestoreMs??0,projectionRestoreMode:surface?.projectionRestoreMode??'none',projectionCacheRevision:surface?.projectionCacheRevision??null,browserPredictionSamples:surface?.browserPredictionSamples??0,
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
     activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:workspace.classList.contains('open'),workspaceDisplay:getComputedStyle(workspace).display,
     visualViewport:window.visualViewport?{width:Math.round(window.visualViewport.width),height:Math.round(window.visualViewport.height),offsetTop:Math.round(window.visualViewport.offsetTop),offsetLeft:Math.round(window.visualViewport.offsetLeft),scale:window.visualViewport.scale}:null,
@@ -92,7 +93,23 @@ const updateQa=()=>{
 };
 renderLayers();
 
-function queueLatestCommit(){const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;persistence.noteCommit(controller.document,handoff);}
+function scheduleProjectionCheckpoint(delay=700){
+  if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);
+  projectionCheckpointTimer=window.setTimeout(()=>{projectionCheckpointTimer=null;void createProjectionCheckpoint();},delay);
+}
+async function createProjectionCheckpoint(){
+  if(projectionCheckpointBusy||!surface||!documentReady){if(documentReady)scheduleProjectionCheckpoint(900);return;}
+  if(surface.busy){scheduleProjectionCheckpoint(900);return;}
+  const activeSurface=surface,revisionId=controller.document.head;projectionCheckpointBusy=true;
+  try{
+    const cache=await activeSurface.captureProjectionCache(revisionId);
+    if(surface===activeSurface&&controller.document.head===revisionId&&!activeSurface.busy)await persistence.storeProjectionCheckpoint(cache);
+  }catch{}finally{
+    projectionCheckpointBusy=false;
+    if(surface===activeSurface&&controller.document.head!==revisionId)scheduleProjectionCheckpoint(900);
+  }
+}
+function queueLatestCommit(){const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;persistence.noteCommit(controller.document,handoff);scheduleProjectionCheckpoint();}
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();},backendOverride);}
 surface=makeSurface();const workspace=byId('workspace'),drawer=byId<HTMLButtonElement>('drawer'),compactWorkspace=matchMedia('(max-width:760px)');
 function syncWorkspaceState(){const open=workspace.classList.contains('open'),hidden=compactWorkspace.matches&&!open;drawer.setAttribute('aria-expanded',String(open));workspace.inert=hidden;workspace.setAttribute('aria-hidden',String(hidden));}
@@ -108,27 +125,27 @@ splitter.onpointerdown=e=>{resizePointer=e.pointerId;splitter.setPointerCapture(
 splitter.onkeydown=e=>{const current=Number(splitter.getAttribute('aria-valuenow'));if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();setWidth(current+(e.key==='ArrowLeft'?10:-10));}};
 
 function syncPreset(){if(!surface?.preset)return;byId<HTMLInputElement>('size').value=String(surface.preset.size);byId<HTMLInputElement>('sizeNumber').value=String(surface.preset.size);byId<HTMLInputElement>('force').checked=surface.preset.forceFade?.enabled??false;updateQa();}
-async function initializeCurrentSurface(replay:boolean){
+async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache']){
   if(!surface)throw new Error('描画面がありません。');
   await surface.initialize();
   const select=byId<HTMLSelectElement>('brush');select.replaceChildren();surface.brushes.forEach(p=>select.add(new Option(p.name,p.id)));
   lastBrushPresetId=surface.brushes.find(p=>p.blend!=='erase')?.id??surface.brushes[0]?.id??lastBrushPresetId;
   lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
   selectPreset(lastBrushPresetId);
-  if(replay)await surface.restoreDocumentProjection();
+  if(replay)await surface.restoreDocumentProjection(projectionCache);
   for(const id of ['brush','size','sizeNumber','force','addLayer','save','saveCopy'])(byId(id) as HTMLInputElement).disabled=false;
   syncPreset();renderLayers();updateHistoryButtons();documentReady=true;
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,savedRevision=opened.snapshotRevisionId){
   surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;surface=makeSurface();
-  try{await initializeCurrentSurface(true);}
+  try{await initializeCurrentSurface(true,opened.projectionCache);}
   catch(error){
     const requested=new URLSearchParams(location.search).get('backend'),selection=surface?.backendSelection as {selected?:string}|null;
     if(requested!=='webgpu'&&requested!=='webgl2'&&selection?.selected==='webgpu'){
-      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(true);
+      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(true,opened.projectionCache);
     }else throw error;
   }
-  await persistence.initialize(controller,savedRevision,opened.preserved,recovered);updatePersistenceDisplay();updateQa();
+  await persistence.initialize(controller,savedRevision,opened.preserved,recovered);scheduleProjectionCheckpoint(1000);updatePersistenceDisplay();updateQa();
 }
 byId<HTMLButtonElement>('new').onclick=async()=>{
   byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';
@@ -209,7 +226,7 @@ byId<HTMLButtonElement>('reloadSaved').onclick=async()=>{
 byId<HTMLButtonElement>('recover').onclick=async()=>{
   const candidate=recoveryCandidates[0];if(!candidate)return;byId('status').textContent='作業途中の状態を確認しています。';
   try{
-    const recovered=await persistence.recover(candidate),opened={document:recovered.document,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},generationId:'recovery',snapshotRevisionId:recovered.document.head} as PortableOpenResult;
+    const recovered=await persistence.recover(candidate),opened={document:recovered.document,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},generationId:'recovery',snapshotRevisionId:recovered.document.head,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})} as PortableOpenResult;
     await activateOpened(opened,true,recovered.savedRevision??undefined);recoveryCandidates=[];byId('status').textContent='作業途中の保護状態から戻しました。';
   }catch(error){byId('status').textContent='作業途中の状態を戻せませんでした。'+(error instanceof Error?error.message:String(error));}
   updatePersistenceDisplay();updateQa();
@@ -236,7 +253,7 @@ if(qaMode){
   };
 }
 if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLabelElement>('qaNoteLabel'),note=byId<HTMLTextAreaElement>('qaNote');const sync=()=>{const problem=state.value==='problem';noteLabel.hidden=!problem;note.disabled=!problem;updateQa();};state.onchange=sync;sync();byId<HTMLButtonElement>('qaCopy').onclick=async()=>{const result={result:state.value,note:state.value==='problem'?note.value:'',automatic:JSON.parse(byId('qaAuto').textContent||'{}')};try{await navigator.clipboard.writeText(JSON.stringify(result,null,2));byId('qaCopy').textContent='コピーしました';}catch{byId('qaCopy').textContent='コピーできませんでした';}};}
-updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('resize',updateQa);addEventListener('pagehide',()=>surface?.destroy());
+updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('resize',updateQa);addEventListener('pagehide',()=>{if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);surface?.destroy();});
 
 function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M05 今回の確認</summary><ol>
 <li>線を描き、レイヤー追加や消しゴムも使った状態で「保存」してください。</li>
