@@ -1,6 +1,7 @@
 import {CoreDocument,type CorePersistenceSnapshotV1,type LayerId,type RevisionId} from '@illustro/core';
 import {validateRecord} from '@illustro/brush-rt';
 import {decodeIllustroFile,encodeIllustroFile,type DecodedPortableFile,type PortableSectionInput} from './format';
+import type {ProjectionCacheV1} from './projectionCache';
 
 const CORE_SECTION='document';
 const EDITOR_SECTION='editor-state';
@@ -14,7 +15,7 @@ export type PreservedPortableData=Readonly<{
 }>;
 export type PortableOpenResult=Readonly<{
   document:CoreDocument;selectedLayerId:LayerId;preserved:PreservedPortableData;
-  generationId:string;snapshotRevisionId:RevisionId;
+  generationId:string;snapshotRevisionId:RevisionId;projectionCache?:ProjectionCacheV1;
 }>;
 
 export async function createPortableDocument(input:Readonly<{
@@ -52,7 +53,7 @@ export function openDecodedPortableDocument(decoded:DecodedPortableFile):Portabl
   if(editor){if(editor.descriptor.type!==EDITOR_TYPE||editor.descriptor.required)throw new Error('invalid editor state section');try{const state=JSON.parse(textDecoder.decode(editor.bytes)) as {version?:unknown;selectedLayerId?:unknown};if(state.version===1&&typeof state.selectedLayerId==='string'&&document.root.hasLayer(state.selectedLayerId as LayerId))selectedLayerId=state.selectedLayerId as LayerId;}catch{throw new Error('malformed editor state section');}}
   if(!selectedLayerId)throw new Error('opened document has no selectable layer');
   const optionalSections:PortableSectionInput[]=[];
-  for(const {descriptor,bytes:sectionBytes} of decoded.sections.values()){if(descriptor.id===CORE_SECTION||descriptor.id===EDITOR_SECTION||descriptor.type===BLOCK_TYPE)continue;if(descriptor.required)throw new Error('unknown required section');
+  for(const {descriptor,bytes:sectionBytes} of decoded.sections.values()){if(descriptor.id===CORE_SECTION||descriptor.id===EDITOR_SECTION||descriptor.type===BLOCK_TYPE||descriptor.type==='render.cache.index.v1'||descriptor.type==='render.cache.layer.v1')continue;if(descriptor.required)throw new Error('unknown required section');
     optionalSections.push(Object.freeze({id:descriptor.id,type:descriptor.type,required:false,codec:descriptor.codec,bytes:sectionBytes.slice(),descriptorExtras:descriptor.extras}));}
   const preserved=Object.freeze({manifestExtras:decoded.manifest.extras,optionalSections:Object.freeze(optionalSections)});
   return Object.freeze({document,selectedLayerId,preserved,generationId:decoded.manifest.generationId,snapshotRevisionId:decoded.manifest.snapshotRevisionId as RevisionId});
