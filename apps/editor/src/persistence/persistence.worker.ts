@@ -28,7 +28,7 @@ async function handle(message:RequestMessage){
       await writeBlocks(store,path,blocks);await putVerified(store,path+'/base.frame',await frameJson(snapshot));
       const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId};
       await putVerified(store,path+'/meta.frame',await frameJson(meta));
-      const storage=await storageInfo();reply(message.id,true,{backend:store.mode,protectedThrough:'0',storage});break;
+      const saves=await documentSaveState(store,documentId),storage=await storageInfo();reply(message.id,true,{backend:store.mode,protectedThrough:'0',storage,...saves});break;
     }
     case 'protect':{
       const session=requireSession(message),packet=message.packet as CoreRecoveryPacketV1,blocks=blockInputs(message.blocks),supported=new Set(stringArray(message.supportedAlgorithms,'supported algorithms'));
@@ -82,13 +82,15 @@ async function handle(message:RequestMessage){
     }
     case 'activate-last-good':{
       const session=requireSession(message),bytes=uint8(message.bytes,'save bytes');await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
-      const lastPath=session.path+'/saves/last.illustro',previousPath=session.path+'/saves/previous.illustro',candidatePath=session.path+'/saves/candidate.illustro';
-      await putVerified(store,candidatePath,bytes);const previous=await store.get(lastPath);if(previous){await decodeIllustroFile(previous,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});await putVerified(store,previousPath,previous);}
+      const saveRoot=documentSavePath(session.documentId),lastPath=saveRoot+'/last.illustro',previousPath=saveRoot+'/previous.illustro',candidatePath=saveRoot+'/candidate.illustro';
+      await putVerified(store,candidatePath,bytes);let previous=await store.get(lastPath);
+      if(!previous)previous=await store.get(session.path+'/saves/last.illustro');
+      if(previous){await decodeIllustroFile(previous,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});await putVerified(store,previousPath,previous);}
       await putVerified(store,lastPath,bytes);const verified=await store.get(lastPath);if(!verified)throw new Error('Last Good activation missing');await decodeIllustroFile(verified,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});
       await store.remove(candidatePath);await touchMeta(store,session,String(message.savedRevisionId??''));reply(message.id,true,{lastGood:true,previousGood:Boolean(previous),backend:store.mode});break;
     }
     case 'load-last-good':{
-      const session=readSession(message),last=await store.get(session.path+'/saves/last.illustro'),previous=await store.get(session.path+'/saves/previous.illustro');let chosen:Uint8Array|null=null,source:'last'|'previous'|null=null;
+      const session=readSession(message),saveRoot=documentSavePath(session.documentId),last=(await store.get(saveRoot+'/last.illustro'))??(await store.get(session.path+'/saves/last.illustro')),previous=(await store.get(saveRoot+'/previous.illustro'))??(await store.get(session.path+'/saves/previous.illustro'));let chosen:Uint8Array|null=null,source:'last'|'previous'|null=null;
       if(last)try{await decodeIllustroFile(last,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});chosen=last;source='last';}catch{}
       if(!chosen&&previous)try{await decodeIllustroFile(previous,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])});chosen=previous;source='previous';}catch{}
       if(!chosen)throw new Error('正常に保存できた作品がありません。');reply(message.id,true,{bytes:chosen,source},undefined,[chosen.buffer as ArrayBuffer]);break;
@@ -203,7 +205,7 @@ async function listRecoveryCandidates(store:WorkingStore){
   const out:Array<Record<string,unknown>>=[],root='m05/sessions';for(const doc of await store.entries(root)){if(doc.kind!=='directory'||!isUuid(doc.name))continue;for(const epoch of await store.entries(root+'/'+doc.name)){if(epoch.kind!=='directory'||!isUuid(epoch.name))continue;
       const session={documentId:doc.name,writerEpochId:epoch.name,path:root+'/'+doc.name+'/'+epoch.name};try{const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)continue;const base=await unframeJson(baseBytes) as CorePersistenceSnapshotV1,protectedThrough=await scanProtected(store,session);
         const target=base.revisions.find(x=>x.id===base.snapshotRevisionId),metaBytes=await store.get(session.path+'/meta.frame'),meta=metaBytes?await unframeJson(metaBytes) as Record<string,unknown>:{};
-        const lastGood=await store.exists(session.path+'/saves/last.illustro'),previousGood=await store.exists(session.path+'/saves/previous.illustro');
+        const saves=await documentSaveState(store,session.documentId),lastGood=saves.lastGood,previousGood=saves.previousGood;
         out.push({documentId:session.documentId,writerEpochId:session.writerEpochId,title:target?.root.name??'作品',protectedThrough:protectedThrough.toString(),updatedAt:typeof meta.updatedAt==='number'?meta.updatedAt:0,savedRevisionId:typeof meta.savedRevisionId==='string'?meta.savedRevisionId:null,lastGood,previousGood});}catch{} }}
   return out.sort((a,b)=>(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0));
 }
@@ -213,6 +215,10 @@ async function touchMeta(store:WorkingStore,session:Session,savedRevisionId?:str
   if(old)try{meta=await unframeJson(old) as Record<string,unknown>;}catch{}meta={...meta,updatedAt:Date.now(),...(savedRevisionId?{savedRevisionId}:{})};await putVerified(store,path,await frameJson(meta));
 }
 function sessionPath(documentId:string,writerEpochId:string){return 'm05/sessions/'+documentId+'/'+writerEpochId;}
+function documentSavePath(documentId:string){return 'm05/documents/'+documentId+'/saves';}
+async function documentSaveState(store:WorkingStore,documentId:string){
+  const root=documentSavePath(documentId);return {lastGood:await store.exists(root+'/last.illustro'),previousGood:await store.exists(root+'/previous.illustro')};
+}
 
 class WorkingStore{
   mode:StoreMode='indexeddb';private root:FileSystemDirectoryHandle|null=null;private db:IDBDatabase|null=null;
