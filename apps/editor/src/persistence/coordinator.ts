@@ -64,8 +64,8 @@ export class PersistenceCoordinator{
       let handlePromise:Promise<unknown>|null=null;const w=window as AnyWindow;if(!this.fileHandle||forceSaveCopy){if(w.showSaveFilePicker)handlePromise=w.showSaveFilePicker({suggestedName:safeFileName(document.root.name)+'.illustro',types:[{description:'Illustro作品',accept:{'application/octet-stream':['.illustro']}}]});}
       const saveRevision=document.head,captureStart=performance.now(),snapshot=document.capturePersistenceSnapshot(saveRevision),snapshotCaptureMs=performance.now()-captureStart,blockEntries=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes})),generationId=crypto.randomUUID(),createdAt=Date.now();
       const transfer=blockEntries.map(x=>x.bytes.buffer as ArrayBuffer),raw=await this.request('encode-save',{snapshot,blocks:blockEntries,selectedLayerId,generationId,createdAt,preserved:this.preserved},transfer) as any,bytes=raw.bytes as Uint8Array;
-      let output:'picker'|'download';if(handlePromise){const handle=await handlePromise;await this.writeExternal(handle,bytes,false);this.fileHandle=handle;this.externalFingerprint=await fingerprintHandle(handle);output='picker';}
-      else if(this.fileHandle&&!forceSaveCopy){await this.writeExternal(this.fileHandle,bytes,true);this.externalFingerprint=await fingerprintHandle(this.fileHandle);output='picker';}
+      let output:'picker'|'download';if(handlePromise){const handle=await handlePromise;const fingerprint=await this.writeExternal(handle,bytes,false);this.fileHandle=handle;this.externalFingerprint=fingerprint;output='picker';}
+      else if(this.fileHandle&&!forceSaveCopy){this.externalFingerprint=await this.writeExternal(this.fileHandle,bytes,true);output='picker';}
       else{downloadBlob(bytes,safeFileName(document.root.name)+'.illustro');output='download';}
       const activationBytes=bytes.slice(),activation=await this.request('activate-last-good',{bytes:activationBytes,savedRevisionId:saveRevision},[activationBytes.buffer as ArrayBuffer]) as any;
       this.patch({savedRevision:saveRevision,currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,
@@ -103,10 +103,17 @@ export class PersistenceCoordinator{
   }
   private applyStorage(value:unknown){if(!value||typeof value!=='object')return;const x=value as {persisted?:unknown;usage?:unknown;quota?:unknown};this.patch({storagePersisted:typeof x.persisted==='boolean'?x.persisted:null,storageUsage:typeof x.usage==='number'?x.usage:null,storageQuota:typeof x.quota==='number'?x.quota:null});}
   private async writeExternal(handle:unknown,bytes:Uint8Array,checkConflict:boolean){
-    const h=handle as {getFile:()=>Promise<File>;createWritable:()=>Promise<{write:(b:Blob|BufferSource|string)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>}>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
+    type Writable={write:(b:Blob|BufferSource|string)=>Promise<void>;truncate?:(size:number)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>};
+    const h=handle as {getFile:()=>Promise<File>;createWritable:(options?:{keepExistingData?:boolean})=>Promise<Writable>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
     if(checkConflict&&this.externalFingerprint){const current=await fingerprintHandle(handle);if(current!==this.externalFingerprint&&!confirm('保存先のファイルが外部で変更されています。上書きしますか？\nキャンセルした場合は「別名保存」を使えます。'))throw new Error('外部変更を検出したため上書きを中止しました。');}
-    const writable=await h.createWritable();try{await writable.write(new Blob([bytes.slice().buffer as ArrayBuffer],{type:'application/octet-stream'}));await writable.close();}catch(error){try{await writable.abort?.();}catch{}throw error;}
-    const file=await h.getFile(),written=new Uint8Array(await file.arrayBuffer());if(!(await sameDigest(bytes,written)))throw new Error('保存先の検証に失敗しました。');
+    const stable=bytes.slice(),writable=await h.createWritable({keepExistingData:false});
+    try{
+      await writable.truncate?.(0);
+      await writable.write(new Blob([stable.buffer as ArrayBuffer],{type:'application/octet-stream'}));
+      await writable.truncate?.(stable.byteLength);
+      await writable.close();
+    }catch(error){try{await writable.abort?.();}catch{}throw error;}
+    return await verifyExternalWrite(h,stable);
   }
   private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared();};private pagehide=()=>{void this.flushPrepared();};private onlineState=()=>this.patch({offline:!navigator.onLine});
 }
@@ -116,7 +123,21 @@ function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){
   return Object.freeze([...supported]);
 }
 async function fingerprintHandle(handle:unknown){const file=await (handle as {getFile:()=>Promise<File>}).getFile(),bytes=new Uint8Array(await file.arrayBuffer()),hash=await hashHex(bytes);return file.size+':'+file.lastModified+':'+hash;}
-async function sameDigest(a:Uint8Array,b:Uint8Array){if(a.byteLength!==b.byteLength)return false;return await hashHex(a)===await hashHex(b);}
+async function verifyExternalWrite(handle:{getFile:()=>Promise<File>},expected:Uint8Array){
+  const expectedHash=await hashHex(expected),delays=[0,30,80,160,320,640,1200,2000];let lastSize:number|null=null,lastReason='読み戻しできませんでした';
+  for(const delay of delays){
+    if(delay)await sleep(delay);
+    try{
+      const file=await handle.getFile();lastSize=file.size;
+      if(file.size!==expected.byteLength){lastReason='保存先のサイズが反映待ちです';continue;}
+      const actual=new Uint8Array(await file.arrayBuffer());if(actual.byteLength!==expected.byteLength){lastReason='保存先の読み戻しサイズが一致しません';continue;}
+      const actualHash=await hashHex(actual);if(actualHash===expectedHash)return file.size+':'+file.lastModified+':'+actualHash;
+      lastReason='保存先の内容がまだ反映されていません';
+    }catch(error){lastReason=message(error);}
+  }
+  const sizeText=lastSize===null?'不明':String(lastSize);throw new Error('保存先の検証に失敗しました。書き込み後のファイルが端末側で正しく確認できませんでした（確認サイズ '+sizeText+' B / 予定 '+expected.byteLength+' B、'+lastReason+'）。');
+}
+function sleep(ms:number){return new Promise<void>(resolve=>setTimeout(resolve,ms));}
 async function hashHex(bytes:Uint8Array){const copy=bytes.byteOffset===0&&bytes.byteLength===bytes.buffer.byteLength?bytes:bytes.slice(),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy as Uint8Array<ArrayBuffer>));return [...hash].map(x=>x.toString(16).padStart(2,'0')).join('');}
 function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes.slice().buffer as ArrayBuffer],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
 function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
