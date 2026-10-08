@@ -19,6 +19,8 @@ describe('.illustro v1 container',()=>{
     const manifestBroken=bytes.slice(),manifestByte=manifestBroken[30];if(manifestByte===undefined)throw new Error('fixture too small');manifestBroken[30]=manifestByte^1;await expect(decodeIllustroFile(manifestBroken)).rejects.toThrow(/manifest integrity/);
     const payloadBroken=bytes.slice();const decoded=await decodeIllustroFile(bytes);const doc=decoded.sections.get('document')!;const payloadStart=24+new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(16,true),payloadIndex=payloadStart+doc.descriptor.offset,payloadByte=payloadBroken[payloadIndex];if(payloadByte===undefined)throw new Error('fixture payload missing');payloadBroken[payloadIndex]=payloadByte^1;
     await expect(decodeIllustroFile(payloadBroken)).rejects.toThrow(/section integrity/);
+    const optionalBroken=bytes.slice(),future=decoded.sections.get('future')!,futureIndex=payloadStart+future.descriptor.offset,futureByte=optionalBroken[futureIndex];if(futureByte===undefined)throw new Error('fixture optional payload missing');optionalBroken[futureIndex]=futureByte^1;
+    const optionalDecoded=await decodeIllustroFile(optionalBroken,{knownRequiredTypes:new Set(['document.v1'])});expect(optionalDecoded.sections.has('future')).toBe(false);expect(optionalDecoded.sections.has('document')).toBe(true);
     const unknownRequired={...base(),sections:[{id:'x',type:'future.required.v99',required:true,bytes:new Uint8Array([1])}]};
     await expect(decodeIllustroFile(await encodeIllustroFile(unknownRequired),{knownRequiredTypes:new Set(['document.v1'])})).rejects.toThrow(/unknown required/);
   });
