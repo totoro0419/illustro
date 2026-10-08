@@ -50,6 +50,8 @@ jobs:
           npm --workspace @illustro/editor exec -- vite build --base=./
           test -f apps/editor/dist/sw.js
           test -f apps/editor/dist/manifest.webmanifest
+          test -f apps/editor/dist/offline-assets.json
+          node -e "const m=require('./apps/editor/dist/offline-assets.json'); if(!Array.isArray(m.assets)||!m.assets.some(x=>/worker/i.test(x))||!m.assets.some(x=>/\.js$/.test(x))) process.exit(1)"
       - name: Install browser verifier
         run: |
           npm install --prefix /tmp/m05-browser playwright@1.62.1 --no-audit --no-fund
