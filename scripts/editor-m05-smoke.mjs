@@ -89,6 +89,12 @@ try{
     const beforeSave=await qa(page),savedRevision=beforeSave.currentRevision;
     const saved=await saveDownload(page),afterSave=await qa(page);assert.equal(afterSave.persistence.savedRevision,savedRevision);assert.equal(afterSave.persistence.dirty,false);assert.equal(afterSave.persistence.lastGood,true);
     await fs.copyFile(saved.filePath,path.join(evidence,`${backend}-roundtrip.illustro`));
+    const restart=await context.newPage({viewport:{width:820,height:700}}),restartErrors=[];
+    restart.on('pageerror',e=>restartErrors.push(e.message));restart.on('console',m=>{if(m.type()==='error')restartErrors.push(m.text());});
+    await restart.goto(pageUrl(backend),{waitUntil:'networkidle',timeout:45000});
+    await restart.waitForFunction(()=>!(document.getElementById('reloadSaved')?.disabled),{timeout:30000});
+    await restart.locator('#reloadSaved').click();await restart.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('最後に正常保存できた状態を開き直しました'),{timeout:30000});await waitReady(restart);
+    const restarted=await qa(restart);assert.equal(restarted.currentRevision,savedRevision);assert.equal(restarted.totalStrokeCount,3);assert.deepEqual(restartErrors,[]);await restart.close();
     await page.locator('#paint').click();await draw(page,[.15,.72],[.85,.72]);await waitStroke(page,4);
     const changed=await qa(page);assert.equal(changed.persistence.savedRevision,savedRevision);assert.notEqual(changed.currentRevision,savedRevision);assert.equal(changed.persistence.dirty,true);assert.match(await page.locator('#saveState').textContent(),/保存後の変更あり/);
     await page.locator('#reloadSaved').click();await page.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('最後に正常保存できた状態を開き直しました')||text.includes('保存版を開き直せませんでした');},{timeout:30000});await waitReady(page);
@@ -100,14 +106,16 @@ try{
   }
 
   // Crash/reload equivalent: recover the last fully protected sequence from OPFS.
+  // Use enough strokes to catch slow one-by-one visible replay regressions.
   {
-    const context=await freshContext(),page=await context.newPage({viewport:{width:1100,height:800}}),errors=await init(page);
-    await draw(page,[.15,.25],[.80,.25]);await waitStroke(page,1);await draw(page,[.15,.45],[.80,.45]);await waitStroke(page,2);await draw(page,[.15,.65],[.80,.65]);await waitStroke(page,3);await waitProtected(page,3);
+    const context=await freshContext(),page=await context.newPage({viewport:{width:1100,height:800}}),errors=await init(page),strokeTotal=24;
+    for(let i=0;i<strokeTotal;i++){const y=.08+(i%12)*.07,x0=.10+(i%2)*.04,x1=.86-(i%3)*.03;await draw(page,[x0,y],[x1,y],4);await waitStroke(page,i+1);}
+    await waitProtected(page,strokeTotal);
     const before=await qa(page),doc=before.documentId,head=before.currentRevision;await page.close();
     const restoredPage=await context.newPage({viewport:{width:1100,height:800}});restoredPage.on('pageerror',e=>errors.push(e.message));await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});
-    await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('作業途中の保護状態から戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
-    const recovered=await qa(restoredPage);assert.equal(recovered.documentId,doc);assert.equal(recovered.currentRevision,head);assert.equal(recovered.persistence.recovered,true);assert.equal(recovered.totalStrokeCount,3);assert.deepEqual(errors,[]);
-    report.recovery={status:'PASS',protectedThrough:before.persistence.protectedThrough,recoveredRevision:recovered.currentRevision,durationMs:recovered.persistence.recoveryDurationMs};await context.close();
+    await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});const clickAt=Date.now();await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>{const text=document.querySelector('#status')?.textContent??'';return text.includes('作業途中の保護状態から戻しました')||text.includes('作業途中の状態を戻せませんでした');},{timeout:30000});await waitReady(restoredPage);
+    const recovered=await qa(restoredPage),wallMs=Date.now()-clickAt;assert.equal(recovered.documentId,doc);assert.equal(recovered.currentRevision,head);assert.equal(recovered.persistence.recovered,true);assert.equal(recovered.totalStrokeCount,strokeTotal);assert.ok(recovered.projectionRestoreMs<1000,`projection restore too slow: ${recovered.projectionRestoreMs}ms`);assert.deepEqual(errors,[]);
+    report.recovery={status:'PASS',protectedThrough:before.persistence.protectedThrough,recoveredRevision:recovered.currentRevision,workerDurationMs:recovered.persistence.recoveryDurationMs,projectionRestoreMs:recovered.projectionRestoreMs,wallMs,strokeTotal};await context.close();
   }
 
   // Missing sequence 2 must stop protection at sequence 1; sequence 3 cannot be skipped over.
