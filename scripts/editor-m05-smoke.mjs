@@ -141,8 +141,9 @@ try{
     const offlineQaPanel=page.locator('#qaPanel');if(await offlineQaPanel.count())await offlineQaPanel.evaluate(el=>{el.open=false;});
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await waitReady(page);await draw(page,[.18,.45],[.82,.45]);await waitStroke(page,1);await waitProtected(page,1);
     const offlineSave=await saveDownload(page);assert.ok(offlineSave.filePath);await page.locator('#openFile').setInputFiles(onlineSave.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('保存した作品を開きました'),{timeout:30000});await waitReady(page);
+    assert.deepEqual(errors,[],'Offline app operations produced a browser error before the intentional network probe');
     const networkUnavailable=await page.evaluate(async()=>{try{await fetch('./__m05_network_probe__?t='+Date.now(),{cache:'no-store'});return false;}catch{return true;}});
-    const navigatorOnline=await page.evaluate(()=>navigator.onLine),offlineState=await qa(page);assert.equal(networkUnavailable,true);assert.deepEqual(errors,[]);
+    const navigatorOnline=await page.evaluate(()=>navigator.onLine),offlineState=await qa(page);assert.equal(networkUnavailable,true);
     report.offline={status:'PASS',serviceWorker:true,networkUnavailable,draw:true,recoveryStore:true,save:true,open:true,navigatorOnline,backend:offlineState.persistence.backend};await context.setOffline(false);await context.close();
   }
 
