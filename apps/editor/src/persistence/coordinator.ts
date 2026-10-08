@@ -31,16 +31,17 @@ export class PersistenceCoordinator{
   async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false){
     this.controller=controller;this.preserved=preserved;this.queue=[];this.cancelIdle();const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
     const storage=await this.storageStatus(true);const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
-    this.patch({currentRevision:document.head,savedRevision,dirty:savedRevision!==document.head,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
-      storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false});
+    this.patch({currentRevision:document.head,savedRevision,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
+      storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false,saving:false,
+      lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,recoveryDurationMs:null,lastGood:false,previousGood:false});
   }
   noteCommit(document:CoreDocument,handoff:PersistenceHandoff){
     try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),algorithms=runtimeSupportedAlgorithms(packet);
-      this.queue.push(Object.freeze({packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms}));this.patch({currentRevision:document.head,dirty:this.stateValue.savedRevision!==document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
+      this.queue.push(Object.freeze({packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms}));this.patch({currentRevision:document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    this.patch({currentRevision:document.head,dirty:this.stateValue.savedRevision!==document.head});void this.request('set-head',{revisionId:document.head}).catch(error=>this.patch({storageError:message(error)}));
+    this.patch({currentRevision:document.head});void this.request('set-head',{revisionId:document.head}).catch(error=>this.patch({storageError:message(error)}));
   }
   async flushPrepared(){this.cancelIdle();await this.drain();}
   async listRecoveryCandidates():Promise<readonly Candidate[]>{const result=await this.request('list-recovery',{}) as any;this.applyStorage(result.storage);if(result.backend)this.patch({backend:String(result.backend)});return Object.freeze((Array.isArray(result.candidates)?result.candidates:[]) as Candidate[]);}
@@ -66,7 +67,7 @@ export class PersistenceCoordinator{
       else if(this.fileHandle&&!forceSaveCopy){await this.writeExternal(this.fileHandle,bytes,true);this.externalFingerprint=await fingerprintHandle(this.fileHandle);output='picker';}
       else{downloadBlob(bytes,safeFileName(document.root.name)+'.illustro');output='download';}
       const activationBytes=bytes.slice(),activation=await this.request('activate-last-good',{bytes:activationBytes,savedRevisionId:saveRevision},[activationBytes.buffer as ArrayBuffer]) as any;
-      this.patch({savedRevision:saveRevision,currentRevision:document.head,dirty:document.head!==saveRevision,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,
+      this.patch({savedRevision:saveRevision,currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,
         lastGood:Boolean(activation.lastGood),previousGood:Boolean(activation.previousGood),backend:String(activation.backend??this.stateValue.backend),saving:false});
       return Object.freeze({revisionId:saveRevision,bytes,output,generationId});
     }catch(error){this.patch({saving:false,storageError:message(error),saveDurationMs:performance.now()-started});throw error;}
@@ -84,7 +85,11 @@ export class PersistenceCoordinator{
   private async drain(){if(this.draining)return;this.draining=true;try{while(this.queue.length){const item=this.queue.shift()!,transfers=item.blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{packet:item.packet,blocks:item.blocks,supportedAlgorithms:item.supportedAlgorithms},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
         catch(error){this.patch({storageError:message(error)});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.draining=false;this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});if(this.queue.length)this.schedule();}}
   private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
-  private patch(patch:Partial<PersistenceState>){this.stateValue=Object.freeze({...this.stateValue,...patch,offline:!navigator.onLine});this.onChange(this.stateValue);}
+  private patch(patch:Partial<PersistenceState>){
+    const next={...this.stateValue,...patch,offline:!navigator.onLine};
+    next.dirty=next.savedRevision===null?true:next.currentRevision!==next.savedRevision;
+    this.stateValue=Object.freeze(next);this.onChange(this.stateValue);
+  }
   private applyStorage(value:unknown){if(!value||typeof value!=='object')return;const x=value as {persisted?:unknown;usage?:unknown;quota?:unknown};this.patch({storagePersisted:typeof x.persisted==='boolean'?x.persisted:null,storageUsage:typeof x.usage==='number'?x.usage:null,storageQuota:typeof x.quota==='number'?x.quota:null});}
   private async writeExternal(handle:unknown,bytes:Uint8Array,checkConflict:boolean){
     const h=handle as {getFile:()=>Promise<File>;createWritable:()=>Promise<{write:(b:Blob|BufferSource|string)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>}>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
