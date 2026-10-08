@@ -45,6 +45,41 @@ async function waitStroke(page,count){await page.waitForFunction(n=>document.que
 async function waitProtected(page,min){await page.waitForFunction(n=>{try{const raw=document.querySelector('#qaAuto')?.textContent;if(!raw)return false;const p=JSON.parse(raw).persistence;return BigInt(p?.protectedThrough??'0')>=BigInt(n)&&p?.queueLength===0&&!p?.protectionPending&&!p?.storageError;}catch{return false;}},String(min),{timeout:30000});}
 async function draw(page,a=[.16,.35],b=[.84,.35],steps=20){const canvas=page.locator('#canvas'),box=await canvas.boundingBox();assert.ok(box);await page.mouse.move(box.x+a[0]*box.width,box.y+a[1]*box.height);await page.mouse.down();await page.mouse.move(box.x+b[0]*box.width,box.y+b[1]*box.height,{steps});await page.mouse.up();}
 async function freshContext(){const context=await browser.newContext({acceptDownloads:true});await context.addInitScript(()=>{try{Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true});}catch{}});return context;}
+async function delayedPickerContext(staleReads=3){
+  const context=await browser.newContext({acceptDownloads:true});
+  await context.addInitScript(({staleReads})=>{
+    const state={bytes:new Uint8Array(),reads:0,writes:0,staleReads};
+    Object.defineProperty(window,'__m05PickerState',{value:state,configurable:true});
+    const handle={
+      async getFile(){
+        state.reads++;
+        const data=state.reads<=state.staleReads?new Uint8Array(state.bytes.byteLength):state.bytes.slice();
+        return new File([data], 'Illustro作品.illustro',{type:'application/octet-stream',lastModified:1000+state.writes});
+      },
+      async createWritable(){
+        let buffer=new Uint8Array();
+        return {
+          async write(value){
+            let bytes;
+            if(value instanceof Blob)bytes=new Uint8Array(await value.arrayBuffer());
+            else if(typeof value==='string')bytes=new TextEncoder().encode(value);
+            else if(ArrayBuffer.isView(value))bytes=new Uint8Array(value.buffer.slice(value.byteOffset,value.byteOffset+value.byteLength));
+            else if(value instanceof ArrayBuffer)bytes=new Uint8Array(value.slice(0));
+            else throw new Error('unsupported mock write');
+            buffer=bytes;
+          },
+          async truncate(size){
+            const next=new Uint8Array(size);next.set(buffer.subarray(0,Math.min(size,buffer.byteLength)));buffer=next;
+          },
+          async close(){state.bytes=buffer.slice();state.writes++;state.reads=0;},
+          async abort(){},
+        };
+      },
+    };
+    Object.defineProperty(window,'showSaveFilePicker',{value:async()=>handle,configurable:true});
+  },{staleReads});
+  return context;
+}
 async function init(page,backend='webgl2'){
   const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto(pageUrl(backend),{waitUntil:'networkidle',timeout:45000});
@@ -124,6 +159,22 @@ try{
     const opened=await qa(page);assert.equal(opened.currentRevision,savedRevision);assert.equal(opened.layerCount,2);assert.equal(opened.totalStrokeCount,3);assert.equal(opened.projectionRestoreMode,'cache');assert.deepEqual(errors,[]);
     report.backends.push({backend,status:'PASS',opfs:opened.persistence.backend,roundTrip:true,snapshotIsolation:true,saveDurationMs:afterSave.persistence.saveDurationMs,snapshotCaptureMs:afterSave.persistence.snapshotCaptureMs});
     await page.screenshot({path:path.join(evidence,`${backend}-m05.png`),fullPage:true});await context.close();
+  }
+
+  // Direct File System Access save: Android/storage providers can briefly return stale
+  // bytes immediately after close(). The app must retry verification instead of reporting
+  // a false save failure.
+  {
+    const context=await delayedPickerContext(3),page=await context.newPage({viewport:{width:900,height:700}});const errors=await init(page);
+    await draw(page,[.15,.35],[.85,.35]);await waitStroke(page,1);await waitProtected(page,1);
+    await page.locator('#save').click();await page.waitForFunction(()=>document.getElementById('saveState')?.dataset.saving==='false',{timeout:30000});
+    const firstStatus=await page.locator('#status').textContent(),first=await qa(page),picker1=await page.evaluate(()=>{const s=window.__m05PickerState;return {size:s?.bytes?.byteLength??0,reads:s?.reads??0,writes:s?.writes??0};});
+    assert.match(firstStatus??'',/作品を保存しました（.+ (?:B|KB|MB)）。/);assert.ok(!firstStatus?.includes('保存できませんでした'));assert.equal(first.persistence.lastGood,true);assert.equal(await page.locator('#reloadSaved').isEnabled(),true);assert.ok(picker1.size>128);assert.equal(picker1.writes,1);assert.ok(picker1.reads>3,'direct-save verifier did not retry stale readback');
+    await page.locator('#paint').click();await draw(page,[.15,.65],[.85,.65]);await waitStroke(page,2);await waitProtected(page,2);
+    await page.locator('#save').click();await page.waitForFunction(()=>document.getElementById('saveState')?.dataset.saving==='false',{timeout:30000});
+    const secondStatus=await page.locator('#status').textContent(),picker2=await page.evaluate(()=>{const s=window.__m05PickerState;return {size:s?.bytes?.byteLength??0,reads:s?.reads??0,writes:s?.writes??0};});
+    assert.match(secondStatus??'',/作品を保存しました（.+ (?:B|KB|MB)）。/);assert.equal(picker2.writes,2);assert.ok(picker2.size>picker1.size);assert.deepEqual(errors,[]);
+    report.directPicker={status:'PASS',staleReadsSimulated:3,verificationRetried:true,firstBytes:picker1.size,secondBytes:picker2.size,reloadEnabled:true};await context.close();
   }
 
   // Explicit save is independent from recovery-journal progress. Even a fresh document
