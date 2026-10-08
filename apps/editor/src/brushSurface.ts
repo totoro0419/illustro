@@ -2,7 +2,7 @@ import {TILE,validateRecord,type FoundationPreset,type GpuRenderer,type Realtime
 import {CANONICAL_TILE_SIZE,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import type {EditorController,EditorHistoryChange} from './controller';
-import type {ProjectionCacheV1} from './persistence/projectionCache';
+import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
 
 
 export class BrushSurface{
@@ -97,6 +97,34 @@ export class BrushSurface{
     }
     if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection cache capture is stale');
     return Object.freeze({version:1 as const,revisionId,width:root.width,height:root.height,layers:Object.freeze(layers.map(layer=>Object.freeze(layer)))});
+  }
+  async captureProjectionDelta(revisionId:string,operations:readonly SemanticOperation[]):Promise<ProjectionCheckpointDeltaV2>{
+    if(!this.renderer||!this.session)throw new Error('Renderer is not initialized');if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection checkpoint capture is stale');
+    const root=this.controller.document.root,bySurface=new Map<string,Set<string>>();
+    for(const operation of operations){
+      for(const footprint of operation.dirtyFootprint){
+        if(!root.hasLayer(footprint.layerId))continue;
+        const surfaceId=root.getLayer(footprint.layerId).surface.descriptor.surfaceId,set=bySurface.get(surfaceId)??new Set<string>();bySurface.set(surfaceId,set);
+        const x0=footprint.tileX*CANONICAL_TILE_SIZE+footprint.bounds.x0,y0=footprint.tileY*CANONICAL_TILE_SIZE+footprint.bounds.y0,x1=footprint.tileX*CANONICAL_TILE_SIZE+footprint.bounds.x1,y1=footprint.tileY*CANONICAL_TILE_SIZE+footprint.bounds.y1;
+        const minX=Math.max(0,Math.floor(x0/TILE)),minY=Math.max(0,Math.floor(y0/TILE)),maxX=Math.min(Math.ceil(root.width/TILE)-1,Math.ceil(x1/TILE)-1),maxY=Math.min(Math.ceil(root.height/TILE)-1,Math.ceil(y1/TILE)-1);
+        for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)set.add(x+','+y);
+      }
+    }
+    const tiles:Array<{surfaceId:string;key:string;pixels:Uint8Array}>=[],backend=(this.renderer as unknown as {backend?:any}).backend;
+    for(const [surfaceId,keys] of bySurface)for(const key of keys){
+      if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection checkpoint capture is stale');
+      tiles.push({surfaceId,key,pixels:await this.readBackendTile(backend,key,surfaceId)});
+    }
+    if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection checkpoint capture is stale');
+    return Object.freeze({version:2 as const,revisionId,width:root.width,height:root.height,tileSize:TILE,surfaceIds:Object.freeze(this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId)),tiles:Object.freeze(tiles.map(tile=>Object.freeze(tile)))});
+  }
+  private async readBackendTile(backend:any,key:string,surfaceId:string){
+    if(!backend?.tile)throw new Error('Projection checkpoint readback unavailable');const t=backend.tile(key,surfaceId),target=t.layer[t.l],out=new Uint8Array(TILE*TILE*4);
+    if(backend.gl){const g=backend.gl;g.bindFramebuffer(g.FRAMEBUFFER,target.f);g.readPixels(0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,out);return out;}
+    if(backend.device){
+      const d=backend.device,b=d.createBuffer({size:out.byteLength,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ}),e=d.createCommandEncoder();e.copyTextureToBuffer({texture:target},{buffer:b,bytesPerRow:TILE*4},[TILE,TILE]);d.queue.submit([e.finish()]);await b.mapAsync(GPUMapMode.READ);out.set(new Uint8Array(b.getMappedRange()));b.unmap();b.destroy();return out;
+    }
+    throw new Error('Projection checkpoint readback backend unsupported');
   }
   async restoreDocumentProjection(cache?:ProjectionCacheV1){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
