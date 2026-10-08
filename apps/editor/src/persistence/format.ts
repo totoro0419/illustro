@@ -81,7 +81,8 @@ export async function decodeIllustroFile(bytes:Uint8Array,options:Readonly<{limi
     const digest=readHash(s.sha256),required=s.required;if(required&&options.knownRequiredTypes&&!options.knownRequiredTypes.has(type))throw new Error('unknown required section');
     const descriptorExtras=extractExtras(s,new Set(['id','type','required','codec','offset','length','sha256']));
     const descriptor=Object.freeze({id,type,required,codec:'none' as const,offset,length,sha256:digest,extras:descriptorExtras});descriptors.push(descriptor);
-    const body=bytes.slice(payloadStart+offset,payloadStart+offset+length);if(await sha256Hex(body)!==digest)throw new Error('section integrity check failed');
+    const body=bytes.slice(payloadStart+offset,payloadStart+offset+length),valid=await sha256Hex(body)===digest;
+    if(!valid){if(required)throw new Error('section integrity check failed');continue;}
     sections.set(id,Object.freeze({descriptor,bytes:body}));
   }
   if(expectedOffset!==payloadLength)throw new Error('payload layout mismatch');
