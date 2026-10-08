@@ -19,6 +19,7 @@ app.innerHTML=`
 <main><p id="status" role="status">新規キャンバスを開くか、保存した作品を開いてください。</p><div class="document-actions"><button id="new">新規キャンバス</button><button id="reloadSaved" type="button" disabled>保存版を開き直す</button><button id="recover" type="button" disabled>作業途中から戻す</button><button id="saveCopy" type="button" disabled>別名保存</button><input id="openFile" type="file" accept=".illustro,application/octet-stream" hidden></div><div class="surface"><canvas id="canvas" aria-label="描画キャンバス" data-committed-strokes="0"></canvas></div></main>
 <div id="splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Workspaceの幅" aria-valuemin="240" aria-valuemax="440" aria-valuenow="344"></div>
 <aside id="workspace" aria-label="Workspace"><button id="close" class="compact-only">閉じる</button>
+  ${qaMode?qaMarkup():''}
   <details open id="layersBox"><summary>レイヤー</summary><div id="layerList" class="layer-list" aria-label="レイヤー一覧"></div><button id="addLayer" type="button" disabled>レイヤー追加</button></details>
   <details open id="colorBox"><summary>カラー</summary><p>カラー調整は準備中です。</p></details>
   <details open id="brushBox"><summary>ブラシ</summary><label>種類<select id="brush" disabled></select></label>
@@ -30,8 +31,7 @@ app.innerHTML=`
   <label class="width-control">Workspaceの幅<input id="width" type="range" min="240" max="440" value="344"></label>
   <div class="commands"><button id="layer">レイヤー</button><button id="undo" disabled title="元に戻す">Undo</button><button id="redo" disabled title="やり直す">Redo</button><button disabled>左右反転</button><button disabled>上下反転</button></div>
 </aside>
-<div class="compact-only bottom"><button id="compactUndo" disabled title="元に戻す">Undo</button><button id="compactRedo" disabled title="やり直す">Redo</button><button id="drawer" aria-controls="workspace" aria-expanded="false">Workspace</button></div>
-${qaMode?qaMarkup():''}`;
+<div class="compact-only bottom"><button id="compactUndo" disabled title="元に戻す">Undo</button><button id="compactRedo" disabled title="やり直す">Redo</button><button id="drawer" aria-controls="workspace" aria-expanded="false">Workspace</button></div>`;
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();
