@@ -75,7 +75,7 @@ try{
     const initFrames=state.presentationFrames;
     await draw(page);await waitCount(page,1);
     // Box state is independent of renderer lifecycle.
-    await page.locator('#brushBoxBody').evaluate(el=>el.previousElementSibling?.querySelector('.box-toggle')?.click());
+    await page.locator('#brushBoxBody').evaluate(el=>el.closest('.workspace-box')?.querySelector('.box-toggle')?.click());
     assert.equal(await page.locator('#brushBoxBody').getAttribute('hidden'),'');
     await page.locator('#workspaceToggle').click();
     await draw(page);await waitCount(page,2);
@@ -101,7 +101,6 @@ try{
     await page.locator('#allFeatures').click();
     assert.equal(await page.locator('#allFeaturesPanel').isVisible(),true);
     await page.locator('[data-category="document-output"]').click();
-    await page.locator('#featuresItems').getByRole('button',{name:'画像',exact:false}).count();
     await page.locator('#featuresClose').click();
     await page.locator('#undo').click();
     await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='4',{timeout:20000});
