@@ -66,7 +66,7 @@ async function pixels(page,data){
     const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
     const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0);
     const at=(x,y)=>[...ctx.getImageData(x,y,1,1).data];
-    const result={width:bitmap.width,height:bitmap.height,corner:at(0,0),first:at(160,96),second:at(160,211),erased:at(256,211)};
+    const result={width:bitmap.width,height:bitmap.height,corner:at(0,0),first:at(160,96),second:at(90,211),erased:at(256,211)};
     bitmap.close();return result;
   },data.toString('base64'));
   assert.equal(image.width,512);assert.equal(image.height,384);
