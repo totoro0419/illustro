@@ -28,7 +28,7 @@ if(!publicBase){
   base='http://127.0.0.1:'+server.address().port+'/';
 }
 const report={milestone:'M06',mode:publicBase?'public':'local',base,status:'FAIL',backends:[],fixedPages:[],errors:[]};
-const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface']});
+const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface','--enable-precise-memory-info']});
 const qa=async page=>JSON.parse((await page.locator('#qaAuto').textContent())??'{}');
 async function draw(page,a,b,steps=18){
   const box=await page.locator('#canvas').boundingBox();assert.ok(box);
@@ -42,6 +42,11 @@ function validFormat(data,format){
   else assert.ok(data.toString('ascii',0,4)==='RIFF'&&data.toString('ascii',8,12)==='WEBP');
 }
 async function exportOne(page,format,quality=90){
+  await page.evaluate(()=>{
+    const sample=()=>{const value=performance.memory?.usedJSHeapSize;
+      if(Number.isFinite(value)){window.__m06JsHeapPeak=Math.max(window.__m06JsHeapPeak??0,value);window.__m06JsHeapSamples=(window.__m06JsHeapSamples??0)+1;}};
+    window.__m06JsHeapPeak=null;window.__m06JsHeapSamples=0;sample();window.__m06SampleTimer=setInterval(sample,25);
+  });
   await page.locator('#exportImage').click();
   await page.locator('#exportFormat').selectOption(format);
   if(format!=='png')await page.locator('#exportQuality').fill(String(quality));
@@ -52,12 +57,16 @@ async function exportOne(page,format,quality=90){
   const data=await fs.readFile(file);validFormat(data,format);
   assert.ok(download.suggestedFilename().endsWith(format==='jpeg'?'.jpg':'.'+format));
   await page.waitForFunction(n=>JSON.parse(document.getElementById('qaAuto')?.textContent??'{}').export.count>=n,1,{timeout:45000});
+  const sampled=await page.evaluate(()=>{
+    clearInterval(window.__m06SampleTimer);
+    return {sampledJsHeapPeakBytes:window.__m06JsHeapPeak??null,jsHeapSamples:window.__m06JsHeapSamples??0};
+  });
   const meta=await qa(page);
   assert.equal(meta.export.last.mime,'image/'+format);
   assert.equal(meta.export.last.width,512);assert.equal(meta.export.last.height,384);
   assert.ok(meta.export.last.encodeMs>=0);
   await fs.writeFile(path.join(evidence,format+'-'+quality+'-'+meta.backend+'.'+(format==='jpeg'?'jpg':format)),data);
-  return {data,meta,filename:download.suggestedFilename()};
+  return {data,meta,filename:download.suggestedFilename(),sampled};
 }
 async function pixels(page,data){
   const image=await page.evaluate(async(base64)=>{
@@ -114,9 +123,27 @@ try{
     for(const format of ['png','jpeg','webp'])await exportOne(page,format,80);
     await context.setOffline(false);
     assert.deepEqual(errors,[],'browser console errors');
-    report.backends.push({backend,status:'PASS',revision:rev,png:pngPixels,jpeg:jpegPixels,webp:webpPixels,qualityChanged:true,offlineFormats:['png','jpeg','webp'],unchangedSaveState:true,undoRedo:true,encodeMs:png.meta.export.last.encodeMs,estimatedPeakBytes:png.meta.export.last.estimatedPeakBytes,consoleErrors:errors});
+    report.backends.push({backend,status:'PASS',revision:rev,png:pngPixels,jpeg:jpegPixels,webp:webpPixels,qualityChanged:true,offlineFormats:['png','jpeg','webp'],unchangedSaveState:true,undoRedo:true,encodeMs:png.meta.export.last.encodeMs,estimatedPeakBytes:png.meta.export.last.estimatedPeakBytes,sampledJsHeapPeakBytes:png.sampled.sampledJsHeapPeakBytes,jsHeapSamples:png.sampled.jsHeapSamples,consoleErrors:errors});
     await context.close();
   }
+
+  // Android-sized Chromium emulation; real Android hardware acceptance is separate.
+  const mobileContext=await browser.newContext({acceptDownloads:true,viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+  try{
+    const mobile=await mobileContext.newPage(),mobileErrors=[];
+    mobile.on('pageerror',e=>mobileErrors.push(e.message));
+    await mobile.goto(base+(publicBase?'?backend=webgl2&build='+expectedCommit:'?qa=1&backend=webgl2'),{waitUntil:'networkidle',timeout:45000});
+    if(await mobile.locator('#qaPanel').count())await mobile.locator('#qaPanel').evaluate(el=>{el.open=false;});
+    await mobile.locator('#new').click();
+    await mobile.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
+    const canvas=await mobile.locator('#canvas').boundingBox();assert.ok(canvas&&canvas.width>100&&canvas.x>=0,'compact canvas is not visible');
+    await draw(mobile,[.2,.24],[.8,.24]);await waitStroke(mobile,1);
+    const state=await qa(mobile);assert.equal(state.workspaceOpen,false,'compact Workspace should start closed');
+    const png=await exportOne(mobile,'png'),p=await pixels(mobile,png.data);
+    assert.equal(p.corner[3],0);assert.ok(p.first[3]>0,'compact export lost painted artwork');
+    assert.deepEqual(mobileErrors,[]);
+    report.mobile={status:'PASS',emulation:'Chromium Android-sized 390x844 touch viewport',workspaceClosedDrawing:true,alpha:true,sampledJsHeapPeakBytes:png.sampled.sampledJsHeapPeakBytes};
+  }finally{await mobileContext.close();}
   report.status='PASS';
 }catch(error){report.failure=String(error?.stack??error);throw error;}
 finally{await fs.writeFile(path.join(evidence,'report.json'),JSON.stringify(report,null,2));await browser.close();if(server)server.close();console.log(JSON.stringify(report,null,2));}
