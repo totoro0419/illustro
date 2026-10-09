@@ -16,7 +16,7 @@ export function installShellUi():ShellControl{
   const workspace=byId<HTMLElement>('workspace'),rightDock=byId<HTMLElement>('rightDock'),page=byId<HTMLElement>('layerPage');
   const drawer=byId<HTMLButtonElement>('drawer'),compact=matchMedia('(max-width:760px)'),coarse=matchMedia('(any-pointer:coarse)'),touch=()=>coarse.matches||navigator.maxTouchPoints>0;
   const toggle=byId<HTMLButtonElement>('workspaceToggle'),layer=byId<HTMLButtonElement>('layer');
-  let width=touch()?360:344,previousWidth=width,resizing:{pointerId:number;original:number}|null=null,layerOpen=false,expanded:Record<string,boolean>={};
+  let width=touch()?360:344,resizing:{pointerId:number;original:number}|null=null,layerOpen=false,expanded:Record<string,boolean>={};
   const savedWidth=Number(safeRead(WIDTH_KEY));if(Number.isFinite(savedWidth)&&savedWidth>0)width=savedWidth;
   try{expanded=JSON.parse(safeRead(BOX_KEY)||'{}') as Record<string,boolean>;}catch{expanded={};}
   const minimum=()=>touch()?320:288;
@@ -95,7 +95,7 @@ export function installShellUi():ShellControl{
     if(compact.matches||document.body.classList.contains('right-collapsed')||resizing)return;
     // Pen/touch resizing must explicitly begin on the visible grip, never on canvas.
     if(e.pointerType!=='mouse'&&!(e.target instanceof Element&&e.target.closest('.resize-grip')))return;
-    resizing={pointerId:e.pointerId,original:width};previousWidth=width;
+    resizing={pointerId:e.pointerId,original:width};
     splitter.setPointerCapture(e.pointerId);splitter.classList.add('dragging');e.preventDefault();
   });
   splitter.addEventListener('pointermove',e=>{if(resizing?.pointerId===e.pointerId)applyWidth(innerWidth-e.clientX);});
