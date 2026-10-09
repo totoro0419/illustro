@@ -109,8 +109,12 @@ try{
     const added=await qa(page);assert.notEqual(added.currentRevision,rev);
     await page.locator('#undo').click();await page.waitForFunction(s=>document.querySelector('canvas')?.dataset.revisionId===s,rev,{timeout:30000});
     await page.locator('#redo').click();await page.waitForFunction(s=>document.querySelector('canvas')?.dataset.revisionId===s,added.currentRevision,{timeout:30000});
+    // All three exporters run locally even when network access is unavailable.
+    await context.setOffline(true);
+    for(const format of ['png','jpeg','webp'])await exportOne(page,format,80);
+    await context.setOffline(false);
     assert.deepEqual(errors,[],'browser console errors');
-    report.backends.push({backend,status:'PASS',revision:rev,png:pngPixels,jpeg:jpegPixels,webp:webpPixels,qualityChanged:true,unchangedSaveState:true,undoRedo:true,encodeMs:png.meta.export.last.encodeMs,estimatedPeakBytes:png.meta.export.last.estimatedPeakBytes,consoleErrors:errors});
+    report.backends.push({backend,status:'PASS',revision:rev,png:pngPixels,jpeg:jpegPixels,webp:webpPixels,qualityChanged:true,offlineFormats:['png','jpeg','webp'],unchangedSaveState:true,undoRedo:true,encodeMs:png.meta.export.last.encodeMs,estimatedPeakBytes:png.meta.export.last.estimatedPeakBytes,consoleErrors:errors});
     await context.close();
   }
   report.status='PASS';
