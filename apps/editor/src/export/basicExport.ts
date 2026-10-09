@@ -104,7 +104,7 @@ export function exportFileName(name:string,format:ImageFormat):string{
 }
 
 function rgbaImageData(pixels:Uint8ClampedArray,width:number,height:number):ImageData{
-  return new ImageData(pixels,width,height,{colorSpace:'srgb'});
+  return new ImageData(new Uint8ClampedArray(pixels),width,height,{colorSpace:'srgb'});
 }
 
 async function encodeBrowser(pixels:Uint8ClampedArray,width:number,height:number,format:'jpeg'|'webp',quality:number):Promise<Blob>{
@@ -151,7 +151,7 @@ export async function encodePng(pixels:Uint8ClampedArray,width:number,height:num
   }else zipped=deflateStored(raw);
   const head=new Uint8Array(13);write32(head,0,width);write32(head,4,height);head[8]=8;head[9]=6;
   const sig=Uint8Array.of(137,80,78,71,13,10,26,10),ihdr=pngChunk('IHDR',head),srgb=pngChunk('sRGB',Uint8Array.of(0)),idat=pngChunk('IDAT',zipped),end=pngChunk('IEND',new Uint8Array());
-  return new Blob([sig,ihdr,srgb,idat,end],{type:'image/png'});
+  return new Blob([sig,ihdr,srgb,idat,end].map(bytes=>new Uint8Array(bytes).buffer as ArrayBuffer),{type:'image/png'});
 }
 
 export async function verifyImage(blob:Blob,format:ImageFormat,width:number,height:number):Promise<void>{
