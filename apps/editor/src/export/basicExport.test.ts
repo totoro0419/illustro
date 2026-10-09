@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 // @ts-ignore: Node test-only import; browser application intentionally excludes Node types.
 import {inflateSync} from 'node:zlib';
 import {CoreDocument} from '@illustro/core';
-import type {StrokeRecord} from '@illustro/brush-rt';
+import {CanonicalBuilder,referenceBrushes,type StrokeRecord} from '@illustro/brush-rt';
 import {EditorController} from '../controller';
 import {captureExport,compositeLayer,encodePng,exportFileName,flattenOnWhite} from './basicExport';
 
@@ -60,14 +60,17 @@ describe('M06 exact export pixel and state contracts',()=>{
   it('freezes real stroke A before an additional real stroke B and leaves history unchanged',async()=>{
     const controller=new EditorController(128,128);
     const record=(x:number):StrokeRecord=>{
-      const command=Array(24).fill(0);command[0]=command[16]=x;command[1]=command[17]=32;command[2]=12;command[18]=6;command[19]=1;
-      return {version:2,engine:'illustro-rt-2.5',smoothing:'local-regression-adaptive-48ms-bounded-2',fast:0,random:'philox4x32-10',seed:[1,2],preset:{id:'paint',blend:'normal'},raw:[{x,y:32,t:1,pressure:1,pointerType:'pen'}],geometry:[],commands:[command]} as unknown as StrokeRecord;
+      const brush=referenceBrushes.find(p=>p.id==='foundation-g-pen')??referenceBrushes[0]!;
+      const builder=new CanonicalBuilder(brush,[1,2]);
+      const point=(px:number,t:number)=>({x:px,y:32,t,pressure:1,pointerType:'pen',tilt:0,azimuth:0,twist:0});
+      builder.accept(point(x,1));builder.accept(point(x+12,20));builder.finish();
+      return builder.record();
     };
     await controller.finishStroke(controller.target(),record(18));
     const fixed=captureExport(controller.document),headA=fixed.revision,sequenceA=controller.document.commitSequence;
     await controller.finishStroke(controller.target(),record(98));
     expect(fixed.strokes).toHaveLength(1);
-    expect(fixed.strokes[0]?.record.commands[0]?.[0]).toBe(18);
+    expect(fixed.strokes[0]?.record.raw[0]?.x).toBe(18);
     expect(fixed.revision).toBe(headA);
     expect(controller.document.head).not.toBe(headA);
     expect(controller.document.commitSequence).toBe(sequenceA+1n);
