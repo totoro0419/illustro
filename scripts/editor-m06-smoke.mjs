@@ -47,6 +47,7 @@ async function exportOne(page,format,quality=90){
       if(Number.isFinite(value)){window.__m06JsHeapPeak=Math.max(window.__m06JsHeapPeak??0,value);window.__m06JsHeapSamples=(window.__m06JsHeapSamples??0)+1;}};
     window.__m06JsHeapPeak=null;window.__m06JsHeapSamples=0;sample();window.__m06SampleTimer=setInterval(sample,25);
   });
+  const countBefore=(await qa(page)).export.count;
   await page.locator('#exportImage').click();
   await page.locator('#exportFormat').selectOption(format);
   if(format!=='png')await page.locator('#exportQuality').fill(String(quality));
@@ -56,7 +57,7 @@ async function exportOne(page,format,quality=90){
   const file=await download.path();assert.ok(file);
   const data=await fs.readFile(file);validFormat(data,format);
   assert.ok(download.suggestedFilename().endsWith(format==='jpeg'?'.jpg':'.'+format));
-  await page.waitForFunction(n=>JSON.parse(document.getElementById('qaAuto')?.textContent??'{}').export.count>=n,1,{timeout:45000});
+  await page.waitForFunction(n=>JSON.parse(document.getElementById('qaAuto')?.textContent??'{}').export.count>n,countBefore,{timeout:45000});
   const sampled=await page.evaluate(()=>{
     clearInterval(window.__m06SampleTimer);
     return {sampledJsHeapPeakBytes:window.__m06JsHeapPeak??null,jsHeapSamples:window.__m06JsHeapSamples??0};
@@ -114,8 +115,46 @@ try{
     assert.equal(after.currentRevision,rev);assert.equal(after.commitSequence,seq);
     assert.equal(after.persistence.savedRevision,before.persistence.savedRevision);
     assert.equal(after.persistence.dirty,before.persistence.dirty);
-    await page.locator('#paint').click();await draw(page,[.15,.75],[.85,.75]);await waitStroke(page,4);
-    const added=await qa(page);assert.notEqual(added.currentRevision,rev);
+    // True in-flight snapshot isolation. Start PNG export of Revision A,
+    // draw stroke B on the live canvas while the export is running, and assert
+    // the downloaded image still contains A only. Pointer input must not be blocked.
+    await page.locator('#paint').click();
+    const beforeConcurrent=await qa(page),countBeforeConcurrent=beforeConcurrent.export.count;
+    await page.evaluate(()=>{
+      window.__m06ExportBusyAtDraw=null;
+      document.querySelector('#canvas').addEventListener('pointerdown',()=>{
+        window.__m06ExportBusyAtDraw=JSON.parse(document.querySelector('#qaAuto')?.textContent||'{}').export.busy;
+      },{once:true,capture:true});
+    });
+    await page.locator('#exportImage').click();
+    await page.locator('#exportFormat').selectOption('png');
+    const concurrentDownload=page.waitForEvent('download',{timeout:120000});
+    await page.locator('#exportRun').click();
+    await draw(page,[.15,.75],[.85,.75],6);
+    await waitStroke(page,4);
+    const [overlap,startedRevision]=await page.evaluate(()=>{
+      const q=JSON.parse(document.querySelector('#qaAuto')?.textContent||'{}');
+      return [window.__m06ExportBusyAtDraw,q.export.last?.revision];
+    });
+    const concurrentFile=await (await concurrentDownload).path();assert.ok(concurrentFile);
+    const frozenPng=await fs.readFile(concurrentFile);validFormat(frozenPng,'png');
+    await page.waitForFunction(n=>JSON.parse(document.querySelector('#qaAuto')?.textContent||'{}').export.count>n,countBeforeConcurrent,{timeout:45000});
+    const frozenResult=await qa(page),frozenPixels=await pixels(page,frozenPng);
+    assert.equal(frozenResult.export.last.revision,beforeConcurrent.currentRevision,'Export included new Revision B');
+    assert.notEqual(frozenResult.currentRevision,beforeConcurrent.currentRevision,'Stroke B did not commit while exporting');
+    assert.equal(frozenPixels.corner[3],0);
+    const excluded=await page.evaluate(async b64=>{
+      const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+      const bmp=await createImageBitmap(new Blob([bytes]));
+      const c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;
+      const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(bmp,0,0);
+      const a=ctx.getImageData(160,288,1,1).data[3];bmp.close();return a;
+    },frozenPng.toString('base64'));
+    assert.equal(excluded,0,'Export image unexpectedly included stroke B');
+    assert.equal(overlap,true,'Pointer down did not occur during active export');
+    const added=await qa(page);
+    report.concurrentSnapshots??={};
+    report.concurrentSnapshots[backend]={status:'PASS',exportRevision:frozenResult.export.last.revision,currentRevision:added.currentRevision,strokeBExcluded:true,pointerAcceptedDuringExport:overlap};
     await page.locator('#undo').click();await page.waitForFunction(s=>document.querySelector('canvas')?.dataset.revisionId===s,rev,{timeout:30000});
     await page.locator('#redo').click();await page.waitForFunction(s=>document.querySelector('canvas')?.dataset.revisionId===s,added.currentRevision,{timeout:30000});
     // All three exporters run locally even when network access is unavailable.
