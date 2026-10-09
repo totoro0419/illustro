@@ -1,0 +1,14 @@
+{
+  "parent": "dd35eb845c954399060a31651414070b7495b8fc",
+  "run": 36954292768,
+  "job": 110673708693,
+  "observedStatus": "failure",
+  "observedError": "TS2307 cannot find vitest",
+  "cause": "package-lock linked dependencies to an earlier scratch workspace",
+  "fix": "regenerated registry lock and verified npm ci; no external scratch dependencies",
+  "localAfterFix": "167 Brush and 8 Core tests PASS, typechecks PASS, rebuilt offline HTML byte-identical to browser-tested artifact",
+  "remoteAfterFix": "PASS",
+  "verifiedCommit": "ad3258d28451613e0353947cf260da048914660a",
+  "verifiedBrushRun": 36989102014,
+  "verifiedCoreRun": 36989102039
+}

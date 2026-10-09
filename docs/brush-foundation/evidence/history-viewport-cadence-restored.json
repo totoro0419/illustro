@@ -1,0 +1,50 @@
+{
+  "backends": [
+    {
+      "backend": "webgl2",
+      "drawn": {
+        "channelsOver3": 0,
+        "expectedPaint": 2349,
+        "visiblePaint": 2349
+      },
+      "redo": {
+        "channelsOver3": 0,
+        "expectedPaint": 2349,
+        "visiblePaint": 2349
+      },
+      "load": {
+        "channelsOver3": 0,
+        "expectedPaint": 2349,
+        "visiblePaint": 2349
+      },
+      "canonicalExact": true
+    },
+    {
+      "backend": "webgpu",
+      "drawn": {
+        "channelsOver3": 0,
+        "expectedPaint": 2349,
+        "visiblePaint": 2349
+      },
+      "redo": {
+        "channelsOver3": 0,
+        "expectedPaint": 2349,
+        "visiblePaint": 2349
+      },
+      "load": {
+        "channelsOver3": 0,
+        "expectedPaint": 2349,
+        "visiblePaint": 2349
+      },
+      "canonicalExact": true
+    }
+  ],
+  "provenance": {
+    "candidateHtmlGitBlob": "925804bf751b4a6b9066cb5c89f59849dc89091e",
+    "scope": "1:1 restoration viewport after WebGL2 cadence restored; physical display unverified",
+    "browser": "Chromium 153.0.8010.0",
+    "gateChannelTolerance": 3
+  },
+  "sourceCommit": "7ecdf9b4283e0d8f2b850845a7f6675f11e818f4",
+  "htmlGitBlob": "925804bf751b4a6b9066cb5c89f59849dc89091e"
+}

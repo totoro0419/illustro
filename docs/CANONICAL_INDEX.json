@@ -1,0 +1,1678 @@
+{
+  "authority": "docs/IMPLEMENTATION_BASELINE.md",
+  "owners": {
+    "product": "docs/PRODUCT_SPEC.md",
+    "implementation": "docs/IMPLEMENTATION_BASELINE.md",
+    "features": "docs/FEATURE_SPEC.md",
+    "families": "docs/FEATURE_SYSTEM_INTEGRATION_2026-10-04.md",
+    "architecture": "docs/architecture/ARCHITECTURE_V2.md",
+    "leftUI": "docs/ui/LEFT_UI_SPEC.md",
+    "rightUI": "docs/ui/RIGHT_UI_SPEC.md",
+    "layerPage": "docs/ui/RIGHT_LAYER_PAGE_SPEC.md",
+    "compactUI": "docs/ui/COMPACT_IMPLEMENTATION_BASELINE.md",
+    "numericInput": "docs/ui/UI_INPUT_CONTROL_STANDARD.md",
+    "workspaceCustomization": "docs/ui/WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md",
+    "brushAdoption": "docs/brush-foundation/ADOPTION_BASELINE.md",
+    "regionAdoption": "docs/architecture/REGION_ADOPTION.md",
+    "performance": "docs/architecture/FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md",
+    "roadmap": "docs/IMPLEMENTATION_CHECKLIST.md"
+  },
+  "entries": [
+    {
+      "path": "apps/editor/index.html",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/package.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/brushSurface.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/controller.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/main.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ports.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/style.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/tsconfig.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/architecture/ADR_TEMPLATE.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0001-document-layer-model.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0002-tile-render-pipeline.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0003-history-command-snapshot.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0004-input-brush-engine.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0006-color-pipeline.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0007-selection-transform-effects.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0008-persistence-recovery.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0009-integrated-runtime.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ADR-0010-device-capability-adaptation.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ARCHITECTURE_OVERVIEW.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ARCHITECTURE_V1.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/ARCHITECTURE_V2.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/architecture/BRUSH_RENDER_CONTRACT_V2.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/architecture/CANONICAL_RASTER_V2.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/architecture/DEVICE_COMPATIBILITY_AUDIT_2026-09-27.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/DEVICE_TEST_MATRIX.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/architecture/IDENTITY_OPERATION_REVISION_V2.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/architecture/INTEGRATION_VALIDATION.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/PERFORMANCE_AUDIT_2026-09-27.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/PERFORMANCE_POLICY.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/PERSISTENCE_RECOVERY_LOGICAL_V2.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/architecture/README.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/REGION_ADOPTION.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/architecture/REGION_RESOLVER_V2.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/architecture/V1_FIRST_PASS_EVIDENCE.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/V1_PROMOTION_GATE.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/brush-foundation/ADOPTION_BASELINE.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/brush-foundation/ARCHITECTURE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/COMPLETION_CONTRACT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/continuation-seven-brush-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/foundation-blend-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/foundation-blend-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/g-pen-tap-before-after.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/history-viewport-after.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/history-viewport-before.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/history-viewport-cadence-restored.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-baseline-repeated-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-candidate-repeated-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-contract-25ac91e-webgl2.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-contract-25ac91e-webgpu.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-initial-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-paired-webgl2-65e1937-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-paired-webgl2-cadence-restored-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-paired-webgl2-latest.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-paired-webgpu-legacy-7ecdf9b-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-source-26a5f86-webgpu-full-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-source-65e1937-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-source-65e1937-visual-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-source-7ecdf9b-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-tap-default-webgl2.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-tap-default-webgpu.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/local-webgpu-font-interruption.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/node-contract-25ac91e.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/node-tap-default.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/paired-brush-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/preset-io-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37095147652-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37101405455-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37101405455-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37103851111-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37103851111-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-attempt1-webgpu-interrupted-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-attempt2-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37107164670-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37111369583-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37111369583-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37111369583-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37111369583-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37117836111-full-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37117836111-full-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37117836111-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37117836111-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37119396194-quick-webgl2-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37119396194-quick-webgpu-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37121144408-brush-rt-evidence-webgl2-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37121144408-brush-rt-evidence-webgpu-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37121144408-foundation-quick-evidence-webgl2-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37121144408-foundation-quick-evidence-webgpu-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37128925258-brush-rt-evidence-webgl2-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37128925258-brush-rt-evidence-webgpu-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37128925258-foundation-quick-evidence-webgl2-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37128925258-foundation-quick-evidence-webgpu-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37131153403-webgl2-full-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37131153403-webgl2-targeted-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37131153403-webgpu-full-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/run-37131153403-webgpu-targeted-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/ui-contract-25ac91e.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/FAILURE_ANALYSIS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/HANDOFF_STATE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/HUMAN_CHECKS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/package_handoff.py",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/reference-brushes.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/REQUIREMENT_COVERAGE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/VALIDATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/ARCHITECTURE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/BENCHMARK.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/COMPETITOR_COMPARISON.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/node-tests.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37040087180-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37043019906-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37045562556-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37049012748-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37083561667-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37084846924-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37085312706-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37089526671-webgl2-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37089526671-webgpu-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/evidence/run-37090457149-results.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/EXPERIENCE_CONTRACT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/FAILURE_ANALYSIS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/VALIDATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/AUDIT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/COMPETITORS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/automated-checks.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/before-console-v3.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/benchmark-console.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/browser-checks.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/browser-desktop.png",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/browser-mobile.png",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/browser-run.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/browser-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/browser-sustained.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/ci-thick-v3.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/dd35-source-manifest.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/dd35-validation.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/integration-benchmark-console.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/integration-browser-console.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/integration-browser-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/integration-build.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/integration-checks.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/integration-ci-diagnosis.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/integration-equivalence.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/integration-remote-ci.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/latency-before.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/latency-benchmark.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/latency-check.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/latency-checks.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/latency-p0-checks.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/latency-unit-checks.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/long-tip-failed-run-v3.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/long-tip-repeat-v3.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/node-performance.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/overload-console-v3.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/overload-tip-v3.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/p0-build.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/p0-tests.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/paced-console-v3.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/paced-thick-before-v3.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/paced-thick-long-v3.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/paced-thick-v3.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/preset-atlas.html",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/preset-atlas.png",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/presets.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/source-manifest.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/source-thick-v3.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/thick-check-v3.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/thick-console-v3.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/throughput-after-v2.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/throughput-before-v2.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/throughput-browser-checks.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/throughput-browser-summary.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/throughput-console.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/throughput-latency-checks.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/throughput-source.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/throughput-unit-checks.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/evidence/unit-thick-v3.txt",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/LATENCY.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/PRESETS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/THICK_LATENCY.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/VALIDATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/WORK_CHECKPOINT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/CANONICAL_INDEX.json",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/CANONICAL_INDEX.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/CREATION_PROXIMITY_PRINCIPLES.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/DESIGN_COMPLETION_GATE.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/FEATURE_CATALOG.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/FEATURE_DELIVERY_GATE.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/FEATURE_SPEC.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/FEATURE_SYSTEM_INTEGRATION_2026-10-04.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/features/brush-eraser.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/canvas-navigation.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/clipboard.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/color-eyedropper.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/document-lifecycle.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/history-snapshot-layer-comp.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/keyboard-shortcuts.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/layers.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/quick-menu-command-search.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/reference-workspace.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/save-recovery.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/selection-transform.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/features/smart-fill.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/FUTURE.md",
+      "status": "FUTURE"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_BASELINE.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_CHECKLIST.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/implementation/CORE_SLICE_001_FINAL_DISPOSITION.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/implementation/CORE_SLICE_001_REDESIGN_REAUDIT.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/implementation/CORE_VERTICAL_SLICE_001.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/implementation/M01_STROKE_COMMIT_DESIGN.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M01_STROKE_COMMIT_VERIFICATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M02_LAYER_ADD_SELECT_DESIGN.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M03_UNDO_REDO_DESIGN.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/implementation/M04_ERASER_INTEGRATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/interaction/INTERACTION_GAP_AUDIT_2026-09-27.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/interaction/INTERACTION_MODEL.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/interaction/INTERACTION_REAUDIT_2026-09-27.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/interaction/LOCALIZATION_POLICY.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/interaction/README.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/interaction/REMAINING_INTERACTION_BACKLOG.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/interaction/REQUIREMENT_TRACEABILITY.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/LEGACY_REFERENCE_POLICY.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/PRODUCT_SPEC.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/production-prep/brush-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/canonical-paths.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/editor-smoke.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/github-audit.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/PR_DISPOSITION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/REFERENCE_DECISIONS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-extension-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-feedback-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-raster-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/region-structure-verification.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/source-lock.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/VERIFICATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/prototypes/P0_ARCHITECTURE_PROTOTYPE.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/REDESIGN_PRINCIPLES.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/research/COMPETITOR_MATRIX.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/COMPETITOR_PASS2.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M01_STROKE_COMMIT_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M02_LAYER_ADD_SELECT_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M03_UNDO_REDO_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M04_ERASER_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M05_SAVE_RECOVERY_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M06_BASIC_EXPORT_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/STATUS.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/ui/COMPACT_IMPLEMENTATION_BASELINE.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/ui/COMPACT_UI_SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/LEFT_PINNED_RAIL_SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/LEFT_TOOL_SURFACE_OPTIONS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/LEFT_UI_ACCESS_ARCHITECTURE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/LEFT_UI_ACCESS_COVERAGE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/LEFT_UI_SPEC.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/ui/RIGHT_LAYER_PAGE_SPEC.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/ui/RIGHT_UI_FEATURE_COVERAGE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/RIGHT_UI_QUALITY_REVIEW.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/RIGHT_UI_SPEC.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/ui/RIGHT_WORKSPACE_BOX_TAXONOMY.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/RIGHT_WORKSPACE_DEFAULT_LAYOUT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/RIGHT_WORKSPACE_GENERAL_UI_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/RIGHT_WORKSPACE_INTERACTION_SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_GATE_E_VISUAL_BRIEF.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_GATE_E_VISUAL_REVIEW_2026-09-29.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_GATE_E.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_CONTROL_ATLAS.html",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_CONTROL_AUDIT_2026-09-30.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_CONTROL_LAB.html",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_CONTROL_SPEC_DRAFT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_CONTROL_STANDARD_VERIFICATION.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_CONTROL_STANDARD.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_CONTROL_VERIFICATION.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_COVERAGE_MATRIX.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_COVERAGE_VERIFICATION.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_DEFERRED_VALUES.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_INPUT_DESIGN_COMPLETION_2026-09-30.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_THEME_CANDIDATES_2026-09-30.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/UI_THEME_COMPARISON.html",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/ui/WORKSPACE_VISUAL_CUSTOMIZATION_VERIFICATION.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/browser-extension-verification.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/browser-feedback-verification.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/browser-verification.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/build-html.py",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/DESIGN.md",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/engine.js",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/extension-verification.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/feedback-verification.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/generate-fixtures.py",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/illustro-raster-region-lab.html",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/raster-verification.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/README.md",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/structure-verification.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/template.html",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/test-extension.cjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/test-feedback.cjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/test-raster.cjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/test-structure.cjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/package.json",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/baseline-shaders.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/canonical.worker.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/foundation.d.ts",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/foundation.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/index.d.ts",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/index.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/model.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/renderer.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/session.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/src/shaders.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/test/foundation-contract.test.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/test/foundation.test.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/test/model.test.mjs",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush/package.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/benchmark.mts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/coreSession.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/coverage.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/dynamics.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/engine.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/engine.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/fixtures.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/index.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/input.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/math.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/optimization.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/presets.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/random.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/raster.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/raster.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/reconstruction.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/record.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/src/types.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush/tsconfig.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/package.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/commit.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/coreDocument.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/documentBranch.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/documentHistory.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/documentMetadata.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/documentSparse.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/documentStale.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/documentValidation.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/hash.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/history.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/ids.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/index.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/internal.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/model.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/pagedMap.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/pagedMap.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/raster/store.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/raster/surface.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/raster/working.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/rasterStore.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/recovery.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/transaction.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/tsconfig.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/brush-rt/browser-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/brush-rt/build.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "prototypes/brush-rt/foundation-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/brush-rt/foundation-quick-check.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/brush-rt/index.html",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/brush-rt/ui.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/.gitignore",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/index.html",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/package.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/playwright.config.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/PROTOTYPE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/bench/api.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/bench/extended.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/activePointer.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/activePointer.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/byteBudgetCache.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/byteBudgetCache.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/graphicsProbe.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/history.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/history.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/input.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/journalBatcher.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/journalBatcher.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/journalFrame.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/journalFrame.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/metrics.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/metrics.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/rasterSeal.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/rasterSeal.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/renderBackend.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/renderBackend.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/sparseTile.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/sparseTile.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/types.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/wasmBoundary.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/core/wasmBoundary.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/env.d.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/gates/paintWorkload.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/gates/v1Adversarial.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/gates/v1RasterTileGates.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/main.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/style.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/workers/persistence.worker.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/src/workers/realtime.worker.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/tests/browser.spec.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/tsconfig.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "prototypes/p0-architecture/vitest.config.ts",
+      "status": "EXPERIMENTAL"
+    }
+  ]
+}
