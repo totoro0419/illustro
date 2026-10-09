@@ -69,7 +69,7 @@
 本番実装のマイルストーン番号・名称・順序は、`docs/IMPLEMENTATION_CHECKLIST.md` の **M01〜M47** を正本とする。
 
 - M01〜M03は合格・固定済み。
-- 現在の実装対象はM04「Eraser正式統合」。
+- M01〜M06は合格・固定済み。現在の実装対象はM07「本番PC/Tablet UI骨格」。
 - M05以降は、M05 Save基盤 → M06 基本Export → M07 本番PC/Tablet UI骨格 … → M46 v1 Release Candidate → M47 Illustro v1.0 Release Gate の順で進める。
 - 過去のM05〜M40ロードマップは廃止する。過去文書内に旧番号が残っていても、現在の実装順序の根拠にはしない。
 - Managerや実装チャットは、ユーザー承認なしにM01〜M47を改番・統合・順序変更しない。内部サブタスクへ分解しても外側のマイルストーンIDは維持する。
