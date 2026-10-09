@@ -144,3 +144,6 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
 }
 @media(max-width:760px) and (orientation:landscape){.right-dock{height:65dvh}}
 @media(prefers-reduced-motion:reduce){.right-dock,.chevron,button{transition:none!important}}
+
+.resize-grip{pointer-events:auto;cursor:ew-resize}
+#featuresCategories[hidden],#featuresActions[hidden]{display:none!important}
