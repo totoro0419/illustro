@@ -32,6 +32,59 @@ async function draw(page){
 async function waitCount(page,n){
   await page.waitForFunction(x=>document.getElementById('canvas')?.dataset.committedStrokes===String(x)&&document.getElementById('canvas')?.dataset.historyBusy==='false',n,{timeout:45000});
 }
+
+async function startFrameCapture(page){
+  await page.evaluate(()=>{
+    window.__m07FrameIntervals=[];window.__m07FrameSampling=true;
+    let previous=0;
+    const next=(time)=>{
+      if(previous)window.__m07FrameIntervals.push(time-previous);
+      previous=time;
+      if(window.__m07FrameSampling&&window.__m07FrameIntervals.length<900)requestAnimationFrame(next);
+    };
+    requestAnimationFrame(next);
+  });
+}
+async function stopFrameCapture(page){
+  return page.evaluate(()=>{
+    window.__m07FrameSampling=false;
+    const arr=(window.__m07FrameIntervals??[]).filter(x=>Number.isFinite(x)).sort((a,b)=>a-b);
+    const at=p=>arr.length?arr[Math.min(arr.length-1,Math.floor(arr.length*p))]:null;
+    return {frameSamples:arr.length,p50FrameMs:at(.5),p95FrameMs:at(.95),
+      heapBytes:performance.memory?.usedJSHeapSize??null,
+      domNodes:document.querySelectorAll('*').length};
+  });
+}
+async function penStroke(page){
+  const box=await page.locator('#canvas').boundingBox();assert.ok(box);
+  const x=box.x+box.width*.19,y=box.y+box.height*.64;
+  const x2=box.x+box.width*.73,y2=box.y+box.height*.7;
+  const session=await page.context().newCDPSession(page);
+  await session.send('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,pointerType:'pen'});
+  await session.send('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',buttons:1,clickCount:1,pointerType:'pen'});
+  for(let i=1;i<=16;i++)await session.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:x+(x2-x)*i/16,y:y+(y2-y)*i/16,button:'left',buttons:1,pointerType:'pen'});
+  await session.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:x2,y:y2,button:'left',buttons:0,clickCount:1,pointerType:'pen'});
+  await session.detach();
+}
+async function touchStroke(page){
+  const box=await page.locator('#canvas').boundingBox();assert.ok(box);
+  const x=box.x+box.width*.14,y=box.y+box.height*.27;
+  const x2=box.x+box.width*.61,y2=box.y+box.height*.31;
+  const session=await page.context().newCDPSession(page);
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});
+  for(let i=1;i<=15;i++)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+(x2-x)*i/15,y:y+(y2-y)*i/15}]});
+  await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await session.detach();
+}
+async function boxScrollCost(page){
+  return page.evaluate(()=>{
+    const box=document.getElementById('boxStack');
+    const before=performance.now();let range=0;
+    for(let i=0;i<25;i++){box.scrollTop=i%2?0:box.scrollHeight;range=Math.max(range,box.scrollHeight-box.clientHeight);void box.getBoundingClientRect().height;}
+    const elapsed=performance.now()-before;return {scrollRangePx:range,layoutAndScroll25ChangesMs:elapsed};
+  });
+}
+
 async function checkPage(page,profile){
   const structure=await page.evaluate(()=>{
     const boxes=[...document.querySelectorAll('[data-box-id]')].map(x=>x.getAttribute('data-box-id'));
@@ -66,9 +119,10 @@ try{
   for(const backend of ['webgl2','webgpu']){
     const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:true});
     const page=await context.newPage(),errors=[];
-    page.on('pageerror',e=>errors.push(e.message));
+    page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     await page.goto(base+(publicBase?'?backend='+backend+'&build='+expectedCommit:'?qa=1&backend='+backend),{waitUntil:'networkidle',timeout:45000});
     const structure=await checkPage(page,'pointer');
+    await startFrameCapture(page);
     await page.locator('#new').click();
     await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
     const state=await qa(page);assert.equal(state.milestone,'M07');assert.equal(state.backendSelection.selected,backend);if(expectedCommit)assert.equal(state.commit,expectedCommit);
@@ -105,10 +159,16 @@ try{
     await page.locator('#undo').click();
     await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='4',{timeout:20000});
     await page.locator('#redo').click();await waitCount(page,5);
+    await penStroke(page);await waitCount(page,6);
+    assert.equal((await qa(page)).lastInputType,'pen','Browser stylus-equivalent input must reach Canvas');
     assert.ok((await qa(page)).presentationFrames>=initFrames);
     assert.deepEqual(errors,[],'JS runtime errors');
+    const perf=await stopFrameCapture(page);
+    const scrolling=await boxScrollCost(page);
+    assert.ok(perf.frameSamples>20,'Frame pacing capture had too few samples');
+    assert.ok(scrolling.scrollRangePx>0,'Right Box stack must scroll independently');
     await page.screenshot({path:path.join(evidence,backend+'-1440.png')});
-    report.cases.push({backend,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,layerSynced:true,errors});
+    report.cases.push({backend,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
     await context.close();
   }
   for(const [name,width,height,touch] of [
@@ -117,16 +177,21 @@ try{
     ['compact',390,844,true]
   ]){
     const context=await browser.newContext({viewport:{width,height},hasTouch:touch,isMobile:false,acceptDownloads:true});
-    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     await page.goto(base+(publicBase?'?backend=webgl2&build='+expectedCommit:'?qa=1&backend=webgl2'),{waitUntil:'networkidle',timeout:45000});
     const compact=width<=760;
     console.log('M07 viewport',name,width,height,touch);
     if(!compact)await checkPage(page,touch?'tablet':'pointer');
     await page.locator('#new').click();await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
     await draw(page);await waitCount(page,1);
+    if(touch&&!compact&&name==='tablet-1280'){
+      await page.locator('#finger').check();
+      await touchStroke(page);await waitCount(page,2);
+      assert.equal((await qa(page)).lastInputType,'touch','Touch input must reach Canvas when enabled');
+    }
     const canvas=await page.locator('#canvas').boundingBox();assert.ok(canvas&&canvas.width>100);
     if(!compact){
-      await page.locator('#layer').click();await draw(page);await waitCount(page,2);
+      await page.locator('#layer').click();await draw(page);await waitCount(page,name==='tablet-1280'?3:2);
       const x=await page.evaluate(()=>({bodyOverflow:document.documentElement.scrollWidth>innerWidth+1,overlay:document.body.classList.contains('right-overlay')}));
       assert.equal(x.bodyOverflow,false);
       await page.screenshot({path:path.join(evidence,name+'.png')});
