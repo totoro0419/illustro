@@ -91,7 +91,7 @@ try{
     await page.goto(base+(publicBase?'?backend='+backend+'&build='+expectedCommit:'?qa=1&backend='+backend),{waitUntil:'networkidle',timeout:45000});
     if(await page.locator('#qaPanel').count())await page.locator('#qaPanel').evaluate(el=>{el.open=false;});
     await page.locator('#new').click();await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
-    const info=await qa(page);assert.equal(info.milestone,'M06');assert.equal(info.backendSelection.selected,backend);if(expectedCommit)assert.equal(info.commit,expectedCommit);
+    const info=await qa(page);assert.equal(info.milestone,process.env.M06_EXPECT_MILESTONE??'M06');assert.equal(info.backendSelection.selected,backend);if(expectedCommit)assert.equal(info.commit,expectedCommit);
     await draw(page,[.15,.25],[.85,.25]);await waitStroke(page,1);
     await page.locator('#addLayer').click();await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.layerCount==='2');
     await draw(page,[.15,.55],[.85,.55]);await waitStroke(page,2);
