@@ -122,7 +122,7 @@ export function installShellUi():ShellControl{
     if(open){categories.hidden=false;actions.hidden=true;}
     else if(featurePanel.contains(document.activeElement))featureButton.focus({preventScroll:true});
   };
-  featureButton.onclick=()=>showFeature(featurePanel.hidden);
+  featureButton.onclick=()=>showFeature(featurePanel.hidden!==false);
   byId('featuresClose').onclick=()=>showFeature(false);
   byId('featuresBack').onclick=()=>{categories.hidden=false;actions.hidden=true;};
   categories.querySelectorAll<HTMLButtonElement>('[data-category]').forEach(button=>{
