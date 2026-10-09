@@ -183,6 +183,36 @@ try{
     assert.deepEqual(mobileErrors,[]);
     report.mobile={status:'PASS',emulation:'Chromium Android-sized 390x844 touch viewport',workspaceClosedDrawing:true,alpha:true,sampledJsHeapPeakBytes:png.sampled.sampledJsHeapPeakBytes};
   }finally{await mobileContext.close();}
+  // DPR=3 matches the size ratio in the user-supplied JPEG attachment.
+  // Repeat all three exports WITHOUT changing the document or canvas size.
+  // Check the actual downloaded bytes, not merely the declared export metadata.
+  const highDpiContext=await browser.newContext({acceptDownloads:true,viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:3});
+  try{
+    const highDpi=await highDpiContext.newPage(),errors=[];
+    highDpi.on('pageerror',e=>errors.push(e.message));
+    highDpi.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+    await highDpi.goto(base+(publicBase?'?backend=webgl2&build='+expectedCommit:'?qa=1&backend=webgl2'),{waitUntil:'networkidle',timeout:45000});
+    if(await highDpi.locator('#qaPanel').count())await highDpi.locator('#qaPanel').evaluate(el=>{el.open=false;});
+    await highDpi.locator('#new').click();
+    await highDpi.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
+    await draw(highDpi,[.17,.28],[.83,.66]);
+    await waitStroke(highDpi,1);
+    const before=await qa(highDpi),byFormat={};
+    assert.equal(await highDpi.evaluate(()=>devicePixelRatio),3,'DPR 3 emulator setup');
+    for(const format of ['png','jpeg','webp']){
+      const exported=await exportOne(highDpi,format,90);
+      const decoded=await pixels(highDpi,exported.data);
+      assert.equal(decoded.width,512,format+' downloaded image unexpectedly scaled with DPR 3');
+      assert.equal(decoded.height,384,format+' downloaded image unexpectedly scaled with DPR 3');
+      assert.equal(exported.meta.export.last.downloadBytes,exported.data.length,'QA-reported byte count differs from downloaded file');
+      byFormat[format]={width:decoded.width,height:decoded.height,bytes:exported.data.length};
+    }
+    const after=await qa(highDpi);
+    assert.equal(after.currentRevision,before.currentRevision,'DPR 3 export altered document revision');
+    assert.equal(after.commitSequence,before.commitSequence,'DPR 3 export altered commit sequence');
+    assert.deepEqual(errors,[],'DPR 3 browser console errors');
+    report.highDpi={status:'PASS',emulation:'mobile 390x844 touch DPR3',formats:byFormat,unchangedDocument:true,consoleErrors:errors};
+  }finally{await highDpiContext.close();}
   report.status='PASS';
 }catch(error){report.failure=String(error?.stack??error);throw error;}
 finally{await fs.writeFile(path.join(evidence,'report.json'),JSON.stringify(report,null,2));await browser.close();if(server)server.close();console.log(JSON.stringify(report,null,2));}
