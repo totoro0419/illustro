@@ -120,6 +120,7 @@ try{
     const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base+(publicBase?'?backend=webgl2&build='+expectedCommit:'?qa=1&backend=webgl2'),{waitUntil:'networkidle',timeout:45000});
     const compact=width<=760;
+    console.log('M07 viewport',name,width,height,touch);
     if(!compact)await checkPage(page,touch?'tablet':'pointer');
     await page.locator('#new').click();await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
     await draw(page);await waitCount(page,1);
