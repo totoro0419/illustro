@@ -23,7 +23,7 @@ export class CoreStrokeDocumentPort implements DocumentPort{
       kind:'brush.stroke',schemaVersion:1,parameters:Object.freeze({strokeRecord:record,strokeRecordVersion:record.version,engine:record.engine,brushId:brushId(record),action:record.preset.blend==='erase'?'erase':'paint'}),
       algorithmVersionRefs:Object.freeze([`engine:${record.engine}`,`reconstruction:${record.smoothing}`,`prng:${record.random}`,`stroke-schema:${record.version}`]),sourceRevisionIds:Object.freeze([target.baseRevision]),
     },dirty);
-    const receipt=tx.commit();return Object.freeze({revisionId:receipt.revision.id,operationKey,dirtyTileCount:dirty.length});
+    const receipt=tx.commit();return Object.freeze({revisionId:receipt.revision.id,operationKey,dirtyTileCount:dirty.length,persistence:receipt.persistence});
   }
 }
 function shallowRecordGuard(record:StrokeRecord){

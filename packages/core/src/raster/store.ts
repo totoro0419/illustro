@@ -21,6 +21,7 @@ export class CanonicalTileStore{
   constructor(private readonly ids:IdFactory,readonly transfer:OwnershipTransfer=defaultOwnershipTransfer){}
   get blockCount(){return this.blocks.size;}
   get allocatedBytes(){let n=0;for(const b of this.blocks.values())n+=b.bytes.byteLength;return n;}
+  has(id:BlockId){return this.blocks.has(id);}
   prepareBatch(inputs:readonly BlockInput[]):PreparedBlockBatch{
     for(const input of inputs)validateInput(input);
     const owned=this.transfer.transferBatch(inputs.map(x=>x.bytes));if(owned.length!==inputs.length)throw new Error('transfer batch mismatch');
@@ -31,6 +32,11 @@ export class CanonicalTileStore{
   publishPrepared(batch:PreparedBlockBatch){for(const entry of batch.entries){if(this.blocks.has(entry.id))throw new Error('duplicate block id');}
     for(const entry of batch.entries)this.blocks.set(entry.id,entry.block);return Object.freeze(batch.entries.map(x=>x.id));}
   rollbackPrepared(batch:PreparedBlockBatch){for(const entry of batch.entries)this.blocks.delete(entry.id);}
+  restore(id:BlockId,descriptor:RasterBlockDescriptor,bytes:Uint8Array){
+    if(this.blocks.has(id))throw new Error('duplicate block id');validateInput({descriptor,bytes});
+    this.blocks.set(id,Object.freeze({descriptor:Object.freeze({sampleEncoding:descriptor.sampleEncoding,bounds:Object.freeze({...descriptor.bounds})}),bytes:bytes.slice()}));
+  }
+  entries(){return Object.freeze([...this.blocks.entries()].sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([id,b])=>Object.freeze({id,descriptor:b.descriptor,bytes:b.bytes.slice()})));}
   readCopy(id:BlockId){const b=this.blocks.get(id);if(!b)throw new Error('missing block');return b.bytes.slice();}
   descriptor(id:BlockId){const b=this.blocks.get(id);if(!b)throw new Error('missing block');return b.descriptor;}
 }

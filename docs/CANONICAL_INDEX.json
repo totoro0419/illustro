@@ -1031,6 +1031,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "docs/research/M05_SAVE_RECOVERY_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
       "status": "OBSOLETE"
     },
