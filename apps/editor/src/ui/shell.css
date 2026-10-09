@@ -147,3 +147,11 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
 
 .resize-grip{pointer-events:auto;cursor:ew-resize}
 #featuresCategories[hidden],#featuresActions[hidden]{display:none!important}
+
+/* In overlay mode, keep document operations on the exposed side of Canvas.
+   This avoids the dock intercepting creation/open/save controls on narrow tablets. */
+@media(min-width:761px){
+ body.right-overlay .canvas-top{flex-direction:column;align-items:flex-start;gap:5px;min-height:88px}
+ body.right-overlay .canvas-top #status{flex:none;min-width:0;width:max(170px,calc(100% - var(--workspace) - 22px))}
+ body.right-overlay .canvas-top .document-actions{max-width:calc(100% - var(--workspace) - 22px)}
+}
