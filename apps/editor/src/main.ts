@@ -1,16 +1,17 @@
 import './style.css';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
+import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import type {SemanticOperation} from '@illustro/core';
 
 const qaPath=location.pathname.replace(/\/+$/,'');
-const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWith('/qa/m05')||qaPath.endsWith('/qa/m05/index.html');
+const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWith('/qa/m05')||qaPath.endsWith('/qa/m05/index.html')||qaPath.endsWith('/qa/m06')||qaPath.endsWith('/qa/m06/index.html');
 const qaStartedAt=new Date().toISOString();
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=`
-<header><strong>Illustro</strong><button disabled title="ホーム画面は準備中">Home</button><button id="save" disabled>作品ファイル保存</button><button id="open" type="button">作品ファイルを開く</button><span id="saveState">自動保存準備中</span><span>${qaMode?'M05 実機確認':'描画確認用'}</span></header>
+<header><strong>Illustro</strong><button disabled title="ホーム画面は準備中">Home</button><button id="save" disabled>作品ファイル保存</button><button id="open" type="button">作品ファイルを開く</button><button id="exportImage" type="button" disabled>画像を書き出す</button><span id="saveState">自動保存準備中</span><span>${qaMode?'M06 実機確認':'描画確認用'}</span></header>
 <nav class="rail" aria-label="メインツール">
   <button id="paint" aria-pressed="true">ブラシ</button><button id="erase" aria-pressed="false">消しゴム</button>
   <button disabled>ぼかし</button><button disabled>スポイト</button><button disabled>塗り</button><button disabled>選択</button><button disabled>変形</button><button disabled>移動</button>
@@ -32,7 +33,8 @@ app.innerHTML=`
   <label class="width-control">Workspaceの幅<input id="width" type="range" min="240" max="440" value="344"></label>
   <div class="commands"><button id="layer">レイヤー</button><button id="undo" disabled title="元に戻す">Undo</button><button id="redo" disabled title="やり直す">Redo</button><button disabled>左右反転</button><button disabled>上下反転</button></div>
 </aside>
-<div class="compact-only bottom"><button id="compactUndo" disabled title="元に戻す">Undo</button><button id="compactRedo" disabled title="やり直す">Redo</button><button id="drawer" aria-controls="workspace" aria-expanded="false">Workspace</button></div>`;
+<div class="compact-only bottom"><button id="compactUndo" disabled title="元に戻す">Undo</button><button id="compactRedo" disabled title="やり直す">Redo</button><button id="drawer" aria-controls="workspace" aria-expanded="false">Workspace</button></div>
+<dialog id="exportDialog" aria-labelledby="exportTitle" class="export-dialog"><form method="dialog" id="exportForm"><h2 id="exportTitle">画像を書き出す</h2><p>作品ファイルの保存とは別です。レイヤーを1枚の画像にまとめます。</p><label>画像の種類<select id="exportFormat"><option value="png">PNG（透明な背景を保持）</option><option value="jpeg">JPEG（背景を白にする）</option><option value="webp">WebP（透明な背景を保持）</option></select></label><label id="exportQualityRow" hidden>画質 <output id="exportQualityValue">90%</output><input id="exportQuality" type="range" min="1" max="100" step="1" value="90"></label><p id="exportTransparencyInfo">PNGは背景の透明な部分を保持します。</p><p id="exportStatus" role="status" aria-live="polite"></p><div class="export-actions"><button id="exportCancel" value="cancel" type="button">閉じる</button><button id="exportRun" type="button">書き出す</button></div></form></dialog>`;
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();
@@ -41,6 +43,7 @@ const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
 let checkpointOperations:SemanticOperation[]=[];
 let persistenceState:PersistenceState|null=null;
+let lastExport:Omit<ImageExportResult,'blob'>|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();updateQa();});
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
@@ -77,14 +80,14 @@ const updateQa=()=>{
   canvas.dataset.layerCount=String(controller.layers.length);canvas.dataset.selectedLayerId=controller.selectedLayerId;canvas.dataset.selectedLayerName=selected.name;
   canvas.dataset.canUndo=String(controller.canUndo);canvas.dataset.canRedo=String(controller.canRedo);canvas.dataset.historyBusy=String(historyPending||surface?.busy===true);canvas.dataset.historyPatchHits=String(surface?.historyPatchHits??0);canvas.dataset.historyReplayFallbacks=String(surface?.historyReplayFallbacks??0);canvas.dataset.selectedTool=selectedTool;canvas.dataset.selectedPresetId=surface?.brushId??'未選択';canvas.dataset.selectedBlend=surface?.blendMode??'normal';canvas.dataset.eraserStrokes=String(controller.committedEraserStrokeCount);
   if(!qaMode)return;
-  const data={milestone:'M05',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',backendSelection:surface?.backendSelection??null,initializationError:surface?.initializationError??null,viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
+  const data={milestone:'M06',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',backendSelection:surface?.backendSelection??null,initializationError:surface?.initializationError??null,viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
     selectedTool,selectedPresetId:surface?.brushId??'未選択',selectedPresetName:surface?.brushName??'未選択',blendMode:surface?.blendMode??'normal',eraserType:surface?.eraserType,size:surface?.brushSize??0,
     layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:controller.canUndo,canRedo:controller.canRedo,
     undoCount,redoCount,blockedHistoryGhostClicks,eraserCommittedStrokeCount:controller.committedEraserStrokeCount,totalStrokeCount:controller.committedStrokeCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,rendererArtworkAlpha:surface?.rendererArtworkAlpha??false,presentationOpaque:surface?.presentationOpaque??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,projectionRestoreMs:surface?.projectionRestoreMs??0,projectionRestoreMode:surface?.projectionRestoreMode??'none',projectionCacheRevision:surface?.projectionCacheRevision??null,browserPredictionSamples:surface?.browserPredictionSamples??0,
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
     activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:workspace.classList.contains('open'),workspaceDisplay:getComputedStyle(workspace).display,
     visualViewport:window.visualViewport?{width:Math.round(window.visualViewport.width),height:Math.round(window.visualViewport.height),offsetTop:Math.round(window.visualViewport.offsetTop),offsetLeft:Math.round(window.visualViewport.offsetLeft),scale:window.visualViewport.scale}:null,
-    layers:controller.layers.map(layer=>({id:layer.id,surfaceId:layer.surface.descriptor.surfaceId,name:layer.name,committedStrokes:controller.strokeCountForLayer(layer.id)})),documentId:controller.document.root.documentId,documentMetadata:controller.document.root.metadata,writerEpoch:controller.document.writerEpochId,commitSequence:controller.document.commitSequence.toString(),persistence:persistenceState,autosaveCheckpoint:{operationInterval:CHECKPOINT_OPERATION_INTERVAL,idleMs:CHECKPOINT_IDLE_MS,opsSinceLast:checkpointOpsSinceLast,fullSeedPending:checkpointNeedsFullSeed,lastCheckpointAt},qaStartedAt};
+    export:{last:lastExport,error:exportError,busy:exportBusy,count:exportCount},layers:controller.layers.map(layer=>({id:layer.id,surfaceId:layer.surface.descriptor.surfaceId,name:layer.name,committedStrokes:controller.strokeCountForLayer(layer.id)})),documentId:controller.document.root.documentId,documentMetadata:controller.document.root.metadata,writerEpoch:controller.document.writerEpochId,commitSequence:controller.document.commitSequence.toString(),persistence:persistenceState,autosaveCheckpoint:{operationInterval:CHECKPOINT_OPERATION_INTERVAL,idleMs:CHECKPOINT_IDLE_MS,opsSinceLast:checkpointOpsSinceLast,fullSeedPending:checkpointNeedsFullSeed,lastCheckpointAt},qaStartedAt};
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
 };
 renderLayers();
@@ -140,7 +143,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
   selectPreset(lastBrushPresetId);
   if(replay)await surface.restoreDocumentProjection(projectionCache);
-  for(const id of ['brush','size','sizeNumber','force','addLayer','save','saveCopy'])(byId(id) as HTMLInputElement).disabled=false;
+  for(const id of ['brush','size','sizeNumber','force','addLayer','save','saveCopy','exportImage'])(byId(id) as HTMLInputElement).disabled=false;
   syncPreset();renderLayers();updateHistoryButtons();documentReady=true;
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false){
@@ -225,6 +228,51 @@ byId<HTMLButtonElement>('saveCopy').onclick=async()=>{
   catch(error){byId('status').textContent='作品ファイルを別名保存できませんでした。'+(error instanceof Error?error.message:String(error));}
   updateQa();
 };
+
+const exportDialog=byId<HTMLDialogElement>('exportDialog'),exportFormat=byId<HTMLSelectElement>('exportFormat'),exportQuality=byId<HTMLInputElement>('exportQuality');
+function updateExportOptions(){
+  const f=exportFormat.value as ImageFormat,lossy=f!=='png';
+  byId<HTMLLabelElement>('exportQualityRow').hidden=!lossy;
+  byId<HTMLOutputElement>('exportQualityValue').textContent=exportQuality.value+'%';
+  byId('exportTransparencyInfo').textContent=f==='jpeg'
+    ?'JPEGは透明部分を保存できません。背景を白にして書き出します（黒にはしません）。'
+    :f==='png'?'PNGは透明度を保ち、画像の色を劣化させずに保存します。':'WebPは透明度を保ち、画質を調整できます。';
+}
+exportFormat.onchange=updateExportOptions;exportQuality.oninput=updateExportOptions;updateExportOptions();
+byId<HTMLButtonElement>('exportImage').onclick=()=>{
+  if(!documentReady)return;
+  byId('exportStatus').textContent='';
+  exportDialog.showModal();
+};
+byId<HTMLButtonElement>('exportCancel').onclick=()=>{if(!exportBusy)exportDialog.close();};
+byId<HTMLButtonElement>('exportRun').onclick=async()=>{
+  if(exportBusy||!documentReady)return;
+  const format=exportFormat.value as ImageFormat,quality=Number(exportQuality.value)/100;
+  // The snapshot is captured synchronously: later brush transactions cannot enter it.
+  let fixed:ReturnType<typeof captureExport>;
+  try{fixed=captureExport(controller.document);}
+  catch(error){byId('exportStatus').textContent=String(error instanceof Error?error.message:error);return;}
+  const filename=exportFileName(fixed.name,format);
+  exportBusy=true;exportError=null;byId<HTMLButtonElement>('exportRun').disabled=true;byId<HTMLButtonElement>('exportCancel').disabled=true;
+  byId('exportStatus').textContent='画像を書き出しています。描画は続けられます。';updateQa();
+  try{
+    const result=await exportImage(fixed,format,quality);
+    // Download works on Android and on browsers without the File System Access API.
+    const url=URL.createObjectURL(result.blob),anchor=document.createElement('a');
+    anchor.href=url;anchor.download=filename;anchor.hidden=true;document.body.append(anchor);anchor.click();anchor.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(url),60000);
+    const {blob,...evidence}=result;lastExport=evidence;exportCount++;
+    byId('exportStatus').textContent=filename+' を作成しました（'+formatFileSize(blob.size)+'）。作品ファイルの保存状態は変わりません。';
+    byId('status').textContent='画像を書き出しました。引き続き描画できます。';
+  }catch(error){
+    exportError=error instanceof Error?error.message:String(error);
+    byId('exportStatus').textContent='画像を書き出せませんでした。'+exportError;
+    byId('status').textContent='書き出しに失敗しました。作品は変更されていません。';
+  }finally{
+    exportBusy=false;byId<HTMLButtonElement>('exportRun').disabled=false;byId<HTMLButtonElement>('exportCancel').disabled=false;updateQa();
+  }
+};
+
 byId<HTMLButtonElement>('recover').onclick=async()=>{
   const candidate=recoveryCandidates.find(item=>BigInt(item.protectedThrough)>0n);if(!candidate)return;byId('status').textContent='作業途中の状態を確認しています。';
   try{
@@ -258,15 +306,18 @@ if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLab
 updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('resize',updateQa);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&documentReady){if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);projectionCheckpointTimer=null;void createProjectionCheckpoint();}});addEventListener('pagehide',()=>{if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);surface?.destroy();});
 
 function formatFileSize(bytes:number){if(!Number.isFinite(bytes)||bytes<0)return 'サイズ不明';if(bytes<1024)return Math.round(bytes)+' B';if(bytes<1024*1024)return (bytes/1024).toFixed(bytes<10*1024?1:0)+' KB';return (bytes/(1024*1024)).toFixed(bytes<10*1024*1024?1:0)+' MB';}
-function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M05 今回の確認</summary><ol>
-<li>10〜15本ほど描き、途中でレイヤー追加や消しゴムも使ってください。「自動保存済み」になることを確認してください。</li>
-<li>作品ファイルを保存しなくても、そのままページを再読み込みしてください。</li>
-<li>「自動保存から戻す」で、直前の作業状態へ短時間で戻ることを確認してください。</li>
-<li>必要なら「作品ファイル保存」を押し、.illustroファイルを作れることも確認してください。これは自動保存とは別機能です。</li>
-<li>最後に「問題なし / 問題あり」を選択してください。</li>
-</ol><details class="qa-auto"><summary>描画と保存の状態（問題がある場合のみ）</summary>
-<p>黒画面、保存後の表示差、復元失敗がある場合に状態を記録します。</p>
-<button id="qaDiagInitial" type="button">状態を記録する</button>
-<button id="qaDiagCopy" type="button">診断結果をコピーする</button>
-<pre id="qaGpuReport" style="font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere"></pre>
-</details><label>結果<select id="qaState"><option value="unchecked">未確認</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3" placeholder="短く書いてください"></textarea></label><button id="qaCopy" type="button">結果をコピー</button><details class="qa-auto"><summary>自動記録</summary><pre id="qaAuto"></pre></details></details>`;}
+function qaMarkup(){return `<details id="qaPanel" class="qa-panel" open><summary>M06 画像書き出しの確認</summary><ol>
+<li>線を何本か描き、レイヤーを追加して別の線を描いてください。</li>
+<li>消しゴムで線の一部を消してください。</li>
+<li>「画像を書き出す」からPNGを保存し、透明部分が白くなっていないか確認してください。</li>
+<li>JPEGを保存し、透明部分が白い背景になっているか、画質を変更できるか確認してください。</li>
+<li>WebPも保存し、透明部分を含め正しく見えるか確認してください。</li>
+<li>3つの画像で大きさや絵の位置が変わっていないか確認してください。</li>
+<li>書き出した後も描けるか、UndoとRedoが使えるか確認してください。</li>
+<li>「作品ファイル保存」と「画像を書き出す」が区別できるか確認してください。</li>
+</ol><details class="qa-auto"><summary>動作の状態（問題がある場合のみ）</summary>
+<button id="qaDiagInitial" type="button">状態を記録する</button><button id="qaDiagCopy" type="button">診断結果をコピーする</button>
+<pre id="qaGpuReport" style="font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere"></pre></details>
+<label>結果<select id="qaState"><option value="unchecked">未確認</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label>
+<label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3" placeholder="短く書いてください"></textarea></label>
+<button id="qaCopy" type="button">結果をコピー</button><details class="qa-auto"><summary>自動記録</summary><pre id="qaAuto"></pre></details></details>`;}
