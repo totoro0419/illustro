@@ -85,7 +85,7 @@ async function init(page,backend='webgl2'){
   await page.goto(pageUrl(backend),{waitUntil:'networkidle',timeout:45000});
   const qaPanel=page.locator('#qaPanel');if(await qaPanel.count())await qaPanel.evaluate(el=>{el.open=false;});
   await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await waitReady(page);
-  const state=await qa(page);assert.equal(state.milestone,'M05');assert.equal(state.backendSelection.requested,backend);assert.equal(state.backendSelection.selected,backend);assert.equal(state.backendSelection.fallbackUsed,false);if(expectedCommit)assert.equal(state.commit,expectedCommit);
+  const state=await qa(page);assert.equal(state.milestone,process.env.M05_EXPECT_MILESTONE??'M05');assert.equal(state.backendSelection.requested,backend);assert.equal(state.backendSelection.selected,backend);assert.equal(state.backendSelection.fallbackUsed,false);if(expectedCommit)assert.equal(state.commit,expectedCommit);
   assert.match(state.persistence.backend,/^opfs-(sync|async)$/,'Chromium M05 did not use OPFS Working Store');
   return errors;
 }

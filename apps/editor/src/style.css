@@ -12,3 +12,17 @@ aside{position:fixed;right:0;top:var(--top);bottom:0;width:var(--workspace);padd
 #splitter{position:fixed;right:var(--workspace);top:var(--top);bottom:var(--bottom);width:8px;cursor:ew-resize;touch-action:none;z-index:2}#splitter:focus-visible{outline:2px solid #9c6900}
 aside{resize:none}
 @media(max-width:760px){#splitter{display:none}.bottom{position:fixed;left:var(--rail);right:env(safe-area-inset-right);bottom:0;display:flex;height:calc(var(--bottom) + env(safe-area-inset-bottom));padding:5px 5px calc(5px + env(safe-area-inset-bottom));gap:5px;background:#fff1c7;z-index:3}.bottom button{flex:1;min-width:0;font-size:12px}}
+
+/* M06: temporary export-only dialog. Full editor UI belongs to M07. */
+.export-dialog{border:1px solid #d9c898;border-radius:14px;background:#fffdf8;color:#353329;max-width:min(94vw,470px);width:100%;padding:20px;box-shadow:0 15px 50px #2e301e40}
+.export-dialog::backdrop{background:#232a32a0}
+.export-dialog h2{font-size:19px;margin:0 0 8px}
+.export-dialog p{font-size:13px;line-height:1.6}
+.export-dialog select,.export-dialog input[type=range]{min-height:35px}
+.export-dialog label{font-size:14px;font-weight:600}
+.export-dialog #exportTransparencyInfo{background:#fff4d4;padding:10px;border-radius:8px}
+.export-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.export-actions button{min-height:42px;padding:9px 15px}
+#exportRun{background:#ffdd84;border-color:#caa13b;font-weight:700}
+#exportStatus{min-height:20px;overflow-wrap:anywhere}
+@media(max-width:760px){header{flex-wrap:wrap;height:auto;min-height:var(--top);gap:3px}header button{font-size:11px;padding:6px 4px}header span:last-child{display:none}.export-dialog{max-height:90dvh;overflow:auto;padding:16px}}

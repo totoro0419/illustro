@@ -1035,6 +1035,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "docs/research/M06_BASIC_EXPORT_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
       "status": "OBSOLETE"
     },
