@@ -30,7 +30,8 @@ try{
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();
     await page.waitForFunction(()=>!document.getElementById('brush').disabled,{timeout:45000});
     assert.equal(await page.locator('#brush option').count(),7);
-    assert.equal(await page.getByRole('button',{name:'Save',exact:true}).isDisabled(),true);
+    assert.equal(await page.locator('#save').isDisabled(),false,'M05 portable artwork save must be available after document initialization');
+    assert.equal((await page.locator('#save').textContent())?.trim(),'作品ファイル保存');
     const before=dark(await page.locator('canvas').screenshot());
     const box=await page.locator('canvas').boundingBox();assert.ok(box);
     await page.mouse.move(box.x+80,box.y+100);await page.mouse.down();
@@ -69,7 +70,7 @@ try{
       if(viewport.width===390)await page.screenshot({path:path.join(evidence,backend+'-compact.png')});
     }
     assert.deepEqual(errors,[]);report.backends.push({backend,status:'PASS',sevenBrushes:true,visibleStrokePixels:painted-before,
-      sizeSliderAndNumber:true,forceFadeToggle:true,eraserRoute:true,workspaceWidthKeyboard:true,unconnectedSaveDisabled:true,consoleErrors:errors});
+      sizeSliderAndNumber:true,forceFadeToggle:true,eraserRoute:true,workspaceWidthKeyboard:true,portableSaveReady:true,consoleErrors:errors});
     await page.close();
   }
   report.status='PASS';
