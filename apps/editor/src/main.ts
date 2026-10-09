@@ -115,8 +115,6 @@ function queueLatestCommit(){
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();},backendOverride);}
 surface=makeSurface();
 const shellUi=installShellUi(),workspace=shellUi.workspace;
-function openBox(id:string){shellUi.openBox(id);}
-function close(restoreKeyboardFocus=false){shellUi.close(restoreKeyboardFocus);}
 
 function syncPreset(){if(!surface?.preset)return;byId<HTMLInputElement>('size').value=String(surface.preset.size);byId<HTMLInputElement>('sizeNumber').value=String(surface.preset.size);byId<HTMLInputElement>('force').checked=surface.preset.forceFade?.enabled??false;updateQa();}
 async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache']){
