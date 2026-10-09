@@ -43,7 +43,7 @@ const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
 let checkpointOperations:SemanticOperation[]=[];
 let persistenceState:PersistenceState|null=null;
-let lastExport:Omit<ImageExportResult,'blob'>|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
+let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();updateQa();});
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
@@ -263,9 +263,9 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
     const url=URL.createObjectURL(result.blob),anchor=document.createElement('a');
     anchor.href=url;anchor.download=filename;anchor.hidden=true;document.body.append(anchor);anchor.click();anchor.remove();
     window.setTimeout(()=>URL.revokeObjectURL(url),60000);
-    const {blob,...evidence}=result;lastExport=evidence;exportCount++;
-    byId('exportStatus').textContent=filename+' を作成しました（'+formatFileSize(blob.size)+'）。作品ファイルの保存状態は変わりません。';
-    byId('status').textContent='画像を書き出しました。引き続き描画できます。';
+    const {blob,...evidence}=result;lastExport={...evidence,downloadBytes:blob.size};exportCount++;
+    byId('exportStatus').textContent=filename+' を作成しました（'+result.width+'×'+result.height+'ピクセル、'+formatFileSize(blob.size)+'）。作品ファイルの保存状態は変わりません。';
+    byId('status').textContent='画像を書き出しました（'+result.width+'×'+result.height+'ピクセル、'+formatFileSize(blob.size)+'）。引き続き描画できます。';
   }catch(error){
     exportError=error instanceof Error?error.message:String(error);
     byId('exportStatus').textContent='画像を書き出せませんでした。'+exportError;
