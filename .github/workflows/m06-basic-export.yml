@@ -34,12 +34,13 @@ jobs:
           npm run core:check
           node --check scripts/editor-m06-smoke.mjs
           node --check scripts/editor-m05-smoke.mjs
+      - name: Build Brush runtime required by editor tests
+        run: npm run brush:build > /tmp/m06-brush-build.log
       - name: M01-M06 Editor unit tests
         run: |
           npx vitest run apps/editor/src/strokeCommit.test.ts apps/editor/src/layerSelection.test.ts apps/editor/src/historyController.test.ts apps/editor/src/eraserIntegration.test.ts apps/editor/src/persistence/format.test.ts apps/editor/src/export/basicExport.test.ts
       - name: Brush Foundation exact 93-test regression
         run: |
-          npm run brush:build > /tmp/m06-brush-build.log
           node --test packages/brush-rt/test/*.test.mjs | tee /tmp/m06-brush-regression.log
           grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/m06-brush-regression.log
           grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/m06-brush-regression.log
