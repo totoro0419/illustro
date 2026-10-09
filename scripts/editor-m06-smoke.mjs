@@ -88,6 +88,8 @@ try{
     await page.locator('#erase').click();await draw(page,[.43,.55],[.57,.55],12);await waitStroke(page,3);
     const before=await qa(page),rev=before.currentRevision,seq=before.commitSequence;
     const png=await exportOne(page,'png'),pngPixels=await pixels(page,png.data);
+    console.log('M06 PNG diagnostics',JSON.stringify({backend,info:(await qa(page)).layers,pngPixels,revision:rev}));
+    console.log('M06 PNG alpha probes',JSON.stringify(await page.evaluate(async b64=>{const b=Uint8Array.from(atob(b64),c=>c.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([b]));const c=document.createElement('canvas');c.width=bitmap.width;c.height=bitmap.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(bitmap,0,0);const out={};for(const y of [90,95,96,97,100,190,200,210,211,212,218,225,245])out[y]=[90,160,256,350].map(p=>[...x.getImageData(p,y,1,1).data]);bitmap.close();return out;},png.data.toString('base64'))));
     assert.equal(pngPixels.corner[3],0,'PNG presentation white leaked into transparent artwork');
     assert.ok(pngPixels.first[3]>0,'first formal layer missing');
     assert.ok(pngPixels.second[3]>0,'second formal layer missing');
