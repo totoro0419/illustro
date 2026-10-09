@@ -1,4 +1,5 @@
 import {describe,it,expect} from 'vitest';
+// @ts-ignore: Node test-only import; browser application intentionally excludes Node types.
 import {inflateSync} from 'node:zlib';
 import {CoreDocument} from '@illustro/core';
 import {captureExport,compositeLayer,encodePng,exportFileName,flattenOnWhite} from './basicExport';
