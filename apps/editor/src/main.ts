@@ -254,6 +254,8 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
   catch(error){byId('exportStatus').textContent=String(error instanceof Error?error.message:error);return;}
   const filename=exportFileName(fixed.name,format);
   exportBusy=true;exportError=null;byId<HTMLButtonElement>('exportRun').disabled=true;byId<HTMLButtonElement>('exportCancel').disabled=true;
+  // A modal dialog would block canvas input during encoding; close it before heavy work.
+  exportDialog.close();byId('status').textContent='画像を書き出しています。描画は続けられます。';
   byId('exportStatus').textContent='画像を書き出しています。描画は続けられます。';updateQa();
   try{
     const result=await exportImage(fixed,format,quality);
