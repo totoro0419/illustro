@@ -11,14 +11,14 @@ const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWi
 const qaStartedAt=new Date().toISOString();
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=`
-<header><strong>Illustro</strong><button disabled title="ホーム画面は準備中">Home</button><button id="save" disabled>作品ファイル保存</button><button id="open" type="button">作品ファイルを開く</button><button id="exportImage" type="button" disabled>画像を書き出す</button><span id="saveState">自動保存準備中</span><span>${qaMode?'M06 実機確認':'描画確認用'}</span></header>
+<header><strong>Illustro</strong><button disabled title="ホーム画面は準備中">Home</button><button id="save" disabled>作品ファイル保存</button><button id="open" type="button">作品ファイルを開く</button><span id="saveState">自動保存準備中</span><span>${qaMode?'M06 実機確認':'描画確認用'}</span></header>
 <nav class="rail" aria-label="メインツール">
   <button id="paint" aria-pressed="true">ブラシ</button><button id="erase" aria-pressed="false">消しゴム</button>
   <button disabled>ぼかし</button><button disabled>スポイト</button><button disabled>塗り</button><button disabled>選択</button><button disabled>変形</button><button disabled>移動</button>
   <button id="colorPage" class="compact-only">色</button><button id="brushPage" class="compact-only">設定</button><button id="layersPage" class="compact-only">レイヤー</button>
   <button disabled class="all">全機能</button>
 </nav>
-<main><p id="status" role="status">新規キャンバスを開くか、作品ファイルを開いてください。</p><div class="document-actions"><button id="new">新規キャンバス</button><button id="recover" type="button" disabled>自動保存から戻す</button><button id="saveCopy" type="button" disabled>作品ファイルを別名保存</button><input id="openFile" type="file" accept=".illustro,application/octet-stream" hidden></div><div class="surface"><canvas id="canvas" aria-label="描画キャンバス" data-committed-strokes="0"></canvas></div></main>
+<main><p id="status" role="status">新規キャンバスを開くか、作品ファイルを開いてください。</p><div class="document-actions"><button id="new">新規キャンバス</button><button id="recover" type="button" disabled>自動保存から戻す</button><button id="saveCopy" type="button" disabled>作品ファイルを別名保存</button><button id="exportImage" type="button" disabled>画像を書き出す</button><input id="openFile" type="file" accept=".illustro,application/octet-stream" hidden></div><div class="surface"><canvas id="canvas" aria-label="描画キャンバス" data-committed-strokes="0"></canvas></div></main>
 <div id="splitter" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Workspaceの幅" aria-valuemin="240" aria-valuemax="440" aria-valuenow="344"></div>
 <aside id="workspace" aria-label="Workspace"><button id="close" class="compact-only">閉じる</button>
   ${qaMode?qaMarkup():''}
