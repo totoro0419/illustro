@@ -164,6 +164,7 @@ try{
     assert.ok((await qa(page)).presentationFrames>=initFrames);
     assert.deepEqual(errors,[],'JS runtime errors');
     const perf=await stopFrameCapture(page);
+    await page.locator('[data-box-id="right.brush"] .box-toggle').click();
     const scrolling=await boxScrollCost(page);
     assert.ok(perf.frameSamples>20,'Frame pacing capture had too few samples');
     assert.ok(scrolling.scrollRangePx>0,'Right Box stack must scroll independently');
