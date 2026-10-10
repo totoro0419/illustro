@@ -51,6 +51,14 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "apps/editor/src/ui/aurora.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/icons.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/src/ui/shell.css",
       "status": "EXPERIMENTAL"
     },
@@ -1052,6 +1060,10 @@
     },
     {
       "path": "docs/research/M06_BASIC_EXPORT_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M07_ICONOGRAPHY_AND_AURORA_IMPLEMENTATION.md",
       "status": "EXPERIMENTAL"
     },
     {
