@@ -1,5 +1,6 @@
 import './style.css';
 import './ui/shell.css';
+import './ui/aurora.css';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
