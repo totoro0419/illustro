@@ -70,10 +70,14 @@ main#canvasArea{background:
  content:"";display:block;height:2px;background:var(--aurora-edge);opacity:.83
 }
 .box-heading{color:#36425B}
-.box-toggle{color:inherit}
+.box-toggle{color:#6076A6}
+.box-toggle:hover:not(:disabled){background:#EDF2FF;color:#3D55A4}
+.box-title{color:#36425B}
+.box-toggle:focus-visible{outline:2px solid var(--a-focus);outline-offset:-3px}
+.workspace-box:focus-visible{outline:2px solid #AEC3FC;outline-offset:2px}
 .box-glyph{display:grid;place-items:center;color:#687DA8;flex:none}
 .box-glyph .ui-icon{width:17px;height:17px}
-.box-toggle[aria-expanded=true] .box-glyph{color:#6278CE}
+.workspace-box:has(.box-toggle[aria-expanded=true]) .box-glyph{color:#6278CE}
 .box-summary{color:#65758E}
 .box-more{color:#677896}
 .box-body{border-top-color:#EFF2FA}
