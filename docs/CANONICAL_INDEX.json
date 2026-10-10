@@ -19,12 +19,20 @@
   },
   "entries": [
     {
+      "path": ".github/workflows/m07-pc-tablet-ui-shell.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/index.html",
       "status": "EXPERIMENTAL"
     },
     {
       "path": "apps/editor/package.json",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/public/brand/illustro-logo.png",
+      "status": "CANONICAL"
     },
     {
       "path": "apps/editor/src/brushSurface.ts",
@@ -44,6 +52,26 @@
     },
     {
       "path": "apps/editor/src/style.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/aurora.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/icons.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/shell.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/shell.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/shellBehavior.ts",
       "status": "EXPERIMENTAL"
     },
     {
@@ -165,6 +193,10 @@
     {
       "path": "docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md",
       "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/brand/OFFICIAL_LOGO.md",
+      "status": "CANONICAL"
     },
     {
       "path": "docs/brush-foundation/ADOPTION_BASELINE.md",
@@ -1039,6 +1071,18 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "docs/research/M07_ICONOGRAPHY_AND_AURORA_IMPLEMENTATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M07_PC_TABLET_UI_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M07_QUALITY_FINISH_AUDIT_2026-10-10.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
       "status": "OBSOLETE"
     },
@@ -1672,6 +1716,10 @@
     },
     {
       "path": "prototypes/p0-architecture/vitest.config.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/editor-m07-smoke.mjs",
       "status": "EXPERIMENTAL"
     }
   ]
