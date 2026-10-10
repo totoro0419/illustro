@@ -11,7 +11,7 @@
 }
 body{overflow:hidden;background:var(--a-background)}
 button{transition:background-color .12s,border-color .12s;color:var(--a-text);border-color:var(--a-border)}
-button:hover:not(:disabled){background:var(--a-accent-soft);border-color:var(--a-border-strong)}
+html[data-ui-input="hover"] button:hover:not(:disabled){background:var(--a-accent-soft);border-color:var(--a-border-strong)}
 button:active:not(:disabled){background:var(--a-accent-soft)}
 button:disabled{opacity:.62;cursor:not-allowed;color:var(--a-subtle)}
 button:focus-visible,input:focus-visible,summary:focus-visible,select:focus-visible{outline:3px solid var(--a-focus);outline-offset:2px}
@@ -50,7 +50,7 @@ aside#workspace{position:relative;inset:auto;width:100%;height:auto;min-width:0;
  display:grid;place-items:center;border:0;border-radius:8px;
  background:transparent;color:var(--a-subtle);cursor:pointer;
 }
-.box-toggle:hover:not(:disabled){background:var(--a-accent-soft)}
+html[data-ui-input="hover"] .box-toggle:hover:not(:disabled){background:var(--a-accent-soft)}
 .chevron{display:grid;place-items:center;transform:rotate(-90deg);transition:transform .12s;pointer-events:none}
 .box-toggle[aria-expanded=true] .chevron{transform:rotate(0)}
 .box-title{
@@ -91,7 +91,7 @@ aside#workspace{position:relative;inset:auto;width:100%;height:auto;min-width:0;
 .commands button[aria-expanded=true]{background:var(--a-accent-soft)}
 #splitter{right:var(--workspace);top:var(--top);bottom:var(--a-strip);width:7px;background:transparent;z-index:9;display:flex;align-items:center;justify-content:center}
 #splitter:before{content:'';position:absolute;inset:0 auto 0 3px;width:1px;background:#c9ccc2}
-#splitter:hover,#splitter:focus-visible,#splitter.dragging{background:#9cb5f533}
+html[data-ui-input="hover"] #splitter:hover,#splitter:focus-visible,#splitter.dragging{background:#9cb5f533}
 .resize-grip{position:relative;width:22px;min-height:64px;background:var(--a-surface-soft);border:1px solid var(--a-border-strong);box-shadow:0 2px 7px #4442;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--a-subtle);pointer-events:none}
 .layer-page{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--a-surface-soft);padding:12px 12px 8px;overflow:hidden}
 .layer-page-head{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 12px;border-bottom:1px solid var(--a-border)}
