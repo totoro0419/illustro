@@ -74,3 +74,21 @@ The new geometry was **not selected solely from SVG source inspection**. We firs
 6. Confirm operation and QA regressions with public M07; ask for **user visual review**. No subjective PASS claim solely from component checks.
 
 **Scope limitation:** This follow-up surgically fixes the two reported pictograms rather than randomly redrawing already functional icons. A holistic full-icon silhouette review remains a valid design review task. M07 still awaits explicit user acceptance; do not silently advance to M08.
+
+
+## Follow-up correction: Smudge hand metaphor rejected by user (2026-10-10)
+
+**New explicit user feedback:** The previous Smudge symbol is an inappropriate expression. The user did not specify its exact interpretation, so do not invent one. The icon resembles a hand gesture; this design is now **REJECTED**, regardless of the previous SVG connectivity or test results.
+
+**Reference research for the intended action:**
+- [CLIP STUDIO official support](https://support.clip-studio.com/ja-jp/faq/articles/20200058) confirms blur, color mix and fingertip-style tools are categorized under the `色混ぜ` (Blend) tool group. This confirms the *function*; it does **not** require copying a finger pictogram.
+- [Krita official Color Smudge manual](https://docs.krita.org/en/reference_manual/brushes/brush_engines/color_smudge_engine.html) documents color smear and smooth blending as combined/dragged paint, giving a non-human *result-based* motif.
+- [Adobe Photoshop official Smudge guide](https://helpx.adobe.com/photoshop/desktop/apply-painting-techniques/fill-objects-selections-layers/smudge-image-areas.html) describes dragging pigment and softening color transitions. Its "finger through wet paint" simile is **not** an icon requirement.
+
+**Result-based replacement:** Two curving paint strokes softly merge in the center; a lighter third stroke demonstrates their shared color trail. A single-color original SVG with no hand, fingers, people, directional arrows, offensive gesture, or Unicode symbol. This encodes **what happens to color**, rather than **what a user's body is doing**.
+
+**Visual selection evidence:** We locally rasterized **eight separate original, non-human concept candidates** at 16, 24, 40 and 72 px (paint smear / dual strokes / interweaving ribbons / soft blend). Several resembled a fork, a fish or a wind icon and were rejected. Chosen concept: `B-2colors`, three controlled curves. Exact test sheet: `/mnt/data/icon_smudge_candidate_comparison.png` in the interactive session (not a committed design asset).
+
+**Future icon constraint:** Do not use a hand/finger graphic for `smudge`, including when adapting competing applications' common symbols. User feedback overrides historical design preferences. Use meaningful non-human silhouettes and screen-size visual review. Code-level SVG validity and screenshot appearance do not constitute subjective icon approval.
+
+The previous section's finger design is retained only as **historical evidence of an erroneous revision**; it is **no longer the current or recommended design**. M07 remains USER REVIEW REQUIRED.
