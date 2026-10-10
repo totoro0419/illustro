@@ -169,6 +169,54 @@ async function verifyPopupPositionAndAurora(page){
   return g;
 }
 
+async function verifyRightBoxHeaderTargets(page,{all=false}={}){
+  const rows=page.locator('.workspace-box');
+  assert.equal(await rows.count(),12,'All 12 Right Boxes must be present');
+  const indexes=all?Array.from({length:12},(_,i)=>i):[0,1,2,11];
+  for(const index of indexes){
+    const row=rows.nth(index),arrow=row.locator('.box-toggle'),title=row.locator('.box-title');
+    const body=row.locator('.box-body'),summary=row.locator('.box-summary'),more=row.locator('.box-more');
+    assert.equal(await title.locator('button').count(),0,'Title is a heading, not a hidden toggle');
+    assert.equal(await arrow.locator('.chevron').count(),1,'Dedicated arrow button required');
+    const bodyId=await body.getAttribute('id');
+    assert.equal(await arrow.getAttribute('aria-controls'),bodyId);
+    const before=await arrow.getAttribute('aria-expanded');
+    const hit=await arrow.boundingBox(),labelBox=await title.boundingBox();
+    assert.ok(hit&&hit.width>=39&&hit.width<=45&&hit.height>=39,
+      'Chevron has a bounded 40px hit area');
+    assert.ok(labelBox&&hit.x+hit.width<=labelBox.x+1,
+      'Chevron hit rectangle must not span the title');
+    await title.click();
+    assert.equal(await arrow.getAttribute('aria-expanded'),before,
+      'Clicking title must NOT fold Right Box');
+    await summary.click();
+    assert.equal(await arrow.getAttribute('aria-expanded'),before,
+      'Clicking contextual summary must NOT fold Right Box');
+    await more.click();
+    assert.equal(await arrow.getAttribute('aria-expanded'),before,
+      'Clicking More must not implicitly collapse the Box');
+    assert.equal(await row.locator('.box-more-menu').isVisible(),true);
+    await more.click();
+    assert.equal(await row.locator('.box-more-menu').isVisible(),false);
+    await arrow.click();
+    assert.notEqual(await arrow.getAttribute('aria-expanded'),before,
+      'Only actual chevron click should fold/unfold Box');
+    assert.equal(await body.isVisible(),before!=='true');
+    const label=await arrow.getAttribute('aria-label');
+    assert.match(label,before==='true'?/開く$/:/折りたたむ$/,
+      'Chevron accessible label must describe the next action');
+    await arrow.focus();await page.keyboard.press('Space');
+    assert.equal(await arrow.getAttribute('aria-expanded'),before,
+      'Space restores Box expansion without pointer input');
+  }
+  const first=rows.first().locator('.box-toggle');
+  const initial=await first.getAttribute('aria-expanded');
+  await first.focus();await page.keyboard.press('Enter');
+  assert.notEqual(await first.getAttribute('aria-expanded'),initial);
+  await page.keyboard.press('Enter');
+  assert.equal(await first.getAttribute('aria-expanded'),initial);
+}
+
 async function checkPage(page,profile){
   const structure=await page.evaluate(()=>{
     const boxes=[...document.querySelectorAll('[data-box-id]')].map(x=>x.getAttribute('data-box-id'));
@@ -208,6 +256,7 @@ try{
     const visual=await verifyAuroraIconReview(page);
     const popup=await verifyPopupPositionAndAurora(page);
     const structure=await checkPage(page,'pointer');
+    await verifyRightBoxHeaderTargets(page,{all:true});
     await startFrameCapture(page);
     await page.locator('#new').click();
     await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
@@ -267,7 +316,7 @@ try{
     await verifyPopupPositionAndAurora(page);
     const compact=width<=760;
     console.log('M07 viewport',name,width,height,touch);
-    if(!compact)await checkPage(page,touch?'tablet':'pointer');
+    if(!compact){await checkPage(page,touch?'tablet':'pointer');await verifyRightBoxHeaderTargets(page);}
     await page.locator('#new').click();await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
     await draw(page);await waitCount(page,1);
     if(touch&&!compact&&name==='tablet-1280'){
@@ -284,6 +333,7 @@ try{
     }else{
       assert.equal((await qa(page)).workspaceOpen,false);
       await page.locator('#drawer').click();
+      await verifyRightBoxHeaderTargets(page);
       await page.locator('#drawer').click();await draw(page);await waitCount(page,2);
       await page.screenshot({path:path.join(evidence,name+'.png')});
     }
