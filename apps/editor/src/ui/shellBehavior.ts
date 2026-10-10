@@ -106,6 +106,18 @@ export function installShellUi():ShellControl{
       if(returnFocus&&menu.contains(document.activeElement))opener?.focus({preventScroll:true});
     }
   };
+  const positionBoxMenu=(menu:HTMLElement)=>{
+    const stack=byId<HTMLElement>('boxStack').getBoundingClientRect();
+    const heading=menu.closest<HTMLElement>('.workspace-box')?.querySelector<HTMLElement>('.box-heading');
+    if(!heading)return;
+    // Floating menus never resize the Box stack; select the direction with
+    // adequate visible room, including when the list has been scrolled.
+    menu.dataset.placement='below';
+    const rect=heading.getBoundingClientRect();
+    const height=menu.getBoundingClientRect().height;
+    const roomBelow=stack.bottom-rect.bottom-6,roomAbove=rect.top-stack.top-6;
+    if(roomBelow<height&&roomAbove>roomBelow)menu.dataset.placement='above';
+  };
   const persistBoxes=()=>safeWrite(BOX_KEY,JSON.stringify(expanded));
   const setBoxExpansion=(section:HTMLElement,open:boolean)=>{
     const id=section.dataset.boxId;if(!id)return;
@@ -128,14 +140,18 @@ export function installShellUi():ShellControl{
       if(event.target.closest('.box-title,.box-summary'))section.focus({preventScroll:true});
     });
     const more=section.querySelector<HTMLButtonElement>('.box-more')!,menu=section.querySelector<HTMLElement>('.box-more-menu')!;
-    more.onclick=()=>{
+    more.onclick=event=>{
       const opening=menu.hidden;
       closeBoxMenus();
       menu.hidden=!opening;
       more.setAttribute('aria-expanded',String(opening));
+      if(opening){
+        positionBoxMenu(menu);
+        if(event.detail===0)menu.querySelector<HTMLButtonElement>('button')?.focus({preventScroll:true});
+      }
     };
-    menu.querySelector<HTMLButtonElement>('[data-collapse-box]')!.onclick=()=>{setBoxExpansion(section,false);menu.hidden=true;more.setAttribute('aria-expanded','false');control.focus();};
-    menu.querySelector<HTMLButtonElement>('[data-expand-box]')!.onclick=()=>{setBoxExpansion(section,true);menu.hidden=true;more.setAttribute('aria-expanded','false');control.focus();};
+    menu.querySelector<HTMLButtonElement>('[data-collapse-box]')!.onclick=()=>{setBoxExpansion(section,false);menu.hidden=true;more.setAttribute('aria-expanded','false');if(document.documentElement.dataset.uiInput==='hover')control.focus({preventScroll:true});};
+    menu.querySelector<HTMLButtonElement>('[data-expand-box]')!.onclick=()=>{setBoxExpansion(section,true);menu.hidden=true;more.setAttribute('aria-expanded','false');if(document.documentElement.dataset.uiInput==='hover')control.focus({preventScroll:true});};
     setBoxExpansion(section,typeof expanded[id]==='boolean'?expanded[id]:defaultOpen);
   }
   const splitter=byId<HTMLElement>('splitter');
@@ -188,21 +204,31 @@ export function installShellUi():ShellControl{
     const panelTop=Math.max(topLimit,Math.min(targetTop,innerHeight-margin-panelHeight));
     featurePanel.style.setProperty('--features-top',Math.round(panelTop)+'px');
   }
-  const showFeature=(open:boolean,returnFocus=false)=>{
+  let previousCategory:HTMLButtonElement|null=null;
+  const showFeature=(open:boolean,returnFocus=false,keyboardOpen=false)=>{
     if(open)closeBoxMenus();
+    const focusWasInside=featurePanel.contains(document.activeElement);
     featurePanel.hidden=!open;featureButton.setAttribute('aria-expanded',String(open));
     if(open){
       categories.hidden=false;actions.hidden=true;
       const qa=document.getElementById('qaSummary') as HTMLDetailsElement|null;
       if(qa?.open)qa.open=false; // no overlapping floating panels
       positionFeature();featurePanel.scrollTop=0;
-    }else if(returnFocus&&featurePanel.contains(document.activeElement))featureButton.focus({preventScroll:true});
+      if(keyboardOpen)categories.querySelector<HTMLButtonElement>('button')?.focus({preventScroll:true});
+    }else if(focusWasInside){
+      if(returnFocus)featureButton.focus({preventScroll:true});
+      else if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
+    }
   };
-  featureButton.onclick=()=>showFeature(featurePanel.hidden!==false);
-  byId('featuresClose').onclick=()=>showFeature(false,true);
-  byId('featuresBack').onclick=()=>{categories.hidden=false;actions.hidden=true;};
+  featureButton.onclick=event=>showFeature(featurePanel.hidden!==false,false,event.detail===0);
+  byId('featuresClose').onclick=event=>showFeature(false,event.detail===0);
+  byId('featuresBack').onclick=event=>{
+    categories.hidden=false;actions.hidden=true;positionFeature();
+    if(event.detail===0)previousCategory?.focus({preventScroll:true});
+  };
   categories.querySelectorAll<HTMLButtonElement>('[data-category]').forEach(button=>{
-    button.onclick=()=>{
+    button.onclick=event=>{
+      previousCategory=button;
       const id=button.dataset.category||'',cat=FEATURE_CATEGORIES.find(entry=>entry[1]===id);
       byId('featuresTitle').textContent=cat?.[0]||'機能';
       items.replaceChildren();
@@ -214,6 +240,9 @@ export function installShellUi():ShellControl{
         const info=document.createElement('p');info.className='unavailable';info.textContent='このカテゴリの機能は後のマイルストーンで利用できます。';items.append(info);
       }
       categories.hidden=true;actions.hidden=false;positionFeature();
+      if(event.detail===0){
+        (items.querySelector<HTMLButtonElement>('button')||byId<HTMLButtonElement>('featuresBack')).focus({preventScroll:true});
+      }
     };
   });
   document.querySelectorAll<HTMLButtonElement>('[data-action]').forEach(button=>button.onclick=()=>byId<HTMLButtonElement>(button.dataset.action||'')?.click());
@@ -279,6 +308,19 @@ export function installShellUi():ShellControl{
         const opener=menu.closest('.workspace-box')?.querySelector<HTMLButtonElement>('.box-more');
         menu.hidden=true;opener?.setAttribute('aria-expanded','false');
       }
+    }
+  });
+  // Keyboard Tab away from a transient surface dismisses it just as a
+  // pointer tap outside does, without trapping focus or requiring Esc.
+  document.addEventListener('focusin',event=>{
+    const target=event.target;
+    if(!(target instanceof Node)||document.querySelector('dialog:modal'))return;
+    if(!featurePanel.hidden&&!featurePanel.contains(target)&&!featureButton.contains(target))showFeature(false);
+    if(qaCard?.open&&!qaCard.contains(target)&&!qaEntry?.contains(target))closeQa();
+    for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
+      if(menu.hidden||menu.contains(target))continue;
+      const opener=menu.closest('.workspace-box')?.querySelector<HTMLButtonElement>('.box-more');
+      if(!opener?.contains(target)){menu.hidden=true;opener?.setAttribute('aria-expanded','false');}
     }
   });
   document.addEventListener('keydown',event=>{
