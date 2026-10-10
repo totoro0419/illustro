@@ -401,7 +401,7 @@ async function verifyNativeTouchSelectionPolicy(page){
       item.selector+' must not invoke Android copy/select handles');
     assert.equal(item.webkitUserSelect,'none',
       item.selector+' must not invoke Android WebKit text selection');
-    assert.match(item.tapHighlight,/(transparent|rgba\\(0, 0, 0, 0\\))/,
+    assert.ok(item.tapHighlight==='transparent'||item.tapHighlight==='rgba(0, 0, 0, 0)',
       item.selector+' must not show the browser native blue tap overlay');
   }
   assert.equal(styles.input.userSelect,'text','Real numeric editor keeps text selection');
