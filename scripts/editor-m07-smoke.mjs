@@ -546,6 +546,24 @@ try{
       if(!(await page.locator('#workspace').isVisible()))await page.locator('#workspaceToggle').click();
       await verifyRightBoxHeaderTargets(page);
       if(name==='desktop-1366'||name==='tablet-1280')await verifyNaturalMenuAndKeyboard(page);
+       // A touchscreen must never transfer focus to Workspace Toggle when
+       // closing via an inner action. Keyboard activation DOES restore it.
+       if(touch&&name==='tablet-1280'){
+         const hide=page.locator('#hideWorkspace');
+         await hide.scrollIntoViewIfNeeded();
+         const hit=await hide.boundingBox();assert.ok(hit,'Workspace close action reachable');
+         await page.touchscreen.tap(hit.x+hit.width/2,hit.y+hit.height/2);
+         assert.equal(await workspaceOpen(page),false,'Touch can close Workspace from its settings');
+         assert.notEqual(await page.evaluate(()=>document.activeElement?.id),'workspaceToggle',
+           'Touch close must not leave a keyboard focus ring on Workspace Toggle');
+         await page.locator('#workspaceToggle').click();
+         await hide.scrollIntoViewIfNeeded();
+         await hide.focus();await page.keyboard.press('Enter');
+         assert.equal(await workspaceOpen(page),false,'Keyboard close still works');
+         assert.equal(await page.evaluate(()=>document.activeElement?.id),'workspaceToggle',
+           'Keyboard closing Workspace restores a visible focus target');
+         await page.locator('#workspaceToggle').click();
+       }
     }
     await page.locator('#new').click();await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
     await draw(page);await waitCount(page,1);

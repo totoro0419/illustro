@@ -127,14 +127,27 @@ html[data-ui-input="hover"] .feature-category:hover{background:var(--aurora-sele
 #featuresClose .ui-icon,#closeLayerPage .ui-icon{width:18px;height:18px}
 .bottom button{display:flex;align-items:center;justify-content:center;gap:3px}
 .bottom .ui-icon{width:17px;height:17px}
+/* QA placement + skin: the closed sheet has no invisible hit area. */
 .qa-review{
+ position:fixed;left:auto;top:auto;right:calc(var(--workspace) + 12px);bottom:14px;
+ width:min(356px,calc(100vw - var(--rail) - var(--workspace) - 26px));
+ max-width:calc(100vw - var(--rail) - 22px);max-height:min(62dvh,520px);
  background:#FFFFFFF7;border:1px solid #BACCF7;
  box-shadow:0 11px 32px #334E8A38;
- width:min(388px,calc(100vw - var(--rail) - 24px));
- max-height:min(76dvh,660px);
- padding:0;
- border-radius:15px;
- overflow:auto;
+ padding:0;border-radius:15px;overflow:auto;
+}
+body.right-collapsed .qa-review{right:18px}
+@media(min-width:761px){body.right-overlay .qa-review{right:calc(var(--workspace) + 12px)}}
+@media(max-width:760px){
+ .qa-review{
+  left:auto;top:auto;right:9px;
+  bottom:calc(var(--bottom) + env(safe-area-inset-bottom) + 10px);
+  width:min(318px,calc(100vw - var(--rail) - 18px));
+  max-height:min(61dvh,480px);
+ }
+}
+@media(max-height:640px){
+ .qa-review{max-height:min(61dvh,calc(100dvh - var(--top) - var(--bottom) - 110px))}
 }
 .qa-review>summary{
  display:flex;align-items:center;gap:9px;
@@ -190,27 +203,6 @@ html[data-ui-input="hover"] .export-dialog #exportRun:hover:not(:disabled){backg
  background-position:center center;
 }
 
-/* Once QA is folded, park its small reopen tab at the Canvas-facing right edge.
-   It MUST NOT intercept New/Open/Save in the upper-left of narrow tablet layouts. */
-@media(min-width:761px){
- .qa-review:not([open]),
- .qa-review:has(#qaPanel:not([open])){
-   left:auto;
-   right:calc(var(--workspace) + 14px);
-   top:calc(var(--top) + 7px);
- }
- .qa-review:has(#qaPanel:not([open])){width:max-content;max-width:calc(100vw - var(--rail) - var(--workspace) - 24px)}
-}
-@media(max-width:760px){
- .qa-review:not([open]),
- .qa-review:has(#qaPanel:not([open])){
-   left:auto;
-   right:8px;
-   top:calc(var(--top) + 7px);
-   max-width:calc(100vw - var(--rail) - 14px);
- }
-}
-
 /* QA has its own permanent topbar entry: hiding the floating card never
    removes access to the checklist, and never steals drawing/Export clicks. */
 .topbar #qaEntry{color:#3E51A6;background:var(--aurora-selection);border:1px solid #C7D4FC;border-radius:10px;font-weight:730}
@@ -258,29 +250,3 @@ button:disabled{color:var(--a-subtle);background-color:#F5F7FC}
 .feature-actions h3{margin:8px 0;font-weight:700}
 .feature-actions button{border-color:#E3E9F4;background:#FFFFFF}
 html[data-ui-input="hover"] .feature-actions button:hover:not(:disabled){background:var(--aurora-selection)}
-/* Initial QA must be discoverable but not plastered over the document
-   commands immediately under the topbar. It docks near the Canvas right edge
-   at the *bottom*, sized to the space left beside the Right Workspace. */
-.qa-review{
- left:auto;top:auto;right:calc(var(--workspace) + 12px);bottom:14px;
- width:min(356px,calc(100vw - var(--rail) - var(--workspace) - 26px));
- max-height:min(62dvh,520px);
- max-width:calc(100vw - var(--rail) - 22px);
-}
-body.right-collapsed .qa-review{right:18px}
-@media(min-width:761px){
- body.right-overlay .qa-review{right:calc(var(--workspace) + 12px)}
-}
-@media(max-width:760px){
- .qa-review{
-  left:auto;top:auto;right:9px;
-  bottom:calc(var(--bottom) + env(safe-area-inset-bottom) + 10px);
-  width:min(318px,calc(100vw - var(--rail) - 18px));
-  max-height:min(61dvh,480px);
- }
-}
-@media(max-height:640px){
- /* A short screen must reserve the document toolbar ABOVE the floating QA.
-    Previous formula could expand QA across New/Open/Export on small phones. */
- .qa-review{max-height:min(61dvh,calc(100dvh - var(--top) - var(--bottom) - 110px))}
-}
