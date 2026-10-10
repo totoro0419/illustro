@@ -82,7 +82,7 @@ html[data-ui-input="hover"] .box-toggle:hover:not(:disabled){background:var(--a-
 .box-title{
  margin:0;min-width:0;display:flex;gap:6px;align-items:center;
  font-size:12px;line-height:18px;font-weight:700;
- color:inherit;cursor:default;user-select:text;
+ color:inherit;cursor:default;user-select:none;-webkit-user-select:none;
 }
 .box-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .box-summary{flex:1;min-width:0;height:100%;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;color:var(--a-subtle);text-align:right;cursor:default}
