@@ -206,3 +206,15 @@ input[type=checkbox]{accent-color:#748BEE}
    max-width:calc(100vw - var(--rail) - 14px);
  }
 }
+
+/* QA has its own permanent topbar entry: hiding the floating card never
+   removes access to the checklist, and never steals drawing/Export clicks. */
+.topbar #qaEntry{color:#3E51A6;background:var(--aurora-selection);border:1px solid #C7D4FC;border-radius:10px;font-weight:730}
+.topbar #qaEntry:hover{background:#E0E9FF;border-color:#AABBF1}
+.topbar #qaEntry[aria-expanded=true]{box-shadow:inset 0 -2px #8396F2}
+.qa-review:not([open]),.qa-review:has(#qaPanel:not([open])){display:none!important}
+@media(max-width:760px){
+ .topbar #qaEntry span{display:inline;font-size:10px}
+ .topbar #qaEntry{padding:3px 5px;min-height:30px}
+ .topbar #qaEntry .ui-icon{width:16px;height:16px}
+}
