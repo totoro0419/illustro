@@ -29,6 +29,8 @@ button:focus-visible,input:focus-visible,summary:focus-visible,select:focus-visi
 .rail .tool-button[aria-pressed=true]{background:var(--a-accent-soft);border-color:var(--a-border-strong);box-shadow:inset 3px 0 var(--a-accent)}
 .rail .tool-glyph{font-size:23px;line-height:26px;font-weight:400}
 .rail .tool-caption{font-size:9px;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--a-subtle)}
+.rail .all-caption{display:flex;flex-direction:column;align-items:center;gap:0;line-height:10px;white-space:nowrap;text-overflow:clip;overflow:visible}
+.rail .all-caption span{display:block;white-space:nowrap}
 .rail .all{margin-top:auto !important;min-height:59px!important;border-top:1px solid var(--a-border)!important;border-radius:9px!important;color:var(--a-focus)}
 .rail .all>span:first-child{font-size:22px}
 .rail .tool-button:disabled{opacity:.43}
@@ -176,6 +178,16 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
  .rail{bottom:calc(var(--bottom) + env(safe-area-inset-bottom));padding:5px 3px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
  .rail .tool-button{min-height:44px;padding:2px}.rail .tool-caption{font-size:8px}
  .rail .tool-glyph{font-size:19px;line-height:19px}
+ /* Compact paint shortcuts: a legible single-line caption below a pictogram. */
+ .rail .compact-shortcut{
+  display:flex;flex:none;flex-direction:column;align-items:center;justify-content:center;
+  width:100%;height:46px;min-height:46px;gap:2px;margin:0;padding:3px 0;
+  border:1px solid var(--a-border);border-radius:10px;
+  background:var(--a-surface-soft);color:var(--a-subtle);
+  font-size:9px;line-height:11px;white-space:nowrap;
+ }
+ .rail .compact-shortcut .ui-icon{width:18px;height:18px}
+ .rail .compact-shortcut span{display:block;white-space:nowrap;letter-spacing:-.15px}
  .rail .all{min-height:44px!important}
  main#canvasArea,body.right-overlay main#canvasArea{margin:var(--top) 0 var(--bottom) var(--rail);height:calc(100dvh - var(--top) - var(--bottom));padding:0}
  .canvas-top{padding:4px 8px;min-height:70px;gap:3px}

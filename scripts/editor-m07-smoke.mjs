@@ -538,6 +538,22 @@ try{
     if(width>760)await verifyTransientOverlays(page);
     if(touch){await verifyNativeTouchSelectionPolicy(page);await verifyTouchAndMouseFeedback(page);}
     const compact=width<=760;
+    if(compact){
+      const shortcuts=await page.evaluate(()=>['colorPage','brushPage','layersPage','allFeatures'].map(id=>{
+        const button=document.getElementById(id);
+        const label=button?.querySelector('span:last-child');
+        const b=button?.getBoundingClientRect(),r=label?.getBoundingClientRect();
+        return {id,visual:!!button?.querySelector('svg.ui-icon'),
+          width:b?.width??0,height:b?.height??0,railWidth:document.querySelector('.rail')?.getBoundingClientRect().width??0,
+          labelWidth:r?.width??0,labelScrollWidth:label?.scrollWidth??Infinity};
+      }));
+      for(const item of shortcuts){
+        assert.ok(item.visual,'Compact shortcut SVG missing '+item.id);
+        assert.ok(item.labelScrollWidth<=item.labelWidth+1,'Compact caption clipped '+item.id);
+        assert.ok(item.height>=40&&item.height<=68,'Compact shortcut cannot occupy a multi-line tall box '+item.id);
+        assert.ok(item.width<=item.railWidth,'Compact shortcut exceeds rail '+item.id);
+      }
+    }
     console.log('M07 viewport',name,width,height,touch);
     if(!compact){
       await checkPage(page,touch?'tablet':'pointer');
