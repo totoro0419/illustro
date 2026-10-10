@@ -59,7 +59,7 @@ aside#workspace{position:relative;inset:auto;width:100%;height:auto;min-width:0;
  color:inherit;cursor:default;user-select:text;
 }
 .box-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.box-summary{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;color:var(--a-subtle);text-align:right;cursor:default}
+.box-summary{flex:1;min-width:0;height:100%;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;color:var(--a-subtle);text-align:right;cursor:default}
 .box-more{flex:none;padding:0;width:36px;height:38px;min-height:38px;min-width:36px;border:0;border-radius:8px;background:transparent;font-size:13px;color:var(--a-subtle)}
 @media(any-pointer:coarse){
  .box-toggle{position:relative;flex-basis:40px}
