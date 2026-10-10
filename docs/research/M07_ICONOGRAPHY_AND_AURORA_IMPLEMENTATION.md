@@ -41,3 +41,36 @@ Current M07 visual stylesheet: \`apps/editor/src/ui/aurora.css\` overrides outda
 
 ## Not yet evidenced solely by source code
 Passing builds and browser smoke does **not** prove subjective pictogram recognizability, rendered optical quality, physical stylus hit-target behavior or feel compared to M06. User device/visual review remains required. No unilateral M07 acceptance.
+
+
+## 2026-10-10 follow-up: distinguish logo design from toolbar icon design
+
+User subsequently identified the **Smudge / Blend** and **Eyedropper** icons as having broken shapes and demanded actual study of polished logo construction, not arbitrary hand-drawn SVG.
+
+### Research expanded: actual graphic-design process, not just icon API size
+- [Adobe: Flat logo design](https://www.adobe.com/creativecloud/design/discover/flat-logo-design.html): begin with research and a few quick silhouettes, test **in black and white** before color, keep recognizable shapes and eliminate unnecessary detail. Do not use a gradient to mask a weak silhouette.
+- [Adobe: Minimalist logo design](https://www.adobe.com/uk/creativecloud/design/discover/minimalist-logo-design.html): produce several iterations; prioritize proportion, negative space, and consistent recognizable results from small to large sizes.
+- [IBM Design Language: Designing UI icons](https://www.ibm.com/design/language/iconography/ui-icons/design/): the square grid controls proportions, positioning, angles and corners; align intentionally rather than scatter arbitrary Bézier control points. Optical tuning is valid when strict grid fitting harms legibility.
+- [IBM Design Language: UI icon usage](https://www.ibm.com/design/language/iconography/ui-icons/usage/): 16, 20, 24, 32 are design inspection sizes; consistent visual weight and optical centering matter, **44px** is a button target, not the glyph size.
+- [Apple Human Interface Guidelines: SF Symbols](https://developer.apple.com/design/human-interface-guidelines/sf-symbols): prioritize simple, recognizable, directly relevant symbols; consistent visual weight and alignment.
+- [Adobe Photoshop: Eyedropper](https://helpx.adobe.com/photoshop/using/tool-techniques/eyedropper-tool.html): tool conveys color sampling, so its recognizable pipette anatomy takes priority over ornamental stroke details.
+
+**Crucial distinction:** A *brand logo* must create distinctive brand recognition; a *toolbar icon* must immediately communicate a known action and avoid semantic ambiguity. The logo-design workflow of research → silhouette sketches → simplification → optical balance → small-size test transfers to toolbar symbols, but its pressure for uniqueness must **not** override well-known painting-tool metaphors.
+
+### Defect diagnosis and construction decisions
+| Item | Rejected prior concept | New motif | Reason |
+|---|---|---|---|
+| Smudge / Blend | Three unrelated curved strokes with a nearby chevron; reads as accidental scratches or a directional arrow rather than an actual tool. | A single connected, forward-extending index finger with simplified hand contour. | Painting apps conventionally communicate smudging through direct finger manipulation. The silhouette is legible before the two minor finger joints are noticed. |
+| Eyedropper | Several incomplete/disjoint-looking diagonals making a pen-like or broken impression. | Rounded rubber bulb, continuous diagonal pipette barrel/collar, pointy color-sampling tip. | Shows an actual dropper rather than a generic pen, with connected contour and visible terminal. |
+
+The new geometry was **not selected solely from SVG source inspection**. We first generated **three finger alternatives and eight pipette alternatives**, rendered each at **16, 20, 24, 48 and 88 CSS pixels**, and visually compared silhouette, contour continuity and tiny-scale clutter. The selected designs then underwent 16/20/23/24px raster checks using CairoSVG + Pillow + connected-component labeling: **one connected ink component, no touches to the SVG viewBox edges at every size** for each icon. These checks confirm raster continuity/clipping only. They do not establish subjective elegance or intuitive comprehension.
+
+### Review gate added for every future icon change
+1. Choose a real-world motif and confirm what operation it should explain. Put the proposed meaning in one sentence.
+2. Draw 3+ black-and-white silhouette alternatives *before* adding polished curves and strokes.
+3. Compare with the family's fixed optical size, padding and stroke. Detect accidental double contours, disconnected segments, overdrawn nodes and small blurred details.
+4. Actually rasterize icons at **16px, 20px, 24px**, not just edit `path d` or trust CI compiling. Review on light/dark and enabled/disabled surfaces.
+5. Compare icons next to one another so their visual weights and strokes are consistent; require shape-based distinguishability between Brush, Smudge, Eraser and Eyedropper.
+6. Confirm operation and QA regressions with public M07; ask for **user visual review**. No subjective PASS claim solely from component checks.
+
+**Scope limitation:** This follow-up surgically fixes the two reported pictograms rather than randomly redrawing already functional icons. A holistic full-icon silhouette review remains a valid design review task. M07 still awaits explicit user acceptance; do not silently advance to M08.
