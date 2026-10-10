@@ -77,7 +77,7 @@ html[data-ui-input="hover"] .box-toggle:hover:not(:disabled){background:var(--a-
  padding:7px;display:flex;flex-direction:column;gap:3px;
  background:var(--a-surface);box-shadow:0 10px 26px #33497633,0 2px 6px #40526E19;
 }
-.box-more-menu[data-placement="above"]{top:auto;bottom:calc(var(--a-box-header) + 2px)}
+.box-more-menu[data-placement="above"]{top:var(--box-menu-above,-134px);bottom:auto}
 .box-more-menu button{font-size:12px;min-height:40px;width:100%;text-align:left}
 .box-more-menu span{font-size:10px;line-height:1.35;padding:5px 7px;align-self:stretch;color:var(--a-subtle)}
 .box-body>label{margin:5px 0 9px}
