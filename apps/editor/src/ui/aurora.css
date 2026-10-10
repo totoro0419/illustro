@@ -185,3 +185,24 @@ input[type=checkbox]{accent-color:#748BEE}
  background-repeat:repeat-y;
  background-position:center center;
 }
+
+/* Once QA is folded, park its small reopen tab at the Canvas-facing right edge.
+   It MUST NOT intercept New/Open/Save in the upper-left of narrow tablet layouts. */
+@media(min-width:761px){
+ .qa-review:not([open]),
+ .qa-review:has(#qaPanel:not([open])){
+   left:auto;
+   right:calc(var(--workspace) + 14px);
+   top:calc(var(--top) + 7px);
+ }
+ .qa-review:has(#qaPanel:not([open])){width:max-content;max-width:calc(100vw - var(--rail) - var(--workspace) - 24px)}
+}
+@media(max-width:760px){
+ .qa-review:not([open]),
+ .qa-review:has(#qaPanel:not([open])){
+   left:auto;
+   right:8px;
+   top:calc(var(--top) + 7px);
+   max-width:calc(100vw - var(--rail) - 14px);
+ }
+}
