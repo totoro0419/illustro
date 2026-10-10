@@ -149,6 +149,18 @@ export function installShellUi():ShellControl{
     if(layerOpen){setLayerPage(false);event.preventDefault();return;}
     if(compact.matches&&rightDock.classList.contains('open')){close(true);event.preventDefault();}
   },{capture:true});
+  // M07 QA is initially expanded; the persistent topbar entry remains reachable
+  // even when the floating checklist is closed by its header or regression tests.
+  const qaEntry=document.getElementById('qaEntry') as HTMLButtonElement|null;
+  const qaCard=document.getElementById('qaSummary') as HTMLDetailsElement|null;
+  const qaPanel=document.getElementById('qaPanel') as HTMLDetailsElement|null;
+  if(qaEntry&&qaCard&&qaPanel){
+    const syncQa=()=>qaEntry.setAttribute('aria-expanded',String(qaCard.open&&qaPanel.open));
+    qaEntry.onclick=()=>{const next=!(qaCard.open&&qaPanel.open);qaCard.open=next;if(next)qaPanel.open=true;syncQa();};
+    qaCard.addEventListener('toggle',syncQa);
+    qaPanel.addEventListener('toggle',syncQa);
+    syncQa();
+  }
   applyWidth(width);syncPresentation();
   return {workspace,drawer,openBox,close,setLayerPage,layerPageOpen:()=>layerOpen,refreshWidth:()=>applyWidth(width)};
 }
