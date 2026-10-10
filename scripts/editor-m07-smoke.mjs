@@ -24,6 +24,7 @@ if(!base){
 const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan','--enable-precise-memory-info']});
 const report={source:expectedCommit,mode:publicBase?'public':'local',status:'FAIL',cases:[],errors:[]};
 const qa=async p=>JSON.parse((await p.locator('#qaAuto').textContent())||'{}');
+const workspaceOpen=async p=>p.evaluate(()=>!document.getElementById('workspace').inert);
 async function draw(page){
   const box=await page.locator('#canvas').boundingBox();assert.ok(box&&box.width>100,'Canvas not visible');
   await page.mouse.move(box.x+box.width*.22,box.y+box.height*.4);
@@ -387,17 +388,17 @@ try{
         // Temporary Right Workspace: outside gesture hides it; reopened
         // Layer Page also dismisses without losing the drawing gesture.
         await page.locator('#status').click();
-        assert.equal((await qa(page)).workspaceOpen,false,'Tablet overlay closes outside');
+        assert.equal(await workspaceOpen(page),false,'Tablet overlay closes outside');
         await page.locator('#workspaceToggle').click();
-        assert.equal((await qa(page)).workspaceOpen,true,'Tablet overlay can reopen');
+        assert.equal(await workspaceOpen(page),true,'Tablet overlay can reopen');
         await page.keyboard.press('Escape');
-        assert.equal((await qa(page)).workspaceOpen,false,'Escape closes tablet overlay');
+        assert.equal(await workspaceOpen(page),false,'Escape closes tablet overlay');
         await page.locator('#workspaceToggle').click();
-        assert.equal((await qa(page)).workspaceOpen,true);
+        assert.equal(await workspaceOpen(page),true);
       }
       await page.locator('#layer').click();await draw(page);await waitCount(page,name==='tablet-1280'?3:2);
       if(isOverlay){
-        assert.equal((await qa(page)).workspaceOpen,false,'Painting light-dismisses overlay without swallowing stroke');
+        assert.equal(await workspaceOpen(page),false,'Painting light-dismisses overlay without swallowing stroke');
         await page.locator('#workspaceToggle').click();
       }
       const x=await page.evaluate(()=>({bodyOverflow:document.documentElement.scrollWidth>innerWidth+1,overlay:document.body.classList.contains('right-overlay')}));
@@ -408,18 +409,20 @@ try{
       await page.locator('#drawer').click();
       await verifyRightBoxHeaderTargets(page);
       await page.locator('#status').click();
-      assert.equal((await qa(page)).workspaceOpen,false,'Compact drawer closes on outside tap');
+      assert.equal(await workspaceOpen(page),false,'Compact drawer closes on outside tap');
       await page.locator('#drawer').click();
       await page.keyboard.press('Escape');
-      assert.equal((await qa(page)).workspaceOpen,false,'Escape closes compact drawer');
+      assert.equal(await workspaceOpen(page),false,'Escape closes compact drawer');
       await page.locator('#drawer').click();
       const box=await page.locator('#canvas').boundingBox();assert.ok(box);
-      // Top edge of the artwork is exposed above the 55dvh drawer.
-      const sx=box.x+box.width*.5,sy=box.y+box.height*.08;
+      const dock=await page.locator('#rightDock').boundingBox();assert.ok(dock);
+      const exposed=Math.max(0,Math.min(box.y+box.height,dock.y)-box.y);
+      assert.ok(exposed>=42,'Compact drawer must leave a useful visible part of Canvas');
+      const sx=box.x+box.width*.5,sy=box.y+Math.min(24,exposed*.5);
       await page.mouse.move(sx,sy);await page.mouse.down();
       await page.mouse.move(sx+Math.min(55,box.width*.2),sy+Math.min(15,box.height*.05),{steps:8});
       await page.mouse.up();await waitCount(page,2);
-      assert.equal((await qa(page)).workspaceOpen,false,'First painting contact dismisses drawer and reaches Canvas');
+      assert.equal(await workspaceOpen(page),false,'First painting contact dismisses drawer and reaches Canvas');
       await page.screenshot({path:path.join(evidence,name+'.png')});
     }
     assert.deepEqual(errors,[]);
