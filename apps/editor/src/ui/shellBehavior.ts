@@ -79,12 +79,21 @@ export function installShellUi():ShellControl{
     const control=section.querySelector<HTMLButtonElement>('.box-toggle');
     const body=section.querySelector<HTMLElement>('.box-body');
     if(!control||!body)return;
-    control.setAttribute('aria-expanded',String(open));body.hidden=!open;expanded[id]=open;persistBoxes();
+    control.setAttribute('aria-expanded',String(open));
+    control.setAttribute('aria-label',section.querySelector('.box-name')?.textContent+'を'+(open?'折りたたむ':'開く'));
+    body.hidden=!open;expanded[id]=open;persistBoxes();
   };
   for(const [id,,domId,defaultOpen] of RIGHT_BOXES){
     const section=byId(domId+'Body')?.closest<HTMLElement>('.workspace-box');if(!section)continue;
     const control=section.querySelector<HTMLButtonElement>('.box-toggle')!;
+    // Only the separate chevron button owns expand/collapse.
+    // Heading text and summary are not inside a button, and never trigger it.
     control.onclick=()=>setBoxExpansion(section,control.getAttribute('aria-expanded')!=='true');
+    const heading=section.querySelector<HTMLElement>('.box-heading')!;
+    heading.addEventListener('click',event=>{
+      if(!(event.target instanceof Element))return;
+      if(event.target.closest('.box-title,.box-summary'))section.focus({preventScroll:true});
+    });
     const more=section.querySelector<HTMLButtonElement>('.box-more')!,menu=section.querySelector<HTMLElement>('.box-more-menu')!;
     more.onclick=()=>{menu.hidden=!menu.hidden;more.setAttribute('aria-expanded',String(!menu.hidden));};
     menu.querySelector<HTMLButtonElement>('[data-collapse-box]')!.onclick=()=>{setBoxExpansion(section,false);menu.hidden=true;more.setAttribute('aria-expanded','false');control.focus();};
