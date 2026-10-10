@@ -67,13 +67,17 @@ export function installShellUi():ShellControl{
     syncPresentation();if(persist)safeWrite(WIDTH_KEY,String(width));
     if(!byId<HTMLElement>('allFeaturesPanel').hidden)positionFeature();
   };
-  const setLayerPage=(open:boolean)=>{
+  // Move focus only for keyboard-initiated navigation. Pointer/touch opening
+  // must not leave an unrelated Close button selected or focus-highlighted.
+  const setLayerPage=(open:boolean,keyboardNavigation=false)=>{
+    const focusWasInside=page.contains(document.activeElement);
     layerOpen=open;if(open){document.body.classList.remove('right-collapsed');if(compact.matches)rightDock.classList.add('open');}
-    syncPresentation();if(open)byId<HTMLButtonElement>('closeLayerPage').focus({preventScroll:true});
-    else if(document.activeElement&&page.contains(document.activeElement))layer.focus({preventScroll:true});
+    syncPresentation();
+    if(open&&keyboardNavigation)byId<HTMLButtonElement>('closeLayerPage').focus({preventScroll:true});
+    else if(!open&&focusWasInside&&keyboardNavigation)layer.focus({preventScroll:true});
   };
-  layer.onclick=()=>setLayerPage(!layerOpen);
-  byId('closeLayerPage').onclick=()=>setLayerPage(false);
+  layer.onclick=event=>setLayerPage(!layerOpen,event.detail===0);
+  byId('closeLayerPage').onclick=event=>setLayerPage(false,event.detail===0);
   const close=(focus=false)=>{
     if(layerOpen)setLayerPage(false);
     if(compact.matches)rightDock.classList.remove('open');else document.body.classList.add('right-collapsed');
@@ -93,7 +97,7 @@ export function installShellUi():ShellControl{
   };
   drawer.onclick=()=>{rightDock.classList.toggle('open');if(!rightDock.classList.contains('open'))layerOpen=false;syncPresentation();};
   byId('close').onclick=e=>close(e.detail===0);
-  byId('layersPage').onclick=()=>setLayerPage(true);
+  byId('layersPage').onclick=event=>setLayerPage(true,event.detail===0);
   byId('colorPage').onclick=()=>openBox('colorBox');
   byId('brushPage').onclick=()=>openBox('brushBox');
   // Box operation menus share the same light-dismiss behavior as floating
