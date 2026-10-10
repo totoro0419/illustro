@@ -147,7 +147,7 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
  #status{font-size:10px;min-width:0;flex:1 1 100%;max-height:30px;overflow:auto}
  .document-actions{gap:3px}.document-actions button{font-size:9px;min-height:28px;padding:3px 5px}
  .surface{max-width:calc(100% - 14px);width:100%;margin:auto}
- .right-dock,body.right-overlay .right-dock{top:auto;bottom:calc(var(--bottom) + env(safe-area-inset-bottom));left:var(--rail);right:env(safe-area-inset-right);width:auto;height:55dvh;box-shadow:0 -4px 18px #2a332522;opacity:0;transform:translate3d(0,calc(100% + 5px),0);pointer-events:none;transition:transform .14s ease,opacity .14s ease;contain:layout paint}
+ .right-dock,body.right-overlay .right-dock{top:auto;bottom:calc(var(--bottom) + env(safe-area-inset-bottom));left:var(--rail);right:env(safe-area-inset-right);width:auto;height:43dvh;box-shadow:0 -4px 18px #2a332522;opacity:0;transform:translate3d(0,calc(100% + 5px),0);pointer-events:none;transition:transform .14s ease,opacity .14s ease;contain:layout paint}
  .right-dock.open{opacity:1;transform:none;pointer-events:auto}
  .right-dock #workspace{height:100%;flex:1;inset:auto;padding:0;min-width:0;width:100%}
  .right-dock .commands{display:none}
@@ -155,9 +155,9 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
  #splitter{display:none}
  .bottom{display:flex;z-index:12}
  .qa-review{left:calc(var(--rail) + 4px);top:calc(var(--top) + 3px)}
- body.right-collapsed .right-dock{height:55dvh;top:auto;bottom:calc(var(--bottom) + env(safe-area-inset-bottom));width:auto}
+ body.right-collapsed .right-dock{height:43dvh;top:auto;bottom:calc(var(--bottom) + env(safe-area-inset-bottom));width:auto}
 }
-@media(max-width:760px) and (orientation:landscape){.right-dock{height:65dvh}}
+@media(max-width:760px) and (orientation:landscape){.right-dock,body.right-collapsed .right-dock{height:48dvh}}
 @media(prefers-reduced-motion:reduce){.right-dock,.chevron,button{transition:none!important}}
 
 .resize-grip{pointer-events:auto;cursor:ew-resize}
