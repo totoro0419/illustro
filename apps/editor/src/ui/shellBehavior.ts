@@ -16,6 +16,29 @@ export function installShellUi():ShellControl{
   const workspace=byId<HTMLElement>('workspace'),rightDock=byId<HTMLElement>('rightDock'),page=byId<HTMLElement>('layerPage');
   const drawer=byId<HTMLButtonElement>('drawer'),compact=matchMedia('(max-width:760px)'),coarse=matchMedia('(any-pointer:coarse)'),touch=()=>coarse.matches||navigator.maxTouchPoints>0;
   const toggle=byId<HTMLButtonElement>('workspaceToggle'),layer=byId<HTMLButtonElement>('layer');
+  // Browsers can leave :hover visually latched after a touchscreen tap.
+  // Track the ACTUAL last pointing device, not just viewport width / UA:
+  // Android tablets can attach a mouse, and a pen may not offer hover.
+  // Keyboard focus-visible remains independent of this pointer state.
+  const root=document.documentElement;
+  const setInput=(mode:'hover'|'touch')=>{
+    if(root.dataset.uiInput!==mode)root.dataset.uiInput=mode;
+  };
+  setInput(matchMedia('(hover:hover) and (pointer:fine)').matches?'hover':'touch');
+  document.addEventListener('pointerdown',event=>{
+    setInput(event.pointerType==='mouse'?'hover':'touch');
+  },{capture:true});
+  document.addEventListener('pointermove',event=>{
+    if(event.pointerType==='mouse')setInput('hover');
+  },{capture:true});
+  document.addEventListener('click',event=>{
+    // Tapped buttons must not retain a pressed/focus halo. Do not blur
+    // keyboard-triggered clicks (detail=0) or focus inside form controls.
+    if(root.dataset.uiInput!=='touch'||event.detail===0)return;
+    const button=event.target instanceof Element?event.target.closest('button'):null;
+    if(button&&document.activeElement===button)button.blur();
+  });
+
   let width=touch()?360:344,resizing:{pointerId:number;original:number}|null=null,layerOpen=false,expanded:Record<string,boolean>={};
   const savedWidth=Number(safeRead(WIDTH_KEY));if(Number.isFinite(savedWidth)&&savedWidth>0)width=savedWidth;
   try{expanded=JSON.parse(safeRead(BOX_KEY)||'{}') as Record<string,boolean>;}catch{expanded={};}
@@ -201,6 +224,10 @@ export function installShellUi():ShellControl{
   const qaEntry=document.getElementById('qaEntry') as HTMLButtonElement|null;
   const qaCard=document.getElementById('qaSummary') as HTMLDetailsElement|null;
   const qaPanel=document.getElementById('qaPanel') as HTMLDetailsElement|null;
+  // M07 QA checklist stays reachable from its topbar button. On touch-first
+  // devices it must NOT open as a floating sheet over the artwork by default.
+  // Desktop mouse QA retains the historically visible initial checklist.
+  if(touch()&&qaCard)qaCard.open=false;
   const syncQa=()=>{if(qaEntry&&qaCard&&qaPanel)qaEntry.setAttribute('aria-expanded',String(qaCard.open&&qaPanel.open));};
   const closeQa=()=>{
     if(!qaCard?.open)return;
