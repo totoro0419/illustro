@@ -94,6 +94,7 @@ async function verifyAuroraIconReview(page){
     const selected=getComputedStyle(document.querySelector('#paint'));
     return {
       qaInitiallyOpen:qa?.open===true,
+      touchFirst:matchMedia('(any-pointer:coarse)').matches||navigator.maxTouchPoints>0,
       checklistInitiallyOpen:panel?.open===true,
       checklistCount:panel?.querySelectorAll('ol>li').length,
       qaHeading:qa?.querySelector('summary')?.textContent?.trim(),
@@ -109,14 +110,17 @@ async function verifyAuroraIconReview(page){
       qaVisible:!!qa&&qa.getBoundingClientRect().height>120,
     };
   });
-  assert.ok(result.qaInitiallyOpen&&result.checklistInitiallyOpen,'QA checklist must be expanded immediately');
+  assert.ok(result.checklistInitiallyOpen,'QA inner checklist remains available');
+  assert.equal(result.qaInitiallyOpen,!result.touchFirst,
+    'QA opens by default on desktop but stays unobtrusive on tablets/phones');
   assert.equal(result.checklistCount,12,'All 12 QA items must be visible by scrolling');
   assert.match(result.qaHeading,/実機確認.*12項目/);
-  assert.ok(result.qaVisible,'QA card must be prominent on first visit');
+  assert.equal(result.qaVisible,!result.touchFirst,'Touch devices must start with an unobstructed Canvas');
   assert.ok(result.toolVectors&&result.bottomVectors&&result.topVectors&&result.allFeatureVector,'Every primary icon is an SVG motif');
   assert.equal(result.boxHeaderVectors,12);assert.equal(result.categoryVectors,12);
   assert.equal(result.auroraBlue,'#5ea8ff');assert.equal(result.auroraViolet,'#8b7cff');
   assert.match(result.selectedGradient,/gradient/i,'Active tool must carry restrained Aurora light');
+  if(result.touchFirst)await page.locator('#qaEntry').click();
   const qaPlacement=await page.evaluate(()=>{
     const q=document.querySelector('#qaSummary').getBoundingClientRect(),a=document.querySelector('.document-actions').getBoundingClientRect();
     const overlap=q.left<a.right&&q.right>a.left&&q.top<a.bottom&&q.bottom>a.top;
@@ -130,6 +134,40 @@ async function verifyAuroraIconReview(page){
   assert.equal(await page.locator('#qaSummary').getAttribute('open'),'','Topbar button reopens hidden QA');
   await page.locator('#qaEntry').click();
   return {...result,qaPlacement};
+}
+
+async function verifyTouchAndMouseFeedback(page){
+  const all=page.locator('#allFeatures'),r=await all.boundingBox();
+  assert.ok(r,'All Features must be touch reachable');
+  const cx=r.x+r.width/2,cy=r.y+r.height/2;
+  const initial=await page.evaluate(()=>getComputedStyle(document.querySelector('#allFeatures')).backgroundColor);
+  await page.touchscreen.tap(cx,cy);
+  assert.equal(await page.locator('#allFeaturesPanel').isVisible(),true,'Touch opens feature overlay');
+  await page.touchscreen.tap(cx,cy);
+  assert.equal(await page.locator('#allFeaturesPanel').isVisible(),false,'Second touch closes feature overlay');
+  const after=await page.evaluate(()=>{
+    const element=document.querySelector('#allFeatures');
+    return {input:document.documentElement.dataset.uiInput,
+      color:getComputedStyle(element).backgroundColor,
+      hovered:element.matches(':hover'),
+      stuckFocus:document.activeElement===element,
+      open:element.getAttribute('aria-expanded')};
+  });
+  assert.equal(after.input,'touch','Actual touch pointer input switches off hover CSS');
+  assert.equal(after.color,initial,'Tap must not leave a sticky hover-color halo');
+  assert.equal(after.stuckFocus,false,'Tapped button must not retain keyboard-like focus');
+  assert.equal(after.open,'false','Transient overlay open state returns to false');
+
+  // Real mouse input restores hover styling, even on a tablet with both a
+  // touchscreen and a connected mouse. Emulated touch must not disable mouse.
+  await page.mouse.move(cx+Math.min(14,r.width/3),cy);
+  assert.equal(await page.evaluate(()=>document.documentElement.dataset.uiInput),'hover',
+    'Real mouse motion restores mouse hover affordance');
+  await page.touchscreen.tap(cx,cy);
+  assert.equal(await page.evaluate(()=>document.documentElement.dataset.uiInput),'touch',
+    'Touch input supersedes mouse hover without sticky retention');
+  await page.locator('#featuresClose').click();
+  return {initialBackground:initial,afterTouch:after};
 }
 
 async function verifyPopupPositionAndAurora(page){
@@ -365,6 +403,7 @@ try{
     await verifyAuroraIconReview(page);
     await verifyPopupPositionAndAurora(page);
     if(width>760)await verifyTransientOverlays(page);
+    if(touch)await verifyTouchAndMouseFeedback(page);
     const compact=width<=760;
     console.log('M07 viewport',name,width,height,touch);
     if(!compact){
