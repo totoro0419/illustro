@@ -170,3 +170,18 @@ input[type=checkbox]{accent-color:#748BEE}
 @media(prefers-reduced-motion:reduce){
  .ui-icon,.brand-symbol{transition:none}
 }
+
+/* Align the remaining M06 export dialog and Compact toolbar with Aurora. */
+.export-dialog{background:#FFFFFF;border:1px solid #CFDAED;color:var(--a-text);box-shadow:0 17px 55px #25385E48}
+.export-dialog #exportTransparencyInfo{background:#EEF3FF;color:#465D90}
+.export-dialog #exportRun{background:var(--aurora-selection);border-color:#B7C9F5;color:#374EA0}
+.export-dialog #exportRun:hover:not(:disabled){background:#DDE9FF}
+.bottom{background:#F8FAFF;border-top:1px solid #DAE3F3}
+.bottom button{color:#4B5F8C}
+.resize-grip{
+ background-color:#FAFBFF;
+ background-image:radial-gradient(circle,#8195C4 1.2px,transparent 1.5px);
+ background-size:6px 8px;
+ background-repeat:repeat-y;
+ background-position:center center;
+}
