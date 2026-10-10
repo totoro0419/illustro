@@ -239,6 +239,12 @@ async function verifyRightBoxHeaderTargets(page,{all=false}={}){
     assert.equal(await arrow.getAttribute('aria-expanded'),before,
       'Clicking More must not implicitly collapse the Box');
     assert.equal(await row.locator('.box-more-menu').isVisible(),true);
+    const openerUnobscured=await more.evaluate(el=>{
+      const r=el.getBoundingClientRect();
+      const top=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+      return top===el||el.contains(top);
+    });
+    assert.equal(openerUnobscured,true,'Floating More menu must never cover its own launcher');
     await more.click();
     assert.equal(await row.locator('.box-more-menu').isVisible(),false);
     await arrow.click();
