@@ -218,3 +218,63 @@ input[type=checkbox]{accent-color:#748BEE}
  .topbar #qaEntry{padding:3px 5px;min-height:30px}
  .topbar #qaEntry .ui-icon{width:16px;height:16px}
 }
+
+/* M07 visual repair: a single source of truth for ALL pointer states,
+   not only default backgrounds. No legacy yellow hover / pressed overlay. */
+button:hover:not(:disabled){background-color:#EFF3FF;border-color:#C5D3F6}
+button:active:not(:disabled){
+ background:#E3EAFF;border-color:#A6B8F1;color:#30498C;
+ box-shadow:inset 0 1px 2px #536CA51C;
+}
+button:disabled{color:var(--a-subtle);background-color:#F5F7FC}
+.rail .tool-button:active:not(:disabled),
+.rail #allFeatures:active:not(:disabled),
+.feature-category:active:not(:disabled),
+.commands button:active:not(:disabled),
+.box-toggle:active:not(:disabled),
+.box-more:active:not(:disabled),
+.bottom button:active:not(:disabled){background:var(--aurora-selection);color:#3852A6;border-color:#A6B8F1}
+.rail .tool-button[aria-pressed=true]:active:not(:disabled){background:var(--aurora-selection)}
+.topbar #qaEntry:active:not(:disabled),#new:active:not(:disabled),
+.export-dialog #exportRun:active:not(:disabled){background:var(--aurora-selection);border-color:#9EADF1}
+.feature-category:focus-visible,.features-header button:focus-visible{outline-offset:-2px}
+.features-panel{
+ padding:11px 12px;border-radius:13px;
+ background:#FFFFFFF9;
+ box-shadow:0 14px 34px #314B8940,0 2px 6px #405C8B12;
+}
+.features-header{
+ position:sticky;top:-11px;z-index:1;
+ background:#FFFFFFF4;border-bottom:1px solid #E6ECF8;
+ margin:-1px -2px 7px;padding:4px 5px 10px;
+}
+.feature-category{min-height:41px;border-radius:8px}
+.feature-categories{gap:3px}
+.feature-actions{min-height:0}
+.feature-actions h3{margin:8px 0;font-weight:700}
+.feature-actions button{border-color:#E3E9F4;background:#FFFFFF}
+.feature-actions button:hover:not(:disabled){background:var(--aurora-selection)}
+/* Initial QA must be discoverable but not plastered over the document
+   commands immediately under the topbar. It docks near the Canvas right edge
+   at the *bottom*, sized to the space left beside the Right Workspace. */
+.qa-review{
+ left:auto;top:auto;right:calc(var(--workspace) + 12px);bottom:14px;
+ width:min(356px,calc(100vw - var(--rail) - var(--workspace) - 26px));
+ max-height:min(62dvh,520px);
+ max-width:calc(100vw - var(--rail) - 22px);
+}
+body.right-collapsed .qa-review{right:18px}
+@media(min-width:761px){
+ body.right-overlay .qa-review{right:calc(var(--workspace) + 12px)}
+}
+@media(max-width:760px){
+ .qa-review{
+  left:auto;top:auto;right:9px;
+  bottom:calc(var(--bottom) + env(safe-area-inset-bottom) + 10px);
+  width:min(318px,calc(100vw - var(--rail) - 18px));
+  max-height:min(61dvh,480px);
+ }
+}
+@media(max-height:640px){
+ .qa-review{max-height:calc(100dvh - var(--top) - var(--bottom) - 30px)}
+}
