@@ -232,13 +232,20 @@ export function installShellUi():ShellControl{
     // removing its inline layout during pointerdown shifts neighboring More
     // buttons away from pointerup and silently loses the click.
     if(!rightDock.contains(t))closeBoxMenus();
-    if(floatingDockOpen()&&!rightDock.contains(t)&&!toggle.contains(t)&&!drawer.contains(t)){
+    if(floatingDockOpen()&&t instanceof Element&&t.closest('#canvas')){
+      // Artwork does not change position on dismiss. Closing here leaves the
+      // initiating pen/touch pointerdown available to the Canvas renderer.
       close(false);
     }
   },{capture:true});
   document.addEventListener('click',event=>{
     const t=event.target;
-    if(!(t instanceof Node)||!rightDock.contains(t))return;
+    if(!(t instanceof Node))return;
+    // Finish clicks on OTHER controls before moving a floating Workspace:
+    // moving QA / feature launchers on pointerdown causes a lost pointerup
+    // and accidental non-activation, especially at tablet overlay widths.
+    if(floatingDockOpen()&&!rightDock.contains(t)&&!toggle.contains(t)&&!drawer.contains(t))close(false);
+    if(!rightDock.contains(t))return;
     if(t instanceof Element&&t.closest('.box-more'))return;
     for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
       if(!menu.hidden&&!menu.contains(t)){
