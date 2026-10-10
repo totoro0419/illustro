@@ -34,12 +34,12 @@ body{color:var(--a-text);background:var(--a-surround)}
 .topbar .brand strong{font-weight:750;letter-spacing:-.55px}
 .brand-sub{color:#758399}
 .topbar #save{background:var(--aurora-selection);border-color:#CBDAF8}
-.topbar #save:hover:not(:disabled){background:#E1EAFF;border-color:#9AB5F5}
+html[data-ui-input="hover"] .topbar #save:hover:not(:disabled){background:#E1EAFF;border-color:#9AB5F5}
 .topbar #save:disabled{background:#F4F6FA}
 .topbar #saveState{color:var(--a-subtle)}
 .rail{background:#FEFFFF;border-color:var(--a-border)}
 .rail .tool-button,.rail #allFeatures{color:#4B5975}
-.rail .tool-button:hover:not(:disabled),.rail #allFeatures:hover{background:#F0F5FF;border-color:#DFE6FB}
+html[data-ui-input="hover"] .rail .tool-button:hover:not(:disabled),html[data-ui-input="hover"] .rail #allFeatures:hover{background:#F0F5FF;border-color:#DFE6FB}
 .rail .tool-button[aria-pressed=true]{
  background:var(--aurora-selection);
  border-color:#B8CAFC;
@@ -57,9 +57,9 @@ main#canvasArea{background:
 .canvas-top{background:#FFFFFFDF;border-color:var(--a-border)}
 #status{color:var(--a-subtle)}
 .document-actions button{border-color:#DCE3EF;color:#485A75;background:#FFFFFF}
-.document-actions button:hover:not(:disabled){background:#EFF4FF}
+html[data-ui-input="hover"] .document-actions button:hover:not(:disabled){background:#EFF4FF}
 #new{background:var(--aurora-selection);border-color:#BFD4F8;color:#4053A0}
-#new:hover{background:#E2EDFF}
+html[data-ui-input="hover"] #new:hover{background:#E2EDFF}
 .surface{border-color:#CAD4E2;box-shadow:0 10px 27px #3E54792B,0 2px 7px #445C7413}
 .right-dock{background:#F8FAFF;border-color:#DEE5F0}
 .box-stack{scrollbar-color:#D1DCF1 transparent}
@@ -71,7 +71,7 @@ main#canvasArea{background:
 }
 .box-heading{color:#36425B}
 .box-toggle{color:#6076A6}
-.box-toggle:hover:not(:disabled){background:#EDF2FF;color:#3D55A4}
+html[data-ui-input="hover"] .box-toggle:hover:not(:disabled){background:#EDF2FF;color:#3D55A4}
 .box-title{color:#36425B}
 .box-toggle:focus-visible{outline:2px solid var(--a-focus);outline-offset:-3px}
 .workspace-box:focus-visible{outline:2px solid #AEC3FC;outline-offset:2px}
@@ -91,11 +91,11 @@ input[type=checkbox]{accent-color:#748BEE}
 .layer-state{color:#435BBC}
 .commands{border-color:#DEE5F0;background:#FFFFFF}
 .commands button{color:#4A5D7F}
-.commands button:hover:not(:disabled){background:#EFF3FF}
+html[data-ui-input="hover"] .commands button:hover:not(:disabled){background:#EFF3FF}
 .commands button.selected,.commands button[aria-expanded=true]{color:#354DAC;background:var(--aurora-selection)}
 #splitter:before{background:#C3D2E9}
 .resize-grip{color:#7386AB;background:#FAFBFF;border-color:#C9D5E9}
-#splitter:hover,#splitter.dragging{background:#A2B8F42B}
+html[data-ui-input="hover"] #splitter:hover,#splitter.dragging{background:#A2B8F42B}
 .layer-page{background:#F9FAFF}
 .layer-page-head{border-color:#DCE5F0}
 .layer-page-head small{color:#697CB0}
@@ -108,7 +108,7 @@ input[type=checkbox]{accent-color:#748BEE}
 .feature-category .feature-label{flex:1;text-align:left}
 .feature-chevron .ui-icon{width:13px;height:13px;transform:rotate(-90deg)}
 .feature-category[data-group-start=true]{border-top-color:#E2E8F5}
-.feature-category:hover{background:var(--aurora-selection)}
+html[data-ui-input="hover"] .feature-category:hover{background:var(--aurora-selection)}
 /* The icon does not change dimensions between active, disabled and hover states. */
 .ui-icon{display:inline-block;flex:none;vertical-align:middle;width:22px;height:22px;pointer-events:none}
 .tool-glyph{display:grid;place-items:center;min-width:26px;min-height:26px}
@@ -179,7 +179,7 @@ input[type=checkbox]{accent-color:#748BEE}
 .export-dialog{background:#FFFFFF;border:1px solid #CFDAED;color:var(--a-text);box-shadow:0 17px 55px #25385E48}
 .export-dialog #exportTransparencyInfo{background:#EEF3FF;color:#465D90}
 .export-dialog #exportRun{background:var(--aurora-selection);border-color:#B7C9F5;color:#374EA0}
-.export-dialog #exportRun:hover:not(:disabled){background:#DDE9FF}
+html[data-ui-input="hover"] .export-dialog #exportRun:hover:not(:disabled){background:#DDE9FF}
 .bottom{background:#F8FAFF;border-top:1px solid #DAE3F3}
 .bottom button{color:#4B5F8C}
 .resize-grip{
@@ -214,7 +214,7 @@ input[type=checkbox]{accent-color:#748BEE}
 /* QA has its own permanent topbar entry: hiding the floating card never
    removes access to the checklist, and never steals drawing/Export clicks. */
 .topbar #qaEntry{color:#3E51A6;background:var(--aurora-selection);border:1px solid #C7D4FC;border-radius:10px;font-weight:730}
-.topbar #qaEntry:hover{background:#E0E9FF;border-color:#AABBF1}
+html[data-ui-input="hover"] .topbar #qaEntry:hover{background:#E0E9FF;border-color:#AABBF1}
 .topbar #qaEntry[aria-expanded=true]{box-shadow:inset 0 -2px #8396F2}
 .qa-review:not([open]),.qa-review:has(#qaPanel:not([open])){display:none!important}
 @media(max-width:760px){
@@ -225,7 +225,7 @@ input[type=checkbox]{accent-color:#748BEE}
 
 /* M07 visual repair: a single source of truth for ALL pointer states,
    not only default backgrounds. No legacy yellow hover / pressed overlay. */
-button:hover:not(:disabled){background-color:#EFF3FF;border-color:#C5D3F6}
+html[data-ui-input="hover"] button:hover:not(:disabled){background-color:#EFF3FF;border-color:#C5D3F6}
 button:active:not(:disabled){
  background:#E3EAFF;border-color:#A6B8F1;color:#30498C;
  box-shadow:inset 0 1px 2px #536CA51C;
@@ -257,7 +257,7 @@ button:disabled{color:var(--a-subtle);background-color:#F5F7FC}
 .feature-actions{min-height:0}
 .feature-actions h3{margin:8px 0;font-weight:700}
 .feature-actions button{border-color:#E3E9F4;background:#FFFFFF}
-.feature-actions button:hover:not(:disabled){background:var(--aurora-selection)}
+html[data-ui-input="hover"] .feature-actions button:hover:not(:disabled){background:var(--aurora-selection)}
 /* Initial QA must be discoverable but not plastered over the document
    commands immediately under the topbar. It docks near the Canvas right edge
    at the *bottom*, sized to the space left beside the Right Workspace. */
