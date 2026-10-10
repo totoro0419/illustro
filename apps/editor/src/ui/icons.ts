@@ -7,13 +7,13 @@
  * Geometry: 1.8 visual stroke, rounded joins/caps, 2+ units of breathing room.
  */
 const motifs={
-  brush:'<path d="M14.6 3.8 20.2 9.4 11 18.6l-5.6-5.6z"/><path d="m13.4 5 5.6 5.6"/><path d="M5.4 13c-1.8.9-2.4 2.8-2.1 4.1.3 1.1-.1 2.5-1.3 3.1 3.6.6 7.3-.9 7.3-4.4"/>',
+  brush:'<path d="M10.7 13.2 17.4 4.4a2 2 0 0 1 2.9 2.7l-7.8 8.2"/><path d="m14.5 8.4 2.6 2.3"/><path d="M10.7 13.2c-2.3-.9-4.6.7-4.6 3 0 1.5-.9 2.9-3.2 3.7 4.8.7 9.6-1.6 9.6-4.6z"/>',
   eraser:'<path d="m4.8 14.4 8.7-9.2a2 2 0 0 1 2.9 0l3.4 3.4a2 2 0 0 1 0 2.8l-8 8.2H8.1z"/><path d="m9.3 9.6 6.6 6.6M11.8 19.6h8.1"/>',
-  smudge:'<path d="M5 9.3c1.6-3 4.3-4.4 7-3.1 2.8 1.4 4.1 4.9 7.4 5.9"/><path d="M4.6 14.7c2.5-2.9 5.1-3.2 7.4-1.4 3.3 2.5 4.4 3.4 7.4 1.9"/><path d="M7 11.6c3-1.1 5.4-.6 8.4 1.4"/>',
-  eyedropper:'<circle cx="18" cy="5.6" r="2.6"/><path d="m16.2 7.4-2.2 2.2m-1.8-1.8 4 4m-3.5-3.5-8.7 8.7-.8 3.6 3.6-.8 8.7-8.7"/>',
-  smartFill:'<path d="m6.4 5.2 9.6 9.6-5.8 5.7a2 2 0 0 1-2.8 0L2.7 15.8a2 2 0 0 1 0-2.8l7.7-7.8"/><path d="M2.8 14.4H16"/><path d="M19.1 13.2c1.3 2.1 2.2 3.5 2.2 4.4a2.2 2.2 0 1 1-4.4 0c0-.9.9-2.3 2.2-4.4z"/><path d="M17.8 4.2v3.4m-1.7-1.7h3.4"/>',
-  selection:'<rect x="4.5" y="4.5" width="15" height="15" rx="1.4" stroke-dasharray="2.5 3.1"/><path d="m15 14 2.2 6.2 1.5-2.4 2.4-1.5z" fill="currentColor" stroke="none"/>',
-  transform:'<rect x="6" y="6" width="12" height="12" rx="1"/><rect x="3.5" y="3.5" width="4.5" height="4.5" rx=".6" fill="var(--a-surface,#fff)"/><rect x="16" y="3.5" width="4.5" height="4.5" rx=".6" fill="var(--a-surface,#fff)"/><rect x="3.5" y="16" width="4.5" height="4.5" rx=".6" fill="var(--a-surface,#fff)"/><rect x="16" y="16" width="4.5" height="4.5" rx=".6" fill="var(--a-surface,#fff)"/>',
+  smudge:'<path d="M8.6 4.6c3 0 5 2.3 5 5.2s-2 5.1-5 5.1-5-2.2-5-5.1 2-5.2 5-5.2z"/><path d="M15.4 9.4c2.9 0 5 2.3 5 5.2s-2.1 5.1-5 5.1-5-2.2-5-5.1"/><path d="M10.1 10.6c1.9 1.1 3.6 2.6 4.6 4.3"/>',
+  eyedropper:'<path d="M15.8 8.6a3.2 3.2 0 1 1 2.5 2.5l-9.4 9.4-4.8.9 1-4.8 9.4-9.4"/><path d="m12.1 9.6 3.4 3.3"/>',
+  smartFill:'<path d="m4 12.9 8.3-8.3 7.1 7.1-8 8a2 2 0 0 1-2.8 0L4 15.7a2 2 0 0 1 0-2.8z"/><path d="M4 13.9h15"/><path d="M19.7 16.3c1 1.3 1.7 2.3 1.7 3.1a1.7 1.7 0 0 1-3.4 0c0-.8.7-1.8 1.7-3.1z"/>',
+  selection:'<rect x="3.5" y="3.5" width="16" height="16" rx="1.4" stroke-dasharray="2.4 3.2"/><path d="M14 13.1 16.1 21l1.7-3.3 3.2-1.7z" fill="currentColor" stroke="none"/>',
+  transform:'<rect x="6.5" y="6.5" width="11" height="11" rx=".5"/><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4z" fill="none"/>',
   move:'<path d="M12 2.5v19M2.5 12h19"/><path d="m8.8 5.7 3.2-3.2 3.2 3.2M8.8 18.3l3.2 3.2 3.2-3.2M5.7 8.8 2.5 12l3.2 3.2m12.6-6.4 3.2 3.2-3.2 3.2"/>',
   all:'<rect x="3.5" y="3.5" width="7.2" height="7.2" rx="1.4"/><rect x="13.3" y="3.5" width="7.2" height="7.2" rx="1.4"/><rect x="3.5" y="13.3" width="7.2" height="7.2" rx="1.4"/><rect x="13.3" y="13.3" width="7.2" height="7.2" rx="1.4"/>',
   home:'<path d="M3.4 10.6 12 3.5l8.6 7.1"/><path d="M5.7 9.9v9.7a1 1 0 0 0 1 1h10.6a1 1 0 0 0 1-1V9.9"/><path d="M9.5 20.6v-7h5v7"/>',

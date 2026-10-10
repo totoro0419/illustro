@@ -182,7 +182,7 @@ export function installShellUi():ShellControl{
   byId('narrower').onclick=()=>applyWidth(width-24,true);
   byId('wider').onclick=()=>applyWidth(width+24,true);
   byId('resetWidth').onclick=()=>applyWidth(defaultWidth(),true);
-  byId('hideWorkspace').onclick=()=>close(true);
+  byId('hideWorkspace').onclick=event=>close(event.detail===0);
   window.addEventListener('resize',()=>applyWidth(width));
   compact.addEventListener('change',()=>{if(!compact.matches)rightDock.classList.remove('open');syncPresentation();});
   const featurePanel=byId<HTMLElement>('allFeaturesPanel'),featureButton=byId<HTMLButtonElement>('allFeatures');
