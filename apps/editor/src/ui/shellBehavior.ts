@@ -73,6 +73,16 @@ export function installShellUi():ShellControl{
   byId('layersPage').onclick=()=>setLayerPage(true);
   byId('colorPage').onclick=()=>openBox('colorBox');
   byId('brushPage').onclick=()=>openBox('brushBox');
+  // Box operation menus share the same light-dismiss behavior as floating
+  // palettes. Only one may be expanded; their Box body state is independent.
+  const closeBoxMenus=(except:HTMLElement|null=null,returnFocus=false)=>{
+    for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
+      if(menu.hidden||menu===except)continue;
+      const opener=menu.closest('.workspace-box')?.querySelector<HTMLButtonElement>('.box-more');
+      menu.hidden=true;opener?.setAttribute('aria-expanded','false');
+      if(returnFocus&&menu.contains(document.activeElement))opener?.focus({preventScroll:true});
+    }
+  };
   const persistBoxes=()=>safeWrite(BOX_KEY,JSON.stringify(expanded));
   const setBoxExpansion=(section:HTMLElement,open:boolean)=>{
     const id=section.dataset.boxId;if(!id)return;
@@ -95,7 +105,12 @@ export function installShellUi():ShellControl{
       if(event.target.closest('.box-title,.box-summary'))section.focus({preventScroll:true});
     });
     const more=section.querySelector<HTMLButtonElement>('.box-more')!,menu=section.querySelector<HTMLElement>('.box-more-menu')!;
-    more.onclick=()=>{menu.hidden=!menu.hidden;more.setAttribute('aria-expanded',String(!menu.hidden));};
+    more.onclick=()=>{
+      const opening=menu.hidden;
+      closeBoxMenus();
+      menu.hidden=!opening;
+      more.setAttribute('aria-expanded',String(opening));
+    };
     menu.querySelector<HTMLButtonElement>('[data-collapse-box]')!.onclick=()=>{setBoxExpansion(section,false);menu.hidden=true;more.setAttribute('aria-expanded','false');control.focus();};
     menu.querySelector<HTMLButtonElement>('[data-expand-box]')!.onclick=()=>{setBoxExpansion(section,true);menu.hidden=true;more.setAttribute('aria-expanded','false');control.focus();};
     setBoxExpansion(section,typeof expanded[id]==='boolean'?expanded[id]:defaultOpen);
@@ -150,17 +165,18 @@ export function installShellUi():ShellControl{
     const panelTop=Math.max(topLimit,Math.min(targetTop,innerHeight-margin-panelHeight));
     featurePanel.style.setProperty('--features-top',Math.round(panelTop)+'px');
   }
-  const showFeature=(open:boolean)=>{
+  const showFeature=(open:boolean,returnFocus=false)=>{
+    if(open)closeBoxMenus();
     featurePanel.hidden=!open;featureButton.setAttribute('aria-expanded',String(open));
     if(open){
       categories.hidden=false;actions.hidden=true;
       const qa=document.getElementById('qaSummary') as HTMLDetailsElement|null;
       if(qa?.open)qa.open=false; // no overlapping floating panels
       positionFeature();featurePanel.scrollTop=0;
-    }else if(featurePanel.contains(document.activeElement))featureButton.focus({preventScroll:true});
+    }else if(returnFocus&&featurePanel.contains(document.activeElement))featureButton.focus({preventScroll:true});
   };
   featureButton.onclick=()=>showFeature(featurePanel.hidden!==false);
-  byId('featuresClose').onclick=()=>showFeature(false);
+  byId('featuresClose').onclick=()=>showFeature(false,true);
   byId('featuresBack').onclick=()=>{categories.hidden=false;actions.hidden=true;};
   categories.querySelectorAll<HTMLButtonElement>('[data-category]').forEach(button=>{
     button.onclick=()=>{
@@ -178,26 +194,62 @@ export function installShellUi():ShellControl{
     };
   });
   document.querySelectorAll<HTMLButtonElement>('[data-action]').forEach(button=>button.onclick=()=>byId<HTMLButtonElement>(button.dataset.action||'')?.click());
-  document.addEventListener('pointerdown',event=>{const t=event.target;if(!featurePanel.hidden&&t instanceof Node&&!featurePanel.contains(t)&&!featureButton.contains(t))showFeature(false);});
-  document.addEventListener('keydown',event=>{
-    if(event.key!=='Escape'||event.defaultPrevented)return;
-    if(resizing){finish(true);event.preventDefault();return;}
-    if(!featurePanel.hidden){showFeature(false);event.preventDefault();return;}
-    if(layerOpen){setLayerPage(false);event.preventDefault();return;}
-    if(compact.matches&&rightDock.classList.contains('open')){close(true);event.preventDefault();}
-  },{capture:true});
-  // M07 QA is initially expanded; the persistent topbar entry remains reachable
-  // even when the floating checklist is closed by its header or regression tests.
+  // ONE light-dismiss coordinator for temporary surfaces. Keep persistent
+  // inline Workspace untouched; only the tablet-overlay / compact drawer close
+  // when the user returns to artwork. Pointerdown is intentionally not blocked:
+  // the same first pen/finger contact can begin a real Canvas stroke.
   const qaEntry=document.getElementById('qaEntry') as HTMLButtonElement|null;
   const qaCard=document.getElementById('qaSummary') as HTMLDetailsElement|null;
   const qaPanel=document.getElementById('qaPanel') as HTMLDetailsElement|null;
+  const syncQa=()=>{if(qaEntry&&qaCard&&qaPanel)qaEntry.setAttribute('aria-expanded',String(qaCard.open&&qaPanel.open));};
+  const closeQa=()=>{
+    if(!qaCard?.open)return;
+    qaCard.open=false;
+    syncQa();
+  };
   if(qaEntry&&qaCard&&qaPanel){
-    const syncQa=()=>qaEntry.setAttribute('aria-expanded',String(qaCard.open&&qaPanel.open));
-    qaEntry.onclick=()=>{const next=!(qaCard.open&&qaPanel.open);qaCard.open=next;if(next)qaPanel.open=true;syncQa();};
+    qaEntry.onclick=()=>{
+      const next=!(qaCard.open&&qaPanel.open);
+      if(next){closeBoxMenus();showFeature(false);qaCard.open=true;qaPanel.open=true;}
+      else qaCard.open=false;
+      syncQa();
+    };
     qaCard.addEventListener('toggle',syncQa);
     qaPanel.addEventListener('toggle',syncQa);
     syncQa();
   }
+  const floatingDockOpen=()=>compact.matches
+    ?rightDock.classList.contains('open')
+    :document.body.classList.contains('right-overlay')&&!document.body.classList.contains('right-collapsed');
+  document.addEventListener('pointerdown',event=>{
+    if(document.querySelector('dialog:modal'))return; // native modal owns dismissal
+    const t=event.target;
+    if(!(t instanceof Node))return;
+    if(!featurePanel.hidden&&!featurePanel.contains(t)&&!featureButton.contains(t))showFeature(false);
+    if(qaCard?.open&&!qaCard.contains(t)&&!qaEntry?.contains(t))closeQa();
+    // Box operation menus close when another element is touched, including
+    // a different Box, the drawing surface, or the neighboring More button.
+    for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
+      if(menu.hidden)continue;
+      const opener=menu.closest('.workspace-box')?.querySelector<HTMLButtonElement>('.box-more');
+      if(!menu.contains(t)&&!opener?.contains(t)){menu.hidden=true;opener?.setAttribute('aria-expanded','false');}
+    }
+    if(floatingDockOpen()&&!rightDock.contains(t)&&!toggle.contains(t)&&!drawer.contains(t)){
+      close(false);
+    }
+  },{capture:true});
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape'||event.defaultPrevented||document.querySelector('dialog:modal'))return;
+    if(resizing){finish(true);event.preventDefault();return;}
+    // Escape dismisses only the most immediate surface, then its parent.
+    const openMenu=[...document.querySelectorAll<HTMLElement>('.box-more-menu')].find(menu=>!menu.hidden);
+    if(openMenu){closeBoxMenus(null,true);event.preventDefault();return;}
+    if(!featurePanel.hidden){showFeature(false,true);event.preventDefault();return;}
+    if(qaCard?.open){closeQa();qaEntry?.focus({preventScroll:true});event.preventDefault();return;}
+    if(floatingDockOpen()){close(true);event.preventDefault();return;}
+    if(layerOpen){setLayerPage(false);event.preventDefault();}
+  },{capture:true});
+
   applyWidth(width);syncPresentation();
   return {workspace,drawer,openBox,close,setLayerPage,layerPageOpen:()=>layerOpen,refreshWidth:()=>applyWidth(width)};
 }
