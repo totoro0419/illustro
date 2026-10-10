@@ -549,6 +549,9 @@ try{
        // A touchscreen must never transfer focus to Workspace Toggle when
        // closing via an inner action. Keyboard activation DOES restore it.
        if(touch&&name==='tablet-1280'){
+         // Another palette may have dismissed the floating tablet dock;
+         // explicitly restore it before testing controls inside it.
+         if(!(await page.locator('#workspace').isVisible()))await page.locator('#workspaceToggle').click();
          // The Workspace-settings Box is collapsed by default. Reveal the
          // action before attempting to tap it; do not mask a hidden target.
          const settingsToggle=page.locator('[data-box-id="right.workspace"] .box-toggle');
