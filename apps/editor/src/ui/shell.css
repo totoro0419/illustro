@@ -51,7 +51,7 @@ button,summary,[role=button],
 .topbar,.rail,.commands,.bottom,.box-heading,.box-title,.box-summary,
 .box-more-menu,.features-panel,.feature-category,.document-actions,
 .layer-page-head,.layer-page-meta,.layer-page-actions,.box-actions,
-.box-body label,.box-body .unavailable,.width-control,.resize-grip{
+.box-body label,.box-body .unavailable,.width-control,.resize-grip,canvas{
  -webkit-user-select:none;
  user-select:none;
  -webkit-touch-callout:none;
