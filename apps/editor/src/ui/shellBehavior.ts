@@ -139,11 +139,8 @@ export function installShellUi():ShellControl{
     // Only the separate chevron button owns expand/collapse.
     // Heading text and summary are not inside a button, and never trigger it.
     control.onclick=()=>setBoxExpansion(section,control.getAttribute('aria-expanded')!=='true');
-    const heading=section.querySelector<HTMLElement>('.box-heading')!;
-    heading.addEventListener('click',event=>{
-      if(!(event.target instanceof Element))return;
-      if(event.target.closest('.box-title,.box-summary'))section.focus({preventScroll:true});
-    });
+    // Titles and summaries are static labels. They must neither collapse the
+    // Box nor move keyboard focus when tapped, especially on Android.
     const more=section.querySelector<HTMLButtonElement>('.box-more')!,menu=section.querySelector<HTMLElement>('.box-more-menu')!;
     more.onclick=event=>{
       const opening=menu.hidden;
