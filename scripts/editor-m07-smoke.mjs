@@ -85,6 +85,42 @@ async function boxScrollCost(page){
   });
 }
 
+async function verifyAuroraIconReview(page){
+  const result=await page.evaluate(()=>{
+    const qa=document.querySelector('#qaSummary'),panel=document.querySelector('#qaPanel');
+    const svg=(selector)=>[...document.querySelectorAll(selector)].every(el=>!!el.querySelector('svg.ui-icon'));
+    const root=getComputedStyle(document.documentElement);
+    const selected=getComputedStyle(document.querySelector('#paint'));
+    return {
+      qaInitiallyOpen:qa?.open===true,
+      checklistInitiallyOpen:panel?.open===true,
+      checklistCount:panel?.querySelectorAll('ol>li').length,
+      qaHeading:qa?.querySelector('summary')?.textContent?.trim(),
+      toolVectors:svg('.rail .tool-button'),
+      bottomVectors:svg('.commands button'),
+      topVectors:svg('.topbar #home, .topbar #save, .topbar #workspaceToggle'),
+      allFeatureVector:!!document.querySelector('#allFeatures svg.ui-icon'),
+      boxHeaderVectors:document.querySelectorAll('.box-glyph svg.ui-icon').length,
+      categoryVectors:document.querySelectorAll('.feature-category svg.ui-icon').length,
+      auroraBlue:root.getPropertyValue('--aurora-blue').trim().toLowerCase(),
+      auroraViolet:root.getPropertyValue('--aurora-violet').trim().toLowerCase(),
+      selectedGradient:selected.backgroundImage,
+      qaVisible:!!qa&&qa.getBoundingClientRect().height>120,
+    };
+  });
+  assert.ok(result.qaInitiallyOpen&&result.checklistInitiallyOpen,'QA checklist must be expanded immediately');
+  assert.equal(result.checklistCount,12,'All 12 QA items must be visible by scrolling');
+  assert.match(result.qaHeading,/実機確認.*12項目/);
+  assert.ok(result.qaVisible,'QA card must be prominent on first visit');
+  assert.ok(result.toolVectors&&result.bottomVectors&&result.topVectors&&result.allFeatureVector,'Every primary icon is an SVG motif');
+  assert.equal(result.boxHeaderVectors,12);assert.equal(result.categoryVectors,12);
+  assert.equal(result.auroraBlue,'#5ea8ff');assert.equal(result.auroraViolet,'#8b7cff');
+  assert.match(result.selectedGradient,/gradient/i,'Active tool must carry restrained Aurora light');
+  await page.locator('#qaSummary>summary').click();
+  assert.equal(await page.locator('#qaSummary').getAttribute('open'),null,'QA can be folded before drawing');
+  return result;
+}
+
 async function checkPage(page,profile){
   const structure=await page.evaluate(()=>{
     const boxes=[...document.querySelectorAll('[data-box-id]')].map(x=>x.getAttribute('data-box-id'));
@@ -121,6 +157,7 @@ try{
     const page=await context.newPage(),errors=[];
     page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     await page.goto(base+(publicBase?'?backend='+backend+'&build='+expectedCommit:'?qa=1&backend='+backend),{waitUntil:'networkidle',timeout:45000});
+    const visual=await verifyAuroraIconReview(page);
     const structure=await checkPage(page,'pointer');
     await startFrameCapture(page);
     await page.locator('#new').click();
@@ -169,7 +206,7 @@ try{
     assert.ok(perf.frameSamples>20,'Frame pacing capture had too few samples');
     assert.ok(scrolling.scrollRangePx>0,'Right Box stack must scroll independently');
     await page.screenshot({path:path.join(evidence,backend+'-1440.png')});
-    report.cases.push({backend,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
+    report.cases.push({backend,auroraIconReview:visual,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
     await context.close();
   }
   for(const [name,width,height,touch] of [
@@ -180,6 +217,7 @@ try{
     const context=await browser.newContext({viewport:{width,height},hasTouch:touch,isMobile:false,acceptDownloads:true});
     const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     await page.goto(base+(publicBase?'?backend=webgl2&build='+expectedCommit:'?qa=1&backend=webgl2'),{waitUntil:'networkidle',timeout:45000});
+    await verifyAuroraIconReview(page);
     const compact=width<=760;
     console.log('M07 viewport',name,width,height,touch);
     if(!compact)await checkPage(page,touch?'tablet':'pointer');
