@@ -423,6 +423,16 @@ async function verifyNativeTouchSelectionPolicy(page){
   return {controlSurfaces:styles.controls.length,editingPreserved:true};
 }
 
+// Every Left-rail tool name must be legible rather than rendered as '...'.
+async function verifyRailCaptionClipping(page){
+  const captions=await page.locator('.rail .tool-button .tool-caption').evaluateAll(elements=>
+    elements.map(el=>({name:el.textContent,actual:el.clientWidth,required:el.scrollWidth}))
+  );
+  assert.equal(captions.length,8,'All 8 primary tool captions are present');
+  for(const caption of captions)assert.ok(caption.required<=caption.actual+1,
+    'Left toolbar caption is clipped: '+JSON.stringify(caption));
+}
+
 async function checkPage(page,profile){
   const structure=await page.evaluate(()=>{
     const boxes=[...document.querySelectorAll('[data-box-id]')].map(x=>x.getAttribute('data-box-id'));
@@ -463,6 +473,7 @@ try{
     const popup=await verifyPopupPositionAndAurora(page);
     const transient=await verifyTransientOverlays(page);
     const selectionPolicy=await verifyNativeTouchSelectionPolicy(page);
+    await verifyRailCaptionClipping(page);
     const structure=await checkPage(page,'pointer');
     await verifyRightBoxHeaderTargets(page,{all:true});
     await verifyNaturalMenuAndKeyboard(page);
@@ -567,6 +578,7 @@ try{
           'Small phone first and last tools must be visible together: '+JSON.stringify(rail));
       }
     }
+    await verifyRailCaptionClipping(page);
     console.log('M07 viewport',name,width,height,touch);
     if(!compact){
       await checkPage(page,touch?'tablet':'pointer');

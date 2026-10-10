@@ -49,7 +49,7 @@ html[data-ui-input="hover"] .rail .tool-button:hover:not(:disabled),html[data-ui
 .rail .tool-button[aria-pressed=true] .tool-caption{color:#364CA9;font-weight:720}
 .rail .tool-caption{color:#66758D}
 .rail .all{border-top:1px solid var(--a-border)!important;color:#536BA5}
-.rail .tool-button:disabled{opacity:.48}
+.rail .tool-button:disabled{opacity:.78}
 main#canvasArea{background:
  radial-gradient(ellipse at 28% 19%,#D8EBFC75,transparent 43%),
  radial-gradient(ellipse at 76% 80%,#E3D9FC55,transparent 40%),
