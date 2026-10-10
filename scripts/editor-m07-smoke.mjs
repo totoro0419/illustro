@@ -549,6 +549,11 @@ try{
        // A touchscreen must never transfer focus to Workspace Toggle when
        // closing via an inner action. Keyboard activation DOES restore it.
        if(touch&&name==='tablet-1280'){
+         // The Workspace-settings Box is collapsed by default. Reveal the
+         // action before attempting to tap it; do not mask a hidden target.
+         const settingsToggle=page.locator('[data-box-id="right.workspace"] .box-toggle');
+         await settingsToggle.scrollIntoViewIfNeeded();
+         if(await settingsToggle.getAttribute('aria-expanded')==='false')await settingsToggle.click();
          const hide=page.locator('#hideWorkspace');
          await hide.scrollIntoViewIfNeeded();
          const hit=await hide.boundingBox();assert.ok(hit,'Workspace close action reachable');
