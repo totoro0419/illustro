@@ -260,6 +260,55 @@ async function verifyRightBoxHeaderTargets(page,{all=false}={}){
   assert.equal(await first.getAttribute('aria-expanded'),initial);
 }
 
+async function verifyNaturalMenuAndKeyboard(page){
+  const first=page.locator('.workspace-box').first();
+  const second=page.locator('.workspace-box').nth(1);
+  if(!(await first.locator('.box-more').isVisible()))return;
+  const menu=first.locator('.box-more-menu');
+  const before=await second.boundingBox();assert.ok(before,'Second Box visible');
+  const stackBefore=await page.locator('#boxStack').evaluate(el=>el.scrollHeight);
+  await first.locator('.box-more').click();
+  const after=await second.boundingBox();assert.ok(after);
+  const stackAfter=await page.locator('#boxStack').evaluate(el=>el.scrollHeight);
+  assert.ok(Math.abs(before.y-after.y)<1,'Opening More must not shift adjacent Boxes');
+  assert.equal(stackBefore,stackAfter,'Opening floating menu must not change stack scroll length');
+  assert.equal(await menu.evaluate(el=>getComputedStyle(el).position),'absolute','More is an overlay, not a layout row');
+  const bounds=await menu.boundingBox(),stack=await page.locator('#boxStack').boundingBox();
+  assert.ok(bounds&&stack&&bounds.left>=stack.left&&bounds.right<=stack.right,
+    'More menu stays within Workspace horizontal bounds');
+  await first.locator('.box-more').click();
+
+  const more=first.locator('.box-more');
+  await more.focus();await page.keyboard.press('Enter');
+  assert.equal(await menu.isVisible(),true,'Keyboard can open More');
+  assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-collapse-box')),true,
+    'Keyboard open focuses the first action');
+  await page.keyboard.press('Escape');
+  assert.equal(await menu.isVisible(),false,'Escape closes More');
+  assert.equal(await more.evaluate(el=>document.activeElement===el),true,
+    'Escape restores keyboard focus to opener');
+
+  const all=page.locator('#allFeatures');
+  await all.focus();await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#allFeaturesPanel').isVisible(),true);
+  assert.equal(await page.evaluate(()=>document.activeElement?.classList.contains('feature-category')),true,
+    'Keyboard open must focus first available category');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#featuresActions').isVisible(),true,
+    'Category activates using keyboard');
+  assert.ok(await page.locator('#featuresItems button').count()>0,'First category exposes actions');
+  assert.equal(await page.evaluate(()=>document.activeElement?.closest('#featuresItems')!==null),true,
+    'Keyboard category moves focus to first action');
+  await page.locator('#featuresBack').focus();await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#featuresCategories').isVisible(),true,'Back returns to categories');
+  assert.equal(await page.evaluate(()=>document.activeElement?.classList.contains('feature-category')),true,
+    'Back restores keyboard focus to previous category');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#allFeaturesPanel').isVisible(),false);
+  assert.equal(await all.evaluate(el=>document.activeElement===el),true,
+    'Escape returns focus to palette launcher');
+}
+
 // Light-dismiss regression: a single natural outside gesture closes any
 // temporary UI without swallowing the user's drawing or toolbar input.
 async function verifyTransientOverlays(page){
@@ -349,6 +398,7 @@ try{
     const transient=await verifyTransientOverlays(page);
     const structure=await checkPage(page,'pointer');
     await verifyRightBoxHeaderTargets(page,{all:true});
+    await verifyNaturalMenuAndKeyboard(page);
     await startFrameCapture(page);
     await page.locator('#new').click();
     await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
@@ -399,7 +449,7 @@ try{
   for(const [name,width,height,touch] of [
     ['desktop-1920',1920,1080,false],['desktop-1366',1366,768,false],
     ['tablet-1280',1280,800,true],['tablet-1024',1024,768,true],['tablet-portrait',800,1100,true],
-    ['compact',390,844,true]
+    ['compact',390,844,true],['compact-small',360,640,true]
   ]){
     const context=await browser.newContext({viewport:{width,height},hasTouch:touch,isMobile:false,acceptDownloads:true});
     const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
@@ -416,6 +466,7 @@ try{
       // Reopen it before checking its 40px Box hit areas.
       if(!(await page.locator('#workspace').isVisible()))await page.locator('#workspaceToggle').click();
       await verifyRightBoxHeaderTargets(page);
+      if(name==='desktop-1366'||name==='tablet-1280')await verifyNaturalMenuAndKeyboard(page);
     }
     await page.locator('#new').click();await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
     await draw(page);await waitCount(page,1);
