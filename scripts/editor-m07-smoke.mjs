@@ -145,6 +145,9 @@ async function verifyTouchAndMouseFeedback(page){
   assert.equal(await page.locator('#allFeaturesPanel').isVisible(),true,'Touch opens feature overlay');
   await page.touchscreen.tap(cx,cy);
   assert.equal(await page.locator('#allFeaturesPanel').isVisible(),false,'Second touch closes feature overlay');
+  // CSS transitions can briefly report partially transparent RGB values.
+  // Assess the settled touch state, not an animation's intermediate color.
+  await page.waitForTimeout(200);
   const after=await page.evaluate(()=>{
     const element=document.querySelector('#allFeatures');
     return {input:document.documentElement.dataset.uiInput,
@@ -154,7 +157,8 @@ async function verifyTouchAndMouseFeedback(page){
       open:element.getAttribute('aria-expanded')};
   });
   assert.equal(after.input,'touch','Actual touch pointer input switches off hover CSS');
-  assert.equal(after.color,initial,'Tap must not leave a sticky hover-color halo');
+  assert.equal(after.color,'rgba(0, 0, 0, 0)',
+    'After tap and animation settles, button must have fully transparent unhovered background');
   assert.equal(after.stuckFocus,false,'Tapped button must not retain keyboard-like focus');
   assert.equal(after.open,'false','Transient overlay open state returns to false');
 
