@@ -366,7 +366,13 @@ try{
     if(width>760)await verifyTransientOverlays(page);
     const compact=width<=760;
     console.log('M07 viewport',name,width,height,touch);
-    if(!compact){await checkPage(page,touch?'tablet':'pointer');await verifyRightBoxHeaderTargets(page);}
+    if(!compact){
+      await checkPage(page,touch?'tablet':'pointer');
+      // Light-dismiss testing may close the transient tablet Workspace.
+      // Reopen it before checking its 40px Box hit areas.
+      if(!(await page.locator('#workspace').isVisible()))await page.locator('#workspaceToggle').click();
+      await verifyRightBoxHeaderTargets(page);
+    }
     await page.locator('#new').click();await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,{timeout:45000});
     await draw(page);await waitCount(page,1);
     if(touch&&!compact&&name==='tablet-1280'){
