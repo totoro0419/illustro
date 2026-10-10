@@ -173,11 +173,7 @@ body.right-collapsed .qa-review{right:18px}
 .qa-review .qa-panel #qaCopy{background:var(--aurora-selection);border-color:#BBCBF5}
 .qa-review .qa-auto{background:#F6F9FE}
 @media(max-width:760px){
-  .qa-review{
-    max-height:min(68dvh,560px);
-    width:min(344px,calc(100vw - var(--rail) - 11px));
-    border-radius:11px
-  }
+  .qa-review{border-radius:11px}
   .qa-review>summary{padding:9px 10px;font-size:12px}
   .qa-summary-hint{font-size:9px}
   .tool-glyph .ui-icon{width:19px;height:19px}
