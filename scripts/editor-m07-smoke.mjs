@@ -230,9 +230,13 @@ async function verifyRightBoxHeaderTargets(page,{all=false}={}){
     assert.ok(labelBox&&hit.x+hit.width<=labelBox.x+1,
       'Chevron hit rectangle must not span the title');
     await title.click();
+    assert.equal(await row.evaluate(el=>document.activeElement===el),false,
+      'Tapping a static Box title must not place focus on its container');
     assert.equal(await arrow.getAttribute('aria-expanded'),before,
       'Clicking title must NOT fold Right Box');
     await summary.click();
+    assert.equal(await row.evaluate(el=>document.activeElement===el),false,
+      'Tapping a static Box summary must not place focus on its container');
     assert.equal(await arrow.getAttribute('aria-expanded'),before,
       'Clicking contextual summary must NOT fold Right Box');
     await more.click();
@@ -493,9 +497,13 @@ try{
     const resized=await page.evaluate(()=>Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--workspace')));
     assert.ok(resized>344,'Workspace width did not increase');await draw(page);await waitCount(page,5);
     await verifyPopupPositionAndAurora(page);
-    await page.locator('#undo').click();
+    // The text spans are separate DOM hit targets from their parent buttons.
+    // They must work without weakening the real ghost-click guard.
+    await page.locator('#undo span').click();
     await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='4',{timeout:20000});
-    await page.locator('#redo').click();await waitCount(page,5);
+    await page.locator('#redo span').click();await waitCount(page,5);
+    assert.equal((await qa(page)).blockedHistoryGhostClicks,0,
+      'Valid presses on Undo/Redo labels must not be classified as ghost clicks');
     await penStroke(page);await waitCount(page,6);
     assert.equal((await qa(page)).lastInputType,'pen','Browser stylus-equivalent input must reach Canvas');
     assert.ok((await qa(page)).presentationFrames>=initFrames);
