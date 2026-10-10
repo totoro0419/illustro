@@ -101,7 +101,7 @@ async function verifyAuroraIconReview(page){
       topVectors:svg('.topbar #home, .topbar #save, .topbar #workspaceToggle'),
       allFeatureVector:!!document.querySelector('#allFeatures svg.ui-icon'),
       boxHeaderVectors:document.querySelectorAll('.box-glyph svg.ui-icon').length,
-      categoryVectors:document.querySelectorAll('.feature-category svg.ui-icon').length,
+      categoryVectors:document.querySelectorAll('.feature-category > svg.ui-icon').length,
       auroraBlue:root.getPropertyValue('--aurora-blue').trim().toLowerCase(),
       auroraViolet:root.getPropertyValue('--aurora-violet').trim().toLowerCase(),
       selectedGradient:selected.backgroundImage,
