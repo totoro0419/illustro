@@ -553,6 +553,19 @@ try{
         assert.ok(item.height>=40&&item.height<=68,'Compact shortcut cannot occupy a multi-line tall box '+item.id);
         assert.ok(item.width<=item.railWidth,'Compact shortcut exceeds rail '+item.id);
       }
+      if(height<=640){
+        const rail=await page.evaluate(()=>{
+          const el=document.querySelector('.rail'),first=document.getElementById('paint'),
+                last=document.getElementById('allFeatures');
+          const r=el.getBoundingClientRect(),a=first.getBoundingClientRect(),b=last.getBoundingClientRect();
+          return {scrollHeight:el.scrollHeight,clientHeight:el.clientHeight,scrollTop:el.scrollTop,
+            firstTop:a.top,firstBottom:a.bottom,lastBottom:b.bottom,railTop:r.top,railBottom:r.bottom};
+        });
+        assert.ok(rail.scrollHeight<=rail.clientHeight+2,
+          'Small phone toolbar must fit its available height without clipping: '+JSON.stringify(rail));
+        assert.ok(rail.firstTop>=rail.railTop-1&&rail.lastBottom<=rail.railBottom+1,
+          'Small phone first and last tools must be visible together: '+JSON.stringify(rail));
+      }
     }
     console.log('M07 viewport',name,width,height,touch);
     if(!compact){
