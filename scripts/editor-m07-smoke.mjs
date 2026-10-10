@@ -217,6 +217,54 @@ async function verifyRightBoxHeaderTargets(page,{all=false}={}){
   assert.equal(await first.getAttribute('aria-expanded'),initial);
 }
 
+// Light-dismiss regression: a single natural outside gesture closes any
+// temporary UI without swallowing the user's drawing or toolbar input.
+async function verifyTransientOverlays(page){
+  const feature=page.locator('#allFeaturesPanel');
+  const qaCard=page.locator('#qaSummary');
+  await page.locator('#qaEntry').click();
+  assert.equal(await qaCard.getAttribute('open'),'','QA review opens on demand');
+  await page.locator('#status').click();
+  assert.equal(await qaCard.getAttribute('open'),null,'Outside click naturally hides QA');
+  assert.equal(await page.locator('#qaEntry').getAttribute('aria-expanded'),'false');
+  await page.locator('#qaEntry').click();
+  await page.keyboard.press('Escape');
+  assert.equal(await qaCard.getAttribute('open'),null,'Escape dismisses QA review');
+
+  await page.locator('#allFeatures').click();
+  assert.equal(await feature.isVisible(),true);
+  await page.locator('[data-category="history-automation"]').click();
+  assert.equal(await page.locator('#featuresActions').isVisible(),true);
+  await page.locator('#status').click();
+  assert.equal(await feature.isVisible(),false,'Click outside closes feature palette');
+  assert.equal(await page.locator('#allFeatures').getAttribute('aria-expanded'),'false');
+  await page.locator('#allFeatures').click();
+  assert.equal(await page.locator('#featuresCategories').isVisible(),true,'Reopen shows root categories');
+  await page.keyboard.press('Escape');
+  assert.equal(await feature.isVisible(),false,'Escape dismisses feature palette');
+  assert.equal(await page.locator('#allFeatures').getAttribute('aria-expanded'),'false');
+  await page.locator('#allFeatures').click();
+  await page.locator('#allFeatures').click();
+  assert.equal(await feature.isVisible(),false,'Clicking launcher again closes palette');
+
+  const rightVisible=await page.locator('#workspace').isVisible();
+  if(rightVisible){
+    const box1=page.locator('.workspace-box').first(),box2=page.locator('.workspace-box').nth(1);
+    await box1.locator('.box-more').click();
+    assert.equal(await box1.locator('.box-more-menu').isVisible(),true);
+    await box2.locator('.box-more').click();
+    assert.equal(await box1.locator('.box-more-menu').isVisible(),false,'Next menu closes previous');
+    assert.equal(await box2.locator('.box-more-menu').isVisible(),true);
+    await page.keyboard.press('Escape');
+    assert.equal(await box2.locator('.box-more-menu').isVisible(),false,'Escape closes box menu');
+    assert.equal(await box2.locator('.box-more').getAttribute('aria-expanded'),'false');
+    await box1.locator('.box-more').click();
+    await page.locator('#status').click();
+    assert.equal(await box1.locator('.box-more-menu').isVisible(),false,'Outside click closes box menu');
+  }
+  return {features:true,qa:true,boxMore:rightVisible};
+}
+
 async function checkPage(page,profile){
   const structure=await page.evaluate(()=>{
     const boxes=[...document.querySelectorAll('[data-box-id]')].map(x=>x.getAttribute('data-box-id'));
@@ -255,6 +303,7 @@ try{
     await page.goto(base+(publicBase?'?backend='+backend+'&build='+expectedCommit:'?qa=1&backend='+backend),{waitUntil:'networkidle',timeout:45000});
     const visual=await verifyAuroraIconReview(page);
     const popup=await verifyPopupPositionAndAurora(page);
+    const transient=await verifyTransientOverlays(page);
     const structure=await checkPage(page,'pointer');
     await verifyRightBoxHeaderTargets(page,{all:true});
     await startFrameCapture(page);
@@ -301,7 +350,7 @@ try{
     assert.ok(perf.frameSamples>20,'Frame pacing capture had too few samples');
     assert.ok(scrolling.scrollRangePx>0,'Right Box stack must scroll independently');
     await page.screenshot({path:path.join(evidence,backend+'-1440.png')});
-    report.cases.push({backend,auroraIconReview:visual,popup,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
+    report.cases.push({backend,auroraIconReview:visual,popup,transient,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
     await context.close();
   }
   for(const [name,width,height,touch] of [
@@ -314,6 +363,7 @@ try{
     await page.goto(base+(publicBase?'?backend=webgl2&build='+expectedCommit:'?qa=1&backend=webgl2'),{waitUntil:'networkidle',timeout:45000});
     await verifyAuroraIconReview(page);
     await verifyPopupPositionAndAurora(page);
+    if(width>760)await verifyTransientOverlays(page);
     const compact=width<=760;
     console.log('M07 viewport',name,width,height,touch);
     if(!compact){await checkPage(page,touch?'tablet':'pointer');await verifyRightBoxHeaderTargets(page);}
@@ -326,7 +376,24 @@ try{
     }
     const canvas=await page.locator('#canvas').boundingBox();assert.ok(canvas&&canvas.width>100);
     if(!compact){
+      const isOverlay=await page.evaluate(()=>document.body.classList.contains('right-overlay'));
+      if(isOverlay){
+        // Temporary Right Workspace: outside gesture hides it; reopened
+        // Layer Page also dismisses without losing the drawing gesture.
+        await page.locator('#status').click();
+        assert.equal((await qa(page)).workspaceOpen,false,'Tablet overlay closes outside');
+        await page.locator('#workspaceToggle').click();
+        assert.equal((await qa(page)).workspaceOpen,true,'Tablet overlay can reopen');
+        await page.keyboard.press('Escape');
+        assert.equal((await qa(page)).workspaceOpen,false,'Escape closes tablet overlay');
+        await page.locator('#workspaceToggle').click();
+        assert.equal((await qa(page)).workspaceOpen,true);
+      }
       await page.locator('#layer').click();await draw(page);await waitCount(page,name==='tablet-1280'?3:2);
+      if(isOverlay){
+        assert.equal((await qa(page)).workspaceOpen,false,'Painting light-dismisses overlay without swallowing stroke');
+        await page.locator('#workspaceToggle').click();
+      }
       const x=await page.evaluate(()=>({bodyOverflow:document.documentElement.scrollWidth>innerWidth+1,overlay:document.body.classList.contains('right-overlay')}));
       assert.equal(x.bodyOverflow,false);
       await page.screenshot({path:path.join(evidence,name+'.png')});
@@ -334,7 +401,19 @@ try{
       assert.equal((await qa(page)).workspaceOpen,false);
       await page.locator('#drawer').click();
       await verifyRightBoxHeaderTargets(page);
-      await page.locator('#drawer').click();await draw(page);await waitCount(page,2);
+      await page.locator('#status').click();
+      assert.equal((await qa(page)).workspaceOpen,false,'Compact drawer closes on outside tap');
+      await page.locator('#drawer').click();
+      await page.keyboard.press('Escape');
+      assert.equal((await qa(page)).workspaceOpen,false,'Escape closes compact drawer');
+      await page.locator('#drawer').click();
+      const box=await page.locator('#canvas').boundingBox();assert.ok(box);
+      // Top edge of the artwork is exposed above the 55dvh drawer.
+      const sx=box.x+box.width*.5,sy=box.y+box.height*.08;
+      await page.mouse.move(sx,sy);await page.mouse.down();
+      await page.mouse.move(sx+Math.min(55,box.width*.2),sy+Math.min(15,box.height*.05),{steps:8});
+      await page.mouse.up();await waitCount(page,2);
+      assert.equal((await qa(page)).workspaceOpen,false,'First painting contact dismisses drawer and reaches Canvas');
       await page.screenshot({path:path.join(evidence,name+'.png')});
     }
     assert.deepEqual(errors,[]);
