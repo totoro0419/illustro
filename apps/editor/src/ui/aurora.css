@@ -280,5 +280,7 @@ body.right-collapsed .qa-review{right:18px}
  }
 }
 @media(max-height:640px){
- .qa-review{max-height:calc(100dvh - var(--top) - var(--bottom) - 30px)}
+ /* A short screen must reserve the document toolbar ABOVE the floating QA.
+    Previous formula could expand QA across New/Open/Export on small phones. */
+ .qa-review{max-height:min(61dvh,calc(100dvh - var(--top) - var(--bottom) - 110px))}
 }
