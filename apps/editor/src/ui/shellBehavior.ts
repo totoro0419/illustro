@@ -42,6 +42,7 @@ export function installShellUi():ShellControl{
     byId<HTMLOutputElement>('widthValue').textContent=width+'px';
     const splitter=byId('splitter');splitter.setAttribute('aria-valuemin',String(minimum()));splitter.setAttribute('aria-valuenow',String(width));
     syncPresentation();if(persist)safeWrite(WIDTH_KEY,String(width));
+    if(!byId<HTMLElement>('allFeaturesPanel').hidden)positionFeature();
   };
   const setLayerPage=(open:boolean)=>{
     layerOpen=open;if(open){document.body.classList.remove('right-collapsed');if(compact.matches)rightDock.classList.add('open');}
@@ -117,10 +118,37 @@ export function installShellUi():ShellControl{
   compact.addEventListener('change',()=>{if(!compact.matches)rightDock.classList.remove('open');syncPresentation();});
   const featurePanel=byId<HTMLElement>('allFeaturesPanel'),featureButton=byId<HTMLButtonElement>('allFeatures');
   const categories=byId<HTMLElement>('featuresCategories'),actions=byId<HTMLElement>('featuresActions'),items=byId<HTMLElement>('featuresItems');
+  // Keep the palette beside its launcher and inside the usable viewport.
+  // Its height is capped and the category list scrolls rather than covering
+  // the entire artwork or opening up at an unrelated screen position.
+  function positionFeature(){
+    if(featurePanel.hidden)return;
+    const trigger=featureButton.getBoundingClientRect();
+    const styles=getComputedStyle(document.documentElement);
+    const railEdge=Number.parseFloat(styles.getPropertyValue('--rail'))||68;
+    const topInset=Number.parseFloat(styles.getPropertyValue('--top'))||56;
+    const margin=8,left=railEdge+margin,topLimit=topInset+margin;
+    const dockEdge=compact.matches||document.body.classList.contains('right-collapsed')
+      ?innerWidth:rightDock.getBoundingClientRect().left;
+    const available=Math.max(170,Math.min(innerWidth,dockEdge)-left-2*margin);
+    const panelWidth=Math.min(348,available);
+    const limitHeight=Math.max(150,Math.min(548,innerHeight-topLimit-2*margin));
+    featurePanel.style.setProperty('--features-left',left+'px');
+    featurePanel.style.setProperty('--features-width',panelWidth+'px');
+    featurePanel.style.setProperty('--features-max-height',limitHeight+'px');
+    const panelHeight=featurePanel.getBoundingClientRect().height;
+    const targetTop=trigger.bottom-panelHeight;
+    const panelTop=Math.max(topLimit,Math.min(targetTop,innerHeight-margin-panelHeight));
+    featurePanel.style.setProperty('--features-top',Math.round(panelTop)+'px');
+  }
   const showFeature=(open:boolean)=>{
     featurePanel.hidden=!open;featureButton.setAttribute('aria-expanded',String(open));
-    if(open){categories.hidden=false;actions.hidden=true;}
-    else if(featurePanel.contains(document.activeElement))featureButton.focus({preventScroll:true});
+    if(open){
+      categories.hidden=false;actions.hidden=true;
+      const qa=document.getElementById('qaSummary') as HTMLDetailsElement|null;
+      if(qa?.open)qa.open=false; // no overlapping floating panels
+      positionFeature();featurePanel.scrollTop=0;
+    }else if(featurePanel.contains(document.activeElement))featureButton.focus({preventScroll:true});
   };
   featureButton.onclick=()=>showFeature(featurePanel.hidden!==false);
   byId('featuresClose').onclick=()=>showFeature(false);
@@ -137,7 +165,7 @@ export function installShellUi():ShellControl{
       if(!(actionLabels[id]?.length)){
         const info=document.createElement('p');info.className='unavailable';info.textContent='このカテゴリの機能は後のマイルストーンで利用できます。';items.append(info);
       }
-      categories.hidden=true;actions.hidden=false;
+      categories.hidden=true;actions.hidden=false;positionFeature();
     };
   });
   document.querySelectorAll<HTMLButtonElement>('[data-action]').forEach(button=>button.onclick=()=>byId<HTMLButtonElement>(button.dataset.action||'')?.click());
