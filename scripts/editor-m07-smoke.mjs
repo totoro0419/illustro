@@ -274,7 +274,7 @@ async function verifyNaturalMenuAndKeyboard(page){
   assert.equal(stackBefore,stackAfter,'Opening floating menu must not change stack scroll length');
   assert.equal(await menu.evaluate(el=>getComputedStyle(el).position),'absolute','More is an overlay, not a layout row');
   const bounds=await menu.boundingBox(),stack=await page.locator('#boxStack').boundingBox();
-  assert.ok(bounds&&stack&&bounds.left>=stack.left-2&&bounds.right<=stack.right+2,
+  assert.ok(bounds&&stack&&bounds.x>=stack.x-2&&bounds.x+bounds.width<=stack.x+stack.width+2,
     'More menu stays within Workspace horizontal bounds: '+JSON.stringify({bounds,stack}));
   await first.locator('.box-more').click();
 
