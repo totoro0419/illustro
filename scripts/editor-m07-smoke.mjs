@@ -479,6 +479,8 @@ try{
     await draw(page);await waitCount(page,2);
     await page.locator('#workspaceToggle').click();
     await page.locator('#layer').click();
+    assert.notEqual(await page.evaluate(()=>document.activeElement?.id),'closeLayerPage',
+      'Pointer opening Layer Page must not move focus to its Close button');
     assert.equal(await page.locator('#layerPage').isVisible(),true);
     assert.equal(await page.locator('#workspace').isVisible(),false);
     assert.ok(await page.locator('#canvas').isVisible());
@@ -488,6 +490,12 @@ try{
     assert.equal(await page.locator('#layerPageList .layer-row[aria-pressed=true]').count(),1);
     await draw(page);await waitCount(page,3);
     await page.locator('#layer').click();
+    assert.equal(await page.locator('#layerPage').isVisible(),false);
+    // Keyboard entry must still transfer focus into the Layer Page.
+    await page.locator('#layer').focus();await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(()=>document.activeElement?.id),'closeLayerPage',
+      'Keyboard navigation into Layer Page should focus its Close control');
+    await page.keyboard.press('Escape');
     assert.equal(await page.locator('#layerPage').isVisible(),false);
     assert.equal(await page.locator('#layerList .layer-row[aria-pressed=true]').count(),1);
     await draw(page);await waitCount(page,4);
