@@ -31,6 +31,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "apps/editor/public/brand/illustro-logo.png",
+      "status": "CANONICAL"
+    },
+    {
       "path": "apps/editor/src/brushSurface.ts",
       "status": "EXPERIMENTAL"
     },
@@ -189,6 +193,10 @@
     {
       "path": "docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md",
       "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/brand/OFFICIAL_LOGO.md",
+      "status": "CANONICAL"
     },
     {
       "path": "docs/brush-foundation/ADOPTION_BASELINE.md",
@@ -1067,11 +1075,11 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/M07_QUALITY_FINISH_AUDIT_2026-10-10.md",
+      "path": "docs/research/M07_PC_TABLET_UI_COMPETITOR_RESEARCH.md",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/M07_PC_TABLET_UI_COMPETITOR_RESEARCH.md",
+      "path": "docs/research/M07_QUALITY_FINISH_AUDIT_2026-10-10.md",
       "status": "EXPERIMENTAL"
     },
     {
