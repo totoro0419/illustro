@@ -116,9 +116,57 @@ async function verifyAuroraIconReview(page){
   assert.equal(result.boxHeaderVectors,12);assert.equal(result.categoryVectors,12);
   assert.equal(result.auroraBlue,'#5ea8ff');assert.equal(result.auroraViolet,'#8b7cff');
   assert.match(result.selectedGradient,/gradient/i,'Active tool must carry restrained Aurora light');
+  const qaPlacement=await page.evaluate(()=>{
+    const q=document.querySelector('#qaSummary').getBoundingClientRect(),a=document.querySelector('.document-actions').getBoundingClientRect();
+    const overlap=q.left<a.right&&q.right>a.left&&q.top<a.bottom&&q.bottom>a.top;
+    return {left:q.left,top:q.top,right:q.right,bottom:q.bottom,height:q.height,overlapsDocuments:overlap};
+  });
+  assert.ok(!qaPlacement.overlapsDocuments,'Floating QA must not cover New/Open/Export operations');
+  assert.ok(qaPlacement.left>=0&&qaPlacement.top>=0&&qaPlacement.right<=await page.evaluate(()=>innerWidth+1),'QA stays within viewport');
   await page.locator('#qaSummary>summary').click();
   assert.equal(await page.locator('#qaSummary').getAttribute('open'),null,'QA can be folded before drawing');
-  return result;
+  await page.locator('#qaEntry').click();
+  assert.equal(await page.locator('#qaSummary').getAttribute('open'),'','Topbar button reopens hidden QA');
+  await page.locator('#qaEntry').click();
+  return {...result,qaPlacement};
+}
+
+async function verifyPopupPositionAndAurora(page){
+  await page.locator('#allFeatures').click();
+  const g=await page.evaluate(()=>{
+    const panel=document.getElementById('allFeaturesPanel');
+    const trigger=document.getElementById('allFeatures').getBoundingClientRect();
+    const box=panel.getBoundingClientRect();
+    const bar=document.querySelector('.topbar').getBoundingClientRect();
+    const dock=document.getElementById('rightDock').getBoundingClientRect();
+    const dockVisible=innerWidth>760&&!document.body.classList.contains('right-collapsed');
+    const rules=[...document.styleSheets].flatMap(sheet=>{
+      try{return [...sheet.cssRules].map(rule=>rule.cssText)}catch{return []}
+    }).join(' ');
+    return {
+      visible:!panel.hidden,triggerBottom:trigger.bottom,
+      rect:{left:box.left,top:box.top,right:box.right,bottom:box.bottom,width:box.width,height:box.height},
+      barBottom:bar.bottom,dockLeft:dock.left,dockVisible,
+      legacyYellow:/(#fff1c7|#ffdf83|#fff7dc|#f3b83e|#fff0c3|#ffdd84|#edcf81)/i.test(rules),
+      backgrounds:{
+        features:getComputedStyle(panel).backgroundColor,
+        activeTool:getComputedStyle(document.querySelector('#paint')).backgroundImage
+      }
+    };
+  });
+  assert.ok(g.visible,'All Features must open');
+  assert.ok(g.rect.left>=0&&g.rect.top>=g.barBottom,'Palette must not overlap topbar');
+  assert.ok(g.rect.right<=await page.evaluate(()=>innerWidth+1),'Palette must stay onscreen');
+  assert.ok(g.rect.bottom<=await page.evaluate(()=>innerHeight+1),'Palette must stay inside viewport');
+  assert.ok(g.rect.width>=220&&g.rect.height>100,'Palette must have readable dimensions');
+  assert.ok(!g.dockVisible||g.rect.right<=g.dockLeft-4,'Palette must not cover Right Workspace');
+  assert.ok(Math.abs(g.rect.bottom-g.triggerBottom)<22,'Palette is anchored to launcher instead of arbitrary screen corner');
+  assert.equal(g.legacyYellow,false,'No old yellow CSS tokens may survive in M07');
+  await page.locator('[data-category="document-output"]').click();
+  const selected=await page.locator('#featuresActions').isVisible();
+  assert.ok(selected,'Palette sub-category should open');
+  await page.locator('#featuresClose').click();
+  return g;
 }
 
 async function checkPage(page,profile){
@@ -158,6 +206,7 @@ try{
     page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     await page.goto(base+(publicBase?'?backend='+backend+'&build='+expectedCommit:'?qa=1&backend='+backend),{waitUntil:'networkidle',timeout:45000});
     const visual=await verifyAuroraIconReview(page);
+    const popup=await verifyPopupPositionAndAurora(page);
     const structure=await checkPage(page,'pointer');
     await startFrameCapture(page);
     await page.locator('#new').click();
@@ -189,10 +238,7 @@ try{
     await page.mouse.move(rect.x-70,rect.y+rect.height/2,{steps:7});await page.mouse.up();
     const resized=await page.evaluate(()=>Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--workspace')));
     assert.ok(resized>344,'Workspace width did not increase');await draw(page);await waitCount(page,5);
-    await page.locator('#allFeatures').click();
-    assert.equal(await page.locator('#allFeaturesPanel').isVisible(),true);
-    await page.locator('[data-category="document-output"]').click();
-    await page.locator('#featuresClose').click();
+    await verifyPopupPositionAndAurora(page);
     await page.locator('#undo').click();
     await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='4',{timeout:20000});
     await page.locator('#redo').click();await waitCount(page,5);
@@ -206,7 +252,7 @@ try{
     assert.ok(perf.frameSamples>20,'Frame pacing capture had too few samples');
     assert.ok(scrolling.scrollRangePx>0,'Right Box stack must scroll independently');
     await page.screenshot({path:path.join(evidence,backend+'-1440.png')});
-    report.cases.push({backend,auroraIconReview:visual,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
+    report.cases.push({backend,auroraIconReview:visual,popup,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
     await context.close();
   }
   for(const [name,width,height,touch] of [
@@ -218,6 +264,7 @@ try{
     const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     await page.goto(base+(publicBase?'?backend=webgl2&build='+expectedCommit:'?qa=1&backend=webgl2'),{waitUntil:'networkidle',timeout:45000});
     await verifyAuroraIconReview(page);
+    await verifyPopupPositionAndAurora(page);
     const compact=width<=760;
     console.log('M07 viewport',name,width,height,touch);
     if(!compact)await checkPage(page,touch?'tablet':'pointer');
