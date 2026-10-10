@@ -227,17 +227,26 @@ export function installShellUi():ShellControl{
     if(!(t instanceof Node))return;
     if(!featurePanel.hidden&&!featurePanel.contains(t)&&!featureButton.contains(t))showFeature(false);
     if(qaCard?.open&&!qaCard.contains(t)&&!qaEntry?.contains(t))closeQa();
-    // Box operation menus close when another element is touched, including
-    // a different Box, the drawing surface, or the neighboring More button.
-    for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
-      if(menu.hidden)continue;
-      const opener=menu.closest('.workspace-box')?.querySelector<HTMLButtonElement>('.box-more');
-      if(!menu.contains(t)&&!opener?.contains(t)){menu.hidden=true;opener?.setAttribute('aria-expanded','false');}
-    }
+    // When drawing/outside the dock, dismiss on pointerdown so the same
+    // stroke reaches Canvas. Inside the dock, DON'T fold a menu until click:
+    // removing its inline layout during pointerdown shifts neighboring More
+    // buttons away from pointerup and silently loses the click.
+    if(!rightDock.contains(t))closeBoxMenus();
     if(floatingDockOpen()&&!rightDock.contains(t)&&!toggle.contains(t)&&!drawer.contains(t)){
       close(false);
     }
   },{capture:true});
+  document.addEventListener('click',event=>{
+    const t=event.target;
+    if(!(t instanceof Node)||!rightDock.contains(t))return;
+    if(t instanceof Element&&t.closest('.box-more'))return;
+    for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
+      if(!menu.hidden&&!menu.contains(t)){
+        const opener=menu.closest('.workspace-box')?.querySelector<HTMLButtonElement>('.box-more');
+        menu.hidden=true;opener?.setAttribute('aria-expanded','false');
+      }
+    }
+  });
   document.addEventListener('keydown',event=>{
     if(event.key!=='Escape'||event.defaultPrevented||document.querySelector('dialog:modal'))return;
     if(resizing){finish(true);event.preventDefault();return;}
