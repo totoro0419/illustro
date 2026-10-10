@@ -172,7 +172,14 @@ async function performHistory(direction:'undo'|'redo'){
 }
 function bindHistoryButton(id:string,direction:'undo'|'redo'){
   const button=byId<HTMLButtonElement>(id);
-  button.onclick=e=>{if(e.detail>0&&lastPointerDownTarget!==button){blockedHistoryGhostClicks++;e.preventDefault();updateQa();return;}void performHistory(direction);};
+  // A real pointer press may land on the button's text <span>, not the
+  // button node itself. Accept any descendant while rejecting genuine
+  // outside-down / inside-up ghost clicks that can affect touch devices.
+  button.onclick=e=>{
+    const startedInside=lastPointerDownTarget instanceof Node&&button.contains(lastPointerDownTarget);
+    if(e.detail>0&&!startedInside){blockedHistoryGhostClicks++;e.preventDefault();updateQa();return;}
+    void performHistory(direction);
+  };
 }
 bindHistoryButton('undo','undo');bindHistoryButton('compactUndo','undo');bindHistoryButton('redo','redo');bindHistoryButton('compactRedo','redo');
 
