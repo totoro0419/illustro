@@ -116,7 +116,12 @@ export function installShellUi():ShellControl{
     const rect=heading.getBoundingClientRect();
     const height=menu.getBoundingClientRect().height;
     const roomBelow=stack.bottom-rect.bottom-6,roomAbove=rect.top-stack.top-6;
-    if(roomBelow<height&&roomAbove>roomBelow)menu.dataset.placement='above';
+    if(roomBelow<height&&roomAbove>roomBelow){
+      menu.dataset.placement='above';
+      // Offset is measured from the Box TOP, not from its full height.
+      // This keeps the opener visible even for tall expanded Boxes.
+      menu.style.setProperty('--box-menu-above',Math.round(-height-4)+'px');
+    }
   };
   const persistBoxes=()=>safeWrite(BOX_KEY,JSON.stringify(expanded));
   const setBoxExpansion=(section:HTMLElement,open:boolean)=>{
