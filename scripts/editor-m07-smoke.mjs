@@ -363,6 +363,62 @@ async function verifyTransientOverlays(page){
   return {features:true,qa:true,boxMore:rightVisible};
 }
 
+// Android selection/callout contract: UI chrome is not prose to copy.
+// Real editors remain selectable, so that clipboard and accessibility work.
+async function verifyNativeTouchSelectionPolicy(page){
+  const styles=await page.evaluate(()=>{
+    const inspect=(selector)=>{
+      const el=document.querySelector(selector);if(!el)throw Error('Missing touch style target '+selector);
+      const css=getComputedStyle(el);
+      return {selector,userSelect:css.userSelect,
+        webkitUserSelect:css.webkitUserSelect,
+        tapHighlight:css.webkitTapHighlightColor,
+        webkitCallout:css.getPropertyValue('-webkit-touch-callout')};
+    };
+    const controls=[
+      '.topbar #workspaceToggle','.rail .tool-button','.commands #undo',
+      '.workspace-box .box-title','.workspace-box .box-summary',
+      '.workspace-box .box-toggle','.workspace-box .box-more',
+      '#allFeatures','.feature-category','.box-body label',
+      '#qaSummary>summary','#canvas'
+    ].map(inspect);
+    const input=inspect('#sizeNumber');
+    const status=inspect('#status');
+    // This textarea is created only in the test to ensure WebKit/Chromium's
+    // inheritance quirk doesn't disable native selection inside Box labels.
+    const label=document.querySelector('.box-body label');
+    const textarea=document.createElement('textarea');
+    textarea.value='自由に選択できます';
+    label?.append(textarea);textarea.focus();textarea.select();
+    const editable=textarea.selectionStart===0&&
+      textarea.selectionEnd===textarea.value.length;
+    const textareaStyle=getComputedStyle(textarea).userSelect;
+    textarea.remove();
+    return {controls,input,status,textareaStyle,editable};
+  });
+  for(const item of styles.controls){
+    assert.equal(item.userSelect,'none',
+      item.selector+' must not invoke Android copy/select handles');
+    assert.equal(item.webkitUserSelect,'none',
+      item.selector+' must not invoke Android WebKit text selection');
+    assert.match(item.tapHighlight,/(transparent|rgba\\(0, 0, 0, 0\\))/,
+      item.selector+' must not show the browser native blue tap overlay');
+  }
+  assert.equal(styles.input.userSelect,'text','Real numeric editor keeps text selection');
+  assert.equal(styles.textareaStyle,'text','Text editor inside a UI label remains selectable');
+  assert.ok(styles.editable,'Select-all in real editable controls continues to work');
+  assert.notEqual(styles.status.userSelect,'none','Read-only diagnostic text stays copyable');
+  if(await page.evaluate(()=>navigator.maxTouchPoints>0)){
+    const button=page.locator('#allFeatures'),box=await button.boundingBox();
+    assert.ok(box);
+    await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+    await page.touchscreen.tap(box.x+box.width/2,box.y+box.height/2);
+    assert.equal(await page.locator('#allFeaturesPanel').isVisible(),false,
+      'Touch selection policy must not break opening and closing palettes');
+  }
+  return {controlSurfaces:styles.controls.length,editingPreserved:true};
+}
+
 async function checkPage(page,profile){
   const structure=await page.evaluate(()=>{
     const boxes=[...document.querySelectorAll('[data-box-id]')].map(x=>x.getAttribute('data-box-id'));
@@ -402,6 +458,7 @@ try{
     const visual=await verifyAuroraIconReview(page);
     const popup=await verifyPopupPositionAndAurora(page);
     const transient=await verifyTransientOverlays(page);
+    const selectionPolicy=await verifyNativeTouchSelectionPolicy(page);
     const structure=await checkPage(page,'pointer');
     await verifyRightBoxHeaderTargets(page,{all:true});
     await verifyNaturalMenuAndKeyboard(page);
@@ -449,7 +506,7 @@ try{
     assert.ok(perf.frameSamples>20,'Frame pacing capture had too few samples');
     assert.ok(scrolling.scrollRangePx>0,'Right Box stack must scroll independently');
     await page.screenshot({path:path.join(evidence,backend+'-1440.png')});
-    report.cases.push({backend,auroraIconReview:visual,popup,transient,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
+    report.cases.push({backend,auroraIconReview:visual,popup,transient,selectionPolicy,layout:structure,widthAfterResize:resized,drawAfterWorkspaceClosed:true,drawWithLayerPageOpen:true,drawAfterResize:true,stylusEquivalentDraw:true,layerSynced:true,performance:perf,scrolling,errors});
     await context.close();
   }
   for(const [name,width,height,touch] of [
@@ -463,7 +520,7 @@ try{
     await verifyAuroraIconReview(page);
     await verifyPopupPositionAndAurora(page);
     if(width>760)await verifyTransientOverlays(page);
-    if(touch)await verifyTouchAndMouseFeedback(page);
+    if(touch){await verifyNativeTouchSelectionPolicy(page);await verifyTouchAndMouseFeedback(page);}
     const compact=width<=760;
     console.log('M07 viewport',name,width,height,touch);
     if(!compact){
