@@ -21,7 +21,7 @@ describe('M03 editor history projection',()=>{
   });
   it('counts a wrapped seamless stroke once across undo and redo',async()=>{
     const c=new EditorController();
-    const copy={...record,commands:record.commands.map(command=>{const out=Array.from(command);out[0]+=480;out[16]+=480;return out;})} as StrokeRecord;
+    const copy={...record,commands:record.commands.map(command=>{const out=Array.from(command);out[0]=(out[0]??0)+480;out[16]=(out[16]??0)+480;return out;})} as StrokeRecord;
     await c.finishStroke(c.target(),record,[copy]);
     expect(c.document.currentRevision.command?.operations).toHaveLength(2);
     expect(c.document.currentRevision.command?.operations[1]?.parameters.seamlessCopy).toBe(true);
