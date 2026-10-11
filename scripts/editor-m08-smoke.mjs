@@ -87,14 +87,15 @@ async function run(kind,dpr,width,height){
       const canvas=document.querySelector('#canvas'),q=JSON.parse(document.querySelector('#qaAuto').textContent||'{}');
       const v=q.display.view,rect=canvas.getBoundingClientRect(),bytes=Uint8Array.from(atob(png),ch=>ch.charCodeAt(0));
       const image=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
-      const scratch=document.createElement('canvas');scratch.width=image.width;scratch.height=image.height;
+      const imageWidth=image.width,imageHeight=image.height;
+      const scratch=document.createElement('canvas');scratch.width=imageWidth;scratch.height=imageHeight;
       const ctx=scratch.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);image.close();
-      const sx=image.width/rect.width,sy=image.height/rect.height;
+      const sx=imageWidth/rect.width,sy=imageHeight/rect.height;
       return [[40,40],[41,40],[192,64],[193,64],[400,40]].map(([x,y])=>{
         const cssX=rect.width/2+(x+.5-v.documentWidth/2)*v.zoom+v.panX;
         const cssY=rect.height/2+(y+.5-v.documentHeight/2)*v.zoom+v.panY;
-        const px=Math.max(0,Math.min(image.width-1,Math.floor(cssX*sx)));
-        const py=Math.max(0,Math.min(image.height-1,Math.floor(cssY*sy)));
+        const px=Math.max(0,Math.min(imageWidth-1,Math.floor(cssX*sx)));
+        const py=Math.max(0,Math.min(imageHeight-1,Math.floor(cssY*sy)));
         return {x,y,rgba:[...ctx.getImageData(px,py,1,1).data],pixel:{px,py}};
       });
     },screenshot);
