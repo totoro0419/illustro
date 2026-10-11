@@ -37,11 +37,22 @@ jobs:
           npm --workspace @illustro/editor exec -- tsc --noEmit
           npm --workspace @illustro/editor exec -- vite build --base=./
           test -f apps/editor/dist/sw.js
+      - name: Install Playwright Chromium
+        run: |
+          npm install --prefix /tmp/m08-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/m08-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: M08 local WebGL2 / WebGPU DPR and navigation QA
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m08-browser/node_modules/playwright
+          M08_EVIDENCE_DIRECTORY: /tmp/m08-evidence/local
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m08-smoke.mjs
       - name: Upload build evidence
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: m08-build-unit-evidence
           path: |
+            /tmp/m08-evidence
             /tmp/brush-m08.txt
             apps/editor/dist/offline-assets.json
