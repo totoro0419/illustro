@@ -31,7 +31,7 @@ try{
     await page.waitForFunction(()=>!document.getElementById('brush').disabled,{timeout:45000});
     assert.equal(await page.locator('#brush option').count(),7);
     assert.equal(await page.locator('#save').isDisabled(),false,'M05 portable artwork save must be available after document initialization');
-    assert.equal((await page.locator('#save').textContent())?.trim(),'作品ファイル保存');
+    assert.equal((await page.locator('#save').textContent())?.trim(),'Save');
     const before=dark(await page.locator('canvas').screenshot());
     const box=await page.locator('canvas').boundingBox();assert.ok(box);
     await page.mouse.move(box.x+80,box.y+100);await page.mouse.down();
