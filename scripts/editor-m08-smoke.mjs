@@ -84,6 +84,16 @@ async function run(kind,dpr,width,height){
   await page.locator('#zoomPercent').fill('137');
   await page.locator('#zoomPercent').press('Tab');
   v=await getState(page);assert.ok(Math.abs(v.view.zoom-1.37)<1e-6,'fractional zoom');
+  if(kind==='webgl2'&&dpr===2&&width===512){
+    for(const percent of [12.5,25,33.3,50,66.7,75,100,125,150,200,243,400,800,1600]){
+      await page.locator('#zoomPercent').fill(String(percent));await page.locator('#zoomPercent').press('Tab');
+      const state=await getState(page);assert.ok(Math.abs(state.view.zoom-percent/100)<1e-5,'zoom sweep '+percent);
+    }
+    for(const degrees of [0,5,15,30,45,89,90,135,237]){
+      await page.locator('#angleDegree').fill(String(degrees));await page.locator('#angleDegree').press('Tab');
+      const state=await getState(page);assert.ok(Math.abs(state.view.rotation-degrees*Math.PI/180)<1e-5,'rotate sweep '+degrees);
+    }
+  }
   await page.locator('#resetRotation').click();
   await page.locator('#fitView').click();
   await draw(page);
@@ -103,7 +113,7 @@ async function run(kind,dpr,width,height){
 }
 try{
  for(const kind of (process.env.M08_SMOKE_QUICK?['webgl2']:['webgl2','webgpu'])){
-  for(const dpr of (process.env.M08_SMOKE_QUICK?[2]:[1,1.5,2,2.5,3]))await run(kind,dpr,512,384);
+  for(const dpr of (process.env.M08_SMOKE_QUICK?[2]:[1,1.25,1.5,2,2.5,2.75,3]))await run(kind,dpr,512,384);
   for(const [w,h] of (process.env.M08_SMOKE_QUICK?[[2048,1536]]:[[2048,1536],[2560,1440],[3000,2000]]))await run(kind,2,w,h);
  }
 }finally{await browser.close();if(server)await new Promise(resolve=>server.close(resolve));}

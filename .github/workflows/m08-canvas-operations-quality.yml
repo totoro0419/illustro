@@ -45,7 +45,6 @@ jobs:
         env:
           RT_PLAYWRIGHT_PATH: /tmp/m08-browser/node_modules/playwright
           M08_EVIDENCE_DIRECTORY: /tmp/m08-evidence/local
-          M08_SMOKE_QUICK: '1'
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/editor-m08-smoke.mjs
       - name: Upload build evidence
