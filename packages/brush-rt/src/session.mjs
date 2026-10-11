@@ -42,6 +42,17 @@ export class RealtimeSession {
 
  end(release=null){const a=this.active;if(!a)return Promise.resolve(null);this.flush();const finalized=a.builder.finish(),forceFade=!!a.builder.p.__foundation?.preset.forceFade?.enabled;if(forceFade){const commands=a.builder.record().commands.map(c=>Float64Array.from(c));a.stableSource.length=0;a.stableSource.push(...commands);a.builder.published=a.builder.commands.length;}else for(const c of finalized)a.stableSource.push(c);this.updateLive(performance.now(),true,forceFade);this.renderer.markEnded(a.id);this.worker.postMessage({type:'end',id:a.id,release});this.active=null;const promise=new Promise((resolve,reject)=>{this.resolvers.set(a.id,{resolve,reject});});this.resolvers.get(a.id).promise=promise;return promise.then(record=>{this.renderer.needsFrame=true;return record;});}
  async cancel(){if(!this.active)return;const id=this.active.id;this.cancelledIds.add(id);this.worker.postMessage({type:'cancel',id});this.strokePresets.delete(id);this.strokeSurfaces.delete(id);this.active=null;this.pending=[];await this.rebuild();}
+ async appendSupplemental(records,surfaceKey='default'){
+  if(this.active||this.resolvers.size)throw Error('finish active stroke before seamless copy');
+  if(!Array.isArray(records)||records.length>8)throw Error('too many seamless copies');
+  for(const record of records){validateRecord(record);const id=++this.id,preset=this.presetForRecord(record);
+   this.recordSurfaces.set(record,surfaceKey);this.recordIds.set(record,id);
+   this.renderer.document.append(id,preset,record.commands,null,surfaceKey);
+   const keys=this.renderer.document.end(id,preset,surfaceKey);
+   this.records.push(record);this.indexRecord(record,keys,surfaceKey);
+  }
+  await this.renderer.drain();
+ }
  async rebuild(){await this.renderer.reset();this.tileRecords.clear();for(const r of this.records){const id=++this.id,preset=this.presetForRecord(r),surfaceKey=this.recordSurfaces.get(r)??'default';this.recordIds.set(r,id);this.renderer.document.append(id,preset,r.commands,null,surfaceKey);const keys=this.renderer.document.end(id,preset,surfaceKey);this.indexRecord(r,keys,surfaceKey);}await this.renderer.drain();}
  async rebuildDirty(keys,surfaceKey='default'){const records=this.recordsForKeys(keys,surfaceKey),entries=records.map(r=>({id:++this.id,preset:this.presetForRecord(r),commands:r.commands}));await this.renderer.rebuildTiles(keys,entries,surfaceKey);}
  async undoDerived(expected,keys,surfaceKey='default'){await this.settle();const record=this.records.at(-1);if(record!==expected)throw Error('Document/Renderer undo mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');const id=this.recordIds.get(record);this.records.pop();this.redoRecords.push(record);this.unindexRecord(record);const hot=id!==undefined&&await this.renderer.undoCommit(id);if(hot)this.historyPatchHits++;else{this.historyReplayFallbacks++;await this.rebuildDirty(keys,surfaceKey);}}

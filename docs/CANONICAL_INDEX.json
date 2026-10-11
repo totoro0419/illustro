@@ -71,6 +71,14 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "apps/editor/src/seamlessStroke.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/seamlessStroke.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/src/style.css",
       "status": "EXPERIMENTAL"
     },

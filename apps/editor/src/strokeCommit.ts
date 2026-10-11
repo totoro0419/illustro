@@ -12,18 +12,26 @@ export class CoreStrokeDocumentPort implements DocumentPort{
     if(layer.locked)throw new Error('選択中のレイヤーはロックされています。');
     return Object.freeze({documentId:root.documentId,layerId:layer.id,surfaceId:layer.surface.descriptor.surfaceId,width:root.width,height:root.height,baseRevision:this.document.head});
   }
-  async commitStroke(target:DrawingTarget,record:StrokeRecord):Promise<StrokeCommitResult>{
+  async commitStroke(target:DrawingTarget,record:StrokeRecord,additional:readonly StrokeRecord[]=[]):Promise<StrokeCommitResult>{
     const root=this.document.root;if(root.documentId!==target.documentId)throw new Error('描画先の文書が変わりました。');
     if(this.document.head!==target.baseRevision)throw new Error('描画中に作品の状態が変わりました。');
     const layer=root.getLayer(target.layerId);if(layer.kind!=='raster'||layer.surface.descriptor.surfaceId!==target.surfaceId)throw new Error('描画先のレイヤーが変わりました。');
     if(layer.locked)throw new Error('描画先のレイヤーはロックされています。');
-    shallowRecordGuard(record);const dirty=dirtyTiles(record);if(!dirty.length)throw new Error('確定できる線がありません。');
+    const records=[record,...additional],dirtyByRecord=records.map(item=>{shallowRecordGuard(item);return dirtyTiles(item).filter(h=>h.tileX>=0&&h.tileY>=0&&h.tileX*CANONICAL_TILE_SIZE<target.width&&h.tileY*CANONICAL_TILE_SIZE<target.height);});
+    if(!dirtyByRecord[0]?.length)throw new Error('確定できる線がありません。');
     const tx=this.document.begin('Brush stroke');
-    const operationKey=tx.recordRasterOperation(target.layerId,{
-      kind:'brush.stroke',schemaVersion:1,parameters:Object.freeze({strokeRecord:record,strokeRecordVersion:record.version,engine:record.engine,brushId:brushId(record),action:record.preset.blend==='erase'?'erase':'paint'}),
-      algorithmVersionRefs:Object.freeze([`engine:${record.engine}`,`reconstruction:${record.smoothing}`,`prng:${record.random}`,`stroke-schema:${record.version}`]),sourceRevisionIds:Object.freeze([target.baseRevision]),
-    },dirty);
-    const receipt=tx.commit();return Object.freeze({revisionId:receipt.revision.id,operationKey,dirtyTileCount:dirty.length,persistence:receipt.persistence});
+    let operationKey:StrokeCommitResult['operationKey']|null=null,dirtyTileCount=0;
+    for(let i=0;i<records.length;i++){const item=records[i]!,dirty=dirtyByRecord[i]!;
+      if(!dirty.length)continue;
+      const key=tx.recordRasterOperation(target.layerId,{
+        kind:'brush.stroke',schemaVersion:1,parameters:Object.freeze({strokeRecord:item,strokeRecordVersion:item.version,engine:item.engine,brushId:brushId(item),action:item.preset.blend==='erase'?'erase':'paint',...(i>0?{seamlessCopy:true}:{} )}),
+        algorithmVersionRefs:Object.freeze([`engine:${item.engine}`,`reconstruction:${item.smoothing}`,`prng:${item.random}`,`stroke-schema:${item.version}`]),sourceRevisionIds:Object.freeze([target.baseRevision]),
+      },dirty);
+      if(i===0)operationKey=key;
+      dirtyTileCount+=dirty.length;
+    }
+    if(!operationKey)throw new Error('確定できる線がありません。');
+    const receipt=tx.commit();return Object.freeze({revisionId:receipt.revision.id,operationKey,dirtyTileCount,persistence:receipt.persistence});
   }
 }
 function shallowRecordGuard(record:StrokeRecord){

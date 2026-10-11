@@ -4,6 +4,21 @@ import * as S from '@rt/shaders';
 // Solid ink and swept material share exact single-stroke MAX coverage.
 // Restrict scheduling changes to the new Foundation, retaining legacy behavior.
 const foundationUnion=p=>!!p?.__foundation&&(continuous(p)||!!p.__foundation.coverageUnion);
+/** View-only duplicates of live preview near the seamless image edges. */
+function previewWrapOffsets(state,width,height){
+ const commands=[...(state.stableSource??[]),...(state.commands??[])];if(!commands.length)return [];
+ let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+ for(const c of commands){const b=commandBounds(c);x0=Math.min(x0,b.x0);x1=Math.max(x1,b.x1);y0=Math.min(y0,b.y0);y1=Math.max(y1,b.y1);}
+ const xs=x0<0?[width]:x1>width?[-width]:[],ys=y0<0?[height]:y1>height?[-height]:[];
+ const shifts=[];if(xs.length)shifts.push([xs[0],0]);if(ys.length)shifts.push([0,ys[0]]);if(xs.length&&ys.length)shifts.push([xs[0],ys[0]]);
+ return shifts;
+}
+function previewTranslated(state,id,dx,dy){
+ const translate=c=>{const out=Float64Array.from(c);out[0]+=dx;out[1]+=dy;out[16]+=dx;out[17]+=dy;return out;};
+ const point=p=>p?{...p,x:p.x+dx,y:p.y+dy}:p;
+ return {...state,id,stableSource:(state.stableSource??[]).map(translate),commands:(state.commands??[]).map(translate),
+  tip:point(state.tip),inputTip:point(state.inputTip),previewTip:point(state.previewTip),rawTip:point(state.rawTip)};
+}
 const emptyPreset={hardness:1,bristles:7,aspect:1,grainScale:1,grainRotation:0,tip:'round',grainKind:'paper',blend:'normal'};
 const HISTORY_GPU_BUDGET=16*1024*1024,HISTORY_TILE_RESERVATION=TILE*TILE*4*2;
 const surfaceTileKey=(surfaceKey,key)=>surfaceKey+'\u0000'+key;
@@ -165,9 +180,20 @@ export class GpuRenderer {
   try{const r=new WebGlBackend(canvas,width,height,options.webglDesynchronized??true);r.info.selection=selection;return new GpuRenderer(r,width,height);}
   catch(e){const message=e instanceof Error?e.message:String(e);throw Error((selection.fallbackUsed?'WebGPU unavailable ('+selection.webgpu.stage+': '+selection.webgpu.error+'); ':'')+'WebGL2 initialization failed: '+message,{cause:e});}
  }
- constructor(backend,width,height){this.backend=backend;this.document=new TileDocument(width,height);this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;this.needsFrame=true;}
+ constructor(backend,width,height){this.backend=backend;this.document=new TileDocument(width,height);this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.seamlessPreview=false;this.wrapPreviews=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;this.needsFrame=true;}
  setSurfaceStack(surfaceKeys){if(!Array.isArray(surfaceKeys)||!surfaceKeys.length||new Set(surfaceKeys).size!==surfaceKeys.length||surfaceKeys.some(x=>typeof x!=='string'||!x))throw Error('invalid surface stack');this.backend.setSurfaceStack(surfaceKeys);this.needsFrame=true;}
- setLive(s){this.previewStates.set(s.id,s);this.mailbox.set(s);this.requestPreview();}
+ setSeamlessPreview(enabled){this.seamlessPreview=!!enabled;}
+ clearSeamlessPreviews(id){const keys=this.wrapPreviews.get(id)??[];for(const key of keys){this.previewStates.delete(key);this.backend.retirePreview(key);}this.wrapPreviews.delete(id);this.needsFrame=true;}
+ setLive(s){
+  this.previewStates.set(s.id,s);
+  if(this.seamlessPreview){
+   const offsets=previewWrapOffsets(s,this.document.width,this.document.height),previous=new Set(this.wrapPreviews.get(s.id)??[]),next=[];
+   for(let i=0;i<offsets.length;i++){const id=8_000_000+s.id*4+i,[dx,dy]=offsets[i];next.push(id);this.previewStates.set(id,previewTranslated(s,id,dx,dy));previous.delete(id);}
+   for(const id of previous){this.previewStates.delete(id);this.backend.retirePreview(id);}
+   this.wrapPreviews.set(s.id,next);
+  }
+  this.mailbox.set(s);this.requestPreview();
+ }
  // One deferred request consumes the newest notification after an input batch.
  // Do not launch a GPU submission for every coalesced input sample.
  requestPreview(){if(this.disposed||this.inflight||this.previewRequested||!this.backend.immediatePreview||!foundationUnion(this.mailbox.value?.preset)||this.mailbox.value.finished)return;this.previewRequested=true;queueMicrotask(()=>{this.previewRequested=false;this.frame(performance.now());});}
@@ -186,7 +212,7 @@ export class GpuRenderer {
  async undoCommit(id){await this.drain(false);const ok=await this.backend.undoCommit(id);if(!ok)return false;this.needsFrame=true;await this.drain();return true;}
  async redoCommit(id){await this.drain(false);const ok=await this.backend.redoCommit(id);if(!ok)return false;this.needsFrame=true;await this.drain();return true;}
  dropHistory(ids){this.backend.dropHistory(ids);}
- destroy(){this.disposed=true;this.backend.destroy();}
+ destroy(){this.disposed=true;this.wrapPreviews.clear();this.backend.destroy();}
  setViewTransform(values){this.backend.setViewTransform(values);this.needsFrame=true;}
  get info(){return this.backend.info;}
 }

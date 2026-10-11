@@ -3,13 +3,14 @@ import {CANONICAL_TILE_SIZE,type RevisionId,type SemanticOperation} from '@illus
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import type {EditorController,EditorHistoryChange} from './controller';
 import {CanvasView,type Point} from './canvasView';
+import {wrappedCopies} from './seamlessStroke';
 import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
 
 
 export class BrushSurface{
   private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private presentedFrames=0;private lastPresentedAt=0;private _initializationError:string|null=null;private _projectionRestoreMs=0;private _projectionRestoreMode:'none'|'cache'|'replay-fallback'='none';private _projectionCacheRevision:string|null=null;
   private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private touchPoints=new Map<number,Point>();private lastGesture:{center:Point;distance:number;angle:number}|null=null;
-  private panning:{id:number;point:Point}|null=null;private keyboardSpace=false;private densityMedia:MediaQueryList|null=null;
+  private panning:{id:number;point:Point}|null=null;private keyboardSpace=false;private densityMedia:MediaQueryList|null=null;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.view=new CanvasView(target.width,target.height);
@@ -70,7 +71,7 @@ export class BrushSurface{
   setViewRotation(angle:number){if(this.view){this.view.setRotation(angle);this.updateView();}}
   setSeamless(enabled:boolean){if(this.view){this.view.seamless=enabled;this.updateView();}}
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView();}}
-  private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x,y:d.y,t:e.timeStamp,pressure:e.pressure,pointerType:e.pointerType,tilt:Math.min(1,Math.hypot(e.tiltX,e.tiltY)/90),azimuth:Math.atan2(e.tiltY,e.tiltX),twist:e.twist/360};}
+  private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0),t:e.timeStamp,pressure:e.pressure,pointerType:e.pointerType,tilt:Math.min(1,Math.hypot(e.tiltX,e.tiltY)/90),azimuth:Math.atan2(e.tiltY,e.tiltX),twist:e.twist/360};}
   private gesture(){const points=[...this.touchPoints.values()];if(points.length<2)return null;const a=points[0]!,b=points[1]!;return {center:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},distance:Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),angle:Math.atan2(b.y-a.y,b.x-a.x)};}
   private touchMovement(e:PointerEvent){if(!this.touchPoints.has(e.pointerId)||!this.view)return false;this.touchPoints.set(e.pointerId,this.pointerLocation(e));
     if(this.touchPoints.size>=2){const next=this.gesture();if(next&&this.lastGesture){this.view.zoomAt(next.distance/this.lastGesture.distance,this.lastGesture.center);this.view.rotateAt(next.angle-this.lastGesture.angle,this.lastGesture.center);this.view.pan(next.center.x-this.lastGesture.center.x,next.center.y-this.lastGesture.center.y);this.updateView();}this.lastGesture=next;return true;}
@@ -83,15 +84,33 @@ export class BrushSurface{
       if(!this.fingerDrawing){this.panning={id:e.pointerId,point:this.pointerLocation(e)};return;}
     }else if(e.button===1||(e.button===0&&this.keyboardSpace)){e.preventDefault();this.panning={id:e.pointerId,point:this.pointerLocation(e)};this.canvas.setPointerCapture(e.pointerId);return;}
     if(e.button!==0||this.pointer!==null||this.finishing||this.historySyncing||this.touchPoints.size>1)return;e.preventDefault();
-    try{this.target=this.controller.target();this.session.begin(this.preset,0,{},this.target.surfaceId);const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
+    try{this.target=this.controller.target();
+      const origin=this.view.document(this.pointerLocation(e)),w=this.target.width,h=this.target.height;
+      this.wrapOrigin=this.view.seamless?{x:Math.floor(origin.x/w)*w,y:Math.floor(origin.y/h)*h}:null;
+      this.renderer?.setSeamlessPreview(this.view.seamless);
+      this.activeStrokeId=this.session.begin(this.preset,0,{},this.target.surfaceId);const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{if(this.touchMovement(e))return;if(this.panning?.id===e.pointerId&&this.view){e.preventDefault();const point=this.pointerLocation(e);this.view.pan(point.x-this.panning.point.x,point.y-this.panning.point.y);this.panning.point=point;this.updateView();return;}
     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];for(let i=0;i<events.length;i++){const s=this.sample(events[i]!);actual.push(s);this.session.accept(s,i===events.length-1);}const predictedEvents=e.getPredictedEvents?.()??[],predicted=this.clampPredicted(actual.at(-1)??this.sample(e),predictedEvents.slice(0,2).map(event=>({...this.sample(event),origin:'predicted'})));this.session.predictions(predicted);};
-  private up=(e:PointerEvent)=>{if(this.touchPoints.has(e.pointerId)){this.touchPoints.delete(e.pointerId);this.lastGesture=this.gesture();if(this.touchPoints.size===1&&this.pointer===null){const [id,p]=this.touchPoints.entries().next().value!;this.panning={id,point:p};}}if(this.panning?.id===e.pointerId){this.panning=null;return;}if(e.pointerId!==this.pointer||!this.session||!this.target)return;const session=this.session,target=this.target,release=this.sample(e);session.predictions([]);this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();
-    void session.end({...release,origin:'release'}).then(async record=>{if(!record)return;try{await this.controller.finishStroke(target,record);await session.renderer.drain();session.discardRedo();this.status(record.preset.blend==='erase'?'消した内容を作品に反映しました。':'線を作品に反映しました。');this.onCommitted();}
-      catch{try{await session.rollbackLatest(record);}catch{}this.status('線を確定できなかったため、作品には残していません。');}})
-      .catch(()=>{this.status('線を確定できませんでした。');}).finally(()=>{this.finishing=false;this.onStateChanged();});};
+  private up=(e:PointerEvent)=>{if(this.touchPoints.has(e.pointerId)){this.touchPoints.delete(e.pointerId);this.lastGesture=this.gesture();if(this.touchPoints.size===1&&this.pointer===null){const [id,p]=this.touchPoints.entries().next().value!;this.panning={id,point:p};}}if(this.panning?.id===e.pointerId){this.panning=null;return;}if(e.pointerId!==this.pointer||!this.session||!this.target)return;const session=this.session,target=this.target,release=this.sample(e),seamless=this.view?.seamless??false,strokeId=this.activeStrokeId;session.predictions([]);this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();
+    void session.end({...release,origin:'release'}).then(async record=>{
+      if(!record)return;let published=false;
+      try{
+        const copies=seamless?wrappedCopies(record,target.width,target.height):[];
+        await this.controller.finishStroke(target,record,copies.map(copy=>copy.record));published=true;
+        if(copies.length)await session.appendSupplemental(copies.map(copy=>copy.record),target.surfaceId);
+        await session.renderer.drain();
+        if(strokeId!==null)session.renderer.clearSeamlessPreviews(strokeId);
+        session.renderer.setSeamlessPreview(false);await session.renderer.drain();
+        session.discardRedo();this.status(record.preset.blend==='erase'?'消した内容を作品に反映しました。':'線を作品に反映しました。');this.onCommitted();
+      }catch{
+        if(strokeId!==null)session.renderer.clearSeamlessPreviews(strokeId);
+        session.renderer.setSeamlessPreview(false);
+        if(published){this.status('線は保存されましたが表示更新で問題が起きました。');this.onCommitted();}
+        else{try{await session.rollbackLatest(record);}catch{}this.status('線を確定できなかったため、作品には残していません。');}
+      }
+    }).catch(()=>{this.status('線を確定できませんでした。');}).finally(()=>{this.finishing=false;this.onStateChanged();});};
   private cancel=(e:PointerEvent)=>{this.touchPoints.delete(e.pointerId);this.lastGesture=this.gesture();if(this.panning?.id===e.pointerId)this.panning=null;if(e.pointerId===this.pointer)void this.cancelStroke();};
-  private async cancelStroke(){this.pointer=null;this.target=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{this.finishing=false;this.onStateChanged();}}
+  private async cancelStroke(){const id=this.activeStrokeId;this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;}
   async inspectRendering(){
