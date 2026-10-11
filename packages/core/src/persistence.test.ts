@@ -2,6 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {CoreDocument} from './coreDocument';
 import {createDeterministicIdFactory} from './ids';
 import {ProtectionTracker} from './recovery';
+import {mergeCoreRecovery} from './persistence';
 
 describe('M05 core persistence',()=>{
   it('round-trips IDs, layers, hidden RGB, metadata and retained Undo roots',()=>{
@@ -33,4 +34,39 @@ describe('M05 core persistence',()=>{
     const missing=new Map(blocks);missing.delete(first.id as never);expect(()=>CoreDocument.restore({snapshot:parsed,blockPayloads:missing,ids})).toThrow(/missing|required|mismatch/);
     const corrupt=new Map(blocks),bytes=corrupt.get(first.id as never)!.slice(0,-1);corrupt.set(first.id as never,bytes);expect(()=>CoreDocument.restore({snapshot:parsed,blockPayloads:corrupt,ids})).toThrow(/byte length/);
   });
+  it('recovers geometry dimensions, replaced pixels and later strokes with contiguous commits',()=>{
+    const ids=createDeterministicIdFactory(),doc=new CoreDocument({width:64,height:64,ids}),layer=doc.defaultRasterLayerId;
+    const base=doc.capturePersistenceSnapshot(),packets:ReturnType<typeof doc.captureRecoveryPacket>[]=[],allBlocks=new Map(doc.persistenceBlockPayloads(base));
+    const track=(receipt:ReturnType<ReturnType<typeof doc.begin>['commit']>)=>{
+      const packet=doc.captureRecoveryPacket(receipt.persistence);
+      packets.push(JSON.parse(JSON.stringify(packet)));
+      for(const [id,bytes] of doc.recoveryBlockPayloads(packet))allBlocks.set(id,bytes);
+    };
+    const first=doc.begin('initial pixels');first.setPixel(layer,3,4,[12,34,56,255]);track(first.commit());
+    const geometry=doc.begin('resize bounds'),basePixels=new Uint8Array(80*72*4);
+    basePixels.set([12,34,56,255],(4*80+3)*4);
+    geometry.resizeDocument(80,72,'document.canvas-resize',new Map([[layer,basePixels]]),{anchor:'top-left'});track(geometry.commit());
+    const further=doc.begin('continued edit');further.setPixel(layer,70,63,[64,120,230,220]);track(further.commit());
+    const cropped=doc.begin('crop'),cropPixels=new Uint8Array(40*40*4);
+    cropPixels.set([12,34,56,255],(4*40+3)*4);
+    cropped.resizeDocument(40,40,'document.crop',new Map([[layer,cropPixels]]),{x:0,y:0});track(cropped.commit());
+    expect(doc.commitSequence).toBe(4n);expect(packets.map(p=>p.handoff.commitSequence)).toEqual(['1','2','3','4']);
+    expect(packets[1]!.replacementRoot?.width).toBe(80);
+    expect(packets[3]!.replacementRoot?.height).toBe(40);
+    const recovered=mergeCoreRecovery(base,packets,doc.head);
+    const restored=CoreDocument.restore({snapshot:JSON.parse(JSON.stringify(recovered)),blockPayloads:allBlocks,ids});
+    expect(restored.root.width).toBe(40);expect(restored.root.height).toBe(40);
+    expect(restored.readPixel(layer,3,4)).toEqual([12,34,56,255]);
+    expect(restored.readPixel(layer,6,6)).toEqual([0,0,0,0]);
+    restored.undo();expect(restored.root.width).toBe(80);expect(restored.readPixel(layer,70,63)).toEqual([64,120,230,220]);
+    restored.undo();expect(restored.root.width).toBe(80);expect(restored.readPixel(layer,70,63)).toEqual([0,0,0,0]);
+    restored.redo();restored.redo();expect(restored.root.width).toBe(40);
+    const missing=new Map(allBlocks);const newBlock=packets[3]!.handoff.requiredBlockIds[0]!;
+    missing.delete(newBlock as never);
+    expect(()=>CoreDocument.restore({snapshot:recovered,blockPayloads:missing,ids})).toThrow();
+    const corrupted=JSON.parse(JSON.stringify(packets));
+    corrupted[3].replacementRoot.width=0;
+    expect(()=>mergeCoreRecovery(base,corrupted,doc.head)).toThrow(/dimension/);
+  });
+
 });
