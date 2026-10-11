@@ -71,13 +71,13 @@ async function run(kind,dpr,width,height){
   assert.equal(errors.filter(e=>!e.includes('ERR_NAME_NOT_RESOLVED')).length,0,'console errors: '+JSON.stringify(errors));
   if(dpr===2&&width===3000)await page.screenshot({path:path.join(evidence,kind+'-3000-'+dpr+'.png')});
   output.tests.push({kind,dpr,width,height,result:'PASS',backing:[v.backingWidth,v.backingHeight],css:[v.cssWidth,v.cssHeight],view:v.view,backend:v.backend,errors});
- }catch(e){output.errors.push({kind,dpr,width,height,error:String(e),console:errors});output.tests.push({kind,dpr,width,height,result:'FAIL',error:String(e)});await page.screenshot({path:path.join(evidence,kind+'-failure-'+dpr+'-'+width+'.png')}).catch(()=>{});}
+ }catch(e){const snapshot=await getState(page).catch(x=>({error:String(x)}));output.errors.push({kind,dpr,width,height,error:String(e),console:errors,snapshot});output.tests.push({kind,dpr,width,height,result:'FAIL',error:String(e),snapshot});await page.screenshot({path:path.join(evidence,kind+'-failure-'+dpr+'-'+width+'.png')}).catch(()=>{});}
  finally{await context.close();}
 }
 try{
- for(const kind of ['webgl2','webgpu']){
-  for(const dpr of [1,1.5,2,2.5,3])await run(kind,dpr,512,384);
-  for(const [w,h] of [[2048,1536],[2560,1440],[3000,2000]])await run(kind,2,w,h);
+ for(const kind of (process.env.M08_SMOKE_QUICK?['webgl2']:['webgl2','webgpu'])){
+  for(const dpr of (process.env.M08_SMOKE_QUICK?[2]:[1,1.5,2,2.5,3]))await run(kind,dpr,512,384);
+  for(const [w,h] of (process.env.M08_SMOKE_QUICK?[[2048,1536]]:[[2048,1536],[2560,1440],[3000,2000]]))await run(kind,2,w,h);
  }
 }finally{await browser.close();if(server)await new Promise(resolve=>server.close(resolve));}
 await fs.writeFile(path.join(evidence,'m08-report.json'),JSON.stringify(output,null,2));
