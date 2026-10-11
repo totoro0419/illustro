@@ -221,9 +221,20 @@ try{
     const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;
     // Corrupt caches only after the editor has stopped writing. Editing and test-side
     // createWritable() on the same OPFS entry can race, yielding a transient NotFoundError.
+    // Keep this isolated from the PWA's service worker and editor worker.
+    // A Playwright-fulfilled HTML document retains the editor's origin/OPFS,
+    // unlike a JSON asset which Chromium may treat as a download.
+    await page.evaluate(async()=>{
+      if('serviceWorker' in navigator){
+        await Promise.all((await navigator.serviceWorker.getRegistrations()).map(registration=>registration.unregister()));
+      }
+    });
     await page.close();
-    const corruptPage=await context.newPage();
-    await corruptPage.goto(new URL('offline-assets.json',base).href,{waitUntil:'load',timeout:45000});
+    const corruptPage=await context.newPage(),probeUrl=new URL('__m05_opfs_corruption_probe__.html',base).href;
+    await corruptPage.route(probeUrl,route=>route.fulfill({status:200,contentType:'text/html; charset=utf-8',body:'<!doctype html><title>OPFS corruption probe</title>'}));
+    const probeResponse=await corruptPage.goto(probeUrl,{waitUntil:'load',timeout:45000});
+    assert.equal(probeResponse?.status(),200);
+    assert.equal(await corruptPage.title(),'OPFS corruption probe');
     const corrupted=[];
     await waitForOpfsEntry(corruptPage,doc,epoch,'projection-v2.frame');
     corrupted.push(await corruptOpfsFile(corruptPage,doc,epoch,'projection-v2.frame'));

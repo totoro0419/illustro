@@ -408,16 +408,22 @@ updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('r
 
 function formatFileSize(bytes:number){if(!Number.isFinite(bytes)||bytes<0)return 'サイズ不明';if(bytes<1024)return Math.round(bytes)+' B';if(bytes<1024*1024)return (bytes/1024).toFixed(bytes<10*1024?1:0)+' KB';return (bytes/(1024*1024)).toFixed(bytes<10*1024*1024?1:0)+' MB';}
 function qaM08Markup(){return '<details id="qaPanel" class="qa-panel" open><summary>キャンバスの操作と画質の確認</summary><ol>'+[
-'普通の大きさで線がぼやけて見えないか',
-'100%表示で細かい模様が自然か',
-'拡大・縮小しても急に画質が崩れないか',
-'キャンバスを回してもぼやけすぎないか',
-'左右・上下反転がすぐ効くか',
-'指で拡大・移動・回転しやすいか',
-'2000〜3000pxの大きな作品でも表示が自然か',
-'描いている途中と、ペンを離した後で線が変わりすぎないか',
-'高密度のAndroid画面でも粗く見えないか',
-'キャンバス操作をしても描画が重くならないか',
+'指で用紙を動かしても、白い四角形だけが元の場所に残らないか',
+'2本指で用紙を拡大・縮小して、用紙の枠と絵がずれないか',
+'2本指で用紙を回して、枠と絵が一緒に回るか',
+'左右・上下反転で、用紙の枠と絵がずれないか',
+'100%表示で、線や細かい模様がぼやけないか',
+'拡大・縮小・回転を繰り返しても、画質が不自然に崩れないか',
+'描いている途中と、ペンを離した後で線の見た目が変わりすぎないか',
+'右の作業欄を閉じても、描いた線がすぐ表示されるか',
+'切り抜きで、作品の表示範囲が正しく変わるか',
+'キャンバスのサイズ変更で、絵が勝手に引き伸ばされないか',
+'画像のサイズ変更で、絵も指定した大きさに変わるか',
+'端がつながるモードで、上下左右の境界をまたいで描けるか',
+'元に戻す・やり直すが正常に動くか',
+'保存して開き直しても、絵と変更内容が残っているか',
+'2000〜3000pxの大きな作品でも操作が重くならないか',
+'Androidなどの高密度画面でも線が粗く見えないか',
 '問題なし、または問題ありを選んでください'
 ].map(x=>'<li>'+x+'</li>').join('')+'</ol><label class="checkbox-line"><input id="referencePattern" type="checkbox"> 画質確認用の細かい模様を表示（作品には影響しません）</label><details class="qa-auto"><summary>問題の調査用</summary><button id="qaDiagInitial" type="button">状態を記録する</button><button id="qaDiagCopy" type="button">結果をコピーする</button><pre id="qaGpuReport"></pre></details><label>結果<select id="qaState"><option value="unchecked">まだ確認していない</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3"></textarea></label><button id="qaCopy" type="button">確認結果をコピー</button><details class="qa-auto"><summary>詳しい動作記録</summary><pre id="qaAuto"></pre></details></details>';}
 function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary>使いやすさと描画の確認</summary><ol>'+
