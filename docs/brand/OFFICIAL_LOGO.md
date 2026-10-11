@@ -1,15 +1,16 @@
 # Illustro — Official Logo
 
-This directory records the **user-approved Illustro brand logo**.
+The canonical Illustro brand logo is [`apps/editor/public/brand/illustro-logo.png`](../../apps/editor/public/brand/illustro-logo.png).
 
-- Canonical image: [`apps/editor/public/brand/illustro-logo.png`](../../apps/editor/public/brand/illustro-logo.png)
-- Format: PNG, 1254 × 1254, RGB, white background
-- Motif: fountain-pen nib, aurora-colored orbit, small orb
-- Colors: predominantly blue and violet, with cyan/teal and pink accents
-- Finish: glossy gradients with a soft floating shadow
-- Typography: no wordmark or other text
+- **Current version:** bright Aurora revision (2026-10-11), selected to harmonize with Illustro's light UI.
+- **Format:** PNG, 1254 × 1254, RGB, white background.
+- **Motif:** fountain-pen nib, orbital ring, small sphere.
+- **Colors:** luminous blue and violet, with cyan/teal and pink highlights; reduced dark navy areas.
+- **Finish:** smooth glossy gradients, soft floating shadow.
+- **Typography:** no wordmark or other text.
 
-The original user-approved PNG was added without visual modification.
-SHA-256: `ff162f371337f20d360af2a2c21749d7af236ee32496670676c339147ab64905`
+This image replaces the previous darker logo **in the same canonical file path**. The newly selected image was committed without modification.
 
-**Scope:** This is the brand logo, not an automatically approved replacement for the separately designed app icon. Introducing it into existing UI is a separate change.
+**Image SHA-256:** `90c4eb3aeefcd4681fc998dad50d823ec61be2159d6fbbf36e1c6192f9ae1c99`
+
+**Scope:** This is the brand logo; it does not automatically replace the separately designed app icon. Showing the logo inside the existing UI remains a separate change.
