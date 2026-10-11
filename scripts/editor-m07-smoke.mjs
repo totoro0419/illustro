@@ -101,6 +101,7 @@ async function verifyAuroraIconReview(page){
       toolVectors:svg('.rail .tool-button'),
       bottomVectors:svg('.commands button'),
       topVectors:svg('.topbar #home, .topbar #save, .topbar #workspaceToggle'),
+      brandLogoLoaded:(()=>{const img=document.querySelector('.topbar .brand-logo');return !!img&&img.complete&&img.naturalWidth===1254&&img.naturalHeight===1254&&img.currentSrc.includes('/brand/illustro-logo.png')})(),
       allFeatureVector:!!document.querySelector('#allFeatures svg.ui-icon'),
       boxHeaderVectors:document.querySelectorAll('.box-glyph svg.ui-icon').length,
       categoryVectors:document.querySelectorAll('.feature-category > svg.ui-icon').length,
@@ -116,6 +117,7 @@ async function verifyAuroraIconReview(page){
   assert.equal(result.checklistCount,12,'All 12 QA items must be visible by scrolling');
   assert.match(result.qaHeading,/実機確認.*12項目/);
   assert.equal(result.qaVisible,!result.touchFirst,'Touch devices must start with an unobstructed Canvas');
+  assert.ok(result.brandLogoLoaded,'Approved Illustro logo loads inside the topbar');
   assert.ok(result.toolVectors&&result.bottomVectors&&result.topVectors&&result.allFeatureVector,'Every primary icon is an SVG motif');
   assert.equal(result.boxHeaderVectors,12);assert.equal(result.categoryVectors,12);
   assert.equal(result.auroraBlue,'#5ea8ff');assert.equal(result.auroraViolet,'#8b7cff');
