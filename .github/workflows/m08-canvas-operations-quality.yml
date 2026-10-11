@@ -23,7 +23,7 @@ jobs:
       - name: Brush runtime build
         run: npm run brush:build
       - name: Editor unit regression and M08 view transforms
-        run: npx vitest run apps/editor/src
+        run: npx vitest run apps/editor/src packages/core/src/geometry.test.ts
       - name: Brush foundation exact 93 tests
         run: |
           node --test packages/brush-rt/test/*.test.mjs | tee /tmp/brush-m08.txt

@@ -4,7 +4,7 @@ import {DocumentRoot,rasterLayer} from './model';
 import {PagedMap} from './pagedMap';
 import {blockPayloadsForSnapshot,captureCoreRecoveryPacket,captureCoreSnapshot,parseCoreSnapshot,restoreBlocks,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from './persistence';
 import {CanonicalTileStore,type OwnershipTransfer} from './raster/store';
-import {bytesPerPixel,CANONICAL_TILE_SIZE,pixelToTile,type RasterSampleEncoding} from './raster/surface';
+import {bytesPerPixel,CANONICAL_TILE_SIZE,pixelToTile,parseTileKey,type RasterSampleEncoding} from './raster/surface';
 import {DocumentTransaction} from './transaction';
 import type {PersistenceHandoff} from './recovery';
 import {CORE_INTERNAL,type CoreInternalToken} from './internal';
@@ -40,6 +40,16 @@ export class CoreDocument{
     const commands:Command[]=[],visiting=new Set<RevisionId>();let current=this.historyValue.get(revisionId);
     while(current.parentIds[0]){if(visiting.has(current.id))throw new Error('revision cycle');visiting.add(current.id);if(current.command)commands.push(current.command);current=this.historyValue.get(current.parentIds[0]);}
     commands.reverse();return Object.freeze(commands.flatMap(command=>command.operations));
+  }
+  /** Geometry checkpoints contain exact base raster blocks, independent of brush history replay. */
+  readBaseRasterPixels(layerId:LayerId){
+    const root=this.root,layer=root.getLayer(layerId);if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('unsupported encoding');
+    const out=new Uint8Array(root.width*root.height*4),T=CANONICAL_TILE_SIZE;
+    for(const [key,value] of layer.surface.tiles.entries()){if(!value.baseBlockId)continue;const [tx,ty]=parseTileKey(key);
+      if(tx<0||ty<0||tx*T>=root.width||ty*T>=root.height)continue;
+      const b=this.storeValue.readCopy(value.baseBlockId),copyW=Math.min(T,root.width-tx*T),copyH=Math.min(T,root.height-ty*T);
+      for(let row=0;row<copyH;row++)out.set(b.subarray(row*T*4,(row*T+copyW)*4),((ty*T+row)*root.width+tx*T)*4);
+    }return out;
   }
   getTileValue(layerId:LayerId,tileX:number,tileY:number){return this.root.getLayer(layerId).surface.getValue(tileX,tileY);}
   readPixel(layerId:LayerId,x:number,y:number){if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y))throw new Error('invalid pixel coordinate');const l=this.root.getLayer(layerId);

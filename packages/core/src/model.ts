@@ -22,6 +22,10 @@ export class DocumentRoot{
     for(const id of rootLayerIds){if(seen.has(id))throw new Error('duplicate root layer');if(!layers.get(id))throw new Error('root layer is missing');seen.add(id);}
     return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,layers,rootLayerIds,this.metadata);
   }
+  withDimensions(width:number,height:number){if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)throw new Error('invalid canvas dimensions');
+    if(width===this.width&&height===this.height)return this;
+    return new DocumentRoot(this.documentId,width,height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,this.metadata);
+  }
   withModifiedAt(modifiedAt:number){if(!Number.isSafeInteger(modifiedAt)||modifiedAt<this.metadata.createdAt)throw new Error('invalid modifiedAt');
     if(modifiedAt===this.metadata.modifiedAt)return this;return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{createdAt:this.metadata.createdAt,modifiedAt});}
 }
