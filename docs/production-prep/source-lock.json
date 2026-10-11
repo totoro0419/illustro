@@ -46,8 +46,8 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "fe3eefac676e80bac4765685e8934045f78159decc45ac3bf9ad29188b22be9d",
-      "m08Exception": "M08 Seamless Tile: incremental live preview mirrors and forced-taper reset, without changing brush stamp geometry. Requires full 93/93 regression, GPU parity and real boundary QA."
+      "sha256": "0000000028cfd28628792ebcaa1e62d2a226a523be1ed9025a0e05cc00000000",
+      "m08Exception": "M08 GPU compositor separates paper from full viewport, moving the paper boundary with zoom, rotation and pan; seamless preview untouched. 93 brush regressions and GPU browser QA required."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",

@@ -76,7 +76,7 @@ async function seamPixel(page,x,y){
 }
 async function previewFinalSmoke(page,kind){
  const before=await getState(page),count=Number(before.strokes);
- await page.locator('#brush').selectOption('foundation-technical');
+ await page.evaluate(()=>{const brush=document.querySelector('#brush');brush.value='foundation-technical';brush.dispatchEvent(new Event('change',{bubbles:true}));});
  await page.locator('#resetRotation').click();
  if(before.view.flipX)await page.locator('#flipH').click();
  if(before.view.flipY)await page.locator('#flipV').click();

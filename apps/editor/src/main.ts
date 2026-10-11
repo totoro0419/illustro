@@ -17,6 +17,8 @@ const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWi
 const qaStartedAt=new Date().toISOString();
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=shellMarkup(qaMode,qaMode?(m08Mode?qaM08Markup():qaMarkup()):'');
+// In M08 the GPU canvas is the entire interaction viewport, not a fixed paper rectangle.
+if(m08Mode)document.body.classList.add('m08-canvas-viewport');
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();

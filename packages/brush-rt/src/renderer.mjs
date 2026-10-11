@@ -63,7 +63,11 @@ void main(){
  vec2 pos=(screen-viewScreen.zw*.5-viewMotion.xy)/viewDocument.z;
  float c=cos(viewDocument.w),s=sin(viewDocument.w);
  vec2 doc=vec2(pos.x*c+pos.y*s,-pos.x*s+pos.y*c)*viewMotion.zw+viewDocument.xy*.5;
- if(viewOptions.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=viewDocument.x||doc.y>=viewDocument.y)){outColor=vec4(1.);return;}
+ if(viewOptions.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=viewDocument.x||doc.y>=viewDocument.y)){
+  vec2 outside=max(max(-doc,doc-viewDocument.xy),vec2(0.));
+  float shadow=.075*exp(-length(outside)*viewDocument.z/13.);
+  outColor=vec4(vec3(.945,.955,.977)-vec3(shadow),1.);return;
+ }
  vec2 pixel=vec2(doc.x,viewOptions.z>.5?doc.y:viewDocument.y-doc.y)-.5;
  ivec2 at=ivec2(floor(pixel));vec2 w=fract(pixel);
  vec4 color;float footprint=max(viewScreen.z/viewScreen.x,viewScreen.w/viewScreen.y)/viewDocument.z;
@@ -73,7 +77,10 @@ void main(){
  vec2 location=pixel+(vec2(float(xx)+.5,float(yy)+.5)/float(taps)-.5)*footprint;accum+=takePixel(ivec2(floor(location+.5)));}}
  color=accum/float(taps*taps);
  }else color=viewOptions.y>.5?takePixel(ivec2(floor(pixel+.5))):mix(mix(takePixel(at),takePixel(at+ivec2(1,0)),w.x),mix(takePixel(at+ivec2(0,1)),takePixel(at+ivec2(1,1)),w.x),w.y);
- outColor=vec4(color.rgb+vec3(1.-color.a),1.);
+ vec3 paperColor=color.rgb+vec3(1.-color.a);
+ float distanceToEdge=min(min(doc.x,doc.y),min(viewDocument.x-doc.x,viewDocument.y-doc.y))*viewDocument.z;
+ float outline=(1.-smoothstep(0.,1.25,distanceToEdge))*.6;
+ outColor=vec4(mix(paperColor,vec3(.60,.68,.81),outline),1.);
 }`;
 const PRESENT_WGSL=`struct VertexOut{@builtin(position) position:vec4f}
 struct PresentView{screen:vec4f,document:vec4f,motion:vec4f,options:vec4f}
@@ -94,7 +101,11 @@ fn takePixel(p:vec2i)->vec4f{
  let pos=(screen-view.screen.zw*.5-view.motion.xy)/view.document.z;
  let c=cos(view.document.w);let s=sin(view.document.w);
  let doc=vec2f(pos.x*c+pos.y*s,-pos.x*s+pos.y*c)*view.motion.zw+view.document.xy*.5;
- if(view.options.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=view.document.x||doc.y>=view.document.y)){return vec4f(1.);}
+ if(view.options.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=view.document.x||doc.y>=view.document.y)){
+  let outside=max(max(-doc,doc-view.document.xy),vec2f(0.));
+  let shadow=.075*exp(-length(outside)*view.document.z/13.);
+  return vec4f(vec3f(.945,.955,.977)-vec3f(shadow),1.);
+ }
  let pixel=doc-vec2f(.5);let at=vec2i(floor(pixel));let w=fract(pixel);
  var color:vec4f;
  let footprint=max(view.screen.z/view.screen.x,view.screen.w/view.screen.y)/view.document.z;
@@ -106,7 +117,10 @@ fn takePixel(p:vec2i)->vec4f{
  color=accum/f32(taps*taps);
  }else if(view.options.y>.5){color=takePixel(vec2i(floor(pixel+.5)));}
  else{color=mix(mix(takePixel(at),takePixel(at+vec2i(1,0)),w.x),mix(takePixel(at+vec2i(0,1)),takePixel(at+vec2i(1,1)),w.x),w.y);}
- return vec4f(color.rgb+vec3f(1.-color.a),1.);
+ let paperColor=color.rgb+vec3f(1.-color.a);
+ let distanceToEdge=min(min(doc.x,doc.y),min(view.document.x-doc.x,view.document.y-doc.y))*view.document.z;
+ let outline=(1.-smoothstep(0.,1.25,distanceToEdge))*.6;
+ return vec4f(mix(paperColor,vec3f(.60,.68,.81),outline),1.);
 }`;
 export function parameters(p=emptyPreset,x=0,y=0,n=0,mode=0,w=2048,h=1536,cw=1024,ch=768,same=false,liveBlend=0,bandSectors=64){const out=new Float32Array([x,y,n,mode,p.hardness,p.bristles,p.dualAspect??p.aspect,p.grainScale,Math.cos(p.grainRotation),Math.sin(p.grainRotation),S.kinds[p.tip],p.dual?S.kinds[p.dual]:-1,S.grainKinds[p.grainKind],S.blends[p.blend],p.__foundation?.coverageUnion?2:p.__foundation?.material?1:0,p.__foundation?.opacity??1,w,h,0,0,cw,ch,0,0,same?1:0,liveBlend,0,liveAccumulation(p)?1:0,0,bandSectors,p.__legacyStarAa?1:0,0,...new Array(32).fill(0)]);const t=p.__foundation?.texture;if(t){out[32]=t.sizeMode==='relative'?1:0;out[33]=t.space==='tip'?1:0;out[34]=t.followDirection?1:0;out[35]=t.invert?1:0;out[36]=t.minimum;out[37]=t.aa?1:0;}return out;}
 
