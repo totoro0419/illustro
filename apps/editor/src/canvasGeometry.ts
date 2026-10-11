@@ -58,8 +58,8 @@ export function resizeImagePixels(source:Pixels,w:number,h:number,newW:number,ne
      const wx:Array<[number,number]>=[];forWeights(x,rx,sampleMethod,w,(i,weight)=>wx.push([i,weight]));
      let a=0,r=0,g=0,b=0,total=0;
      for(const [sy,wyv] of wy)for(const [sx,wxv] of wx){
-       const v=wyv*wxv,i=(sy*w+sx)*4,alpha=source[i+3]/255;
-       total+=v;a+=v*alpha;r+=v*alpha*source[i];g+=v*alpha*source[i+1];b+=v*alpha*source[i+2];
+       const v=wyv*wxv,i=(sy*w+sx)*4,alpha=(source[i+3]??0)/255;
+       total+=v;a+=v*alpha;r+=v*alpha*(source[i]??0);g+=v*alpha*(source[i+1]??0);b+=v*alpha*(source[i+2]??0);
      }
      const p=(y*newW+x)*4,opacity=total===0?0:clamp(a/total,0,1);
      out[p+3]=Math.round(opacity*255);

@@ -138,13 +138,13 @@ function geometryRect(){
 }
 function redrawCrop(){
  if(geometryMode!=='document.crop'||!surface)return;
- const rect=geometryRect();if(!rect){cropOverlay.hidden=true;return;}
- cropOverlay.hidden=false;
+ const rect=geometryRect();if(!rect){cropOverlay.setAttribute('hidden','');return;}
+ cropOverlay.removeAttribute('hidden');
  const a=surface.documentToScreen({x:rect.x,y:rect.y}),b=surface.documentToScreen({x:rect.x+rect.w,y:rect.y}),c=surface.documentToScreen({x:rect.x+rect.w,y:rect.y+rect.h}),d=surface.documentToScreen({x:rect.x,y:rect.y+rect.h});
  const points=[a,b,c,d];(document.getElementById('cropPolygon') as unknown as SVGPolygonElement).setAttribute('points',points.map(p=>p.x+','+p.y).join(' '));
  for(const [corner,index] of [['tl',0],['tr',1],['br',2],['bl',3]] as const){const handle=cropOverlay.querySelector<SVGCircleElement>('[data-corner="'+corner+'"]');if(handle){handle.setAttribute('cx',String(points[index]!.x));handle.setAttribute('cy',String(points[index]!.y));}}
 }
-function closeGeometry(){if(geometryBusy)return;geometryMode=null;geometryDialog.close();cropOverlay.hidden=true;byId('geometryStatus').textContent='';}
+function closeGeometry(){if(geometryBusy)return;geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');byId('geometryStatus').textContent='';}
 function openGeometry(mode:GeometryMode){
  if(!documentReady||!surface?.canChangeGeometry){byId('status').textContent='描画が終わってから変更してください。';return;}
  geometryMode=mode;const root=controller.document.root;
@@ -210,7 +210,7 @@ async function applyGeometry(){
   const tx=controller.document.begin(mode==='document.crop'?'Crop':mode==='document.canvas-resize'?'Canvas Resize':'Image Resize');
   tx.resizeDocument(w,h,mode,out,mode==='document.crop'?{x:rect!.x,y:rect!.y}:{anchor,filter:method});
   const receipt=tx.commit();controller.lastPersistenceHandoff=receipt.persistence;queueLatestCommit();
-  geometryMode=null;geometryDialog.close();cropOverlay.hidden=true;
+  geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');
   await reloadGeometryProjection();scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
   byId('status').textContent='作品を'+w+'×'+h+'pxに変更しました。元に戻すこともできます。';
  }catch(error){byId('geometryStatus').textContent=error instanceof Error?error.message:'変更できませんでした。';}
