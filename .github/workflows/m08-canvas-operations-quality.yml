@@ -4,7 +4,7 @@ on:
     branches: ['milestone/M08-canvas-operations-quality']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -61,6 +61,63 @@ jobs:
           M06_EXPECT_MILESTONE: M07
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/editor-m06-smoke.mjs
+      - name: Checkout immutable earlier QA snapshots
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+      - name: Preserve M01 to M07 and stage exact M08 QA
+        run: |
+          for n in 01 02 03 04 05 06 07; do
+            test -d "site/qa/m$n"
+            (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/m$n.before"
+          done
+          rm -rf site/qa/m08
+          mkdir -p site/qa/m08
+          cp -a apps/editor/dist/. site/qa/m08/
+          touch site/.nojekyll
+          for n in 01 02 03 04 05 06 07; do
+            (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/m$n.after"
+            diff -u "/tmp/m$n.before" "/tmp/m$n.after"
+          done
+      - name: Publish only M08 QA
+        working-directory: site
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m08 .nojekyll
+          if git diff --cached --quiet; then echo 'M08 QA already published'; else
+            git commit -m 'qa: publish M08 Canvas operations and display'
+            git push origin HEAD:gh-pages
+          fi
+      - name: Verify exact published HEAD and earlier QA availability
+        env:
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          ok=0
+          for i in $(seq 1 72); do
+            code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m08.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m08/?build=$EXPECTED_COMMIT_SHA" || true)
+            valid=1
+            for n in 01 02 03 04 05 06 07; do
+              result=$(curl -L -sS -H 'Cache-Control: no-cache' -o "/tmp/m$n.html" -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m$n/?m08=$EXPECTED_COMMIT_SHA" || true)
+              [ "$result" = '200' ] || valid=0
+            done
+            asset=$(sed -n 's#.*src="./\([^"]*\.js\)".*#\1#p' /tmp/m08.html | head -n 1)
+            if [ "$code" = '200' ] && [ "$valid" = '1' ] && [ -n "$asset" ]; then
+              js=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m08.js -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m08/$asset?build=$EXPECTED_COMMIT_SHA" || true)
+              if [ "$js" = '200' ] && grep -q "$EXPECTED_COMMIT_SHA" /tmp/m08.js; then ok=1; break; fi
+            fi
+            sleep 5
+          done
+          test "$ok" = '1'
+      - name: M08 actual published browser spot check
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m08-browser/node_modules/playwright
+          M08_EVIDENCE_DIRECTORY: /tmp/m08-evidence/public
+          M08_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m08/
+          M08_SMOKE_QUICK: '1'
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m08-smoke.mjs
       - name: Upload build evidence
         uses: actions/upload-artifact@v4
         if: always()
