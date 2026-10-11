@@ -44,9 +44,9 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "M08 display presentation verified by targeted regression build",
-      "sha256": "e51def352d9eb64f676b09fc1b6c8121f1216a244e3d644dc32973766fb1379c",
-      "m08Exception": "Only presentation target dimensions changed to independent document dimensions; exact new file SHA-256 above; brush shape and stroke geometry frozen."
+      "sourceCommit": "M08 QA reference-only shader/test pattern",
+      "sha256": "de3b59ae32bf910502e25c514f2e145e3227e7ab58be3412ad2fd721a13d6347",
+      "m08Exception": "Reference visual pattern is generated as a separate 512px texture, never alters document/brush geometry or exports."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",

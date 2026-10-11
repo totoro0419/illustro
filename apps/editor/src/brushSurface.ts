@@ -63,6 +63,7 @@ export class BrushSurface{
   setViewZoom(zoom:number){if(this.view){this.view.setZoom(zoom);this.updateView();}}
   setViewRotation(angle:number){if(this.view){this.view.setRotation(angle);this.updateView();}}
   setSeamless(enabled:boolean){if(this.view){this.view.seamless=enabled;this.updateView();}}
+  setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView();}}
   private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x,y:d.y,t:e.timeStamp,pressure:e.pressure,pointerType:e.pointerType,tilt:Math.min(1,Math.hypot(e.tiltX,e.tiltY)/90),azimuth:Math.atan2(e.tiltY,e.tiltX),twist:e.twist/360};}
   private gesture(){const points=[...this.touchPoints.values()];if(points.length<2)return null;const a=points[0]!,b=points[1]!;return {center:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},distance:Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),angle:Math.atan2(b.y-a.y,b.x-a.x)};}
   private touchMovement(e:PointerEvent){if(!this.touchPoints.has(e.pointerId)||!this.view)return false;this.touchPoints.set(e.pointerId,this.pointerLocation(e));
