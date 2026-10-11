@@ -46,7 +46,13 @@ void main(){
  if(viewOptions.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=viewDocument.x||doc.y>=viewDocument.y)){outColor=vec4(1.);return;}
  vec2 pixel=vec2(doc.x,viewOptions.z>.5?doc.y:viewDocument.y-doc.y)-.5;
  ivec2 at=ivec2(floor(pixel));vec2 w=fract(pixel);
- vec4 color=viewOptions.y>.5?takePixel(ivec2(floor(pixel+.5))):mix(mix(takePixel(at),takePixel(at+ivec2(1,0)),w.x),mix(takePixel(at+ivec2(0,1)),takePixel(at+ivec2(1,1)),w.x),w.y);
+ vec4 color;float footprint=max(viewScreen.z/viewScreen.x,viewScreen.w/viewScreen.y)/viewDocument.z;
+ if(viewOptions.y<.5&&footprint>1.5){
+ int taps=int(clamp(ceil(footprint),2.,8.));vec4 accum=vec4(0.);
+ for(int yy=0;yy<8;yy++){if(yy>=taps)break;for(int xx=0;xx<8;xx++){if(xx>=taps)break;
+ vec2 location=pixel+(vec2(float(xx)+.5,float(yy)+.5)/float(taps)-.5)*footprint;accum+=takePixel(ivec2(floor(location+.5)));}}
+ color=accum/float(taps*taps);
+ }else color=viewOptions.y>.5?takePixel(ivec2(floor(pixel+.5))):mix(mix(takePixel(at),takePixel(at+ivec2(1,0)),w.x),mix(takePixel(at+ivec2(0,1)),takePixel(at+ivec2(1,1)),w.x),w.y);
  outColor=vec4(color.rgb+vec3(1.-color.a),1.);
 }`;
 const PRESENT_WGSL=`struct VertexOut{@builtin(position) position:vec4f}
@@ -71,7 +77,14 @@ fn takePixel(p:vec2i)->vec4f{
  if(view.options.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=view.document.x||doc.y>=view.document.y)){return vec4f(1.);}
  let pixel=doc-vec2f(.5);let at=vec2i(floor(pixel));let w=fract(pixel);
  var color:vec4f;
- if(view.options.y>.5){color=takePixel(vec2i(floor(pixel+.5)));}
+ let footprint=max(view.screen.z/view.screen.x,view.screen.w/view.screen.y)/view.document.z;
+ if(view.options.y<.5&&footprint>1.5){
+ let taps=i32(clamp(ceil(footprint),2.,8.));var accum=vec4f(0.);
+ for(var yy:i32=0;yy<8;yy=yy+1){if(yy>=taps){break;}
+ for(var xx:i32=0;xx<8;xx=xx+1){if(xx>=taps){break;}
+ let location=pixel+(vec2f(f32(xx)+.5,f32(yy)+.5)/f32(taps)-.5)*footprint;accum+=takePixel(vec2i(floor(location+.5)));}}
+ color=accum/f32(taps*taps);
+ }else if(view.options.y>.5){color=takePixel(vec2i(floor(pixel+.5)));}
  else{color=mix(mix(takePixel(at),takePixel(at+vec2i(1,0)),w.x),mix(takePixel(at+vec2i(0,1)),takePixel(at+vec2i(1,1)),w.x),w.y);}
  return vec4f(color.rgb+vec3f(1.-color.a),1.);
 }`;
