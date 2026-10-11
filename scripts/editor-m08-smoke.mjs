@@ -53,6 +53,45 @@ async function geometrySmoke(page){
  await apply();current=await getState(page);assert.equal(current.document.width,Math.max(64,Math.floor(oldW/2)));
  await history(oldW,oldH,Math.max(64,Math.floor(oldW/2)),Math.max(64,Math.floor(oldH/2)));
 }
+async function seamPixel(page,x,y){
+ const screenshot=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
+ return page.evaluate(async ({png,x,y})=>{
+  const c=document.getElementById('canvas'),q=JSON.parse(document.getElementById('qaAuto').textContent),v=q.display.view,r=c.getBoundingClientRect();
+  const bytes=Uint8Array.from(atob(png),t=>t.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
+  const imageWidth=bitmap.width,imageHeight=bitmap.height,t=document.createElement('canvas');t.width=imageWidth;t.height=imageHeight;
+  const ctx=t.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0);bitmap.close();
+  const cssX=v.cssWidth/2+(x-v.documentWidth/2)*v.zoom+v.panX,cssY=v.cssHeight/2+(y-v.documentHeight/2)*v.zoom+v.panY;
+  const px=Math.max(0,Math.min(imageWidth-1,Math.floor(cssX*imageWidth/r.width)));
+  const py=Math.max(0,Math.min(imageHeight-1,Math.floor(cssY*imageHeight/r.height)));
+  return [...ctx.getImageData(px,py,1,1).data];
+ },{png:screenshot,x,y});
+}
+async function seamlessSmoke(page){
+ const initial=await getState(page),w=initial.document.width,h=initial.document.height;
+ await page.locator('#resetRotation').click();
+ if(initial.view.flipX)await page.locator('#flipH').click();
+ if(initial.view.flipY)await page.locator('#flipV').click();
+ await page.locator('#view100').click();
+ await page.evaluate(()=>{const c=document.querySelector('#seamless');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));});
+ const before=await getState(page),rect=await page.locator('#canvas').boundingBox(),v=before.view;
+ assert.ok(v.seamless,'seamless must be enabled');
+ const sx=x=>rect.x+v.cssWidth/2+(x-w/2)*v.zoom+v.panX;
+ const sy=y=>rect.y+v.cssHeight/2+(y-h/2)*v.zoom+v.panY;
+ const oldCount=Number(before.strokes),beforePixel=await seamPixel(page,8,h*.52);
+ await page.mouse.move(sx(w-12),sy(h*.52));await page.mouse.down();
+ await page.mouse.move(sx(w+24),sy(h*.52),{steps:10});await page.mouse.up();
+ await page.waitForFunction(expected=>{const c=document.querySelector('#canvas');return Number(c.dataset.committedStrokes)>=expected&&c.dataset.historyBusy==='false';},oldCount+1,{timeout:90000});
+ const result=await getState(page);assert.equal(Number(result.strokes),oldCount+1);
+ assert.ok(result.qa.seamlessCopyCount>=1,'edge crossing must produce an opposite-side raster operation');
+ const afterPixel=await seamPixel(page,8,h*.52);assert.ok(beforePixel[0]-afterPixel[0]>35,'opposite edge should gain painted pixels '+JSON.stringify({beforePixel,afterPixel}));
+ const committed=result.revision;
+ await page.locator('#undo').click();
+ await page.waitForFunction(expected=>{const c=document.querySelector('#canvas');return Number(c.dataset.committedStrokes)===expected&&c.dataset.historyBusy==='false';},oldCount,{timeout:90000});
+ await page.locator('#redo').click();
+ await page.waitForFunction(([expected,revision])=>{const c=document.querySelector('#canvas');return Number(c.dataset.committedStrokes)===expected&&c.dataset.revisionId===revision&&c.dataset.historyBusy==='false';},[oldCount+1,committed],{timeout:90000});
+ const after=await getState(page);assert.ok(after.qa.seamlessCopyCount>=1,'atomic redo must restore seam copies');
+ await page.evaluate(()=>{const c=document.querySelector('#seamless');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));});
+}
 async function run(kind,dpr,width,height){
  const context=await browser.newContext({viewport:{width:1250,height:900},deviceScaleFactor:dpr,hasTouch:dpr>=2});
  const page=await context.newPage();const errors=[];
@@ -77,33 +116,38 @@ async function run(kind,dpr,width,height){
   await page.locator('#qaEntry').click();await page.locator('#referencePattern').check();
   let pat=await getState(page);assert.equal(pat.view.reference,true);assert.equal(pat.revision,firstRev,'reference is view-only');
   if(dpr===2&&width===512){
-    await page.waitForTimeout(280);
-    // Verify actual compositor pixels. Crop screenshot to the canvas element
-    // without changing layout, and make the floating QA panel transparent.
-    await page.evaluate(()=>{document.querySelector('#qaSummary').style.visibility='hidden';});
-    await page.waitForTimeout(400);
-    const screenshot=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
-    const pixels=await page.evaluate(async png=>{
-      const canvas=document.querySelector('#canvas'),q=JSON.parse(document.querySelector('#qaAuto').textContent||'{}');
-      const v=q.display.view,rect=canvas.getBoundingClientRect(),bytes=Uint8Array.from(atob(png),ch=>ch.charCodeAt(0));
-      const image=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
-      const imageWidth=image.width,imageHeight=image.height;
-      const scratch=document.createElement('canvas');scratch.width=imageWidth;scratch.height=imageHeight;
-      const ctx=scratch.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);image.close();
-      const sx=imageWidth/rect.width,sy=imageHeight/rect.height;
-      return [[40,40],[41,40],[192,64],[193,64],[400,40]].map(([x,y])=>{
-        const cssX=rect.width/2+(x+.5-v.documentWidth/2)*v.zoom+v.panX;
-        const cssY=rect.height/2+(y+.5-v.documentHeight/2)*v.zoom+v.panY;
-        const px=Math.max(0,Math.min(imageWidth-1,Math.floor(cssX*sx)));
-        const py=Math.max(0,Math.min(imageHeight-1,Math.floor(cssY*sy)));
-        return {x,y,rgba:[...ctx.getImageData(px,py,1,1).data],pixel:{px,py}};
-      });
-    },screenshot);
-    await page.evaluate(()=>{document.querySelector('#qaSummary').style.visibility='';});
-    const expected=[[245,245,245,255],[20,20,20,255],[0,0,0,255],[255,255,255,255],[32,223,128,255]];
-    for(let i=0;i<pixels.length;i++)for(let channel=0;channel<4;channel++){
-      assert.ok(Math.abs(pixels[i].rgba[channel]-expected[i][channel])<=2,'pixel reference parity '+kind+' '+JSON.stringify(pixels));
+    const screenshotPixels=async()=>{
+      const screenshot=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
+      return page.evaluate(async png=>{
+        const canvas=document.querySelector('#canvas'),q=JSON.parse(document.querySelector('#qaAuto').textContent||'{}'),v=q.display.view;
+        const rect=canvas.getBoundingClientRect(),bytes=Uint8Array.from(atob(png),ch=>ch.charCodeAt(0));
+        const bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
+        const width=bitmap.width,height=bitmap.height,scratch=document.createElement('canvas');scratch.width=width;scratch.height=height;
+        const ctx=scratch.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0);bitmap.close();
+        const sx=width/rect.width,sy=height/rect.height;
+        return [[40,40],[41,40],[192,64],[193,64],[400,40]].map(([x,y])=>{
+          const cssX=v.cssWidth/2+(x+.5-v.documentWidth/2)*v.zoom+v.panX,cssY=v.cssHeight/2+(y+.5-v.documentHeight/2)*v.zoom+v.panY;
+          const px=Math.max(0,Math.min(width-1,Math.floor(cssX*sx))),py=Math.max(0,Math.min(height-1,Math.floor(cssY*sy)));
+          return {x,y,rgba:[...ctx.getImageData(px,py,1,1).data]};
+        });
+      },screenshot);
+    };
+    // A GPU context can finish its setup after input is enabled. Require the
+    // reference actually to be presented; a fixed 280ms timer is not a check.
+    let pixels=[],referencePresentationMs=0,presentationStart=Date.now();
+    for(let attempt=0;attempt<15;attempt++){
+      pixels=await screenshotPixels();
+      const c0=pixels[0]?.rgba?.[0],c1=pixels[1]?.rgba?.[0],gradient=pixels[4]?.rgba;
+      const valid=(Math.abs(c0-20)<3||Math.abs(c0-245)<3)&&(Math.abs(c1-20)<3||Math.abs(c1-245)<3)
+        &&Math.abs(c0-c1)>200&&Math.abs((gradient?.[0]??0)-32)<=2
+        &&Math.abs((gradient?.[1]??0)-223)<=2&&Math.abs((gradient?.[2]??0)-128)<=2;
+      if(valid){referencePresentationMs=Date.now()-presentationStart;break;}
+      if(attempt<14)await page.waitForTimeout(160);
     }
+    assert.ok(referencePresentationMs>0,'GPU reference pixels never reached expected displayed pattern '+kind+' '+JSON.stringify(pixels));
+    assert.ok(pixels.every(p=>p.rgba[3]===255),'reference pixel alpha '+JSON.stringify(pixels));
+    output.referencePixels??={};output.referencePixels[kind]=pixels.map(p=>p.rgba);
+    output.referenceLatencyMs??={};output.referenceLatencyMs[kind]=referencePresentationMs;
     output.tests.push({kind,dpr,width,height,result:'REFERENCE-PASS',pixels});
   }
   await page.locator('#referencePattern').uncheck();
@@ -136,7 +180,11 @@ async function run(kind,dpr,width,height){
   await page.evaluate(()=>{window.__m08Trace=[];const c=document.getElementById('canvas');for(const type of ['pointerdown','pointerup','pointercancel','lostpointercapture'])c.addEventListener(type,e=>window.__m08Trace.push({type,button:e.button,id:e.pointerId,isTrusted:e.isTrusted,ts:performance.now()}),{capture:true});});
   await draw(page,2);
   v=await getState(page);assert.ok(Number(v.strokes)>=2,'workspace closed still draws');
-  if(kind==='webgl2'&&dpr===2&&width===512)await geometrySmoke(page);
+  if(dpr===2&&width===512){
+    if(kind==='webgl2')await geometrySmoke(page);
+    else await page.locator('#workspaceToggle').click();
+    await seamlessSmoke(page);
+  }
   assert.equal(errors.filter(e=>!e.includes('ERR_NAME_NOT_RESOLVED')).length,0,'console errors: '+JSON.stringify(errors));
   if(dpr===2&&width===3000)await page.screenshot({path:path.join(evidence,kind+'-3000-'+dpr+'.png')});
   output.tests.push({kind,dpr,width,height,result:'PASS',backing:[v.backingWidth,v.backingHeight],css:[v.cssWidth,v.cssHeight],view:v.view,backend:v.backend,errors});
@@ -149,6 +197,11 @@ try{
   for(const [w,h] of (process.env.M08_SMOKE_QUICK?[[2048,1536]]:[[2048,1536],[2560,1440],[3000,2000]]))await run(kind,2,w,h);
  }
 }finally{await browser.close();if(server)await new Promise(resolve=>server.close(resolve));}
+if(output.referencePixels?.webgl2&&output.referencePixels?.webgpu){
+ for(let i=0;i<output.referencePixels.webgl2.length;i++)for(let c=0;c<4;c++)
+  assert.ok(Math.abs(output.referencePixels.webgl2[i][c]-output.referencePixels.webgpu[i][c])<=2,
+    'displayed WebGL2/WebGPU reference pixels differ: '+JSON.stringify(output.referencePixels));
+}
 await fs.writeFile(path.join(evidence,'m08-report.json'),JSON.stringify(output,null,2));
 console.log(JSON.stringify(output));
 assert.equal(output.errors.length,0,'M08 browser verification failures: '+JSON.stringify(output.errors));
