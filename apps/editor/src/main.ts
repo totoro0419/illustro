@@ -115,7 +115,7 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   persistence.noteCommit(controller.document,handoff);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateViewControls();updateQa();},backendOverride);}
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateViewControls();redrawCrop();updateQa();},backendOverride);}
 surface=makeSurface();
 function updateViewControls(){const state=surface?.viewState;if(!state)return;
   byId<HTMLInputElement>('zoomPercent').value=String(Math.round(state.zoom*1000)/10);
@@ -128,7 +128,7 @@ const shellUi=installShellUi(),workspace=shellUi.workspace;
 function syncPreset(){if(!surface?.preset)return;byId<HTMLInputElement>('size').value=String(surface.preset.size);byId<HTMLInputElement>('sizeNumber').value=String(surface.preset.size);byId<HTMLInputElement>('force').checked=surface.preset.forceFade?.enabled??false;updateQa();}
 type GeometryMode='document.crop'|'document.canvas-resize'|'document.image-resize';
 let geometryMode:GeometryMode|null=null,geometryBusy=false;
-const geometryDialog=byId<HTMLDialogElement>('geometryDialog'),cropOverlay=byId<SVGSVGElement>('cropOverlay');
+const geometryDialog=byId<HTMLDialogElement>('geometryDialog'),cropOverlay=document.getElementById('cropOverlay') as unknown as SVGSVGElement;
 const dimensionInput=(id:string)=>byId<HTMLInputElement>(id);
 function geometryRect(){
  const root=controller.document.root;
@@ -141,7 +141,7 @@ function redrawCrop(){
  const rect=geometryRect();if(!rect){cropOverlay.hidden=true;return;}
  cropOverlay.hidden=false;
  const a=surface.documentToScreen({x:rect.x,y:rect.y}),b=surface.documentToScreen({x:rect.x+rect.w,y:rect.y}),c=surface.documentToScreen({x:rect.x+rect.w,y:rect.y+rect.h}),d=surface.documentToScreen({x:rect.x,y:rect.y+rect.h});
- const points=[a,b,c,d];byId<SVGPolygonElement>('cropPolygon').setAttribute('points',points.map(p=>p.x+','+p.y).join(' '));
+ const points=[a,b,c,d];(document.getElementById('cropPolygon') as unknown as SVGPolygonElement).setAttribute('points',points.map(p=>p.x+','+p.y).join(' '));
  for(const [corner,index] of [['tl',0],['tr',1],['br',2],['bl',3]] as const){const handle=cropOverlay.querySelector<SVGCircleElement>('[data-corner="'+corner+'"]');if(handle){handle.setAttribute('cx',String(points[index]!.x));handle.setAttribute('cy',String(points[index]!.y));}}
 }
 function closeGeometry(){if(geometryBusy)return;geometryMode=null;geometryDialog.close();cropOverlay.hidden=true;byId('geometryStatus').textContent='';}
@@ -257,15 +257,15 @@ byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.b
 byId<HTMLButtonElement>('addLayerPage').onclick=()=>byId<HTMLButtonElement>('addLayer').click();
 
 async function performHistory(direction:'undo'|'redo'){
-  if(!surface||surface.busy||historyPending)return;const available=direction==='undo'?controller.canUndo:controller.canRedo;if(!available)return;
+  if(!surface||surface.busy||historyPending||geometryBusy)return;const available=direction==='undo'?controller.canUndo:controller.canRedo;if(!available)return;
   historyPending=true;updateHistoryButtons();updateQa();let change:EditorHistoryChange|null=null;
   try{
     change=direction==='undo'?controller.undo():controller.redo();if(!change.changed)return;
-    await surface.syncHistory(change);if(direction==='undo')undoCount++;else redoCount++;
+    if(change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'))await reloadGeometryProjection();else await surface.syncHistory(change);if(direction==='undo')undoCount++;else redoCount++;
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(change.operations);byId('status').textContent=direction==='undo'?'ひとつ前の状態に戻しました。':'取り消した操作をやり直しました。';
   }catch{
     if(change?.changed){
-      try{const rollback=direction==='undo'?controller.redo():controller.undo();if(rollback.changed)await surface.syncHistory(rollback);}catch{}
+      try{const rollback=direction==='undo'?controller.redo():controller.undo();if(rollback.changed){if(rollback.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'))await reloadGeometryProjection();else await surface.syncHistory(rollback);}}catch{}
     }
     renderLayers();byId('status').textContent='Undo / Redoを安全に反映できなかったため、操作を戻しました。';
   }finally{historyPending=false;updateHistoryButtons();updateQa();}
