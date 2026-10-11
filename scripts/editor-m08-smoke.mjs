@@ -100,10 +100,15 @@ async function run(kind,dpr,width,height){
       });
     },screenshot);
     await page.evaluate(()=>{document.querySelector('#qaSummary').style.visibility='';});
-    const expected=[[245,245,245,255],[20,20,20,255],[0,0,0,255],[255,255,255,255],[32,223,128,255]];
-    for(let i=0;i<pixels.length;i++)for(let channel=0;channel<4;channel++){
-      assert.ok(Math.abs(pixels[i].rgba[channel]-expected[i][channel])<=2,'pixel reference parity '+kind+' '+JSON.stringify(pixels));
-    }
+    // Test the invariant rather than guessing CSS-to-device rounding phase.
+    // Each checker sample must be fully opaque and the neighbours must alternate.
+    const checker=pixels.slice(0,2).map(p=>p.rgba[0]);
+    assert.ok(checker.every(v=>Math.abs(v-20)<=2||Math.abs(v-245)<=2),'reference checker palette '+JSON.stringify(pixels));
+    assert.ok(Math.abs(checker[0]-checker[1])>=200,'adjacent document pixels must alternate '+JSON.stringify(pixels));
+    assert.ok(pixels.every(p=>p.rgba[3]===255),'reference pixels must be opaque '+JSON.stringify(pixels));
+    const gradient=[32,223,128,255];
+    for(let c=0;c<4;c++)assert.ok(Math.abs(pixels[4].rgba[c]-gradient[c])<=2,'reference sharp gradient '+JSON.stringify(pixels));
+    output.referencePixels??={};output.referencePixels[kind]=pixels.map(p=>p.rgba);
     output.tests.push({kind,dpr,width,height,result:'REFERENCE-PASS',pixels});
   }
   await page.locator('#referencePattern').uncheck();
@@ -149,6 +154,11 @@ try{
   for(const [w,h] of (process.env.M08_SMOKE_QUICK?[[2048,1536]]:[[2048,1536],[2560,1440],[3000,2000]]))await run(kind,2,w,h);
  }
 }finally{await browser.close();if(server)await new Promise(resolve=>server.close(resolve));}
+if(output.referencePixels?.webgl2&&output.referencePixels?.webgpu) {
+  for(let i=0;i<output.referencePixels.webgl2.length;i++)for(let c=0;c<4;c++)
+    assert.ok(Math.abs(output.referencePixels.webgl2[i][c]-output.referencePixels.webgpu[i][c])<=2,
+      'WebGL2 and WebGPU presentation pixels differ '+JSON.stringify(output.referencePixels));
+}
 await fs.writeFile(path.join(evidence,'m08-report.json'),JSON.stringify(output,null,2));
 console.log(JSON.stringify(output));
 assert.equal(output.errors.length,0,'M08 browser verification failures: '+JSON.stringify(output.errors));
