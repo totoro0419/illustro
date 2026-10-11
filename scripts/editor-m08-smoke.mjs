@@ -74,7 +74,27 @@ async function run(kind,dpr,width,height){
   await page.locator('#view100').click();
   let v=await getState(page);assert.ok(Math.abs(v.view.zoom-1)<1e-8,'100% is 1 doc px to CSS px');
   const firstRev=v.revision;
-  await page.locator('#qaEntry').click();await page.locator('#referencePattern').check();let pat=await getState(page);assert.equal(pat.view.reference,true);assert.equal(pat.revision,firstRev,'reference is view-only');await page.locator('#referencePattern').uncheck();
+  await page.locator('#qaEntry').click();await page.locator('#referencePattern').check();
+  let pat=await getState(page);assert.equal(pat.view.reference,true);assert.equal(pat.revision,firstRev,'reference is view-only');
+  if(dpr===2&&width===512){
+    await page.waitForTimeout(280);
+    const pixels=await page.evaluate(async()=>{
+      const canvas=document.querySelector('#canvas'),q=JSON.parse(document.querySelector('#qaAuto').textContent||'{}'),v=q.display.view;
+      const image=await createImageBitmap(canvas),temp=document.createElement('canvas');temp.width=canvas.width;temp.height=canvas.height;
+      const ctx=temp.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);image.close();
+      return [[40,40],[41,40],[192,64],[193,64],[400,40]].map(([x,y])=>{
+        const cssX=v.cssWidth/2+(x+.5-v.documentWidth/2)*v.zoom,cssY=v.cssHeight/2+(y+.5-v.documentHeight/2)*v.zoom;
+        const px=Math.max(0,Math.min(canvas.width-1,Math.floor(cssX*canvas.width/v.cssWidth))),py=Math.max(0,Math.min(canvas.height-1,Math.floor(cssY*canvas.height/v.cssHeight)));
+        return {x,y,rgba:[...ctx.getImageData(px,py,1,1).data]};
+      });
+    });
+    const expected=[[245,245,245,255],[20,20,20,255],[0,0,0,255],[255,255,255,255],[32,223,128,255]];
+    for(let i=0;i<pixels.length;i++)for(let channel=0;channel<4;channel++){
+      assert.ok(Math.abs(pixels[i].rgba[channel]-expected[i][channel])<=2,'pixel reference parity '+kind+' '+JSON.stringify(pixels));
+    }
+    output.tests.push({kind,dpr,width,height,result:'REFERENCE-PASS',pixels});
+  }
+  await page.locator('#referencePattern').uncheck();
   await page.locator('#flipH').click();await page.locator('#flipV').click();
   v=await getState(page);assert.equal(v.view.flipX,true);assert.equal(v.view.flipY,true);assert.equal(v.revision,firstRev,'flip must not change revision');
   await page.locator('#fitView').click();
