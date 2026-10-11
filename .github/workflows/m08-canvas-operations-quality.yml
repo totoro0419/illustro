@@ -8,7 +8,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
@@ -47,6 +47,20 @@ jobs:
           M08_EVIDENCE_DIRECTORY: /tmp/m08-evidence/local
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/editor-m08-smoke.mjs
+      - name: M05 Save Recovery Offline regression on M08
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m08-browser/node_modules/playwright
+          M05_EVIDENCE_DIRECTORY: /tmp/m08-evidence/m05
+          M05_EXPECT_MILESTONE: M07
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m05-smoke.mjs
+      - name: M06 PNG JPEG WebP export regression on M08
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m08-browser/node_modules/playwright
+          M06_EVIDENCE_DIRECTORY: /tmp/m08-evidence/m06
+          M06_EXPECT_MILESTONE: M07
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m06-smoke.mjs
       - name: Upload build evidence
         uses: actions/upload-artifact@v4
         if: always()
