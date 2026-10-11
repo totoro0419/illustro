@@ -19,6 +19,19 @@ describe('M03 editor history projection',()=>{
     const c=new EditorController(),first=c.selectedLayerId,second=c.addRasterLayer();c.selectLayer(first);const head=c.document.head;
     c.selectLayer(second);expect(c.document.head).toBe(head);c.selectLayer(first);expect(c.document.head).toBe(head);
   });
+  it('counts a wrapped seamless stroke once across undo and redo',async()=>{
+    const c=new EditorController();
+    const copy={...record,commands:record.commands.map(command=>{const out=Array.from(command);out[0]+=480;out[16]+=480;return out;})} as StrokeRecord;
+    await c.finishStroke(c.target(),record,[copy]);
+    expect(c.document.currentRevision.command?.operations).toHaveLength(2);
+    expect(c.document.currentRevision.command?.operations[1]?.parameters.seamlessCopy).toBe(true);
+    expect(c.committedStrokeCount).toBe(1);
+    expect(c.strokeCountForLayer(c.selectedLayerId)).toBe(1);
+    c.undo();expect(c.committedStrokeCount).toBe(0);
+    expect(c.strokeCountForLayer(c.selectedLayerId)).toBe(0);
+    c.redo();expect(c.committedStrokeCount).toBe(1);
+    expect(c.strokeCountForLayer(c.selectedLayerId)).toBe(1);
+  });
   it('invalidates redo after undo followed by a new formal edit',()=>{
     const c=new EditorController(),first=c.selectedLayerId;c.addRasterLayer();c.undo();expect(c.canRedo).toBe(true);
     c.selectLayer(first);c.addRasterLayer();expect(c.canRedo).toBe(false);expect(c.redo().changed).toBe(false);

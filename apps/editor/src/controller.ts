@@ -51,7 +51,7 @@ export class EditorController{
   }
   private adjustStrokeCounters(direction:'undo'|'redo',operations:readonly SemanticOperation[]){
     const delta=direction==='undo'?-1:1;
-    for(const operation of operations){if(operation.kind!=='brush.stroke')continue;const layerId=operation.targetEntityIds[0];if(layerId===undefined)continue;
+    for(const operation of operations){if(operation.kind!=='brush.stroke'||operation.parameters.seamlessCopy===true)continue;const layerId=operation.targetEntityIds[0];if(layerId===undefined)continue;
       this.committedStrokeCount=Math.max(0,this.committedStrokeCount+delta);if(operation.parameters.action==='erase')this.committedEraserStrokeCount=Math.max(0,this.committedEraserStrokeCount+delta);this.committedByLayer.set(layerId,Math.max(0,this.strokeCountForLayer(layerId)+delta));}
   }
 }
