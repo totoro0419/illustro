@@ -30,6 +30,29 @@ async function draw(page,minimumStrokes=1){
  await page.waitForFunction(minimum=>Number(document.getElementById('canvas')?.dataset.committedStrokes??'0')>=minimum&&document.getElementById('canvas')?.dataset.historyBusy==='false',minimumStrokes,{timeout:45000});
 }
 async function getState(page){return page.evaluate(()=>{const c=document.getElementById('canvas'),r=c.getBoundingClientRect(),q=JSON.parse(document.getElementById('qaAuto')?.textContent||'{}');return {trace:window.__m08Trace??[],status:document.getElementById('status')?.textContent,cssWidth:r.width,cssHeight:r.height,backingWidth:c.width,backingHeight:c.height,dpr:devicePixelRatio,qa:q,revision:c.dataset.revisionId,strokes:c.dataset.committedStrokes,backend:q.backend,view:q.display?.view,document:q.display?.document}});}
+async function geometrySmoke(page){
+ // Document workspace box is initially collapsed by M07.
+ await page.locator('#workspaceToggle').click();
+ await page.locator('.box-toggle[aria-controls="documentBoxBody"]').click();
+ let current=await getState(page),oldW=current.document.width,oldH=current.document.height;
+ const apply=async()=>{await page.locator('#geometryApply').click();await page.waitForFunction(()=>!document.getElementById('geometryDialog').open&&document.getElementById('status')?.textContent?.includes('変更しました'),{timeout:90000});};
+ const history=async(w,h,redoW,redoH)=>{
+  await page.locator('#undo').click();await page.waitForFunction(([w,h])=>{const c=document.getElementById('canvas'),q=JSON.parse(document.getElementById('qaAuto').textContent||'{}');return q.display?.document?.width===w&&q.display?.document?.height===h&&c.dataset.historyBusy==='false';},[w,h],{timeout:90000});
+  await page.locator('#redo').click();await page.waitForFunction(([w,h])=>{const c=document.getElementById('canvas'),q=JSON.parse(document.getElementById('qaAuto').textContent||'{}');return q.display?.document?.width===w&&q.display?.document?.height===h&&c.dataset.historyBusy==='false';},[redoW,redoH],{timeout:90000});
+ };
+ await page.locator('#canvasResizeStart').click();await page.locator('#geometryWidth').fill(String(oldW+32));await page.locator('#geometryHeight').fill(String(oldH+24));await apply();
+ current=await getState(page);assert.equal(current.document.width,oldW+32);assert.equal(current.document.height,oldH+24);
+ await history(oldW,oldH,oldW+32,oldH+24);
+ await page.locator('#cropStart').click();await page.locator('#geometryX').fill('8');await page.locator('#geometryY').fill('8');
+ await page.locator('#geometryWidth').fill(String(oldW));await page.locator('#geometryHeight').fill(String(oldH));
+ assert.equal(await page.locator('#cropOverlay').isVisible(),true,'on-canvas crop handles must be visible');
+ await apply();current=await getState(page);assert.equal(current.document.width,oldW);assert.equal(current.document.height,oldH);
+ await history(oldW+32,oldH+24,oldW,oldH);
+ await page.locator('#imageResizeStart').click();await page.locator('#geometryWidth').fill(String(Math.max(64,Math.floor(oldW/2))));
+ await page.locator('#geometryHeight').fill(String(Math.max(64,Math.floor(oldH/2))));await page.locator('#geometryFilter').selectOption('bicubic');
+ await apply();current=await getState(page);assert.equal(current.document.width,Math.max(64,Math.floor(oldW/2)));
+ await history(oldW,oldH,Math.max(64,Math.floor(oldW/2)),Math.max(64,Math.floor(oldH/2)));
+}
 async function run(kind,dpr,width,height){
  const context=await browser.newContext({viewport:{width:1250,height:900},deviceScaleFactor:dpr,hasTouch:dpr>=2});
  const page=await context.newPage();const errors=[];
@@ -71,6 +94,7 @@ async function run(kind,dpr,width,height){
   await page.evaluate(()=>{window.__m08Trace=[];const c=document.getElementById('canvas');for(const type of ['pointerdown','pointerup','pointercancel','lostpointercapture'])c.addEventListener(type,e=>window.__m08Trace.push({type,button:e.button,id:e.pointerId,isTrusted:e.isTrusted,ts:performance.now()}),{capture:true});});
   await draw(page,2);
   v=await getState(page);assert.ok(Number(v.strokes)>=2,'workspace closed still draws');
+  if(kind==='webgl2'&&dpr===2&&width===512)await geometrySmoke(page);
   assert.equal(errors.filter(e=>!e.includes('ERR_NAME_NOT_RESOLVED')).length,0,'console errors: '+JSON.stringify(errors));
   if(dpr===2&&width===3000)await page.screenshot({path:path.join(evidence,kind+'-3000-'+dpr+'.png')});
   output.tests.push({kind,dpr,width,height,result:'PASS',backing:[v.backingWidth,v.backingHeight],css:[v.cssWidth,v.cssHeight],view:v.view,backend:v.backend,errors});
