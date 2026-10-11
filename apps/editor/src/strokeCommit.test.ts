@@ -47,6 +47,12 @@ describe('M01 stroke -> Document adapter',()=>{
     expect(d.getTileValue(layer,1,0)?.mutations).toHaveLength(1);
     expect(d.getTileValue(layer,0,0)?.mutations).toHaveLength(1);
     expect(result.dirtyTileCount).toBeGreaterThanOrEqual(2);
+    const snapshot=d.capturePersistenceSnapshot(),blocks=d.persistenceBlockPayloads(snapshot);
+    const restored=CoreDocument.restore({snapshot,blockPayloads:blocks});
+    expect(restored.currentRevision.command?.operations).toHaveLength(2);
+    expect(restored.currentRevision.command?.operations[1]?.parameters.seamlessCopy).toBe(true);
+    restored.undo();expect(restored.head).toBe(start);
+    restored.redo();expect(restored.currentRevision.command?.operations).toHaveLength(2);
     d.undo();expect(d.head).toBe(start);
     d.redo();expect(d.currentRevision.command?.operations).toHaveLength(2);
   });

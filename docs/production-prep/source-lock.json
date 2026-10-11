@@ -46,8 +46,8 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "f94fa2e545e3e1d3afafb33d66862b2eadc3f91d50dff04865fa47bf0392e06f",
-      "m08Exception": "M08 Seamless Tile view-only preview and one-step raster seam copies; brush geometry algorithms unchanged. Exact SHA-256 recalculated and 93/93 regression required."
+      "sha256": "fe3eefac676e80bac4765685e8934045f78159decc45ac3bf9ad29188b22be9d",
+      "m08Exception": "M08 Seamless Tile: incremental live preview mirrors and forced-taper reset, without changing brush stamp geometry. Requires full 93/93 regression, GPU parity and real boundary QA."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",

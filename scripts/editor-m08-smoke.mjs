@@ -46,6 +46,14 @@ async function geometrySmoke(page){
  await page.locator('#cropStart').click();await page.locator('#geometryX').fill('8');await page.locator('#geometryY').fill('8');
  await page.locator('#geometryWidth').fill(String(oldW));await page.locator('#geometryHeight').fill(String(oldH));
  assert.equal(await page.locator('#cropOverlay').isVisible(),true,'on-canvas crop handles must be visible');
+ const handle=await page.locator('#cropOverlay .crop-handle[data-corner="br"]').boundingBox();
+ assert.ok(handle&&handle.width>0,'crop handle must be an actual pointer target');
+ await page.mouse.move(handle.x+handle.width/2,handle.y+handle.height/2);await page.mouse.down();
+ await page.mouse.move(handle.x+handle.width/2+20,handle.y+handle.height/2+12,{steps:4});await page.mouse.up();
+ const dragged=Number(await page.locator('#geometryWidth').inputValue());
+ assert.notEqual(dragged,oldW,'dragging crop corner must update numeric width');
+ await page.locator('#geometryX').fill('8');await page.locator('#geometryY').fill('8');
+ await page.locator('#geometryWidth').fill(String(oldW));await page.locator('#geometryHeight').fill(String(oldH));
  await apply();current=await getState(page);assert.equal(current.document.width,oldW);assert.equal(current.document.height,oldH);
  await history(oldW+32,oldH+24,oldW,oldH);
  await page.locator('#imageResizeStart').click();await page.locator('#geometryWidth').fill(String(Math.max(64,Math.floor(oldW/2))));
@@ -116,6 +124,8 @@ async function run(kind,dpr,width,height){
   await page.locator('#qaEntry').click();await page.locator('#referencePattern').check();
   let pat=await getState(page);assert.equal(pat.view.reference,true);assert.equal(pat.revision,firstRev,'reference is view-only');
   if(dpr===2&&width===512){
+    // The floating QA overlay must not obscure reference source pixels.
+    await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='hidden';});
     const screenshotPixels=async()=>{
       const screenshot=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
       return page.evaluate(async png=>{
@@ -148,6 +158,7 @@ async function run(kind,dpr,width,height){
     assert.ok(pixels.every(p=>p.rgba[3]===255),'reference pixel alpha '+JSON.stringify(pixels));
     output.referencePixels??={};output.referencePixels[kind]=pixels.map(p=>p.rgba);
     output.referenceLatencyMs??={};output.referenceLatencyMs[kind]=referencePresentationMs;
+    await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='';});
     output.tests.push({kind,dpr,width,height,result:'REFERENCE-PASS',pixels});
   }
   await page.locator('#referencePattern').uncheck();
