@@ -44,8 +44,9 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "df63e4f6a6b6b7c12979d121030075fd402c60216b447c2ab63ba8d638500bea"
+      "sourceCommit": "ff991d8c83310029f7dea4209d88ce62f454ea05",
+      "sha256": "0df691c9f97b8903fa0c6ae9e0149d583ac035ba9674512367e86d5204229d54",
+      "m08Exception": "View-only presentation compositor and backing-size decoupling; no brush geometry/preset/deposit algorithm change; pending 93-test and WebGL2/WebGPU verification."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
