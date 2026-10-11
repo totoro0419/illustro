@@ -78,25 +78,27 @@ async function run(kind,dpr,width,height){
   let pat=await getState(page);assert.equal(pat.view.reference,true);assert.equal(pat.revision,firstRev,'reference is view-only');
   if(dpr===2&&width===512){
     await page.waitForTimeout(280);
-    // WebGPU's Canvas isn't readable through createImageBitmap(canvas) after
-    // composition on Chromium. Sample an actual compositor screenshot instead.
-    await page.locator('#qaEntry').click();
-    const screenshot=(await page.screenshot({type:'png',animations:'disabled'})).toString('base64');
+    // Verify actual compositor pixels. Crop screenshot to the canvas element
+    // without changing layout, and make the floating QA panel transparent.
+    await page.evaluate(()=>{document.querySelector('#qaSummary').style.visibility='hidden';});
+    await page.waitForTimeout(400);
+    const screenshot=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
     const pixels=await page.evaluate(async png=>{
-      const canvas=document.querySelector('#canvas'),q=JSON.parse(document.querySelector('#qaAuto').textContent||'{}'),v=q.display.view;
-      const bytes=Uint8Array.from(atob(png),ch=>ch.charCodeAt(0));
+      const canvas=document.querySelector('#canvas'),q=JSON.parse(document.querySelector('#qaAuto').textContent||'{}');
+      const v=q.display.view,rect=canvas.getBoundingClientRect(),bytes=Uint8Array.from(atob(png),ch=>ch.charCodeAt(0));
       const image=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
       const scratch=document.createElement('canvas');scratch.width=image.width;scratch.height=image.height;
       const ctx=scratch.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);image.close();
-      const rect=canvas.getBoundingClientRect(),scale=image.width/window.innerWidth;
+      const sx=image.width/rect.width,sy=image.height/rect.height;
       return [[40,40],[41,40],[192,64],[193,64],[400,40]].map(([x,y])=>{
-        const cssX=v.cssWidth/2+(x+.5-v.documentWidth/2)*v.zoom,cssY=v.cssHeight/2+(y+.5-v.documentHeight/2)*v.zoom;
-        const px=Math.max(0,Math.min(image.width-1,Math.floor((rect.x+cssX)*scale)));
-        const py=Math.max(0,Math.min(image.height-1,Math.floor((rect.y+cssY)*scale)));
-        return {x,y,rgba:[...ctx.getImageData(px,py,1,1).data]};
+        const cssX=rect.width/2+(x+.5-v.documentWidth/2)*v.zoom+v.panX;
+        const cssY=rect.height/2+(y+.5-v.documentHeight/2)*v.zoom+v.panY;
+        const px=Math.max(0,Math.min(image.width-1,Math.floor(cssX*sx)));
+        const py=Math.max(0,Math.min(image.height-1,Math.floor(cssY*sy)));
+        return {x,y,rgba:[...ctx.getImageData(px,py,1,1).data],pixel:{px,py}};
       });
     },screenshot);
-    await page.locator('#qaEntry').click();
+    await page.evaluate(()=>{document.querySelector('#qaSummary').style.visibility='';});
     const expected=[[245,245,245,255],[20,20,20,255],[0,0,0,255],[255,255,255,255],[32,223,128,255]];
     for(let i=0;i<pixels.length;i++)for(let channel=0;channel<4;channel++){
       assert.ok(Math.abs(pixels[i].rgba[channel]-expected[i][channel])<=2,'pixel reference parity '+kind+' '+JSON.stringify(pixels));
