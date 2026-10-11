@@ -44,9 +44,9 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "ff991d8c83310029f7dea4209d88ce62f454ea05",
-      "sha256": "0df691c9f97b8903fa0c6ae9e0149d583ac035ba9674512367e86d5204229d54",
-      "m08Exception": "View-only presentation compositor and backing-size decoupling; no brush geometry/preset/deposit algorithm change; pending 93-test and WebGL2/WebGPU verification."
+      "sourceCommit": "M08 display presentation verified by targeted regression build",
+      "sha256": "e51def352d9eb64f676b09fc1b6c8121f1216a244e3d644dc32973766fb1379c",
+      "m08Exception": "Only presentation target dimensions changed to independent document dimensions; exact new file SHA-256 above; brush shape and stroke geometry frozen."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",

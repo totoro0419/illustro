@@ -40,7 +40,12 @@ export class BrushSurface{
     const options={signal:this.abort.signal};this.canvas.addEventListener('pointerdown',this.down,options);this.canvas.addEventListener('pointermove',this.move,options);this.canvas.addEventListener('pointerup',this.up,options);this.canvas.addEventListener('pointercancel',this.cancel,options);this.canvas.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
   private pointerLocation(e:PointerEvent|WheelEvent):Point{const r=this.canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
   private setBackingSize(exact?:{width:number;height:number}){if(!this.view)return;const r=this.canvas.getBoundingClientRect();if(r.width<=0||r.height<=0)return;
-    this.view.resize(r.width,r.height);const dpr=window.devicePixelRatio||1,w=Math.max(1,Math.round(exact?.width??r.width*dpr)),h=Math.max(1,Math.round(exact?.height??r.height*dpr));
+    this.view.resize(r.width,r.height);const dpr=window.devicePixelRatio||1,estimatedW=Math.max(1,Math.round(r.width*dpr)),estimatedH=Math.max(1,Math.round(r.height*dpr));
+    // Some emulated DPR browsers report CSS-sized devicePixelContentBox. If it disagrees
+    // substantially with DPR scaling, preserve rendering fidelity by using the larger
+    // DPR-aware backing rather than silently downgrading device output resolution.
+    const w=exact&&Math.abs(exact.width-estimatedW)<=3?Math.max(1,exact.width):estimatedW;
+    const h=exact&&Math.abs(exact.height-estimatedH)<=3?Math.max(1,exact.height):estimatedH;
     if(this.canvas.width!==w)this.canvas.width=w;if(this.canvas.height!==h)this.canvas.height=h;this.updateView();}
   private windowResize=()=>this.setBackingSize();
   private keyDown=(e:KeyboardEvent)=>{if(e.code==='Space'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement))this.keyboardSpace=true;};
