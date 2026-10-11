@@ -74,6 +74,48 @@ async function seamPixel(page,x,y){
   return [...ctx.getImageData(px,py,1,1).data];
  },{png:screenshot,x,y});
 }
+// Regression: the white paper must move. The GPU canvas itself fills the viewport.
+async function paperViewportSmoke(page,kind){
+ const canvas=await page.locator('#canvas').boundingBox(),stage=await page.locator('.surface').boundingBox();
+ assert.ok(canvas&&stage,'M08 viewport elements must exist');
+ assert.ok(Math.abs(canvas.width-stage.width)<2&&Math.abs(canvas.height-stage.height)<2,
+  'M08 canvas must fill the interaction viewport');
+ const css=await page.locator('.surface').evaluate(el=>({background:getComputedStyle(el).backgroundColor,border:getComputedStyle(el).borderTopWidth}));
+ assert.equal(css.background,'rgba(0, 0, 0, 0)','fixed white CSS surface must not remain');
+ assert.equal(css.border,'0px','fixed paper frame must not remain');
+ await page.locator('#view100').click();
+ await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='hidden';});
+ const centerPixel=async()=>{
+  const png=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
+  return page.evaluate(async encoded=>{
+   const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
+   const bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
+   const scratch=document.createElement('canvas');scratch.width=bitmap.width;scratch.height=bitmap.height;
+   const context=scratch.getContext('2d',{willReadFrequently:true});context.drawImage(bitmap,0,0);
+   const pixel=[...context.getImageData(Math.floor(bitmap.width/2),Math.floor(bitmap.height/2),1,1).data];
+   bitmap.close();return pixel;
+  },png);
+ };
+ try{
+  const start=await centerPixel();
+  assert.ok(start[0]>245&&start[1]>245&&start[2]>245,
+   'blank paper center should be white '+JSON.stringify(start));
+  const middleX=canvas.x+canvas.width/2,middleY=canvas.y+canvas.height/2;
+  await page.mouse.move(middleX,middleY);
+  await page.mouse.down({button:'middle'});
+  await page.mouse.move(middleX+canvas.width*.43,middleY,{steps:12});
+  await page.mouse.up({button:'middle'});
+  await page.waitForFunction(()=>{const v=JSON.parse(document.getElementById('qaAuto').textContent).display.view;return v.panX>200;},{timeout:12000});
+  let moved=[];
+  for(let i=0;i<16;i++){moved=await centerPixel();if(start[0]-moved[0]>8)break;await page.waitForTimeout(110);}
+  assert.ok(start[0]-moved[0]>8,
+   'document paper must move away, exposing nonwhite viewport '+JSON.stringify({start,moved}));
+  output.tests.push({kind,result:'PAPER-FOLLOWS-PAN-PASS',start,moved});
+ }finally{
+  await page.locator('#fitView').click();
+  await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='';});
+ }
+}
 async function previewFinalSmoke(page,kind){
  const before=await getState(page),count=Number(before.strokes);
  await page.evaluate(()=>{const brush=document.querySelector('#brush');brush.value='foundation-technical';brush.dispatchEvent(new Event('change',{bubbles:true}));});
@@ -208,6 +250,7 @@ async function run(kind,dpr,width,height){
     output.tests.push({kind,dpr,width,height,result:'REFERENCE-PASS',pixels});
   }
   await page.locator('#referencePattern').uncheck();
+  if(dpr===2&&width===512)await paperViewportSmoke(page,kind);
   await page.locator('#flipH').click();await page.locator('#flipV').click();
   v=await getState(page);assert.equal(v.view.flipX,true);assert.equal(v.view.flipY,true);assert.equal(v.revision,firstRev,'flip must not change revision');
   await page.locator('#fitView').click();

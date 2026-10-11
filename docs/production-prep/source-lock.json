@@ -46,8 +46,8 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "644e2ef83438d040cc07de0f9cceca77dd97cfdce8d961609deefb673e13d757",
-      "m08Exception": "M08 GPU compositor separates paper from full viewport, moving the paper boundary with zoom, rotation and pan; seamless preview untouched. 93 brush regressions and GPU browser QA required."
+      "sha256": "040d4b42410f45b94a658f38bea9a6a1694c135b9e5aeaf4d20ac8958e2b35e1",
+      "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
