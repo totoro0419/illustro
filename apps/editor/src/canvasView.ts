@@ -1,12 +1,12 @@
 /** M08: view-only geometry. Coordinates remain in document pixels. */
 export type Point=Readonly<{x:number;y:number}>;
-export type ViewState=Readonly<{documentWidth:number;documentHeight:number;cssWidth:number;cssHeight:number;zoom:number;rotation:number;panX:number;panY:number;flipX:boolean;flipY:boolean}>;
+export type ViewState=Readonly<{documentWidth:number;documentHeight:number;cssWidth:number;cssHeight:number;zoom:number;rotation:number;panX:number;panY:number;flipX:boolean;flipY:boolean;seamless:boolean}>;
 export class CanvasView {
  readonly documentWidth:number;readonly documentHeight:number;
- cssWidth=1;cssHeight=1;zoom=1;rotation=0;panX=0;panY=0;flipX=false;flipY=false;
+ cssWidth=1;cssHeight=1;zoom=1;rotation=0;panX=0;panY=0;flipX=false;flipY=false;seamless=false;
  private fitted=false;
  constructor(width:number,height:number){if(!(width>0&&height>0))throw new Error('Invalid canvas size');this.documentWidth=width;this.documentHeight=height;}
- get state():ViewState{return {documentWidth:this.documentWidth,documentHeight:this.documentHeight,cssWidth:this.cssWidth,cssHeight:this.cssHeight,zoom:this.zoom,rotation:this.rotation,panX:this.panX,panY:this.panY,flipX:this.flipX,flipY:this.flipY};}
+ get state():ViewState{return {documentWidth:this.documentWidth,documentHeight:this.documentHeight,cssWidth:this.cssWidth,cssHeight:this.cssHeight,zoom:this.zoom,rotation:this.rotation,panX:this.panX,panY:this.panY,flipX:this.flipX,flipY:this.flipY,seamless:this.seamless};}
  resize(width:number,height:number){if(!(width>0&&height>0))return;this.cssWidth=width;this.cssHeight=height;if(!this.fitted){this.fit();this.fitted=true;}}
  fit(){const c=Math.abs(Math.cos(this.rotation)),s=Math.abs(Math.sin(this.rotation));const w=this.documentWidth*c+this.documentHeight*s,h=this.documentWidth*s+this.documentHeight*c;this.zoom=Math.max(0.001,Math.min(this.cssWidth/w,this.cssHeight/h));this.panX=0;this.panY=0;}
  screen(point:Point):Point{let x=(point.x-this.documentWidth/2)*(this.flipX?-1:1),y=(point.y-this.documentHeight/2)*(this.flipY?-1:1);const c=Math.cos(this.rotation),s=Math.sin(this.rotation);return {x:this.cssWidth/2+this.panX+(x*c-y*s)*this.zoom,y:this.cssHeight/2+this.panY+(x*s+y*c)*this.zoom};}
@@ -19,5 +19,5 @@ export class CanvasView {
  setRotation(angle:number){if(!Number.isFinite(angle))return;const center={x:this.cssWidth/2,y:this.cssHeight/2},d=this.document(center);this.rotation=angle;this.anchor(d,center);}
  toggleFlip(axis:'x'|'y'){if(axis==='x')this.flipX=!this.flipX;else this.flipY=!this.flipY;}
  /** Packing shared by WebGPU and WebGL2: three aligned vec4 values. */
- uniform(backingWidth:number,backingHeight:number):Float32Array{return new Float32Array([backingWidth,backingHeight,this.cssWidth,this.cssHeight,this.documentWidth,this.documentHeight,this.zoom,this.rotation,this.panX,this.panY,this.flipX?-1:1,this.flipY?-1:1]);}
+ uniform(backingWidth:number,backingHeight:number):Float32Array{return new Float32Array([backingWidth,backingHeight,this.cssWidth,this.cssHeight,this.documentWidth,this.documentHeight,this.zoom,this.rotation,this.panX,this.panY,this.flipX?-1:1,this.flipY?-1:1,this.seamless?1:0,this.zoom>=4?1:0,0,0]);}
 }

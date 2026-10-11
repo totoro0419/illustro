@@ -224,3 +224,12 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
  body.right-overlay .canvas-top #status{flex:none;min-width:0;width:max(170px,calc(100% - var(--workspace) - 22px))}
  body.right-overlay .canvas-top .document-actions{max-width:calc(100% - var(--workspace) - 22px)}
 }
+
+/* M08 navigation: separate responsive view controls from the fixed M07 panels. */
+.canvas-view-strip{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;padding:5px 9px;max-width:100%;background:#fff9;border-bottom:1px solid var(--a-border);font-size:12px}
+.canvas-view-strip button{min-width:38px;min-height:34px;padding:5px 9px;border-radius:8px;border:1px solid var(--a-border);background:var(--a-surface,#fff);color:var(--a-text,#253047);font-size:12px}
+.canvas-view-strip button:focus-visible{outline:2px solid var(--a-accent,#708fff)}
+.view-number-label{display:flex;gap:3px;align-items:center;font-size:12px}
+.view-number-label input{width:57px;max-width:65px;min-height:33px;border:1px solid var(--a-border);border-radius:7px;background:#fff;color:#253047;text-align:center}
+.commands button[aria-pressed=true]{background:var(--a-accent-soft,#e9eeff)}
+@media(max-width:760px){.canvas-view-strip{justify-content:flex-start;width:100%;overflow-x:auto;flex-wrap:nowrap;flex:none}.canvas-view-strip button{flex:none}.view-number-label{flex:none}}
