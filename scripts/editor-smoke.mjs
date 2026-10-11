@@ -61,7 +61,8 @@ try{
         assert.equal(await page.locator('#workspace').evaluate(el=>el.inert),true,'closed compact Workspace must be inert');
         assert.equal(await page.locator('#workspace').evaluate(el=>getComputedStyle(el).display),'block','closed compact Workspace must stay in the compositor tree');
         assert.equal(await page.locator('#rightDock').evaluate(el=>getComputedStyle(el).pointerEvents),'none','closed compact Workspace dock must not receive pointer input');
-        assert.equal(await page.locator('#rightDock').evaluate(el=>getComputedStyle(el).opacity),'0','closed compact Workspace dock must be visually hidden');
+        await page.waitForFunction(()=>{const el=document.getElementById('rightDock');return !!el&&Number.parseFloat(getComputedStyle(el).opacity)<=0.01;},{timeout:1000});
+        assert.ok(Number.parseFloat(await page.locator('#rightDock').evaluate(el=>getComputedStyle(el).opacity))<=0.01,'closed compact Workspace dock must be visually hidden after transition');
         const workspaceCoversCenter=await page.evaluate(()=>{const c=document.querySelector('canvas'),w=document.getElementById('workspace');if(!c||!w)return true;const r=c.getBoundingClientRect();return document.elementsFromPoint(r.left+r.width*.5,r.top+r.height*.5).some(el=>el===w||w.contains(el));});
         assert.equal(workspaceCoversCenter,false,'closed compact Workspace still participates in Canvas hit testing');
         assert.equal(await page.locator('#workspace').evaluate(el=>el.contains(document.activeElement)),false,'closed Workspace retained focus');
