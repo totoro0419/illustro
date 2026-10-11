@@ -45,8 +45,8 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "c8dd5bc4adc961fd01dc8d81a28619cf51b59a5d0b06fa820f615bc1c80495cd",
-      "m08Exception": "Reference sampler uses consistent top-origin pixel pattern for WebGL2 and WebGPU; brush geometry unchanged."
+      "sha256": "a8580b0a801b3f18e4f4b29e145f8767d4aa86dfa7999ac62d36845face4754a",
+      "m08Exception": "GPU presentation-only adaptive minification filter (2–8 texel samples per axis); no Brush Engine geometry modifications. Requires quality/performance verification."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
