@@ -24,11 +24,12 @@ const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu
 const output={commit:expected,mode:target?'public':'local',tests:[],errors:[]};
 async function draw(page,minimumStrokes=1){
  const b=await page.locator('#canvas').boundingBox();assert.ok(b&&b.width>100&&b.height>100,'canvas visible');
- await page.mouse.move(b.x+b.width*.25,b.y+b.height*.34);
- await page.mouse.down();await page.mouse.move(b.x+b.width*.7,b.y+b.height*.62,{steps:9});await page.mouse.up();
+ const second=minimumStrokes>1;
+ await page.mouse.move(b.x+b.width*(second?.28:.25),b.y+b.height*(second?.68:.34));
+ await page.mouse.down();await page.mouse.move(b.x+b.width*(second?.64:.7),b.y+b.height*(second?.35:.62),{steps:9});await page.mouse.up();
  await page.waitForFunction(minimum=>Number(document.getElementById('canvas')?.dataset.committedStrokes??'0')>=minimum&&document.getElementById('canvas')?.dataset.historyBusy==='false',minimumStrokes,{timeout:45000});
 }
-async function getState(page){return page.evaluate(()=>{const c=document.getElementById('canvas'),r=c.getBoundingClientRect(),q=JSON.parse(document.getElementById('qaAuto')?.textContent||'{}');return {cssWidth:r.width,cssHeight:r.height,backingWidth:c.width,backingHeight:c.height,dpr:devicePixelRatio,qa:q,revision:c.dataset.revisionId,strokes:c.dataset.committedStrokes,backend:q.backend,view:q.display?.view,document:q.display?.document}});}
+async function getState(page){return page.evaluate(()=>{const c=document.getElementById('canvas'),r=c.getBoundingClientRect(),q=JSON.parse(document.getElementById('qaAuto')?.textContent||'{}');return {trace:window.__m08Trace??[],status:document.getElementById('status')?.textContent,cssWidth:r.width,cssHeight:r.height,backingWidth:c.width,backingHeight:c.height,dpr:devicePixelRatio,qa:q,revision:c.dataset.revisionId,strokes:c.dataset.committedStrokes,backend:q.backend,view:q.display?.view,document:q.display?.document}});}
 async function run(kind,dpr,width,height){
  const context=await browser.newContext({viewport:{width:1250,height:900},deviceScaleFactor:dpr,hasTouch:dpr>=2});
  const page=await context.newPage();const errors=[];
@@ -67,6 +68,7 @@ async function run(kind,dpr,width,height){
   await page.locator('#undo').click();await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.canRedo==='true'&&document.getElementById('canvas')?.dataset.historyBusy==='false',{timeout:45000});
   await page.locator('#redo').click();await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,{timeout:45000});
   await page.locator('#workspaceToggle').click();
+  await page.evaluate(()=>{window.__m08Trace=[];const c=document.getElementById('canvas');for(const type of ['pointerdown','pointerup','pointercancel','lostpointercapture'])c.addEventListener(type,e=>window.__m08Trace.push({type,button:e.button,id:e.pointerId,isTrusted:e.isTrusted,ts:performance.now()}),{capture:true});});
   await draw(page,2);
   v=await getState(page);assert.ok(Number(v.strokes)>=2,'workspace closed still draws');
   assert.equal(errors.filter(e=>!e.includes('ERR_NAME_NOT_RESOLVED')).length,0,'console errors: '+JSON.stringify(errors));
