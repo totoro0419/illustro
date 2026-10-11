@@ -19,5 +19,5 @@ export class CanvasView {
  setRotation(angle:number){if(!Number.isFinite(angle))return;const center={x:this.cssWidth/2,y:this.cssHeight/2},d=this.document(center);this.rotation=angle;this.anchor(d,center);}
  toggleFlip(axis:'x'|'y'){if(axis==='x')this.flipX=!this.flipX;else this.flipY=!this.flipY;}
  /** Packing shared by WebGPU and WebGL2: three aligned vec4 values. */
- uniform(backingWidth:number,backingHeight:number):Float32Array{return new Float32Array([backingWidth,backingHeight,this.cssWidth,this.cssHeight,this.documentWidth,this.documentHeight,this.zoom,this.rotation,this.panX,this.panY,this.flipX?-1:1,this.flipY?-1:1,this.seamless?1:0,this.zoom>=4?1:0,this.reference?1:0,0]);}
+ uniform(backingWidth:number,backingHeight:number):Float32Array{const pxPerDoc=this.zoom*Math.min(backingWidth/this.cssWidth,backingHeight/this.cssHeight),nearest=this.zoom>=4||(pxPerDoc>=1&&Math.abs(pxPerDoc-Math.round(pxPerDoc))<1e-6&&Math.abs(Math.sin(this.rotation*2))<1e-6);return new Float32Array([backingWidth,backingHeight,this.cssWidth,this.cssHeight,this.documentWidth,this.documentHeight,this.zoom,this.rotation,this.panX,this.panY,this.flipX?-1:1,this.flipY?-1:1,this.seamless?1:0,nearest?1:0,this.reference?1:0,0]);}
 }
