@@ -125,12 +125,20 @@ async function corruptDocumentSave(page,doc,relative){
   },{doc,relative});
 }
 async function corruptOpfsFile(page,doc,epoch,relative){
-  await page.evaluate(async({doc,epoch,relative})=>{
+  return await page.evaluate(async({doc,epoch,relative})=>{
     let dir=await navigator.storage.getDirectory();
     for(const name of ['m05','sessions',doc,epoch])dir=await dir.getDirectoryHandle(name);
     const parts=relative.split('/'),name=parts.pop();if(!name)throw new Error('bad test path');
     for(const part of parts)dir=await dir.getDirectoryHandle(part);
-    const file=await dir.getFileHandle(name),w=await file.createWritable();await w.write(new Uint8Array([0,1,2,3]));await w.truncate(4);await w.close();
+    const file=await dir.getFileHandle(name);
+    const original=await (await file.getFile()).arrayBuffer();
+    if(original.byteLength<=4)throw new Error('render cache missing valid pre-corruption data: '+relative);
+    const w=await file.createWritable();
+    try{await w.write(new Uint8Array([0,1,2,3]));await w.truncate(4);await w.close();}
+    catch(error){try{await w.abort?.();}catch{}throw error;}
+    const damaged=new Uint8Array(await (await file.getFile()).arrayBuffer());
+    if(damaged.byteLength!==4||damaged.some((byte,i)=>byte!==i))throw new Error('render cache corruption was not persisted: '+relative);
+    return {file:relative,beforeBytes:original.byteLength,afterBytes:damaged.byteLength};
   },{doc,epoch,relative});
 }
 
@@ -210,7 +218,21 @@ try{
   {
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     await draw(page,[.14,.25],[.84,.25],5);await waitStroke(page,1);await draw(page,[.14,.50],[.84,.50],5);await waitStroke(page,2);await draw(page,[.14,.75],[.84,.75],5);await waitStroke(page,3);await waitProtected(page,3);await page.waitForTimeout(1200);
-    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;await waitForOpfsEntry(page,doc,epoch,'projection-v2.frame');await corruptOpfsFile(page,doc,epoch,'projection-v2.frame');if(process.env.M08_CORRUPT_ALL_RENDER_CACHES==='1'){await waitForOpfsEntry(page,doc,epoch,'projection.frame');await corruptOpfsFile(page,doc,epoch,'projection.frame');}await page.close();
+    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;
+    // Corrupt caches only after the editor has stopped writing. Editing and test-side
+    // createWritable() on the same OPFS entry can race, yielding a transient NotFoundError.
+    await page.close();
+    const corruptPage=await context.newPage();
+    await corruptPage.goto(new URL('offline-assets.json',base).href,{waitUntil:'load',timeout:45000});
+    const corrupted=[];
+    await waitForOpfsEntry(corruptPage,doc,epoch,'projection-v2.frame');
+    corrupted.push(await corruptOpfsFile(corruptPage,doc,epoch,'projection-v2.frame'));
+    if(process.env.M08_CORRUPT_ALL_RENDER_CACHES==='1'){
+      await waitForOpfsEntry(corruptPage,doc,epoch,'projection.frame');
+      corrupted.push(await corruptOpfsFile(corruptPage,doc,epoch,'projection.frame'));
+    }
+    report.corruptedProjectionCaches=corrupted;
+    await corruptPage.close();
     const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('自動保存された最新の作業状態へ戻しました'),{timeout:30000});await waitReady(restoredPage);
     const repaired=await qa(restoredPage);assert.equal(repaired.currentRevision,head);assert.equal(repaired.totalStrokeCount,3);assert.equal(repaired.projectionRestoreMode,'replay-fallback');report.repairFallback={status:'PASS',cacheCorrupted:true,strategy:'stroke-replay',strokeCount:3};await context.close();
   }
