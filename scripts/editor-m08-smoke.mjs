@@ -89,7 +89,7 @@ async function run(kind,dpr,width,height){
   await draw(page);
   v=await getState(page);assert.ok(Number(v.strokes)>0,'stroke persisted');
   await page.locator('#undo').click();await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.canRedo==='true'&&document.getElementById('canvas')?.dataset.historyBusy==='false',{timeout:45000});
-  await page.locator('#redo').click();await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,{timeout:45000});
+  await page.locator('#redo').click();await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0&&document.getElementById('canvas')?.dataset.historyBusy==='false',{timeout:45000});
   await page.locator('#workspaceToggle').click();
   await page.evaluate(()=>{window.__m08Trace=[];const c=document.getElementById('canvas');for(const type of ['pointerdown','pointerup','pointercancel','lostpointercapture'])c.addEventListener(type,e=>window.__m08Trace.push({type,button:e.button,id:e.pointerId,isTrusted:e.isTrusted,ts:performance.now()}),{capture:true});});
   await draw(page,2);
