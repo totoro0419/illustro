@@ -405,7 +405,7 @@ if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLab
 updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('resize',updateQa);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&documentReady){if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);projectionCheckpointTimer=null;void createProjectionCheckpoint();}});addEventListener('pagehide',()=>{if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);surface?.destroy();});
 
 function formatFileSize(bytes:number){if(!Number.isFinite(bytes)||bytes<0)return 'サイズ不明';if(bytes<1024)return Math.round(bytes)+' B';if(bytes<1024*1024)return (bytes/1024).toFixed(bytes<10*1024?1:0)+' KB';return (bytes/(1024*1024)).toFixed(bytes<10*1024*1024?1:0)+' MB';}
-function qaM08Markup(){return '<details class="qa-panel" open><summary>キャンバスの操作と画質の確認</summary><ol>'+[
+function qaM08Markup(){return '<details id="qaPanel" class="qa-panel" open><summary>キャンバスの操作と画質の確認</summary><ol>'+[
 '普通の大きさで線がぼやけて見えないか',
 '100%表示で細かい模様が自然か',
 '拡大・縮小しても急に画質が崩れないか',

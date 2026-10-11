@@ -51,7 +51,7 @@ async function run(kind,dpr,width,height){
   await page.locator('#view100').click();
   let v=await getState(page);assert.ok(Math.abs(v.view.zoom-1)<1e-8,'100% is 1 doc px to CSS px');
   const firstRev=v.revision;
-  await page.locator('#referencePattern').check();let pat=await getState(page);assert.equal(pat.view.reference,true);assert.equal(pat.revision,firstRev,'reference is view-only');await page.locator('#referencePattern').uncheck();
+  await page.locator('#qaEntry').click();await page.locator('#referencePattern').check();let pat=await getState(page);assert.equal(pat.view.reference,true);assert.equal(pat.revision,firstRev,'reference is view-only');await page.locator('#referencePattern').uncheck();
   await page.locator('#flipH').click();await page.locator('#flipV').click();
   v=await getState(page);assert.equal(v.view.flipX,true);assert.equal(v.view.flipY,true);assert.equal(v.revision,firstRev,'flip must not change revision');
   await page.locator('#fitView').click();
