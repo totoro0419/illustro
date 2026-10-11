@@ -23,6 +23,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": ".github/workflows/m08-canvas-operations-quality.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/index.html",
       "status": "EXPERIMENTAL"
     },
@@ -36,6 +40,14 @@
     },
     {
       "path": "apps/editor/src/brushSurface.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/canvasView.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/canvasView.ts",
       "status": "EXPERIMENTAL"
     },
     {
@@ -157,6 +169,10 @@
     {
       "path": "docs/architecture/INTEGRATION_VALIDATION.md",
       "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/M08_VIEW_PRESENTATION_BOUNDARY.md",
+      "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/architecture/PERFORMANCE_AUDIT_2026-09-27.md",

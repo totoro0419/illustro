@@ -1,0 +1,47 @@
+name: M08 Canvas Operations Quality
+on:
+  push:
+    branches: ['milestone/M08-canvas-operations-quality']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source lock and core
+        run: |
+          npm run prep:check
+          npm run core:check
+      - name: Brush runtime build
+        run: npm run brush:build
+      - name: Editor unit regression and M08 view transforms
+        run: npx vitest run apps/editor/src
+      - name: Brush foundation exact 93 tests
+        run: |
+          node --test packages/brush-rt/test/*.test.mjs | tee /tmp/brush-m08.txt
+          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/brush-m08.txt
+          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/brush-m08.txt
+          grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/brush-m08.txt
+      - name: Editor typecheck and production build
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+          test -f apps/editor/dist/sw.js
+      - name: Upload build evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m08-build-unit-evidence
+          path: |
+            /tmp/brush-m08.txt
+            apps/editor/dist/offline-assets.json
