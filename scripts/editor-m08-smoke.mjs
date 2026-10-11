@@ -74,6 +74,28 @@ async function seamPixel(page,x,y){
   return [...ctx.getImageData(px,py,1,1).data];
  },{png:screenshot,x,y});
 }
+async function previewFinalSmoke(page,kind){
+ const before=await getState(page),count=Number(before.strokes);
+ await page.locator('#brush').selectOption('foundation-technical');
+ await page.locator('#resetRotation').click();
+ if(before.view.flipX)await page.locator('#flipH').click();
+ if(before.view.flipY)await page.locator('#flipV').click();
+ await page.locator('#fitView').click();
+ const state=await getState(page),v=state.view,rect=await page.locator('#canvas').boundingBox();
+ const x0=rect.x+v.cssWidth/2+(v.documentWidth*.2-v.documentWidth/2)*v.zoom+v.panX;
+ const x1=rect.x+v.cssWidth/2+(v.documentWidth*.7-v.documentWidth/2)*v.zoom+v.panX;
+ const y=rect.y+v.cssHeight/2+(v.documentHeight*.16-v.documentHeight/2)*v.zoom+v.panY;
+ await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='hidden';});
+ await page.mouse.move(x0,y);await page.mouse.down();await page.mouse.move(x1,y,{steps:22});
+ let live=[255,255,255,255];for(let i=0;i<18;i++){live=await seamPixel(page,v.documentWidth*.5,v.documentHeight*.16);if(live[0]<140)break;await page.waitForTimeout(130);}
+ await page.mouse.up();
+ await page.waitForFunction(n=>{const c=document.querySelector('#canvas');return Number(c.dataset.committedStrokes)>=n&&c.dataset.historyBusy==='false';},count+1,{timeout:90000});
+ const final=await seamPixel(page,v.documentWidth*.5,v.documentHeight*.16);
+ await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='';});
+ assert.ok(live[0]<140&&final[0]<140,'technical brush preview/final must both be visible '+JSON.stringify({live,final}));
+ assert.ok(Math.abs(live[0]-final[0])<=22,'unchanged geometry must not change display brightness '+JSON.stringify({live,final}));
+ return {kind,live,final,difference:Math.abs(live[0]-final[0])};
+}
 async function seamlessSmoke(page){
  const initial=await getState(page),w=initial.document.width,h=initial.document.height;
  await page.locator('#resetRotation').click();
@@ -192,6 +214,7 @@ async function run(kind,dpr,width,height){
   await draw(page,2);
   v=await getState(page);assert.ok(Number(v.strokes)>=2,'workspace closed still draws');
   if(dpr===2&&width===512){
+    const previewDiff=await previewFinalSmoke(page,kind);output.tests.push({kind,dpr,width,height,result:'PREVIEW-FINAL-PASS',...previewDiff});
     if(kind==='webgl2')await geometrySmoke(page);
     else await page.locator('#workspaceToggle').click();
     await seamlessSmoke(page);
