@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: m08-canvas-operations-quality
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
