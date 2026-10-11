@@ -179,6 +179,12 @@ export class BrushSurface{
     }
     throw new Error('Projection checkpoint readback backend unsupported');
   }
+  async captureDocumentLayers(){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
+    await this.renderer.drain();
+    const result=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
+    for(const layer of this.controller.layers){const bytes=await this.renderer.read(layer.surface.descriptor.surfaceId);result.set(layer.id,new Uint8Array(bytes));}
+    return result;
+  }
   async restoreDocumentProjection(cache?:ProjectionCacheV1){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
     const started=performance.now();this.historySyncing=true;this.onStateChanged();let held=false,complete=false;
@@ -186,16 +192,20 @@ export class BrushSurface{
     const runtime=this.session as unknown as {records:StrokeRecord[];redoRecords:StrokeRecord[];id:number;recordSurfaces:WeakMap<StrokeRecord,string>;recordTiles:WeakMap<StrokeRecord,string[]>;recordIds:WeakMap<StrokeRecord,number>;recordOrder:WeakMap<StrokeRecord,number>;tileRecords:Map<string,StrokeRecord[]>;nextRecordOrder:number;indexRecord:(record:StrokeRecord,keys:readonly string[],surfaceKey:string)=>void;presetForRecord:(record:StrokeRecord)=>unknown;rebuild:()=>Promise<void>};
     const originalFrame=renderer.frame;
     try{
-      this.syncLayerStack();const entries:Array<{operation:SemanticOperation;record:StrokeRecord;surfaceKey:string;keys:string[]}>=[];for(const operation of this.controller.document.operationsTo()){
+      this.syncLayerStack();const operations=this.controller.document.operationsTo(),geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
+      const geometry=geometryIndex>=0,visibleOperations=geometry?operations.slice(geometryIndex+1):operations;
+      const entries:Array<{operation:SemanticOperation;record:StrokeRecord;surfaceKey:string;keys:string[]}>=[];for(const operation of visibleOperations){
         if(operation.kind==='brush.stroke')entries.push({operation,record:validateRecord(operation.parameters.strokeRecord),surfaceKey:this.surfaceForOperation(operation),keys:this.runtimeKeys(operation)});
-        else if(operation.kind==='raster.strict-delta')throw new Error('This saved strict Raster delta cannot yet be projected by the M05 editor renderer');
+        else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
       }
-      const validCache=this.validProjectionCache(cache);
+      const root=this.controller.document.root;
+      const baseGeometry:ProjectionCacheV1|undefined=geometry?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,layers:this.controller.layers.map(layer=>({surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)}))}:undefined;
+      const validCache=this.validProjectionCache(baseGeometry??cache);
       if(renderer.backend?.setPresentationHeld){renderer.backend.setPresentationHeld(true);held=true;}
       renderer.frame=(now:number)=>{renderer.formalQuantum=Math.max(256,renderer.formalQuantum??0);return originalFrame.call(renderer,now);};
       if(validCache){
         await renderer.reset();this.syncLayerStack();this.resetDerivedRuntime(runtime);
-        const cachedKeys=new Set(this.controller.document.operationsTo(validCache.revisionId as RevisionId).filter(operation=>operation.kind==='brush.stroke').map(operation=>operation.key));
+        const cachedKeys=geometry?new Set<SemanticOperation['key']>():new Set(this.controller.document.operationsTo(validCache.revisionId as RevisionId).filter(operation=>operation.kind==='brush.stroke').map(operation=>operation.key));
         await this.seedProjectionCache(validCache,renderer.backend);
         runtime.records=entries.map(entry=>entry.record);runtime.redoRecords=[];
         for(const entry of entries){
