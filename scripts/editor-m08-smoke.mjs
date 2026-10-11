@@ -120,6 +120,20 @@ async function seamlessSmoke(page){
  await page.locator('#redo').click();
  await page.waitForFunction(([expected,revision])=>{const c=document.querySelector('#canvas');return Number(c.dataset.committedStrokes)===expected&&c.dataset.revisionId===revision&&c.dataset.historyBusy==='false';},[oldCount+1,committed],{timeout:90000});
  const after=await getState(page);assert.ok(after.qa.seamlessCopyCount>=1,'atomic redo must restore seam copies');
+ // Reload must reconstruct both the source stroke and wrapped copy from OPFS,
+ // not leave only the on-screen preview or rely on an in-memory GPU texture.
+ await page.waitForFunction(()=>{const q=JSON.parse(document.querySelector('#qaAuto')?.textContent||'{}'),p=q.persistence;return p&&BigInt(p.protectedThrough)>=BigInt(q.commitSequence)&&!p.protectionPending&&p.queueLength===0;},{timeout:90000});
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>{const b=document.getElementById('recover');return b&&!b.disabled;},{timeout:45000});
+ await page.locator('#recover').click();
+ await page.waitForFunction(revision=>{
+   const c=document.querySelector('#canvas'),q=JSON.parse(document.querySelector('#qaAuto')?.textContent||'{}');
+   return c?.dataset.revisionId===revision&&q.persistence?.recovered===true&&q.seamlessCopyCount>=1&&c.dataset.historyBusy==='false';
+ },committed,{timeout:90000});
+ const recovered=await getState(page);
+ assert.equal(Number(recovered.strokes),oldCount+1);assert.equal(recovered.document.width,w);assert.equal(recovered.document.height,h);
+ const repairedPixel=await seamPixel(page,8,h*.52);
+ assert.ok(repairedPixel[0]<150,'opposite-edge copy must survive reload '+JSON.stringify(repairedPixel));
  await page.evaluate(()=>{const c=document.querySelector('#seamless');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));});
 }
 async function run(kind,dpr,width,height){
@@ -140,6 +154,16 @@ async function run(kind,dpr,width,height){
   assert.ok(Math.abs(initial.backingHeight-initial.cssHeight*dpr)<=2.1,'backing device-pixel height');
   assert.ok(initial.backend===kind.toUpperCase()||initial.backend.toLowerCase()===kind,'requested renderer mismatch '+initial.backend);
   assert.ok(initial.view?.zoom>0,'fit zoom positive');
+  if(dpr===2&&width===512){
+    const original=initial.document,oldRevision=initial.revision;
+    await page.setViewportSize({width:870,height:990});
+    await page.waitForFunction(dpr=>{const c=document.querySelector('#canvas'),r=c.getBoundingClientRect();return Math.abs(c.width-r.width*dpr)<=2.1&&Math.abs(c.height-r.height*dpr)<=2.1;},dpr,{timeout:45000});
+    const portrait=await getState(page);assert.deepEqual(portrait.document,original);assert.equal(portrait.revision,oldRevision);
+    await page.setViewportSize({width:1250,height:900});
+    await page.waitForFunction(dpr=>{const c=document.querySelector('#canvas'),r=c.getBoundingClientRect();return Math.abs(c.width-r.width*dpr)<=2.1&&Math.abs(c.height-r.height*dpr)<=2.1;},dpr,{timeout:45000});
+    const restored=await getState(page);assert.deepEqual(restored.document,original);assert.equal(restored.revision,oldRevision);
+    output.tests.push({kind,dpr,width,height,result:'VIEWPORT-RESIZE-PASS',portrait:{css:[portrait.cssWidth,portrait.cssHeight],backing:[portrait.backingWidth,portrait.backingHeight]}});
+  }
   await page.locator('#view100').click();
   let v=await getState(page);assert.ok(Math.abs(v.view.zoom-1)<1e-8,'100% is 1 doc px to CSS px');
   const firstRev=v.revision;
