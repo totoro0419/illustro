@@ -53,6 +53,9 @@ export class BrushSurface{
   private wheel=(e:WheelEvent)=>{if(!this.view)return;e.preventDefault();this.view.zoomAt(Math.exp(-e.deltaY*.0018),this.pointerLocation(e));this.updateView();};
   private updateView(){if(this.view&&this.renderer){(this.renderer as GpuRenderer&{setViewTransform:(value:Float32Array)=>void}).setViewTransform(this.view.uniform(this.canvas.width,this.canvas.height));this.onStateChanged();}}
   get viewState(){return this.view?.state??null;}
+  documentToScreen(point:Point){return this.view?.screen(point)??point;}
+  screenToDocument(point:Point){return this.view?.document(point)??point;}
+  get canChangeGeometry(){return !this.busy&&!!this.renderer;}
   get displayDiagnostics(){const r=this.canvas.getBoundingClientRect();return {document:{width:this.controller.document.root.width,height:this.controller.document.root.height},css:{width:r.width,height:r.height},backing:{width:this.canvas.width,height:this.canvas.height},dpr:window.devicePixelRatio,view:this.viewState};}
   fitView(){if(this.view){this.view.fit();this.updateView();}}
   viewAt100(){if(this.view){this.view.setZoom(1);this.updateView();}}
