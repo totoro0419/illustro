@@ -1,33 +1,70 @@
-export type Size={width:number;height:number};
-export type Filter='nearest'|'bilinear'|'bicubic'|'lanczos3';
-export function validateSize(s:Size){if(!Number.isSafeInteger(s.width)||!Number.isSafeInteger(s.height)||s.width<1||s.height<1||s.width>8192||s.height>8192)throw Error('画像サイズは1～8192px');}
-export function canvasResize(p:Uint8Array|Uint8ClampedArray,a:Size,b:Size,dx:number,dy:number){
- validateSize(b);if(p.length!==a.width*a.height*4)throw Error('pixel count mismatch');
- if(!Number.isSafeInteger(dx)||!Number.isSafeInteger(dy))throw Error('invalid offset');
- const out=new Uint8Array(b.width*b.height*4),left=Math.max(0,dx),right=Math.min(b.width,a.width+dx);
- for(let y=Math.max(0,dy);y<Math.min(b.height,a.height+dy);y++)if(right>left){const source=((y-dy)*a.width+left-dx)*4;out.set(p.subarray(source,source+(right-left)*4),(y*b.width+left)*4);}
+/**
+ * M08 destructive document geometry. All pixel buffers are straight-alpha RGBA8,
+ * row-major, document-sized; navigation never calls these functions.
+ */
+export type ImageResample='auto'|'nearest'|'bilinear'|'bicubic'|'area';
+type Pixels=Uint8Array|Uint8ClampedArray;
+function dimensions(w:number,h:number){if(!Number.isSafeInteger(w)||!Number.isSafeInteger(h)||w<1||h<1||w>8192||h>8192)throw Error('Invalid artwork dimensions');}
+function verify(source:Pixels,w:number,h:number){dimensions(w,h);if(source.length!==w*h*4)throw Error('Source pixel buffer mismatch');}
+
+/** Canvas Resize: shift/crop bounds while preserving every included source pixel bit-for-bit. */
+export function changeCanvasBounds(source:Pixels,w:number,h:number,newW:number,newH:number,shiftX:number,shiftY:number){
+ verify(source,w,h);dimensions(newW,newH);if(!Number.isInteger(shiftX)||!Number.isInteger(shiftY))throw Error('Invalid canvas offset');
+ const out=new Uint8Array(newW*newH*4),left=Math.max(0,shiftX),right=Math.min(newW,w+shiftX),top=Math.max(0,shiftY),bottom=Math.min(newH,h+shiftY);
+ if(right<=left||bottom<=top)return out;
+ for(let y=top;y<bottom;y++)out.set(source.subarray(((y-shiftY)*w+left-shiftX)*4,((y-shiftY)*w+right-shiftX)*4),(y*newW+left)*4);
  return out;
 }
-export function crop(p:Uint8Array|Uint8ClampedArray,a:Size,x:number,y:number,w:number,h:number){return canvasResize(p,a,{width:w,height:h},-x,-y);}
-const sinc=(x:number)=>x===0?1:Math.sin(Math.PI*x)/(Math.PI*x);
-function kernel(filter:Filter,x:number){x=Math.abs(x);if(filter==='nearest')return x<.5?1:0;if(filter==='bilinear')return Math.max(0,1-x);if(filter==='lanczos3')return x<3?sinc(x)*sinc(x/3):0;if(x<1)return (1.5*x-2.5)*x*x+1;if(x<2)return ((-.5*x+2.5)*x-4)*x+2;return 0;}
-export function imageResize(p:Uint8Array|Uint8ClampedArray,a:Size,b:Size,filter:Filter){
- validateSize(b);if(p.length!==a.width*a.height*4)throw Error('pixel count mismatch');
- if(!(['nearest','bilinear','bicubic','lanczos3'] as string[]).includes(filter))throw Error('invalid filter');
- const out=new Uint8Array(b.width*b.height*4),scaleX=a.width/b.width,scaleY=a.height/b.height;
- const makeTaps=(old:number,now:number,scale:number)=>{
-  const taps:[number,number][][]=[],radius=filter==='nearest'?.5:filter==='bilinear'?1:filter==='bicubic'?2:3,spread=Math.max(1,scale);
-  for(let q=0;q<now;q++){if(filter==='nearest'){taps.push([[Math.min(old-1,Math.floor((q+.5)*scale)),1]]);continue;}
-   const center=(q+.5)*scale-.5,t:[number,number][]=[],lo=Math.max(0,Math.floor(center-radius*spread)),hi=Math.min(old-1,Math.ceil(center+radius*spread));let sum=0;
-   for(let i=lo;i<=hi;i++){const w=kernel(filter,(center-i)/spread);if(w){t.push([i,w]);sum+=w;}}taps.push(t.map(([i,w])=>[i,w/sum]));}
-  return taps;
- };
- const xs=makeTaps(a.width,b.width,scaleX),ys=makeTaps(a.height,b.height,scaleY);
- for(let y=0;y<b.height;y++)for(let x=0;x<b.width;x++){
-  let red=0,green=0,blue=0,alpha=0;
-  for(const [j,wy] of ys[y]!)for(const [i,wx] of xs[x]!) {const k=(j*a.width+i)*4,w=wy*wx,aa=p[k+3]!/255;alpha+=w*aa;red+=w*aa*p[k]!;green+=w*aa*p[k+1]!;blue+=w*aa*p[k+2]!;}
-  const k=(y*b.width+x)*4;out[k+3]=Math.round(Math.max(0,Math.min(1,alpha))*255);
-  if(alpha>1e-6){out[k]=Math.round(Math.max(0,Math.min(255,red/alpha)));out[k+1]=Math.round(Math.max(0,Math.min(255,green/alpha)));out[k+2]=Math.round(Math.max(0,Math.min(255,blue/alpha)));}
+/** Crop uses source pixel bounds (left/top inclusive). */
+export function cropCanvas(source:Pixels,w:number,h:number,x:number,y:number,cropW:number,cropH:number){
+ if(!Number.isInteger(x)||!Number.isInteger(y)||!Number.isInteger(cropW)||!Number.isInteger(cropH)||cropW<1||cropH<1||x<0||y<0||x+cropW>w||y+cropH>h)throw Error('Crop must be inside existing artwork');
+ return changeCanvasBounds(source,w,h,cropW,cropH,-x,-y);
+}
+export function shiftedForAnchor(oldW:number,oldH:number,newW:number,newH:number,anchor:'center'|'top-left'|'top-right'|'bottom-left'|'bottom-right'){
+ dimensions(oldW,oldH);dimensions(newW,newH);
+ const x=newW-oldW,y=newH-oldH;
+ if(anchor==='center')return {x:Math.floor(x/2),y:Math.floor(y/2)};
+ if(anchor==='top-left')return {x:0,y:0};
+ if(anchor==='top-right')return {x,y:0};
+ if(anchor==='bottom-left')return {x:0,y};
+ if(anchor==='bottom-right')return {x,y};
+ throw Error('Unknown canvas anchor');
+}
+const clamp=(n:number,lower:number,upper:number)=>Math.max(lower,Math.min(upper,n));
+const cubic=(x:number)=>{const B=1/3,C=1/3,d=Math.abs(x);return d<1?((12-9*B-6*C)*d*d*d+(-18+12*B+6*C)*d*d+(6-2*B))/6:d<2?((-B-6*C)*d*d*d+(6*B+30*C)*d*d+(-12*B-48*C)*d+(8*B+24*C))/6:0;};
+function forWeights(x:number,ratio:number,method:'bilinear'|'bicubic'|'area',limit:number,cb:(i:number,w:number)=>void){
+ if(method==='area'){
+   const from=x*ratio,to=(x+1)*ratio;
+   for(let i=Math.floor(from);i<Math.ceil(to);i++){const weight=Math.max(0,Math.min(to,i+1)-Math.max(from,i));if(weight>0)cb(clamp(i,0,limit-1),weight/ratio);}
+   return;
+ }
+ const center=(x+.5)*ratio-.5,range=method==='bilinear'?1:2;
+ for(let i=Math.floor(center)-range+1;i<=Math.floor(center)+range;i++){const w=method==='bilinear'?Math.max(0,1-Math.abs(i-center)):cubic(i-center);if(w!==0)cb(clamp(i,0,limit-1),w);}
+}
+/** Premultiplied-alpha weighted color prevents dark/bright fringe at transparent boundaries. */
+export function resizeImagePixels(source:Pixels,w:number,h:number,newW:number,newH:number,requested:ImageResample='auto'){
+ verify(source,w,h);dimensions(newW,newH);
+ const method:Exclude<ImageResample,'auto'>=requested==='auto'?(newW<w/1.5||newH<h/1.5?'area':'bicubic'):requested;
+ if(!['nearest','bilinear','bicubic','area'].includes(method))throw Error('Unsupported interpolation');
+ if(newW===w&&newH===h)return Uint8Array.from(source);
+ const out=new Uint8Array(newW*newH*4),rx=w/newW,ry=h/newH;
+ if(method==='nearest'){
+   for(let y=0;y<newH;y++)for(let x=0;x<newW;x++){const sx=clamp(Math.floor((x+.5)*rx),0,w-1),sy=clamp(Math.floor((y+.5)*ry),0,h-1),a=(sy*w+sx)*4,b=(y*newW+x)*4;out.set(source.subarray(a,a+4),b);}return out;
+ }
+ const sampleMethod=method;
+ for(let y=0;y<newH;y++){
+   const wy:Array<[number,number]>=[];forWeights(y,ry,sampleMethod,h,(i,w)=>wy.push([i,w]));
+   for(let x=0;x<newW;x++){
+     const wx:Array<[number,number]>=[];forWeights(x,rx,sampleMethod,w,(i,weight)=>wx.push([i,weight]));
+     let a=0,r=0,g=0,b=0,total=0;
+     for(const [sy,wyv] of wy)for(const [sx,wxv] of wx){
+       const v=wyv*wxv,i=(sy*w+sx)*4,alpha=source[i+3]/255;
+       total+=v;a+=v*alpha;r+=v*alpha*source[i];g+=v*alpha*source[i+1];b+=v*alpha*source[i+2];
+     }
+     const p=(y*newW+x)*4,opacity=total===0?0:clamp(a/total,0,1);
+     out[p+3]=Math.round(opacity*255);
+     if(a>1e-8){out[p]=Math.round(clamp(r/a,0,255));out[p+1]=Math.round(clamp(g/a,0,255));out[p+2]=Math.round(clamp(b/a,0,255));}
+   }
  }
  return out;
 }
