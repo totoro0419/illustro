@@ -151,7 +151,8 @@ async function corruptOpfsFile(page,doc,epoch,relative,allowMissingIndexFallback
       // even after editor workers have closed. A missing legacy cache is a
       // separate, equally necessary fallback scenario; never silently skip it.
       if(!allowMissingIndexFallback||error?.name!=='NotFoundError')throw new Error('render cache corruption failed at '+stage+' for '+relative+': '+String(error));
-      await dir.removeEntry(name);
+      try{await dir.removeEntry(name);}
+      catch(removeError){if(removeError?.name!=='NotFoundError')throw removeError;}
       try{await dir.getFileHandle(name);throw new Error('legacy projection index still present after deletion');}
       catch(verifyError){if(verifyError?.name!=='NotFoundError')throw verifyError;}
       return {file:relative,mode:'removed',priorFailureStage:stage,priorFailureName:error.name};
