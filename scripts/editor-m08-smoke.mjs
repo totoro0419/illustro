@@ -22,11 +22,11 @@ if(!base){
 }
 const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
 const output={commit:expected,mode:target?'public':'local',tests:[],errors:[]};
-async function draw(page){
+async function draw(page,minimumStrokes=1){
  const b=await page.locator('#canvas').boundingBox();assert.ok(b&&b.width>100&&b.height>100,'canvas visible');
  await page.mouse.move(b.x+b.width*.25,b.y+b.height*.34);
  await page.mouse.down();await page.mouse.move(b.x+b.width*.7,b.y+b.height*.62,{steps:9});await page.mouse.up();
- await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes??'0')>0,{timeout:45000});
+ await page.waitForFunction(minimum=>Number(document.getElementById('canvas')?.dataset.committedStrokes??'0')>=minimum&&document.getElementById('canvas')?.dataset.historyBusy==='false',minimumStrokes,{timeout:45000});
 }
 async function getState(page){return page.evaluate(()=>{const c=document.getElementById('canvas'),r=c.getBoundingClientRect(),q=JSON.parse(document.getElementById('qaAuto')?.textContent||'{}');return {cssWidth:r.width,cssHeight:r.height,backingWidth:c.width,backingHeight:c.height,dpr:devicePixelRatio,qa:q,revision:c.dataset.revisionId,strokes:c.dataset.committedStrokes,backend:q.backend,view:q.display?.view,document:q.display?.document}});}
 async function run(kind,dpr,width,height){
@@ -66,7 +66,7 @@ async function run(kind,dpr,width,height){
   await page.locator('#undo').click();await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.canRedo==='true'&&document.getElementById('canvas')?.dataset.historyBusy==='false',{timeout:45000});
   await page.locator('#redo').click();await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,{timeout:45000});
   await page.locator('#workspaceToggle').click();
-  await draw(page);
+  await draw(page,2);
   v=await getState(page);assert.ok(Number(v.strokes)>=2,'workspace closed still draws');
   assert.equal(errors.filter(e=>!e.includes('ERR_NAME_NOT_RESOLVED')).length,0,'console errors: '+JSON.stringify(errors));
   if(dpr===2&&width===3000)await page.screenshot({path:path.join(evidence,kind+'-3000-'+dpr+'.png')});
