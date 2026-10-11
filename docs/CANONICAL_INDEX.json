@@ -43,6 +43,14 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "apps/editor/src/canvasGeometry.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/canvasGeometry.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/src/canvasView.test.ts",
       "status": "EXPERIMENTAL"
     },
@@ -1484,6 +1492,10 @@
     },
     {
       "path": "packages/core/src/documentValidation.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/geometry.test.ts",
       "status": "EXPERIMENTAL"
     },
     {
