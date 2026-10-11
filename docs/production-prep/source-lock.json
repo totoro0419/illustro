@@ -45,8 +45,8 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "de3b59ae32bf910502e25c514f2e145e3227e7ab58be3412ad2fd721a13d6347",
-      "m08Exception": "Reference visual pattern is generated as a separate 512px texture, never alters document/brush geometry or exports."
+      "sha256": "c8dd5bc4adc961fd01dc8d81a28619cf51b59a5d0b06fa820f615bc1c80495cd",
+      "m08Exception": "Reference sampler uses consistent top-origin pixel pattern for WebGL2 and WebGPU; brush geometry unchanged."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",

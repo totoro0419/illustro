@@ -44,7 +44,7 @@ void main(){
  float c=cos(viewDocument.w),s=sin(viewDocument.w);
  vec2 doc=vec2(pos.x*c+pos.y*s,-pos.x*s+pos.y*c)*viewMotion.zw+viewDocument.xy*.5;
  if(viewOptions.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=viewDocument.x||doc.y>=viewDocument.y)){outColor=vec4(1.);return;}
- vec2 pixel=vec2(doc.x,viewDocument.y-doc.y)-.5;
+ vec2 pixel=vec2(doc.x,viewOptions.z>.5?doc.y:viewDocument.y-doc.y)-.5;
  ivec2 at=ivec2(floor(pixel));vec2 w=fract(pixel);
  vec4 color=viewOptions.y>.5?takePixel(ivec2(floor(pixel+.5))):mix(mix(takePixel(at),takePixel(at+ivec2(1,0)),w.x),mix(takePixel(at+ivec2(0,1)),takePixel(at+ivec2(1,1)),w.x),w.y);
  outColor=vec4(color.rgb+vec3(1.-color.a),1.);
