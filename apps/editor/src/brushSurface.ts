@@ -45,7 +45,7 @@ export class BrushSurface{
   private keyDown=(e:KeyboardEvent)=>{if(e.code==='Space'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement))this.keyboardSpace=true;};
   private keyUp=(e:KeyboardEvent)=>{if(e.code==='Space')this.keyboardSpace=false;};
   private wheel=(e:WheelEvent)=>{if(!this.view)return;e.preventDefault();this.view.zoomAt(Math.exp(-e.deltaY*.0018),this.pointerLocation(e));this.updateView();};
-  private updateView(){if(this.view&&this.renderer){this.renderer.setViewTransform(this.view.uniform(this.canvas.width,this.canvas.height));this.onStateChanged();}}
+  private updateView(){if(this.view&&this.renderer){(this.renderer as GpuRenderer&{setViewTransform:(value:Float32Array)=>void}).setViewTransform(this.view.uniform(this.canvas.width,this.canvas.height));this.onStateChanged();}}
   get viewState(){return this.view?.state??null;}
   get displayDiagnostics(){const r=this.canvas.getBoundingClientRect();return {document:{width:this.controller.document.root.width,height:this.controller.document.root.height},css:{width:r.width,height:r.height},backing:{width:this.canvas.width,height:this.canvas.height},dpr:window.devicePixelRatio,view:this.viewState};}
   fitView(){if(this.view){this.view.fit();this.updateView();}}
