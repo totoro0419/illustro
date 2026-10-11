@@ -36,7 +36,7 @@ describe('M05 core persistence',()=>{
   });
   it('recovers geometry dimensions, replaced pixels and later strokes with contiguous commits',()=>{
     const ids=createDeterministicIdFactory(),doc=new CoreDocument({width:64,height:64,ids}),layer=doc.defaultRasterLayerId;
-    const base=doc.capturePersistenceSnapshot(),packets:ReturnType<typeof doc.captureRecoveryPacket>[]=[],allBlocks=new Map(doc.persistenceBlockPayloads(base));
+    const base=doc.capturePersistenceSnapshot(),packets:ReturnType<typeof doc.captureRecoveryPacket>[]=[],allBlocks=new Map<string,Uint8Array>(doc.persistenceBlockPayloads(base));
     const track=(receipt:ReturnType<ReturnType<typeof doc.begin>['commit']>)=>{
       const packet=doc.captureRecoveryPacket(receipt.persistence);
       packets.push(JSON.parse(JSON.stringify(packet)));
