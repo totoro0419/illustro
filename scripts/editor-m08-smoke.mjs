@@ -35,7 +35,7 @@ async function run(kind,dpr,width,height){
  page.on('pageerror',e=>errors.push('page: '+e.message));
  page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text());});
  try{
-  await page.goto(base+(base.includes('?')?'&':'?')+'qa=1&backend='+kind,{waitUntil:'domcontentloaded',timeout:50000});
+  await page.goto(base+(base.includes('?')?'&':'?')+'qa=1&m08=1&backend='+kind,{waitUntil:'domcontentloaded',timeout:50000});
   await page.waitForSelector('#canvas');
   await page.evaluate(([w,h])=>{document.getElementById('newCanvasWidth').value=String(w);document.getElementById('newCanvasHeight').value=String(h);},[width,height]);
   await page.locator('#new').click();
@@ -63,8 +63,8 @@ async function run(kind,dpr,width,height){
   await page.locator('#fitView').click();
   await draw(page);
   v=await getState(page);assert.ok(Number(v.strokes)>0,'stroke persisted');
-  await page.keyboard.press('Control+z');await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.canRedo==='true',{timeout:45000});
-  await page.keyboard.press('Control+y');await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,{timeout:45000});
+  await page.locator('#undo').click();await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.canRedo==='true'&&document.getElementById('canvas')?.dataset.historyBusy==='false',{timeout:45000});
+  await page.locator('#redo').click();await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,{timeout:45000});
   await page.locator('#workspaceToggle').click();
   await draw(page);
   v=await getState(page);assert.ok(Number(v.strokes)>=2,'workspace closed still draws');
