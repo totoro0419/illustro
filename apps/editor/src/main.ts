@@ -273,7 +273,7 @@ async function createDocument(width:number,height:number,name='新しい作品',
       const next=document.addRasterLayerAbove(selected);selected=next.layerId;
     }
     await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head});
-    if(!qaMode)void refreshWorks();
+    if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,width,height,background);void refreshWorks();}
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
     updateQa();return true;
@@ -441,6 +441,13 @@ function copyOpened(opened:PortableOpenResult,name:string):PortableOpenResult{
   const snapshot=opened.document.capturePersistenceSnapshot(),document=CoreDocument.restore({snapshot:namedSnapshot(snapshot,name,crypto.randomUUID()),blockPayloads:opened.document.persistenceBlockPayloads(snapshot)});
   return {...opened,document,snapshotRevisionId:document.head,generationId:'copy'};
 }
+// A new blank work needs no expensive full-resolution GPU readback.
+async function storeBlankThumbnail(documentId:string,revisionId:string,width:number,height:number,background:'transparent'|'white'){
+  const scale=Math.min(1,320/width,240/height),preview=new OffscreenCanvas(Math.max(1,Math.round(width*scale)),Math.max(1,Math.round(height*scale)));
+  if(background==='white'){const context=preview.getContext('2d')!;context.fillStyle='#ffffff';context.fillRect(0,0,preview.width,preview.height);}
+  try{await persistence.storeThumbnail(documentId,revisionId,await preview.convertToBlob({type:'image/png'}));}
+  catch(error){console.warn('Initial thumbnail deferred:',error);}
+}
 async function createWorkThumbnail(){
   if(qaMode||!documentReady||!surface||surface.busy)return;
   const active=surface,doc=controller.document,revision=doc.head,root=doc.root;
@@ -502,7 +509,7 @@ if(!qaMode){
       const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
       return candidate?recoverCandidate(candidate):false;
     },
-    prepareHome:async()=>{scheduleWorkThumbnail();void refreshRecoveryCandidates();void refreshWorks();return true;},
+    prepareHome:async()=>{scheduleWorkThumbnail();void refreshWorks();return true;},
     listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
     renameWork:async(id,name)=>{await persistence.renameWork(id,name);if(documentReady&&controller.document.root.documentId===id){await prepareWorkSwitch();const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);}await refreshWorks();},
