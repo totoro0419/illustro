@@ -160,7 +160,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     navigate('recovery');
   };
   const setRecoveryCandidates=(candidates:readonly RecoverySummary[])=>{
-    recovery=candidates;const available=candidates.filter(x=>{try{return BigInt(x.protectedThrough)>0n;}catch{return false;});
+    recovery=candidates;const available=candidates.filter(x=>{try{return BigInt(x.protectedThrough)>0n;}catch{return false;}});
     const count=available.length;el('ihContinueDescription').textContent=count===0?'復元できる作業はありません':count===1?'保存された作業が1件あります':'復元できる作業が'+count+'件あります';
     el<HTMLButtonElement>('ihContinue').disabled=count===0;
     el('ihContinue').setAttribute('aria-disabled',String(count===0));
