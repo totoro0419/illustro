@@ -29,25 +29,25 @@ export function colorMarkup():string {
 }
 
 export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>void,onBrushColor:()=>void}){
- let active=0,model='HSV' as 'HSV'|'HSL'|'RGB';
+ let active=0,model='HSV' as 'HSV'|'HSL'|'RGB',hueMemory=rgbToHsv(state.current).h;
  const tabs=Array.from({length:4},(_,i)=>id<HTMLButtonElement>('colorTab'+i));
  const selectTab=(n:number,focus=false)=>{active=(n+4)%4;tabs.forEach((t,i)=>{t.setAttribute('aria-selected',String(i===active));t.tabIndex=i===active?0:-1;id<HTMLElement>('colorPanel'+i).hidden=i!==active;});if(focus)tabs[active]!.focus();if(active===1)renderChannels();};
  tabs.forEach((tab,n)=>{tab.onclick=()=>selectTab(n);tab.onkeydown=e=>{const step=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:e.key==='Home'?-99:e.key==='End'?99:0;if(!step)return;e.preventDefault();selectTab(step===-99?0:step===99?3:n+step,true);};});
  const current=id<HTMLElement>('colorCurrent'),previous=id<HTMLButtonElement>('colorPrevious'),code=id<HTMLOutputElement>('colorCode'),ring=id<HTMLElement>('colorRing'),plane=id<HTMLElement>('colorPlane'),hexField=id<HTMLInputElement>('colorHex');
  let channelEditing=false;
- function reflect(){const c=state.current,hsv=rgbToHsv(c);
+ function reflect(){const c=state.current,hsv=rgbToHsv(c);if(hsv.s>1e-7&&hsv.v>1e-7)hueMemory=hsv.h;
   current.style.backgroundColor=hex(c);code.textContent=hex(c);previous.style.backgroundColor=hex(state.previous);
   id<HTMLElement>('colorBoxSummary').textContent=hex(c);
-  ring.style.setProperty('--hue',String(hsv.h));plane.style.setProperty('--pure',hex(hsvToRgb(hsv.h,1,1)));
-  const angle=hsv.h*Math.PI/180,rad=81;const hue=id<HTMLElement>('colorHueMarker');hue.style.left='calc(50% + '+Math.round(Math.cos(angle)*rad)+'px)';hue.style.top='calc(50% + '+Math.round(Math.sin(angle)*rad)+'px)';
+  ring.style.setProperty('--hue',String(hueMemory));plane.style.setProperty('--pure',hex(hsvToRgb(hueMemory,1,1)));
+  const angle=hueMemory*Math.PI/180,rad=81;const hue=id<HTMLElement>('colorHueMarker');hue.style.left='calc(50% + '+Math.round(Math.cos(angle)*rad)+'px)';hue.style.top='calc(50% + '+Math.round(Math.sin(angle)*rad)+'px)';
   const marker=id<HTMLElement>('colorSvMarker');marker.style.left=(hsv.s*100)+'%';marker.style.top=((1-hsv.v)*100)+'%';
   if(document.activeElement!==hexField)hexField.value=hex(c);
   if(!channelEditing&&active===1)updateChannels();
   options.onBrushColor();
  }
- previous.onclick=()=>state.choose(state.previous);
+ current.onclick=()=>selectTab(0,true);previous.onclick=()=>state.choose(state.previous);
  let editingHex=false;
- const commitHex=()=>{if(!editingHex)return;const parsed=fromHex(hexField.value);if(!parsed){id('colorHexError').textContent='#の後に6桁の英数字（0〜9、A〜F）を入力してください。';return;}editingHex=false;id('colorHexError').textContent='';state.commit(parsed);};
+ const commitHex=()=>{if(!editingHex)return;const parsed=fromHex(hexField.value);if(!parsed){id('colorHexError').textContent='#の後に6桁の英数字（0〜9、A〜F）を入力してください。';if(document.activeElement!==hexField){editingHex=false;state.cancel();}return;}editingHex=false;id('colorHexError').textContent='';state.commit(parsed);};
  hexField.addEventListener('focus',()=>{editingHex=true;state.begin();});
  hexField.addEventListener('input',()=>{const c=fromHex(hexField.value);if(c){id('colorHexError').textContent='';state.preview(c);}});
  hexField.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();editingHex=false;state.cancel();hexField.value=hex(state.current);id('colorHexError').textContent='';hexField.blur();}else if(e.key==='Enter'){e.preventDefault();commitHex();hexField.blur();}});
@@ -60,10 +60,10 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(part==='ring'){
    const r=ring.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
    const h=(Math.atan2(y,x)*180/Math.PI+360)%360,sv=rgbToHsv(state.current);
-   state.preview(hsvToRgb(h,sv.s,sv.v));
+   hueMemory=h;state.preview(hsvToRgb(h,sv.s,sv.v));
   }else{
    const r=plane.getBoundingClientRect(),sv=rgbToHsv(state.current);
-   state.preview(hsvToRgb(sv.h,clamp((e.clientX-r.left)/r.width),1-clamp((e.clientY-r.top)/r.height)));
+   state.preview(hsvToRgb(hueMemory,clamp((e.clientX-r.left)/r.width),1-clamp((e.clientY-r.top)/r.height)));
   }
  }
  picker.addEventListener('pointerdown',e=>{
@@ -81,7 +81,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  const channelDef=()=>model==='RGB'?[['R','赤',255],['G','緑',255],['B','青',255]] as const:model==='HSL'?[['H','色相',360],['S','鮮やかさ',100],['L','明るさ',100]] as const:[['H','色相',360],['S','鮮やかさ',100],['V','明るさ',100]] as const;
  const values=()=>{const c=state.current,hsv=rgbToHsv(c),hsl=rgbToHsl(c);return model==='RGB'?[c.r*255,c.g*255,c.b*255]:model==='HSL'?[hsl.h,hsl.s*100,hsl.l*100]:[hsv.h,hsv.s*100,hsv.v*100];};
  function commitValue(index:number,value:number){if(!Number.isFinite(value))return false;const defs=channelDef();if(value<0||value>defs[index]![2])return false;
-  const v=values();v[index]=value;state.preview(model==='RGB'?rgb(v[0]!/255,v[1]!/255,v[2]!/255):model==='HSL'?hslToRgb(v[0]!,v[1]!/100,v[2]!/100):hsvToRgb(v[0]!,v[1]!/100,v[2]!/100));return true;
+  const v=values();v[index]=value;if(model!=='RGB'&&index===0)hueMemory=value;state.preview(model==='RGB'?rgb(v[0]!/255,v[1]!/255,v[2]!/255):model==='HSL'?hslToRgb(v[0]!,v[1]!/100,v[2]!/100):hsvToRgb(v[0]!,v[1]!/100,v[2]!/100));return true;
  }
  function renderChannels(){
   channels.replaceChildren();channelDef().forEach(([ch,label,max],i)=>{
@@ -96,7 +96,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
    number.onfocus=()=>{channelEditing=true;state.begin();};
    number.oninput=()=>{if(number.value!==''&&number.validity.valid)commitValue(i,Number(number.value));};
    const finish=()=>{if(!channelEditing)return;const n=Number(number.value);
-    if(number.value===''||!Number.isFinite(n)||!commitValue(i,n)){number.setCustomValidity('0〜'+max+'の数字を入力してください。');number.reportValidity();return;}
+    if(number.value===''||!Number.isFinite(n)||!number.validity.valid||!commitValue(i,n)){number.setCustomValidity('0〜'+max+'の数字を入力してください。');number.reportValidity();if(document.activeElement!==number){channelEditing=false;state.cancel();}return;}
     number.setCustomValidity('');channelEditing=false;state.commit();};
    number.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();channelEditing=false;number.setCustomValidity('');state.cancel();updateChannels();number.blur();}else if(e.key==='Enter'){e.preventDefault();finish();if(!channelEditing)number.blur();}};
    number.onblur=finish;
@@ -130,18 +130,17 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
     case 'clear-history':state.clearHistory();break;
     case 'new-palette':{const n=prompt('新しいパレットの名前','新しいパレット');if(n!==null)state.createPalette(n);break;}
     case 'rename-palette':{const n=prompt('パレットの新しい名前',state.palette.name);if(n!==null)state.renamePalette(n);break;}
-    case 'export-palette':{const payload=new Blob([JSON.stringify(JSON.parse(exportPaletteJson()),null,2)],{type:'application/json'});const url=URL.createObjectURL(payload),a=document.createElement('a');a.href=url;a.download='illustro-palette.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);break;}
+    case 'export-palette':{const payload=new Blob([exportPalette(state.palette)],{type:'application/json'});const url=URL.createObjectURL(payload),a=document.createElement('a');a.href=url;a.download='illustro-palette.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);break;}
     case 'import-palette':id<HTMLInputElement>('colorPaletteFile').click();break;
    }
   }catch(e){error.textContent=e instanceof Error?e.message:String(e);}
  });
- function exportPaletteJson(){return exportPalette(state.palette);}
- id<HTMLInputElement>('colorPaletteFile').onchange=async e=>{
+  id<HTMLInputElement>('colorPaletteFile').onchange=async e=>{
   const field=e.target as HTMLInputElement,file=field.files?.[0];field.value='';if(!file)return;
   if(file.size>262144){error.textContent='ファイルが大きすぎます（256KBまで）。';return;}
   try{state.importPalette(await file.text());selectTab(2);}catch(ex){error.textContent=ex instanceof Error?ex.message:String(ex);}
  };
- const unsubscribe=state.subscribe(()=>{reflect();if(pointer===null)renderCollections();});
+ const unsubscribe=state.subscribe(()=>{reflect();if(!state.isEditing)renderCollections();});
  reflect();renderCollections();
  return {destroy:unsubscribe,showTab:selectTab};
 }
