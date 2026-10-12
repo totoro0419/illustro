@@ -262,3 +262,5 @@ body.canvas-viewport main#canvasArea>.surface>#canvas{
  display:block;width:100%;height:100%;max-width:none;aspect-ratio:auto;
  background:transparent;touch-action:none;
 }
+/* Header flex buttons must still honor the saved/error visibility state. */
+#retryWorkSave[hidden]{display:none!important}
