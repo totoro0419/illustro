@@ -400,7 +400,7 @@ async function recoverCandidate(candidate:Candidate):Promise<boolean>{
   byId('status').textContent='作業途中の状態を確認しています。';
   try{
     const recovered=await persistence.recover(candidate),opened={document:recovered.document,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},generationId:'recovery',snapshotRevisionId:recovered.document.head,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})} as PortableOpenResult;
-    await activateOpened(opened,true);recoveryCandidates=[];byId('status').textContent='自動保存された作業状態へ戻しました。';
+    await activateOpened(opened,true);recoveryCandidates=[];byId('status').textContent=qaMode?'自動保存された最新の作業状態へ戻しました。':'選択した作業状態へ戻しました。';
     updatePersistenceDisplay();updateQa();return true;
   }catch(error){
     const message='作業途中の状態を戻せませんでした。'+(error instanceof Error?error.message:String(error));
