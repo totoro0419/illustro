@@ -1,6 +1,8 @@
 import './style.css';
 import './ui/shell.css';
 import './ui/aurora.css';
+import './ui/home.css';
+import {installHomeShell,type HomeShell} from './ui/homeShell';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
@@ -29,6 +31,8 @@ let checkpointOperations:SemanticOperation[]=[];
 let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();updateQa();});
+let homeUi:HomeShell|null=null;
+document.body.dataset.appMode=qaMode?'qa':'production';
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
 const renderLayers=()=>{
@@ -242,18 +246,36 @@ async function activateOpened(opened:PortableOpenResult,recovered=false){
   }
   await persistence.initialize(controller,null,opened.preserved,recovered);scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
 }
-byId<HTMLButtonElement>('new').onclick=async()=>{
-  byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';
+async function createDocument(width:number,height:number):Promise<boolean>{
+  const trigger=byId<HTMLButtonElement>('new');
+  if(trigger.disabled)return false;
+  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){
+    byId('status').textContent='幅と高さを1〜8192pxで指定してください。';return false;
+  }
+  if(documentReady&&!qaMode){
+    try{await persistence.flushPrepared();}
+    catch(error){byId('status').textContent='現在の作業を保護できないため、新規作成を中止しました。'+String(error);return false;}
+    if(persistence.state.storageError||persistence.state.protectionPending){
+      byId('status').textContent='現在の作業の自動保存に問題があります。新規作成せず、作品を保存してから再度お試しください。';return false;
+    }
+    if(!window.confirm('新しい作品を開きますか？現在の作品は閉じます。必要なら事前にSaveで作品ファイルを保存してください。'))return false;
+  }
+  trigger.disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
-    surface?.destroy();controller=new EditorController(Number(byId<HTMLInputElement>('newCanvasWidth').value)||512,Number(byId<HTMLInputElement>('newCanvasHeight').value)||384);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
+    surface?.destroy();controller=new EditorController(width,height);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
     await initializeCurrentSurface(false);await persistence.initialize(controller,null,undefined,false);scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
-    byId('status').textContent=selection?.fallbackUsed?`描画できます。WebGPUは${selection.webgpu?.stage??'初期化'}で利用できなかったためWebGL2を使用しています。`:'描画できます。作業内容は自動的に保護されます。';
-    updateQa();
-  }catch(error){const message=surface?.initializationError||(error instanceof Error?error.message:String(error));updateQa();surface?.destroy();documentReady=false;byId('status').textContent='描画を開始できませんでした。'+message;}
-  finally{byId<HTMLButtonElement>('new').disabled=false;}
+    byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
+    updateQa();return true;
+  }catch(error){
+    const message=surface?.initializationError||(error instanceof Error?error.message:String(error));
+    updateQa();surface?.destroy();documentReady=false;byId('status').textContent='描画を開始できませんでした。'+message;return false;
+  }finally{trigger.disabled=false;}
+}
+byId<HTMLButtonElement>('new').onclick=()=>{
+  if(homeUi&&!qaMode){homeUi.showNew();return;}
+  void createDocument(Number(byId<HTMLInputElement>('newCanvasWidth').value)||512,Number(byId<HTMLInputElement>('newCanvasHeight').value)||384);
 };
-
 byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.busy||historyPending){byId('status').textContent='今の操作が終わってからレイヤーを追加してください。';return;}try{const id=controller.addRasterLayer(),layer=controller.document.root.getLayer(id);surface.syncLayerStack();surface.discardRedoProjection();queueLatestCommit();renderLayers();updateHistoryButtons();byId('status').textContent=`${layer.name}を追加して選択しました。`;updateQa();}catch{byId('status').textContent='レイヤーを追加できませんでした。';}};
 
 byId<HTMLButtonElement>('addLayerPage').onclick=()=>byId<HTMLButtonElement>('addLayer').click();
@@ -304,15 +326,15 @@ byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as
 const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
 byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
 
-byId<HTMLButtonElement>('open').onclick=()=>byId<HTMLInputElement>('openFile').click();
+byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 byId<HTMLInputElement>('openFile').onchange=async e=>{
   const input=e.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file)return;
   byId('status').textContent='作品ファイルを確認しています。';let opened:PortableOpenResult;
   try{opened=await persistence.decodePortable(new Uint8Array(await file.arrayBuffer()));}
-  catch(error){byId('status').textContent='この作品ファイルは安全に読み込めませんでした。'+(error instanceof Error?error.message:String(error));updateQa();return;}
+  catch(error){const message='この作品ファイルは安全に読み込めませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);updateQa();return;}
   byId('status').textContent='作品を表示しています。';
-  try{await activateOpened(opened,false);byId('status').textContent='作品ファイルを開きました。自動保存を開始しました。';}
-  catch(error){byId('status').textContent='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));}
+  try{await activateOpened(opened,false);byId('status').textContent='作品ファイルを開きました。自動保存を開始しました。';homeUi?.showEditor();}
+  catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);}
   updateQa();
 };
 byId<HTMLButtonElement>('save').onclick=async()=>{
@@ -374,16 +396,48 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
   }
 };
 
-byId<HTMLButtonElement>('recover').onclick=async()=>{
-  const candidate=recoveryCandidates.find(item=>BigInt(item.protectedThrough)>0n);if(!candidate)return;byId('status').textContent='作業途中の状態を確認しています。';
+async function recoverCandidate(candidate:Candidate):Promise<boolean>{
+  byId('status').textContent='作業途中の状態を確認しています。';
   try{
     const recovered=await persistence.recover(candidate),opened={document:recovered.document,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},generationId:'recovery',snapshotRevisionId:recovered.document.head,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})} as PortableOpenResult;
-    await activateOpened(opened,true);recoveryCandidates=[];byId('status').textContent='自動保存された最新の作業状態へ戻しました。';
-  }catch(error){byId('status').textContent='作業途中の状態を戻せませんでした。'+(error instanceof Error?error.message:String(error));}
-  updatePersistenceDisplay();updateQa();
+    await activateOpened(opened,true);recoveryCandidates=[];byId('status').textContent='自動保存された作業状態へ戻しました。';
+    updatePersistenceDisplay();updateQa();return true;
+  }catch(error){
+    const message='作業途中の状態を戻せませんでした。'+(error instanceof Error?error.message:String(error));
+    byId('status').textContent=message;homeUi?.notify(message);updatePersistenceDisplay();updateQa();return false;
+  }
+}
+byId<HTMLButtonElement>('recover').onclick=()=>{
+  if(homeUi&&!qaMode){homeUi.showRecovery();return;}
+  const candidate=recoveryCandidates.find(item=>BigInt(item.protectedThrough)>0n);
+  if(candidate)void recoverCandidate(candidate);
 };
 async function refreshRecoveryCandidates(){
-  try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values;updatePersistenceDisplay();if(recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n)&&!documentReady)byId('status').textContent='自動保存から戻せる作業があります。';}catch{}
+  try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values;updatePersistenceDisplay();homeUi?.setRecoveryCandidates(values);if(recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n)&&!documentReady)byId('status').textContent='自動保存から戻せる作業があります。';}catch{}
+}
+if(!qaMode){
+  homeUi=installHomeShell(app,{
+    createDocument,
+    openFile:()=>byId<HTMLInputElement>('openFile').click(),
+    resume:async(documentId,writerEpochId)=>{
+      const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
+      return candidate?recoverCandidate(candidate):false;
+    },
+    prepareHome:async()=>{
+      if(documentReady){
+        try{await persistence.flushPrepared();}
+        catch(error){byId('status').textContent='作業の自動保存が完了していません。'+String(error);return false;}
+        if(persistence.state.storageError||persistence.state.protectionPending){
+          byId('status').textContent='自動保存の問題を解決してからホームへ戻ってください。作業画面は開いたままです。';
+          return false;
+        }
+      }
+      void refreshRecoveryCandidates();
+      return true;
+    },
+    hasDocument:()=>documentReady,
+  });
+  byId<HTMLButtonElement>('home').onclick=()=>{void homeUi?.showHome();};
 }
 void refreshRecoveryCandidates();
 if('serviceWorker' in navigator){const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});}
