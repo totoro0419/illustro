@@ -83,6 +83,7 @@ async function test(kind,dpr,touch=false){
   await p.locator('input[name="colorModel"][value="HSV"]').check();
   assert.ok(Math.abs(Number(await p.locator('#colorNumber2').inputValue())-100)<.5,'HSV numeric sync');
   await p.locator('#colorPrecision summary').click();
+  await p.locator('#colorPlane').scrollIntoViewIfNeeded();
   const wheel=await p.locator('#colorPicker').boundingBox();
   const picker=await p.locator('#colorPlane').boundingBox();assert.ok(picker);
   assert.ok(wheel&&picker,'picker geometry exists');
