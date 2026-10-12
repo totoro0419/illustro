@@ -37,6 +37,8 @@ async function home(page){
  assert.equal(await page.locator('#ihApp .ih-brand-name').textContent(),'Illustro.');
  const labels=await page.locator('#ihApp .ih-home-actions .ih-action strong').allTextContents();
  assert.deepEqual(labels,['新しい作品','マイ作品','前回の作業を続ける']);
+ assert.equal(await page.locator('#ihApp .ih-home-actions .ih-action-icon svg.ui-icon').count(),3,'original Aurora icon system');
+ assert.equal(await page.locator('#ihApp #ihNavSettings svg.ui-icon').count(),1,'matching settings icon');
  // Public GitHub Pages can load the logo after DOMContentLoaded, especially
  // on a new tablet/mobile context. Wait for decode, not just DOM insertion.
  await page.waitForFunction(()=>{
