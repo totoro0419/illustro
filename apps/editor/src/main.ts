@@ -125,7 +125,7 @@ function queueLatestCommit(){
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateViewControls();redrawCrop();updateQa();},backendOverride,(rgba,phase)=>{
  if(phase==='cancel'){foreground.cancel();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';restoreDrawingTool();}return;}
- const alpha=rgba[3]/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value!=='layer');
+ const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value!=='layer');
  const channels=rgba.slice(0,3).map(v=>Math.min(1,Math.max(0,v/255)));
  // Composite surfaces store premultiplied alpha; restore the displayed RGB at translucent edges.
  const color=rgb(...(fromComposite&&alpha>0&&alpha<1?channels.map(v=>Math.min(1,v/alpha)):channels) as [number,number,number]);
