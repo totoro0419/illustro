@@ -500,7 +500,10 @@ if(!qaMode){
       const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
       return candidate?recoverCandidate(candidate):false;
     },
-    prepareHome:async()=>{scheduleWorkThumbnail();void refreshWorks();return true;},
+    prepareHome:async()=>{scheduleWorkThumbnail();void refreshWorks();
+      // Start durable protection after the Home screen has had a chance to paint.
+      window.setTimeout(()=>{void persistence.barrier().then(refreshWorks).catch(showStorageError);},40);
+      return true;},
     listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
     renameWork:async(id,name)=>{await persistence.renameWork(id,name);if(documentReady&&controller.document.root.documentId===id){await prepareWorkSwitch();const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);}await refreshWorks();},
