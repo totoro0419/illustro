@@ -43,7 +43,7 @@ export class PersistenceCoordinator{
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    this.patch({currentRevision:document.head});void this.request('set-head',{revisionId:document.head,width:document.root.width,height:document.root.height}).catch(error=>this.patch({storageError:message(error)}));
+    this.patch({currentRevision:document.head});void this.request('set-head',{revisionId:document.head,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId}).catch(error=>this.patch({storageError:message(error)}));
   }
   async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
   async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}

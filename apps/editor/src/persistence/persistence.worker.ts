@@ -80,7 +80,7 @@ async function handle(message:RequestMessage){
     }
     case 'set-head':{
       const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session);
-      if(libraryWork)await publishCurrent({revisionId,width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,updatedAt:Date.now()});
+      if(libraryWork)await publishCurrent({revisionId,selectedLayerId:typeof message.selectedLayerId==='string'?uuid(message.selectedLayerId,'selected layer'):libraryWork.selectedLayerId,width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,updatedAt:Date.now()});
       reply(message.id,true,{backend:store.mode});break;
     }
     case 'flush':{
