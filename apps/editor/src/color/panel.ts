@@ -25,6 +25,7 @@ export function colorMarkup():string {
  '<div class="color-history-heading"><span>最近使った色（最大24色）</span>'+button('消去','clear-history')+'</div>'+
  '<div id="colorHistoryList" class="color-swatch-grid" role="group" aria-label="最近使った色"></div>'+
  '<p class="color-help">操作を確定した色だけ記録します。絵の「元に戻す」とは別です。</p></section>'+
+ '<dialog id="colorPaletteDialog" class="color-palette-dialog" aria-labelledby="colorPaletteDialogTitle"><form id="colorPaletteForm"><h3 id="colorPaletteDialogTitle">新しいパレット</h3><label for="colorPaletteName">パレットの名前<input id="colorPaletteName" type="text" maxlength="80" required autocomplete="off"></label><small id="colorPaletteDialogError" class="color-error" role="alert"></small><div class="color-dialog-actions"><button id="colorPaletteCancel" type="button">やめる</button><button id="colorPaletteConfirm" type="submit">保存</button></div></form></dialog>'+
  '</div>';
 }
 
@@ -120,6 +121,11 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  }
  selector.onchange=()=>state.selectPalette(selector.value);
  const error=id<HTMLElement>('colorPaletteError');
+  const paletteDialog=id<HTMLDialogElement>('colorPaletteDialog'),paletteForm=id<HTMLFormElement>('colorPaletteForm'),paletteName=id<HTMLInputElement>('colorPaletteName');
+  let dialogMode:'new'|'rename'='new';
+  function showPaletteDialog(mode:'new'|'rename'){dialogMode=mode;id('colorPaletteDialogTitle').textContent=mode==='new'?'新しいパレットを作る':'パレットの名前を変える';paletteName.value=mode==='new'?'':state.palette.name;id('colorPaletteDialogError').textContent='';paletteDialog.showModal();paletteName.focus();}
+  id<HTMLButtonElement>('colorPaletteCancel').onclick=()=>paletteDialog.close();
+  paletteForm.onsubmit=e=>{e.preventDefault();try{if(dialogMode==='new')state.createPalette(paletteName.value);else state.renamePalette(paletteName.value);paletteDialog.close();}catch(ex){id('colorPaletteDialogError').textContent=ex instanceof Error?ex.message:String(ex);}};
  const actions=document.querySelectorAll<HTMLButtonElement>('[data-color-action]');
  actions.forEach(b=>b.onclick=async()=>{
   const name=b.dataset.colorAction;error.textContent='';
@@ -128,8 +134,8 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
     case 'eyedropper':options.onPickTool();break;
     case 'add-current':state.addSwatch();break;
     case 'clear-history':state.clearHistory();break;
-    case 'new-palette':{const n=prompt('新しいパレットの名前','新しいパレット');if(n!==null)state.createPalette(n);break;}
-    case 'rename-palette':{const n=prompt('パレットの新しい名前',state.palette.name);if(n!==null)state.renamePalette(n);break;}
+    case 'new-palette':showPaletteDialog('new');break;
+    case 'rename-palette':showPaletteDialog('rename');break;
     case 'export-palette':{const payload=new Blob([exportPalette(state.palette)],{type:'application/json'});const url=URL.createObjectURL(payload),a=document.createElement('a');a.href=url;a.download='illustro-palette.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);break;}
     case 'import-palette':id<HTMLInputElement>('colorPaletteFile').click();break;
    }
