@@ -27,6 +27,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": ".github/workflows/m09-color-basics.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/index.html",
       "status": "EXPERIMENTAL"
     },
@@ -56,6 +60,22 @@
     },
     {
       "path": "apps/editor/src/canvasView.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/color/color.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/color/model.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/color/model.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/color/panel.ts",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1120,6 +1140,10 @@
     },
     {
       "path": "docs/research/M08_CANVAS_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M09_COLOR_COMPETITOR_RESEARCH.md",
       "status": "EXPERIMENTAL"
     },
     {
