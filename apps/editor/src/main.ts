@@ -2,7 +2,7 @@ import './style.css';
 import './ui/shell.css';
 import './ui/aurora.css';
 import './color/color.css';
-import {ForegroundColor,rgb,hex,type RGB} from './color/model';
+import {ForegroundColor,rgb,hex} from './color/model';
 import {installColorPanel} from './color/panel';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
@@ -130,7 +130,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new Bru
  // Composite surfaces store premultiplied alpha; restore the displayed RGB at translucent edges.
  const color=rgb(...(fromComposite&&alpha>0&&alpha<1?channels.map(v=>Math.min(1,v/alpha)):channels) as [number,number,number]);
  if(phase==='preview'){foreground.begin();foreground.preview(color);}
- else{foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';restoreDrawingTool();}
+ else{foreground.begin();foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';restoreDrawingTool();}
  });}
 surface=makeSurface();
 function updateViewControls(){const state=surface?.viewState;if(!state)return;
