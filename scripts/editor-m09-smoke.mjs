@@ -94,9 +94,12 @@ async function test(kind,dpr,touch=false){
   assert.ok(pickerGeometry.roundingClearance>=2,'SV square and marker must not collide with hue ring');
   assert.ok(pickerGeometry.horizontalOverflow<=3,'Color Box must have no horizontal overflow: '+JSON.stringify(pickerGeometry));
   assert.equal(pickerGeometry.hasPeerTabs,false,'advanced and palette controls are not peer tabs');
+  const pickerHit=await p.evaluate(({x,y})=>{const t=document.elementFromPoint(x,y);return {tag:t?.tagName,id:t?.id,klass:t?.className};},{x:picker.x+picker.width*.35,y:picker.y+picker.height*.15});
+  await p.locator('#colorPicker').evaluate(el=>{el.dataset.pointerTrace='';for(const kind of ['pointerdown','pointermove','pointerup'])el.addEventListener(kind,e=>{el.dataset.pointerTrace+=kind+':'+e.target.id+':'+document.getElementById('colorCode').textContent+';';},{capture:true});});
   await p.mouse.move(picker.x+picker.width*.35,picker.y+picker.height*.15);await p.mouse.down();
   await p.mouse.move(picker.x+picker.width*.75,picker.y+picker.height*.65,{steps:8});await p.mouse.up();
-  const valueAfterPicker=await current(p);assert.notEqual(valueAfterPicker,'#FF0000');
+  const valueAfterPicker=await current(p),pointerTrace=await p.locator('#colorPicker').getAttribute('data-pointer-trace');
+  assert.notEqual(valueAfterPicker,'#FF0000','Square drag must update color: '+JSON.stringify({pickerHit,pointerTrace,pickerGeometry}));
   assert.ok((await state(p)).currentRevision===rev2);
   await p.locator('#colorPaletteTools summary').click();
   await p.locator('[data-color-action="new-palette"]').click();
