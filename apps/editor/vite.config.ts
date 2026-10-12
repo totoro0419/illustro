@@ -5,7 +5,7 @@ function m05OfflineAssetManifest():Plugin{
     name:'m05-offline-asset-manifest',
     generateBundle(_options,bundle){
       // Vite bundle keys exclude files copied verbatim from public/. The editor logo is required offline.
-      const assets=[...new Set([...Object.keys(bundle).filter(name=>!name.endsWith('.map')),'brand/illustro-logo.png'])].sort();
+      const assets=[...new Set([...Object.keys(bundle).filter(name=>!name.endsWith('.map')),'brand/illustro-logo.png','brand/illustro-logo-canvas-soft.webp'])].sort();
       this.emitFile({type:'asset',fileName:'offline-assets.json',source:JSON.stringify({version:1,assets})});
     },
   };

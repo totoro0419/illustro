@@ -50,6 +50,7 @@ async function home(page){
   return {loaded:img.complete&&img.naturalWidth>0,fit:style.objectFit,width:outer.width,imageWidth:inner.width,imageHeight:inner.height,inside:inner.left>=outer.left&&inner.right<=outer.right&&inner.top>=outer.top&&inner.bottom<=outer.bottom};
  });
  assert.ok(brand.loaded,'approved logo loads');
+ assert.ok(new URL(await page.locator('#ihApp .ih-logo img').getAttribute('src'),page.url()).pathname.endsWith('/brand/illustro-logo.png'),'Home retains the bright official logo');
  assert.equal(brand.fit,'contain','preserve original logo composition');
  assert.ok(brand.inside&&brand.imageWidth>=brand.width-3,'logo must fill rounded frame without clipping');
  record('HOME-APPROVED-ACTIONS');
@@ -124,7 +125,7 @@ try{
   const inner=img.getBoundingClientRect(),outer=img.parentElement.getBoundingClientRect();
   return {source:new URL(img.src).pathname,inside:inner.left>=outer.left&&inner.right<=outer.right&&inner.top>=outer.top&&inner.bottom<=outer.bottom,fit:getComputedStyle(img).objectFit};
  });
- assert.ok(editorLogo.source.endsWith('/brand/illustro-logo.png')&&editorLogo.inside&&editorLogo.fit==='contain','editor uses the real fitted logo');
+ assert.ok(editorLogo.source.endsWith('/brand/illustro-logo-canvas-soft.webp')&&editorLogo.inside&&editorLogo.fit==='contain','editor uses the real fitted logo');
  record('NEW-DOCUMENT-PRESET-AND-REAL-EDITOR');
  record('LOGO-HOME-AND-EDITOR-IMAGE-BOUNDARIES',editorLogo);
 
