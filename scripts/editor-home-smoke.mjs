@@ -92,6 +92,16 @@ try{
  await click(desktop,'#ihChoiceFile');
  assert.equal(await desktop.locator('#ihFileOptions').isVisible(),true);
  assert.equal(await desktop.locator('#ihBlankForm').isVisible(),false);
+ const chooserPending=desktop.waitForEvent('filechooser',{timeout:20000});
+ await click(desktop,'#ihSelectFile');
+ const chooser=await chooserPending;
+ assert.equal(chooser.isMultiple(),false,'one portable document at a time');
+ await chooser.setFiles({name:'broken.illustro',mimeType:'application/octet-stream',buffer:Buffer.from('not-an-illustro-file')});
+ await desktop.waitForFunction(()=>document.querySelector('#ihNotice')?.textContent?.includes('安全に読み込めませんでした'),null,{timeout:12000});
+ assert.equal(await desktop.locator('#ihApp').isVisible(),true,'invalid input keeps Home active');
+ record('HOME-NATIVE-FILE-PICKER-AND-INVALID-FILE-SAFETY');
+ await click(desktop,'#ihStart');
+ await desktop.waitForSelector('#ihNewDialog[open]');
  await click(desktop,'#ihChoiceBlank');
  await click(desktop,'[data-ih-preset="2048x1536"]');
  assert.equal(await desktop.locator('#ihNewWidth').inputValue(),'2048');
