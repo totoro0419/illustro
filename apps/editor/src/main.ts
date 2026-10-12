@@ -33,6 +33,7 @@ let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
 let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=null,workSwitchBusy=false,librarySaving=false;
+let thumbnailTimer:number|null=null,thumbnailInProgress=false;
 
 document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};byId('saveState').after(retry);}
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
@@ -272,7 +273,7 @@ async function createDocument(width:number,height:number,name='新しい作品',
       const next=document.addRasterLayerAbove(selected);selected=next.layerId;
     }
     await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head});
-    if(!qaMode){await createWorkThumbnail();await refreshWorks();}
+    if(!qaMode)void refreshWorks();
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
     updateQa();return true;
@@ -443,27 +444,48 @@ function copyOpened(opened:PortableOpenResult,name:string):PortableOpenResult{
 async function createWorkThumbnail(){
   if(qaMode||!documentReady||!surface||surface.busy)return;
   const active=surface,doc=controller.document,revision=doc.head,root=doc.root;
-  const pixels=await active.captureDocumentLayers(),scale=Math.min(1,320/root.width,240/root.height),width=Math.max(1,Math.round(root.width*scale)),height=Math.max(1,Math.round(root.height*scale));
+  if(works.some(work=>work.documentId===root.documentId&&work.thumbnail&&work.thumbnailRevision===revision))return;
+  const layers=controller.layers.map(layer=>({id:layer.id,visible:layer.visible,opacity:layer.opacity}));
+  const pixels=await active.captureDocumentLayers();
+  if(surface!==active||controller.document!==doc||doc.head!==revision)return;
+  const scale=Math.min(1,320/root.width,240/root.height),width=Math.max(1,Math.round(root.width*scale)),height=Math.max(1,Math.round(root.height*scale));
   const canvas=new OffscreenCanvas(width,height),ctx=canvas.getContext('2d')!;
-  for(const layer of controller.layers){if(!layer.visible)continue;const rgba=pixels.get(layer.id);if(!rgba)continue;
-    const bitmap=await createImageBitmap(new ImageData(new Uint8ClampedArray(rgba),root.width,root.height),{resizeWidth:width,resizeHeight:height,resizeQuality:'high'});
+  for(const layer of layers){if(!layer.visible)continue;const rgba=pixels.get(layer.id);if(!rgba)continue;
+    const bitmap=await createImageBitmap(new ImageData(new Uint8ClampedArray(rgba.buffer,rgba.byteOffset,rgba.byteLength),root.width,root.height),{resizeWidth:width,resizeHeight:height,resizeQuality:'high'});
     ctx.globalAlpha=layer.opacity;ctx.drawImage(bitmap,0,0);bitmap.close();
   }
   const blob=await canvas.convertToBlob({type:'image/png'});
-  if(surface===active&&doc.head===revision)await persistence.storeThumbnail(root.documentId,revision,blob);
+  if(surface===active&&controller.document===doc&&doc.head===revision)await persistence.storeThumbnail(root.documentId,revision,blob);
+}
+// Thumbnail updates are best-effort background work, never part of opening or leaving an artwork.
+function scheduleWorkThumbnail(){
+  if(qaMode||!documentReady||!surface)return;
+  if(thumbnailTimer!==null)clearTimeout(thumbnailTimer);
+  thumbnailTimer=window.setTimeout(()=>{
+    thumbnailTimer=null;
+    const run=async()=>{
+      if(!app.inert||thumbnailInProgress||!documentReady||!surface||surface.busy)return;
+      thumbnailInProgress=true;
+      try{await createWorkThumbnail();await refreshWorks();}
+      catch(error){console.warn('Thumbnail update deferred:',error);}
+      finally{thumbnailInProgress=false;}
+    };
+    const idle=(window as Window&{requestIdleCallback?:(callback:()=>void,options?:{timeout:number})=>number}).requestIdleCallback;
+    if(idle)idle(()=>{void run();},{timeout:1500});else void run();
+  },120);
 }
 async function prepareWorkSwitch(){
   if(!documentReady)return true;
   if(persistence.state.saving){homeUi?.notify('作品ファイルの保存が終わってから切り替えてください。描画は続けられます。');return false;}
   if(surface?.busy||historyPending||geometryBusy){homeUi?.notify('描いている線や操作が終わってから切り替えてください。');return false;}
   const wasInert=app.inert;app.inert=true;
-  try{librarySaving=true;await persistence.barrier();await createWorkThumbnail();return true;}
+  try{librarySaving=true;await persistence.barrier();return true;}
   catch(error){showStorageError(error);return false;}finally{app.inert=wasInert;librarySaving=false;updatePersistenceDisplay();}
 }
 async function openWork(id:string):Promise<boolean>{
   if(workSwitchBusy)return false;workSwitchBusy=true;
-  try{if(!(await prepareWorkSwitch()))return false;
-    if(documentReady&&controller.document.root.documentId===id){homeUi?.showEditor();return true;}
+  try{if(documentReady&&controller.document.root.documentId===id){homeUi?.showEditor();return true;}
+    if(!(await prepareWorkSwitch()))return false;
     const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);await refreshWorks();homeUi?.showEditor();
     if(loaded.fallback)homeUi?.notify('最新の保存を読み込めなかったため、前の正常な保存から開きました。');return true;
   }catch(error){showStorageError(error);return false;}finally{workSwitchBusy=false;}
@@ -480,11 +502,11 @@ if(!qaMode){
       const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
       return candidate?recoverCandidate(candidate):false;
     },
-    prepareHome:async()=>{if(!(await prepareWorkSwitch()))return false;await refreshRecoveryCandidates();await refreshWorks();return true;},
-    listWorks:async()=>{await refreshWorks();return {works,lastWorkId};},
+    prepareHome:async()=>{scheduleWorkThumbnail();void refreshRecoveryCandidates();void refreshWorks();return true;},
+    listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
     renameWork:async(id,name)=>{await persistence.renameWork(id,name);if(documentReady&&controller.document.root.documentId===id){await prepareWorkSwitch();const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);}await refreshWorks();},
-    duplicateWork:async(id)=>{if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');const loaded=await persistence.loadWork(id),copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');await activateOpened(copy);await createWorkThumbnail();await refreshWorks();},
+    duplicateWork:async(id)=>{if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');const loaded=await persistence.loadWork(id),copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');await activateOpened(copy);await refreshWorks();},
     deleteWork:async(id)=>{await persistence.deleteWork(id);if(documentReady&&controller.document.root.documentId===id){surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();}await refreshWorks();},
     hasDocument:()=>documentReady,
   });
