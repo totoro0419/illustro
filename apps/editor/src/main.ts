@@ -451,7 +451,7 @@ async function createWorkThumbnail(){
   const scale=Math.min(1,320/root.width,240/root.height),width=Math.max(1,Math.round(root.width*scale)),height=Math.max(1,Math.round(root.height*scale));
   const canvas=new OffscreenCanvas(width,height),ctx=canvas.getContext('2d')!;
   for(const layer of layers){if(!layer.visible)continue;const rgba=pixels.get(layer.id);if(!rgba)continue;
-    const bitmap=await createImageBitmap(new ImageData(new Uint8ClampedArray(rgba.buffer,rgba.byteOffset,rgba.byteLength),root.width,root.height),{resizeWidth:width,resizeHeight:height,resizeQuality:'high'});
+    const bitmap=await createImageBitmap(new ImageData(new Uint8ClampedArray(rgba),root.width,root.height),{resizeWidth:width,resizeHeight:height,resizeQuality:'high'});
     ctx.globalAlpha=layer.opacity;ctx.drawImage(bitmap,0,0);bitmap.close();
   }
   const blob=await canvas.convertToBlob({type:'image/png'});
