@@ -24,13 +24,13 @@ const report={commit:process.env.EXPECTED_COMMIT_SHA??'',target:publicUrl?'publi
 const current=p=>p.locator('#colorCode').textContent();
 const state=async p=>JSON.parse((await p.locator('#qaAuto').textContent())||'{}');
 async function showColor(p){
- if(await p.locator('#colorTab0').isVisible())return;
+ if(await p.locator('#colorPicker').isVisible())return;
  if(await p.locator('#colorPage').isVisible())await p.locator('#colorPage').click();
  else await p.locator('#workspaceToggle').click();
- assert.ok(await p.locator('#colorTab0').isVisible(),'Color Box must be reachable with one visible action');
+ assert.ok(await p.locator('#colorPicker').isVisible(),'Primary color picker must be reachable with one action');
 }
 async function changeHex(p,value){
- await showColor(p);const field=p.locator('#colorHex');await p.locator('#colorTab0').click();await field.fill(value);await field.press('Enter');
+ await showColor(p);const field=p.locator('#colorHex');await field.fill(value);await field.press('Enter');
  assert.equal(await current(p),value);
 }
 async function draw(p,offset=0){
@@ -50,7 +50,8 @@ async function test(kind,dpr,touch=false){
  const name=kind+'-'+dpr+'-'+(touch?'touch':'desktop');
  try{
   await p.goto(base+(base.includes('?')?'&':'?')+'m09=1&backend='+kind,{waitUntil:'domcontentloaded'});
-  assert.equal(await p.locator('#colorTab0').count(),1,'Color surface visible in Right Box');
+  assert.equal(await p.locator('#colorPicker').count(),1,'Color picker visible in Right Box');
+  assert.equal(await p.locator('.color-tabs').count(),0,'four peer tabs are removed');
   await p.locator('#new').click();
   await p.waitForFunction(()=>document.getElementById('status')?.textContent?.includes('描画できます'),{timeout:75000});
   const initial=await state(p);
@@ -74,27 +75,37 @@ async function test(kind,dpr,touch=false){
   await p.waitForFunction(()=>document.getElementById('colorCode')?.textContent==='#FF0000',{timeout:20000});
   assert.equal(await p.locator('#eyedropper').getAttribute('aria-pressed'),'false');
   assert.equal((await state(p)).currentRevision,rev2,'eyedropper must not create artwork revision');
-  await showColor(p);await p.locator('#colorTab1').click();
+  await showColor(p);await p.locator('#colorPrecision summary').click();
   await p.locator('input[name="colorModel"][value="RGB"]').check();
   assert.ok(Math.abs(Number(await p.locator('#colorNumber0').inputValue())-255)<0.5,'RGB numeric sync');
   await p.locator('input[name="colorModel"][value="HSL"]').check();
   assert.ok(Math.abs(Number(await p.locator('#colorNumber1').inputValue())-100)<.5,'HSL numeric sync');
   await p.locator('input[name="colorModel"][value="HSV"]').check();
   assert.ok(Math.abs(Number(await p.locator('#colorNumber2').inputValue())-100)<.5,'HSV numeric sync');
-  await p.locator('#colorTab0').click();
+  await p.locator('#colorPrecision summary').click();
+  const wheel=await p.locator('#colorPicker').boundingBox();
   const picker=await p.locator('#colorPlane').boundingBox();assert.ok(picker);
+  assert.ok(wheel&&picker,'picker geometry exists');
+  const pickerGeometry=await p.locator('#colorPicker').evaluate(el=>{
+    const ring=el.querySelector('#colorRing'),plane=el.querySelector('#colorPlane');
+    const a=ring.getBoundingClientRect(),b=plane.getBoundingClientRect(),style=getComputedStyle(el),c=document.getElementById('colorBox');
+    return {wheel:a.width,square:b.width,roundingClearance:(a.width/2-30)-(Math.hypot(b.width/2,b.height/2)+9),horizontalOverflow:c?.scrollWidth-c?.clientWidth,hasPeerTabs:!!document.querySelector('.color-tabs'),precisionOpened:document.getElementById('colorPrecision').open};
+  });
+  assert.ok(pickerGeometry.roundingClearance>=2,'SV square and marker must not collide with hue ring');
+  assert.ok(pickerGeometry.horizontalOverflow<=3,'Color Box must have no horizontal overflow');
+  assert.equal(pickerGeometry.hasPeerTabs,false,'advanced and palette controls are not peer tabs');
   await p.mouse.move(picker.x+picker.width*.35,picker.y+picker.height*.15);await p.mouse.down();
   await p.mouse.move(picker.x+picker.width*.75,picker.y+picker.height*.65,{steps:8});await p.mouse.up();
   const valueAfterPicker=await current(p);assert.notEqual(valueAfterPicker,'#FF0000');
   assert.ok((await state(p)).currentRevision===rev2);
-  await p.locator('#colorTab2').click();
+  await p.locator('#colorPaletteTools summary').click();
   await p.locator('[data-color-action="new-palette"]').click();
   await p.locator('#colorPaletteName').fill('検証パレット');
   await p.locator('#colorPaletteConfirm').click();
   assert.equal(await p.locator('#colorPaletteSelect').inputValue(),await p.locator('#colorPaletteSelect option').last().getAttribute('value'));
-  await p.locator('[data-color-action="add-current"]').last().click();
+  await p.locator('[data-color-action="add-current"]').click();
   assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),1);
-  await changeHex(p,'#0000FF');await p.locator('#colorTab2').click();
+  await changeHex(p,'#0000FF');
   await p.locator('[data-color-action="add-current"]').last().click();
   assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),2);
   const nameBefore=await p.locator('#colorPaletteSelect option:checked').textContent();
@@ -103,12 +114,11 @@ async function test(kind,dpr,touch=false){
   await p.locator('#colorPaletteFile').setInputFiles({name:'palette.json',mimeType:'application/json',buffer:file});
   assert.equal(await p.locator('#colorPaletteSelect option:checked').textContent(),nameBefore);
   assert.deepEqual(await p.locator('#colorPaletteList .color-swatch').evaluateAll(list=>list.map(x=>x.getAttribute('aria-label'))),swatchesBefore);
-  await p.locator('.color-swatch-move[aria-label="前へ移動"]').last().click();
-  await p.locator('.color-swatch-move[aria-label="色を削除"]').first().click();
+  await p.locator('#colorPaletteManageList .color-swatch-move[aria-label="前へ移動"]').last().click();
+  await p.locator('#colorPaletteManageList .color-swatch-move[aria-label="色を削除"]').first().click();
   assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),1);
-  await p.locator('#colorTab3').click();assert.ok(await p.locator('#colorHistoryList .color-swatch').count()>=2);
-  await p.locator('[data-color-action="clear-history"]').click();
-  assert.equal(await p.locator('#colorHistoryList .color-swatch').count(),0);
+  assert.ok(await p.locator('#colorHistoryList .color-swatch').count()>=2);
+  assert.ok(await p.locator('#colorHistoryList').isVisible(),'history is accessible without a tab');
   await p.screenshot({path:path.join(evidence,name+'-color.png')});
  }catch(e){report.errors.push({name,error:String(e),stack:e.stack,console:errors});await p.screenshot({path:path.join(evidence,name+'-failure.png')}).catch(()=>{});}
  finally{report.cases.push({name,console:errors,qa:await state(p).catch(()=>null)});if(errors.length)report.errors.push({name,console:errors});await context.close();}
