@@ -21,7 +21,10 @@ try{
  browser=await chromium.launch(launch);
  const profile=await fs.mkdtemp('/tmp/illustro-profile-');
  let persistent=await chromium.launchPersistentContext(profile,{...launch,viewport:{width:1024,height:768}}),page=await persistent.newPage();
- await page.goto(base+'?backend=webgl2');const saved=await create(page,'ブラウザ再起動');await draw(page);await home(page);await persistent.close();
+ await page.goto(base+'?backend=webgl2');const saved=await create(page,'ブラウザ再起動');await draw(page);await home(page);
+  // Home is intentionally immediate. Persistence is independently confirmed before a simulated clean browser exit.
+  await page.waitForFunction(()=>{const el=document.getElementById('saveState');return el?.dataset.autosavePending==='false'&&el.dataset.protectedThrough!=='0'&&el.textContent.includes('保存済み');},{timeout:30000});
+  await persistent.close();
  persistent=await chromium.launchPersistentContext(profile,{...launch,viewport:{width:1024,height:768}});page=await persistent.newPage();await page.goto(base+'?backend=webgl2');await page.locator('#ihContinue').click();await page.locator('#ihApp').waitFor({state:'hidden'});assert.equal((await state(page)).documentId,saved.documentId);assert.equal((await state(page)).committedStrokes,'1');await persistent.close();record('BROWSER-PROCESS-RESTART');
  const context=await browser.newContext({viewport:{width:1200,height:900},serviceWorkers:'block',acceptDownloads:true});await context.addInitScript(()=>Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true}));
  await context.route('**/assets/persistence.worker-*.js',async route=>{const response=await route.fetch(),source=await response.text();
@@ -31,7 +34,13 @@ try{
  async function fault(value){await page.evaluate(value=>new Promise(resolve=>{const c=new BroadcastChannel('illustro-test-fault');c.onmessage=e=>{if(e.data==='ready'){c.close();resolve();}};c.postMessage(value);}),value);}
  await fault(true);await draw(page,2);await page.waitForFunction(()=>document.getElementById('saveState').textContent.includes('保存できません'),{timeout:15000});
  const catalog=await page.evaluate(()=>new Promise(resolve=>{const request=indexedDB.open('illustro-work-library-v1');request.onsuccess=()=>{const tx=request.result.transaction('works'),r=tx.objectStore('works').getAll();r.onsuccess=()=>resolve(r.result.map(x=>({revision:x.revisionId})));};}));assert.equal(catalog[0].revision,revision,'failed publication retains prior verified artwork');
- await page.locator('#home').click();await page.waitForFunction(()=>document.getElementById('app').inert===false);assert.equal(await page.locator('#ihApp').isHidden(),true,'failed save blocks destructive switch');
+ await page.locator('#home').click();await page.locator('#ihApp').waitFor({state:'visible',timeout:2000});
+  // Navigation remains fast even if a save failed. But creating/switching artwork must fail safely.
+  await page.locator('#ihStart').click();await page.locator('#ihNewCreate').click();
+  await page.waitForFunction(()=>document.getElementById('ihNewError').textContent.includes('作成できません')||document.getElementById('ihNotice').textContent.includes('保存できません'),{timeout:20000});
+  assert.equal(await page.locator('#ihApp').isVisible(),true,'failed save prevents destructive artwork replacement');
+  await page.locator('#ihNewCancel').click();await page.locator('#ihReturnEditor').click();
+  assert.equal((await state(page)).documentId,a.documentId,'failed save keeps active artwork available');
  await fault(false);await page.locator('#retryWorkSave').click();await page.waitForFunction(()=>document.getElementById('saveState').textContent.includes('保存済み'));await home(page);await works(page,1);await open(page,a.documentId);assert.equal((await state(page)).committedStrokes,'2');record('INDEXEDDB-FALLBACK-QUOTA-FAILURE-RETRY-PREVIOUS-INTACT');
  await home(page);await page.locator('#ihNavHome').click();const white=await create(page,'白い背景',128,96,'white');await draw(page);const output=await download(page,async()=>{await page.evaluate(()=>document.getElementById('exportImage').click());await page.locator('#exportFormat').selectOption('png');await page.locator('#exportRun').click();});
  const pixel=await page.evaluate(async bytes=>{const b=await createImageBitmap(new Blob([new Uint8Array(bytes)])),c=new OffscreenCanvas(b.width,b.height),ctx=c.getContext('2d');ctx.drawImage(b,0,0);b.close();return Array.from(ctx.getImageData(1,1,1,1).data);},Array.from(output.buffer));assert.deepEqual(pixel,[255,255,255,255]);await home(page);await page.reload();await works(page,2);await open(page,white.documentId);assert.equal((await state(page)).layerCount,'2');record('BACKGROUND-REAL-RASTER-SAVE-REOPEN-EXPORT');
