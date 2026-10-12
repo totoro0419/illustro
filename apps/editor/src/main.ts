@@ -416,6 +416,9 @@ async function refreshRecoveryCandidates(){
   try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values;updatePersistenceDisplay();homeUi?.setRecoveryCandidates(values);if(recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n)&&!documentReady)byId('status').textContent='自動保存から戻せる作業があります。';}catch{}
 }
 if(!qaMode){
+  // The editor is inert while Home is active. Keep the native file picker outside
+  // that subtree so a genuine Home button press may open the OS picker.
+  document.body.append(byId<HTMLInputElement>('openFile'));
   homeUi=installHomeShell(app,{
     createDocument,
     openFile:()=>{
