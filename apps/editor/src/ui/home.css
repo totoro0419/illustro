@@ -75,6 +75,9 @@
  display:inline-flex;align-items:center;gap:10px;margin-top:19px;padding:9px 5px;color:#6279C0;
  background:transparent;border:0;font-size:12px;font-weight:650
 }
+.ih-save-status{font-size:12px;line-height:1.5;color:#667899;margin:4px 0 0;max-width:390px}
+.ih-save-status[hidden]{display:none}
+
 .ih-discover{
  align-self:stretch;display:flex;flex-direction:column;min-height:536px;
  border:1px solid #DFE7F6;border-radius:25px;overflow:hidden;
