@@ -259,3 +259,10 @@
 @media (prefers-reduced-motion:reduce){
  .ih-root *, .ih-root *::before,.ih-root *::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 }
+
+/* Production replaces QA document shortcuts with Home and the canonical Document routes. */
+body[data-app-mode="production"] .canvas-top .document-actions{display:none!important}
+body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] .scalar-row{display:none!important}
+body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [data-action="new"],
+body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [data-action="open"],
+body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [data-action="recover"]{display:none!important}
