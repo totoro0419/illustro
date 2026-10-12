@@ -44,7 +44,8 @@ try{
  await fault(false);
   // The save queue may automatically recover when the fault is lifted; retry only if needed.
   await page.waitForFunction(()=>document.getElementById('retryWorkSave')?.hidden===false||document.getElementById('saveState')?.textContent.includes('保存済み'),null,{timeout:20000});
-  if(await page.locator('#retryWorkSave').isVisible())await page.locator('#retryWorkSave').click();
+  const recoveryAction=await page.evaluate(()=>{const button=document.getElementById('retryWorkSave');if(button&&!button.hidden){button.click();return 'requested-retry';}return 'already-recovered';});
+  console.log('SAVE-RECOVERY '+recoveryAction);
   await page.waitForFunction(()=>document.getElementById('saveState').textContent.includes('保存済み')&&document.getElementById('saveState').dataset.autosavePending==='false',null,{timeout:20000});await home(page);await works(page,1);await open(page,a.documentId);assert.equal((await state(page)).committedStrokes,'2');record('INDEXEDDB-FALLBACK-QUOTA-FAILURE-RETRY-PREVIOUS-INTACT');
  await home(page);await page.locator('#ihNavHome').click();const white=await create(page,'白い背景',128,96,'white');await draw(page);const output=await download(page,async()=>{await page.evaluate(()=>document.getElementById('exportImage').click());await page.locator('#exportFormat').selectOption('png');await page.locator('#exportRun').click();});
  const pixel=await page.evaluate(async bytes=>{const b=await createImageBitmap(new Blob([new Uint8Array(bytes)])),c=new OffscreenCanvas(b.width,b.height),ctx=c.getContext('2d');ctx.drawImage(b,0,0);b.close();return Array.from(ctx.getImageData(1,1,1,1).data);},Array.from(output.buffer));assert.deepEqual(pixel,[255,255,255,255]);await home(page);await page.reload();await works(page,2);await open(page,white.documentId);assert.equal((await state(page)).layerCount,'2');record('BACKGROUND-REAL-RASTER-SAVE-REOPEN-EXPORT');
