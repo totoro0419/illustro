@@ -1,0 +1,66 @@
+{
+  "brushSource": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+  "brushDocumentationHead": "d9b325e2ab933688039e23d72fefb1b9d890e18b",
+  "htmlBlob": "548736458cf0d51a73e8c6b7e31d3fd056936ab0",
+  "htmlBytes": 549706,
+  "brushCI": {
+    "id": 37286523766,
+    "status": "completed",
+    "conclusion": "success",
+    "nodeTests": 91,
+    "backends": [
+      {
+        "backend": "webgpu",
+        "checks": 229,
+        "performanceConditions": 38,
+        "status": "CHECKS_PASS",
+        "threeMinuteInputs": [
+          {
+            "actual": 43200,
+            "scheduled": 43200,
+            "retained": 43200
+          },
+          {
+            "actual": 43200,
+            "scheduled": 43200,
+            "retained": 43200
+          }
+        ]
+      },
+      {
+        "backend": "webgl2",
+        "checks": 229,
+        "performanceConditions": 38,
+        "status": "CHECKS_PASS",
+        "threeMinuteInputs": [
+          {
+            "actual": 43200,
+            "scheduled": 43200,
+            "retained": 43200
+          },
+          {
+            "actual": 43200,
+            "scheduled": 43200,
+            "retained": 43200
+          }
+        ]
+      }
+    ],
+    "targeted": [
+      {
+        "backend": "webgpu",
+        "conditions": 18,
+        "status": "CHECKS_PASS",
+        "latencyFailures": 0
+      },
+      {
+        "backend": "webgl2",
+        "conditions": 18,
+        "status": "CHECKS_PASS",
+        "latencyFailures": 0
+      }
+    ]
+  },
+  "physicalPen": "USER_ACCEPTANCE_REPORTED; no new physical measurement",
+  "oldWebglInitialRepeatFail": "retained; cause unconfirmed"
+}

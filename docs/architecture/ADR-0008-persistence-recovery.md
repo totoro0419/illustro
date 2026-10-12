@@ -1,3 +1,5 @@
+> Classification: OBSOLETE / historical evidence; valid technical principles may be reused. Current authority: `docs/IMPLEMENTATION_BASELINE.md` and `docs/CANONICAL_INDEX.json`. Old stop/PASS/candidate declarations below apply to their recorded version only.
+
 # ADR-0008: .illustro Persistence / Autosave / Recovery
 
 ## Status

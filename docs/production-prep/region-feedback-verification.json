@@ -1,0 +1,41 @@
+{
+  "kind": "Human-feedback mechanism regression; no image quality grading",
+  "tests": [
+    {
+      "name": "separately drawn converging sides produce a tip connection",
+      "status": "PASS"
+    },
+    {
+      "name": "closure evidence uses an already accepted connection",
+      "status": "PASS"
+    },
+    {
+      "name": "turning off contour extension leaves the larger gap",
+      "status": "PASS"
+    },
+    {
+      "name": "blocking the short support link prevents the larger closure",
+      "status": "PASS"
+    },
+    {
+      "name": "same large gap between open continuation strokes stays pending",
+      "status": "PASS"
+    },
+    {
+      "name": "constant separation parallel strokes are not capped",
+      "status": "PASS"
+    },
+    {
+      "name": "multiple comparable tips are held",
+      "status": "PASS"
+    },
+    {
+      "name": "shared boundary ahead holds an ambiguous root or tip",
+      "status": "PASS"
+    },
+    {
+      "name": "zero gap disables all inferred links and repeated geometry is deterministic",
+      "status": "PASS"
+    }
+  ]
+}

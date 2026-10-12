@@ -1,0 +1,5719 @@
+{
+  "date": "2026-10-03T11:22:12.505Z",
+  "scope": "targeted performance feedback; full visual regression remains required",
+  "environment": "headless Chromium software GPU; NOT physical latency",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "checks": [],
+      "benchmarks": [
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 0.8,
+            "spacing": 0.12,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 0.9,
+            "bristles": 7,
+            "grain": 0.65,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-pencil",
+            "name": "\u925b\u7b46",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u7b46\u5727\u3067\u592a\u3055\u30fb\u6fc3\u3055\u30fb\u304b\u3059\u308c\u304c\u5909\u308f\u308b\u3002\u8cea\u611f\u306f\u6700\u521d\u304b\u3089\u63cf\u304d\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-pencil",
+                "name": "\u925b\u7b46",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u7b46\u5727\u3067\u592a\u3055\u30fb\u6fc3\u3055\u30fb\u304b\u3059\u308c\u304c\u5909\u308f\u308b\u3002\u8cea\u611f\u306f\u6700\u521d\u304b\u3089\u63cf\u304d\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "sweep",
+                "size": 512,
+                "opacity": 1,
+                "flow": 0.8,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "normal",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 0.9,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.12,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [
+                  {
+                    "source": "pressure",
+                    "target": "size",
+                    "mode": "multiply",
+                    "min": 0.2,
+                    "max": 1,
+                    "curve": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "source": "pressure",
+                    "target": "opacity",
+                    "mode": "multiply",
+                    "min": 0.1,
+                    "max": 1,
+                    "curve": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "source": "pressure",
+                    "target": "grain",
+                    "mode": "multiply",
+                    "min": 1,
+                    "max": 1.8,
+                    "curve": [
+                      [
+                        0,
+                        1
+                      ],
+                      [
+                        1,
+                        0
+                      ]
+                    ]
+                  }
+                ],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0.65,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": false,
+              "coverageUnion": true,
+              "material": true,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0.65,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4010.7999999999884,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.433333333324754,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 31,
+          "startSamples": 7,
+          "middleSamples": 8,
+          "endSamples": 8,
+          "startP95": 137.5,
+          "middleP95": 135,
+          "endP95": 136.83333333333394,
+          "growth": -0.6666666666660603,
+          "steadyGrowth": 1.8333333333339397,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 138.83333333333394,
+          "maxDistance": 247.51567535125758,
+          "maxPreviewQueueAge": 22.83333333333303,
+          "maxQueueAge": 3944.166666666667,
+          "maxConfirmedLag": 3808.333333333333,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 304,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 117.19999999999709
+              },
+              {
+                "gpuWorkMs": 118.20000000001164
+              },
+              {
+                "gpuWorkMs": 118.80000000000291
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 116.70000000001164
+              },
+              {
+                "gpuWorkMs": 100.5
+              },
+              {
+                "gpuWorkMs": 116.30000000000291
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "erase",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-hard-eraser",
+            "name": "\u786c\u3044\u6d88\u3057\u30b4\u30e0",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u4e38\u3044\u8f2a\u90ed\u3067\u6d88\u3059\u3002\u7dda\u753b\u3068\u540c\u3058\u9023\u7d9a\u63cf\u753b\u3092\u4f7f\u3044\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-hard-eraser",
+                "name": "\u786c\u3044\u6d88\u3057\u30b4\u30e0",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u4e38\u3044\u8f2a\u90ed\u3067\u6d88\u3059\u3002\u7dda\u753b\u3068\u540c\u3058\u9023\u7d9a\u63cf\u753b\u3092\u4f7f\u3044\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "auto",
+                "size": 512,
+                "opacity": 1,
+                "flow": 1,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "erase",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 1,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.09,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": true,
+              "material": false,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4005.5999999999913,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 20.89999999999418,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 51,
+          "startSamples": 12,
+          "middleSamples": 14,
+          "endSamples": 12,
+          "startP95": 103.96666666666965,
+          "middleP95": 84.80000000000291,
+          "endP95": 89.30000000000291,
+          "growth": -14.666666666666742,
+          "steadyGrowth": 4.5,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 124.5,
+          "maxDistance": 218.8495997149565,
+          "maxPreviewQueueAge": 23.63333333333685,
+          "maxQueueAge": 3972.199999999997,
+          "maxConfirmedLag": 3891.666666666666,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 310,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 118.80000000000291
+              },
+              {
+                "gpuWorkMs": 85.80000000000291
+              },
+              {
+                "gpuWorkMs": 69.80000000000291
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 72.30000000000291
+              },
+              {
+                "gpuWorkMs": 54.90000000000873
+              },
+              {
+                "gpuWorkMs": 65.39999999999418
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 0.65,
+            "spacing": 0.12,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 0.05,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "erase",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-soft-eraser",
+            "name": "\u67d4\u3089\u304b\u3044\u6d88\u3057\u30b4\u30e0",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u67d4\u3089\u304b\u3044\u8f2a\u90ed\u3067\u5c11\u3057\u305a\u3064\u6d88\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-soft-eraser",
+                "name": "\u67d4\u3089\u304b\u3044\u6d88\u3057\u30b4\u30e0",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u67d4\u3089\u304b\u3044\u8f2a\u90ed\u3067\u5c11\u3057\u305a\u3064\u6d88\u3059\u3002",
+                "kind": "mono",
+                "renderer": "sweep",
+                "size": 512,
+                "opacity": 1,
+                "flow": 0.65,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "erase",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 0.05,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.12,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": false,
+              "coverageUnion": true,
+              "material": true,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4007.300000000003,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.86666666666406,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 24,
+          "startSamples": 5,
+          "middleSamples": 6,
+          "endSamples": 7,
+          "startP95": 203.23333333334222,
+          "middleP95": 174.66666666666697,
+          "endP95": 169.1999999999971,
+          "growth": -34.03333333334513,
+          "steadyGrowth": -5.46666666666988,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 222,
+          "maxDistance": 326.0244366603705,
+          "maxPreviewQueueAge": 24.66666666666697,
+          "maxQueueAge": 3910.0666666666757,
+          "maxConfirmedLag": 3754.166666666667,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 310,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 133.5
+              },
+              {
+                "gpuWorkMs": 201.8000000000029
+              },
+              {
+                "gpuWorkMs": 149.8000000000029
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 133.3000000000029
+              },
+              {
+                "gpuWorkMs": 134.10000000000582
+              },
+              {
+                "gpuWorkMs": 136.20000000001164
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 1024,
+            "opacity": 0.45,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-marker",
+            "name": "\u30de\u30fc\u30ab\u30fc",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u4e00\u7b46\u306e\u6fc3\u3055\u3092\u4e00\u5b9a\u306b\u4fdd\u3061\u3001\u5225\u306e\u7dda\u3068\u306f\u91cd\u306a\u308a\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-marker",
+                "name": "\u30de\u30fc\u30ab\u30fc",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u4e00\u7b46\u306e\u6fc3\u3055\u3092\u4e00\u5b9a\u306b\u4fdd\u3061\u3001\u5225\u306e\u7dda\u3068\u306f\u91cd\u306a\u308a\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "auto",
+                "size": 1024,
+                "opacity": 0.45,
+                "flow": 1,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "normal",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 1,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.09,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": true,
+              "material": false,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4005.9000000000087,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.333333333333258,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 46,
+          "startSamples": 9,
+          "middleSamples": 11,
+          "endSamples": 15,
+          "startP95": 135.5,
+          "middleP95": 104.0666666666757,
+          "endP95": 103.40000000000873,
+          "growth": -32.09999999999127,
+          "steadyGrowth": -0.6666666666669698,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 189.90000000000873,
+          "maxDistance": 317.5052389136424,
+          "maxPreviewQueueAge": 24.30000000000291,
+          "maxQueueAge": 3973,
+          "maxConfirmedLag": 3920.833333333334,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 384,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 183.90000000000873
+              },
+              {
+                "gpuWorkMs": 117
+              },
+              {
+                "gpuWorkMs": 67.29999999998836
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 34.5
+              },
+              {
+                "gpuWorkMs": 35.30000000000291
+              },
+              {
+                "gpuWorkMs": 33.89999999999418
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-rt-2.5",
+          "preset": {
+            "version": 1,
+            "id": "fine-ink",
+            "name": "\u7d30\u7dda",
+            "category": "\u7dda\u753b",
+            "purpose": "\u5c0f\u3055\u306a\u30d1\u30fc\u30c4\u3092\u4e00\u5b9a\u306e\u592a\u3055\u3067\u63cf\u304f",
+            "signature": false,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "size": 1024,
+            "opacity": 1,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.5,
+            "pressureSmoothing": 0.25,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": []
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4013.4000000000087,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.23333333334199,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 48,
+          "startSamples": 9,
+          "middleSamples": 12,
+          "endSamples": 16,
+          "startP95": 152.8000000000029,
+          "middleP95": 101.70000000001164,
+          "endP95": 100.03333333334558,
+          "growth": -52.76666666665733,
+          "steadyGrowth": -1.6666666666660603,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 178.20000000001164,
+          "maxDistance": 302.62351927684875,
+          "maxPreviewQueueAge": 23.866666666677702,
+          "maxQueueAge": 4013.2000000000116,
+          "maxConfirmedLag": 3958.333333333334,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 384,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 167.5
+              },
+              {
+                "gpuWorkMs": 133.8000000000029
+              },
+              {
+                "gpuWorkMs": 69.20000000001164
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 35
+              },
+              {
+                "gpuWorkMs": 35
+              },
+              {
+                "gpuWorkMs": 36
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 0.8,
+            "spacing": 0.12,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 0.9,
+            "bristles": 7,
+            "grain": 0.65,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-pencil",
+            "name": "\u925b\u7b46",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u7b46\u5727\u3067\u592a\u3055\u30fb\u6fc3\u3055\u30fb\u304b\u3059\u308c\u304c\u5909\u308f\u308b\u3002\u8cea\u611f\u306f\u6700\u521d\u304b\u3089\u63cf\u304d\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-pencil",
+                "name": "\u925b\u7b46",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u7b46\u5727\u3067\u592a\u3055\u30fb\u6fc3\u3055\u30fb\u304b\u3059\u308c\u304c\u5909\u308f\u308b\u3002\u8cea\u611f\u306f\u6700\u521d\u304b\u3089\u63cf\u304d\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "sweep",
+                "size": 512,
+                "opacity": 1,
+                "flow": 0.8,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "normal",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 0.9,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.12,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [
+                  {
+                    "source": "pressure",
+                    "target": "size",
+                    "mode": "multiply",
+                    "min": 0.2,
+                    "max": 1,
+                    "curve": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "source": "pressure",
+                    "target": "opacity",
+                    "mode": "multiply",
+                    "min": 0.1,
+                    "max": 1,
+                    "curve": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "source": "pressure",
+                    "target": "grain",
+                    "mode": "multiply",
+                    "min": 1,
+                    "max": 1.8,
+                    "curve": [
+                      [
+                        0,
+                        1
+                      ],
+                      [
+                        1,
+                        0
+                      ]
+                    ]
+                  }
+                ],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0.65,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": false,
+              "coverageUnion": true,
+              "material": true,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0.65,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4005.5,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 18.70000000001164,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 31,
+          "startSamples": 8,
+          "middleSamples": 8,
+          "endSamples": 8,
+          "startP95": 135.86666666667838,
+          "middleP95": 136.5666666666757,
+          "endP95": 134.8666666666777,
+          "growth": -1.0000000000006821,
+          "steadyGrowth": -1.6999999999979991,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 137.20000000001164,
+          "maxDistance": 247.01284066804666,
+          "maxPreviewQueueAge": 21.633333333336395,
+          "maxQueueAge": 3888.8666666666786,
+          "maxConfirmedLag": 3754.166666666667,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 304,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 115.89999999999418
+              },
+              {
+                "gpuWorkMs": 117.70000000001164
+              },
+              {
+                "gpuWorkMs": 103.59999999999127
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 116.90000000000873
+              },
+              {
+                "gpuWorkMs": 116.79999999998836
+              },
+              {
+                "gpuWorkMs": 116.70000000001164
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "erase",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-hard-eraser",
+            "name": "\u786c\u3044\u6d88\u3057\u30b4\u30e0",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u4e38\u3044\u8f2a\u90ed\u3067\u6d88\u3059\u3002\u7dda\u753b\u3068\u540c\u3058\u9023\u7d9a\u63cf\u753b\u3092\u4f7f\u3044\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-hard-eraser",
+                "name": "\u786c\u3044\u6d88\u3057\u30b4\u30e0",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u4e38\u3044\u8f2a\u90ed\u3067\u6d88\u3059\u3002\u7dda\u753b\u3068\u540c\u3058\u9023\u7d9a\u63cf\u753b\u3092\u4f7f\u3044\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "auto",
+                "size": 512,
+                "opacity": 1,
+                "flow": 1,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "erase",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 1,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.09,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": true,
+              "material": false,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4006.399999999994,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.633333333321843,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 53,
+          "startSamples": 12,
+          "middleSamples": 14,
+          "endSamples": 14,
+          "startP95": 102.26666666665801,
+          "middleP95": 86.5,
+          "endP95": 87.93333333332521,
+          "growth": -14.333333333332803,
+          "steadyGrowth": 1.4333333333252085,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 124.69999999999709,
+          "maxDistance": 218.8495997149565,
+          "maxPreviewQueueAge": 24.89999999999418,
+          "maxQueueAge": 3958,
+          "maxConfirmedLag": 3887.5,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 310,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 118.30000000000291
+              },
+              {
+                "gpuWorkMs": 83.39999999999418
+              },
+              {
+                "gpuWorkMs": 66.69999999999709
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 51.20000000001164
+              },
+              {
+                "gpuWorkMs": 50.5
+              },
+              {
+                "gpuWorkMs": 51.80000000000291
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 0.65,
+            "spacing": 0.12,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 0.05,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "erase",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-soft-eraser",
+            "name": "\u67d4\u3089\u304b\u3044\u6d88\u3057\u30b4\u30e0",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u67d4\u3089\u304b\u3044\u8f2a\u90ed\u3067\u5c11\u3057\u305a\u3064\u6d88\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-soft-eraser",
+                "name": "\u67d4\u3089\u304b\u3044\u6d88\u3057\u30b4\u30e0",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u67d4\u3089\u304b\u3044\u8f2a\u90ed\u3067\u5c11\u3057\u305a\u3064\u6d88\u3059\u3002",
+                "kind": "mono",
+                "renderer": "sweep",
+                "size": 512,
+                "opacity": 1,
+                "flow": 0.65,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "erase",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 0.05,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.12,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": false,
+              "coverageUnion": true,
+              "material": true,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4118.800000000003,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 151.93333333333976,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 27,
+          "startSamples": 6,
+          "middleSamples": 7,
+          "endSamples": 7,
+          "startP95": 154.90000000000873,
+          "middleP95": 152.46666666666988,
+          "endP95": 168.33333333333394,
+          "growth": 13.433333333325209,
+          "steadyGrowth": 15.86666666666406,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 222.66666666666606,
+          "maxDistance": 291.2267122981239,
+          "maxPreviewQueueAge": 156,
+          "maxQueueAge": 4085.166666666667,
+          "maxConfirmedLag": 3862.500000000001,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 310,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 118.30000000000291
+              },
+              {
+                "gpuWorkMs": 166.5
+              },
+              {
+                "gpuWorkMs": 133.39999999999418
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 134.3000000000029
+              },
+              {
+                "gpuWorkMs": 135.3000000000029
+              },
+              {
+                "gpuWorkMs": 204.39999999999418
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 1024,
+            "opacity": 0.45,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-marker",
+            "name": "\u30de\u30fc\u30ab\u30fc",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u4e00\u7b46\u306e\u6fc3\u3055\u3092\u4e00\u5b9a\u306b\u4fdd\u3061\u3001\u5225\u306e\u7dda\u3068\u306f\u91cd\u306a\u308a\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-marker",
+                "name": "\u30de\u30fc\u30ab\u30fc",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u4e00\u7b46\u306e\u6fc3\u3055\u3092\u4e00\u5b9a\u306b\u4fdd\u3061\u3001\u5225\u306e\u7dda\u3068\u306f\u91cd\u306a\u308a\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "auto",
+                "size": 1024,
+                "opacity": 0.45,
+                "flow": 1,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "normal",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 1,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.09,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": true,
+              "material": false,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4004.699999999997,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 20.633333333336395,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 48,
+          "startSamples": 9,
+          "middleSamples": 12,
+          "endSamples": 15,
+          "startP95": 135.89999999999418,
+          "middleP95": 87.46666666666943,
+          "endP95": 89.13333333333685,
+          "growth": -46.76666666665733,
+          "steadyGrowth": 1.6666666666674246,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 188.5,
+          "maxDistance": 317.50523891364287,
+          "maxPreviewQueueAge": 22.46666666666897,
+          "maxQueueAge": 3972.899999999994,
+          "maxConfirmedLag": 3920.833333333334,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 384,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 183.60000000000582
+              },
+              {
+                "gpuWorkMs": 117.59999999999127
+              },
+              {
+                "gpuWorkMs": 68.09999999999127
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 34.30000000000291
+              },
+              {
+                "gpuWorkMs": 33.39999999999418
+              },
+              {
+                "gpuWorkMs": 34.89999999999418
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-rt-2.5",
+          "preset": {
+            "version": 1,
+            "id": "fine-ink",
+            "name": "\u7d30\u7dda",
+            "category": "\u7dda\u753b",
+            "purpose": "\u5c0f\u3055\u306a\u30d1\u30fc\u30c4\u3092\u4e00\u5b9a\u306e\u592a\u3055\u3067\u63cf\u304f",
+            "signature": false,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "size": 1024,
+            "opacity": 1,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.5,
+            "pressureSmoothing": 0.25,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": []
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4005,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.533333333330347,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 47,
+          "startSamples": 9,
+          "middleSamples": 11,
+          "endSamples": 15,
+          "startP95": 136.3000000000029,
+          "middleP95": 103.63333333333594,
+          "endP95": 86.73333333332812,
+          "growth": -49.56666666667479,
+          "steadyGrowth": -16.90000000000782,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 190.09999999999127,
+          "maxDistance": 317.5052389136424,
+          "maxPreviewQueueAge": 20.966666666669425,
+          "maxQueueAge": 3973.699999999997,
+          "maxConfirmedLag": 3920.833333333334,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 384,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 182.29999999998836
+              },
+              {
+                "gpuWorkMs": 118.70000000001164
+              },
+              {
+                "gpuWorkMs": 68.39999999999418
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 34.79999999998836
+              },
+              {
+                "gpuWorkMs": 34.5
+              },
+              {
+                "gpuWorkMs": 35.39999999999418
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 0.8,
+            "spacing": 0.12,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 0.9,
+            "bristles": 7,
+            "grain": 0.65,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-pencil",
+            "name": "\u925b\u7b46",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u7b46\u5727\u3067\u592a\u3055\u30fb\u6fc3\u3055\u30fb\u304b\u3059\u308c\u304c\u5909\u308f\u308b\u3002\u8cea\u611f\u306f\u6700\u521d\u304b\u3089\u63cf\u304d\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-pencil",
+                "name": "\u925b\u7b46",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u7b46\u5727\u3067\u592a\u3055\u30fb\u6fc3\u3055\u30fb\u304b\u3059\u308c\u304c\u5909\u308f\u308b\u3002\u8cea\u611f\u306f\u6700\u521d\u304b\u3089\u63cf\u304d\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "sweep",
+                "size": 512,
+                "opacity": 1,
+                "flow": 0.8,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "normal",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 0.9,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.12,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [
+                  {
+                    "source": "pressure",
+                    "target": "size",
+                    "mode": "multiply",
+                    "min": 0.2,
+                    "max": 1,
+                    "curve": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "source": "pressure",
+                    "target": "opacity",
+                    "mode": "multiply",
+                    "min": 0.1,
+                    "max": 1,
+                    "curve": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "source": "pressure",
+                    "target": "grain",
+                    "mode": "multiply",
+                    "min": 1,
+                    "max": 1.8,
+                    "curve": [
+                      [
+                        0,
+                        1
+                      ],
+                      [
+                        1,
+                        0
+                      ]
+                    ]
+                  }
+                ],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0.65,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": false,
+              "coverageUnion": true,
+              "material": true,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0.65,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4015,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 19.866666666678157,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 30,
+          "startSamples": 7,
+          "middleSamples": 8,
+          "endSamples": 8,
+          "startP95": 134.3000000000029,
+          "middleP95": 135.86666666667816,
+          "endP95": 135.63333333333685,
+          "growth": 1.3333333333339397,
+          "steadyGrowth": -0.23333333334130657,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 152.76666666667234,
+          "maxDistance": 257.22938244580723,
+          "maxPreviewQueueAge": 23.30000000000291,
+          "maxQueueAge": 3929.166666666667,
+          "maxConfirmedLag": 3795.833333333333,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 304,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 116.80000000000291
+              },
+              {
+                "gpuWorkMs": 117.90000000000873
+              },
+              {
+                "gpuWorkMs": 117.69999999999709
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 119.30000000000291
+              },
+              {
+                "gpuWorkMs": 117.40000000000873
+              },
+              {
+                "gpuWorkMs": 116.79999999998836
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "erase",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-hard-eraser",
+            "name": "\u786c\u3044\u6d88\u3057\u30b4\u30e0",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u4e38\u3044\u8f2a\u90ed\u3067\u6d88\u3059\u3002\u7dda\u753b\u3068\u540c\u3058\u9023\u7d9a\u63cf\u753b\u3092\u4f7f\u3044\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-hard-eraser",
+                "name": "\u786c\u3044\u6d88\u3057\u30b4\u30e0",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u4e38\u3044\u8f2a\u90ed\u3067\u6d88\u3059\u3002\u7dda\u753b\u3068\u540c\u3058\u9023\u7d9a\u63cf\u753b\u3092\u4f7f\u3044\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "auto",
+                "size": 512,
+                "opacity": 1,
+                "flow": 1,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "erase",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 1,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.09,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": true,
+              "material": false,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4015.2000000000116,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 22.766666666672563,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 54,
+          "startSamples": 11,
+          "middleSamples": 14,
+          "endSamples": 15,
+          "startP95": 122.0333333333449,
+          "middleP95": 85.10000000000582,
+          "endP95": 86.70000000001164,
+          "growth": -35.33333333333326,
+          "steadyGrowth": 1.6000000000058208,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 133.10000000000582,
+          "maxDistance": 233.57585092244736,
+          "maxPreviewQueueAge": 23.833333333333485,
+          "maxQueueAge": 4015.100000000006,
+          "maxConfirmedLag": 3945.833333333334,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 310,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 118.39999999999418
+              },
+              {
+                "gpuWorkMs": 103
+              },
+              {
+                "gpuWorkMs": 67.39999999999418
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 52
+              },
+              {
+                "gpuWorkMs": 50.5
+              },
+              {
+                "gpuWorkMs": 50.5
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 0.65,
+            "spacing": 0.12,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 0.05,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "erase",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-soft-eraser",
+            "name": "\u67d4\u3089\u304b\u3044\u6d88\u3057\u30b4\u30e0",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u67d4\u3089\u304b\u3044\u8f2a\u90ed\u3067\u5c11\u3057\u305a\u3064\u6d88\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-soft-eraser",
+                "name": "\u67d4\u3089\u304b\u3044\u6d88\u3057\u30b4\u30e0",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u67d4\u3089\u304b\u3044\u8f2a\u90ed\u3067\u5c11\u3057\u305a\u3064\u6d88\u3059\u3002",
+                "kind": "mono",
+                "renderer": "sweep",
+                "size": 512,
+                "opacity": 1,
+                "flow": 0.65,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "erase",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 0.05,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.12,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": false,
+              "coverageUnion": true,
+              "material": true,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4007.1999999999825,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.433333333310202,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 27,
+          "startSamples": 6,
+          "middleSamples": 7,
+          "endSamples": 7,
+          "startP95": 154.83333333333348,
+          "middleP95": 153.33333333333303,
+          "endP95": 150.93333333331066,
+          "growth": -3.9000000000228283,
+          "steadyGrowth": -2.4000000000223736,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 170.5,
+          "maxDistance": 280.6182977813371,
+          "maxPreviewQueueAge": 25.5,
+          "maxQueueAge": 3940.666666666667,
+          "maxConfirmedLag": 3804.166666666667,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 310,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 133.70000000001164
+              },
+              {
+                "gpuWorkMs": 150.5
+              },
+              {
+                "gpuWorkMs": 134.80000000001746
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 134.70000000001164
+              },
+              {
+                "gpuWorkMs": 133.30000000001746
+              },
+              {
+                "gpuWorkMs": 116.90000000002328
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 1024,
+            "opacity": 0.45,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-marker",
+            "name": "\u30de\u30fc\u30ab\u30fc",
+            "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+            "purpose": "\u4e00\u7b46\u306e\u6fc3\u3055\u3092\u4e00\u5b9a\u306b\u4fdd\u3061\u3001\u5225\u306e\u7dda\u3068\u306f\u91cd\u306a\u308a\u307e\u3059\u3002",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-marker",
+                "name": "\u30de\u30fc\u30ab\u30fc",
+                "category": "\u57fa\u6e96\u30d6\u30e9\u30b7",
+                "purpose": "\u4e00\u7b46\u306e\u6fc3\u3055\u3092\u4e00\u5b9a\u306b\u4fdd\u3061\u3001\u5225\u306e\u7dda\u3068\u306f\u91cd\u306a\u308a\u307e\u3059\u3002",
+                "kind": "mono",
+                "renderer": "auto",
+                "size": 1024,
+                "opacity": 0.45,
+                "flow": 1,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "normal",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 1,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.09,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": true,
+              "material": false,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4002.9000000000233,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 20.300000000017462,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 47,
+          "startSamples": 8,
+          "middleSamples": 12,
+          "endSamples": 15,
+          "startP95": 150.90000000002328,
+          "middleP95": 103.73333333335677,
+          "endP95": 84.90000000002328,
+          "growth": -66,
+          "steadyGrowth": -18.833333333333485,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 187.40000000002328,
+          "maxDistance": 312.74753978959535,
+          "maxPreviewQueueAge": 22.733333333357223,
+          "maxQueueAge": 3970.4000000000233,
+          "maxConfirmedLag": 3920.833333333334,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 384,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 184.30000000001746
+              },
+              {
+                "gpuWorkMs": 133.10000000000582
+              },
+              {
+                "gpuWorkMs": 69.20000000001164
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 34.70000000001164
+              },
+              {
+                "gpuWorkMs": 35.10000000000582
+              },
+              {
+                "gpuWorkMs": 34.20000000001164
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-rt-2.5",
+          "preset": {
+            "version": 1,
+            "id": "fine-ink",
+            "name": "\u7d30\u7dda",
+            "category": "\u7dda\u753b",
+            "purpose": "\u5c0f\u3055\u306a\u30d1\u30fc\u30c4\u3092\u4e00\u5b9a\u306e\u592a\u3055\u3067\u63cf\u304f",
+            "signature": false,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "size": 1024,
+            "opacity": 1,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.5,
+            "pressureSmoothing": 0.25,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": []
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4013.100000000006,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 20.466666666684205,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 47,
+          "startSamples": 9,
+          "middleSamples": 11,
+          "endSamples": 15,
+          "startP95": 151.23333333335654,
+          "middleP95": 101.56666666669025,
+          "endP95": 97.30000000001746,
+          "growth": -53.93333333333908,
+          "steadyGrowth": -4.266666666672791,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 194,
+          "maxDistance": 322.0562534759648,
+          "maxPreviewQueueAge": 22.466666666683977,
+          "maxQueueAge": 4012.8000000000175,
+          "maxConfirmedLag": 3958.333333333334,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 384,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 183.19999999998254
+              },
+              {
+                "gpuWorkMs": 133.5
+              },
+              {
+                "gpuWorkMs": 67.5
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 34
+              },
+              {
+                "gpuWorkMs": 35.59999999997672
+              },
+              {
+                "gpuWorkMs": 36.80000000001746
+              }
+            ]
+          }
+        }
+      ],
+      "info": {
+        "backend": "WebGL2",
+        "desynchronized": true,
+        "renderer": "WebKit WebGL",
+        "hardwareVerified": false
+      },
+      "latencyDifferences": [],
+      "status": "CHECKS_PASS",
+      "consoleErrors": [],
+      "physicalVisibleTip": "UNVERIFIED"
+    }
+  ],
+  "provenance": {
+    "sourceCommit": "7ecdf9b4283e0d8f2b850845a7f6675f11e818f4",
+    "runId": 37119396194,
+    "artifactId": 11272388690,
+    "archiveSha256": "64f136c3f412c0355d232e8eb74727087388a2f99e948ae851740ad68ca9be34",
+    "rawArtifactIndependentlyVerified": true,
+    "gateUnchanged": true
+  }
+}

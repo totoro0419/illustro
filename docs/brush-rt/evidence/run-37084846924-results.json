@@ -1,0 +1,3835 @@
+{
+  "commit": "6a0301a029d043d612340d25fb0ab5cfd4d73b8a",
+  "run": "https://github.com/totoro0419/illustro/actions/runs/37084846924",
+  "environment": "Software Chromium adapters; physical pen/display UNVERIFIED",
+  "webgl2": {
+    "date": "2026-10-03T01:07:53.355Z",
+    "environment": "headless Chromium / software adapter expected; NOT real stylus or photon measurement",
+    "backends": [
+      {
+        "backend": "webgl2",
+        "checks": [
+          {
+            "name": "mouse-reference",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "undo-redo-canonical",
+            "status": "PASS"
+          },
+          {
+            "name": "preset-0",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-1",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-2",
+            "maxChannelError": 1,
+            "meanChannelError": 0.00054931640625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-3",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-4",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-5",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-6",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-7",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-8",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-9",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-10",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-11",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-12",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-13",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000005086263020833333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-14",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-15",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-16",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000006357828776041667,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-17",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-18",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000008900960286458334,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-19",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-20",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000010172526041666666,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-21",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000016530354817708332,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-22",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000012715657552083334,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-23",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-24",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-25",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-26",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-27",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-28",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-29",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-30",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-31",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-32",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0004247029622395833,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-33",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-34",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000025431315104166665,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-35",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-36",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-37",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-38",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-39",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-40",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-41",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-42",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-43",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-44",
+            "maxChannelError": 242,
+            "meanChannelError": 0.000576019287109375,
+            "channelsOver3": 3,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 0,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 1,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 2,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-45",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-46",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-47",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000025431315104166665,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-48",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-49",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-50",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-51",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-52",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-53",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-54",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000027974446614583332,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-55",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000030517578125,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "spaced-round-intent-45",
+            "gapAlpha": 0,
+            "centerAlpha": 255,
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "spaced-round-intent-46",
+            "gapAlpha": 0,
+            "centerAlpha": 255,
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "blend-normal",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0022226969401041665,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 2
+          },
+          {
+            "name": "blend-multiply",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0021998087565104165,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 3
+          },
+          {
+            "name": "blend-screen",
+            "maxChannelError": 1,
+            "meanChannelError": 0.00218963623046875,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 4
+          },
+          {
+            "name": "blend-erase",
+            "maxChannelError": 1,
+            "meanChannelError": 0.00218963623046875,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 5
+          },
+          {
+            "name": "live-before-confirmed-0",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0009290159138199517,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-1",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0009946735855800666,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-4",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0001528771095026554,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-7",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0002982046089920346,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-13",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0007249620225694398,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-16",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0008576885547513143,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-24",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0012341268701490983,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-27",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0012141757541232687,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-39",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.00130191379123264,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-49",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 0,
+            "meanPremultipliedChannelError": 0,
+            "channelsOver3": 0
+          },
+          {
+            "name": "feedback-archive-with-formal-stall",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1.3960784313725583,
+            "meanPremultipliedChannelError": 0.0014720243566176707,
+            "channelsOver3": 0,
+            "records": 12,
+            "rawSamples": 96,
+            "formalJobsStillWaiting": 48,
+            "archivedThrough": 155
+          },
+          {
+            "name": "wide-incremental-live-512",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.12750305849190782,
+            "channelsOver3": 0
+          },
+          {
+            "name": "wide-incremental-live-1024",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.24445937911346682,
+            "channelsOver3": 0
+          },
+          {
+            "name": "pattern-line",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.00000762939453125,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-slow-curve",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000019073486328125,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-fast-curve",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.00009663899739583333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-s",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000039418538411458336,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-small-circle",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000008900960286458334,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-large-circle",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000057220458984375,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-zigzag",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.00020345052083333334,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-reversal",
+            "samples": 96,
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-short",
+            "samples": 96,
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-long",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000072479248046875,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-taper",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000026702880859375,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-pressure-step",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000005086263020833333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "mobile-overflow",
+            "status": "PASS"
+          }
+        ],
+        "benchmarks": [
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 1024,
+            "hz": 240,
+            "duration": 180011.5,
+            "shape": "long",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 43200,
+            "scheduledSamples": 43200,
+            "inputGeneratorMaxLateness": 134.23333333332755,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 3205,
+            "startSamples": 2,
+            "middleSamples": 13,
+            "endSamples": 18,
+            "startP95": 402.09999999999127,
+            "middleP95": 120.39999999999418,
+            "endP95": 68.33333333334303,
+            "growth": -333.76666666664823,
+            "steadyGrowth": -52.066666666651145,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 419.3999999999942,
+            "maxDistance": 1189.2507884323113,
+            "maxPreviewQueueAge": 138.1999999999971,
+            "maxQueueAge": 179963.40000000002,
+            "maxConfirmedLag": 179895.83333333334,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 368,
+            "retainedCanonicalInputs": 43200
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 16,
+            "hz": 60,
+            "duration": 4014.0999999999767,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 240,
+            "scheduledSamples": 240,
+            "inputGeneratorMaxLateness": 39.33333333333334,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 64,
+            "startSamples": 13,
+            "middleSamples": 17,
+            "endSamples": 17,
+            "startP95": 86.13333333332167,
+            "middleP95": 84.69999999995343,
+            "endP95": 84.13333333332184,
+            "growth": -1.9999999999998295,
+            "steadyGrowth": -0.5666666666315905,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 265.8999999999651,
+            "maxDistance": 362.8867128144444,
+            "maxPreviewQueueAge": 36.699999999953434,
+            "maxQueueAge": 4014.0999999999767,
+            "maxConfirmedLag": 3933.3333333333335,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 120,
+            "retainedCanonicalInputs": 240
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 16,
+            "hz": 120,
+            "duration": 4002.5,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 480,
+            "scheduledSamples": 480,
+            "inputGeneratorMaxLateness": 53.5666666666898,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 63,
+            "startSamples": 12,
+            "middleSamples": 17,
+            "endSamples": 17,
+            "startP95": 100.20000000001164,
+            "middleP95": 69,
+            "endP95": 69.13333333332184,
+            "growth": -31.066666666689798,
+            "steadyGrowth": 0.13333333332184338,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 254.90000000002328,
+            "maxDistance": 362.8867128144444,
+            "maxPreviewQueueAge": 61.90000000002328,
+            "maxQueueAge": 3985.7999999999884,
+            "maxConfirmedLag": 3916.6666666666665,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 120,
+            "retainedCanonicalInputs": 480
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 16,
+            "hz": 240,
+            "duration": 4010.7999999999884,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 960,
+            "scheduledSamples": 960,
+            "inputGeneratorMaxLateness": 56.20000000001164,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 63,
+            "startSamples": 12,
+            "middleSamples": 17,
+            "endSamples": 17,
+            "startP95": 87.2666666666434,
+            "middleP95": 71.70000000001164,
+            "endP95": 69.63333333332184,
+            "growth": -17.63333333332156,
+            "steadyGrowth": -2.066666666689798,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 261.9000000000233,
+            "maxDistance": 365.1135798896196,
+            "maxPreviewQueueAge": 60.26666666664323,
+            "maxQueueAge": 4010.7000000000116,
+            "maxConfirmedLag": 3945.833333333334,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 120,
+            "retainedCanonicalInputs": 960
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 128,
+            "hz": 60,
+            "duration": 4012.7000000000116,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 240,
+            "scheduledSamples": 240,
+            "inputGeneratorMaxLateness": 41.13333333337991,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 56,
+            "startSamples": 11,
+            "middleSamples": 15,
+            "endSamples": 15,
+            "startP95": 111.2333333333566,
+            "middleP95": 80.26666666670167,
+            "endP95": 80.93333333336841,
+            "growth": -30.299999999988188,
+            "steadyGrowth": 0.6666666666667425,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 280.70000000001164,
+            "maxDistance": 366.4289246224975,
+            "maxPreviewQueueAge": 44.76666666670155,
+            "maxQueueAge": 3978.5,
+            "maxConfirmedLag": 3900,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 200,
+            "retainedCanonicalInputs": 240
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 128,
+            "hz": 120,
+            "duration": 4010.7000000000116,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 480,
+            "scheduledSamples": 480,
+            "inputGeneratorMaxLateness": 64.5,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 54,
+            "startSamples": 10,
+            "middleSamples": 15,
+            "endSamples": 15,
+            "startP95": 120.96666666665504,
+            "middleP95": 87.39999999996508,
+            "endP95": 85.83333333333348,
+            "growth": -35.13333333332156,
+            "steadyGrowth": -1.5666666666315905,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 262.79999999998836,
+            "maxDistance": 365.1135798896196,
+            "maxPreviewQueueAge": 72.83333333333348,
+            "maxQueueAge": 3977.5,
+            "maxConfirmedLag": 3891.6666666666665,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 192,
+            "retainedCanonicalInputs": 480
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 128,
+            "hz": 240,
+            "duration": 4008.899999999965,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 960,
+            "scheduledSamples": 960,
+            "inputGeneratorMaxLateness": 49.33333333333334,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 51,
+            "startSamples": 10,
+            "middleSamples": 14,
+            "endSamples": 14,
+            "startP95": 134.46666666665504,
+            "middleP95": 84.23333333329833,
+            "endP95": 84.66666666666652,
+            "growth": -49.79999999998853,
+            "steadyGrowth": 0.43333333336818214,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 260.79999999998836,
+            "maxDistance": 365.1135798896196,
+            "maxPreviewQueueAge": 22.4666666666551,
+            "maxQueueAge": 3978.899999999965,
+            "maxConfirmedLag": 3895.8333333333335,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 192,
+            "retainedCanonicalInputs": 960
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 512,
+            "hz": 60,
+            "duration": 4009.4000000000233,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 240,
+            "scheduledSamples": 240,
+            "inputGeneratorMaxLateness": 43.033333333344984,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 43,
+            "startSamples": 7,
+            "middleSamples": 12,
+            "endSamples": 12,
+            "startP95": 160,
+            "middleP95": 96.56666666669003,
+            "endP95": 95.5666666666898,
+            "growth": -64.4333333333102,
+            "steadyGrowth": -1.0000000000002274,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 310,
+            "maxDistance": 362.7215354926604,
+            "maxPreviewQueueAge": 40.90000000002328,
+            "maxQueueAge": 3942.7999999999884,
+            "maxConfirmedLag": 3850,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 310,
+            "retainedCanonicalInputs": 240
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 512,
+            "hz": 120,
+            "duration": 4010.100000000035,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 480,
+            "scheduledSamples": 480,
+            "inputGeneratorMaxLateness": 61.43333333336841,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 42,
+            "startSamples": 7,
+            "middleSamples": 12,
+            "endSamples": 12,
+            "startP95": 168.66666666666669,
+            "middleP95": 102.33333333333326,
+            "endP95": 102.53333333334513,
+            "growth": -66.13333333332156,
+            "steadyGrowth": 0.2000000000118689,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 310.20000000001164,
+            "maxDistance": 359.62067179224346,
+            "maxPreviewQueueAge": 69.76666666670144,
+            "maxQueueAge": 3960.600000000035,
+            "maxConfirmedLag": 3875,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 310,
+            "retainedCanonicalInputs": 480
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 512,
+            "hz": 240,
+            "duration": 4007,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 960,
+            "scheduledSamples": 960,
+            "inputGeneratorMaxLateness": 76.66666666666652,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 40,
+            "startSamples": 7,
+            "middleSamples": 11,
+            "endSamples": 11,
+            "startP95": 165.36666666667833,
+            "middleP95": 101.9666666666551,
+            "endP95": 100.40000000002328,
+            "growth": -64.96666666665504,
+            "steadyGrowth": -1.5666666666318179,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 307.6000000000349,
+            "maxDistance": 361.27626767143266,
+            "maxPreviewQueueAge": 80.73333333335677,
+            "maxQueueAge": 3942.600000000035,
+            "maxConfirmedLag": 3854.1666666666665,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 310,
+            "retainedCanonicalInputs": 960
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 1024,
+            "hz": 60,
+            "duration": 4014,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 240,
+            "scheduledSamples": 240,
+            "inputGeneratorMaxLateness": 73,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 38,
+            "startSamples": 5,
+            "middleSamples": 10,
+            "endSamples": 13,
+            "startP95": 210.13333333337982,
+            "middleP95": 112,
+            "endP95": 125.73333333335677,
+            "growth": -84.40000000002306,
+            "steadyGrowth": 13.733333333356768,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 376,
+            "maxDistance": 378.5531124357818,
+            "maxPreviewQueueAge": 89.5666666666898,
+            "maxQueueAge": 3994.100000000035,
+            "maxConfirmedLag": 3916.6666666666665,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 384,
+            "retainedCanonicalInputs": 240
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 1024,
+            "hz": 120,
+            "duration": 4001.7000000000116,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 480,
+            "scheduledSamples": 480,
+            "inputGeneratorMaxLateness": 43.8666666666783,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 36,
+            "startSamples": 5,
+            "middleSamples": 9,
+            "endSamples": 12,
+            "startP95": 219.13333333337982,
+            "middleP95": 117.23333333335654,
+            "endP95": 119.36666666667816,
+            "growth": -99.76666666670167,
+            "steadyGrowth": 2.133333333321616,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 369.80000000004657,
+            "maxDistance": 413.64958017738303,
+            "maxPreviewQueueAge": 20.033333333345126,
+            "maxQueueAge": 4001.600000000035,
+            "maxConfirmedLag": 3916.6666666666665,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 384,
+            "retainedCanonicalInputs": 480
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 1024,
+            "hz": 240,
+            "duration": 4005.2000000000116,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 960,
+            "scheduledSamples": 960,
+            "inputGeneratorMaxLateness": 49.1333333333217,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 34,
+            "startSamples": 4,
+            "middleSamples": 9,
+            "endSamples": 12,
+            "startP95": 217.4666666666551,
+            "middleP95": 136.5666666666316,
+            "endP95": 118.56666666663159,
+            "growth": -98.90000000002351,
+            "steadyGrowth": -18,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 371.8999999999651,
+            "maxDistance": 415.7918632284749,
+            "maxPreviewQueueAge": 22.566666666631818,
+            "maxQueueAge": 4005,
+            "maxConfirmedLag": 3920.8333333333335,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 384,
+            "retainedCanonicalInputs": 960
+          },
+          {
+            "backend": {
+              "backend": "WebGL2",
+              "desynchronized": true,
+              "renderer": "WebKit WebGL",
+              "hardwareVerified": false
+            },
+            "size": 1024,
+            "hz": 240,
+            "duration": 5009.200000000012,
+            "shape": "reversal",
+            "prediction": true,
+            "confirmDelay": 100,
+            "actualSamples": 1200,
+            "scheduledSamples": 1200,
+            "inputGeneratorMaxLateness": 76.76666666670144,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 23,
+            "startSamples": 3,
+            "middleSamples": 4,
+            "endSamples": 5,
+            "startP95": 285.3666666666784,
+            "middleP95": 230.16666666666674,
+            "endP95": 189.06666666669025,
+            "growth": -96.29999999998813,
+            "steadyGrowth": -41.09999999997649,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 409.9000000000233,
+            "maxDistance": 224.59733333333344,
+            "maxPreviewQueueAge": 80.83333333333348,
+            "maxQueueAge": 4862.400000000023,
+            "maxConfirmedLag": 4675,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 320,
+            "retainedCanonicalInputs": 1200
+          }
+        ],
+        "info": {
+          "backend": "WebGL2",
+          "desynchronized": true,
+          "renderer": "WebKit WebGL",
+          "hardwareVerified": false
+        },
+        "capabilities": {
+          "raw": true,
+          "coalesced": true,
+          "predictedApi": true
+        },
+        "rawNumericalDifferences": [
+          {
+            "index": 44,
+            "maxChannelError": 242,
+            "meanChannelError": 0.000576019287109375,
+            "channelsOver3": 3,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 0,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 1,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 2,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        ],
+        "benchmarkDimensions": [
+          2048,
+          1536
+        ],
+        "latencyDifferences": [],
+        "status": "CHECKS_PASS",
+        "physicalVisibleTip": "UNVERIFIED",
+        "consoleErrors": []
+      }
+    ]
+  },
+  "webgpu": {
+    "date": "2026-10-03T01:07:42.035Z",
+    "environment": "headless Chromium / software adapter expected; NOT real stylus or photon measurement",
+    "backends": [
+      {
+        "backend": "webgpu",
+        "checks": [
+          {
+            "name": "mouse-reference",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "undo-redo-canonical",
+            "status": "PASS"
+          },
+          {
+            "name": "preset-0",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-1",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-2",
+            "maxChannelError": 1,
+            "meanChannelError": 0.00054931640625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-3",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-4",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-5",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-6",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-7",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-8",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-9",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-10",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-11",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-12",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-13",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000005086263020833333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-14",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-15",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-16",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000006357828776041667,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-17",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-18",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000008900960286458334,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-19",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-20",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000010172526041666666,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-21",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000016530354817708332,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-22",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000012715657552083334,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-23",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-24",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-25",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-26",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-27",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-28",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-29",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-30",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-31",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-32",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0004247029622395833,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-33",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-34",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000025431315104166665,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-35",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-36",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-37",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-38",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000003814697265625,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-39",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-40",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-41",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-42",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-43",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-44",
+            "maxChannelError": 242,
+            "meanChannelError": 0.000576019287109375,
+            "channelsOver3": 3,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 0,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 1,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 2,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-45",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-46",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-47",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000025431315104166665,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-48",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-49",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-50",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-51",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0000012715657552083333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-52",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-53",
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-54",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000027974446614583332,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "preset-55",
+            "maxChannelError": 1,
+            "meanChannelError": 0.000030517578125,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "spaced-round-intent-45",
+            "gapAlpha": 0,
+            "centerAlpha": 255,
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "spaced-round-intent-46",
+            "gapAlpha": 0,
+            "centerAlpha": 255,
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "blend-normal",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0022252400716145835,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 2
+          },
+          {
+            "name": "blend-multiply",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0021998087565104165,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 3
+          },
+          {
+            "name": "blend-screen",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0021870930989583335,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 4
+          },
+          {
+            "name": "blend-erase",
+            "maxChannelError": 1,
+            "meanChannelError": 0.0021870930989583335,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 5
+          },
+          {
+            "name": "live-before-confirmed-0",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0009290159138199517,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-1",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0009946735855800666,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-4",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0001528771095026554,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-7",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0002982046089920346,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-13",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0007249620225694398,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-16",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0008576885547513143,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-24",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0012341268701490983,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-27",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0012141757541232687,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-39",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.00130191379123264,
+            "channelsOver3": 0
+          },
+          {
+            "name": "live-before-confirmed-49",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 0,
+            "meanPremultipliedChannelError": 0,
+            "channelsOver3": 0
+          },
+          {
+            "name": "feedback-archive-with-formal-stall",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1.3960784313725583,
+            "meanPremultipliedChannelError": 0.0014720243566176707,
+            "channelsOver3": 0,
+            "records": 12,
+            "rawSamples": 96,
+            "formalJobsStillWaiting": 48,
+            "archivedThrough": 155
+          },
+          {
+            "name": "wide-incremental-live-512",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.12750305849190782,
+            "channelsOver3": 0
+          },
+          {
+            "name": "wide-incremental-live-1024",
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.24445937911346682,
+            "channelsOver3": 0
+          },
+          {
+            "name": "pattern-line",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.00000762939453125,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-slow-curve",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000019073486328125,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-fast-curve",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.00009663899739583333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-s",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000039418538411458336,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-small-circle",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000008900960286458334,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-large-circle",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000057220458984375,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-zigzag",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.00020345052083333334,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-reversal",
+            "samples": 96,
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-short",
+            "samples": 96,
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-long",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000072479248046875,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-taper",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000026702880859375,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "pattern-pressure-step",
+            "samples": 96,
+            "maxChannelError": 1,
+            "meanChannelError": 0.000005086263020833333,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          },
+          {
+            "name": "mobile-overflow",
+            "status": "PASS"
+          }
+        ],
+        "benchmarks": [
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 1024,
+            "hz": 240,
+            "duration": 180002.90000000002,
+            "shape": "long",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 43200,
+            "scheduledSamples": 43200,
+            "inputGeneratorMaxLateness": 399.36666666667827,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 5160,
+            "startSamples": 3,
+            "middleSamples": 13,
+            "endSamples": 30,
+            "startP95": 426.4000000000233,
+            "middleP95": 345.3666666666784,
+            "endP95": 64.20000000001164,
+            "growth": -362.20000000001164,
+            "steadyGrowth": -281.16666666666674,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 602.6333333333508,
+            "maxDistance": 882.3686642946499,
+            "maxPreviewQueueAge": 397.23333333335665,
+            "maxQueueAge": 29046.266666666674,
+            "maxConfirmedLag": 29000,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 161,
+            "retainedCanonicalInputs": 43200
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 16,
+            "hz": 60,
+            "duration": 4014.7999999999884,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 240,
+            "scheduledSamples": 240,
+            "inputGeneratorMaxLateness": 182.36666666667833,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 97,
+            "startSamples": 20,
+            "middleSamples": 25,
+            "endSamples": 26,
+            "startP95": 213,
+            "middleP95": 84.59999999997672,
+            "endP95": 86,
+            "growth": -127,
+            "steadyGrowth": 1.400000000023283,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 243.03333333334496,
+            "maxDistance": 318.2929321333853,
+            "maxPreviewQueueAge": 196.33333333333331,
+            "maxQueueAge": 3427.3333333333335,
+            "maxConfirmedLag": 3349.9999999999995,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 109,
+            "retainedCanonicalInputs": 240
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 16,
+            "hz": 120,
+            "duration": 4034.0999999999767,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 480,
+            "scheduledSamples": 480,
+            "inputGeneratorMaxLateness": 184.7666666666434,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 98,
+            "startSamples": 19,
+            "middleSamples": 26,
+            "endSamples": 26,
+            "startP95": 214,
+            "middleP95": 78.56666666663159,
+            "endP95": 75.86666666667816,
+            "growth": -138.13333333332184,
+            "steadyGrowth": -2.699999999953434,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 235.20000000001164,
+            "maxDistance": 303.7982041991137,
+            "maxPreviewQueueAge": 189,
+            "maxQueueAge": 3407.0999999999767,
+            "maxConfirmedLag": 3333.333333333334,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 108,
+            "retainedCanonicalInputs": 480
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 16,
+            "hz": 240,
+            "duration": 4011.399999999965,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 960,
+            "scheduledSamples": 960,
+            "inputGeneratorMaxLateness": 183.96666666665504,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 97,
+            "startSamples": 20,
+            "middleSamples": 25,
+            "endSamples": 26,
+            "startP95": 214.20000000001164,
+            "middleP95": 73.5,
+            "endP95": 72.06666666663159,
+            "growth": -142.13333333338005,
+            "steadyGrowth": -1.4333333333684095,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 232.03333333334496,
+            "maxDistance": 296.26598625405404,
+            "maxPreviewQueueAge": 185.03333333334496,
+            "maxQueueAge": 3817.43333333331,
+            "maxConfirmedLag": 3754.1666666666674,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 115,
+            "retainedCanonicalInputs": 960
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 128,
+            "hz": 60,
+            "duration": 4031.0999999999767,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 240,
+            "scheduledSamples": 240,
+            "inputGeneratorMaxLateness": 188.86666666667833,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 77,
+            "startSamples": 16,
+            "middleSamples": 20,
+            "endSamples": 20,
+            "startP95": 219.39999999996508,
+            "middleP95": 111.86666666667838,
+            "endP95": 107.4333333333102,
+            "growth": -111.96666666665487,
+            "steadyGrowth": -4.433333333368182,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 249.63333333332167,
+            "maxDistance": 318.2929321333853,
+            "maxPreviewQueueAge": 202.7333333332984,
+            "maxQueueAge": 4029,
+            "maxConfirmedLag": 3933.333333333334,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 200,
+            "retainedCanonicalInputs": 240
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 128,
+            "hz": 120,
+            "duration": 4041.9000000000233,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 480,
+            "scheduledSamples": 480,
+            "inputGeneratorMaxLateness": 194.86666666667833,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 75,
+            "startSamples": 15,
+            "middleSamples": 20,
+            "endSamples": 20,
+            "startP95": 224.60000000003492,
+            "middleP95": 102.10000000003492,
+            "endP95": 103.66666666666652,
+            "growth": -120.93333333336841,
+            "steadyGrowth": 1.5666666666315905,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 251.20000000001164,
+            "maxDistance": 303.7982041991137,
+            "maxPreviewQueueAge": 199.60000000003492,
+            "maxQueueAge": 4038.9000000000233,
+            "maxConfirmedLag": 3941.666666666666,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 192,
+            "retainedCanonicalInputs": 480
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 128,
+            "hz": 240,
+            "duration": 4012.0999999999767,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 960,
+            "scheduledSamples": 960,
+            "inputGeneratorMaxLateness": 190.53333333328675,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 72,
+            "startSamples": 15,
+            "middleSamples": 19,
+            "endSamples": 20,
+            "startP95": 216.89999999996508,
+            "middleP95": 100.59999999997672,
+            "endP95": 101.06666666663114,
+            "growth": -115.83333333333394,
+            "steadyGrowth": 0.4666666666544188,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 240.19999999995343,
+            "maxDistance": 303.7903307899068,
+            "maxPreviewQueueAge": 191.89999999996508,
+            "maxQueueAge": 4009.399999999965,
+            "maxConfirmedLag": 3908.333333333334,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 192,
+            "retainedCanonicalInputs": 960
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 512,
+            "hz": 60,
+            "duration": 4033.6999999999534,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 240,
+            "scheduledSamples": 240,
+            "inputGeneratorMaxLateness": 248.56666666663176,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 47,
+            "startSamples": 8,
+            "middleSamples": 12,
+            "endSamples": 13,
+            "startP95": 278.5,
+            "middleP95": 164.63333333332162,
+            "endP95": 163.79999999998836,
+            "growth": -114.70000000001164,
+            "steadyGrowth": -0.8333333333332575,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 359.6333333333217,
+            "maxDistance": 325.6087530639275,
+            "maxPreviewQueueAge": 261.8333333333333,
+            "maxQueueAge": 4031.1999999999534,
+            "maxConfirmedLag": 3883.333333333334,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 310,
+            "retainedCanonicalInputs": 240
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 512,
+            "hz": 120,
+            "duration": 4053.5999999999767,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 480,
+            "scheduledSamples": 480,
+            "inputGeneratorMaxLateness": 257.96666666665504,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 47,
+            "startSamples": 7,
+            "middleSamples": 13,
+            "endSamples": 13,
+            "startP95": 282.70000000001164,
+            "middleP95": 163.70000000001164,
+            "endP95": 157.09999999997672,
+            "growth": -125.60000000003492,
+            "steadyGrowth": -6.600000000034925,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 369.79999999998836,
+            "maxDistance": 304.21644110048766,
+            "maxPreviewQueueAge": 257.70000000001164,
+            "maxQueueAge": 4051.4000000000233,
+            "maxConfirmedLag": 3908.333333333334,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 310,
+            "retainedCanonicalInputs": 480
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 512,
+            "hz": 240,
+            "duration": 4009.100000000035,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 960,
+            "scheduledSamples": 960,
+            "inputGeneratorMaxLateness": 256.03333333334496,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 44,
+            "startSamples": 7,
+            "middleSamples": 13,
+            "endSamples": 12,
+            "startP95": 281.1000000000349,
+            "middleP95": 166.46666666665487,
+            "endP95": 168.26666666670144,
+            "growth": -112.83333333333348,
+            "steadyGrowth": 1.8000000000465661,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 370.6000000000349,
+            "maxDistance": 304.20878436963255,
+            "maxPreviewQueueAge": 256.1000000000349,
+            "maxQueueAge": 3988.100000000035,
+            "maxConfirmedLag": 3841.666666666666,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 310,
+            "retainedCanonicalInputs": 960
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 1024,
+            "hz": 60,
+            "duration": 4007.7000000000116,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 240,
+            "scheduledSamples": 240,
+            "inputGeneratorMaxLateness": 361.1666666666667,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 38,
+            "startSamples": 4,
+            "middleSamples": 10,
+            "endSamples": 15,
+            "startP95": 388.3999999999651,
+            "middleP95": 263.1333333333216,
+            "endP95": 211.03333333334513,
+            "growth": -177.36666666661995,
+            "steadyGrowth": -52.09999999997649,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 497.8333333333333,
+            "maxDistance": 596.2861574710627,
+            "maxPreviewQueueAge": 371.7333333332984,
+            "maxQueueAge": 4005,
+            "maxConfirmedLag": 3900,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 384,
+            "retainedCanonicalInputs": 240
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 1024,
+            "hz": 120,
+            "duration": 4014.2999999999884,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 480,
+            "scheduledSamples": 480,
+            "inputGeneratorMaxLateness": 362.1666666666667,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 37,
+            "startSamples": 4,
+            "middleSamples": 9,
+            "endSamples": 14,
+            "startP95": 390.4000000000233,
+            "middleP95": 240.60000000003492,
+            "endP95": 212.5666666666898,
+            "growth": -177.83333333333348,
+            "steadyGrowth": -28.033333333345126,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 523.5,
+            "maxDistance": 545.8956189476622,
+            "maxPreviewQueueAge": 365.4000000000233,
+            "maxQueueAge": 3991.9000000000233,
+            "maxConfirmedLag": 3908.333333333334,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 384,
+            "retainedCanonicalInputs": 480
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 1024,
+            "hz": 240,
+            "duration": 4000.9000000000233,
+            "shape": "fast-curve",
+            "prediction": false,
+            "confirmDelay": 0,
+            "actualSamples": 960,
+            "scheduledSamples": 960,
+            "inputGeneratorMaxLateness": 373.8666666666783,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 36,
+            "startSamples": 4,
+            "middleSamples": 9,
+            "endSamples": 14,
+            "startP95": 398.70000000001164,
+            "middleP95": 242.13333333337982,
+            "endP95": 220.70000000001164,
+            "growth": -178,
+            "steadyGrowth": -21.433333333368182,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 537.0333333333449,
+            "maxDistance": 553.4352997142328,
+            "maxPreviewQueueAge": 369.53333333334496,
+            "maxQueueAge": 3999.100000000035,
+            "maxConfirmedLag": 3929.166666666666,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 384,
+            "retainedCanonicalInputs": 960
+          },
+          {
+            "backend": {
+              "backend": "WebGPU",
+              "adapter": "",
+              "hardwareVerified": false,
+              "desynchronized": false
+            },
+            "size": 1024,
+            "hz": 240,
+            "duration": 5027.799999999988,
+            "shape": "reversal",
+            "prediction": true,
+            "confirmDelay": 100,
+            "actualSamples": 1200,
+            "scheduledSamples": 1200,
+            "inputGeneratorMaxLateness": 389.8666666666783,
+            "stopped": false,
+            "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+            "samples": 27,
+            "startSamples": 3,
+            "middleSamples": 5,
+            "endSamples": 7,
+            "startP95": 418,
+            "middleP95": 410.56666666669,
+            "endP95": 300.70000000001164,
+            "growth": -117.29999999998836,
+            "steadyGrowth": -109.86666666667838,
+            "growthGate": "PASS_PROXY",
+            "maxAge": 547.6333333333216,
+            "maxDistance": 234.15466666666657,
+            "maxPreviewQueueAge": 388.8333333333333,
+            "maxQueueAge": 5019.700000000012,
+            "maxConfirmedLag": 4729.166666666667,
+            "physicalVisibleTip": "UNVERIFIED",
+            "pendingFormalJobs": 320,
+            "retainedCanonicalInputs": 1200
+          }
+        ],
+        "info": {
+          "backend": "WebGPU",
+          "adapter": "",
+          "hardwareVerified": false,
+          "desynchronized": false
+        },
+        "capabilities": {
+          "raw": true,
+          "coalesced": true,
+          "predictedApi": true
+        },
+        "rawNumericalDifferences": [
+          {
+            "index": 44,
+            "maxChannelError": 242,
+            "meanChannelError": 0.000576019287109375,
+            "channelsOver3": 3,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 0,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 1,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "x": 51,
+                "y": 59,
+                "channel": 2,
+                "gpu": [
+                  242,
+                  77,
+                  132,
+                  1
+                ],
+                "reference": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        ],
+        "benchmarkDimensions": [
+          2048,
+          1536
+        ],
+        "latencyDifferences": [],
+        "status": "CHECKS_PASS",
+        "physicalVisibleTip": "UNVERIFIED",
+        "consoleErrors": []
+      }
+    ]
+  }
+}

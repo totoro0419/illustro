@@ -1,0 +1,174 @@
+name: M04 Eraser Integration
+
+on:
+  push:
+    branches: ['milestone/M04-eraser-integration']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: m04-eraser-integration
+  cancel-in-progress: true
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
+    steps:
+      - name: Checkout M04 source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source lock and Core
+        run: |
+          npm run prep:check
+          npm run core:check
+          node --check scripts/editor-m04-smoke.mjs
+      - name: M01-M04 editor unit tests
+        run: npx vitest run apps/editor/src/strokeCommit.test.ts apps/editor/src/layerSelection.test.ts apps/editor/src/historyController.test.ts apps/editor/src/eraserIntegration.test.ts
+      - name: Brush Foundation exact 93-test regression
+        run: |
+          npm run brush:build > /tmp/m04-brush-build.log
+          node --test packages/brush-rt/test/*.test.mjs | tee /tmp/m04-brush-regression.log
+          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/m04-brush-regression.log
+          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/m04-brush-regression.log
+          grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/m04-brush-regression.log
+      - name: Build M04 editor
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install browser verifier
+        run: |
+          npm install --prefix /tmp/m04-browser playwright@1.62.1 pngjs@7.0.0 --no-audit --no-fund
+          /tmp/m04-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Production regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m04-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/m04-browser/node_modules/pngjs
+          PREP_EVIDENCE_DIRECTORY: /tmp/m04-evidence/production
+        run: node scripts/editor-smoke.mjs
+      - name: M04 WebGL2 and WebGPU local integration
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m04-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/m04-browser/node_modules/pngjs
+          M04_EVIDENCE_DIRECTORY: /tmp/m04-evidence/local
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m04-smoke.mjs
+      - name: Checkout current Pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+      - name: Preserve M01 M02 M03 and replace only M04 QA
+        run: |
+          test -d site/qa/m01
+          test -d site/qa/m02
+          test -d site/qa/m03
+          (cd site && find qa/m01 -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/m01.before
+          (cd site && find qa/m02 -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/m02.before
+          (cd site && find qa/m03 -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/m03.before
+          rm -rf site/qa/m04
+          mkdir -p site/qa/m04
+          cp -a apps/editor/dist/. site/qa/m04/
+          touch site/.nojekyll
+          (cd site && find qa/m01 -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/m01.after
+          (cd site && find qa/m02 -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/m02.after
+          (cd site && find qa/m03 -type f -print0 | sort -z | xargs -0 sha256sum) > /tmp/m03.after
+          diff -u /tmp/m01.before /tmp/m01.after
+          diff -u /tmp/m02.before /tmp/m02.after
+          diff -u /tmp/m03.before /tmp/m03.after
+      - name: Publish M04 without touching older QA pages
+        working-directory: site
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m04 .nojekyll
+          if git diff --cached --quiet; then
+            echo 'M04 QA output already matches gh-pages.'
+          else
+            git commit -m 'qa: publish M04 fixed review page'
+            git push origin HEAD:gh-pages
+          fi
+      - name: Wait for exact M04 build and older fixed QA
+        env:
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          ok=0
+          for i in $(seq 1 60); do
+            m04=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m04.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m04/?build=$EXPECTED_COMMIT_SHA" || true)
+            m03=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m03.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m03/?m04-check=$EXPECTED_COMMIT_SHA" || true)
+            m02=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m02.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m02/?m04-check=$EXPECTED_COMMIT_SHA" || true)
+            m01=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m01.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m01/?m04-check=$EXPECTED_COMMIT_SHA" || true)
+            asset=$(sed -n 's#.*src="./\([^"]*\.js\)".*#\1#p' /tmp/m04.html | head -n 1)
+            if [ "$m04" = '200' ] && [ "$m03" = '200' ] && [ "$m02" = '200' ] && [ "$m01" = '200' ] && [ -n "$asset" ]; then
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m04.js -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m04/$asset?build=$EXPECTED_COMMIT_SHA" || true)
+              if [ "$code" = '200' ] && grep -q "$EXPECTED_COMMIT_SHA" /tmp/m04.js && grep -q '<title>Illustro</title>' /tmp/m01.html && grep -q '<title>Illustro</title>' /tmp/m02.html && grep -q '<title>Illustro</title>' /tmp/m03.html; then
+                ok=1
+                break
+              fi
+            fi
+            sleep 5
+          done
+          test "$ok" = '1'
+      - name: Verify actual public M04 with WebGL2 and WebGPU
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m04-browser/node_modules/playwright
+          PREP_PNG_PATH: /tmp/m04-browser/node_modules/pngjs
+          M04_EVIDENCE_DIRECTORY: /tmp/m04-evidence/public
+          M04_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m04/
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          ok=0
+          for attempt in 1 2 3; do
+            if node scripts/editor-m04-smoke.mjs; then ok=1; break; fi
+            sleep 10
+          done
+          test "$ok" = '1'
+      - name: Open M01 M02 M03 in a real browser
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m04-browser/node_modules/playwright
+        run: |
+          node --input-type=module <<'NODE'
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url),{chromium}=require(process.env.RT_PLAYWRIGHT_PATH);
+          const browser=await chromium.launch({headless:true});
+          for(const url of ['https://totoro0419.github.io/illustro/qa/m01/','https://totoro0419.github.io/illustro/qa/m02/','https://totoro0419.github.io/illustro/qa/m03/']){
+            const page=await browser.newPage();await page.goto(url,{waitUntil:'networkidle',timeout:45000});
+            if(await page.title()!=='Illustro')throw new Error('fixed QA failed to open: '+url);await page.close();
+          }
+          await browser.close();
+          NODE
+      - name: Upload M04 evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m04-eraser-integration-evidence
+          path: /tmp/m04-evidence
+      - name: Report M04 commit status
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          M04_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const state = process.env.M04_JOB_STATUS === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state,
+              context: 'M04 Eraser Integration',
+              description: state === 'success' ? 'M04 eraser integration and public QA passed' : 'M04 verification failed',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });

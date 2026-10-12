@@ -1,0 +1,181 @@
+name: M07 PC Tablet UI Shell
+
+on:
+  push:
+    branches: ['milestone/M07-pc-tablet-ui-shell']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: m07-pc-tablet-ui-shell
+  cancel-in-progress: true
+
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout M07 source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Canonical source lock and Core
+        run: |
+          npm run prep:check
+          npm run core:check
+          node --check scripts/editor-m07-smoke.mjs
+          node --check scripts/editor-m07-smoke.mjs
+          node --check scripts/editor-m06-smoke.mjs
+          node --check scripts/editor-m05-smoke.mjs
+      - name: Build Brush runtime required by editor tests
+        run: npm run brush:build > /tmp/m07-brush-build.log
+      - name: M01-M06 Editor unit tests
+        run: |
+          npx vitest run apps/editor/src/strokeCommit.test.ts apps/editor/src/layerSelection.test.ts apps/editor/src/historyController.test.ts apps/editor/src/eraserIntegration.test.ts apps/editor/src/persistence/format.test.ts apps/editor/src/export/basicExport.test.ts
+      - name: Brush Foundation exact 93-test regression
+        run: |
+          node --test packages/brush-rt/test/*.test.mjs | tee /tmp/m07-brush-regression.log
+          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/m07-brush-regression.log
+          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/m07-brush-regression.log
+          grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/m07-brush-regression.log
+      - name: Build M07 editor and offline assets
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+          test -f apps/editor/dist/sw.js
+          test -f apps/editor/dist/manifest.webmanifest
+          test -f apps/editor/dist/offline-assets.json
+          node -e "const m=require('./apps/editor/dist/offline-assets.json'); if(!Array.isArray(m.assets)||!m.assets.some(x=>/worker/i.test(x))||!m.assets.some(x=>/\.js$/.test(x))) process.exit(1)"
+      - name: Install browser verifier
+        run: |
+          npm install --prefix /tmp/m07-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/m07-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: M07 local WebGL2 WebGPU and PC Tablet Compact QA
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m07-browser/node_modules/playwright
+          M07_EVIDENCE_DIRECTORY: /tmp/m07-evidence/local-shell
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m07-smoke.mjs
+      - name: M05 Save Recovery Offline regression using current Editor
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m07-browser/node_modules/playwright
+          M05_EVIDENCE_DIRECTORY: /tmp/m07-evidence/m05-regression
+          M05_EXPECT_MILESTONE: M07
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m05-smoke.mjs
+      - name: M06 PNG JPEG WebP regression on current M07 UI
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m07-browser/node_modules/playwright
+          M06_EVIDENCE_DIRECTORY: /tmp/m07-evidence/m06-regression
+          M06_EXPECT_MILESTONE: M07
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m06-smoke.mjs
+      - name: Checkout existing Pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+      - name: Preserve M01-M06 byte-for-byte and stage M07 QA
+        run: |
+          for n in 01 02 03 04 05 06; do
+            test -d "site/qa/m$n"
+            (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/m$n.before"
+          done
+          rm -rf site/qa/m07
+          mkdir -p site/qa/m07
+          cp -a apps/editor/dist/. site/qa/m07/
+          touch site/.nojekyll
+          for n in 01 02 03 04 05 06; do
+            (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/m$n.after"
+            diff -u "/tmp/m$n.before" "/tmp/m$n.after"
+          done
+      - name: Publish only M07 fixed QA
+        working-directory: site
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m07 .nojekyll
+          if git diff --cached --quiet; then echo 'M07 QA already published.'; else
+            git commit -m 'qa: publish M07 PC tablet UI review page'
+            git push origin HEAD:gh-pages
+          fi
+      - name: Wait for exact M07 public build and M01-M06
+        env:
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          ok=0
+          for i in $(seq 1 72); do
+            m07=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m07.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m07/?build=$EXPECTED_COMMIT_SHA" || true)
+            good=1
+            for n in 01 02 03 04 05 06; do
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o "/tmp/m$n.html" -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m$n/?m07-check=$EXPECTED_COMMIT_SHA" || true)
+              [ "$code" = '200' ] || good=0
+            done
+            asset=$(sed -n 's#.*src="./\([^"]*\.js\)".*#\1#p' /tmp/m07.html | head -n 1)
+            if [ "$m07" = '200' ] && [ "$good" = '1' ] && [ -n "$asset" ]; then
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m07.js -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m07/$asset?build=$EXPECTED_COMMIT_SHA" || true)
+              sw=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m07-sw.js -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m07/sw.js?build=$EXPECTED_COMMIT_SHA" || true)
+              if [ "$code" = '200' ] && [ "$sw" = '200' ] && grep -q "$EXPECTED_COMMIT_SHA" /tmp/m07.js; then ok=1; break; fi
+            fi
+            sleep 5
+          done
+          test "$ok" = '1'
+      - name: M07 public actual browser WebGL2 WebGPU verify
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m07-browser/node_modules/playwright
+          M07_EVIDENCE_DIRECTORY: /tmp/m07-evidence/public-export
+          M07_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m07/
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m07-smoke.mjs
+      - name: M01-M06 public QA intact in Chromium
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m07-browser/node_modules/playwright
+        run: |
+          node --input-type=module <<'NODE'
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url),{chromium}=require(process.env.RT_PLAYWRIGHT_PATH);
+          const browser=await chromium.launch({headless:true});
+          try{
+            for(const n of ['01','02','03','04','05','06']){
+              const url='https://totoro0419.github.io/illustro/qa/m'+n+'/';
+              const page=await browser.newPage();
+              await page.goto(url,{waitUntil:'networkidle',timeout:45000});
+              if(await page.title()!=='Illustro')throw new Error('Fixed QA failed: '+url);
+              await page.close();
+            }
+          }finally{await browser.close();}
+          NODE
+      - name: Upload M07 independent evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m07-pc-tablet-ui-shell-evidence
+          path: |
+            /tmp/m07-evidence
+            /tmp/m07-brush-regression.log
+            /tmp/m07-brush-build.log
+      - name: Report exact M07 commit status
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          M07_JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const state=process.env.M07_JOB_STATUS==='success'?'success':'failure';
+            await github.rest.repos.createCommitStatus({
+              owner:context.repo.owner,repo:context.repo.repo,sha:context.sha,
+              state,context:'M07 PC Tablet UI Shell',
+              description:state==='success'?'M07 UI browser, regression and public QA passed':'M07 verification failed',
+              target_url:`https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });

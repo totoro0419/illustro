@@ -1,0 +1,22 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:browser
+> node prototypes/brush-lab/browser-check.mjs
+
+PASS offline initialization, 56 brushes, no HTTP dependency
+PASS actual mouse capture and final raster replay
+PASS undo then redo preserve canvas bytes
+PASS synthetic CDP pen pressure and tilt, not hardware evidence
+PASS cancel discards unpublished artwork
+PASS JSON save/import and reload restoration
+PASS corrupt imports retain current artwork
+PASS search, no-result state and native controls
+PASS invalid custom preset rejected with visible error
+PASS comparison canvases and point toggles
+PASS all eight synthetic stroke shapes replay exactly
+PASS held airbrush gains color without fabricated input geometry
+PASS 320px, phone/tablet/desktop and text-resize layout
+PASS touch, high DPI and CPU-throttle software mobile profile
+PASS keyboard reaches controls and focus is visible
+PASS three-minute scheduled 240Hz input run
+PASS no browser script errors or HTTP requests

@@ -1,0 +1,6379 @@
+{
+  "date": "2026-10-02T17:22:00.951Z",
+  "environment": "headless Chromium / software adapter expected; NOT real stylus or photon measurement",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "checks": [
+        {
+          "name": "mouse-reference",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "undo-redo-canonical",
+          "status": "PASS"
+        },
+        {
+          "name": "preset-0",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-1",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-2",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000024159749348958332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-3",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-4",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-5",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-6",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-7",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-8",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-9",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-10",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-11",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-12",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-13",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-14",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-15",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-16",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000006357828776041667,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-17",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-18",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000008900960286458334,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-19",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-20",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000010172526041666666,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-21",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000016530354817708332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-22",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000012715657552083334,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-23",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-24",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-25",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-26",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-27",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-28",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-29",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-30",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-31",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-32",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0004247029622395833,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-33",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-34",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000025431315104166665,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-35",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-36",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-37",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-38",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-39",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-40",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-41",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-42",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-43",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-44",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000025431315104166665,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-45",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-46",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-47",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-48",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-49",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-50",
+          "maxChannelError": 18,
+          "meanChannelError": 0.00002288818359375,
+          "channelsOver3": 1,
+          "badPixels": [
+            {
+              "x": 42,
+              "y": 63,
+              "channel": 3,
+              "gpu": [
+                31,
+                38,
+                51,
+                219
+              ],
+              "reference": [
+                31,
+                38,
+                51,
+                201
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-51",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-52",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-53",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-54",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000027974446614583332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-55",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000030517578125,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "blend-normal",
+          "maxChannelError": 179,
+          "meanChannelError": 0.004618326822916667,
+          "channelsOver3": 42,
+          "badPixels": [
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                25,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                25,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                25,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 59,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 59,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 59,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 60,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 2
+        },
+        {
+          "name": "blend-multiply",
+          "maxChannelError": 179,
+          "meanChannelError": 0.006863911946614583,
+          "channelsOver3": 63,
+          "badPixels": [
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                178,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                178,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                178,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 3
+        },
+        {
+          "name": "blend-screen",
+          "maxChannelError": 179,
+          "meanChannelError": 0.008160909016927084,
+          "channelsOver3": 75,
+          "badPixels": [
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                178,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 4
+        },
+        {
+          "name": "blend-erase",
+          "maxChannelError": 179,
+          "meanChannelError": 0.0036074320475260415,
+          "channelsOver3": 33,
+          "badPixels": [
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 73,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 73,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 73,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 73,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 73,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 73,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 73,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 5
+        }
+      ],
+      "benchmarks": [
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 16,
+          "hz": 60,
+          "duration": 4012.300000000003,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 32,
+          "startP95": 162.2333333333275,
+          "endP95": 195.3666666666636,
+          "growth": 33.13333333333611,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 279,
+          "maxDistance": 366.4289246224975,
+          "maxPreviewQueueAge": 37.09999999999127,
+          "maxQueueAge": 1912.0333333333306,
+          "maxConfirmedLag": 1716.666666666667,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 16,
+          "hz": 120,
+          "duration": 4014.800000000003,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 34,
+          "startP95": 90.36666666667952,
+          "endP95": 189.8000000000029,
+          "growth": 99.43333333332339,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 206.36666666667952,
+          "maxDistance": 336.1396065661602,
+          "maxPreviewQueueAge": 24.70000000001164,
+          "maxQueueAge": 1923.0333333333438,
+          "maxConfirmedLag": 1716.6666666666642,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 16,
+          "hz": 240,
+          "duration": 4013.5,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 34,
+          "startP95": 101.09999999999127,
+          "endP95": 184.36666666666133,
+          "growth": 83.26666666667006,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 201.06666666665842,
+          "maxDistance": 325.49533079814967,
+          "maxPreviewQueueAge": 19.13333333333867,
+          "maxQueueAge": 2771.899999999994,
+          "maxConfirmedLag": 2570.8333333333358,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 128,
+          "hz": 60,
+          "duration": 4014,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 24,
+          "startP95": 130.66666666667152,
+          "endP95": 313.86666666668316,
+          "growth": 183.20000000001164,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 313.9666666666599,
+          "maxDistance": 501.5203252965981,
+          "maxPreviewQueueAge": 32.9333333333343,
+          "maxQueueAge": 3363.866666666683,
+          "maxConfirmedLag": 3050,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 128,
+          "hz": 120,
+          "duration": 4013,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 21,
+          "startP95": 138.13333333331684,
+          "endP95": 321.3666666666395,
+          "growth": 183.23333333332266,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 338,
+          "maxDistance": 548.3374484039501,
+          "maxPreviewQueueAge": 24.39999999999418,
+          "maxQueueAge": 3454.6999999999825,
+          "maxConfirmedLag": 3133.333333333343,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 128,
+          "hz": 240,
+          "duration": 4014.4000000000233,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 16,
+          "startP95": 153.59999999997672,
+          "endP95": 368.4666666666453,
+          "growth": 214.8666666666686,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 385.20000000001164,
+          "maxDistance": 635.221163102664,
+          "maxPreviewQueueAge": 20.266666666633682,
+          "maxQueueAge": 3656.0333333333547,
+          "maxConfirmedLag": 3270.833333333343,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 60,
+          "duration": 4015.2000000000116,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 4,
+          "startP95": 180.5,
+          "endP95": null,
+          "growth": null,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 1513.7999999999884,
+          "maxDistance": 826.6392029000395,
+          "maxPreviewQueueAge": 30.5,
+          "maxQueueAge": 2863.7999999999884,
+          "maxConfirmedLag": 1350,
+          "physicalVisibleTip": "UNVERIFIED"
+        }
+      ],
+      "info": {
+        "backend": "WebGL2",
+        "desynchronized": true,
+        "renderer": "WebKit WebGL",
+        "hardwareVerified": false
+      },
+      "capabilities": {
+        "raw": true,
+        "coalesced": true,
+        "predictedApi": true
+      },
+      "pixelDifferences": [
+        {
+          "index": 50,
+          "maxChannelError": 18,
+          "meanChannelError": 0.00002288818359375,
+          "channelsOver3": 1,
+          "badPixels": [
+            {
+              "x": 42,
+              "y": 63,
+              "channel": 3,
+              "gpu": [
+                31,
+                38,
+                51,
+                219
+              ],
+              "reference": [
+                31,
+                38,
+                51,
+                201
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "blend": "normal",
+          "maxChannelError": 179,
+          "meanChannelError": 0.004618326822916667,
+          "channelsOver3": 42,
+          "badPixels": [
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                25,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                25,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                25,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 59,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 59,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 59,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 60,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 2
+        },
+        {
+          "blend": "multiply",
+          "maxChannelError": 179,
+          "meanChannelError": 0.006863911946614583,
+          "channelsOver3": 63,
+          "badPixels": [
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                178,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                178,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                178,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 3
+        },
+        {
+          "blend": "screen",
+          "maxChannelError": 179,
+          "meanChannelError": 0.008160909016927084,
+          "channelsOver3": 75,
+          "badPixels": [
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                178,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 4
+        },
+        {
+          "blend": "erase",
+          "maxChannelError": 179,
+          "meanChannelError": 0.0036074320475260415,
+          "channelsOver3": 33,
+          "badPixels": [
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 73,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 73,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 73,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 73,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 73,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 73,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 73,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 5
+        }
+      ],
+      "benchmarkDimensions": [
+        2048,
+        1536
+      ],
+      "status": "FAIL",
+      "failure": "page.evaluate: Error: confirmed renderer drain timeout\n    at GpuRenderer.drain ([embedded module]:37:134)\n    at async GpuRenderer.reset ([embedded module]:39:16)\n    at async RealtimeSession.rebuild ([embedded module]:19:18)\n    at async eval (eval at evaluate (:311:30), <anonymous>:1:42)\n    at async <anonymous>:337:30\n    at /home/runner/work/illustro/illustro/prototypes/brush-rt/browser-check.mjs:19:79",
+      "consoleErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "checks": [
+        {
+          "name": "mouse-reference",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "undo-redo-canonical",
+          "status": "PASS"
+        },
+        {
+          "name": "preset-0",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-1",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-2",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000024159749348958332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-3",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-4",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-5",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-6",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-7",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-8",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-9",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-10",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-11",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-12",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-13",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-14",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-15",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-16",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000006357828776041667,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-17",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-18",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000008900960286458334,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-19",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-20",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000010172526041666666,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-21",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000016530354817708332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-22",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000012715657552083334,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-23",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-24",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-25",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-26",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-27",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-28",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-29",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-30",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-31",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-32",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0004247029622395833,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-33",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-34",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000025431315104166665,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-35",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-36",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-37",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-38",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-39",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-40",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-41",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-42",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-43",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-44",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000025431315104166665,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-45",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-46",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-47",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-48",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-49",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-50",
+          "maxChannelError": 18,
+          "meanChannelError": 0.00002288818359375,
+          "channelsOver3": 1,
+          "badPixels": [
+            {
+              "x": 42,
+              "y": 63,
+              "channel": 3,
+              "gpu": [
+                31,
+                38,
+                51,
+                219
+              ],
+              "reference": [
+                31,
+                38,
+                51,
+                201
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-51",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-52",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-53",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-54",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000027974446614583332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-55",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000030517578125,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "blend-normal",
+          "maxChannelError": 179,
+          "meanChannelError": 0.003988901774088542,
+          "channelsOver3": 36,
+          "badPixels": [
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                25,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 2
+        },
+        {
+          "name": "blend-multiply",
+          "maxChannelError": 179,
+          "meanChannelError": 0.006561279296875,
+          "channelsOver3": 60,
+          "badPixels": [
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 3
+        },
+        {
+          "name": "blend-screen",
+          "maxChannelError": 179,
+          "meanChannelError": 0.008183797200520834,
+          "channelsOver3": 75,
+          "badPixels": [
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 4
+        },
+        {
+          "name": "blend-erase",
+          "maxChannelError": 179,
+          "meanChannelError": 0.004605611165364583,
+          "channelsOver3": 42,
+          "badPixels": [
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 50,
+              "y": 73,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 5
+        }
+      ],
+      "benchmarks": [
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 16,
+          "hz": 60,
+          "duration": 4077.6999999999534,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 219,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 17,
+          "startP95": 280.19999999995343,
+          "endP95": 765.4333333333102,
+          "growth": 485.23333333335677,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 840.1666666666665,
+          "maxDistance": 633.3075980603505,
+          "maxPreviewQueueAge": 440.1666666666665,
+          "maxQueueAge": 3706.833333333333,
+          "maxConfirmedLag": 2866.666666666667,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 16,
+          "hz": 120,
+          "duration": 4211.399999999907,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 452,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 19,
+          "startP95": 240.66666666667152,
+          "endP95": 782.9666666666017,
+          "growth": 542.2999999999302,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 862.4333333333052,
+          "maxDistance": 669.0597988396675,
+          "maxPreviewQueueAge": 445.76666666664823,
+          "maxQueueAge": 3837.433333333305,
+          "maxConfirmedLag": 2975,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 16,
+          "hz": 240,
+          "duration": 4324.400000000023,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 936,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 19,
+          "startP95": 273.30000000004657,
+          "endP95": 824.666666666657,
+          "growth": 551.3666666666104,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 885.7333333333663,
+          "maxDistance": 614.8654630155299,
+          "maxPreviewQueueAge": 441.33333333334303,
+          "maxQueueAge": 3981.5666666666802,
+          "maxConfirmedLag": 3095.833333333314,
+          "physicalVisibleTip": "UNVERIFIED"
+        }
+      ],
+      "info": {
+        "backend": "WebGPU",
+        "adapter": "",
+        "hardwareVerified": false,
+        "desynchronized": false
+      },
+      "capabilities": {
+        "raw": true,
+        "coalesced": true,
+        "predictedApi": true
+      },
+      "pixelDifferences": [
+        {
+          "index": 50,
+          "maxChannelError": 18,
+          "meanChannelError": 0.00002288818359375,
+          "channelsOver3": 1,
+          "badPixels": [
+            {
+              "x": 42,
+              "y": 63,
+              "channel": 3,
+              "gpu": [
+                31,
+                38,
+                51,
+                219
+              ],
+              "reference": [
+                31,
+                38,
+                51,
+                201
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "blend": "normal",
+          "maxChannelError": 179,
+          "meanChannelError": 0.003988901774088542,
+          "channelsOver3": 36,
+          "badPixels": [
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                25,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 2
+        },
+        {
+          "blend": "multiply",
+          "maxChannelError": 179,
+          "meanChannelError": 0.006561279296875,
+          "channelsOver3": 60,
+          "badPixels": [
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 3
+        },
+        {
+          "blend": "screen",
+          "maxChannelError": 179,
+          "meanChannelError": 0.008183797200520834,
+          "channelsOver3": 75,
+          "badPixels": [
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 47,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 48,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 49,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 52,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 53,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 4
+        },
+        {
+          "blend": "erase",
+          "maxChannelError": 179,
+          "meanChannelError": 0.004605611165364583,
+          "channelsOver3": 42,
+          "badPixels": [
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 54,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 55,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 56,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 57,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 1,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 58,
+              "y": 48,
+              "channel": 2,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            },
+            {
+              "x": 50,
+              "y": 73,
+              "channel": 0,
+              "gpu": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "reference": [
+                179,
+                51,
+                26,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 5
+        }
+      ],
+      "benchmarkDimensions": [
+        2048,
+        1536
+      ],
+      "inputGeneratorFailures": [
+        {
+          "size": 16,
+          "hz": 60,
+          "samples": 219
+        },
+        {
+          "size": 16,
+          "hz": 120,
+          "samples": 452
+        },
+        {
+          "size": 16,
+          "hz": 240,
+          "samples": 936
+        }
+      ],
+      "status": "FAIL",
+      "failure": "page.evaluate: Error: confirmed renderer drain timeout\n    at GpuRenderer.drain ([embedded module]:37:134)\n    at async GpuRenderer.reset ([embedded module]:39:16)\n    at async RealtimeSession.rebuild ([embedded module]:19:18)\n    at async eval (eval at evaluate (:311:30), <anonymous>:1:42)\n    at async <anonymous>:337:30\n    at /home/runner/work/illustro/illustro/prototypes/brush-rt/browser-check.mjs:19:79",
+      "consoleErrors": []
+    }
+  ]
+}

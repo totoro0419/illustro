@@ -1,0 +1,264 @@
+{
+  "artifactId": 11273371257,
+  "artifactSha256": "1c081bc586b4178c26c7769dc4b31eb7e47824bd6672ff38377c2bcff9c0ae8f",
+  "source": "6f72a2c19b8a1c20f4017fb6e5bf0579cee9d8b6",
+  "backend": "webgpu",
+  "checks": 0,
+  "benchmarks": 18,
+  "status": "CHECKS_PASS",
+  "conditions": [
+    {
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -2.4333333333688643,
+      "steadyGrowth": -2.966666666713536,
+      "sampleCounts": [
+        13,
+        14,
+        14
+      ]
+    },
+    {
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 7.099999999977172,
+      "steadyGrowth": -3.6666666666660603,
+      "sampleCounts": [
+        16,
+        15,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -26.966666666712626,
+      "steadyGrowth": -48.03333333334467,
+      "sampleCounts": [
+        12,
+        12,
+        16
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -31.299999999987904,
+      "steadyGrowth": -2.433333333309747,
+      "sampleCounts": [
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -31.433333333309292,
+      "steadyGrowth": -4.866666666677702,
+      "sampleCounts": [
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "growth": -17.700000000011187,
+      "steadyGrowth": -21.96666666665442,
+      "sampleCounts": [
+        12,
+        12,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -12.099999999977172,
+      "steadyGrowth": -1.9333333333106566,
+      "sampleCounts": [
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -12.299999999987904,
+      "steadyGrowth": -2.700000000010732,
+      "sampleCounts": [
+        16,
+        17,
+        18
+      ]
+    },
+    {
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 1.8999999999646207,
+      "steadyGrowth": -0.6666666666669698,
+      "sampleCounts": [
+        15,
+        15,
+        16
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -28.83333333333394,
+      "steadyGrowth": -3.9666666666553283,
+      "sampleCounts": [
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -23.666666666667425,
+      "steadyGrowth": -12.16666666666697,
+      "sampleCounts": [
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "growth": -25.56666666663159,
+      "steadyGrowth": -23.766666666642777,
+      "sampleCounts": [
+        11,
+        13,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -7.833333333332575,
+      "steadyGrowth": -2.4999999999990905,
+      "sampleCounts": [
+        12,
+        14,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -11.866666666679066,
+      "steadyGrowth": -0.43333333336886426,
+      "sampleCounts": [
+        16,
+        18,
+        18
+      ]
+    },
+    {
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 1.9666666667126265,
+      "steadyGrowth": -6.766666666643687,
+      "sampleCounts": [
+        15,
+        15,
+        16
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -33.29999999998836,
+      "steadyGrowth": -1.7000000000116415,
+      "sampleCounts": [
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -24.89999999996553,
+      "steadyGrowth": -11.566666666632045,
+      "sampleCounts": [
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "growth": -24.26666666670144,
+      "steadyGrowth": -20.53333333334467,
+      "sampleCounts": [
+        11,
+        13,
+        15
+      ]
+    }
+  ],
+  "arithmeticAudit": "p95 recalculated from chronological samples using recorded window counts; capture-window boundaries not independently timestamped"
+}

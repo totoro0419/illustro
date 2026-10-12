@@ -1,0 +1,5056 @@
+{
+  "kind": "Raster execution, partition consistency and determinism. No human intention or quality score.",
+  "tests": [
+    {
+      "name": "ring-width-1",
+      "category": "closed ring",
+      "mode": "none",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "c1018e01",
+      "ms": 43,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-1",
+      "category": "closed ring",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "c1018e01",
+      "ms": 14,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-1",
+      "category": "closed ring",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "c1018e01",
+      "ms": 9,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-2",
+      "category": "closed ring",
+      "mode": "none",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d3d05b75",
+      "ms": 16,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-2",
+      "category": "closed ring",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d3d05b75",
+      "ms": 14,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-2",
+      "category": "closed ring",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d3d05b75",
+      "ms": 15,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-4",
+      "category": "closed ring",
+      "mode": "none",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "416a420a",
+      "ms": 20,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-4",
+      "category": "closed ring",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "416a420a",
+      "ms": 16,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-4",
+      "category": "closed ring",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "416a420a",
+      "ms": 10,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-12",
+      "category": "closed ring",
+      "mode": "none",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "15cd79dc",
+      "ms": 18,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-12",
+      "category": "closed ring",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "15cd79dc",
+      "ms": 18,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-12",
+      "category": "closed ring",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "15cd79dc",
+      "ms": 18,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-28",
+      "category": "closed ring",
+      "mode": "none",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "108fb771",
+      "ms": 24,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-28",
+      "category": "closed ring",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "108fb771",
+      "ms": 25,
+      "candidates": []
+    },
+    {
+      "name": "ring-width-28",
+      "category": "closed ring",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "108fb771",
+      "ms": 18,
+      "candidates": []
+    },
+    {
+      "name": "T-cross",
+      "category": "T and crossing",
+      "mode": "none",
+      "regions": 3,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "5a18b750",
+      "ms": 10,
+      "candidates": []
+    },
+    {
+      "name": "T-cross",
+      "category": "T and crossing",
+      "mode": "balanced",
+      "regions": 3,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "5a18b750",
+      "ms": 12,
+      "candidates": []
+    },
+    {
+      "name": "T-cross",
+      "category": "T and crossing",
+      "mode": "generous",
+      "regions": 3,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "5a18b750",
+      "ms": 9,
+      "candidates": []
+    },
+    {
+      "name": "nested-holes",
+      "category": "nested loops",
+      "mode": "none",
+      "regions": 3,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a0d41344",
+      "ms": 11,
+      "candidates": []
+    },
+    {
+      "name": "nested-holes",
+      "category": "nested loops",
+      "mode": "balanced",
+      "regions": 3,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a0d41344",
+      "ms": 13,
+      "candidates": []
+    },
+    {
+      "name": "nested-holes",
+      "category": "nested loops",
+      "mode": "generous",
+      "regions": 3,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a0d41344",
+      "ms": 19,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-0",
+      "category": "terminal cap",
+      "mode": "none",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "c1afed69",
+      "ms": 6,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-0",
+      "category": "terminal cap",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "c1afed69",
+      "ms": 15,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-0",
+      "category": "terminal cap",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "c1afed69",
+      "ms": 15,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-4",
+      "category": "terminal cap",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 10,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 39.5,
+            "y": 148.5,
+            "pixel": 36098
+          },
+          "b": {
+            "x": 45.5,
+            "y": 148.5,
+            "pixel": 36104
+          }
+        }
+      ]
+    },
+    {
+      "name": "tip-gap-4",
+      "category": "terminal cap",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "ae544cd5",
+      "ms": 10,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 39.5,
+            "y": 148.5,
+            "pixel": 36098
+          },
+          "b": {
+            "x": 45.5,
+            "y": 148.5,
+            "pixel": 36104
+          }
+        }
+      ]
+    },
+    {
+      "name": "tip-gap-4",
+      "category": "terminal cap",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "ae544cd5",
+      "ms": 12,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 39.5,
+            "y": 148.5,
+            "pixel": 36098
+          },
+          "b": {
+            "x": 45.5,
+            "y": 148.5,
+            "pixel": 36104
+          }
+        }
+      ]
+    },
+    {
+      "name": "tip-gap-8",
+      "category": "terminal cap",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 8,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 39.5,
+            "y": 148.5,
+            "pixel": 36098
+          },
+          "b": {
+            "x": 48.5,
+            "y": 148.5,
+            "pixel": 36107
+          }
+        }
+      ]
+    },
+    {
+      "name": "tip-gap-8",
+      "category": "terminal cap",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "e9123ba1",
+      "ms": 8,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 39.5,
+            "y": 148.5,
+            "pixel": 36098
+          },
+          "b": {
+            "x": 48.5,
+            "y": 148.5,
+            "pixel": 36107
+          }
+        }
+      ]
+    },
+    {
+      "name": "tip-gap-8",
+      "category": "terminal cap",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "e9123ba1",
+      "ms": 10,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 39.5,
+            "y": 148.5,
+            "pixel": 36098
+          },
+          "b": {
+            "x": 48.5,
+            "y": 148.5,
+            "pixel": 36107
+          }
+        }
+      ]
+    },
+    {
+      "name": "tip-gap-16",
+      "category": "terminal cap",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-16",
+      "category": "terminal cap",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-16",
+      "category": "terminal cap",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-24",
+      "category": "terminal cap",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-24",
+      "category": "terminal cap",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 9,
+      "candidates": []
+    },
+    {
+      "name": "tip-gap-24",
+      "category": "terminal cap",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 9,
+      "candidates": []
+    },
+    {
+      "name": "dense-tips",
+      "category": "dense terminal caps",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 16,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 35.5,
+            "y": 152.5,
+            "pixel": 37062
+          },
+          "b": {
+            "x": 43.5,
+            "y": 153.5,
+            "pixel": 37312
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 85.5,
+            "y": 152.5,
+            "pixel": 37112
+          },
+          "b": {
+            "x": 93.5,
+            "y": 153.5,
+            "pixel": 37362
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 135.5,
+            "y": 152.5,
+            "pixel": 37162
+          },
+          "b": {
+            "x": 143.5,
+            "y": 153.5,
+            "pixel": 37412
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 185.5,
+            "y": 152.5,
+            "pixel": 37212
+          },
+          "b": {
+            "x": 193.5,
+            "y": 153.5,
+            "pixel": 37462
+          }
+        }
+      ]
+    },
+    {
+      "name": "dense-tips",
+      "category": "dense terminal caps",
+      "mode": "balanced",
+      "regions": 4,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a95eb905",
+      "ms": 10,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 35.5,
+            "y": 152.5,
+            "pixel": 37062
+          },
+          "b": {
+            "x": 43.5,
+            "y": 153.5,
+            "pixel": 37312
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 85.5,
+            "y": 152.5,
+            "pixel": 37112
+          },
+          "b": {
+            "x": 93.5,
+            "y": 153.5,
+            "pixel": 37362
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 135.5,
+            "y": 152.5,
+            "pixel": 37162
+          },
+          "b": {
+            "x": 143.5,
+            "y": 153.5,
+            "pixel": 37412
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 185.5,
+            "y": 152.5,
+            "pixel": 37212
+          },
+          "b": {
+            "x": 193.5,
+            "y": 153.5,
+            "pixel": 37462
+          }
+        }
+      ]
+    },
+    {
+      "name": "dense-tips",
+      "category": "dense terminal caps",
+      "mode": "generous",
+      "regions": 4,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a95eb905",
+      "ms": 11,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 35.5,
+            "y": 152.5,
+            "pixel": 37062
+          },
+          "b": {
+            "x": 43.5,
+            "y": 153.5,
+            "pixel": 37312
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 85.5,
+            "y": 152.5,
+            "pixel": 37112
+          },
+          "b": {
+            "x": 93.5,
+            "y": 153.5,
+            "pixel": 37362
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 135.5,
+            "y": 152.5,
+            "pixel": 37162
+          },
+          "b": {
+            "x": 143.5,
+            "y": 153.5,
+            "pixel": 37412
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 185.5,
+            "y": 152.5,
+            "pixel": 37212
+          },
+          "b": {
+            "x": 193.5,
+            "y": 153.5,
+            "pixel": 37462
+          }
+        }
+      ]
+    },
+    {
+      "name": "open-T",
+      "category": "endpoint to interior",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 9,
+      "candidates": [
+        {
+          "kind": "線の途中へ",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 118.5,
+            "y": 45.5,
+            "pixel": 11251
+          },
+          "b": {
+            "x": 118.5,
+            "y": 37.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "open-T",
+      "category": "endpoint to interior",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 12,
+      "candidates": [
+        {
+          "kind": "線の途中へ",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 118.5,
+            "y": 45.5,
+            "pixel": 11251
+          },
+          "b": {
+            "x": 118.5,
+            "y": 37.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "open-T",
+      "category": "endpoint to interior",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": [
+        {
+          "kind": "線の途中へ",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 118.5,
+            "y": 45.5,
+            "pixel": 11251
+          },
+          "b": {
+            "x": 118.5,
+            "y": 37.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "parallel-open",
+      "category": "near nonconnected lines",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 5,
+      "candidates": []
+    },
+    {
+      "name": "parallel-open",
+      "category": "near nonconnected lines",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": []
+    },
+    {
+      "name": "parallel-open",
+      "category": "near nonconnected lines",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 11,
+      "candidates": []
+    },
+    {
+      "name": "tiny-loops",
+      "category": "small areas",
+      "mode": "none",
+      "regions": 5,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "6f122343",
+      "ms": 8,
+      "candidates": []
+    },
+    {
+      "name": "tiny-loops",
+      "category": "small areas",
+      "mode": "balanced",
+      "regions": 5,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "6f122343",
+      "ms": 8,
+      "candidates": []
+    },
+    {
+      "name": "tiny-loops",
+      "category": "small areas",
+      "mode": "generous",
+      "regions": 5,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "6f122343",
+      "ms": 7,
+      "candidates": []
+    },
+    {
+      "name": "feedback-taper",
+      "category": "separate converging sides with overshoot",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 10,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 83.5,
+            "y": 149.5,
+            "pixel": 36384
+          },
+          "b": {
+            "x": 98.5,
+            "y": 151.5,
+            "pixel": 36883
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-taper",
+      "category": "separate converging sides with overshoot",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 83.5,
+            "y": 149.5,
+            "pixel": 36384
+          },
+          "b": {
+            "x": 98.5,
+            "y": 151.5,
+            "pixel": 36883
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-taper",
+      "category": "separate converging sides with overshoot",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 83.5,
+            "y": 149.5,
+            "pixel": 36384
+          },
+          "b": {
+            "x": 98.5,
+            "y": 151.5,
+            "pixel": 36883
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-contour",
+      "category": "continuation closes contour after short root link",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 8,
+      "candidates": [
+        {
+          "kind": "線の続き",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 73.5,
+            "y": 14.5,
+            "pixel": 3704
+          },
+          "b": {
+            "x": 65.5,
+            "y": 19.5,
+            "pixel": 4906
+          }
+        },
+        {
+          "kind": "線の続き",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 109.5,
+            "y": 151.5,
+            "pixel": 36894
+          },
+          "b": {
+            "x": 129.5,
+            "y": 154.5,
+            "pixel": 37640
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-contour",
+      "category": "continuation closes contour after short root link",
+      "mode": "balanced",
+      "regions": 1,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d120f427",
+      "ms": 7,
+      "candidates": [
+        {
+          "kind": "線の続き",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 73.5,
+            "y": 14.5,
+            "pixel": 3704
+          },
+          "b": {
+            "x": 65.5,
+            "y": 19.5,
+            "pixel": 4906
+          }
+        },
+        {
+          "kind": "線の続き",
+          "status": "accepted",
+          "reason": "輪郭が閉じる根拠を確認（隙間上限の1.5倍以内）",
+          "a": {
+            "x": 109.5,
+            "y": 151.5,
+            "pixel": 36894
+          },
+          "b": {
+            "x": 129.5,
+            "y": 154.5,
+            "pixel": 37640
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-contour",
+      "category": "continuation closes contour after short root link",
+      "mode": "generous",
+      "regions": 1,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d120f427",
+      "ms": 7,
+      "candidates": [
+        {
+          "kind": "線の続き",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 73.5,
+            "y": 14.5,
+            "pixel": 3704
+          },
+          "b": {
+            "x": 65.5,
+            "y": 19.5,
+            "pixel": 4906
+          }
+        },
+        {
+          "kind": "線の続き",
+          "status": "accepted",
+          "reason": "輪郭が閉じる根拠を確認（隙間上限の2倍以内）",
+          "a": {
+            "x": 109.5,
+            "y": 151.5,
+            "pixel": 36894
+          },
+          "b": {
+            "x": 129.5,
+            "y": 154.5,
+            "pixel": 37640
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-open-continuation",
+      "category": "same gap without a closing contour",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": [
+        {
+          "kind": "線の続き",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 87.5,
+            "y": 81.5,
+            "pixel": 19932
+          },
+          "b": {
+            "x": 106.5,
+            "y": 81.5,
+            "pixel": 19951
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-open-continuation",
+      "category": "same gap without a closing contour",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 5,
+      "candidates": [
+        {
+          "kind": "線の続き",
+          "status": "pending",
+          "reason": "拡張した隙間には閉じる輪郭の根拠が必要",
+          "a": {
+            "x": 87.5,
+            "y": 81.5,
+            "pixel": 19932
+          },
+          "b": {
+            "x": 106.5,
+            "y": 81.5,
+            "pixel": 19951
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-open-continuation",
+      "category": "same gap without a closing contour",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 5,
+      "candidates": [
+        {
+          "kind": "線の続き",
+          "status": "pending",
+          "reason": "拡張した隙間には閉じる輪郭の根拠が必要",
+          "a": {
+            "x": 87.5,
+            "y": 81.5,
+            "pixel": 19932
+          },
+          "b": {
+            "x": 106.5,
+            "y": 81.5,
+            "pixel": 19951
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-competing-tips",
+      "category": "multiple comparable terminal candidates",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 99.5,
+            "y": 147.5,
+            "pixel": 35916
+          },
+          "b": {
+            "x": 89.5,
+            "y": 150.5,
+            "pixel": 36632
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 78.5,
+            "y": 148.5,
+            "pixel": 36137
+          },
+          "b": {
+            "x": 89.5,
+            "y": 150.5,
+            "pixel": 36632
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-competing-tips",
+      "category": "multiple comparable terminal candidates",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "根拠が近い候補が複数ある",
+          "a": {
+            "x": 99.5,
+            "y": 147.5,
+            "pixel": 35916
+          },
+          "b": {
+            "x": 89.5,
+            "y": 150.5,
+            "pixel": 36632
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "同じ端点の別候補を優先",
+          "a": {
+            "x": 78.5,
+            "y": 148.5,
+            "pixel": 36137
+          },
+          "b": {
+            "x": 89.5,
+            "y": 150.5,
+            "pixel": 36632
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-competing-tips",
+      "category": "multiple comparable terminal candidates",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 8,
+      "candidates": [
+        {
+          "kind": "延長すると合流",
+          "status": "rejected",
+          "reason": "途中の別の境界を横切る",
+          "a": {
+            "x": 99.5,
+            "y": 147.5,
+            "pixel": 35916
+          },
+          "b": {
+            "x": 78.5,
+            "y": 148.5,
+            "pixel": 36137
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "根拠が近い候補が複数ある",
+          "a": {
+            "x": 99.5,
+            "y": 147.5,
+            "pixel": 35916
+          },
+          "b": {
+            "x": 89.5,
+            "y": 150.5,
+            "pixel": 36632
+          }
+        },
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "同じ端点の別候補を優先",
+          "a": {
+            "x": 78.5,
+            "y": 148.5,
+            "pixel": 36137
+          },
+          "b": {
+            "x": 89.5,
+            "y": 150.5,
+            "pixel": 36632
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-taper-with-boundary-ahead",
+      "category": "same taper facing a shared nearby boundary",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "両端の先に同じ別境界があり、先端か根元か不明",
+          "a": {
+            "x": 83.5,
+            "y": 149.5,
+            "pixel": 36384
+          },
+          "b": {
+            "x": 98.5,
+            "y": 151.5,
+            "pixel": 36883
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-taper-with-boundary-ahead",
+      "category": "same taper facing a shared nearby boundary",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "pending",
+          "reason": "両端の先に同じ別境界があり、先端か根元か不明",
+          "a": {
+            "x": 83.5,
+            "y": 149.5,
+            "pixel": 36384
+          },
+          "b": {
+            "x": 98.5,
+            "y": 151.5,
+            "pixel": 36883
+          }
+        }
+      ]
+    },
+    {
+      "name": "feedback-taper-with-boundary-ahead",
+      "category": "same taper facing a shared nearby boundary",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": [
+        {
+          "kind": "先端を閉じる",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 83.5,
+            "y": 149.5,
+            "pixel": 36384
+          },
+          "b": {
+            "x": 98.5,
+            "y": 151.5,
+            "pixel": 36883
+          }
+        }
+      ]
+    },
+    {
+      "name": "extension-both-forward",
+      "category": "both forward rays meet; join endpoints directly",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": []
+    },
+    {
+      "name": "extension-both-forward",
+      "category": "both forward rays meet; join endpoints directly",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": []
+    },
+    {
+      "name": "extension-both-forward",
+      "category": "both forward rays meet; join endpoints directly",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 5,
+      "candidates": [
+        {
+          "kind": "線の続き",
+          "status": "pending",
+          "reason": "拡張した隙間には閉じる輪郭の根拠が必要",
+          "a": {
+            "x": 99.5,
+            "y": 77.5,
+            "pixel": 18976
+          },
+          "b": {
+            "x": 78.5,
+            "y": 89.5,
+            "pixel": 21859
+          }
+        }
+      ]
+    },
+    {
+      "name": "extension-one-to-interior",
+      "category": "one extended side lands inside another boundary",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 5,
+      "candidates": []
+    },
+    {
+      "name": "extension-one-to-interior",
+      "category": "one extended side lands inside another boundary",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": []
+    },
+    {
+      "name": "extension-one-to-interior",
+      "category": "one extended side lands inside another boundary",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": []
+    },
+    {
+      "name": "extension-obstructed",
+      "category": "a third boundary blocks virtual meeting",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 7,
+      "candidates": [
+        {
+          "kind": "線の途中へ",
+          "status": "pending",
+          "reason": "補助接続なし",
+          "a": {
+            "x": 78.5,
+            "y": 89.5,
+            "pixel": 21859
+          },
+          "b": {
+            "x": 89.5,
+            "y": 91.07142857142857
+          }
+        }
+      ]
+    },
+    {
+      "name": "extension-obstructed",
+      "category": "a third boundary blocks virtual meeting",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": [
+        {
+          "kind": "線の途中へ",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 78.5,
+            "y": 89.5,
+            "pixel": 21859
+          },
+          "b": {
+            "x": 89.5,
+            "y": 91.07142857142857
+          }
+        }
+      ]
+    },
+    {
+      "name": "extension-obstructed",
+      "category": "a third boundary blocks virtual meeting",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 1,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": [
+        {
+          "kind": "線の続き",
+          "status": "rejected",
+          "reason": "途中の別の境界を横切る",
+          "a": {
+            "x": 99.5,
+            "y": 77.5,
+            "pixel": 18976
+          },
+          "b": {
+            "x": 78.5,
+            "y": 89.5,
+            "pixel": 21859
+          }
+        },
+        {
+          "kind": "線の途中へ",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 78.5,
+            "y": 89.5,
+            "pixel": 21859
+          },
+          "b": {
+            "x": 89.5,
+            "y": 91.07142857142857
+          }
+        },
+        {
+          "kind": "延長して線へ",
+          "status": "pending",
+          "reason": "同じ端点の別候補を優先",
+          "a": {
+            "x": 78.5,
+            "y": 89.5,
+            "pixel": 21859
+          },
+          "b": {
+            "x": 89.5,
+            "y": 92.25
+          }
+        }
+      ]
+    },
+    {
+      "name": "relaxed-short-taper",
+      "category": "short converging sides previously lack long tangent samples",
+      "mode": "none",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": []
+    },
+    {
+      "name": "relaxed-short-taper",
+      "category": "short converging sides previously lack long tangent samples",
+      "mode": "balanced",
+      "regions": 0,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": []
+    },
+    {
+      "name": "relaxed-short-taper",
+      "category": "short converging sides previously lack long tangent samples",
+      "mode": "generous",
+      "regions": 0,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b62b24c5",
+      "ms": 6,
+      "candidates": [
+        {
+          "kind": "延長すると合流",
+          "status": "accepted",
+          "reason": "形の条件と候補競合を通過",
+          "a": {
+            "x": 65.5,
+            "y": 62.5,
+            "pixel": 15312
+          },
+          "b": {
+            "x": 49.5,
+            "y": 63.5,
+            "pixel": 15538
+          }
+        }
+      ]
+    },
+    {
+      "name": "stress-0",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 92,
+      "accepted": 0,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d5d49a9d",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-0",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 95,
+      "accepted": 3,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b025b9bc",
+      "ms": 29,
+      "candidates": []
+    },
+    {
+      "name": "stress-0",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 95,
+      "accepted": 3,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b025b9bc",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-1",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 66,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "54759be4",
+      "ms": 38,
+      "candidates": []
+    },
+    {
+      "name": "stress-1",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 67,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "ebdc11d7",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-1",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 67,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "ebdc11d7",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-2",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 74,
+      "accepted": 0,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b30ab9ef",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-2",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 76,
+      "accepted": 2,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "25c7acc9",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-2",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 76,
+      "accepted": 2,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "25c7acc9",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-3",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 106,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "eab5d",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-3",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 106,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "eab5d",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-3",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 109,
+      "accepted": 3,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "449aac27",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-4",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 76,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "35b2d61d",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-4",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 79,
+      "accepted": 3,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "73945bad",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-4",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 79,
+      "accepted": 3,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "bfe2b926",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-5",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 89,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "9e93794e",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-5",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 93,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "6f93b5f9",
+      "ms": 42,
+      "candidates": []
+    },
+    {
+      "name": "stress-5",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 93,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "6f93b5f9",
+      "ms": 42,
+      "candidates": []
+    },
+    {
+      "name": "stress-6",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 97,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "faf2c02",
+      "ms": 60,
+      "candidates": []
+    },
+    {
+      "name": "stress-6",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 98,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "9e48d026",
+      "ms": 40,
+      "candidates": []
+    },
+    {
+      "name": "stress-6",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 98,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "9e48d026",
+      "ms": 40,
+      "candidates": []
+    },
+    {
+      "name": "stress-7",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 76,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "532e3f7c",
+      "ms": 49,
+      "candidates": []
+    },
+    {
+      "name": "stress-7",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 76,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "532e3f7c",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-7",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 76,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "532e3f7c",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-8",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 91,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "ae273f1b",
+      "ms": 28,
+      "candidates": []
+    },
+    {
+      "name": "stress-8",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 95,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "49af5ed5",
+      "ms": 29,
+      "candidates": []
+    },
+    {
+      "name": "stress-8",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 95,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "49af5ed5",
+      "ms": 28,
+      "candidates": []
+    },
+    {
+      "name": "stress-9",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 124,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f01689b7",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-9",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 125,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "aac18b75",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-9",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 126,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "4aa3fa17",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-10",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 56,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "18bcab97",
+      "ms": 56,
+      "candidates": []
+    },
+    {
+      "name": "stress-10",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 57,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "400d0578",
+      "ms": 42,
+      "candidates": []
+    },
+    {
+      "name": "stress-10",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 59,
+      "accepted": 3,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "477287a7",
+      "ms": 41,
+      "candidates": []
+    },
+    {
+      "name": "stress-11",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 114,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "48a068a3",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-11",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 116,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "e0a55dac",
+      "ms": 37,
+      "candidates": []
+    },
+    {
+      "name": "stress-11",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 117,
+      "accepted": 3,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "670b8432",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-12",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 98,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "8d98ce1a",
+      "ms": 28,
+      "candidates": []
+    },
+    {
+      "name": "stress-12",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 99,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "65b1e060",
+      "ms": 27,
+      "candidates": []
+    },
+    {
+      "name": "stress-12",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 98,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "8d98ce1a",
+      "ms": 26,
+      "candidates": []
+    },
+    {
+      "name": "stress-13",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 76,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "3097b0e0",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-13",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 80,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "84be61f4",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-13",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 81,
+      "accepted": 5,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "6ce58a2f",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-14",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 81,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "ae61d114",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-14",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 82,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "71e08893",
+      "ms": 46,
+      "candidates": []
+    },
+    {
+      "name": "stress-14",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 83,
+      "accepted": 2,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d1c6a8fc",
+      "ms": 45,
+      "candidates": []
+    },
+    {
+      "name": "stress-15",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 105,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "8abe9171",
+      "ms": 29,
+      "candidates": []
+    },
+    {
+      "name": "stress-15",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 106,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a82cf273",
+      "ms": 29,
+      "candidates": []
+    },
+    {
+      "name": "stress-15",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 106,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a82cf273",
+      "ms": 25,
+      "candidates": []
+    },
+    {
+      "name": "stress-16",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 93,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b520ae5",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-16",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 95,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "fc284c54",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-16",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 95,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "fc284c54",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-17",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 97,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "7c180a69",
+      "ms": 39,
+      "candidates": []
+    },
+    {
+      "name": "stress-17",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 98,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "17fb04fc",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-17",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 98,
+      "accepted": 1,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "17fb04fc",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-18",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 51,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "e25b165d",
+      "ms": 27,
+      "candidates": []
+    },
+    {
+      "name": "stress-18",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 53,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "3b411e4b",
+      "ms": 28,
+      "candidates": []
+    },
+    {
+      "name": "stress-18",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 53,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "3b411e4b",
+      "ms": 27,
+      "candidates": []
+    },
+    {
+      "name": "stress-19",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 90,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "9ec310da",
+      "ms": 29,
+      "candidates": []
+    },
+    {
+      "name": "stress-19",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 90,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "9ec310da",
+      "ms": 37,
+      "candidates": []
+    },
+    {
+      "name": "stress-19",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 90,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "9ec310da",
+      "ms": 37,
+      "candidates": []
+    },
+    {
+      "name": "stress-20",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 133,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a69c5e8a",
+      "ms": 39,
+      "candidates": []
+    },
+    {
+      "name": "stress-20",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 134,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "e346bbd6",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-20",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 134,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "e346bbd6",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-21",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 78,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "95add321",
+      "ms": 21,
+      "candidates": []
+    },
+    {
+      "name": "stress-21",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 80,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "5c82b58e",
+      "ms": 21,
+      "candidates": []
+    },
+    {
+      "name": "stress-21",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 81,
+      "accepted": 3,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "cfc62058",
+      "ms": 22,
+      "candidates": []
+    },
+    {
+      "name": "stress-22",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 101,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f617cf52",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-22",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 101,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f617cf52",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-22",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 101,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f617cf52",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-23",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 78,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "25246160",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-23",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 79,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "790a2260",
+      "ms": 44,
+      "candidates": []
+    },
+    {
+      "name": "stress-23",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 78,
+      "accepted": 0,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "25246160",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-24",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 110,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "db82451d",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-24",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 110,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "db82451d",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-24",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 111,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "1836485f",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-25",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 82,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b9c059a4",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-25",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 83,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "39b1222f",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-25",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 83,
+      "accepted": 1,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "39b1222f",
+      "ms": 37,
+      "candidates": []
+    },
+    {
+      "name": "stress-26",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 106,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "82505cdb",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-26",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 109,
+      "accepted": 3,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "69599474",
+      "ms": 38,
+      "candidates": []
+    },
+    {
+      "name": "stress-26",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 110,
+      "accepted": 4,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "5acbc08c",
+      "ms": 40,
+      "candidates": []
+    },
+    {
+      "name": "stress-27",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 72,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b9a7a76a",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-27",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 74,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "49f7374b",
+      "ms": 38,
+      "candidates": []
+    },
+    {
+      "name": "stress-27",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 74,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "49f7374b",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-28",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 40,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "36fde11",
+      "ms": 25,
+      "candidates": []
+    },
+    {
+      "name": "stress-28",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 41,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "261fff4d",
+      "ms": 22,
+      "candidates": []
+    },
+    {
+      "name": "stress-28",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 42,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "df00183d",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-29",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 97,
+      "accepted": 0,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "5977e0db",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-29",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 100,
+      "accepted": 3,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f9846adf",
+      "ms": 38,
+      "candidates": []
+    },
+    {
+      "name": "stress-29",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 101,
+      "accepted": 4,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "34b93dc3",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-30",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 108,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "98cf3f00",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-30",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 108,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "98cf3f00",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-30",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 110,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "8352e3df",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-31",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 91,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "714b9a10",
+      "ms": 25,
+      "candidates": []
+    },
+    {
+      "name": "stress-31",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 92,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "7f31f7b3",
+      "ms": 26,
+      "candidates": []
+    },
+    {
+      "name": "stress-31",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 92,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "7f31f7b3",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-32",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 106,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f5e73262",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-32",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 107,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f8a4bb96",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-32",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 107,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f8a4bb96",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-33",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 127,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "1e7dfdc6",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-33",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 128,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "3c70b89f",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-33",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 128,
+      "accepted": 1,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b0001640",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-34",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 95,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f3b9f859",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-34",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 99,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b07fdeaf",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-34",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 99,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b07fdeaf",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-35",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 110,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "942e81a2",
+      "ms": 38,
+      "candidates": []
+    },
+    {
+      "name": "stress-35",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 112,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "6ed74e1d",
+      "ms": 46,
+      "candidates": []
+    },
+    {
+      "name": "stress-35",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 112,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "6ed74e1d",
+      "ms": 42,
+      "candidates": []
+    },
+    {
+      "name": "stress-36",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 67,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "da5f84be",
+      "ms": 26,
+      "candidates": []
+    },
+    {
+      "name": "stress-36",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 71,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "2d74ba8e",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-36",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 71,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "2d74ba8e",
+      "ms": 25,
+      "candidates": []
+    },
+    {
+      "name": "stress-37",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 118,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "cbc4c6fb",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-37",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 120,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b758fd5d",
+      "ms": 29,
+      "candidates": []
+    },
+    {
+      "name": "stress-37",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 121,
+      "accepted": 3,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "2b6e2989",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-38",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 116,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "823f99f9",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-38",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 116,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "823f99f9",
+      "ms": 38,
+      "candidates": []
+    },
+    {
+      "name": "stress-38",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 116,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "823f99f9",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-39",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 79,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "3e4cf18b",
+      "ms": 25,
+      "candidates": []
+    },
+    {
+      "name": "stress-39",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 80,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b0b7197",
+      "ms": 28,
+      "candidates": []
+    },
+    {
+      "name": "stress-39",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 81,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "dcdda641",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-40",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 127,
+      "accepted": 0,
+      "pending": 4,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "45cbc00d",
+      "ms": 40,
+      "candidates": []
+    },
+    {
+      "name": "stress-40",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 131,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a9134b6",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-40",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 131,
+      "accepted": 4,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a9134b6",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-41",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 100,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a2156837",
+      "ms": 37,
+      "candidates": []
+    },
+    {
+      "name": "stress-41",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 100,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a2156837",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-41",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 100,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "a2156837",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-42",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 116,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "5a47fd40",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-42",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 117,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "3ad4b595",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-42",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 117,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "3ad4b595",
+      "ms": 40,
+      "candidates": []
+    },
+    {
+      "name": "stress-43",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 74,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "19a952ec",
+      "ms": 33,
+      "candidates": []
+    },
+    {
+      "name": "stress-43",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 76,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d39c1e80",
+      "ms": 39,
+      "candidates": []
+    },
+    {
+      "name": "stress-43",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 76,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d39c1e80",
+      "ms": 38,
+      "candidates": []
+    },
+    {
+      "name": "stress-44",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 105,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f64a8d39",
+      "ms": 40,
+      "candidates": []
+    },
+    {
+      "name": "stress-44",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 105,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f64a8d39",
+      "ms": 38,
+      "candidates": []
+    },
+    {
+      "name": "stress-44",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 105,
+      "accepted": 0,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f64a8d39",
+      "ms": 40,
+      "candidates": []
+    },
+    {
+      "name": "stress-45",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 103,
+      "accepted": 0,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "67780ce6",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-45",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 106,
+      "accepted": 3,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "f379c339",
+      "ms": 36,
+      "candidates": []
+    },
+    {
+      "name": "stress-45",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 109,
+      "accepted": 6,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "91f5c230",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-46",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 121,
+      "accepted": 0,
+      "pending": 2,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "94dafe1d",
+      "ms": 29,
+      "candidates": []
+    },
+    {
+      "name": "stress-46",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 123,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "c291ceba",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-46",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 123,
+      "accepted": 2,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "c291ceba",
+      "ms": 31,
+      "candidates": []
+    },
+    {
+      "name": "stress-47",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 79,
+      "accepted": 0,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "df09517a",
+      "ms": 39,
+      "candidates": []
+    },
+    {
+      "name": "stress-47",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 82,
+      "accepted": 3,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "9d983ff9",
+      "ms": 43,
+      "candidates": []
+    },
+    {
+      "name": "stress-47",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 82,
+      "accepted": 3,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "9d983ff9",
+      "ms": 34,
+      "candidates": []
+    },
+    {
+      "name": "stress-48",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 105,
+      "accepted": 0,
+      "pending": 3,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "abe29ee7",
+      "ms": 43,
+      "candidates": []
+    },
+    {
+      "name": "stress-48",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 107,
+      "accepted": 2,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "63dda03d",
+      "ms": 37,
+      "candidates": []
+    },
+    {
+      "name": "stress-48",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 108,
+      "accepted": 3,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "d954e4b5",
+      "ms": 35,
+      "candidates": []
+    },
+    {
+      "name": "stress-49",
+      "category": "runtime stress, no intention labels",
+      "mode": "none",
+      "regions": 93,
+      "accepted": 0,
+      "pending": 1,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "adcad5a5",
+      "ms": 32,
+      "candidates": []
+    },
+    {
+      "name": "stress-49",
+      "category": "runtime stress, no intention labels",
+      "mode": "balanced",
+      "regions": 94,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b2ef74e8",
+      "ms": 30,
+      "candidates": []
+    },
+    {
+      "name": "stress-49",
+      "category": "runtime stress, no intention labels",
+      "mode": "generous",
+      "regions": 94,
+      "accepted": 1,
+      "pending": 0,
+      "checks": {
+        "euler": true,
+        "twins": true,
+        "cycles": true,
+        "adjacency": true,
+        "pixelCoverage": true,
+        "nonnegativeArea": true
+      },
+      "hash": "b2ef74e8",
+      "ms": 32,
+      "candidates": []
+    }
+  ],
+  "failures": []
+}

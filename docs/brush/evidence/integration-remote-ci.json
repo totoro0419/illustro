@@ -1,0 +1,20 @@
+{
+  "verifiedImplementationCommit": "ad3258d28451613e0353947cf260da048914660a",
+  "scope": "remote code validation; not physical device, artist or competitor certification",
+  "runs": [
+    {
+      "id": 36989102014,
+      "name": "Brush Engine CI",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/totoro0419/illustro/actions/runs/36989102014"
+    },
+    {
+      "id": 36989102039,
+      "name": "Core CI",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/totoro0419/illustro/actions/runs/36989102039"
+    }
+  ]
+}

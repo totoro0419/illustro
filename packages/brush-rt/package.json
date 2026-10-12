@@ -1,0 +1,17 @@
+{
+  "name": "@illustro/brush-rt",
+  "private": true,
+  "type": "module",
+  "version": "0.3.0",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./dist/rt/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "node ../../prototypes/brush-rt/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "browser": "node ../../prototypes/brush-rt/browser-check.mjs"
+  }
+}

@@ -1,0 +1,413 @@
+{
+  "scope": "Headless Chromium / SwiftShader. Independent CPU active-preview and canonical worker replay. Float boundary errors explicitly counted; no physical pen-to-photon claim.",
+  "cases": [
+    {
+      "variant": {
+        "id": "rough-pencil",
+        "size": 128
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 12,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "rough-pencil",
+        "size": 512
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000012715657552083333
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "rough-pencil",
+        "size": 1024
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        },
+        {
+          "input": 6,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000019073486328125
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000057220458984375
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "rough-pencil",
+        "size": 512,
+        "grainRotation": 0.37
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        },
+        {
+          "input": 6,
+          "maxChannelError": 33,
+          "channelsOver2": 2,
+          "meanChannelError": 0.000036875406901041664
+        },
+        {
+          "input": 12,
+          "maxChannelError": 26,
+          "channelsOver2": 3,
+          "meanChannelError": 0.0000476837158203125
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "rough-pencil",
+        "size": 512,
+        "grainKind": "hatch",
+        "grainScale": 3.4,
+        "grainRotation": 0.63
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.00002288818359375
+        },
+        {
+          "input": 6,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.000244140625
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0003159840901692708
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "rough-pencil",
+        "size": 512,
+        "grainKind": "image",
+        "grainScale": 11,
+        "texture": {
+          "width": 2,
+          "height": 2,
+          "alpha": [
+            0.1,
+            0.4,
+            0.7,
+            1
+          ]
+        }
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000012715657552083333
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "rough-pencil",
+        "size": 512,
+        "flow": 0.003
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 12,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "rough-pencil",
+        "size": 512,
+        "mappings": [
+          {
+            "source": "pressure",
+            "target": "opacity",
+            "min": 0.1,
+            "max": 1,
+            "mode": "multiply",
+            "fallback": 1,
+            "curve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000025431315104166665
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "clean-ink",
+        "size": 512
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "clean-ink",
+        "size": 1024
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "rough-soft",
+        "size": 512
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000019073486328125
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "felt",
+        "size": 512
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 0,
+          "channelsOver2": 0,
+          "meanChannelError": 0
+        },
+        {
+          "input": 6,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000012715657552083333
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000012715657552083333
+        }
+      ],
+      "canonicalReplayExact": true
+    },
+    {
+      "variant": {
+        "id": "confetti",
+        "size": 512
+      },
+      "snapshots": [
+        {
+          "input": 1,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 6.357828776041666e-7
+        },
+        {
+          "input": 6,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.0000019073486328125
+        },
+        {
+          "input": 12,
+          "maxChannelError": 1,
+          "channelsOver2": 0,
+          "meanChannelError": 0.000004450480143229167
+        }
+      ],
+      "canonicalReplayExact": true
+    }
+  ],
+  "cancellation": {
+    "wasPending": true,
+    "active": false,
+    "livePending": false,
+    "paintedAfterCancel": false
+  },
+  "contactPreparation": {},
+  "firstContact": {
+    "clear": 0,
+    "drawArrays": 1,
+    "drawArraysInstanced": 1,
+    "blitFramebuffer": 0,
+    "copyTexSubImage2D": 0,
+    "readPixels": 0,
+    "finish": 0,
+    "clientWaitSync": 0,
+    "instances": 1
+  },
+  "regionCommitMaxChannelError": 0,
+  "errors": []
+}

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Illustro Input Control Lab — Candidate</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#F7F9FC;--surface:#FFF;--surface2:#F2F6FB;--surface3:#EDF3F9;--line:#D9E3EE;--line2:#C3D0DF;
+  --text:#1E2732;--muted:#657283;--faint:#929EAC;--blue:#5EA8FF;--violet:#8B7CFF;--pink:#C681DE;
+  --accent:#6E8EFF;--focus:#756DF5;--danger:#B94A5D;
+  --aurora:linear-gradient(90deg,#5EA8FF 0%,#708FFF 38%,#8B7CFF 72%,#C681DE 100%);
+  --aurora-v:linear-gradient(180deg,#5EA8FF 0%,#708FFF 38%,#8B7CFF 72%,#C681DE 100%);
+  --shadow:0 12px 32px rgba(58,77,103,.09);
+  --r:12px;
+}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--focus) 58%,transparent);outline-offset:2px}
+.app{height:100vh;display:grid;grid-template-rows:52px 1fr}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:#fff;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:760}.brand-mark{width:24px;height:24px;border-radius:8px;border:1px solid transparent;background:linear-gradient(#F5F8FE,#F5F8FE) padding-box,var(--aurora) border-box;position:relative}.brand-mark:after{content:"";position:absolute;left:4px;right:4px;bottom:4px;height:3px;border-radius:999px;background:var(--aurora)}
+.title{font-size:13px;color:var(--muted)}.status{margin-left:auto;font-size:11px;padding:5px 9px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+.main{min-height:0;padding:16px;display:grid;grid-template-columns:repeat(4,344px);gap:10px;align-items:stretch}
+.card{min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.card-head{height:44px;flex:none;display:flex;align-items:center;padding:0 13px;border-bottom:1px solid var(--line);font-size:13px;font-weight:750;position:relative}
+.card-head:before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--aurora)}
+.card-head small{margin-left:auto;font-size:10px;font-weight:600;color:var(--muted)}
+.card-body{padding:12px;overflow:auto;min-height:0}.section{padding:10px 0;border-bottom:1px solid var(--line)}.section:first-child{padding-top:0}.section:last-child{border-bottom:0;padding-bottom:0}
+.section-title{display:flex;align-items:center;gap:7px;margin-bottom:8px;font-size:11px;font-weight:750}.section-title span{font-size:10px;color:var(--muted);font-weight:560;margin-left:auto}
+.brush-preview{height:110px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(135deg,#FAFCFF,#EFF4FA);display:grid;place-items:center;position:relative;overflow:hidden}
+.preview-stroke{height:22px;width:210px;border-radius:999px;background:#26303B;transform:rotate(-4deg);box-shadow:0 1px 0 rgba(255,255,255,.5) inset;transition:height .08s}.preview-label{position:absolute;left:8px;top:7px;font-size:9px;color:var(--muted)}
+.param{display:grid;grid-template-columns:66px 1fr 70px;gap:8px;align-items:center;min-height:39px}.param label{font-size:11px;font-weight:660;color:var(--text)}
+.range-wrap{height:30px;display:flex;align-items:center}.range{width:100%;height:28px;background:transparent;appearance:none;-webkit-appearance:none;margin:0;cursor:pointer}.range::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(90deg,var(--accentFill,var(--blue)) 0 var(--p,50%),var(--line) var(--p,50%) 100%)}.range::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--accent);margin-top:-5px;box-shadow:0 1px 4px rgba(37,51,70,.18)}.range::-moz-range-track{height:5px;border-radius:999px;background:var(--line)}.range::-moz-range-progress{height:5px;border-radius:999px;background:var(--blue)}.range::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--accent)}
+.valuebox{height:30px;display:grid;grid-template-columns:1fr auto;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:8px;overflow:hidden}.valuebox input{width:100%;height:100%;min-width:0;border:0;outline:0;padding:0 5px 0 8px;background:transparent;text-align:right;font-size:11px;font-variant-numeric:tabular-nums}.unit{padding-right:7px;font-size:9px;color:var(--muted)}
+.inline-note{font-size:9px;line-height:1.45;color:var(--muted);margin-top:6px}
+/* color */
+.color-top{display:grid;grid-template-columns:1fr 88px;gap:10px;align-items:start}.picker{width:190px;height:190px;margin:auto;position:relative;border-radius:50%;background:conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}.picker:before{content:"";position:absolute;inset:18px;background:var(--surface);border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.sv{position:absolute;width:116px;height:116px;left:37px;top:37px;border-radius:8px;background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(var(--h),100%,50%));box-shadow:0 0 0 1px rgba(0,0,0,.18);cursor:crosshair}.sv-knob{position:absolute;width:13px;height:13px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #26303B,0 1px 4px rgba(0,0,0,.25);transform:translate(-50%,-50%);pointer-events:none}.h-knob{position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #303946;box-shadow:0 1px 4px rgba(0,0,0,.25);transform:translate(-50%,-50%);pointer-events:none}
+.swatch-stack{display:grid;gap:7px}.swatch-pair{height:74px;position:relative}.swatch-now,.swatch-prev{position:absolute;width:58px;height:58px;border-radius:10px;border:1px solid rgba(0,0,0,.14);box-shadow:0 3px 8px rgba(34,45,59,.11)}.swatch-prev{right:0;bottom:0;background:#52616F}.swatch-now{left:0;top:0;z-index:2;background:#6E8EFF}.hex-read{font-size:10px;font-weight:700;text-align:center;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.segmented{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--surface2);margin:10px 0 8px}.segmented button{height:28px;border:0;border-radius:6px;background:transparent;font-size:10px;font-weight:700;color:var(--muted)}.segmented button.active{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(47,64,86,.10);position:relative}.segmented button.active:after{content:"";position:absolute;left:9px;right:9px;bottom:2px;height:2px;border-radius:99px;background:var(--aurora)}
+.color-fields{display:grid;gap:6px}.c-row{display:grid;grid-template-columns:18px 1fr 58px;gap:7px;align-items:center}.c-row label{font-size:10px;font-weight:750;color:var(--muted)}.c-track{height:5px;border-radius:99px;background:var(--line);overflow:hidden}.c-fill{height:100%;border-radius:99px;background:var(--aurora);width:50%}.c-row input{height:28px;border:1px solid var(--line);border-radius:7px;background:#fff;padding:0 6px;text-align:right;font-size:10px;outline:0}
+.hex-input{display:none;grid-template-columns:45px 1fr;gap:7px;align-items:center}.hex-input label{font-size:10px;font-weight:750;color:var(--muted)}.hex-input input{height:30px;border:1px solid var(--line);border-radius:7px;padding:0 8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;text-transform:uppercase}
+.history{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}.chip-color{aspect-ratio:1;border-radius:7px;border:1px solid rgba(0,0,0,.13);padding:0}.chip-color.selected{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--focus)}
+/* dynamics */
+.select-row{display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:center;margin-bottom:8px}.select-row label{font-size:11px;font-weight:700}.select-row select{height:32px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 8px;font-size:10px}
+.curve-wrap{height:220px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(#eef3f8 1px,transparent 1px),linear-gradient(90deg,#eef3f8 1px,transparent 1px),#fff;background-size:25% 25%;position:relative;overflow:hidden}.curve-wrap svg{width:100%;height:100%;display:block}.curve-path{fill:none;stroke:url(#curveGradient);stroke-width:3;stroke-linecap:round}.curve-base{fill:none;stroke:#B9C5D2;stroke-width:1.2;stroke-dasharray:4 4}.curve-point{fill:#fff;stroke:#6E80EE;stroke-width:2;cursor:grab}.curve-label{position:absolute;font-size:9px;color:var(--muted)}.curve-label.x{right:7px;bottom:6px}.curve-label.y{left:7px;top:6px}
+.range-pair{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}.small-input{width:100%;min-width:0;height:30px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 7px;text-align:right;font-size:10px}.dash{color:var(--faint);font-size:11px}
+.switch-row{height:40px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line)}.switch-row span{font-size:11px;font-weight:650}.switch{position:relative;width:40px;height:24px}.switch input{position:absolute;opacity:0;width:1px;height:1px}.switch-ui{position:absolute;inset:0;border-radius:99px;background:#D6DEE8;border:1px solid #C5D0DD;transition:.15s}.switch-ui:after{content:"";position:absolute;width:18px;height:18px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(28,42,58,.22);transition:.15s}.switch input:checked+.switch-ui{background:#7587F2;border-color:#6879E7}.switch input:checked+.switch-ui:after{transform:translateX(16px)}
+/* primitive rail */
+.primitive-card .card-body{padding:12px}.primitive{padding:11px 0;border-bottom:1px solid var(--line)}.primitive:last-child{border:0}.primitive h3{font-size:11px;margin:0 0 8px}.primitive p{font-size:9px;color:var(--muted);margin:6px 0 0;line-height:1.4}.mode-pills{display:flex;gap:5px}.mode-pills button{height:30px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:10px;color:var(--muted)}.mode-pills button.active{background:var(--surface2);border-color:#9FB3F5;color:#34466A;font-weight:750;box-shadow:inset 0 -2px 0 #7184EE}.angle-row{display:grid;grid-template-columns:52px 1fr 58px;gap:8px;align-items:center}.dial{width:50px;height:50px;border-radius:50%;border:1px solid var(--line2);background:conic-gradient(from -90deg,#7B8DF4 0 25%,#E7ECF2 25% 100%);position:relative}.dial:after{content:"";position:absolute;inset:8px;border-radius:50%;background:#fff}.dial-hand{position:absolute;width:2px;height:18px;background:#5366D8;left:24px;top:7px;transform-origin:1px 18px;transform:rotate(45deg);z-index:2}.dial-dot{position:absolute;width:6px;height:6px;border-radius:50%;background:#5366D8;left:22px;top:22px;z-index:3}.disabled-demo{opacity:.48}.disabled-demo button{cursor:default}
+.footer-note{grid-column:1/-1;height:34px;display:flex;align-items:center;gap:14px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,#fff 88%,transparent);font-size:9px;color:var(--muted)}.footer-note strong{color:var(--text)}
+@media(max-width:1438px){html,body{overflow:auto}.main{grid-template-columns:344px 344px;align-items:start}}
+@media(max-width:760px){.main{grid-template-columns:344px;justify-content:center}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand"><span class="brand-mark"></span>Illustro</div>
+  <div class="title">Input Control Lab · Aurora visual baseline</div>
+  <div class="status">candidate / user review pending</div>
+</header>
+<main class="main">
+  <section class="card" id="brushCard">
+    <header class="card-head">Brush Inputs <small>344 px panel fit</small></header>
+    <div class="card-body">
+      <div class="section">
+        <div class="section-title">Live preview <span>value changes immediately</span></div>
+        <div class="brush-preview"><span class="preview-label">Brush footprint preview</span><div class="preview-stroke" id="previewStroke"></div></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Primary <span>fast access</span></div>
+        <div class="param"><label for="sizeRange">Size</label><div class="range-wrap"><input class="range" id="sizeRange" type="range" min="1" max="1000" value="181" aria-label="Brush size slider"></div><div class="valuebox"><input id="sizeNum" inputmode="decimal" value="18.0" aria-label="Brush size exact value"><span class="unit">px</span></div></div>
+        <div class="param"><label for="opacityRange">Opacity</label><div class="range-wrap"><input class="range" id="opacityRange" type="range" min="0" max="100" value="100" aria-label="Opacity slider"></div><div class="valuebox"><input id="opacityNum" inputmode="decimal" value="100" aria-label="Opacity exact value"><span class="unit">%</span></div></div>
+        <div class="param"><label for="flowRange">Flow</label><div class="range-wrap"><input class="range" id="flowRange" type="range" min="0" max="100" value="82" aria-label="Flow slider"></div><div class="valuebox"><input id="flowNum" inputmode="decimal" value="82" aria-label="Flow exact value"><span class="unit">%</span></div></div>
+        <div class="inline-note">Sizeのスライダーは低い値を細かく扱える非線形候補。数値欄から正確な値も入力できます。最大値・曲線はまだProduction値ではありません。</div>
+      </div>
+      <div class="section">
+        <div class="section-title">Stroke feel</div>
+        <div class="param"><label for="stabRange">Stabilize</label><div class="range-wrap"><input class="range" id="stabRange" type="range" min="0" max="100" value="28" aria-label="Stabilization slider"></div><div class="valuebox"><input id="stabNum" inputmode="decimal" value="28" aria-label="Stabilization exact value"><span class="unit">%</span></div></div>
+        <div class="param"><label for="hardRange">Hardness</label><div class="range-wrap"><input class="range" id="hardRange" type="range" min="0" max="100" value="74" aria-label="Hardness slider"></div><div class="valuebox"><input id="hardNum" inputmode="decimal" value="74" aria-label="Hardness exact value"><span class="unit">%</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="colorCard">
+    <header class="card-head">Color Picker <small>wheel + precise values</small></header>
+    <div class="card-body">
+      <div class="section">
+        <div class="color-top">
+          <div class="picker" id="picker" style="--h:228" tabindex="0" aria-label="Hue ring and saturation value field. Exact HSV fields are available below."><div class="sv" id="sv"><div class="sv-knob" id="svKnob"></div></div><div class="h-knob" id="hKnob"></div></div>
+          <div class="swatch-stack"><div class="swatch-pair"><div class="swatch-prev" title="Previous color"></div><div class="swatch-now" id="swatchNow" title="Current color"></div></div><div class="hex-read" id="hexRead">#6E8EFF</div></div>
+        </div>
+        <div class="segmented" aria-label="Color value model"><button class="active" data-model="hsv" aria-pressed="true">HSV</button><button data-model="rgb" aria-pressed="false">RGB</button><button data-model="hex" aria-pressed="false">HEX</button></div>
+        <div class="color-fields" id="hsvFields">
+          <div class="c-row"><label for="hVal">H</label><div class="c-track"><div class="c-fill" id="hFill"></div></div><input id="hVal" inputmode="decimal" value="228" aria-label="Hue degrees"></div>
+          <div class="c-row"><label for="sVal">S</label><div class="c-track"><div class="c-fill" id="sFill"></div></div><input id="sVal" inputmode="decimal" value="44" aria-label="Saturation percent"></div>
+          <div class="c-row"><label for="vVal">V</label><div class="c-track"><div class="c-fill" id="vFill"></div></div><input id="vVal" inputmode="decimal" value="100" aria-label="Value percent"></div>
+        </div>
+        <div class="color-fields" id="rgbFields" style="display:none">
+          <div class="c-row"><label for="rVal">R</label><div class="c-track"><div class="c-fill" id="rFill"></div></div><input id="rVal" inputmode="numeric" value="110" aria-label="Red value"></div>
+          <div class="c-row"><label for="gVal">G</label><div class="c-track"><div class="c-fill" id="gFill"></div></div><input id="gVal" inputmode="numeric" value="142" aria-label="Green value"></div>
+          <div class="c-row"><label for="bVal">B</label><div class="c-track"><div class="c-fill" id="bFill"></div></div><input id="bVal" inputmode="numeric" value="255" aria-label="Blue value"></div>
+        </div>
+        <div class="hex-input" id="hexInput"><label for="hexVal">HEX</label><input id="hexVal" value="#6E8EFF" aria-label="Hex color value"></div>
+      </div>
+      <div class="section"><div class="section-title">History <span>direct recall</span></div><div class="history" id="history"></div></div>
+      <div class="section"><div class="section-title">Palette <span>same destination, not a second color state</span></div><div class="history" id="palette"></div></div>
+    </div>
+  </section>
+
+  <section class="card" id="dynCard">
+    <header class="card-head">Dynamics Mapping <small>shared mapping UI</small></header>
+    <div class="card-body">
+      <div class="section">
+        <div class="select-row"><label for="sourceSelect">Input</label><select id="sourceSelect"><option>Pressure</option><option>Tilt</option><option>Azimuth</option><option>Speed</option><option>Distance</option><option>Random</option></select></div>
+        <div class="select-row"><label for="targetSelect">Affects</label><select id="targetSelect"><option>Size</option><option>Opacity</option><option>Flow</option><option>Spacing</option><option>Rotation</option><option>Scatter</option><option>Hue</option><option>Saturation</option><option>Value</option></select></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Response curve <span>drag center point</span></div>
+        <div class="curve-wrap" id="curveWrap"><span class="curve-label y">Output</span><span class="curve-label x">Input</span><svg viewBox="0 0 300 220" preserveAspectRatio="none"><defs><linearGradient id="curveGradient" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5EA8FF"/><stop offset=".58" stop-color="#8B7CFF"/><stop offset="1" stop-color="#C681DE"/></linearGradient></defs><path class="curve-base" d="M16 204 L284 16"/><path class="curve-path" id="curvePath" d="M16 204 C84 174 196 48 284 16"/><circle class="curve-point" cx="150" cy="108" r="7" id="curvePoint" tabindex="0" aria-label="Pressure curve center control point"/></svg></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Output range</div>
+        <div class="range-pair"><input class="small-input" id="rangeMin" inputmode="decimal" value="20" aria-label="Minimum output percent"><span class="dash">—</span><input class="small-input" id="rangeMax" inputmode="decimal" value="100" aria-label="Maximum output percent"></div>
+        <div class="switch-row"><span>Invert input</span><label class="switch"><input id="invertToggle" type="checkbox" role="switch"><span class="switch-ui"></span></label></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card primitive-card">
+    <header class="card-head">Other Primitives <small>semantic use</small></header>
+    <div class="card-body">
+      <div class="primitive"><h3>Segmented choice</h3><div class="mode-pills" id="modePills"><button class="active" aria-pressed="true">Normal</button><button aria-pressed="false">Multiply</button><button aria-pressed="false">Screen</button></div><p>少数の排他的な選択肢。選択は色だけでなく背景・Border・下線でも示す。</p></div>
+      <div class="primitive"><h3>Boolean switch</h3><div class="switch-row" style="border:0;height:32px"><span>Lock transparency</span><label class="switch"><input type="checkbox" role="switch" checked><span class="switch-ui"></span></label></div><p>即時ON/OFFする状態だけに使用。実行コマンドには使わない。</p></div>
+      <div class="primitive"><h3>Angle + exact value</h3><div class="angle-row"><div class="dial" aria-hidden="true"><div class="dial-hand"></div><div class="dial-dot"></div></div><input class="range" id="angleRange" type="range" min="0" max="360" value="45" aria-label="Rotation angle"><div class="valuebox"><input id="angleNum" value="45" inputmode="decimal" aria-label="Rotation angle exact value"><span class="unit">°</span></div></div><p>回転やBrush tip角度。Dialは視覚補助で、Slider/数値を代替経路として残す。</p></div>
+      <div class="primitive"><h3>Long enum</h3><div class="select-row" style="grid-template-columns:1fr;margin:0"><select aria-label="Interpolation mode"><option>Auto</option><option>Bilinear</option><option>Bicubic</option><option>Lanczos</option><option>Nearest</option></select></div><p>選択肢が多い場合はSegmentedに詰め込まずSelect/Popoverへ。</p></div>
+      <div class="primitive disabled-demo"><h3>Disabled with reason</h3><div class="mode-pills"><button disabled title="Vector layer is required">Edit vector width</button></div><p>無効化して消さず、理由を確認できる状態を想定。</p></div>
+    </div>
+  </section>
+
+  <div class="footer-note"><strong>Interaction rule:</strong><span>Drag = continuous preview, pointer-up/Enter = commit boundary.</span><span>数値欄・キーボード経路を残し、drag / wheel / color ringだけを必須操作にしない。</span></div>
+</main>
+</div>
+<script>
+(()=>{
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const ranges=[...document.querySelectorAll('.range')];
+function paintRange(el){const min=+el.min,max=+el.max,v=+el.value;el.style.setProperty('--p',`${(v-min)/(max-min)*100}%`)}ranges.forEach(r=>{paintRange(r);r.addEventListener('input',()=>paintRange(r))});
+// Brush values. Size slider uses a candidate nonlinear review mapping, not a production limit.
+const sizeRange=document.getElementById('sizeRange'),sizeNum=document.getElementById('sizeNum'),preview=document.getElementById('previewStroke');
+function posToSize(p){const t=(p-1)/999;return .5+Math.pow(t,2.15)*499.5}function sizeToPos(s){const t=Math.pow((clamp(s,.5,500)-.5)/499.5,1/2.15);return 1+t*999}
+function setSize(s,fromNum=false){s=clamp(Number(s)||.5,.5,500);sizeNum.value=s<10?s.toFixed(1):Math.round(s).toString();if(fromNum){sizeRange.value=Math.round(sizeToPos(s));paintRange(sizeRange)}preview.style.height=`${clamp(3+s*.55,3,84)}px`}
+sizeRange.addEventListener('input',()=>setSize(posToSize(+sizeRange.value)));sizeNum.addEventListener('change',()=>setSize(sizeNum.value,true));setSize(18,true);
+[['opacityRange','opacityNum'],['flowRange','flowNum'],['stabRange','stabNum'],['hardRange','hardNum']].forEach(([r,n])=>{const rr=document.getElementById(r),nn=document.getElementById(n);rr.addEventListener('input',()=>nn.value=rr.value);nn.addEventListener('change',()=>{rr.value=clamp(+nn.value||0,0,100);nn.value=rr.value;paintRange(rr)})});
+// Color
+let H=228,S=44,V=100;const picker=document.getElementById('picker'),sv=document.getElementById('sv'),svKnob=document.getElementById('svKnob'),hKnob=document.getElementById('hKnob'),swatch=document.getElementById('swatchNow'),hexRead=document.getElementById('hexRead'),hexVal=document.getElementById('hexVal');const hVal=document.getElementById('hVal'),sVal=document.getElementById('sVal'),vVal=document.getElementById('vVal');
+function hsv2rgb(h,s,v){s/=100;v/=100;const c=v*s,x=c*(1-Math.abs((h/60)%2-1)),m=v-c;let r=0,g=0,b=0;if(h<60){r=c;g=x}else if(h<120){r=x;g=c}else if(h<180){g=c;b=x}else if(h<240){g=x;b=c}else if(h<300){r=x;b=c}else{r=c;b=x}return [r,g,b].map(q=>Math.round((q+m)*255))}
+function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=60*(((g-b)/d)%6);else if(mx===g)h=60*((b-r)/d+2);else h=60*((r-g)/d+4)}if(h<0)h+=360;return [h,mx?d/mx*100:0,mx*100]}
+const toHex=rgb=>'#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+function updateColor(){H=(H%360+360)%360;S=clamp(S,0,100);V=clamp(V,0,100);picker.style.setProperty('--h',H);const rgb=hsv2rgb(H,S,V),hex=toHex(rgb);swatch.style.background=hex;hexRead.textContent=hex;hexVal.value=hex;hVal.value=Math.round(H);sVal.value=Math.round(S);vVal.value=Math.round(V);document.getElementById('hFill').style.width=`${H/3.6}%`;document.getElementById('sFill').style.width=`${S}%`;document.getElementById('vFill').style.width=`${V}%`;const a=H*Math.PI/180,r=86;hKnob.style.left=`${95+Math.cos(a)*r}px`;hKnob.style.top=`${95+Math.sin(a)*r}px`;svKnob.style.left=`${S}%`;svKnob.style.top=`${100-V}%`;if(typeof updateRgbFields==='function')updateRgbFields()}
+function colorPointer(e){const rect=picker.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,dx=e.clientX-cx,dy=e.clientY-cy,d=Math.hypot(dx,dy);if(d>67){H=(Math.atan2(dy,dx)*180/Math.PI+360)%360;updateColor();return}const sr=sv.getBoundingClientRect();S=clamp((e.clientX-sr.left)/sr.width*100,0,100);V=100-clamp((e.clientY-sr.top)/sr.height*100,0,100);updateColor()}
+picker.addEventListener('pointerdown',e=>{picker.setPointerCapture(e.pointerId);colorPointer(e)});picker.addEventListener('pointermove',e=>{if(picker.hasPointerCapture(e.pointerId))colorPointer(e)});picker.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')H-=1;if(e.key==='ArrowRight')H+=1;if(e.key==='ArrowUp')V+=1;if(e.key==='ArrowDown')V-=1;if(e.key.startsWith('Arrow')){e.preventDefault();updateColor()}});
+[[hVal,'h'],[sVal,'s'],[vVal,'v']].forEach(([el,k])=>el.addEventListener('change',()=>{if(k==='h')H=+el.value||0;if(k==='s')S=+el.value||0;if(k==='v')V=+el.value||0;updateColor()}));hexVal.addEventListener('change',()=>{let x=hexVal.value.trim().replace('#','');if(/^[0-9a-f]{6}$/i.test(x)){const [r,g,b]=[x.slice(0,2),x.slice(2,4),x.slice(4,6)].map(q=>parseInt(q,16));[H,S,V]=rgb2hsv(r,g,b);updateColor()}else updateColor()});
+const segs=[...document.querySelectorAll('.segmented button')],hsvFields=document.getElementById('hsvFields'),rgbFields=document.getElementById('rgbFields'),hexInput=document.getElementById('hexInput');const rVal=document.getElementById('rVal'),gVal=document.getElementById('gVal'),bVal=document.getElementById('bVal');function updateRgbFields(){const [r,g,b]=hsv2rgb(H,S,V);rVal.value=r;gVal.value=g;bVal.value=b;document.getElementById('rFill').style.width=`${r/2.55}%`;document.getElementById('gFill').style.width=`${g/2.55}%`;document.getElementById('bFill').style.width=`${b/2.55}%`}segs.forEach(b=>b.addEventListener('click',()=>{segs.forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',x===b?'true':'false')});const m=b.dataset.model;hsvFields.style.display=m==='hsv'?'grid':'none';rgbFields.style.display=m==='rgb'?'grid':'none';hexInput.style.display=m==='hex'?'grid':'none';updateRgbFields()}));[rVal,gVal,bVal].forEach(el=>el.addEventListener('change',()=>{const r=clamp(+rVal.value||0,0,255),g=clamp(+gVal.value||0,0,255),b=clamp(+bVal.value||0,0,255);[H,S,V]=rgb2hsv(r,g,b);updateColor();updateRgbFields()}));
+const historyColors=['#6E8EFF','#C681DE','#4B6579','#E9B7A5','#84BEB1','#2B3440','#E5D8C4','#9AABBF'];const paletteColors=['#1F2630','#516578','#7893AD','#ADC0D1','#E9EDF2','#B28DBD','#D4A98A','#7BAF9E'];function fillColors(id,arr){const root=document.getElementById(id);arr.forEach((c,i)=>{const b=document.createElement('button');b.className='chip-color'+(i===0&&id==='history'?' selected':'');b.style.background=c;b.setAttribute('aria-label',`Choose ${c}`);b.addEventListener('click',()=>{const x=c.slice(1);const [r,g,bb]=[0,2,4].map(j=>parseInt(x.slice(j,j+2),16));[H,S,V]=rgb2hsv(r,g,bb);updateColor()});root.appendChild(b)})}fillColors('history',historyColors);fillColors('palette',paletteColors);updateColor();
+// Dynamics curve center point
+const curveWrap=document.getElementById('curveWrap'),point=document.getElementById('curvePoint'),path=document.getElementById('curvePath');let px=150,py=108;function drawCurve(){point.setAttribute('cx',px);point.setAttribute('cy',py);path.setAttribute('d',`M16 204 C${Math.max(32,px-66)} ${Math.min(204,py+66)} ${Math.min(268,px+66)} ${Math.max(16,py-66)} 284 16`)}function movePoint(e){const r=curveWrap.getBoundingClientRect();px=clamp((e.clientX-r.left)/r.width*300,28,272);py=clamp((e.clientY-r.top)/r.height*220,28,192);drawCurve()}point.addEventListener('pointerdown',e=>{point.setPointerCapture(e.pointerId);movePoint(e)});point.addEventListener('pointermove',e=>{if(point.hasPointerCapture(e.pointerId))movePoint(e)});point.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')px-=3;if(e.key==='ArrowRight')px+=3;if(e.key==='ArrowUp')py-=3;if(e.key==='ArrowDown')py+=3;px=clamp(px,28,272);py=clamp(py,28,192);if(e.key.startsWith('Arrow')){e.preventDefault();drawCurve()}});drawCurve();
+// primitive controls
+const mode=[...document.querySelectorAll('#modePills button')];mode.forEach(b=>b.addEventListener('click',()=>mode.forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',x===b?'true':'false')})));
+const angleR=document.getElementById('angleRange'),angleN=document.getElementById('angleNum'),hand=document.querySelector('.dial-hand');function setAngle(v,fromNum=false){v=((+v||0)%360+360)%360;angleN.value=Math.round(v);angleR.value=v;if(fromNum)paintRange(angleR);hand.style.transform=`rotate(${v}deg)`}angleR.addEventListener('input',()=>setAngle(angleR.value));angleN.addEventListener('change',()=>setAngle(angleN.value,true));setAngle(45,true);
+window.__ILLUSTRO_INPUT_LAB__={version:'candidate-1',get brushSize(){return Number(sizeNum.value)},get hsv(){return [H,S,V]},cards:document.querySelectorAll('.card').length};
+})();
+</script>
+</body>
+</html>

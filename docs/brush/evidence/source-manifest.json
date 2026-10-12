@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "integrationParent": "dd35eb845c954399060a31651414070b7495b8fc",
+  "mainBase": "bdc7135b51033982d90ea5dad104bb04fc107df2",
+  "scope": "current integration source and offline HTML; excludes result documents and this manifest",
+  "files": [
+    {
+      "path": "package-lock.json",
+      "bytes": 48202,
+      "sha256": "88a92965733172767cc05d35dbf62cd3bb0fd69f652ffedbb63195e33ab571eb"
+    },
+    {
+      "path": "package.json",
+      "bytes": 934,
+      "sha256": "f846a59e101364980d5e5bd55dbd6e226d09a0192898137ed10555f356c2878d"
+    },
+    {
+      "path": "packages/brush/src/benchmark.mts",
+      "bytes": 5057,
+      "sha256": "e56bdaa759652bd57be966ab9789ffd091e12561fa2231444e50377e82847814"
+    },
+    {
+      "path": "packages/brush/src/coreSession.ts",
+      "bytes": 2723,
+      "sha256": "e69d6dcf3d23d0e876824bf92f7e18153e51a7c64bf34a604043061ed6da0cea"
+    },
+    {
+      "path": "packages/brush/src/coverage.ts",
+      "bytes": 5256,
+      "sha256": "afd80041509eb4dba7489471105de522b3a86c5a55504235cb9da308a503dbbd"
+    },
+    {
+      "path": "packages/brush/src/dynamics.ts",
+      "bytes": 4732,
+      "sha256": "187136e25b57419e9fe40c5b8e21db526b50bd5ae89df56ab266a1a692c63db8"
+    },
+    {
+      "path": "packages/brush/src/engine.test.ts",
+      "bytes": 9999,
+      "sha256": "5ebf0d5e99f5da143279c13d20123e71e9f08aaddd0ea113eb127580fbd5a537"
+    },
+    {
+      "path": "packages/brush/src/engine.ts",
+      "bytes": 12290,
+      "sha256": "cdc9489c96ebbae4a52d6f745daf4010b52157ecf3416a33c44f67ae23e00a4d"
+    },
+    {
+      "path": "packages/brush/src/fixtures.ts",
+      "bytes": 1471,
+      "sha256": "bc97ebcd6981d14b2cb406c979016f2dde70045481d8973a241ceb907d206120"
+    },
+    {
+      "path": "packages/brush/src/index.ts",
+      "bytes": 214,
+      "sha256": "6047c155d1ebe836f34101502a0d698d607fc496dafbb6d11396398c2e97e44f"
+    },
+    {
+      "path": "packages/brush/src/input.ts",
+      "bytes": 2724,
+      "sha256": "d2f74ddb797d108811266bb9acb3e10442f7748c96dcd7e51006755968545c71"
+    },
+    {
+      "path": "packages/brush/src/math.ts",
+      "bytes": 1689,
+      "sha256": "8e0468ad6a1ac34d51b6f21e28732a771be13d1db6dc9c06e68bbc8fb427953d"
+    },
+    {
+      "path": "packages/brush/src/optimization.test.ts",
+      "bytes": 2024,
+      "sha256": "869ddf947c1ea86a939f315c8abedbf2edf0b77390c5d306cfeca27f58e39235"
+    },
+    {
+      "path": "packages/brush/src/presets.ts",
+      "bytes": 18057,
+      "sha256": "717000704e8e567acc62afe8e5560d812bdf352252ab40f891904ff6953d56f7"
+    },
+    {
+      "path": "packages/brush/src/random.ts",
+      "bytes": 1125,
+      "sha256": "ac3020e62ebf437e521552424373dd3494f1fccd27cb314205e8fee87ef6fbce"
+    },
+    {
+      "path": "packages/brush/src/raster.test.ts",
+      "bytes": 9947,
+      "sha256": "9e12677a5bcfb920582f5c1fed28bb7e0a098b17122971b60467b8e9df2d734e"
+    },
+    {
+      "path": "packages/brush/src/raster.ts",
+      "bytes": 8130,
+      "sha256": "23a5869faed8c8443ac6877fd710437fa2e4c0343bc7de5869f41e04ab1725e8"
+    },
+    {
+      "path": "packages/brush/src/reconstruction.ts",
+      "bytes": 2883,
+      "sha256": "75d2834918469585b3f18eb7c9df79b265a3544c58cc5ad17edcce839bdc9cd3"
+    },
+    {
+      "path": "packages/brush/src/record.ts",
+      "bytes": 7869,
+      "sha256": "26b58f6f436cfd3526a656cc3fa788d7b4eebfcd3b83d04b27a8e0eb320e9d7d"
+    },
+    {
+      "path": "packages/brush/src/types.ts",
+      "bytes": 3055,
+      "sha256": "c84497b2c4f0ee8a4ffa6f8798a79ee11acd596bf2618d2ddfd70f7695934fa4"
+    },
+    {
+      "path": "packages/core/src/commit.ts",
+      "bytes": 2119,
+      "sha256": "eb89cf19fb6cb9f75b86ae77506678128c8f0179d089c017101bb91585378d36"
+    },
+    {
+      "path": "packages/core/src/history.ts",
+      "bytes": 1833,
+      "sha256": "229f3b8815178e9103f90894d95083feda864fae01d545cefb129ff11ef6e05e"
+    },
+    {
+      "path": "packages/core/src/transaction.ts",
+      "bytes": 3793,
+      "sha256": "641a24446a50df416e2a27b04c30581ce1a458780480614bb4eb07a25b986fb0"
+    },
+    {
+      "path": "prototypes/brush-lab/browser-check.mjs",
+      "bytes": 13724,
+      "sha256": "2583cd88e57e443a2eb090af02b511ca4745a54a457efb645c2ea0e242239ba9"
+    },
+    {
+      "path": "prototypes/brush-lab/build.mjs",
+      "bytes": 784,
+      "sha256": "2cbe204be38e67916e0f3191a80fdbfcdc94b5783fe08c85eae2c2ab5860c9f5"
+    },
+    {
+      "path": "prototypes/brush-lab/illustro-brush-lab.html",
+      "bytes": 56803,
+      "sha256": "9c7b35af2df1e18d34f2d05eba4c93b01555e89e08575bcfa8cca10cf2d8efab"
+    },
+    {
+      "path": "prototypes/brush-lab/main.ts",
+      "bytes": 20881,
+      "sha256": "ecc7436e3ee73493e0f0f2c3b70bf4cdd37a86d358644c9073ebc1d6ca9028a7"
+    }
+  ]
+}

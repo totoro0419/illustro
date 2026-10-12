@@ -53,21 +53,22 @@
 | Wetness / Pigment等の内部状態 | Investigate | Wet Media基盤 |
 | 紙質・粒子・質感 | Required / Investigate | Brush/Wet Media連携 |
 
-## C. 線画レイヤー / 領域分け
-
-> この領域は**設計をリセット済み**。旧 Lineart Region / Persistent Region ID / 自動再マッピング設計は現在の仕様として扱わない。
+## C. 線画・Region Intelligence
 
 | 機能 | 状態 | 備考 |
 |---|---|---|
-| 線画レイヤー | Core / Design reset | ラスター線画から生成する専用レイヤー。現時点では完成目標の概念のみ確定 |
-| Raster線画からの生成 | Core | 通常のストローク中心Raster Layerを「複製する」感覚で作成 |
-| 太さを持たない境界 | Core | 描画線の太さではなく、領域を分ける境界として保持 |
-| 領域分けデータ | Core | 線そのものではなく、どの場所がどの領域かを表す構造が主データ |
-| 接続・領域分けの手動修正 | Core | 線画レイヤー選択中に自動判定の誤りを直接修正できる |
-| 線画からの自動抽出 | Investigate | 接続判定を含む抽出アルゴリズムは旧成果を破棄し、ゼロから再設計 |
-| 線画レイヤー基準のFill | Required | 色差ではなく線画レイヤー上の領域分けをFill基準として利用 |
-| 線画レイヤー基準のSelection | Required | 領域分けを選択範囲生成へ利用可能にする |
-| 元Raster編集後の追従 | Investigate | 自動追従・再生成・独立保持の扱いは未決定 |
+| Lineart Region System | Core | 製品定義級の独自機能 |
+| 閉領域検出 | Core | 第一段階の必須能力 |
+| Persistent Region ID | Core | 再計算後の対応付けが必要 |
+| Region隣接グラフ | Core | 彩色支援等に利用 |
+| Boundary Tracking | Core | |
+| Line Connectivity Analysis | Core | |
+| Region Selection | Required | |
+| Region Fill | Required | |
+| Lineart-linked Coloring | Core | 線画変更後に既存塗りを再マッピング |
+| 追従強度・条件設定 | Required | |
+| 変更結果の確認・Undo | Required | 自動変更をユーザー制御下に置く |
+| Semantic Region Label | Investigate | 初期段階では必須にしない |
 
 ## D. 塗り・彩色
 
@@ -78,18 +79,18 @@
 | Gap Tolerance | Required | |
 | Boundary Expand / Contract | Required | |
 | Multi-layer Reference Fill | Required | |
-| Lineart Layer Reference Fill | Required | 線画レイヤーの領域分けを参照 |
+| Lineart Reference Fill | Required | |
 | Color Difference Tolerance | Required | |
 | Enclose and Fill | Required | 囲って塗る |
 | Trace and Fill | Required | なぞって塗る |
 | Drag Fill | Required | |
-| Continuous Area Fill | Required | 線画レイヤー領域にも対応 |
+| Continuous Region Fill | Required | |
 | Smart Fill 統合UI | Core | モード分散を避ける |
 | Smart Color Assist | Core | ユーザー補助。生成AI主体にしない |
 | Base Color候補 | Required / Investigate | 決定的アルゴリズム優先 |
 | Palette候補 | Required / Investigate | |
 | 隣接色調和支援 | Required / Investigate | |
-| Lineart Layer Area Recolor | Required | 線画レイヤー領域単位 |
+| Region Recolor | Required | |
 | Shadow / Highlight候補 | Investigate | |
 | Color Temperature調整 | Required | |
 | 全体色調整 | Required | |
@@ -178,7 +179,7 @@
 | Freehand Selection | Required | |
 | Polygonal Selection | Required | |
 | Color / Similarity Selection | Required | アルゴリズム未確定 |
-| Lineart Layer Area Selection | Required | 線画レイヤーの領域分けを利用 |
+| Region Selection | Required | Region System連携 |
 | Add / Subtract / Intersect | Required | |
 | Invert Selection | Required | |
 | Feather | Required | |
@@ -415,7 +416,7 @@
 |---|---|---|
 | 生成AIを中心価値にする | Out of scope | 明示的方針 |
 | 色提案 | Investigate | 決定的アルゴリズム優先 |
-| 線画レイヤー領域補助 | Investigate | |
+| Region補助 | Investigate | |
 | Selection補助 | Investigate | |
 | 整理補助 | Investigate | |
 | 修正補助 | Investigate | ユーザー制御必須 |

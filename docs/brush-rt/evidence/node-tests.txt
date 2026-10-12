@@ -1,0 +1,23 @@
+✔ all 56 unchanged presets generate and independently replay version 2 records (168.005084ms)
+✔ prediction never enters records (0.571573ms)
+✔ out-of-order input and non-finite sensors rejected (0.376906ms)
+✔ sensors and absent-pressure fallbacks retained (0.229228ms)
+✔ smoother has no constant-speed phase lag at every tested frequency (6.597752ms)
+✔ local regression reduces alternating jitter with bounded displacement (0.999705ms)
+✔ corners reset and guarded prediction does not overshoot reversal (0.331789ms)
+✔ prediction time/distance limited and expires after actual input stops (0.179615ms)
+✔ latest mailbox keeps only newest state, never drops canonical input (18.588075ms)
+✔ tampered commands are rejected by independent replay (0.687695ms)
+✔ stroke opacity caps overlap and erase preserves color correctly (1.994702ms)
+✔ dirty work is clipped to document tiles (0.281595ms)
+✔ confirmed tile batches bounded to 16 commands and preserve order (0.709757ms)
+✔ formal stall cannot create a FIFO of submitted live snapshots (1.642603ms)
+✔ size/frequency/180-second scheduling simulation retains every input without live backlog (3621.275526ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4042.283866

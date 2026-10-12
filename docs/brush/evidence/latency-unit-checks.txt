@@ -1,0 +1,68 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:check
+> npm run brush:typecheck && npm run brush:test && npm run core:check
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:typecheck
+> npm --workspace @illustro/brush run typecheck
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> @illustro/brush@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:test
+> npm --workspace @illustro/brush run test
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> @illustro/brush@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.2 /workspace/scratch/9ba3e7d038e2/illustro-integration/packages/brush
+
+
+ Test Files  3 passed (3)
+      Tests  169 passed (169)
+   Start at  19:29:14
+   Duration  7.98s (tests 97%, transform 2%, import 1%)
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 core:check
+> npm run core:typecheck && npm run core:test
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 core:typecheck
+> npm --workspace @illustro/core run typecheck
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> @illustro/core@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 core:test
+> npm --workspace @illustro/core run test
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> @illustro/core@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.2 /workspace/scratch/9ba3e7d038e2/illustro-integration/packages/core
+
+
+ Test Files  8 passed (8)
+      Tests  8 passed (8)
+   Start at  19:29:23
+   Duration  443ms (transform 75%, import 17%, tests 4%, worker 3%)
+

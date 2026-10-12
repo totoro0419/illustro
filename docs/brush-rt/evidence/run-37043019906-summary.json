@@ -1,0 +1,2720 @@
+{
+  "run": 37043019906,
+  "commit": "114d70b413ff6ff11cefb79276fb9f28db7fbef7",
+  "tree": "2ed147bfc7ffee1be96b1a28f24d0d86ec507add",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "checks": [
+        {
+          "name": "mouse-reference",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "undo-redo-canonical",
+          "status": "PASS"
+        },
+        {
+          "name": "preset-0",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-1",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-2",
+          "maxChannelError": 1,
+          "meanChannelError": 0.00054931640625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-3",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-4",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-5",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-6",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-7",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-8",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-9",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-10",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-11",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-12",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-13",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000005086263020833333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-14",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-15",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-16",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000006357828776041667,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-17",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-18",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000008900960286458334,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-19",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-20",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000010172526041666666,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-21",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000016530354817708332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-22",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000012715657552083334,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-23",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-24",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-25",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-26",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-27",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-28",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-29",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-30",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-31",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-32",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0004247029622395833,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-33",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-34",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000025431315104166665,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-35",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-36",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-37",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-38",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-39",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-40",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-41",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-42",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-43",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-44",
+          "maxChannelError": 242,
+          "meanChannelError": 0.000576019287109375,
+          "channelsOver3": 3,
+          "badPixels": [
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 0,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 1,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 2,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-45",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-46",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-47",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000025431315104166665,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-48",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-49",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-50",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-51",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-52",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-53",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-54",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000027974446614583332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-55",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000030517578125,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "blend-normal",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0018984476725260417,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 2
+        },
+        {
+          "name": "blend-multiply",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0018399556477864583,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 3
+        },
+        {
+          "name": "blend-screen",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0018285115559895833,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 4
+        },
+        {
+          "name": "blend-erase",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0018285115559895833,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 5
+        },
+        {
+          "name": "live-before-confirmed-0",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1.007843137254902,
+          "meanPremultipliedChannelError": 0.0006436566122217108,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-1",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1,
+          "meanPremultipliedChannelError": 0.0009918561947891058,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-4",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1,
+          "meanPremultipliedChannelError": 0.00011874429540696479,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-7",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1,
+          "meanPremultipliedChannelError": 0.00017193563623365995,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-13",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1,
+          "meanPremultipliedChannelError": 0.0006388146892871738,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-16",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1,
+          "meanPremultipliedChannelError": 0.0001781139498442608,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-24",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1,
+          "meanPremultipliedChannelError": 0.0012637219397850436,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-27",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1,
+          "meanPremultipliedChannelError": 0.0012227924820644564,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-39",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 1.007843137254902,
+          "meanPremultipliedChannelError": 0.0007307613597196697,
+          "channelsOver3": 0
+        },
+        {
+          "name": "live-before-confirmed-49",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 0,
+          "meanPremultipliedChannelError": 0,
+          "channelsOver3": 0
+        }
+      ],
+      "benchmarks": [
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 16,
+          "hz": 60,
+          "duration": 4010.6999999999534,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "scheduledSamples": 240,
+          "inputGeneratorMaxLateness": 80.83333333333331,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 55,
+          "startP95": 132.6333333332634,
+          "endP95": 80.29999999993015,
+          "growth": -52.33333333333326,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 330.29999999993015,
+          "maxDistance": 355.6909714558751,
+          "maxPreviewQueueAge": 71.36666666661995,
+          "maxQueueAge": 596.2999999999302,
+          "maxConfirmedLag": 516.6666666666665,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 16,
+          "hz": 120,
+          "duration": 4006.399999999907,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "scheduledSamples": 480,
+          "inputGeneratorMaxLateness": 22.199999999953434,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 59,
+          "startP95": 76.29999999993015,
+          "endP95": 76.73333333324081,
+          "growth": 0.4333333333106566,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 107.29999999993015,
+          "maxDistance": 179.59169889254596,
+          "maxPreviewQueueAge": 30.533333333287374,
+          "maxQueueAge": 675.9666666665962,
+          "maxConfirmedLag": 608.3333333333321,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 16,
+          "hz": 240,
+          "duration": 4012.6999999999534,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 17.699999999953434,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 59,
+          "startP95": 71.43333333331066,
+          "endP95": 70.43333333330884,
+          "growth": -1.000000000001819,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 115.80000000004657,
+          "maxDistance": 203.54508584547813,
+          "maxPreviewQueueAge": 21.766666666644596,
+          "maxQueueAge": 1988.6999999999534,
+          "maxConfirmedLag": 1920.8333333333321,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 128,
+          "hz": 60,
+          "duration": 4012.5,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "scheduledSamples": 240,
+          "inputGeneratorMaxLateness": 17.23333333323899,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 46,
+          "startP95": 112.63333333326227,
+          "endP95": 98.89999999990687,
+          "growth": -13.733333333355404,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 115.79999999993015,
+          "maxDistance": 179.59169889254423,
+          "maxPreviewQueueAge": 33.79999999993015,
+          "maxQueueAge": 2763.5666666665747,
+          "maxConfirmedLag": 2666.666666666668,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 128,
+          "hz": 120,
+          "duration": 4010.70000000007,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "scheduledSamples": 480,
+          "inputGeneratorMaxLateness": 17.566666666687524,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 39,
+          "startP95": 105.16666666666424,
+          "endP95": 104.93333333331248,
+          "growth": -0.23333333335176576,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 119.20000000006985,
+          "maxDistance": 195.68837361490955,
+          "maxPreviewQueueAge": 23.16666666666424,
+          "maxQueueAge": 3339.8333333333358,
+          "maxConfirmedLag": 3250,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 128,
+          "hz": 240,
+          "duration": 4013.20000000007,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 18.5,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 27,
+          "startP95": 151.3666666667341,
+          "endP95": 183.83333333333576,
+          "growth": 32.46666666660167,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 183.8666666667341,
+          "maxDistance": 313.1382501710315,
+          "maxPreviewQueueAge": 21.66666666666424,
+          "maxQueueAge": 3825.5,
+          "maxConfirmedLag": 3675,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 60,
+          "duration": 4011.0999999999767,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "scheduledSamples": 240,
+          "inputGeneratorMaxLateness": 15,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 4,
+          "startP95": 177,
+          "endP95": 1658.8666666667414,
+          "growth": 1481.8666666667414,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 1658.8666666667414,
+          "maxDistance": 635.5626666666703,
+          "maxPreviewQueueAge": 28.533333333398332,
+          "maxQueueAge": 3092.20000000007,
+          "maxConfirmedLag": 1433.3333333333285,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 120,
+          "duration": 4014.9000000000233,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "scheduledSamples": 480,
+          "inputGeneratorMaxLateness": 18.79999999993015,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 3,
+          "startP95": 182.59999999997672,
+          "endP95": null,
+          "growth": null,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 2022.1333333332586,
+          "maxDistance": 781.6209409754039,
+          "maxPreviewQueueAge": 24.266666666648234,
+          "maxQueueAge": 2913.79999999993,
+          "maxConfirmedLag": 891.6666666666715,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4013,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.466666666587116,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 3,
+          "startP95": 184.79999999993015,
+          "endP95": 2035.0666666665638,
+          "growth": 1850.2666666666337,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 2035.0666666665638,
+          "maxDistance": 785.4978842200275,
+          "maxPreviewQueueAge": 22.29999999993015,
+          "maxQueueAge": 3580.899999999907,
+          "maxConfirmedLag": 1545.833333333343,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 60,
+          "duration": 4007.70000000007,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "scheduledSamples": 240,
+          "inputGeneratorMaxLateness": 20.900000000023283,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 2,
+          "startP95": 294.10000000009313,
+          "endP95": null,
+          "growth": null,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 1557.8666666667268,
+          "maxDistance": 895.8868962370155,
+          "maxPreviewQueueAge": 27.433333333436167,
+          "maxQueueAge": 1841.2000000000698,
+          "maxConfirmedLag": 283.33333333334303,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 120,
+          "duration": 4009.2999999998137,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "scheduledSamples": 480,
+          "inputGeneratorMaxLateness": 17.26666666654637,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 2,
+          "startP95": 293.0999999998603,
+          "endP95": 3085.1333333331277,
+          "growth": 2792.0333333332674,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 3085.1333333331277,
+          "maxDistance": 1195.1658418020645,
+          "maxPreviewQueueAge": 18.466666666499805,
+          "maxQueueAge": 3376.7999999998137,
+          "maxConfirmedLag": 291.66666666668607,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4013,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 19.199999999953434,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 1,
+          "startP95": 297.80000000004657,
+          "endP95": null,
+          "growth": null,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 297.80000000004657,
+          "maxDistance": 363.95368473041066,
+          "maxPreviewQueueAge": 18.633333333360497,
+          "maxQueueAge": 297.80000000004657,
+          "maxConfirmedLag": 0,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 5011.199999999953,
+          "shape": "reversal",
+          "prediction": true,
+          "confirmDelay": 100,
+          "actualSamples": 1200,
+          "scheduledSamples": 1200,
+          "inputGeneratorMaxLateness": 18.433333333174232,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 1,
+          "startP95": 329.69999999995343,
+          "endP95": null,
+          "growth": null,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 329.69999999995343,
+          "maxDistance": 176.81066666665544,
+          "maxPreviewQueueAge": 21.366666666639503,
+          "maxQueueAge": 329.69999999995343,
+          "maxConfirmedLag": 0,
+          "physicalVisibleTip": "UNVERIFIED"
+        }
+      ],
+      "info": {
+        "backend": "WebGL2",
+        "desynchronized": true,
+        "renderer": "WebKit WebGL",
+        "hardwareVerified": false
+      },
+      "capabilities": {
+        "raw": true,
+        "coalesced": true,
+        "predictedApi": true
+      },
+      "pixelDifferences": [
+        {
+          "index": 44,
+          "maxChannelError": 242,
+          "meanChannelError": 0.000576019287109375,
+          "channelsOver3": 3,
+          "badPixels": [
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 0,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 1,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 2,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        }
+      ],
+      "benchmarkDimensions": [
+        2048,
+        1536
+      ],
+      "status": "FAIL",
+      "failure": "page.evaluate: Error: confirmed renderer drain timeout\n    at GpuRenderer.drain ([embedded module]:38:134)\n    at async GpuRenderer.reset ([embedded module]:40:16)\n    at async RealtimeSession.rebuild ([embedded module]:19:18)\n    at async eval (eval at evaluate (:311:30), <anonymous>:1:42)\n    at async <anonymous>:337:30\n    at /home/runner/work/illustro/illustro/prototypes/brush-rt/browser-check.mjs:24:48",
+      "consoleErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "checks": [
+        {
+          "name": "mouse-reference",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "undo-redo-canonical",
+          "status": "PASS"
+        },
+        {
+          "name": "preset-0",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-1",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-2",
+          "maxChannelError": 1,
+          "meanChannelError": 0.00054931640625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-3",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-4",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-5",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-6",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-7",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-8",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-9",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-10",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-11",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-12",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-13",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000005086263020833333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-14",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-15",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-16",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000006357828776041667,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-17",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-18",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000008900960286458334,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-19",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-20",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000010172526041666666,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-21",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000016530354817708332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-22",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000012715657552083334,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-23",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-24",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-25",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-26",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-27",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-28",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-29",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-30",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-31",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-32",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0004247029622395833,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-33",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-34",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000025431315104166665,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-35",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-36",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-37",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-38",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-39",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-40",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-41",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-42",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-43",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-44",
+          "maxChannelError": 242,
+          "meanChannelError": 0.000576019287109375,
+          "channelsOver3": 3,
+          "badPixels": [
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 0,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 1,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 2,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-45",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000003814697265625,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-46",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-47",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000025431315104166665,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-48",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-49",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-50",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-51",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0000012715657552083333,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-52",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-53",
+          "maxChannelError": 0,
+          "meanChannelError": 0,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-54",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000027974446614583332,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "preset-55",
+          "maxChannelError": 1,
+          "meanChannelError": 0.000030517578125,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        },
+        {
+          "name": "blend-normal",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0018781026204427083,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 2
+        },
+        {
+          "name": "blend-multiply",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0018246968587239583,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 3
+        },
+        {
+          "name": "blend-screen",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0018094380696614583,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 4
+        },
+        {
+          "name": "blend-erase",
+          "maxChannelError": 1,
+          "meanChannelError": 0.0018094380696614583,
+          "channelsOver3": 0,
+          "badPixels": [],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 5
+        },
+        {
+          "name": "live-before-confirmed-0",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 248,
+          "meanPremultipliedChannelError": 0.30343111823586805,
+          "channelsOver3": 3646
+        },
+        {
+          "name": "live-before-confirmed-1",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 112,
+          "meanPremultipliedChannelError": 0.13232885622510765,
+          "channelsOver3": 3335
+        },
+        {
+          "name": "live-before-confirmed-4",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 255,
+          "meanPremultipliedChannelError": 0.60583376416973,
+          "channelsOver3": 5315
+        },
+        {
+          "name": "live-before-confirmed-7",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 255,
+          "meanPremultipliedChannelError": 0.25350159289790103,
+          "channelsOver3": 2433
+        },
+        {
+          "name": "live-before-confirmed-13",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 240,
+          "meanPremultipliedChannelError": 0.1898279377058438,
+          "channelsOver3": 2793
+        },
+        {
+          "name": "live-before-confirmed-16",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 166,
+          "meanPremultipliedChannelError": 0.2834095674402592,
+          "channelsOver3": 3921
+        },
+        {
+          "name": "live-before-confirmed-24",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 90,
+          "meanPremultipliedChannelError": 0.1313134735705802,
+          "channelsOver3": 4349
+        },
+        {
+          "name": "live-before-confirmed-27",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 33,
+          "meanPremultipliedChannelError": 0.03161710851332738,
+          "channelsOver3": 2090
+        },
+        {
+          "name": "live-before-confirmed-39",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 254,
+          "meanPremultipliedChannelError": 0.44678706748812774,
+          "channelsOver3": 5078
+        },
+        {
+          "name": "live-before-confirmed-49",
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 0,
+          "meanPremultipliedChannelError": 0,
+          "channelsOver3": 0
+        }
+      ],
+      "benchmarks": [
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 16,
+          "hz": 60,
+          "duration": 4012.100000000006,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "scheduledSamples": 240,
+          "inputGeneratorMaxLateness": 281.16666666666663,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 64,
+          "startP95": 311,
+          "endP95": 127.03333333333103,
+          "growth": -183.96666666666897,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 414.23333333332755,
+          "maxDistance": 308.73026669768564,
+          "maxPreviewQueueAge": 294.33333333333337,
+          "maxQueueAge": 1954.5,
+          "maxConfirmedLag": 1850,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 16,
+          "hz": 120,
+          "duration": 4017.4000000000087,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "scheduledSamples": 480,
+          "inputGeneratorMaxLateness": 58.16666666666606,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 70,
+          "startP95": 124.60000000000582,
+          "endP95": 120.26666666667188,
+          "growth": -4.33333333333394,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 130,
+          "maxDistance": 181.81105995080827,
+          "maxPreviewQueueAge": 64.19999999999709,
+          "maxQueueAge": 2012.800000000003,
+          "maxConfirmedLag": 1908.333333333334,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 16,
+          "hz": 240,
+          "duration": 4033.5,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 65.90000000000873,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 69,
+          "startP95": 120.73333333334085,
+          "endP95": 115.13333333333503,
+          "growth": -5.600000000005821,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 129.86666666666497,
+          "maxDistance": 158.27194628689787,
+          "maxPreviewQueueAge": 66.86666666666497,
+          "maxQueueAge": 2714.633333333335,
+          "maxConfirmedLag": 2612.5,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 128,
+          "hz": 60,
+          "duration": 4060.899999999994,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "scheduledSamples": 240,
+          "inputGeneratorMaxLateness": 115.5,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 40,
+          "startP95": 196.39999999999418,
+          "endP95": 207.39999999999418,
+          "growth": 11,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 227.13333333332412,
+          "maxDistance": 278.19901358625447,
+          "maxPreviewQueueAge": 124.06666666665842,
+          "maxQueueAge": 3521.9666666666526,
+          "maxConfirmedLag": 3316.6666666666642,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 128,
+          "hz": 120,
+          "duration": 4091,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "scheduledSamples": 480,
+          "inputGeneratorMaxLateness": 167.16666666666424,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 30,
+          "startP95": 253.29999999998836,
+          "endP95": 314.3666666666468,
+          "growth": 61.06666666665842,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 326.5,
+          "maxDistance": 354.63431525535685,
+          "maxPreviewQueueAge": 169.79999999998836,
+          "maxQueueAge": 3905.1666666666642,
+          "maxConfirmedLag": 3641.6666666666642,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 128,
+          "hz": 240,
+          "duration": 4240.899999999994,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 290.80000000001746,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 18,
+          "startP95": 319.76666666667734,
+          "endP95": 575.3000000000175,
+          "growth": 255.53333333334012,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 584.8000000000175,
+          "maxDistance": 581.7853980526064,
+          "maxPreviewQueueAge": 291.966666666689,
+          "maxQueueAge": 4208.633333333346,
+          "maxConfirmedLag": 3633.3333333333285,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 512,
+          "hz": 60,
+          "duration": 5831.699999999997,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "scheduledSamples": 240,
+          "inputGeneratorMaxLateness": 2188.899999999994,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 6,
+          "startP95": 223.09999999997672,
+          "endP95": 4088.7666666666337,
+          "growth": 3865.666666666657,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 4088.7666666666337,
+          "maxDistance": 880.8888957279295,
+          "maxPreviewQueueAge": 2198.366666666654,
+          "maxQueueAge": 5822.099999999962,
+          "maxConfirmedLag": 1733.3333333333285,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 512,
+          "hz": 120,
+          "duration": 6500.5,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "scheduledSamples": 480,
+          "inputGeneratorMaxLateness": 3063.666666666657,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 5,
+          "startP95": 218.5,
+          "endP95": 4661.700000000012,
+          "growth": 4443.200000000012,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 4661.700000000012,
+          "maxDistance": 783.2207623143279,
+          "maxPreviewQueueAge": 3061.7000000000116,
+          "maxQueueAge": 6486.700000000012,
+          "maxConfirmedLag": 1825,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 6010.5,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 2936.2333333333663,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 4,
+          "startP95": 219.09999999997672,
+          "endP95": 5351.833333333343,
+          "growth": 5132.733333333366,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 5351.833333333343,
+          "maxDistance": 1027.2869414746324,
+          "maxPreviewQueueAge": 2931,
+          "maxQueueAge": 5993.5,
+          "maxConfirmedLag": 641.666666666657,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 1024,
+          "hz": 60,
+          "duration": 4748.5,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 240,
+          "scheduledSamples": 240,
+          "inputGeneratorMaxLateness": 3946.2999999999884,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 3,
+          "startP95": 459.20000000001164,
+          "endP95": 4269.433333333349,
+          "growth": 3810.233333333337,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 4269.433333333349,
+          "maxDistance": 436.753634596441,
+          "maxPreviewQueueAge": 3952.766666666721,
+          "maxQueueAge": 4736.100000000035,
+          "maxConfirmedLag": 466.66666666668607,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 1024,
+          "hz": 120,
+          "duration": 8849,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 480,
+          "scheduledSamples": 480,
+          "inputGeneratorMaxLateness": 7749.233333333337,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 3,
+          "startP95": 470,
+          "endP95": 8336.033333333326,
+          "growth": 7866.033333333326,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 8336.033333333326,
+          "maxDistance": 279.3131216231673,
+          "maxPreviewQueueAge": 7744.366666666698,
+          "maxQueueAge": 8827.700000000012,
+          "maxConfirmedLag": 491.66666666668607,
+          "physicalVisibleTip": "UNVERIFIED"
+        },
+        {
+          "backend": {
+            "backend": "WebGPU",
+            "adapter": "",
+            "hardwareVerified": false,
+            "desynchronized": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 10810.800000000105,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 9192.100000000035,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "samples": 3,
+          "startP95": 474.80000000004657,
+          "endP95": 10281.666666666744,
+          "growth": 9806.866666666698,
+          "growthGate": "FAIL_OR_INSUFFICIENT",
+          "maxAge": 10281.666666666744,
+          "maxDistance": 476.4891974541297,
+          "maxPreviewQueueAge": 9181.666666666744,
+          "maxQueueAge": 10777.500000000058,
+          "maxConfirmedLag": 495.83333333331393,
+          "physicalVisibleTip": "UNVERIFIED"
+        }
+      ],
+      "info": {
+        "backend": "WebGPU",
+        "adapter": "",
+        "hardwareVerified": false,
+        "desynchronized": false
+      },
+      "capabilities": {
+        "raw": true,
+        "coalesced": true,
+        "predictedApi": true
+      },
+      "pixelDifferences": [
+        {
+          "index": 44,
+          "maxChannelError": 242,
+          "meanChannelError": 0.000576019287109375,
+          "channelsOver3": 3,
+          "badPixels": [
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 0,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 1,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "x": 51,
+              "y": 59,
+              "channel": 2,
+              "gpu": [
+                242,
+                77,
+                132,
+                1
+              ],
+              "reference": [
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          "dimensions": [
+            512,
+            384
+          ],
+          "strokes": 1
+        }
+      ],
+      "previewDifferences": [
+        {
+          "index": 0,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 248,
+          "meanPremultipliedChannelError": 0.30343111823586805,
+          "channelsOver3": 3646
+        },
+        {
+          "index": 1,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 112,
+          "meanPremultipliedChannelError": 0.13232885622510765,
+          "channelsOver3": 3335
+        },
+        {
+          "index": 4,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 255,
+          "meanPremultipliedChannelError": 0.60583376416973,
+          "channelsOver3": 5315
+        },
+        {
+          "index": 7,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 255,
+          "meanPremultipliedChannelError": 0.25350159289790103,
+          "channelsOver3": 2433
+        },
+        {
+          "index": 13,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 240,
+          "meanPremultipliedChannelError": 0.1898279377058438,
+          "channelsOver3": 2793
+        },
+        {
+          "index": 16,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 166,
+          "meanPremultipliedChannelError": 0.2834095674402592,
+          "channelsOver3": 3921
+        },
+        {
+          "index": 24,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 90,
+          "meanPremultipliedChannelError": 0.1313134735705802,
+          "channelsOver3": 4349
+        },
+        {
+          "index": 27,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 33,
+          "meanPremultipliedChannelError": 0.03161710851332738,
+          "channelsOver3": 2090
+        },
+        {
+          "index": 39,
+          "measurement": "GPU canvas readback, NOT physical presentation",
+          "maxPremultipliedChannelError": 254,
+          "meanPremultipliedChannelError": 0.44678706748812774,
+          "channelsOver3": 5078
+        }
+      ],
+      "benchmarkDimensions": [
+        2048,
+        1536
+      ],
+      "status": "FAIL",
+      "failure": "page.evaluate: Error: confirmed renderer drain timeout\n    at GpuRenderer.drain ([embedded module]:38:134)\n    at async GpuRenderer.reset ([embedded module]:40:16)\n    at async RealtimeSession.rebuild ([embedded module]:19:18)\n    at async eval (eval at evaluate (:311:30), <anonymous>:1:42)\n    at async <anonymous>:337:30\n    at /home/runner/work/illustro/illustro/prototypes/brush-rt/browser-check.mjs:23:13",
+      "consoleErrors": []
+    }
+  ]
+}

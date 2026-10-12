@@ -1,0 +1,260 @@
+{
+  "source": "25ac91eaf8bd741cdff8007abe268e12b88960e2",
+  "artifactId": 11276545807,
+  "artifactSha256": "4ebe8ba15fbcad88cb44a8b4cb31458046b391cb2cdf87e37135534c50da0578",
+  "backend": "webgl2",
+  "conditions": [
+    {
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 17.233333333327437,
+      "steadyGrowth": 18.10000000000582,
+      "sampleCounts": [
+        7,
+        8,
+        7
+      ]
+    },
+    {
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -33,
+      "steadyGrowth": 0.06666666666114907,
+      "sampleCounts": [
+        10,
+        12,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 2.399999999994634,
+      "steadyGrowth": 2.233333333328119,
+      "sampleCounts": [
+        6,
+        7,
+        6
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -49.83333333333394,
+      "steadyGrowth": -6.066666666661149,
+      "sampleCounts": [
+        8,
+        11,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -67.33333333333394,
+      "steadyGrowth": -14.399999999995089,
+      "sampleCounts": [
+        8,
+        12,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "growth": -49.76666666667211,
+      "steadyGrowth": -34,
+      "sampleCounts": [
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 0.7666666666718811,
+      "steadyGrowth": 1.3000000000165528,
+      "sampleCounts": [
+        7,
+        8,
+        8
+      ]
+    },
+    {
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -17.666666666666742,
+      "steadyGrowth": -3.0333333333446717,
+      "sampleCounts": [
+        12,
+        14,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -1.199999999982083,
+      "steadyGrowth": -1.9999999999990905,
+      "sampleCounts": [
+        6,
+        7,
+        7
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -48.66666666666674,
+      "steadyGrowth": -15.60000000000582,
+      "sampleCounts": [
+        9,
+        11,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -50.76666666667188,
+      "steadyGrowth": 10.200000000012551,
+      "sampleCounts": [
+        9,
+        12,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "growth": -32.766666666672336,
+      "steadyGrowth": -33,
+      "sampleCounts": [
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 2.566666666661604,
+      "steadyGrowth": -1.100000000005366,
+      "sampleCounts": [
+        7,
+        8,
+        8
+      ]
+    },
+    {
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -15.966666666683523,
+      "steadyGrowth": 1.3333333333339397,
+      "sampleCounts": [
+        11,
+        15,
+        14
+      ]
+    },
+    {
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 1,
+      "steadyGrowth": 4.33333333333303,
+      "sampleCounts": [
+        6,
+        7,
+        6
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -36.26666666664278,
+      "steadyGrowth": 3.566666666690253,
+      "sampleCounts": [
+        9,
+        12,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -52.90000000002328,
+      "steadyGrowth": 12.899999999965075,
+      "sampleCounts": [
+        9,
+        12,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "growth": -32.599999999976944,
+      "steadyGrowth": -33.833333333333485,
+      "sampleCounts": [
+        5,
+        6,
+        8
+      ]
+    }
+  ]
+}

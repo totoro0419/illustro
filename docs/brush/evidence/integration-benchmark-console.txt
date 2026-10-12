@@ -1,0 +1,168 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:benchmark
+> node prototypes/brush-lab/build-benchmark.mjs && node --expose-gc benchmark-dist/benchmark.mjs
+
+vite v8.3.1 building ssr environment for production...
+transforming...
+✓ 14 modules transformed.
+rendering chunks...
+computing gzip size...
+benchmark-dist/benchmark.mjs  53.94 kB │ gzip: 17.02 kB
+
+✓ built in 33ms
+{
+  "inputRuns": [
+    {
+      "accepted": 100000,
+      "delivered": 12210,
+      "commands": 12210,
+      "activeBytes": 98304,
+      "batchP95Ms": 0.04992399999999009,
+      "batchMaxMs": 1.2953530000000057,
+      "releaseMs": 0.9324970000000121
+    },
+    {
+      "accepted": 100000,
+      "delivered": 12210,
+      "commands": 12210,
+      "activeBytes": 98304,
+      "batchP95Ms": 0.0377459999999985,
+      "batchMaxMs": 0.24177700000001323,
+      "releaseMs": 1.0001370000000236
+    },
+    {
+      "accepted": 100000,
+      "delivered": 12210,
+      "commands": 12210,
+      "activeBytes": 98304,
+      "batchP95Ms": 0.024665999999996302,
+      "batchMaxMs": 0.2629479999999944,
+      "releaseMs": 0.7634369999999535
+    },
+    {
+      "accepted": 100000,
+      "delivered": 12210,
+      "commands": 12210,
+      "activeBytes": 98304,
+      "batchP95Ms": 0.023495000000025357,
+      "batchMaxMs": 0.8882619999999974,
+      "releaseMs": 0.6316830000000095
+    },
+    {
+      "accepted": 100000,
+      "delivered": 12210,
+      "commands": 12210,
+      "activeBytes": 98304,
+      "batchP95Ms": 0.01624400000002879,
+      "batchMaxMs": 0.13467900000000554,
+      "releaseMs": 0.5863459999999918
+    }
+  ],
+  "materialization": [
+    {
+      "id": "s2",
+      "name": "丸2px",
+      "commands": 1115,
+      "wholeStrokeP95Ms": 6.581962000000033,
+      "sliceP95Ms": 0.844206999999983,
+      "sliceMaxMs": 2.0130930000000262,
+      "rasterBytes": 2621440
+    },
+    {
+      "id": "s16",
+      "name": "丸16px",
+      "commands": 146,
+      "wholeStrokeP95Ms": 4.50774899999999,
+      "sliceP95Ms": 0.4741000000000213,
+      "sliceMaxMs": 0.6824080000000095,
+      "rasterBytes": 2621440
+    },
+    {
+      "id": "s128",
+      "name": "丸128px",
+      "commands": 20,
+      "wholeStrokeP95Ms": 18.15417500000001,
+      "sliceP95Ms": 0.43351099999995313,
+      "sliceMaxMs": 1.4914229999999975,
+      "rasterBytes": 3145728
+    },
+    {
+      "id": "s512",
+      "name": "丸512px",
+      "commands": 6,
+      "wholeStrokeP95Ms": 39.613181000000054,
+      "sliceP95Ms": 0.5330579999999827,
+      "sliceMaxMs": 0.9043759999999565,
+      "rasterBytes": 6291456
+    },
+    {
+      "id": "dry-brush",
+      "name": "ドライ筆",
+      "commands": 124,
+      "wholeStrokeP95Ms": 27.187787999999955,
+      "sliceP95Ms": 0.980077999999935,
+      "sliceMaxMs": 2.03368300000011,
+      "rasterBytes": 2621440
+    },
+    {
+      "id": "star-stamp",
+      "name": "星スタンプ",
+      "commands": 200,
+      "wholeStrokeP95Ms": 44.72509099999991,
+      "sliceP95Ms": 1.046265999999946,
+      "sliceMaxMs": 2.0007849999999507,
+      "rasterBytes": 2621440
+    },
+    {
+      "id": "clean-ink",
+      "name": "輪郭ペン",
+      "commands": 604,
+      "wholeStrokeP95Ms": 5.019663999999921,
+      "sliceP95Ms": 0.7461419999999634,
+      "sliceMaxMs": 5.488716999999951,
+      "rasterBytes": 2621440
+    },
+    {
+      "id": "bundle",
+      "name": "束ね",
+      "commands": 168,
+      "wholeStrokeP95Ms": 45.93637100000001,
+      "sliceP95Ms": 1.8206589999999778,
+      "sliceMaxMs": 4.133135000000038,
+      "rasterBytes": 2621440
+    }
+  ],
+  "stabilization": [
+    {
+      "strength": 0,
+      "stationaryRms": 0.3499759902129589,
+      "smallLoopChangeRms": 0
+    },
+    {
+      "strength": 0.15,
+      "stationaryRms": 0.28174156938247846,
+      "smallLoopChangeRms": 0.010576938948267637
+    },
+    {
+      "strength": 0.5,
+      "stationaryRms": 0.09880493127625058,
+      "smallLoopChangeRms": 0.0506677074543689
+    },
+    {
+      "strength": 0.85,
+      "stationaryRms": 0.08409285420206553,
+      "smallLoopChangeRms": 0.06358887129641053
+    },
+    {
+      "strength": 1,
+      "stationaryRms": 0.0810562667682273,
+      "smallLoopChangeRms": 0.06776010761528935
+    }
+  ],
+  "memory": {
+    "heapBefore": 7231336,
+    "heapAfter": 7522064,
+    "gcMaxMs": 4.155558000085875
+  }
+}

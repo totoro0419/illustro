@@ -1,0 +1,70 @@
+{
+  "kind": "structural verification only; human quality pending",
+  "tests": [
+    {
+      "name": "empty exterior",
+      "status": "PASS",
+      "ms": 1
+    },
+    {
+      "name": "exact square face and query",
+      "status": "PASS",
+      "ms": 2
+    },
+    {
+      "name": "nested loops holes and exterior",
+      "status": "PASS",
+      "ms": 2
+    },
+    {
+      "name": "T splits adjacent regions, dangling slit does not split",
+      "status": "PASS",
+      "ms": 1
+    },
+    {
+      "name": "crossing boundaries are split and all four faces exist",
+      "status": "PASS",
+      "ms": 2
+    },
+    {
+      "name": "overlapping segments do not duplicate boundaries",
+      "status": "PASS",
+      "ms": 1
+    },
+    {
+      "name": "subpixel region is retained in authoritative graph",
+      "status": "PASS",
+      "ms": 0
+    },
+    {
+      "name": "three nested loops attach negative cycles correctly",
+      "status": "PASS",
+      "ms": 2
+    },
+    {
+      "name": "independent loops share one exterior",
+      "status": "PASS",
+      "ms": 0
+    },
+    {
+      "name": "all foreground pixels can be analyzed without nontermination",
+      "status": "PASS",
+      "ms": 28
+    },
+    {
+      "name": "same raster repeats with identical geometry and labels",
+      "status": "PASS",
+      "ms": 13
+    },
+    {
+      "name": "transparent empty raster and unsupported sizes",
+      "status": "PASS",
+      "ms": 4
+    },
+    {
+      "name": "512 exhaustive 3x3 raster topology configurations",
+      "status": "PASS",
+      "ms": 62
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+> Classification: OBSOLETE / historical evidence; valid technical principles may be reused. Current authority: `docs/IMPLEMENTATION_BASELINE.md` and `docs/CANONICAL_INDEX.json`. Old stop/PASS/candidate declarations below apply to their recorded version only.
+
 # Illustro Interaction Specifications
 
 > Purpose: ユーザーが実際にどう操作するかを、Visual UI生成前に固定する。

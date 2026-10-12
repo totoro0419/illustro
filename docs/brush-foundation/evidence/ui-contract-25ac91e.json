@@ -1,0 +1,71 @@
+{
+  "scope": "preset IO, pointer failure recovery, mouse save/history, narrow layout; physical stylus and assistive technology unverified",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "status": "PASS",
+      "invalidPackPreservesAllSettings": true,
+      "validNameAndSizeUpdated": true,
+      "invalidStrokeThenDrawRecovery": true,
+      "saveHistoryExact": true,
+      "restored": {
+        "measurement": "persistent GPU viewport readback, NOT browser presentation",
+        "maxPremultipliedChannelError": 1,
+        "meanPremultipliedChannelError": 0.001232172149458744,
+        "channelsOver3": 0
+      },
+      "exportedBrushPack": true,
+      "layouts": [
+        {
+          "viewport": 320,
+          "documentWidth": 320,
+          "canvasWidth": 272
+        },
+        {
+          "viewport": 800,
+          "documentWidth": 800,
+          "canvasWidth": 456
+        },
+        {
+          "viewport": 1200,
+          "documentWidth": 1200,
+          "canvasWidth": 856
+        }
+      ],
+      "consoleErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "status": "PASS",
+      "invalidPackPreservesAllSettings": true,
+      "validNameAndSizeUpdated": true,
+      "invalidStrokeThenDrawRecovery": true,
+      "saveHistoryExact": true,
+      "restored": {
+        "measurement": "persistent GPU viewport readback, NOT browser presentation",
+        "maxPremultipliedChannelError": 1,
+        "meanPremultipliedChannelError": 0.0012277840009701812,
+        "channelsOver3": 0
+      },
+      "exportedBrushPack": true,
+      "layouts": [
+        {
+          "viewport": 320,
+          "documentWidth": 320,
+          "canvasWidth": 272
+        },
+        {
+          "viewport": 800,
+          "documentWidth": 800,
+          "canvasWidth": 456
+        },
+        {
+          "viewport": 1200,
+          "documentWidth": 1200,
+          "canvasWidth": 856
+        }
+      ],
+      "consoleErrors": []
+    }
+  ]
+}

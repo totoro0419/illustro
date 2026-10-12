@@ -4,6 +4,8 @@
 > 目的: `PRODUCT_SPEC.md` と `FEATURE_CATALOG.md` を、実装・UI・アーキテクチャ設計で参照できる要求単位へ落とす。  
 > 優先順位: `PRODUCT_SPEC.md` > 本書 > 個別機能仕様 > UI/実装仕様。  
 > 注意: 本書は「実装済み」を意味しない。内部アルゴリズムが未決定でも、ユーザーから見た能力・制約・品質要件を固定する。
+>
+> 2026-10-04 cross-feature integration: [FEATURE_SYSTEM_INTEGRATION_2026-10-04.md](FEATURE_SYSTEM_INTEGRATION_2026-10-04.md) defines the integrated user-route/cross-feature baseline for families 1–12. User-facing completion is governed by [FEATURE_DELIVERY_GATE.md](FEATURE_DELIVERY_GATE.md).
 
 ## 1. 要求の表記
 
@@ -210,79 +212,78 @@ Undo/Redo、Timelapse、保存/再開のため、同一State/Commandから再現
 
 ---
 
-## 6. Lineart Layer — 線画レイヤー
+## 6. Lineart Region System
 
-> **Design reset:** 旧 Lineart Region / Persistent Region ID / Stable Identity / 自動色再マッピングの設計は破棄し、現在の要件として扱わない。ここではユーザーが確定した完成目標だけを定義する。
+### DR-REGION-001 Region
 
-### DR-LINEART-001 Dedicated structural layer
+RegionをDocument内の明示的なデータ概念として扱える構造を持つ。
 
-線画レイヤーは通常のRaster Layerとは別種の専用レイヤーとして扱う。
+### DR-REGION-002 Region Properties
 
-通常のストローク中心Raster線画から、ユーザーが「複製する」感覚で線画レイヤーを生成できることを基本操作とする。
+Regionは少なくとも以下を持てる。
 
-### DR-LINEART-002 Region partition is the canonical purpose
+- Region ID
+- Boundary
+- adjacency
+- source/reference information
+- validity/confidence state
+- mapping metadata
 
-線画レイヤーの主データは描画線そのものではなく、**領域分けの構造データ**である。
+### FR-REGION-001 Closed Region Detection
 
-内部の境界は描画上の太さを持つ線として定義しない。表示上の見せ方とは分離し、「ここを越えると別の領域になる」という境界・接続・分割情報を表す。
+線画から閉領域を検出できなければならない。
 
-### FR-LINEART-001 Generate from raster lineart
+### FR-REGION-002 Gap Tolerance
 
-ストローク中心のRaster線画を入力として線画レイヤーを生成できる。
+小さな線の隙間を設定に応じて閉領域として扱える。
 
-生成処理は元Rasterを破壊してはならない。
+### FR-REGION-003 Stable Identity
 
-### FR-LINEART-002 Editable correction
+線画の軽微な変更後も、可能な限り同一Regionとして対応付ける。
 
-自動抽出した接続や領域分けに誤りがある場合、線画レイヤーを選択中にユーザーが修正できなければならない。
+単純な配列index等をRegion identityとして使用してはならない。
 
-必要な最終操作体系はUI設計とアルゴリズム設計で確定する。
+### FR-REGION-004 Adjacency
 
-### FR-LINEART-003 Area-based consumers
+Region間の隣接関係を取得可能にする。
 
-線画レイヤーで定義した領域分けを、少なくともFillとSelectionの基準として利用可能にする。
+### FR-REGION-005 Region Selection / Fill
 
-色差や現在のピクセル色だけに依存せず、線画レイヤー上の領域を直接対象にできることを要求する。
+RegionはSelection、Fill、Color Assistの入力として利用可能にする。
 
-### FR-LINEART-004 Separation from rendered stroke width
+### FR-REGION-006 User Override
 
-元線画のブラシ太さ・アンチエイリアス・表示上の線幅と、線画レイヤー上の領域境界の意味を分離する。
+誤認識が発生した場合、ユーザーがRegionの結合・分離・無視・再計算等を制御できる方式を持つ。
 
-線画レイヤーの境界を「太さ付きRaster線」として正本化してはならない。
+### FR-REGION-007 Optional Semantics
 
-### FR-LINEART-005 Algorithm status
+Hair/Skin等の意味ラベルは将来拡張可能にするが、基本Region機能は意味認識なしで成立しなければならない。
 
-以下は**未設計**であり、旧成果物を根拠に確定扱いしてはならない。
+---
 
-- Raster線画から境界・接続を抽出する具体アルゴリズム
-- 端点同士、端点と線途中、交差、近接、隙間の判定規則
-- 内部データ構造
-- 領域IDの有無と寿命
-- 隣接情報の保持方式
-- 元Raster編集後の自動追従・再生成・独立保持の方針
-- gap補完の方針
-- exact thresholds / weights / confidence model
+## 7. Lineart-linked Coloring
 
-接続判定は最終目的ではなく、**編集可能な正しい領域分けデータを生成するための一工程**として設計する。
+### FR-LINKCOLOR-001 Boundary Recalculation
 
-## 7. Lineart Layer area-based coloring
+Lineart変更後、影響するRegion境界を再評価する。
 
-### FR-LINEARTCOLOR-001 Area reference
+### FR-LINKCOLOR-002 Color Remapping
 
-Fillは参照基準として線画レイヤーを選択でき、クリック位置が属する線画レイヤー上の領域を対象にできる。
+既存Color情報を、新しいRegionへ可能な範囲で再マッピングできる。
 
-### FR-LINEARTCOLOR-002 Manual structure takes precedence
+### FR-LINKCOLOR-003 Preview
 
-ユーザーが線画レイヤー上で修正した接続・領域分けは、自動判定結果より優先されなければならない。
+自動追従による大きな変更はユーザーが結果を確認可能でなければならない。
 
-自動再解析がユーザー修正を無断で上書きする設計は禁止する。
+### FR-LINKCOLOR-004 Undo
 
-### FR-LINEARTCOLOR-003 Source-edit behavior is open
+追従処理全体をUndo可能なCommandとして記録する。
 
-元Raster線画を生成後に編集した場合の挙動は未決定とする。
+### FR-LINKCOLOR-005 Control
 
-自動追従、明示再生成、差分更新、独立保持のいずれも現時点では確定しない。
+追従のON/OFF、強度、対象、条件を設定可能にする。
 
+---
 
 ## 8. Fill / Coloring
 
@@ -298,7 +299,7 @@ Fillは以下を参照元として選択できる設計にする。
 - selected layers
 - reference-designated layers
 - visible composite
-- Lineart Layer area model
+- Region model
 
 ### FR-FILL-003 Gap Closing
 
@@ -312,7 +313,7 @@ Fill結果のExpand/Contractを設定可能にする。
 
 以下をバラバラな独立アプリ機能として散在させず、一貫したFill Familyとして設計する。
 
-- Lineart Layer Area Fill
+- Region Fill
 - Enclose and Fill
 - Trace and Fill
 - Drag Fill
@@ -320,7 +321,7 @@ Fill結果のExpand/Contractを設定可能にする。
 
 ### FR-COLORASSIST-001 Smart Color Assist
 
-Smart Color Assistはユーザーの既存Artwork/Lineart Layer area/Paletteを入力とする補助機能として動作する。
+Smart Color Assistはユーザーの既存Artwork/Region/Paletteを入力とする補助機能として動作する。
 
 ### FR-COLORASSIST-002 Deterministic-first
 
@@ -484,7 +485,7 @@ Vectorを明示的にRasterizeできる。
 
 ### FR-VECTOR-006 Region Integration
 
-Vector Lineartを線画レイヤー生成元として利用する方式は未設計であり、別途検討する。
+Vector LineartをRegion Boundary Sourceとして利用できる方式を検討する。
 
 ---
 
@@ -537,7 +538,7 @@ TextをVector Pathへ変換する機能を提供する。
 - Polygon
 - Color/Similarity
 - Luminance/Color Range
-- Lineart Layer area-based
+- Region-based
 - Layer-content
 
 ### FR-SELECT-002 Boolean Operations
@@ -1274,7 +1275,7 @@ Native Formatは **.illustro** とする。
 - Vector
 - Text
 - Brush/document-specific brush data
-- Lineart Layer area data
+- Region
 - References
 - Snapshot
 - Layer Comp
@@ -1396,7 +1397,7 @@ GPU Feature差によって基本編集不能にならないFallback戦略を持�
 
 例:
 
-- 線画レイヤー解析は線画レイヤー機能を使用しないDocumentでは常時実行しない
+- Region解析はRegion依存機能を使用しないDocumentでは常時実行しない
 - Soft Proof OFF時はProof変換を実行しない
 - Wet Media未使用時はWet stateを確保しない
 - PSD/EXR等のCodecは必要になるまでロードしない
@@ -1489,30 +1490,38 @@ Plugin/Extension APIは本体完成前の必須機能にしない。
 
 ## 34. 仕様上の未確定事項
 
-以下は「機能を入れるかどうか」ではなく、主に**どう実装するか**が未確定。
+Architecture V2によりCross-cutting Core semanticsは以下まで確定した。
 
-- Tile size / cache / eviction
-- internal pixel format
-- working color space
-- ICC implementation
+- stable ID / Revision / Operation taxonomy
+- signed sparse Raster coordinate model
+- canonical logical Tile 256
+- Surface-level UNORM8 / UNORM16 / FLOAT32 Raster precision
+- straight alpha / hidden RGB
+- semantic Brush record / deterministic random boundary
+- Persistence / Recovery dependency closure
+- Shared Region Resolver fixed/live/confidence/identity boundary
+
+以下は引き続き、主にFeature-specific implementation / Prototype / UIで決める。
+
+- working color spaceの製品Default
+- ICC implementation/library
 - HDR output/display mapping
-- Blend Mode exact formula
-- brush graph data model
-- wet-media simulation
-- Lineart Layer extraction / connection algorithm
+- exact Blend Mode compatibility formula
+- Brush stabilization/reconstruction calibration constants
+- Wet Media simulation
+- Region evidence/gap/confidence thresholds
 - Vector stroke representation
 - text shaping engine
-- selection antialiasing
-- transform interpolation
-- live-filter render graph
-- Undo delta/checkpoint strategy
-- Snapshot branch storage
-- .illustro container/versioning
-- PSD parser/writer
+- selection antialiasing/resampling kernels
+- advanced transform interpolation
+- live-filter render graph details
+- physical .illustro container/versioning/compression
+- PSD parser/writer mapping
 - Web/PWA/Desktop runtime composition
 - default keyboard/gesture mapping
+- concrete PiP / Quick Controller / Panel / Color / Brush UI
 
-これらはアーキテクチャ設計・Prototype・Benchmarkの結果を根拠として確定する。
+これらは該当Subsystem Gateで確定する。Cross-cutting Core仕様へ逆流する変更が必要になった場合はArchitecture V2を明示的に改訂する。
 
 ---
 
@@ -1520,89 +1529,105 @@ Plugin/Extension APIは本体完成前の必須機能にしない。
 
 ### 35.1 Architecture Gate
 
-Architecture v1は2026-09-28時点で**Core implementation開始可能**として確定済み。
+Current semantic design baseline:
 
-V1で実装Baselineとして確定した主要事項:
+- `docs/architecture/ARCHITECTURE_V2.md`
 
-- Main Thread defaultのPointer/Stroke coordination
-- Dedicated Persistence Worker
-- sparse logical Raster
-- standard Tile profile 256 / memory-constrained candidate 128
-- local dirty-subrect
-- ownership-transfer Canonical Raster sealing
-- WebGPU → WebGL2 → Canvas2D fallback
-- OPFS framed/batched Recovery + torn-tail repair
-- First Draw critical pathのlazy module policy
-- TypeScript default / heavy-kernel WASMは後続実測で採否判断
+Architecture V1の5 Gate + Second Auditは、実現可能性・性能基盤のEvidenceとして保持する。
 
-根拠:
+V2で追加確定した主要事項:
 
-- \`docs/architecture/ARCHITECTURE_V1.md\`
-- \`docs/architecture/V1_PROMOTION_GATE.md\`
-- \`docs/architecture/V1_FIRST_PASS_EVIDENCE.md\`
-- \`docs/architecture/V1_SECOND_AUDIT_EVIDENCE.md\`
+- UUID stable identity + runtime handle + content digest分離
+- one Transaction → one immutable Revision
+- semantic Operation records
+- signed overscan Raster
+- canonical logical Tile 256 / adaptive execution subdivision
+- UNORM8 / UNORM16 / FLOAT32 Raster Surface
+- straight alpha / hidden RGB
+- Brush semantic record / Philox4x32-10 random
+- Preview / strict materialization boundary
+- WriterEpoch + CommitSequence + dependency-closed Recovery
+- Shared Region Resolver / fixed-live / confidence / lineage rules
 
-First PASS後に独立再監査を行い、4件のhidden issueを修正してSecond PASSまで確認済み。
+Architecture design completionだけではProduction implementation authorizationにならない。
 
 ### 35.2 Interaction Gate
 
-Core painting workflowについては \`docs/interaction/INTERACTION_MODEL.md\` と \`docs/features/*.md\` のP0詳細仕様をSourceとして使用する。
+Core painting workflowについては `docs/interaction/INTERACTION_MODEL.md` と `docs/features/*.md` をSourceとして使用する。
 
-Core UI visual designへ進むためのP0 Interaction GateはPASS済み。
+Core painting interaction baselineはVisual prototypeへ進める精度がある。
 
-詳細:
+Concrete UI placement/shape/layoutはユーザー共同設計とする。
 
-- \`docs/interaction/INTERACTION_REAUDIT_2026-09-27.md\`
-- \`docs/interaction/REQUIREMENT_TRACEABILITY.md\`
+### 35.3 Brush Production Gate
 
-### 35.3 Advanced-feature Gate
+Semantic design: **COMPLETE**。
 
-Vector / Text / Wet Media / Advanced Filter / Macro / Asset等の最終実装・最終UIは、それぞれのInteraction backlogを解消してから確定する。
+Production前に `docs/architecture/BRUSH_RENDER_CONTRACT_V2.md` のPrototype/Benchmark Gateを通す。
 
-未決定事項:
+Calibration対象:
 
-- \`docs/interaction/REMAINING_INTERACTION_BACKLOG.md\`
+- stabilizer/reconstruction coefficients
+- mutable-tail budgets
+- preview tolerance
+- materialization limits
+- supported-device performance profile
 
-これらはCore Editor実装開始のblockerではない。
+### 35.4 Region / Fill Production Gate
 
-### 35.4 UI generation rule
+Semantic design: **COMPLETE**。
+
+Production前に `docs/architecture/REGION_RESOLVER_V2.md` のlabeled corpus benchmarkを通す。
+
+Calibration対象:
+
+- evidence threshold
+- gap/bridge threshold
+- confidence/margin threshold
+- update/work budgets
+
+### 35.5 Persistence / Native File Gate
+
+Logical Save/Recovery semanticsは `docs/architecture/PERSISTENCE_RECOVERY_LOGICAL_V2.md` で確定。
+
+Production Persistence / portable `.illustro` 前にphysical encodingを決める。
+
+### 35.6 UI generation rule
 
 Visual UIはユーザーと共同で設計する。
 
 UI生成を行う場合は専用UI Design Skillを使用し、Interaction SpecやArchitectureを勝手に補完・変更してはならない。
 
-### 35.5 Architecture Implementation Baseline
+未承認:
 
-**Architecture baselineはPASS済み。ただしIllustro全体のDesign Completion GateはOPEN。**
+- PiP具体形
+- Quick Controller具体形
+- Panel layout
+- Color UI
+- Brush Settings UI
+- Desktop / Tablet / Smartphone concrete layout
+- icons/theme/visual hierarchy
 
-Second PASS evidence:
+### 35.7 Production authorization
 
-- GitHub Actions run: \`36335428192\`
-- strict TypeScript: PASS
-- Vitest: 29 tests / 12 files PASS
-- Vite production build: PASS
-- served Chromium: 4 / 4 PASS
-- actual OPFS SyncAccessHandle recovery path: PASS
-- WebGL2 actual draw/readback fallback: PASS
-- First Stroke lazy-load invariant: PASS
-- Xiaomi tablet + Xiaomi pen Realtime placement measurement: recorded
+**Core Drawing Slice implementation is authorized under IMPLEMENTATION_BASELINE.md by the 2026-10-05 user task.**
 
-Architecture v1はCore Infrastructureを実装可能にするBaselineとして有効。実際のSubsystem Production実装は、`docs/DESIGN_COMPLETION_GATE.md` のSubsystem readiness ruleを満たしてから進める。Architecture PASSだけを設計完了や実装許可と解釈しない。
+Architecture V2 completion、Prototype PASS、UI prototype完成のいずれも、自動的な実装許可ではない。
 
-PC / Tablet / Smartphone全体の正常動作・性能・Fallback検証は、該当機能が実装された後、Supported environmentを宣言する前のRegression/Compatibility Gateで実施する。
+今回の許可範囲は本番準備と最小骨格。続くCore Drawing Sliceは正本基準に従って開始可能。mainへのmergeは許可されていない。
 
-### 35.6 Still-open implementation-time decisions
+### 35.8 Still-open calibration decisions
 
-次は実装を止めない。
+次はArchitectureのsemantic defectではなく、該当Feature/Runtimeの測定項目。
 
 - heavy-kernel TS/WASM split
 - exact memory/cache budgets
-- 128↔256 Tile profile switch threshold
-- brush stabilizer/resampling constants
-- Lineart Layer extraction thresholds
+- scheduler deadlines
+- Brush calibration constants
+- Region thresholds
 - ICC implementation/library
-- portable .illustro physical encoding/compression/hash
+- physical .illustro encoding/compression
 - PSD mapping
 - advanced-feature interaction details
 
-代表的なProduction-like workloadが存在した時点で測定し、必要なADRへ追加する。
+代表的なProduction-like workload / labeled corpusで測定し、該当仕様へversioned resultとして追加する。

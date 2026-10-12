@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-05",
+  "repository": "totoro0419/illustro",
+  "main": "bdc7135b51033982d90ea5dad104bb04fc107df2",
+  "prs": [
+    {
+      "number": 6,
+      "head": "design/ui-gate-e-2026-09-29",
+      "headSha": "134123f1020430b1da3a0606bd237182d62004c0",
+      "base": "design/completion-audit-2026-09-28",
+      "baseSha": "3ce3b55d4d249b9a618f24da4954b6ff7099c486",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 7,
+      "head": "codex/raster-region-lab-20261001",
+      "headSha": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
+      "base": "main",
+      "baseSha": "bdc7135b51033982d90ea5dad104bb04fc107df2",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 8,
+      "head": "brush/production-engine-2026-10-02",
+      "headSha": "dc1f1ffead0c7601b9d23e81ba1eb8dcb643b279",
+      "base": "main",
+      "baseSha": "bdc7135b51033982d90ea5dad104bb04fc107df2",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 9,
+      "head": "brush/realtime-redesign-2026-10-03",
+      "headSha": "5aaf99d74cf4eb58088a0770ce9ceabb237b2220",
+      "base": "brush/production-engine-2026-10-02",
+      "baseSha": "dc1f1ffead0c7601b9d23e81ba1eb8dcb643b279",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 10,
+      "head": "brush/foundation-2026-10-03",
+      "headSha": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+      "base": "brush/realtime-redesign-2026-10-03",
+      "baseSha": "5aaf99d74cf4eb58088a0770ce9ceabb237b2220",
+      "state": "open",
+      "draft": true
+    },
+    {
+      "number": 11,
+      "head": "design/feature-integration-2026-10-04",
+      "headSha": "bfc7e627e862e31b10720125ffafb2504f8da92c",
+      "base": "design/ui-gate-e-2026-09-29",
+      "baseSha": "134123f1020430b1da3a0606bd237182d62004c0",
+      "state": "open",
+      "draft": true
+    }
+  ],
+  "openPrNumbers": [
+    11,
+    10,
+    9,
+    8,
+    7,
+    6,
+    5
+  ],
+  "brushRun": {
+    "id": 37286523766,
+    "headSha": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+    "status": "in_progress",
+    "conclusion": null
+  },
+  "snapshotMeaning": "Initial GitHub audit; later direct confirmation is recorded below.",
+  "finalConfirmation": {
+    "main": "bdc7135b51033982d90ea5dad104bb04fc107df2",
+    "integrationPr": 12,
+    "verifiedCodeHead": "11fe2a9a915e64dc2fc3f3d610cfd41f9a059c36",
+    "foundationHead": "d9b325e2ab933688039e23d72fefb1b9d890e18b",
+    "foundationRuntimeSource": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
+    "foundationRun": 37286523766,
+    "foundationConclusion": "success",
+    "editorRun": 37291492186,
+    "editorConclusion": "success",
+    "mainUnchanged": true,
+    "existingPrsRemainOpenDraft": true
+  }
+}

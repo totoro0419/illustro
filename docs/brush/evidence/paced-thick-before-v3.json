@@ -1,0 +1,153 @@
+{
+  "scope": "Headless Chromium / SwiftShader. See cases and parameters for effective diameters, sample rates and durations. Production present(false) on candidate. Test fence only on actual latest-input presentations, including asynchronous retries; input-free prefix refinement excluded from tip age but included in completedDurationMs. Completion ages include driver, polling and event-loop costs. queuePeak counts test fences (core candidate display maximum one); candidate live dabs maximum two. No physical pen-to-photon claim. Canonical geometry/replay exact. Baseline 78ad has no backpressure hook and submits every sample.",
+  "cases": [
+    {
+      "id": "clean-ink",
+      "size": 512,
+      "hz": 120,
+      "seconds": 1,
+      "maxLiveDabs": 0,
+      "phaseP95Ms": [
+        326.5,
+        447.5,
+        498.5
+      ],
+      "ageGrowthMs": 172,
+      "accepted": 120,
+      "acceptedByEngine": 120,
+      "submittedFrames": 120,
+      "completedFrames": 120,
+      "contactImmediate": true,
+      "latestInputCompleted": true,
+      "submittedDurationMs": 991.2999999998137,
+      "completedDurationMs": 1495.5,
+      "queuePeak": 51,
+      "completionAgeP95Ms": 492,
+      "completionAgeMaxMs": 504.3000000002794,
+      "oldestUnpresentedInputAgeP95Ms": 492,
+      "oldestUnpresentedInputAgeMaxMs": 504.3000000002794,
+      "inputHandlerP95Ms": 1.2000000001862645,
+      "previewMeanChannelError": 0,
+      "previewChannelsOver2": 0,
+      "pipeline": null,
+      "canonicalReplayExact": true,
+      "canonicalGeometrySamples": 120,
+      "errors": []
+    },
+    {
+      "id": "clean-ink",
+      "size": 512,
+      "hz": 240,
+      "seconds": 1,
+      "maxLiveDabs": 0,
+      "phaseP95Ms": [
+        552.2999999998137,
+        969.8000000002794,
+        1452.2999999998137
+      ],
+      "ageGrowthMs": 900,
+      "accepted": 240,
+      "acceptedByEngine": 240,
+      "submittedFrames": 240,
+      "completedFrames": 240,
+      "contactImmediate": true,
+      "latestInputCompleted": true,
+      "submittedDurationMs": 1110.2999999998137,
+      "completedDurationMs": 2583.1999999997206,
+      "queuePeak": 141,
+      "completionAgeP95Ms": 1422.6000000000931,
+      "completionAgeMaxMs": 1473,
+      "oldestUnpresentedInputAgeP95Ms": 1422.6000000000931,
+      "oldestUnpresentedInputAgeMaxMs": 1473,
+      "inputHandlerP95Ms": 0.5,
+      "previewMeanChannelError": 6.357828776041666e-07,
+      "previewChannelsOver2": 0,
+      "pipeline": null,
+      "canonicalReplayExact": true,
+      "canonicalGeometrySamples": 240,
+      "errors": []
+    },
+    {
+      "id": "rough-pencil",
+      "size": 512,
+      "hz": 120,
+      "seconds": 1,
+      "maxLiveDabs": 0,
+      "phaseP95Ms": [
+        400.60000000009313,
+        714.8999999999069,
+        1041.3000000002794
+      ],
+      "ageGrowthMs": 640.7000000001863,
+      "accepted": 120,
+      "acceptedByEngine": 120,
+      "submittedFrames": 120,
+      "completedFrames": 120,
+      "contactImmediate": true,
+      "latestInputCompleted": true,
+      "submittedDurationMs": 991.5,
+      "completedDurationMs": 2038.2000000001863,
+      "queuePeak": 62,
+      "completionAgeP95Ms": 1020.7999999998137,
+      "completionAgeMaxMs": 1047.2999999998137,
+      "oldestUnpresentedInputAgeP95Ms": 1020.7999999998137,
+      "oldestUnpresentedInputAgeMaxMs": 1047.2999999998137,
+      "inputHandlerP95Ms": 0.6000000000931323,
+      "previewMeanChannelError": 3.814697265625e-06,
+      "previewChannelsOver2": 0,
+      "pipeline": null,
+      "canonicalReplayExact": true,
+      "canonicalGeometrySamples": 120,
+      "errors": []
+    },
+    {
+      "id": "rough-pencil",
+      "size": 512,
+      "hz": 240,
+      "seconds": 1,
+      "maxLiveDabs": 0,
+      "phaseP95Ms": [
+        1555.8000000002794,
+        2484.2999999998137,
+        3845.5
+      ],
+      "ageGrowthMs": 2289.6999999997206,
+      "accepted": 240,
+      "acceptedByEngine": 240,
+      "submittedFrames": 240,
+      "completedFrames": 240,
+      "contactImmediate": true,
+      "latestInputCompleted": true,
+      "submittedDurationMs": 1304.5,
+      "completedDurationMs": 5189.399999999907,
+      "queuePeak": 194,
+      "completionAgeP95Ms": 3721.3000000002794,
+      "completionAgeMaxMs": 3885.100000000093,
+      "oldestUnpresentedInputAgeP95Ms": 3721.3000000002794,
+      "oldestUnpresentedInputAgeMaxMs": 3885.100000000093,
+      "inputHandlerP95Ms": 0.5,
+      "previewMeanChannelError": 5.086263020833333e-06,
+      "previewChannelsOver2": 0,
+      "pipeline": null,
+      "canonicalReplayExact": true,
+      "canonicalGeometrySamples": 240,
+      "errors": []
+    }
+  ],
+  "parameters": {
+    "sizes": [
+      512
+    ],
+    "seconds": [
+      1
+    ],
+    "hz": [
+      120,
+      240
+    ],
+    "presets": [
+      "clean-ink",
+      "rough-pencil"
+    ]
+  }
+}
