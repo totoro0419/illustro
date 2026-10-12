@@ -91,7 +91,7 @@ try{
  await click(desktop,'[data-ih-preset="512x384"]');
  await desktop.screenshot({path:path.join(evidence,'new-document.png')});
  await click(desktop,'#ihNewCreate');
- await desktop.waitForSelector('#ihApp[hidden]',{timeout:45000});
+ await desktop.locator('#ihApp').waitFor({state:'hidden',timeout:45000});
  assert.equal(await desktop.locator('#home').isEnabled(),true);
  assert.equal(await desktop.locator('.canvas-top .document-actions').isVisible(),false);
  assert.equal(await desktop.locator('#canvas').isVisible(),true);
@@ -101,7 +101,7 @@ try{
  await desktop.waitForSelector('#ihApp:not([hidden]) [data-ih-screen="home"]:not([hidden])',{timeout:25000});
  assert.equal(await desktop.locator('#ihReturnEditor').isVisible(),true);
  await click(desktop,'#ihReturnEditor');
- await desktop.waitForSelector('#ihApp[hidden]');
+ await desktop.locator('#ihApp').waitFor({state:'hidden'});
  assert.equal(await desktop.locator('#canvas').isVisible(),true);
  record('HOME-EDITOR-ROUNDTRIP-NO-RECREATE');
 
