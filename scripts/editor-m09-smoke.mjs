@@ -88,8 +88,9 @@ async function test(kind,dpr,touch=false){
   const valueAfterPicker=await current(p);assert.notEqual(valueAfterPicker,'#FF0000');
   assert.ok((await state(p)).currentRevision===rev2);
   await p.locator('#colorTab2').click();
-  p.once('dialog',dialog=>dialog.accept('検証パレット'));
   await p.locator('[data-color-action="new-palette"]').click();
+  await p.locator('#colorPaletteName').fill('検証パレット');
+  await p.locator('#colorPaletteConfirm').click();
   assert.equal(await p.locator('#colorPaletteSelect').inputValue(),await p.locator('#colorPaletteSelect option').last().getAttribute('value'));
   await p.locator('[data-color-action="add-current"]').last().click();
   assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),1);
