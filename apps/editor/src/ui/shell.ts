@@ -1,4 +1,5 @@
 import {icon,type IconName} from './icons';
+import {colorMarkup} from '../color/panel';
 /** M07 PC/tablet production shell. Artwork state remains in EditorController. */
 export const RIGHT_BOXES=[
   ['right.layers','Layers','layersBox',true],
@@ -24,7 +25,7 @@ export const FEATURE_CATEGORIES=[
 ] as const;
 const railTools=[
   ['paint','brush','ブラシ',true],['erase','eraser','消しゴム',true],
-  ['smudge','smudge','ぼかし・混色',false],['eyedropper','eyedropper','スポイト',false],
+  ['smudge','smudge','ぼかし・混色',false],['eyedropper','eyedropper','スポイト',true],
   ['smartFill','smartFill','スマート塗り',false],['selection','selection','選択',false],
   ['transform','transform','変形',false],['move','move','移動',false],
 ] as const;
@@ -42,7 +43,7 @@ const disabled=(label:string)=>'<span class="unavailable" aria-label="'+label+'�
 const boxBody=(id:string):string=>{
   switch(id){
     case 'right.layers':return '<div id="layerList" class="layer-list" role="group" aria-label="レイヤー一覧"></div><button id="addLayer" type="button" disabled>'+icon('plus')+' レイヤー追加</button>';
-    case 'right.color':return disabled('カラー設定');
+    case 'right.color':return colorMarkup();
     case 'right.brush':return '<label>ブラシの種類<select id="brush" disabled></select></label><div class="scalar-row"><label for="size">太さ</label><input id="size" aria-label="ブラシの太さ" type="range" min="0.1" max="1024" step="0.1" value="16" disabled><input id="sizeNumber" aria-label="ブラシの太さの数値" type="number" min="0.1" max="1024" step="0.1" value="16" disabled><span>px</span></div><label class="checkbox-line"><input id="force" type="checkbox" disabled> 強制入り抜き</label><label class="checkbox-line"><input id="finger" type="checkbox"> 指で描く</label>';
     case 'right.navigator':return '<div class="box-actions"><button type="button" data-action="fitView">全体表示</button><button type="button" data-action="view100">100%</button><button type="button" data-action="actualPixels">実画素表示</button><button type="button" data-action="resetRotation">回転を戻す</button></div><label class="checkbox-line"><input id="seamless" type="checkbox"> 繰り返し表示</label>';
     case 'right.document':return '<div class="scalar-row"><label for="newCanvasWidth">新しい作品</label><input id="newCanvasWidth" aria-label="新しい作品の横幅（px）" type="number" min="1" max="8192" value="512"><span>×</span><input id="newCanvasHeight" aria-label="新しい作品の縦幅（px）" type="number" min="1" max="8192" value="384"></div><div class="box-actions"><button id="cropStart" type="button">切り抜き</button><button id="canvasResizeStart" type="button">キャンバスサイズを変更</button><button id="imageResizeStart" type="button">画像の大きさを変更</button></div><div class="box-actions"><button type="button" data-action="new">'+icon('plus')+' 新規作成</button><button type="button" data-action="open">'+icon('open')+' 作品を開く</button><button type="button" data-action="save">'+icon('save')+' 作品を保存</button><button type="button" data-action="exportImage">'+icon('export')+' 画像を書き出す</button><button type="button" data-action="recover">'+icon('recover')+' 自動保存から戻す</button></div>';
