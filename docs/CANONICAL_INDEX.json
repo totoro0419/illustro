@@ -1789,6 +1789,26 @@
     {
       "path": "scripts/editor-m07-smoke.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/HOME_MY_WORKS_IMPLEMENTATION_BRIEF_2026-10-12.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": ".github/workflows/home-ui-skeleton.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/home.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/homeShell.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/editor-home-smoke.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

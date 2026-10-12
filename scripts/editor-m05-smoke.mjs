@@ -34,7 +34,7 @@ if(!publicBase){
   base=`http://127.0.0.1:${server.address().port}/`;
 }
 
-const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface']});
+const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{}),args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface']});
 const report={milestone:'M05',mode:publicBase?'public':'local',url:base,status:'FAIL',backends:[],recovery:null,gap:null,lastGood:null,offline:null};
 
 function pageUrl(backend='webgl2'){const suffix=publicBase?`?backend=${backend}&build=${encodeURIComponent(expectedCommit)}&m05-public-check=1`:`?qa=1&backend=${backend}`;return base+suffix;}

@@ -5,6 +5,7 @@ export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
   revision:RevisionId;width:number;height:number;name:string;colorProfileId:string;
   layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number}>[];
+  basePixels?:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[];
   strokes:readonly Readonly<{surfaceId:string;record:StrokeRecord}>[];
 }>;
 export type ImageExportResult=Readonly<{
@@ -25,14 +26,16 @@ export function captureExport(document:CoreDocument):FrozenExport {
   });
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord}[]=[];
-  for(const op of document.operationsTo(revision)){
+  const operations=document.operationsTo(revision),geometryIndex=operations.findLastIndex(op=>['document.crop','document.canvas-resize','document.image-resize'].includes(op.kind));
+  const basePixels=geometryIndex>=0?root.rootLayerIds.map(id=>({surfaceId:root.getLayer(id).surface.descriptor.surfaceId,pixels:document.readBaseRasterPixels(id)})):undefined;
+  for(const op of operations.slice(geometryIndex+1)){
     if(op.kind==='brush.stroke'){
       const id=op.targetEntityIds[0],surfaceId=id===undefined?undefined:byLayer.get(id);
       if(!surfaceId)throw new Error('書き出し対象に不明なレイヤーがあります。');
       strokes.push(Object.freeze({surfaceId,record:validateRecord(op.parameters.strokeRecord)}));
     }else if(op.kind==='raster.strict-delta')throw new Error('厳密なラスターデータの書き出しはまだ利用できません。');
   }
-  return Object.freeze({revision,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,layers:Object.freeze(layers),strokes:Object.freeze(strokes)});
+  return Object.freeze({revision,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,layers:Object.freeze(layers),strokes:Object.freeze(strokes),...(basePixels?{basePixels}:{})});
 }
 
 /** Straight-alpha source-over; layer order is bottom to top. Output is never the presentation canvas. */
@@ -65,6 +68,7 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
     try{renderer=await GpuRenderer.create(canvas,width,height,'webgl2',{webglDesynchronized:false});}
     catch{renderer=await GpuRenderer.create(canvas,width,height,'webgpu',{webglDesynchronized:false});}
     renderer.setSurfaceStack(layers.map(l=>l.surfaceId));
+    if(frozen.basePixels)await seedBasePixels(renderer,frozen.basePixels,width,height);
     let id=0;
     for(const {surfaceId,record} of strokes){
       const preset={...record.preset,__legacyStarAa:record.engine==='illustro-rt-2.4'};
@@ -174,4 +178,17 @@ export async function exportImage(frozen:FrozenExport,format:ImageFormat,quality
   const blob=format==='png'?await encodePng(pixels,frozen.width,frozen.height):await encodeBrowser(flattened,frozen.width,frozen.height,format,quality);
   await verifyImage(blob,format,frozen.width,frozen.height);
   return Object.freeze({blob,revision:frozen.revision,format,mime:blob.type,width:frozen.width,height:frozen.height,quality:format==='png'?null:quality,alpha:format!=='jpeg',background:format==='jpeg'?'white':'transparent',encodeMs:performance.now()-encodedStart,totalMs:performance.now()-started,estimatedPeakBytes:frozen.width*frozen.height*4*(frozen.layers.length+4)});
+}
+
+async function seedBasePixels(renderer:GpuRenderer,layers:readonly {surfaceId:string;pixels:Uint8Array}[],width:number,height:number){
+  const backend=(renderer as unknown as {backend:any}).backend,T=128;
+  for(const layer of layers)for(let ty=0;ty<Math.ceil(height/T);ty++)for(let tx=0;tx<Math.ceil(width/T);tx++){
+    const pixels=new Uint8Array(T*T*4);let nonEmpty=false;
+    for(let y=0;y<Math.min(T,height-ty*T);y++){const row=layer.pixels.subarray(((ty*T+y)*width+tx*T)*4,((ty*T+y)*width+tx*T+Math.min(T,width-tx*T))*4);pixels.set(row,y*T*4);for(let i=3;i<row.length;i+=4)if(row[i])nonEmpty=true;}
+    if(!nonEmpty)continue;const key=tx+','+ty,tile=backend.tile(key,layer.surfaceId),target=tile.layer[tile.l];
+    if(backend.gl){const g=backend.gl;g.bindTexture(g.TEXTURE_2D,target.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,T,T,g.RGBA,g.UNSIGNED_BYTE,pixels);}
+    else backend.device.queue.writeTexture({texture:target},pixels,{bytesPerRow:T*4},[T,T]);
+    tile.committedId=-1;backend.dirtyConfirmed.add(key);
+  }
+  if(backend.device)await backend.device.queue.onSubmittedWorkDone();
 }

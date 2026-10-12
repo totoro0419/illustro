@@ -72,6 +72,15 @@ jobs:
           M06_EXPECT_MILESTONE: M07
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/editor-m06-smoke.mjs
+      - name: Home, Works and recovery regression (both GPU backends)
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
+          HOME_EVIDENCE_DIRECTORY: /tmp/m09-evidence/home-local
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/editor-home-smoke.mjs
+          node scripts/editor-works-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
       - name: Checkout immutable earlier QA snapshots
         uses: actions/checkout@v4
         with:
@@ -86,6 +95,8 @@ jobs:
           rm -rf site/qa/m09
           mkdir -p site/qa/m09
           cp -a apps/editor/dist/. site/qa/m09/
+          mkdir -p site/qa/m09/app
+          cp -a apps/editor/dist/. site/qa/m09/app/
           touch site/.nojekyll
           for n in 01 02 03 04 05 06 07 08; do
             (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/m$n.after"
@@ -128,6 +139,13 @@ jobs:
           M09_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m09/
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/editor-m09-smoke.mjs
+      - name: Published integrated Home preview check
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
+          HOME_EVIDENCE_DIRECTORY: /tmp/m09-evidence/home-public
+          HOME_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m09/app/
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-home-smoke.mjs
       - name: Upload build evidence
         uses: actions/upload-artifact@v4
         if: always()

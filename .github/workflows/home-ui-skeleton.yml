@@ -1,0 +1,146 @@
+name: Home Works Management
+on:
+  push:
+    branches: ['feature/home-my-works-foundation-2026-10-12']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: home-works-management
+  cancel-in-progress: true
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Canonical source lock and Core tests
+        run: |
+          npm run prep:check
+          npm run core:check
+          node --check scripts/editor-home-smoke.mjs
+      - name: Build Brush runtime
+        run: npm run brush:build
+      - name: Editor unit regression
+        run: npx vitest run apps/editor/src packages/core/src/geometry.test.ts
+      - name: Brush foundation exact 93 tests
+        run: |
+          node --test packages/brush-rt/test/*.test.mjs | tee /tmp/home-brush.txt
+          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/home-brush.txt
+          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/home-brush.txt
+          grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/home-brush.txt
+      - name: Editor typecheck and build
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA="$GITHUB_SHA" npm --workspace @illustro/editor exec -- vite build --base=./
+          test -f apps/editor/dist/sw.js
+          test -f apps/editor/dist/brand/illustro-logo.png
+          test -f apps/editor/dist/offline-assets.json
+      - name: Install Playwright Chromium
+        run: |
+          npm install --prefix /tmp/home-browser playwright@1.64.0 --no-audit --no-fund
+          /tmp/home-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Local Home desktop tablet mobile navigation and previous QA
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          HOME_EVIDENCE_DIRECTORY: /tmp/home-evidence/local
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-works-smoke.mjs
+      - name: Restart fallback and save failure safety
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          HOME_EVIDENCE_DIRECTORY: /tmp/home-evidence/safety
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-works-safety-smoke.mjs
+      - name: Home UI design and legacy QA isolation
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          HOME_EVIDENCE_DIRECTORY: /tmp/home-evidence/layout
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-home-smoke.mjs
+      - name: M08 canvas and display quality regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          M08_EVIDENCE_DIRECTORY: /tmp/home-evidence/m08-regression
+          M08_SMOKE_QUICK: '1'
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-m08-smoke.mjs
+      - name: M05 recovery regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          M05_EVIDENCE_DIRECTORY: /tmp/home-evidence/m05-regression
+          M05_EXPECT_MILESTONE: M07
+          M08_CORRUPT_ALL_RENDER_CACHES: '1'
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-m05-smoke.mjs
+      - name: M06 export regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          M06_EVIDENCE_DIRECTORY: /tmp/home-evidence/m06-regression
+          M06_EXPECT_MILESTONE: M07
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-m06-smoke.mjs
+      - name: Checkout published site
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+      - name: Preserve M01-M08 and stage only Home QA
+        run: |
+          for n in 01 02 03 04 05 06 07 08; do
+            test -f "site/qa/m$n/index.html"
+            (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/home-m$n.before"
+          done
+          rm -rf site/qa/home
+          mkdir -p site/qa/home
+          cp -a apps/editor/dist/. site/qa/home/
+          touch site/.nojekyll
+          for n in 01 02 03 04 05 06 07 08; do
+            (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/home-m$n.after"
+            diff -u "/tmp/home-m$n.before" "/tmp/home-m$n.after"
+          done
+      - name: Publish only Home UI QA
+        working-directory: site
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/home .nojekyll
+          if git diff --cached --quiet; then echo 'Home QA already published'; else
+            git commit -m 'qa: publish Home Works management'
+            git push origin HEAD:gh-pages
+          fi
+      - name: Verify published home and permanent old QA
+        run: |
+          ok=0
+          for i in $(seq 1 72); do
+            status=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/home.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/home/?build=$GITHUB_SHA" || true)
+            good=1
+            for n in 01 02 03 04 05 06 07 08; do
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /dev/null -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m$n/?home=$GITHUB_SHA" || true)
+              [ "$code" = '200' ] || good=0
+            done
+            asset=$(sed -n 's#.*src="./\([^"]*\.js\)".*#\1#p' /tmp/home.html | head -n 1)
+            if [ "$status" = '200' ] && [ "$good" = '1' ] && [ -n "$asset" ]; then
+              code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/home.js -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/home/$asset?build=$GITHUB_SHA" || true)
+              if [ "$code" = '200' ] && grep -q "$GITHUB_SHA" /tmp/home.js; then ok=1; break; fi
+            fi
+            sleep 5
+          done
+          test "$ok" = '1'
+      - name: Actual published Home browser QA
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          HOME_EVIDENCE_DIRECTORY: /tmp/home-evidence/public
+          HOME_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/home/
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-works-smoke.mjs
+      - name: Upload visual evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: home-works-management-evidence
+          path: |
+            /tmp/home-evidence
+            /tmp/home-brush.txt

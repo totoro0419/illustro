@@ -14,8 +14,8 @@ export class BrushSurface{
   private panning:{id:number;point:Point}|null=null;private keyboardSpace=false;private densityMedia:MediaQueryList|null=null;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
-  async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('m08-canvas-viewport')?.94:1);
-    this.canvas.style.aspectRatio=document.body.classList.contains('m08-canvas-viewport')?'auto':target.width+' / '+target.height;
+  async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
+    this.canvas.style.aspectRatio=document.body.classList.contains('canvas-viewport')?'auto':target.width+' / '+target.height;
     const rect=this.canvas.getBoundingClientRect();this.view.resize(Math.max(1,rect.width),Math.max(1,rect.height));this.setBackingSize();
     const requested=new URLSearchParams(location.search).get('backend');
     this._initializationError=null;
@@ -205,6 +205,38 @@ export class BrushSurface{
       const d=backend.device,gpu=globalThis as unknown as {GPUBufferUsage:{COPY_DST:number;MAP_READ:number};GPUMapMode:{READ:number}},b=d.createBuffer({size:out.byteLength,usage:gpu.GPUBufferUsage.COPY_DST|gpu.GPUBufferUsage.MAP_READ}),e=d.createCommandEncoder();e.copyTextureToBuffer({texture:target},{buffer:b,bytesPerRow:TILE*4},[TILE,TILE]);d.queue.submit([e.finish()]);await b.mapAsync(gpu.GPUMapMode.READ);out.set(new Uint8Array(b.getMappedRange()));b.unmap();b.destroy();return out;
     }
     throw new Error('Projection checkpoint readback backend unsupported');
+  }
+  /** Build a small artwork preview from occupied GPU tiles, without allocating full-size layer bitmaps. */
+  async captureWorkThumbnail():Promise<Blob>{
+    if(!this.renderer||this.busy||this.disposed)throw new Error('描画処理が完了していません。');
+    await this.renderer.drain();
+    if(this.busy||this.disposed)throw new Error('描画状態が変更されました。');
+    const root=this.controller.document.root,scale=Math.min(1,320/root.width,240/root.height);
+    const width=Math.max(1,Math.round(root.width*scale)),height=Math.max(1,Math.round(root.height*scale));
+    const output=new OffscreenCanvas(width,height),context=output.getContext('2d');
+    if(!context)throw new Error('Thumbnail 2D canvas unavailable');
+    const backend=(this.renderer as unknown as {backend?:any}).backend;
+    if(!backend?.tiles?.values)throw new Error('GPU tile snapshot unavailable');
+    const occupied=[...backend.tiles.values()] as {key:string;surfaceKey:string;x:number;y:number}[];
+    const tileCanvas=new OffscreenCanvas(TILE,TILE),tileContext=tileCanvas.getContext('2d');
+    if(!tileContext)throw new Error('Thumbnail tile canvas unavailable');
+    for(const layer of this.controller.layers){
+      if(!layer.visible||layer.opacity<=0)continue;
+      const key=layer.surface.descriptor.surfaceId;
+      const layerCanvas=new OffscreenCanvas(width,height),layerContext=layerCanvas.getContext('2d');
+      if(!layerContext)throw new Error('Thumbnail layer canvas unavailable');
+      for(const tile of occupied){
+        if(tile.surfaceKey!==key)continue;
+        if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
+        const pixels=await this.readBackendTile(backend,tile.key,key);
+        const imageData=new ImageData(new Uint8ClampedArray(pixels),TILE,TILE);
+        tileContext.putImageData(imageData,0,0);
+        layerContext.drawImage(tileCanvas,tile.x*scale,tile.y*scale,TILE*scale,TILE*scale);
+      }
+      context.globalAlpha=layer.opacity;context.drawImage(layerCanvas,0,0);
+    }
+    if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
+    return output.convertToBlob({type:'image/png'});
   }
   async captureDocumentLayers(){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
     await this.renderer.drain();
