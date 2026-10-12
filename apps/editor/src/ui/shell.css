@@ -224,3 +224,25 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
  body.right-overlay .canvas-top #status{flex:none;min-width:0;width:max(170px,calc(100% - var(--workspace) - 22px))}
  body.right-overlay .canvas-top .document-actions{max-width:calc(100% - var(--workspace) - 22px)}
 }
+
+/* M08 navigation: separate responsive view controls from the fixed M07 panels. */
+.canvas-view-strip{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;padding:5px 9px;max-width:100%;background:#fff9;border-bottom:1px solid var(--a-border);font-size:12px}
+.canvas-view-strip button{min-width:38px;min-height:34px;padding:5px 9px;border-radius:8px;border:1px solid var(--a-border);background:var(--a-surface,#fff);color:var(--a-text,#253047);font-size:12px}
+.canvas-view-strip button:focus-visible{outline:2px solid var(--a-accent,#708fff)}
+.view-number-label{display:flex;gap:3px;align-items:center;font-size:12px}
+.view-number-label input{width:57px;max-width:65px;min-height:33px;border:1px solid var(--a-border);border-radius:7px;background:#fff;color:#253047;text-align:center}
+.commands button[aria-pressed=true]{background:var(--a-accent-soft,#e9eeff)}
+@media(max-width:760px){.canvas-view-strip{justify-content:flex-start;width:100%;overflow-x:auto;flex-wrap:nowrap;flex:none}.canvas-view-strip button{flex:none}.view-number-label{flex:none}}
+
+/* M08 document geometry UI. The overlay is view-only and never a raster layer. */
+.surface{position:relative}
+.crop-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.crop-overlay[hidden]{display:none!important}
+#cropPolygon{stroke:#e6a62e;stroke-width:2;stroke-dasharray:7 4;vector-effect:non-scaling-stroke;fill:#f5c85422}
+.crop-handle{fill:white;stroke:#d38a13;stroke-width:3;vector-effect:non-scaling-stroke;pointer-events:all;cursor:move;touch-action:none;filter:drop-shadow(0 1px 2px #2334)}
+.geometry-dialog{position:fixed;left:max(80px,calc(var(--rail) + 12px));top:calc(var(--top) + 78px);margin:0;z-index:20;width:min(348px,calc(100vw - var(--rail) - 30px));max-height:calc(100dvh - var(--top) - 90px);overflow:auto;background:var(--a-surface);color:var(--a-text);border:1px solid var(--a-border-strong);border-radius:14px;padding:16px;box-shadow:0 14px 36px #24324638}
+.geometry-dialog h2{font-size:17px;margin:0 0 7px}.geometry-dialog p{font-size:12px;margin:6px 0 12px;color:var(--a-subtle)}
+.geometry-inputs{display:grid;grid-template-columns:1fr 1fr;gap:9px}.geometry-inputs label{display:flex;flex-direction:column;gap:4px;font-size:12px}.geometry-inputs input,.geometry-inputs select{width:100%;min-height:35px;padding:4px 7px;border:1px solid var(--a-border-strong);background:white;border-radius:8px;color:var(--a-text)}
+.geometry-dialog .export-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:12px}
+.geometry-dialog .export-actions button{min-height:38px;border-radius:9px;border:1px solid var(--a-border);padding:6px 12px;background:white}
+.geometry-dialog #geometryApply{background:#ffe49b;border-color:#e9bd53}

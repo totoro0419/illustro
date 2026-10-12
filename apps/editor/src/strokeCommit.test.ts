@@ -35,7 +35,28 @@ describe('M01 stroke -> Document adapter',()=>{
     await expect(port.commitStroke(target,record([command(30,30)]))).rejects.toThrow(/作品の状態が変わりました/);
     expect(d.head).toBe(head);expect(d.revisionCount).toBe(count);
   });
-  it('does not offer a locked Raster Layer as a drawing target',()=>{
+  it('commits seam copies in one artwork revision and undoes both together',async()=>{
+    const d=new CoreDocument({width:512,height:384}),port=new CoreStrokeDocumentPort(d),layer=d.defaultRasterLayerId,start=d.head;
+    const original=record([command(506,150,496,150,24)]),copy=record([command(-6,150,-16,150,24)]);
+    const result=await port.commitStroke(port.target(),original,[copy]);
+    expect(d.head).not.toBe(start);expect(d.revisionCount).toBe(2);
+    expect(d.currentRevision.command?.operations).toHaveLength(2);
+    const ops=d.currentRevision.command!.operations;
+    expect(ops[0]?.parameters.seamlessCopy).toBeUndefined();
+    expect(ops[1]?.parameters.seamlessCopy).toBe(true);
+    expect(d.getTileValue(layer,1,0)?.mutations).toHaveLength(1);
+    expect(d.getTileValue(layer,0,0)?.mutations).toHaveLength(1);
+    expect(result.dirtyTileCount).toBeGreaterThanOrEqual(2);
+    const snapshot=d.capturePersistenceSnapshot(),blocks=d.persistenceBlockPayloads(snapshot);
+    const restored=CoreDocument.restore({snapshot,blockPayloads:blocks});
+    expect(restored.currentRevision.command?.operations).toHaveLength(2);
+    expect(restored.currentRevision.command?.operations[1]?.parameters.seamlessCopy).toBe(true);
+    restored.undo();expect(restored.head).toBe(start);
+    restored.redo();expect(restored.currentRevision.command?.operations).toHaveLength(2);
+    d.undo();expect(d.head).toBe(start);
+    d.redo();expect(d.currentRevision.command?.operations).toHaveLength(2);
+  });
+    it('does not offer a locked Raster Layer as a drawing target',()=>{
     const d=new CoreDocument({width:512,height:512}),port=new CoreStrokeDocumentPort(d),layer=d.defaultRasterLayerId;
     const tx=d.begin('lock');tx.setLayerLocked(layer,true);tx.commit();
     expect(()=>port.target()).toThrow(/ロック/);

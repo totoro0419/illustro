@@ -23,6 +23,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": ".github/workflows/m08-canvas-operations-quality.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/index.html",
       "status": "EXPERIMENTAL"
     },
@@ -39,6 +43,22 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "apps/editor/src/canvasGeometry.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/canvasGeometry.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/canvasView.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/canvasView.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/src/controller.ts",
       "status": "EXPERIMENTAL"
     },
@@ -48,6 +68,18 @@
     },
     {
       "path": "apps/editor/src/ports.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/seamlessPreview.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/seamlessStroke.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/seamlessStroke.ts",
       "status": "EXPERIMENTAL"
     },
     {
@@ -157,6 +189,10 @@
     {
       "path": "docs/architecture/INTEGRATION_VALIDATION.md",
       "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/architecture/M08_VIEW_PRESENTATION_BOUNDARY.md",
+      "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/architecture/PERFORMANCE_AUDIT_2026-09-27.md",
@@ -1083,6 +1119,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "docs/research/M08_CANVAS_COMPETITOR_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
       "status": "OBSOLETE"
     },
@@ -1464,6 +1504,10 @@
     },
     {
       "path": "packages/core/src/documentValidation.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/core/src/geometry.test.ts",
       "status": "EXPERIMENTAL"
     },
     {

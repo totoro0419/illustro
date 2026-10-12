@@ -25,8 +25,8 @@ export class EditorController{
   addRasterLayer(){const {layerId,receipt}=this.document.addRasterLayerAbove(this.selectedLayerIdValue);this.selectedLayerIdValue=layerId;this.lastPersistenceHandoff=receipt.persistence;return layerId;}
   strokeCountForLayer(id:LayerId){return this.committedByLayer.get(id)??0;}
   target():DrawingTarget{const port=this.ports.document;if(!port)throw new Error('Document connection unavailable');return port.target();}
-  async finishStroke(target:DrawingTarget,record:StrokeRecord){
-    const port=this.ports.document;if(!port)throw new Error('Document connection unavailable');const result=await port.commitStroke(target,record);
+  async finishStroke(target:DrawingTarget,record:StrokeRecord,additional:readonly StrokeRecord[]=[]){
+    const port=this.ports.document;if(!port)throw new Error('Document connection unavailable');const result=await port.commitStroke(target,record,additional);
     this.committedStrokeCount++;if(record.preset.blend==='erase')this.committedEraserStrokeCount++;this.committedByLayer.set(target.layerId,this.strokeCountForLayer(target.layerId)+1);this.lastCommit=result;this.lastPersistenceHandoff=result.persistence;return result;
   }
   undo():EditorHistoryChange{
@@ -41,7 +41,7 @@ export class EditorController{
   }
   private rebuildStrokeCounters(){
     this.committedByLayer.clear();this.committedStrokeCount=0;this.committedEraserStrokeCount=0;
-    for(const operation of this.document.operationsTo()){if(operation.kind!=='brush.stroke')continue;const layerId=operation.targetEntityIds[0];if(!layerId)continue;this.committedStrokeCount++;if(operation.parameters.action==='erase')this.committedEraserStrokeCount++;this.committedByLayer.set(layerId,this.strokeCountForLayer(layerId)+1);}
+    for(const operation of this.document.operationsTo()){if(operation.kind!=='brush.stroke'||operation.parameters.seamlessCopy===true)continue;const layerId=operation.targetEntityIds[0];if(!layerId)continue;this.committedStrokeCount++;if(operation.parameters.action==='erase')this.committedEraserStrokeCount++;this.committedByLayer.set(layerId,this.strokeCountForLayer(layerId)+1);}
   }
   private reconcileSelection(previousOrder:readonly LayerId[]){
     const root=this.document.root;if(root.hasLayer(this.selectedLayerIdValue))return;
@@ -51,7 +51,7 @@ export class EditorController{
   }
   private adjustStrokeCounters(direction:'undo'|'redo',operations:readonly SemanticOperation[]){
     const delta=direction==='undo'?-1:1;
-    for(const operation of operations){if(operation.kind!=='brush.stroke')continue;const layerId=operation.targetEntityIds[0];if(layerId===undefined)continue;
+    for(const operation of operations){if(operation.kind!=='brush.stroke'||operation.parameters.seamlessCopy===true)continue;const layerId=operation.targetEntityIds[0];if(layerId===undefined)continue;
       this.committedStrokeCount=Math.max(0,this.committedStrokeCount+delta);if(operation.parameters.action==='erase')this.committedEraserStrokeCount=Math.max(0,this.committedEraserStrokeCount+delta);this.committedByLayer.set(layerId,Math.max(0,this.strokeCountForLayer(layerId)+delta));}
   }
 }

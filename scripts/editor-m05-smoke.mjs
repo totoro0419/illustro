@@ -124,14 +124,40 @@ async function corruptDocumentSave(page,doc,relative){
     const file=await dir.getFileHandle(name),w=await file.createWritable();await w.write(new Uint8Array([0,1,2,3]));await w.truncate(4);await w.close();
   },{doc,relative});
 }
-async function corruptOpfsFile(page,doc,epoch,relative){
-  await page.evaluate(async({doc,epoch,relative})=>{
-    let dir=await navigator.storage.getDirectory();
+async function corruptOpfsFile(page,doc,epoch,relative,allowMissingIndexFallback=false){
+  return await page.evaluate(async({doc,epoch,relative,allowMissingIndexFallback})=>{
+    let dir=await navigator.storage.getDirectory(),stage='open session';
     for(const name of ['m05','sessions',doc,epoch])dir=await dir.getDirectoryHandle(name);
     const parts=relative.split('/'),name=parts.pop();if(!name)throw new Error('bad test path');
     for(const part of parts)dir=await dir.getDirectoryHandle(part);
-    const file=await dir.getFileHandle(name),w=await file.createWritable();await w.write(new Uint8Array([0,1,2,3]));await w.truncate(4);await w.close();
-  },{doc,epoch,relative});
+    try{
+      stage='open file';
+      const file=await dir.getFileHandle(name);
+      stage='read original';
+      const original=await (await file.getFile()).arrayBuffer();
+      if(original.byteLength<=4)throw new Error('render cache missing valid pre-corruption data: '+relative);
+      stage='create writable';
+      const w=await file.createWritable();
+      try{
+        stage='write damaged bytes';
+        await w.write(new Uint8Array([0,1,2,3]));await w.truncate(4);await w.close();
+      }catch(error){try{await w.abort?.();}catch{}throw error;}
+      stage='verify damaged bytes';
+      const damaged=new Uint8Array(await (await file.getFile()).arrayBuffer());
+      if(damaged.byteLength!==4||damaged.some((byte,i)=>byte!==i))throw new Error('render cache corruption was not persisted: '+relative);
+      return {file:relative,mode:'corrupted',beforeBytes:original.byteLength,afterBytes:damaged.byteLength};
+    }catch(error){
+      // Some Chromium OPFS entries reject createWritable() with NotFoundError
+      // even after editor workers have closed. A missing legacy cache is a
+      // separate, equally necessary fallback scenario; never silently skip it.
+      if(!allowMissingIndexFallback||error?.name!=='NotFoundError')throw new Error('render cache corruption failed at '+stage+' for '+relative+': '+String(error));
+      try{await dir.removeEntry(name);}
+      catch(removeError){if(removeError?.name!=='NotFoundError')throw removeError;}
+      try{await dir.getFileHandle(name);throw new Error('legacy projection index still present after deletion');}
+      catch(verifyError){if(verifyError?.name!=='NotFoundError')throw verifyError;}
+      return {file:relative,mode:'removed',priorFailureStage:stage,priorFailureName:error.name};
+    }
+  },{doc,epoch,relative,allowMissingIndexFallback});
 }
 
 try{
@@ -210,7 +236,33 @@ try{
   {
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     await draw(page,[.14,.25],[.84,.25],5);await waitStroke(page,1);await draw(page,[.14,.50],[.84,.50],5);await waitStroke(page,2);await draw(page,[.14,.75],[.84,.75],5);await waitStroke(page,3);await waitProtected(page,3);await page.waitForTimeout(1200);
-    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;await waitForOpfsEntry(page,doc,epoch,'projection-v2.frame');await corruptOpfsFile(page,doc,epoch,'projection-v2.frame');await page.close();
+    const state=await qa(page),doc=state.documentId,epoch=state.writerEpoch,head=state.currentRevision;
+    // Stop the editor before injecting failures: this rules out a live writer as
+    // an explanation. The v2 index must be malformed, and the legacy index
+    // must be demonstrably malformed or absent before testing journal replay.
+    // Keep this isolated from the PWA's service worker and editor worker.
+    // A Playwright-fulfilled HTML document retains the editor's origin/OPFS,
+    // unlike a JSON asset which Chromium may treat as a download.
+    await page.evaluate(async()=>{
+      if('serviceWorker' in navigator){
+        await Promise.all((await navigator.serviceWorker.getRegistrations()).map(registration=>registration.unregister()));
+      }
+    });
+    await page.close();
+    const corruptPage=await context.newPage(),probeUrl=new URL('__m05_opfs_corruption_probe__.html',base).href;
+    await corruptPage.route(probeUrl,route=>route.fulfill({status:200,contentType:'text/html; charset=utf-8',body:'<!doctype html><title>OPFS corruption probe</title>'}));
+    const probeResponse=await corruptPage.goto(probeUrl,{waitUntil:'load',timeout:45000});
+    assert.equal(probeResponse?.status(),200);
+    assert.equal(await corruptPage.title(),'OPFS corruption probe');
+    const corrupted=[];
+    await waitForOpfsEntry(corruptPage,doc,epoch,'projection-v2.frame');
+    corrupted.push(await corruptOpfsFile(corruptPage,doc,epoch,'projection-v2.frame'));
+    if(process.env.M08_CORRUPT_ALL_RENDER_CACHES==='1'){
+      await waitForOpfsEntry(corruptPage,doc,epoch,'projection.frame');
+      corrupted.push(await corruptOpfsFile(corruptPage,doc,epoch,'projection.frame',true));
+    }
+    report.corruptedProjectionCaches=corrupted;
+    await corruptPage.close();
     const restoredPage=await context.newPage({viewport:{width:1000,height:760}});await restoredPage.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await restoredPage.waitForFunction(()=>!(document.getElementById('recover')?.disabled),{timeout:30000});await restoredPage.locator('#recover').click();await restoredPage.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('自動保存された最新の作業状態へ戻しました'),{timeout:30000});await waitReady(restoredPage);
     const repaired=await qa(restoredPage);assert.equal(repaired.currentRevision,head);assert.equal(repaired.totalStrokeCount,3);assert.equal(repaired.projectionRestoreMode,'replay-fallback');report.repairFallback={status:'PASS',cacheCorrupted:true,strategy:'stroke-replay',strokeCount:3};await context.close();
   }

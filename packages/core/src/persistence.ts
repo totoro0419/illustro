@@ -8,7 +8,7 @@ import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
 const UUID_V4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster']);
+const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','document.crop','document.canvas-resize','document.image-resize']);
 const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.unorm16.v1','rgba.float32.v1']);
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
@@ -173,14 +173,19 @@ export type CoreRecoveryPacketV1=Readonly<{
   schema:'illustro.core.recovery-packet';schemaVersion:1;handoff:PersistedPersistenceHandoff;
   revision:Readonly<{id:string;parentIds:readonly string[];transactionId:string;command:Command;commitStamp:Readonly<{writerEpochId:string;commitSequence:string}>;committedAt:number}>;
   modifiedAt:number;layerStates:readonly RecoveryLayerState[];rootLayerIds:readonly string[]|null;tileChanges:readonly RecoveryTileChange[];blocks:readonly PersistedBlockDescriptor[];
+  /** M08: complete rebased document root for a dimension-changing transaction. */
+  replacementRoot?:PersistedRoot|null;
 }>;
 
 export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentRoot>,store:CanonicalTileStore,handoff:PersistenceHandoff):CoreRecoveryPacketV1{
   const revision=history.revisions.find(item=>item.id===handoff.resultRevisionId);if(!revision||!revision.command||!revision.commitStamp)throw new Error('recovery revision missing');
   if(revision.commitStamp.writerEpochId!==handoff.commitStamp.writerEpochId||revision.commitStamp.commitSequence!==handoff.commitStamp.commitSequence)throw new Error('recovery handoff stamp mismatch');
   if(revision.parentIds.length!==handoff.parentRevisionIds.length||revision.parentIds.some((id,i)=>id!==handoff.parentRevisionIds[i]))throw new Error('recovery parent mismatch');
-  const layerStates:RecoveryLayerState[]=[],layerStateIds=new Set<string>(),tileChanges:RecoveryTileChange[]=[];let structural=false;
+  const layerStates:RecoveryLayerState[]=[],layerStateIds=new Set<string>(),tileChanges:RecoveryTileChange[]=[];let structural=false,geometry=false;
   for(const operation of revision.command.operations){
+    if(operation.kind==='document.crop'||operation.kind==='document.canvas-resize'||operation.kind==='document.image-resize'){
+      geometry=true;continue;
+    }
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
     if(operation.kind==='layer.metadata'||operation.kind==='layer.add-raster'){
       if(!layerStateIds.has(layerId)){layerStateIds.add(layerId);layerStates.push(Object.freeze({id:layer.id,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,surfaceDescriptor:layer.surface.descriptor}));}
@@ -194,6 +199,10 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
         tileChanges.push(Object.freeze({mode:'set-block' as const,layerId,key,blockId:value.baseBlockId}));}
     }else throw new Error('unsupported recovery operation');
   }
+  // Dimension changes replace entire layer tile maps. Ordinary deltas cannot
+  // describe erased old tiles or new document dimensions: persist the new root.
+  const geometryBlocks=new Set<BlockId>(),replacementRoot=geometry?serializeRoot(revision.root,geometryBlocks):null;
+  if(geometry&&[...geometryBlocks].some(id=>!handoff.requiredBlockIds.includes(id)))throw new Error('geometry recovery dependency missing');
   const blocks=Object.freeze(handoff.requiredBlockIds.map(id=>Object.freeze({id,descriptor:store.descriptor(id)})));
   const persistedHandoff:PersistedPersistenceHandoff=Object.freeze({schemaVersion:2 as const,writerEpochId:handoff.commitStamp.writerEpochId,commitSequence:handoff.commitStamp.commitSequence.toString(),
     transactionId:handoff.transactionId,parentRevisionIds:Object.freeze([...handoff.parentRevisionIds]),resultRevisionId:handoff.resultRevisionId,documentId:handoff.documentRootRef.documentId,
@@ -202,7 +211,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
   return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff:persistedHandoff,
     revision:Object.freeze({id:revision.id,parentIds:Object.freeze([...revision.parentIds]),transactionId:revision.transactionId!,command:revision.command,
       commitStamp:Object.freeze({writerEpochId:revision.commitStamp.writerEpochId,commitSequence:revision.commitStamp.commitSequence.toString()}),committedAt:revision.committedAt}),
-    modifiedAt:revision.root.metadata.modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds:structural?Object.freeze([...revision.root.rootLayerIds]):null,tileChanges:Object.freeze(tileChanges),blocks});
+    modifiedAt:revision.root.metadata.modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds:structural?Object.freeze([...revision.root.rootLayerIds]):null,tileChanges:Object.freeze(tileChanges),blocks,replacementRoot});
 }
 
 export function mergeCoreRecovery(baseValue:unknown,packetValues:readonly unknown[],headRevisionId?:string):CorePersistenceSnapshotV1{
@@ -240,10 +249,24 @@ function parseRecoveryPacket(value:unknown):CoreRecoveryPacketV1{
     if(t.mode==='set-block')return Object.freeze({mode:'set-block' as const,layerId,key,blockId:uuid(t.blockId,'block id')});if(t.mode==='append-mutation'){const m=record(t.mutation,'mutation'),mutation:Object=Object.freeze({operationKey:parseOperationKey(m.operationKey),bounds:parseBounds(m.bounds),workUnits:integer(m.workUnits,'workUnits',1),commandIndices:Object.freeze(Array.isArray(m.commandIndices)?m.commandIndices.map(i=>integer(i,'command index',0)):(()=>{throw new Error('invalid command indices')})())});return Object.freeze({mode:'append-mutation' as const,layerId,key,mutation:mutation as RasterMutationRef});}throw new Error('invalid recovery tile change');});
   const packetBlocks=p.blocks.map(x=>{const b=record(x,'recovery block'),id=uuid(b.id,'block id'),descriptor=parseBlockDescriptor(b.descriptor);return Object.freeze({id,descriptor});});
   const handoff=Object.freeze({schemaVersion:2 as const,writerEpochId,commitSequence,transactionId,parentRevisionIds:Object.freeze(parentRevisionIds),resultRevisionId,documentId,semanticOperationRefs:Object.freeze(semanticOperationRefs),requiredBlockIds:Object.freeze(requiredBlockIds),requiredResourceIds:Object.freeze(requiredResourceIds),requiredAlgorithmVersionRefs:Object.freeze(requiredAlgorithmVersionRefs)});
-  return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff,revision:Object.freeze({id:resultRevisionId,parentIds:Object.freeze(revisionParentIds),transactionId,command,commitStamp:Object.freeze({writerEpochId,commitSequence}),committedAt}),modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds,tileChanges:Object.freeze(tileChanges),blocks:Object.freeze(packetBlocks)});
+  const geometry=command.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
+  const replacementRoot=p.replacementRoot===undefined||p.replacementRoot===null?null:(()=>{
+    // Verify every rebased tile refers to a block in this protected packet.
+    const descriptors=new Map<BlockId,RasterBlockDescriptor>(packetBlocks.map(item=>[item.id as BlockId,item.descriptor]));
+    const parsed=parseRoot(p.replacementRoot,descriptors),blockIds=new Set<BlockId>();
+    const root=serializeRoot(parsed,blockIds);
+    if([...blockIds].some(id=>!requiredBlockIds.includes(id)))throw new Error('geometry recovery block not protected');
+    return root;
+  })();
+  if(geometry!==!!replacementRoot)throw new Error('geometry recovery root missing or unexpected');
+  return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff,revision:Object.freeze({id:resultRevisionId,parentIds:Object.freeze(revisionParentIds),transactionId,command,commitStamp:Object.freeze({writerEpochId,commitSequence}),committedAt}),modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds,tileChanges:Object.freeze(tileChanges),blocks:Object.freeze(packetBlocks),replacementRoot});
 }
 
 function applyRootDelta(parent:PersistedRoot,packet:CoreRecoveryPacketV1):PersistedRoot{
+  if(packet.replacementRoot){
+    if(packet.replacementRoot.documentId!==parent.documentId)throw new Error('geometry recovery document identity mismatch');
+    return packet.replacementRoot;
+  }
   const layers=parent.layers.map(layer=>({...layer,surface:{descriptor:layer.surface.descriptor,tiles:[...layer.surface.tiles]}})) as Array<{id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;surface:{descriptor:RasterSurfaceDescriptor;tiles:Array<{key:string;value:RasterTileValue}>}}>;
   for(const state of packet.layerStates){let layer=layers.find(x=>x.id===state.id);if(!layer){layer={id:state.id,kind:'raster',name:state.name,visible:state.visible,opacity:state.opacity,locked:state.locked,surface:{descriptor:state.surfaceDescriptor,tiles:[]}};layers.push(layer);}
     else{layer.name=state.name;layer.visible=state.visible;layer.opacity=state.opacity;layer.locked=state.locked;if(layer.surface.descriptor.surfaceId!==state.surfaceDescriptor.surfaceId)throw new Error('recovery surface identity changed');}}

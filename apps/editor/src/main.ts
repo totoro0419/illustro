@@ -5,16 +5,20 @@ import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
+import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
 import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import type {SemanticOperation} from '@illustro/core';
 
 const qaPath=location.pathname.replace(/\/+$/,'');
-const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWith('/qa/m05')||qaPath.endsWith('/qa/m05/index.html')||qaPath.endsWith('/qa/m06')||qaPath.endsWith('/qa/m06/index.html')||qaPath.endsWith('/qa/m07')||qaPath.endsWith('/qa/m07/index.html');
+const m08Mode=new URLSearchParams(location.search).has('m08')||qaPath.endsWith('/qa/m08')||qaPath.endsWith('/qa/m08/index.html');
+const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWith('/qa/m05')||qaPath.endsWith('/qa/m05/index.html')||qaPath.endsWith('/qa/m06')||qaPath.endsWith('/qa/m06/index.html')||qaPath.endsWith('/qa/m07')||qaPath.endsWith('/qa/m07/index.html')||m08Mode;
 const qaStartedAt=new Date().toISOString();
 const app=document.querySelector<HTMLDivElement>('#app')!;
-app.innerHTML=shellMarkup(qaMode,qaMode?qaMarkup():'');
+app.innerHTML=shellMarkup(qaMode,qaMode?(m08Mode?qaM08Markup():qaMarkup()):'');
+// In M08 the GPU canvas is the entire interaction viewport, not a fixed paper rectangle.
+if(m08Mode)document.body.classList.add('m08-canvas-viewport');
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();
@@ -73,10 +77,10 @@ const updateQa=()=>{
   canvas.dataset.layerCount=String(controller.layers.length);canvas.dataset.selectedLayerId=controller.selectedLayerId;canvas.dataset.selectedLayerName=selected.name;
   canvas.dataset.canUndo=String(controller.canUndo);canvas.dataset.canRedo=String(controller.canRedo);canvas.dataset.historyBusy=String(historyPending||surface?.busy===true);canvas.dataset.historyPatchHits=String(surface?.historyPatchHits??0);canvas.dataset.historyReplayFallbacks=String(surface?.historyReplayFallbacks??0);canvas.dataset.selectedTool=selectedTool;canvas.dataset.selectedPresetId=surface?.brushId??'未選択';canvas.dataset.selectedBlend=surface?.blendMode??'normal';canvas.dataset.eraserStrokes=String(controller.committedEraserStrokeCount);
   if(!qaMode)return;
-  const data={milestone:'M07',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',backendSelection:surface?.backendSelection??null,initializationError:surface?.initializationError??null,viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
+  const data={display:surface?.displayDiagnostics??null,milestone:m08Mode?'M08':'M07',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',backendSelection:surface?.backendSelection??null,initializationError:surface?.initializationError??null,viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
     selectedTool,selectedPresetId:surface?.brushId??'未選択',selectedPresetName:surface?.brushName??'未選択',blendMode:surface?.blendMode??'normal',eraserType:surface?.eraserType,size:surface?.brushSize??0,
     layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:controller.canUndo,canRedo:controller.canRedo,
-    undoCount,redoCount,blockedHistoryGhostClicks,eraserCommittedStrokeCount:controller.committedEraserStrokeCount,totalStrokeCount:controller.committedStrokeCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,rendererArtworkAlpha:surface?.rendererArtworkAlpha??false,presentationOpaque:surface?.presentationOpaque??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,projectionRestoreMs:surface?.projectionRestoreMs??0,projectionRestoreMode:surface?.projectionRestoreMode??'none',projectionCacheRevision:surface?.projectionCacheRevision??null,browserPredictionSamples:surface?.browserPredictionSamples??0,
+    seamlessCopyCount:controller.document.currentRevision.command?.operations.filter(op=>op.parameters.seamlessCopy===true).length??0,undoCount,redoCount,blockedHistoryGhostClicks,eraserCommittedStrokeCount:controller.committedEraserStrokeCount,totalStrokeCount:controller.committedStrokeCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,rendererArtworkAlpha:surface?.rendererArtworkAlpha??false,presentationOpaque:surface?.presentationOpaque??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,projectionRestoreMs:surface?.projectionRestoreMs??0,projectionRestoreMode:surface?.projectionRestoreMode??'none',projectionCacheRevision:surface?.projectionCacheRevision??null,browserPredictionSamples:surface?.browserPredictionSamples??0,
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
     activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:!workspace.inert,workspaceDisplay:getComputedStyle(workspace).display,
     visualViewport:window.visualViewport?{width:Math.round(window.visualViewport.width),height:Math.round(window.visualViewport.height),offsetTop:Math.round(window.visualViewport.offsetTop),offsetLeft:Math.round(window.visualViewport.offsetLeft),scale:window.visualViewport.scale}:null,
@@ -113,11 +117,109 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   persistence.noteCommit(controller.document,handoff);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateQa();},backendOverride);}
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateViewControls();redrawCrop();updateQa();},backendOverride);}
 surface=makeSurface();
+function updateViewControls(){const state=surface?.viewState;if(!state)return;
+  byId<HTMLInputElement>('zoomPercent').value=String(Math.round(state.zoom*1000)/10);
+  byId<HTMLInputElement>('angleDegree').value=String(Math.round(state.rotation*180/Math.PI*10)/10);
+  for(const [id,on] of [['flipH',state.flipX],['flipV',state.flipY]] as const)byId<HTMLButtonElement>(id).setAttribute('aria-pressed',String(on));
+  const tile=byId<HTMLInputElement>('seamless');if(tile)tile.checked=state.seamless;
+}
 const shellUi=installShellUi(),workspace=shellUi.workspace;
 
 function syncPreset(){if(!surface?.preset)return;byId<HTMLInputElement>('size').value=String(surface.preset.size);byId<HTMLInputElement>('sizeNumber').value=String(surface.preset.size);byId<HTMLInputElement>('force').checked=surface.preset.forceFade?.enabled??false;updateQa();}
+type GeometryMode='document.crop'|'document.canvas-resize'|'document.image-resize';
+let geometryMode:GeometryMode|null=null,geometryBusy=false;
+const geometryDialog=byId<HTMLDialogElement>('geometryDialog'),cropOverlay=document.getElementById('cropOverlay') as unknown as SVGSVGElement;
+const dimensionInput=(id:string)=>byId<HTMLInputElement>(id);
+function geometryRect(){
+ const root=controller.document.root;
+ const x=Number(dimensionInput('geometryX').value),y=Number(dimensionInput('geometryY').value),w=Number(dimensionInput('geometryWidth').value),h=Number(dimensionInput('geometryHeight').value);
+ if(![x,y,w,h].every(Number.isSafeInteger)||w<1||h<1||x<0||y<0||x+w>root.width||y+h>root.height)return null;
+ return {x,y,w,h};
+}
+function redrawCrop(){
+ if(geometryMode!=='document.crop'||!surface)return;
+ const rect=geometryRect();if(!rect){cropOverlay.setAttribute('hidden','');return;}
+ cropOverlay.removeAttribute('hidden');
+ const a=surface.documentToScreen({x:rect.x,y:rect.y}),b=surface.documentToScreen({x:rect.x+rect.w,y:rect.y}),c=surface.documentToScreen({x:rect.x+rect.w,y:rect.y+rect.h}),d=surface.documentToScreen({x:rect.x,y:rect.y+rect.h});
+ const points=[a,b,c,d];(document.getElementById('cropPolygon') as unknown as SVGPolygonElement).setAttribute('points',points.map(p=>p.x+','+p.y).join(' '));
+ for(const [corner,index] of [['tl',0],['tr',1],['br',2],['bl',3]] as const){const handle=cropOverlay.querySelector<SVGCircleElement>('[data-corner="'+corner+'"]');if(handle){handle.setAttribute('cx',String(points[index]!.x));handle.setAttribute('cy',String(points[index]!.y));}}
+}
+function closeGeometry(){if(geometryBusy)return;geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');byId('geometryStatus').textContent='';}
+function openGeometry(mode:GeometryMode){
+ if(!documentReady||!surface?.canChangeGeometry){byId('status').textContent='描画が終わってから変更してください。';return;}
+ geometryMode=mode;const root=controller.document.root;
+ dimensionInput('geometryWidth').value=String(root.width);dimensionInput('geometryHeight').value=String(root.height);
+ dimensionInput('geometryX').value='0';dimensionInput('geometryY').value='0';
+ for(const element of geometryDialog.querySelectorAll<HTMLElement>('.crop-coordinate'))element.hidden=mode!=='document.crop';
+ for(const element of geometryDialog.querySelectorAll<HTMLElement>('.resize-anchor'))element.hidden=mode!=='document.canvas-resize';
+ for(const element of geometryDialog.querySelectorAll<HTMLElement>('.image-filter'))element.hidden=mode!=='document.image-resize';
+ byId('geometryTitle').textContent=mode==='document.crop'?'切り抜き':mode==='document.canvas-resize'?'キャンバスサイズ変更':'画像サイズ変更';
+ byId('geometryHelp').textContent=mode==='document.crop'?'黄色い枠の四隅をドラッグするか、数値で正確に指定できます。拡大・移動しながら調整できます。':mode==='document.canvas-resize'?'作品の範囲だけを変更します。絵の大きさは変えません。':'絵のピクセル数を変更します。画質を比較してから適用してください。';
+ byId('geometryStatus').textContent='';
+ if(!geometryDialog.open)geometryDialog.show();redrawCrop();
+}
+byId('cropStart').onclick=()=>openGeometry('document.crop');
+byId('canvasResizeStart').onclick=()=>openGeometry('document.canvas-resize');
+byId('imageResizeStart').onclick=()=>openGeometry('document.image-resize');
+byId('geometryCancel').onclick=closeGeometry;
+geometryDialog.addEventListener('cancel',e=>{e.preventDefault();closeGeometry();});
+for(const id of ['geometryWidth','geometryHeight','geometryX','geometryY'])dimensionInput(id).addEventListener('input',redrawCrop);
+let draggingCrop:{corner:string;startX:number;startY:number;endX:number;endY:number}|null=null;
+cropOverlay.addEventListener('pointerdown',e=>{
+ const target=e.target as SVGElement,corner=target.dataset.corner,rect=geometryRect();
+ if(!corner||!rect)return;e.preventDefault();e.stopPropagation();
+ draggingCrop={corner,startX:rect.x,startY:rect.y,endX:rect.x+rect.w,endY:rect.y+rect.h};
+ target.setPointerCapture(e.pointerId);
+});
+cropOverlay.addEventListener('pointermove',e=>{
+ if(!draggingCrop||!surface)return;e.preventDefault();
+ const box=byId<HTMLCanvasElement>('canvas').getBoundingClientRect(),p=surface.screenToDocument({x:e.clientX-box.left,y:e.clientY-box.top}),root=controller.document.root,c=draggingCrop;
+ const x=Math.max(0,Math.min(root.width,Math.round(p.x))),y=Math.max(0,Math.min(root.height,Math.round(p.y)));
+ let x0=c.startX,y0=c.startY,x1=c.endX,y1=c.endY;
+ if(c.corner.includes('l'))x0=Math.min(x,x1-1);else x1=Math.max(x,x0+1);
+ if(c.corner.includes('t'))y0=Math.min(y,y1-1);else y1=Math.max(y,y0+1);
+ dimensionInput('geometryX').value=String(x0);dimensionInput('geometryY').value=String(y0);
+ dimensionInput('geometryWidth').value=String(x1-x0);dimensionInput('geometryHeight').value=String(y1-y0);redrawCrop();
+});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])cropOverlay.addEventListener(type,()=>draggingCrop=null);
+async function reloadGeometryProjection(){
+ const oldPreset=surface?.brushId;surface?.destroy();surface=makeSurface();
+ await initializeCurrentSurface(true);
+ if(oldPreset){try{selectPreset(oldPreset);}catch{}}
+ updateViewControls();renderLayers();updateQa();redrawCrop();
+}
+async function applyGeometry(){
+ if(!geometryMode||geometryBusy||!surface?.canChangeGeometry)return;
+ const mode=geometryMode,old=controller.document.root,w=Number(dimensionInput('geometryWidth').value),h=Number(dimensionInput('geometryHeight').value);
+ if(!Number.isSafeInteger(w)||!Number.isSafeInteger(h)||w<1||h<1||w>8192||h>8192){byId('geometryStatus').textContent='幅と高さを1〜8192pxで指定してください。';return;}
+ let rect=geometryRect();
+ if(mode==='document.crop'&&!rect){byId('geometryStatus').textContent='切り抜き範囲が作品からはみ出しています。';return;}
+ if(mode!=='document.crop'&&w===old.width&&h===old.height){byId('geometryStatus').textContent='元の大きさと同じです。';return;}
+ geometryBusy=true;byId<HTMLButtonElement>('geometryApply').disabled=true;byId('geometryStatus').textContent='作品を変更しています。';
+ const canvas=byId<HTMLCanvasElement>('canvas');canvas.style.pointerEvents='none';
+ try{
+  const source=await surface.captureDocumentLayers(),out=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
+  const anchor=dimensionInput('geometryAnchor').value as 'center'|'top-left'|'top-right'|'bottom-left'|'bottom-right';
+  const shift=shiftedForAnchor(old.width,old.height,w,h,anchor);
+  const method=dimensionInput('geometryFilter').value as ImageResample;
+  for(const [id,pixels] of source){
+   out.set(id,mode==='document.crop'?cropCanvas(pixels,old.width,old.height,rect!.x,rect!.y,w,h):
+     mode==='document.canvas-resize'?changeCanvasBounds(pixels,old.width,old.height,w,h,shift.x,shift.y):
+     resizeImagePixels(pixels,old.width,old.height,w,h,method));
+  }
+  const tx=controller.document.begin(mode==='document.crop'?'Crop':mode==='document.canvas-resize'?'Canvas Resize':'Image Resize');
+  tx.resizeDocument(w,h,mode,out,mode==='document.crop'?{x:rect!.x,y:rect!.y}:{anchor,filter:method});
+  const receipt=tx.commit();controller.lastPersistenceHandoff=receipt.persistence;queueLatestCommit();
+  geometryMode=null;geometryDialog.close();cropOverlay.setAttribute('hidden','');
+  await reloadGeometryProjection();scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
+  byId('status').textContent='作品を'+w+'×'+h+'pxに変更しました。元に戻すこともできます。';
+ }catch(error){byId('geometryStatus').textContent=error instanceof Error?error.message:'変更できませんでした。';}
+ finally{canvas.style.pointerEvents='';geometryBusy=false;byId<HTMLButtonElement>('geometryApply').disabled=false;updateHistoryButtons();updateQa();}
+}
+byId('geometryApply').onclick=()=>{void applyGeometry();};
+
 async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache']){
   if(!surface)throw new Error('描画面がありません。');
   await surface.initialize();
@@ -126,7 +228,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
   selectPreset(lastBrushPresetId);
   if(replay)await surface.restoreDocumentProjection(projectionCache);
-  for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage'])(byId(id) as HTMLInputElement).disabled=false;
+  for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV'])(byId(id) as HTMLInputElement).disabled=false;
   syncPreset();renderLayers();updateHistoryButtons();documentReady=true;
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false){
@@ -143,7 +245,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false){
 byId<HTMLButtonElement>('new').onclick=async()=>{
   byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
-    if(documentReady){surface?.destroy();controller=new EditorController();lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();}else resetCheckpointTracking();
+    surface?.destroy();controller=new EditorController(Number(byId<HTMLInputElement>('newCanvasWidth').value)||512,Number(byId<HTMLInputElement>('newCanvasHeight').value)||384);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
     await initializeCurrentSurface(false);await persistence.initialize(controller,null,undefined,false);scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?`描画できます。WebGPUは${selection.webgpu?.stage??'初期化'}で利用できなかったためWebGL2を使用しています。`:'描画できます。作業内容は自動的に保護されます。';
@@ -157,15 +259,15 @@ byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.b
 byId<HTMLButtonElement>('addLayerPage').onclick=()=>byId<HTMLButtonElement>('addLayer').click();
 
 async function performHistory(direction:'undo'|'redo'){
-  if(!surface||surface.busy||historyPending)return;const available=direction==='undo'?controller.canUndo:controller.canRedo;if(!available)return;
+  if(!surface||surface.busy||historyPending||geometryBusy)return;const available=direction==='undo'?controller.canUndo:controller.canRedo;if(!available)return;
   historyPending=true;updateHistoryButtons();updateQa();let change:EditorHistoryChange|null=null;
   try{
     change=direction==='undo'?controller.undo():controller.redo();if(!change.changed)return;
-    await surface.syncHistory(change);if(direction==='undo')undoCount++;else redoCount++;
+    if(change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'))await reloadGeometryProjection();else await surface.syncHistory(change);if(direction==='undo')undoCount++;else redoCount++;
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(change.operations);byId('status').textContent=direction==='undo'?'ひとつ前の状態に戻しました。':'取り消した操作をやり直しました。';
   }catch{
     if(change?.changed){
-      try{const rollback=direction==='undo'?controller.redo():controller.undo();if(rollback.changed)await surface.syncHistory(rollback);}catch{}
+      try{const rollback=direction==='undo'?controller.redo():controller.undo();if(rollback.changed){if(rollback.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'))await reloadGeometryProjection();else await surface.syncHistory(rollback);}}catch{}
     }
     renderLayers();byId('status').textContent='Undo / Redoを安全に反映できなかったため、操作を戻しました。';
   }finally{historyPending=false;updateHistoryButtons();updateQa();}
@@ -195,6 +297,11 @@ document.addEventListener('keydown',e=>{
 
 function selectPreset(id:string){if(!surface)return;surface.selectById(id);const erasing=surface.blendMode==='erase';selectedTool=erasing?'eraser':'brush';if(erasing)lastEraserPresetId=surface.brushId;else lastBrushPresetId=surface.brushId;byId<HTMLSelectElement>('brush').value=surface.brushId;byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));syncPreset();byId('brushBoxSummary').textContent=(surface.brushName||selectedTool)+' · '+Math.round(surface.brushSize)+'px';}
 byId<HTMLSelectElement>('brush').onchange=e=>selectPreset((e.target as HTMLSelectElement).value);for(const id of ['size','sizeNumber'])byId<HTMLInputElement>(id).oninput=e=>{if(!surface)return;const input=e.target as HTMLInputElement,value=Number(input.value);if(!input.validity.valid||input.value==='')return;surface.setSize(value);syncPreset();};
+for(const [id,handler] of Object.entries({fitView:()=>surface?.fitView(),zoomOut:()=>surface?.zoomView(1/1.25),zoomIn:()=>surface?.zoomView(1.25),view100:()=>surface?.viewAt100(),actualPixels:()=>surface?.actualPixels(),resetRotation:()=>surface?.resetRotation(),flipH:()=>surface?.flipView('x'),flipV:()=>surface?.flipView('y')}))byId<HTMLButtonElement>(id).onclick=handler;
+byId<HTMLInputElement>('zoomPercent').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewZoom(n/100);};
+byId<HTMLInputElement>('angleDegree').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewRotation(n*Math.PI/180);};
+byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as HTMLInputElement).checked);
+const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
 byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
 
 byId<HTMLButtonElement>('open').onclick=()=>byId<HTMLInputElement>('openFile').click();
@@ -300,6 +407,25 @@ if(qaMode){const state=byId<HTMLSelectElement>('qaState'),noteLabel=byId<HTMLLab
 updateHistoryButtons();updatePersistenceDisplay();updateQa();addEventListener('resize',updateQa);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&documentReady){if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);projectionCheckpointTimer=null;void createProjectionCheckpoint();}});addEventListener('pagehide',()=>{if(projectionCheckpointTimer!==null)clearTimeout(projectionCheckpointTimer);surface?.destroy();});
 
 function formatFileSize(bytes:number){if(!Number.isFinite(bytes)||bytes<0)return 'サイズ不明';if(bytes<1024)return Math.round(bytes)+' B';if(bytes<1024*1024)return (bytes/1024).toFixed(bytes<10*1024?1:0)+' KB';return (bytes/(1024*1024)).toFixed(bytes<10*1024*1024?1:0)+' MB';}
+function qaM08Markup(){return '<details id="qaPanel" class="qa-panel" open><summary>キャンバスの操作と画質の確認</summary><ol>'+[
+'指で用紙を動かしても、白い四角形だけが元の場所に残らないか',
+'2本指で用紙を拡大・縮小して、用紙の枠と絵がずれないか',
+'2本指で用紙を回して、枠と絵が一緒に回るか',
+'左右・上下反転で、用紙の枠と絵がずれないか',
+'100%表示で、線や細かい模様がぼやけないか',
+'拡大・縮小・回転を繰り返しても、画質が不自然に崩れないか',
+'描いている途中と、ペンを離した後で線の見た目が変わりすぎないか',
+'右の作業欄を閉じても、描いた線がすぐ表示されるか',
+'切り抜きで、作品の表示範囲が正しく変わるか',
+'キャンバスのサイズ変更で、絵が勝手に引き伸ばされないか',
+'画像のサイズ変更で、絵も指定した大きさに変わるか',
+'端がつながるモードで、上下左右の境界をまたいで描けるか',
+'元に戻す・やり直すが正常に動くか',
+'保存して開き直しても、絵と変更内容が残っているか',
+'2000〜3000pxの大きな作品でも操作が重くならないか',
+'Androidなどの高密度画面でも線が粗く見えないか',
+'問題なし、または問題ありを選んでください'
+].map(x=>'<li>'+x+'</li>').join('')+'</ol><label class="checkbox-line"><input id="referencePattern" type="checkbox"> 画質確認用の細かい模様を表示（作品には影響しません）</label><details class="qa-auto"><summary>問題の調査用</summary><button id="qaDiagInitial" type="button">状態を記録する</button><button id="qaDiagCopy" type="button">結果をコピーする</button><pre id="qaGpuReport"></pre></details><label>結果<select id="qaState"><option value="unchecked">まだ確認していない</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3"></textarea></label><button id="qaCopy" type="button">確認結果をコピー</button><details class="qa-auto"><summary>詳しい動作記録</summary><pre id="qaAuto"></pre></details></details>';}
 function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary>使いやすさと描画の確認</summary><ol>'+
 ['左のツール欄は見やすいですか？','ブラシと消しゴムをすぐ切り替えられますか？','右側が邪魔にならず描けますか？','右側の幅を簡単に変えられますか？','レイヤーボタンからレイヤー画面を開けますか？','その画面を開いたままでも描けますか？','元に戻す・やり直しはすぐ使えますか？','保存と画像書き出しへ迷わず行けますか？','ペンや指でボタンを押しやすいですか？','明るい見た目で制作に集中できますか？','右側を開閉しても描画が止まりませんか？','重くなっていませんか？'].map(x=>'<li>'+x+'</li>').join('')+
 '</ol><details class="qa-auto"><summary>問題があるときの動作確認</summary><button id="qaDiagInitial" type="button">状態を記録する</button><button id="qaDiagCopy" type="button">結果をコピーする</button><pre id="qaGpuReport"></pre></details><label>結果<select id="qaState"><option value="unchecked">まだ確認していない</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3" placeholder="具体的に教えてください"></textarea></label><button id="qaCopy" type="button">確認結果をコピー</button><details class="qa-auto"><summary>詳しい動作記録</summary><pre id="qaAuto"></pre></details></details>';}

@@ -30,7 +30,8 @@
     {
       "path": "packages/brush-rt/src/index.d.ts",
       "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "0377cf0e4543c5524832c599ed6ce49dab4dd58d92f52e96776eb1bef9894727"
+      "sha256": "e53bb0b216aaf12e8750d549e4e140c07186818f7b56cec93b52580d30edccb9",
+      "m08Exception": "M08 Seamless Tile view-only preview and one-step raster seam copies; brush geometry algorithms unchanged. Exact SHA-256 recalculated and 93/93 regression required."
     },
     {
       "path": "packages/brush-rt/src/index.mjs",
@@ -44,13 +45,15 @@
     },
     {
       "path": "packages/brush-rt/src/renderer.mjs",
-      "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "df63e4f6a6b6b7c12979d121030075fd402c60216b447c2ab63ba8d638500bea"
+      "sourceCommit": "M08 QA reference-only shader/test pattern",
+      "sha256": "040d4b42410f45b94a658f38bea9a6a1694c135b9e5aeaf4d20ac8958e2b35e1",
+      "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
       "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "1291d79041fbf5e385864880bd8ce0e4f04bb0a7715d0b80867fd737954af0a9"
+      "sha256": "7d41a08551c3cd885f49a41a24cb39136f88d4ebe2222a185b1c3e4b4fa3ba54",
+      "m08Exception": "M08 Seamless Tile view-only preview and one-step raster seam copies; brush geometry algorithms unchanged. Exact SHA-256 recalculated and 93/93 regression required."
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
