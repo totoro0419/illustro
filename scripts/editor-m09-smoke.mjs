@@ -88,7 +88,7 @@ async function test(kind,dpr,touch=false){
   assert.ok(wheel&&picker,'picker geometry exists');
   const pickerGeometry=await p.locator('#colorPicker').evaluate(el=>{
     const ring=el.querySelector('#colorRing'),plane=el.querySelector('#colorPlane');
-    const a=ring.getBoundingClientRect(),b=plane.getBoundingClientRect(),style=getComputedStyle(el),c=document.getElementById('colorBox');
+    const a=ring.getBoundingClientRect(),b=plane.getBoundingClientRect(),style=getComputedStyle(el),c=el.closest('.workspace-box');
     const outer=c.getBoundingClientRect(),offenders=[...c.querySelectorAll('*')].map(x=>({el:(x.id?'#'+x.id:x.className?.toString().slice(0,40)||x.tagName),right:Math.round(x.getBoundingClientRect().right-outer.right),left:Math.round(outer.left-x.getBoundingClientRect().left)})).filter(x=>x.right>3||x.left>3).sort((a,b)=>b.right-a.right).slice(0,8);return {wheel:a.width,square:b.width,roundingClearance:(a.width/2-30)-(Math.hypot(b.width/2,b.height/2)+9),horizontalOverflow:c?.scrollWidth-c?.clientWidth,clientWidth:c.clientWidth,scrollWidth:c.scrollWidth,offenders,hasPeerTabs:!!document.querySelector('.color-tabs'),precisionOpened:document.getElementById('colorPrecision').open};
   });
   assert.ok(pickerGeometry.roundingClearance>=2,'SV square and marker must not collide with hue ring');
