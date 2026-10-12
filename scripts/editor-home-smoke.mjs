@@ -37,6 +37,12 @@ async function home(page){
  assert.equal(await page.locator('#ihApp .ih-brand-name').textContent(),'Illustro.');
  const labels=await page.locator('#ihApp .ih-home-actions .ih-action strong').allTextContents();
  assert.deepEqual(labels,['新しい作品','マイ作品','前回の作業を続ける']);
+ // Public GitHub Pages can load the logo after DOMContentLoaded, especially
+ // on a new tablet/mobile context. Wait for decode, not just DOM insertion.
+ await page.waitForFunction(()=>{
+   const img=document.querySelector('#ihApp .ih-logo img');
+   return img instanceof HTMLImageElement&&img.complete&&img.naturalWidth>0;
+ },null,{timeout:20000});
  const brand=await page.locator('#ihApp .ih-logo img').evaluate(el=>({complete:el.complete,naturalWidth:el.naturalWidth}));
  assert.ok(brand.complete&&brand.naturalWidth>0,'actual logo loaded');
  record('HOME-APPROVED-ACTIONS');
