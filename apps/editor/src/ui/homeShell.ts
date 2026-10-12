@@ -5,7 +5,7 @@ export type RecoverySummary = Readonly<{
 export type HomeActions = Readonly<{
   createDocument: (width:number,height:number)=>Promise<boolean>;
   openFile: ()=>void;
-  resume: (documentId:string,writerEpochId:string)=>Promise<boolean>;
+  resume: (documentId:string,writerEpochId:string)=>Promise<boolean|'cancelled'>;
   prepareHome: ()=>Promise<boolean>;
   hasDocument: ()=>boolean;
 }>;
@@ -154,7 +154,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const name=document.createElement('strong');name.textContent=item.title||'名前のない作品';
       const time=document.createElement('small');time.textContent=item.updatedAt?new Date(item.updatedAt).toLocaleString('ja-JP'):'保存時刻不明';
       const marker=document.createElement('span');marker.textContent='復元する ↗';button.append(name,time,marker);
-      button.addEventListener('click',async()=>{button.disabled=true;notify('保存された作業を確認しています。');try{if(await actions.resume(item.documentId,item.writerEpochId))navigate('editor');else notify('作業を復元できませんでした。');}finally{button.disabled=false;}});
+      button.addEventListener('click',async()=>{button.disabled=true;notify('保存された作業を確認しています。');try{const result=await actions.resume(item.documentId,item.writerEpochId);if(result===true)navigate('editor');else notify(result==='cancelled'?'復元をキャンセルしました。':'作業を復元できませんでした。');}finally{button.disabled=false;}});
       list.append(button);
     }
     navigate('recovery');
