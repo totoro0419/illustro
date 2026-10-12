@@ -27,8 +27,11 @@ try{
   const a=await create(page,'作品A');assert.equal(a.backend,backend==='webgl2'?'WebGL2':'WebGPU');assert.equal(a.width,Math.round(a.cssWidth*a.dpr));
   assert.equal(await page.locator('body.canvas-viewport').count(),1);assert.equal(await page.locator('.surface').evaluate(el=>getComputedStyle(el).borderTopWidth),'0px');
   await draw(page);await page.locator('#layer').click();await page.locator('#addLayerPage').click();await page.locator('#closeLayerPage').click();await draw(page,2);const layer=(await state(page)).selectedLayerId;
-  const rev=(await state(page)).revisionId;await home(page);await works(page,1);
-  assert.equal(await page.locator('.ih-work-card img').count(),1);await page.screenshot({path:path.join(evidence,backend+'-works.png'),fullPage:true});
+  const rev=(await state(page)).revisionId;
+  const immediateHome=await page.evaluate(()=>{document.getElementById('home').click();return !document.getElementById('ihApp').hidden;});
+  assert.equal(immediateHome,true,'Home must be visible before saving or thumbnail creation');
+  record(backend+'-HOME-NAVIGATION-NONBLOCKING');await works(page,1);
+  await page.waitForFunction(()=>document.querySelectorAll('.ih-work-card img').length===1,null,{timeout:30000});await page.screenshot({path:path.join(evidence,backend+'-works.png'),fullPage:true});
   await open(page,a.documentId);let restored=await state(page);assert.equal(restored.revisionId,rev);assert.equal(restored.layerCount,'2');assert.equal(restored.selectedLayerId,layer);await draw(page,3);
   await home(page);await page.locator('#ihNavHome').click();const b=await create(page,'作品B',640,480);await draw(page);await home(page);await works(page,2);await open(page,a.documentId);assert.equal((await state(page)).committedStrokes,'3');await home(page);await works(page,2);await open(page,b.documentId);assert.equal((await state(page)).committedStrokes,'1');
   await home(page);await page.reload({waitUntil:'networkidle'});await works(page,2);await open(page,a.documentId);restored=await state(page);assert.equal(restored.committedStrokes,'3');assert.equal(restored.layerCount,'2');assert.equal(restored.documentWidth,'512');record(backend+'-A-B-ISOLATION-RELOAD-SELECTED-LAYER');
