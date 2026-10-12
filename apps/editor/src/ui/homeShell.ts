@@ -63,6 +63,7 @@ const html = [
             '<button type="button" id="ihContinue" class="ih-action"><span class="ih-action-icon" aria-hidden="true">'+icon('recover')+'</span><span class="ih-action-text"><strong>前回の作業を続ける</strong><small id="ihContinueDescription">保存された作業を確認中</small></span><span class="ih-action-arrow" aria-hidden="true">→</span></button>',
           '</div>',
           '<button type="button" id="ihReturnEditor" class="ih-return-editor" hidden><span aria-hidden="true">↗</span> 開いているキャンバスに戻る</button>',
+           '<p id="ihHomeSaveState" class="ih-save-status" role="status" aria-live="polite" hidden></p>',
         '</div>',
         '<section class="ih-discover" aria-labelledby="ihDiscoverHeading">',
           '<div class="ih-discover-top"><div><span class="ih-overline">DISCOVER ILLUSTRO</span><h2 id="ihDiscoverHeading">知るほど、描くのが楽しくなる。</h2></div><span class="ih-discover-count" id="ihFeatureCounter">01 / 05</span></div>',
