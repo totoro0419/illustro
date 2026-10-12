@@ -23,8 +23,14 @@ const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu
 const report={commit:process.env.EXPECTED_COMMIT_SHA??'',target:publicUrl?'public':'local',cases:[],errors:[]};
 const current=p=>p.locator('#colorCode').textContent();
 const state=async p=>JSON.parse((await p.locator('#qaAuto').textContent())||'{}');
+async function showColor(p){
+ if(await p.locator('#colorTab0').isVisible())return;
+ if(await p.locator('#colorPage').isVisible())await p.locator('#colorPage').click();
+ else await p.locator('#workspaceToggle').click();
+ assert.ok(await p.locator('#colorTab0').isVisible(),'Color Box must be reachable with one visible action');
+}
 async function changeHex(p,value){
- const field=p.locator('#colorHex');await p.locator('#colorTab0').click();await field.fill(value);await field.press('Enter');
+ await showColor(p);const field=p.locator('#colorHex');await p.locator('#colorTab0').click();await field.fill(value);await field.press('Enter');
  assert.equal(await current(p),value);
 }
 async function draw(p,offset=0){
@@ -68,7 +74,7 @@ async function test(kind,dpr,touch=false){
   await p.waitForFunction(()=>document.getElementById('colorCode')?.textContent==='#FF0000',{timeout:20000});
   assert.equal(await p.locator('#eyedropper').getAttribute('aria-pressed'),'false');
   assert.equal((await state(p)).currentRevision,rev2,'eyedropper must not create artwork revision');
-  await p.locator('#colorTab1').click();
+  await showColor(p);await p.locator('#colorTab1').click();
   await p.locator('input[name="colorModel"][value="RGB"]').check();
   assert.ok(Math.abs(Number(await p.locator('#colorNumber0').inputValue())-255)<0.5,'RGB numeric sync');
   await p.locator('input[name="colorModel"][value="HSL"]').check();
@@ -82,8 +88,27 @@ async function test(kind,dpr,touch=false){
   const valueAfterPicker=await current(p);assert.notEqual(valueAfterPicker,'#FF0000');
   assert.ok((await state(p)).currentRevision===rev2);
   await p.locator('#colorTab2').click();
+  p.once('dialog',dialog=>dialog.accept('検証パレット'));
   await p.locator('[data-color-action="new-palette"]').click();
-  // prompt() is handled explicitly for reliable cross-browser QA.
+  assert.equal(await p.locator('#colorPaletteSelect').inputValue(),await p.locator('#colorPaletteSelect option').last().getAttribute('value'));
+  await p.locator('[data-color-action="add-current"]').last().click();
+  assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),1);
+  await changeHex(p,'#0000FF');await p.locator('#colorTab2').click();
+  await p.locator('[data-color-action="add-current"]').last().click();
+  assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),2);
+  const nameBefore=await p.locator('#colorPaletteSelect option:checked').textContent();
+  const swatchesBefore=await p.locator('#colorPaletteList .color-swatch').evaluateAll(list=>list.map(x=>x.getAttribute('aria-label')));
+  const file=await Promise.all([p.waitForEvent('download'),p.locator('[data-color-action="export-palette"]').click()]).then(async([download])=>fs.readFile(await download.path()));
+  await p.locator('#colorPaletteFile').setInputFiles({name:'palette.json',mimeType:'application/json',buffer:file});
+  assert.equal(await p.locator('#colorPaletteSelect option:checked').textContent(),nameBefore);
+  assert.deepEqual(await p.locator('#colorPaletteList .color-swatch').evaluateAll(list=>list.map(x=>x.getAttribute('aria-label'))),swatchesBefore);
+  await p.locator('.color-swatch-move[aria-label="前へ移動"]').last().click();
+  await p.locator('.color-swatch-move[aria-label="色を削除"]').first().click();
+  assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),1);
+  await p.locator('#colorTab3').click();assert.ok(await p.locator('#colorHistoryList .color-swatch').count()>=2);
+  await p.locator('[data-color-action="clear-history"]').click();
+  assert.equal(await p.locator('#colorHistoryList .color-swatch').count(),0);
+  await p.screenshot({path:path.join(evidence,name+'-color.png')});
  }catch(e){report.errors.push({name,error:String(e),stack:e.stack,console:errors});await p.screenshot({path:path.join(evidence,name+'-failure.png')}).catch(()=>{});}
  finally{report.cases.push({name,console:errors,qa:await state(p).catch(()=>null)});if(errors.length)report.errors.push({name,console:errors});await context.close();}
 }
