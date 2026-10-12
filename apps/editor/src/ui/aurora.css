@@ -29,8 +29,8 @@
 }
 body{color:var(--a-text);background:var(--a-surround)}
 .topbar{background:#FFFFFFF7;border-color:var(--a-border);box-shadow:0 2px 8px #4C62810D}
-.brand-mark{width:32px;height:32px;border:1px solid #DDE5FA;background:#F4F7FF;border-radius:10px;box-shadow:0 2px 7px #779BDD1E}
-.brand-symbol{display:block;width:100%;height:100%}
+.brand-mark{flex-basis:32px;width:32px;height:32px;border:1px solid #DDE5FA;background:#fff;border-radius:10px;box-shadow:0 2px 7px #779BDD1E}
+.brand-artwork{display:block;width:100%;height:100%;object-fit:contain;object-position:center;border-radius:inherit}
 .topbar .brand strong{font-weight:750;letter-spacing:-.55px}
 .brand-sub{color:#758399}
 .topbar #save{background:var(--aurora-selection);border-color:#CBDAF8}
@@ -181,7 +181,7 @@ body.right-collapsed .qa-review{right:18px}
   .topbar .ui-icon{width:19px;height:19px}
 }
 @media(prefers-reduced-motion:reduce){
- .ui-icon,.brand-symbol{transition:none}
+ .ui-icon,.brand-artwork{transition:none}
 }
 
 /* Align the remaining M06 export dialog and Compact toolbar with Aurora. */
@@ -250,15 +250,17 @@ html[data-ui-input="hover"] .feature-actions button:hover:not(:disabled){backgro
 
 /* M08: full drawing viewport. The paper bounds are drawn in GPU view space;
    a fixed CSS paper rectangle would stay white when the document moves. */
-body.m08-canvas-viewport main#canvasArea{overflow:hidden}
-body.m08-canvas-viewport main#canvasArea>.canvas-top,
-body.m08-canvas-viewport main#canvasArea>.canvas-view-strip{flex:0 0 auto}
-body.m08-canvas-viewport main#canvasArea>.surface{
+body.canvas-viewport main#canvasArea{overflow:hidden}
+body.canvas-viewport main#canvasArea>.canvas-top,
+body.canvas-viewport main#canvasArea>.canvas-view-strip{flex:0 0 auto}
+body.canvas-viewport main#canvasArea>.surface{
  display:block;flex:1 1 0;align-self:stretch;min-width:0;min-height:0;
  width:100%;max-width:none;height:auto;margin:0;padding:0;
  background:transparent;border:0;border-radius:0;box-shadow:none;overflow:hidden;
 }
-body.m08-canvas-viewport main#canvasArea>.surface>#canvas{
+body.canvas-viewport main#canvasArea>.surface>#canvas{
  display:block;width:100%;height:100%;max-width:none;aspect-ratio:auto;
  background:transparent;touch-action:none;
 }
+/* Header flex buttons must still honor the saved/error visibility state. */
+#retryWorkSave[hidden]{display:none!important}

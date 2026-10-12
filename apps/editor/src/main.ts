@@ -1,6 +1,9 @@
+import {namedSnapshot,type WorkEntry} from './persistence/workLibrary';
 import './style.css';
 import './ui/shell.css';
 import './ui/aurora.css';
+import './ui/home.css';
+import {installHomeShell,type HomeShell} from './ui/homeShell';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
@@ -9,7 +12,7 @@ import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type Im
 import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
-import type {SemanticOperation} from '@illustro/core';
+import {CoreDocument,type SemanticOperation} from '@illustro/core';
 
 const qaPath=location.pathname.replace(/\/+$/,'');
 const m08Mode=new URLSearchParams(location.search).has('m08')||qaPath.endsWith('/qa/m08')||qaPath.endsWith('/qa/m08/index.html');
@@ -18,7 +21,7 @@ const qaStartedAt=new Date().toISOString();
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=shellMarkup(qaMode,qaMode?(m08Mode?qaM08Markup():qaMarkup()):'');
 // In M08 the GPU canvas is the entire interaction viewport, not a fixed paper rectangle.
-if(m08Mode)document.body.classList.add('m08-canvas-viewport');
+if(m08Mode||!qaMode)document.body.classList.add('canvas-viewport');
 
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();
@@ -28,7 +31,11 @@ let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,ch
 let checkpointOperations:SemanticOperation[]=[];
 let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
-const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();updateQa();});
+const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
+let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=null,workSwitchBusy=false,librarySaving=false;
+let thumbnailTimer:number|null=null,thumbnailInProgress=false;
+
+document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};byId('saveState').after(retry);}
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
 const renderLayers=()=>{
@@ -42,7 +49,7 @@ const renderLayers=()=>{
       name.className='layer-name';name.textContent=layer.name;state.className='layer-state';state.textContent=selected?'選択中':'';
       row.append(name,state);
       row.onclick=()=>{
-        try{controller.selectLayer(layer.id);renderLayers();byId('status').textContent=layer.name+'を選びました。次の線はこのレイヤーに入ります。';updateHistoryButtons();updateQa();}
+        try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+'を選びました。次の線はこのレイヤーに入ります。';updateHistoryButtons();updateQa();}
         catch{byId('status').textContent='そのレイヤーを選択できませんでした。';}
       };
       return row;
@@ -64,8 +71,15 @@ function updateHistoryButtons(){
 function updatePersistenceDisplay(){
   const state=persistenceState,indicator=byId('saveState');
   if(!state){indicator.textContent='自動保存準備中';return;}
-  indicator.textContent=state.storageError?'自動保存エラー':state.protectionPending||state.queueLength>0?'自動保存中':'自動保存済み';
-  indicator.dataset.autosavePending=String(state.protectionPending||state.queueLength>0);indicator.dataset.saving=String(state.saving);indicator.dataset.protectedThrough=state.protectedThrough;
+  indicator.textContent=state.storageError?'保存できません・再試行してください':state.protectionPending||state.queueLength>0?'アプリ内に保存中':qaMode?'自動保存済み':documentReady?'アプリ内に保存済み':'作品はまだ開かれていません';
+  const retry=document.getElementById('retryWorkSave');if(retry)retry.hidden=!state.storageError;
+  indicator.dataset.autosavePending=String(state.protectionPending||state.queueLength>0);indicator.dataset.saving=String(state.saving||librarySaving);indicator.dataset.protectedThrough=state.protectedThrough;
+  const homeSaveState=document.getElementById('ihHomeSaveState');
+  if(homeSaveState){
+    const pending=state.protectionPending||state.queueLength>0;
+    homeSaveState.hidden=!documentReady||(!pending&&!state.storageError);
+    homeSaveState.textContent=state.storageError?'保存できませんでした。開いているキャンバスに戻り、保存を再試行してください。':'作品を安全に保存しています。完了するまではこのページを閉じないでください。';
+  }
   byId<HTMLButtonElement>('recover').disabled=!recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n);
 }
 
@@ -73,7 +87,7 @@ document.addEventListener('pointerdown',e=>{lastPointerDownTarget=e.target;},{ca
 if(qaMode){document.addEventListener('pointerdown',e=>{const canvas=byId<HTMLCanvasElement>('canvas'),target=e.target instanceof HTMLElement?e.target:null;canvas.dataset.lastPointerTarget=target?.id||target?.tagName.toLowerCase()||'unknown';canvas.dataset.lastPointerType=e.pointerType;canvas.dataset.lastPointerX=String(Math.round(e.clientX));canvas.dataset.lastPointerY=String(Math.round(e.clientY));queueMicrotask(updateQa);},{capture:true});}
 const updateQa=()=>{
   const canvas=byId<HTMLCanvasElement>('canvas'),selected=controller.selectedLayer;
-  canvas.dataset.committedStrokes=String(controller.committedStrokeCount);canvas.dataset.revisionId=controller.document.head;canvas.dataset.dirtyTiles=String(controller.lastCommit?.dirtyTileCount??0);
+  canvas.dataset.commit=import.meta.env.VITE_COMMIT_SHA??'unknown';canvas.dataset.documentId=controller.document.root.documentId;canvas.dataset.documentName=controller.document.root.name;canvas.dataset.documentWidth=String(controller.document.root.width);canvas.dataset.documentHeight=String(controller.document.root.height);canvas.dataset.backend=surface?.backend??'';canvas.dataset.view=JSON.stringify(surface?.viewState??null);canvas.dataset.committedStrokes=String(controller.committedStrokeCount);canvas.dataset.revisionId=controller.document.head;canvas.dataset.dirtyTiles=String(controller.lastCommit?.dirtyTileCount??0);
   canvas.dataset.layerCount=String(controller.layers.length);canvas.dataset.selectedLayerId=controller.selectedLayerId;canvas.dataset.selectedLayerName=selected.name;
   canvas.dataset.canUndo=String(controller.canUndo);canvas.dataset.canRedo=String(controller.canRedo);canvas.dataset.historyBusy=String(historyPending||surface?.busy===true);canvas.dataset.historyPatchHits=String(surface?.historyPatchHits??0);canvas.dataset.historyReplayFallbacks=String(surface?.historyReplayFallbacks??0);canvas.dataset.selectedTool=selectedTool;canvas.dataset.selectedPresetId=surface?.brushId??'未選択';canvas.dataset.selectedBlend=surface?.blendMode??'normal';canvas.dataset.eraserStrokes=String(controller.committedEraserStrokeCount);
   if(!qaMode)return;
@@ -231,7 +245,9 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV'])(byId(id) as HTMLInputElement).disabled=false;
   syncPreset();renderLayers();updateHistoryButtons();documentReady=true;
 }
-async function activateOpened(opened:PortableOpenResult,recovered=false){
+async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null){
+  const previous=controller,previousPreserved=persistence.preservedData,wasReady=documentReady;documentReady=false;
+  try{
   surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
   try{await initializeCurrentSurface(true,opened.projectionCache);}
   catch(error){
@@ -240,20 +256,42 @@ async function activateOpened(opened:PortableOpenResult,recovered=false){
       surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(true,opened.projectionCache);
     }else throw error;
   }
-  await persistence.initialize(controller,null,opened.preserved,recovered);scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
+  persistence.clearFileDestination();await persistence.initialize(controller,null,opened.preserved,recovered);if(!qaMode)await persistence.bindWork(expectedEpoch);scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
+  }catch(error){
+    surface?.destroy();const snapshot=previous.document.capturePersistenceSnapshot();controller=EditorController.restored(CoreDocument.restore({snapshot,blockPayloads:previous.document.persistenceBlockPayloads(snapshot)}),previous.selectedLayerId);surface=makeSurface();documentReady=false;
+    if(wasReady){try{await initializeCurrentSurface(true);await persistence.initialize(controller,null,previousPreserved,false);const current=(await persistence.listWorks()).works.find(x=>x.documentId===controller.document.root.documentId);if(!qaMode)await persistence.bindWork(current?.writerEpochId??null);}catch{}}
+    throw error;
+  }
 }
-byId<HTMLButtonElement>('new').onclick=async()=>{
-  byId<HTMLButtonElement>('new').disabled=true;byId('status').textContent='キャンバスを準備しています。';
+async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent'):Promise<boolean>{
+  const trigger=byId<HTMLButtonElement>('new');
+  if(trigger.disabled)return false;
+  if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){
+    byId('status').textContent='幅と高さを1〜8192pxで指定してください。';return false;
+  }
+  if(!qaMode&&!(await prepareWorkSwitch()))return false;
+  trigger.disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
-    surface?.destroy();controller=new EditorController(Number(byId<HTMLInputElement>('newCanvasWidth').value)||512,Number(byId<HTMLInputElement>('newCanvasHeight').value)||384);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
-    await initializeCurrentSurface(false);await persistence.initialize(controller,null,undefined,false);scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
+    const document=new CoreDocument({width,height,name:name.trim()||'新しい作品'});let selected=document.root.rootLayerIds[0]!;
+    if(background==='white'){
+      const pixels=new Uint8Array(width*height*4);pixels.fill(255);const tx=document.begin('白い背景');
+      tx.resizeDocument(width,height,'document.canvas-resize',new Map([[selected,pixels]]),{});tx.renameLayer(selected,'背景');tx.commit();
+      const next=document.addRasterLayerAbove(selected);selected=next.layerId;
+    }
+    await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head});
+    if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,width,height,background);void refreshWorks();}
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
-    byId('status').textContent=selection?.fallbackUsed?`描画できます。WebGPUは${selection.webgpu?.stage??'初期化'}で利用できなかったためWebGL2を使用しています。`:'描画できます。作業内容は自動的に保護されます。';
-    updateQa();
-  }catch(error){const message=surface?.initializationError||(error instanceof Error?error.message:String(error));updateQa();surface?.destroy();documentReady=false;byId('status').textContent='描画を開始できませんでした。'+message;}
-  finally{byId<HTMLButtonElement>('new').disabled=false;}
+    byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
+    updateQa();return true;
+  }catch(error){
+    const message=surface?.initializationError||(error instanceof Error?error.message:String(error));
+    updateQa();surface?.destroy();documentReady=false;byId('status').textContent='描画を開始できませんでした。'+message;return false;
+  }finally{trigger.disabled=false;}
+}
+byId<HTMLButtonElement>('new').onclick=()=>{
+  if(homeUi&&!qaMode){homeUi.showNew();return;}
+  void createDocument(Number(byId<HTMLInputElement>('newCanvasWidth').value)||512,Number(byId<HTMLInputElement>('newCanvasHeight').value)||384);
 };
-
 byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.busy||historyPending){byId('status').textContent='今の操作が終わってからレイヤーを追加してください。';return;}try{const id=controller.addRasterLayer(),layer=controller.document.root.getLayer(id);surface.syncLayerStack();surface.discardRedoProjection();queueLatestCommit();renderLayers();updateHistoryButtons();byId('status').textContent=`${layer.name}を追加して選択しました。`;updateQa();}catch{byId('status').textContent='レイヤーを追加できませんでした。';}};
 
 byId<HTMLButtonElement>('addLayerPage').onclick=()=>byId<HTMLButtonElement>('addLayer').click();
@@ -304,15 +342,25 @@ byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as
 const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
 byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
 
-byId<HTMLButtonElement>('open').onclick=()=>byId<HTMLInputElement>('openFile').click();
+byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 byId<HTMLInputElement>('openFile').onchange=async e=>{
   const input=e.target as HTMLInputElement,file=input.files?.[0];input.value='';if(!file)return;
   byId('status').textContent='作品ファイルを確認しています。';let opened:PortableOpenResult;
   try{opened=await persistence.decodePortable(new Uint8Array(await file.arrayBuffer()));}
-  catch(error){byId('status').textContent='この作品ファイルは安全に読み込めませんでした。'+(error instanceof Error?error.message:String(error));updateQa();return;}
+  catch(error){const message='この作品ファイルは安全に読み込めませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);updateQa();return;}
   byId('status').textContent='作品を表示しています。';
-  try{await activateOpened(opened,false);byId('status').textContent='作品ファイルを開きました。自動保存を開始しました。';}
-  catch(error){byId('status').textContent='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));}
+  try{
+    if(!qaMode){
+      if(!(await prepareWorkSwitch()))return;
+      const same=(await persistence.listWorks()).works.find(x=>x.documentId===opened.document.root.documentId);
+      if(same){
+        if(same.revisionId===opened.document.head){await openWork(same.documentId);homeUi?.notify('登録済みの同じ作品を開きました。');return;}
+        if(!confirm('同じ識別番号の作品が既にあります。読み込むファイルを別の作品として追加しますか？\n既存の作品は残ります。'))return;
+        opened=copyOpened(opened,opened.document.root.name+'（読み込み）');
+      }
+    }
+    await activateOpened(opened,false);if(!qaMode){await createWorkThumbnail();await refreshWorks();}byId('status').textContent='作品ファイルを開きました。自動保存を開始しました。';homeUi?.showEditor();}
+  catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);}
   updateQa();
 };
 byId<HTMLButtonElement>('save').onclick=async()=>{
@@ -374,18 +422,104 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
   }
 };
 
-byId<HTMLButtonElement>('recover').onclick=async()=>{
-  const candidate=recoveryCandidates.find(item=>BigInt(item.protectedThrough)>0n);if(!candidate)return;byId('status').textContent='作業途中の状態を確認しています。';
+async function recoverCandidate(candidate:Candidate):Promise<boolean>{
+  byId('status').textContent='作業途中の状態を確認しています。';
   try{
     const recovered=await persistence.recover(candidate),opened={document:recovered.document,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},generationId:'recovery',snapshotRevisionId:recovered.document.head,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})} as PortableOpenResult;
-    await activateOpened(opened,true);recoveryCandidates=[];byId('status').textContent='自動保存された最新の作業状態へ戻しました。';
-  }catch(error){byId('status').textContent='作業途中の状態を戻せませんでした。'+(error instanceof Error?error.message:String(error));}
-  updatePersistenceDisplay();updateQa();
+    const existing=!qaMode?(await persistence.listWorks()).works.find(x=>x.documentId===opened.document.root.documentId):null;await activateOpened(opened,true,existing?.writerEpochId??null);if(!qaMode)await refreshWorks();recoveryCandidates=[];byId('status').textContent=qaMode?'自動保存された最新の作業状態へ戻しました。':'選択した作業状態へ戻しました。';
+    updatePersistenceDisplay();updateQa();return true;
+  }catch(error){
+    const message='作業途中の状態を戻せませんでした。'+(error instanceof Error?error.message:String(error));
+    byId('status').textContent=message;homeUi?.notify(message);updatePersistenceDisplay();updateQa();return false;
+  }
+}
+byId<HTMLButtonElement>('recover').onclick=()=>{
+  if(homeUi&&!qaMode){homeUi.showRecovery();return;}
+  const candidate=recoveryCandidates.find(item=>BigInt(item.protectedThrough)>0n);
+  if(candidate)void recoverCandidate(candidate);
 };
 async function refreshRecoveryCandidates(){
-  try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values;updatePersistenceDisplay();if(recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n)&&!documentReady)byId('status').textContent='自動保存から戻せる作業があります。';}catch{}
+  try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values;updatePersistenceDisplay();homeUi?.setRecoveryCandidates(values);if(recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n)&&!documentReady)byId('status').textContent='自動保存から戻せる作業があります。';}catch{}
 }
-void refreshRecoveryCandidates();
+function showStorageError(error:unknown){const text='アプリ内に保存できませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=text;homeUi?.notify(text);}
+async function refreshWorks(){try{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;homeUi?.setWorks(works,lastWorkId);}catch(error){showStorageError(error);}}
+function copyOpened(opened:PortableOpenResult,name:string):PortableOpenResult{
+  const snapshot=opened.document.capturePersistenceSnapshot(),document=CoreDocument.restore({snapshot:namedSnapshot(snapshot,name,crypto.randomUUID()),blockPayloads:opened.document.persistenceBlockPayloads(snapshot)});
+  return {...opened,document,snapshotRevisionId:document.head,generationId:'copy'};
+}
+// A new blank work needs no expensive full-resolution GPU readback.
+async function storeBlankThumbnail(documentId:string,revisionId:string,width:number,height:number,background:'transparent'|'white'){
+  const scale=Math.min(1,320/width,240/height),preview=new OffscreenCanvas(Math.max(1,Math.round(width*scale)),Math.max(1,Math.round(height*scale)));
+  if(background==='white'){const context=preview.getContext('2d')!;context.fillStyle='#ffffff';context.fillRect(0,0,preview.width,preview.height);}
+  try{await persistence.storeThumbnail(documentId,revisionId,await preview.convertToBlob({type:'image/png'}));}
+  catch(error){console.warn('Initial thumbnail deferred:',error);}
+}
+async function createWorkThumbnail(){
+  if(qaMode||!documentReady||!surface||surface.busy)return;
+  const active=surface,doc=controller.document,revision=doc.head,documentId=doc.root.documentId;
+  if(works.some(work=>work.documentId===documentId&&work.thumbnail&&work.thumbnailRevision===revision))return;
+  const blob=await active.captureWorkThumbnail();
+  if(surface===active&&controller.document===doc&&doc.head===revision)await persistence.storeThumbnail(documentId,revision,blob);
+}
+// Thumbnail updates are best-effort background work, never part of opening or leaving an artwork.
+function scheduleWorkThumbnail(){
+  if(qaMode||!documentReady||!surface)return;
+  if(thumbnailTimer!==null)clearTimeout(thumbnailTimer);
+  thumbnailTimer=window.setTimeout(()=>{
+    thumbnailTimer=null;
+    const run=async()=>{
+      if(!app.inert||thumbnailInProgress||!documentReady||!surface||surface.busy)return;
+      thumbnailInProgress=true;
+      try{await createWorkThumbnail();await refreshWorks();}
+      catch(error){console.warn('Thumbnail update deferred:',error);}
+      finally{thumbnailInProgress=false;}
+    };
+    const idle=(window as Window&{requestIdleCallback?:(callback:()=>void,options?:{timeout:number})=>number}).requestIdleCallback;
+    if(idle)idle(()=>{void run();},{timeout:1500});else void run();
+  },120);
+}
+async function prepareWorkSwitch(){
+  if(!documentReady)return true;
+  if(persistence.state.saving){homeUi?.notify('作品ファイルの保存が終わってから切り替えてください。描画は続けられます。');return false;}
+  if(surface?.busy||historyPending||geometryBusy){homeUi?.notify('描いている線や操作が終わってから切り替えてください。');return false;}
+  const wasInert=app.inert;app.inert=true;
+  try{librarySaving=true;await persistence.barrier();return true;}
+  catch(error){showStorageError(error);return false;}finally{app.inert=wasInert;librarySaving=false;updatePersistenceDisplay();}
+}
+async function openWork(id:string):Promise<boolean>{
+  if(workSwitchBusy)return false;workSwitchBusy=true;
+  try{if(documentReady&&controller.document.root.documentId===id){homeUi?.showEditor();return true;}
+    if(!(await prepareWorkSwitch()))return false;
+    const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);await refreshWorks();homeUi?.showEditor();
+    if(loaded.fallback)homeUi?.notify('最新の保存を読み込めなかったため、前の正常な保存から開きました。');return true;
+  }catch(error){showStorageError(error);return false;}finally{workSwitchBusy=false;}
+}
+if(!qaMode){
+  // The editor is inert while Home is active. Keep the native file picker outside
+  // that subtree so a genuine Home button press may open the OS picker.
+  document.body.append(byId<HTMLInputElement>('openFile'));
+  homeUi=installHomeShell(app,{
+    createDocument,
+    openFile:()=>byId<HTMLInputElement>('openFile').click(),
+    resume:async(documentId,writerEpochId)=>{
+      if(!(await prepareWorkSwitch()))return false;
+      const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
+      return candidate?recoverCandidate(candidate):false;
+    },
+    prepareHome:async()=>{scheduleWorkThumbnail();void refreshWorks();
+      // Start durable protection after the Home screen has had a chance to paint.
+      window.setTimeout(()=>{void persistence.barrier().then(refreshWorks).catch(showStorageError);},40);
+      return true;},
+    listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
+    openWork,
+    renameWork:async(id,name)=>{await persistence.renameWork(id,name);if(documentReady&&controller.document.root.documentId===id){await prepareWorkSwitch();const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);}await refreshWorks();},
+    duplicateWork:async(id)=>{if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');const loaded=await persistence.loadWork(id),copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');await activateOpened(copy);await refreshWorks();},
+    deleteWork:async(id)=>{await persistence.deleteWork(id);if(documentReady&&controller.document.root.documentId===id){surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();}await refreshWorks();},
+    hasDocument:()=>documentReady,
+  });
+  byId<HTMLButtonElement>('home').onclick=()=>{void homeUi?.showHome();};
+}
+void refreshRecoveryCandidates();if(!qaMode)void refreshWorks();
 if('serviceWorker' in navigator){const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});}
 
 if(qaMode){
