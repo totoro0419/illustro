@@ -17,7 +17,8 @@ button:disabled{opacity:.62;cursor:not-allowed;color:var(--a-subtle)}
 button:focus-visible,input:focus-visible,summary:focus-visible,select:focus-visible{outline:3px solid var(--a-focus);outline-offset:2px}
 .topbar{position:fixed;inset:0 0 auto 0;z-index:12;height:var(--top);padding:0 16px;display:flex;align-items:center;gap:9px;background:var(--a-surface);border-bottom:1px solid var(--a-border)}
 .topbar .brand{display:flex;align-items:center;gap:6px;margin-right:19px}
-.brand-mark{display:grid;place-items:center;background:var(--a-accent-soft);color:var(--a-focus);border:1px solid var(--a-border-strong);border-radius:11px;width:30px;height:30px;font-size:20px}
+.brand-mark{display:block;flex:0 0 30px;background:#fff;overflow:hidden;border:1px solid var(--a-border-strong);border-radius:11px;width:30px;height:30px}
+.brand-artwork{display:block;width:100%;height:100%;object-fit:contain;object-position:center;border-radius:inherit}
 .brand strong{font-size:17px;letter-spacing:-.7px}
 .brand-sub{font-size:10px;color:#96968b;margin-left:5px;white-space:nowrap}
 .topbar button{font-size:12px;border-color:transparent;background:transparent;min-height:36px;padding:5px 11px;font-weight:600}
@@ -171,7 +172,7 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
  :root{--rail:56px;--top:44px;--bottom:52px}
  body{overflow:hidden}
  .topbar{height:var(--top);padding:0 6px;gap:3px}
- .brand-sub{display:none}.brand strong{font-size:14px}.brand-mark{width:23px;height:23px}
+ .brand-sub{display:none}.brand strong{font-size:14px}.brand-mark{flex-basis:27px;width:27px;height:27px}
  .topbar button{font-size:10px;padding:3px 5px;min-height:32px}
  .topbar #saveState{font-size:9px;overflow:hidden;text-overflow:ellipsis}
  .topbar button span{display:none}
