@@ -57,3 +57,17 @@
 .color-loupe-pair span{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;white-space:nowrap}
 .color-loupe-pair i{display:block;width:46px;height:42px;border-radius:8px;border:2px solid #fff;box-shadow:0 0 0 1px #8895a8}
 .color-sample-loupe small{display:block;text-align:center;letter-spacing:.08em;font-variant-numeric:tabular-nums;margin-top:4px}
+
+/* Large enough palette management targets; the recent-color grid stays dense. */
+#colorPaletteList{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));max-height:312px;gap:10px}
+#colorPaletteList .color-swatch{height:48px}
+#colorPaletteList .color-swatch-move{min-height:37px;font-weight:650;font-size:13px}
+.color-palette-dialog{border:1px solid var(--a-border-strong,#ccd6e4);border-radius:15px;padding:18px;width:min(360px,calc(100vw - 28px));max-width:calc(100vw - 28px);box-shadow:0 15px 55px #26395545;background:#fff;color:var(--a-text)}
+.color-palette-dialog::backdrop{background:#26365482}
+.color-palette-dialog h3{font-size:17px;letter-spacing:-.02em;margin:0 0 12px}
+.color-palette-dialog label{font-size:13px;font-weight:600}
+.color-palette-dialog input{display:block;width:100%;min-height:42px;margin-top:8px;border:1px solid var(--a-border-strong);border-radius:9px;padding:8px 10px}
+.color-dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:13px}
+.color-dialog-actions button{min-height:42px;padding:8px 15px}
+#colorPaletteConfirm{background:var(--a-accent-soft);font-weight:700}
+@media(pointer:coarse){#colorPaletteList .color-swatch-move{min-height:42px}}
