@@ -1,4 +1,5 @@
-import {mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
+import {listWorks,getWork,publishWork,updateWork,deleteWork,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
+import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
 
 type RequestMessage={id:number;type:string;[key:string]:unknown};
@@ -14,6 +15,7 @@ const out=self as unknown as {postMessage:(value:unknown,transfer?:Transferable[
 const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
 const FRAME_MAGIC=encoder.encode('ILJRNL01'),FRAME_HEADER=12,FRAME_HASH=32;
 let storePromise:Promise<WorkingStore>|null=null,currentSession:Session|null=null,serial=Promise.resolve();
+let libraryWork:WorkEntry|null=null;
 
 self.onmessage=(event:MessageEvent<RequestMessage>)=>{
   const message=event.data;serial=serial.then(()=>handle(message)).catch(error=>reply(message.id,false,undefined,error));
@@ -22,10 +24,44 @@ self.onmessage=(event:MessageEvent<RequestMessage>)=>{
 async function handle(message:RequestMessage){
   const store=await getStore();
   switch(message.type){
+    case 'library-list':{reply(message.id,true,{works:await listWorks(),lastWorkId:await lastWorkId()});break;}
+    case 'library-bind':{
+      const session=requireSession(message),snapshot=await loadRecovery(store,session);
+      const document=CoreDocument.restore({snapshot:snapshot.snapshot,blockPayloads:new Map(snapshot.blocks.map(b=>[b.id,b.bytes]))});
+      const old=await getWork(session.documentId),root=document.root,now=Date.now();
+      const entry:WorkEntry={documentId:session.documentId,writerEpochId:session.writerEpochId,revisionId:document.head,protectedThrough:snapshot.protectedThrough,
+        name:root.name,width:root.width,height:root.height,createdAt:old?.createdAt??root.metadata.createdAt,updatedAt:old?.updatedAt??now,openedAt:now,
+        selectedLayerId:uuid(message.selectedLayerId,'selected layer'),thumbnail:old?.thumbnail??null,thumbnailRevision:old?.thumbnailRevision??null,
+        previous:old?{writerEpochId:old.writerEpochId,revisionId:old.revisionId,protectedThrough:old.protectedThrough}:null,preserved:message.preserved};
+      await publishWork(entry,typeof message.expectedEpoch==='string'?message.expectedEpoch:null);libraryWork=entry;reply(message.id,true,entry);break;
+    }
+    case 'library-load':{
+      const entry=await getWork(uuid(message.documentId,'document id'));if(!entry)throw new Error('作品が見つかりません。');
+      const session={documentId:entry.documentId,writerEpochId:entry.writerEpochId,path:sessionPath(entry.documentId,entry.writerEpochId)};
+      let loaded;let fallback=false;
+      try{loaded=await loadRecovery(store,session,entry.revisionId,entry.protectedThrough);}
+      catch(error){if(!entry.previous)throw error;fallback=true;const previous=entry.previous;
+        loaded=await loadRecovery(store,{documentId:entry.documentId,writerEpochId:previous.writerEpochId,path:sessionPath(entry.documentId,previous.writerEpochId)},previous.revisionId,previous.protectedThrough);}
+      const snapshot=namedSnapshot(loaded.snapshot,entry.name);
+      CoreDocument.restore({snapshot,blockPayloads:new Map(loaded.blocks.map(b=>[b.id,b.bytes]))});
+      const projectionCache=await loadProjectionCheckpointRaw(store,session,new Set(snapshot.revisions.map(r=>r.id)));
+      reply(message.id,true,{...loaded,snapshot,entry,fallback,projectionCache});break;
+    }
+    case 'library-selection':{
+      if(libraryWork)await publishCurrent({selectedLayerId:uuid(message.selectedLayerId,'selected layer')});reply(message.id,true,{});break;
+    }
+    case 'library-thumbnail':{
+      const id=uuid(message.documentId,'document id');await updateWork(id,entry=>entry.revisionId===message.revisionId?{...entry,thumbnail:message.thumbnail as Blob,thumbnailRevision:entry.revisionId}:entry);reply(message.id,true,{});break;
+    }
+    case 'library-rename':{
+      const id=uuid(message.documentId,'document id'),name=String(message.name??'').trim().slice(0,120);if(!name)throw new Error('作品名を入力してください。');
+      await updateWork(id,entry=>({...entry,name,updatedAt:Date.now()}));if(libraryWork?.documentId===id)libraryWork={...libraryWork,name};reply(message.id,true,{});break;
+    }
+    case 'library-delete':{const id=uuid(message.documentId,'document id');await deleteWork(id);if(libraryWork?.documentId===id)libraryWork=null;try{await store.removeTree('m05/sessions/'+id);await store.removeTree('m05/documents/'+id);}catch{}reply(message.id,true,{});break;}
     case 'init':{
       const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch'),snapshot=message.snapshot as CorePersistenceSnapshotV1,blocks=blockInputs(message.blocks);
       if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid recovery base snapshot');
-      const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};
+      const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};libraryWork=null;
       await writeBlocks(store,path,blocks);await putVerified(store,path+'/base.frame',await frameJson(snapshot));
       const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId};
       await putVerified(store,path+'/meta.frame',await frameJson(meta));
@@ -35,13 +71,16 @@ async function handle(message:RequestMessage){
       const session=requireSession(message),packet=message.packet as CoreRecoveryPacketV1,blocks=blockInputs(message.blocks),supported=new Set(stringArray(message.supportedAlgorithms,'supported algorithms'));
       validateClosure(packet,blocks,supported);await writeBlocks(store,session.path,blocks);
       const seq=BigInt(packet.handoff.commitSequence),finalPath=session.path+'/commits/'+seq.toString().padStart(20,'0')+'.frame',bytes=await frameJson(packet),existing=await store.get(finalPath);
-      if(existing){if(!(await equalDigest(existing,bytes)))throw new Error('duplicate recovery packet differs');}
+      if(existing){if(!(await equalDigest(existing,bytes))){let valid=false;try{await unframeJson(existing);valid=true;}catch{}if(valid)throw new Error('duplicate recovery packet differs');await putVerified(store,finalPath,bytes);}}
       else await putVerified(store,finalPath,bytes);
       const protectedThrough=await scanProtected(store,session);await writeHead(store,session,packet.revision.id);
-      await touchMeta(store,session);reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
+      await touchMeta(store,session);
+      if(libraryWork){const root=packet.replacementRoot??libraryWork;await publishCurrent({selectedLayerId:uuid(message.selectedLayerId,'selected layer'),revisionId:packet.revision.id,protectedThrough:protectedThrough.toString(),width:root.width,height:root.height,updatedAt:Date.now()});}
+      reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
     }
     case 'set-head':{
       const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session);
+      if(libraryWork)await publishCurrent({revisionId,width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,updatedAt:Date.now()});
       reply(message.id,true,{backend:store.mode});break;
     }
     case 'flush':{
@@ -139,11 +178,11 @@ async function scanProtected(store:WorkingStore,session:Session){
     try{const packet=await unframeJson(bytes) as CoreRecoveryPacketV1;if(packet?.schema!=='illustro.core.recovery-packet'||packet.handoff?.writerEpochId!==session.writerEpochId||packet.handoff?.commitSequence!==seq.toString())break;}catch{break;}expected++;}
   return expected-1n;
 }
-async function loadRecovery(store:WorkingStore,session:Session){
-  const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)throw new Error('recovery base missing');const base=await unframeJson(baseBytes),protectedThrough=await scanProtected(store,session),packets:unknown[]=[];
+async function loadRecovery(store:WorkingStore,session:Session,chosenHead?:string,chosenThrough?:string){
+  const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)throw new Error('recovery base missing');const base=await unframeJson(baseBytes),protectedThrough=chosenThrough===undefined?await scanProtected(store,session):BigInt(chosenThrough),packets:unknown[]=[];
   for(let seq=1n;seq<=protectedThrough;seq++){const bytes=await store.get(session.path+'/commits/'+seq.toString().padStart(20,'0')+'.frame');if(!bytes)throw new Error('recovery packet gap');packets.push(await unframeJson(bytes));}
   let headRevisionId:string|undefined;const headBytes=await store.get(session.path+'/head.frame');if(headBytes){try{const head=await unframeJson(headBytes) as {revisionId?:unknown};if(typeof head.revisionId==='string')headRevisionId=head.revisionId;}catch{}}
-  const snapshot=mergeCoreRecovery(base,packets,headRevisionId),blocks:Array<{id:string;bytes:Uint8Array}>=[];
+  const snapshot=mergeCoreRecovery(base,packets,chosenHead??headRevisionId),blocks:Array<{id:string;bytes:Uint8Array}>=[];
   for(const descriptor of snapshot.blocks){const bytes=await store.get(session.path+'/blocks/'+descriptor.id+'.bin');if(!bytes)throw new Error('recovery block dependency missing');blocks.push({id:descriptor.id,bytes});}
   return {snapshot,blocks,protectedThrough:protectedThrough.toString(),documentId:session.documentId,writerEpochId:session.writerEpochId};
 }
@@ -252,7 +291,7 @@ function projectionEncoding(value:unknown):ProjectionEncoding{if(value==='raw-rg
 function dimension(value:unknown,name:string){const n=integer(value,name,1);if(n>8192)throw new Error(name+' too large');return n;}
 
 async function listRecoveryCandidates(store:WorkingStore){
-  const out:Array<Record<string,unknown>>=[],root='m05/sessions';for(const doc of await store.entries(root)){if(doc.kind!=='directory'||!isUuid(doc.name))continue;for(const epoch of await store.entries(root+'/'+doc.name)){if(epoch.kind!=='directory'||!isUuid(epoch.name))continue;
+  const out:Array<Record<string,unknown>>=[],root='m05/sessions';for(const doc of await store.entries(root)){if(doc.kind!=='directory'||!isUuid(doc.name)||await isWorkDeleted(doc.name))continue;for(const epoch of await store.entries(root+'/'+doc.name)){if(epoch.kind!=='directory'||!isUuid(epoch.name))continue;
       const session={documentId:doc.name,writerEpochId:epoch.name,path:root+'/'+doc.name+'/'+epoch.name};try{const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)continue;const base=await unframeJson(baseBytes) as CorePersistenceSnapshotV1,protectedThrough=await scanProtected(store,session);
         const target=base.revisions.find(x=>x.id===base.snapshotRevisionId),metaBytes=await store.get(session.path+'/meta.frame'),meta=metaBytes?await unframeJson(metaBytes) as Record<string,unknown>:{};
         const saves=await documentSaveState(store,session.documentId),lastGood=saves.lastGood,previousGood=saves.previousGood;
@@ -285,6 +324,7 @@ class WorkingStore{
   async remove(path:string){if(this.root){try{const parts=split(path),name=parts.pop()!,dir=await this.dir(parts,false);await dir.removeEntry(name);}catch{}return;}await idbDelete(this.db!,path);}
   async entries(path:string):Promise<Entry[]>{if(this.root){try{const dir=await this.dir(split(path),false),result:Entry[]=[];for await(const value of (dir as unknown as {values:()=>AsyncIterableIterator<FileSystemHandle>}).values())result.push({name:value.name,kind:value.kind});return result;}catch{return [];}}
     return idbEntries(this.db!,path);}
+  async removeTree(path:string){if(this.root){const parts=split(path),name=parts.pop()!,dir=await this.dir(parts,false);await dir.removeEntry(name,{recursive:true});return;}for(const entry of await this.entries(path)){const target=path+'/'+entry.name;if(entry.kind==='directory')await this.removeTree(target);else await this.remove(target);}}
   private async file(path:string,create:boolean){const parts=split(path),name=parts.pop();if(!name)throw new Error('invalid working path');return (await this.dir(parts,create)).getFileHandle(name,{create});}
   private async dir(parts:string[],create:boolean){let dir=this.root!;for(const name of parts)dir=await dir.getDirectoryHandle(name,{create});return dir;}
 }
@@ -314,3 +354,5 @@ function idbGet(db:IDBDatabase,key:string){return new Promise<Uint8Array|null>((
 function idbHas(db:IDBDatabase,key:string){return new Promise<boolean>((resolve,reject)=>{const tx=db.transaction('files','readonly'),request=tx.objectStore('files').count(key);request.onsuccess=()=>resolve(request.result>0);request.onerror=()=>reject(request.error);});}
 function idbDelete(db:IDBDatabase,key:string){return new Promise<void>((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
 function idbEntries(db:IDBDatabase,path:string){return new Promise<Entry[]>((resolve,reject)=>{const prefix=path.replace(/\/+$/,'')+'/',entries=new Map<string,'file'|'directory'>(),tx=db.transaction('files','readonly'),request=tx.objectStore('files').openKeyCursor();request.onsuccess=()=>{const cursor=request.result;if(!cursor){resolve([...entries].map(([name,kind])=>({name,kind})));return;}const key=String(cursor.key);if(key.startsWith(prefix)){const rest=key.slice(prefix.length),slash=rest.indexOf('/'),name=slash<0?rest:rest.slice(0,slash);if(name)entries.set(name,slash<0?'file':'directory');}cursor.continue();};request.onerror=()=>reject(request.error);});}
+
+async function publishCurrent(patch:Partial<WorkEntry>){if(!libraryWork)return;const old=libraryWork,current=await getWork(old.documentId);if(!current)throw new Error('この作品は作品一覧から削除されています。');const entry={...current,...patch,writerEpochId:old.writerEpochId,...(patch.revisionId&&patch.revisionId!==current.revisionId?{previous:{writerEpochId:current.writerEpochId,revisionId:current.revisionId,protectedThrough:current.protectedThrough}}:{})};await publishWork(entry,old.writerEpochId);libraryWork=entry;}

@@ -1,3 +1,4 @@
+import type {WorkEntry} from '../persistence/workLibrary';
 import {icon} from './icons';
 
 /** Illustro first-party Home skeleton. Artwork and storage stay owned by the editor. */
@@ -5,7 +6,12 @@ export type RecoverySummary = Readonly<{
   documentId: string; writerEpochId: string; title: string; protectedThrough: string; updatedAt: number;
 }>;
 export type HomeActions = Readonly<{
-  createDocument: (width:number,height:number)=>Promise<boolean>;
+  createDocument: (width:number,height:number,name:string,background:'transparent'|'white')=>Promise<boolean>;
+  listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
+  openWork:(id:string)=>Promise<boolean>;
+  renameWork:(id:string,name:string)=>Promise<void>;
+  duplicateWork:(id:string)=>Promise<void>;
+  deleteWork:(id:string)=>Promise<void>;
   openFile: ()=>void;
   resume: (documentId:string,writerEpochId:string)=>Promise<boolean|'cancelled'>;
   prepareHome: ()=>Promise<boolean>;
@@ -17,6 +23,7 @@ export type HomeShell = Readonly<{
   showNew: (mode?:'blank'|'file')=>void;
   showRecovery: ()=>void;
   setRecoveryCandidates: (candidates:readonly RecoverySummary[])=>void;
+  setWorks:(works:readonly WorkEntry[],lastWorkId:string|null)=>void;
   notify: (message:string)=>void;
 }>;
 
@@ -74,9 +81,10 @@ const html = [
     '</section>',
     '<section class="ih-screen ih-inner-screen" data-ih-screen="works" hidden aria-labelledby="ihWorksTitle">',
       '<div class="ih-page-top"><span class="ih-overline">YOUR WORKSPACE</span><h1 id="ihWorksTitle">マイ作品<span class="ih-period">.</span></h1><p>作品を選び、続きを描くための場所。</p></div>',
-      '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><span class="ih-works-count">作品一覧の準備中</span></div>',
+      '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><span class="ih-works-count">作品を確認しています</span></div>',
+      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名で検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option></select></label></div><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
       '<div class="ih-empty-works"><div class="ih-empty-art" aria-hidden="true"><span class="ih-empty-sheet ih-sheet-one"></span><span class="ih-empty-sheet ih-sheet-two"></span><span class="ih-empty-spark">'+icon('effects')+'</span></div>',
-        '<h2>作品一覧は、これから。</h2><p>このページは作品を一覧表示・管理するための場所です。現在は一覧機能を開発中のため、保存済みの作品をまだ表示できません。</p>',
+        '<h2>最初の作品を、ここから。</h2><p>新しく作った作品は自動保存され、ここからいつでも続きを描けます。</p>',
         '<button id="ihWorksStart" type="button" class="ih-solid-button">新しい作品を作る <span aria-hidden="true">↗</span></button>',
         '<p class="ih-empty-note">保存した .illustro ファイルは「新しい作品 → ファイルから開く」から読み込めます。</p>',
       '</div>',
@@ -97,9 +105,9 @@ const html = [
   '<dialog id="ihNewDialog" class="ih-new-dialog" aria-labelledby="ihNewTitle"><div class="ih-dialog-content">',
     '<div class="ih-dialog-head"><div><span class="ih-overline">START CREATING</span><h2 id="ihNewTitle">新しい作品</h2></div><button type="button" id="ihNewClose" class="ih-dialog-close" aria-label="閉じる">×</button></div>',
     '<div class="ih-start-choices"><button type="button" id="ihChoiceBlank" class="ih-choice" aria-pressed="true"><span class="ih-choice-icon">'+icon('document')+'</span><strong>空白から作成</strong><small>新しいキャンバスを準備</small></button><button type="button" id="ihChoiceFile" class="ih-choice" aria-pressed="false"><span class="ih-choice-icon">'+icon('open')+'</span><strong>ファイルから開く</strong><small>.illustro 形式の作品</small></button></div>',
-    '<form id="ihBlankForm"><div class="ih-size-heading"><strong>キャンバスサイズ</strong><span>px</span></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button></div>',
+    '<form id="ihBlankForm"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><div class="ih-size-heading"><strong>キャンバスサイズ</strong><span>px</span></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button></div>',
       '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="numeric"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="numeric"></label></div>',
-      '<p class="ih-dialog-hint">現在は透明なキャンバスから作成します。背景の細かな設定は今後追加します。</p><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
+      '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><p class="ih-dialog-hint">作品はIllustro内に自動保存されます。ファイル保存はバックアップ用です。</p><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
       '<div class="ih-dialog-actions"><button type="button" id="ihNewCancel" class="ih-quiet-button">キャンセル</button><button type="submit" id="ihNewCreate" class="ih-solid-button">キャンバスを作成 <span aria-hidden="true">↗</span></button></div>',
     '</form>',
     '<div id="ihFileOptions" class="ih-file-options" hidden><p>Illustroの作品ファイル（.illustro）を選択して、編集画面で開きます。</p><button type="button" id="ihSelectFile" class="ih-solid-button">ファイルを選択 <span aria-hidden="true">↗</span></button></div>',
@@ -109,9 +117,12 @@ const html = [
 type Screen='home'|'works'|'recovery'|'feature'|'settings'|'editor';
 export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const root=document.createElement('div');root.id='ihApp';root.className='ih-root';root.innerHTML=html;document.body.append(root);
+  if(location.pathname.replace(/\/+$/,'').endsWith('/qa/home')){
+    const checks=document.createElement('details');checks.className='ih-checks';checks.innerHTML='<summary>今回の確認</summary><ol><li>作品を作り、線を描いてホームへ戻る</li><li>マイ作品から開き、線とレイヤーが残っているか見る</li><li>別の作品も作り、二つの絵が混ざらないか見る</li><li>アプリを閉じて開き直し、前回の作品を続ける</li><li>作品の名前を変え、複製・削除を試す</li><li>用紙を動かす・拡大する・回す。白い枠だけが残らないか見る</li></ol>';root.querySelector('.ih-footer')!.after(checks);
+  }
   const el=<T extends HTMLElement=HTMLElement>(id:string)=>root.querySelector<T>('#'+id)!;
   const dialog=el<HTMLDialogElement>('ihNewDialog');
-  let screen:Screen='home',featureIndex=0,recovery:readonly RecoverySummary[]=[];
+  let screen:Screen='home',featureIndex=0,recovery:readonly RecoverySummary[]=[],works:readonly WorkEntry[]=[],lastWorkId:string|null=null,workUrls:string[]=[];
   const setButton=(id:string,handler:()=>void)=>{el<HTMLButtonElement>(id).addEventListener('click',handler);};
   const notify=(message:string)=>{const notice=el('ihNotice');notice.textContent=message;notice.hidden=!message;};
   const updateEditorLink=()=>{el('ihReturnEditor').hidden=!actions.hasDocument();};
@@ -124,8 +135,9 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     el('ihNavHome').classList.toggle('is-active',homeNav);el('ihNavWorks').classList.toggle('is-active',worksNav);
     el('ihNavSettings').classList.toggle('is-active',next==='settings');
     el('ihNavHome').setAttribute('aria-current',homeNav?'page':'false');el('ihNavWorks').setAttribute('aria-current',worksNav?'page':'false');
-    updateEditorLink();if(!inEditor){notify('');el('ihMain').scrollTop=0;root.scrollTop=0;}
+    updateEditorLink();if(next==='works')void loadWorks();if(!inEditor){notify('');el('ihMain').scrollTop=0;root.scrollTop=0;}
     if(dialog.open)dialog.close();
+    const heading=inEditor?app.querySelector<HTMLElement>('#canvas'):root.querySelector<HTMLElement>('[data-ih-screen="'+next+'"] h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
     if(writeHistory){
       const hash=next==='feature'?'#feature/'+HOME_TRIVIA[featureIndex]!.id:'#'+next;
       if(location.hash!==hash)history.pushState({illustroScreen:next},'',hash);
@@ -147,25 +159,58 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     el('ihDetailTitle').textContent=card.title;el('ihDetailSummary').textContent=card.summary;el('ihDetailCategory').textContent=card.kicker;el('ihDetailMilestone').textContent=card.milestone;
     el('ihDetailDescription').textContent=card.details;const steps=el<HTMLOListElement>('ihDetailSteps');steps.replaceChildren(...card.steps.map(step=>{const li=document.createElement('li');li.textContent=step;return li;}));navigate('feature');
   };
-  const showRecovery=()=>{
+  const run=async(action:()=>Promise<unknown>,button?:HTMLButtonElement)=>{if(button)button.disabled=true;try{await action();}catch(error){notify(error instanceof Error?error.message:String(error));}finally{if(button)button.disabled=false;}};
+  const renderWorks=()=>{
+    workUrls.forEach(URL.revokeObjectURL);workUrls=[];
+    const query=el<HTMLInputElement>('ihWorkSearch').value.trim().toLocaleLowerCase('ja-JP'),sort=el<HTMLSelectElement>('ihWorkSort').value;
+    const filtered=works.filter(work=>work.name.toLocaleLowerCase('ja-JP').includes(query)).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ja-JP'):sort==='created'?b.createdAt-a.createdAt:b.updatedAt-a.updatedAt);
+    root.querySelector('.ih-works-count')!.textContent=works.length+'作品';(root.querySelector('.ih-empty-works') as HTMLElement).hidden=works.length>0;
+    el('ihWorkNoResults').hidden=works.length===0||filtered.length>0;
+    el('ihWorkGrid').replaceChildren(...filtered.map(work=>{
+      const card=document.createElement('article');card.className='ih-work-card';card.dataset.workId=work.documentId;
+      const open=document.createElement('button');open.type='button';open.className='ih-work-preview';open.setAttribute('aria-label',work.name+'を開く');
+      if(work.thumbnail){const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=URL.createObjectURL(work.thumbnail);workUrls.push(img.src);open.append(img);}else{open.textContent='プレビューを準備中';}
+      open.onclick=()=>void run(async()=>{if(await actions.openWork(work.documentId))navigate('editor');},open);
+      const info=document.createElement('div');info.className='ih-work-info';
+      const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
+      title.onclick=()=>showRename(work);
+      const meta=document.createElement('p');meta.textContent=work.width+' × '+work.height+' px · '+new Date(work.updatedAt).toLocaleString('ja-JP');
+      const details=document.createElement('details');details.className='ih-work-actions';const summary=document.createElement('summary');summary.textContent='作品の操作';details.append(summary);
+      for(const [label,action] of [['名前を変更',async()=>showRename(work)],['複製',async()=>{await actions.duplicateWork(work.documentId);await loadWorks();}],['削除',async()=>{if(confirm('「'+work.name+'」をマイ作品から削除しますか？\n削除後は作品一覧から開けなくなります。')){await actions.deleteWork(work.documentId);await loadWorks();}}]] as const){
+        const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.workAction=label;button.onclick=()=>void run(action,button);details.append(button);
+      }
+      const id=document.createElement('small');id.textContent='識別番号 '+work.documentId;details.append(id);
+      info.append(title,meta,details);card.append(open,info);return card;
+    }));
+  };
+  const updateContinue=()=>{
+    const last=works.find(x=>x.documentId===lastWorkId);
+    el('ihContinueDescription').textContent=last?last.name+' · '+new Date(last.updatedAt).toLocaleString('ja-JP'):recovery.length?'保存された作業を選んで再開':'まだ作業した作品はありません';
+    el<HTMLButtonElement>('ihContinue').disabled=!last&&!recovery.length;
+  };
+  const setWorks=(values:readonly WorkEntry[],last:string|null)=>{works=values;lastWorkId=last;renderWorks();updateContinue();};
+  const loadWorks=async()=>{el('ihWorksLoading').hidden=false;try{const value=await actions.listWorks();setWorks(value.works,value.lastWorkId);}catch(error){notify('作品一覧を読み込めませんでした。'+String(error));}finally{el('ihWorksLoading').hidden=true;}};
+  el('ihWorkSearch').addEventListener('input',renderWorks);el('ihWorkSort').addEventListener('change',renderWorks);
+  const rename=document.createElement('dialog');rename.className='ih-new-dialog';rename.innerHTML='<form class="ih-dialog-content"><h2>作品名を変更</h2><label class="ih-name-field">作品名<input name="title" maxlength="120" required></label><p role="status"></p><div class="ih-dialog-actions"><button type="button" class="ih-quiet-button">キャンセル</button><button type="submit" class="ih-solid-button">変更する</button></div></form>';root.append(rename);
+  let renamedWork:WorkEntry|null=null;
+  const showRename=(work:WorkEntry)=>{renamedWork=work;rename.querySelector<HTMLInputElement>('input')!.value=work.name;rename.querySelector('p')!.textContent='';rename.showModal();rename.querySelector<HTMLInputElement>('input')!.focus();};
+  rename.querySelector<HTMLButtonElement>('button[type=button]')!.onclick=()=>rename.close();
+  rename.querySelector('form')!.onsubmit=event=>{event.preventDefault();if(!renamedWork)return;const work=renamedWork,button=rename.querySelector<HTMLButtonElement>('button[type=submit]')!;void run(async()=>{try{await actions.renameWork(work.documentId,rename.querySelector<HTMLInputElement>('input')!.value);rename.close();await loadWorks();}catch(error){rename.querySelector('p')!.textContent=error instanceof Error?error.message:String(error);}},button);};
+  const showRecovery=()=>{void run(async()=>{
+    const last=works.find(x=>x.documentId===lastWorkId),newer=last?recovery.filter(x=>x.documentId===last.documentId&&x.writerEpochId!==last.writerEpochId&&x.updatedAt>last.updatedAt):recovery;
+    if(last&&!newer.length){if(await actions.openWork(last.documentId))navigate('editor');return;}
     const list=el('ihRecoveryList');list.replaceChildren();
-    const valid=recovery.filter(x=>{try{return BigInt(x.protectedThrough)>0n;}catch{return false;}});
-    if(!valid.length){const empty=document.createElement('div');empty.className='ih-placeholder';empty.textContent='復元できる作業はありません。新しい作品から描き始められます。';list.append(empty);}
-    else for(const item of valid){
-      const button=document.createElement('button');button.type='button';button.className='ih-recovery-item';
-      const name=document.createElement('strong');name.textContent=item.title||'名前のない作品';
-      const time=document.createElement('small');time.textContent=item.updatedAt?new Date(item.updatedAt).toLocaleString('ja-JP'):'保存時刻不明';
-      const marker=document.createElement('span');marker.textContent='復元する ↗';button.append(name,time,marker);
-      button.addEventListener('click',async()=>{button.disabled=true;notify('保存された作業を確認しています。');try{const result=await actions.resume(item.documentId,item.writerEpochId);if(result===true)navigate('editor');else notify(result==='cancelled'?'復元をキャンセルしました。':'作業を復元できませんでした。');}finally{button.disabled=false;}});
-      list.append(button);
+    if(last){const button=document.createElement('button');button.type='button';button.className='ih-recovery-item';button.textContent=last.name+' — マイ作品の保存から続ける';button.onclick=()=>void run(async()=>{if(await actions.openWork(last.documentId))navigate('editor');},button);list.append(button);}
+    const valid=newer.filter(x=>{try{return BigInt(x.protectedThrough)>0n;}catch{return false;}});
+    if(!valid.length&&!last){const empty=document.createElement('p');empty.textContent='復元できる作業はありません。新しい作品から描き始められます。';list.append(empty);}
+    for(const item of valid){const button=document.createElement('button');button.type='button';button.className='ih-recovery-item';
+      button.textContent=(item.title||'名前のない作品')+' · '+new Date(item.updatedAt).toLocaleString('ja-JP')+' — 作業途中から復元';
+      button.onclick=()=>void run(async()=>{if(await actions.resume(item.documentId,item.writerEpochId)===true)navigate('editor');},button);list.append(button);
     }
     navigate('recovery');
-  };
+  });};
   const setRecoveryCandidates=(candidates:readonly RecoverySummary[])=>{
-    recovery=candidates;const available=candidates.filter(x=>{try{return BigInt(x.protectedThrough)>0n;}catch{return false;}});
-    const count=available.length;el('ihContinueDescription').textContent=count===0?'復元できる作業はありません':count===1?'保存された作業が1件あります':'復元できる作業が'+count+'件あります';
-    el<HTMLButtonElement>('ihContinue').disabled=count===0;
-    el('ihContinue').setAttribute('aria-disabled',String(count===0));
+    recovery=candidates.filter(x=>{try{return BigInt(x.protectedThrough)>0n;}catch{return false;}});updateContinue();
     if(screen==='recovery')showRecovery();
   };
   const showHome=async()=>{if(screen==='editor'&&!(await actions.prepareHome()))return;navigate('home');};
@@ -194,21 +239,22 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
     if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){el('ihNewError').textContent='幅と高さを1〜8192pxで指定してください。';return;}
     const button=el<HTMLButtonElement>('ihNewCreate');button.disabled=true;el('ihNewError').textContent='キャンバスを準備しています。';
-    try{if(await actions.createDocument(width,height))navigate('editor');else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';}
+    try{if(await actions.createDocument(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white'))navigate('editor');else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';}
     catch(error){el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}finally{button.disabled=false;}
   })();});
   let swipeStart:number|null=null;
   el('ihFeatureVisual').addEventListener('touchstart',event=>{swipeStart=event.touches[0]?.clientX??null;},{passive:true});
   el('ihFeatureVisual').addEventListener('touchend',event=>{if(swipeStart===null)return;const delta=(event.changedTouches[0]?.clientX??swipeStart)-swipeStart;swipeStart=null;if(Math.abs(delta)>48){chooseTrivia(featureIndex+(delta<0?1:-1));event.preventDefault();}},{passive:false});
-  addEventListener('popstate',()=>{
+  addEventListener('popstate',()=>{void(async()=>{
+    if(screen==='editor'&&!(await actions.prepareHome())){navigate('editor');return;}
     const value=location.hash.replace(/^#/,'');
     if(value.startsWith('feature/')){const index=HOME_TRIVIA.findIndex(x=>x.id===value.slice(8));if(index>=0){chooseTrivia(index);showFeature();return;}}
     if(value==='works'||value==='recovery'||value==='settings')navigate(value,false);
     else if(value==='editor'&&actions.hasDocument())navigate('editor',false);
     else navigate('home',false);
-  });
+  })();});
   chooseTrivia(0);setRecoveryCandidates([]);
   // The old milestone QA pages do not install this shell; normal startup is Home.
   navigate('home',location.hash!=='#home');
-  return {showHome,showEditor:()=>navigate('editor'),showNew,showRecovery,setRecoveryCandidates,notify};
+  return {showHome,showEditor:()=>navigate('editor'),showNew,showRecovery,setRecoveryCandidates,setWorks,notify};
 }

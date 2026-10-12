@@ -1,3 +1,4 @@
+import {type WorkEntry} from './workLibrary';
 import {CoreDocument,type CoreRecoveryPacketV1,type LayerId,type PersistenceHandoff,type RevisionId} from '@illustro/core';
 import {validateRecord} from '@illustro/brush-rt';
 import workerUrl from './persistence.worker.ts?worker&url';
@@ -13,7 +14,7 @@ export type PersistenceState=Readonly<{
   lastProtectionTime:number|null;lastExplicitSaveTime:number|null;saveDurationMs:number|null;snapshotCaptureMs:number|null;reloadDurationMs:number|null;recoveryDurationMs:number|null;
   lastGood:boolean;previousGood:boolean;offline:boolean;
 }>;
-type Pending=Readonly<{packet:CoreRecoveryPacketV1;blocks:readonly {id:string;bytes:Uint8Array}[];supportedAlgorithms:readonly string[]}>;
+type Pending=Readonly<{selectedLayerId:LayerId;packet:CoreRecoveryPacketV1;blocks:readonly {id:string;bytes:Uint8Array}[];supportedAlgorithms:readonly string[]}>;
 type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
 
 export class PersistenceCoordinator{
@@ -38,13 +39,25 @@ export class PersistenceCoordinator{
   }
   noteCommit(document:CoreDocument,handoff:PersistenceHandoff){
     try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),algorithms=runtimeSupportedAlgorithms(packet);
-      this.queue.push(Object.freeze({packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms}));this.patch({currentRevision:document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
+      this.queue.push(Object.freeze({selectedLayerId:this.controller?.selectedLayerId??document.root.rootLayerIds[0]!,packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms}));this.patch({currentRevision:document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    this.patch({currentRevision:document.head});void this.request('set-head',{revisionId:document.head}).catch(error=>this.patch({storageError:message(error)}));
+    this.patch({currentRevision:document.head});void this.request('set-head',{revisionId:document.head,width:document.root.width,height:document.root.height}).catch(error=>this.patch({storageError:message(error)}));
   }
-  async flushPrepared(){this.cancelIdle();await this.drain();}
+  async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
+  async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
+  async bindWork(expectedEpoch:string|null=null){if(!this.controller)throw new Error('作品が開かれていません。');return this.request('library-bind',{selectedLayerId:this.controller.selectedLayerId,expectedEpoch,preserved:this.preserved});}
+  async loadWork(documentId:string){const raw=await this.request('library-load',{documentId});
+    const document=CoreDocument.restore({snapshot:raw.snapshot,blockPayloads:new Map(raw.blocks.map((b:{id:string;bytes:Uint8Array})=>[b.id,b.bytes]))});
+    const selected=raw.entry.selectedLayerId;return {opened:{document,selectedLayerId:document.root.hasLayer(selected)?selected:document.root.rootLayerIds[0]!,preserved:raw.entry.preserved??{manifestExtras:{},optionalSections:[]},generationId:'library',snapshotRevisionId:document.head,projectionCache:raw.projectionCache??undefined} as PortableOpenResult,entry:raw.entry as WorkEntry,fallback:Boolean(raw.fallback)};}
+  async renameWork(documentId:string,name:string){await this.request('library-rename',{documentId,name});}
+  async deleteWork(documentId:string){await this.request('library-delete',{documentId});}
+  async selectWorkLayer(selectedLayerId:LayerId){await this.request('library-selection',{selectedLayerId});}
+  async storeThumbnail(documentId:string,revisionId:string,thumbnail:Blob){await this.request('library-thumbnail',{documentId,revisionId,thumbnail});}
+  async barrier(){await this.flushPrepared();await this.request('flush',{});if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);}
+  async retry(){this.cancelIdle();await this.drain();if(this.queue.length)throw new Error(this.stateValue.storageError??'保存に失敗しました。');if(this.controller){const d=this.controller.document;await this.request('set-head',{revisionId:d.head,width:d.root.width,height:d.root.height});}this.patch({storageError:null});}
+  clearFileDestination(){this.fileHandle=null;this.externalFingerprint=null;}
   async listRecoveryCandidates():Promise<readonly Candidate[]>{const result=await this.request('list-recovery',{}) as any;this.applyStorage(result.storage);if(result.backend)this.patch({backend:String(result.backend)});return Object.freeze((Array.isArray(result.candidates)?result.candidates:[]) as Candidate[]);}
   async recover(candidate:Candidate){
     const started=performance.now(),result=await this.request('load-recovery',{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}) as any,blocks=new Map<string,Uint8Array>();
@@ -95,9 +108,9 @@ export class PersistenceCoordinator{
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
   private async drain(){
     if(this.activeDrain)return this.activeDrain;
-    const run=(async()=>{try{while(this.queue.length){const item=this.queue.shift()!,transfers=item.blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{packet:item.packet,blocks:item.blocks,supportedAlgorithms:item.supportedAlgorithms},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
-      catch(error){this.patch({storageError:message(error)});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
-    this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length)this.schedule();}
+    const run=(async()=>{try{while(this.queue.length){const item=this.queue.shift()!,blocks=item.blocks.map(b=>({id:b.id,bytes:b.bytes.slice()})),transfers=blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{selectedLayerId:item.selectedLayerId,packet:item.packet,blocks,supportedAlgorithms:item.supportedAlgorithms},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
+      catch(error){this.queue.unshift(item);this.patch({storageError:message(error),protectionPending:true});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
+    this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length&&!this.stateValue.storageError)this.schedule();}
   }
   private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
   private patch(patch:Partial<PersistenceState>){
@@ -119,7 +132,7 @@ export class PersistenceCoordinator{
     }catch(error){try{await writable.abort?.();}catch{}throw error;}
     return await verifyExternalWrite(h,stable);
   }
-  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared();};private pagehide=()=>{void this.flushPrepared();};private onlineState=()=>this.patch({offline:!navigator.onLine});
+  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared().catch(()=>{});};private pagehide=()=>{void this.flushPrepared().catch(()=>{});};private onlineState=()=>this.patch({offline:!navigator.onLine});
 }
 
 function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){

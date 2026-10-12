@@ -26,7 +26,7 @@ if(!base){
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
  base='http://127.0.0.1:'+server.address().port+'/';
 }
-const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
+const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{}),args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
 const report={commit:expected,mode:publicBase?'public':'local',tests:[],errors:[]};
 function record(name,extra={}){report.tests.push({name,status:'PASS',...extra});}
 const errors=[];
@@ -70,7 +70,7 @@ try{
 
  await click(desktop,'#ihWorks');
  await desktop.waitForSelector('[data-ih-screen="works"]:not([hidden])');
- assert.match(await desktop.locator('.ih-empty-works').innerText(),/一覧機能を開発中/);
+ assert.match(await desktop.locator('.ih-empty-works').innerText(),/最初の作品/);
  assert.equal(await desktop.locator('.ih-works-bar').count(),1);
  assert.equal(await desktop.locator('.ih-works-card').count(),0,'no fake cards');
  await desktop.screenshot({path:path.join(evidence,'my-works-empty.png'),fullPage:true});

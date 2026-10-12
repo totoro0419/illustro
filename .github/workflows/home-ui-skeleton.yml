@@ -1,4 +1,4 @@
-name: Home UI Skeleton
+name: Home Works Management
 on:
   push:
     branches: ['feature/home-my-works-foundation-2026-10-12']
@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: home-ui-skeleton
+  group: home-works-management
   cancel-in-progress: true
 jobs:
   verify-publish:
@@ -47,12 +47,22 @@ jobs:
           test -f apps/editor/dist/offline-assets.json
       - name: Install Playwright Chromium
         run: |
-          npm install --prefix /tmp/home-browser playwright@1.62.1 --no-audit --no-fund
+          npm install --prefix /tmp/home-browser playwright@1.64.0 --no-audit --no-fund
           /tmp/home-browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Local Home desktop tablet mobile navigation and previous QA
         env:
           RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
           HOME_EVIDENCE_DIRECTORY: /tmp/home-evidence/local
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-works-smoke.mjs
+      - name: Restart fallback and save failure safety
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          HOME_EVIDENCE_DIRECTORY: /tmp/home-evidence/safety
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-works-safety-smoke.mjs
+      - name: Home UI design and legacy QA isolation
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
+          HOME_EVIDENCE_DIRECTORY: /tmp/home-evidence/layout
         run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-home-smoke.mjs
       - name: M08 canvas and display quality regression
         env:
@@ -99,7 +109,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add qa/home .nojekyll
           if git diff --cached --quiet; then echo 'Home QA already published'; else
-            git commit -m 'qa: publish Home UI skeleton'
+            git commit -m 'qa: publish Home Works management'
             git push origin HEAD:gh-pages
           fi
       - name: Verify published home and permanent old QA
@@ -125,12 +135,12 @@ jobs:
           RT_PLAYWRIGHT_PATH: /tmp/home-browser/node_modules/playwright
           HOME_EVIDENCE_DIRECTORY: /tmp/home-evidence/public
           HOME_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/home/
-        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-home-smoke.mjs
+        run: EXPECTED_COMMIT_SHA="$GITHUB_SHA" node scripts/editor-works-smoke.mjs
       - name: Upload visual evidence
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: home-ui-skeleton-evidence
+          name: home-works-management-evidence
           path: |
             /tmp/home-evidence
             /tmp/home-brush.txt
