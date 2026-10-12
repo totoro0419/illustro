@@ -303,9 +303,9 @@ export class BrushSurface{
     gl.readPixels(sx,layer?sy:h-1-sy,1,1,gl.RGBA,gl.UNSIGNED_BYTE,out);
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);return [...out];
    }
-   if(backend.device){const device=backend.device as GPUDevice,texture=layer?tile.layer[tile.l]:backend.liveTarget;
-    const buffer=device.createBuffer({size:256,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
-    try{const encoder=device.createCommandEncoder();encoder.copyTextureToBuffer({texture,origin:{x:sx,y:sy,z:0}},{buffer,bytesPerRow:256,rowsPerImage:1},{width:1,height:1,depthOrArrayLayers:1});device.queue.submit([encoder.finish()]);await buffer.mapAsync(GPUMapMode.READ);const raw=new Uint8Array(buffer.getMappedRange());const bgra=!layer&&String(backend.format).startsWith('bgra');const result=[raw[bgra?2:0]??0,raw[1]??0,raw[bgra?0:2]??0,raw[3]??0];buffer.unmap();return result;}
+   if(backend.device){const device=backend.device as any,texture=layer?tile.layer[tile.l]:backend.liveTarget;
+    const buffer=device.createBuffer({size:256,usage:(globalThis as any).GPUBufferUsage.COPY_DST|(globalThis as any).GPUBufferUsage.MAP_READ});
+    try{const encoder=device.createCommandEncoder();encoder.copyTextureToBuffer({texture,origin:{x:sx,y:sy,z:0}},{buffer,bytesPerRow:256,rowsPerImage:1},{width:1,height:1,depthOrArrayLayers:1});device.queue.submit([encoder.finish()]);await buffer.mapAsync((globalThis as any).GPUMapMode.READ);const raw=new Uint8Array(buffer.getMappedRange());const bgra=!layer&&String(backend.format).startsWith('bgra');const result=[raw[bgra?2:0]??0,raw[1]??0,raw[bgra?0:2]??0,raw[3]??0];buffer.unmap();return result;}
     finally{buffer.destroy();}
    }
    return null;
