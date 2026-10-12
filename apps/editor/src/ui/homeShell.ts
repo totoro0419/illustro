@@ -135,7 +135,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     el('ihNavHome').classList.toggle('is-active',homeNav);el('ihNavWorks').classList.toggle('is-active',worksNav);
     el('ihNavSettings').classList.toggle('is-active',next==='settings');
     el('ihNavHome').setAttribute('aria-current',homeNav?'page':'false');el('ihNavWorks').setAttribute('aria-current',worksNav?'page':'false');
-    updateEditorLink();if(next==='works')void loadWorks();if(!inEditor){notify('');el('ihMain').scrollTop=0;root.scrollTop=0;}
+    updateEditorLink();if(next==='works'){renderWorks();void loadWorks();}if(!inEditor){notify('');el('ihMain').scrollTop=0;root.scrollTop=0;}
     if(dialog.open)dialog.close();
     const heading=inEditor?app.querySelector<HTMLElement>('#canvas'):root.querySelector<HTMLElement>('[data-ih-screen="'+next+'"] h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
     if(writeHistory){
@@ -188,7 +188,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     el('ihContinueDescription').textContent=last?last.name+' · '+new Date(last.updatedAt).toLocaleString('ja-JP'):recovery.length?'保存された作業を選んで再開':'まだ作業した作品はありません';
     el<HTMLButtonElement>('ihContinue').disabled=!last&&!recovery.length;
   };
-  const setWorks=(values:readonly WorkEntry[],last:string|null)=>{works=values;lastWorkId=last;renderWorks();updateContinue();};
+  const setWorks=(values:readonly WorkEntry[],last:string|null)=>{works=values;lastWorkId=last;if(screen==='works')renderWorks();updateContinue();};
   const loadWorks=async()=>{el('ihWorksLoading').hidden=false;try{const value=await actions.listWorks();setWorks(value.works,value.lastWorkId);}catch(error){notify('作品一覧を読み込めませんでした。'+String(error));}finally{el('ihWorksLoading').hidden=true;}};
   el('ihWorkSearch').addEventListener('input',renderWorks);el('ihWorkSort').addEventListener('change',renderWorks);
   const rename=document.createElement('dialog');rename.className='ih-new-dialog';rename.setAttribute('aria-label','作品名を変更');rename.innerHTML='<form class="ih-dialog-content"><h2>作品名を変更</h2><label class="ih-name-field">作品名<input name="title" maxlength="120" required></label><p role="status"></p><div class="ih-dialog-actions"><button type="button" class="ih-quiet-button">キャンセル</button><button type="submit" class="ih-solid-button">変更する</button></div></form>';root.append(rename);
@@ -213,7 +213,11 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     recovery=candidates.filter(x=>{try{return BigInt(x.protectedThrough)>0n;}catch{return false;}});updateContinue();
     if(screen==='recovery')showRecovery();
   };
-  const showHome=async()=>{if(screen==='editor'&&!(await actions.prepareHome()))return;navigate('home');};
+  const showHome=async()=>{
+    const leavingEditor=screen==='editor';
+    navigate('home');
+    if(leavingEditor)void actions.prepareHome().catch(error=>notify('作品情報を更新できませんでした。'+String(error)));
+  };
 
   setButton('ihBrand',()=>void showHome());setButton('ihNavHome',()=>void showHome());setButton('ihNavWorks',()=>navigate('works'));
   setButton('ihNavSettings',()=>navigate('settings'));setButton('ihStart',()=>showNew());setButton('ihWorks',()=>navigate('works'));
@@ -246,7 +250,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   el('ihFeatureVisual').addEventListener('touchstart',event=>{swipeStart=event.touches[0]?.clientX??null;},{passive:true});
   el('ihFeatureVisual').addEventListener('touchend',event=>{if(swipeStart===null)return;const delta=(event.changedTouches[0]?.clientX??swipeStart)-swipeStart;swipeStart=null;if(Math.abs(delta)>48){chooseTrivia(featureIndex+(delta<0?1:-1));event.preventDefault();}},{passive:false});
   addEventListener('popstate',()=>{void(async()=>{
-    if(screen==='editor'&&!(await actions.prepareHome())){navigate('editor');return;}
+    if(screen==='editor')void actions.prepareHome().catch(error=>notify('作品情報を更新できませんでした。'+String(error)));
     const value=location.hash.replace(/^#/,'');
     if(value.startsWith('feature/')){const index=HOME_TRIVIA.findIndex(x=>x.id===value.slice(8));if(index>=0){chooseTrivia(index);showFeature();return;}}
     if(value==='works'||value==='recovery'||value==='settings')navigate(value,false);
