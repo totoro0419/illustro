@@ -122,7 +122,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   }
   const el=<T extends HTMLElement=HTMLElement>(id:string)=>root.querySelector<T>('#'+id)!;
   const dialog=el<HTMLDialogElement>('ihNewDialog');
-  let screen:Screen='home',featureIndex=0,recovery:readonly RecoverySummary[]=[],works:readonly WorkEntry[]=[],lastWorkId:string|null=null,workUrls:string[]=[];
+  let screen:Screen='home',featureIndex=0,recovery:readonly RecoverySummary[]=[],works:readonly WorkEntry[]=[],lastWorkId:string|null=null,workUrls=new Map<string,{revision:string|null;url:string}>();
   const setButton=(id:string,handler:()=>void)=>{el<HTMLButtonElement>(id).addEventListener('click',handler);};
   const notify=(message:string)=>{const notice=el('ihNotice');notice.textContent=message;notice.hidden=!message;};
   const updateEditorLink=()=>{el('ihReturnEditor').hidden=!actions.hasDocument();};
@@ -161,7 +161,8 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   };
   const run=async(action:()=>Promise<unknown>,button?:HTMLButtonElement)=>{if(button)button.disabled=true;try{await action();}catch(error){notify(error instanceof Error?error.message:String(error));}finally{if(button)button.disabled=false;}};
   const renderWorks=()=>{
-    workUrls.forEach(URL.revokeObjectURL);workUrls=[];
+    const validIds=new Set(works.map(work=>work.documentId));
+    for(const [id,cached] of workUrls){if(!validIds.has(id)){URL.revokeObjectURL(cached.url);workUrls.delete(id);}}
     const query=el<HTMLInputElement>('ihWorkSearch').value.trim().toLocaleLowerCase('ja-JP'),sort=el<HTMLSelectElement>('ihWorkSort').value;
     const filtered=works.filter(work=>work.name.toLocaleLowerCase('ja-JP').includes(query)).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ja-JP'):sort==='created'?b.createdAt-a.createdAt:b.updatedAt-a.updatedAt);
     root.querySelector('.ih-works-count')!.textContent=works.length+'作品';(root.querySelector('.ih-empty-works') as HTMLElement).hidden=works.length>0;
@@ -169,7 +170,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     el('ihWorkGrid').replaceChildren(...filtered.map(work=>{
       const card=document.createElement('article');card.className='ih-work-card';card.dataset.workId=work.documentId;
       const open=document.createElement('button');open.type='button';open.className='ih-work-preview';open.setAttribute('aria-label',work.name+'を開く');
-      if(work.thumbnail){const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=URL.createObjectURL(work.thumbnail);workUrls.push(img.src);open.append(img);}else{open.textContent='プレビューを準備中';}
+      if(work.thumbnail){const img=document.createElement('img');img.alt='';img.loading='lazy';const cached=workUrls.get(work.documentId);if(cached?.revision===work.thumbnailRevision)img.src=cached.url;else{if(cached)URL.revokeObjectURL(cached.url);img.src=URL.createObjectURL(work.thumbnail);workUrls.set(work.documentId,{revision:work.thumbnailRevision,url:img.src});}open.append(img);}else{open.textContent='プレビューを準備中';}
       open.onclick=()=>void run(async()=>{if(await actions.openWork(work.documentId))navigate('editor');},open);
       const info=document.createElement('div');info.className='ih-work-info';
       const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
