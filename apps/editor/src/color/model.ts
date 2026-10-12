@@ -66,6 +66,7 @@ export class ForegroundColor {
   if(Array.isArray(d.palettes)){const items=d.palettes.slice(0,MAX_PALETTES).map((p:unknown)=>{const q=p as Palette;if(typeof q?.id!=='string'||typeof q.name!=='string'||!Array.isArray(q.swatches))return null;return {id:q.id,name:cleanName(q.name),swatches:q.swatches.slice(0,MAX_SWATCHES).filter(s=>typeof s?.id==='string'&&validRGB(s.color))};}).filter((p):p is Palette=>p!==null&&!!p.name);if(items.length)this.palettes=items;}
   if(typeof d.paletteId==='string'&&this.palettes.some(p=>p.id===d.paletteId))this.paletteId=d.paletteId;
  }catch{/* Corrupt workspace preferences never prevent startup. */}}
+ get isEditing(){return this.origin!==null;}
  subscribe(f:()=>void){this.listeners.add(f);return ()=>this.listeners.delete(f);}
  private notify(){for(const f of this.listeners)f();}
  private save(){try{localStorage.setItem(key,JSON.stringify({version:1,current:this.current,previous:this.previous,history:this.history,palettes:this.palettes,paletteId:this.paletteId}));}catch{/* Storage quota/unavailable is nonfatal; palette export stays usable. */}}
