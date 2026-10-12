@@ -266,3 +266,12 @@ body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] .s
 body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [data-action="new"],
 body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [data-action="open"],
 body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [data-action="recover"]{display:none!important}
+
+/* The approved M07 Aurora SVG icon family: no font-dependent pictograms. */
+.ih-sparkle .ui-icon{width:19px;height:19px;display:block}
+.ih-action-icon .ui-icon{width:25px;height:25px;display:block}
+.ih-nav-icon .ui-icon{width:21px;height:21px;display:block}
+.ih-choice-icon .ui-icon{width:26px;height:26px;display:block}
+.ih-empty-spark .ui-icon{width:31px;height:31px;display:block}
+.ih-detail-glyph{background:none;-webkit-background-clip:initial;background-clip:initial;color:#8B83EA}
+.ih-detail-glyph .ui-icon{width:124px;height:124px;display:block;stroke-width:1.45}
