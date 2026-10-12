@@ -45,8 +45,13 @@ async function home(page){
    const img=document.querySelector('#ihApp .ih-logo img');
    return img instanceof HTMLImageElement&&img.complete&&img.naturalWidth>0;
  },null,{timeout:20000});
- const brand=await page.locator('#ihApp .ih-logo img').evaluate(el=>({complete:el.complete,naturalWidth:el.naturalWidth}));
- assert.ok(brand.complete&&brand.naturalWidth>0,'actual logo loaded');
+ const brand=await page.locator('#ihApp .ih-logo img').evaluate(img=>{
+  const frame=img.parentElement,outer=frame.getBoundingClientRect(),inner=img.getBoundingClientRect(),style=getComputedStyle(img);
+  return {loaded:img.complete&&img.naturalWidth>0,fit:style.objectFit,width:outer.width,imageWidth:inner.width,imageHeight:inner.height,inside:inner.left>=outer.left&&inner.right<=outer.right&&inner.top>=outer.top&&inner.bottom<=outer.bottom};
+ });
+ assert.ok(brand.loaded,'approved logo loads');
+ assert.equal(brand.fit,'contain','preserve original logo composition');
+ assert.ok(brand.inside&&brand.imageWidth>=brand.width-3,'logo must fill rounded frame without clipping');
  record('HOME-APPROVED-ACTIONS');
 }
 try{
@@ -113,7 +118,15 @@ try{
  assert.equal(await desktop.locator('#home').isEnabled(),true);
  assert.equal(await desktop.locator('.canvas-top .document-actions').isVisible(),false);
  assert.equal(await desktop.locator('#canvas').isVisible(),true);
+ await desktop.waitForFunction(()=>{const img=document.querySelector('.topbar .brand-mark img.brand-artwork');return img instanceof HTMLImageElement&&img.complete&&img.naturalWidth>0;});
+ assert.equal(await desktop.locator('.topbar .brand-symbol').count(),0,'old placeholder logo removed');
+ const editorLogo=await desktop.locator('.topbar .brand-mark img.brand-artwork').evaluate(img=>{
+  const inner=img.getBoundingClientRect(),outer=img.parentElement.getBoundingClientRect();
+  return {source:new URL(img.src).pathname,inside:inner.left>=outer.left&&inner.right<=outer.right&&inner.top>=outer.top&&inner.bottom<=outer.bottom,fit:getComputedStyle(img).objectFit};
+ });
+ assert.ok(editorLogo.source.endsWith('/brand/illustro-logo.png')&&editorLogo.inside&&editorLogo.fit==='contain','editor uses the real fitted logo');
  record('NEW-DOCUMENT-PRESET-AND-REAL-EDITOR');
+ record('LOGO-HOME-AND-EDITOR-IMAGE-BOUNDARIES',editorLogo);
 
  await click(desktop,'#home');
  await desktop.waitForSelector('#ihApp:not([hidden]) [data-ih-screen="home"]:not([hidden])',{timeout:25000});
