@@ -44,6 +44,12 @@ jobs:
         run: |
           npm install --prefix /tmp/m09-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/m09-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: M09 local WebGL2 / WebGPU PC Tablet and Color QA
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
+          M09_EVIDENCE_DIRECTORY: /tmp/m09-evidence/local
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m09-smoke.mjs
       - name: M05 Save Recovery Offline regression on M09
         env:
           RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
@@ -52,12 +58,6 @@ jobs:
           M08_CORRUPT_ALL_RENDER_CACHES: '1'
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/editor-m05-smoke.mjs
-      - name: M09 local WebGL2 / WebGPU PC Tablet and Color QA
-        env:
-          RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
-          M09_EVIDENCE_DIRECTORY: /tmp/m09-evidence/local
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-        run: node scripts/editor-m09-smoke.mjs
       - name: M08 Canvas display quality regression
         env:
           RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
