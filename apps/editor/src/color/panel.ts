@@ -1,7 +1,6 @@
-import {ForegroundColor,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
+import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
 
 const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as T;
-const swatch=(c:RGB)=>'background:'+hex(c)+';';
 const button=(label:string,action:string)=>'<button type="button" data-color-action="'+action+'">'+label+'</button>';
 export function colorMarkup():string {
  return '<div class="color-workbench">'+
@@ -12,7 +11,7 @@ export function colorMarkup():string {
  '<div id="colorPlane" class="color-plane" aria-hidden="true"><div class="color-plane-white"></div><div class="color-plane-black"></div><i id="colorSvMarker" class="color-sv-marker"></i></div></div>'+
  '<p class="color-help">外側の輪で色味、内側で鮮やかさと明るさを選びます。細かい調整は「数値」から行えます。</p>'+
  '<label class="color-hex-label" for="colorHex">色の番号（HEX）<input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" value="#1F2633"></label><small id="colorHexError" class="color-error" role="status"></small>'+
- '<div class="color-quick-actions">'+button('スポイトを使う','eyedropper')+button('今の色を保存','add-current')+'</div></section>'+
+ '<label class="color-sample-source">スポイトで拾う場所<select id="colorSampleSource"><option value="composite">見えている絵全体</option><option value="layer">今のレイヤーだけ</option></select></label><div class="color-quick-actions">'+button('スポイトを使う','eyedropper')+button('今の色を保存','add-current')+'</div></section>'+
  '<section id="colorPanel1" class="color-tabpanel" role="tabpanel" aria-labelledby="colorTab1" hidden>'+
  '<div role="radiogroup" class="color-models" aria-label="色の表し方">'+['HSV','HSL','RGB'].map((m,i)=>'<label><input type="radio" name="colorModel" value="'+m+'" '+(i===0?'checked':'')+'><span>'+m+'</span></label>').join('')+'</div>'+
  '<div id="colorValueChannels" class="color-value-channels"></div><p class="color-help">スライダーでも数字でも調整できます。確定はEnter、取り消しはEscです。</p></section>'+
@@ -136,7 +135,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
    }
   }catch(e){error.textContent=e instanceof Error?e.message:String(e);}
  });
- function exportPaletteJson(){return JSON.stringify({format:'illustro-palette',version:1,name:state.palette.name,swatches:state.palette.swatches.map(s=>({id:s.id,color:{space:'srgb',channels:[s.color.r,s.color.g,s.color.b]}}))});}
+ function exportPaletteJson(){return exportPalette(state.palette);}
  id<HTMLInputElement>('colorPaletteFile').onchange=async e=>{
   const field=e.target as HTMLInputElement,file=field.files?.[0];field.value='';if(!file)return;
   if(file.size>262144){error.textContent='ファイルが大きすぎます（256KBまで）。';return;}
