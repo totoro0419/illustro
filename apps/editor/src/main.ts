@@ -450,19 +450,10 @@ async function storeBlankThumbnail(documentId:string,revisionId:string,width:num
 }
 async function createWorkThumbnail(){
   if(qaMode||!documentReady||!surface||surface.busy)return;
-  const active=surface,doc=controller.document,revision=doc.head,root=doc.root;
-  if(works.some(work=>work.documentId===root.documentId&&work.thumbnail&&work.thumbnailRevision===revision))return;
-  const layers=controller.layers.map(layer=>({id:layer.id,visible:layer.visible,opacity:layer.opacity}));
-  const pixels=await active.captureDocumentLayers();
-  if(surface!==active||controller.document!==doc||doc.head!==revision)return;
-  const scale=Math.min(1,320/root.width,240/root.height),width=Math.max(1,Math.round(root.width*scale)),height=Math.max(1,Math.round(root.height*scale));
-  const canvas=new OffscreenCanvas(width,height),ctx=canvas.getContext('2d')!;
-  for(const layer of layers){if(!layer.visible)continue;const rgba=pixels.get(layer.id);if(!rgba)continue;
-    const bitmap=await createImageBitmap(new ImageData(new Uint8ClampedArray(rgba),root.width,root.height),{resizeWidth:width,resizeHeight:height,resizeQuality:'high'});
-    ctx.globalAlpha=layer.opacity;ctx.drawImage(bitmap,0,0);bitmap.close();
-  }
-  const blob=await canvas.convertToBlob({type:'image/png'});
-  if(surface===active&&controller.document===doc&&doc.head===revision)await persistence.storeThumbnail(root.documentId,revision,blob);
+  const active=surface,doc=controller.document,revision=doc.head,documentId=doc.root.documentId;
+  if(works.some(work=>work.documentId===documentId&&work.thumbnail&&work.thumbnailRevision===revision))return;
+  const blob=await active.captureWorkThumbnail();
+  if(surface===active&&controller.document===doc&&doc.head===revision)await persistence.storeThumbnail(documentId,revision,blob);
 }
 // Thumbnail updates are best-effort background work, never part of opening or leaving an artwork.
 function scheduleWorkThumbnail(){
