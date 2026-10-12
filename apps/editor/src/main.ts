@@ -418,10 +418,27 @@ async function refreshRecoveryCandidates(){
 if(!qaMode){
   homeUi=installHomeShell(app,{
     createDocument,
-    openFile:()=>byId<HTMLInputElement>('openFile').click(),
+    openFile:()=>{
+      if(documentReady){
+        if(persistence.state.protectionPending||persistence.state.storageError){
+          homeUi?.notify('現在の作業の自動保存を確認してから、別の作品を開いてください。');return;
+        }
+        if(!window.confirm('別の作品ファイルを開きますか？現在の作品は閉じます。必要なら事前にSaveで保存してください。'))return;
+      }
+      byId<HTMLInputElement>('openFile').click();
+    },
     resume:async(documentId,writerEpochId)=>{
       const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
-      return candidate?recoverCandidate(candidate):false;
+      if(!candidate)return false;
+      if(documentReady){
+        try{await persistence.flushPrepared();}
+        catch(error){homeUi?.notify('現在の作業の保護が完了していないため復元を中止しました。'+String(error));return false;}
+        if(persistence.state.storageError||persistence.state.protectionPending){
+          homeUi?.notify('現在の作業の自動保存を確認してから、復元してください。');return false;
+        }
+        if(!window.confirm('この復元データを開きますか？現在の編集画面は閉じます。必要なら事前にSaveで保存してください。'))return 'cancelled';
+      }
+      return recoverCandidate(candidate);
     },
     prepareHome:async()=>{
       if(documentReady){
