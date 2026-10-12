@@ -28,10 +28,11 @@
 .ih-header-inner,.ih-main{width:min(100% - 88px,1240px);margin-inline:auto}
 .ih-header-inner{height:82px;display:flex;align-items:center;justify-content:space-between;gap:24px}
 .ih-brand{display:flex;align-items:center;gap:12px;border:0;background:transparent;padding:4px 0;color:#222C40}
-.ih-logo{display:grid;place-items:center;width:43px;height:43px;overflow:hidden;border-radius:13px;
- background:linear-gradient(125deg,#EDF6FF,#EDEEFF);border:1px solid #DDE6FA;
- box-shadow:0 6px 16px #7089F12D}
-.ih-logo img{display:block;object-fit:contain;width:36px;height:36px}
+/* The approved image includes its own margin and soft shadow. It must fill a single rounded square,
+   rather than render as a second inset square that looks misaligned in the frame. */
+.ih-logo{display:block;flex:none;width:43px;height:43px;overflow:hidden;border:1px solid #DDE6FA;border-radius:13px;
+ background:#fff;box-shadow:0 6px 16px #7089F12D}
+.ih-logo img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;border-radius:inherit}
 .ih-brand-name{font-size:23px;font-weight:770;letter-spacing:-1.1px}
 .ih-brand-dot{color:#8B7CFF}
 .ih-nav{display:flex;align-items:center;gap:12px}
@@ -221,7 +222,7 @@
  .ih-header,.ih-header-inner{min-height:68px;height:68px}
  .ih-header-inner,.ih-main{width:min(100% - 34px,620px)}
  .ih-brand{gap:8px}.ih-brand-name{font-size:21px}
- .ih-logo{width:37px;height:37px;border-radius:11px}.ih-logo img{width:33px;height:33px}
+ .ih-logo{width:37px;height:37px;border-radius:11px}
  .ih-nav{gap:2px}.ih-nav-item{padding:9px 10px;font-size:12px}.ih-nav-icon{width:40px;height:40px;border:0;background:transparent}
  .ih-main-grid{display:flex;flex-direction:column;align-items:stretch;gap:30px;padding-top:40px;padding-bottom:30px}
  .ih-welcome{max-width:none}
