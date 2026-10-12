@@ -168,7 +168,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     root.querySelector('.ih-works-count')!.textContent=works.length+'作品';(root.querySelector('.ih-empty-works') as HTMLElement).hidden=works.length>0;
     el('ihWorkNoResults').hidden=works.length===0||filtered.length>0;
     el('ihWorkGrid').replaceChildren(...filtered.map(work=>{
-      const card=document.createElement('article');card.className='ih-work-card';card.dataset.workId=work.documentId;
+      const card=document.createElement('article');card.className='ih-work-card';card.dataset.workId=work.documentId;card.dataset.workRevision=work.revisionId;card.dataset.thumbnailRevision=work.thumbnailRevision??'';
       const open=document.createElement('button');open.type='button';open.className='ih-work-preview';open.setAttribute('aria-label',work.name+'を開く');
       if(work.thumbnail){const img=document.createElement('img');img.alt='';img.loading='lazy';const cached=workUrls.get(work.documentId);if(cached?.revision===work.thumbnailRevision)img.src=cached.url;else{if(cached)URL.revokeObjectURL(cached.url);img.src=URL.createObjectURL(work.thumbnail);workUrls.set(work.documentId,{revision:work.thumbnailRevision,url:img.src});}open.append(img);}else{open.textContent='プレビューを準備中';}
       open.onclick=()=>void run(async()=>{if(await actions.openWork(work.documentId))navigate('editor');},open);
