@@ -454,6 +454,7 @@ async function createWorkThumbnail(){
 }
 async function prepareWorkSwitch(){
   if(!documentReady)return true;
+  if(persistence.state.saving){homeUi?.notify('作品ファイルの保存が終わってから切り替えてください。描画は続けられます。');return false;}
   if(surface?.busy||historyPending||geometryBusy){homeUi?.notify('描いている線や操作が終わってから切り替えてください。');return false;}
   const wasInert=app.inert;app.inert=true;
   try{librarySaving=true;await persistence.barrier();await createWorkThumbnail();return true;}

@@ -72,7 +72,7 @@ export class PersistenceCoordinator{
     const decoded:Object={manifest:raw.manifest,sections},opened=openDecodedPortableDocument(decoded as DecodedPortableFile),projectionCache=isProjectionCache(raw.projectionCache)?raw.projectionCache:undefined;this.patch({reloadDurationMs:performance.now()-started});return Object.freeze({...opened,...(projectionCache?{projectionCache}:{})});
   }
   async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false){
-    if(this.stateValue.saving)throw new Error('保存中です。');this.patch({saving:true,storageError:null});const started=performance.now();
+    if(this.stateValue.saving)throw new Error('保存中です。');this.patch({saving:true});const started=performance.now();
     try{
       let handlePromise:Promise<unknown>|null=null;const w=window as AnyWindow;if(!this.fileHandle||forceSaveCopy){if(w.showSaveFilePicker)handlePromise=w.showSaveFilePicker({suggestedName:safeFileName(document.root.name)+'.illustro',types:[{description:'Illustro作品',accept:{'application/octet-stream':['.illustro']}}]});}
       const saveRevision=document.head,captureStart=performance.now(),snapshot=document.capturePersistenceSnapshot(saveRevision),snapshotCaptureMs=performance.now()-captureStart,blockEntries=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes})),generationId=crypto.randomUUID(),createdAt=Date.now();
@@ -82,7 +82,7 @@ export class PersistenceCoordinator{
       else{downloadBlob(bytes,safeFileName(document.root.name)+'.illustro');output='download';}
       this.patch({currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
       return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId});
-    }catch(error){this.patch({saving:false,storageError:message(error),saveDurationMs:performance.now()-started});throw error;}
+    }catch(error){this.patch({saving:false,saveDurationMs:performance.now()-started});throw error;}
   }
   async saveCopy(document:CoreDocument,selectedLayerId:LayerId){return this.save(document,selectedLayerId,true);}
   async storeProjectionCheckpoint(cache:ProjectionCacheV1){
