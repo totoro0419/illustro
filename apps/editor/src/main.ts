@@ -74,6 +74,12 @@ function updatePersistenceDisplay(){
   indicator.textContent=state.storageError?'保存できません・再試行してください':state.protectionPending||state.queueLength>0?'アプリ内に保存中':qaMode?'自動保存済み':documentReady?'アプリ内に保存済み':'作品はまだ開かれていません';
   const retry=document.getElementById('retryWorkSave');if(retry)retry.hidden=!state.storageError;
   indicator.dataset.autosavePending=String(state.protectionPending||state.queueLength>0);indicator.dataset.saving=String(state.saving||librarySaving);indicator.dataset.protectedThrough=state.protectedThrough;
+  const homeSaveState=document.getElementById('ihHomeSaveState');
+  if(homeSaveState){
+    const pending=state.protectionPending||state.queueLength>0;
+    homeSaveState.hidden=!documentReady||(!pending&&!state.storageError);
+    homeSaveState.textContent=state.storageError?'保存できませんでした。開いているキャンバスに戻り、保存を再試行してください。':'作品を安全に保存しています。完了するまではこのページを閉じないでください。';
+  }
   byId<HTMLButtonElement>('recover').disabled=!recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n);
 }
 
