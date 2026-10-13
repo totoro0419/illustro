@@ -4,7 +4,7 @@ import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rg
 const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as T;
 const button=(label:string,action:string,cls='')=>'<button type="button" class="'+cls+'" data-color-action="'+action+'">'+label+'</button>';
 
-/** One default experience: select a color. Numeric work and management are optional disclosures. */
+/** Familiar two-view Color/Palette panel with a compact Classic/Orbit selector. */
 export function colorMarkup():string {
  return '<div class="color-workbench">'+
  '<div class="color-current" aria-label="現在の色と変更前の色">'+
@@ -25,8 +25,8 @@ export function colorMarkup():string {
   '</div>'+
   '<div id="colorOrbitPicker" class="color-orbit-picker" hidden aria-label="オービット色選択">'+
    '<div id="colorOrbitPlane" class="color-orbit-plane" role="group" aria-label="彩度・明るさの調整"><div class="color-orbit-white"></div><div class="color-orbit-black"></div><span id="colorOrbitSvMarker" class="color-orbit-sv-marker" aria-hidden="true"></span></div>'+
-   '<canvas id="colorOrbitWheel" class="color-orbit-wheel" role="slider" tabindex="0" width="640" height="320" aria-label="色相。リングを左右にスライド" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></canvas>'+
-   '<span class="color-orbit-hint">色の輪を左右にスライドして色相を変更</span>'+
+   '<canvas id="colorOrbitWheel" class="color-orbit-wheel" role="slider" tabindex="0" width="640" height="320" aria-label="色相。上側で回転、下側は左右スライド" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></canvas>'+
+   '<span class="color-orbit-hint">上側を回して色相を選択・手前側は左右スライド</span>'+
   '</div>'+
   '<label class="color-hex-label" for="colorHex"><span>カラーコード</span><input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" aria-describedby="colorHexError" value="#1F2633"></label>'+
   '<small id="colorHexError" class="color-error" role="status"></small>'+
