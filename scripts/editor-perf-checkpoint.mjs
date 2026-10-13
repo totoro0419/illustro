@@ -12,7 +12,7 @@ try{for(const backend of ['webgl2','webgpu']){
  const context=await browser.newContext({viewport:{width:900,height:900},deviceScaleFactor:2,hasTouch:true}),p=await context.newPage();p.on('pageerror',e=>report.errors.push(e.message));
  await p.goto(base+'?m09=1&perf=1&backend='+backend);await p.evaluate(()=>{document.getElementById('newCanvasWidth').value='3000';document.getElementById('newCanvasHeight').value='3000';});
  await p.locator('#new').click();await p.waitForFunction(()=>document.getElementById('status').textContent.includes('描画できます'),null,{timeout:90000});
- await p.locator('#canvasPerformance summary').click();await p.locator('#performanceEnabled').check();await p.locator('#canvasPerformance summary').click();
+ await p.locator('#canvasPerformance > summary').click();await p.locator('#performanceEnabled').check();await p.locator('#canvasPerformance > summary').click();
  const blank=await p.evaluate(()=>window.__illustroPerformance.capture());assert.equal(blank.tiles,0);assert.equal(blank.bytes,0);assert.equal(blank.after.occupiedGpuTiles,blank.before.occupiedGpuTiles);
  for(let layer=0;layer<3;layer++){
   if(layer){if(!(await p.locator('#addLayer').isVisible())){if(await p.locator('#workspaceToggle').getAttribute('aria-expanded')==='false')await p.locator('#workspaceToggle').click();if(!(await p.locator('#addLayer').isVisible()))await p.locator('.box-toggle[aria-controls="layersBoxBody"]').click();}await p.locator('#addLayer').click();}
