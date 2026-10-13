@@ -115,6 +115,12 @@ async function run(kind,touch=false){
   await p.locator('#ihApp:not([hidden]) [data-ih-screen="home"]:not([hidden])').waitFor({timeout:30000});
   await p.locator('#ihReturnEditor').click();
   await p.locator('#ihApp').waitFor({state:'hidden',timeout:45000});
+  // On touch screens the workspace may be collapsed after navigation.
+  // Use the same visible UI control the user would use to reopen Color.
+  if(!(await p.locator('#colorShowColor').isVisible())){
+   if(await p.locator('#colorPage').isVisible())await p.locator('#colorPage').click();
+   else await p.locator('#workspaceToggle').click();
+  }
   await p.locator('#colorShowColor').click();
   assert.equal(await p.locator('#colorModeOrbit').getAttribute('aria-pressed'),'true','Mode persists across editor/Home roundtrip');
   assert.equal(await color(p),prior,'Color survives Home roundtrip');
