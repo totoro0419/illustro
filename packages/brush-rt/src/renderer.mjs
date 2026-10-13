@@ -199,8 +199,8 @@ export class GpuRenderer {
   try{const r=new WebGlBackend(canvas,width,height,options.webglDesynchronized??true);r.info.selection=selection;return new GpuRenderer(r,width,height);}
   catch(e){const message=e instanceof Error?e.message:String(e);throw Error((selection.fallbackUsed?'WebGPU unavailable ('+selection.webgpu.stage+': '+selection.webgpu.error+'); ':'')+'WebGL2 initialization failed: '+message,{cause:e});}
  }
- constructor(backend,width,height){this.backend=backend;this.document=new TileDocument(width,height);this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.seamlessPreview=false;this.wrapPreviews=new Map;this.wrapCaches=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;this.needsFrame=true;}
- setSurfaceStack(surfaceKeys){if(!Array.isArray(surfaceKeys)||!surfaceKeys.length||new Set(surfaceKeys).size!==surfaceKeys.length||surfaceKeys.some(x=>typeof x!=='string'||!x))throw Error('invalid surface stack');this.backend.setSurfaceStack(surfaceKeys);this.needsFrame=true;}
+ constructor(backend,width,height){this.backend=backend;this.document=new TileDocument(width,height);this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.seamlessPreview=false;this.wrapPreviews=new Map;this.wrapCaches=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;this.needsFrame=true;this.viewOnlyPending=false;}
+ setSurfaceStack(surfaceKeys){if(!Array.isArray(surfaceKeys)||!surfaceKeys.length||new Set(surfaceKeys).size!==surfaceKeys.length||surfaceKeys.some(x=>typeof x!=='string'||!x))throw Error('invalid surface stack');this.backend.setSurfaceStack(surfaceKeys);this.needsFrame=true;this.viewOnlyPending=false;}
  setSeamlessPreview(enabled){this.seamlessPreview=!!enabled;}
  clearSeamlessPreviews(id){
   for(const key of this.wrapPreviews.get(id)??[]){this.previewStates.delete(key);this.backend.retirePreview(key);}
@@ -243,6 +243,18 @@ export class GpuRenderer {
  markEnded(id){this.ended.add(id);}
 
  frame(now){if(this.disposed)return false;this.backend.poll?.();if(this.inflight)return false;const latest=this.mailbox.take();if(latest?.resetPreview)this.backend.retirePreview(latest.id);if(latest)this.snapshot=latest;const jobs=now-this.lastConfirmed>=this.confirmDelay?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[],job=jobs[0]??null;if(!latest&&!job&&!this.needsFrame)return false;this.needsFrame=false;const s=this.snapshot;this.inflight=true;
+  // View movement must only present the already-composited pixels. Never run the
+  // stroke/preview/tile render pipeline when nothing in the document changed.
+  const presentOnly=!latest&&!jobs.length&&this.viewOnlyPending&&!this.document.jobs.length
+   &&!this.previewStates.size&&!(this.backend.previews?.size??0)&&!(this.backend.dirtyConfirmed?.size??0);
+  this.viewOnlyPending=false;
+  if(presentOnly){
+   try{
+    Promise.resolve(this.backend.presentCurrent()).then(()=>{if(!this.disposed)this.inflight=false;})
+     .catch(e=>{this.errors.push(e instanceof Error?e.message:String(e));this.inflight=false;this.disposed=true;});
+    return true;
+   }catch(e){this.errors.push(e instanceof Error?e.message:String(e));this.inflight=false;this.disposed=true;return false;}
+  }
   try{const submittedAt=performance.now();this.backend.render(s,jobs,[...this.previewStates.values()]).then(()=>{if(this.disposed)return;const end=performance.now();for(const j of jobs){this.document.complete(j);if(j.t!==null)this.confirmedTime=Math.max(this.confirmedTime,j.commands.at(-1)?.[20]??0);}if(job)this.lastConfirmed=end;const work=end-submittedAt;this.lastGpuWork=work;this.formalQuantum=work>50?Math.max(1,Math.floor(this.formalQuantum/2)):work<34?Math.min(8,this.formalQuantum+1):this.formalQuantum;
    if(s&&s.tip){const m={stage:'gpu-complete-proxy',revision:s.revision,completedAt:end,inputAge:end-s.tip.t,latestInputAge:end-(s.inputTip??s.tip).t,tip:{...s.tip},previewTip:{...(s.previewTip??s.tip)},previewQueueAge:this.mailbox.value?.tip?Math.max(0,end-(this.mailbox.value.inputTip??this.mailbox.value.tip).t):0,oldestQueueAge:Number.isFinite(this.document.oldestTime)?Math.max(0,end-this.document.oldestTime):0,confirmedLag:Math.max(0,(s.inputTip??s.tip).t-Math.min(this.document.knownTime,this.document.oldestTime)),obsoletePreviewCount:this.mailbox.obsolete+(this.backend.obsoleteFinished??0),formalJobs:this.document.jobs.length,inFlightSubmissions:1,gpuWorkMs:work,...(this.backend.lastSubmission?{submission:{...this.backend.lastSubmission}}:{})};this.completions.push(m);if(this.completions.length>24000)this.completions.splice(0,12000);this.onComplete?.(m);}for(const j of jobs)if(j.commit&&this.ended.has(j.id)&&!this.document.jobs.some(q=>q.id===j.id)){this.backend.retirePreview(j.id);this.previewStates.delete(j.id);this.ended.delete(j.id);if(this.snapshot?.id===j.id)this.snapshot=null;}
    // Preserve a newer zoom/pan/rotation invalidation issued while GPU work was in flight.
@@ -257,7 +269,7 @@ export class GpuRenderer {
  async redoCommit(id){await this.drain(false);const ok=await this.backend.redoCommit(id);if(!ok)return false;this.needsFrame=true;await this.drain();return true;}
  dropHistory(ids){this.backend.dropHistory(ids);}
  destroy(){this.disposed=true;this.wrapPreviews.clear();this.wrapCaches.clear();this.backend.destroy();}
- setViewTransform(values){this.backend.setViewTransform(values);this.needsFrame=true;}
+ setViewTransform(values){this.backend.setViewTransform(values);this.needsFrame=true;this.viewOnlyPending=true;}
  get info(){return this.backend.info;}
 }
 class WebGlBackend {
