@@ -167,7 +167,7 @@
 .color-orbit-picker{
  position:relative;width:min(306px,100%);height:auto;aspect-ratio:1;
  min-width:0;margin:2px auto 3px;overflow:hidden;user-select:none;
- isolation:isolate;touch-action:none;
+ isolation:isolate;touch-action:pan-y;
 }
 .color-orbit-plane{
  position:absolute;z-index:1;
@@ -191,10 +191,21 @@
 .color-orbit-wheel{
  position:absolute;z-index:2;left:0;top:48%;width:100%;
  height:auto;aspect-ratio:2/1;display:block;
- cursor:grab;touch-action:none;outline:none;
+ pointer-events:none;touch-action:pan-y;outline:none;
 }
 /* Override the global canvas{background:#fff} rule: an opaque canvas was hiding
    the lower diamond tip and turning the elliptical hole into a white rectangle. */
+/* Only the visible, painted ellipse is interactive. The svg element itself
+   is transparent to hit testing; its two curved strokes are the hit targets.
+   Blank space and the wheel's rectangular canvas bounds retain normal scroll. */
+.color-orbit-hue-hit{
+ position:absolute;z-index:3;left:0;top:48%;
+ width:100%;height:auto;aspect-ratio:2/1;
+ display:block;overflow:visible;
+ pointer-events:none;touch-action:pan-y;
+}
+.color-orbit-hue-hit path{pointer-events:stroke;touch-action:none;cursor:grab}
+.color-orbit-hue-hit path:active{cursor:grabbing}
 #colorOrbitWheel.color-orbit-wheel{background:transparent}
 .color-orbit-wheel:active{cursor:grabbing}
 .color-orbit-wheel:focus-visible{outline:3px solid var(--a-focus);outline-offset:-3px;border-radius:35%}
