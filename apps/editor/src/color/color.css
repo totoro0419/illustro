@@ -151,3 +151,22 @@
  .color-hex-label input{min-height:42px}
  .color-palette-screen .color-history-strip .color-swatch{height:44px;min-height:44px}
 }
+
+
+/* M09 — color display modes. Both use the same brush color, palette and HSB inputs. */
+.color-picker-modes{display:flex;align-items:center;gap:3px;min-width:0;padding:3px;border:1px solid var(--a-border);border-radius:9px;background:var(--a-surface-soft);margin:0 0 2px}
+.color-picker-modes-label{font-size:11px;color:var(--a-subtle);white-space:nowrap;padding:0 7px 0 6px}
+.color-picker-modes button{flex:1;min-width:0;min-height:40px;border:0;border-radius:7px;padding:5px 3px;background:transparent;color:var(--a-subtle);font-size:12px;font-weight:650;cursor:pointer}
+.color-picker-modes button[aria-pressed="true"]{background:#fff;color:var(--a-text);box-shadow:0 1px 4px #2735471f}
+.color-picker-modes button:focus-visible{outline:2px solid var(--a-focus);outline-offset:-2px}
+#colorPicker[hidden],#colorOrbitPicker[hidden]{display:none!important}
+.color-orbit-picker{position:relative;width:min(306px,100%);height:303px;min-width:0;margin:2px auto 3px;overflow:hidden;touch-action:pan-y;user-select:none;isolation:isolate}
+.color-orbit-plane{position:absolute;z-index:2;top:7px;left:19%;width:62%;height:179px;box-sizing:border-box;border:2px solid #536175;background:var(--pure,#f33);clip-path:polygon(4% 3%,95% 0%,100% 97%,2% 100%);touch-action:none;cursor:crosshair}
+.color-orbit-white,.color-orbit-black{position:absolute;inset:0;pointer-events:none}
+.color-orbit-white{background:linear-gradient(to right,#fff,transparent)}
+.color-orbit-black{background:linear-gradient(to top,#000,transparent)}
+.color-orbit-sv-marker{position:absolute;z-index:1;width:17px;height:17px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.4px #263344,0 1px 4px #23344880;transform:translate(-50%,-50%);pointer-events:none}
+.color-orbit-wheel{position:absolute;z-index:1;left:0;bottom:21px;width:100%;height:auto;aspect-ratio:2/1;display:block;cursor:ew-resize;touch-action:none;outline:none}
+.color-orbit-wheel:focus-visible{outline:3px solid var(--a-focus);outline-offset:-3px;border-radius:35%}
+.color-orbit-hint{position:absolute;left:0;right:0;bottom:1px;line-height:19px;text-align:center;font-size:10px;color:var(--a-subtle);pointer-events:none}
+@media(any-pointer:coarse){.color-picker-modes button{min-height:44px}.color-orbit-picker{height:310px}}
