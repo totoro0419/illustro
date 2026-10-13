@@ -88,33 +88,96 @@ async function run(kind,touch=false){
   assert.notEqual(await color(p),dragColor,'Reverse horizontal drag changes hue the other direction');
   await wheel.focus();await wheel.press('ArrowRight');
   assert.ok(Number(await wheel.getAttribute('aria-valuenow'))>=0,'Keyboard hue slider remains operable');
-  const plane=p.locator('#colorOrbitPlane'),q=await plane.boundingBox();assert.ok(q?.width>100);
-  const svShape=await plane.evaluate(el=>{
-   const pane=el.getBoundingClientRect(),wheel=el.parentElement.querySelector('#colorOrbitWheel').getBoundingClientRect();
-   const wheelTopColor=wheel.top+wheel.height*(73-51)/160;
-   const style=getComputedStyle(el),outer=el.closest('.workspace-box');
-   return {width:pane.width,height:pane.height,borderRadius:style.borderRadius,clipPath:style.clipPath,transform:style.transform,gapToHueRing:wheelTopColor-pane.bottom,overflow:outer.scrollWidth-outer.clientWidth};
-  });
-  assert.ok(Math.abs(svShape.width-svShape.height)<1,'Orbit SV area must be a true 1:1 square: '+JSON.stringify(svShape));
-  assert.ok(svShape.transform==='none','SV panel must not be skewed or rotated');
-  assert.ok(svShape.clipPath==='none','SV panel must not be clipped into a trapezoid');
-  assert.ok(svShape.gapToHueRing>=2,'Orbit SV area must not overlap colored hue ring: '+JSON.stringify(svShape));
-  assert.ok(svShape.overflow<=3,'Orbit must not overflow narrow dock');
-  // All four SV corners remain physically within the colored panel.
-  const hitCorners=await plane.evaluate(el=>{
-   const r=el.getBoundingClientRect();return [[12,12],[r.width-12,12],[12,r.height-12],[r.width-12,r.height-12]].map(([x,y])=>{
-    const t=document.elementFromPoint(r.left+x,r.top+y);return t===el||el.contains(t);
-   });
-  });
-  assert.ok(hitCorners.every(Boolean),'SV panel corners must be available, without polygon clipping');
-  await p.screenshot({path:path.join(evidence,label+'-orbit.png')});
-  if(touch)await p.touchscreen.tap(q.x+q.width*.28,q.y+q.height*.36);
-  else await p.mouse.click(q.x+q.width*.28,q.y+q.height*.36);
-  const hsv=await p.locator('input[name="colorModel"][value="HSV"]').check().then(async()=>[
+  // Top/back of the tilted ellipse is rotatable: moving the finger right
+  // turns the visible colored ring CLOCKWISE. Front/lower arc keeps the
+  // existing horizontal-slider behavior tested above.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const startRingBox=await wheel.boundingBox();assert.ok(startRingBox);
+  const upper={x:startRingBox.x+startRingBox.width*.5,y:startRingBox.y+startRingBox.height*32/160};
+  const lastHue=Number(await wheel.getAttribute('aria-valuenow'));
+  assert.equal(lastHue,0,'Top rotation starts at red');
+  await p.mouse.move(upper.x,upper.y);await p.mouse.down();
+  await p.mouse.move(upper.x+55,upper.y,{steps:14});await p.mouse.up();
+  const rotatedHue=Number(await wheel.getAttribute('aria-valuenow'));
+  assert.ok(rotatedHue>305&&rotatedHue<359,'Upper wheel dragged right must rotate clockwise: '+rotatedHue);
+  const hsva=await p.locator('input[name="colorModel"][value="HSV"]').check().then(async()=>[
    Number(await p.locator('#colorNumber1').inputValue()),
    Number(await p.locator('#colorNumber2').inputValue())
   ]);
-  assert.ok(hsv[0]>15&&hsv[0]<50&&hsv[1]>50&&hsv[1]<83,'Orbit SV area updates shared HSB inputs: '+hsv);
+  assert.ok(hsva[0]>99&&hsva[1]>99,'Hue gesture must not change SV');
+  // Externally visible SV diamond must have its actual four corners and
+  // separate controls: no polygon clipping or touch area stealing.
+  const plane=p.locator('#colorOrbitPlane'),q=await plane.boundingBox();assert.ok(q?.width>100);
+  const svShape=await plane.evaluate(el=>{
+   const rect=el.getBoundingClientRect(),wheel=el.parentElement.querySelector('#colorOrbitWheel').getBoundingClientRect();
+   const wheelTopColor=wheel.top+wheel.height*(73-51)/160;
+   const style=getComputedStyle(el),outer=el.closest('.workspace-box');
+   return {
+    naturalWidth:el.offsetWidth,naturalHeight:el.offsetHeight,
+    rotatedBoundsWidth:rect.width,rotatedBoundsHeight:rect.height,
+    rotation:style.transform,clipPath:style.clipPath,
+    gapToHueRing:wheelTopColor-rect.bottom,
+    overflow:outer.scrollWidth-outer.clientWidth
+   };
+  });
+  assert.ok(Math.abs(svShape.naturalWidth-svShape.naturalHeight)<1,'Orbit SV diamond must originate from a true square: '+JSON.stringify(svShape));
+  assert.ok(Math.abs(svShape.rotatedBoundsWidth-svShape.rotatedBoundsHeight)<1,'SV diamond rotated bounds must be symmetric');
+  assert.notEqual(svShape.rotation,'none','SV square must be rotated into a diamond');
+  assert.ok(svShape.clipPath==='none','Diamond uses genuine rotation without distorted clipping');
+  assert.ok(svShape.gapToHueRing>=2&&svShape.gapToHueRing<=12,'Diamond should connect visually to the ring without stealing touches: '+JSON.stringify(svShape));
+  assert.ok(svShape.overflow<=3,'Orbit must not overflow narrow dock');
+  const svCoordinate=(s,v)=>{
+   const dx=(s-.5)*svShape.naturalWidth,dy=(.5-v)*svShape.naturalHeight;
+   return {x:q.x+q.width/2+(dx-dy)/Math.SQRT2,y:q.y+q.height/2+(dx+dy)/Math.SQRT2};
+  };
+  // Actual colored diamond corners are individually hit-testable (not a
+  // rectangular click mask over the upper hue ring).
+  const sampled=await plane.evaluate(el=>{
+   const rect=el.getBoundingClientRect(),side=el.offsetWidth,cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+   const test=(s,v)=>{
+    const dx=(s-.5)*side,dy=(.5-v)*side;
+    const x=cx+(dx-dy)/Math.SQRT2,y=cy+(dx+dy)/Math.SQRT2;
+    const elAt=document.elementFromPoint(x,y);
+    return elAt===el||el.contains(elAt);
+   };
+   return [[.08,.08],[.92,.08],[.08,.92],[.92,.92]].map(([s,v])=>test(s,v));
+  });
+  assert.ok(sampled.every(Boolean),'Diamond must be accessible near all 4 corners');
+  await p.screenshot({path:path.join(evidence,label+'-orbit.png')});
+  // Dragging from the upper ring into the diamond must stay a hue gesture,
+  // preserving saturation and brightness all the way until release.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  await p.mouse.move(upper.x,upper.y);await p.mouse.down();
+  await p.mouse.move(q.x+q.width/2,q.y+q.height/2,{steps:14});await p.mouse.up();
+  const crossHSV=[Number(await p.locator('#colorNumber1').inputValue()),Number(await p.locator('#colorNumber2').inputValue())];
+  assert.ok(crossHSV[0]>99&&crossHSV[1]>99,'Ring drag crossing the SV diamond must NOT change SV: '+crossHSV);
+  // SV gesture uses inverse rotation, not its rectangular bounding box.
+  const svFrom=svCoordinate(.28,.64);
+  if(touch)await p.touchscreen.tap(svFrom.x,svFrom.y);
+  else await p.mouse.click(svFrom.x,svFrom.y);
+  const hsv=[
+   Number(await p.locator('#colorNumber1').inputValue()),
+   Number(await p.locator('#colorNumber2').inputValue())
+  ];
+  assert.ok(hsv[0]>24&&hsv[0]<33&&hsv[1]>60&&hsv[1]<68,'Diamond SV controls must map to true saturation and brightness: '+hsv);
+  // SV gestures remain SV even after dragging across the ring. Hue is fixed.
+  const hueBeforeSV=Number(await wheel.getAttribute('aria-valuenow'));
+  const svStart=svCoordinate(.5,.5);
+  await p.mouse.move(svStart.x,svStart.y);await p.mouse.down();
+  await p.mouse.move(upper.x,upper.y,{steps:9});await p.mouse.up();
+  assert.equal(Number(await wheel.getAttribute('aria-valuenow')),hueBeforeSV,'SV drag crossing ring must not rotate hue');
+  if(touch){
+   // Native touchscreen starts in the upper band; the ring, not the diamond,
+   // owns the gesture. This is also important for Android tablet input.
+   await hex.fill('#FF0000');await hex.press('Enter');
+   const cdp=await context.newCDPSession(p);
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:upper.x,y:upper.y}]});
+   for(let i=1;i<=9;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:upper.x+55*i/9,y:upper.y}]});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   const actualHue=Number(await wheel.getAttribute('aria-valuenow'));
+   assert.ok(actualHue>305&&actualHue<359,'Touch: upper-ring right swipe rotates clockwise: '+actualHue);
+   await cdp.detach();
+  }
   const prior=await color(p);
   await mode.selectOption('classic');
   assert.equal(await color(p),prior,'Classic and Orbit use the exact same foreground color');
@@ -149,7 +212,7 @@ async function run(kind,touch=false){
   await p.locator('#colorShowColor').click();
   assert.equal(await mode.inputValue(),'orbit','Mode persists across editor/Home roundtrip');
   assert.equal(await color(p),prior,'Color survives Home roundtrip');
-  result.tests.push({label,mode:'classic/orbit',menuGeometry,svShape,hue,hsv,dragColor,overflow,homeRoundtrip:true});
+  result.tests.push({label,mode:'classic/orbit',menuGeometry,svShape,hue,rotatedHue,hsv,dragColor,overflow,homeRoundtrip:true});
  }catch(e){
   result.errors.push({label,error:String(e),stack:e.stack,console:logs});
   await p.screenshot({path:path.join(evidence,label+'-FAIL.png')}).catch(()=>{});
