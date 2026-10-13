@@ -19,7 +19,8 @@ export async function readGpuTiles(backend:any,requests:readonly TileReadRequest
     const status=gl.clientWaitSync(fence,0,0);if(status===gl.ALREADY_SIGNALED||status===gl.CONDITION_SATISFIED)break;
     if(status===gl.WAIT_FAILED||performance.now()-started>30000)throw new Error('GPU readback fence failed or timed out');}
    gl.bindBuffer(gl.PIXEL_PACK_BUFFER,pbo);
-   for(const [index,{i}]of occupied.entries())gl.getBufferSubData(gl.PIXEL_PACK_BUFFER,index*bytes,result[i]!.pixels);
+   const array=new Uint8Array(occupied.length*bytes);gl.getBufferSubData(gl.PIXEL_PACK_BUFFER,0,array);
+   for(const [index,{i}]of occupied.entries())result[i]!.pixels.set(array.subarray(index*bytes,(index+1)*bytes));
   }finally{gl.bindBuffer(gl.PIXEL_PACK_BUFFER,null);if(fence)gl.deleteSync(fence);gl.deleteBuffer(pbo);}
  }else if(backend.device){
   const d=backend.device,gpu=globalThis as any,b=d.createBuffer({size:occupied.length*bytes,usage:gpu.GPUBufferUsage.COPY_DST|gpu.GPUBufferUsage.MAP_READ});

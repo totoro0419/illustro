@@ -30,7 +30,7 @@ export class PresentationPyramid{
    if(level.generation!==this.generation){
     const scale=2**(i+1);
     // A level skipped during previous content edits requires a complete refresh.
-    const regions=level.generation===this.generation-1&&rects?rects.map(([x0,y0,x1,y1])=>[Math.floor(x0/scale),Math.floor(y0/scale),Math.min(w,Math.ceil(x1/scale)),Math.min(h,Math.ceil(y1/scale))]):[[0,0,w,h]];
+    const regions=level.generation===this.generation-1&&rects?.length?rects.map(([x0,y0,x1,y1])=>[Math.floor(x0/scale),Math.floor(y0/scale),Math.min(w,Math.ceil(x1/scale)),Math.min(h,Math.ceil(y1/scale))]):[[0,0,w,h]];
     this.draw(source,level,regions,encoder);level.generation=this.generation;this.updates++;
    }
    source=level.image;

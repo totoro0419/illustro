@@ -75,11 +75,12 @@ jobs:
         env:
           RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          M08_SMOKE_QUICK: '1'
+          M08_PERF_REVIEW: '1'
           M05_EXPECT_MILESTONE: M07
           M06_EXPECT_MILESTONE: M07
           M08_CORRUPT_ALL_RENDER_CACHES: '1'
         run: |
+          node scripts/editor-perf-checkpoint.mjs
           node scripts/editor-m09-smoke.mjs
           node scripts/editor-orbit-smoke.mjs
           node scripts/editor-m05-smoke.mjs
@@ -106,10 +107,13 @@ jobs:
         with: {ref: gh-pages, path: site}
       - uses: actions/download-artifact@v4
         with: {name: canvas-review-build, path: review-build}
+      - uses: actions/download-artifact@v4
+        with: {name: canvas-performance-measurements, path: review-measurements}
       - name: Preserve all earlier QA and stage isolated review
         run: |
           (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
-          mkdir -p site/qa/perf-canvas/app
+          mkdir -p site/qa/perf-canvas/app site/qa/perf-canvas/evidence
+          cp -a review-measurements/. site/qa/perf-canvas/evidence/
           cp -a review-build/. site/qa/perf-canvas/app/
           printf '%s\n' '<!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro Canvas Performance</title><script>location.replace("./app/"+location.search+location.hash)</script><a href="./app/">性能改善版を開く</a></html>' > site/qa/perf-canvas/index.html
           (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after

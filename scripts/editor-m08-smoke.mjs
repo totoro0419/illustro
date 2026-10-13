@@ -298,9 +298,9 @@ async function run(kind,dpr,width,height){
  finally{await context.close();}
 }
 try{
- for(const kind of (process.env.M08_SMOKE_QUICK?['webgl2']:['webgl2','webgpu'])){
-  for(const dpr of (process.env.M08_SMOKE_QUICK?[2]:[1,1.25,1.5,2,2.5,2.75,3]))await run(kind,dpr,512,384);
-  for(const [w,h] of (process.env.M08_SMOKE_QUICK?[[2048,1536]]:[[2048,1536],[2560,1440],[3000,2000]]))await run(kind,2,w,h);
+ for(const kind of (process.env.M08_SMOKE_QUICK&&!process.env.M08_PERF_REVIEW?['webgl2']:['webgl2','webgpu'])){
+  for(const dpr of (process.env.M08_PERF_REVIEW?[1,2,3]:process.env.M08_SMOKE_QUICK?[2]:[1,1.25,1.5,2,2.5,2.75,3]))await run(kind,dpr,512,384);
+  for(const [w,h] of (process.env.M08_PERF_REVIEW?[[2048,2048],[3000,3000]]:process.env.M08_SMOKE_QUICK?[[2048,1536]]:[[2048,1536],[2560,1440],[3000,2000]]))await run(kind,2,w,h);
  }
 }finally{await browser.close();if(server)await new Promise(resolve=>server.close(resolve));}
 if(output.referencePixels?.webgl2&&output.referencePixels?.webgpu){

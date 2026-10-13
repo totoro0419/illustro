@@ -1,3 +1,4 @@
+import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {TILE,validateRecord,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
 import {CANONICAL_TILE_SIZE,type RevisionId,type SemanticOperation} from '@illustro/core';
@@ -14,7 +15,7 @@ export class BrushSurface{
   private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'='composite';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private foreground:readonly [number,number,number]=[.12,.15,.2];
   private panning:{id:number;point:Point}|null=null;private keyboardSpace=false;private densityMedia:MediaQueryList|null=null;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
-  constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
+  constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'view-command'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
     this.canvas.style.aspectRatio=document.body.classList.contains('canvas-viewport')?'auto':target.width+' / '+target.height;
     const rect=this.canvas.getBoundingClientRect();this.view.resize(Math.max(1,rect.width),Math.max(1,rect.height));this.setBackingSize();
@@ -57,22 +58,22 @@ export class BrushSurface{
   private keyDown=(e:KeyboardEvent)=>{if(e.code==='Space'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement))this.keyboardSpace=true;};
   private keyUp=(e:KeyboardEvent)=>{if(e.code==='Space')this.keyboardSpace=false;};
   private wheel=(e:WheelEvent)=>{if(!this.view)return;e.preventDefault();this.view.zoomAt(Math.exp(-e.deltaY*.0018),this.pointerLocation(e));this.updateView();};
-  private updateView(){if(this.view&&this.renderer){(this.renderer as GpuRenderer&{setViewTransform:(value:Float32Array)=>void}).setViewTransform(this.view.uniform(this.canvas.width,this.canvas.height));this.viewNotificationPending=true;}}
+  private updateView(immediate=false){if(this.view&&this.renderer){(this.renderer as GpuRenderer&{setViewTransform:(value:Float32Array)=>void}).setViewTransform(this.view.uniform(this.canvas.width,this.canvas.height));this.viewNotificationPending=!immediate;if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
   screenToDocument(point:Point){return this.view?.document(point)??point;}
   get canChangeGeometry(){return !this.busy&&!!this.renderer;}
   get displayDiagnostics(){const r=this.canvas.getBoundingClientRect();return {document:{width:this.controller.document.root.width,height:this.controller.document.root.height},css:{width:r.width,height:r.height},backing:{width:this.canvas.width,height:this.canvas.height},dpr:window.devicePixelRatio,view:this.viewState};}
-  fitView(){if(this.view){this.view.fit();this.updateView();}}
-  viewAt100(){if(this.view){this.view.setZoom(1);this.updateView();}}
-  actualPixels(){if(this.view){this.view.setZoom(1/(window.devicePixelRatio||1));this.updateView();}}
-  zoomView(factor:number){if(this.view){this.view.zoomAt(factor,{x:this.view.cssWidth/2,y:this.view.cssHeight/2});this.updateView();}}
-  resetRotation(){if(this.view){this.view.setRotation(0);this.updateView();}}
-  flipView(axis:'x'|'y'){if(this.view){this.view.toggleFlip(axis);this.updateView();}}
-  setViewZoom(zoom:number){if(this.view){this.view.setZoom(zoom);this.updateView();}}
-  setViewRotation(angle:number){if(this.view){this.view.setRotation(angle);this.updateView();}}
-  setSeamless(enabled:boolean){if(this.view){this.view.seamless=enabled;this.updateView();}}
-  setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView();}}
+  fitView(){if(this.view){this.view.fit();this.updateView(true);}}
+  viewAt100(){if(this.view){this.view.setZoom(1);this.updateView(true);}}
+  actualPixels(){if(this.view){this.view.setZoom(1/(window.devicePixelRatio||1));this.updateView(true);}}
+  zoomView(factor:number){if(this.view){this.view.zoomAt(factor,{x:this.view.cssWidth/2,y:this.view.cssHeight/2});this.updateView(true);}}
+  resetRotation(){if(this.view){this.view.setRotation(0);this.updateView(true);}}
+  flipView(axis:'x'|'y'){if(this.view){this.view.toggleFlip(axis);this.updateView(true);}}
+  setViewZoom(zoom:number,notify=true){if(this.view){this.view.setZoom(zoom);this.updateView(notify);}}
+  setViewRotation(angle:number,notify=true){if(this.view){this.view.setRotation(angle);this.updateView(notify);}}
+  setSeamless(enabled:boolean){if(this.view){this.view.seamless=enabled;this.updateView(true);}}
+  setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
   private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0),t:e.timeStamp,pressure:e.pressure,pointerType:e.pointerType,tilt:Math.min(1,Math.hypot(e.tiltX,e.tiltY)/90),azimuth:Math.atan2(e.tiltY,e.tiltX),twist:e.twist/360};}
   private gesture(){const points=[...this.touchPoints.values()];if(points.length<2)return null;const a=points[0]!,b=points[1]!;return {center:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},distance:Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),angle:Math.atan2(b.y-a.y,b.x-a.x)};}
   private touchMovement(e:PointerEvent){if(!this.touchPoints.has(e.pointerId)||!this.view)return false;this.touchPoints.set(e.pointerId,this.pointerLocation(e));
@@ -202,9 +203,6 @@ export class BrushSurface{
     if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection checkpoint capture is stale');
     return Object.freeze({version:2 as const,replace:operations===undefined,revisionId,width:root.width,height:root.height,tileSize:TILE,surfaceIds:Object.freeze(this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId)),tiles:Object.freeze(tiles.map(tile=>Object.freeze(tile)))});
   }
-  private async readBackendTile(backend:any,key:string,surfaceId:string){
-    return (await readGpuTiles(backend,[{surfaceId,key}],()=>!this.disposed))[0]!.pixels;
-  }
   /** Build a small artwork preview from occupied GPU tiles, without allocating full-size layer bitmaps. */
   async captureWorkThumbnail():Promise<Blob>{
     if(!this.renderer||this.busy||this.disposed)throw new Error('描画処理が完了していません。');
@@ -224,13 +222,14 @@ export class BrushSurface{
       const key=layer.surface.descriptor.surfaceId;
       const layerCanvas=new OffscreenCanvas(width,height),layerContext=layerCanvas.getContext('2d');
       if(!layerContext)throw new Error('Thumbnail layer canvas unavailable');
-      for(const tile of occupied){
-        if(tile.surfaceKey!==key)continue;
-        if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
-        const pixels=await this.readBackendTile(backend,tile.key,key);
-        const imageData=new ImageData(new Uint8ClampedArray(pixels),TILE,TILE);
-        tileContext.putImageData(imageData,0,0);
-        layerContext.drawImage(tileCanvas,tile.x*scale,tile.y*scale,TILE*scale,TILE*scale);
+      const tiles=occupied.filter(tile=>tile.surfaceKey===key),revision=this.controller.document.head,valid=()=>!this.busy&&!this.disposed&&this.controller.document.head===revision;
+      for(let offset=0;offset<tiles.length;offset+=16){
+        const batch=tiles.slice(offset,offset+16),read=await readGpuTiles(backend,batch.map(tile=>({surfaceId:key,key:tile.key})),valid);
+        for(let index=0;index<batch.length;index++){const tile=batch[index]!,pixels=read[index]!.pixels;
+          const imageData=new ImageData(new Uint8ClampedArray(pixels),TILE,TILE);tileContext.putImageData(imageData,0,0);
+          layerContext.drawImage(tileCanvas,tile.x*scale,tile.y*scale,TILE*scale,TILE*scale);
+        }
+        if(offset+16<tiles.length)await new Promise<void>(resolve=>setTimeout(resolve,0));
       }
       context.globalAlpha=layer.opacity;context.drawImage(layerCanvas,0,0);
     }
@@ -257,13 +256,14 @@ export class BrushSurface{
         else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
       }
       const root=this.controller.document.root;
-      const baseGeometry:ProjectionCacheV1|undefined=geometry?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,layers:this.controller.layers.map(layer=>({surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)}))}:undefined;
-      const validCache=this.validProjectionCache(baseGeometry??cache);
+      const savedCache=this.validProjectionCache(cache);
+      const baseGeometry:ProjectionCacheV1|undefined=geometry&&!savedCache?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,layers:this.controller.layers.map(layer=>({surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)}))}:undefined;
+      const validCache=savedCache??this.validProjectionCache(baseGeometry);
       if(renderer.backend?.setPresentationHeld){renderer.backend.setPresentationHeld(true);held=true;}
       renderer.frame=(now:number)=>{renderer.formalQuantum=Math.max(256,renderer.formalQuantum??0);return originalFrame.call(renderer,now);};
       if(validCache){
         await renderer.reset();this.syncLayerStack();this.resetDerivedRuntime(runtime);
-        const cachedKeys=geometry?new Set<SemanticOperation['key']>():new Set(this.controller.document.operationsTo(validCache.revisionId as RevisionId).filter(operation=>operation.kind==='brush.stroke').map(operation=>operation.key));
+        const cachedKeys=geometry&&!savedCache?new Set<SemanticOperation['key']>():new Set(this.controller.document.operationsTo(validCache.revisionId as RevisionId).filter(operation=>operation.kind==='brush.stroke').map(operation=>operation.key));
         await this.seedProjectionCache(validCache,renderer.backend);
         runtime.records=entries.map(entry=>entry.record);runtime.redoRecords=[];
         for(const entry of entries){
@@ -284,6 +284,7 @@ export class BrushSurface{
   }
   private validProjectionCache(cache?:ProjectionCacheV1){
     if(!cache||cache.version!==1||cache.width!==this.controller.document.root.width||cache.height!==this.controller.document.root.height||!this.controller.document.hasRevision(cache.revisionId as RevisionId))return null;
+    if(!canExtendProjection(this.controller.document.operationsTo(cache.revisionId as RevisionId),this.controller.document.operationsTo()))return null;
     const root=this.controller.document.revision(cache.revisionId as RevisionId).root,expected=new Set<string>(root.rootLayerIds.map(id=>root.getLayer(id).surface.descriptor.surfaceId)),seen=new Set<string>(),bytes=cache.width*cache.height*4;
     for(const layer of cache.layers){if(!expected.has(layer.surfaceId)||seen.has(layer.surfaceId)||layer.pixels.byteLength!==bytes)return null;seen.add(layer.surfaceId);}if(seen.size!==expected.size)return null;return cache;
   }
