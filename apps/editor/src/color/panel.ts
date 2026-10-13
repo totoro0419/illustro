@@ -78,7 +78,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   id<HTMLElement>('colorBoxSummary').textContent=hex(c);
   plane.style.setProperty('--pure',hex(hsvToRgb(hueMemory,1,1)));
   const angle=hueMemory*Math.PI/180,hue=id<HTMLElement>('colorHueMarker');
-  hue.style.left=(50+44*Math.cos(angle))+'%';hue.style.top=(50+44*Math.sin(angle))+'%';
+  hue.style.left=(50+45.5*Math.cos(angle))+'%';hue.style.top=(50+45.5*Math.sin(angle))+'%';
   const marker=id<HTMLElement>('colorSvMarker');marker.style.left=(hsv.s*100)+'%';marker.style.top=((1-hsv.v)*100)+'%';
   ring.setAttribute('aria-valuenow',String(Math.round(hueMemory)%360));
   ring.setAttribute('aria-valuetext','色相 '+Math.round(hueMemory)+'度');
@@ -120,6 +120,12 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(pointer!==null)return;
   const target=e.target as HTMLElement;
   part=target.closest('#colorPlane')?'plane':target.closest('#colorRing,#colorHueMarker')?'ring':null;
+  if(part==='ring'){
+   // Masked-out center must NOT act as a hue control. The hue band alone is interactive.
+   const r=ring.getBoundingClientRect(),dist=Math.hypot(e.clientX-r.left-r.width/2,e.clientY-r.top-r.height/2);
+   const band=parseFloat(getComputedStyle(ring).getPropertyValue('--hue-ring-width'))||22;
+   if(dist<r.width/2-band-3||dist>r.width/2+3)part=null;
+  }
   if(!part)return;pointer=e.pointerId;state.begin();picker.setPointerCapture(e.pointerId);movePicker(e);e.preventDefault();
  });
  picker.addEventListener('pointermove',movePicker);
