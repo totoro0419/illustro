@@ -161,22 +161,17 @@
 .color-mode-switch #colorPickerMode[hidden]{display:none!important}
 #colorPicker[hidden],#colorOrbitPicker[hidden]{display:none!important}
 
-/* The diamond leans toward the rear lip of the Orbit wheel. Its 45°-rotated
-   visible bounds fit above the wheel rim with a narrow, consistent join.
-   The wheel artwork is unchanged; only its position relative to SV changes. */
+/* The SV diamond is intentionally inset into the rear of the Orbit wheel.
+   The colored upper arc remains in front: overlap is visual, not a competing
+   rectangular hit area. Input routing uses actual ellipse / diamond geometry. */
 .color-orbit-picker{
  position:relative;width:min(306px,100%);height:auto;aspect-ratio:1;
  min-width:0;margin:2px auto 3px;overflow:hidden;user-select:none;
  isolation:isolate;touch-action:none;
 }
-.color-orbit-picker::before{
- content:"";position:absolute;z-index:1;pointer-events:none;
- left:calc(50% - 1.5px);top:48.4%;height:4.5%;width:3px;
- border-radius:3px;background:linear-gradient(#73819a96,#eff4f8);
-}
 .color-orbit-plane{
- position:absolute;z-index:2;
- top:8%;left:33%;width:34%;height:auto;aspect-ratio:1;
+ position:absolute;z-index:1;
+ top:9%;left:28.5%;width:43%;height:auto;aspect-ratio:1;
  box-sizing:border-box;transform:rotate(45deg);transform-origin:center;
  border:1px solid rgba(52,69,94,.5);border-radius:3px;
  background:var(--pure,#f33);
@@ -191,10 +186,10 @@
  border:3px solid #fff;box-shadow:0 0 0 1.4px #263344,0 1px 4px #23344880;
  transform:translate(-50%,-50%);pointer-events:none;
 }
-/* Preserve the exact ring dimensions and renderer; upper arc now meets the
-   SV diamond visually without overlapping its interactive surface. */
+/* Canvas transparency exposes the diamond underneath the inner opening.
+   The colored ring itself is in front, so it can be traced all the way around. */
 .color-orbit-wheel{
- position:absolute;z-index:1;left:0;top:44%;width:100%;
+ position:absolute;z-index:2;left:0;top:44%;width:100%;
  height:auto;aspect-ratio:2/1;display:block;
  cursor:grab;touch-action:none;outline:none;
 }
