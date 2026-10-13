@@ -193,6 +193,9 @@
  height:auto;aspect-ratio:2/1;display:block;
  cursor:grab;touch-action:none;outline:none;
 }
+/* Override the global canvas{background:#fff} rule: an opaque canvas was hiding
+   the lower diamond tip and turning the elliptical hole into a white rectangle. */
+#colorOrbitWheel.color-orbit-wheel{background:transparent}
 .color-orbit-wheel:active{cursor:grabbing}
 .color-orbit-wheel:focus-visible{outline:3px solid var(--a-focus);outline-offset:-3px;border-radius:35%}
 .color-orbit-hint{
