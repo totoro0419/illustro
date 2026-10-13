@@ -92,30 +92,11 @@ export function installOrbitPicker(root:HTMLElement,options:{
   const b=wheel.getBoundingClientRect();
   return {x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*160/b.height};
  };
- // Separate painted ring pixels from a slightly forgiving touch region.
- // A foreground diamond can visually overlap the hole, but must never steal
- // a gesture started on the visible, colored upper arc of the wheel.
- const wheelBand=(e:PointerEvent)=>{
-  const b=wheel.getBoundingClientRect();
-  if(!b.width||!b.height)return {painted:false,near:false};
-  const {x,y}=wheelPoint(e);
-  const outer=Math.hypot((x-radius.cx)/radius.outerX,(y-radius.cy)/radius.outerY);
-  const inner=Math.hypot((x-radius.cx)/radius.innerX,(y-radius.cy)/radius.innerY);
-  return {
-   painted:outer<=1.055&&inner>=.96,
-   near:outer<=1.27&&inner>=.78,
-  };
- };
  const planeLocal=(e:PointerEvent)=>{
   const b=plane.getBoundingClientRect(),side=plane.offsetWidth;
   // Invert the same clockwise 45° CSS rotation used by Classic.
   const dx=e.clientX-b.left-b.width/2,dy=e.clientY-b.top-b.height/2;
   return {s:.5+(dx+dy)/(Math.SQRT2*side),v:1-(.5+(-dx+dy)/(Math.SQRT2*side))};
- };
- const planeHit=(e:PointerEvent)=>{
-  if(!plane.offsetWidth)return false;
-  const {s,v}=planeLocal(e);
-  return s>=0&&s<=1&&v>=0&&v<=1;
  };
  const ellipseAngle=(e:PointerEvent)=>{
   const {x,y}=wheelPoint(e);
@@ -141,14 +122,18 @@ export function installOrbitPicker(root:HTMLElement,options:{
  // avoids the rotated diamond stealing touches from the upper hue ring.
  root.addEventListener('pointerdown',e=>{
   if(drag!==null)return;
-  const band=wheelBand(e),insideSv=planeHit(e);
-  // Always select a real color-ring pixel, even when the diamond's
-  // rectangular bounding box overlaps the wheel. Use the wider touch
-  // tolerance only outside the actual diamond geometry.
-  const hitRing=band.painted||(band.near&&!insideSv);
-  const hitSv=!hitRing&&insideSv;
+  const target=e.target instanceof Element?e.target:null;
+  const upperArc=target?.closest('#colorOrbitTopArc');
+  const frontArc=target?.closest('#colorOrbitFrontArc');
+  // Real SVG strokes define the wheel's input boundary. This is intentionally
+  // the SAME curved region the user can see. The surrounding canvas box is
+  // not a control and should permit workspace scrolling.
+  const hitRing=!!(upperArc||frontArc);
+  const hitSv=!hitRing&&!!target&&plane.contains(target);
   if(!hitRing&&!hitSv)return;
-  const mode=hitRing?(wheelPoint(e).y<radius.cy?'rotate':'slide'):'sv';
+  // Mode is chosen from the hit ARC, not where a rectangular canvas lands.
+  // Pointer capture then keeps that chosen operation until pointerup/cancel.
+  const mode=upperArc?'rotate':frontArc?'slide':'sv';
   const angle=hitRing?ellipseAngle(e):0;
   drag={id:e.pointerId,part:hitRing?'wheel':'plane',mode,startX:e.clientX,
    startHue:options.getHue(),lastAngle:angle,angleTravel:0};
