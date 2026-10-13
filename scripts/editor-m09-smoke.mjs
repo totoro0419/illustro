@@ -100,12 +100,30 @@ async function test(kind,dpr,touch=false){
   const pickerGeometry=await p.locator('#colorPicker').evaluate(el=>{
     const ring=el.querySelector('#colorRing'),plane=el.querySelector('#colorPlane');
     const a=ring.getBoundingClientRect(),b=plane.getBoundingClientRect(),style=getComputedStyle(el),c=el.closest('.workspace-box');
-    const outer=c.getBoundingClientRect(),offenders=[...c.querySelectorAll('*')].map(x=>({el:(x.id?'#'+x.id:x.className?.toString().slice(0,40)||x.tagName),right:Math.round(x.getBoundingClientRect().right-outer.right),left:Math.round(outer.left-x.getBoundingClientRect().left)})).filter(x=>x.right>3||x.left>3).sort((a,b)=>b.right-a.right).slice(0,8);return {wheel:a.width,diamond:b.width,roundingClearance:a.width/2-30-(plane.offsetWidth/Math.SQRT2+9),horizontalOverflow:c.scrollWidth-c.clientWidth,hasPeerTabs:!!document.querySelector('.color-tabs'),isRotated:getComputedStyle(plane).transform!=='none'};
+    const band=Number.parseFloat(getComputedStyle(ring).getPropertyValue('--hue-ring-width'));
+    return {wheel:a.width,diamond:b.width,hueRingThickness:band,ringMask:getComputedStyle(ring).maskImage,roundingClearance:a.width/2-band-(plane.offsetWidth/Math.SQRT2+9),horizontalOverflow:c.scrollWidth-c.clientWidth,hasPeerTabs:!!document.querySelector('.color-tabs'),isRotated:getComputedStyle(plane).transform!=='none'};
   });
   assert.ok(pickerGeometry.roundingClearance>=2,'SV square and marker must not collide with hue ring');
   assert.ok(pickerGeometry.horizontalOverflow<=3,'Color Box must have no horizontal overflow: '+JSON.stringify(pickerGeometry));
   assert.equal(pickerGeometry.hasPeerTabs,false,'no four-peer tabs');
   assert.equal(pickerGeometry.isRotated,true,'square is rotated as an HSB diamond');
+  assert.equal(pickerGeometry.hueRingThickness,22,'hue ring must be a thin 22px annulus');
+  assert.match(pickerGeometry.ringMask,/closest-side/,'hue ring needs a radius-based circular cutout');
+  // Verify rendered pixels: saturated hue on the outer band, neutral background in the center gap.
+  const ringPng=await p.locator('#colorPicker').screenshot();
+  const ringPixels=await p.evaluate(async(data)=>{
+   const image=new Image();image.src=data;await image.decode();
+   const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+   const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
+   const probe=(radiusPx)=>{const d=ctx.getImageData(Math.round(canvas.width/2),Math.round(canvas.height/2-radiusPx),1,1).data;return [d[0],d[1],d[2]];};
+   const bandMid=(canvas.width/2-(22/2)*(canvas.width/252));
+   const centerGap=(canvas.width/2-34*(canvas.width/252));
+   return {ring:probe(bandMid),gap:probe(centerGap),width:canvas.width};
+  },'data:image/png;base64,'+ringPng.toString('base64'));
+  const chroma=c=>Math.max(...c)-Math.min(...c);
+  assert.ok(chroma(ringPixels.ring)>80,'Hue ring must visibly contain bright hue color: '+JSON.stringify(ringPixels));
+  assert.ok(chroma(ringPixels.gap)<40,'The space inside the hue ring must be visually empty: '+JSON.stringify(ringPixels));
+
   // Test unrotated S/B coordinates transformed into the visible diamond.
   const touchSource=await p.locator('#colorPlane').evaluate(el=>{
    const a=el.getBoundingClientRect();return {cx:a.left+a.width/2,cy:a.top+a.height/2,side:el.offsetWidth};
@@ -119,6 +137,13 @@ async function test(kind,dpr,touch=false){
   await p.mouse.move(to.x,to.y,{steps:8});await p.mouse.up();
   const valueAfterPicker=await current(p);
   assert.notEqual(valueAfterPicker,'#FF0000','ibis-style diamond drag updates current color');
+  // Clicking the masked center gap may not silently change hue.
+  const beforeGapClick=await current(p),circleCenter={x:wheel.x+wheel.width/2,y:wheel.y+wheel.height/2};
+  await p.mouse.click(circleCenter.x,circleCenter.y-wheel.width/2+33);
+  assert.equal(await current(p),beforeGapClick,'transparent hue-ring center is not a clickable hue');
+  await p.mouse.click(circleCenter.x,circleCenter.y-wheel.width/2+11);
+  assert.notEqual(await current(p),beforeGapClick,'hue changes when clicking the colored annulus');
+
   assert.ok((await state(p)).currentRevision===rev2);
   await p.locator('#colorShowPalette').click();
   assert.ok(await p.locator('#colorPaletteScreen').isVisible(),'palette toggle shows palette + history');
