@@ -5,6 +5,7 @@ import workerUrl from './persistence.worker.ts?worker&url';
 import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortableData} from './portable';
 import type {DecodedPortableFile,PortableManifestSection} from './format';
 import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
+import {cloneProjectionTiles} from './projectionTransfer';
 
 type WorkerReply={id:number;ok:boolean;result?:unknown;error?:string};
 export type Candidate=Readonly<{documentId:string;writerEpochId:string;title:string;protectedThrough:string;updatedAt:number;savedRevisionId:string|null;lastGood:boolean;previousGood:boolean}>;
@@ -18,6 +19,7 @@ type Pending=Readonly<{selectedLayerId:LayerId;packet:CoreRecoveryPacketV1;block
 type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
 
 export class PersistenceCoordinator{
+  private destroyed=false;
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
   private preserved:PreservedPortableData|undefined;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
@@ -94,7 +96,8 @@ export class PersistenceCoordinator{
   async storeProjectionDelta(delta:ProjectionCheckpointDeltaV2){
     if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
     await this.flushPrepared();if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
-    const tiles=delta.tiles.map(tile=>({surfaceId:tile.surfaceId,key:tile.key,pixels:tile.pixels.slice()})),transfer=tiles.map(tile=>tile.pixels.buffer as ArrayBuffer);
+    const controller=this.controller,valid=()=>!this.destroyed&&this.controller===controller&&controller.document.head===delta.revisionId,tiles=await cloneProjectionTiles(delta.tiles,valid);
+    if(!tiles||!valid())return false;const transfer=tiles.map(tile=>tile.pixels.buffer as ArrayBuffer);
     await this.request('store-projection-delta',{replace:delta.replace===true,revisionId:delta.revisionId,width:delta.width,height:delta.height,tileSize:delta.tileSize,surfaceIds:[...delta.surfaceIds],tiles},transfer);return true;
   }
   async storageStatus(requestPersistence=false){
@@ -103,7 +106,7 @@ export class PersistenceCoordinator{
     try{const estimate=storage?.estimate?await storage.estimate():null;usage=estimate?.usage??null;quota=estimate?.quota??null;}catch{}
     this.patch({storagePersisted:persisted,storageUsage:usage,storageQuota:quota});return {persisted,usage,quota};
   }
-  destroy(){this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
+  destroy(){this.destroyed=true;this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
   private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:250});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
   private async drain(){
