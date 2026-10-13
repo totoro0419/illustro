@@ -95,7 +95,7 @@ export class PersistenceCoordinator{
     if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
     await this.flushPrepared();if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
     const tiles=delta.tiles.map(tile=>({surfaceId:tile.surfaceId,key:tile.key,pixels:tile.pixels.slice()})),transfer=tiles.map(tile=>tile.pixels.buffer as ArrayBuffer);
-    await this.request('store-projection-delta',{revisionId:delta.revisionId,width:delta.width,height:delta.height,tileSize:delta.tileSize,surfaceIds:[...delta.surfaceIds],tiles},transfer);return true;
+    await this.request('store-projection-delta',{replace:delta.replace===true,revisionId:delta.revisionId,width:delta.width,height:delta.height,tileSize:delta.tileSize,surfaceIds:[...delta.surfaceIds],tiles},transfer);return true;
   }
   async storageStatus(requestPersistence=false){
     const storage=navigator.storage;let persisted:boolean|null=null,usage:number|null=null,quota:number|null=null;

@@ -1809,6 +1809,10 @@
     {
       "path": "scripts/editor-home-smoke.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/CANVAS_PERFORMANCE_2026-10-14.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

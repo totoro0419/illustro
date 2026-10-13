@@ -93,7 +93,7 @@ async function handle(message:RequestMessage){
     }
     case 'store-projection-delta':{
       const session=requireSession(message),revisionId=uuid(message.revisionId,'projection revision'),width=dimension(message.width,'projection width'),height=dimension(message.height,'projection height'),tileSize=integer(message.tileSize,'projection tile size',1),surfaceIds=stringArray(message.surfaceIds,'projection surfaces').map(x=>uuid(x,'projection surface')),tiles=projectionTileInputs(message.tiles,tileSize);
-      await storeProjectionDelta(store,session,revisionId,width,height,tileSize,surfaceIds,tiles);await touchMeta(store,session);
+      await storeProjectionDelta(store,session,revisionId,width,height,tileSize,surfaceIds,tiles,message.replace===true);await touchMeta(store,session);
       reply(message.id,true,{backend:store.mode,revisionId,tileCount:tiles.length});break;
     }
     case 'list-recovery':{
@@ -210,11 +210,11 @@ async function loadProjectionCheckpointRaw(store:WorkingStore,session:Session,al
     return Object.freeze({version:1 as const,revisionId:encoded.index.revisionId,width:encoded.index.width,height:encoded.index.height,layers:Object.freeze(layers.map(x=>Object.freeze(x)))});
   }catch{return null;}
 }
-async function storeProjectionDelta(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,tileSize:number,surfaceIds:readonly string[],tiles:readonly {surfaceId:string;key:string;pixels:Uint8Array}[]){
+async function storeProjectionDelta(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,tileSize:number,surfaceIds:readonly string[],tiles:readonly {surfaceId:string;key:string;pixels:Uint8Array}[],replace=false){
   const path=session.path+'/projection-v2.frame',old=await store.get(path);let previous:ProjectionDeltaIndex|null=null;
   if(old)try{previous=parseProjectionDeltaIndex(await unframeJson(old));}catch{}
   const map=new Map<string,{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number}>();
-  if(previous&&previous.width===width&&previous.height===height&&previous.tileSize===tileSize)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
+  if(!replace&&previous&&previous.width===width&&previous.height===height&&previous.tileSize===tileSize)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
   for(const tile of tiles){
     if(!surfaceIds.includes(tile.surfaceId))continue;const id=tile.surfaceId+'\u0000'+tile.key,file=session.path+'/projection-v2/'+tile.surfaceId+'/'+tileFileName(tile.key)+'.bin';
     if(isTransparent(tile.pixels)){await store.remove(file);map.delete(id);continue;}

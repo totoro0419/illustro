@@ -1,3 +1,4 @@
+import {readGpuTiles} from './gpuReadback';
 import {TILE,validateRecord,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
 import {CANONICAL_TILE_SIZE,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
@@ -9,11 +10,11 @@ import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/
 
 export class BrushSurface{
   private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private presentedFrames=0;private lastPresentedAt=0;private _initializationError:string|null=null;private _projectionRestoreMs=0;private _projectionRestoreMode:'none'|'cache'|'replay-fallback'='none';private _projectionCacheRevision:string|null=null;
-  private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private touchPoints=new Map<number,Point>();private lastGesture:{center:Point;distance:number;angle:number}|null=null;
+  private viewNotificationPending=false;private checkpointMetrics={captures:0,tiles:0,batches:0,bytes:0,lastMs:0};private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private touchPoints=new Map<number,Point>();private lastGesture:{center:Point;distance:number;angle:number}|null=null;
   private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'='composite';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private foreground:readonly [number,number,number]=[.12,.15,.2];
   private panning:{id:number;point:Point}|null=null;private keyboardSpace=false;private densityMedia:MediaQueryList|null=null;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
-  constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
+  constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
     this.canvas.style.aspectRatio=document.body.classList.contains('canvas-viewport')?'auto':target.width+' / '+target.height;
     const rect=this.canvas.getBoundingClientRect();this.view.resize(Math.max(1,rect.width),Math.max(1,rect.height));this.setBackingSize();
@@ -30,7 +31,7 @@ export class BrushSurface{
       this._initializationError='GPU initialization failed: '+message;
       throw new Error(this._initializationError,{cause:error});
     }
-    this.renderer.onComplete=()=>this.markPresented();
+    this.renderer.onPresentation=()=>this.markPresented();
     this.updateView();
     this.resizeObserver=new ResizeObserver(entries=>{const e=entries[0];if(!e)return;const exact=e.devicePixelContentBoxSize?.[0];this.setBackingSize(exact?{width:exact.inlineSize,height:exact.blockSize}:undefined);});
     try{this.resizeObserver.observe(this.canvas,{box:'device-pixel-content-box'});}catch{this.resizeObserver.observe(this.canvas);}
@@ -56,7 +57,7 @@ export class BrushSurface{
   private keyDown=(e:KeyboardEvent)=>{if(e.code==='Space'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement))this.keyboardSpace=true;};
   private keyUp=(e:KeyboardEvent)=>{if(e.code==='Space')this.keyboardSpace=false;};
   private wheel=(e:WheelEvent)=>{if(!this.view)return;e.preventDefault();this.view.zoomAt(Math.exp(-e.deltaY*.0018),this.pointerLocation(e));this.updateView();};
-  private updateView(){if(this.view&&this.renderer){(this.renderer as GpuRenderer&{setViewTransform:(value:Float32Array)=>void}).setViewTransform(this.view.uniform(this.canvas.width,this.canvas.height));this.onStateChanged();}}
+  private updateView(){if(this.view&&this.renderer){(this.renderer as GpuRenderer&{setViewTransform:(value:Float32Array)=>void}).setViewTransform(this.view.uniform(this.canvas.width,this.canvas.height));this.viewNotificationPending=true;}}
   get viewState(){return this.view?.state??null;}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
   screenToDocument(point:Point){return this.view?.document(point)??point;}
@@ -113,7 +114,7 @@ export class BrushSurface{
     }).catch(()=>{this.status('線を確定できませんでした。');}).finally(()=>{this.finishing=false;this.onStateChanged();});};
   private cancel=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}this.touchPoints.delete(e.pointerId);this.lastGesture=this.gesture();if(this.panning?.id===e.pointerId)this.panning=null;if(e.pointerId===this.pointer)void this.cancelStroke();};
   private async cancelStroke(){const id=this.activeStrokeId;this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
-  private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
+  private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;}
   async inspectRendering(){
     const backend=(this.renderer as unknown as {backend?:{
@@ -177,10 +178,11 @@ export class BrushSurface{
   }
   async captureProjectionDelta(revisionId:string,operations?:readonly SemanticOperation[]):Promise<ProjectionCheckpointDeltaV2>{
     if(!this.renderer||!this.session)throw new Error('Renderer is not initialized');if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection checkpoint capture is stale');
-    const root=this.controller.document.root,bySurface=new Map<string,Set<string>>();
+    const started=performance.now(),root=this.controller.document.root,bySurface=new Map<string,Set<string>>(),backend=(this.renderer as unknown as {backend?:any}).backend;
+    await this.renderer.drain(false);const valid=()=>!this.disposed&&!this.busy&&this.controller.document.head===revisionId;
     if(operations===undefined){
-      const maxX=Math.ceil(root.width/TILE),maxY=Math.ceil(root.height/TILE);
-      for(const layer of this.controller.layers){const set=new Set<string>();for(let y=0;y<maxY;y++)for(let x=0;x<maxX;x++)set.add(x+','+y);bySurface.set(layer.surface.descriptor.surfaceId,set);}
+      const active=new Set(this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId));
+      for(const tile of backend.tiles.values()){if(!active.has(tile.surfaceKey))continue;const keys=bySurface.get(tile.surfaceKey)??new Set<string>();keys.add(tile.key);bySurface.set(tile.surfaceKey,keys);}
     }else for(const operation of operations){
       for(const footprint of operation.dirtyFootprint){
         if(!root.hasLayer(footprint.layerId))continue;
@@ -190,21 +192,18 @@ export class BrushSurface{
         for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)set.add(x+','+y);
       }
     }
-    const tiles:Array<{surfaceId:string;key:string;pixels:Uint8Array}>=[],backend=(this.renderer as unknown as {backend?:any}).backend;
-    for(const [surfaceId,keys] of bySurface)for(const key of keys){
-      if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection checkpoint capture is stale');
-      tiles.push({surfaceId,key,pixels:await this.readBackendTile(backend,key,surfaceId)});
+    const tiles:Array<{surfaceId:string;key:string;pixels:Uint8Array}>=[],requests=[...bySurface].flatMap(([surfaceId,keys])=>[...keys].map(key=>({surfaceId,key})));
+    for(let offset=0;offset<requests.length;offset+=16){
+      tiles.push(...await readGpuTiles(backend,requests.slice(offset,offset+16),valid));this.checkpointMetrics.batches++;
+      // Let input and screen presentation run between bounded transfer batches.
+      if(offset+16<requests.length)await new Promise<void>(resolve=>setTimeout(resolve,0));
     }
+    this.checkpointMetrics.captures++;this.checkpointMetrics.tiles+=tiles.length;this.checkpointMetrics.bytes+=tiles.length*TILE*TILE*4;this.checkpointMetrics.lastMs=performance.now()-started;
     if(this.busy||this.controller.document.head!==revisionId)throw new Error('Projection checkpoint capture is stale');
-    return Object.freeze({version:2 as const,revisionId,width:root.width,height:root.height,tileSize:TILE,surfaceIds:Object.freeze(this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId)),tiles:Object.freeze(tiles.map(tile=>Object.freeze(tile)))});
+    return Object.freeze({version:2 as const,replace:operations===undefined,revisionId,width:root.width,height:root.height,tileSize:TILE,surfaceIds:Object.freeze(this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId)),tiles:Object.freeze(tiles.map(tile=>Object.freeze(tile)))});
   }
   private async readBackendTile(backend:any,key:string,surfaceId:string){
-    if(!backend?.tile)throw new Error('Projection checkpoint readback unavailable');const t=backend.tile(key,surfaceId),target=t.layer[t.l],out=new Uint8Array(TILE*TILE*4);
-    if(backend.gl){const g=backend.gl;g.bindFramebuffer(g.FRAMEBUFFER,target.f);g.readPixels(0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,out);return out;}
-    if(backend.device){
-      const d=backend.device,gpu=globalThis as unknown as {GPUBufferUsage:{COPY_DST:number;MAP_READ:number};GPUMapMode:{READ:number}},b=d.createBuffer({size:out.byteLength,usage:gpu.GPUBufferUsage.COPY_DST|gpu.GPUBufferUsage.MAP_READ}),e=d.createCommandEncoder();e.copyTextureToBuffer({texture:target},{buffer:b,bytesPerRow:TILE*4},[TILE,TILE]);d.queue.submit([e.finish()]);await b.mapAsync(gpu.GPUMapMode.READ);out.set(new Uint8Array(b.getMappedRange()));b.unmap();b.destroy();return out;
-    }
-    throw new Error('Projection checkpoint readback backend unsupported');
+    return (await readGpuTiles(backend,[{surfaceId,key}],()=>!this.disposed))[0]!.pixels;
   }
   /** Build a small artwork preview from occupied GPU tiles, without allocating full-size layer bitmaps. */
   async captureWorkThumbnail():Promise<Blob>{
@@ -343,6 +342,9 @@ export class BrushSurface{
    return null;
   }
   select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];}}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
+  setPerformanceEnabled(enabled:boolean){this.renderer?.setPerformanceEnabled(enabled);}
+  get performanceDiagnostics(){return {...this.renderer?.performanceSummary(),checkpoint:{...this.checkpointMetrics},strokeReplayFallbacks:this.historyReplayFallbacks,projectionRestoreMode:this._projectionRestoreMode};}
+  get interacting(){return this.touchPoints.size>0||this.panning!==null||this.busy;}
   get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'direct-gpu';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get projectionRestoreMode(){return this._projectionRestoreMode;}get projectionCacheRevision(){return this._projectionCacheRevision;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
-  destroy(){this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.touchPoints.clear();this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onComplete=null;this.session?.destroy();}
+  destroy(){this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.touchPoints.clear();this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
 }

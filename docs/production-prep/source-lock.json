@@ -30,8 +30,9 @@
     {
       "path": "packages/brush-rt/src/index.d.ts",
       "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "e53bb0b216aaf12e8750d549e4e140c07186818f7b56cec93b52580d30edccb9",
-      "m08Exception": "M08 Seamless Tile view-only preview and one-step raster seam copies; brush geometry algorithms unchanged. Exact SHA-256 recalculated and 93/93 regression required."
+      "sha256": "53503497d299223e371f38ab3a65d760087b474ffe7b7b494aad1174e5fd026c",
+      "m08Exception": "M08 Seamless Tile view-only preview and one-step raster seam copies; brush geometry algorithms unchanged. Exact SHA-256 recalculated and 93/93 regression required.",
+      "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required."
     },
     {
       "path": "packages/brush-rt/src/index.mjs",
@@ -46,8 +47,9 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "040d4b42410f45b94a658f38bea9a6a1694c135b9e5aeaf4d20ac8958e2b35e1",
-      "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification."
+      "sha256": "e9c44ca5998f3f49cc5d82c4e486129126df9e18f188a6def105b70f0a363e2e",
+      "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
+      "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
@@ -198,12 +200,14 @@
     {
       "path": "prototypes/brush-rt/build.mjs",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "e40a51f4091010591ed4ce12e97d639a961d2ecc3cb186712087628a347649d1"
+      "sha256": "e8fcebcdd7fc200aee1a98196eddc72839cfc6d1c5ff0ebfb2d7f971ed28cbdf",
+      "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required."
     },
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "51dc62778467915f25e1f94a93f4458d9160104f128da04db1f934ba1e75f66b"
+      "sha256": "d7a4301bfaa45af2be28224de0b5e0d4b10af8383000fd58f6bfa5f4c346c4d7",
+      "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required."
     },
     {
       "path": "prototypes/brush-rt/foundation-check.mjs",
@@ -314,6 +318,12 @@
       "path": "experiments/raster-region-lab-v01/test-structure.cjs",
       "sourceCommit": "dcd09c8bbb5929a0b13a24a58f0b8bc63d109298",
       "sha256": "be566007d34d5180e5e5bddfd868cd8065377f1d3d408c85c68bc3e1f7dacae0"
+    },
+    {
+      "path": "packages/brush-rt/src/minification.mjs",
+      "sourceCommit": "e04d3e29ab162d487d0c774524323bf49c684a4d",
+      "sha256": "6aa81f8d1ecfe89475c0d0d9d2258b15c9514dc8cbe8bcc0ca9b9229918a151b",
+      "performanceException": "Derived display cache, original pixels unchanged."
     }
   ],
   "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Artwork alpha remains preserved in internal renderer targets and read/export results. Visible presentation must not depend on browser compositing of a transparent GPU canvas over CSS paper: the final GPU presentation pass composites the transparent artwork over the current paper background and writes an opaque frame. WebGL2 and WebGPU share this rule. No secondary full-size presentation/latency Canvas or OffscreenCanvas bridge is allowed. Browser predicted events feed the existing GPU preview path. Live preview scheduling is latest-state/coalesced: WebGL2 and WebGPU may submit the newest Foundation preview immediately after an input batch instead of waiting for the next RAF, and coalesced pointer samples preserve every canonical input while publishing only one GPU preview notification for the batch. Backend selection must not depend on viewport size. Production uses capability-based auto selection: WebGPU is selected only after adapter acquisition, device creation, renderer pipeline initialization, canvas configuration, and initial presentation all succeed; otherwise the failure stage/reason is recorded and the renderer falls back to WebGL2. A fully initialized WebGPU path must never be bypassed merely because of device class or viewport. Explicit backend QA remains available and explicit WebGPU failure must not silently fall back. Workspace open/close must never change Renderer settings, Canvas ownership, or Document state. M03 History is Document-owned. Recent Stroke Undo/Redo may use a strictly bounded 16 MiB GPU hot tile cache for one-frame-class response. Cache memory never grows beyond the fixed budget; evicted/oversized history falls back to rebuilding only affected 128px runtime tiles from active formal StrokeRecords. Fallback rebuild presentation is atomic: the old completed canvas remains visible until the rebuilt dirty tiles are complete, then the result is presented once. Full-canvas readback, visible stroke-by-stroke replay, unbounded GPU history, and rebuilding unrelated tiles are forbidden. M04 formal Eraser integration keys runtime artwork by formal Raster SurfaceId so erase never operates on a flattened multi-layer result; erase remains brush.stroke with blend:'erase'. Canonical straight-alpha erase preserves destination hidden RGB even when alpha reaches zero. Brush/Eraser switching must use stable preset identity/meaning rather than preset array position."

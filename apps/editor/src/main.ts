@@ -17,6 +17,7 @@ import {PersistenceCoordinator,type Candidate,type PersistenceState} from './per
 import type {PortableOpenResult} from './persistence/portable';
 import {CoreDocument,type SemanticOperation} from '@illustro/core';
 
+const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/');
 const qaPath=location.pathname.replace(/\/+$/,'');
 const m09Mode=new URLSearchParams(location.search).has('m09')||qaPath.endsWith('/qa/m09')||qaPath.endsWith('/qa/m09/index.html');
 const m08Mode=m09Mode||new URLSearchParams(location.search).has('m08')||qaPath.endsWith('/qa/m08')||qaPath.endsWith('/qa/m08/index.html');
@@ -35,7 +36,8 @@ let eyedropperOriginal=foreground.current;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,lastPointerDownTarget:EventTarget|null=null,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
-let checkpointOperations:SemanticOperation[]=[];
+let checkpointOperations:SemanticOperation[]=[];let checkpointCancelled=0;const checkpointErrors:Array<{at:string;message:string}>=[];let qaRefreshTimer:number|null=null;
+function scheduleQaRefresh(){if(qaRefreshTimer!==null)return;qaRefreshTimer=window.setTimeout(()=>{qaRefreshTimer=null;updateQa();},250);}
 let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
@@ -105,7 +107,7 @@ const updateQa=()=>{
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
     activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:!workspace.inert,workspaceDisplay:getComputedStyle(workspace).display,
     visualViewport:window.visualViewport?{width:Math.round(window.visualViewport.width),height:Math.round(window.visualViewport.height),offsetTop:Math.round(window.visualViewport.offsetTop),offsetLeft:Math.round(window.visualViewport.offsetLeft),scale:window.visualViewport.scale}:null,
-    export:{last:lastExport,error:exportError,busy:exportBusy,count:exportCount},layers:controller.layers.map(layer=>({id:layer.id,surfaceId:layer.surface.descriptor.surfaceId,name:layer.name,committedStrokes:controller.strokeCountForLayer(layer.id)})),documentId:controller.document.root.documentId,documentMetadata:controller.document.root.metadata,writerEpoch:controller.document.writerEpochId,commitSequence:controller.document.commitSequence.toString(),persistence:persistenceState,autosaveCheckpoint:{operationInterval:CHECKPOINT_OPERATION_INTERVAL,idleMs:CHECKPOINT_IDLE_MS,opsSinceLast:checkpointOpsSinceLast,fullSeedPending:checkpointNeedsFullSeed,lastCheckpointAt},qaStartedAt};
+    export:{last:lastExport,error:exportError,busy:exportBusy,count:exportCount},layers:controller.layers.map(layer=>({id:layer.id,surfaceId:layer.surface.descriptor.surfaceId,name:layer.name,committedStrokes:controller.strokeCountForLayer(layer.id)})),documentId:controller.document.root.documentId,documentMetadata:controller.document.root.metadata,writerEpoch:controller.document.writerEpochId,commitSequence:controller.document.commitSequence.toString(),persistence:persistenceState,autosaveCheckpoint:{operationInterval:CHECKPOINT_OPERATION_INTERVAL,idleMs:CHECKPOINT_IDLE_MS,opsSinceLast:checkpointOpsSinceLast,fullSeedPending:checkpointNeedsFullSeed,lastCheckpointAt,cancelled:checkpointCancelled,errors:checkpointErrors},qaStartedAt};
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
 };
 renderLayers();
@@ -120,14 +122,14 @@ function noteCheckpointOperations(operations:readonly SemanticOperation[]){
 }
 async function createProjectionCheckpoint(){
   if(projectionCheckpointBusy||!surface||!documentReady){if(documentReady)scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
-  if(surface.busy){scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
+  if(surface.interacting){scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
   const activeSurface=surface,revisionId=controller.document.head,operations=checkpointOperations.slice(),fullSeed=checkpointNeedsFullSeed;projectionCheckpointBusy=true;
   try{
     const delta=await activeSurface.captureProjectionDelta(revisionId,fullSeed?undefined:operations);
-    if(surface===activeSurface&&controller.document.head===revisionId&&!activeSurface.busy&&await persistence.storeProjectionDelta(delta)){
-      checkpointOperations=[];checkpointOpsSinceLast=0;checkpointNeedsFullSeed=false;lastCheckpointAt=Date.now();
+    if(surface===activeSurface&&controller.document.head===revisionId&&!activeSurface.busy&&await persistence.storeProjectionDelta(delta)&&surface===activeSurface){
+      checkpointOperations.splice(0,operations.length);checkpointOpsSinceLast=checkpointOperations.length;checkpointNeedsFullSeed=false;lastCheckpointAt=Date.now();
     }
-  }catch{}finally{
+  }catch(error){const message=error instanceof Error?error.message:String(error);if(message.includes('stale'))checkpointCancelled++;else{checkpointErrors.push({at:new Date().toISOString(),message});if(checkpointErrors.length>12)checkpointErrors.shift();}}finally{
     projectionCheckpointBusy=false;
     if(surface===activeSurface&&(controller.document.head!==revisionId||checkpointOperations.length||checkpointNeedsFullSeed))scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     updateQa();
@@ -138,7 +140,7 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   persistence.noteCommit(controller.document,handoff);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},()=>{updateHistoryButtons();updateViewControls();redrawCrop();updateQa();},backendOverride,(rgba,phase,point)=>{
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},reason=>{updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';restoreDrawingTool();}return;}
  const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value!=='layer');
@@ -159,9 +161,9 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new Bru
  });}
 surface=makeSurface();
 function updateViewControls(){const state=surface?.viewState;if(!state)return;
-  byId<HTMLInputElement>('zoomPercent').value=String(Math.round(state.zoom*1000)/10);
-  byId<HTMLInputElement>('angleDegree').value=String(Math.round(state.rotation*180/Math.PI*10)/10);
-  for(const [id,on] of [['flipH',state.flipX],['flipV',state.flipY]] as const)byId<HTMLButtonElement>(id).setAttribute('aria-pressed',String(on));
+  const zoom=byId<HTMLInputElement>('zoomPercent'),zoomValue=String(Math.round(state.zoom*1000)/10);if(zoom.value!==zoomValue)zoom.value=zoomValue;
+  const angle=byId<HTMLInputElement>('angleDegree'),angleValue=String(Math.round(state.rotation*180/Math.PI*10)/10);if(angle.value!==angleValue)angle.value=angleValue;
+  for(const [id,on] of [['flipH',state.flipX],['flipV',state.flipY]] as const){const button=byId<HTMLButtonElement>(id),value=String(on);if(button.getAttribute('aria-pressed')!==value)button.setAttribute('aria-pressed',value);}
   const tile=byId<HTMLInputElement>('seamless');if(tile)tile.checked=state.seamless;
 }
 const shellUi=installShellUi(),workspace=shellUi.workspace;
@@ -610,3 +612,15 @@ function qaM08Markup(){return '<details id="qaPanel" class="qa-panel" open><summ
 function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary>使いやすさと描画の確認</summary><ol>'+
 ['左のツール欄は見やすいですか？','ブラシと消しゴムをすぐ切り替えられますか？','右側が邪魔にならず描けますか？','右側の幅を簡単に変えられますか？','レイヤーボタンからレイヤー画面を開けますか？','その画面を開いたままでも描けますか？','元に戻す・やり直しはすぐ使えますか？','保存と画像書き出しへ迷わず行けますか？','ペンや指でボタンを押しやすいですか？','明るい見た目で制作に集中できますか？','右側を開閉しても描画が止まりませんか？','重くなっていませんか？'].map(x=>'<li>'+x+'</li>').join('')+
 '</ol><details class="qa-auto"><summary>問題があるときの動作確認</summary><button id="qaDiagInitial" type="button">状態を記録する</button><button id="qaDiagCopy" type="button">結果をコピーする</button><pre id="qaGpuReport"></pre></details><label>結果<select id="qaState"><option value="unchecked">まだ確認していない</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3" placeholder="具体的に教えてください"></textarea></label><button id="qaCopy" type="button">確認結果をコピー</button><details class="qa-auto"><summary>詳しい動作記録</summary><pre id="qaAuto"></pre></details></details>';}
+
+// Review-only performance controls: native disclosure + checkbox, no normal UI changes.
+if(perfMode){
+ const panel=document.createElement('details');panel.id='canvasPerformance';panel.style.cssText='position:fixed;left:80px;bottom:20px;z-index:80;max-width:min(420px,calc(100vw - 100px));max-height:45vh;overflow:auto;background:#fffaf0;color:#302c26;border:1px solid #decba4;border-radius:12px;padding:8px 12px;font-size:12px';
+ panel.innerHTML='<summary>キャンバスの軽さを確認</summary><label style="display:block;padding:8px 0"><input id="performanceEnabled" type="checkbox"> 動作の測定を表示する</label><p>数値はGPUへの表示要求を測った目安です。画面そのものの更新や指から光までの時間は未測定です。</p><output id="performanceReadout" style="white-space:pre-wrap"></output><p><a href="../../m09/" target="_blank" rel="noopener">改善前のM09を開く</a></p>';
+ document.body.append(panel);const enabled=byId<HTMLInputElement>('performanceEnabled');
+ enabled.onchange=()=>{surface?.setPerformanceEnabled(enabled.checked);byId('performanceReadout').textContent='';};
+ window.setInterval(()=>{if(!enabled.checked)return;surface?.setPerformanceEnabled(true);const data=surface?.performanceDiagnostics;
+  // Enable only on transition; the history window must survive refreshes.
+  byId('performanceReadout').textContent=JSON.stringify({backend:surface?.backend,...data,checkpointErrors},null,2);
+ },500);
+}
