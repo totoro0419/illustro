@@ -14,7 +14,10 @@
 .color-describe output{font-size:14px;font-weight:750;letter-spacing:.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
 .color-primary{display:flex;flex-direction:column;gap:7px}
 .color-picker{position:relative;width:min(252px,100%);height:auto;aspect-ratio:1;margin:2px auto 3px;touch-action:none;user-select:none;isolation:isolate}
-.color-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 90deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000);-webkit-mask:radial-gradient(circle,transparent calc(50% - 30px),#000 calc(50% - 29px));mask:radial-gradient(circle,transparent calc(50% - 30px),#000 calc(50% - 29px));touch-action:none}
+/* Use closest-side (actual circle radius) for the mask. The former farthest-corner percentage stop made the color band too wide. */
+.color-ring{--hue-ring-width:22px;position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 90deg,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000);-webkit-mask:radial-gradient(circle closest-side at center,transparent calc(100% - var(--hue-ring-width) - 1px),#000 calc(100% - var(--hue-ring-width)));mask:radial-gradient(circle closest-side at center,transparent calc(100% - var(--hue-ring-width) - 1px),#000 calc(100% - var(--hue-ring-width)));touch-action:none}
+/* Visual cutout fallback for engines that do not support CSS masks. */
+.color-ring::after{content:"";position:absolute;inset:var(--hue-ring-width);border-radius:50%;background:var(--a-surface);pointer-events:none}
 .color-ring:focus-visible{outline:3px solid var(--a-focus);outline-offset:4px}
 .color-ring-marker{position:absolute;left:94%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px #263144,0 1px 5px #26314488;z-index:2;pointer-events:none}
 .color-plane{position:absolute;left:27%;top:27%;width:46%;height:46%;border-radius:8px;background:var(--pure,#ff0000);box-shadow:0 1px 4px #16294d3b,0 0 0 1px #cad3df;touch-action:none;cursor:crosshair}
