@@ -34,18 +34,20 @@ Minification levels average 2×2 premultiplied source pixels and are created onl
 
 Checkpoint reads never allocate missing tiles. A complete sparse seed replaces the previous checkpoint tile index; dirty deltas include zero pixels to remove erased regions. Transfers contain at most 16×128×128×4 = 1 MiB, with an input opportunity between batches. A changed revision or active stroke cancels the capture; the protected operation journal is unaffected. Checkpoint acknowledgements remove only the captured operation prefix. Cached images ahead of Undo or on another history branch are rejected; exact geometry checkpoints take priority over an older materialized geometry base. Thumbnail transfers also use bounded batches. The existing 12-operation / 800ms policy remains: no measurement yet justifies changing it. View gestures defer starting checkpoint work.
 
-Current checkpoint load still expands saved layers to dense CPU arrays. Very large documents with many layers may have significant restore memory cost; the new readback batching does not solve that existing limitation. GPU execution timestamps and total GPU allocation are not yet measured.
+Current checkpoint load still expands saved layers to dense CPU arrays. Very large documents with many layers may have significant restore memory cost; the new readback batching does not solve that existing limitation. GPU execution timestamps and total GPU allocation are not yet measured. Unused preview slots, which the existing shader loop never reads beyond its actual overlay count, now share a 1×1 zero image instead of a full-document zero image: nominal RGBA16F storage saved at 3000×3000 is 71,999,992 bytes. Transparent pixels with nonzero RGB are retained in sparse save and upload; only all-zero RGBA may be omitted.
 
 ## Measurement scope
 
 The benchmark uses real Chromium WebGL2/WebGPU with SwiftShader software GPU. It exercises 512×384, 2048×2048 and 3000×3000; 0/50/500/2000 rasterized strokes; 1/3/10 surface stacks. The fixture uses short strokes in a reproducible occupied area; it is not equivalent to a densely painted whole document.
+
+The first benchmark counter missed WebGPU inline presentation encoding. Corrected measurements count WebGPU queue submissions containing presentation and WebGL flushes after presentation; zero observed submissions cannot pass.
 
 Measured: canvas presentation submission cadence, frame-interval p95, handler-to-submission proxy, JavaScript submission duration, occupied tile count and history bytes. Actual physical display refresh, input-to-photon latency, GPU timer-query duration and Android hardware performance are unmeasured. Initial benchmark fixture construction timed out; fixture settling now uses the same 256-job restoration quantum on both versions, outside the measured manipulation window. The report must preserve these distinctions.
 
 ## Local evidence before browser CI
 
 - Core typecheck + 31 tests passed.
-- Editor + geometry: 65 tests passed, including sparse-readback and checkpoint history-prefix cases.
+- Editor + geometry: 68 tests passed, including sparse-readback and checkpoint history-prefix cases.
 - Brush Foundation + scheduler regression: 104 tests passed (93 original + 11 new).
 - Editor typecheck and production build passed.
 - Canonical index / source lock check passed after updating only changed display sources and generated artifact hashes.

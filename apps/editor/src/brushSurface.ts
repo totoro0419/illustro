@@ -1,3 +1,4 @@
+import {hasPixelData} from './persistence/pixelPresence';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {TILE,validateRecord,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
@@ -295,7 +296,7 @@ export class BrushSurface{
     if(!backend?.tile||!backend?.dirtyConfirmed)throw new Error('Projection cache upload unavailable');const width=cache.width,height=cache.height;
     for(const layer of cache.layers){for(let ty=0;ty<Math.ceil(height/TILE);ty++)for(let tx=0;tx<Math.ceil(width/TILE);tx++){
       const tile=new Uint8Array(TILE*TILE*4);let nonEmpty=false;const copyW=Math.min(TILE,width-tx*TILE),copyH=Math.min(TILE,height-ty*TILE);
-      for(let y=0;y<copyH;y++){const source=((ty*TILE+y)*width+tx*TILE)*4,target=y*TILE*4,row=layer.pixels.subarray(source,source+copyW*4);tile.set(row,target);for(let i=3;i<row.length;i+=4)if(row[i]!==0){nonEmpty=true;break;}}
+      for(let y=0;y<copyH;y++){const source=((ty*TILE+y)*width+tx*TILE)*4,target=y*TILE*4,row=layer.pixels.subarray(source,source+copyW*4);tile.set(row,target);if(hasPixelData(row))nonEmpty=true;}
       if(!nonEmpty)continue;const key=tx+','+ty,t=backend.tile(key,layer.surfaceId),target=t.layer[t.l];
       if(backend.gl){const g=backend.gl;g.bindTexture(g.TEXTURE_2D,target.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,tile);}
       else if(backend.device){backend.device.queue.writeTexture({texture:target},tile,{bytesPerRow:TILE*4},[TILE,TILE]);}

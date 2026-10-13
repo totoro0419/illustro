@@ -1,3 +1,4 @@
+import {hasPixelData} from './pixelPresence';
 import {listWorks,getWork,publishWork,updateWork,deleteWork,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
@@ -217,7 +218,7 @@ async function storeProjectionDelta(store:WorkingStore,session:Session,revisionI
   if(!replace&&previous&&previous.width===width&&previous.height===height&&previous.tileSize===tileSize)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
   for(const tile of tiles){
     if(!surfaceIds.includes(tile.surfaceId))continue;const id=tile.surfaceId+'\u0000'+tile.key,file=session.path+'/projection-v2/'+tile.surfaceId+'/'+tileFileName(tile.key)+'.bin';
-    if(isTransparent(tile.pixels)){await store.remove(file);map.delete(id);continue;}
+    if(!hasPixelData(tile.pixels)){await store.remove(file);map.delete(id);continue;}
     const encoded=await encodeProjectionPixels(tile.pixels);await putVerified(store,file,encoded.bytes);map.set(id,{surfaceId:tile.surfaceId,key:tile.key,encoding:encoded.encoding,rawLength:tile.pixels.byteLength});
   }
   const index:ProjectionDeltaIndex=Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
@@ -249,7 +250,6 @@ function projectionTileInputs(value:unknown,tileSize:number){
 function tileKey(value:unknown){if(typeof value!=='string'||!/^\d+,\d+$/.test(value))throw new Error('invalid projection tile key');return value;}
 function parseTileKey(key:string){const parts=key.split(','),x=Number(parts[0]),y=Number(parts[1]);if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0)throw new Error('invalid projection tile key');return [x,y] as const;}
 function tileFileName(key:string){return key.replace(',',':');}
-function isTransparent(bytes:Uint8Array){for(let i=3;i<bytes.length;i+=4)if(bytes[i]!==0)return false;return true;}
 
 async function decodeProjectionCache(decoded:Awaited<ReturnType<typeof decodeIllustroFile>>):Promise<ProjectionCache|null>{
   const section=decoded.sections.get('render-cache');if(!section||section.descriptor.type!=='render.cache.index.v1'||section.descriptor.required)return null;
