@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: perf-canvas
+  group: perf-canvas-${{ github.sha }}
   cancel-in-progress: true
 jobs:
   benchmark:
@@ -80,6 +80,7 @@ jobs:
           M06_EXPECT_MILESTONE: M07
           M08_CORRUPT_ALL_RENDER_CACHES: '1'
         run: |
+          node scripts/display-cache-quality.mjs
           node scripts/editor-perf-checkpoint.mjs
           node scripts/editor-m09-smoke.mjs
           node scripts/editor-orbit-smoke.mjs
@@ -98,8 +99,30 @@ jobs:
             /tmp/brush-tests.log
       - uses: actions/upload-artifact@v4
         with: {name: canvas-review-build, path: apps/editor/dist/}
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run brush:build > /tmp/foundation-build.log
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Brush visual equivalence and large-size latency growth
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          RT_EVIDENCE_DIRECTORY: /tmp/foundation-perf-evidence
+          RT_QUICK_TEST: '1'
+        run: node prototypes/brush-rt/foundation-quick-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: canvas-foundation-evidence, path: /tmp/foundation-perf-evidence/}
   publish:
-    needs: [regression, benchmark]
+    needs: [regression, benchmark, foundation]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -121,6 +144,8 @@ jobs:
       - name: Publish only performance review
         working-directory: site
         run: |
+          current=$(git ls-remote origin refs/heads/perf/canvas-presentation-2026-10-14 | cut -f1)
+          if [ "$current" != "$GITHUB_SHA" ]; then echo 'Newer review commit exists; preserving its publication.'; exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add qa/perf-canvas

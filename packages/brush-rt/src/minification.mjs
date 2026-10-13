@@ -43,7 +43,7 @@ export class PresentationPyramid{
   this.layout=d.createBindGroupLayout({entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'float'}}]});
   this.pipeline=d.createRenderPipeline({layout:d.createPipelineLayout({bindGroupLayouts:[this.layout]}),vertex:{module,entryPoint:'vertex'},fragment:{module,entryPoint:'fragment',targets:[{format:b.format}]},primitive:{topology:'triangle-list'}});
  }
- allocate(w,h){const b=this.backend;return b.gl?b.surface(w,h,b.gl.RGBA8,b.gl.UNSIGNED_BYTE):b.device.createTexture({size:[w,h],format:b.format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});}
+ allocate(w,h){const b=this.backend;return b.gl?b.surface(w,h,b.gl.RGBA8,b.gl.UNSIGNED_BYTE):b.device.createTexture({size:[w,h],format:b.format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_SRC});}
  draw(source,level,rects,encoder){const b=this.backend;
   if(b.gl){const g=b.gl;g.bindFramebuffer(g.FRAMEBUFFER,level.image.f);g.viewport(0,0,level.w,level.h);g.disable(g.BLEND);g.disable(g.DEPTH_TEST);g.bindVertexArray(b.vao);g.useProgram(this.pipeline);g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,source.t);g.uniform1i(g.getUniformLocation(this.pipeline,'source'),0);g.enable(g.SCISSOR_TEST);
    for(const [x0,y0,x1,y1]of rects){if(x1<=x0||y1<=y0)continue;g.scissor(x0,y0,x1-x0,y1-y0);g.drawArrays(g.TRIANGLES,0,3);}g.disable(g.SCISSOR_TEST);
