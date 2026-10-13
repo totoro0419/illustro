@@ -55,18 +55,24 @@ async function run(kind,touch=false){
   await p.goto(base+(base.includes('?')?'&':'?')+'backend='+kind,{waitUntil:'domcontentloaded',timeout:55000});
   await openEditor(p);
   const rev=await p.locator('#canvas').getAttribute('data-current-revision');
-  assert.ok(await p.locator('#colorModeClassic').isVisible());
-  assert.ok(await p.locator('#colorModeOrbit').isVisible());
-  await p.locator('#colorModeClassic').click();
+  const mode=p.locator('#colorPickerMode');
+  assert.ok(await mode.isVisible(),'Compact picker mode dropdown is visible');
+  const menuGeometry=await p.locator('.color-mode-switch').evaluate(el=>{
+   const a=el.getBoundingClientRect(),b=el.querySelector('#colorPickerMode').getBoundingClientRect();
+   return {height:a.height,menuWidth:b.width,menuHeight:b.height,menuWithinNav:b.top>=a.top-1&&b.bottom<=a.bottom+1};
+  });
+  assert.ok(menuGeometry.menuWithinNav&&menuGeometry.menuWidth<=100,'Picker mode dropdown fits within Color/Palette row: '+JSON.stringify(menuGeometry));
+  assert.equal(await p.locator('.color-picker-modes').count(),0,'No extra mode row should consume editor height');
+  await mode.selectOption('classic');
   assert.ok(await p.locator('#colorPicker').isVisible(),'Classic wheel remains intact');
   assert.equal(await p.locator('#colorOrbitPicker').isVisible(),false,'Orbit starts hidden');
   const hex=p.locator('#colorHex');
   await hex.fill('#FF0000');await hex.press('Enter');
   assert.equal(await color(p),'#FF0000');
-  await p.locator('#colorModeOrbit').click();
+  await mode.selectOption('orbit');
   assert.ok(await p.locator('#colorOrbitPicker').isVisible());
   assert.equal(await p.locator('#colorPicker').isVisible(),false,'Classic is hidden in Orbit');
-  assert.equal(await p.locator('#colorModeOrbit').getAttribute('aria-pressed'),'true');
+  assert.equal(await mode.inputValue(),'orbit');
   assert.equal(await color(p),'#FF0000','Color state survives mode change');
   assert.ok(await p.locator('#colorValueChannels').isVisible(),'HSB/RGB controls remain visible in Orbit');
   const wheel=p.locator('#colorOrbitWheel');
@@ -83,6 +89,25 @@ async function run(kind,touch=false){
   await wheel.focus();await wheel.press('ArrowRight');
   assert.ok(Number(await wheel.getAttribute('aria-valuenow'))>=0,'Keyboard hue slider remains operable');
   const plane=p.locator('#colorOrbitPlane'),q=await plane.boundingBox();assert.ok(q?.width>100);
+  const svShape=await plane.evaluate(el=>{
+   const pane=el.getBoundingClientRect(),wheel=el.parentElement.querySelector('#colorOrbitWheel').getBoundingClientRect();
+   const wheelTopColor=wheel.top+wheel.height*(73-51)/160;
+   const style=getComputedStyle(el),outer=el.closest('.workspace-box');
+   return {width:pane.width,height:pane.height,borderRadius:style.borderRadius,clipPath:style.clipPath,transform:style.transform,gapToHueRing:wheelTopColor-pane.bottom,overflow:outer.scrollWidth-outer.clientWidth};
+  });
+  assert.ok(Math.abs(svShape.width-svShape.height)<1,'Orbit SV area must be a true 1:1 square: '+JSON.stringify(svShape));
+  assert.ok(svShape.transform==='none','SV panel must not be skewed or rotated');
+  assert.ok(svShape.clipPath==='none','SV panel must not be clipped into a trapezoid');
+  assert.ok(svShape.gapToHueRing>=2,'Orbit SV area must not overlap colored hue ring: '+JSON.stringify(svShape));
+  assert.ok(svShape.overflow<=3,'Orbit must not overflow narrow dock');
+  // All four SV corners remain physically within the colored panel.
+  const hitCorners=await plane.evaluate(el=>{
+   const r=el.getBoundingClientRect();return [[2,2],[r.width-2,2],[2,r.height-2],[r.width-2,r.height-2]].map(([x,y])=>{
+    const t=document.elementFromPoint(r.left+x,r.top+y);return t===el||el.contains(t);
+   });
+  });
+  assert.ok(hitCorners.every(Boolean),'SV panel corners must be available, without polygon clipping');
+  await p.screenshot({path:path.join(evidence,label+'-orbit.png')});
   if(touch)await p.touchscreen.tap(q.x+q.width*.28,q.y+q.height*.36);
   else await p.mouse.click(q.x+q.width*.28,q.y+q.height*.36);
   const hsv=await p.locator('input[name="colorModel"][value="HSV"]').check().then(async()=>[
@@ -91,7 +116,7 @@ async function run(kind,touch=false){
   ]);
   assert.ok(hsv[0]>15&&hsv[0]<50&&hsv[1]>50&&hsv[1]<83,'Orbit SV area updates shared HSB inputs: '+hsv);
   const prior=await color(p);
-  await p.locator('#colorModeClassic').click();
+  await mode.selectOption('classic');
   assert.equal(await color(p),prior,'Classic and Orbit use the exact same foreground color');
   assert.ok(await p.locator('#colorRing').isVisible());
   await p.locator('#colorShowPalette').click();
@@ -99,7 +124,7 @@ async function run(kind,touch=false){
   await p.locator('[data-color-action="add-current"]').click();
   assert.ok(await p.locator('#colorPaletteList .color-swatch').count()>0);
   await p.locator('#colorShowColor').click();
-  await p.locator('#colorModeOrbit').click();
+  await mode.selectOption('orbit');
   assert.equal(await color(p),prior,'Palette and mode changes must not reset the color');
   assert.equal(await p.evaluate(()=>localStorage.getItem('illustro-color-picker-mode')),'orbit','Display selection persists in local storage');
   const revisionNow=await p.locator('#canvas').getAttribute('data-current-revision');
@@ -122,9 +147,9 @@ async function run(kind,touch=false){
    else await p.locator('#workspaceToggle').click();
   }
   await p.locator('#colorShowColor').click();
-  assert.equal(await p.locator('#colorModeOrbit').getAttribute('aria-pressed'),'true','Mode persists across editor/Home roundtrip');
+  assert.equal(await mode.inputValue(),'orbit','Mode persists across editor/Home roundtrip');
   assert.equal(await color(p),prior,'Color survives Home roundtrip');
-  result.tests.push({label,mode:'classic/orbit',hue,hsv,dragColor,overflow,homeRoundtrip:true});
+  result.tests.push({label,mode:'classic/orbit',menuGeometry,svShape,hue,hsv,dragColor,overflow,homeRoundtrip:true});
  }catch(e){
   result.errors.push({label,error:String(e),stack:e.stack,console:logs});
   await p.screenshot({path:path.join(evidence,label+'-FAIL.png')}).catch(()=>{});
