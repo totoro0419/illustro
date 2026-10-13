@@ -41,7 +41,10 @@ export function installOrbitPicker(root:HTMLElement,options:{
   ctx.setTransform(w/320,0,0,h/160,0,0);ctx.clearRect(0,0,320,160);
   // Ground shadow and the darker front-facing thickness establish depth.
   ctx.beginPath();ctx.ellipse(160,91,146,53,0,0,Math.PI*2);
-  ctx.fillStyle='rgba(44,57,76,.13)';ctx.fill();
+  ctx.ellipse(160,91,97,31,0,0,Math.PI*2);
+  // The cast shadow is ring-shaped. Never fill the hole with a flat gray disk:
+  // the SV diamond must remain visibly joined through the transparent opening.
+  ctx.fillStyle='rgba(44,57,76,.13)';ctx.fill('evenodd');
   const n=240,step=2*Math.PI/n;
   for(let i=0;i<n/2;i++){
    const a=i*step,b=(i+1)*step+.008;
