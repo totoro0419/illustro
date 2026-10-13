@@ -1,3 +1,4 @@
+import {installOrbitPicker} from './orbit';
 import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
 
 const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as T;
@@ -16,10 +17,20 @@ export function colorMarkup():string {
   '<button type="button" id="colorShowPalette" role="tab" aria-controls="colorPaletteScreen" aria-selected="false" tabindex="-1">パレット</button>'+
  '</div>'+
  '<section id="colorScreen" role="tabpanel" aria-labelledby="colorShowColor" class="color-primary">'+
+  '<div class="color-picker-modes" role="group" aria-label="色選択の表示モード">'+
+   '<span class="color-picker-modes-label">表示</span>'+
+   '<button id="colorModeClassic" type="button" aria-pressed="true">クラシック</button>'+
+   '<button id="colorModeOrbit" type="button" aria-pressed="false">オービット</button>'+
+  '</div>'+
   '<div class="color-picker" id="colorPicker">'+
    '<div id="colorRing" class="color-ring" role="slider" tabindex="0" aria-label="色相" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></div>'+
    '<i id="colorHueMarker" class="color-ring-marker" aria-hidden="true"></i>'+
    '<div id="colorPlane" class="color-plane" role="group" aria-label="彩度と明度"><div class="color-plane-white"></div><div class="color-plane-black"></div><i id="colorSvMarker" class="color-sv-marker"></i></div>'+
+  '</div>'+
+  '<div id="colorOrbitPicker" class="color-orbit-picker" hidden aria-label="オービット色選択">'+
+   '<div id="colorOrbitPlane" class="color-orbit-plane" role="group" aria-label="彩度・明るさの調整"><div class="color-orbit-white"></div><div class="color-orbit-black"></div><span id="colorOrbitSvMarker" class="color-orbit-sv-marker" aria-hidden="true"></span></div>'+
+   '<canvas id="colorOrbitWheel" class="color-orbit-wheel" role="slider" tabindex="0" width="640" height="320" aria-label="色相。リングを左右にスライド" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></canvas>'+
+   '<span class="color-orbit-hint">色の輪を左右にスライドして色相を変更</span>'+
   '</div>'+
   '<label class="color-hex-label" for="colorHex"><span>カラーコード</span><input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" aria-describedby="colorHexError" value="#1F2633"></label>'+
   '<small id="colorHexError" class="color-error" role="status"></small>'+
@@ -59,6 +70,27 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   notice=id<HTMLElement>('colorActionNotice'),
   colorScreen=id<HTMLElement>('colorScreen'),paletteScreen=id<HTMLElement>('colorPaletteScreen'),
   showColor=id<HTMLButtonElement>('colorShowColor'),showPalette=id<HTMLButtonElement>('colorShowPalette');
+ const classicPicker=id<HTMLElement>('colorPicker'),orbitPicker=id<HTMLElement>('colorOrbitPicker'),
+  classicModeButton=id<HTMLButtonElement>('colorModeClassic'),orbitModeButton=id<HTMLButtonElement>('colorModeOrbit');
+ const readStoredMode=()=>{try{return localStorage.getItem('illustro-color-picker-mode');}catch{return null;}};
+ let pickerMode:'classic'|'orbit'='classic';
+ const orbit=installOrbitPicker(orbitPicker,{
+  getHue:()=>hueMemory,
+  getSv:()=>{const c=rgbToHsv(state.current);return {s:c.s,v:c.v};},
+  onPreview:(h,s,v)=>{hueMemory=h;state.preview(hsvToRgb(h,s,v));},
+  begin:()=>state.begin(),commit:()=>state.commit(),cancel:()=>state.cancel(),
+ });
+ function setPickerMode(mode:'classic'|'orbit',store=true){
+  pickerMode=mode;classicPicker.hidden=mode!=='classic';orbitPicker.hidden=mode!=='orbit';
+  classicModeButton.setAttribute('aria-pressed',String(mode==='classic'));
+  orbitModeButton.setAttribute('aria-pressed',String(mode==='orbit'));
+  const color=rgbToHsv(state.current);
+  if(mode==='orbit')orbit.reflect(hueMemory,color.s,color.v);
+  if(store){try{localStorage.setItem('illustro-color-picker-mode',mode);}catch{/* browser storage may be restricted */}}
+ }
+ classicModeButton.onclick=()=>setPickerMode('classic');
+ orbitModeButton.onclick=()=>setPickerMode('orbit');
+ setPickerMode(readStoredMode()==='orbit'?'orbit':'classic',false);
  let channelEditing=false,editingHex=false;
  const selectScreen=(next:'color'|'palette',focus=false)=>{
   colorScreen.hidden=next!=='color';paletteScreen.hidden=next!=='palette';
@@ -82,6 +114,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const marker=id<HTMLElement>('colorSvMarker');marker.style.left=(hsv.s*100)+'%';marker.style.top=((1-hsv.v)*100)+'%';
   ring.setAttribute('aria-valuenow',String(Math.round(hueMemory)%360));
   ring.setAttribute('aria-valuetext','色相 '+Math.round(hueMemory)+'度');
+  if(pickerMode==='orbit')orbit.reflect(hueMemory,hsv.s,hsv.v);
   if(document.activeElement!==hexField)hexField.value=hex(c);
   if(!channelEditing)updateChannels();
   for(const el of document.querySelectorAll<HTMLButtonElement>('.color-swatch')){
@@ -89,7 +122,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   }
   options.onBrushColor();
  }
- current.onclick=()=>{ring.focus({preventScroll:true});};
+ current.onclick=()=>{(pickerMode==='orbit'?id<HTMLElement>('colorOrbitWheel'):ring).focus({preventScroll:true});};
  previous.onclick=()=>state.choose(state.previous);
  const commitHex=()=>{if(!editingHex)return;const parsed=fromHex(hexField.value);
   if(!parsed){id('colorHexError').textContent='#の後に6桁の英数字を入力してください。';if(document.activeElement!==hexField){editingHex=false;state.cancel();hexField.value=hex(state.current);}return;}
@@ -220,5 +253,5 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  };
  const unsubscribe=state.subscribe(()=>{reflect();if(!state.isEditing)renderCollections();});
  renderChannels();reflect();renderCollections();
- return {destroy:unsubscribe,showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1){model='RGB';(document.querySelector<HTMLInputElement>('input[name="colorModel"][value="RGB"]')!).checked=true;renderChannels();}}};
+ return {destroy:()=>{unsubscribe();orbit.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1){model='RGB';(document.querySelector<HTMLInputElement>('input[name="colorModel"][value="RGB"]')!).checked=true;renderChannels();}}};
 }
