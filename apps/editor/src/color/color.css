@@ -189,7 +189,7 @@
 /* Canvas transparency exposes the diamond underneath the inner opening.
    The colored ring itself is in front, so it can be traced all the way around. */
 .color-orbit-wheel{
- position:absolute;z-index:2;left:0;top:44%;width:100%;
+ position:absolute;z-index:2;left:0;top:48%;width:100%;
  height:auto;aspect-ratio:2/1;display:block;
  cursor:grab;touch-action:none;outline:none;
 }
