@@ -83,7 +83,7 @@ async function run(kind,touch=false){
    const pixel=ctx.getImageData(Math.round(el.width/2),Math.round(el.height*73/160),1,1).data;
    return {background:bg,holeAlpha:pixel[3]};
   });
-  assert.match(wheelOpacity.background,/^rgba?\\(0, 0, 0, 0\\)$/,'Orbit canvas must have a transparent CSS background, not the global white canvas fill: '+JSON.stringify(wheelOpacity));
+  assert.ok(wheelOpacity.background==='rgba(0, 0, 0, 0)'||wheelOpacity.background==='transparent','Orbit canvas must have a transparent CSS background, not the global white canvas fill: '+JSON.stringify(wheelOpacity));
   assert.equal(wheelOpacity.holeAlpha,0,'Inner hole must stay transparent, never a shadow-filled gray disk');
   const b=await wheel.boundingBox();assert.ok(b?.width>210);
   const x=b.x+b.width/2,y=b.y+b.height*114/160;
