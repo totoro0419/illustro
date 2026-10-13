@@ -33,7 +33,7 @@ describe('sparse checkpoint publication durability',()=>{
  it('M09 indexes without a content digest still restore',async()=>{
   const store=new MemoryStore();await save(store,oldRevision,[tile('0,0',10)]);
   const original=store.files.get('session/projection-v2.frame')!,length=new DataView(original.buffer).getUint32(8,true),index=JSON.parse(new TextDecoder().decode(original.subarray(12,12+length)));
-  const descriptor=index.tiles[0],from='session/projection-v2/'+surfaceId+'/0:0.'+descriptor.digest+'.bin';store.files.set('session/projection-v2/'+surfaceId+'/0:0.bin',store.files.get(from)!);delete descriptor.digest;
+  const descriptor=index.tiles[0],from='session/projection-v2/'+surfaceId+'/0:0.'+descriptor.digest+'.bin';store.files.set('session/projection-v2/'+surfaceId+'/0:0.bin',store.files.get(from)!);delete descriptor.digest;index.version=2;
   const bytes=new TextEncoder().encode(JSON.stringify(index)),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),frame=new Uint8Array(12+bytes.length+32);
   frame.set(new TextEncoder().encode('ILJRNL01'));new DataView(frame.buffer).setUint32(8,bytes.length,true);frame.set(bytes,12);frame.set(hash,12+bytes.length);store.files.set('session/projection-v2.frame',frame);
   expect((await load(store))?.layers[0]?.pixels[0]).toBe(10);

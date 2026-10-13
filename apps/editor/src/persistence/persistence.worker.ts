@@ -9,7 +9,7 @@ type Entry={name:string;kind:'file'|'directory'};
 type StoreMode='opfs-sync'|'opfs-async'|'indexeddb';
 type ProjectionEncoding='raw-rgba8'|'gzip-rgba8';
 type ProjectionIndex=Readonly<{version:1;generationId:string;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
-type ProjectionDeltaIndex=Readonly<{version:2;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number;digest?:string}>[]}>;
+type ProjectionDeltaIndex=Readonly<{version:2|3;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number;digest?:string}>[]}>;
 type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>;
 
 const out=self as unknown as {postMessage:(value:unknown,transfer?:Transferable[])=>void};
@@ -229,7 +229,7 @@ export async function storeProjectionDelta(store:WorkingStore,session:Session,re
     if(!existing||await digestHex(existing)!==hash)await putVerified(store,target,encoded.bytes);
     map.set(id,descriptor);
   }
-  const index:ProjectionDeltaIndex=Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
+  const index:ProjectionDeltaIndex=Object.freeze({version:3 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
   await putVerified(store,path,await frameJson(index));
   }catch(error){
     const saved=await store.get(path).catch(()=>null);
@@ -254,10 +254,10 @@ export async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,
   }catch{return null;}
 }
 function parseProjectionDeltaIndex(value:unknown):ProjectionDeltaIndex{
-  if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2)throw new Error('unsupported projection delta index');
+  if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2&&x.version!==3)throw new Error('unsupported projection delta index');
   const revisionId=uuid(x.revisionId,'projection revision'),width=dimension(x.width,'projection width'),height=dimension(x.height,'projection height'),tileSize=integer(x.tileSize,'projection tile size',1),surfaceIds=stringArray(x.surfaceIds,'projection surfaces').map(v=>uuid(v,'projection surface'));
   if(tileSize>1024||!Array.isArray(x.tiles)||x.tiles.length>1000000)throw new Error('invalid projection delta tiles');const seen=new Set<string>(),tiles=x.tiles.map(value=>{if(!value||typeof value!=='object')throw new Error('invalid projection delta tile');const item=value as Record<string,unknown>,surfaceId=uuid(item.surfaceId,'projection surface'),key=tileKey(item.key),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection delta tile');seen.add(id);const encoding=projectionEncoding(item.encoding),rawLength=integer(item.rawLength,'projection tile length',0);if(rawLength!==tileSize*tileSize*4)throw new Error('projection tile size mismatch');const digest=item.digest;if(digest!==undefined&&(typeof digest!=='string'||!(/^[0-9a-f]{64}$/).test(digest)))throw new Error('invalid projection tile digest');return Object.freeze({surfaceId,key,encoding,rawLength,...(typeof digest==='string'?{digest}:{})});});
-  return Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze(surfaceIds),tiles:Object.freeze(tiles)});
+  return Object.freeze({version:x.version as 2|3,revisionId,width,height,tileSize,surfaceIds:Object.freeze(surfaceIds),tiles:Object.freeze(tiles)});
 }
 function projectionTileInputs(value:unknown,tileSize:number){
   if(!Array.isArray(value)||value.length>1000000)throw new Error('invalid projection tile list');const expected=tileSize*tileSize*4,seen=new Set<string>();
