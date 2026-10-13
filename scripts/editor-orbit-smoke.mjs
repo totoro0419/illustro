@@ -76,6 +76,15 @@ async function run(kind,touch=false){
   assert.equal(await color(p),'#FF0000','Color state survives mode change');
   assert.ok(await p.locator('#colorValueChannels').isVisible(),'HSB/RGB controls remain visible in Orbit');
   const wheel=p.locator('#colorOrbitWheel');
+  await p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const wheelOpacity=await wheel.evaluate(el=>{
+   const bg=getComputedStyle(el).backgroundColor;
+   const ctx=el.getContext('2d');
+   const pixel=ctx.getImageData(Math.round(el.width/2),Math.round(el.height*73/160),1,1).data;
+   return {background:bg,holeAlpha:pixel[3]};
+  });
+  assert.match(wheelOpacity.background,/^rgba?\\(0, 0, 0, 0\\)$/,'Orbit canvas must have a transparent CSS background, not the global white canvas fill: '+JSON.stringify(wheelOpacity));
+  assert.equal(wheelOpacity.holeAlpha,0,'Inner hole must stay transparent, never a shadow-filled gray disk');
   const b=await wheel.boundingBox();assert.ok(b?.width>210);
   const x=b.x+b.width/2,y=b.y+b.height*114/160;
   await p.mouse.move(x,y);await p.mouse.down();await p.mouse.move(x+86,y,{steps:12});await p.mouse.up();
