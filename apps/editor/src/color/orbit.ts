@@ -3,7 +3,8 @@ import {clamp,hex,hsvToRgb} from './model';
 /**
  * Orbit hue selector: a deliberately light Canvas2D rendering of a tilted, thick
  * HSV wheel. The displayed hue travels under the front marker when dragged
- * horizontally (front arc) or by rotating the upper arc clockwise/counterclockwise.\n * Color stays in the shared ForegroundColor model.
+ * horizontally (front arc) or by tracing the upper arc clockwise/counterclockwise.
+ * Color stays in the shared ForegroundColor model.
  */
 export function installOrbitPicker(root:HTMLElement,options:{
  getHue:()=>number;
@@ -88,14 +89,19 @@ export function installOrbitPicker(root:HTMLElement,options:{
   const b=wheel.getBoundingClientRect();
   return {x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*160/b.height};
  };
- const wheelHit=(e:PointerEvent)=>{
-  const b=wheel.getBoundingClientRect();if(!b.width||!b.height)return false;
+ // Separate painted ring pixels from a slightly forgiving touch region.
+ // A foreground diamond can visually overlap the hole, but must never steal
+ // a gesture started on the visible, colored upper arc of the wheel.
+ const wheelBand=(e:PointerEvent)=>{
+  const b=wheel.getBoundingClientRect();
+  if(!b.width||!b.height)return {painted:false,near:false};
   const {x,y}=wheelPoint(e);
   const outer=Math.hypot((x-radius.cx)/radius.outerX,(y-radius.cy)/radius.outerY);
   const inner=Math.hypot((x-radius.cx)/radius.innerX,(y-radius.cy)/radius.innerY);
-  // Coarse-pointer slop is confined to the actual elliptical band. It may
-  // never extend into the SV diamond: wheel ownership is decided first.
-  return outer<=(y<radius.cy?1.12:1.20)&&inner>=.84;
+  return {
+   painted:outer<=1.055&&inner>=.96,
+   near:outer<=1.27&&inner>=.78,
+  };
  };
  const planeLocal=(e:PointerEvent)=>{
   const b=plane.getBoundingClientRect(),side=plane.offsetWidth;
@@ -132,12 +138,18 @@ export function installOrbitPicker(root:HTMLElement,options:{
  // avoids the rotated diamond stealing touches from the upper hue ring.
  root.addEventListener('pointerdown',e=>{
   if(drag!==null)return;
-  const hitRing=wheelHit(e),hitSv=!hitRing&&planeHit(e);
+  const band=wheelBand(e),insideSv=planeHit(e);
+  // Always select a real color-ring pixel, even when the diamond's
+  // rectangular bounding box overlaps the wheel. Use the wider touch
+  // tolerance only outside the actual diamond geometry.
+  const hitRing=band.painted||(band.near&&!insideSv);
+  const hitSv=!hitRing&&insideSv;
   if(!hitRing&&!hitSv)return;
   const mode=hitRing?(wheelPoint(e).y<radius.cy?'rotate':'slide'):'sv';
   const angle=hitRing?ellipseAngle(e):0;
   drag={id:e.pointerId,part:hitRing?'wheel':'plane',mode,startX:e.clientX,
    startHue:options.getHue(),lastAngle:angle,angleTravel:0};
+  root.dataset.orbitGesture=mode;
   options.begin();
   root.setPointerCapture(e.pointerId);
   if(mode==='sv')previewPlane(e);
@@ -156,21 +168,12 @@ export function installOrbitPicker(root:HTMLElement,options:{
   }
   // At the BACK/UPPER arc, dragging right naturally rotates the colored
   // wheel clockwise. Hue decreases because the wheel art is color(hue+angle).
-  // Accumulate shortest angular steps to prevent jumps crossing ±180°.
-  const points=e.getCoalescedEvents?.()||[];
-  const samples=points.length?points:[e];
-  for(const p of samples){
-   const angle=ellipseAngle(p);
-   const step=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
-   drag.angleTravel+=step;
-   drag.lastAngle=angle;
-  }
-  // The last coalesced point may precede the event's terminal position.
-  if(samples[samples.length-1]!==e){
-   const angle=ellipseAngle(e);
-   drag.angleTravel+=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
-   drag.lastAngle=angle;
-  }
+  // Accumulate the shortest angular step around the ellipse. Using the
+  // current pointer location directly avoids duplicate/out-of-order
+  // coalesced samples on styluses and touch screens.
+  const angle=ellipseAngle(e);
+  drag.angleTravel+=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
+  drag.lastAngle=angle;
   previewHue(drag.startHue-drag.angleTravel*180/Math.PI);
  };
  root.addEventListener('pointermove',update);
