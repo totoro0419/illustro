@@ -29,8 +29,17 @@ try{
    r.setPerformanceEnabled?.(true);const b=r.backend,results=[];let renderCalls=0,compositions=0,presentCalls=0;
    const render=b.render.bind(b),present=b.presentCurrent.bind(b);
    b.render=(...args)=>{renderCalls++;compositions+=b.dirtyConfirmed.size;return render(...args);};
-   let samples=null;
-   b.presentCurrent=(...args)=>{presentCalls++;if(samples)samples.push(performance.now());return present(...args);};
+   let samples=null,presentationEncoded=false;
+   const submitted=()=>{presentCalls++;if(samples)samples.push(performance.now());};
+   if(b.device){
+    const encode=b.encodePresentation.bind(b),submit=b.device.queue.submit.bind(b.device.queue);
+    b.encodePresentation=(...args)=>{const result=encode(...args);presentationEncoded=true;return result;};
+    b.device.queue.submit=(...args)=>{const result=submit(...args);if(presentationEncoded){submitted();presentationEncoded=false;}return result;};
+   }else{
+    const flush=b.gl.flush.bind(b.gl);
+    b.presentCurrent=(...args)=>{presentationEncoded=true;return present(...args);};
+    b.gl.flush=(...args)=>{const result=flush(...args);if(presentationEncoded){submitted();presentationEncoded=false;}return result;};
+   }
    const base=new Float32Array([800,600,800,600,size,size===512?384:size,Math.min(1,500/size),0,0,0,1,1,0,0,0,0]);
    const settleFixture=async()=>{const frame=r.frame;r.frame=function(now){this.formalQuantum=256;return frame.call(this,now);};try{await r.drain();}finally{r.frame=frame;}};
    r.setViewTransform(base);await settleFixture();let count=0;
@@ -60,7 +69,7 @@ try{
    }
    r.destroy();return results;
   },{kind,size,layers,quick:process.env.PERF_QUICK==='1'});
-  for(const item of result){assert.equal(item.strokeReplayDuringMovement,0);if(!report.baseline)assert.ok(item.renderCalls<=1,'movement must only present; final drain may render');}
+  for(const item of result){assert.ok(item.presentationSubmissions>0,'every measured workload needs observed GPU presentation submissions');assert.equal(item.strokeReplayDuringMovement,0);if(!report.baseline)assert.ok(item.renderCalls<=1,'movement must only present; final drain may render');}
   await page.close();
   console.log(kind,size,layers,'measured');
  }
