@@ -15,13 +15,9 @@ export function colorMarkup():string {
  '<div class="color-mode-switch" role="tablist" aria-label="カラーウィンドウ">'+
   '<button type="button" id="colorShowColor" role="tab" aria-controls="colorScreen" aria-selected="true" tabindex="0">カラー</button>'+
   '<button type="button" id="colorShowPalette" role="tab" aria-controls="colorPaletteScreen" aria-selected="false" tabindex="-1">パレット</button>'+
+  '<select id="colorPickerMode" aria-label="色選択の表示モード" title="色選択の表示モード"><option value="classic">クラシック</option><option value="orbit">オービット</option></select>'+
  '</div>'+
  '<section id="colorScreen" role="tabpanel" aria-labelledby="colorShowColor" class="color-primary">'+
-  '<div class="color-picker-modes" role="group" aria-label="色選択の表示モード">'+
-   '<span class="color-picker-modes-label">表示</span>'+
-   '<button id="colorModeClassic" type="button" aria-pressed="true">クラシック</button>'+
-   '<button id="colorModeOrbit" type="button" aria-pressed="false">オービット</button>'+
-  '</div>'+
   '<div class="color-picker" id="colorPicker">'+
    '<div id="colorRing" class="color-ring" role="slider" tabindex="0" aria-label="色相" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></div>'+
    '<i id="colorHueMarker" class="color-ring-marker" aria-hidden="true"></i>'+
@@ -71,7 +67,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   colorScreen=id<HTMLElement>('colorScreen'),paletteScreen=id<HTMLElement>('colorPaletteScreen'),
   showColor=id<HTMLButtonElement>('colorShowColor'),showPalette=id<HTMLButtonElement>('colorShowPalette');
  const classicPicker=id<HTMLElement>('colorPicker'),orbitPicker=id<HTMLElement>('colorOrbitPicker'),
-  classicModeButton=id<HTMLButtonElement>('colorModeClassic'),orbitModeButton=id<HTMLButtonElement>('colorModeOrbit');
+  modeSelect=id<HTMLSelectElement>('colorPickerMode');
  const readStoredMode=()=>{try{return localStorage.getItem('illustro-color-picker-mode');}catch{return null;}};
  let pickerMode:'classic'|'orbit'='classic';
  const orbit=installOrbitPicker(orbitPicker,{
@@ -82,20 +78,20 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  });
  function setPickerMode(mode:'classic'|'orbit',store=true){
   pickerMode=mode;classicPicker.hidden=mode!=='classic';orbitPicker.hidden=mode!=='orbit';
-  classicModeButton.setAttribute('aria-pressed',String(mode==='classic'));
-  orbitModeButton.setAttribute('aria-pressed',String(mode==='orbit'));
+  modeSelect.value=mode;
   const color=rgbToHsv(state.current);
   if(mode==='orbit')orbit.reflect(hueMemory,color.s,color.v);
   if(store){try{localStorage.setItem('illustro-color-picker-mode',mode);}catch{/* browser storage may be restricted */}}
  }
- classicModeButton.onclick=()=>setPickerMode('classic');
- orbitModeButton.onclick=()=>setPickerMode('orbit');
+ modeSelect.onchange=()=>setPickerMode(modeSelect.value==='orbit'?'orbit':'classic');
  setPickerMode(readStoredMode()==='orbit'?'orbit':'classic',false);
  let channelEditing=false,editingHex=false;
  const selectScreen=(next:'color'|'palette',focus=false)=>{
   colorScreen.hidden=next!=='color';paletteScreen.hidden=next!=='palette';
   showColor.setAttribute('aria-selected',String(next==='color'));showPalette.setAttribute('aria-selected',String(next==='palette'));
   showColor.tabIndex=next==='color'?0:-1;showPalette.tabIndex=next==='palette'?0:-1;
+  modeSelect.hidden=next!=='color';
+  modeSelect.parentElement?.classList.toggle('color-no-picker-mode',next!=='color');
   if(focus)(next==='color'?showColor:showPalette).focus();
  };
  showColor.onclick=()=>selectScreen('color');showPalette.onclick=()=>selectScreen('palette');
