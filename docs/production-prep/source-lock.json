@@ -206,7 +206,7 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "dad6790e3c3cf7a7c56f8d614bf524911976e889f81a7954a98b0c9927d6e590",
+      "sha256": "87e6fcf62ff3eae7582b8b4c66e75738628547b9e9eeddeac6bba224279e446b",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required."
     },
     {
@@ -322,7 +322,7 @@
     {
       "path": "packages/brush-rt/src/minification.mjs",
       "sourceCommit": "e04d3e29ab162d487d0c774524323bf49c684a4d",
-      "sha256": "d2c71f52cd2041cb8bb93358e160eb3aaa76902295b9459c033fcabe372db5c2",
+      "sha256": "496de3488263ec1456805352a4d19caa623f9cae041d93afd727bb529fa27012",
       "performanceException": "Derived display cache, original pixels unchanged."
     }
   ],

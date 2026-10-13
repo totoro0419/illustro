@@ -21,3 +21,7 @@ test('100 percent and exact-pixel views keep the original source',()=>{
  const {p,v,calls}=cache();v[6]=1;assert.equal(p.source(v).scale,1);assert.equal(calls.length,0);
  v[6]=.125;v[13]=1;assert.equal(p.source(v).source.id,0);
 });
+test('odd seamless dimensions preserve the original repetition period',()=>{
+ const {p,v,calls}=cache();p.backend.width=513;p.backend.height=385;v[4]=513;v[5]=385;v[6]=.125;v[12]=1;
+ const result=p.source(v);assert.equal(result.source.id,0);assert.equal(result.scale,1);assert.equal(calls.length,0);
+});

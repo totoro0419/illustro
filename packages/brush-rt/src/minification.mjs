@@ -22,6 +22,8 @@ export class PresentationPyramid{
   const footprint=Math.max(view[2]/view[0],view[3]/view[1])/view[6];
   const wanted=Math.max(0,Math.min(Math.floor(Math.log2(footprint)),Math.ceil(Math.log2(Math.max(b.width,b.height)))));
   if(!wanted)return {source:base,scale:1};
+  // Padded odd-size levels must not change the seamless repetition period.
+  if(view[12]>.5&&(b.width%(2**wanted)||b.height%(2**wanted)))return {source:base,scale:1};
   this.initialize();let source=base,w=b.width,h=b.height;
   const rects=this.full?null:[...this.dirty].map(key=>{const [x,y]=key.split(',').map(Number);return [x*128,b.gl?Math.max(0,b.height-(y+1)*128):y*128,Math.min(b.width,(x+1)*128),b.gl?b.height-y*128:Math.min(b.height,(y+1)*128)];});
   for(let i=0;i<wanted;i++){
