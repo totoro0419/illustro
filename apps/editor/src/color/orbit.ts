@@ -3,7 +3,7 @@ import {clamp,hex,hsvToRgb} from './model';
 /**
  * Orbit hue selector: a deliberately light Canvas2D rendering of a tilted, thick
  * HSV wheel. The displayed hue travels under the front marker when dragged
- * horizontally; color stays in the shared ForegroundColor model.
+ * horizontally (front arc) or by rotating the upper arc clockwise/counterclockwise.\n * Color stays in the shared ForegroundColor model.
  */
 export function installOrbitPicker(root:HTMLElement,options:{
  getHue:()=>number;
@@ -16,7 +16,8 @@ export function installOrbitPicker(root:HTMLElement,options:{
  const wheel=root.querySelector<HTMLCanvasElement>('#colorOrbitWheel')!;
  const plane=root.querySelector<HTMLElement>('#colorOrbitPlane')!;
  const point=root.querySelector<HTMLElement>('#colorOrbitSvMarker')!;
- let hue=options.getHue(),frame=0,drag:{id:number;part:'wheel'|'plane';startX:number;startHue:number}|null=null;
+ type Drag={id:number;part:'wheel'|'plane';mode:'slide'|'rotate'|'sv';startX:number;startHue:number;lastAngle:number;angleTravel:number};
+ let hue=options.getHue(),frame=0,drag:Drag|null=null;
  const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false;
  void reduceMotion; // No inertial animation: color control tracks the input exactly.
  const radius={cx:160,cy:73,outerX:146,outerY:51,innerX:97,innerY:31,depth:13};
@@ -82,18 +83,37 @@ export function installOrbitPicker(root:HTMLElement,options:{
   ctx.beginPath();ctx.moveTo(151,109);ctx.lineTo(169,109);ctx.lineTo(160,129);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
  }
  const request=()=>{if(!frame)frame=requestAnimationFrame(render);};
- const dimensions=()=>{
-  const r=wheel.getBoundingClientRect();
-  return {w:r.width,h:r.height};
+ // Coordinate helpers always use painted geometry, not the canvas's rectangular box.
+ const wheelPoint=(e:PointerEvent)=>{
+  const b=wheel.getBoundingClientRect();
+  return {x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*160/b.height};
  };
  const wheelHit=(e:PointerEvent)=>{
   const b=wheel.getBoundingClientRect();if(!b.width||!b.height)return false;
-  const x=(e.clientX-b.left)*320/b.width,y=(e.clientY-b.top)*160/b.height;
+  const {x,y}=wheelPoint(e);
   const outer=Math.hypot((x-radius.cx)/radius.outerX,(y-radius.cy)/radius.outerY);
   const inner=Math.hypot((x-radius.cx)/radius.innerX,(y-radius.cy)/radius.innerY);
-  return outer<=1.16&&inner>=.77;
+  // Coarse-pointer slop is confined to the actual elliptical band. It may
+  // never extend into the SV diamond: wheel ownership is decided first.
+  return outer<=(y<radius.cy?1.12:1.20)&&inner>=.84;
  };
- void dimensions;
+ const planeLocal=(e:PointerEvent)=>{
+  const b=plane.getBoundingClientRect(),side=plane.offsetWidth;
+  // Invert the same clockwise 45° CSS rotation used by Classic.
+  const dx=e.clientX-b.left-b.width/2,dy=e.clientY-b.top-b.height/2;
+  return {s:.5+(dx+dy)/(Math.SQRT2*side),v:1-(.5+(-dx+dy)/(Math.SQRT2*side))};
+ };
+ const planeHit=(e:PointerEvent)=>{
+  if(!plane.offsetWidth)return false;
+  const {s,v}=planeLocal(e);
+  return s>=0&&s<=1&&v>=0&&v<=1;
+ };
+ const ellipseAngle=(e:PointerEvent)=>{
+  const {x,y}=wheelPoint(e);
+  // Normalize the ellipse before measuring angles so a dragged finger follows
+  // the physical 3D wheel rather than an unrelated horizontal slider.
+  return Math.atan2((y-radius.cy)/radius.outerY,(x-radius.cx)/radius.outerX);
+ };
  function reflect(h:number,s:number,v:number){
   hue=h;
   point.style.left=(clamp(s)*100)+'%';
@@ -107,21 +127,65 @@ export function installOrbitPicker(root:HTMLElement,options:{
   const sv=options.getSv();
   options.onPreview((next%360+360)%360,sv.s,sv.v);
  }
- wheel.addEventListener('pointerdown',e=>{
-  if(drag||!wheelHit(e))return;
-  drag={id:e.pointerId,part:'wheel',startX:e.clientX,startHue:options.getHue()};
-  options.begin();wheel.setPointerCapture(e.pointerId);e.preventDefault();
+ // A gesture is owned by its initial control until release, even if the
+ // finger crosses the other surface. Routing on the parent in capture phase
+ // avoids the rotated diamond stealing touches from the upper hue ring.
+ root.addEventListener('pointerdown',e=>{
+  if(drag!==null)return;
+  const hitRing=wheelHit(e),hitSv=!hitRing&&planeHit(e);
+  if(!hitRing&&!hitSv)return;
+  const mode=hitRing?(wheelPoint(e).y<radius.cy?'rotate':'slide'):'sv';
+  const angle=hitRing?ellipseAngle(e):0;
+  drag={id:e.pointerId,part:hitRing?'wheel':'plane',mode,startX:e.clientX,
+   startHue:options.getHue(),lastAngle:angle,angleTravel:0};
+  options.begin();
+  root.setPointerCapture(e.pointerId);
+  if(mode==='sv')previewPlane(e);
+  e.preventDefault();
+ },{capture:true});
+ const previewPlane=(e:PointerEvent)=>{
+  const {s,v}=planeLocal(e);
+  options.onPreview(options.getHue(),clamp(s),clamp(v));
+ };
+ const update=(e:PointerEvent)=>{
+  if(!drag||drag.id!==e.pointerId)return;
+  if(drag.mode==='sv'){previewPlane(e);return;}
+  if(drag.mode==='slide'){
+   // Preserve the familiar horizontal slide on the front-facing arc.
+   previewHue(drag.startHue+(e.clientX-drag.startX)*1.15);return;
+  }
+  // At the BACK/UPPER arc, dragging right naturally rotates the colored
+  // wheel clockwise. Hue decreases because the wheel art is color(hue+angle).
+  // Accumulate shortest angular steps to prevent jumps crossing ±180°.
+  const points=e.getCoalescedEvents?.()||[];
+  const samples=points.length?points:[e];
+  for(const p of samples){
+   const angle=ellipseAngle(p);
+   const step=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
+   drag.angleTravel+=step;
+   drag.lastAngle=angle;
+  }
+  // The last coalesced point may precede the event's terminal position.
+  if(samples[samples.length-1]!==e){
+   const angle=ellipseAngle(e);
+   drag.angleTravel+=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
+   drag.lastAngle=angle;
+  }
+  previewHue(drag.startHue-drag.angleTravel*180/Math.PI);
+ };
+ root.addEventListener('pointermove',update);
+ root.addEventListener('pointerup',e=>{
+  if(!drag||drag.id!==e.pointerId)return;
+  update(e);drag=null;options.commit();
  });
- wheel.addEventListener('pointermove',e=>{
-  if(!drag||drag.id!==e.pointerId||drag.part!=='wheel')return;
-  previewHue(drag.startHue+(e.clientX-drag.startX)*1.15);
+ root.addEventListener('pointercancel',e=>{
+  if(!drag||drag.id!==e.pointerId)return;
+  drag=null;options.cancel();
  });
- wheel.addEventListener('pointerup',e=>{
-  if(!drag||drag.id!==e.pointerId||drag.part!=='wheel')return;
-  previewHue(drag.startHue+(e.clientX-drag.startX)*1.15);drag=null;options.commit();
+ root.addEventListener('lostpointercapture',e=>{
+  if(!drag||drag.id!==e.pointerId)return;
+  drag=null;options.cancel();
  });
- wheel.addEventListener('pointercancel',e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;options.cancel();});
- wheel.addEventListener('lostpointercapture',e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;options.cancel();});
  wheel.addEventListener('keydown',e=>{
   const step=e.key==='ArrowRight'||e.key==='ArrowUp'?1:e.key==='ArrowLeft'||e.key==='ArrowDown'?-1:e.key==='PageUp'?10:e.key==='PageDown'?-10:null;
   if(step===null&&e.key!=='Home'&&e.key!=='End')return;
@@ -129,23 +193,6 @@ export function installOrbitPicker(root:HTMLElement,options:{
   previewHue(e.key==='Home'?0:e.key==='End'?359:options.getHue()+step!);
   options.commit();
  });
- const previewPlane=(e:PointerEvent)=>{
-  const b=plane.getBoundingClientRect();
-  const s=clamp((e.clientX-b.left)/b.width),v=1-clamp((e.clientY-b.top)/b.height);
-  options.onPreview(options.getHue(),s,v);
- };
- plane.addEventListener('pointerdown',e=>{
-  if(drag)return;
-  drag={id:e.pointerId,part:'plane',startX:e.clientX,startHue:options.getHue()};
-  options.begin();plane.setPointerCapture(e.pointerId);previewPlane(e);e.preventDefault();
- });
- plane.addEventListener('pointermove',e=>{if(drag?.part==='plane'&&drag.id===e.pointerId)previewPlane(e);});
- plane.addEventListener('pointerup',e=>{
-  if(drag?.part!=='plane'||drag.id!==e.pointerId)return;
-  previewPlane(e);drag=null;options.commit();
- });
- plane.addEventListener('pointercancel',e=>{if(drag?.part!=='plane'||drag.id!==e.pointerId)return;drag=null;options.cancel();});
- plane.addEventListener('lostpointercapture',e=>{if(drag?.part!=='plane'||drag.id!==e.pointerId)return;drag=null;options.cancel();});
  const observer=new ResizeObserver(request);observer.observe(wheel);
  return {reflect,request,destroy:()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame);}};
 }
