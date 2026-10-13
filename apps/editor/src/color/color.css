@@ -153,25 +153,55 @@
 }
 
 
-/* M09 color display modes — minimal, integrated with Color / Palette navigation.
-   Orbit's SV plane is an axis-aligned square: no polygon clipping, skew or distortion.
-   Relative geometry scales identically for desktop and narrow touch workspaces. */
+/* M09: compact mode switch shared by Classic and Orbit. */
 .color-mode-switch{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,96px);gap:3px}
 .color-mode-switch.color-no-picker-mode{grid-template-columns:repeat(2,minmax(0,1fr))}
 .color-mode-switch #colorPickerMode{appearance:auto;box-sizing:border-box;min-width:0;width:100%;height:40px;min-height:40px;align-self:center;border:1px solid var(--a-border-strong);border-radius:7px;padding:0 2px 0 6px;background:#fff;color:var(--a-text);font-size:11px;font-weight:650;cursor:pointer}
 .color-mode-switch #colorPickerMode:focus-visible{outline:2px solid var(--a-focus);outline-offset:1px}
 .color-mode-switch #colorPickerMode[hidden]{display:none!important}
 #colorPicker[hidden],#colorOrbitPicker[hidden]{display:none!important}
-.color-orbit-picker{position:relative;width:min(306px,100%);height:auto;aspect-ratio:1;min-width:0;margin:2px auto 3px;overflow:hidden;user-select:none;isolation:isolate}
-/* Actual 1:1 SV square, precisely centered. Color values match coordinates. */
-.color-orbit-plane{position:absolute;z-index:2;top:2%;left:26.5%;width:47%;height:auto;aspect-ratio:1;box-sizing:border-box;border:1px solid rgba(52,69,94,.32);border-radius:7px;background:var(--pure,#f33);box-shadow:0 2px 6px rgba(30,48,73,.12),0 0 0 3px rgba(255,255,255,.72);touch-action:none;cursor:crosshair;overflow:visible}
-/* No nonrectangular clipping: the full gamut including all four extremes is accessible. */
-.color-orbit-white,.color-orbit-black{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+
+/* The diamond leans toward the rear lip of the Orbit wheel. Its 45°-rotated
+   visible bounds fit above the wheel rim with a narrow, consistent join.
+   The wheel artwork is unchanged; only its position relative to SV changes. */
+.color-orbit-picker{
+ position:relative;width:min(306px,100%);height:auto;aspect-ratio:1;
+ min-width:0;margin:2px auto 3px;overflow:hidden;user-select:none;
+ isolation:isolate;touch-action:none;
+}
+.color-orbit-picker::before{
+ content:"";position:absolute;z-index:1;pointer-events:none;
+ left:calc(50% - 1.5px);top:48.4%;height:4.5%;width:3px;
+ border-radius:3px;background:linear-gradient(#73819a96,#eff4f8);
+}
+.color-orbit-plane{
+ position:absolute;z-index:2;
+ top:8%;left:33%;width:34%;height:auto;aspect-ratio:1;
+ box-sizing:border-box;transform:rotate(45deg);transform-origin:center;
+ border:1px solid rgba(52,69,94,.5);border-radius:3px;
+ background:var(--pure,#f33);
+ box-shadow:0 1px 5px rgba(30,48,73,.18),0 0 0 2px rgba(255,255,255,.88);
+ touch-action:none;cursor:crosshair;overflow:visible;
+}
+.color-orbit-white,.color-orbit-black{position:absolute;inset:0;pointer-events:none;border-radius:inherit}
 .color-orbit-white{background:linear-gradient(to right,#fff,transparent)}
 .color-orbit-black{background:linear-gradient(to top,#000,transparent)}
-.color-orbit-sv-marker{position:absolute;z-index:3;width:17px;height:17px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.4px #263344,0 1px 4px #23344880;transform:translate(-50%,-50%);pointer-events:none}
-/* Ring visuals and left/right wheel interaction are unchanged. Its top edge just clears the SV pane. */
-.color-orbit-wheel{position:absolute;z-index:1;left:0;top:44%;width:100%;height:auto;aspect-ratio:2/1;display:block;cursor:ew-resize;touch-action:none;outline:none}
+.color-orbit-sv-marker{
+ position:absolute;z-index:3;width:17px;height:17px;border-radius:50%;
+ border:3px solid #fff;box-shadow:0 0 0 1.4px #263344,0 1px 4px #23344880;
+ transform:translate(-50%,-50%);pointer-events:none;
+}
+/* Preserve the exact ring dimensions and renderer; upper arc now meets the
+   SV diamond visually without overlapping its interactive surface. */
+.color-orbit-wheel{
+ position:absolute;z-index:1;left:0;top:44%;width:100%;
+ height:auto;aspect-ratio:2/1;display:block;
+ cursor:grab;touch-action:none;outline:none;
+}
+.color-orbit-wheel:active{cursor:grabbing}
 .color-orbit-wheel:focus-visible{outline:3px solid var(--a-focus);outline-offset:-3px;border-radius:35%}
-.color-orbit-hint{position:absolute;left:0;right:0;bottom:0;line-height:17px;text-align:center;font-size:10px;color:var(--a-subtle);pointer-events:none}
+.color-orbit-hint{
+ position:absolute;left:0;right:0;bottom:0;line-height:17px;
+ text-align:center;font-size:10px;color:var(--a-subtle);pointer-events:none;
+}
 @media(any-pointer:coarse){.color-mode-switch #colorPickerMode{height:44px;min-height:44px}}
