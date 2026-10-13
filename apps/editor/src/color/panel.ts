@@ -6,49 +6,49 @@ const button=(label:string,action:string,cls='')=>'<button type="button" class="
 /** One default experience: select a color. Numeric work and management are optional disclosures. */
 export function colorMarkup():string {
  return '<div class="color-workbench">'+
-  '<div class="color-current" aria-label="描画色">'+
-   '<button id="colorCurrent" class="color-chip" aria-label="今の色。色を選ぶ" type="button"></button>'+
-   '<div class="color-describe"><strong>描画する色</strong><output id="colorCode">#1F2633</output></div>'+
-   '<button id="colorPrevious" class="color-chip color-previous" aria-label="ひとつ前の色に戻す" type="button"></button>'+
-   '<span class="color-previous-label">前の色</span>'+
+ '<div class="color-current" aria-label="現在の色と変更前の色">'+
+  '<button id="colorCurrent" class="color-chip" type="button" aria-label="現在の色"></button>'+
+  '<div class="color-describe"><strong>現在の色</strong><output id="colorCode">#1F2633</output></div>'+
+  '<button id="colorPrevious" class="color-chip color-previous" type="button" aria-label="変更前の色に戻す"></button><span class="color-previous-label">変更前</span>'+
+ '</div>'+
+ '<div class="color-mode-switch" role="tablist" aria-label="カラーウィンドウ">'+
+  '<button type="button" id="colorShowColor" role="tab" aria-controls="colorScreen" aria-selected="true" tabindex="0">カラー</button>'+
+  '<button type="button" id="colorShowPalette" role="tab" aria-controls="colorPaletteScreen" aria-selected="false" tabindex="-1">パレット</button>'+
+ '</div>'+
+ '<section id="colorScreen" role="tabpanel" aria-labelledby="colorShowColor" class="color-primary">'+
+  '<div class="color-picker" id="colorPicker">'+
+   '<div id="colorRing" class="color-ring" role="slider" tabindex="0" aria-label="色相" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></div>'+
+   '<i id="colorHueMarker" class="color-ring-marker" aria-hidden="true"></i>'+
+   '<div id="colorPlane" class="color-plane" role="group" aria-label="彩度と明度"><div class="color-plane-white"></div><div class="color-plane-black"></div><i id="colorSvMarker" class="color-sv-marker"></i></div>'+
   '</div>'+
-  '<div class="color-primary" aria-label="色を選ぶ">'+
-   '<div class="color-picker" id="colorPicker">'+
-    '<div id="colorRing" class="color-ring" role="slider" tabindex="0" aria-label="色味" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0" aria-valuetext="赤色"></div>'+
-    '<i id="colorHueMarker" class="color-ring-marker" aria-hidden="true"></i>'+
-    '<div id="colorPlane" class="color-plane" role="group" aria-label="鮮やかさと明るさ"><div class="color-plane-white"></div><div class="color-plane-black"></div><i id="colorSvMarker" class="color-sv-marker"></i></div>'+
+  '<label class="color-hex-label" for="colorHex"><span>カラーコード</span><input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" aria-describedby="colorHexError" value="#1F2633"></label>'+
+  '<small id="colorHexError" class="color-error" role="status"></small>'+
+  '<div id="colorValueChannels" class="color-value-channels"></div>'+
+  '<div class="color-value-footer"><span class="color-mode-caption">色の数値</span>'+
+   '<div role="radiogroup" class="color-models" aria-label="カラー形式">'+
+    ['HSV','RGB','HSL'].map((m,i)=>'<label><input type="radio" name="colorModel" value="'+m+'" '+(i===0?'checked':'')+'><span>'+(m==='HSV'?'HSB':m)+'</span></label>').join('')+
    '</div>'+
-   '<div class="color-precision-inline">'+
-    '<label for="colorHex">カラーコード <input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" aria-describedby="colorHexError" value="#1F2633"></label>'+
-    button('スポイト','eyedropper','color-pick-button')+
-   '</div>'+
-   '<small id="colorHexError" class="color-error" role="status"></small>'+
   '</div>'+
-  '<section class="color-recent" aria-labelledby="colorRecentTitle"><div class="color-section-header"><h3 id="colorRecentTitle">最近使った色</h3></div>'+
-   '<div id="colorHistoryList" class="color-swatch-grid color-history-strip" role="group" aria-label="最近使った色"></div>'+
-  '</section>'+
-  '<section class="color-library" aria-labelledby="colorLibraryTitle">'+
-   '<div class="color-section-header"><h3 id="colorLibraryTitle">保存した色</h3>'+button('＋ 今の色を保存','add-current','color-add-button')+'</div>'+
-   '<label for="colorPaletteSelect" class="color-palette-choice"><span>パレット</span><select id="colorPaletteSelect" aria-label="使うパレット"></select></label>'+
-   '<div id="colorPaletteList" class="color-swatch-grid color-favorites-grid" role="group" aria-label="保存した色"></div>'+
-   '<details id="colorPaletteTools" class="color-disclosure color-manage"><summary>パレットを管理</summary><div class="color-detail-inner">'+
-    '<div class="color-palette-actions">'+button('新しく作る','new-palette')+button('名前を変える','rename-palette')+'</div>'+
-    '<div class="color-palette-actions">'+button('書き出す','export-palette')+button('読み込む','import-palette')+'</div>'+
-    '<input type="file" id="colorPaletteFile" accept=".json,application/json" hidden>'+
-    '<p class="color-help">登録した色の順番の変更・削除</p><div id="colorPaletteManageList" class="color-manage-grid" role="group" aria-label="保存した色の並べ替え・削除"></div>'+
-    '<small id="colorPaletteError" class="color-error" role="status"></small>'+
-   '</div></details>'+
-  '</section>'+
-  '<details id="colorPrecision" class="color-disclosure"><summary>数字で細かく調整</summary><div class="color-detail-inner">'+
-   '<div role="radiogroup" class="color-models" aria-label="色の表し方">'+['HSV','HSL','RGB'].map((m,i)=>'<label><input type="radio" name="colorModel" value="'+m+'" '+(i===0?'checked':'')+'><span>'+m+'</span></label>').join('')+'</div>'+
-   '<div id="colorValueChannels" class="color-value-channels"></div>'+
-   '<p class="color-help">スライダーでも数値でも設定できます。Enterで確定、Escで取り消せます。</p>'+
-  '</div></details>'+
-  '<details id="colorEyedropperOptions" class="color-disclosure color-sample-options"><summary>スポイトの対象</summary><div class="color-detail-inner">'+
+  '<details id="colorEyedropperOptions" class="color-disclosure color-sample-options"><summary>スポイトの参照先</summary><div class="color-detail-inner">'+
    '<label class="color-sample-source" for="colorSampleSource">取得する場所<select id="colorSampleSource"><option value="composite">見えている絵全体</option><option value="layer">選んでいるレイヤー</option></select></label>'+
   '</div></details>'+
-  '<div class="color-palette-notice" id="colorActionNotice" role="status" aria-live="polite"></div>'+
-  '<dialog id="colorPaletteDialog" class="color-palette-dialog" aria-labelledby="colorPaletteDialogTitle"><form id="colorPaletteForm"><h3 id="colorPaletteDialogTitle">新しいパレット</h3><label for="colorPaletteName">パレットの名前<input id="colorPaletteName" type="text" maxlength="80" required autocomplete="off"></label><small id="colorPaletteDialogError" class="color-error" role="alert"></small><div class="color-dialog-actions"><button id="colorPaletteCancel" type="button">やめる</button><button id="colorPaletteConfirm" type="submit">保存</button></div></form></dialog>'+
+ '</section>'+
+ '<section id="colorPaletteScreen" role="tabpanel" aria-labelledby="colorShowPalette" class="color-palette-screen" hidden>'+
+  '<div class="color-section-header"><h3>カラーパレット</h3>'+button('＋ 色を追加','add-current','color-add-button')+'</div>'+
+  '<label for="colorPaletteSelect" class="color-palette-choice"><span>パレット</span><select id="colorPaletteSelect" aria-label="使うパレット"></select></label>'+
+  '<div id="colorPaletteList" class="color-swatch-grid color-favorites-grid" role="group" aria-label="カラーパレット"></div>'+
+  '<div class="color-section-header color-history-heading"><h3>カラー履歴</h3></div>'+
+  '<div id="colorHistoryList" class="color-swatch-grid color-history-strip" role="group" aria-label="カラー履歴"></div>'+
+  '<details id="colorPaletteTools" class="color-disclosure color-manage"><summary>パレットの編集・管理</summary><div class="color-detail-inner">'+
+   '<div class="color-palette-actions">'+button('新規作成','new-palette')+button('名前の変更','rename-palette')+'</div>'+
+   '<div class="color-palette-actions">'+button('書き出す','export-palette')+button('読み込む','import-palette')+'</div>'+
+   '<input type="file" id="colorPaletteFile" accept=".json,application/json" hidden>'+
+   '<p class="color-help">色の並べ替え・削除</p><div id="colorPaletteManageList" class="color-manage-grid" role="group" aria-label="パレットの色の並べ替え・削除"></div>'+
+   '<small id="colorPaletteError" class="color-error" role="status"></small>'+
+  '</div></details>'+
+ '</section>'+
+ '<div class="color-palette-notice" id="colorActionNotice" role="status" aria-live="polite"></div>'+
+ '<dialog id="colorPaletteDialog" class="color-palette-dialog" aria-labelledby="colorPaletteDialogTitle"><form id="colorPaletteForm"><h3 id="colorPaletteDialogTitle">新しいパレット</h3><label for="colorPaletteName">パレットの名前<input id="colorPaletteName" type="text" maxlength="80" required autocomplete="off"></label><small id="colorPaletteDialogError" class="color-error" role="alert"></small><div class="color-dialog-actions"><button id="colorPaletteCancel" type="button">やめる</button><button id="colorPaletteConfirm" type="submit">保存</button></div></form></dialog>'+
  '</div>';
 }
 
