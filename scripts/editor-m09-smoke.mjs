@@ -25,9 +25,16 @@ const current=p=>p.locator('#colorCode').textContent();
 const state=async p=>JSON.parse((await p.locator('#qaAuto').textContent())||'{}');
 async function showColor(p){
  if(await p.locator('#colorPicker').isVisible())return;
- if(await p.locator('#colorPage').isVisible())await p.locator('#colorPage').click();
- else await p.locator('#workspaceToggle').click();
- assert.ok(await p.locator('#colorPicker').isVisible(),'Primary color picker must be reachable with one action');
+ if(await p.locator('#colorShowColor').isVisible()){
+  await p.locator('#colorShowColor').click();
+ }else if(await p.locator('#colorPage').isVisible()){
+  await p.locator('#colorPage').click();
+  await p.locator('#colorShowColor').click();
+ }else{
+  await p.locator('#workspaceToggle').click();
+  await p.locator('#colorShowColor').click();
+ }
+ assert.ok(await p.locator('#colorPicker').isVisible(),'ibis-style Color screen must be reachable');
 }
 async function changeHex(p,value){
  await showColor(p);const field=p.locator('#colorHex');await field.fill(value);await field.press('Enter');
@@ -52,6 +59,10 @@ async function test(kind,dpr,touch=false){
   await p.goto(base+(base.includes('?')?'&':'?')+'m09=1&backend='+kind,{waitUntil:'domcontentloaded'});
   assert.equal(await p.locator('#colorPicker').count(),1,'Color picker visible in Right Box');
   assert.equal(await p.locator('.color-tabs').count(),0,'four peer tabs are removed');
+  assert.equal(await p.locator('#colorShowPalette').count(),1,'dedicated Palette screen');
+  assert.equal(await p.locator('#colorScreen[hidden]').count(),0,'Color is the default screen');
+  assert.equal(await p.locator('#colorPaletteScreen[hidden]').count(),1,'Palette starts hidden');
+  assert.ok(await p.locator('#colorValueChannels').isVisible(),'HSB sliders always visible without expansion');
   await p.locator('#new').click();
   await p.waitForFunction(()=>document.getElementById('status')?.textContent?.includes('描画できます'),{timeout:75000});
   const initial=await state(p);
@@ -75,14 +86,13 @@ async function test(kind,dpr,touch=false){
   await p.waitForFunction(()=>document.getElementById('colorCode')?.textContent==='#FF0000',{timeout:20000});
   assert.equal(await p.locator('#eyedropper').getAttribute('aria-pressed'),'false');
   assert.equal((await state(p)).currentRevision,rev2,'eyedropper must not create artwork revision');
-  await showColor(p);await p.locator('#colorPrecision summary').click();
+  await showColor(p);
   await p.locator('input[name="colorModel"][value="RGB"]').check();
   assert.ok(Math.abs(Number(await p.locator('#colorNumber0').inputValue())-255)<0.5,'RGB numeric sync');
   await p.locator('input[name="colorModel"][value="HSL"]').check();
   assert.ok(Math.abs(Number(await p.locator('#colorNumber1').inputValue())-100)<.5,'HSL numeric sync');
   await p.locator('input[name="colorModel"][value="HSV"]').check();
   assert.ok(Math.abs(Number(await p.locator('#colorNumber2').inputValue())-100)<.5,'HSV numeric sync');
-  await p.locator('#colorPrecision summary').click();
   await p.locator('#colorPlane').scrollIntoViewIfNeeded();
   const wheel=await p.locator('#colorPicker').boundingBox();
   const picker=await p.locator('#colorPlane').boundingBox();assert.ok(picker);
@@ -90,18 +100,28 @@ async function test(kind,dpr,touch=false){
   const pickerGeometry=await p.locator('#colorPicker').evaluate(el=>{
     const ring=el.querySelector('#colorRing'),plane=el.querySelector('#colorPlane');
     const a=ring.getBoundingClientRect(),b=plane.getBoundingClientRect(),style=getComputedStyle(el),c=el.closest('.workspace-box');
-    const outer=c.getBoundingClientRect(),offenders=[...c.querySelectorAll('*')].map(x=>({el:(x.id?'#'+x.id:x.className?.toString().slice(0,40)||x.tagName),right:Math.round(x.getBoundingClientRect().right-outer.right),left:Math.round(outer.left-x.getBoundingClientRect().left)})).filter(x=>x.right>3||x.left>3).sort((a,b)=>b.right-a.right).slice(0,8);return {wheel:a.width,square:b.width,roundingClearance:(a.width/2-30)-(Math.hypot(b.width/2,b.height/2)+9),horizontalOverflow:c?.scrollWidth-c?.clientWidth,clientWidth:c.clientWidth,scrollWidth:c.scrollWidth,offenders,hasPeerTabs:!!document.querySelector('.color-tabs'),precisionOpened:document.getElementById('colorPrecision').open};
+    const outer=c.getBoundingClientRect(),offenders=[...c.querySelectorAll('*')].map(x=>({el:(x.id?'#'+x.id:x.className?.toString().slice(0,40)||x.tagName),right:Math.round(x.getBoundingClientRect().right-outer.right),left:Math.round(outer.left-x.getBoundingClientRect().left)})).filter(x=>x.right>3||x.left>3).sort((a,b)=>b.right-a.right).slice(0,8);return {wheel:a.width,diamond:b.width,roundingClearance:a.width/2-30-(plane.offsetWidth/Math.SQRT2+9),horizontalOverflow:c.scrollWidth-c.clientWidth,hasPeerTabs:!!document.querySelector('.color-tabs'),isRotated:getComputedStyle(plane).transform!=='none'};
   });
   assert.ok(pickerGeometry.roundingClearance>=2,'SV square and marker must not collide with hue ring');
   assert.ok(pickerGeometry.horizontalOverflow<=3,'Color Box must have no horizontal overflow: '+JSON.stringify(pickerGeometry));
-  assert.equal(pickerGeometry.hasPeerTabs,false,'advanced and palette controls are not peer tabs');
-  const pickerHit=await p.evaluate(({x,y})=>{const t=document.elementFromPoint(x,y);return {tag:t?.tagName,id:t?.id,klass:t?.className};},{x:picker.x+picker.width*.35,y:picker.y+picker.height*.15});
-  await p.locator('#colorPicker').evaluate(el=>{el.dataset.pointerTrace='';for(const kind of ['pointerdown','pointermove','pointerup'])el.addEventListener(kind,e=>{el.dataset.pointerTrace+=kind+':'+e.target.id+':'+document.getElementById('colorCode').textContent+';';},{capture:true});});
-  await p.mouse.move(picker.x+picker.width*.35,picker.y+picker.height*.15);await p.mouse.down();
-  await p.mouse.move(picker.x+picker.width*.75,picker.y+picker.height*.65,{steps:8});await p.mouse.up();
-  const valueAfterPicker=await current(p),pointerTrace=await p.locator('#colorPicker').getAttribute('data-pointer-trace');
-  assert.notEqual(valueAfterPicker,'#FF0000','Square drag must update color: '+JSON.stringify({pickerHit,pointerTrace,pickerGeometry}));
+  assert.equal(pickerGeometry.hasPeerTabs,false,'no four-peer tabs');
+  assert.equal(pickerGeometry.isRotated,true,'square is rotated as an HSB diamond');
+  // Test unrotated S/B coordinates transformed into the visible diamond.
+  const touchSource=await p.locator('#colorPlane').evaluate(el=>{
+   const a=el.getBoundingClientRect();return {cx:a.left+a.width/2,cy:a.top+a.height/2,side:el.offsetWidth};
+  });
+  const diamondPos=(sat,bright)=>{
+   const dx=(sat-.5)*touchSource.side,dy=(.5-bright)*touchSource.side;
+   return {x:touchSource.cx+(dx-dy)/Math.SQRT2,y:touchSource.cy+(dx+dy)/Math.SQRT2};
+  };
+  const from=diamondPos(.25,.85),to=diamondPos(.75,.35);
+  await p.mouse.move(from.x,from.y);await p.mouse.down();
+  await p.mouse.move(to.x,to.y,{steps:8});await p.mouse.up();
+  const valueAfterPicker=await current(p);
+  assert.notEqual(valueAfterPicker,'#FF0000','ibis-style diamond drag updates current color');
   assert.ok((await state(p)).currentRevision===rev2);
+  await p.locator('#colorShowPalette').click();
+  assert.ok(await p.locator('#colorPaletteScreen').isVisible(),'palette toggle shows palette + history');
   await p.locator('#colorPaletteTools summary').click();
   await p.locator('[data-color-action="new-palette"]').click();
   await p.locator('#colorPaletteName').fill('検証パレット');
@@ -110,7 +130,8 @@ async function test(kind,dpr,touch=false){
   await p.locator('[data-color-action="add-current"]').click();
   assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),1);
   await changeHex(p,'#0000FF');
-  await p.locator('[data-color-action="add-current"]').last().click();
+  await p.locator('#colorShowPalette').click();
+  await p.locator('[data-color-action="add-current"]').click();
   assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),2);
   const nameBefore=await p.locator('#colorPaletteSelect option:checked').textContent();
   const swatchesBefore=await p.locator('#colorPaletteList .color-swatch').evaluateAll(list=>list.map(x=>x.getAttribute('aria-label')));
@@ -122,7 +143,15 @@ async function test(kind,dpr,touch=false){
   await p.locator('#colorPaletteManageList .color-swatch-move[aria-label="色を削除"]').first().click();
   assert.equal(await p.locator('#colorPaletteList .color-swatch').count(),1);
   assert.ok(await p.locator('#colorHistoryList .color-swatch').count()>=2);
-  assert.ok(await p.locator('#colorHistoryList').isVisible(),'history is accessible without a tab');
+  assert.ok(await p.locator('#colorHistoryList').isVisible(),'history shares the Palette screen');
+  if(touch){
+    await p.locator('#colorShowColor').click();
+    await p.locator('#colorPicker').scrollIntoViewIfNeeded();
+    const box=await p.locator('#colorPicker').boundingBox();assert.ok(box);
+    const beforeTouch=await current(p);
+    await p.touchscreen.tap(box.x+box.width*.5,box.y+box.height*.06);
+    assert.notEqual(await current(p),beforeTouch,'touch hue ring changes color');
+  }
   await p.screenshot({path:path.join(evidence,name+'-color.png')});
  }catch(e){report.errors.push({name,error:String(e),stack:e.stack,console:errors});await p.screenshot({path:path.join(evidence,name+'-failure.png')}).catch(()=>{});}
  finally{report.cases.push({name,console:errors,qa:await state(p).catch(()=>null)});if(errors.length)report.errors.push({name,console:errors});await context.close();}
