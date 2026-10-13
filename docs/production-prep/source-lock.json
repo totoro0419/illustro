@@ -47,7 +47,7 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "6da6a485a72d0c399c6e4aa9d731364b26e826cd13d9e940048729cb4e2b3c8d",
+      "sha256": "11a916eb379a1a4d5b95f91ad88c93127f1116473a12e52804f4f5e9c2b6a5d2",
       "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required."
     },
@@ -206,7 +206,7 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "c80a7bf045bd6901f6d146fccafdfafed02affcb06b2c532e75b2418f18d3928",
+      "sha256": "dad6790e3c3cf7a7c56f8d614bf524911976e889f81a7954a98b0c9927d6e590",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required."
     },
     {

@@ -52,18 +52,18 @@ try{
     }
     await settleFixture();
     const before={renderCalls,compositions,presentCalls,jobs:r.document.jobs.length};
-    const times=[],cpu=[],latency=[];samples=[];const start=performance.now();let inputAt=start;
+    const durationMs=!quick&&size===3000&&layers===3&&strokes===2000?30000:(quick?600:1400);const times=[],cpu=[],latency=[];samples=[];const start=performance.now();let inputAt=start;
     await new Promise(resolve=>{const tick=ts=>{
      times.push(ts);const v=base.slice();v[8]=60*Math.sin((ts-start)/180);v[9]=40*Math.cos((ts-start)/210);v[7]=.2*Math.sin((ts-start)/340);v[6]*=1+.2*Math.sin((ts-start)/280);
      inputAt=performance.now();r.setViewTransform(v);const begin=performance.now();r.frame(ts);cpu.push(performance.now()-begin);
      if(samples.length&&samples.at(-1)>=inputAt)latency.push(samples.at(-1)-inputAt);
-     if(ts-start<(quick?600:1400))requestAnimationFrame(tick);else resolve();
+     if(ts-start<durationMs)requestAnimationFrame(tick);else resolve();
     };requestAnimationFrame(tick);});
     const submitted=samples;samples=null;await r.drain();
     const intervals=submitted.slice(1).map((t,i)=>t-submitted[i]),raf=times.slice(1).map((t,i)=>t-times[i]);
     const p95=a=>a.length?[...a].sort((x,y)=>x-y)[Math.ceil(a.length*.95)-1]:null;
     const elapsed=times.at(-1)-start;
-    results.push({kind,size,height:size===512?384:size,layers,strokes,submissionFps:submitted.length*1000/elapsed,frameIntervalP95Ms:p95(intervals),rafIntervalP95Ms:p95(raf),inputToSubmissionP95Ms:p95(latency),javascriptP95Ms:p95(cpu),stalls:intervals.filter(t=>t>p95(raf)*1.5).length,renderCalls:renderCalls-before.renderCalls,compositedTileCount:compositions-before.compositions,presentationSubmissions:submitted.length,strokeReplayDuringMovement:r.document.jobs.length-before.jobs,occupiedGpuTiles:b.tiles.size,historyGpuReservedBytes:b.historyReservedBytes,metrics:r.performanceSummary?.()??null});
+    results.push({kind,size,durationMs,height:size===512?384:size,layers,strokes,submissionFps:submitted.length*1000/elapsed,frameIntervalP95Ms:p95(intervals),rafIntervalP95Ms:p95(raf),inputToSubmissionP95Ms:p95(latency),javascriptP95Ms:p95(cpu),stalls:intervals.filter(t=>t>p95(raf)*1.5).length,renderCalls:renderCalls-before.renderCalls,compositedTileCount:compositions-before.compositions,presentationSubmissions:submitted.length,strokeReplayDuringMovement:r.document.jobs.length-before.jobs,occupiedGpuTiles:b.tiles.size,historyGpuReservedBytes:b.historyReservedBytes,metrics:r.performanceSummary?.()??null});
     await window.recordPerfCase(results.at(-1));
     if(r.errors.length)throw Error(r.errors.join(';'));
    }

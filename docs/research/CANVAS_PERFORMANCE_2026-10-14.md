@@ -28,7 +28,7 @@ The reported stroke-by-stroke appearance during canvas movement has not yet been
 
 ## Architecture and limits
 
-Original stroke records and canonical input are unchanged. Presentation does not append jobs or create revisions. A separate bounded presentation request may run while formal work finishes; atomic history/restoration holds still block it. WebGL formal completion has an idempotent synchronous acknowledgement to avoid the extra RAF.
+Original stroke records and canonical input are unchanged. Unchanged preview notifications reuse their already-rendered prefix/tail images during formal settling, avoiding repeated full-size clear/render passes. Each notification captures its own shallow state snapshot; append-only geometry buffers are still shared. Presentation does not append jobs or create revisions. A separate bounded presentation request may run while formal work finishes; atomic history/restoration holds still block it. WebGL formal completion has an idempotent synchronous acknowledgement to avoid the extra RAF.
 
 Minification levels average 2×2 premultiplied source pixels and are created only when needed; occupied dirty rectangles update derived levels. Source artwork, export pixels, DPR backing size and input transforms are unchanged. Nearest/100% and the M08 reference pattern keep their existing sampler. Display cache storage is approximately one third of the source RGBA8 image, plus edge rounding. Runtime quality must still be verified on both backends.
 
@@ -48,7 +48,7 @@ Measured: canvas presentation submission cadence, frame-interval p95, handler-to
 
 - Core typecheck + 31 tests passed.
 - Editor + geometry: 68 tests passed, including sparse-readback and checkpoint history-prefix cases.
-- Brush Foundation + scheduler regression: 104 tests passed (93 original + 11 new).
+- Brush Foundation + scheduler regression: 105 tests passed (93 original + 12 new).
 - Editor typecheck and production build passed.
 - Canonical index / source lock check passed after updating only changed display sources and generated artifact hashes.
 - Local Chromium install failed (invalid/truncated download). Browser execution is delegated to the repository's CI environment, not claimed as locally verified.

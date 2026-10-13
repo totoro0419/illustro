@@ -34,3 +34,10 @@ test('identical transform creates neither a submission nor a raster render',()=>
 test('presentation failure is recorded without escaping the animation loop',()=>{
  const {r,backend}=harness();backend.presentView=()=>{throw Error('device lost');};r.setViewTransform(view(2));assert.doesNotThrow(()=>r.frame(0));assert.deepEqual(r.errors,['device lost']);
 });
+
+test('zero confirmation delay does not skip formal work after same-RAF fence acknowledgement',()=>{
+ const {r,backend}=harness(),queue=[{id:1,key:'0,0',surfaceKey:'a',commit:false,t:null,commands:[]},{id:2,key:'0,0',surfaceKey:'a',commit:false,t:null,commands:[]}],seen=[];
+ r.document.jobs=queue;r.document.peekMany=()=>queue.slice(0,1);r.document.complete=()=>queue.shift();
+ const original=backend.render.bind(backend);backend.render=(s,jobs,states)=>{seen.push(jobs.map(x=>x.id));return original(s,jobs,states);};
+ r.frame(0);r.frame(0);assert.deepEqual(seen,[[1],[2]],'a stale RAF timestamp must not create an empty formal submission');
+});
