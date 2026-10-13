@@ -50,6 +50,12 @@ jobs:
           M09_EVIDENCE_DIRECTORY: /tmp/m09-evidence/local
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/editor-m09-smoke.mjs
+      - name: Integrated Classic / Orbit browser QA (Home, GPU, touch)
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
+          ORBIT_EVIDENCE_DIRECTORY: /tmp/m09-evidence/orbit-local
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-orbit-smoke.mjs
       - name: M05 Save Recovery Offline regression on M09
         env:
           RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
@@ -86,23 +92,24 @@ jobs:
         with:
           ref: gh-pages
           path: site
-      - name: Preserve M01 to M08 and stage exact M09 QA
+      - name: Preserve M01 to M08 and stage integrated M09 app only
         run: |
           for n in 01 02 03 04 05 06 07 08; do
             test -d "site/qa/m$n"
             (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/m$n.before"
           done
           rm -rf site/qa/m09
-          mkdir -p site/qa/m09
-          cp -a apps/editor/dist/. site/qa/m09/
           mkdir -p site/qa/m09/app
           cp -a apps/editor/dist/. site/qa/m09/app/
+          # Historical /qa/m09/ links lead to the one integrated implementation;
+          # no independent M09 feature-only application is published.
+          printf '%s\n' '<!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro M09</title><script>location.replace("./app/"+location.search+location.hash)</script><a href="./app/">統合版を開く</a></html>' > site/qa/m09/index.html
           touch site/.nojekyll
           for n in 01 02 03 04 05 06 07 08; do
             (cd site && find "qa/m$n" -type f -print0 | sort -z | xargs -0 sha256sum) > "/tmp/m$n.after"
             diff -u "/tmp/m$n.before" "/tmp/m$n.after"
           done
-      - name: Publish only M09 QA
+      - name: Publish only integrated M09 QA
         working-directory: site
         run: |
           git config user.name 'github-actions[bot]'
@@ -118,7 +125,7 @@ jobs:
         run: |
           ok=0
           for i in $(seq 1 72); do
-            code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m09.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m09/?build=$EXPECTED_COMMIT_SHA" || true)
+            code=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m09.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m09/app/?build=$EXPECTED_COMMIT_SHA" || true)
             valid=1
             for n in 01 02 03 04 05 06 07 08; do
               result=$(curl -L -sS -H 'Cache-Control: no-cache' -o "/tmp/m$n.html" -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m$n/?m08=$EXPECTED_COMMIT_SHA" || true)
@@ -126,19 +133,19 @@ jobs:
             done
             asset=$(sed -n 's#.*src="./\([^"]*\.js\)".*#\1#p' /tmp/m09.html | head -n 1)
             if [ "$code" = '200' ] && [ "$valid" = '1' ] && [ -n "$asset" ]; then
-              js=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m09.js -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m09/$asset?build=$EXPECTED_COMMIT_SHA" || true)
+              js=$(curl -L -sS -H 'Cache-Control: no-cache' -o /tmp/m09.js -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m09/app/$asset?build=$EXPECTED_COMMIT_SHA" || true)
               if [ "$js" = '200' ] && grep -q "$EXPECTED_COMMIT_SHA" /tmp/m09.js; then ok=1; break; fi
             fi
             sleep 5
           done
           test "$ok" = '1'
-      - name: M09 actual published browser spot check
+      - name: M09 integrated published Classic / Orbit browser spot check
         env:
           RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
-          M09_EVIDENCE_DIRECTORY: /tmp/m09-evidence/public
-          M09_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m09/
+          ORBIT_EVIDENCE_DIRECTORY: /tmp/m09-evidence/orbit-public
+          ORBIT_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m09/app/
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
-        run: node scripts/editor-m09-smoke.mjs
+        run: node scripts/editor-orbit-smoke.mjs
       - name: Published integrated Home preview check
         env:
           RT_PLAYWRIGHT_PATH: /tmp/m09-browser/node_modules/playwright
