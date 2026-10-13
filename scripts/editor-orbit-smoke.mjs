@@ -86,6 +86,29 @@ async function run(kind,touch=false){
   assert.ok(wheelOpacity.background==='rgba(0, 0, 0, 0)'||wheelOpacity.background==='transparent','Orbit canvas must have a transparent CSS background, not the global white canvas fill: '+JSON.stringify(wheelOpacity));
   assert.equal(wheelOpacity.holeAlpha,0,'Inner hole must stay transparent, never a shadow-filled gray disk');
   const b=await wheel.boundingBox();assert.ok(b?.width>210);
+  const hitMap=await p.locator('#colorOrbitPicker').evaluate(root=>{
+   const wheel=root.querySelector('#colorOrbitWheel'),svg=root.querySelector('#colorOrbitHueHit');
+   const r=root.getBoundingClientRect(),wr=wheel.getBoundingClientRect();
+   const sample=(x,y)=>document.elementFromPoint(x,y)?.id||'anonymous';
+   return {
+    plainTarget:sample(r.left+r.width*.08,r.top+r.height*.26),
+    upperTarget:sample(wr.left+wr.width/2,wr.top+wr.height*(32/160)),
+    lowerTarget:sample(wr.left+wr.width/2,wr.top+wr.height*(114/160)),
+    svgTouch:getComputedStyle(svg).touchAction,
+    rootTouch:getComputedStyle(root).touchAction,
+    canvasPointer:getComputedStyle(wheel).pointerEvents,
+    upperTouch:getComputedStyle(svg.querySelector('#colorOrbitTopArc')).touchAction,
+    frontTouch:getComputedStyle(svg.querySelector('#colorOrbitFrontArc')).touchAction,
+   };
+  });
+  assert.equal(hitMap.plainTarget,'colorOrbitPicker','A blank Orbit margin must not intercept workspace scrolling: '+JSON.stringify(hitMap));
+  assert.equal(hitMap.upperTarget,'colorOrbitTopArc','Upper ellipse arc must have a real curved hit target: '+JSON.stringify(hitMap));
+  assert.equal(hitMap.lowerTarget,'colorOrbitFrontArc','Front ellipse arc must have a real curved hit target: '+JSON.stringify(hitMap));
+  assert.equal(hitMap.rootTouch,'pan-y','Blank Orbit must allow vertical workspace touch scrolling');
+  assert.equal(hitMap.canvasPointer,'none','Rectangular canvas must never swallow gestures or scrolling');
+  assert.equal(hitMap.upperTouch,'none','Only the upper color arc disables native touch scroll');
+  assert.equal(hitMap.frontTouch,'none','Only the front color arc disables native touch scroll');
+
   const x=b.x+b.width/2,y=b.y+b.height*114/160;
   await p.mouse.move(x,y);await p.mouse.down();await p.mouse.move(x+86,y,{steps:12});await p.mouse.up();
   const dragColor=await color(p);
@@ -138,6 +161,18 @@ async function run(kind,touch=false){
    Number(await p.locator('#colorNumber2').inputValue())
   ]);
   assert.ok(hsva[0]>99&&hsva[1]>99,'Hue gesture must not change SV');
+  // The ellipse bounding box has no blanket touch blockade. A drag initiated
+  // on unused whitespace is not classified as an Orbit color gesture.
+  const rootHit=p.locator('#colorOrbitPicker');
+  const frameHit=await rootHit.boundingBox();assert.ok(frameHit);
+  await rootHit.evaluate(el=>{el.dataset.orbitGesture='unset';});
+  const blank={x:frameHit.x+frameHit.width*.08,y:frameHit.y+frameHit.height*.26};
+  const blankColor=await color(p);
+  await p.mouse.move(blank.x,blank.y);await p.mouse.down();
+  await p.mouse.move(blank.x,blank.y-50,{steps:6});await p.mouse.up();
+  assert.equal(await rootHit.getAttribute('data-orbit-gesture'),'unset','Whitespace drag must not acquire a color gesture');
+  assert.equal(await color(p),blankColor,'Whitespace drag must leave hue and SV unchanged');
+
   // Externally visible SV diamond must have its actual four corners and
   // separate controls: no polygon clipping or touch area stealing.
   const plane=p.locator('#colorOrbitPlane'),q=await plane.boundingBox();assert.ok(q?.width>100);
@@ -253,7 +288,7 @@ async function run(kind,touch=false){
   await p.locator('#colorShowColor').click();
   assert.equal(await mode.inputValue(),'orbit','Mode persists across editor/Home roundtrip');
   assert.equal(await color(p),prior,'Color survives Home roundtrip');
-  result.tests.push({label,mode:'classic/orbit',menuGeometry,svShape,hue,rotatedHue,arcHue,hsv,dragColor,overflow,homeRoundtrip:true});
+  result.tests.push({label,mode:'classic/orbit',menuGeometry,svShape,hitMap,hue,rotatedHue,arcHue,hsv,dragColor,overflow,homeRoundtrip:true});
  }catch(e){
   result.errors.push({label,error:String(e),stack:e.stack,console:logs});
   await p.screenshot({path:path.join(evidence,label+'-FAIL.png')}).catch(()=>{});
