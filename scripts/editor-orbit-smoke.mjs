@@ -100,6 +100,30 @@ async function run(kind,touch=false){
   await p.mouse.move(upper.x+55,upper.y,{steps:14});await p.mouse.up();
   const rotatedHue=Number(await wheel.getAttribute('aria-valuenow'));
   assert.ok(rotatedHue>305&&rotatedHue<359,'Upper wheel dragged right must rotate clockwise: '+rotatedHue);
+  // Real curved gesture along the colored UPPER elliptical arc, not an
+  // artificial horizontal mouse move outside the wheel. Drag the real arc from
+  // upper-left through its top to upper-right and verify continuous rotation.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const upperArc=(degrees)=>{
+   const rad=degrees*Math.PI/180,frame=startRingBox;
+   return {x:frame.x+frame.width*(160+121.5*Math.cos(rad))/320,
+           y:frame.y+frame.height*(73+41*Math.sin(rad))/160};
+  };
+  const arcStart=upperArc(-130),arcEnd=upperArc(-50);
+  await p.mouse.move(arcStart.x,arcStart.y);await p.mouse.down();
+  assert.equal(await p.locator('#colorOrbitPicker').getAttribute('data-orbit-gesture'),'rotate','Upper curved arc must grab hue wheel');
+  for(let deg=-125;deg<=-50;deg+=5){
+   const pt=upperArc(deg);await p.mouse.move(pt.x,pt.y,{steps:2});
+  }
+  await p.mouse.up();
+  const arcHue=Number(await wheel.getAttribute('aria-valuenow'));
+  assert.ok(arcHue>265&&arcHue<295,'Tracing the upper painted arc must rotate clockwise about 80°: '+arcHue);
+  // A touch that starts at a pixel of the upper ring, where the SV diamond
+  // overlaps its bounding box, must still capture the RING.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  await p.mouse.move(upper.x,upper.y);await p.mouse.down();
+  assert.equal(await p.locator('#colorOrbitPicker').getAttribute('data-orbit-gesture'),'rotate','Upper center must choose ring, not SV');
+  await p.mouse.move(upper.x+25,upper.y-2,{steps:4});await p.mouse.up();
   const hsva=await p.locator('input[name="colorModel"][value="HSV"]').check().then(async()=>[
    Number(await p.locator('#colorNumber1').inputValue()),
    Number(await p.locator('#colorNumber2').inputValue())
@@ -116,7 +140,9 @@ async function run(kind,touch=false){
     naturalWidth:el.offsetWidth,naturalHeight:el.offsetHeight,
     rotatedBoundsWidth:rect.width,rotatedBoundsHeight:rect.height,
     rotation:style.transform,clipPath:style.clipPath,
-    gapToHueRing:wheelTopColor-rect.bottom,
+    overlapWithHueRing:rect.bottom-wheelTopColor,
+    ringInFront:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitWheel')).zIndex)>Number(style.zIndex),
+    relativeSide:el.offsetWidth/el.parentElement.getBoundingClientRect().width,
     overflow:outer.scrollWidth-outer.clientWidth
    };
   });
@@ -124,7 +150,9 @@ async function run(kind,touch=false){
   assert.ok(Math.abs(svShape.rotatedBoundsWidth-svShape.rotatedBoundsHeight)<1,'SV diamond rotated bounds must be symmetric');
   assert.notEqual(svShape.rotation,'none','SV square must be rotated into a diamond');
   assert.ok(svShape.clipPath==='none','Diamond uses genuine rotation without distorted clipping');
-  assert.ok(svShape.gapToHueRing>=2&&svShape.gapToHueRing<=12,'Diamond should connect visually to the ring without stealing touches: '+JSON.stringify(svShape));
+  assert.ok(svShape.relativeSide>=.425,'SV diamond should be visibly larger: '+JSON.stringify(svShape));
+  assert.ok(svShape.overlapWithHueRing>=12&&svShape.overlapWithHueRing<=45,'Diamond must overlap the ring slightly: '+JSON.stringify(svShape));
+  assert.equal(svShape.ringInFront,true,'Painted hue arc must appear in front of the overlapping diamond');
   assert.ok(svShape.overflow<=3,'Orbit must not overflow narrow dock');
   const svCoordinate=(s,v)=>{
    const dx=(s-.5)*svShape.naturalWidth,dy=(.5-v)*svShape.naturalHeight;
@@ -140,9 +168,9 @@ async function run(kind,touch=false){
     const elAt=document.elementFromPoint(x,y);
     return elAt===el||el.contains(elAt);
    };
-   return [[.08,.08],[.92,.08],[.08,.92],[.92,.92]].map(([s,v])=>test(s,v));
+   return [[.22,.22],[.78,.22],[.22,.78],[.78,.78]].map(([s,v])=>test(s,v));
   });
-  assert.ok(sampled.every(Boolean),'Diamond must be accessible near all 4 corners');
+  assert.ok(sampled.every(Boolean),'The visible main area of the enlarged diamond must be accessible');
   await p.screenshot({path:path.join(evidence,label+'-orbit.png')});
   // Dragging from the upper ring into the diamond must stay a hue gesture,
   // preserving saturation and brightness all the way until release.
@@ -171,11 +199,15 @@ async function run(kind,touch=false){
    // owns the gesture. This is also important for Android tablet input.
    await hex.fill('#FF0000');await hex.press('Enter');
    const cdp=await context.newCDPSession(p);
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:upper.x,y:upper.y}]});
-   for(let i=1;i<=9;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:upper.x+55*i/9,y:upper.y}]});
+   const t0=upperArc(-130);
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:t0.x,y:t0.y}]});
+   for(let deg=-125;deg<=-50;deg+=5){
+    const pt=upperArc(deg);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:pt.x,y:pt.y}]});
+   }
    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
    const actualHue=Number(await wheel.getAttribute('aria-valuenow'));
-   assert.ok(actualHue>305&&actualHue<359,'Touch: upper-ring right swipe rotates clockwise: '+actualHue);
+   assert.ok(actualHue>265&&actualHue<295,'Touch must rotate on a curved path along the upper hue band: '+actualHue);
    await cdp.detach();
   }
   const prior=await color(p);
@@ -212,7 +244,7 @@ async function run(kind,touch=false){
   await p.locator('#colorShowColor').click();
   assert.equal(await mode.inputValue(),'orbit','Mode persists across editor/Home roundtrip');
   assert.equal(await color(p),prior,'Color survives Home roundtrip');
-  result.tests.push({label,mode:'classic/orbit',menuGeometry,svShape,hue,rotatedHue,hsv,dragColor,overflow,homeRoundtrip:true});
+  result.tests.push({label,mode:'classic/orbit',menuGeometry,svShape,hue,rotatedHue,arcHue,hsv,dragColor,overflow,homeRoundtrip:true});
  }catch(e){
   result.errors.push({label,error:String(e),stack:e.stack,console:logs});
   await p.screenshot({path:path.join(evidence,label+'-FAIL.png')}).catch(()=>{});
