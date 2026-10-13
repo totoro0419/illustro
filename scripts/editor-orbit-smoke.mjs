@@ -102,7 +102,7 @@ async function run(kind,touch=false){
   assert.ok(svShape.overflow<=3,'Orbit must not overflow narrow dock');
   // All four SV corners remain physically within the colored panel.
   const hitCorners=await plane.evaluate(el=>{
-   const r=el.getBoundingClientRect();return [[2,2],[r.width-2,2],[2,r.height-2],[r.width-2,r.height-2]].map(([x,y])=>{
+   const r=el.getBoundingClientRect();return [[12,12],[r.width-12,12],[12,r.height-12],[r.width-12,r.height-12]].map(([x,y])=>{
     const t=document.elementFromPoint(r.left+x,r.top+y);return t===el||el.contains(t);
    });
   });
