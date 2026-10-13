@@ -9,7 +9,7 @@ type Entry={name:string;kind:'file'|'directory'};
 type StoreMode='opfs-sync'|'opfs-async'|'indexeddb';
 type ProjectionEncoding='raw-rgba8'|'gzip-rgba8';
 type ProjectionIndex=Readonly<{version:1;generationId:string;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
-type ProjectionDeltaIndex=Readonly<{version:2;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
+type ProjectionDeltaIndex=Readonly<{version:2;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number;digest?:string}>[]}>;
 type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>;
 
 const out=self as unknown as {postMessage:(value:unknown,transfer?:Transferable[])=>void};
@@ -211,26 +211,42 @@ async function loadProjectionCheckpointRaw(store:WorkingStore,session:Session,al
     return Object.freeze({version:1 as const,revisionId:encoded.index.revisionId,width:encoded.index.width,height:encoded.index.height,layers:Object.freeze(layers.map(x=>Object.freeze(x)))});
   }catch{return null;}
 }
-async function storeProjectionDelta(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,tileSize:number,surfaceIds:readonly string[],tiles:readonly {surfaceId:string;key:string;pixels:Uint8Array}[],replace=false){
+export async function storeProjectionDelta(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,tileSize:number,surfaceIds:readonly string[],tiles:readonly {surfaceId:string;key:string;pixels:Uint8Array}[],replace=false){
   const path=session.path+'/projection-v2.frame',old=await store.get(path);let previous:ProjectionDeltaIndex|null=null;
   if(old)try{previous=parseProjectionDeltaIndex(await unframeJson(old));}catch{}
-  const map=new Map<string,{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number}>();
+  const map=new Map<string,ProjectionDeltaIndex['tiles'][number]>(),file=(tile:ProjectionDeltaIndex['tiles'][number])=>session.path+'/projection-v2/'+tile.surfaceId+'/'+tileFileName(tile.key,tile.digest)+'.bin';
+  const previousFiles=new Set(previous?.tiles.map(file)??[]),staged=new Set<string>();let cleanupErrors=0;
+  const cleanup=async(target:string)=>{try{await store.remove(target);}catch(error){if(++cleanupErrors<=4)console.warn('Projection checkpoint file cleanup deferred',error);}};
   if(!replace&&previous&&previous.width===width&&previous.height===height&&previous.tileSize===tileSize)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
+  try{
   for(const tile of tiles){
-    if(!surfaceIds.includes(tile.surfaceId))continue;const id=tile.surfaceId+'\u0000'+tile.key,file=session.path+'/projection-v2/'+tile.surfaceId+'/'+tileFileName(tile.key)+'.bin';
-    if(!hasPixelData(tile.pixels)){await store.remove(file);map.delete(id);continue;}
-    const encoded=await encodeProjectionPixels(tile.pixels);await putVerified(store,file,encoded.bytes);map.set(id,{surfaceId:tile.surfaceId,key:tile.key,encoding:encoded.encoding,rawLength:tile.pixels.byteLength});
+    if(!surfaceIds.includes(tile.surfaceId))continue;const id=tile.surfaceId+'\u0000'+tile.key;
+    if(!hasPixelData(tile.pixels)){map.delete(id);continue;}
+    const encoded=await encodeProjectionPixels(tile.pixels),hash=await digestHex(encoded.bytes),descriptor={surfaceId:tile.surfaceId,key:tile.key,encoding:encoded.encoding,rawLength:tile.pixels.byteLength,digest:hash},target=file(descriptor);
+    if(!previousFiles.has(target))staged.add(target);
+    // Existing checkpoint files stay immutable until its replacement index is durable.
+    const existing=previousFiles.has(target)?await store.get(target):null;
+    if(!existing||await digestHex(existing)!==hash)await putVerified(store,target,encoded.bytes);
+    map.set(id,descriptor);
   }
   const index:ProjectionDeltaIndex=Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
   await putVerified(store,path,await frameJson(index));
+  }catch(error){
+    const saved=await store.get(path).catch(()=>null);
+    // Clean interrupted staging only when the prior index is still authoritative.
+    if((!old&&!saved)||(old&&saved&&await equalDigest(old,saved)))for(const target of staged)await cleanup(target);
+    throw error;
+  }
+  const currentFiles=new Set([...map.values()].map(file));
+  for(const target of previousFiles)if(!currentFiles.has(target))await cleanup(target);
 }
-async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
+export async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
   const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
   try{
     const index=parseProjectionDeltaIndex(await unframeJson(frame));if(!allowedRevisions.has(index.revisionId))return null;
     const layers=new Map<string,Uint8Array>();for(const surfaceId of index.surfaceIds)layers.set(surfaceId,new Uint8Array(index.width*index.height*4));
     for(const descriptor of index.tiles){
-      const target=layers.get(descriptor.surfaceId);if(!target)return null;const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key)+'.bin');if(!bytes)return null;
+      const target=layers.get(descriptor.surfaceId);if(!target)return null;const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key,descriptor.digest)+'.bin');if(!bytes||(descriptor.digest&&await digestHex(bytes)!==descriptor.digest))return null;
       const pixels=await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength),coords=parseTileKey(descriptor.key),tx=coords[0],ty=coords[1],copyW=Math.min(index.tileSize,index.width-tx*index.tileSize),copyH=Math.min(index.tileSize,index.height-ty*index.tileSize);
       for(let y=0;y<copyH;y++){const from=y*index.tileSize*4,to=((ty*index.tileSize+y)*index.width+tx*index.tileSize)*4;target.set(pixels.subarray(from,from+copyW*4),to);}
     }
@@ -240,7 +256,7 @@ async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowed
 function parseProjectionDeltaIndex(value:unknown):ProjectionDeltaIndex{
   if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2)throw new Error('unsupported projection delta index');
   const revisionId=uuid(x.revisionId,'projection revision'),width=dimension(x.width,'projection width'),height=dimension(x.height,'projection height'),tileSize=integer(x.tileSize,'projection tile size',1),surfaceIds=stringArray(x.surfaceIds,'projection surfaces').map(v=>uuid(v,'projection surface'));
-  if(tileSize>1024||!Array.isArray(x.tiles)||x.tiles.length>1000000)throw new Error('invalid projection delta tiles');const seen=new Set<string>(),tiles=x.tiles.map(value=>{if(!value||typeof value!=='object')throw new Error('invalid projection delta tile');const item=value as Record<string,unknown>,surfaceId=uuid(item.surfaceId,'projection surface'),key=tileKey(item.key),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection delta tile');seen.add(id);const encoding=projectionEncoding(item.encoding),rawLength=integer(item.rawLength,'projection tile length',0);if(rawLength!==tileSize*tileSize*4)throw new Error('projection tile size mismatch');return Object.freeze({surfaceId,key,encoding,rawLength});});
+  if(tileSize>1024||!Array.isArray(x.tiles)||x.tiles.length>1000000)throw new Error('invalid projection delta tiles');const seen=new Set<string>(),tiles=x.tiles.map(value=>{if(!value||typeof value!=='object')throw new Error('invalid projection delta tile');const item=value as Record<string,unknown>,surfaceId=uuid(item.surfaceId,'projection surface'),key=tileKey(item.key),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection delta tile');seen.add(id);const encoding=projectionEncoding(item.encoding),rawLength=integer(item.rawLength,'projection tile length',0);if(rawLength!==tileSize*tileSize*4)throw new Error('projection tile size mismatch');const digest=item.digest;if(digest!==undefined&&(typeof digest!=='string'||!(/^[0-9a-f]{64}$/).test(digest)))throw new Error('invalid projection tile digest');return Object.freeze({surfaceId,key,encoding,rawLength,...(typeof digest==='string'?{digest}:{})});});
   return Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze(surfaceIds),tiles:Object.freeze(tiles)});
 }
 function projectionTileInputs(value:unknown,tileSize:number){
@@ -249,7 +265,8 @@ function projectionTileInputs(value:unknown,tileSize:number){
 }
 function tileKey(value:unknown){if(typeof value!=='string'||!/^\d+,\d+$/.test(value))throw new Error('invalid projection tile key');return value;}
 function parseTileKey(key:string){const parts=key.split(','),x=Number(parts[0]),y=Number(parts[1]);if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0)throw new Error('invalid projection tile key');return [x,y] as const;}
-function tileFileName(key:string){return key.replace(',',':');}
+function tileFileName(key:string,digest?:string){return key.replace(',',':')+(digest?'.'+digest:'');}
+async function digestHex(bytes:Uint8Array){return [...await digest(bytes)].map(value=>value.toString(16).padStart(2,'0')).join('');}
 
 async function decodeProjectionCache(decoded:Awaited<ReturnType<typeof decodeIllustroFile>>):Promise<ProjectionCache|null>{
   const section=decoded.sections.get('render-cache');if(!section||section.descriptor.type!=='render.cache.index.v1'||section.descriptor.required)return null;
