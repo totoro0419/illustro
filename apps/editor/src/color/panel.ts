@@ -56,9 +56,21 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  let model='HSV' as 'HSV'|'HSL'|'RGB',hueMemory=rgbToHsv(state.current).h;
  const current=id<HTMLElement>('colorCurrent'),previous=id<HTMLButtonElement>('colorPrevious'),code=id<HTMLOutputElement>('colorCode'),
   ring=id<HTMLElement>('colorRing'),plane=id<HTMLElement>('colorPlane'),hexField=id<HTMLInputElement>('colorHex'),
-  precision=id<HTMLDetailsElement>('colorPrecision'),notice=id<HTMLElement>('colorActionNotice');
+  notice=id<HTMLElement>('colorActionNotice'),
+  colorScreen=id<HTMLElement>('colorScreen'),paletteScreen=id<HTMLElement>('colorPaletteScreen'),
+  showColor=id<HTMLButtonElement>('colorShowColor'),showPalette=id<HTMLButtonElement>('colorShowPalette');
  let channelEditing=false,editingHex=false;
- const showPrecision=()=>{precision.open=true;renderChannels();precision.scrollIntoView({block:'nearest',behavior:'instant'});};
+ const selectScreen=(next:'color'|'palette',focus=false)=>{
+  colorScreen.hidden=next!=='color';paletteScreen.hidden=next!=='palette';
+  showColor.setAttribute('aria-selected',String(next==='color'));showPalette.setAttribute('aria-selected',String(next==='palette'));
+  showColor.tabIndex=next==='color'?0:-1;showPalette.tabIndex=next==='palette'?0:-1;
+  if(focus)(next==='color'?showColor:showPalette).focus();
+ };
+ showColor.onclick=()=>selectScreen('color');showPalette.onclick=()=>selectScreen('palette');
+ for(const tab of [showColor,showPalette])tab.onkeydown=e=>{
+  if(!['ArrowRight','ArrowLeft','Home','End'].includes(e.key))return;
+  e.preventDefault();selectScreen(e.key==='ArrowRight'||e.key==='End'?'palette':'color',true);
+ };
  function reflect(){
   const c=state.current,hsv=rgbToHsv(c);
   if(hsv.s>1e-7&&hsv.v>1e-7)hueMemory=hsv.h;
@@ -71,7 +83,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   ring.setAttribute('aria-valuenow',String(Math.round(hueMemory)%360));
   ring.setAttribute('aria-valuetext','色相 '+Math.round(hueMemory)+'度');
   if(document.activeElement!==hexField)hexField.value=hex(c);
-  if(!channelEditing&&precision.open)updateChannels();
+  if(!channelEditing)updateChannels();
   for(const el of document.querySelectorAll<HTMLButtonElement>('.color-swatch')){
    el.setAttribute('aria-pressed',String(el.dataset.hex===hex(c)));
   }
@@ -87,7 +99,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  hexField.addEventListener('input',()=>{const c=fromHex(hexField.value);if(c){id('colorHexError').textContent='';state.preview(c);}});
  hexField.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();editingHex=false;state.cancel();hexField.value=hex(state.current);id('colorHexError').textContent='';hexField.blur();}else if(e.key==='Enter'){e.preventDefault();commitHex();hexField.blur();}});
  hexField.addEventListener('blur',commitHex);
- // The square fits INSIDE the ring's empty center, including its corners.
+ // Use inverse 45-degree rotation for the ibisPaint-style HSB diamond.
  let pointer:number|null=null,part:'ring'|'plane'|null=null;
  const picker=id<HTMLElement>('colorPicker');
  function movePicker(e:PointerEvent){
@@ -97,8 +109,11 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
    hueMemory=(Math.atan2(y,x)*180/Math.PI+360)%360;
    const sv=rgbToHsv(state.current);state.preview(hsvToRgb(hueMemory,sv.s,sv.v));
   }else{
-   const r=plane.getBoundingClientRect();
-   state.preview(hsvToRgb(hueMemory,clamp((e.clientX-r.left)/r.width),1-clamp((e.clientY-r.top)/r.height)));
+   const r=plane.getBoundingClientRect(),side=plane.offsetWidth;
+   const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+   const saturation=clamp(.5+(dx+dy)/(Math.SQRT2*side));
+   const brightness=1-clamp(.5+(-dx+dy)/(Math.SQRT2*side));
+   state.preview(hsvToRgb(hueMemory,saturation,brightness));
   }
  }
  picker.addEventListener('pointerdown',e=>{
@@ -147,7 +162,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   });updateChannels();
  }
  function updateChannels(){const v=values();v.forEach((n,i)=>{const s=document.getElementById('colorSlider'+i) as HTMLInputElement|null,f=document.getElementById('colorNumber'+i) as HTMLInputElement|null;if(s)s.value=String(n);if(f&&document.activeElement!==f)f.value=String(Math.round(n*10)/10);});}
- precision.addEventListener('toggle',()=>{if(precision.open)renderChannels();});
+ // HSB/RGB/HSL values are directly visible below the diamond.
  const list=id<HTMLElement>('colorPaletteList'),manager=id<HTMLElement>('colorPaletteManageList'),history=id<HTMLElement>('colorHistoryList'),selector=id<HTMLSelectElement>('colorPaletteSelect');
  function makeChip(color:RGB,label:string,onSelect:()=>void):HTMLButtonElement{
   const b=document.createElement('button');b.type='button';b.className='color-swatch';b.style.backgroundColor=hex(color);b.dataset.hex=hex(color);b.title=label+' '+hex(color);b.setAttribute('aria-label',label+' '+hex(color));b.setAttribute('aria-pressed',String(hex(color)===hex(state.current)));b.onclick=onSelect;return b;
@@ -166,7 +181,7 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
     b.onclick=()=>move===0?state.removeSwatch(s.id):state.moveSwatch(s.id,move);cell.append(b);
    }manager.append(cell);
   }
-  if(!list.childElementCount)list.innerHTML='<span class="color-empty">よく使う色を「＋ 今の色を保存」で登録</span>';
+  if(!list.childElementCount)list.innerHTML='<span class="color-empty">「＋ 色を追加」で現在の色を登録</span>';
   if(!manager.childElementCount)manager.innerHTML='<span class="color-empty">保存した色はありません。</span>';
   history.replaceChildren(...state.history.map((c,i)=>makeChip(c,'最近の色 '+(i+1),()=>state.choose(c))));
   if(!history.childElementCount)history.innerHTML='<span class="color-empty">色を選ぶと、ここからすぐ戻せます。</span>';
@@ -195,9 +210,9 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  id<HTMLInputElement>('colorPaletteFile').onchange=async e=>{
   const field=e.target as HTMLInputElement,file=field.files?.[0];field.value='';if(!file)return;
   if(file.size>262144){error.textContent='ファイルが大きすぎます（256KBまで）。';return;}
-  try{state.importPalette(await file.text());notice.textContent='パレットを読み込みました。';}catch(ex){error.textContent=ex instanceof Error?ex.message:String(ex);}
+  try{state.importPalette(await file.text());selectScreen('palette');notice.textContent='パレットを読み込みました。';}catch(ex){error.textContent=ex instanceof Error?ex.message:String(ex);}
  };
  const unsubscribe=state.subscribe(()=>{reflect();if(!state.isEditing)renderCollections();});
- reflect();renderCollections();
- return {destroy:unsubscribe,showTab:(n:number)=>{if(n===1)showPrecision();else if(n===2)id<HTMLDetailsElement>('colorPaletteTools').open=true;else if(n===3)history.scrollIntoView({block:'nearest'});}};
+ renderChannels();reflect();renderCollections();
+ return {destroy:unsubscribe,showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1){model='RGB';(document.querySelector<HTMLInputElement>('input[name="colorModel"][value="RGB"]')!).checked=true;renderChannels();}}};
 }
