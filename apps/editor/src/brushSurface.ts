@@ -10,11 +10,12 @@ import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/
 export class BrushSurface{
   private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private presentedFrames=0;private lastPresentedAt=0;private _initializationError:string|null=null;private _projectionRestoreMs=0;private _projectionRestoreMode:'none'|'cache'|'replay-fallback'='none';private _projectionCacheRevision:string|null=null;
   private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private touchPoints=new Map<number,Point>();private lastGesture:{center:Point;distance:number;angle:number}|null=null;
+  private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'='composite';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private foreground:readonly [number,number,number]=[.12,.15,.2];
   private panning:{id:number;point:Point}|null=null;private keyboardSpace=false;private densityMedia:MediaQueryList|null=null;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
-  constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null){}
-  async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('m08-canvas-viewport')?.94:1);
-    this.canvas.style.aspectRatio=document.body.classList.contains('m08-canvas-viewport')?'auto':target.width+' / '+target.height;
+  constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:()=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
+  async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
+    this.canvas.style.aspectRatio=document.body.classList.contains('canvas-viewport')?'auto':target.width+' / '+target.height;
     const rect=this.canvas.getBoundingClientRect();this.view.resize(Math.max(1,rect.width),Math.max(1,rect.height));this.setBackingSize();
     const requested=new URLSearchParams(location.search).get('backend');
     this._initializationError=null;
@@ -79,6 +80,7 @@ export class BrushSurface{
     return false;
   }
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
+    if(this.eyedropper){if(e.button!==0||this.eyedropperPointer!==null)return;e.preventDefault();this.eyedropperPointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'){e.preventDefault();this.touchPoints.set(e.pointerId,this.pointerLocation(e));this.canvas.setPointerCapture(e.pointerId);
       if(this.touchPoints.size>=2){if(this.pointer!==null)void this.cancelStroke();this.panning=null;this.lastGesture=this.gesture();return;}
       if(!this.fingerDrawing){this.panning={id:e.pointerId,point:this.pointerLocation(e)};return;}
@@ -89,9 +91,9 @@ export class BrushSurface{
       this.wrapOrigin=this.view.seamless?{x:Math.floor(origin.x/w)*w,y:Math.floor(origin.y/h)*h}:null;
       this.renderer?.setSeamlessPreview(this.view.seamless);
       this.activeStrokeId=this.session.begin(this.preset,0,{},this.target.surfaceId);const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
-  private move=(e:PointerEvent)=>{if(this.touchMovement(e))return;if(this.panning?.id===e.pointerId&&this.view){e.preventDefault();const point=this.pointerLocation(e);this.view.pan(point.x-this.panning.point.x,point.y-this.panning.point.y);this.panning.point=point;this.updateView();return;}
+  private move=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}if(this.touchMovement(e))return;if(this.panning?.id===e.pointerId&&this.view){e.preventDefault();const point=this.pointerLocation(e);this.view.pan(point.x-this.panning.point.x,point.y-this.panning.point.y);this.panning.point=point;this.updateView();return;}
     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];for(let i=0;i<events.length;i++){const s=this.sample(events[i]!);actual.push(s);this.session.accept(s,i===events.length-1);}const predictedEvents=e.getPredictedEvents?.()??[],predicted=this.clampPredicted(actual.at(-1)??this.sample(e),predictedEvents.slice(0,2).map(event=>({...this.sample(event),origin:'predicted'})));this.session.predictions(predicted);};
-  private up=(e:PointerEvent)=>{if(this.touchPoints.has(e.pointerId)){this.touchPoints.delete(e.pointerId);this.lastGesture=this.gesture();if(this.touchPoints.size===1&&this.pointer===null){const [id,p]=this.touchPoints.entries().next().value!;this.panning={id,point:p};}}if(this.panning?.id===e.pointerId){this.panning=null;return;}if(e.pointerId!==this.pointer||!this.session||!this.target)return;const session=this.session,target=this.target,release=this.sample(e),seamless=this.view?.seamless??false,strokeId=this.activeStrokeId;session.predictions([]);this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();
+  private up=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.eyedropperPointer=null;this.queueSample(this.screenToDocument(this.pointerLocation(e)),'commit');return;}if(this.touchPoints.has(e.pointerId)){this.touchPoints.delete(e.pointerId);this.lastGesture=this.gesture();if(this.touchPoints.size===1&&this.pointer===null){const [id,p]=this.touchPoints.entries().next().value!;this.panning={id,point:p};}}if(this.panning?.id===e.pointerId){this.panning=null;return;}if(e.pointerId!==this.pointer||!this.session||!this.target)return;const session=this.session,target=this.target,release=this.sample(e),seamless=this.view?.seamless??false,strokeId=this.activeStrokeId;session.predictions([]);this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();
     void session.end({...release,origin:'release'}).then(async record=>{
       if(!record)return;let published=false;
       try{
@@ -109,7 +111,7 @@ export class BrushSurface{
         else{try{await session.rollbackLatest(record);}catch{}this.status('線を確定できなかったため、作品には残していません。');}
       }
     }).catch(()=>{this.status('線を確定できませんでした。');}).finally(()=>{this.finishing=false;this.onStateChanged();});};
-  private cancel=(e:PointerEvent)=>{this.touchPoints.delete(e.pointerId);this.lastGesture=this.gesture();if(this.panning?.id===e.pointerId)this.panning=null;if(e.pointerId===this.pointer)void this.cancelStroke();};
+  private cancel=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}this.touchPoints.delete(e.pointerId);this.lastGesture=this.gesture();if(this.panning?.id===e.pointerId)this.panning=null;if(e.pointerId===this.pointer)void this.cancelStroke();};
   private async cancelStroke(){const id=this.activeStrokeId;this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.session?.frame(now);if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;}
@@ -204,6 +206,38 @@ export class BrushSurface{
     }
     throw new Error('Projection checkpoint readback backend unsupported');
   }
+  /** Build a small artwork preview from occupied GPU tiles, without allocating full-size layer bitmaps. */
+  async captureWorkThumbnail():Promise<Blob>{
+    if(!this.renderer||this.busy||this.disposed)throw new Error('描画処理が完了していません。');
+    await this.renderer.drain();
+    if(this.busy||this.disposed)throw new Error('描画状態が変更されました。');
+    const root=this.controller.document.root,scale=Math.min(1,320/root.width,240/root.height);
+    const width=Math.max(1,Math.round(root.width*scale)),height=Math.max(1,Math.round(root.height*scale));
+    const output=new OffscreenCanvas(width,height),context=output.getContext('2d');
+    if(!context)throw new Error('Thumbnail 2D canvas unavailable');
+    const backend=(this.renderer as unknown as {backend?:any}).backend;
+    if(!backend?.tiles?.values)throw new Error('GPU tile snapshot unavailable');
+    const occupied=[...backend.tiles.values()] as {key:string;surfaceKey:string;x:number;y:number}[];
+    const tileCanvas=new OffscreenCanvas(TILE,TILE),tileContext=tileCanvas.getContext('2d');
+    if(!tileContext)throw new Error('Thumbnail tile canvas unavailable');
+    for(const layer of this.controller.layers){
+      if(!layer.visible||layer.opacity<=0)continue;
+      const key=layer.surface.descriptor.surfaceId;
+      const layerCanvas=new OffscreenCanvas(width,height),layerContext=layerCanvas.getContext('2d');
+      if(!layerContext)throw new Error('Thumbnail layer canvas unavailable');
+      for(const tile of occupied){
+        if(tile.surfaceKey!==key)continue;
+        if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
+        const pixels=await this.readBackendTile(backend,tile.key,key);
+        const imageData=new ImageData(new Uint8ClampedArray(pixels),TILE,TILE);
+        tileContext.putImageData(imageData,0,0);
+        layerContext.drawImage(tileCanvas,tile.x*scale,tile.y*scale,TILE*scale,TILE*scale);
+      }
+      context.globalAlpha=layer.opacity;context.drawImage(layerCanvas,0,0);
+    }
+    if(this.busy||this.disposed)throw new Error('Thumbnail became stale');
+    return output.convertToBlob({type:'image/png'});
+  }
   async captureDocumentLayers(){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
     await this.renderer.drain();
     const result=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
@@ -281,7 +315,34 @@ export class BrushSurface{
       for(let y=minY;y<=endY;y++)for(let x=minX;x<=endX;x++)keys.add(x+','+y);}
     return [...keys];
   }
-  select(index:number){const p=this.brushes[index];if(p)this.preset=structuredClone(p);}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
+  setForegroundColor(color:readonly [number,number,number]){if(!color.every(x=>Number.isFinite(x)&&x>=0&&x<=1))return;this.foreground=[...color] as [number,number,number];if(this.preset?.blend!=='erase'&&this.preset)this.preset.color=[...this.foreground];}
+  setEyedropper(enabled:boolean,source:'composite'|'layer'='composite'){if(!enabled&&this.eyedropperPointer!==null){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);}this.eyedropper=enabled;this.sampleSource=source;}
+  private queueSample(point:Point,phase:'preview'|'commit'){this.pendingSample={point,phase};if(!this.sampleRunning)void this.flushSamples();}
+  private async flushSamples(){this.sampleRunning=true;const epoch=this.sampleEpoch;try{while(this.pendingSample&&epoch===this.sampleEpoch&&!this.disposed){const requested=this.pendingSample;this.pendingSample=null;let rgba:readonly number[]|null=null;try{rgba=await this.readOnePixel(requested.point);}catch(error){this.status('色を取得できませんでした。'+(error instanceof Error?error.message:String(error)));}
+    if(epoch!==this.sampleEpoch||this.disposed)return;if(this.pendingSample&&requested.phase!=='commit')continue;this.onSample(rgba,requested.phase,requested.point);
+   }}finally{this.sampleRunning=false;if(this.pendingSample&&!this.disposed)void this.flushSamples();}}
+  /** Read only a 1x1 GPU region. Neither a canvas readback nor a layer recomposition is allowed here. */
+  private async readOnePixel(point:Point):Promise<readonly number[]|null>{
+   const x=Math.floor(point.x),y=Math.floor(point.y),w=this.controller.document.root.width,h=this.controller.document.root.height;
+   if(x<0||y<0||x>=w||y>=h)return null;
+   const backend=(this.renderer as unknown as {backend?:any}|null)?.backend;if(!backend)return null;
+   const layer=this.sampleSource==='layer',key=Math.floor(x/TILE)+','+Math.floor(y/TILE),surfaceKey=this.controller.selectedLayer.surface.descriptor.surfaceId;
+   const tile=layer?backend.tiles?.get(surfaceKey+'\u0000'+key):null;
+   if(layer&&!tile)return [0,0,0,0];
+   const sx=layer?x%TILE:x,sy=layer?y%TILE:y;
+   if(backend.gl){const gl=backend.gl as WebGL2RenderingContext,out=new Uint8Array(4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,layer?tile.layer[tile.l].f:backend.liveTarget.f);
+    gl.readPixels(sx,layer?sy:h-1-sy,1,1,gl.RGBA,gl.UNSIGNED_BYTE,out);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);return [...out];
+   }
+   if(backend.device){const device=backend.device as any,texture=layer?tile.layer[tile.l]:backend.liveTarget;
+    const buffer=device.createBuffer({size:256,usage:(globalThis as any).GPUBufferUsage.COPY_DST|(globalThis as any).GPUBufferUsage.MAP_READ});
+    try{const encoder=device.createCommandEncoder();encoder.copyTextureToBuffer({texture,origin:{x:sx,y:sy,z:0}},{buffer,bytesPerRow:256,rowsPerImage:1},{width:1,height:1,depthOrArrayLayers:1});device.queue.submit([encoder.finish()]);await buffer.mapAsync((globalThis as any).GPUMapMode.READ);const raw=new Uint8Array(buffer.getMappedRange());const bgra=!layer&&String(backend.format).startsWith('bgra');const result=[raw[bgra?2:0]??0,raw[1]??0,raw[bgra?0:2]??0,raw[3]??0];buffer.unmap();return result;}
+    finally{buffer.destroy();}
+   }
+   return null;
+  }
+  select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];}}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
   get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'direct-gpu';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get projectionRestoreMode(){return this._projectionRestoreMode;}get projectionCacheRevision(){return this._projectionCacheRevision;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.pointer!==null||this.finishing||this.historySyncing;}
   destroy(){this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.touchPoints.clear();this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onComplete=null;this.session?.destroy();}
 }
