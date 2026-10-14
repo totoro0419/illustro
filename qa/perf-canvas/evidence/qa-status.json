@@ -1,5 +1,5 @@
 {
-  "commit": "719dbe455f1ef83963640d640b89a3e101e0e5d7",
+  "commit": "5ed3b915ef1313a4c8f5e9e16db664fd63c8b007",
   "review": "EXPERIMENTAL_NOT_ACCEPTED",
   "functionalAndBrushImages": "verified",
   "foundationCiResult": "success",
@@ -43,7 +43,7 @@
   "gestureCancellation": {
     "result": "VERIFIED_BROWSER_SOFTWARE_NOT_DEVICE",
     "baselineCommit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
-    "commit": "719dbe455f1ef83963640d640b89a3e101e0e5d7",
+    "commit": "5ed3b915ef1313a4c8f5e9e16db664fd63c8b007",
     "trustedTouchCases": 6,
     "completedStrokesPerCase": 50,
     "before": {
@@ -61,6 +61,26 @@
       "gesture-cancellation/before/report.json",
       "gesture-cancellation/after/report.json",
       "gesture-cancellation/gpu/report.json"
+    ],
+    "gpuPixelEvidenceSourceCommit": "719dbe455f1ef83963640d640b89a3e101e0e5d7",
+    "latestReport": "color-interaction/canvas-gestures/report.json"
+  },
+  "measurementSourceCommit": "719dbe455f1ef83963640d640b89a3e101e0e5d7",
+  "previousFunctionalSourceCommit": "719dbe455f1ef83963640d640b89a3e101e0e5d7",
+  "colorInteraction": {
+    "commit": "5ed3b915ef1313a4c8f5e9e16db664fd63c8b007",
+    "priorSource": "719dbe455f1ef83963640d640b89a3e101e0e5d7",
+    "result": "VERIFIED_BROWSER_NOT_PHYSICAL_DEVICE",
+    "fullBandCases": 5,
+    "ringHitMisses": 0,
+    "visibleSvHitMisses": 0,
+    "phoneTabletTrustedTouch": true,
+    "physicalAndroid": "UNVERIFIED",
+    "reports": [
+      "color-interaction/before/report.json",
+      "color-interaction/after/report.json",
+      "color-interaction/orbit/orbit-report.json",
+      "color-interaction/m09/m09-local.json"
     ]
   }
 }
