@@ -27,9 +27,12 @@ export function colorMarkup():string {
   '</div>'+
   '<div id="colorOrbitPicker" class="color-orbit-picker" hidden aria-label="オービット色選択">'+
    '<div id="colorOrbitPlane" class="color-orbit-plane" role="group" aria-label="彩度・明るさの調整"><div class="color-orbit-white"></div><div class="color-orbit-black"></div><span id="colorOrbitSvMarker" class="color-orbit-sv-marker" aria-hidden="true"></span></div>'+
-   '<canvas id="colorOrbitWheel" class="color-orbit-wheel" role="slider" tabindex="0" width="640" height="320" aria-label="色相。上側で回転、下側は左右スライド" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></canvas>'+
-   '<svg id="colorOrbitHueHit" class="color-orbit-hue-hit" viewBox="0 0 '+ORBIT_WHEEL.width+' '+ORBIT_WHEEL.height+'" preserveAspectRatio="none" aria-hidden="true">'+
+   '<canvas id="colorOrbitWheel" class="color-orbit-wheel" role="slider" tabindex="0" width="640" height="320" aria-label="色相。円周をなぞって回転、手前は左右スライド" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></canvas>'+
+   '<svg id="colorOrbitHueBackHit" class="color-orbit-hue-hit color-orbit-hue-back" viewBox="0 0 '+ORBIT_WHEEL.width+' '+ORBIT_WHEEL.height+'" preserveAspectRatio="none" aria-hidden="true">'+
     '<path id="colorOrbitTopArc" d="'+arcs.top+'" fill="transparent"/>'+
+   '</svg>'+
+   '<canvas id="colorOrbitWheelFront" class="color-orbit-wheel color-orbit-wheel-front" width="640" height="320" aria-hidden="true"></canvas>'+
+   '<svg id="colorOrbitHueHit" class="color-orbit-hue-hit color-orbit-hue-front" viewBox="0 0 '+ORBIT_WHEEL.width+' '+ORBIT_WHEEL.height+'" preserveAspectRatio="none" aria-hidden="true">'+
     '<path id="colorOrbitFrontArc" d="'+arcs.front+'" fill="transparent"/>'+
    '</svg>'+
    '<span class="color-orbit-hint">上側を回して色相を選択・手前側は左右スライド</span>'+
