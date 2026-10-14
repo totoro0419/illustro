@@ -60,7 +60,20 @@ try{for(const [width,dpr,touch] of (baseline?[[1440,2,false]]:[[390,3,true],[600
  const down=async pt=>cdp?cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,...pt}]}):(await p.mouse.move(pt.x,pt.y),p.mouse.down());
  const move=async pt=>cdp?cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{id:1,...pt}]}):p.mouse.move(pt.x,pt.y);
  const up=async()=>cdp?cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]}):p.mouse.up();
- const cancel=async()=>{if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});else{await p.evaluate(()=>document.getElementById('colorOrbitPicker').releasePointerCapture(1));await p.mouse.up();}};
+ const cancel=async()=>{if(cdp)await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});else{
+  // lostpointercapture is queued asynchronously. If mouseup is sent first,
+  // a supposed cancellation can commit its pending hue instead (CI race).
+  // Await the browser's real lostpointercapture before the release.
+  await p.evaluate(async()=>{
+   const root=document.getElementById('colorOrbitPicker');
+   await new Promise((resolve,reject)=>{
+    if(!root.hasPointerCapture(1)){reject(new Error('expected active mouse pointer capture'));return;}
+    root.addEventListener('lostpointercapture',resolve,{once:true});
+    root.releasePointerCapture(1);
+   });
+  });
+  await p.mouse.up();
+ }};
  const trace=()=>p.evaluate(()=>({h:Number(document.getElementById('colorOrbitWheel').getAttribute('aria-valuenow')),s:Number(document.getElementById('colorNumber1').value),v:Number(document.getElementById('colorNumber2').value),color:document.getElementById('colorCode').textContent,gesture:document.getElementById('colorOrbitPicker').dataset.orbitGesture}));
  await down(arc(-130));const hues=[];for(let a=-125;a<=-50;a+=5){await move(arc(a));hues.push((await trace()).h);}await up();const rotation=await trace();
  assert.ok(rotation.h>265&&rotation.h<295);assert.equal(rotation.s,100);assert.equal(rotation.v,100);assert.ok(hues.every((h,i)=>i===0||h<=hues[i-1]),'upper right motion must rotate continuously clockwise');
