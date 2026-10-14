@@ -146,6 +146,27 @@ async function run(kind,touch=false){
    return {x:frame.x+frame.width*(160+121.5*Math.cos(rad))/320,
            y:frame.y+frame.height*(73+41*Math.sin(rad))/160};
   };
+  // Short press selects the color ALREADY painted under the pointer.
+  // Dragging is still rotation/slide, and a one-tap choice is one commit.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const tapOnRing=async pt=>{await p.mouse.click(pt.x,pt.y);return Number(await wheel.getAttribute('aria-valuenow'));};
+  const tapUpper=await tapOnRing(upperArc(-130));
+  assert.ok(tapUpper>=138&&tapUpper<=142,'Upper ring short tap must pick its displayed green hue immediately: '+tapUpper);
+  assert.equal(await p.locator('#colorCode').textContent(),await color(p));
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const tapUpperRight=await tapOnRing(upperArc(-50));
+  assert.ok(tapUpperRight>=218&&tapUpperRight<=222,'Other upper side of ring must select a different painted hue: '+tapUpperRight);
+  // Color on the dark near-side face shares its HUE with the bright top
+  // wedge; depth offsets must not change the selected hue angle.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const frontFace=(degrees)=>{
+   const a=degrees*Math.PI/180,b=startRingBox;
+   return {x:b.x+b.width*(160+146*Math.cos(a))/320,
+           y:b.y+b.height*(73+51*Math.sin(a)+6.5)/160};
+  };
+  const tapFront=await tapOnRing(frontFace(60));
+  assert.ok(tapFront>=328&&tapFront<=332,'Front side face short tap must pick the hue visible on that face: '+tapFront);
+  await hex.fill('#FF0000');await hex.press('Enter');
   const arcStart=upperArc(-130),arcEnd=upperArc(-50);
   await p.mouse.move(arcStart.x,arcStart.y);await p.mouse.down();
   assert.equal(await p.locator('#colorOrbitPicker').getAttribute('data-orbit-gesture'),'rotate','Upper curved arc must grab hue wheel');
@@ -342,6 +363,20 @@ async function run(kind,touch=false){
    // owns the gesture. This is also important for Android tablet input.
    await hex.fill('#FF0000');await hex.press('Enter');
    const cdp=await context.newCDPSession(p);
+   // Genuine touchscreen tap has no pointermove; pointerup must still pick
+   // the color at the tapped point (and one touch cannot become SV).
+   const tapColor=async pt=>{
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,x:pt.x,y:pt.y}]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
+    return Number(await wheel.getAttribute('aria-valuenow'));
+   };
+   const tappedHue=await tapColor(upperArc(-130));
+   assert.ok(tappedHue>=138&&tappedHue<=142,'Native touch short tap must select color: '+tappedHue);
+   await hex.fill('#FF0000');await hex.press('Enter');
+   const tappedFront=await tapColor(frontFace(60));
+   assert.ok(tappedFront>=328&&tappedFront<=332,'Native touch on the near-side front face must select hue: '+tappedFront);
+   await hex.fill('#FF0000');await hex.press('Enter');
    const t0=upperArc(-130);
    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:t0.x,y:t0.y}]});
    for(let deg=-125;deg<=-50;deg+=5){
