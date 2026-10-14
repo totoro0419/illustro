@@ -96,6 +96,9 @@ jobs:
           node scripts/editor-perf-checkpoint.mjs
           node scripts/editor-m09-smoke.mjs
           node scripts/editor-orbit-smoke.mjs
+          # A renderer/performance change must also pass the full painted-band
+          # and SV overlap touch regression, not just the central Orbit smoke.
+          node scripts/editor-color-hit-smoke.mjs
           node scripts/editor-m05-smoke.mjs
           node scripts/editor-m06-smoke.mjs
           node scripts/editor-m08-smoke.mjs
