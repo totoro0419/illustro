@@ -138,8 +138,8 @@ export function installOrbitPicker(root:HTMLElement,options:{
   // Capture the initial operation until release, including crossovers.
   // Empty space remains available for workspace scrolling.
   const mode=ringRegion??'sv';
-  const angle=hitRing?ellipseAngle(e):0;
-  drag={id:e.pointerId,part:hitRing?'wheel':'plane',mode,startX:e.clientX,
+  const angle=ringRegion!==null?ellipseAngle(e):0;
+  drag={id:e.pointerId,part:ringRegion!==null?'wheel':'plane',mode,startX:e.clientX,
    startHue:options.getHue(),lastAngle:angle,angleTravel:0};
   root.dataset.orbitGesture=mode;
   options.begin();
