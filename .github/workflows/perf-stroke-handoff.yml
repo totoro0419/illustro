@@ -45,6 +45,7 @@ jobs:
           M06_EXPECT_MILESTONE: M07
           M08_CORRUPT_ALL_RENDER_CACHES: '1'
         run: |
+          node scripts/stroke-handoff-operations.mjs
           node scripts/editor-m09-smoke.mjs
           node scripts/editor-orbit-smoke.mjs
           node scripts/editor-color-hit-smoke.mjs

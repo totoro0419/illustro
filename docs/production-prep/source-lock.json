@@ -49,7 +49,7 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "bf552ce59c009ccbd27c80cca5fa4259dcfcb9326bf651129f81131a1cda9749",
+      "sha256": "96f5efd6d869fdb1c365181ba98cd2214c82a827e2fe5337c9ac764b845405b2",
       "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified."
@@ -213,7 +213,7 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "772e406f9243fe61c85dd48bc5a6ef076dae5f4022fd4eec42893a7c312e97bb",
+      "sha256": "652ac237fbc2f8496d2ba347230e14042f2db9365a283b55b8022577e62f9c4e",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified."
     },
