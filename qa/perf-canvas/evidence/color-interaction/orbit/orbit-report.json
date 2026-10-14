@@ -1,6 +1,6 @@
 {
   "target": "integrated-local",
-  "commit": "54e12c9a2cdcf1b6afbd4bfd0bc0c39bc544cafc",
+  "commit": "45357428592c0366a90aa4ecac97a1ba72937fc8",
   "tests": [
     {
       "label": "webgl2-desktop",
