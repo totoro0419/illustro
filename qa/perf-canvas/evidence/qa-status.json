@@ -1,49 +1,28 @@
 {
-  "commit": "3040c4be6610bce42c3a98ec3f4646abd0253926",
+  "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
   "review": "EXPERIMENTAL_NOT_ACCEPTED",
   "functionalAndBrushImages": "verified",
-  "foundationCiResult": "failure",
+  "foundationCiResult": "success",
   "physicalDevice": "UNVERIFIED",
   "gpuTimerQueries": "UNMEASURED",
   "measurementScope": "headless Chromium software GPU; NOT physical latency",
   "latency": [
     {
       "backend": "webgl2",
-      "status": "GATE_FAIL",
-      "differences": [
-        {
-          "brush": "foundation-soft-eraser",
-          "size": 512,
-          "hz": 240,
-          "shape": "fast-curve",
-          "duration": 4009.100000000093,
-          "start": 375.80000000004657,
-          "middle": 600.8666666667368,
-          "end": 567.4000000000233,
-          "growth": 191.59999999997672,
-          "steadyGrowth": -33.466666666713536,
-          "samples": 7
-        }
-      ]
+      "status": "CHECKS_PASS",
+      "differences": []
     },
     {
       "backend": "webgpu",
-      "status": "GATE_FAIL",
-      "differences": [
-        {
-          "brush": "foundation-pencil",
-          "size": 512,
-          "hz": 240,
-          "shape": "fast-curve",
-          "duration": 4033.3000000000466,
-          "start": 523.7000000001863,
-          "middle": 553.5333333335193,
-          "end": 548.2333333334736,
-          "growth": 24.533333333287374,
-          "steadyGrowth": -5.300000000045657,
-          "samples": 14
-        }
-      ]
+      "status": "CHECKS_PASS",
+      "differences": []
     }
-  ]
+  ],
+  "latencyComparison": {
+    "scope": "GPU-completion proxy, not physical display or photon latency",
+    "currentRuns": 16,
+    "failedOrInsufficient": 0,
+    "failures": [],
+    "report": "latency-comparison/report.json"
+  }
 }
