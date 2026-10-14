@@ -1,0 +1,45 @@
+import {describe,expect,it} from 'vitest';
+import {ORBIT_WHEEL,orbitHueRegion,orbitHuePaths} from './orbitGeometry';
+
+describe('Orbit painted wheel hit geometry',()=>{
+ const r=ORBIT_WHEEL;
+ it('uses one wheel geometry for render and SVG hit paths',()=>{
+  const {top,front}=orbitHuePaths();
+  expect(top).toContain(String(r.outerX));
+  expect(front).toContain(String(r.depth));
+ });
+ it('accepts the upper colored band throughout its ellipse',()=>{
+  for(let angle=185;angle<=355;angle+=5){
+   const a=angle*Math.PI/180;
+   for(const t of [.02,.08,.5,.92,.98]){
+    const x=r.cx+(r.innerX+(r.outerX-r.innerX)*t)*Math.cos(a);
+    const y=r.cy+(r.innerY+(r.outerY-r.innerY)*t)*Math.sin(a);
+    expect(orbitHueRegion(x,y)).toBe('rotate');
+   }
+  }
+ });
+ it('accepts the lower colored band and visible outer face',()=>{
+  for(let angle=5;angle<=175;angle+=5){
+   const a=angle*Math.PI/180;
+   for(const t of [.02,.5,.98]){
+    const x=r.cx+(r.innerX+(r.outerX-r.innerX)*t)*Math.cos(a);
+    const y=r.cy+(r.innerY+(r.outerY-r.innerY)*t)*Math.sin(a);
+    expect(orbitHueRegion(x,y)).toBe('slide');
+   }
+   const x=r.cx+r.outerX*Math.cos(a);
+   const face=r.cy+r.outerY*Math.sin(a)+r.depth*.5;
+   // The actual outer visible face continues below the ellipse.
+   const atX=r.cy+r.outerY*Math.sqrt(1-((x-r.cx)/r.outerX)**2);
+   expect(orbitHueRegion(x,atX+r.depth*.5)).toBe('slide');
+   void face;
+  }
+ });
+ it('leaves the visible SV hole and blank workspace unclaimed',()=>{
+  for(const [x,y] of [
+   [r.cx,r.cy],[r.cx,r.cy-r.innerY*.5],
+   [r.cx,r.cy+r.innerY*.5],[r.cx,r.cy-r.outerY-4],
+   [r.cx+r.outerX+6,r.cy],[r.cx,r.cy+r.outerY+r.depth+3],
+   [0,0],[r.width,r.height]
+  ]) expect(orbitHueRegion(x,y)).toBeNull();
+ });
+});
