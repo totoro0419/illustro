@@ -16,6 +16,7 @@ export function installOrbitPicker(root:HTMLElement,options:{
  cancel:()=>void;
 }){
  const wheel=root.querySelector<HTMLCanvasElement>('#colorOrbitWheel')!;
+ const front=root.querySelector<HTMLCanvasElement>('#colorOrbitWheelFront')!;
  const plane=root.querySelector<HTMLElement>('#colorOrbitPlane')!;
  const point=root.querySelector<HTMLElement>('#colorOrbitSvMarker')!;
  type Drag={id:number;part:'wheel'|'plane';mode:'slide'|'rotate'|'sv';startX:number;startHue:number;lastAngle:number;angleTravel:number};
@@ -86,6 +87,13 @@ export function installOrbitPicker(root:HTMLElement,options:{
   ctx.save();ctx.shadowColor='rgba(15,26,37,.55)';ctx.shadowBlur=4;
   ctx.fillStyle='#fff';ctx.strokeStyle='#28384b';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(151,109);ctx.lineTo(169,109);ctx.lineTo(160,129);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+  // Full wheel remains in the rear; copy only the nearer half OVER the SV.
+  // This is one actual hue render plus a tiny GPU-independent canvas copy.
+  if(front.width!==w||front.height!==h){front.width=w;front.height=h;}
+  const fctx=front.getContext('2d',{alpha:true});if(!fctx)return;
+  fctx.setTransform(1,0,0,1,0,0);fctx.clearRect(0,0,w,h);
+  const split=Math.round(radius.cy*h/radius.height);
+  fctx.drawImage(wheel,0,split,w,h-split,0,split,w,h-split);
  }
  const request=()=>{if(!frame)frame=requestAnimationFrame(render);};
  // Coordinate helpers always use painted geometry, not the canvas's rectangular box.
@@ -128,11 +136,17 @@ export function installOrbitPicker(root:HTMLElement,options:{
   // Geometry is authoritative. SVG hit paths are retained for touch-action
   // negotiation, but CSS stacking and SVG hit-test differences must never
   // steal a painted hue pixel for SV or turn a visible SV pixel into hue.
-  const ringRegion=orbitHueRegion(x,y);
+  // A ring gesture starts on the painted SVG path only. The upper arc is
+  // physically BEHIND SV; its overlapped portion must not steal SV input.
+  // The near/front arc is always above SV and receives priority.
+  const frontHit=!!target?.closest('#colorOrbitFrontArc');
+  const backHit=!!target?.closest('#colorOrbitTopArc');
+  const ringRegion=frontHit?'slide':backHit?'rotate':null;
   const sv=planeLocal(e);
   const hitSv=ringRegion===null&&(
    (!!target&&plane.contains(target))||
-   (sv.s>=0&&sv.s<=1&&sv.v>=0&&sv.v<=1)
+   (sv.s>=0&&sv.s<=1&&sv.v>=0&&sv.v<=1&&
+    orbitHueRegion(x,y)===null)
   );
   if(ringRegion===null&&!hitSv)return;
   // Capture the initial operation until release, including crossovers.
