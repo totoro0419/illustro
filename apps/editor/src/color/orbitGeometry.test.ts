@@ -38,6 +38,6 @@ describe('Orbit painted wheel hit geometry',()=>{
    [r.cx,r.cy+r.innerY*.5],[r.cx,r.cy-r.outerY-4],
    [r.cx+r.outerX+6,r.cy],[r.cx,r.cy+r.outerY+r.depth+3],
    [0,0],[r.width,r.height]
-  ]) expect(orbitHueRegion(x,y)).toBeNull();
+  ] as const) expect(orbitHueRegion(x,y)).toBeNull();
  });
 });
