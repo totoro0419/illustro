@@ -25,7 +25,7 @@ try{for(const backend of ['webgl2','webgpu']){
  const cdp=await context.newCDPSession(page),touch=(type,points)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y,radiusX:4,radiusY:4,force:.7}))});
  const ax=box.x+box.width*.4,ay=box.y+box.height*.45,bx=ax+65,by=ay+30;
  for(const scenario of ['short-first-touch','draw-then-two-fingers','pointercancel']){
-  await page.locator('#fitView').click();await page.locator('#resetRotation').click();await page.waitForFunction(()=>{const s=window.__illustroPerformance.read().frameState;return !s.inflight&&!s.needsFrame&&!s.viewPending;},null,{timeout:45000});
+  await page.locator('#resetRotation').click();await page.locator('#fitView').click();await page.waitForFunction(()=>{const s=window.__illustroPerformance.read().frameState;return !s.inflight&&!s.needsFrame&&!s.viewPending;},null,{timeout:45000});
   const before=await read(page),image=(await page.locator('#canvas').screenshot()).toString('base64');
   await touch('touchStart',[[0,ax,ay]]);
   await page.waitForTimeout(scenario==='short-first-touch'?40:240);
@@ -42,15 +42,16 @@ try{for(const backend of ['webgl2','webgpu']){
   const replayed=afterReplay-beforeReplay,resets=(baseline?after.probe.rebuilds-before.probe.rebuilds:after.metrics.fullDocumentRebuilds-before.metrics.fullDocumentRebuilds);
   if(baseline){assert.equal(resets,1);assert.equal(replayed,50,'baseline must expose the actual cancellation replay');}
   else{assert.equal(resets,0);assert.equal(replayed,0);assert.equal(after.metrics.cancelledStrokeCount-before.metrics.cancelledStrokeCount,1);assert.deepEqual(after.metrics.frameState.errors,[]);assert.deepEqual(after.metrics.frameState.sessionErrors,[]);}
-  await page.locator('#fitView').click();await page.locator('#resetRotation').click();await page.waitForFunction(()=>{const s=window.__illustroPerformance.read().frameState;return !s.inflight&&!s.needsFrame&&!s.viewPending;},null,{timeout:45000});
+  await page.locator('#resetRotation').click();await page.locator('#fitView').click();await page.waitForFunction(()=>{const s=window.__illustroPerformance.read().frameState;return !s.inflight&&!s.needsFrame&&!s.viewPending;},null,{timeout:45000});
   const result=(await page.locator('#canvas').screenshot()).toString('base64');
   const difference=await page.evaluate(async({before,after})=>{
    const decode=async png=>{const bitmap=await createImageBitmap(new Blob([Uint8Array.from(atob(png),c=>c.charCodeAt(0))],{type:'image/png'})),c=document.createElement('canvas');c.width=bitmap.width;c.height=bitmap.height;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0);bitmap.close();return ctx.getImageData(0,0,c.width,c.height).data;};
    const a=await decode(before),b=await decode(after);if(a.length!==b.length)throw Error('canvas backing size changed');let max=0,over2=0;for(let i=0;i<a.length;i++){const d=Math.abs(a[i]-b[i]);max=Math.max(max,d);if(d>2)over2++;}return {max,over2};
   },{before:image,after:result});
-  assert.equal(difference.over2,0,'completed displayed artwork must survive '+scenario);
   report.cases.push({backend,scenario,strokes:50,resets,replayed,difference,before,after});
   await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
+  if(difference.over2){await fs.writeFile(path.join(out,backend+'-'+scenario+'-before.png'),Buffer.from(image,'base64'));await fs.writeFile(path.join(out,backend+'-'+scenario+'-after.png'),Buffer.from(result,'base64'));}
+  assert.equal(difference.over2,0,'completed displayed artwork must survive '+scenario);
  }
  // Navigation cancellation must keep existing history usable.
  await page.locator('#undo').click();await page.waitForFunction(()=>Number(document.getElementById('canvas').dataset.committedStrokes)===49&&document.getElementById('canvas').dataset.historyBusy==='false',null,{timeout:90000});
