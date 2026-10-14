@@ -1,4 +1,5 @@
 import {clamp,hex,hsvToRgb} from './model';
+import {ORBIT_WHEEL} from './orbitGeometry';
 
 /**
  * Orbit hue selector: a deliberately light Canvas2D rendering of a tilted, thick
@@ -21,7 +22,7 @@ export function installOrbitPicker(root:HTMLElement,options:{
  let hue=options.getHue(),frame=0,drag:Drag|null=null;
  const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false;
  void reduceMotion; // No inertial animation: color control tracks the input exactly.
- const radius={cx:160,cy:73,outerX:146,outerY:51,innerX:97,innerY:31,depth:13};
+ const radius=ORBIT_WHEEL;
  function quad(ctx:CanvasRenderingContext2D,a:number,b:number,r0x:number,r0y:number,r1x:number,r1y:number,shift=0){
   ctx.beginPath();
   ctx.moveTo(radius.cx+r0x*Math.cos(a),radius.cy+r0y*Math.sin(a)+shift);
@@ -38,7 +39,7 @@ export function installOrbitPicker(root:HTMLElement,options:{
   const dpr=Math.min(window.devicePixelRatio||1,2.5),w=Math.max(1,Math.round(bound.width*dpr)),h=Math.max(1,Math.round(bound.height*dpr));
   if(wheel.width!==w||wheel.height!==h){wheel.width=w;wheel.height=h;}
   const ctx=wheel.getContext('2d',{alpha:true});if(!ctx)return;
-  ctx.setTransform(w/320,0,0,h/160,0,0);ctx.clearRect(0,0,320,160);
+  ctx.setTransform(w/radius.width,0,0,h/radius.height,0,0);ctx.clearRect(0,0,radius.width,radius.height);
   // Ground shadow and the darker front-facing thickness establish depth.
   ctx.beginPath();ctx.ellipse(160,91,146,53,0,0,Math.PI*2);
   ctx.ellipse(160,91,97,31,0,0,Math.PI*2);
@@ -90,7 +91,7 @@ export function installOrbitPicker(root:HTMLElement,options:{
  // Coordinate helpers always use painted geometry, not the canvas's rectangular box.
  const wheelPoint=(e:PointerEvent)=>{
   const b=wheel.getBoundingClientRect();
-  return {x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*160/b.height};
+  return {x:(e.clientX-b.left)*radius.width/b.width,y:(e.clientY-b.top)*radius.height/b.height};
  };
  const planeLocal=(e:PointerEvent)=>{
   const b=plane.getBoundingClientRect(),side=plane.offsetWidth;
@@ -125,8 +126,8 @@ export function installOrbitPicker(root:HTMLElement,options:{
   const target=e.target instanceof Element?e.target:null;
   const upperArc=target?.closest('#colorOrbitTopArc');
   const frontArc=target?.closest('#colorOrbitFrontArc');
-  // Real SVG strokes define the wheel's input boundary. This is intentionally
-  // the SAME curved region the user can see. The surrounding canvas box is
+  // Filled SVG sectors share the painted outer/inner ellipse and front depth.
+  // The surrounding canvas box is
   // not a control and should permit workspace scrolling.
   const hitRing=!!(upperArc||frontArc);
   const hitSv=!hitRing&&!!target&&plane.contains(target);

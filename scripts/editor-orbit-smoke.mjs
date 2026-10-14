@@ -106,6 +106,7 @@ async function run(kind,touch=false){
   assert.equal(hitMap.lowerTarget,'colorOrbitFrontArc','Front ellipse arc must have a real curved hit target: '+JSON.stringify(hitMap));
   assert.equal(hitMap.rootTouch,'pan-y','Blank Orbit must allow vertical workspace touch scrolling');
   assert.equal(hitMap.canvasPointer,'none','Rectangular canvas must never swallow gestures or scrolling');
+  assert.equal(hitMap.svgTouch,'none','The replaced SVG container must disable native scroll only for its painted hit descendants');
   assert.equal(hitMap.upperTouch,'none','Only the upper color arc disables native touch scroll');
   assert.equal(hitMap.frontTouch,'none','Only the front color arc disables native touch scroll');
 

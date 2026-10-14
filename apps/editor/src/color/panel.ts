@@ -1,4 +1,5 @@
 import {installOrbitPicker} from './orbit';
+import {ORBIT_WHEEL,orbitHuePaths} from './orbitGeometry';
 import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
 
 const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as T;
@@ -6,6 +7,7 @@ const button=(label:string,action:string,cls='')=>'<button type="button" class="
 
 /** Familiar two-view Color/Palette panel with a compact Classic/Orbit selector. */
 export function colorMarkup():string {
+ const arcs=orbitHuePaths();
  return '<div class="color-workbench">'+
  '<div class="color-current" aria-label="現在の色と変更前の色">'+
   '<button id="colorCurrent" class="color-chip" type="button" aria-label="現在の色"></button>'+
@@ -26,9 +28,9 @@ export function colorMarkup():string {
   '<div id="colorOrbitPicker" class="color-orbit-picker" hidden aria-label="オービット色選択">'+
    '<div id="colorOrbitPlane" class="color-orbit-plane" role="group" aria-label="彩度・明るさの調整"><div class="color-orbit-white"></div><div class="color-orbit-black"></div><span id="colorOrbitSvMarker" class="color-orbit-sv-marker" aria-hidden="true"></span></div>'+
    '<canvas id="colorOrbitWheel" class="color-orbit-wheel" role="slider" tabindex="0" width="640" height="320" aria-label="色相。上側で回転、下側は左右スライド" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></canvas>'+
-   '<svg id="colorOrbitHueHit" class="color-orbit-hue-hit" viewBox="0 0 320 160" preserveAspectRatio="none" aria-hidden="true">'+
-    '<path id="colorOrbitTopArc" d="M 38.5 73 A 121.5 41 0 0 1 281.5 73" fill="none" stroke="transparent" stroke-width="40" stroke-linecap="butt"/>'+
-    '<path id="colorOrbitFrontArc" d="M 281.5 73 A 121.5 41 0 0 1 38.5 73" fill="none" stroke="transparent" stroke-width="44" stroke-linecap="butt"/>'+
+   '<svg id="colorOrbitHueHit" class="color-orbit-hue-hit" viewBox="0 0 '+ORBIT_WHEEL.width+' '+ORBIT_WHEEL.height+'" preserveAspectRatio="none" aria-hidden="true">'+
+    '<path id="colorOrbitTopArc" d="'+arcs.top+'" fill="transparent"/>'+
+    '<path id="colorOrbitFrontArc" d="'+arcs.front+'" fill="transparent"/>'+
    '</svg>'+
    '<span class="color-orbit-hint">上側を回して色相を選択・手前側は左右スライド</span>'+
   '</div>'+

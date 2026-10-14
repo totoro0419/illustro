@@ -1833,6 +1833,26 @@
     {
       "path": "scripts/check-gesture-cancellation.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/color/orbitGeometry.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/editor-color-hit-smoke.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/check-color-interaction-review.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": ".github/workflows/color-interaction.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/COLOR_INTERACTION_2026-10-14.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

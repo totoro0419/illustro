@@ -2,6 +2,17 @@ name: Canvas Performance
 on:
   push:
     branches: ['perf/canvas-presentation-2026-10-14']
+    # Color-only changes use the focused UI + gesture pipeline. Renderer,
+    # persistence and input-source changes still require the full performance run.
+    paths-ignore:
+      - 'apps/editor/src/color/**'
+      - 'scripts/editor-orbit-smoke.mjs'
+      - 'scripts/editor-color-hit-smoke.mjs'
+      - 'scripts/check-color-interaction-review.mjs'
+      - '.github/workflows/color-interaction.yml'
+      - '.github/workflows/perf-canvas.yml'
+      - 'docs/research/COLOR_INTERACTION_2026-10-14.md'
+      - 'docs/CANONICAL_INDEX.json'
   workflow_dispatch:
 permissions:
   contents: write
