@@ -1,0 +1,42 @@
+name: Stroke Handoff
+on:
+  push:
+    branches: ['perf/stroke-handoff-2026-10-14']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: stroke-handoff-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare immutable source baseline with timing access only
+        run: |
+          git worktree add --detach /tmp/handoff-before 45357428592c0366a90aa4ecac97a1ba72937fc8
+          node scripts/instrument-handoff-baseline.mjs /tmp/handoff-before
+          cd /tmp/handoff-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/handoff-before-build.log
+          VITE_COMMIT_SHA=45357428592c0366a90aa4ecac97a1ba72937fc8 npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Measure previous input gate and each finish stage
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          HANDOFF_APP_ROOT: /tmp/handoff-before/apps/editor/dist
+          HANDOFF_OUTPUT: /tmp/handoff-evidence/before.json
+          EXPECTED_COMMIT_SHA: 45357428592c0366a90aa4ecac97a1ba72937fc8
+        run: node scripts/stroke-handoff-benchmark.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: stroke-handoff-baseline, path: /tmp/handoff-evidence/}
