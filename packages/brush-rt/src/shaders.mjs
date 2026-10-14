@@ -46,6 +46,20 @@ export const glSolidLive=`#version 300 es
 precision highp float;
 uniform vec4 params[16];flat in vec4 oa,ob,oc,oe,os;out vec4 result;
 void main(){vec2 xy=vec2(gl_FragCoord.x,params[0].w==2.?gl_FragCoord.y:params[5].y-gl_FragCoord.y)*params[4].xy/params[5].xy+params[0].xy;vec2 d=oa.xy-os.xy;float f=clamp(dot(xy-os.xy,d)/max(.000001,dot(d,d)),0.,1.);float k=clamp(mix(os.z,oa.z*.5,f)+.5-length(xy-os.xy-d*f),0.,1.);if(params[0].w==1.&&k<1.)discard;float a=ob.y*k;result=vec4(oc.rgb*a,a);}`;
+// Same analytic coverage as WebGPU fragmentSweepPlain. Coverage-union
+// compilation guarantees a round, saturated, single-color swept material;
+// the backend selects this only when every command has zero texture strength.
+// Canonical geometry, material opacity and the antialias equation are unchanged.
+export const glSweepPlain=`#version 300 es
+precision highp float;
+uniform vec4 params[16];flat in vec4 oa,ob,oc,os;out vec4 result;
+void main(){
+ vec2 xy=vec2(gl_FragCoord.x,params[5].y-gl_FragCoord.y)*params[4].xy/params[5].xy+params[0].xy;
+ vec2 d=oa.xy-os.xy;float f=clamp(dot(xy-os.xy,d)/max(.000001,dot(d,d)),0.,1.);
+ float radius=mix(os.z,oa.z*.5,f),dist=length(xy-os.xy-d*f),h=radius*params[1].x;
+ float coverage=dist<=h?1.:clamp((radius+.5-dist)/max(.5,radius-h),0.,1.);
+ float a=coverage*ob.z*ob.y;result=vec4(oc.rgb*a,a);
+}`;
 export const glDisplayVertex=`#version 300 es
 uniform vec4 params[16];out vec2 doc;
 void main(){vec2 corner=vec2((gl_VertexID==1||gl_VertexID==2||gl_VertexID==4)?1.:0.,(gl_VertexID==2||gl_VertexID==4||gl_VertexID==5)?1.:0.);doc=params[0].xy+corner*128.;vec2 p=doc/params[4].xy;gl_Position=vec4(p.x*2.-1.,1.-p.y*2.,0,1);}`;
