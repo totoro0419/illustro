@@ -171,7 +171,7 @@ jobs:
       - name: Verify experimental review safety and preserve unmet latency checks
         env:
           FOUNDATION_RESULT: ${{ needs.foundation.result }}
-        run: node scripts/check-performance-review.mjs review-foundation/foundation-quick-results.json review-measurements/qa-status.json
+        run: node scripts/check-performance-review.mjs review-foundation/foundation-quick-results.json review-measurements/qa-status.json review-latency/report.json
       - name: Preserve all earlier QA and stage isolated review
         run: |
           (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before

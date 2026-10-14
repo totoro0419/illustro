@@ -21,8 +21,8 @@ try{
    await page.goto(`http://127.0.0.1:${server.address().port}/?backend=${backend}&document=${width}`);
    await page.waitForFunction(()=>window.__rt||document.getElementById('status').classList.contains('danger'),{timeout:45000});
    assert.ok(await page.evaluate(()=>!!window.__rt),await page.locator('#status').textContent());
-   for(const index of [0,4,6]){
-    const result=await page.evaluate(async({index,width,layered})=>{
+   for(const variant of [{index:0,stamp:false},{index:4,stamp:false},{index:4,stamp:true},{index:6,stamp:false}]){
+    const result=await page.evaluate(async({index,stamp,width,layered})=>{
      const {renderer,session,foundationPresets}=window.__rt;
      const {CanonicalBuilder,cpuReference}=await import('@rt/model');
      const height=renderer.document.height,surfaceKey=layered?'tail-quality':'default';
@@ -55,7 +55,7 @@ try{
      }
      const p=structuredClone(foundationPresets[index]);p.size=width===512?64:512;
      p.forceFade.enabled=false;p.prediction.enabled=false;p.stabilization.constant=0;p.stabilization.fast=0;
-     if(index===4){p.renderer='stamp';p.tip.direction=true;p.tip.aspect=.4;}
+     if(stamp){p.renderer='stamp';p.tip.direction=true;p.tip.aspect=.4;}
      // Replace the entire mutable tail, including jumps across tile boundaries,
      // a clipped edge, and disappearance. Expected pixels come from the CPU
      // brush reference, not from this renderer's dirty-key implementation.
@@ -85,8 +85,8 @@ try{
      }
      renderer.backend.retirePreview(1000);renderer.previewStates.delete(1000);
      renderer.snapshot=null;renderer.mailbox.value=null;
-     return {width,height,layered,brush:p.id,stages,errors:[...renderer.errors,...session.errors]};
-    },{index,width,layered});
+     return {width,height,layered,brush:p.id,stamp,stages,errors:[...renderer.errors,...session.errors]};
+    },{...variant,width,layered});
     report.cases.push({backend,...result});
     await fs.writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));
     assert.deepEqual(result.errors,[]);
@@ -94,7 +94,7 @@ try{
    }
   }finally{await page.close();}
  }
- assert.equal(report.cases.length,24);assert.deepEqual(report.errors,[]);
+ assert.equal(report.cases.length,32);assert.deepEqual(report.errors,[]);
 }catch(e){report.errors.push(e.stack);throw e;}
 finally{
  await fs.writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));

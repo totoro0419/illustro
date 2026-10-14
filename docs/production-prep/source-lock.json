@@ -47,9 +47,9 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "4a61d9e126fbbb27932ccf61e02eaaa482b705b77de030f4a533940a7af0b3f1",
+      "sha256": "0d240bb7e7ffb51b4adf47ee618f93fcd331ac44de8aeb28cfe15181bdbe5d74",
       "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
-      "performanceException": "Performance: bounded live/display scheduling and clears; WebGL uses the existing WebGPU analytic plain-sweep coverage equation. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required."
+      "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
@@ -60,8 +60,8 @@
     {
       "path": "packages/brush-rt/src/shaders.mjs",
       "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "f6b5189624f346538686d2afb18aa7973ddf117d128892bdfa80b30ade09e9f8",
-      "performanceException": "Performance: bounded live/display scheduling and clears; WebGL uses the existing WebGPU analytic plain-sweep coverage equation. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required."
+      "sha256": "38e62648323ba8516427f8675cf29197cdb6538672a04b9d1eb606689b06c39f",
+      "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required."
     },
     {
       "path": "packages/brush-rt/test/fixtures/pre-sweep-foundation-v3.json",
@@ -207,8 +207,8 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "382fc032ee57b6c5562bbe929dfad4f5c2e9913a8c7179f03b86808d80f4f514",
-      "performanceException": "Performance: bounded live/display scheduling and clears; WebGL uses the existing WebGPU analytic plain-sweep coverage equation. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required."
+      "sha256": "832245392e68eb355f312dc382768f9b7fa163c86cc07f6b64c95a5babae2267",
+      "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required."
     },
     {
       "path": "prototypes/brush-rt/foundation-check.mjs",

@@ -81,6 +81,20 @@ void main(){ivec2 q=ivec2(doc-params[0].xy),pos=ivec2(gl_FragCoord.xy);vec4 d=te
 
 // WGSL equations are explicitly matched to the Float64 reference. Integer grain
 // hashing uses wrapping u32 arithmetic; geometry is intentionally f32 on GPU.
+// The same direct single-preview composition as fragmentSweepDisplay below.
+// Use the unchanged straight-alpha composition function from the general shader.
+export const glSweepDisplay=`#version 300 es
+precision highp float;
+uniform vec4 params[16];uniform sampler2D layer,liveImage0,liveImage1;
+in vec2 doc;out vec4 result;
+${glMath.slice(glMath.indexOf('vec4 compose('))}
+void main(){
+ ivec2 q=ivec2(doc-params[0].xy),pos=ivec2(gl_FragCoord.xy);
+ vec4 base=texelFetch(layer,q,0);
+ vec4 paint=max(texelFetch(liveImage0,pos,0),texelFetch(liveImage1,pos,0))*params[8].z;
+ vec4 color=compose(base,paint,int(params[8].y));result=vec4(color.rgb*color.a,color.a);
+}`;
+
 export const wgMath=`
 fn sat(x:f32)->f32{return clamp(x,0.,1.);}
 fn img(t:texture_2d<f32>,uv0:vec2f,repeatImage:bool)->f32{var uv=uv0;if(repeatImage){uv=fract(uv);}else if(any(uv<vec2f(0))||any(uv>vec2f(1))){return 0.;}let sz=textureDimensions(t);return textureLoad(t,min(vec2u(floor(uv*vec2f(sz))),sz-1u),0).r;}
