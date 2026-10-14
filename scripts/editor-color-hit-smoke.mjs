@@ -23,16 +23,16 @@ try{for(const [width,dpr,touch] of (baseline?[[1440,2,false]]:[[390,3,true],[600
  const red=async()=>{await hex.fill('#FF0000');await hex.press('Enter');await ready();};
  await red();
  const hit=await wheel.evaluate(el=>{
-  const b=el.getBoundingClientRect(),ctx=el.getContext('2d'),points=[];
+  const b=el.getBoundingClientRect(),ctx=el.getContext('2d'),points=[],plane=el.parentElement.querySelector('#colorOrbitPlane');
   // Independent samples of the renderer's published ellipse, across its full
   // width. The old smoke sampled only the middle line, missing outer edges.
   for(let angle=0;angle<360;angle+=15)for(const t of [.02,.08,.5,.92,.98]){
    const a=angle*Math.PI/180,x=160+(97+49*t)*Math.cos(a),y=73+(31+20*t)*Math.sin(a),sx=b.left+x*b.width/320,sy=b.top+y*b.height/160;
    const pixel=ctx.getImageData(Math.floor(x*el.width/320),Math.floor(y*el.height/160),1,1).data,target=document.elementFromPoint(sx,sy);
-   points.push({angle,t,alpha:pixel[3],target:target?.id});
+   points.push({angle,t,alpha:pixel[3],target:target?.id,coveredBySv:angle>180&&!!target&&plane.contains(target)});
   }
   for(const x of [110,160,210]){const y=73+51*Math.sqrt(1-((x-160)/146)**2)+10,px=b.left+x*b.width/320,py=b.top+y*b.height/160;points.push({frontFace:true,x,y,alpha:ctx.getImageData(Math.floor(x*el.width/320),Math.floor(y*el.height/160),1,1).data[3],target:document.elementFromPoint(px,py)?.id});}
-  return {bounds:{left:b.left,top:b.top,width:b.width,height:b.height,viewport:[innerWidth,innerHeight]},count:points.length,misses:points.filter(pt=>pt.alpha>200&&!['colorOrbitTopArc','colorOrbitFrontArc'].includes(pt.target)),points};
+  return {bounds:{left:b.left,top:b.top,width:b.width,height:b.height,viewport:[innerWidth,innerHeight]},count:points.length,backOccluded:points.filter(pt=>pt.coveredBySv).length,backExposed:points.filter(pt=>pt.angle>180&&pt.target==='colorOrbitTopArc').length,misses:points.filter(pt=>pt.alpha>200&&!pt.coveredBySv&&!['colorOrbitTopArc','colorOrbitFrontArc'].includes(pt.target)),points};
  });
  report.activeCase={width,dpr,touch,hit};await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
  const before=Number(await wheel.getAttribute('aria-valuenow')),b=await wheel.boundingBox(),x=b.x+(160+97+49*.98)*b.width/320,y=b.y+73*b.height/160;
@@ -40,7 +40,7 @@ try{for(const [width,dpr,touch] of (baseline?[[1440,2,false]]:[[390,3,true],[600
  const outerHue=Number(await wheel.getAttribute('aria-valuenow'));
  assert.deepEqual(errors,[]);
  if(baseline){assert.ok(hit.misses.length>0);assert.equal(outerHue,before,'old outer visible band must reproduce the ignored drag');report.cases.push({width,dpr,touch,hit,outerHue,errors});await context.close();continue;}
- assert.deepEqual(hit.misses,[],'every sampled opaque ring pixel must own hue input');assert.notEqual(outerHue,before,'visible outer edge must start hue drag');
+ assert.deepEqual(hit.misses,[],'every visible colored rim pixel must own hue input');assert.ok(hit.backExposed>5,'upper rim must keep accessible clockwise rotation arcs');assert.ok(hit.backOccluded>0,'SV must physically cover some of the rear rim');assert.notEqual(outerHue,before,'visible outer edge must start hue drag');
  await plane.scrollIntoViewIfNeeded();
  const sv=await plane.evaluate(el=>{
   const r=el.getBoundingClientRect(),side=el.offsetWidth,wheel=el.parentElement.querySelector('#colorOrbitWheel'),b=wheel.getBoundingClientRect(),ctx=wheel.getContext('2d'),misses=[];let checked=0;const clip={left:0,top:0,right:innerWidth,bottom:innerHeight};for(let parent=el.parentElement;parent;parent=parent.parentElement){const style=getComputedStyle(parent),box=parent.getBoundingClientRect(),paint=style.contain.includes('paint');if(paint||/hidden|clip|scroll|auto/.test(style.overflowX)){clip.left=Math.max(clip.left,box.left);clip.right=Math.min(clip.right,box.right);}if(paint||/hidden|clip|scroll|auto/.test(style.overflowY)){clip.top=Math.max(clip.top,box.top);clip.bottom=Math.min(clip.bottom,box.bottom);}}
@@ -50,7 +50,7 @@ try{for(const [width,dpr,touch] of (baseline?[[1440,2,false]]:[[390,3,true],[600
    const neighborhood=wx>=0&&wy>=0&&wx<wheel.width&&wy<wheel.height?ctx.getImageData(Math.floor(wx)-1,Math.floor(wy)-1,3,3).data:null;const alpha=neighborhood?Math.max(...Array.from({length:9},(_,i)=>neighborhood[i*4+3])):0;
    // Border anti-aliasing can cover a fraction of a pixel. Fully transparent
    // wheel pixels above a visible diamond must never acquire hue input.
-   if(alpha!==0)continue;checked++;const target=document.elementFromPoint(x,y);if(!el.contains(target))misses.push({s,v,target:target?.id});
+   if(alpha!==0&&wy>=wheel.height*73/160)continue;checked++;const target=document.elementFromPoint(x,y);if(!el.contains(target))misses.push({s,v,target:target?.id});
   }
   return {checked,misses,naturalSize:[el.offsetWidth,el.offsetHeight],rotation:getComputedStyle(el).transform};
  });
