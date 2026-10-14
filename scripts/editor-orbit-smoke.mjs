@@ -155,6 +155,39 @@ async function run(kind,touch=false){
   await p.mouse.up();
   const arcHue=Number(await wheel.getAttribute('aria-valuenow'));
   assert.ok(arcHue>265&&arcHue<295,'Tracing the upper painted arc must rotate clockwise about 80°: '+arcHue);
+  // Follow one COMPLETE ellipse, including the hidden SV-covered part and
+  // the foreground half. The hue must keep rotating rather than switch into
+  // SV, jump at the -180/+180 seam or stop when the finger crosses a layer.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  await p.mouse.move(upperArc(-130).x,upperArc(-130).y);await p.mouse.down();
+  const fullCircle=[];
+  for(let degrees=-125;degrees<=230;degrees+=5){
+   const pt=upperArc(degrees);await p.mouse.move(pt.x,pt.y);
+   if([ -40,50,140,230 ].includes(degrees))
+    fullCircle.push({degrees,hue:Number(await wheel.getAttribute('aria-valuenow')),
+     mode:await p.locator('#colorOrbitPicker').getAttribute('data-orbit-gesture')});
+  }
+  await p.mouse.up();
+  assert.equal(fullCircle.length,4,'Full-circle checkpoints must all be sampled');
+  assert.ok(fullCircle.every(c=>c.mode==='rotate'),'One circular trace must keep its hue operation across SV and front rim: '+JSON.stringify(fullCircle));
+  assert.ok(fullCircle.slice(0,3).every(c=>c.hue>30&&c.hue<340),'Full circle must change hue in every quadrant: '+JSON.stringify(fullCircle));
+  assert.ok(fullCircle[3].hue<7||fullCircle[3].hue>353,'One lap must return to its original hue: '+JSON.stringify(fullCircle));
+  // Starting on the front rim keeps a straight horizontal slide, but curved
+  // tracing along the circumference must also turn the wheel from this side.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const frontStart=upperArc(90);
+  await p.mouse.move(frontStart.x,frontStart.y);await p.mouse.down();
+  const frontCircle=[];
+  for(let degrees=95;degrees<=450;degrees+=5){
+   const pt=upperArc(degrees);await p.mouse.move(pt.x,pt.y);
+   if([150,240,330,450].includes(degrees))
+    frontCircle.push({degrees,hue:Number(await wheel.getAttribute('aria-valuenow')),
+     mode:await p.locator('#colorOrbitPicker').getAttribute('data-orbit-gesture')});
+  }
+  await p.mouse.up();
+  assert.ok(frontCircle.some(c=>c.mode==='rotate'),'A circular trace beginning at the front must become a hue rotation: '+JSON.stringify(frontCircle));
+  assert.ok(frontCircle[3].hue<10||frontCircle[3].hue>350,'Full front-origin circular trace should close at the initial color: '+JSON.stringify(frontCircle));
+  await hex.fill('#FF0000');await hex.press('Enter');
   // A touch that starts at a pixel of the upper ring, where the SV diamond
   // overlaps its bounding box, must still capture the RING.
   await hex.fill('#FF0000');await hex.press('Enter');
