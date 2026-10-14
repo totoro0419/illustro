@@ -1813,6 +1813,26 @@
     {
       "path": "docs/research/CANVAS_PERFORMANCE_2026-10-14.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/cancellation.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/editor-gesture-cancel-smoke.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/stroke-cancellation-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/instrument-gesture-baseline.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/check-gesture-cancellation.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

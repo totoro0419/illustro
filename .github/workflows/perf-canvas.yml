@@ -150,11 +150,59 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: brush-latency-comparison, path: /tmp/brush-latency-evidence/}
+  gesture-cancellation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare previous review with counters only
+        run: |
+          git worktree add --detach /tmp/gesture-before 6f18011a4a862fff07889dd9d77fab291d0fd05e
+          node scripts/instrument-gesture-baseline.mjs /tmp/gesture-before
+          cd /tmp/gesture-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/gesture-before-build.log
+          VITE_COMMIT_SHA=6f18011a4a862fff07889dd9d77fab291d0fd05e npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Build exact cancellation fix
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm run brush:build > /tmp/gesture-current-build.log
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Reproduce previous whole-document replay via trusted touch
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          GESTURE_APP_ROOT: /tmp/gesture-before/apps/editor/dist
+          GESTURE_EXPECT_REPLAY: '1'
+          GESTURE_EVIDENCE_DIRECTORY: /tmp/gesture-cancel-evidence/before
+          EXPECTED_COMMIT_SHA: 6f18011a4a862fff07889dd9d77fab291d0fd05e
+        run: node scripts/editor-gesture-cancel-smoke.mjs
+      - name: Verify committed GPU pixels and actual gesture cancellation
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          GESTURE_EVIDENCE_DIRECTORY: /tmp/gesture-cancel-evidence/after
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/stroke-cancellation-quality.mjs
+          node scripts/editor-gesture-cancel-smoke.mjs
+          mkdir -p /tmp/gesture-cancel-evidence/gpu
+          cp -a /tmp/stroke-cancellation-evidence/. /tmp/gesture-cancel-evidence/gpu/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: gesture-cancellation-evidence, path: /tmp/gesture-cancel-evidence/}
   publish:
-    needs: [regression, benchmark, foundation, latency-comparison]
+    needs: [regression, benchmark, foundation, latency-comparison, gesture-cancellation]
     # Publish a device-review build only after functional/image safety checks.
     # A latency-only failure remains a failed CI result and is published verbatim.
-    if: ${{ always() && needs.regression.result == 'success' && needs.benchmark.result == 'success' && needs['latency-comparison'].result == 'success' && (needs.foundation.result == 'success' || needs.foundation.result == 'failure') }}
+    if: ${{ always() && needs.regression.result == 'success' && needs.benchmark.result == 'success' && needs['gesture-cancellation'].result == 'success' && needs['latency-comparison'].result == 'success' && (needs.foundation.result == 'success' || needs.foundation.result == 'failure') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -168,10 +216,14 @@ jobs:
         with: {name: canvas-foundation-evidence, path: review-foundation}
       - uses: actions/download-artifact@v4
         with: {name: brush-latency-comparison, path: review-latency}
+      - uses: actions/download-artifact@v4
+        with: {name: gesture-cancellation-evidence, path: review-gestures}
       - name: Verify experimental review safety and preserve unmet latency checks
         env:
           FOUNDATION_RESULT: ${{ needs.foundation.result }}
-        run: node scripts/check-performance-review.mjs review-foundation/foundation-quick-results.json review-measurements/qa-status.json review-latency/report.json
+        run: |
+          node scripts/check-performance-review.mjs review-foundation/foundation-quick-results.json review-measurements/qa-status.json review-latency/report.json
+          node scripts/check-gesture-cancellation.mjs review-gestures/before/report.json review-gestures/after/report.json review-gestures/gpu/report.json review-measurements/qa-status.json
       - name: Preserve all earlier QA and stage isolated review
         run: |
           (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
@@ -180,6 +232,8 @@ jobs:
           cp -a review-foundation/. site/qa/perf-canvas/evidence/foundation/
           mkdir -p site/qa/perf-canvas/evidence/latency-comparison
           cp -a review-latency/. site/qa/perf-canvas/evidence/latency-comparison/
+          mkdir -p site/qa/perf-canvas/evidence/gesture-cancellation
+          cp -a review-gestures/. site/qa/perf-canvas/evidence/gesture-cancellation/
           cp -a review-build/. site/qa/perf-canvas/app/
           printf '%s\n' '<!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro Canvas Performance</title><script>location.replace("./app/"+location.search+location.hash)</script><a href="./app/">性能改善版を開く</a></html>' > site/qa/perf-canvas/index.html
           (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after
