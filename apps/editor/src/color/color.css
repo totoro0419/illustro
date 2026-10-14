@@ -171,7 +171,7 @@
 }
 .color-orbit-plane{
  position:absolute;z-index:1;
- top:9%;left:28.5%;width:43%;height:auto;aspect-ratio:1;
+ top:15.5%;left:28.5%;width:43%;height:auto;aspect-ratio:1;
  box-sizing:border-box;transform:rotate(45deg);transform-origin:center;
  border:1px solid rgba(52,69,94,.5);border-radius:3px;
  background:var(--pure,#f33);
