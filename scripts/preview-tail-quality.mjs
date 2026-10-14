@@ -36,7 +36,7 @@ try{
      }
      const p=structuredClone(foundationPresets[index]);p.size=width===512?64:512;
      p.forceFade.enabled=false;p.prediction.enabled=false;p.stabilization.constant=0;p.stabilization.fast=0;
-     if(index===4){p.tip.direction=true;p.tip.aspect=.4;}
+     if(index===4){p.renderer='stamp';p.tip.direction=true;p.tip.aspect=.4;}
      // Replace the entire mutable tail, including jumps across tile boundaries,
      // a clipped edge, and disappearance. Expected pixels come from the CPU
      // brush reference, not from this renderer's dirty-key implementation.
