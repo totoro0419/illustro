@@ -6,7 +6,7 @@ describe('Orbit painted wheel hit geometry',()=>{
  it('uses one wheel geometry for render and SVG hit paths',()=>{
   const {top,front}=orbitHuePaths();
   expect(top).toContain(String(r.outerX));
-  expect(front).toContain(String(r.depth));
+  expect(front).toContain('L '+(r.cx+r.outerX)+' '+(r.cy+r.depth));
  });
  it('accepts the upper colored band throughout its ellipse',()=>{
   for(let angle=185;angle<=355;angle+=5){
@@ -27,11 +27,9 @@ describe('Orbit painted wheel hit geometry',()=>{
     expect(orbitHueRegion(x,y)).toBe('slide');
    }
    const x=r.cx+r.outerX*Math.cos(a);
-   const face=r.cy+r.outerY*Math.sin(a)+r.depth*.5;
    // The actual outer visible face continues below the ellipse.
    const atX=r.cy+r.outerY*Math.sqrt(1-((x-r.cx)/r.outerX)**2);
    expect(orbitHueRegion(x,atX+r.depth*.5)).toBe('slide');
-   void face;
   }
  });
  it('leaves the visible SV hole and blank workspace unclaimed',()=>{
