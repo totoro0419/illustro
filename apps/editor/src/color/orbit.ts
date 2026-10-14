@@ -1,5 +1,5 @@
 import {clamp,hex,hsvToRgb} from './model';
-import {ORBIT_WHEEL} from './orbitGeometry';
+import {ORBIT_WHEEL,orbitHueRegion} from './orbitGeometry';
 
 /**
  * Orbit hue selector: a deliberately light Canvas2D rendering of a tilted, thick
@@ -124,17 +124,20 @@ export function installOrbitPicker(root:HTMLElement,options:{
  root.addEventListener('pointerdown',e=>{
   if(drag!==null)return;
   const target=e.target instanceof Element?e.target:null;
-  const upperArc=target?.closest('#colorOrbitTopArc');
-  const frontArc=target?.closest('#colorOrbitFrontArc');
-  // Filled SVG sectors share the painted outer/inner ellipse and front depth.
-  // The surrounding canvas box is
-  // not a control and should permit workspace scrolling.
-  const hitRing=!!(upperArc||frontArc);
-  const hitSv=!hitRing&&!!target&&plane.contains(target);
-  if(!hitRing&&!hitSv)return;
-  // Mode is chosen from the hit ARC, not where a rectangular canvas lands.
-  // Pointer capture then keeps that chosen operation until pointerup/cancel.
-  const mode=upperArc?'rotate':frontArc?'slide':'sv';
+  const {x,y}=wheelPoint(e);
+  // Geometry is authoritative. SVG hit paths are retained for touch-action
+  // negotiation, but CSS stacking and SVG hit-test differences must never
+  // steal a painted hue pixel for SV or turn a visible SV pixel into hue.
+  const ringRegion=orbitHueRegion(x,y);
+  const sv=planeLocal(e);
+  const hitSv=ringRegion===null&&(
+   (!!target&&plane.contains(target))||
+   (sv.s>=0&&sv.s<=1&&sv.v>=0&&sv.v<=1)
+  );
+  if(ringRegion===null&&!hitSv)return;
+  // Capture the initial operation until release, including crossovers.
+  // Empty space remains available for workspace scrolling.
+  const mode=ringRegion??'sv';
   const angle=hitRing?ellipseAngle(e):0;
   drag={id:e.pointerId,part:hitRing?'wheel':'plane',mode,startX:e.clientX,
    startHue:options.getHue(),lastAngle:angle,angleTravel:0};
