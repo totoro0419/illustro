@@ -7,7 +7,7 @@ const require=createRequire(import.meta.url),{chromium}=require(process.env.RT_P
 const root=path.resolve(process.env.HANDOFF_APP_ROOT??'apps/editor/dist'),out=process.env.HANDOFF_OUTPUT??'/tmp/handoff-evidence/before.json';
 const server=http.createServer(async(req,res)=>{try{const p=path.resolve(root,'.'+(req.url.split('?')[0]==='/'?'/index.html':req.url.split('?')[0]));if(!p.startsWith(root+path.sep))return res.writeHead(403).end();res.setHeader('Content-Type',p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':p.endsWith('.html')?'text/html':'application/octet-stream');res.end(await fs.readFile(p));}catch{res.writeHead(404).end();}});
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
-const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
+const browser=await chromium.launch({headless:true,...(process.env.HANDOFF_CHROMIUM?{executablePath:process.env.HANDOFF_CHROMIUM}:{}),args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
 const report={commit:process.env.EXPECTED_COMMIT_SHA,cases:[],errors:[],environment:'Chromium software GPU. Submission and completion proxies, not physical pen-to-photon or isolated GPU execution.'};
 try{for(const backend of ['webgl2','webgpu'])for(const [width,height]of [[512,384],[2048,2048],[3000,3000]]){
  const context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1,hasTouch:true}),p=await context.newPage();p.on('pageerror',e=>report.errors.push(e.message));
@@ -23,7 +23,10 @@ try{for(const backend of ['webgl2','webgpu'])for(const [width,height]of [[512,38
   const message=s.worker.onmessage;s.worker.onmessage=event=>{const at=now();message(event);const t=endMap.get(event.data.id);if(t&&event.data.type==='record')t.workerReceiveMs=now()-at;};
   wrap(r,'drain',async(original,...args)=>{const t=traces.find(x=>x.logicalAt&&!x.readyAt),at=now();await original(...args);if(t)t.drainMs=(t.drainMs??0)+now()-at;});
   wrap(r.backend,'render',(original,snapshot,jobs,states)=>{const at=now(),v=original(snapshot,jobs,states),id=snapshot?.id;if(downMap.has(id)){const t=endMap.get(id)??{};if(!t.firstSubmissionAt){t.firstSubmissionAt=at;t.inputToSubmissionMs=at-downMap.get(id);}if(!endMap.has(id))downMap.set('submission:'+id,t);}return v;});
-  const sleep=ms=>new Promise(ok=>setTimeout(ok,ms)),canvas=document.getElementById('canvas'),rect=canvas.getBoundingClientRect(),emit=(type,x,y)=>canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:11,pointerType:'pen',button:0,buttons:type==='pointerup'?0:1,pressure:type==='pointerup'?0:.7,clientX:rect.x+x,clientY:rect.y+y}));
+  // Synthetic timing driver has no platform pointer capture. Trusted mouse/touch
+  // interactions are independently covered by the runtime acceptance suite.
+  const sleep=ms=>new Promise(ok=>setTimeout(ok,ms)),canvas=document.getElementById('canvas'),rect=canvas.getBoundingClientRect();canvas.setPointerCapture=()=>{};
+  const emit=(type,x,y)=>canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:11,pointerType:'pen',button:0,buttons:type==='pointerup'?0:1,pressure:type==='pointerup'?0:.7,clientX:rect.x+x,clientY:rect.y+y}));
   async function stroke(index,wait){const initial=s.id,at=now();emit('pointerdown',rect.width*.5-40,rect.height*.5+(index%8)*3);const accepted=s.id>initial;attempts.push({at,accepted,busy:port.read().frameState.finishing});if(accepted){for(let i=1;i<=12;i++)emit('pointermove',rect.width*.5-40+i*6,rect.height*.5+(index%8)*3+Math.sin(i)*3);emit('pointerup',rect.width*.5+32,rect.height*.5+(index%8)*3);}
    if(wait&&accepted){const t=traces.at(-1),started=now();while(port.read().frameState.finishing){if(now()-started>180000)throw Error('baseline stroke timeout');await sleep(2);}t.readyAt=now();t.upToReadyMs=t.readyAt-t.upAt;const submission=downMap.get('submission:'+t.id);if(submission)Object.assign(t,submission);}
   }
