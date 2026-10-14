@@ -173,3 +173,16 @@ struct VOut{@builtin(position)position:vec4f,@location(0)doc:vec2f};
 // Single MAX-coverage overlay over a committed tile has no archive or formal source.
 @fragment fn fragmentSweepDisplay(v:VOut)->@location(0)vec4f{let q=vec2i(v.doc-p.v[0].xy);let pos=vec2i(v.position.xy);let base=textureLoad(layer,q,0);let paint=max(textureLoad(liveImage0,pos,0),textureLoad(liveImage1,pos,0))*p.v[8].z;let composited=compose(base,paint,i32(p.v[8].y));return vec4f(composited.rgb*composited.a,composited.a);}
 `;
+
+// Handoff feedback is composed in bounded groups in a 128px scratch tile.
+// Keep straight alpha between groups; compose() already rounds every stroke to
+// the same RGBA8 values used by strict deposition. Premultiply only for display.
+export const glFeedbackComposeVertex=glDisplayVertex.replace('vec2 p=doc/params[4].xy;', 'vec2 p=corner;');
+export const glFeedbackCompose=glDisplay.replace('pos=ivec2(gl_FragCoord.xy)', 'pos=ivec2(q.x,127-q.y)').replace('result=vec4(d.rgb*d.a,d.a);', 'result=d;');
+export const glFeedbackContinue=glFeedbackCompose.replace('d=texelFetch(layer,q,0)', 'd=texelFetch(layer,ivec2(q.x,127-q.y),0)');
+export const glFeedbackTile=`#version 300 es
+precision highp float;uniform vec4 params[16];uniform sampler2D layer;in vec2 doc;out vec4 result;
+void main(){ivec2 q=ivec2(doc-params[0].xy);vec4 color=texelFetch(layer,ivec2(q.x,127-q.y),0);result=vec4(color.rgb*color.a,color.a);}`;
+export const wgFeedbackCompose=wgDisplay.replace('let xy=o.doc/p.v[4].xy;', 'let xy=corner;').replace('return vec4f(d.rgb*d.a,d.a);', 'return d;');
+export const wgFeedbackTile=wgDisplay.slice(0,wgDisplay.indexOf('@fragment fn fragment('))+`
+@fragment fn fragment(v:VOut)->@location(0)vec4f{let q=vec2i(v.doc-p.v[0].xy);let color=textureLoad(layer,q,0);return vec4f(color.rgb*color.a,color.a);}`;

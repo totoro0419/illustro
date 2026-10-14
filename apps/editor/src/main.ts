@@ -17,7 +17,7 @@ import {PersistenceCoordinator,type Candidate,type PersistenceState} from './per
 import type {PortableOpenResult} from './persistence/portable';
 import {CoreDocument,type SemanticOperation} from '@illustro/core';
 
-const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/');
+const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/');
 const qaPath=location.pathname.replace(/\/+$/,'');
 const m09Mode=new URLSearchParams(location.search).has('m09')||qaPath.endsWith('/qa/m09')||qaPath.endsWith('/qa/m09/index.html');
 const m08Mode=m09Mode||new URLSearchParams(location.search).has('m08')||qaPath.endsWith('/qa/m08')||qaPath.endsWith('/qa/m08/index.html');
@@ -40,7 +40,7 @@ let checkpointOperations:SemanticOperation[]=[];let checkpointCancelled=0;const 
 function scheduleQaRefresh(){if(qaRefreshTimer!==null)return;qaRefreshTimer=window.setTimeout(()=>{qaRefreshTimer=null;updateQa();},250);}
 let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
-const persistence=new PersistenceCoordinator(state=>{persistenceState=state;updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
+const persistence=new PersistenceCoordinator(state=>{persistenceState=state;surface?.setProtectionQueueLength(state.queueLength);updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
 let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=null,workSwitchBusy=false,librarySaving=false;
 let thumbnailTimer:number|null=null,thumbnailInProgress=false;
 
@@ -70,22 +70,22 @@ const renderLayers=()=>{
 };
 
 function updateHistoryButtons(){
-  const ready=!!surface,blocked=!ready||historyPending||surface?.busy===true;
-  byId<HTMLButtonElement>('undo').disabled=blocked||!controller.canUndo;
-  byId<HTMLButtonElement>('compactUndo').disabled=blocked||!controller.canUndo;
+  const ready=!!surface,blocked=!ready||historyPending||surface?.inputActive===true;
+  byId<HTMLButtonElement>('undo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes);
+  byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes);
   byId<HTMLButtonElement>('redo').disabled=blocked||!controller.canRedo;
   byId<HTMLButtonElement>('compactRedo').disabled=blocked||!controller.canRedo;
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
 }
 function updatePersistenceDisplay(){
-  const state=persistenceState,indicator=byId('saveState');
+  const state=persistenceState,indicator=byId('saveState'),inputPending=surface?.hasUncommittedInput??false;
   if(!state){indicator.textContent='自動保存準備中';return;}
-  indicator.textContent=state.storageError?'保存できません・再試行してください':state.protectionPending||state.queueLength>0?'アプリ内に保存中':qaMode?'自動保存済み':documentReady?'アプリ内に保存済み':'作品はまだ開かれていません';
+  indicator.textContent=state.storageError?'保存できません・再試行してください':inputPending||state.protectionPending||state.queueLength>0?'アプリ内に保存中':qaMode?'自動保存済み':documentReady?'アプリ内に保存済み':'作品はまだ開かれていません';
   const retry=document.getElementById('retryWorkSave');if(retry)retry.hidden=!state.storageError;
-  indicator.dataset.autosavePending=String(state.protectionPending||state.queueLength>0);indicator.dataset.saving=String(state.saving||librarySaving);indicator.dataset.protectedThrough=state.protectedThrough;
+  indicator.dataset.autosavePending=String(inputPending||state.protectionPending||state.queueLength>0);indicator.dataset.saving=String(state.saving||librarySaving);indicator.dataset.protectedThrough=state.protectedThrough;
   const homeSaveState=document.getElementById('ihHomeSaveState');
   if(homeSaveState){
-    const pending=state.protectionPending||state.queueLength>0;
+    const pending=inputPending||state.protectionPending||state.queueLength>0;
     homeSaveState.hidden=!documentReady||(!pending&&!state.storageError);
     homeSaveState.textContent=state.storageError?'保存できませんでした。開いているキャンバスに戻り、保存を再試行してください。':'作品を安全に保存しています。完了するまではこのページを閉じないでください。';
   }
@@ -140,7 +140,7 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   persistence.noteCommit(controller.document,handoff);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},reason=>{updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';restoreDrawingTool();}return;}
  const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value!=='layer');
@@ -331,10 +331,10 @@ byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.b
 byId<HTMLButtonElement>('addLayerPage').onclick=()=>byId<HTMLButtonElement>('addLayer').click();
 
 async function performHistory(direction:'undo'|'redo'){
-  if(!surface||surface.busy||historyPending||geometryBusy)return;const available=direction==='undo'?controller.canUndo:controller.canRedo;if(!available)return;
-  historyPending=true;updateHistoryButtons();updateQa();let change:EditorHistoryChange|null=null;
+  if(!surface||surface.inputActive||historyPending||geometryBusy)return;const available=direction==='undo'?(controller.canUndo||surface.hasPendingStrokes):controller.canRedo;if(!available)return;
+  historyPending=true;surface.setInputBarrier(true);updateHistoryButtons();updateQa();let change:EditorHistoryChange|null=null;
   try{
-    change=direction==='undo'?controller.undo():controller.redo();if(!change.changed)return;
+    await surface.settleStrokes();change=direction==='undo'?controller.undo():controller.redo();if(!change.changed)return;
     if(change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'))await reloadGeometryProjection();else await surface.syncHistory(change);if(direction==='undo')undoCount++;else redoCount++;
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(change.operations);byId('status').textContent=direction==='undo'?'ひとつ前の状態に戻しました。':'取り消した操作をやり直しました。';
   }catch{
@@ -342,7 +342,7 @@ async function performHistory(direction:'undo'|'redo'){
       try{const rollback=direction==='undo'?controller.redo():controller.undo();if(rollback.changed){if(rollback.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'))await reloadGeometryProjection();else await surface.syncHistory(rollback);}}catch{}
     }
     renderLayers();byId('status').textContent='Undo / Redoを安全に反映できなかったため、操作を戻しました。';
-  }finally{historyPending=false;updateHistoryButtons();updateQa();}
+  }finally{surface?.setInputBarrier(false);historyPending=false;updateHistoryButtons();updateQa();}
 }
 function bindHistoryButton(id:string,direction:'undo'|'redo'){
   const button=byId<HTMLButtonElement>(id);
@@ -363,8 +363,8 @@ document.addEventListener('keydown',e=>{
   if(isTextEditingTarget(e.target)||e.altKey)return;
   const primary=e.ctrlKey||e.metaKey;if(!primary)return;const key=e.key.toLowerCase();
   const undo=key==='z'&&!e.shiftKey,redo=(key==='z'&&e.shiftKey)||(key==='y'&&e.ctrlKey&&!e.metaKey);
-  if(!undo&&!redo)return;const direction=undo?'undo':'redo',available=direction==='undo'?controller.canUndo:controller.canRedo;
-  if(!surface||surface.busy||historyPending||!available)return;e.preventDefault();void performHistory(direction);
+  if(!undo&&!redo)return;const direction=undo?'undo':'redo',available=direction==='undo'?(controller.canUndo||surface?.hasPendingStrokes):controller.canRedo;
+  if(!surface||surface.inputActive||historyPending||!available)return;e.preventDefault();void performHistory(direction);
 });
 
 function selectPreset(id:string){if(!surface)return;surface.setEyedropper(false);surface.selectById(id);surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);const erasing=surface.blendMode==='erase';selectedTool=erasing?'eraser':'brush';if(erasing)lastEraserPresetId=surface.brushId;else lastBrushPresetId=surface.brushId;lastDrawingTool=selectedTool;byId<HTMLSelectElement>('brush').value=surface.brushId;byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));syncPreset();reflectRailTool();byId('brushBoxSummary').textContent=(surface.brushName||selectedTool)+' · '+Math.round(surface.brushSize)+'px';}
@@ -399,13 +399,13 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
 };
 byId<HTMLButtonElement>('save').onclick=async()=>{
   if(!documentReady)return;byId('status').textContent='作品ファイルを作成しています。作業の自動保存とは別です。';
-  try{const result=await persistence.save(controller.document,controller.selectedLayerId),size=formatFileSize(result.byteLength);byId('status').textContent='作品ファイルを保存しました（'+size+'）。自動保存状態には影響しません。';}
+  try{await surface?.settleLogicalStrokes();const result=await persistence.save(controller.document,controller.selectedLayerId),size=formatFileSize(result.byteLength);byId('status').textContent='作品ファイルを保存しました（'+size+'）。自動保存状態には影響しません。';}
   catch(error){byId('status').textContent='作品ファイルを保存できませんでした。'+(error instanceof Error?error.message:String(error));}
   updateQa();
 };
 byId<HTMLButtonElement>('saveCopy').onclick=async()=>{
   if(!documentReady)return;
-  try{await persistence.saveCopy(controller.document,controller.selectedLayerId);byId('status').textContent='別名の作品ファイルを保存しました。自動保存状態には影響しません。';}
+  try{await surface?.settleLogicalStrokes();await persistence.saveCopy(controller.document,controller.selectedLayerId);byId('status').textContent='別名の作品ファイルを保存しました。自動保存状態には影響しません。';}
   catch(error){byId('status').textContent='作品ファイルを別名保存できませんでした。'+(error instanceof Error?error.message:String(error));}
   updateQa();
 };
@@ -617,6 +617,7 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 if(perfMode){
  (window as unknown as {__illustroPerformance:unknown}).__illustroPerformance={
   read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,...surface?.performanceDiagnostics,checkpointErrors}),
+  probe:()=>surface?.handoffProbe(),
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},
   capture:async()=>{if(!surface)throw new Error('No document');const before=surface.performanceDiagnostics,delta=await surface.captureProjectionDelta(controller.document.head),after=surface.performanceDiagnostics;return {replace:delta.replace,tiles:delta.tiles.length,bytes:delta.tiles.reduce((n,t)=>n+t.pixels.byteLength,0),before,after};},
   view:(zoom:number,angle:number)=>{surface?.setViewZoom(zoom,false);surface?.setViewRotation(angle,false);},
@@ -628,7 +629,7 @@ if(perfMode){
  window.setInterval(()=>{if(!enabled.checked)return;surface?.setPerformanceEnabled(true);const data=surface?.performanceDiagnostics,metrics=data as Record<string,unknown>|undefined;
   // Enable only on transition; the history window must survive refreshes.
   const value=(n:unknown)=>typeof n==='number'&&Number.isFinite(n)?n.toFixed(1):'未測定';
-  byId('performanceReadout').textContent='表示要求：'+value(metrics?.submissionFps)+' 回/秒\n反映までの目安：'+value(metrics?.inputToSubmissionP95Ms)+' ms\n遅い側の表示間隔：'+value(metrics?.frameIntervalP95Ms)+' ms\n画像の読み出し：'+value(data?.checkpoint.lastMs)+' ms\nGPUの処理時間：未測定';
+  byId('performanceReadout').textContent='次の入力まで：'+value(data?.handoff.traces.at(-1)?.readyMs)+' ms\n正式確定まで：'+value(data?.handoff.traces.at(-1)?.logicalMs)+' ms\n処理待ち：'+((data?.handoff.pendingLogical??0)+(data?.handoff.pendingGpu??0))+' 筆\n入力の制限：'+(data?.handoff.rejected??0)+' 回\n表示要求：'+value(metrics?.submissionFps)+' 回/秒\n反映までの目安：'+value(metrics?.inputToPreviewSubmitP95Ms)+' ms\n遅い側の表示間隔：'+value(metrics?.frameIntervalP95Ms)+' ms\nGPU完了待ちの目安：'+value(metrics?.queueCompletionProxyMs)+' ms\n画像の読み出し：'+value(data?.checkpoint.lastMs)+' ms\nGPUの処理時間：未測定';
   if(byId<HTMLDetailsElement>('performanceRawDetails').open)byId('performanceRaw').textContent=JSON.stringify({backend:surface?.backend,...data,checkpointErrors},null,2);
  },500);
 }

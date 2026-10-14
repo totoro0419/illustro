@@ -1,6 +1,5 @@
 import {type WorkEntry} from './workLibrary';
 import {CoreDocument,type CoreRecoveryPacketV1,type LayerId,type PersistenceHandoff,type RevisionId} from '@illustro/core';
-import {validateRecord} from '@illustro/brush-rt';
 import workerUrl from './persistence.worker.ts?worker&url';
 import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortableData} from './portable';
 import type {DecodedPortableFile,PortableManifestSection} from './format';
@@ -19,7 +18,7 @@ type Pending=Readonly<{selectedLayerId:LayerId;packet:CoreRecoveryPacketV1;block
 type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
 
 export class PersistenceCoordinator{
-  private destroyed=false;
+  private destroyed=false;private navigationSequence=0;private navigationPending=0;
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
   private preserved:PreservedPortableData|undefined;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
@@ -45,7 +44,7 @@ export class PersistenceCoordinator{
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    this.patch({currentRevision:document.head});void this.request('set-head',{revisionId:document.head,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId}).catch(error=>this.patch({storageError:message(error)}));
+    const sequence=++this.navigationSequence,revisionId=document.head;this.navigationPending++;this.patch({currentRevision:revisionId,protectionPending:true});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId});}).catch(error=>this.patch({storageError:message(error)})).finally(()=>{this.navigationPending--;this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});});
   }
   async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
   async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
@@ -55,7 +54,7 @@ export class PersistenceCoordinator{
     const selected=raw.entry.selectedLayerId;return {opened:{document,selectedLayerId:document.root.hasLayer(selected)?selected:document.root.rootLayerIds[0]!,preserved:raw.entry.preserved??{manifestExtras:{},optionalSections:[]},generationId:'library',snapshotRevisionId:document.head,projectionCache:raw.projectionCache??undefined} as PortableOpenResult,entry:raw.entry as WorkEntry,fallback:Boolean(raw.fallback)};}
   async renameWork(documentId:string,name:string){await this.request('library-rename',{documentId,name});}
   async deleteWork(documentId:string){await this.request('library-delete',{documentId});}
-  async selectWorkLayer(selectedLayerId:LayerId){await this.request('library-selection',{selectedLayerId});}
+  async selectWorkLayer(selectedLayerId:LayerId){const controller=this.controller;await this.flushPrepared();if(controller!==this.controller||controller?.selectedLayerId!==selectedLayerId)return;await this.request('library-selection',{selectedLayerId});}
   async storeThumbnail(documentId:string,revisionId:string,thumbnail:Blob){await this.request('library-thumbnail',{documentId,revisionId,thumbnail});}
   async barrier(){await this.flushPrepared();await this.request('flush',{});if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);}
   async retry(){this.cancelIdle();await this.drain();if(this.queue.length)throw new Error(this.stateValue.storageError??'保存に失敗しました。');if(this.controller){const d=this.controller.document;await this.request('set-head',{revisionId:d.head,width:d.root.width,height:d.root.height});}this.patch({storageError:null});}
@@ -117,7 +116,7 @@ export class PersistenceCoordinator{
   }
   private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
   private patch(patch:Partial<PersistenceState>){
-    const next={...this.stateValue,...patch,offline:!navigator.onLine};
+    const next={...this.stateValue,...patch,offline:!navigator.onLine};if(this.navigationPending>0)next.protectionPending=true;
     next.dirty=next.savedRevision===null?true:next.currentRevision!==next.savedRevision;
     this.stateValue=Object.freeze(next);this.onChange(this.stateValue);
   }
@@ -139,8 +138,7 @@ export class PersistenceCoordinator{
 }
 
 function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){
-  const supported=new Set<string>();for(const operation of packet.revision.command.operations){if(operation.kind!=='brush.stroke')continue;const record=validateRecord(operation.parameters.strokeRecord);supported.add('engine:'+record.engine);supported.add('reconstruction:'+record.smoothing);supported.add('prng:'+record.random);supported.add('stroke-schema:'+record.version);}
-  return Object.freeze([...supported]);
+  const supported=new Set<string>();for(const operation of packet.revision.command.operations)for(const ref of operation.algorithmVersionRefs)supported.add(ref);return Object.freeze([...supported]);
 }
 async function fingerprintHandle(handle:unknown){const file=await (handle as {getFile:()=>Promise<File>}).getFile(),bytes=new Uint8Array(await file.arrayBuffer()),hash=await hashHex(bytes);return file.size+':'+file.lastModified+':'+hash;}
 async function verifyExternalWrite(handle:{getFile:()=>Promise<File>},expected:Uint8Array){

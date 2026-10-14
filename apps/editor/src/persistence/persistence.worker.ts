@@ -1,3 +1,4 @@
+import {ContiguousProtection} from './contiguousProtection';
 import {hasPixelData} from './pixelPresence';
 import {listWorks,getWork,publishWork,updateWork,deleteWork,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
@@ -62,7 +63,7 @@ async function handle(message:RequestMessage){
     case 'init':{
       const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch'),snapshot=message.snapshot as CorePersistenceSnapshotV1,blocks=blockInputs(message.blocks);
       if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid recovery base snapshot');
-      const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};libraryWork=null;
+      const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};protectionProofs.delete(path);libraryWork=null;
       await writeBlocks(store,path,blocks);await putVerified(store,path+'/base.frame',await frameJson(snapshot));
       const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId};
       await putVerified(store,path+'/meta.frame',await frameJson(meta));
@@ -74,9 +75,10 @@ async function handle(message:RequestMessage){
       const seq=BigInt(packet.handoff.commitSequence),finalPath=session.path+'/commits/'+seq.toString().padStart(20,'0')+'.frame',bytes=await frameJson(packet),existing=await store.get(finalPath);
       if(existing){if(!(await equalDigest(existing,bytes))){let valid=false;try{await unframeJson(existing);valid=true;}catch{}if(valid)throw new Error('duplicate recovery packet differs');await putVerified(store,finalPath,bytes);}}
       else await putVerified(store,finalPath,bytes);
-      const protectedThrough=await scanProtected(store,session);await writeHead(store,session,packet.revision.id);
+      let proof=protectionProofs.get(session.path);if(!proof){proof=new ContiguousProtection<VerifiedHead>(seq===1n?0n:await scanProtected(store,session));protectionProofs.set(session.path,proof);}
+      const root=packet.replacementRoot??libraryWork;proof.verified(seq,{revisionId:packet.revision.id,selectedLayerId:uuid(message.selectedLayerId,'selected layer'),width:root?.width??0,height:root?.height??0});const protectedThrough=proof.through;
+      if(proof.value){await writeHead(store,session,proof.value.revisionId);if(libraryWork)await publishCurrent({...proof.value,protectedThrough:protectedThrough.toString(),updatedAt:Date.now()});}
       await touchMeta(store,session);
-      if(libraryWork){const root=packet.replacementRoot??libraryWork;await publishCurrent({selectedLayerId:uuid(message.selectedLayerId,'selected layer'),revisionId:packet.revision.id,protectedThrough:protectedThrough.toString(),width:root.width,height:root.height,updatedAt:Date.now()});}
       reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
     }
     case 'set-head':{
@@ -373,3 +375,6 @@ function idbDelete(db:IDBDatabase,key:string){return new Promise<void>((resolve,
 function idbEntries(db:IDBDatabase,path:string){return new Promise<Entry[]>((resolve,reject)=>{const prefix=path.replace(/\/+$/,'')+'/',entries=new Map<string,'file'|'directory'>(),tx=db.transaction('files','readonly'),request=tx.objectStore('files').openKeyCursor();request.onsuccess=()=>{const cursor=request.result;if(!cursor){resolve([...entries].map(([name,kind])=>({name,kind})));return;}const key=String(cursor.key);if(key.startsWith(prefix)){const rest=key.slice(prefix.length),slash=rest.indexOf('/'),name=slash<0?rest:rest.slice(0,slash);if(name)entries.set(name,slash<0?'file':'directory');}cursor.continue();};request.onerror=()=>reject(request.error);});}
 
 async function publishCurrent(patch:Partial<WorkEntry>){if(!libraryWork)return;const old=libraryWork,current=await getWork(old.documentId);if(!current)throw new Error('この作品は作品一覧から削除されています。');const entry={...current,...patch,writerEpochId:old.writerEpochId,...(patch.revisionId&&patch.revisionId!==current.revisionId?{previous:{writerEpochId:current.writerEpochId,revisionId:current.revisionId,protectedThrough:current.protectedThrough}}:{})};await publishWork(entry,old.writerEpochId);libraryWork=entry;}
+
+type VerifiedHead={revisionId:string;selectedLayerId:string;width:number;height:number};
+const protectionProofs=new Map<string,ContiguousProtection<VerifiedHead>>();
