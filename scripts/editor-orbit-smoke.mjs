@@ -295,6 +295,42 @@ async function run(kind,touch=false){
    Number(await p.locator('#colorNumber2').inputValue())
   ];
   assert.ok(hsv[0]>24&&hsv[0]<33&&hsv[1]>60&&hsv[1]<68,'Diamond SV controls must map to true saturation and brightness: '+hsv);
+  // Regression: when V=0, black RGB loses saturation. Dragging beyond the
+  // lower-left must not teleport the SV marker to the left edge.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const svMarker=p.locator('#colorOrbitSvMarker');
+  const marker=async()=>svMarker.evaluate(el=>({s:parseFloat(el.style.left)/100,v:1-parseFloat(el.style.top)/100}));
+  const svStartBlack=svCoordinate(.65,.58),lowerLeftOutside=svCoordinate(.72,-.4);
+  await p.mouse.move(svStartBlack.x,svStartBlack.y);await p.mouse.down();
+  await p.mouse.move(lowerLeftOutside.x,lowerLeftOutside.y,{steps:12});
+  assert.equal(await color(p),'#000000','Outside lower-left should clamp brightness to black');
+  const atBlack=await marker();
+  assert.ok(Math.abs(atBlack.s-.72)<.025&&Math.abs(atBlack.v)<.005,
+   'Black must preserve requested saturation, not snap marker left: '+JSON.stringify(atBlack));
+  await p.mouse.move(svCoordinate(.3,-.4).x,svCoordinate(.3,-.4).y,{steps:8});
+  const trackingBlack=await marker();
+  assert.ok(Math.abs(trackingBlack.s-.3)<.025&&Math.abs(trackingBlack.v)<.005,
+   'Cursor must continue following the lower boundary of diamond: '+JSON.stringify(trackingBlack));
+  const backInside=svCoordinate(.68,.4);
+  await p.mouse.move(backInside.x,backInside.y,{steps:8});await p.mouse.up();
+  const returned=await marker();
+  assert.ok(Math.abs(returned.s-.68)<.025&&Math.abs(returned.v-.4)<.025,
+   'Reentering diamond must recover original cursor position: '+JSON.stringify(returned));
+  assert.notEqual(await color(p),'#000000','Reentering must recover brightness');
+  await hex.fill('#FF0000');await hex.press('Enter');
+  await p.mouse.move(svStartBlack.x,svStartBlack.y);await p.mouse.down();
+  await p.mouse.move(lowerLeftOutside.x,lowerLeftOutside.y,{steps:12});await p.mouse.up();
+  const committedBlack=await marker();
+  assert.ok(Math.abs(committedBlack.s-.72)<.025,
+   'After committing black marker must retain saturation: '+JSON.stringify(committedBlack));
+  assert.ok(Math.abs(Number(await p.locator('#colorNumber1').inputValue())-72)<3,
+   'Numeric HSB saturation must reflect the SV position at black');
+  const brightness=p.locator('#colorNumber2');
+  await brightness.fill('40');await brightness.press('Enter');
+  const brightened=await marker();
+  assert.ok(Math.abs(brightened.s-.72)<.025&&Math.abs(brightened.v-.4)<.025,
+   'Increasing V from black must restore the selected saturation: '+JSON.stringify(brightened));
+  await hex.fill('#FF0000');await hex.press('Enter');
   // SV gestures remain SV even after dragging across the ring. Hue is fixed.
   const hueBeforeSV=Number(await wheel.getAttribute('aria-valuenow'));
   const svStart=svCoordinate(.5,.5);
@@ -315,6 +351,19 @@ async function run(kind,touch=false){
    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
    const actualHue=Number(await wheel.getAttribute('aria-valuenow'));
    assert.ok(actualHue>265&&actualHue<295,'Touch must rotate on a curved path along the upper hue band: '+actualHue);
+   // Use native touchscreen events rather than only emulated mouse motion.
+   await hex.fill('#FF0000');await hex.press('Enter');
+   const nativeStart=svCoordinate(.65,.58),nativeOutside=svCoordinate(.72,-.4);
+   await p.locator('#colorOrbitPicker').evaluate(el=>{el.dataset.orbitGesture='none';});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:nativeStart.x,y:nativeStart.y}]});
+   await p.waitForFunction(()=>document.getElementById('colorOrbitPicker').dataset.orbitGesture==='sv');
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:nativeOutside.x,y:nativeOutside.y}]});
+   await p.waitForFunction(()=>{
+    const el=document.getElementById('colorOrbitSvMarker');
+    return document.getElementById('colorCode').textContent==='#000000'&&Math.abs(parseFloat(el.style.left)-72)<2.5;
+   },null,{timeout:5000});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   assert.ok(Math.abs((await marker()).s-.72)<.025,'Native touch at black must not snap cursor left');
    await cdp.detach();
   }
   const prior=await color(p);
