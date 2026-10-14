@@ -86,6 +86,9 @@ try{for(const [width,dpr,touch] of (baseline?[[1440,2,false]]:[[390,3,true],[600
   const fullCheck=[];
   for(let deg=-120;deg<=230;deg+=10){
    await move(fullAt(deg));
+   // Chromium's CDP send acknowledgment can precede delivery of pointermove
+   // to the page. Sample AFTER an animation frame, not the previous 10° step.
+   await p.evaluate(()=>new Promise(ok=>requestAnimationFrame(ok)));
    if([-40,50,140,230].includes(deg))fullCheck.push(await trace());
   }
   await up();
