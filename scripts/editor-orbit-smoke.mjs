@@ -186,6 +186,19 @@ async function run(kind,touch=false){
     rotatedBoundsWidth:rect.width,rotatedBoundsHeight:rect.height,
     rotation:style.transform,clipPath:style.clipPath,
     overlapWithHueRing:rect.bottom-wheelTopColor,
+    // The bottom tip must enter the transparent INNER opening, not merely
+    // disappear behind the opaque colored upper band. The old top:9% layout
+    // passed the outer-ring overlap check yet left the diamond visually
+    // separated from the hole (it stopped 0.7 CSS px short).
+    innerHoleTop:wheel.top+wheel.height*(73-31)/160,
+    visibleIntoHole:rect.bottom-(wheel.top+wheel.height*(73-31)/160),
+    diamondTipVisible:(()=>{
+     const x=rect.left+rect.width/2;
+     const y=wheel.top+wheel.height*(73-31)/160+Math.min(9,rect.width*.04);
+     const hit=document.elementFromPoint(x,y);
+     return hit===el||el.contains(hit);
+    })(),
+    topMargin:rect.top-el.parentElement.getBoundingClientRect().top,
     ringInFront:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitWheel')).zIndex)>Number(style.zIndex),
     relativeSide:el.offsetWidth/el.parentElement.getBoundingClientRect().width,
     overflow:outer.scrollWidth-outer.clientWidth
@@ -196,7 +209,10 @@ async function run(kind,touch=false){
   assert.notEqual(svShape.rotation,'none','SV square must be rotated into a diamond');
   assert.ok(svShape.clipPath==='none','Diamond uses genuine rotation without distorted clipping');
   assert.ok(svShape.relativeSide>=.425,'SV diamond should be visibly larger: '+JSON.stringify(svShape));
-  assert.ok(svShape.overlapWithHueRing>=12&&svShape.overlapWithHueRing<=45,'Diamond must overlap the ring slightly: '+JSON.stringify(svShape));
+  assert.ok(svShape.overlapWithHueRing>=30&&svShape.overlapWithHueRing<=66,'SV diamond must approach the ring without excessive overlap: '+JSON.stringify(svShape));
+  assert.ok(svShape.visibleIntoHole>=12&&svShape.visibleIntoHole<=30,'SV tip must visibly enter the transparent ring opening (not stop behind the colored band): '+JSON.stringify(svShape));
+  assert.equal(svShape.diamondTipVisible,true,'SV must remain directly visible and hit-testable inside the hue ring hole: '+JSON.stringify(svShape));
+  assert.ok(svShape.topMargin>=9,'Enlarged diamond must remain inside picker, not clip its upper corner: '+JSON.stringify(svShape));
   assert.equal(svShape.ringInFront,true,'Painted hue arc must appear in front of the overlapping diamond');
   assert.ok(svShape.overflow<=3,'Orbit must not overflow narrow dock');
   const svCoordinate=(s,v)=>{
