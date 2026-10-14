@@ -76,7 +76,14 @@ try{for(const [width,dpr,touch] of (baseline?[[1440,2,false]]:[[390,3,true],[600
   const fullBounds=await wheel.boundingBox();
   const fullAt=deg=>({x:fullBounds.x+fullBounds.width*(160+121.5*Math.cos(deg*Math.PI/180))/320,
                      y:fullBounds.y+fullBounds.height*(73+41*Math.sin(deg*Math.PI/180))/160});
-  await down(fullAt(-130));const fullCheck=[];
+  // The browser must dispatch touchStart before the first motion sample.
+  // CDP acknowledges dispatch before the rendered page processes the event;
+  // without this synchronization an artificial test can silently start 10°
+  // into the path, producing a false missing-samples failure.
+  await p.evaluate(()=>{delete document.getElementById('colorOrbitPicker').dataset.orbitGesture;});
+  await down(fullAt(-130));
+  await p.waitForFunction(()=>document.getElementById('colorOrbitPicker')?.dataset.orbitGesture==='rotate',null,{timeout:5000});
+  const fullCheck=[];
   for(let deg=-120;deg<=230;deg+=10){
    await move(fullAt(deg));
    if([-40,50,140,230].includes(deg))fullCheck.push(await trace());
