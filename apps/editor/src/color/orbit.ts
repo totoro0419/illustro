@@ -1,5 +1,5 @@
 import {clamp,hex,hsvToRgb} from './model';
-import {ORBIT_WHEEL,orbitHueRegion} from './orbitGeometry';
+import {ORBIT_WHEEL,orbitHueRegion,orbitHueAtPoint} from './orbitGeometry';
 
 /**
  * Orbit hue selector: a deliberately light Canvas2D rendering of a tilted, thick
@@ -21,7 +21,8 @@ export function installOrbitPicker(root:HTMLElement,options:{
  const point=root.querySelector<HTMLElement>('#colorOrbitSvMarker')!;
  type Drag={id:number;part:'wheel'|'plane';mode:'slide'|'rotate'|'sv';
   startX:number;startY:number;startHue:number;lastAngle:number;angleTravel:number;
-  traceCount:number;wasOnRing:boolean;arcOffset:number;arcSwitchTravel:number;};
+  traceCount:number;wasOnRing:boolean;arcOffset:number;arcSwitchTravel:number;
+  startedAt:number;tapX:number;tapY:number;maxDistance:number;};
  let hue=options.getHue(),frame=0,drag:Drag|null=null;
  const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false;
  void reduceMotion; // No inertial animation: color control tracks the input exactly.
@@ -157,7 +158,8 @@ export function installOrbitPicker(root:HTMLElement,options:{
   const angle=ringRegion!==null?ellipseAngle(e):0;
   drag={id:e.pointerId,part:ringRegion!==null?'wheel':'plane',mode,
    startX:e.clientX,startY:e.clientY,startHue:options.getHue(),lastAngle:angle,
-   angleTravel:0,traceCount:0,wasOnRing:true,arcOffset:0,arcSwitchTravel:0};
+   angleTravel:0,traceCount:0,wasOnRing:true,arcOffset:0,arcSwitchTravel:0,
+   startedAt:performance.now(),tapX:x,tapY:y,maxDistance:0};
   root.dataset.orbitGesture=mode;
   options.begin();
   root.setPointerCapture(e.pointerId);
@@ -170,6 +172,7 @@ export function installOrbitPicker(root:HTMLElement,options:{
  };
  const update=(e:PointerEvent)=>{
   if(!drag||drag.id!==e.pointerId)return;
+  drag.maxDistance=Math.max(drag.maxDistance,Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY));
   if(drag.mode==='sv'){previewPlane(e);return;}
   // Use the actual elliptical polar angle. A finger may cross the SV plane
   // AFTER starting on hue, without ever handing ownership to SV.
@@ -218,7 +221,15 @@ export function installOrbitPicker(root:HTMLElement,options:{
  root.addEventListener('pointermove',update);
  root.addEventListener('pointerup',e=>{
   if(!drag||drag.id!==e.pointerId)return;
-  update(e);drag=null;options.commit();
+  const maxDistance=Math.max(drag.maxDistance,Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY));
+  // Short tap = choose the color ALREADY displayed beneath the finger.
+  // Drag = preserve existing back-arc rotation, front slide and full-lap
+  // tracing. Never turn a slight touch jitter into a wheel rotation.
+  const tap=drag.part==='wheel'&&performance.now()-drag.startedAt<=400&&
+   maxDistance<=(e.pointerType==='touch'?13:8);
+  if(tap)previewHue(orbitHueAtPoint(drag.startHue,drag.tapX,drag.tapY));
+  else update(e);
+  drag=null;options.commit();
  });
  root.addEventListener('pointercancel',e=>{
   if(!drag||drag.id!==e.pointerId)return;
