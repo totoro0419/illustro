@@ -69,6 +69,23 @@ try{for(const [width,dpr,touch] of (baseline?[[1440,2,false]]:[[390,3,true],[600
  await red();const rb=await wheel.boundingBox();await down({x:rb.x+rb.width*.5,y:rb.y+rb.height*114/160});await move({x:rb.x+rb.width*.5+40,y:rb.y+rb.height*114/160});await up();const slide=await trace();assert.ok(slide.h>=44&&slide.h<=48);
  await red();const cb=await wheel.boundingBox();await down({x:cb.x+cb.width*(160+121.5*Math.cos(-130*Math.PI/180))/320,y:cb.y+cb.height*(73+41*Math.sin(-130*Math.PI/180))/160});await move({x:cb.x+cb.width*.6,y:cb.y+cb.height*32/160});await cancel();assert.equal((await trace()).color,'#FF0000','cancelled color edits return to the previous color');
  if(cdp){
+  // Real Chromium touch events: follow the complete ellipse through both
+  // visible arcs, the hidden rear overlap, the front rim and angle wrap.
+  // Mouse-only tests cannot establish that Android touch-action is correct.
+  await red();
+  const fullBounds=await wheel.boundingBox();
+  const fullAt=deg=>({x:fullBounds.x+fullBounds.width*(160+121.5*Math.cos(deg*Math.PI/180))/320,
+                     y:fullBounds.y+fullBounds.height*(73+41*Math.sin(deg*Math.PI/180))/160});
+  await down(fullAt(-130));const fullCheck=[];
+  for(let deg=-120;deg<=230;deg+=10){
+   await move(fullAt(deg));
+   if([-40,50,140,230].includes(deg))fullCheck.push(await trace());
+  }
+  await up();
+  assert.equal(fullCheck.length,4,'Touch full-circle checkpoints');
+  assert.ok(fullCheck.every(t=>t.gesture==='rotate'),'Full touch circle must not switch to SV or slider');
+  assert.ok(fullCheck[3].h<8||fullCheck[3].h>352,'Touch tracing one full wheel lap must return to the initial hue: '+JSON.stringify(fullCheck));
+  assert.equal(fullCheck[3].s,100);assert.equal(fullCheck[3].v,100);
   await p.setViewportSize({width,height:700});await p.locator('#colorOrbitPicker').scrollIntoViewIfNeeded();const blank=await p.locator('#colorOrbitPicker').evaluate(el=>{const r=el.getBoundingClientRect();let scroll=el.parentElement;while(scroll&&scroll.scrollHeight<=scroll.clientHeight+2)scroll=scroll.parentElement;if(!scroll)throw Error('no workspace scroll container');return {x:r.left+r.width*.08,y:r.top+r.height*.26,before:scroll.scrollTop};});
   const blankColor=(await trace()).color;await down({x:blank.x,y:blank.y});for(let i=1;i<=8;i++)await move({x:blank.x,y:blank.y-i*12});await up();
   await p.waitForFunction(before=>{let el=document.getElementById('colorOrbitPicker').parentElement;while(el&&el.scrollHeight<=el.clientHeight+2)el=el.parentElement;return el&&el.scrollTop>before+8;},blank.before,{timeout:6000});assert.equal((await trace()).color,blankColor,'blank space must scroll without changing color');
