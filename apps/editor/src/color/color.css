@@ -161,17 +161,16 @@
 .color-mode-switch #colorPickerMode[hidden]{display:none!important}
 #colorPicker[hidden],#colorOrbitPicker[hidden]{display:none!important}
 
-/* The SV diamond is intentionally inset into the rear of the Orbit wheel.
-   The colored upper arc remains in front: overlap is visual, not a competing
-   rectangular hit area. Input routing uses actual ellipse / diamond geometry. */
+/* Proper 3D composition: back rim < SV diamond < front rim.
+   Both rims share one paint operation for consistent colors and geometry. */
 .color-orbit-picker{
  position:relative;width:min(306px,100%);height:auto;aspect-ratio:1;
  min-width:0;margin:2px auto 3px;overflow:hidden;user-select:none;
  isolation:isolate;touch-action:pan-y;
 }
 .color-orbit-plane{
- position:absolute;z-index:1;
- top:15.5%;left:28.5%;width:43%;height:auto;aspect-ratio:1;
+ position:absolute;z-index:2;
+ top:28.5%;left:26.75%;width:46.5%;height:auto;aspect-ratio:1;
  box-sizing:border-box;transform:rotate(45deg);transform-origin:center;
  border:1px solid rgba(52,69,94,.5);border-radius:3px;
  background:var(--pure,#f33);
@@ -189,24 +188,25 @@
 /* Canvas transparency exposes the diamond underneath the inner opening.
    The colored ring itself is in front, so it can be traced all the way around. */
 .color-orbit-wheel{
- position:absolute;z-index:2;left:0;top:48%;width:100%;
+ position:absolute;z-index:0;left:0;top:48%;width:100%;
  height:auto;aspect-ratio:2/1;display:block;
  pointer-events:none;touch-action:pan-y;outline:none;
 }
-/* Override the global canvas{background:#fff} rule: an opaque canvas was hiding
-   the lower diamond tip and turning the elliptical hole into a white rectangle. */
-/* Only the visible, painted ellipse is interactive. The svg element itself
-   is transparent to hit testing; its two filled annular sectors are the targets.
-   Blank space and the wheel's rectangular canvas bounds retain normal scroll. */
+/* SVG input layers follow the visible back/SV/front order.
+   Front hue wins above SV; only exposed back hue is clickable. */
+.color-orbit-wheel-front{z-index:3}
 .color-orbit-hue-hit{
- position:absolute;z-index:3;left:0;top:48%;
- width:100%;height:auto;aspect-ratio:2/1;
- display:block;overflow:visible;
+ position:absolute;left:0;top:48%;width:100%;
+ height:auto;aspect-ratio:2/1;display:block;overflow:visible;
  pointer-events:none;touch-action:none;
 }
+.color-orbit-hue-back{z-index:1}
+.color-orbit-hue-front{z-index:4}
 .color-orbit-hue-hit path{pointer-events:fill;touch-action:none;cursor:grab}
 .color-orbit-hue-hit path:active{cursor:grabbing}
-#colorOrbitWheel.color-orbit-wheel{background:transparent}
+/* Never inherit the global opaque canvas background. */
+#colorOrbitWheel.color-orbit-wheel,
+#colorOrbitWheelFront.color-orbit-wheel{background:transparent}
 .color-orbit-wheel:active{cursor:grabbing}
 .color-orbit-wheel:focus-visible{outline:3px solid var(--a-focus);outline-offset:-3px;border-radius:35%}
 .color-orbit-hint{
