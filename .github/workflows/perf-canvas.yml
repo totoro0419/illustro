@@ -81,6 +81,7 @@ jobs:
           M08_CORRUPT_ALL_RENDER_CACHES: '1'
         run: |
           node scripts/display-cache-quality.mjs
+          node scripts/preview-tail-quality.mjs
           node scripts/editor-perf-checkpoint.mjs
           node scripts/editor-m09-smoke.mjs
           node scripts/editor-orbit-smoke.mjs
@@ -121,11 +122,39 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: canvas-foundation-evidence, path: /tmp/foundation-perf-evidence/}
+  latency-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build matched M09 and previous review
+        run: |
+          git worktree add --detach /tmp/latency-m09 e04d3e29ab162d487d0c774524323bf49c684a4d
+          git worktree add --detach /tmp/latency-prior 3040c4be6610bce42c3a98ec3f4646abd0253926
+          (cd /tmp/latency-m09 && npm run brush:build > /tmp/latency-m09-build.log)
+          (cd /tmp/latency-prior && npm run brush:build > /tmp/latency-prior-build.log)
+          npm run brush:build > /tmp/latency-current-build.log
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Compare complete input retention and original latency proxies
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/brush-latency-comparison.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: brush-latency-comparison, path: /tmp/brush-latency-evidence/}
   publish:
-    needs: [regression, benchmark, foundation]
+    needs: [regression, benchmark, foundation, latency-comparison]
     # Publish a device-review build only after functional/image safety checks.
     # A latency-only failure remains a failed CI result and is published verbatim.
-    if: ${{ always() && needs.regression.result == 'success' && needs.benchmark.result == 'success' && (needs.foundation.result == 'success' || needs.foundation.result == 'failure') }}
+    if: ${{ always() && needs.regression.result == 'success' && needs.benchmark.result == 'success' && needs['latency-comparison'].result == 'success' && (needs.foundation.result == 'success' || needs.foundation.result == 'failure') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -137,6 +166,8 @@ jobs:
         with: {name: canvas-performance-measurements, path: review-measurements}
       - uses: actions/download-artifact@v4
         with: {name: canvas-foundation-evidence, path: review-foundation}
+      - uses: actions/download-artifact@v4
+        with: {name: brush-latency-comparison, path: review-latency}
       - name: Verify experimental review safety and preserve unmet latency checks
         env:
           FOUNDATION_RESULT: ${{ needs.foundation.result }}
@@ -147,6 +178,8 @@ jobs:
           mkdir -p site/qa/perf-canvas/app site/qa/perf-canvas/evidence/foundation
           cp -a review-measurements/. site/qa/perf-canvas/evidence/
           cp -a review-foundation/. site/qa/perf-canvas/evidence/foundation/
+          mkdir -p site/qa/perf-canvas/evidence/latency-comparison
+          cp -a review-latency/. site/qa/perf-canvas/evidence/latency-comparison/
           cp -a review-build/. site/qa/perf-canvas/app/
           printf '%s\n' '<!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro Canvas Performance</title><script>location.replace("./app/"+location.search+location.hash)</script><a href="./app/">性能改善版を開く</a></html>' > site/qa/perf-canvas/index.html
           (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after

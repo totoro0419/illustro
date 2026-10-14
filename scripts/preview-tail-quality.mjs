@@ -1,0 +1,85 @@
+import fs from 'node:fs/promises';
+import http from 'node:http';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+
+const require=createRequire(import.meta.url),pw=require(process.env.RT_PLAYWRIGHT_PATH??'playwright');
+const html=await fs.readFile(new URL('../prototypes/brush-rt/dist/illustro-brush-rt.html',import.meta.url));
+const output=process.env.TAIL_EVIDENCE_DIRECTORY??'/tmp/preview-tail-evidence';
+await fs.mkdir(output,{recursive:true});
+const report={commit:process.env.EXPECTED_COMMIT_SHA??null,cases:[],errors:[]};
+const server=http.createServer((q,r)=>{r.setHeader('Content-Type','text/html');r.end(html);});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await pw.chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface']});
+try{
+ for(const backend of ['webgl2','webgpu'])for(const width of [512,3000])for(const layered of [false,true]){
+  const page=await browser.newPage();
+  page.on('pageerror',e=>report.errors.push(e.message));
+  page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
+  try{
+   await page.goto(`http://127.0.0.1:${server.address().port}/?backend=${backend}&document=${width}`);
+   await page.waitForFunction(()=>window.__rt||document.getElementById('status').classList.contains('danger'),{timeout:45000});
+   assert.ok(await page.evaluate(()=>!!window.__rt),await page.locator('#status').textContent());
+   for(const index of [0,4,6]){
+    const result=await page.evaluate(async({index,width,layered})=>{
+     const {renderer,session,foundationPresets}=window.__rt;
+     const {CanonicalBuilder,cpuReference}=await import('@rt/model');
+     const height=renderer.document.height,surfaceKey=layered?'tail-quality':'default';
+     await session.rebuild();renderer.setSurfaceStack([surfaceKey]);
+     let base=new Uint8ClampedArray(width*height*4);
+     if(index===6){
+      const under=structuredClone(foundationPresets[2]);under.size=width;under.forceFade.enabled=false;
+      session.begin(under,0,{},surfaceKey);
+      session.accept({x:width/2,y:height/2,t:performance.now(),pressure:1,pointerType:'mouse'});
+      await session.end();base=await renderer.read(surfaceKey);
+     }
+     const p=structuredClone(foundationPresets[index]);p.size=width===512?64:512;
+     p.forceFade.enabled=false;p.prediction.enabled=false;p.stabilization.constant=0;p.stabilization.fast=0;
+     if(index===4){p.tip.direction=true;p.tip.aspect=.4;}
+     // Replace the entire mutable tail, including jumps across tile boundaries,
+     // a clipped edge, and disappearance. Expected pixels come from the CPU
+     // brush reference, not from this renderer's dirty-key implementation.
+     const positions=[[20,20],[width-12,height-12],[width/2,height/2],[-20,height/2],[width/2,10],null];
+     const stages=[];let lastPreset;
+     for(const position of positions){
+      let record,commands=[];
+      if(position){
+       const b=new CanonicalBuilder(p,[0x12345678,51]);
+       b.accept({x:position[0],y:position[1],t:performance.now(),pressure:.8,pointerType:'pen'});
+       b.accept({x:position[0]+12,y:position[1]-9,t:performance.now()+1,pressure:.8,pointerType:'pen'});
+       b.finish();record=b.record();commands=record.commands;lastPreset=record.preset;
+      }
+      renderer.setLive({id:1000,surfaceKey,preset:lastPreset,stableSource:[],stableEnd:0,commands,tip:{x:0,y:0,t:performance.now()},finished:false});
+      const revision=renderer.mailbox.revision,deadline=performance.now()+45000;
+      while(!renderer.completions.some(m=>m.revision>=revision)){
+       if(performance.now()>deadline)throw Error('mutable tail presentation timeout');
+       await new Promise(r=>requestAnimationFrame(r));
+      }
+      const actual=await renderer.backend.readViewport();
+      const expected=record?cpuReference(record,width,height,base):base;
+      let max=0,bad=0;
+      for(let i=0;i<actual.length;i+=4)for(let c=0;c<4;c++){
+       const delta=Math.abs(actual[i+c]-(c===3?expected[i+c]:expected[i+c]*expected[i+3]/255));
+       max=Math.max(max,delta);if(delta>3)bad++;
+      }
+      stages.push({position,maxPremultipliedChannelError:max,channelsOver3:bad,submission:renderer.backend.lastSubmission});
+     }
+     renderer.backend.retirePreview(1000);renderer.previewStates.delete(1000);
+     renderer.snapshot=null;renderer.mailbox.value=null;
+     return {width,height,layered,brush:p.id,stages,errors:[...renderer.errors,...session.errors]};
+    },{index,width,layered});
+    report.cases.push({backend,...result});
+    await fs.writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));
+    assert.deepEqual(result.errors,[]);
+    for(const stage of result.stages)assert.equal(stage.channelsOver3,0,JSON.stringify({backend,brush:result.brush,width,layered,stage}));
+   }
+  }finally{await page.close();}
+ }
+ assert.equal(report.cases.length,24);assert.deepEqual(report.errors,[]);
+}catch(e){report.errors.push(e.stack);throw e;}
+finally{
+ await fs.writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));
+ await browser.close();server.close();
+}
+console.log(JSON.stringify({cases:report.cases.length,errors:report.errors}));
