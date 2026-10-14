@@ -155,3 +155,31 @@ jobs:
           git add qa/perf-stroke-handoff
           git diff --cached --quiet || git commit -m 'qa: publish isolated stroke handoff review'
           git push origin HEAD:gh-pages
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Wait for the exact source on public Pages
+        env:
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          PUBLIC_EVIDENCE_URL: https://totoro0419.github.io/illustro/qa/perf-stroke-handoff/evidence/qa-status.json
+        run: |
+          ready=0
+          for i in $(seq 1 36); do
+            curl -fsSL "$PUBLIC_EVIDENCE_URL?build=$GITHUB_SHA" -o /tmp/public-handoff.json || true
+            if node -e "try{process.exit(JSON.parse(require('fs').readFileSync('/tmp/public-handoff.json')).sourceCommit===process.env.EXPECTED_COMMIT_SHA?0:1)}catch{process.exit(1)}"; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+      - name: Install public-verification browser
+        run: |
+          npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify real drawing, immediate history and fixed save on public build
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          HANDOFF_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-stroke-handoff/app/
+          HANDOFF_OPERATIONS_OUTPUT: /tmp/handoff-public/report.json
+        run: node scripts/stroke-handoff-operations.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: stroke-handoff-public-verification, path: /tmp/handoff-public/}
