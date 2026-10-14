@@ -1853,6 +1853,11 @@
     {
       "path": "docs/research/COLOR_INTERACTION_2026-10-14.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/STROKE_HANDOFF_2026-10-14.md",
+      "status": "EXPERIMENTAL",
+      "note": "Measured stroke handoff design and isolated review evidence; no acceptance promotion."
     }
   ]
 }

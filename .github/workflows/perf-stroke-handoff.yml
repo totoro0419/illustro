@@ -9,16 +9,92 @@ concurrency:
   group: stroke-handoff-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  baseline:
+  regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Prepare immutable source baseline with timing access only
+      - name: Source integrity, color preservation, Core and unit regression
+        run: |
+          git diff --exit-code 45357428592c0366a90aa4ecac97a1ba72937fc8 -- apps/editor/src/color
+          npm run prep:check
+          npm run core:check
+          npm run brush:build > /tmp/brush-build.log
+          npx vitest run apps/editor/src
+          node --test packages/brush-rt/test/*.test.mjs > /tmp/brush-tests.log
+          node scripts/check-test-summary.mjs /tmp/brush-tests.log
+      - name: Build exact review app
+        env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Real browser color, gesture, persistence, export and prior features
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          M08_PERF_REVIEW: '1'
+          M05_EXPECT_MILESTONE: M07
+          M06_EXPECT_MILESTONE: M07
+          M08_CORRUPT_ALL_RENDER_CACHES: '1'
+        run: |
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-orbit-smoke.mjs
+          node scripts/editor-color-hit-smoke.mjs
+          node scripts/editor-gesture-cancel-smoke.mjs
+          node scripts/editor-m05-smoke.mjs
+          node scripts/editor-m06-smoke.mjs
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-home-smoke.mjs
+          node scripts/editor-works-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        with: {name: stroke-handoff-build, path: apps/editor/dist/}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stroke-handoff-regression
+          path: |
+            /tmp/*-evidence/
+            /tmp/illustro-m05/
+            /tmp/brush-tests.log
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run brush:build > /tmp/brush-build.log
+      - run: |
+          npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Four sizes, three layer counts, seven brushes, both GPUs, overlap and history
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/stroke-handoff-quality.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: stroke-handoff-quality, path: /tmp/handoff-quality/}
+  performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare immutable baseline
         run: |
           git worktree add --detach /tmp/handoff-before 45357428592c0366a90aa4ecac97a1ba72937fc8
           node scripts/instrument-handoff-baseline.mjs /tmp/handoff-before
@@ -26,17 +102,55 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm run brush:build > /tmp/handoff-before-build.log
           VITE_COMMIT_SHA=45357428592c0366a90aa4ecac97a1ba72937fc8 npm --workspace @illustro/editor exec -- vite build --base=./
-      - name: Install browser
-        run: |
+      - run: |
+          npm run brush:build > /tmp/brush-build.log
+          VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
           npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Measure previous input gate and each finish stage
+      - name: Matched sequential comparison and sustained 1100 stroke application workload
         env:
           RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
-          HANDOFF_APP_ROOT: /tmp/handoff-before/apps/editor/dist
-          HANDOFF_OUTPUT: /tmp/handoff-evidence/before.json
-          EXPECTED_COMMIT_SHA: 45357428592c0366a90aa4ecac97a1ba72937fc8
-        run: node scripts/stroke-handoff-benchmark.mjs
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          HANDOFF_APP_ROOT=/tmp/handoff-before/apps/editor/dist HANDOFF_OUTPUT=/tmp/handoff-evidence/before.json EXPECTED_COMMIT_SHA=45357428592c0366a90aa4ecac97a1ba72937fc8 node scripts/stroke-handoff-benchmark.mjs
+          HANDOFF_OUTPUT=/tmp/handoff-evidence/after.json node scripts/stroke-handoff-benchmark.mjs
+          HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/stress/report.json node scripts/stroke-handoff-stress.mjs
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: stroke-handoff-baseline, path: /tmp/handoff-evidence/}
+        with: {name: stroke-handoff-performance, path: /tmp/handoff-evidence/}
+  publish:
+    needs: [regression, quality, performance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/download-artifact@v4
+        with: {name: stroke-handoff-build, path: review-build}
+      - uses: actions/download-artifact@v4
+        with: {name: stroke-handoff-performance, path: review-evidence}
+      - uses: actions/download-artifact@v4
+        with: {name: stroke-handoff-quality, path: review-evidence/quality}
+      - uses: actions/download-artifact@v4
+        with: {name: stroke-handoff-regression, path: review-evidence/regression}
+      - name: Verify evidence and preserve every other QA page
+        env: {EXPECTED_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          node scripts/stroke-handoff-report.mjs review-evidence
+          (cd site && find qa -type f ! -path 'qa/perf-stroke-handoff/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
+          mkdir -p site/qa/perf-stroke-handoff/app site/qa/perf-stroke-handoff/evidence
+          cp -a review-build/. site/qa/perf-stroke-handoff/app/
+          cp -a review-evidence/. site/qa/perf-stroke-handoff/evidence/
+          printf '%s\n' '<!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro 連続描画の確認</title><script>location.replace("./app/"+location.search+location.hash)</script><a href="./app/">連続描画の確認ページを開く</a></html>' > site/qa/perf-stroke-handoff/index.html
+          (cd site && find qa -type f ! -path 'qa/perf-stroke-handoff/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after
+          diff -u /tmp/old-qa.before /tmp/old-qa.after
+      - name: Publish isolated QA only
+        working-directory: site
+        run: |
+          current=$(git ls-remote origin refs/heads/perf/stroke-handoff-2026-10-14 | cut -f1)
+          if [ "$current" != "$GITHUB_SHA" ]; then echo 'Newer source exists; preserving it.'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-stroke-handoff
+          git diff --cached --quiet || git commit -m 'qa: publish isolated stroke handoff review'
+          git push origin HEAD:gh-pages

@@ -4,6 +4,7 @@ import type {DocumentPort,DrawingTarget,StrokeCommitResult} from './ports';
 
 type Bounds={x0:number;y0:number;x1:number;y1:number};
 type Accum={bounds:Bounds;commands:number[]};
+export class EmptyStrokeError extends Error{}
 export class CoreStrokeDocumentPort implements DocumentPort{
   constructor(readonly document:CoreDocument,private readonly selectedLayer:()=>LayerId=()=>document.defaultRasterLayerId){}
   target():DrawingTarget{
@@ -18,7 +19,7 @@ export class CoreStrokeDocumentPort implements DocumentPort{
     const layer=root.getLayer(target.layerId);if(layer.kind!=='raster'||layer.surface.descriptor.surfaceId!==target.surfaceId)throw new Error('描画先のレイヤーが変わりました。');
     if(layer.locked)throw new Error('描画先のレイヤーはロックされています。');
     const records=[record,...additional],dirtyByRecord=records.map(item=>{shallowRecordGuard(item);return dirtyTiles(item).filter(h=>h.tileX>=0&&h.tileY>=0&&h.tileX*CANONICAL_TILE_SIZE<target.width&&h.tileY*CANONICAL_TILE_SIZE<target.height);});
-    if(!dirtyByRecord[0]?.length)throw new Error('確定できる線がありません。');
+    if(!dirtyByRecord[0]?.length)throw new EmptyStrokeError('確定できる線がありません。');
     const tx=this.document.begin('Brush stroke');
     let operationKey:StrokeCommitResult['operationKey']|null=null,dirtyTileCount=0;
     for(let i=0;i<records.length;i++){const item=records[i]!,dirty=dirtyByRecord[i]!;
