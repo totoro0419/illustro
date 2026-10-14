@@ -32,11 +32,10 @@ jobs:
         run: npm run brush:build
       - name: Editor unit regression
         run: npx vitest run apps/editor/src packages/core/src/geometry.test.ts
-      - name: Brush foundation exact 93 tests
+      - name: Brush foundation complete discovered tests
         run: |
           node --test packages/brush-rt/test/*.test.mjs | tee /tmp/home-brush.txt
-          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/home-brush.txt
-          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/home-brush.txt
+          node scripts/check-test-summary.mjs /tmp/home-brush.txt
           grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/home-brush.txt
       - name: Editor typecheck and build
         run: |

@@ -1,4 +1,5 @@
 import {clamp,hex,hsvToRgb} from './model';
+import {ORBIT_WHEEL,orbitHueRegion,orbitHueAtPoint} from './orbitGeometry';
 
 /**
  * Orbit hue selector: a deliberately light Canvas2D rendering of a tilted, thick
@@ -15,13 +16,17 @@ export function installOrbitPicker(root:HTMLElement,options:{
  cancel:()=>void;
 }){
  const wheel=root.querySelector<HTMLCanvasElement>('#colorOrbitWheel')!;
+ const front=root.querySelector<HTMLCanvasElement>('#colorOrbitWheelFront')!;
  const plane=root.querySelector<HTMLElement>('#colorOrbitPlane')!;
  const point=root.querySelector<HTMLElement>('#colorOrbitSvMarker')!;
- type Drag={id:number;part:'wheel'|'plane';mode:'slide'|'rotate'|'sv';startX:number;startHue:number;lastAngle:number;angleTravel:number};
+ type Drag={id:number;part:'wheel'|'plane';mode:'slide'|'rotate'|'sv';
+  startX:number;startY:number;startHue:number;lastAngle:number;angleTravel:number;
+  traceCount:number;wasOnRing:boolean;arcOffset:number;arcSwitchTravel:number;
+  startedAt:number;tapX:number;tapY:number;maxDistance:number;};
  let hue=options.getHue(),frame=0,drag:Drag|null=null;
  const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false;
  void reduceMotion; // No inertial animation: color control tracks the input exactly.
- const radius={cx:160,cy:73,outerX:146,outerY:51,innerX:97,innerY:31,depth:13};
+ const radius=ORBIT_WHEEL;
  function quad(ctx:CanvasRenderingContext2D,a:number,b:number,r0x:number,r0y:number,r1x:number,r1y:number,shift=0){
   ctx.beginPath();
   ctx.moveTo(radius.cx+r0x*Math.cos(a),radius.cy+r0y*Math.sin(a)+shift);
@@ -38,7 +43,7 @@ export function installOrbitPicker(root:HTMLElement,options:{
   const dpr=Math.min(window.devicePixelRatio||1,2.5),w=Math.max(1,Math.round(bound.width*dpr)),h=Math.max(1,Math.round(bound.height*dpr));
   if(wheel.width!==w||wheel.height!==h){wheel.width=w;wheel.height=h;}
   const ctx=wheel.getContext('2d',{alpha:true});if(!ctx)return;
-  ctx.setTransform(w/320,0,0,h/160,0,0);ctx.clearRect(0,0,320,160);
+  ctx.setTransform(w/radius.width,0,0,h/radius.height,0,0);ctx.clearRect(0,0,radius.width,radius.height);
   // Ground shadow and the darker front-facing thickness establish depth.
   ctx.beginPath();ctx.ellipse(160,91,146,53,0,0,Math.PI*2);
   ctx.ellipse(160,91,97,31,0,0,Math.PI*2);
@@ -85,12 +90,19 @@ export function installOrbitPicker(root:HTMLElement,options:{
   ctx.save();ctx.shadowColor='rgba(15,26,37,.55)';ctx.shadowBlur=4;
   ctx.fillStyle='#fff';ctx.strokeStyle='#28384b';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(151,109);ctx.lineTo(169,109);ctx.lineTo(160,129);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+  // Full wheel remains in the rear; copy only the nearer half OVER the SV.
+  // This is one actual hue render plus a tiny GPU-independent canvas copy.
+  if(front.width!==w||front.height!==h){front.width=w;front.height=h;}
+  const fctx=front.getContext('2d',{alpha:true});if(!fctx)return;
+  fctx.setTransform(1,0,0,1,0,0);fctx.clearRect(0,0,w,h);
+  const split=Math.round(radius.cy*h/radius.height);
+  fctx.drawImage(wheel,0,split,w,h-split,0,split,w,h-split);
  }
  const request=()=>{if(!frame)frame=requestAnimationFrame(render);};
  // Coordinate helpers always use painted geometry, not the canvas's rectangular box.
  const wheelPoint=(e:PointerEvent)=>{
   const b=wheel.getBoundingClientRect();
-  return {x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*160/b.height};
+  return {x:(e.clientX-b.left)*radius.width/b.width,y:(e.clientY-b.top)*radius.height/b.height};
  };
  const planeLocal=(e:PointerEvent)=>{
   const b=plane.getBoundingClientRect(),side=plane.offsetWidth;
@@ -123,20 +135,31 @@ export function installOrbitPicker(root:HTMLElement,options:{
  root.addEventListener('pointerdown',e=>{
   if(drag!==null)return;
   const target=e.target instanceof Element?e.target:null;
-  const upperArc=target?.closest('#colorOrbitTopArc');
-  const frontArc=target?.closest('#colorOrbitFrontArc');
-  // Real SVG strokes define the wheel's input boundary. This is intentionally
-  // the SAME curved region the user can see. The surrounding canvas box is
-  // not a control and should permit workspace scrolling.
-  const hitRing=!!(upperArc||frontArc);
-  const hitSv=!hitRing&&!!target&&plane.contains(target);
-  if(!hitRing&&!hitSv)return;
-  // Mode is chosen from the hit ARC, not where a rectangular canvas lands.
-  // Pointer capture then keeps that chosen operation until pointerup/cancel.
-  const mode=upperArc?'rotate':frontArc?'slide':'sv';
-  const angle=hitRing?ellipseAngle(e):0;
-  drag={id:e.pointerId,part:hitRing?'wheel':'plane',mode,startX:e.clientX,
-   startHue:options.getHue(),lastAngle:angle,angleTravel:0};
+  const {x,y}=wheelPoint(e);
+  // Geometry is authoritative. SVG hit paths are retained for touch-action
+  // negotiation, but CSS stacking and SVG hit-test differences must never
+  // steal a painted hue pixel for SV or turn a visible SV pixel into hue.
+  // A ring gesture starts on the painted SVG path only. The upper arc is
+  // physically BEHIND SV; its overlapped portion must not steal SV input.
+  // The near/front arc is always above SV and receives priority.
+  const frontHit=!!target?.closest('#colorOrbitFrontArc');
+  const backHit=!!target?.closest('#colorOrbitTopArc');
+  const ringRegion=frontHit?'slide':backHit?'rotate':null;
+  const sv=planeLocal(e);
+  const hitSv=ringRegion===null&&(
+   (!!target&&plane.contains(target))||
+   (sv.s>=0&&sv.s<=1&&sv.v>=0&&sv.v<=1&&
+    orbitHueRegion(x,y)===null)
+  );
+  if(ringRegion===null&&!hitSv)return;
+  // Capture the initial operation until release, including crossovers.
+  // Empty space remains available for workspace scrolling.
+  const mode=ringRegion??'sv';
+  const angle=ringRegion!==null?ellipseAngle(e):0;
+  drag={id:e.pointerId,part:ringRegion!==null?'wheel':'plane',mode,
+   startX:e.clientX,startY:e.clientY,startHue:options.getHue(),lastAngle:angle,
+   angleTravel:0,traceCount:0,wasOnRing:true,arcOffset:0,arcSwitchTravel:0,
+   startedAt:performance.now(),tapX:x,tapY:y,maxDistance:0};
   root.dataset.orbitGesture=mode;
   options.begin();
   root.setPointerCapture(e.pointerId);
@@ -149,25 +172,64 @@ export function installOrbitPicker(root:HTMLElement,options:{
  };
  const update=(e:PointerEvent)=>{
   if(!drag||drag.id!==e.pointerId)return;
+  drag.maxDistance=Math.max(drag.maxDistance,Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY));
   if(drag.mode==='sv'){previewPlane(e);return;}
-  if(drag.mode==='slide'){
-   // Preserve the familiar horizontal slide on the front-facing arc.
-   previewHue(drag.startHue+(e.clientX-drag.startX)*1.15);return;
-  }
-  // At the BACK/UPPER arc, dragging right naturally rotates the colored
-  // wheel clockwise. Hue decreases because the wheel art is color(hue+angle).
-  // Accumulate the shortest angular step around the ellipse. Using the
-  // current pointer location directly avoids duplicate/out-of-order
-  // coalesced samples on styluses and touch screens.
+  // Use the actual elliptical polar angle. A finger may cross the SV plane
+  // AFTER starting on hue, without ever handing ownership to SV.
+  // Ignore the singularity very close to the ellipse center: one stray
+  // sample there must not spin the wheel by 180 degrees.
+  const position=wheelPoint(e);
   const angle=ellipseAngle(e);
-  drag.angleTravel+=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
-  drag.lastAngle=angle;
-  previewHue(drag.startHue-drag.angleTravel*180/Math.PI);
+  const distance=Math.hypot((position.x-radius.cx)/radius.outerX,(position.y-radius.cy)/radius.outerY);
+  if(distance>=.25){
+   if(drag.wasOnRing){
+    const step=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
+    drag.angleTravel+=step;
+   }
+   drag.lastAngle=angle;
+   drag.wasOnRing=true;
+  }else{
+   drag.wasOnRing=false;
+  }
+  if(drag.mode==='slide'){
+   const horizontalHue=drag.startHue+(e.clientX-drag.startX)*1.15;
+   // A horizontal drag remains the familiar front slider. If the pointer
+   // instead follows the elliptical circumference, graduate to rotation.
+   // Require real curved motion on the painted band, not diagonal jitter.
+   const onBand=orbitHueRegion(position.x,position.y)!==null;
+   if(onBand&&distance>.55)drag.traceCount++;
+   else drag.traceCount=0;
+   const dy=Math.abs(e.clientY-drag.startY),arc=Math.abs(drag.angleTravel);
+   if(drag.traceCount>=3&&dy>5&&arc>.34){
+    drag.mode='rotate';
+    root.dataset.orbitGesture='rotate';
+    drag.arcSwitchTravel=drag.angleTravel;
+    // Preserve live color at the transition; dissipate the offset across
+    // a quarter turn. One full circular lap still returns to its first hue.
+    const angularHue=drag.startHue-drag.angleTravel*180/Math.PI;
+    drag.arcOffset=((horizontalHue-angularHue+540)%360)-180;
+   }else{
+    previewHue(horizontalHue);return;
+   }
+  }
+  // Clockwise screen-space tracing increases the ellipse angle; the spectrum
+  // rotates right when hue decreases. Supports multiple uninterrupted turns
+  // and reversals, even while passing across the SV diamond.
+  const fade=Math.max(0,1-Math.abs(drag.angleTravel-drag.arcSwitchTravel)/(Math.PI/2));
+  previewHue(drag.startHue-drag.angleTravel*180/Math.PI+drag.arcOffset*fade);
  };
  root.addEventListener('pointermove',update);
  root.addEventListener('pointerup',e=>{
   if(!drag||drag.id!==e.pointerId)return;
-  update(e);drag=null;options.commit();
+  const maxDistance=Math.max(drag.maxDistance,Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY));
+  // Short tap = choose the color ALREADY displayed beneath the finger.
+  // Drag = preserve existing back-arc rotation, front slide and full-lap
+  // tracing. Never turn a slight touch jitter into a wheel rotation.
+  const tap=drag.part==='wheel'&&performance.now()-drag.startedAt<=400&&
+   maxDistance<=(e.pointerType==='touch'?13:8);
+  if(tap)previewHue(orbitHueAtPoint(drag.startHue,drag.tapX,drag.tapY));
+  else update(e);
+  drag=null;options.commit();
  });
  root.addEventListener('pointercancel',e=>{
   if(!drag||drag.id!==e.pointerId)return;

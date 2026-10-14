@@ -87,25 +87,30 @@ async function run(kind,touch=false){
   assert.equal(wheelOpacity.holeAlpha,0,'Inner hole must stay transparent, never a shadow-filled gray disk');
   const b=await wheel.boundingBox();assert.ok(b?.width>210);
   const hitMap=await p.locator('#colorOrbitPicker').evaluate(root=>{
-   const wheel=root.querySelector('#colorOrbitWheel'),svg=root.querySelector('#colorOrbitHueHit');
+   const wheel=root.querySelector('#colorOrbitWheel'),svg=root.querySelector('#colorOrbitHueHit'),rear=root.querySelector('#colorOrbitHueBackHit');
    const r=root.getBoundingClientRect(),wr=wheel.getBoundingClientRect();
    const sample=(x,y)=>document.elementFromPoint(x,y)?.id||'anonymous';
    return {
     plainTarget:sample(r.left+r.width*.08,r.top+r.height*.26),
-    upperTarget:sample(wr.left+wr.width/2,wr.top+wr.height*(32/160)),
+    upperTarget:sample(wr.left+wr.width*(160+121.5*Math.cos(-130*Math.PI/180))/320,wr.top+wr.height*(73+41*Math.sin(-130*Math.PI/180))/160),
+    coveredRearTarget:sample(wr.left+wr.width/2,wr.top+wr.height*32/160),
     lowerTarget:sample(wr.left+wr.width/2,wr.top+wr.height*(114/160)),
     svgTouch:getComputedStyle(svg).touchAction,
     rootTouch:getComputedStyle(root).touchAction,
     canvasPointer:getComputedStyle(wheel).pointerEvents,
-    upperTouch:getComputedStyle(svg.querySelector('#colorOrbitTopArc')).touchAction,
+    upperTouch:getComputedStyle(rear.querySelector('#colorOrbitTopArc')).touchAction,
+    rearSvgTouch:getComputedStyle(rear).touchAction,
     frontTouch:getComputedStyle(svg.querySelector('#colorOrbitFrontArc')).touchAction,
    };
   });
   assert.equal(hitMap.plainTarget,'colorOrbitPicker','A blank Orbit margin must not intercept workspace scrolling: '+JSON.stringify(hitMap));
-  assert.equal(hitMap.upperTarget,'colorOrbitTopArc','Upper ellipse arc must have a real curved hit target: '+JSON.stringify(hitMap));
+  assert.equal(hitMap.upperTarget,'colorOrbitTopArc','Exposed upper ellipse arc must remain draggable: '+JSON.stringify(hitMap));
+  assert.equal(hitMap.coveredRearTarget,'colorOrbitPlane','SV must cover the occluded back arc (true layer ordering): '+JSON.stringify(hitMap));
   assert.equal(hitMap.lowerTarget,'colorOrbitFrontArc','Front ellipse arc must have a real curved hit target: '+JSON.stringify(hitMap));
   assert.equal(hitMap.rootTouch,'pan-y','Blank Orbit must allow vertical workspace touch scrolling');
   assert.equal(hitMap.canvasPointer,'none','Rectangular canvas must never swallow gestures or scrolling');
+  assert.equal(hitMap.svgTouch,'none','The front SVG must disable native scrolling on hue gestures');
+  assert.equal(hitMap.rearSvgTouch,'none','The back SVG must disable native scrolling on hue gestures');
   assert.equal(hitMap.upperTouch,'none','Only the upper color arc disables native touch scroll');
   assert.equal(hitMap.frontTouch,'none','Only the front color arc disables native touch scroll');
 
@@ -125,7 +130,7 @@ async function run(kind,touch=false){
   // existing horizontal-slider behavior tested above.
   await hex.fill('#FF0000');await hex.press('Enter');
   const startRingBox=await wheel.boundingBox();assert.ok(startRingBox);
-  const upper={x:startRingBox.x+startRingBox.width*.5,y:startRingBox.y+startRingBox.height*32/160};
+  const upper={x:startRingBox.x+startRingBox.width*(160+121.5*Math.cos(-130*Math.PI/180))/320,y:startRingBox.y+startRingBox.height*(73+41*Math.sin(-130*Math.PI/180))/160};
   const lastHue=Number(await wheel.getAttribute('aria-valuenow'));
   assert.equal(lastHue,0,'Top rotation starts at red');
   await p.mouse.move(upper.x,upper.y);await p.mouse.down();
@@ -141,6 +146,27 @@ async function run(kind,touch=false){
    return {x:frame.x+frame.width*(160+121.5*Math.cos(rad))/320,
            y:frame.y+frame.height*(73+41*Math.sin(rad))/160};
   };
+  // Short press selects the color ALREADY painted under the pointer.
+  // Dragging is still rotation/slide, and a one-tap choice is one commit.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const tapOnRing=async pt=>{await p.mouse.click(pt.x,pt.y);return Number(await wheel.getAttribute('aria-valuenow'));};
+  const tapUpper=await tapOnRing(upperArc(-130));
+  assert.ok(tapUpper>=138&&tapUpper<=142,'Upper ring short tap must pick its displayed green hue immediately: '+tapUpper);
+  assert.equal(await p.locator('#colorCode').textContent(),await color(p));
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const tapUpperRight=await tapOnRing(upperArc(-50));
+  assert.ok(tapUpperRight>=218&&tapUpperRight<=222,'Other upper side of ring must select a different painted hue: '+tapUpperRight);
+  // Color on the dark near-side face shares its HUE with the bright top
+  // wedge; depth offsets must not change the selected hue angle.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const frontFace=(degrees)=>{
+   const a=degrees*Math.PI/180,b=startRingBox;
+   return {x:b.x+b.width*(160+146*Math.cos(a))/320,
+           y:b.y+b.height*(73+51*Math.sin(a)+6.5)/160};
+  };
+  const tapFront=await tapOnRing(frontFace(60));
+  assert.ok(tapFront>=328&&tapFront<=332,'Front side face short tap must pick the hue visible on that face: '+tapFront);
+  await hex.fill('#FF0000');await hex.press('Enter');
   const arcStart=upperArc(-130),arcEnd=upperArc(-50);
   await p.mouse.move(arcStart.x,arcStart.y);await p.mouse.down();
   assert.equal(await p.locator('#colorOrbitPicker').getAttribute('data-orbit-gesture'),'rotate','Upper curved arc must grab hue wheel');
@@ -150,6 +176,39 @@ async function run(kind,touch=false){
   await p.mouse.up();
   const arcHue=Number(await wheel.getAttribute('aria-valuenow'));
   assert.ok(arcHue>265&&arcHue<295,'Tracing the upper painted arc must rotate clockwise about 80°: '+arcHue);
+  // Follow one COMPLETE ellipse, including the hidden SV-covered part and
+  // the foreground half. The hue must keep rotating rather than switch into
+  // SV, jump at the -180/+180 seam or stop when the finger crosses a layer.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  await p.mouse.move(upperArc(-130).x,upperArc(-130).y);await p.mouse.down();
+  const fullCircle=[];
+  for(let degrees=-125;degrees<=230;degrees+=5){
+   const pt=upperArc(degrees);await p.mouse.move(pt.x,pt.y);
+   if([ -40,50,140,230 ].includes(degrees))
+    fullCircle.push({degrees,hue:Number(await wheel.getAttribute('aria-valuenow')),
+     mode:await p.locator('#colorOrbitPicker').getAttribute('data-orbit-gesture')});
+  }
+  await p.mouse.up();
+  assert.equal(fullCircle.length,4,'Full-circle checkpoints must all be sampled');
+  assert.ok(fullCircle.every(c=>c.mode==='rotate'),'One circular trace must keep its hue operation across SV and front rim: '+JSON.stringify(fullCircle));
+  assert.ok(fullCircle.slice(0,3).every(c=>c.hue>30&&c.hue<340),'Full circle must change hue in every quadrant: '+JSON.stringify(fullCircle));
+  assert.ok(fullCircle[3].hue<7||fullCircle[3].hue>353,'One lap must return to its original hue: '+JSON.stringify(fullCircle));
+  // Starting on the front rim keeps a straight horizontal slide, but curved
+  // tracing along the circumference must also turn the wheel from this side.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const frontStart=upperArc(90);
+  await p.mouse.move(frontStart.x,frontStart.y);await p.mouse.down();
+  const frontCircle=[];
+  for(let degrees=95;degrees<=450;degrees+=5){
+   const pt=upperArc(degrees);await p.mouse.move(pt.x,pt.y);
+   if([150,240,330,450].includes(degrees))
+    frontCircle.push({degrees,hue:Number(await wheel.getAttribute('aria-valuenow')),
+     mode:await p.locator('#colorOrbitPicker').getAttribute('data-orbit-gesture')});
+  }
+  await p.mouse.up();
+  assert.ok(frontCircle.some(c=>c.mode==='rotate'),'A circular trace beginning at the front must become a hue rotation: '+JSON.stringify(frontCircle));
+  assert.ok(frontCircle[3].hue<10||frontCircle[3].hue>350,'Full front-origin circular trace should close at the initial color: '+JSON.stringify(frontCircle));
+  await hex.fill('#FF0000');await hex.press('Enter');
   // A touch that starts at a pixel of the upper ring, where the SV diamond
   // overlaps its bounding box, must still capture the RING.
   await hex.fill('#FF0000');await hex.press('Enter');
@@ -185,7 +244,25 @@ async function run(kind,touch=false){
     rotatedBoundsWidth:rect.width,rotatedBoundsHeight:rect.height,
     rotation:style.transform,clipPath:style.clipPath,
     overlapWithHueRing:rect.bottom-wheelTopColor,
-    ringInFront:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitWheel')).zIndex)>Number(style.zIndex),
+    // The bottom tip must enter the transparent INNER opening, not merely
+    // disappear behind the opaque colored upper band. The old top:9% layout
+    // passed the outer-ring overlap check yet left the diamond visually
+    // separated from the hole (it stopped 0.7 CSS px short).
+    innerHoleTop:wheel.top+wheel.height*(73-31)/160,
+    visibleIntoHole:rect.bottom-(wheel.top+wheel.height*(73-31)/160),
+    diamondTipVisible:(()=>{
+     const x=rect.left+rect.width/2;
+     const y=wheel.top+wheel.height*(73-31)/160+Math.min(9,rect.width*.04);
+     const hit=document.elementFromPoint(x,y);
+     return hit===el||el.contains(hit);
+    })(),
+    topMargin:rect.top-el.parentElement.getBoundingClientRect().top,
+    ringInFront:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitWheelFront')).zIndex)>Number(style.zIndex),
+    backRimBehind:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitWheel')).zIndex)<Number(style.zIndex),
+    frontHitAbove:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitHueHit')).zIndex)>Number(style.zIndex),
+    backHitBehind:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitHueBackHit')).zIndex)<Number(style.zIndex),
+    innerHoleBottom:wheel.top+wheel.height*(73+31)/160,
+    tipBehindFront:rect.bottom-(wheel.top+wheel.height*(73+31)/160),
     relativeSide:el.offsetWidth/el.parentElement.getBoundingClientRect().width,
     overflow:outer.scrollWidth-outer.clientWidth
    };
@@ -194,9 +271,16 @@ async function run(kind,touch=false){
   assert.ok(Math.abs(svShape.rotatedBoundsWidth-svShape.rotatedBoundsHeight)<1,'SV diamond rotated bounds must be symmetric');
   assert.notEqual(svShape.rotation,'none','SV square must be rotated into a diamond');
   assert.ok(svShape.clipPath==='none','Diamond uses genuine rotation without distorted clipping');
-  assert.ok(svShape.relativeSide>=.425,'SV diamond should be visibly larger: '+JSON.stringify(svShape));
-  assert.ok(svShape.overlapWithHueRing>=12&&svShape.overlapWithHueRing<=45,'Diamond must overlap the ring slightly: '+JSON.stringify(svShape));
-  assert.equal(svShape.ringInFront,true,'Painted hue arc must appear in front of the overlapping diamond');
+  assert.ok(svShape.relativeSide>=.435&&svShape.relativeSide<=.455,'SV diamond should remain readable without overpowering the ring: '+JSON.stringify(svShape));
+  assert.ok(svShape.overlapWithHueRing>=58&&svShape.overlapWithHueRing<=76,'SV diamond should only partially overlap the rear ring: '+JSON.stringify(svShape));
+  assert.ok(svShape.visibleIntoHole>=40&&svShape.visibleIntoHole<=59,'SV diamond must remain near the ring opening without penetrating too deeply: '+JSON.stringify(svShape));
+  assert.ok(svShape.tipBehindFront>=-20&&svShape.tipBehindFront<=-3,'SV diamond tip must stop just short of the front rim (reduce excessive overlap): '+JSON.stringify(svShape));
+  assert.equal(svShape.diamondTipVisible,true,'SV must remain directly visible and hit-testable inside the hue ring hole: '+JSON.stringify(svShape));
+  assert.ok(svShape.topMargin>=9,'Enlarged diamond must remain inside picker, not clip its upper corner: '+JSON.stringify(svShape));
+  assert.equal(svShape.ringInFront,true,'Front hue ring must retain its depth priority whenever surfaces overlap');
+  assert.equal(svShape.backRimBehind,true,'Back ring must go behind the SV diamond');
+  assert.equal(svShape.frontHitAbove,true,'Front ring hit surface must be above SV');
+  assert.equal(svShape.backHitBehind,true,'Rear ring hit surface must not steal SV touches');
   assert.ok(svShape.overflow<=3,'Orbit must not overflow narrow dock');
   const svCoordinate=(s,v)=>{
    const dx=(s-.5)*svShape.naturalWidth,dy=(.5-v)*svShape.naturalHeight;
@@ -232,6 +316,42 @@ async function run(kind,touch=false){
    Number(await p.locator('#colorNumber2').inputValue())
   ];
   assert.ok(hsv[0]>24&&hsv[0]<33&&hsv[1]>60&&hsv[1]<68,'Diamond SV controls must map to true saturation and brightness: '+hsv);
+  // Regression: when V=0, black RGB loses saturation. Dragging beyond the
+  // lower-left must not teleport the SV marker to the left edge.
+  await hex.fill('#FF0000');await hex.press('Enter');
+  const svMarker=p.locator('#colorOrbitSvMarker');
+  const marker=async()=>svMarker.evaluate(el=>({s:parseFloat(el.style.left)/100,v:1-parseFloat(el.style.top)/100}));
+  const svStartBlack=svCoordinate(.65,.58),lowerLeftOutside=svCoordinate(.72,-.4);
+  await p.mouse.move(svStartBlack.x,svStartBlack.y);await p.mouse.down();
+  await p.mouse.move(lowerLeftOutside.x,lowerLeftOutside.y,{steps:12});
+  assert.equal(await color(p),'#000000','Outside lower-left should clamp brightness to black');
+  const atBlack=await marker();
+  assert.ok(Math.abs(atBlack.s-.72)<.025&&Math.abs(atBlack.v)<.005,
+   'Black must preserve requested saturation, not snap marker left: '+JSON.stringify(atBlack));
+  await p.mouse.move(svCoordinate(.3,-.4).x,svCoordinate(.3,-.4).y,{steps:8});
+  const trackingBlack=await marker();
+  assert.ok(Math.abs(trackingBlack.s-.3)<.025&&Math.abs(trackingBlack.v)<.005,
+   'Cursor must continue following the lower boundary of diamond: '+JSON.stringify(trackingBlack));
+  const backInside=svCoordinate(.68,.4);
+  await p.mouse.move(backInside.x,backInside.y,{steps:8});await p.mouse.up();
+  const returned=await marker();
+  assert.ok(Math.abs(returned.s-.68)<.025&&Math.abs(returned.v-.4)<.025,
+   'Reentering diamond must recover original cursor position: '+JSON.stringify(returned));
+  assert.notEqual(await color(p),'#000000','Reentering must recover brightness');
+  await hex.fill('#FF0000');await hex.press('Enter');
+  await p.mouse.move(svStartBlack.x,svStartBlack.y);await p.mouse.down();
+  await p.mouse.move(lowerLeftOutside.x,lowerLeftOutside.y,{steps:12});await p.mouse.up();
+  const committedBlack=await marker();
+  assert.ok(Math.abs(committedBlack.s-.72)<.025,
+   'After committing black marker must retain saturation: '+JSON.stringify(committedBlack));
+  assert.ok(Math.abs(Number(await p.locator('#colorNumber1').inputValue())-72)<3,
+   'Numeric HSB saturation must reflect the SV position at black');
+  const brightness=p.locator('#colorNumber2');
+  await brightness.fill('40');await brightness.press('Enter');
+  const brightened=await marker();
+  assert.ok(Math.abs(brightened.s-.72)<.025&&Math.abs(brightened.v-.4)<.025,
+   'Increasing V from black must restore the selected saturation: '+JSON.stringify(brightened));
+  await hex.fill('#FF0000');await hex.press('Enter');
   // SV gestures remain SV even after dragging across the ring. Hue is fixed.
   const hueBeforeSV=Number(await wheel.getAttribute('aria-valuenow'));
   const svStart=svCoordinate(.5,.5);
@@ -243,6 +363,20 @@ async function run(kind,touch=false){
    // owns the gesture. This is also important for Android tablet input.
    await hex.fill('#FF0000');await hex.press('Enter');
    const cdp=await context.newCDPSession(p);
+   // Genuine touchscreen tap has no pointermove; pointerup must still pick
+   // the color at the tapped point (and one touch cannot become SV).
+   const tapColor=async pt=>{
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,x:pt.x,y:pt.y}]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await p.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));
+    return Number(await wheel.getAttribute('aria-valuenow'));
+   };
+   const tappedHue=await tapColor(upperArc(-130));
+   assert.ok(tappedHue>=138&&tappedHue<=142,'Native touch short tap must select color: '+tappedHue);
+   await hex.fill('#FF0000');await hex.press('Enter');
+   const tappedFront=await tapColor(frontFace(60));
+   assert.ok(tappedFront>=328&&tappedFront<=332,'Native touch on the near-side front face must select hue: '+tappedFront);
+   await hex.fill('#FF0000');await hex.press('Enter');
    const t0=upperArc(-130);
    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:t0.x,y:t0.y}]});
    for(let deg=-125;deg<=-50;deg+=5){
@@ -252,6 +386,19 @@ async function run(kind,touch=false){
    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
    const actualHue=Number(await wheel.getAttribute('aria-valuenow'));
    assert.ok(actualHue>265&&actualHue<295,'Touch must rotate on a curved path along the upper hue band: '+actualHue);
+   // Use native touchscreen events rather than only emulated mouse motion.
+   await hex.fill('#FF0000');await hex.press('Enter');
+   const nativeStart=svCoordinate(.65,.58),nativeOutside=svCoordinate(.72,-.4);
+   await p.locator('#colorOrbitPicker').evaluate(el=>{el.dataset.orbitGesture='none';});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:nativeStart.x,y:nativeStart.y}]});
+   await p.waitForFunction(()=>document.getElementById('colorOrbitPicker').dataset.orbitGesture==='sv');
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:nativeOutside.x,y:nativeOutside.y}]});
+   await p.waitForFunction(()=>{
+    const el=document.getElementById('colorOrbitSvMarker');
+    return document.getElementById('colorCode').textContent==='#000000'&&Math.abs(parseFloat(el.style.left)-72)<2.5;
+   },null,{timeout:5000});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   assert.ok(Math.abs((await marker()).s-.72)<.025,'Native touch at black must not snap cursor left');
    await cdp.detach();
   }
   const prior=await color(p);

@@ -1,4 +1,5 @@
 import {installOrbitPicker} from './orbit';
+import {ORBIT_WHEEL,orbitHuePaths} from './orbitGeometry';
 import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
 
 const id=<T extends HTMLElement>(name:string)=>document.getElementById(name) as T;
@@ -6,6 +7,7 @@ const button=(label:string,action:string,cls='')=>'<button type="button" class="
 
 /** Familiar two-view Color/Palette panel with a compact Classic/Orbit selector. */
 export function colorMarkup():string {
+ const arcs=orbitHuePaths();
  return '<div class="color-workbench">'+
  '<div class="color-current" aria-label="現在の色と変更前の色">'+
   '<button id="colorCurrent" class="color-chip" type="button" aria-label="現在の色"></button>'+
@@ -25,12 +27,15 @@ export function colorMarkup():string {
   '</div>'+
   '<div id="colorOrbitPicker" class="color-orbit-picker" hidden aria-label="オービット色選択">'+
    '<div id="colorOrbitPlane" class="color-orbit-plane" role="group" aria-label="彩度・明るさの調整"><div class="color-orbit-white"></div><div class="color-orbit-black"></div><span id="colorOrbitSvMarker" class="color-orbit-sv-marker" aria-hidden="true"></span></div>'+
-   '<canvas id="colorOrbitWheel" class="color-orbit-wheel" role="slider" tabindex="0" width="640" height="320" aria-label="色相。上側で回転、下側は左右スライド" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></canvas>'+
-   '<svg id="colorOrbitHueHit" class="color-orbit-hue-hit" viewBox="0 0 320 160" preserveAspectRatio="none" aria-hidden="true">'+
-    '<path id="colorOrbitTopArc" d="M 38.5 73 A 121.5 41 0 0 1 281.5 73" fill="none" stroke="transparent" stroke-width="40" stroke-linecap="butt"/>'+
-    '<path id="colorOrbitFrontArc" d="M 281.5 73 A 121.5 41 0 0 1 38.5 73" fill="none" stroke="transparent" stroke-width="44" stroke-linecap="butt"/>'+
+   '<canvas id="colorOrbitWheel" class="color-orbit-wheel" role="slider" tabindex="0" width="640" height="320" aria-label="色相。短くタップして表示中の色を選択。円周をなぞって回転、手前は左右スライド" aria-valuemin="0" aria-valuemax="359" aria-valuenow="0"></canvas>'+
+   '<svg id="colorOrbitHueBackHit" class="color-orbit-hue-hit color-orbit-hue-back" viewBox="0 0 '+ORBIT_WHEEL.width+' '+ORBIT_WHEEL.height+'" preserveAspectRatio="none" aria-hidden="true">'+
+    '<path id="colorOrbitTopArc" d="'+arcs.top+'" fill="transparent"/>'+
    '</svg>'+
-   '<span class="color-orbit-hint">上側を回して色相を選択・手前側は左右スライド</span>'+
+   '<canvas id="colorOrbitWheelFront" class="color-orbit-wheel color-orbit-wheel-front" width="640" height="320" aria-hidden="true"></canvas>'+
+   '<svg id="colorOrbitHueHit" class="color-orbit-hue-hit color-orbit-hue-front" viewBox="0 0 '+ORBIT_WHEEL.width+' '+ORBIT_WHEEL.height+'" preserveAspectRatio="none" aria-hidden="true">'+
+    '<path id="colorOrbitFrontArc" d="'+arcs.front+'" fill="transparent"/>'+
+   '</svg>'+
+   '<span class="color-orbit-hint">タップで選色・円周をなぞって回転・手前は左右スライド</span>'+
   '</div>'+
   '<label class="color-hex-label" for="colorHex"><span>カラーコード</span><input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" aria-describedby="colorHexError" value="#1F2633"></label>'+
   '<small id="colorHexError" class="color-error" role="status"></small>'+
@@ -65,6 +70,9 @@ export function colorMarkup():string {
 
 export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>void,onBrushColor:()=>void}){
  let model='HSV' as 'HSV'|'HSL'|'RGB',hueMemory=rgbToHsv(state.current).h;
+ // Black RGB cannot encode the selected saturation. Preserve the SV marker
+ // coordinate separately when Value reaches zero.
+ let saturationMemory=rgbToHsv(state.current).s,orbitStartSaturation=saturationMemory;
  const current=id<HTMLElement>('colorCurrent'),previous=id<HTMLButtonElement>('colorPrevious'),code=id<HTMLOutputElement>('colorCode'),
   ring=id<HTMLElement>('colorRing'),plane=id<HTMLElement>('colorPlane'),hexField=id<HTMLInputElement>('colorHex'),
   notice=id<HTMLElement>('colorActionNotice'),
@@ -76,15 +84,16 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  let pickerMode:'classic'|'orbit'='classic';
  const orbit=installOrbitPicker(orbitPicker,{
   getHue:()=>hueMemory,
-  getSv:()=>{const c=rgbToHsv(state.current);return {s:c.s,v:c.v};},
-  onPreview:(h,s,v)=>{hueMemory=h;state.preview(hsvToRgb(h,s,v));},
-  begin:()=>state.begin(),commit:()=>state.commit(),cancel:()=>state.cancel(),
+  getSv:()=>{const c=rgbToHsv(state.current);return {s:c.v<=1e-7?saturationMemory:c.s,v:c.v};},
+  onPreview:(h,s,v)=>{hueMemory=h;saturationMemory=clamp(s);state.preview(hsvToRgb(h,s,v));},
+  begin:()=>{orbitStartSaturation=saturationMemory;state.begin();},
+   commit:()=>state.commit(),cancel:()=>{saturationMemory=orbitStartSaturation;state.cancel();},
  });
  function setPickerMode(mode:'classic'|'orbit',store=true){
   pickerMode=mode;classicPicker.hidden=mode!=='classic';orbitPicker.hidden=mode!=='orbit';
   modeSelect.value=mode;
   const color=rgbToHsv(state.current);
-  if(mode==='orbit')orbit.reflect(hueMemory,color.s,color.v);
+  if(mode==='orbit')orbit.reflect(hueMemory,color.v<=1e-7?saturationMemory:color.s,color.v);
   if(store){try{localStorage.setItem('illustro-color-picker-mode',mode);}catch{/* browser storage may be restricted */}}
  }
  modeSelect.onchange=()=>setPickerMode(modeSelect.value==='orbit'?'orbit':'classic');
@@ -105,16 +114,17 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  };
  function reflect(){
   const c=state.current,hsv=rgbToHsv(c);
-  if(hsv.s>1e-7&&hsv.v>1e-7)hueMemory=hsv.h;
+  if(hsv.v>1e-7){saturationMemory=hsv.s;if(hsv.s>1e-7)hueMemory=hsv.h;}
+  const displayS=hsv.v<=1e-7?saturationMemory:hsv.s;
   current.style.backgroundColor=hex(c);code.textContent=hex(c);previous.style.backgroundColor=hex(state.previous);
   id<HTMLElement>('colorBoxSummary').textContent=hex(c);
   plane.style.setProperty('--pure',hex(hsvToRgb(hueMemory,1,1)));
   const angle=hueMemory*Math.PI/180,hue=id<HTMLElement>('colorHueMarker');
   hue.style.left=(50+45.5*Math.cos(angle))+'%';hue.style.top=(50+45.5*Math.sin(angle))+'%';
-  const marker=id<HTMLElement>('colorSvMarker');marker.style.left=(hsv.s*100)+'%';marker.style.top=((1-hsv.v)*100)+'%';
+  const marker=id<HTMLElement>('colorSvMarker');marker.style.left=(displayS*100)+'%';marker.style.top=((1-hsv.v)*100)+'%';
   ring.setAttribute('aria-valuenow',String(Math.round(hueMemory)%360));
   ring.setAttribute('aria-valuetext','色相 '+Math.round(hueMemory)+'度');
-  if(pickerMode==='orbit')orbit.reflect(hueMemory,hsv.s,hsv.v);
+  if(pickerMode==='orbit')orbit.reflect(hueMemory,displayS,hsv.v);
   if(document.activeElement!==hexField)hexField.value=hex(c);
   if(!channelEditing)updateChannels();
   for(const el of document.querySelectorAll<HTMLButtonElement>('.color-swatch')){
@@ -140,11 +150,12 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   if(part==='ring'){
    const r=ring.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
    hueMemory=(Math.atan2(y,x)*180/Math.PI+360)%360;
-   const sv=rgbToHsv(state.current);state.preview(hsvToRgb(hueMemory,sv.s,sv.v));
+   const sv=rgbToHsv(state.current);state.preview(hsvToRgb(hueMemory,sv.v<=1e-7?saturationMemory:sv.s,sv.v));
   }else{
    const r=plane.getBoundingClientRect(),side=plane.offsetWidth;
    const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
    const saturation=clamp(.5+(dx+dy)/(Math.SQRT2*side));
+   saturationMemory=saturation;
    const brightness=1-clamp(.5+(-dx+dy)/(Math.SQRT2*side));
    state.preview(hsvToRgb(hueMemory,saturation,brightness));
   }
@@ -169,16 +180,17 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const delta=e.key==='ArrowRight'||e.key==='ArrowUp'?1:e.key==='ArrowLeft'||e.key==='ArrowDown'?-1:e.key==='PageUp'?10:e.key==='PageDown'?-10:null;
   if(delta===null&&e.key!=='Home'&&e.key!=='End')return;
   e.preventDefault();const h=e.key==='Home'?0:e.key==='End'?359:(hueMemory+delta!+360)%360,sv=rgbToHsv(state.current);
-  hueMemory=h;state.choose(hsvToRgb(h,sv.s,sv.v));
+  hueMemory=h;state.choose(hsvToRgb(h,sv.v<=1e-7?saturationMemory:sv.s,sv.v));
  });
  const models=document.querySelectorAll<HTMLInputElement>('input[name="colorModel"]');
  models.forEach(el=>el.onchange=()=>{if(el.checked){model=el.value as typeof model;renderChannels();}});
  const channels=id<HTMLElement>('colorValueChannels');
  const channelDef=()=>model==='RGB'?[['R','赤',255],['G','緑',255],['B','青',255]] as const:model==='HSL'?[['H','色相',360],['S','鮮やかさ',100],['L','明るさ',100]] as const:[['H','色相',360],['S','鮮やかさ',100],['V','明るさ',100]] as const;
- const values=()=>{const c=state.current,hsv=rgbToHsv(c),hsl=rgbToHsl(c);return model==='RGB'?[c.r*255,c.g*255,c.b*255]:model==='HSL'?[hsl.h,hsl.s*100,hsl.l*100]:[hsv.h,hsv.s*100,hsv.v*100];};
+ const values=()=>{const c=state.current,hsv=rgbToHsv(c),hsl=rgbToHsl(c);return model==='RGB'?[c.r*255,c.g*255,c.b*255]:model==='HSL'?[hsl.h,hsl.s*100,hsl.l*100]:[hueMemory,(hsv.v<=1e-7?saturationMemory:hsv.s)*100,hsv.v*100];};
  function previewValue(index:number,value:number){
   if(!Number.isFinite(value))return false;const defs=channelDef();if(value<0||value>defs[index]![2])return false;
   const v=values();v[index]=value;if(model!=='RGB'&&index===0)hueMemory=value;
+  if(model==='HSV'&&index===1)saturationMemory=value/100;
   state.preview(model==='RGB'?rgb(v[0]!/255,v[1]!/255,v[2]!/255):model==='HSL'?hslToRgb(v[0]!,v[1]!/100,v[2]!/100):hsvToRgb(v[0]!,v[1]!/100,v[2]!/100));return true;
  }
  function renderChannels(){

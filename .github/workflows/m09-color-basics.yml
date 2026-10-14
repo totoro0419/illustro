@@ -27,11 +27,10 @@ jobs:
         run: npm run brush:build
       - name: M01-M09 Editor unit regression, conversion and palette tests
         run: npx vitest run apps/editor/src packages/core/src/geometry.test.ts
-      - name: Brush foundation exact 93 tests
+      - name: Brush foundation complete discovered tests
         run: |
           node --test packages/brush-rt/test/*.test.mjs | tee /tmp/brush-m09.txt
-          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/brush-m09.txt
-          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/brush-m09.txt
+          node scripts/check-test-summary.mjs /tmp/brush-m09.txt
           grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/brush-m09.txt
       - name: Editor typecheck and production build
         env:

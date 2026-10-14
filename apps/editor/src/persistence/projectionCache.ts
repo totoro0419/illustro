@@ -16,6 +16,7 @@ export type ProjectionTileDeltaV2=Readonly<{
 
 export type ProjectionCheckpointDeltaV2=Readonly<{
   version:2;
+  replace?:boolean;
   revisionId:string;
   width:number;
   height:number;
