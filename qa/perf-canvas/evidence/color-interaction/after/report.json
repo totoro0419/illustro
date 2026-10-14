@@ -1,5 +1,5 @@
 {
-  "commit": "bf2b10aa0a7d8a1672ee60714e3aa35002e20d27",
+  "commit": "f20e2e70720f4ed9062d17ed0120f52e896eb7e6",
   "baseline": false,
   "scope": "Color UI and trusted Chromium touch emulation; physical Android unverified",
   "cases": [
@@ -765,7 +765,7 @@
         ]
       },
       "sv": {
-        "checked": 610,
+        "checked": 570,
         "misses": [],
         "naturalSize": [
           124,
@@ -1558,7 +1558,7 @@
         ]
       },
       "sv": {
-        "checked": 610,
+        "checked": 570,
         "misses": [],
         "naturalSize": [
           132,
@@ -2351,7 +2351,7 @@
         ]
       },
       "sv": {
-        "checked": 610,
+        "checked": 570,
         "misses": [],
         "naturalSize": [
           132,
@@ -3144,7 +3144,7 @@
         ]
       },
       "sv": {
-        "checked": 610,
+        "checked": 570,
         "misses": [],
         "naturalSize": [
           129,
@@ -3937,7 +3937,7 @@
         ]
       },
       "sv": {
-        "checked": 610,
+        "checked": 570,
         "misses": [],
         "naturalSize": [
           129,
