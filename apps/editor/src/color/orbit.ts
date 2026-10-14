@@ -19,7 +19,9 @@ export function installOrbitPicker(root:HTMLElement,options:{
  const front=root.querySelector<HTMLCanvasElement>('#colorOrbitWheelFront')!;
  const plane=root.querySelector<HTMLElement>('#colorOrbitPlane')!;
  const point=root.querySelector<HTMLElement>('#colorOrbitSvMarker')!;
- type Drag={id:number;part:'wheel'|'plane';mode:'slide'|'rotate'|'sv';startX:number;startHue:number;lastAngle:number;angleTravel:number};
+ type Drag={id:number;part:'wheel'|'plane';mode:'slide'|'rotate'|'sv';
+  startX:number;startY:number;startHue:number;lastAngle:number;angleTravel:number;
+  traceCount:number;wasOnRing:boolean;arcOffset:number;arcSwitchTravel:number;};
  let hue=options.getHue(),frame=0,drag:Drag|null=null;
  const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false;
  void reduceMotion; // No inertial animation: color control tracks the input exactly.
@@ -153,8 +155,9 @@ export function installOrbitPicker(root:HTMLElement,options:{
   // Empty space remains available for workspace scrolling.
   const mode=ringRegion??'sv';
   const angle=ringRegion!==null?ellipseAngle(e):0;
-  drag={id:e.pointerId,part:ringRegion!==null?'wheel':'plane',mode,startX:e.clientX,
-   startHue:options.getHue(),lastAngle:angle,angleTravel:0};
+  drag={id:e.pointerId,part:ringRegion!==null?'wheel':'plane',mode,
+   startX:e.clientX,startY:e.clientY,startHue:options.getHue(),lastAngle:angle,
+   angleTravel:0,traceCount:0,wasOnRing:true,arcOffset:0,arcSwitchTravel:0};
   root.dataset.orbitGesture=mode;
   options.begin();
   root.setPointerCapture(e.pointerId);
@@ -168,19 +171,49 @@ export function installOrbitPicker(root:HTMLElement,options:{
  const update=(e:PointerEvent)=>{
   if(!drag||drag.id!==e.pointerId)return;
   if(drag.mode==='sv'){previewPlane(e);return;}
-  if(drag.mode==='slide'){
-   // Preserve the familiar horizontal slide on the front-facing arc.
-   previewHue(drag.startHue+(e.clientX-drag.startX)*1.15);return;
-  }
-  // At the BACK/UPPER arc, dragging right naturally rotates the colored
-  // wheel clockwise. Hue decreases because the wheel art is color(hue+angle).
-  // Accumulate the shortest angular step around the ellipse. Using the
-  // current pointer location directly avoids duplicate/out-of-order
-  // coalesced samples on styluses and touch screens.
+  // Use the actual elliptical polar angle. A finger may cross the SV plane
+  // AFTER starting on hue, without ever handing ownership to SV.
+  // Ignore the singularity very close to the ellipse center: one stray
+  // sample there must not spin the wheel by 180 degrees.
+  const position=wheelPoint(e);
   const angle=ellipseAngle(e);
-  drag.angleTravel+=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
-  drag.lastAngle=angle;
-  previewHue(drag.startHue-drag.angleTravel*180/Math.PI);
+  const distance=Math.hypot((position.x-radius.cx)/radius.outerX,(position.y-radius.cy)/radius.outerY);
+  if(distance>=.25){
+   if(drag.wasOnRing){
+    const step=Math.atan2(Math.sin(angle-drag.lastAngle),Math.cos(angle-drag.lastAngle));
+    drag.angleTravel+=step;
+   }
+   drag.lastAngle=angle;
+   drag.wasOnRing=true;
+  }else{
+   drag.wasOnRing=false;
+  }
+  if(drag.mode==='slide'){
+   const horizontalHue=drag.startHue+(e.clientX-drag.startX)*1.15;
+   // A horizontal drag remains the familiar front slider. If the pointer
+   // instead follows the elliptical circumference, graduate to rotation.
+   // Require real curved motion on the painted band, not diagonal jitter.
+   const onBand=orbitHueRegion(position.x,position.y)!==null;
+   if(onBand&&distance>.55)drag.traceCount++;
+   else drag.traceCount=0;
+   const dy=Math.abs(e.clientY-drag.startY),arc=Math.abs(drag.angleTravel);
+   if(drag.traceCount>=3&&dy>5&&arc>.34){
+    drag.mode='rotate';
+    root.dataset.orbitGesture='rotate';
+    drag.arcSwitchTravel=drag.angleTravel;
+    // Preserve live color at the transition; dissipate the offset across
+    // a quarter turn. One full circular lap still returns to its first hue.
+    const angularHue=drag.startHue-drag.angleTravel*180/Math.PI;
+    drag.arcOffset=((horizontalHue-angularHue+540)%360)-180;
+   }else{
+    previewHue(horizontalHue);return;
+   }
+  }
+  // Clockwise screen-space tracing increases the ellipse angle; the spectrum
+  // rotates right when hue decreases. Supports multiple uninterrupted turns
+  // and reversals, even while passing across the SV diamond.
+  const fade=Math.max(0,1-Math.abs(drag.angleTravel-drag.arcSwitchTravel)/(Math.PI/2));
+  previewHue(drag.startHue-drag.angleTravel*180/Math.PI+drag.arcOffset*fade);
  };
  root.addEventListener('pointermove',update);
  root.addEventListener('pointerup',e=>{
