@@ -1,0 +1,722 @@
+{
+  "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+  "baseline": true,
+  "environment": "Chromium software GPU and trusted CDP touch input; physical Android unverified",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "scenario": "short-first-touch",
+      "strokes": 50,
+      "resets": 1,
+      "replayed": 50,
+      "difference": {
+        "max": 0,
+        "over2": 0
+      },
+      "before": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "e6093125-6ab0-4841-b3bc-e461a9d48ee0",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 319,
+          "viewPresentations": 2,
+          "renders": 319,
+          "compositedTiles": 247,
+          "compositedLayerPasses": 247,
+          "supersededViews": 1,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 249.89999999999418,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 92789.79999999999,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": false,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 39,
+            "tiles": 78,
+            "batches": 39,
+            "bytes": 5111808,
+            "lastMs": 4.699999999982538
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 1,
+          "replayedStrokes": 0
+        }
+      },
+      "after": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "e6093125-6ab0-4841-b3bc-e461a9d48ee0",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 445,
+          "viewPresentations": 3,
+          "renders": 444,
+          "compositedTiles": 369,
+          "compositedLayerPasses": 369,
+          "supersededViews": 15,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 266.9000000000233,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 128221.70000000001,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": true,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 39,
+            "tiles": 78,
+            "batches": 39,
+            "bytes": 5111808,
+            "lastMs": 4.699999999982538
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 2,
+          "replayedStrokes": 50
+        }
+      }
+    },
+    {
+      "backend": "webgl2",
+      "scenario": "draw-then-two-fingers",
+      "strokes": 50,
+      "resets": 1,
+      "replayed": 50,
+      "difference": {
+        "max": 0,
+        "over2": 0
+      },
+      "before": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "e6093125-6ab0-4841-b3bc-e461a9d48ee0",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 448,
+          "viewPresentations": 5,
+          "renders": 445,
+          "compositedTiles": 369,
+          "compositedLayerPasses": 369,
+          "supersededViews": 15,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 284.29999999998836,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 130121.29999999999,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": false,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 39,
+            "tiles": 78,
+            "batches": 39,
+            "bytes": 5111808,
+            "lastMs": 4.699999999982538
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 2,
+          "replayedStrokes": 50
+        }
+      },
+      "after": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "e6093125-6ab0-4841-b3bc-e461a9d48ee0",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 574,
+          "viewPresentations": 6,
+          "renders": 570,
+          "compositedTiles": 491,
+          "compositedLayerPasses": 491,
+          "supersededViews": 29,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 266.6000000000058,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 165169.9,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": true,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 39,
+            "tiles": 78,
+            "batches": 39,
+            "bytes": 5111808,
+            "lastMs": 4.699999999982538
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 3,
+          "replayedStrokes": 100
+        }
+      }
+    },
+    {
+      "backend": "webgl2",
+      "scenario": "pointercancel",
+      "strokes": 50,
+      "resets": 1,
+      "replayed": 50,
+      "difference": {
+        "max": 0,
+        "over2": 0
+      },
+      "before": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "e6093125-6ab0-4841-b3bc-e461a9d48ee0",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 577,
+          "viewPresentations": 8,
+          "renders": 571,
+          "compositedTiles": 491,
+          "compositedLayerPasses": 491,
+          "supersededViews": 29,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 284.3999999999942,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 167036.5,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": false,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 39,
+            "tiles": 78,
+            "batches": 39,
+            "bytes": 5111808,
+            "lastMs": 4.699999999982538
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 3,
+          "replayedStrokes": 100
+        }
+      },
+      "after": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "e6093125-6ab0-4841-b3bc-e461a9d48ee0",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 702,
+          "viewPresentations": 8,
+          "renders": 696,
+          "compositedTiles": 613,
+          "compositedLayerPasses": 613,
+          "supersededViews": 29,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 249.90000000002328,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 200768.40000000002,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": true,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 39,
+            "tiles": 78,
+            "batches": 39,
+            "bytes": 5111808,
+            "lastMs": 4.699999999982538
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 4,
+          "replayedStrokes": 150
+        }
+      }
+    },
+    {
+      "backend": "webgpu",
+      "scenario": "short-first-touch",
+      "strokes": 50,
+      "resets": 1,
+      "replayed": 50,
+      "difference": {
+        "max": 0,
+        "over2": 0
+      },
+      "before": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "46681a42-d373-4bc8-8c49-1e51ba27f6e4",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 319,
+          "viewPresentations": 2,
+          "renders": 319,
+          "compositedTiles": 247,
+          "compositedLayerPasses": 247,
+          "supersededViews": 1,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 304.8999999999651,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 107461.40000000002,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": false,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 26,
+            "tiles": 34,
+            "batches": 26,
+            "bytes": 2228224,
+            "lastMs": 7.899999999965075
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 1,
+          "replayedStrokes": 0
+        }
+      },
+      "after": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "46681a42-d373-4bc8-8c49-1e51ba27f6e4",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 448,
+          "viewPresentations": 6,
+          "renders": 444,
+          "compositedTiles": 369,
+          "compositedLayerPasses": 369,
+          "supersededViews": 10,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 314.5999999999767,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 150817.40000000002,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": true,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 27,
+            "tiles": 35,
+            "batches": 27,
+            "bytes": 2293760,
+            "lastMs": 3.6000000000349246
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 2,
+          "replayedStrokes": 50
+        }
+      }
+    },
+    {
+      "backend": "webgpu",
+      "scenario": "draw-then-two-fingers",
+      "strokes": 50,
+      "resets": 1,
+      "replayed": 50,
+      "difference": {
+        "max": 0,
+        "over2": 0
+      },
+      "before": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "46681a42-d373-4bc8-8c49-1e51ba27f6e4",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 451,
+          "viewPresentations": 8,
+          "renders": 445,
+          "compositedTiles": 369,
+          "compositedLayerPasses": 369,
+          "supersededViews": 10,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 313.5,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 152576.5,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": false,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 27,
+            "tiles": 35,
+            "batches": 27,
+            "bytes": 2293760,
+            "lastMs": 3.6000000000349246
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 2,
+          "replayedStrokes": 50
+        }
+      },
+      "after": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "46681a42-d373-4bc8-8c49-1e51ba27f6e4",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 580,
+          "viewPresentations": 12,
+          "renders": 570,
+          "compositedTiles": 491,
+          "compositedLayerPasses": 491,
+          "supersededViews": 19,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 314.29999999998836,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 195435.3,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": true,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 27,
+            "tiles": 35,
+            "batches": 27,
+            "bytes": 2293760,
+            "lastMs": 3.6000000000349246
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 3,
+          "replayedStrokes": 100
+        }
+      }
+    },
+    {
+      "backend": "webgpu",
+      "scenario": "pointercancel",
+      "strokes": 50,
+      "resets": 1,
+      "replayed": 50,
+      "difference": {
+        "max": 0,
+        "over2": 0
+      },
+      "before": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "46681a42-d373-4bc8-8c49-1e51ba27f6e4",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 583,
+          "viewPresentations": 14,
+          "renders": 571,
+          "compositedTiles": 491,
+          "compositedLayerPasses": 491,
+          "supersededViews": 19,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 313.69999999995343,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 197174.5,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": false,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 27,
+            "tiles": 35,
+            "batches": 27,
+            "bytes": 2293760,
+            "lastMs": 3.6000000000349246
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 3,
+          "replayedStrokes": 100
+        }
+      },
+      "after": {
+        "metrics": {
+          "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+          "revision": "46681a42-d373-4bc8-8c49-1e51ba27f6e4",
+          "strokes": 50,
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "presentations": 708,
+          "viewPresentations": 14,
+          "renders": 696,
+          "compositedTiles": 613,
+          "compositedLayerPasses": 613,
+          "supersededViews": 19,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 309.0999999999767,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7864320,
+          "occupiedGpuTiles": 2,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "frameState": {
+            "lastFrameAt": 237827.3,
+            "disposed": false,
+            "pointer": null,
+            "finishing": false,
+            "historySyncing": false,
+            "inflight": false,
+            "viewPending": false,
+            "needsFrame": true,
+            "jobs": 0,
+            "presentationHeld": false,
+            "glFence": false,
+            "pending": false,
+            "errors": [],
+            "sessionErrors": []
+          },
+          "checkpoint": {
+            "captures": 27,
+            "tiles": 35,
+            "batches": 27,
+            "bytes": 2293760,
+            "lastMs": 3.6000000000349246
+          },
+          "strokeReplayFallbacks": 0,
+          "projectionRestoreMode": "replay-fallback",
+          "checkpointErrors": []
+        },
+        "probe": {
+          "rebuilds": 4,
+          "replayedStrokes": 150
+        }
+      }
+    }
+  ],
+  "errors": []
+}

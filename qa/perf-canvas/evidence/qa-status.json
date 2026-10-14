@@ -1,5 +1,5 @@
 {
-  "commit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+  "commit": "719dbe455f1ef83963640d640b89a3e101e0e5d7",
   "review": "EXPERIMENTAL_NOT_ACCEPTED",
   "functionalAndBrushImages": "verified",
   "foundationCiResult": "success",
@@ -21,8 +21,46 @@
   "latencyComparison": {
     "scope": "GPU-completion proxy, not physical display or photon latency",
     "currentRuns": 16,
-    "failedOrInsufficient": 0,
-    "failures": [],
+    "failedOrInsufficient": 1,
+    "failures": [
+      {
+        "backend": "webgpu",
+        "brush": "foundation-pencil",
+        "shape": "long",
+        "repeat": 1,
+        "samples": 77,
+        "startSamples": 25,
+        "middleSamples": 25,
+        "endSamples": 26,
+        "growth": 9.400000000023283,
+        "steadyGrowth": 26.83333333333212,
+        "gate": "FAIL_OR_INSUFFICIENT",
+        "completionWorkP95Ms": 179.30000000004657
+      }
+    ],
     "report": "latency-comparison/report.json"
+  },
+  "gestureCancellation": {
+    "result": "VERIFIED_BROWSER_SOFTWARE_NOT_DEVICE",
+    "baselineCommit": "6f18011a4a862fff07889dd9d77fab291d0fd05e",
+    "commit": "719dbe455f1ef83963640d640b89a3e101e0e5d7",
+    "trustedTouchCases": 6,
+    "completedStrokesPerCase": 50,
+    "before": {
+      "wholeDocumentResetsPerCancellation": 1,
+      "replayedCompletedStrokesPerCancellation": 50
+    },
+    "after": {
+      "wholeDocumentResetsPerCancellation": 0,
+      "replayedCompletedStrokesPerCancellation": 0
+    },
+    "gpuPixelStages": 32,
+    "changedCompletedLayerBytes": 0,
+    "physicalAndroid": "UNVERIFIED",
+    "reports": [
+      "gesture-cancellation/before/report.json",
+      "gesture-cancellation/after/report.json",
+      "gesture-cancellation/gpu/report.json"
+    ]
   }
 }
