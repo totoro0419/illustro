@@ -27,12 +27,31 @@ try{
      const {CanonicalBuilder,cpuReference}=await import('@rt/model');
      const height=renderer.document.height,surfaceKey=layered?'tail-quality':'default';
      await session.rebuild();renderer.setSurfaceStack([surfaceKey]);
-     let base=new Uint8ClampedArray(width*height*4);
+     const positions=[[20,20],[width-12,height-12],[width/2,height/2],[-20,height/2],[width/2,10],null];
+     const base=new Uint8ClampedArray(width*height*4);
      if(index===6){
-      const under=structuredClone(foundationPresets[2]);under.size=width;under.forceFade.enabled=false;
-      session.begin(under,0,{},surfaceKey);
-      session.accept({x:width/2,y:height/2,t:performance.now(),pressure:1,pointerType:'mouse'});
-      await session.end();base=await renderer.read(surfaceKey);
+      // Known straight-alpha pixels isolate mutable-tail replacement from the
+      // unrelated cost of formally rasterizing a 3000px background brush.
+      // The CPU base is constructed independently, never read from this GPU.
+      const backend=renderer.backend,keys=new Set;
+      for(const position of positions.filter(Boolean)){
+       const [px,py]=position;
+       for(let y=Math.max(0,Math.floor((py-320)/128));y<=Math.min(Math.ceil(height/128)-1,Math.floor((py+320)/128));y++)
+        for(let x=Math.max(0,Math.floor((px-320)/128));x<=Math.min(Math.ceil(width/128)-1,Math.floor((px+320)/128));x++)keys.add(x+','+y);
+      }
+      const pixels=new Uint8Array(128*128*4);
+      for(let i=0;i<pixels.length;i+=4)pixels.set([74,112,180,210],i);
+      for(const key of keys){
+       const tile=backend.tile(key,surfaceKey),texture=tile.layer[tile.l];
+       if(backend.gl){const g=backend.gl;g.bindTexture(g.TEXTURE_2D,texture.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,128,128,g.RGBA,g.UNSIGNED_BYTE,pixels);}
+       else backend.device.queue.writeTexture({texture},pixels,{bytesPerRow:128*4},[128,128]);
+       for(let y=0;y<128&&tile.y+y<height;y++){
+        const n=Math.min(128,width-tile.x)*4;
+        base.set(pixels.subarray(y*128*4,y*128*4+n),((tile.y+y)*width+tile.x)*4);
+       }
+       backend.dirtyConfirmed.add(key);
+      }
+      renderer.needsFrame=true;await renderer.drain();
      }
      const p=structuredClone(foundationPresets[index]);p.size=width===512?64:512;
      p.forceFade.enabled=false;p.prediction.enabled=false;p.stabilization.constant=0;p.stabilization.fast=0;
@@ -40,7 +59,6 @@ try{
      // Replace the entire mutable tail, including jumps across tile boundaries,
      // a clipped edge, and disappearance. Expected pixels come from the CPU
      // brush reference, not from this renderer's dirty-key implementation.
-     const positions=[[20,20],[width-12,height-12],[width/2,height/2],[-20,height/2],[width/2,10],null];
      const stages=[];let lastPreset;
      for(const position of positions){
       let record,commands=[];
