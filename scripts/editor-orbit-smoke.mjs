@@ -250,13 +250,13 @@ async function run(kind,touch=false){
   assert.ok(Math.abs(svShape.rotatedBoundsWidth-svShape.rotatedBoundsHeight)<1,'SV diamond rotated bounds must be symmetric');
   assert.notEqual(svShape.rotation,'none','SV square must be rotated into a diamond');
   assert.ok(svShape.clipPath==='none','Diamond uses genuine rotation without distorted clipping');
-  assert.ok(svShape.relativeSide>=.425,'SV diamond should be visibly larger: '+JSON.stringify(svShape));
-  assert.ok(svShape.overlapWithHueRing>=65&&svShape.overlapWithHueRing<=130,'SV diamond must be physically joined to the ring, not floating far above: '+JSON.stringify(svShape));
-  assert.ok(svShape.visibleIntoHole>=55&&svShape.visibleIntoHole<=95,'SV diamond must extend naturally into the ring opening: '+JSON.stringify(svShape));
-  assert.ok(svShape.tipBehindFront>=5&&svShape.tipBehindFront<=35,'SV diamond tip must tuck BEHIND the front rim: '+JSON.stringify(svShape));
+  assert.ok(svShape.relativeSide>=.435&&svShape.relativeSide<=.455,'SV diamond should remain readable without overpowering the ring: '+JSON.stringify(svShape));
+  assert.ok(svShape.overlapWithHueRing>=58&&svShape.overlapWithHueRing<=76,'SV diamond should only partially overlap the rear ring: '+JSON.stringify(svShape));
+  assert.ok(svShape.visibleIntoHole>=40&&svShape.visibleIntoHole<=59,'SV diamond must remain near the ring opening without penetrating too deeply: '+JSON.stringify(svShape));
+  assert.ok(svShape.tipBehindFront>=-20&&svShape.tipBehindFront<=-3,'SV diamond tip must stop just short of the front rim (reduce excessive overlap): '+JSON.stringify(svShape));
   assert.equal(svShape.diamondTipVisible,true,'SV must remain directly visible and hit-testable inside the hue ring hole: '+JSON.stringify(svShape));
   assert.ok(svShape.topMargin>=9,'Enlarged diamond must remain inside picker, not clip its upper corner: '+JSON.stringify(svShape));
-  assert.equal(svShape.ringInFront,true,'Front ring must visually cover the SV tip');
+  assert.equal(svShape.ringInFront,true,'Front hue ring must retain its depth priority whenever surfaces overlap');
   assert.equal(svShape.backRimBehind,true,'Back ring must go behind the SV diamond');
   assert.equal(svShape.frontHitAbove,true,'Front ring hit surface must be above SV');
   assert.equal(svShape.backHitBehind,true,'Rear ring hit surface must not steal SV touches');
