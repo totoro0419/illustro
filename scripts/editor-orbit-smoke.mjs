@@ -87,26 +87,30 @@ async function run(kind,touch=false){
   assert.equal(wheelOpacity.holeAlpha,0,'Inner hole must stay transparent, never a shadow-filled gray disk');
   const b=await wheel.boundingBox();assert.ok(b?.width>210);
   const hitMap=await p.locator('#colorOrbitPicker').evaluate(root=>{
-   const wheel=root.querySelector('#colorOrbitWheel'),svg=root.querySelector('#colorOrbitHueHit');
+   const wheel=root.querySelector('#colorOrbitWheel'),svg=root.querySelector('#colorOrbitHueHit'),rear=root.querySelector('#colorOrbitHueBackHit');
    const r=root.getBoundingClientRect(),wr=wheel.getBoundingClientRect();
    const sample=(x,y)=>document.elementFromPoint(x,y)?.id||'anonymous';
    return {
     plainTarget:sample(r.left+r.width*.08,r.top+r.height*.26),
-    upperTarget:sample(wr.left+wr.width/2,wr.top+wr.height*(32/160)),
+    upperTarget:sample(wr.left+wr.width*(160+121.5*Math.cos(-130*Math.PI/180))/320,wr.top+wr.height*(73+41*Math.sin(-130*Math.PI/180))/160),
+    coveredRearTarget:sample(wr.left+wr.width/2,wr.top+wr.height*32/160),
     lowerTarget:sample(wr.left+wr.width/2,wr.top+wr.height*(114/160)),
     svgTouch:getComputedStyle(svg).touchAction,
     rootTouch:getComputedStyle(root).touchAction,
     canvasPointer:getComputedStyle(wheel).pointerEvents,
-    upperTouch:getComputedStyle(svg.querySelector('#colorOrbitTopArc')).touchAction,
+    upperTouch:getComputedStyle(rear.querySelector('#colorOrbitTopArc')).touchAction,
+    rearSvgTouch:getComputedStyle(rear).touchAction,
     frontTouch:getComputedStyle(svg.querySelector('#colorOrbitFrontArc')).touchAction,
    };
   });
   assert.equal(hitMap.plainTarget,'colorOrbitPicker','A blank Orbit margin must not intercept workspace scrolling: '+JSON.stringify(hitMap));
-  assert.equal(hitMap.upperTarget,'colorOrbitTopArc','Upper ellipse arc must have a real curved hit target: '+JSON.stringify(hitMap));
+  assert.equal(hitMap.upperTarget,'colorOrbitTopArc','Exposed upper ellipse arc must remain draggable: '+JSON.stringify(hitMap));
+  assert.equal(hitMap.coveredRearTarget,'colorOrbitPlane','SV must cover the occluded back arc (true layer ordering): '+JSON.stringify(hitMap));
   assert.equal(hitMap.lowerTarget,'colorOrbitFrontArc','Front ellipse arc must have a real curved hit target: '+JSON.stringify(hitMap));
   assert.equal(hitMap.rootTouch,'pan-y','Blank Orbit must allow vertical workspace touch scrolling');
   assert.equal(hitMap.canvasPointer,'none','Rectangular canvas must never swallow gestures or scrolling');
-  assert.equal(hitMap.svgTouch,'none','The replaced SVG container must disable native scroll only for its painted hit descendants');
+  assert.equal(hitMap.svgTouch,'none','The front SVG must disable native scrolling on hue gestures');
+  assert.equal(hitMap.rearSvgTouch,'none','The back SVG must disable native scrolling on hue gestures');
   assert.equal(hitMap.upperTouch,'none','Only the upper color arc disables native touch scroll');
   assert.equal(hitMap.frontTouch,'none','Only the front color arc disables native touch scroll');
 
@@ -126,7 +130,7 @@ async function run(kind,touch=false){
   // existing horizontal-slider behavior tested above.
   await hex.fill('#FF0000');await hex.press('Enter');
   const startRingBox=await wheel.boundingBox();assert.ok(startRingBox);
-  const upper={x:startRingBox.x+startRingBox.width*.5,y:startRingBox.y+startRingBox.height*32/160};
+  const upper={x:startRingBox.x+startRingBox.width*(160+121.5*Math.cos(-130*Math.PI/180))/320,y:startRingBox.y+startRingBox.height*(73+41*Math.sin(-130*Math.PI/180))/160};
   const lastHue=Number(await wheel.getAttribute('aria-valuenow'));
   assert.equal(lastHue,0,'Top rotation starts at red');
   await p.mouse.move(upper.x,upper.y);await p.mouse.down();
@@ -199,7 +203,12 @@ async function run(kind,touch=false){
      return hit===el||el.contains(hit);
     })(),
     topMargin:rect.top-el.parentElement.getBoundingClientRect().top,
-    ringInFront:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitWheel')).zIndex)>Number(style.zIndex),
+    ringInFront:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitWheelFront')).zIndex)>Number(style.zIndex),
+    backRimBehind:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitWheel')).zIndex)<Number(style.zIndex),
+    frontHitAbove:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitHueHit')).zIndex)>Number(style.zIndex),
+    backHitBehind:Number(getComputedStyle(el.parentElement.querySelector('#colorOrbitHueBackHit')).zIndex)<Number(style.zIndex),
+    innerHoleBottom:wheel.top+wheel.height*(73+31)/160,
+    tipBehindFront:rect.bottom-(wheel.top+wheel.height*(73+31)/160),
     relativeSide:el.offsetWidth/el.parentElement.getBoundingClientRect().width,
     overflow:outer.scrollWidth-outer.clientWidth
    };
@@ -209,11 +218,15 @@ async function run(kind,touch=false){
   assert.notEqual(svShape.rotation,'none','SV square must be rotated into a diamond');
   assert.ok(svShape.clipPath==='none','Diamond uses genuine rotation without distorted clipping');
   assert.ok(svShape.relativeSide>=.425,'SV diamond should be visibly larger: '+JSON.stringify(svShape));
-  assert.ok(svShape.overlapWithHueRing>=30&&svShape.overlapWithHueRing<=66,'SV diamond must approach the ring without excessive overlap: '+JSON.stringify(svShape));
-  assert.ok(svShape.visibleIntoHole>=12&&svShape.visibleIntoHole<=30,'SV tip must visibly enter the transparent ring opening (not stop behind the colored band): '+JSON.stringify(svShape));
+  assert.ok(svShape.overlapWithHueRing>=65&&svShape.overlapWithHueRing<=130,'SV diamond must be physically joined to the ring, not floating far above: '+JSON.stringify(svShape));
+  assert.ok(svShape.visibleIntoHole>=55&&svShape.visibleIntoHole<=95,'SV diamond must extend naturally into the ring opening: '+JSON.stringify(svShape));
+  assert.ok(svShape.tipBehindFront>=5&&svShape.tipBehindFront<=35,'SV diamond tip must tuck BEHIND the front rim: '+JSON.stringify(svShape));
   assert.equal(svShape.diamondTipVisible,true,'SV must remain directly visible and hit-testable inside the hue ring hole: '+JSON.stringify(svShape));
   assert.ok(svShape.topMargin>=9,'Enlarged diamond must remain inside picker, not clip its upper corner: '+JSON.stringify(svShape));
-  assert.equal(svShape.ringInFront,true,'Painted hue arc must appear in front of the overlapping diamond');
+  assert.equal(svShape.ringInFront,true,'Front ring must visually cover the SV tip');
+  assert.equal(svShape.backRimBehind,true,'Back ring must go behind the SV diamond');
+  assert.equal(svShape.frontHitAbove,true,'Front ring hit surface must be above SV');
+  assert.equal(svShape.backHitBehind,true,'Rear ring hit surface must not steal SV touches');
   assert.ok(svShape.overflow<=3,'Orbit must not overflow narrow dock');
   const svCoordinate=(s,v)=>{
    const dx=(s-.5)*svShape.naturalWidth,dy=(.5-v)*svShape.naturalHeight;
