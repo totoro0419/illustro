@@ -82,7 +82,9 @@ jobs:
         env:
           RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
-        run: node scripts/stroke-handoff-quality.mjs
+        run: |
+          node scripts/stroke-handoff-quality.mjs
+          HANDOFF_HEAVY_AREA=1 HANDOFF_QUALITY_OUTPUT=/tmp/handoff-quality/heavy/report.json node scripts/stroke-handoff-quality.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: stroke-handoff-quality, path: /tmp/handoff-quality/}
