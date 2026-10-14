@@ -18,7 +18,7 @@ type Pending=Readonly<{selectedLayerId:LayerId;packet:CoreRecoveryPacketV1;block
 type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
 
 export class PersistenceCoordinator{
-  private destroyed=false;private navigationSequence=0;
+  private destroyed=false;private navigationSequence=0;private navigationPending=0;
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
   private preserved:PreservedPortableData|undefined;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
@@ -44,7 +44,7 @@ export class PersistenceCoordinator{
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    const sequence=++this.navigationSequence,revisionId=document.head;this.patch({currentRevision:revisionId});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId});}).catch(error=>this.patch({storageError:message(error)}));
+    const sequence=++this.navigationSequence,revisionId=document.head;this.navigationPending++;this.patch({currentRevision:revisionId,protectionPending:true});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId});}).catch(error=>this.patch({storageError:message(error)})).finally(()=>{this.navigationPending--;this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});});
   }
   async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
   async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
@@ -116,7 +116,7 @@ export class PersistenceCoordinator{
   }
   private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
   private patch(patch:Partial<PersistenceState>){
-    const next={...this.stateValue,...patch,offline:!navigator.onLine};
+    const next={...this.stateValue,...patch,offline:!navigator.onLine};if(this.navigationPending>0)next.protectionPending=true;
     next.dirty=next.savedRevision===null?true:next.currentRevision!==next.savedRevision;
     this.stateValue=Object.freeze(next);this.onChange(this.stateValue);
   }

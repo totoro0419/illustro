@@ -78,14 +78,14 @@ function updateHistoryButtons(){
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
 }
 function updatePersistenceDisplay(){
-  const state=persistenceState,indicator=byId('saveState');
+  const state=persistenceState,indicator=byId('saveState'),inputPending=surface?.hasUncommittedInput??false;
   if(!state){indicator.textContent='自動保存準備中';return;}
-  indicator.textContent=state.storageError?'保存できません・再試行してください':state.protectionPending||state.queueLength>0?'アプリ内に保存中':qaMode?'自動保存済み':documentReady?'アプリ内に保存済み':'作品はまだ開かれていません';
+  indicator.textContent=state.storageError?'保存できません・再試行してください':inputPending||state.protectionPending||state.queueLength>0?'アプリ内に保存中':qaMode?'自動保存済み':documentReady?'アプリ内に保存済み':'作品はまだ開かれていません';
   const retry=document.getElementById('retryWorkSave');if(retry)retry.hidden=!state.storageError;
-  indicator.dataset.autosavePending=String(state.protectionPending||state.queueLength>0);indicator.dataset.saving=String(state.saving||librarySaving);indicator.dataset.protectedThrough=state.protectedThrough;
+  indicator.dataset.autosavePending=String(inputPending||state.protectionPending||state.queueLength>0);indicator.dataset.saving=String(state.saving||librarySaving);indicator.dataset.protectedThrough=state.protectedThrough;
   const homeSaveState=document.getElementById('ihHomeSaveState');
   if(homeSaveState){
-    const pending=state.protectionPending||state.queueLength>0;
+    const pending=inputPending||state.protectionPending||state.queueLength>0;
     homeSaveState.hidden=!documentReady||(!pending&&!state.storageError);
     homeSaveState.textContent=state.storageError?'保存できませんでした。開いているキャンバスに戻り、保存を再試行してください。':'作品を安全に保存しています。完了するまではこのページを閉じないでください。';
   }
@@ -140,7 +140,7 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   persistence.noteCommit(controller.document,handoff);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},reason=>{updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';restoreDrawingTool();}return;}
  const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value!=='layer');
