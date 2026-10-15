@@ -1,0 +1,532 @@
+{
+  "status": "AUTOMATED_VERIFIED_PHYSICAL_PHONE_UNVERIFIED",
+  "sourceCommit": "b91650573c7f0bfae1fcaf401e7a28e5cba31baa",
+  "baselineCommit": "163f128838d22da4303a61e2f98e26862016740a",
+  "userAccepted": false,
+  "scope": "390x844 DPR3 touch-capable emulation, Chromium SwiftShader; no physical phone or scanout measurement",
+  "comparisons": [
+    {
+      "backend": "webgl2",
+      "size": 512,
+      "brushSize": 64,
+      "before": {
+        "totalMs": 2796.9000000000087,
+        "afterInputMs": 575.1999999999971,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 10,
+        "cpuSubmitMs": 103.00000000001455,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 389,
+          "fbo": 692
+        },
+        "inputToPreviewSubmitP95Ms": 123.19999999999709,
+        "inputToPreviewCompletionP95Ms": 609.5,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 2730.2000000000116,
+        "afterInputMs": 543.9000000000233,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 10,
+        "cpuSubmitMs": 90.19999999998254,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 315,
+          "fbo": 544
+        },
+        "inputToPreviewSubmitP95Ms": 139.80000000001746,
+        "inputToPreviewCompletionP95Ms": 619.9000000000233,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgl2",
+      "size": 512,
+      "brushSize": 256,
+      "before": {
+        "totalMs": 4081.0999999999913,
+        "afterInputMs": 1889.699999999997,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 14,
+        "cpuSubmitMs": 159.59999999999127,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 883,
+          "fbo": 1458
+        },
+        "inputToPreviewSubmitP95Ms": 198,
+        "inputToPreviewCompletionP95Ms": 609.5,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 4064,
+        "afterInputMs": 1894.7000000000116,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 14,
+        "cpuSubmitMs": 153.59999999997672,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 698,
+          "fbo": 1086
+        },
+        "inputToPreviewSubmitP95Ms": 202.10000000000582,
+        "inputToPreviewCompletionP95Ms": 619.9000000000233,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgl2",
+      "size": 2048,
+      "brushSize": 64,
+      "before": {
+        "totalMs": 4224.400000000009,
+        "afterInputMs": 1571.6000000000058,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 10,
+        "cpuSubmitMs": 452.4000000000233,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 1112,
+          "fbo": 1935
+        },
+        "inputToPreviewSubmitP95Ms": 328,
+        "inputToPreviewCompletionP95Ms": 944.1999999999971,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 3359.899999999994,
+        "afterInputMs": 771.6999999999825,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 9,
+        "cpuSubmitMs": 394.1000000000058,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 987,
+          "fbo": 1578
+        },
+        "inputToPreviewSubmitP95Ms": 178.40000000002328,
+        "inputToPreviewCompletionP95Ms": 628.1000000000058,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgl2",
+      "size": 2048,
+      "brushSize": 256,
+      "before": {
+        "totalMs": 7416,
+        "afterInputMs": 5194.099999999991,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 13,
+        "cpuSubmitMs": 392.5999999999767,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 2393,
+          "fbo": 3592
+        },
+        "inputToPreviewSubmitP95Ms": 557.3999999999942,
+        "inputToPreviewCompletionP95Ms": 1643,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 6765.3000000000175,
+        "afterInputMs": 4525.100000000006,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 15,
+        "cpuSubmitMs": 364.39999999990687,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 2347,
+          "fbo": 3056
+        },
+        "inputToPreviewSubmitP95Ms": 425.5,
+        "inputToPreviewCompletionP95Ms": 1175,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgl2",
+      "size": 4000,
+      "brushSize": 64,
+      "before": {
+        "totalMs": 5190.599999999991,
+        "afterInputMs": 2416.899999999994,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 10,
+        "cpuSubmitMs": 587.6000000000204,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 2774,
+          "fbo": 4096
+        },
+        "inputToPreviewSubmitP95Ms": 431.1999999999971,
+        "inputToPreviewCompletionP95Ms": 1246.7999999999884,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 4927.100000000006,
+        "afterInputMs": 2185.100000000006,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 10,
+        "cpuSubmitMs": 539.2999999999884,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 2280,
+          "fbo": 3104
+        },
+        "inputToPreviewSubmitP95Ms": 289.79999999998836,
+        "inputToPreviewCompletionP95Ms": 1022.5,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgl2",
+      "size": 4000,
+      "brushSize": 256,
+      "before": {
+        "totalMs": 9765.299999999988,
+        "afterInputMs": 7457.199999999997,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 16,
+        "cpuSubmitMs": 724.6000000000204,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 5570,
+          "fbo": 7011
+        },
+        "inputToPreviewSubmitP95Ms": 698.6000000000058,
+        "inputToPreviewCompletionP95Ms": 1947.800000000003,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 9398,
+        "afterInputMs": 7148.100000000006,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 16,
+        "cpuSubmitMs": 754.0999999999767,
+        "calls": {
+          "passes": 0,
+          "largePasses": 0,
+          "draws": 4587,
+          "fbo": 5035
+        },
+        "inputToPreviewSubmitP95Ms": 608.0999999999767,
+        "inputToPreviewCompletionP95Ms": 1820,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgpu",
+      "size": 512,
+      "brushSize": 64,
+      "before": {
+        "totalMs": 2756.199999999997,
+        "afterInputMs": 614.3999999999942,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 9,
+        "cpuSubmitMs": 34.30000000000291,
+        "calls": {
+          "passes": 382,
+          "largePasses": 66,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 190.1999999999971,
+        "inputToPreviewCompletionP95Ms": 546.5999999999913,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 2689.899999999994,
+        "afterInputMs": 556.1000000000058,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 9,
+        "cpuSubmitMs": 26.5,
+        "calls": {
+          "passes": 249,
+          "largePasses": 9,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 295.6000000000058,
+        "inputToPreviewCompletionP95Ms": 547.5,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgpu",
+      "size": 512,
+      "brushSize": 256,
+      "before": {
+        "totalMs": 5406.199999999997,
+        "afterInputMs": 3278.300000000003,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 14,
+        "cpuSubmitMs": 67.10000000002037,
+        "calls": {
+          "passes": 852,
+          "largePasses": 161,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 418.70000000001164,
+        "inputToPreviewCompletionP95Ms": 1094.800000000003,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 5240.5,
+        "afterInputMs": 3121.5,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 14,
+        "cpuSubmitMs": 41.000000000029104,
+        "calls": {
+          "passes": 522,
+          "largePasses": 12,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 317.8999999999942,
+        "inputToPreviewCompletionP95Ms": 965.8999999999942,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgpu",
+      "size": 2048,
+      "brushSize": 64,
+      "before": {
+        "totalMs": 3959.9000000000087,
+        "afterInputMs": 1801.8999999999942,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 9,
+        "cpuSubmitMs": 56.10000000004948,
+        "calls": {
+          "passes": 934,
+          "largePasses": 158,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 386.59999999999127,
+        "inputToPreviewCompletionP95Ms": 1101.5999999999913,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 3866.2000000000116,
+        "afterInputMs": 1732,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 9,
+        "cpuSubmitMs": 47.79999999998836,
+        "calls": {
+          "passes": 610,
+          "largePasses": 7,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 359.3999999999942,
+        "inputToPreviewCompletionP95Ms": 1047.5,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgpu",
+      "size": 2048,
+      "brushSize": 256,
+      "before": {
+        "totalMs": 9333.499999999985,
+        "afterInputMs": 7201.999999999985,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 13,
+        "cpuSubmitMs": 97.70000000004075,
+        "calls": {
+          "passes": 1988,
+          "largePasses": 470,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 623.5,
+        "inputToPreviewCompletionP95Ms": 1812.5999999999913,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 9042.400000000023,
+        "afterInputMs": 6913.600000000006,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 13,
+        "cpuSubmitMs": 71.00000000011642,
+        "calls": {
+          "passes": 986,
+          "largePasses": 13,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 1073.0999999999767,
+        "inputToPreviewCompletionP95Ms": 2357.5999999999767,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgpu",
+      "size": 4000,
+      "brushSize": 64,
+      "before": {
+        "totalMs": 6496.600000000006,
+        "afterInputMs": 4338.200000000012,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 9,
+        "cpuSubmitMs": 78.80000000007567,
+        "calls": {
+          "passes": 1842,
+          "largePasses": 367,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 863.1000000000058,
+        "inputToPreviewCompletionP95Ms": 2244.7000000000116,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 6267.900000000023,
+        "afterInputMs": 4111.100000000006,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 9,
+        "cpuSubmitMs": 74.59999999997672,
+        "calls": {
+          "passes": 1058,
+          "largePasses": 7,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 741.5,
+        "inputToPreviewCompletionP95Ms": 2049.5,
+        "heapBytes": null
+      }
+    },
+    {
+      "backend": "webgpu",
+      "size": 4000,
+      "brushSize": 256,
+      "before": {
+        "totalMs": 17119.20000000001,
+        "afterInputMs": 14991.200000000012,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 16,
+        "cpuSubmitMs": 164.79999999998836,
+        "calls": {
+          "passes": 4164,
+          "largePasses": 1115,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 1615.6000000000058,
+        "inputToPreviewCompletionP95Ms": 3981.100000000006,
+        "heapBytes": null
+      },
+      "after": {
+        "totalMs": 16925.70000000001,
+        "afterInputMs": 14790.700000000012,
+        "strokes": 4,
+        "actualPoints": 244,
+        "frames": 17,
+        "cpuSubmitMs": 127.59999999994761,
+        "calls": {
+          "passes": 1942,
+          "largePasses": 16,
+          "draws": 0,
+          "fbo": 0
+        },
+        "inputToPreviewSubmitP95Ms": 1532,
+        "inputToPreviewCompletionP95Ms": 3841.5,
+        "heapBytes": null
+      }
+    }
+  ],
+  "directQuality": {
+    "cases": 2,
+    "exactSceneAndMips": true,
+    "oversizedOverlayFallback": true
+  },
+  "navigation": {
+    "cases": 10,
+    "canvasSizes": [
+      512,
+      4000
+    ],
+    "layerCounts": [
+      1,
+      3,
+      10
+    ]
+  },
+  "input": {
+    "trustedFinger": true,
+    "twoFinger": true,
+    "phoneViewport": [
+      390,
+      844
+    ],
+    "dpr": 3
+  },
+  "stress": [
+    {
+      "backend": "webgl2",
+      "accepted": 1100,
+      "peakPending": 14,
+      "settleMs": 342.79999999998836,
+      "pending": 0
+    },
+    {
+      "backend": "webgpu",
+      "accepted": 1100,
+      "peakPending": 13,
+      "settleMs": 613.5999999999767,
+      "pending": 0
+    }
+  ],
+  "unverified": [
+    "Physical Android phone/tablet/pen",
+    "Thermal throttling and power",
+    "Physical input-to-photon",
+    "Isolated GPU execution time",
+    "Real VRAM/RSS"
+  ],
+  "limitations": [
+    "A software GPU benchmark is not a phone measurement.",
+    "Already submitted GPU work remains bounded but cannot be cancelled.",
+    "Cold Undo still reconstructs outside the bounded cache.",
+    "No all-device 4000px/one-frame performance guarantee."
+  ]
+}

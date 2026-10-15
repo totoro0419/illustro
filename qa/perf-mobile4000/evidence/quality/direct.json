@@ -1,0 +1,131 @@
+{
+  "sourceCommit": "b91650573c7f0bfae1fcaf401e7a28e5cba31baa",
+  "scope": "Exact retained scene/mip pixels, direct versus prior scratch composition; software GPU, physical Android unverified",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "comparisons": [
+        {
+          "label": "pending-1",
+          "exactPixels": true,
+          "previewCount": 1,
+          "direct": {
+            "scene": "1376f9cbee85beb382bdcca28ca3bcddefcb7c3a8e3a657051015515a6209e0b",
+            "mips": [
+              "a1d6dad210e6de8c20aaf1ba90452b506958e79be2a96d5a793df96d2e81b700"
+            ]
+          }
+        },
+        {
+          "label": "pending-4",
+          "exactPixels": true,
+          "previewCount": 4,
+          "direct": {
+            "scene": "7eaef13b9066a4a3b955b6946fd1146aaa97437da58add168990692712970a8f",
+            "mips": [
+              "ac9df66a815ccbc8fbd893e7f318412a804759807f6e2f11a69107ad43ded378"
+            ]
+          }
+        },
+        {
+          "label": "pending-7",
+          "exactPixels": true,
+          "previewCount": 7,
+          "direct": {
+            "scene": "51377ed13e6f88f5e74983f41bde8264bf53b7133192ddec3853d7d521591bd0",
+            "mips": [
+              "40445b0c26a8f69722cadc8db50fbfd69af15a390dbde2f1cd994033c003be3f"
+            ]
+          }
+        },
+        {
+          "label": "pending-12",
+          "exactPixels": true,
+          "previewCount": 12,
+          "direct": {
+            "scene": "4787cc70b7a58413536697e0e60aa6ea2363bfb49019a764b9331c3d1a9b606f",
+            "mips": [
+              "be3ca5f3c842fee2c86a7f2af54126512418b697bf2b27de968a9c6507eab772"
+            ]
+          }
+        },
+        {
+          "label": "formally-completed",
+          "exactPixels": true,
+          "previewCount": 0,
+          "direct": {
+            "scene": "4787cc70b7a58413536697e0e60aa6ea2363bfb49019a764b9331c3d1a9b606f",
+            "mips": [
+              "be3ca5f3c842fee2c86a7f2af54126512418b697bf2b27de968a9c6507eab772"
+            ]
+          }
+        }
+      ],
+      "rebuildMatch": true,
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "comparisons": [
+        {
+          "label": "pending-1",
+          "exactPixels": true,
+          "previewCount": 1,
+          "direct": {
+            "scene": "0d87e1399fe7a4fa6f6129001ac5a8ede968c273c039fe995ea904f2bc445494",
+            "mips": [
+              "6936c4de11ce7db99e628f8704e886481633f4c4be7d010ccc54267b55730183"
+            ]
+          }
+        },
+        {
+          "label": "pending-4",
+          "exactPixels": true,
+          "previewCount": 4,
+          "direct": {
+            "scene": "65d251557c0f625a8cbdc7a89f62d85d96c50d2fd5542df08cbf2f0dcfbc105b",
+            "mips": [
+              "316d4c5d87267440b8b22ca39e80cd69e95fddb0f7edd1c1047ebe6f68eb126e"
+            ]
+          }
+        },
+        {
+          "label": "pending-7",
+          "exactPixels": true,
+          "previewCount": 7,
+          "direct": {
+            "scene": "826b9f7e972ca004cd920de985f8120f9a3af2d3945edefc564768b914aaaeb7",
+            "mips": [
+              "0a4f6602d6d7de7547e09e58d55673e34cf9403b5faf7d51f8bdd3e3bbd9d152"
+            ]
+          }
+        },
+        {
+          "label": "pending-12",
+          "exactPixels": true,
+          "previewCount": 12,
+          "direct": {
+            "scene": "f3b8d02859e7b79c2b143c4562eb9443f64fcb4c3015a63e3aaac530d3350c7b",
+            "mips": [
+              "9995f760d292cfd64b2aa8bfc0ef30672c5a01bd245a82396c239121b25ea3fd"
+            ]
+          }
+        },
+        {
+          "label": "formally-completed",
+          "exactPixels": true,
+          "previewCount": 0,
+          "direct": {
+            "scene": "f3b8d02859e7b79c2b143c4562eb9443f64fcb4c3015a63e3aaac530d3350c7b",
+            "mips": [
+              "9995f760d292cfd64b2aa8bfc0ef30672c5a01bd245a82396c239121b25ea3fd"
+            ]
+          }
+        }
+      ],
+      "rebuildMatch": true,
+      "errors": []
+    }
+  ],
+  "errors": []
+}
