@@ -1,0 +1,2301 @@
+{
+  "status": "AUTOMATED_VERIFIED_DEVICE_REVIEW_PENDING",
+  "sourceCommit": "b2171ed7c9921e7a812c47a5538c1a719aa6be9f",
+  "baselineCommit": "3310f236f432ccfba20bcf964a6c10b12492e8d4",
+  "userAccepted": false,
+  "comparisons": [
+    {
+      "backend": "webgl2",
+      "width": 512,
+      "height": 384,
+      "size": 32,
+      "phases": [
+        {
+          "name": "isolated-undo",
+          "before": {
+            "ms": 872.6000000000349,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 779.2999999999884,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "isolated-redo",
+          "before": {
+            "ms": 1324.5,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 708.6000000000349,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-undo",
+          "before": {
+            "ms": 496.79999999998836,
+            "requested": 12,
+            "applied": 3,
+            "renders": 3,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 579.8000000000466,
+            "requested": 12,
+            "applied": 12,
+            "renders": 5,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-redo",
+          "before": {
+            "ms": 529.7000000000116,
+            "requested": 12,
+            "applied": 3,
+            "renders": 3,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 596.2999999999884,
+            "requested": 12,
+            "applied": 12,
+            "renders": 5,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "cold-burst-undo",
+          "before": {
+            "ms": 396.1000000000349,
+            "requested": 6,
+            "applied": 1,
+            "renders": 3,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 559.0999999999767,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 2
+          }
+        }
+      ],
+      "history": {
+        "pending": false,
+        "queued": 0,
+        "active": 0,
+        "accepted": 42,
+        "refused": 0,
+        "batches": 24,
+        "peak": 7,
+        "fault": null,
+        "traces": [
+          {
+            "sequence": 1,
+            "direction": "undo",
+            "queueMs": 91.60000000003492,
+            "completeMs": 177.10000000003492
+          },
+          {
+            "sequence": 2,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 88.60000000003492
+          },
+          {
+            "sequence": 3,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 95.79999999998836
+          },
+          {
+            "sequence": 4,
+            "direction": "undo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 95.20000000001164
+          },
+          {
+            "sequence": 5,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 131.60000000003492
+          },
+          {
+            "sequence": 6,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 107.5
+          },
+          {
+            "sequence": 7,
+            "direction": "redo",
+            "queueMs": 0.5999999999767169,
+            "completeMs": 106.59999999997672
+          },
+          {
+            "sequence": 8,
+            "direction": "redo",
+            "queueMs": 0.5,
+            "completeMs": 89.90000000002328
+          },
+          {
+            "sequence": 9,
+            "direction": "redo",
+            "queueMs": 1.8999999999650754,
+            "completeMs": 102.09999999997672
+          },
+          {
+            "sequence": 10,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 105.10000000003492
+          },
+          {
+            "sequence": 11,
+            "direction": "redo",
+            "queueMs": 0.6000000000349246,
+            "completeMs": 103.5
+          },
+          {
+            "sequence": 12,
+            "direction": "redo",
+            "queueMs": 0.5999999999767169,
+            "completeMs": 98.29999999998836
+          },
+          {
+            "sequence": 13,
+            "direction": "undo",
+            "queueMs": 0.9000000000232831,
+            "completeMs": 141.20000000001164
+          },
+          {
+            "sequence": 14,
+            "direction": "undo",
+            "queueMs": 104,
+            "completeMs": 218.09999999997672
+          },
+          {
+            "sequence": 15,
+            "direction": "undo",
+            "queueMs": 70.80000000004657,
+            "completeMs": 184.90000000002328
+          },
+          {
+            "sequence": 16,
+            "direction": "undo",
+            "queueMs": 39.90000000002328,
+            "completeMs": 154
+          },
+          {
+            "sequence": 17,
+            "direction": "undo",
+            "queueMs": 109.20000000001164,
+            "completeMs": 191.20000000001164
+          },
+          {
+            "sequence": 18,
+            "direction": "undo",
+            "queueMs": 72.60000000003492,
+            "completeMs": 154.60000000003492
+          },
+          {
+            "sequence": 19,
+            "direction": "undo",
+            "queueMs": 36.600000000034925,
+            "completeMs": 118.60000000003492
+          },
+          {
+            "sequence": 20,
+            "direction": "undo",
+            "queueMs": 5.5,
+            "completeMs": 87.5
+          },
+          {
+            "sequence": 21,
+            "direction": "undo",
+            "queueMs": 46.59999999997672,
+            "completeMs": 162.70000000001164
+          },
+          {
+            "sequence": 22,
+            "direction": "undo",
+            "queueMs": 5.7000000000116415,
+            "completeMs": 121.80000000004657
+          },
+          {
+            "sequence": 23,
+            "direction": "undo",
+            "queueMs": 89.89999999996508,
+            "completeMs": 189.39999999996508
+          },
+          {
+            "sequence": 24,
+            "direction": "undo",
+            "queueMs": 60.09999999997672,
+            "completeMs": 159.59999999997672
+          },
+          {
+            "sequence": 25,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 111.79999999998836
+          },
+          {
+            "sequence": 26,
+            "direction": "redo",
+            "queueMs": 73.5,
+            "completeMs": 175
+          },
+          {
+            "sequence": 27,
+            "direction": "redo",
+            "queueMs": 40.09999999997672,
+            "completeMs": 141.59999999997672
+          },
+          {
+            "sequence": 28,
+            "direction": "redo",
+            "queueMs": 5.099999999976717,
+            "completeMs": 106.59999999997672
+          },
+          {
+            "sequence": 29,
+            "direction": "redo",
+            "queueMs": 58.40000000002328,
+            "completeMs": 172
+          },
+          {
+            "sequence": 30,
+            "direction": "redo",
+            "queueMs": 29.79999999998836,
+            "completeMs": 143.39999999996508
+          },
+          {
+            "sequence": 31,
+            "direction": "redo",
+            "queueMs": 94.70000000001164,
+            "completeMs": 210.79999999998836
+          },
+          {
+            "sequence": 32,
+            "direction": "redo",
+            "queueMs": 61.20000000001164,
+            "completeMs": 177.29999999998836
+          },
+          {
+            "sequence": 33,
+            "direction": "redo",
+            "queueMs": 30.599999999976717,
+            "completeMs": 146.69999999995343
+          },
+          {
+            "sequence": 34,
+            "direction": "redo",
+            "queueMs": 109.5,
+            "completeMs": 226.19999999995343
+          },
+          {
+            "sequence": 35,
+            "direction": "redo",
+            "queueMs": 76.90000000002328,
+            "completeMs": 193.59999999997672
+          },
+          {
+            "sequence": 36,
+            "direction": "redo",
+            "queueMs": 46.100000000034925,
+            "completeMs": 162.79999999998836
+          },
+          {
+            "sequence": 37,
+            "direction": "undo",
+            "queueMs": 0.7999999999883585,
+            "completeMs": 300
+          },
+          {
+            "sequence": 38,
+            "direction": "undo",
+            "queueMs": 242.70000000001164,
+            "completeMs": 475.79999999998836
+          },
+          {
+            "sequence": 39,
+            "direction": "undo",
+            "queueMs": 211.60000000003492,
+            "completeMs": 444.70000000001164
+          },
+          {
+            "sequence": 40,
+            "direction": "undo",
+            "queueMs": 179.70000000001164,
+            "completeMs": 412.79999999998836
+          },
+          {
+            "sequence": 41,
+            "direction": "undo",
+            "queueMs": 146.80000000004657,
+            "completeMs": 379.9000000000233
+          },
+          {
+            "sequence": 42,
+            "direction": "undo",
+            "queueMs": 113.60000000003492,
+            "completeMs": 346.70000000001164
+          }
+        ]
+      },
+      "cacheBudgetBytes": 67108864,
+      "cacheReservedBytes": 0,
+      "supersededGpuJobs": 0
+    },
+    {
+      "backend": "webgl2",
+      "width": 3000,
+      "height": 3000,
+      "size": 64,
+      "phases": [
+        {
+          "name": "isolated-undo",
+          "before": {
+            "ms": 1034,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 1016.2000000000116,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "isolated-redo",
+          "before": {
+            "ms": 1150.600000000035,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 940.7000000000116,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-undo",
+          "before": {
+            "ms": 594.7999999999884,
+            "requested": 12,
+            "applied": 3,
+            "renders": 3,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 654.7999999999884,
+            "requested": 12,
+            "applied": 12,
+            "renders": 4,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-redo",
+          "before": {
+            "ms": 496.20000000001164,
+            "requested": 12,
+            "applied": 3,
+            "renders": 3,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 644.2000000000116,
+            "requested": 12,
+            "applied": 12,
+            "renders": 4,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "cold-burst-undo",
+          "before": {
+            "ms": 963.4000000000233,
+            "requested": 6,
+            "applied": 1,
+            "renders": 5,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 1864,
+            "requested": 6,
+            "applied": 6,
+            "renders": 10,
+            "rebuilds": 2
+          }
+        }
+      ],
+      "history": {
+        "pending": false,
+        "queued": 0,
+        "active": 0,
+        "accepted": 42,
+        "refused": 0,
+        "batches": 22,
+        "peak": 9,
+        "fault": null,
+        "traces": [
+          {
+            "sequence": 1,
+            "direction": "undo",
+            "queueMs": 90.09999999997672,
+            "completeMs": 225.5
+          },
+          {
+            "sequence": 2,
+            "direction": "undo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 139
+          },
+          {
+            "sequence": 3,
+            "direction": "undo",
+            "queueMs": 0.30000000004656613,
+            "completeMs": 158.10000000003492
+          },
+          {
+            "sequence": 4,
+            "direction": "undo",
+            "queueMs": 0.20000000001164153,
+            "completeMs": 145.60000000003492
+          },
+          {
+            "sequence": 5,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 139.79999999998836
+          },
+          {
+            "sequence": 6,
+            "direction": "undo",
+            "queueMs": 0.20000000001164153,
+            "completeMs": 144.79999999998836
+          },
+          {
+            "sequence": 7,
+            "direction": "redo",
+            "queueMs": 0.5999999999767169,
+            "completeMs": 152.89999999996508
+          },
+          {
+            "sequence": 8,
+            "direction": "redo",
+            "queueMs": 0.3999999999650754,
+            "completeMs": 162.29999999998836
+          },
+          {
+            "sequence": 9,
+            "direction": "redo",
+            "queueMs": 1.8999999999650754,
+            "completeMs": 146
+          },
+          {
+            "sequence": 10,
+            "direction": "redo",
+            "queueMs": 0.30000000004656613,
+            "completeMs": 145.5
+          },
+          {
+            "sequence": 11,
+            "direction": "redo",
+            "queueMs": 0.5,
+            "completeMs": 146.40000000002328
+          },
+          {
+            "sequence": 12,
+            "direction": "redo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 145.59999999997672
+          },
+          {
+            "sequence": 13,
+            "direction": "undo",
+            "queueMs": 0.5999999999767169,
+            "completeMs": 125
+          },
+          {
+            "sequence": 14,
+            "direction": "undo",
+            "queueMs": 91.29999999998836,
+            "completeMs": 242.5
+          },
+          {
+            "sequence": 15,
+            "direction": "undo",
+            "queueMs": 61.20000000001164,
+            "completeMs": 212.40000000002328
+          },
+          {
+            "sequence": 16,
+            "direction": "undo",
+            "queueMs": 26.70000000001164,
+            "completeMs": 177.90000000002328
+          },
+          {
+            "sequence": 17,
+            "direction": "undo",
+            "queueMs": 140,
+            "completeMs": 304.79999999998836
+          },
+          {
+            "sequence": 18,
+            "direction": "undo",
+            "queueMs": 105.70000000001164,
+            "completeMs": 270.5
+          },
+          {
+            "sequence": 19,
+            "direction": "undo",
+            "queueMs": 77,
+            "completeMs": 241.79999999998836
+          },
+          {
+            "sequence": 20,
+            "direction": "undo",
+            "queueMs": 47.79999999998836,
+            "completeMs": 212.59999999997672
+          },
+          {
+            "sequence": 21,
+            "direction": "undo",
+            "queueMs": 19.79999999998836,
+            "completeMs": 184.59999999997672
+          },
+          {
+            "sequence": 22,
+            "direction": "undo",
+            "queueMs": 142,
+            "completeMs": 325.1000000000349
+          },
+          {
+            "sequence": 23,
+            "direction": "undo",
+            "queueMs": 110.39999999996508,
+            "completeMs": 293.5
+          },
+          {
+            "sequence": 24,
+            "direction": "undo",
+            "queueMs": 80.5,
+            "completeMs": 263.6000000000349
+          },
+          {
+            "sequence": 25,
+            "direction": "redo",
+            "queueMs": 0.5,
+            "completeMs": 147.79999999998836
+          },
+          {
+            "sequence": 26,
+            "direction": "redo",
+            "queueMs": 110.20000000001164,
+            "completeMs": 278.20000000001164
+          },
+          {
+            "sequence": 27,
+            "direction": "redo",
+            "queueMs": 74.59999999997672,
+            "completeMs": 242.59999999997672
+          },
+          {
+            "sequence": 28,
+            "direction": "redo",
+            "queueMs": 40,
+            "completeMs": 208
+          },
+          {
+            "sequence": 29,
+            "direction": "redo",
+            "queueMs": 9.200000000011642,
+            "completeMs": 177.20000000001164
+          },
+          {
+            "sequence": 30,
+            "direction": "redo",
+            "queueMs": 144.5,
+            "completeMs": 277
+          },
+          {
+            "sequence": 31,
+            "direction": "redo",
+            "queueMs": 113.39999999996508,
+            "completeMs": 245.89999999996508
+          },
+          {
+            "sequence": 32,
+            "direction": "redo",
+            "queueMs": 72.19999999995343,
+            "completeMs": 204.69999999995343
+          },
+          {
+            "sequence": 33,
+            "direction": "redo",
+            "queueMs": 40.09999999997672,
+            "completeMs": 172.59999999997672
+          },
+          {
+            "sequence": 34,
+            "direction": "redo",
+            "queueMs": 6.7999999999883585,
+            "completeMs": 139.29999999998836
+          },
+          {
+            "sequence": 35,
+            "direction": "redo",
+            "queueMs": 93.40000000002328,
+            "completeMs": 225.30000000004657
+          },
+          {
+            "sequence": 36,
+            "direction": "redo",
+            "queueMs": 63,
+            "completeMs": 194.90000000002328
+          },
+          {
+            "sequence": 37,
+            "direction": "undo",
+            "queueMs": 0.6000000000349246,
+            "completeMs": 1024.2000000000116
+          },
+          {
+            "sequence": 38,
+            "direction": "undo",
+            "queueMs": 929.4000000000233,
+            "completeMs": 1745.7000000000116
+          },
+          {
+            "sequence": 39,
+            "direction": "undo",
+            "queueMs": 896.9000000000233,
+            "completeMs": 1713.2000000000116
+          },
+          {
+            "sequence": 40,
+            "direction": "undo",
+            "queueMs": 866.5,
+            "completeMs": 1682.7999999999884
+          },
+          {
+            "sequence": 41,
+            "direction": "undo",
+            "queueMs": 826.7000000000116,
+            "completeMs": 1643
+          },
+          {
+            "sequence": 42,
+            "direction": "undo",
+            "queueMs": 797.2999999999884,
+            "completeMs": 1613.5999999999767
+          }
+        ]
+      },
+      "cacheBudgetBytes": 67108864,
+      "cacheReservedBytes": 0,
+      "supersededGpuJobs": 0
+    },
+    {
+      "backend": "webgl2",
+      "width": 3000,
+      "height": 3000,
+      "size": 256,
+      "phases": [
+        {
+          "name": "isolated-undo",
+          "before": {
+            "ms": 2693.8000000000466,
+            "requested": 6,
+            "applied": 6,
+            "renders": 13,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 1236.399999999965,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "isolated-redo",
+          "before": {
+            "ms": 2930.2999999999884,
+            "requested": 6,
+            "applied": 6,
+            "renders": 13,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 1162.0999999999767,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-undo",
+          "before": {
+            "ms": 500.70000000001164,
+            "requested": 12,
+            "applied": 2,
+            "renders": 2,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 695.2000000000116,
+            "requested": 12,
+            "applied": 12,
+            "renders": 3,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-redo",
+          "before": {
+            "ms": 458.5999999999767,
+            "requested": 12,
+            "applied": 2,
+            "renders": 2,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 670.4000000000233,
+            "requested": 12,
+            "applied": 12,
+            "renders": 3,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "cold-burst-undo",
+          "before": {
+            "ms": 2006,
+            "requested": 6,
+            "applied": 1,
+            "renders": 10,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 3755.899999999965,
+            "requested": 6,
+            "applied": 6,
+            "renders": 18,
+            "rebuilds": 2
+          }
+        },
+        {
+          "name": "immediate-undo-broad-stroke",
+          "before": {
+            "ms": 11251.299999999988,
+            "requested": 1,
+            "applied": 1,
+            "renders": 37,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 3742.7000000000116,
+            "requested": 1,
+            "applied": 1,
+            "renders": 9,
+            "rebuilds": 1
+          }
+        }
+      ],
+      "history": {
+        "pending": false,
+        "queued": 0,
+        "active": 0,
+        "accepted": 43,
+        "refused": 0,
+        "batches": 21,
+        "peak": 11,
+        "fault": null,
+        "traces": [
+          {
+            "sequence": 1,
+            "direction": "undo",
+            "queueMs": 95.5,
+            "completeMs": 264.70000000001164
+          },
+          {
+            "sequence": 2,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 202.29999999998836
+          },
+          {
+            "sequence": 3,
+            "direction": "undo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 178.10000000003492
+          },
+          {
+            "sequence": 4,
+            "direction": "undo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 177.59999999997672
+          },
+          {
+            "sequence": 5,
+            "direction": "undo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 178.09999999997672
+          },
+          {
+            "sequence": 6,
+            "direction": "undo",
+            "queueMs": 0.3999999999650754,
+            "completeMs": 180.39999999996508
+          },
+          {
+            "sequence": 7,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 192.20000000001164
+          },
+          {
+            "sequence": 8,
+            "direction": "redo",
+            "queueMs": 0.20000000001164153,
+            "completeMs": 211.79999999998836
+          },
+          {
+            "sequence": 9,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 177.70000000001164
+          },
+          {
+            "sequence": 10,
+            "direction": "redo",
+            "queueMs": 0.3999999999650754,
+            "completeMs": 178.5
+          },
+          {
+            "sequence": 11,
+            "direction": "redo",
+            "queueMs": 0.20000000001164153,
+            "completeMs": 180
+          },
+          {
+            "sequence": 12,
+            "direction": "redo",
+            "queueMs": 0.20000000001164153,
+            "completeMs": 162
+          },
+          {
+            "sequence": 13,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 182
+          },
+          {
+            "sequence": 14,
+            "direction": "undo",
+            "queueMs": 149.59999999997672,
+            "completeMs": 381.79999999998836
+          },
+          {
+            "sequence": 15,
+            "direction": "undo",
+            "queueMs": 120.39999999996508,
+            "completeMs": 352.5999999999767
+          },
+          {
+            "sequence": 16,
+            "direction": "undo",
+            "queueMs": 89.09999999997672,
+            "completeMs": 321.29999999998836
+          },
+          {
+            "sequence": 17,
+            "direction": "undo",
+            "queueMs": 61.399999999965075,
+            "completeMs": 293.5999999999767
+          },
+          {
+            "sequence": 18,
+            "direction": "undo",
+            "queueMs": 30.20000000001164,
+            "completeMs": 262.4000000000233
+          },
+          {
+            "sequence": 19,
+            "direction": "undo",
+            "queueMs": 2.3999999999650754,
+            "completeMs": 234.59999999997672
+          },
+          {
+            "sequence": 20,
+            "direction": "undo",
+            "queueMs": 184.10000000003492,
+            "completeMs": 434.1000000000349
+          },
+          {
+            "sequence": 21,
+            "direction": "undo",
+            "queueMs": 152.90000000002328,
+            "completeMs": 402.9000000000233
+          },
+          {
+            "sequence": 22,
+            "direction": "undo",
+            "queueMs": 125.5,
+            "completeMs": 375.5
+          },
+          {
+            "sequence": 23,
+            "direction": "undo",
+            "queueMs": 95.70000000001164,
+            "completeMs": 345.70000000001164
+          },
+          {
+            "sequence": 24,
+            "direction": "undo",
+            "queueMs": 64.80000000004657,
+            "completeMs": 314.80000000004657
+          },
+          {
+            "sequence": 25,
+            "direction": "redo",
+            "queueMs": 0.5999999999767169,
+            "completeMs": 196.70000000001164
+          },
+          {
+            "sequence": 26,
+            "direction": "redo",
+            "queueMs": 160.89999999996508,
+            "completeMs": 377.5999999999767
+          },
+          {
+            "sequence": 27,
+            "direction": "redo",
+            "queueMs": 124,
+            "completeMs": 340.70000000001164
+          },
+          {
+            "sequence": 28,
+            "direction": "redo",
+            "queueMs": 93.59999999997672,
+            "completeMs": 310.29999999998836
+          },
+          {
+            "sequence": 29,
+            "direction": "redo",
+            "queueMs": 59.5,
+            "completeMs": 276.20000000001164
+          },
+          {
+            "sequence": 30,
+            "direction": "redo",
+            "queueMs": 28.099999999976717,
+            "completeMs": 244.79999999998836
+          },
+          {
+            "sequence": 31,
+            "direction": "redo",
+            "queueMs": 208.29999999998836,
+            "completeMs": 407.8999999999651
+          },
+          {
+            "sequence": 32,
+            "direction": "redo",
+            "queueMs": 178.90000000002328,
+            "completeMs": 378.5
+          },
+          {
+            "sequence": 33,
+            "direction": "redo",
+            "queueMs": 145.40000000002328,
+            "completeMs": 345
+          },
+          {
+            "sequence": 34,
+            "direction": "redo",
+            "queueMs": 115.70000000001164,
+            "completeMs": 315.29999999998836
+          },
+          {
+            "sequence": 35,
+            "direction": "redo",
+            "queueMs": 85.60000000003492,
+            "completeMs": 285.20000000001164
+          },
+          {
+            "sequence": 36,
+            "direction": "redo",
+            "queueMs": 52.40000000002328,
+            "completeMs": 252
+          },
+          {
+            "sequence": 37,
+            "direction": "undo",
+            "queueMs": 0.9000000000232831,
+            "completeMs": 2019.7999999999884
+          },
+          {
+            "sequence": 38,
+            "direction": "undo",
+            "queueMs": 1927.4000000000233,
+            "completeMs": 3627
+          },
+          {
+            "sequence": 39,
+            "direction": "undo",
+            "queueMs": 1894.8000000000466,
+            "completeMs": 3594.4000000000233
+          },
+          {
+            "sequence": 40,
+            "direction": "undo",
+            "queueMs": 1865,
+            "completeMs": 3564.5999999999767
+          },
+          {
+            "sequence": 41,
+            "direction": "undo",
+            "queueMs": 1836.4000000000233,
+            "completeMs": 3536
+          },
+          {
+            "sequence": 42,
+            "direction": "undo",
+            "queueMs": 1807.7000000000116,
+            "completeMs": 3507.2999999999884
+          },
+          {
+            "sequence": 43,
+            "direction": "undo",
+            "queueMs": 1763.0999999999767,
+            "completeMs": 3380.7000000000116
+          }
+        ]
+      },
+      "cacheBudgetBytes": 67108864,
+      "cacheReservedBytes": 0,
+      "supersededGpuJobs": 660
+    },
+    {
+      "backend": "webgpu",
+      "width": 512,
+      "height": 384,
+      "size": 32,
+      "phases": [
+        {
+          "name": "isolated-undo",
+          "before": {
+            "ms": 839.0999999999767,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 825.6999999999534,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "isolated-redo",
+          "before": {
+            "ms": 828.9000000000233,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 790.7000000000116,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-undo",
+          "before": {
+            "ms": 410.9000000000233,
+            "requested": 12,
+            "applied": 3,
+            "renders": 3,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 599.5,
+            "requested": 12,
+            "applied": 12,
+            "renders": 5,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-redo",
+          "before": {
+            "ms": 460.5999999999767,
+            "requested": 12,
+            "applied": 3,
+            "renders": 3,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 593.5999999999767,
+            "requested": 12,
+            "applied": 12,
+            "renders": 5,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "cold-burst-undo",
+          "before": {
+            "ms": 433.20000000001164,
+            "requested": 6,
+            "applied": 1,
+            "renders": 3,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 857.4000000000233,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 2
+          }
+        }
+      ],
+      "history": {
+        "pending": false,
+        "queued": 0,
+        "active": 0,
+        "accepted": 42,
+        "refused": 0,
+        "batches": 24,
+        "peak": 8,
+        "fault": null,
+        "traces": [
+          {
+            "sequence": 1,
+            "direction": "undo",
+            "queueMs": 96.39999999996508,
+            "completeMs": 200.70000000001164
+          },
+          {
+            "sequence": 2,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 107.70000000001164
+          },
+          {
+            "sequence": 3,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 104
+          },
+          {
+            "sequence": 4,
+            "direction": "undo",
+            "queueMs": 0.30000000004656613,
+            "completeMs": 101.80000000004657
+          },
+          {
+            "sequence": 5,
+            "direction": "undo",
+            "queueMs": 0.30000000004656613,
+            "completeMs": 124.20000000001164
+          },
+          {
+            "sequence": 6,
+            "direction": "undo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 106.79999999998836
+          },
+          {
+            "sequence": 7,
+            "direction": "redo",
+            "queueMs": 0.6000000000349246,
+            "completeMs": 131.79999999998836
+          },
+          {
+            "sequence": 8,
+            "direction": "redo",
+            "queueMs": 0.5,
+            "completeMs": 109.70000000001164
+          },
+          {
+            "sequence": 9,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 126.09999999997672
+          },
+          {
+            "sequence": 10,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 115.79999999998836
+          },
+          {
+            "sequence": 11,
+            "direction": "redo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 106
+          },
+          {
+            "sequence": 12,
+            "direction": "redo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 122.69999999995343
+          },
+          {
+            "sequence": 13,
+            "direction": "undo",
+            "queueMs": 0.7000000000116415,
+            "completeMs": 104.79999999998836
+          },
+          {
+            "sequence": 14,
+            "direction": "undo",
+            "queueMs": 68.5,
+            "completeMs": 196
+          },
+          {
+            "sequence": 15,
+            "direction": "undo",
+            "queueMs": 29.399999999965075,
+            "completeMs": 156.89999999996508
+          },
+          {
+            "sequence": 16,
+            "direction": "undo",
+            "queueMs": 121.20000000001164,
+            "completeMs": 245
+          },
+          {
+            "sequence": 17,
+            "direction": "undo",
+            "queueMs": 93.40000000002328,
+            "completeMs": 217.20000000001164
+          },
+          {
+            "sequence": 18,
+            "direction": "undo",
+            "queueMs": 61.90000000002328,
+            "completeMs": 185.70000000001164
+          },
+          {
+            "sequence": 19,
+            "direction": "undo",
+            "queueMs": 28.70000000001164,
+            "completeMs": 152.5
+          },
+          {
+            "sequence": 20,
+            "direction": "undo",
+            "queueMs": 117.39999999996508,
+            "completeMs": 239.39999999996508
+          },
+          {
+            "sequence": 21,
+            "direction": "undo",
+            "queueMs": 88.09999999997672,
+            "completeMs": 210.09999999997672
+          },
+          {
+            "sequence": 22,
+            "direction": "undo",
+            "queueMs": 58.29999999998836,
+            "completeMs": 180.29999999998836
+          },
+          {
+            "sequence": 23,
+            "direction": "undo",
+            "queueMs": 28.699999999953434,
+            "completeMs": 150.69999999995343
+          },
+          {
+            "sequence": 24,
+            "direction": "undo",
+            "queueMs": 115.60000000003492,
+            "completeMs": 218
+          },
+          {
+            "sequence": 25,
+            "direction": "redo",
+            "queueMs": 0.5,
+            "completeMs": 113.20000000001164
+          },
+          {
+            "sequence": 26,
+            "direction": "redo",
+            "queueMs": 73.89999999996508,
+            "completeMs": 176.29999999998836
+          },
+          {
+            "sequence": 27,
+            "direction": "redo",
+            "queueMs": 42,
+            "completeMs": 144.40000000002328
+          },
+          {
+            "sequence": 28,
+            "direction": "redo",
+            "queueMs": 7.5,
+            "completeMs": 109.90000000002328
+          },
+          {
+            "sequence": 29,
+            "direction": "redo",
+            "queueMs": 77.29999999998836,
+            "completeMs": 184.20000000001164
+          },
+          {
+            "sequence": 30,
+            "direction": "redo",
+            "queueMs": 45.899999999965075,
+            "completeMs": 152.79999999998836
+          },
+          {
+            "sequence": 31,
+            "direction": "redo",
+            "queueMs": 12.699999999953434,
+            "completeMs": 119.59999999997672
+          },
+          {
+            "sequence": 32,
+            "direction": "redo",
+            "queueMs": 87.5,
+            "completeMs": 212.40000000002328
+          },
+          {
+            "sequence": 33,
+            "direction": "redo",
+            "queueMs": 37.899999999965075,
+            "completeMs": 162.79999999998836
+          },
+          {
+            "sequence": 34,
+            "direction": "redo",
+            "queueMs": 8.099999999976717,
+            "completeMs": 133
+          },
+          {
+            "sequence": 35,
+            "direction": "redo",
+            "queueMs": 103.5,
+            "completeMs": 215
+          },
+          {
+            "sequence": 36,
+            "direction": "redo",
+            "queueMs": 73,
+            "completeMs": 184.5
+          },
+          {
+            "sequence": 37,
+            "direction": "undo",
+            "queueMs": 0.7999999999883585,
+            "completeMs": 492.8999999999651
+          },
+          {
+            "sequence": 38,
+            "direction": "undo",
+            "queueMs": 444.70000000001164,
+            "completeMs": 775.7999999999884
+          },
+          {
+            "sequence": 39,
+            "direction": "undo",
+            "queueMs": 408.4000000000233,
+            "completeMs": 739.5
+          },
+          {
+            "sequence": 40,
+            "direction": "undo",
+            "queueMs": 375.1000000000349,
+            "completeMs": 706.2000000000116
+          },
+          {
+            "sequence": 41,
+            "direction": "undo",
+            "queueMs": 347.4000000000233,
+            "completeMs": 678.5
+          },
+          {
+            "sequence": 42,
+            "direction": "undo",
+            "queueMs": 318.1000000000349,
+            "completeMs": 649.2000000000116
+          }
+        ]
+      },
+      "cacheBudgetBytes": 67108864,
+      "cacheReservedBytes": 0,
+      "supersededGpuJobs": 0
+    },
+    {
+      "backend": "webgpu",
+      "width": 3000,
+      "height": 3000,
+      "size": 64,
+      "phases": [
+        {
+          "name": "isolated-undo",
+          "before": {
+            "ms": 1354.7999999999884,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 1270.7999999999884,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "isolated-redo",
+          "before": {
+            "ms": 1120.4000000000233,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 1149.7999999999884,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-undo",
+          "before": {
+            "ms": 434.79999999998836,
+            "requested": 12,
+            "applied": 2,
+            "renders": 2,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 608.6999999999534,
+            "requested": 12,
+            "applied": 12,
+            "renders": 3,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-redo",
+          "before": {
+            "ms": 436.79999999998836,
+            "requested": 12,
+            "applied": 2,
+            "renders": 2,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 639,
+            "requested": 12,
+            "applied": 12,
+            "renders": 3,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "cold-burst-undo",
+          "before": {
+            "ms": 1757.7999999999884,
+            "requested": 6,
+            "applied": 1,
+            "renders": 5,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 2697.5,
+            "requested": 6,
+            "applied": 6,
+            "renders": 10,
+            "rebuilds": 2
+          }
+        }
+      ],
+      "history": {
+        "pending": false,
+        "queued": 0,
+        "active": 0,
+        "accepted": 42,
+        "refused": 0,
+        "batches": 20,
+        "peak": 11,
+        "fault": null,
+        "traces": [
+          {
+            "sequence": 1,
+            "direction": "undo",
+            "queueMs": 88.79999999998836,
+            "completeMs": 253.69999999995343
+          },
+          {
+            "sequence": 2,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 177.5
+          },
+          {
+            "sequence": 3,
+            "direction": "undo",
+            "queueMs": 0.7000000000116415,
+            "completeMs": 184.59999999997672
+          },
+          {
+            "sequence": 4,
+            "direction": "undo",
+            "queueMs": 0.20000000001164153,
+            "completeMs": 187.40000000002328
+          },
+          {
+            "sequence": 5,
+            "direction": "undo",
+            "queueMs": 2.2000000000116415,
+            "completeMs": 208.30000000004657
+          },
+          {
+            "sequence": 6,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 173.40000000002328
+          },
+          {
+            "sequence": 7,
+            "direction": "redo",
+            "queueMs": 0.3999999999650754,
+            "completeMs": 174.09999999997672
+          },
+          {
+            "sequence": 8,
+            "direction": "redo",
+            "queueMs": 0.3999999999650754,
+            "completeMs": 191.09999999997672
+          },
+          {
+            "sequence": 9,
+            "direction": "redo",
+            "queueMs": 0.5,
+            "completeMs": 172.69999999995343
+          },
+          {
+            "sequence": 10,
+            "direction": "redo",
+            "queueMs": 0.20000000001164153,
+            "completeMs": 177
+          },
+          {
+            "sequence": 11,
+            "direction": "redo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 174.70000000001164
+          },
+          {
+            "sequence": 12,
+            "direction": "redo",
+            "queueMs": 0.30000000004656613,
+            "completeMs": 177.60000000003492
+          },
+          {
+            "sequence": 13,
+            "direction": "undo",
+            "queueMs": 0.7000000000116415,
+            "completeMs": 202.29999999998836
+          },
+          {
+            "sequence": 14,
+            "direction": "undo",
+            "queueMs": 162.70000000001164,
+            "completeMs": 354.29999999998836
+          },
+          {
+            "sequence": 15,
+            "direction": "undo",
+            "queueMs": 131.90000000002328,
+            "completeMs": 323.5
+          },
+          {
+            "sequence": 16,
+            "direction": "undo",
+            "queueMs": 102.70000000001164,
+            "completeMs": 294.29999999998836
+          },
+          {
+            "sequence": 17,
+            "direction": "undo",
+            "queueMs": 70.20000000001164,
+            "completeMs": 261.79999999998836
+          },
+          {
+            "sequence": 18,
+            "direction": "undo",
+            "queueMs": 39.5,
+            "completeMs": 231.09999999997672
+          },
+          {
+            "sequence": 19,
+            "direction": "undo",
+            "queueMs": 6.900000000023283,
+            "completeMs": 198.5
+          },
+          {
+            "sequence": 20,
+            "direction": "undo",
+            "queueMs": 169,
+            "completeMs": 355.20000000001164
+          },
+          {
+            "sequence": 21,
+            "direction": "undo",
+            "queueMs": 137.29999999998836,
+            "completeMs": 323.5
+          },
+          {
+            "sequence": 22,
+            "direction": "undo",
+            "queueMs": 104.40000000002328,
+            "completeMs": 290.6000000000349
+          },
+          {
+            "sequence": 23,
+            "direction": "undo",
+            "queueMs": 74.29999999998836,
+            "completeMs": 260.5
+          },
+          {
+            "sequence": 24,
+            "direction": "undo",
+            "queueMs": 36.90000000002328,
+            "completeMs": 223.10000000003492
+          },
+          {
+            "sequence": 25,
+            "direction": "redo",
+            "queueMs": 1.6000000000349246,
+            "completeMs": 237.80000000004657
+          },
+          {
+            "sequence": 26,
+            "direction": "redo",
+            "queueMs": 198.09999999997672,
+            "completeMs": 381.5999999999767
+          },
+          {
+            "sequence": 27,
+            "direction": "redo",
+            "queueMs": 168,
+            "completeMs": 351.5
+          },
+          {
+            "sequence": 28,
+            "direction": "redo",
+            "queueMs": 136.29999999998836,
+            "completeMs": 319.79999999998836
+          },
+          {
+            "sequence": 29,
+            "direction": "redo",
+            "queueMs": 102.5,
+            "completeMs": 286
+          },
+          {
+            "sequence": 30,
+            "direction": "redo",
+            "queueMs": 66.79999999998836,
+            "completeMs": 250.29999999998836
+          },
+          {
+            "sequence": 31,
+            "direction": "redo",
+            "queueMs": 32.59999999997672,
+            "completeMs": 216.09999999997672
+          },
+          {
+            "sequence": 32,
+            "direction": "redo",
+            "queueMs": 174.89999999996508,
+            "completeMs": 355
+          },
+          {
+            "sequence": 33,
+            "direction": "redo",
+            "queueMs": 139.29999999998836,
+            "completeMs": 319.4000000000233
+          },
+          {
+            "sequence": 34,
+            "direction": "redo",
+            "queueMs": 109.29999999998836,
+            "completeMs": 289.4000000000233
+          },
+          {
+            "sequence": 35,
+            "direction": "redo",
+            "queueMs": 75.79999999998836,
+            "completeMs": 255.90000000002328
+          },
+          {
+            "sequence": 36,
+            "direction": "redo",
+            "queueMs": 42.199999999953434,
+            "completeMs": 222.29999999998836
+          },
+          {
+            "sequence": 37,
+            "direction": "undo",
+            "queueMs": 0.6000000000349246,
+            "completeMs": 1553.7000000000116
+          },
+          {
+            "sequence": 38,
+            "direction": "undo",
+            "queueMs": 1509.600000000035,
+            "completeMs": 2623.3000000000466
+          },
+          {
+            "sequence": 39,
+            "direction": "undo",
+            "queueMs": 1477.7999999999884,
+            "completeMs": 2591.5
+          },
+          {
+            "sequence": 40,
+            "direction": "undo",
+            "queueMs": 1446.7999999999884,
+            "completeMs": 2560.5
+          },
+          {
+            "sequence": 41,
+            "direction": "undo",
+            "queueMs": 1415.4000000000233,
+            "completeMs": 2529.100000000035
+          },
+          {
+            "sequence": 42,
+            "direction": "undo",
+            "queueMs": 1384,
+            "completeMs": 2497.7000000000116
+          }
+        ]
+      },
+      "cacheBudgetBytes": 67108864,
+      "cacheReservedBytes": 0,
+      "supersededGpuJobs": 0
+    },
+    {
+      "backend": "webgpu",
+      "width": 3000,
+      "height": 3000,
+      "size": 256,
+      "phases": [
+        {
+          "name": "isolated-undo",
+          "before": {
+            "ms": 4007,
+            "requested": 6,
+            "applied": 6,
+            "renders": 14,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 1604.5999999999767,
+            "requested": 6,
+            "applied": 6,
+            "renders": 7,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "isolated-redo",
+          "before": {
+            "ms": 4099.299999999988,
+            "requested": 6,
+            "applied": 6,
+            "renders": 13,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 1525.0999999999767,
+            "requested": 6,
+            "applied": 6,
+            "renders": 6,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-undo",
+          "before": {
+            "ms": 598.9000000000233,
+            "requested": 12,
+            "applied": 2,
+            "renders": 2,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 807.2000000000116,
+            "requested": 12,
+            "applied": 12,
+            "renders": 3,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "burst-redo",
+          "before": {
+            "ms": 564.7000000000116,
+            "requested": 12,
+            "applied": 2,
+            "renders": 2,
+            "rebuilds": 0
+          },
+          "after": {
+            "ms": 855.5,
+            "requested": 12,
+            "applied": 12,
+            "renders": 3,
+            "rebuilds": 0
+          }
+        },
+        {
+          "name": "cold-burst-undo",
+          "before": {
+            "ms": 2908,
+            "requested": 6,
+            "applied": 1,
+            "renders": 10,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 5569.099999999977,
+            "requested": 6,
+            "applied": 6,
+            "renders": 18,
+            "rebuilds": 2
+          }
+        },
+        {
+          "name": "immediate-undo-broad-stroke",
+          "before": {
+            "ms": 16929.399999999965,
+            "requested": 1,
+            "applied": 1,
+            "renders": 37,
+            "rebuilds": 1
+          },
+          "after": {
+            "ms": 5890.300000000047,
+            "requested": 1,
+            "applied": 1,
+            "renders": 9,
+            "rebuilds": 1
+          }
+        }
+      ],
+      "history": {
+        "pending": false,
+        "queued": 0,
+        "active": 0,
+        "accepted": 43,
+        "refused": 0,
+        "batches": 21,
+        "peak": 11,
+        "fault": null,
+        "traces": [
+          {
+            "sequence": 1,
+            "direction": "undo",
+            "queueMs": 93.39999999996508,
+            "completeMs": 308.20000000001164
+          },
+          {
+            "sequence": 2,
+            "direction": "undo",
+            "queueMs": 0.6000000000349246,
+            "completeMs": 223.40000000002328
+          },
+          {
+            "sequence": 3,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 269
+          },
+          {
+            "sequence": 4,
+            "direction": "undo",
+            "queueMs": 0.30000000004656613,
+            "completeMs": 244.90000000002328
+          },
+          {
+            "sequence": 5,
+            "direction": "undo",
+            "queueMs": 0.5,
+            "completeMs": 211.80000000004657
+          },
+          {
+            "sequence": 6,
+            "direction": "undo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 235.79999999998836
+          },
+          {
+            "sequence": 7,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 268.5
+          },
+          {
+            "sequence": 8,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 267.79999999998836
+          },
+          {
+            "sequence": 9,
+            "direction": "redo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 216.29999999998836
+          },
+          {
+            "sequence": 10,
+            "direction": "redo",
+            "queueMs": 0.40000000002328306,
+            "completeMs": 232.70000000001164
+          },
+          {
+            "sequence": 11,
+            "direction": "redo",
+            "queueMs": 0.29999999998835847,
+            "completeMs": 235.70000000001164
+          },
+          {
+            "sequence": 12,
+            "direction": "redo",
+            "queueMs": 0.20000000001164153,
+            "completeMs": 222.09999999997672
+          },
+          {
+            "sequence": 13,
+            "direction": "undo",
+            "queueMs": 0.7999999999883585,
+            "completeMs": 233.60000000003492
+          },
+          {
+            "sequence": 14,
+            "direction": "undo",
+            "queueMs": 202,
+            "completeMs": 468.1000000000349
+          },
+          {
+            "sequence": 15,
+            "direction": "undo",
+            "queueMs": 174,
+            "completeMs": 440.1000000000349
+          },
+          {
+            "sequence": 16,
+            "direction": "undo",
+            "queueMs": 145.79999999998836,
+            "completeMs": 411.9000000000233
+          },
+          {
+            "sequence": 17,
+            "direction": "undo",
+            "queueMs": 116.5,
+            "completeMs": 382.6000000000349
+          },
+          {
+            "sequence": 18,
+            "direction": "undo",
+            "queueMs": 87,
+            "completeMs": 353.1000000000349
+          },
+          {
+            "sequence": 19,
+            "direction": "undo",
+            "queueMs": 60.5,
+            "completeMs": 326.6000000000349
+          },
+          {
+            "sequence": 20,
+            "direction": "undo",
+            "queueMs": 31.199999999953434,
+            "completeMs": 297.29999999998836
+          },
+          {
+            "sequence": 21,
+            "direction": "undo",
+            "queueMs": 3.3999999999650754,
+            "completeMs": 269.5
+          },
+          {
+            "sequence": 22,
+            "direction": "undo",
+            "queueMs": 240.5,
+            "completeMs": 520.9000000000233
+          },
+          {
+            "sequence": 23,
+            "direction": "undo",
+            "queueMs": 212.20000000001164,
+            "completeMs": 492.6000000000349
+          },
+          {
+            "sequence": 24,
+            "direction": "undo",
+            "queueMs": 183.20000000001164,
+            "completeMs": 463.6000000000349
+          },
+          {
+            "sequence": 25,
+            "direction": "redo",
+            "queueMs": 0.5,
+            "completeMs": 298.9000000000233
+          },
+          {
+            "sequence": 26,
+            "direction": "redo",
+            "queueMs": 237.09999999997672,
+            "completeMs": 511.70000000001164
+          },
+          {
+            "sequence": 27,
+            "direction": "redo",
+            "queueMs": 202.79999999998836,
+            "completeMs": 477.4000000000233
+          },
+          {
+            "sequence": 28,
+            "direction": "redo",
+            "queueMs": 170.39999999996508,
+            "completeMs": 445
+          },
+          {
+            "sequence": 29,
+            "direction": "redo",
+            "queueMs": 140.09999999997672,
+            "completeMs": 414.70000000001164
+          },
+          {
+            "sequence": 30,
+            "direction": "redo",
+            "queueMs": 106.39999999996508,
+            "completeMs": 381
+          },
+          {
+            "sequence": 31,
+            "direction": "redo",
+            "queueMs": 73.09999999997672,
+            "completeMs": 347.70000000001164
+          },
+          {
+            "sequence": 32,
+            "direction": "redo",
+            "queueMs": 40,
+            "completeMs": 314.6000000000349
+          },
+          {
+            "sequence": 33,
+            "direction": "redo",
+            "queueMs": 6.899999999965075,
+            "completeMs": 281.5
+          },
+          {
+            "sequence": 34,
+            "direction": "redo",
+            "queueMs": 250.20000000001164,
+            "completeMs": 503.79999999998836
+          },
+          {
+            "sequence": 35,
+            "direction": "redo",
+            "queueMs": 215.29999999998836,
+            "completeMs": 468.8999999999651
+          },
+          {
+            "sequence": 36,
+            "direction": "redo",
+            "queueMs": 181.70000000001164,
+            "completeMs": 435.29999999998836
+          },
+          {
+            "sequence": 37,
+            "direction": "undo",
+            "queueMs": 0.6999999999534339,
+            "completeMs": 2992.7999999999884
+          },
+          {
+            "sequence": 38,
+            "direction": "undo",
+            "queueMs": 2957.7999999999884,
+            "completeMs": 5492
+          },
+          {
+            "sequence": 39,
+            "direction": "undo",
+            "queueMs": 2924.0999999999767,
+            "completeMs": 5458.299999999988
+          },
+          {
+            "sequence": 40,
+            "direction": "undo",
+            "queueMs": 2887.2000000000116,
+            "completeMs": 5421.400000000023
+          },
+          {
+            "sequence": 41,
+            "direction": "undo",
+            "queueMs": 2856.5999999999767,
+            "completeMs": 5390.799999999988
+          },
+          {
+            "sequence": 42,
+            "direction": "undo",
+            "queueMs": 2819.4000000000233,
+            "completeMs": 5353.600000000035
+          },
+          {
+            "sequence": 43,
+            "direction": "undo",
+            "queueMs": 3270.2999999999884,
+            "completeMs": 5808.799999999988
+          }
+        ]
+      },
+      "cacheBudgetBytes": 67108864,
+      "cacheReservedBytes": 0,
+      "supersededGpuJobs": 660
+    }
+  ],
+  "navigation": {
+    "profiles": 10,
+    "exactPixels": true,
+    "mixedOrder": true,
+    "coldCache": true,
+    "trustedTouch": true,
+    "saveQueuedHistory": true,
+    "layerHistory": true,
+    "supersededPendingGpu": true,
+    "redoBranch": true
+  },
+  "brushQuality": {
+    "profiles": 24,
+    "heavyProfiles": 2
+  },
+  "stress": [
+    {
+      "backend": "webgl2",
+      "accepted": 1100,
+      "committed": 1100,
+      "rejected": 0,
+      "peakPending": 16,
+      "settleMs": 366.4000000000233,
+      "persistence": {
+        "currentRevision": "0cc01b47-f644-4ace-b081-fcd70fa7ab74",
+        "savedRevision": null,
+        "dirty": true,
+        "protectionPending": false,
+        "protectedThrough": "1100",
+        "saving": false,
+        "recovered": false,
+        "storageError": null,
+        "backend": "opfs-sync",
+        "storagePersisted": false,
+        "storageUsage": 16747697,
+        "storageQuota": 3237973169,
+        "queueLength": 0,
+        "lastProtectionTime": 1792049721906,
+        "lastExplicitSaveTime": null,
+        "saveDurationMs": null,
+        "snapshotCaptureMs": null,
+        "reloadDurationMs": null,
+        "recoveryDurationMs": null,
+        "lastGood": false,
+        "previousGood": false,
+        "offline": false
+      }
+    },
+    {
+      "backend": "webgpu",
+      "accepted": 1100,
+      "committed": 1100,
+      "rejected": 0,
+      "peakPending": 13,
+      "settleMs": 538.2000000000698,
+      "persistence": {
+        "currentRevision": "b2cbecb6-6930-4900-a2f0-84e9ca25739c",
+        "savedRevision": null,
+        "dirty": true,
+        "protectionPending": false,
+        "protectedThrough": "1100",
+        "saving": false,
+        "recovered": false,
+        "storageError": null,
+        "backend": "opfs-sync",
+        "storagePersisted": false,
+        "storageUsage": 16737230,
+        "storageQuota": 4311704526,
+        "queueLength": 0,
+        "lastProtectionTime": 1792049834198,
+        "lastExplicitSaveTime": null,
+        "saveDurationMs": null,
+        "snapshotCaptureMs": null,
+        "reloadDurationMs": null,
+        "recoveryDurationMs": null,
+        "lastGood": false,
+        "previousGood": false,
+        "offline": false
+      }
+    }
+  ],
+  "limits": [
+    "Software GPU; Android hardware, physical display latency and VRAM unverified",
+    "Undo/Redo admission is bounded at256 outstanding requests; explicit refusal on overload",
+    "Caches are derived, bounded at32MiB or64MiB from the browser memory hint; cold reconstruction remains necessary beyond the cache",
+    "Submitted GPU work cannot be cancelled; history waits for that bounded submission, then supersedes unnecessary unsent derived work"
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "target": "integrated-local",
+  "commit": "b2171ed7c9921e7a812c47a5538c1a719aa6be9f",
+  "tests": [
+    {
+      "label": "webgl2-desktop",
+      "mode": "classic/orbit",
+      "menuGeometry": {
+        "height": 54,
+        "menuWidth": 96,
+        "menuHeight": 40,
+        "menuWithinNav": true
+      },
+      "svShape": {
+        "naturalWidth": 133,
+        "naturalHeight": 133,
+        "rotatedBoundsWidth": 188.15673828125,
+        "rotatedBoundsHeight": 188.15670776367188,
+        "rotation": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)",
+        "clipPath": "none",
+        "overlapWithHueRing": 65.29555664062502,
+        "innerHoleTop": 619.759375,
+        "visibleIntoHole": 46.60805664062502,
+        "diamondTipVisible": true,
+        "topMargin": 41.210723876953125,
+        "ringInFront": true,
+        "backRimBehind": true,
+        "frontHitAbove": true,
+        "backHitBehind": true,
+        "innerHoleBottom": 677.690625,
+        "tipBehindFront": -11.323193359374955,
+        "relativeSide": 0.44481605351170567,
+        "overflow": 0
+      },
+      "hitMap": {
+        "plainTarget": "colorOrbitPicker",
+        "upperTarget": "colorOrbitTopArc",
+        "coveredRearTarget": "colorOrbitPlane",
+        "lowerTarget": "colorOrbitFrontArc",
+        "svgTouch": "none",
+        "rootTouch": "pan-y",
+        "canvasPointer": "none",
+        "upperTouch": "none",
+        "rearSvgTouch": "none",
+        "frontTouch": "none"
+      },
+      "hue": 99,
+      "rotatedHue": 331,
+      "arcHue": 278,
+      "hsv": [
+        28,
+        64
+      ],
+      "dragColor": "#5AFF00",
+      "overflow": {
+        "own": 0,
+        "dock": 0
+      },
+      "homeRoundtrip": true
+    },
+    {
+      "label": "webgpu-desktop",
+      "mode": "classic/orbit",
+      "menuGeometry": {
+        "height": 54,
+        "menuWidth": 96,
+        "menuHeight": 40,
+        "menuWithinNav": true
+      },
+      "svShape": {
+        "naturalWidth": 133,
+        "naturalHeight": 133,
+        "rotatedBoundsWidth": 188.15673828125,
+        "rotatedBoundsHeight": 188.15670776367188,
+        "rotation": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)",
+        "clipPath": "none",
+        "overlapWithHueRing": 65.29555664062502,
+        "innerHoleTop": 619.759375,
+        "visibleIntoHole": 46.60805664062502,
+        "diamondTipVisible": true,
+        "topMargin": 41.210723876953125,
+        "ringInFront": true,
+        "backRimBehind": true,
+        "frontHitAbove": true,
+        "backHitBehind": true,
+        "innerHoleBottom": 677.690625,
+        "tipBehindFront": -11.323193359374955,
+        "relativeSide": 0.44481605351170567,
+        "overflow": 0
+      },
+      "hitMap": {
+        "plainTarget": "colorOrbitPicker",
+        "upperTarget": "colorOrbitTopArc",
+        "coveredRearTarget": "colorOrbitPlane",
+        "lowerTarget": "colorOrbitFrontArc",
+        "svgTouch": "none",
+        "rootTouch": "pan-y",
+        "canvasPointer": "none",
+        "upperTouch": "none",
+        "rearSvgTouch": "none",
+        "frontTouch": "none"
+      },
+      "hue": 99,
+      "rotatedHue": 331,
+      "arcHue": 278,
+      "hsv": [
+        28,
+        64
+      ],
+      "dragColor": "#5AFF00",
+      "overflow": {
+        "own": 0,
+        "dock": 0
+      },
+      "homeRoundtrip": true
+    },
+    {
+      "label": "webgl2-touch",
+      "mode": "classic/orbit",
+      "menuGeometry": {
+        "height": 58,
+        "menuWidth": 96,
+        "menuHeight": 44,
+        "menuWithinNav": true
+      },
+      "svShape": {
+        "naturalWidth": 136,
+        "naturalHeight": 136,
+        "rotatedBoundsWidth": 192.553955078125,
+        "rotatedBoundsHeight": 192.55398559570312,
+        "rotation": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)",
+        "clipPath": "none",
+        "overlapWithHueRing": 66.81760253906248,
+        "innerHoleTop": 628.0375,
+        "visibleIntoHole": 47.69260253906248,
+        "diamondTipVisible": true,
+        "topMargin": 42.176116943359375,
+        "ringInFront": true,
+        "backRimBehind": true,
+        "frontHitAbove": true,
+        "backHitBehind": true,
+        "innerHoleBottom": 687.325,
+        "tipBehindFront": -11.594897460937545,
+        "relativeSide": 0.4444444444444444,
+        "overflow": 0
+      },
+      "hitMap": {
+        "plainTarget": "colorOrbitPicker",
+        "upperTarget": "colorOrbitTopArc",
+        "coveredRearTarget": "colorOrbitPlane",
+        "lowerTarget": "colorOrbitFrontArc",
+        "svgTouch": "none",
+        "rootTouch": "pan-y",
+        "canvasPointer": "none",
+        "upperTouch": "none",
+        "rearSvgTouch": "none",
+        "frontTouch": "none"
+      },
+      "hue": 99,
+      "rotatedHue": 332,
+      "arcHue": 278,
+      "hsv": [
+        28,
+        64
+      ],
+      "dragColor": "#5AFF00",
+      "overflow": {
+        "own": 0,
+        "dock": 0
+      },
+      "homeRoundtrip": true
+    }
+  ],
+  "errors": []
+}

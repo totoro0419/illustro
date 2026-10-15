@@ -1,0 +1,3584 @@
+{
+  "heavyArea": false,
+  "commit": "b2171ed7c9921e7a812c47a5538c1a719aa6be9f",
+  "scope": "Canonical records and occupied strict GPU tiles; sparse live feedback against final pixels. Chromium software GPU, no physical Android.",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "width": 512,
+      "height": 384,
+      "layers": 1,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 153,
+        "endToFinishMs": 529.5,
+        "totalMs": 560.8999999999942,
+        "renders": 5,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 53,
+          "viewPresentations": 0,
+          "renders": 53,
+          "compositedTiles": 241,
+          "compositedLayerPasses": 241,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 33.20000000001164,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7602176,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 12,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 7077888,
+          "peakPreviewBytes": 7077888,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 71,
+        "viewPresentations": 0,
+        "renders": 71,
+        "compositedTiles": 318,
+        "compositedLayerPasses": 318,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.40000000000873,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 10747904,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 12,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 11010048,
+        "peakPreviewBytes": 11010048,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 512,
+      "height": 384,
+      "layers": 3,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 152,
+        "endToFinishMs": 766.8000000000029,
+        "totalMs": 813.1999999999971,
+        "renders": 5,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 53,
+          "viewPresentations": 0,
+          "renders": 53,
+          "compositedTiles": 241,
+          "compositedLayerPasses": 467,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 65.59999999999127,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7602176,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 20,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 7077888,
+          "peakPreviewBytes": 7077888,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 71,
+        "viewPresentations": 0,
+        "renders": 71,
+        "compositedTiles": 318,
+        "compositedLayerPasses": 624,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.29999999998836,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 10747904,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 20,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 11010048,
+        "peakPreviewBytes": 11010048,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 512,
+      "height": 384,
+      "layers": 10,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 152,
+        "endToFinishMs": 645.7999999999884,
+        "totalMs": 675,
+        "renders": 5,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 53,
+          "viewPresentations": 0,
+          "renders": 53,
+          "compositedTiles": 241,
+          "compositedLayerPasses": 691,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 66.39999999999418,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7602176,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 36,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 7077888,
+          "peakPreviewBytes": 7077888,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 71,
+        "viewPresentations": 0,
+        "renders": 71,
+        "compositedTiles": 318,
+        "compositedLayerPasses": 943,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.19999999998254,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 10747904,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 36,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 11010048,
+        "peakPreviewBytes": 11010048,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 2048,
+      "height": 2048,
+      "layers": 1,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 287,
+        "endToFinishMs": 872.7999999999884,
+        "totalMs": 901.1999999999825,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 285,
+          "compositedLayerPasses": 285,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 66.59999999997672,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 9306112,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 37,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 10747904,
+          "peakPreviewBytes": 10747904,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 73,
+        "viewPresentations": 0,
+        "renders": 73,
+        "compositedTiles": 395,
+        "compositedLayerPasses": 395,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 50,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 12451840,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 37,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 13369344,
+        "peakPreviewBytes": 13369344,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 2048,
+      "height": 2048,
+      "layers": 3,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 288,
+        "endToFinishMs": 826.9000000000233,
+        "totalMs": 856.7000000000116,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 285,
+          "compositedLayerPasses": 487,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 49.89999999999418,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 9306112,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 45,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 10747904,
+          "peakPreviewBytes": 10747904,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 73,
+        "viewPresentations": 0,
+        "renders": 73,
+        "compositedTiles": 395,
+        "compositedLayerPasses": 665,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.30000000001746,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 12451840,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 45,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 13369344,
+        "peakPreviewBytes": 13369344,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 2048,
+      "height": 2048,
+      "layers": 10,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 289,
+        "endToFinishMs": 810,
+        "totalMs": 838.2999999999884,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 285,
+          "compositedLayerPasses": 665,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 49.89999999999418,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 9306112,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 58,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 10747904,
+          "peakPreviewBytes": 10747904,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 73,
+        "viewPresentations": 0,
+        "renders": 73,
+        "compositedTiles": 395,
+        "compositedLayerPasses": 919,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.10000000000582,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 12451840,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 58,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 13369344,
+        "peakPreviewBytes": 13369344,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 3000,
+      "height": 3000,
+      "layers": 1,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 303,
+        "endToFinishMs": 1162.6000000000058,
+        "totalMs": 1199.8999999999942,
+        "renders": 7,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 55,
+          "viewPresentations": 0,
+          "renders": 55,
+          "compositedTiles": 334,
+          "compositedLayerPasses": 334,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 66.39999999999418,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 54,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 76,
+        "viewPresentations": 0,
+        "renders": 76,
+        "compositedTiles": 480,
+        "compositedLayerPasses": 480,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.19999999998254,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 54,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 3000,
+      "height": 3000,
+      "layers": 3,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 303,
+        "endToFinishMs": 1154.2000000000116,
+        "totalMs": 1190.6000000000058,
+        "renders": 7,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 55,
+          "viewPresentations": 0,
+          "renders": 55,
+          "compositedTiles": 334,
+          "compositedLayerPasses": 536,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 66.5,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 62,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 76,
+        "viewPresentations": 0,
+        "renders": 76,
+        "compositedTiles": 480,
+        "compositedLayerPasses": 750,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.30000000001746,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 62,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 3000,
+      "height": 3000,
+      "layers": 10,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 302,
+        "endToFinishMs": 1139.6999999999825,
+        "totalMs": 1172.5,
+        "renders": 7,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 55,
+          "viewPresentations": 0,
+          "renders": 55,
+          "compositedTiles": 334,
+          "compositedLayerPasses": 714,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 66.5,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 75,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 76,
+        "viewPresentations": 0,
+        "renders": 76,
+        "compositedTiles": 481,
+        "compositedLayerPasses": 1005,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.20000000001164,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 75,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4096,
+      "height": 4096,
+      "layers": 1,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 316,
+        "endToFinishMs": 1001.2000000000116,
+        "totalMs": 1034,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 332,
+          "compositedLayerPasses": 332,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 66.60000000000582,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 54,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 74,
+        "viewPresentations": 0,
+        "renders": 74,
+        "compositedTiles": 476,
+        "compositedLayerPasses": 476,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.40000000002328,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 54,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4096,
+      "height": 4096,
+      "layers": 3,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 313,
+        "endToFinishMs": 988.8999999999942,
+        "totalMs": 1023,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 332,
+          "compositedLayerPasses": 534,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 66.60000000000582,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 62,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 74,
+        "viewPresentations": 0,
+        "renders": 74,
+        "compositedTiles": 477,
+        "compositedLayerPasses": 747,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 31.300000000017462,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 62,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4096,
+      "height": 4096,
+      "layers": 10,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 315,
+        "endToFinishMs": 1107.6000000000058,
+        "totalMs": 1139.5,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 332,
+          "compositedLayerPasses": 712,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 66.70000000001164,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 75,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 74,
+        "viewPresentations": 0,
+        "renders": 74,
+        "compositedTiles": 476,
+        "compositedLayerPasses": 1000,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 33.30000000001746,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 75,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 512,
+      "height": 384,
+      "layers": 1,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 153,
+        "endToFinishMs": 780.1000000000058,
+        "totalMs": 821.2999999999884,
+        "renders": 5,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 53,
+          "viewPresentations": 0,
+          "renders": 53,
+          "compositedTiles": 241,
+          "compositedLayerPasses": 241,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 51.60000000000582,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7602176,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 12,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 7077888,
+          "peakPreviewBytes": 7077888,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 71,
+        "viewPresentations": 0,
+        "renders": 71,
+        "compositedTiles": 318,
+        "compositedLayerPasses": 318,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 29,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 10747904,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 12,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 11010048,
+        "peakPreviewBytes": 11010048,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 512,
+      "height": 384,
+      "layers": 3,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 153,
+        "endToFinishMs": 805.2999999999884,
+        "totalMs": 831.5999999999767,
+        "renders": 5,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 53,
+          "viewPresentations": 0,
+          "renders": 53,
+          "compositedTiles": 241,
+          "compositedLayerPasses": 467,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 68.30000000001746,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7602176,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 20,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 7077888,
+          "peakPreviewBytes": 7077888,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 71,
+        "viewPresentations": 0,
+        "renders": 71,
+        "compositedTiles": 318,
+        "compositedLayerPasses": 624,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 27.800000000017462,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 10747904,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 20,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 11010048,
+        "peakPreviewBytes": 11010048,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 512,
+      "height": 384,
+      "layers": 10,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 153,
+        "endToFinishMs": 989.3999999999942,
+        "totalMs": 1015.4000000000233,
+        "renders": 5,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 53,
+          "viewPresentations": 0,
+          "renders": 53,
+          "compositedTiles": 241,
+          "compositedLayerPasses": 691,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 112.29999999998836,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 7602176,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 36,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 7077888,
+          "peakPreviewBytes": 7077888,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 71,
+        "viewPresentations": 0,
+        "renders": 71,
+        "compositedTiles": 318,
+        "compositedLayerPasses": 943,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 38.19999999998254,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 10747904,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 36,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 11010048,
+        "peakPreviewBytes": 11010048,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 2048,
+      "height": 2048,
+      "layers": 1,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 289,
+        "endToFinishMs": 1116.4000000000233,
+        "totalMs": 1147.2000000000116,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 285,
+          "compositedLayerPasses": 285,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 71.40000000002328,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 9306112,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 37,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 10747904,
+          "peakPreviewBytes": 10747904,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 73,
+        "viewPresentations": 0,
+        "renders": 73,
+        "compositedTiles": 395,
+        "compositedLayerPasses": 395,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 29.5,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 12451840,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 37,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 13369344,
+        "peakPreviewBytes": 13369344,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 2048,
+      "height": 2048,
+      "layers": 3,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 287,
+        "endToFinishMs": 1149.5,
+        "totalMs": 1176.1000000000058,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 285,
+          "compositedLayerPasses": 487,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 73.30000000001746,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 9306112,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 45,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 10747904,
+          "peakPreviewBytes": 10747904,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 73,
+        "viewPresentations": 0,
+        "renders": 73,
+        "compositedTiles": 395,
+        "compositedLayerPasses": 665,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 30,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 12451840,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 45,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 13369344,
+        "peakPreviewBytes": 13369344,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 2048,
+      "height": 2048,
+      "layers": 10,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 287,
+        "endToFinishMs": 1171.7000000000116,
+        "totalMs": 1199.2000000000116,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 286,
+          "compositedLayerPasses": 666,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 83.90000000002328,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 9306112,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 58,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 10747904,
+          "peakPreviewBytes": 10747904,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 73,
+        "viewPresentations": 0,
+        "renders": 73,
+        "compositedTiles": 396,
+        "compositedLayerPasses": 920,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 27.400000000023283,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 12451840,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 58,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 13369344,
+        "peakPreviewBytes": 13369344,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 3000,
+      "height": 3000,
+      "layers": 1,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 305,
+        "endToFinishMs": 1667.4000000000233,
+        "totalMs": 1693.1000000000058,
+        "renders": 7,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 55,
+          "viewPresentations": 0,
+          "renders": 55,
+          "compositedTiles": 334,
+          "compositedLayerPasses": 334,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 105.5,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 54,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 76,
+        "viewPresentations": 0,
+        "renders": 76,
+        "compositedTiles": 480,
+        "compositedLayerPasses": 480,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 29.600000000034925,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 54,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 3000,
+      "height": 3000,
+      "layers": 3,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 303,
+        "endToFinishMs": 1679.4000000000233,
+        "totalMs": 1705.600000000035,
+        "renders": 7,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 55,
+          "viewPresentations": 0,
+          "renders": 55,
+          "compositedTiles": 334,
+          "compositedLayerPasses": 536,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 103,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 62,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 76,
+        "viewPresentations": 0,
+        "renders": 76,
+        "compositedTiles": 480,
+        "compositedLayerPasses": 750,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 28.5,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 62,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 3000,
+      "height": 3000,
+      "layers": 10,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 303,
+        "endToFinishMs": 1715.9000000000233,
+        "totalMs": 1741.9000000000233,
+        "renders": 7,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 55,
+          "viewPresentations": 0,
+          "renders": 55,
+          "compositedTiles": 334,
+          "compositedLayerPasses": 714,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 123.10000000003492,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 75,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 76,
+        "viewPresentations": 0,
+        "renders": 76,
+        "compositedTiles": 480,
+        "compositedLayerPasses": 1004,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 40.5,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 75,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4096,
+      "height": 4096,
+      "layers": 1,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 314,
+        "endToFinishMs": 1559.7000000000116,
+        "totalMs": 1591.100000000035,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 332,
+          "compositedLayerPasses": 332,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 102.20000000001164,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 54,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 74,
+        "viewPresentations": 0,
+        "renders": 74,
+        "compositedTiles": 478,
+        "compositedLayerPasses": 478,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 30.400000000023283,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 54,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4096,
+      "height": 4096,
+      "layers": 3,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 316,
+        "endToFinishMs": 1426.9000000000233,
+        "totalMs": 1461.2000000000116,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 332,
+          "compositedLayerPasses": 534,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 105.89999999996508,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 62,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 74,
+        "viewPresentations": 0,
+        "renders": 74,
+        "compositedTiles": 476,
+        "compositedLayerPasses": 746,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 29.400000000023283,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 62,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4096,
+      "height": 4096,
+      "layers": 10,
+      "brushes": [
+        {
+          "id": "foundation-g-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-round-pen",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-technical",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-marker",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-pencil",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-hard-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        },
+        {
+          "id": "foundation-soft-eraser",
+          "recordMatch": true,
+          "historyMatch": true,
+          "preview": {
+            "max": 0,
+            "over3": 0
+          }
+        }
+      ],
+      "overlap": {
+        "max": 0,
+        "over3": 0
+      },
+      "restoreMatch": true,
+      "heavyMetrics": {
+        "raw": 600,
+        "commands": 315,
+        "endToFinishMs": 1616.4000000000233,
+        "totalMs": 1643.2000000000116,
+        "renders": 6,
+        "metrics": {
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": null,
+          "inputToPreviewCompletionP95Ms": null,
+          "presentations": 54,
+          "viewPresentations": 0,
+          "renders": 54,
+          "compositedTiles": 332,
+          "compositedLayerPasses": 712,
+          "supersededViews": 0,
+          "submissionFps": null,
+          "frameIntervalP95Ms": null,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": null,
+          "queueCompletionProxyMs": 120.70000000001164,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 11534336,
+          "historyGpuBudgetBytes": 16777216,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "historyCachedStrokes": 8,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 75,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 0,
+          "previewPoolBytes": 15204352,
+          "peakPreviewBytes": 15204352,
+          "formalJobs": 0,
+          "formalCommands": 0
+        }
+      },
+      "recordCount": 20,
+      "metrics": {
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": null,
+        "inputToPreviewCompletionP95Ms": null,
+        "presentations": 74,
+        "viewPresentations": 0,
+        "renders": 74,
+        "compositedTiles": 477,
+        "compositedLayerPasses": 1001,
+        "supersededViews": 0,
+        "submissionFps": null,
+        "frameIntervalP95Ms": null,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": null,
+        "queueCompletionProxyMs": 30,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 14680064,
+        "historyGpuBudgetBytes": 16777216,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 20,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 75,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewPoolBytes": 16515072,
+        "peakPreviewBytes": 17825792,
+        "formalJobs": 0,
+        "formalCommands": 0
+      },
+      "errors": []
+    }
+  ],
+  "errors": []
+}
