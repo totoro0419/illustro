@@ -1886,6 +1886,26 @@
     {
       "path": "scripts/undo-navigation-report.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/MOBILE_CANVAS_4000_2026-10-15.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/mobile-canvas-benchmark.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/mobile-composition-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/mobile-canvas-report.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/mobile-input-smoke.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }
