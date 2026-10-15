@@ -119,11 +119,16 @@ jobs:
           RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: |
+          if ! HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/stress/report.json node scripts/stroke-handoff-stress.mjs; then
+            baseline_result=0
+            HANDOFF_APP_ROOT=/tmp/handoff-before/apps/editor/dist EXPECTED_COMMIT_SHA=efaf43766aa96befa18984f34d8853543c7d7eed HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/baseline-overload/report.json node scripts/stroke-handoff-stress.mjs || baseline_result=$?
+            echo "Failed candidate; diagnostic baseline exit $baseline_result"
+            exit 1
+          fi
+          HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=100 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/long/report.json node scripts/stroke-handoff-stress.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_OUTPUT=/tmp/handoff-evidence/comparison.json node scripts/thin-stroke-benchmark.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=16 THIN_ROUNDS=1 THIN_SIZES=512,2048,3000 THIN_OUTPUT=/tmp/handoff-evidence/scaling.json node scripts/thin-stroke-benchmark.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=256,512 THIN_ROUNDS=1 THIN_OUTPUT=/tmp/handoff-evidence/broad.json node scripts/thin-stroke-benchmark.mjs
-          HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/stress/report.json node scripts/stroke-handoff-stress.mjs
-          HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=100 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/long/report.json node scripts/stroke-handoff-stress.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: thin-performance, path: /tmp/handoff-evidence/}

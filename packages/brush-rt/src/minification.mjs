@@ -45,13 +45,13 @@ export class ViewportCache{
  invalidate(keys){if(this.full)return;for(const key of keys)this.dirty.add(key);if(this.dirty.size>256){this.full=true;this.dirty.clear();}}
  clear(){this.full=true;this.dirty.clear();this.valid=false;}
  release(){if(this.image){this.backend.gl?this.backend.release(this.image):this.image.destroy();this.image=null;}this.group=null;this.bytes=0;this.clear();}
- plan(view,encoder,direct){
+ plan(view,encoder,direct,refresh=false){
   const b=this.backend,p=b.presentationPyramid,w=b.canvas.width,h=b.canvas.height,generation=p.generation,keys=[...this.dirty],full=this.full,image=p.source(view,encoder),eligible=this.enabled&&b.sparsePreview&&!direct&&view[12]<.5&&view[14]<.5&&w>0&&h>0&&w*h*4<=this.budget;
   if(!eligible){this.valid=false;if(w*h*4>this.budget)this.release();this.last={screenPixels:w*h,screenRects:1,screenCacheHit:false,screenCopiedPixels:0};this.shadedPixels+=w*h;return {image,rects:[[0,0,w,h]],cached:false};}
   if(!this.image||this.width!==w||this.height!==h){this.release();this.image=b.gl?b.surface(w,h,b.gl.RGBA8,b.gl.UNSIGNED_BYTE):b.device.createTexture({size:[w,h],format:b.format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});this.width=w;this.height=h;this.bytes=w*h*4;}
   const same=this.view?.length===view.length&&view.every((v,i)=>v===this.view[i]),fresh=!this.valid||!same||full||(this.generation!==generation&&this.generation!==generation-1)||(this.generation!==generation&&!keys.length);
   const rects=fresh?[[0,0,w,h]]:this.generation===generation?[]:presentationRectangles(view,w,h,keys,image.scale);
-  this.view=Float32Array.from(view);this.generation=generation;this.valid=true;this.full=false;this.dirty.clear();const pixels=rects.reduce((n,[x,y,x1,y1])=>n+(x1-x)*(y1-y),0),copy=rects.length||!b.gl?w*h:0;this.last={screenPixels:pixels,screenRects:rects.length,screenCacheHit:!rects.length,screenCopiedPixels:copy};this.shadedPixels+=pixels;this.copiedPixels+=copy;if(!rects.length)this.hits++;return {image,rects,cached:true};
+  this.view=Float32Array.from(view);this.generation=generation;this.valid=true;this.full=false;this.dirty.clear();const pixels=rects.reduce((n,[x,y,x1,y1])=>n+(x1-x)*(y1-y),0),copy=rects.length||refresh&&!b.gl?w*h:0;this.last={screenPixels:pixels,screenRects:rects.length,screenCacheHit:!rects.length,screenCopiedPixels:copy};this.shadedPixels+=pixels;this.copiedPixels+=copy;if(!rects.length)this.hits++;return {image,rects,cached:true};
  }
  presentGl(view,direct=false){
   const b=this.backend,g=b.gl,{image,rects,cached}=this.plan(view,null,direct);if(!rects.length)return false;const w=b.canvas.width,h=b.canvas.height,values=view.slice();values[15]=image.scale;
@@ -59,13 +59,15 @@ export class ViewportCache{
   if(cached)g.enable(g.SCISSOR_TEST);for(const [x,y,x1,y1]of rects){if(cached)g.scissor(x,h-y1,x1-x,y1-y);g.drawArrays(g.TRIANGLES,0,3);}g.disable(g.SCISSOR_TEST);
   if(cached){g.bindFramebuffer(g.READ_FRAMEBUFFER,this.image.f);g.bindFramebuffer(g.DRAW_FRAMEBUFFER,null);g.blitFramebuffer(0,0,w,h,0,0,w,h,g.COLOR_BUFFER_BIT,g.NEAREST);}g.flush();return true;
  }
- encodeGpu(e,view,direct=false){
-  const b=this.backend,d=b.device,{image,rects,cached}=this.plan(view,e,direct);
+ encodeGpu(e,view,direct=false,refresh=false){
+  const b=this.backend,d=b.device,{image,rects,cached}=this.plan(view,e,direct,refresh);
+  if(cached&&!rects.length&&!refresh)return false;
   if(rects.length){const values=view.slice();values[15]=image.scale;d.queue.writeBuffer(b.presentUniform,0,values);
   const pass=e.beginRenderPass({colorAttachments:[{view:(cached?this.image:b.context.getCurrentTexture()).createView(),clearValue:{r:1,g:1,b:1,a:1},loadOp:cached?'load':'clear',storeOp:'store'}]});pass.setPipeline(b.present);pass.setBindGroup(0,d.createBindGroup({layout:b.presentLayout,entries:[{binding:0,resource:image.source.createView()},{binding:1,resource:{buffer:b.presentUniform}}]}));for(const [x,y,x1,y1]of rects){pass.setScissorRect(x,y,x1-x,y1-y);pass.draw(3);}pass.end();
   }
-  // Canvas current textures expire. Even an unchanged requested WebGPU frame
-  // must copy the retained image into a newly acquired canvas texture.
+  // Explicit canvas refreshes copy the retained image even without edits. An
+  // unchanged automatic formal batch returns above before acquiring a current
+  // texture, retaining the last displayed image and avoiding a redundant copy.
   if(cached){if(!this.pipeline){this.layout=d.createBindGroupLayout({entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'float'}}]});const module=d.createShaderModule({code:copyWgsl});this.pipeline=d.createRenderPipeline({layout:d.createPipelineLayout({bindGroupLayouts:[this.layout]}),vertex:{module,entryPoint:'vertex'},fragment:{module,entryPoint:'fragment',targets:[{format:b.format}]},primitive:{topology:'triangle-list'}});}this.group??=d.createBindGroup({layout:this.layout,entries:[{binding:0,resource:this.image.createView()}]});const copy=e.beginRenderPass({colorAttachments:[{view:b.context.getCurrentTexture().createView(),loadOp:'clear',clearValue:{r:1,g:1,b:1,a:1},storeOp:'store'}]});copy.setPipeline(this.pipeline);copy.setBindGroup(0,this.group);copy.draw(3);copy.end();}return true;
  }
  destroy(){this.release();}

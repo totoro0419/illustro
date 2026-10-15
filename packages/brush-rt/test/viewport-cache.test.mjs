@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PresentationPyramid,ViewportCache,presentationRectangles} from '../dist/rt/minification.mjs';
-import {needsFormalFeedback,boundedFormalJobs} from '../dist/rt/renderer.mjs';
+import {GpuRenderer,needsFormalFeedback,boundedFormalJobs} from '../dist/rt/renderer.mjs';
 function harness(){
  let id=0;const released=[],b={width:4000,height:4000,canvas:{width:1000,height:1600},sparsePreview:true,gl:{RGBA8:1,UNSIGNED_BYTE:2},liveTarget:{id:0},surface:(w,h)=>({id:++id,w,h}),release:x=>released.push(x)};
  b.presentationPyramid=new PresentationPyramid(b,'');b.presentationPyramid.initialize=()=>{};b.presentationPyramid.draw=()=>{};b.viewportCache=new ViewportCache(b);
@@ -28,4 +28,10 @@ test('intermediate coverage can reuse ended feedback, while commits and partial 
 });
 test('normal formal batches bound command overhead as well as pixel work',()=>{
  let requested=0;const jobs=Array.from({length:200},(_,id)=>({id,key:'0,0',surfaceKey:'a',preset:{},commands:[],commit:true})),document={peekMany:limit=>{requested=limit;return jobs.slice(0,limit);}};const selected=boundedFormalJobs(document,2_000_000,32);assert.equal(requested,32);assert.equal(selected.length,32);assert.deepEqual(selected,jobs.slice(0,32));assert.equal(jobs.length,200);
+});
+
+test('active input bounds batch overhead while idle and held reconstruction recover throughput',async()=>{
+ const limits=[],backend={previews:new Map,dirtyConfirmed:new Set,presentationHeld:false,lastSubmission:{presentationSubmitted:false},render:()=>Promise.resolve()},r=new GpuRenderer(backend,512,512,{strokeHandoff:true});r.requestWork=()=>{};r.document.peekMany=limit=>{limits.push(limit);return [];};
+ for(const [finished,held]of [[false,false],[true,false],[false,true]]){r.snapshot={finished,preset:{}};backend.presentationHeld=held;r.needsFrame=true;r.frame(0);await Promise.resolve();}
+ assert.deepEqual(limits,[32,128,128]);assert.equal(r.document.jobs.length,0);
 });
