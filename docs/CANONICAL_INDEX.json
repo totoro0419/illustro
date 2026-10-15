@@ -1858,6 +1858,34 @@
       "path": "docs/research/STROKE_HANDOFF_2026-10-14.md",
       "status": "EXPERIMENTAL",
       "note": "Measured stroke handoff design and isolated review evidence; no acceptance promotion."
+    },
+    {
+      "path": "docs/research/CONTINUOUS_UNDO_2026-10-15.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": ".github/workflows/perf-undo.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/historyNavigation.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/historyNavigation.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/undo-navigation-benchmark.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/undo-navigation-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/undo-navigation-report.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

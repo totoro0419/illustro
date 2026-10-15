@@ -13,6 +13,7 @@ import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/
 
 
 export class BrushSurface{
+  private readonly restoredRecords=new WeakMap<object,StrokeRecord>();
   private handoff:StrokeHandoff|null=null;private reservation:StrokeReservation|null=null;private gpuFinishes=new Map<number,Promise<void>>();private handoffFault:string|null=null;private inputBarrier=false;private protectionQueueLength=0;
   private handoffAccepted=0;private handoffRejected=0;private handoffTraces:Array<{id:number;upAt:number;readyMs:number;recordMs?:number;logicalMs?:number;gpuMs?:number;savePrepareMs?:number;uiStateMs?:number}>=[];
   private readonly traceHandoff=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-stroke-handoff/');
@@ -32,7 +33,7 @@ export class BrushSurface{
     // Only then is it used; any failure in auto mode falls back to WebGL2.
     const backend:'auto'|'webgl2'|'webgpu'=this.backendOverride??(requested==='webgpu'||requested==='webgl2'?requested:'auto');
     try{
-      this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:false,strokeHandoff:true});
+      this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:false,strokeHandoff:true,historyGpuBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?64*1024*1024:32*1024*1024});
     }catch(error){
       const message=error instanceof Error?error.message:String(error);
       this._initializationError='GPU initialization failed: '+message;
@@ -109,11 +110,13 @@ export class BrushSurface{
     }).catch(error=>{this.handoffFault=error instanceof Error?error.message:String(error);this.handoff?.fail(error);this.status('線を確定できませんでした。'+this.handoffFault);}).finally(()=>{if(!this.disposed)this.onStateChanged();});};
   private publishStroke(reservation:StrokeReservation,record:StrokeRecord,additional:readonly StrokeRecord[]){
     const session=this.session!,started=performance.now();this.onCommitted();let ids:number[];try{session.discardRedo();ids=session.commitRecord(record,additional,reservation.target.surfaceId);}catch(error){this.handoffFault=error instanceof Error?error.message:String(error);this.status('線の記録後に表示更新で問題が起きました。'+this.handoffFault);return;}const trace=this.handoffTraces.find(item=>item.id===ids[0]);if(trace)trace.savePrepareMs=performance.now()-started;
-    const promise=session.renderer.waitStroke(ids).then(()=>{if(trace)trace.gpuMs=performance.now()-trace.upAt;if(ids[0]!==undefined)session.renderer.clearSeamlessPreviews(ids[0]);if(!this.disposed&&this.pointer===null&&this.gpuFinishes.size===1)this.status(record.preset.blend==='erase'?'消した内容を作品に反映しました。':'線を作品に反映しました。');}).catch(error=>{this.handoffFault=error instanceof Error?error.message:String(error);if(!this.disposed)this.status('線の記録後に表示更新で問題が起きました。'+this.handoffFault);}).finally(()=>{this.gpuFinishes.delete(reservation.sequence);if(!this.disposed)this.onStateChanged();});this.gpuFinishes.set(reservation.sequence,promise);
+    const promise=session.renderer.waitStroke(ids).then(completion=>{if(trace&&!completion?.superseded)trace.gpuMs=performance.now()-trace.upAt;if(ids[0]!==undefined)session.renderer.clearSeamlessPreviews(ids[0]);if(!completion?.superseded&&!this.disposed&&this.pointer===null&&this.gpuFinishes.size===1)this.status(record.preset.blend==='erase'?'消した内容を作品に反映しました。':'線を作品に反映しました。');}).catch(error=>{this.handoffFault=error instanceof Error?error.message:String(error);if(!this.disposed)this.status('線の記録後に表示更新で問題が起きました。'+this.handoffFault);}).finally(()=>{this.gpuFinishes.delete(reservation.sequence);if(!this.disposed)this.onStateChanged();});this.gpuFinishes.set(reservation.sequence,promise);
   }
   setInputBarrier(enabled:boolean){this.inputBarrier=enabled;}
   setProtectionQueueLength(count:number){this.protectionQueueLength=count;}
   async settleLogicalStrokes(){await this.handoff?.barrier();}
+  async prepareHistory(){await this.settleLogicalStrokes();await this.renderer?.prepareHistory();}
+  resumeHistory(){this.renderer?.resumeHistory();}
   async settleStrokes(){await this.settleLogicalStrokes();await Promise.all(this.gpuFinishes.values());if(this.handoffFault)throw new Error(this.handoffFault);}
   get hasUncommittedInput(){return this.pointer!==null||(this.handoff?.pending??0)>0;}
   get hasPendingStrokes(){return (this.handoff?.pending??0)>0||this.gpuFinishes.size>0;}
@@ -166,10 +169,14 @@ export class BrushSurface{
     return diagnostics;
   }
   private clampPredicted(last:Sample,predicted:Sample[]){if(!predicted.length)return[];const r=this.canvas.getBoundingClientRect(),target=this.target??this.controller.target(),maxLead=Math.max(1,target.width/Math.max(1,r.width)*3),out:Sample[]=[];let anchor=last;for(const p of predicted){let x=p.x,y=p.y;const dx=x-anchor.x,dy=y-anchor.y,d=Math.hypot(dx,dy);if(d>maxLead){const k=maxLead/d;x=anchor.x+dx*k;y=anchor.y+dy*k;}out.push({...p,x,y});anchor={...p,x,y};}return out;}
-  async syncHistory(change:EditorHistoryChange){
-    if(!change.changed)return;if(!this.session)throw new Error('Renderer is not initialized');if(this.pointer!==null||this.finishing||this.historySyncing)throw new Error('History is busy');
-    this.historySyncing=true;this.onStateChanged();try{this.syncLayerStack();const operations=change.direction==='undo'?[...change.operations].reverse():change.operations;
-      for(const operation of operations){if(operation.kind!=='brush.stroke')continue;const record=this.strokeRecord(operation),keys=this.runtimeKeys(operation),surfaceId=this.surfaceForOperation(operation);if(change.direction==='undo')await this.session.undoDerived(record,keys,surfaceId);else await this.session.redoDerived(record,keys,surfaceId);}
+  async syncHistory(change:EditorHistoryChange){await this.syncHistoryBatch([change]);}
+  async syncHistoryBatch(changes:readonly EditorHistoryChange[]){
+    if(!changes.length)return;if(!this.session)throw new Error('Renderer is not initialized');if(this.pointer!==null||this.finishing||this.historySyncing)throw new Error('History is busy');
+    this.historySyncing=true;this.onStateChanged();try{
+      this.syncLayerStack();const steps:import('@illustro/brush-rt').DerivedHistoryStep[]=[];
+      for(const change of changes){const operations=change.direction==='undo'?[...change.operations].reverse():change.operations;
+        for(const operation of operations){if(operation.kind!=='brush.stroke')continue;steps.push({direction:change.direction,record:this.strokeRecord(operation),keys:this.runtimeKeys(operation),surfaceKey:this.surfaceForOperation(operation,change.direction==='undo'?change.fromRevision:change.toRevision)});}
+      }await this.session.navigateDerived(steps);
     }finally{this.historySyncing=false;this.onStateChanged();}
   }
   async captureProjectionCache(revisionId:string):Promise<ProjectionCacheV1>{
@@ -257,7 +264,7 @@ export class BrushSurface{
       this.syncLayerStack();const operations=this.controller.document.operationsTo(),geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
       const geometry=geometryIndex>=0,visibleOperations=geometry?operations.slice(geometryIndex+1):operations;
       const entries:Array<{operation:SemanticOperation;record:StrokeRecord;surfaceKey:string;keys:string[]}>=[];for(const operation of visibleOperations){
-        if(operation.kind==='brush.stroke')entries.push({operation,record:validateRecord(operation.parameters.strokeRecord),surfaceKey:this.surfaceForOperation(operation),keys:this.runtimeKeys(operation)});
+        if(operation.kind==='brush.stroke'){const record=validateRecord(operation.parameters.strokeRecord);this.restoredRecords.set(operation.parameters.strokeRecord as object,record);entries.push({operation,record,surfaceKey:this.surfaceForOperation(operation),keys:this.runtimeKeys(operation)});}
         else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
       }
       const root=this.controller.document.root;
@@ -312,8 +319,8 @@ export class BrushSurface{
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);}
   discardRedoProjection(){this.session?.discardRedo();}
   private surfaceKeys(){return this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId);}
-  private surfaceForOperation(operation:SemanticOperation){const target=operation.targetEntityIds[0],layer=this.controller.layers.find(item=>item.id===target);if(!layer)throw new Error('History target layer missing');return layer.surface.descriptor.surfaceId;}
-  private strokeRecord(operation:SemanticOperation){const record=operation.parameters.strokeRecord;if(!record||typeof record!=='object'||!Array.isArray((record as StrokeRecord).commands))throw new Error('History stroke record missing');return record as StrokeRecord;}
+  private surfaceForOperation(operation:SemanticOperation,revisionId?:RevisionId){const target=operation.targetEntityIds[0],root=revisionId?this.controller.document.revision(revisionId).root:this.controller.document.root;if(!target||!root.hasLayer(target))throw new Error('History target layer missing');return root.getLayer(target).surface.descriptor.surfaceId;}
+  private strokeRecord(operation:SemanticOperation){const record=operation.parameters.strokeRecord;if(!record||typeof record!=='object'||!Array.isArray((record as StrokeRecord).commands))throw new Error('History stroke record missing');return this.restoredRecords.get(record as object)??record as StrokeRecord;}
   private runtimeKeys(operation:SemanticOperation){const root=this.controller.document.root,keys=new Set<string>(),maxX=Math.ceil(root.width/TILE)-1,maxY=Math.ceil(root.height/TILE)-1;
     for(const f of operation.dirtyFootprint){const x0=f.tileX*CANONICAL_TILE_SIZE+f.bounds.x0,y0=f.tileY*CANONICAL_TILE_SIZE+f.bounds.y0,x1=f.tileX*CANONICAL_TILE_SIZE+f.bounds.x1,y1=f.tileY*CANONICAL_TILE_SIZE+f.bounds.y1;
       const minX=Math.max(0,Math.floor(x0/TILE)),minY=Math.max(0,Math.floor(y0/TILE)),endX=Math.min(maxX,Math.ceil(x1/TILE)-1),endY=Math.min(maxY,Math.ceil(y1/TILE)-1);

@@ -70,6 +70,29 @@ export class RealtimeSession {
  }
  async rebuild(){this.fullDocumentRebuilds++;await this.renderer.reset();this.tileRecords.clear();for(const r of this.records){this.seedSequence=Math.max(this.seedSequence,r.seed?.[1]??0);this.fullReplayStrokes++;const id=++this.id,preset=this.presetForRecord(r),surfaceKey=this.recordSurfaces.get(r)??'default';this.recordIds.set(r,id);this.renderer.document.append(id,preset,r.commands,null,surfaceKey);const keys=this.renderer.document.end(id,preset,surfaceKey);this.indexRecord(r,keys,surfaceKey);}await this.renderer.drain();}
  async rebuildDirty(keys,surfaceKey='default'){const records=this.recordsForKeys(keys,surfaceKey),entries=records.map(r=>({id:++this.id,preset:this.presetForRecord(r),commands:r.commands}));await this.renderer.rebuildTiles(keys,entries,surfaceKey);}
+ async navigateDerived(steps){
+  await this.settle();if(!steps.length){this.renderer.resumeHistory();await this.renderer.drain();return;}
+  const records=[...this.records],redo=[...this.redoRecords],plans=[];
+  for(const step of steps){const {direction,record,keys,surfaceKey}=step,source=direction==='undo'?records:redo,target=direction==='undo'?redo:records;
+   if(source.at(-1)!==record)throw Error('Document/Renderer '+direction+' mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');source.pop();target.push(record);plans.push({...step,id:this.recordIds.get(record)});
+  }
+  await this.renderer.prepareHistory();
+  const pendingIds=new Set(this.renderer.document.jobs.map(j=>j.id)),pendingKeys=new Map,pendingEntries=[];
+  for(const record of this.records)if(pendingIds.has(this.recordIds.get(record))){const surface=this.recordSurfaces.get(record)??'default',recordKeys=this.recordTiles.get(record)??[];pendingEntries.push({record,id:this.recordIds.get(record),surfaceKey:surface,keys:recordKeys});let keys=pendingKeys.get(surface);if(!keys)pendingKeys.set(surface,keys=new Set);for(const key of recordKeys)keys.add(key);}
+  const retained=new Set(records),{discarded,baseReused}=this.renderer.discardPendingForHistory(pendingEntries,pendingEntries.every(p=>!retained.has(p.record)));
+  this.records=records;this.redoRecords=redo;for(const p of plans){if(p.direction==='undo')this.unindexRecord(p.record);else this.reindexRecord(p.record);}
+  const renderPlans=baseReused?plans.filter(p=>!pendingIds.has(p.id)):plans;
+  if(baseReused&&!renderPlans.length){await this.renderer.drain();return;}
+  if((!discarded||baseReused)&&await this.renderer.applyHistory(renderPlans)){this.historyPatchHits+=renderPlans.length;return;}
+  this.historyReplayFallbacks+=renderPlans.length;
+  if(!discarded&&plans.every(p=>p.direction==='redo')){
+   // Redo is an exact suffix: reuse the completed base and evaluate only that suffix.
+   for(const p of plans){if(p.id!==undefined)this.renderer.dropHistory([p.id]);const id=++this.id,preset=this.presetForRecord(p.record);this.recordIds.set(p.record,id);this.renderer.document.append(id,preset,p.record.commands,null,p.surfaceKey);this.renderer.document.end(id,preset,p.surfaceKey);}await this.renderer.drain();return;
+  }
+  // A cold batch reconstructs each changed tile once at the final logical head.
+  const groups=baseReused?new Map:pendingKeys;for(const p of renderPlans){let keys=groups.get(p.surfaceKey);if(!keys)groups.set(p.surfaceKey,keys=new Set);for(const key of p.keys)keys.add(key);}
+  await this.renderer.rebuildTileGroups([...groups].map(([surfaceKey,keys])=>({surfaceKey,keys:[...keys],entries:this.recordsForKeys(keys,surfaceKey).map(record=>({id:++this.id,preset:this.presetForRecord(record),commands:record.commands}))})));
+ }
  async undoDerived(expected,keys,surfaceKey='default'){await this.settle();const record=this.records.at(-1);if(record!==expected)throw Error('Document/Renderer undo mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');const id=this.recordIds.get(record);this.records.pop();this.redoRecords.push(record);this.unindexRecord(record);const hot=id!==undefined&&await this.renderer.undoCommit(id);if(hot)this.historyPatchHits++;else{this.historyReplayFallbacks++;await this.rebuildDirty(keys,surfaceKey);}}
  async redoDerived(expected,keys,surfaceKey='default'){await this.settle();const record=this.redoRecords.at(-1);if(record!==expected)throw Error('Document/Renderer redo mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');const id=this.recordIds.get(record);this.redoRecords.pop();this.records.push(record);this.reindexRecord(record);const hot=id!==undefined&&await this.renderer.redoCommit(id);if(hot)this.historyPatchHits++;else{this.historyReplayFallbacks++;await this.rebuildDirty(keys,surfaceKey);}}
  async rollbackLatest(expected){await this.settle();const record=this.records.at(-1);if(record!==expected)throw Error('Renderer rollback mismatch');const keys=[...(this.recordTiles.get(record)??[])],surfaceKey=this.recordSurfaces.get(record)??'default',id=this.recordIds.get(record);this.records.pop();this.unindexRecord(record);const hot=id!==undefined&&await this.renderer.undoCommit(id);if(!hot&&keys.length)await this.rebuildDirty(keys,surfaceKey);if(id!==undefined)this.renderer.dropHistory([id]);}

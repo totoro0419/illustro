@@ -1,3 +1,4 @@
+import {HistoryNavigation,type HistoryDirection} from './historyNavigation';
 import {namedSnapshot,type WorkEntry} from './persistence/workLibrary';
 import './style.css';
 import './ui/shell.css';
@@ -17,7 +18,7 @@ import {PersistenceCoordinator,type Candidate,type PersistenceState} from './per
 import type {PortableOpenResult} from './persistence/portable';
 import {CoreDocument,type SemanticOperation} from '@illustro/core';
 
-const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/');
+const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/');
 const qaPath=location.pathname.replace(/\/+$/,'');
 const m09Mode=new URLSearchParams(location.search).has('m09')||qaPath.endsWith('/qa/m09')||qaPath.endsWith('/qa/m09/index.html');
 const m08Mode=m09Mode||new URLSearchParams(location.search).has('m08')||qaPath.endsWith('/qa/m08')||qaPath.endsWith('/qa/m08/index.html');
@@ -33,6 +34,7 @@ const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();
 const foreground=new ForegroundColor();
 let eyedropperOriginal=foreground.current;
+let historyNavigation:HistoryNavigation|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,lastPointerDownTarget:EventTarget|null=null,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
@@ -70,15 +72,15 @@ const renderLayers=()=>{
 };
 
 function updateHistoryButtons(){
-  const ready=!!surface,blocked=!ready||historyPending||surface?.inputActive===true;
-  byId<HTMLButtonElement>('undo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes);
-  byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes);
-  byId<HTMLButtonElement>('redo').disabled=blocked||!controller.canRedo;
-  byId<HTMLButtonElement>('compactRedo').disabled=blocked||!controller.canRedo;
+  const ready=!!surface&&documentReady,blocked=!ready||geometryBusy||(surface?.inputActive===true&&!historyPending)||!!historyNavigation?.diagnostics.fault;
+  byId<HTMLButtonElement>('undo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes||historyPending);
+  byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes||historyPending);
+  byId<HTMLButtonElement>('redo').disabled=blocked||!(controller.canRedo||historyPending);
+  byId<HTMLButtonElement>('compactRedo').disabled=blocked||!(controller.canRedo||historyPending);
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
 }
 function updatePersistenceDisplay(){
-  const state=persistenceState,indicator=byId('saveState'),inputPending=surface?.hasUncommittedInput??false;
+  const state=persistenceState,indicator=byId('saveState'),inputPending=historyPending||(surface?.hasUncommittedInput??false);
   if(!state){indicator.textContent='自動保存準備中';return;}
   indicator.textContent=state.storageError?'保存できません・再試行してください':inputPending||state.protectionPending||state.queueLength>0?'アプリ内に保存中':qaMode?'自動保存済み':documentReady?'アプリ内に保存済み':'作品はまだ開かれていません';
   const retry=document.getElementById('retryWorkSave');if(retry)retry.hidden=!state.storageError;
@@ -122,7 +124,7 @@ function noteCheckpointOperations(operations:readonly SemanticOperation[]){
 }
 async function createProjectionCheckpoint(){
   if(projectionCheckpointBusy||!surface||!documentReady){if(documentReady)scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
-  if(surface.interacting){scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
+  if(historyPending||surface.interacting){scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);return;}
   const activeSurface=surface,revisionId=controller.document.head,operations=checkpointOperations.slice(),fullSeed=checkpointNeedsFullSeed;projectionCheckpointBusy=true;
   try{
     const delta=await activeSurface.captureProjectionDelta(revisionId,fullSeed?undefined:operations);
@@ -234,7 +236,7 @@ cropOverlay.addEventListener('pointermove',e=>{
 for(const type of ['pointerup','pointercancel','lostpointercapture'])cropOverlay.addEventListener(type,()=>draggingCrop=null);
 async function reloadGeometryProjection(){
  const oldPreset=surface?.brushId;surface?.destroy();surface=makeSurface();
- await initializeCurrentSurface(true);
+ await initializeCurrentSurface(true);surface?.setInputBarrier(historyPending);
  if(oldPreset){try{selectPreset(oldPreset);}catch{}}
  updateViewControls();renderLayers();updateQa();redrawCrop();
 }
@@ -277,11 +279,12 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   selectPreset(lastBrushPresetId);
   if(replay)await surface.restoreDocumentProjection(projectionCache);
   for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV'])(byId(id) as HTMLInputElement).disabled=false;
-  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);renderLayers();updateHistoryButtons();documentReady=true;
+  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);renderLayers();documentReady=true;updateHistoryButtons();
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null){
   const previous=controller,previousPreserved=persistence.preservedData,wasReady=documentReady;documentReady=false;
   try{
+  updateHistoryButtons();await historyNavigation?.barrier();
   surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
   try{await initializeCurrentSurface(true,opened.projectionCache);}
   catch(error){
@@ -330,19 +333,31 @@ byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.b
 
 byId<HTMLButtonElement>('addLayerPage').onclick=()=>byId<HTMLButtonElement>('addLayer').click();
 
-async function performHistory(direction:'undo'|'redo'){
-  if(!surface||surface.inputActive||historyPending||geometryBusy)return;const available=direction==='undo'?(controller.canUndo||surface.hasPendingStrokes):controller.canRedo;if(!available)return;
-  historyPending=true;surface.setInputBarrier(true);updateHistoryButtons();updateQa();let change:EditorHistoryChange|null=null;
+historyNavigation=new HistoryNavigation({
+  prepare:async()=>{await surface?.prepareHistory();},apply:applyHistoryBatch,
+  state:()=>{historyPending=historyNavigation?.pending??false;surface?.setInputBarrier(historyPending);if(!historyPending)surface?.resumeHistory();updateHistoryButtons();updatePersistenceDisplay();updateQa();},
+  failed:(message,unprocessed)=>{byId('status').textContent=message+(unprocessed?' 未処理のUndo / Redo '+unprocessed+'件は反映していません。':'');},
+},perfMode);
+async function applyHistoryBatch(directions:readonly HistoryDirection[]){
+  const changes:EditorHistoryChange[]=[],selectedBefore=controller.selectedLayerId;
   try{
-    await surface.settleStrokes();change=direction==='undo'?controller.undo():controller.redo();if(!change.changed)return;
-    if(change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'))await reloadGeometryProjection();else await surface.syncHistory(change);if(direction==='undo')undoCount++;else redoCount++;
-    renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(change.operations);byId('status').textContent=direction==='undo'?'ひとつ前の状態に戻しました。':'取り消した操作をやり直しました。';
-  }catch{
-    if(change?.changed){
-      try{const rollback=direction==='undo'?controller.redo():controller.undo();if(rollback.changed){if(rollback.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'))await reloadGeometryProjection();else await surface.syncHistory(rollback);}}catch{}
-    }
-    renderLayers();byId('status').textContent='Undo / Redoを安全に反映できなかったため、操作を戻しました。';
-  }finally{surface?.setInputBarrier(false);historyPending=false;updateHistoryButtons();updateQa();}
+    for(const direction of directions){const change=direction==='undo'?controller.undo():controller.redo();if(change.changed)changes.push(change);}
+    if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
+    updateQa();
+    if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
+    undoCount+=changes.filter(c=>c.direction==='undo').length;redoCount+=changes.filter(c=>c.direction==='redo').length;
+    renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
+    const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';
+  }catch(error){
+    for(const change of [...changes].reverse()){if(change.direction==='undo')controller.redo();else controller.undo();}if(controller.document.root.hasLayer(selectedBefore))controller.selectLayer(selectedBefore);
+    try{await reloadGeometryProjection();}catch(restoreError){throw new Error('Undo / Redoの表示復旧に失敗しました。'+String(restoreError)+' 原因：'+String(error));}
+    throw new Error('Undo / Redoを反映できなかったため、直前の状態へ戻しました。'+String(error));
+  }
+}
+function performHistory(direction:HistoryDirection){
+  if(!documentReady||!surface||(surface.inputActive&&!historyPending)||geometryBusy)return;
+  const available=historyPending||(direction==='undo'?(controller.canUndo||surface.hasPendingStrokes):controller.canRedo);if(!available)return;
+  historyNavigation!.enqueue(direction);
 }
 function bindHistoryButton(id:string,direction:'undo'|'redo'){
   const button=byId<HTMLButtonElement>(id);
@@ -364,7 +379,7 @@ document.addEventListener('keydown',e=>{
   const primary=e.ctrlKey||e.metaKey;if(!primary)return;const key=e.key.toLowerCase();
   const undo=key==='z'&&!e.shiftKey,redo=(key==='z'&&e.shiftKey)||(key==='y'&&e.ctrlKey&&!e.metaKey);
   if(!undo&&!redo)return;const direction=undo?'undo':'redo',available=direction==='undo'?(controller.canUndo||surface?.hasPendingStrokes):controller.canRedo;
-  if(!surface||surface.inputActive||historyPending||!available)return;e.preventDefault();void performHistory(direction);
+  if(!documentReady||!surface||(surface.inputActive&&!historyPending)||geometryBusy||(!available&&!historyPending))return;e.preventDefault();performHistory(direction);
 });
 
 function selectPreset(id:string){if(!surface)return;surface.setEyedropper(false);surface.selectById(id);surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);const erasing=surface.blendMode==='erase';selectedTool=erasing?'eraser':'brush';if(erasing)lastEraserPresetId=surface.brushId;else lastBrushPresetId=surface.brushId;lastDrawingTool=selectedTool;byId<HTMLSelectElement>('brush').value=surface.brushId;byId('erase').setAttribute('aria-pressed',String(erasing));byId('paint').setAttribute('aria-pressed',String(!erasing));syncPreset();reflectRailTool();byId('brushBoxSummary').textContent=(surface.brushName||selectedTool)+' · '+Math.round(surface.brushSize)+'px';}
@@ -399,13 +414,13 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
 };
 byId<HTMLButtonElement>('save').onclick=async()=>{
   if(!documentReady)return;byId('status').textContent='作品ファイルを作成しています。作業の自動保存とは別です。';
-  try{await surface?.settleLogicalStrokes();const result=await persistence.save(controller.document,controller.selectedLayerId),size=formatFileSize(result.byteLength);byId('status').textContent='作品ファイルを保存しました（'+size+'）。自動保存状態には影響しません。';}
+  try{await historyNavigation?.barrier();await surface?.settleLogicalStrokes();const result=await persistence.save(controller.document,controller.selectedLayerId),size=formatFileSize(result.byteLength);byId('status').textContent='作品ファイルを保存しました（'+size+'）。自動保存状態には影響しません。';}
   catch(error){byId('status').textContent='作品ファイルを保存できませんでした。'+(error instanceof Error?error.message:String(error));}
   updateQa();
 };
 byId<HTMLButtonElement>('saveCopy').onclick=async()=>{
   if(!documentReady)return;
-  try{await surface?.settleLogicalStrokes();await persistence.saveCopy(controller.document,controller.selectedLayerId);byId('status').textContent='別名の作品ファイルを保存しました。自動保存状態には影響しません。';}
+  try{await historyNavigation?.barrier();await surface?.settleLogicalStrokes();await persistence.saveCopy(controller.document,controller.selectedLayerId);byId('status').textContent='別名の作品ファイルを保存しました。自動保存状態には影響しません。';}
   catch(error){byId('status').textContent='作品ファイルを別名保存できませんでした。'+(error instanceof Error?error.message:String(error));}
   updateQa();
 };
@@ -431,7 +446,7 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
   const format=exportFormat.value as ImageFormat,quality=Number(exportQuality.value)/100;
   // The snapshot is captured synchronously: later brush transactions cannot enter it.
   let fixed:ReturnType<typeof captureExport>;
-  try{fixed=captureExport(controller.document);}
+  try{await historyNavigation?.barrier();fixed=captureExport(controller.document);}
   catch(error){byId('exportStatus').textContent=String(error instanceof Error?error.message:error);return;}
   const filename=exportFileName(fixed.name,format);
   exportBusy=true;exportError=null;byId<HTMLButtonElement>('exportRun').disabled=true;byId<HTMLButtonElement>('exportCancel').disabled=true;
@@ -616,7 +631,7 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
 if(perfMode){
  (window as unknown as {__illustroPerformance:unknown}).__illustroPerformance={
-  read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,...surface?.performanceDiagnostics,checkpointErrors}),
+  read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,historyNavigation:historyNavigation?.diagnostics,...surface?.performanceDiagnostics,checkpointErrors}),
   probe:()=>surface?.handoffProbe(),
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},
   capture:async()=>{if(!surface)throw new Error('No document');const before=surface.performanceDiagnostics,delta=await surface.captureProjectionDelta(controller.document.head),after=surface.performanceDiagnostics;return {replace:delta.replace,tiles:delta.tiles.length,bytes:delta.tiles.reduce((n,t)=>n+t.pixels.byteLength,0),before,after};},
@@ -629,7 +644,7 @@ if(perfMode){
  window.setInterval(()=>{if(!enabled.checked)return;surface?.setPerformanceEnabled(true);const data=surface?.performanceDiagnostics,metrics=data as Record<string,unknown>|undefined;
   // Enable only on transition; the history window must survive refreshes.
   const value=(n:unknown)=>typeof n==='number'&&Number.isFinite(n)?n.toFixed(1):'未測定';
-  byId('performanceReadout').textContent='次の入力まで：'+value(data?.handoff.traces.at(-1)?.readyMs)+' ms\n正式確定まで：'+value(data?.handoff.traces.at(-1)?.logicalMs)+' ms\n処理待ち：'+((data?.handoff.pendingLogical??0)+(data?.handoff.pendingGpu??0))+' 筆\n入力の制限：'+(data?.handoff.rejected??0)+' 回\n表示要求：'+value(metrics?.submissionFps)+' 回/秒\n反映までの目安：'+value(metrics?.inputToPreviewSubmitP95Ms)+' ms\n遅い側の表示間隔：'+value(metrics?.frameIntervalP95Ms)+' ms\nGPU完了待ちの目安：'+value(metrics?.queueCompletionProxyMs)+' ms\n画像の読み出し：'+value(data?.checkpoint.lastMs)+' ms\nGPUの処理時間：未測定';
+  byId('performanceReadout').textContent='次の入力まで：'+value(data?.handoff.traces.at(-1)?.readyMs)+' ms\n正式確定まで：'+value(data?.handoff.traces.at(-1)?.logicalMs)+' ms\n処理待ち：'+((data?.handoff.pendingLogical??0)+(data?.handoff.pendingGpu??0))+' 筆\n入力の制限：'+(data?.handoff.rejected??0)+' 回\n表示要求：'+value(metrics?.submissionFps)+' 回/秒\n反映までの目安：'+value(metrics?.inputToPreviewSubmitP95Ms)+' ms\n遅い側の表示間隔：'+value(metrics?.frameIntervalP95Ms)+' ms\nGPU完了待ちの目安：'+value(metrics?.queueCompletionProxyMs)+' ms\n画像の読み出し：'+value(data?.checkpoint.lastMs)+' ms\nUndo / Redoの処理待ち：'+((historyNavigation?.diagnostics.queued??0)+(historyNavigation?.diagnostics.active??0))+' 件\n履歴キャッシュ上限：'+value(Number(metrics?.historyGpuBudgetBytes??0)/1048576)+' MiB\nGPUの処理時間：未測定';
   if(byId<HTMLDetailsElement>('performanceRawDetails').open)byId('performanceRaw').textContent=JSON.stringify({backend:surface?.backend,...data,checkpointErrors},null,2);
  },500);
 }
