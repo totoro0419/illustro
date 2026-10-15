@@ -120,6 +120,7 @@ jobs:
         run: |
           MOBILE_ROOT=/tmp/handoff-before/apps/editor/dist MOBILE_SIZES=512,2048,4000 MOBILE_OUTPUT=/tmp/handoff-evidence/before.json EXPECTED_COMMIT_SHA=163f128838d22da4303a61e2f98e26862016740a node scripts/mobile-canvas-benchmark.mjs
           MOBILE_SIZES=512,2048,4000 MOBILE_OUTPUT=/tmp/handoff-evidence/after.json node scripts/mobile-canvas-benchmark.mjs
+          MOBILE_SOLID_OUTPUT=/tmp/handoff-evidence/solid.json node scripts/mobile-solid-benchmark.mjs
           HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/stress/report.json node scripts/stroke-handoff-stress.mjs
       - uses: actions/upload-artifact@v4
         if: always()

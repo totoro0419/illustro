@@ -1906,6 +1906,14 @@
     {
       "path": "scripts/mobile-input-smoke.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/mobile-solid-benchmark.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/pending-solid-pruning.test.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }
