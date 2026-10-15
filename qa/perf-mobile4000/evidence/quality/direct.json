@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "b91650573c7f0bfae1fcaf401e7a28e5cba31baa",
+  "sourceCommit": "efaf43766aa96befa18984f34d8853543c7d7eed",
   "scope": "Exact retained scene/mip pixels, direct versus prior scratch composition; software GPU, physical Android unverified",
   "cases": [
     {
@@ -10,9 +10,10 @@
           "exactPixels": true,
           "previewCount": 1,
           "direct": {
-            "scene": "1376f9cbee85beb382bdcca28ca3bcddefcb7c3a8e3a657051015515a6209e0b",
+            "tiles": {},
+            "scene": "f6154761c45c5f541815b29b6a15efadf042a50c6767af46313af5b34def97ff",
             "mips": [
-              "a1d6dad210e6de8c20aaf1ba90452b506958e79be2a96d5a793df96d2e81b700"
+              "1971cd0266821de9f508d8790fb8b42f8dee9d62f67bd22ea8c0b7a19b8ce4ee"
             ]
           }
         },
@@ -21,9 +22,10 @@
           "exactPixels": true,
           "previewCount": 4,
           "direct": {
-            "scene": "7eaef13b9066a4a3b955b6946fd1146aaa97437da58add168990692712970a8f",
+            "tiles": {},
+            "scene": "22929d64d9c72eadbd9a55381dfdca48343dad1ecfb538a5f5a3b1f809f1b642",
             "mips": [
-              "ac9df66a815ccbc8fbd893e7f318412a804759807f6e2f11a69107ad43ded378"
+              "4fab9c0a5a422764db4eea63191e601ade9874158c3ca45926f2f893b88aaf05"
             ]
           }
         },
@@ -32,9 +34,10 @@
           "exactPixels": true,
           "previewCount": 7,
           "direct": {
-            "scene": "51377ed13e6f88f5e74983f41bde8264bf53b7133192ddec3853d7d521591bd0",
+            "tiles": {},
+            "scene": "bc54ecf73e08a5853f82a93b250f0355cf8272be2951761ad523c16ed1fc4914",
             "mips": [
-              "40445b0c26a8f69722cadc8db50fbfd69af15a390dbde2f1cd994033c003be3f"
+              "5d6928fedd6c9210d873486b6aad07145192d9548d8ce4d57a06b7e1a86cb393"
             ]
           }
         },
@@ -43,9 +46,10 @@
           "exactPixels": true,
           "previewCount": 12,
           "direct": {
-            "scene": "4787cc70b7a58413536697e0e60aa6ea2363bfb49019a764b9331c3d1a9b606f",
+            "tiles": {},
+            "scene": "fa8fa088f85f87cac947f4c920737cf559e5072686cd7403d5bdfcfc2b56703e",
             "mips": [
-              "be3ca5f3c842fee2c86a7f2af54126512418b697bf2b27de968a9c6507eab772"
+              "78d9f193ffab72a7d7d1b20f3b41cac4d71344aca1f71ce8b3ef474a83eb8879"
             ]
           }
         },
@@ -54,14 +58,38 @@
           "exactPixels": true,
           "previewCount": 0,
           "direct": {
-            "scene": "4787cc70b7a58413536697e0e60aa6ea2363bfb49019a764b9331c3d1a9b606f",
+            "tiles": {
+              "a\u00000,0": "5b9e0b5b3e54db667a45f59972305c1158682e3b0c03e5a2654d29916927fd9a",
+              "a\u00000,1": "fa09e5b309fd5b2688fcfe57016e523e53dedaad8d986a842cd1c5cea20b8eef",
+              "a\u00001,0": "a1636ffcebbec6eff9102dc1411b973ef1738724fdc3bfa15f98adcb6028dbb5",
+              "a\u00001,1": "2de54be35becc92964b49771cafa1b6171420641b2b89c4573fa0e35ad6b572a",
+              "a\u00002,0": "92291cd0ae6fcefbdf9407729cae65765ae5493b232ba30af1a315a34298e562",
+              "a\u00002,1": "f66da8877a29d1da11a7e3de55b71a91a2d49f2fdd445399e9914cc3134808aa",
+              "b\u00000,0": "ad25a6e39b5741273b54fc5f6b2bf9a3374a709f2ed4a6a5ce11aa85714c71d4",
+              "b\u00000,1": "0b193487a3b836ec82306d559938e4f1fad9b3e674c9b19a532659491a83ab4d",
+              "b\u00001,0": "ffc13b79c240a6f02c44157829f8f2c459ef664e5cab474b5c84d0a1ed981bb2",
+              "b\u00001,1": "0a82f7555c7b74585c375a032efd8dac5cf9fc92af4dd1183a632814b5adb6fb",
+              "b\u00002,0": "520ef308f100fe08e4b6c4ecfd53ba4c40a69ee666748606e0b704ff07426b5d",
+              "b\u00002,1": "ae8695a94a5acf38b835ae9a1c5e3fd41a46b335b93fa02f8b31113af8737fc9",
+              "b\u000030,30": "08e12ad9e2cd989eb198ad7cb1b0fc1ef6204cab52a48e852bcaaa9307ee7d8b",
+              "b\u000030,31": "8ea50af63e65953c4c01dad52bb0ba6fa6633372acb49f0e16751743215d4879",
+              "b\u000031,30": "112d43ef6d4e414a59816c6286adfd250ac8bd0bc3c8c0ef9b11901e34d14580",
+              "b\u000031,31": "8bcd72bc66174270fe3ee8813b6d89ef120b59654a251391abd8020a3c34a062",
+              "c\u000030,30": "73eb2c097c7c5485e105c67b35708c1545576e33ef1442bf64c78c2f98e31eed",
+              "c\u000030,31": "f1096270a5e5ef67082add5dc072b6d6b1da380664f91e194a8afa8128a75c62",
+              "c\u000031,30": "7e0cacccb383e5c814ad890366b7a6e6990b225e4e71ae86c2d466183057855a",
+              "c\u000031,31": "c5d895bf557a0fe3bd5288f6eb6b3bb57efcd8cf0908574ef687dcc958ed5330"
+            },
+            "scene": "fa8fa088f85f87cac947f4c920737cf559e5072686cd7403d5bdfcfc2b56703e",
             "mips": [
-              "be3ca5f3c842fee2c86a7f2af54126512418b697bf2b27de968a9c6507eab772"
+              "78d9f193ffab72a7d7d1b20f3b41cac4d71344aca1f71ce8b3ef474a83eb8879"
             ]
           }
         }
       ],
       "rebuildMatch": true,
+      "unprunedMatch": true,
+      "pruned": 1914,
       "errors": []
     },
     {
@@ -72,9 +100,10 @@
           "exactPixels": true,
           "previewCount": 1,
           "direct": {
-            "scene": "0d87e1399fe7a4fa6f6129001ac5a8ede968c273c039fe995ea904f2bc445494",
+            "tiles": {},
+            "scene": "f9f25166600cd82b1332a413f80b34ff4954484473901e619ab7c6766dad17dc",
             "mips": [
-              "6936c4de11ce7db99e628f8704e886481633f4c4be7d010ccc54267b55730183"
+              "55f091ac2049bd305b0c77a4e94d19814a05ae4b52aac766fa023506539483ed"
             ]
           }
         },
@@ -83,9 +112,10 @@
           "exactPixels": true,
           "previewCount": 4,
           "direct": {
-            "scene": "65d251557c0f625a8cbdc7a89f62d85d96c50d2fd5542df08cbf2f0dcfbc105b",
+            "tiles": {},
+            "scene": "c7294711c2c629a13f94a6ebd70deea8690b616c518a3b10295b514d69cebcac",
             "mips": [
-              "316d4c5d87267440b8b22ca39e80cd69e95fddb0f7edd1c1047ebe6f68eb126e"
+              "2c6c800a09a419243b7947984479c6111123dbf38183dd1b4122cdb0e0b77f98"
             ]
           }
         },
@@ -94,9 +124,10 @@
           "exactPixels": true,
           "previewCount": 7,
           "direct": {
-            "scene": "826b9f7e972ca004cd920de985f8120f9a3af2d3945edefc564768b914aaaeb7",
+            "tiles": {},
+            "scene": "7e71a8ab33ace9b987b90f246f0e1fcffa075603557910555e6cd616e3152a7c",
             "mips": [
-              "0a4f6602d6d7de7547e09e58d55673e34cf9403b5faf7d51f8bdd3e3bbd9d152"
+              "08f6183326ecf8d1dd884e4042bd5c65c010fa02ad0120b8e4c2b4681b082438"
             ]
           }
         },
@@ -105,9 +136,10 @@
           "exactPixels": true,
           "previewCount": 12,
           "direct": {
-            "scene": "f3b8d02859e7b79c2b143c4562eb9443f64fcb4c3015a63e3aaac530d3350c7b",
+            "tiles": {},
+            "scene": "a69bc8569d5951ffb8309886e01daf9b14c1a29af81bddcc4733948afac20ba0",
             "mips": [
-              "9995f760d292cfd64b2aa8bfc0ef30672c5a01bd245a82396c239121b25ea3fd"
+              "6123b66131958d39cbf1e04c76f8d87aa6f5fa2d929a5adc50ddbbefde65707b"
             ]
           }
         },
@@ -116,14 +148,38 @@
           "exactPixels": true,
           "previewCount": 0,
           "direct": {
-            "scene": "f3b8d02859e7b79c2b143c4562eb9443f64fcb4c3015a63e3aaac530d3350c7b",
+            "tiles": {
+              "a\u00000,0": "5b9e0b5b3e54db667a45f59972305c1158682e3b0c03e5a2654d29916927fd9a",
+              "a\u00000,1": "d8e361612f7fddb4b7a9b4ea7f721b03ff4b95e60e41b84fe49fb8e250036b73",
+              "a\u00001,0": "fdf9eec205fe6a34ffa27b1e96354485d3f55ed89acd471d1375759178c10da4",
+              "a\u00001,1": "5bd232f0741cf01a1abcb40e26732d7d7c23a784a4b85fdba89a45a5c02d5504",
+              "a\u00002,0": "2c0690f1d028a820d5d3c1a49618f233e7256713447e62268caa08ad6472ddaf",
+              "a\u00002,1": "0300df55480c2644e87a07f52425e4a54c09b586165d642bb1c029ee956cc10f",
+              "b\u00000,0": "dd355ea36f375f855025ceea5ecee946cb2e0937b75e7a6e6ef2b36f0827ce1e",
+              "b\u00000,1": "acdfab867eebd102ed15f703be9896f6acaa4810ad56f61a7a1d8300e612d3a5",
+              "b\u00001,0": "a81ea890a193f64bfef6d246193d747655f46da84c13db40badc1d60bf8d90bc",
+              "b\u00001,1": "d80ccea7d5e0075115beee85651fc451611b3484602a9eedae917551d8775d17",
+              "b\u00002,0": "e423134dea49c6e61a1d02f2dc8ea81d39749180e6a0b5dc594240819848c16b",
+              "b\u00002,1": "804c463c9d7dc020c2ba528aba22ca9c53fa07fa1c92661f1e2172c0713fb00d",
+              "b\u000030,30": "0cce4cce895f38baa24ba90333e4e2a960d232b6961486fcc8e002253b99d0dc",
+              "b\u000030,31": "6763edd084497279ea27c5662c39eb190ca2a156dcb0366b7119787613f93aa7",
+              "b\u000031,30": "bcb100efacdf83f1a3101a3fe090c413a753cd71bd7938c99cfcc7718b6eb0fd",
+              "b\u000031,31": "b2bc4bcf8bef35156a0153ef75322727d869e490120918b60bf61f10b50419b8",
+              "c\u000030,30": "7df8b36fd1ff064b0e3d9ac79077575ff539302b83ac6071fa38da696d751170",
+              "c\u000030,31": "e274fc4372a41b39b12d558bf85f9e947dc21bb718369abd92dd740f5411d39b",
+              "c\u000031,30": "9b1120a6318270c4ea85f19da2dc4ed1fed51b50de21993e519ae7a53087fd5f",
+              "c\u000031,31": "abcf3aeeb1a053bc666de59ea876f54f40064ff0d40d9069728336c04439b896"
+            },
+            "scene": "a69bc8569d5951ffb8309886e01daf9b14c1a29af81bddcc4733948afac20ba0",
             "mips": [
-              "9995f760d292cfd64b2aa8bfc0ef30672c5a01bd245a82396c239121b25ea3fd"
+              "6123b66131958d39cbf1e04c76f8d87aa6f5fa2d929a5adc50ddbbefde65707b"
             ]
           }
         }
       ],
       "rebuildMatch": true,
+      "unprunedMatch": true,
+      "pruned": 1914,
       "errors": []
     }
   ],
