@@ -77,18 +77,20 @@ export class RealtimeSession {
    if(source.at(-1)!==record)throw Error('Document/Renderer '+direction+' mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');source.pop();target.push(record);plans.push({...step,id:this.recordIds.get(record)});
   }
   await this.renderer.prepareHistory();
-  const pendingIds=new Set(this.renderer.document.jobs.map(j=>j.id)),pendingKeys=new Map;
-  for(const record of this.records)if(pendingIds.has(this.recordIds.get(record))){const surface=this.recordSurfaces.get(record)??'default';let keys=pendingKeys.get(surface);if(!keys)pendingKeys.set(surface,keys=new Set);for(const key of this.recordTiles.get(record)??[])keys.add(key);}
-  const discarded=this.renderer.discardPendingForHistory([...pendingIds]);
+  const pendingIds=new Set(this.renderer.document.jobs.map(j=>j.id)),pendingKeys=new Map,pendingEntries=[];
+  for(const record of this.records)if(pendingIds.has(this.recordIds.get(record))){const surface=this.recordSurfaces.get(record)??'default',recordKeys=this.recordTiles.get(record)??[];pendingEntries.push({record,id:this.recordIds.get(record),surfaceKey:surface,keys:recordKeys});let keys=pendingKeys.get(surface);if(!keys)pendingKeys.set(surface,keys=new Set);for(const key of recordKeys)keys.add(key);}
+  const retained=new Set(records),{discarded,baseReused}=this.renderer.discardPendingForHistory(pendingEntries,pendingEntries.every(p=>!retained.has(p.record)));
   this.records=records;this.redoRecords=redo;for(const p of plans){if(p.direction==='undo')this.unindexRecord(p.record);else this.reindexRecord(p.record);}
-  if(!discarded&&await this.renderer.applyHistory(plans)){this.historyPatchHits+=plans.length;return;}
-  this.historyReplayFallbacks+=plans.length;
+  const renderPlans=baseReused?plans.filter(p=>!pendingIds.has(p.id)):plans;
+  if(baseReused&&!renderPlans.length){await this.renderer.drain();return;}
+  if((!discarded||baseReused)&&await this.renderer.applyHistory(renderPlans)){this.historyPatchHits+=renderPlans.length;return;}
+  this.historyReplayFallbacks+=renderPlans.length;
   if(!discarded&&plans.every(p=>p.direction==='redo')){
    // Redo is an exact suffix: reuse the completed base and evaluate only that suffix.
    for(const p of plans){if(p.id!==undefined)this.renderer.dropHistory([p.id]);const id=++this.id,preset=this.presetForRecord(p.record);this.recordIds.set(p.record,id);this.renderer.document.append(id,preset,p.record.commands,null,p.surfaceKey);this.renderer.document.end(id,preset,p.surfaceKey);}await this.renderer.drain();return;
   }
   // A cold batch reconstructs each changed tile once at the final logical head.
-  const groups=pendingKeys;for(const p of plans){let keys=groups.get(p.surfaceKey);if(!keys)groups.set(p.surfaceKey,keys=new Set);for(const key of p.keys)keys.add(key);}
+  const groups=baseReused?new Map:pendingKeys;for(const p of renderPlans){let keys=groups.get(p.surfaceKey);if(!keys)groups.set(p.surfaceKey,keys=new Set);for(const key of p.keys)keys.add(key);}
   await this.renderer.rebuildTileGroups([...groups].map(([surfaceKey,keys])=>({surfaceKey,keys:[...keys],entries:this.recordsForKeys(keys,surfaceKey).map(record=>({id:++this.id,preset:this.presetForRecord(record),commands:record.commands}))})));
  }
  async undoDerived(expected,keys,surfaceKey='default'){await this.settle();const record=this.records.at(-1);if(record!==expected)throw Error('Document/Renderer undo mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');const id=this.recordIds.get(record);this.records.pop();this.redoRecords.push(record);this.unindexRecord(record);const hot=id!==undefined&&await this.renderer.undoCommit(id);if(hot)this.historyPatchHits++;else{this.historyReplayFallbacks++;await this.rebuildDirty(keys,surfaceKey);}}

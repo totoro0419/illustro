@@ -9,7 +9,7 @@ const server=http.createServer(async(req,res)=>{try{const p=path.resolve(root,'.
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const browser=await chromium.launch({headless:true,...(process.env.HANDOFF_CHROMIUM?{executablePath:process.env.HANDOFF_CHROMIUM}:{}),args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
 const report={commit:process.env.EXPECTED_COMMIT_SHA,cases:[],errors:[],scope:'Trusted keyboard commands. GPU submission/completion proxies, not physical scanout or Android hardware.'};
-const profiles=process.env.UNDO_QUICK?[{width:3000,height:3000,size:64}]:[{width:512,height:384,size:32},{width:3000,height:3000,size:64},{width:3000,height:3000,size:256}];
+const profiles=process.env.UNDO_PRESSURE_ONLY?[{width:3000,height:3000,size:256}]:process.env.UNDO_QUICK?[{width:3000,height:3000,size:64}]:[{width:512,height:384,size:32},{width:3000,height:3000,size:64},{width:3000,height:3000,size:256}];
 try{for(const backend of ['webgl2','webgpu'])for(const profile of profiles){
  const {width,height,size}=profile,context=await browser.newContext({viewport:{width:1440,height:900},hasTouch:true}),p=await context.newPage();p.on('pageerror',e=>report.errors.push(e.message));
  await p.goto((process.env.UNDO_PUBLIC_URL||'http://127.0.0.1:'+server.address().port+'/')+'?m09=1&perf=1&backend='+backend);await p.evaluate(([w,h])=>{document.getElementById('newCanvasWidth').value=String(w);document.getElementById('newCanvasHeight').value=String(h);},[width,height]);await p.locator('#new').click();await p.waitForFunction(()=>document.getElementById('status').textContent.includes('描画できます'),null,{timeout:90000});
