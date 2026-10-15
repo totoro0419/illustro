@@ -51,13 +51,13 @@ export class ViewportCache{
   if(!this.image||this.width!==w||this.height!==h){this.release();this.image=b.gl?b.surface(w,h,b.gl.RGBA8,b.gl.UNSIGNED_BYTE):b.device.createTexture({size:[w,h],format:b.format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});this.width=w;this.height=h;this.bytes=w*h*4;}
   const same=this.view?.length===view.length&&view.every((v,i)=>v===this.view[i]),fresh=!this.valid||!same||full||(this.generation!==generation&&this.generation!==generation-1)||(this.generation!==generation&&!keys.length);
   const rects=fresh?[[0,0,w,h]]:this.generation===generation?[]:presentationRectangles(view,w,h,keys,image.scale);
-  this.view=Float32Array.from(view);this.generation=generation;this.valid=true;this.full=false;this.dirty.clear();const pixels=rects.reduce((n,[x,y,x1,y1])=>n+(x1-x)*(y1-y),0),copy=rects.length||refresh&&!b.gl?w*h:0;this.last={screenPixels:pixels,screenRects:rects.length,screenCacheHit:!rects.length,screenCopiedPixels:copy};this.shadedPixels+=pixels;this.copiedPixels+=copy;if(!rects.length)this.hits++;return {image,rects,cached:true};
+  this.view=Float32Array.from(view);this.generation=generation;this.valid=true;this.full=false;this.dirty.clear();const pixels=rects.reduce((n,[x,y,x1,y1])=>n+(x1-x)*(y1-y),0),copy=b.gl?pixels:rects.length||refresh?w*h:0;this.last={screenPixels:pixels,screenRects:rects.length,screenCacheHit:!rects.length,screenCopiedPixels:copy};this.shadedPixels+=pixels;this.copiedPixels+=copy;if(!rects.length)this.hits++;return {image,rects,cached:true};
  }
  presentGl(view,direct=false){
   const b=this.backend,g=b.gl,{image,rects,cached}=this.plan(view,null,direct);if(!rects.length)return false;const w=b.canvas.width,h=b.canvas.height,values=view.slice();values[15]=image.scale;
   g.bindFramebuffer(g.FRAMEBUFFER,cached?this.image.f:null);g.viewport(0,0,w,h);g.disable(g.BLEND);g.disable(g.DEPTH_TEST);g.bindVertexArray(b.vao);g.useProgram(b.present);g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,image.source.t);g.uniform1i(b.uniformLocation(b.present,'source'),0);for(const [i,name]of ['viewScreen','viewDocument','viewMotion','viewOptions'].entries())g.uniform4fv(b.uniformLocation(b.present,name),values.subarray(i*4,i*4+4));
   if(cached)g.enable(g.SCISSOR_TEST);for(const [x,y,x1,y1]of rects){if(cached)g.scissor(x,h-y1,x1-x,y1-y);g.drawArrays(g.TRIANGLES,0,3);}g.disable(g.SCISSOR_TEST);
-  if(cached){g.bindFramebuffer(g.READ_FRAMEBUFFER,this.image.f);g.bindFramebuffer(g.DRAW_FRAMEBUFFER,null);g.blitFramebuffer(0,0,w,h,0,0,w,h,g.COLOR_BUFFER_BIT,g.NEAREST);}g.flush();return true;
+  if(cached){g.bindFramebuffer(g.READ_FRAMEBUFFER,this.image.f);g.bindFramebuffer(g.DRAW_FRAMEBUFFER,null);for(const [x,y,x1,y1]of rects)g.blitFramebuffer(x,h-y1,x1,h-y,x,h-y1,x1,h-y,g.COLOR_BUFFER_BIT,g.NEAREST);}g.flush();return true;
  }
  encodeGpu(e,view,direct=false,refresh=false){
   const b=this.backend,d=b.device,{image,rects,cached}=this.plan(view,e,direct,refresh);

@@ -114,7 +114,7 @@ jobs:
           VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
           npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Balanced thin-stroke comparison, scaling, broad controls and sustained short/long strokes
+      - name: Sustained1100 short strokes and refusal diagnostics
         env:
           RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
@@ -125,7 +125,20 @@ jobs:
             echo "Failed candidate; diagnostic baseline exit $baseline_result"
             exit 1
           fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: thin-stress-checkpoint, path: /tmp/handoff-evidence/stress/}
+      - name: Sustained100 long strokes
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
           HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=100 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/long/report.json node scripts/stroke-handoff-stress.mjs
+      - name: Balanced thin-stroke comparison, scaling and broad controls
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_OUTPUT=/tmp/handoff-evidence/comparison.json node scripts/thin-stroke-benchmark.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=16 THIN_ROUNDS=1 THIN_SIZES=512,2048,3000 THIN_OUTPUT=/tmp/handoff-evidence/scaling.json node scripts/thin-stroke-benchmark.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=256,512 THIN_ROUNDS=1 THIN_OUTPUT=/tmp/handoff-evidence/broad.json node scripts/thin-stroke-benchmark.mjs

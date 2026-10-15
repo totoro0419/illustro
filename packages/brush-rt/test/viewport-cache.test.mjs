@@ -9,7 +9,7 @@ function harness(){
 }
 test('viewport cache reuses an unchanged frame and recomputes a bounded changed area',()=>{
  const {b,c,p,view}=harness();assert.deepEqual(c.plan(view).rects,[[0,0,1000,1600]]);assert.equal(c.bytes,1000*1600*4);assert.deepEqual(c.plan(view).rects,[]);
- p.invalidate(new Set(['15,15']));const plan=c.plan(view);assert.ok(plan.rects.length);assert.ok(c.last.screenPixels<1000*1600/50);assert.equal(c.plan(view).rects.length,0);assert.equal(b.width,4000);
+ p.invalidate(new Set(['15,15']));const plan=c.plan(view);assert.ok(plan.rects.length);assert.ok(c.last.screenPixels<1000*1600/50);assert.equal(c.last.screenCopiedPixels,c.last.screenPixels);assert.equal(c.plan(view).rects.length,0);assert.equal(b.width,4000);
 });
 test('viewport invalidation is independent of minification at 100 percent',()=>{
  const {c,p,view}=harness();view[6]=1;c.plan(view);assert.equal(p.full,true);assert.deepEqual(c.plan(view).rects,[]);p.invalidate(new Set(['15,15']));c.plan(view);assert.ok(c.last.screenPixels<1000*1600/4);assert.deepEqual(c.plan(view).rects,[]);
