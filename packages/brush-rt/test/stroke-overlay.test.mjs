@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {StrokeOverlay,previewPlan,polygonArea,clipPolygon,directOverlaySupported,toScreen,toDocument} from '../dist/rt/stroke-overlay.mjs';
+import {StrokeOverlay,previewPlan,polygonArea,clipPolygon,directOverlaySupported,toScreen,toDocument,thinCoverage} from '../dist/rt/stroke-overlay.mjs';
 import {CanonicalBuilder,referenceBrushes} from '../dist/rt/index.mjs';
 globalThis.ImageData??=class{constructor(w,h){this.width=w;this.height=h;this.data=new Uint8ClampedArray(w*h*4);}};
 const view=(size=4000,angle=0,dpr=3)=>new Float64Array([400*dpr,600*dpr,400,600,size,size,360/size,angle,0,0,1,1,0,0,0,0]);
@@ -20,3 +20,7 @@ test('unsafe conditions select exact feedback and do not paint an eraser on top'
 test('a stale presentation generation cannot remove a transformed pending stroke',()=>{const {p}=setup(),r=record();p.enqueue(live(r));p.safeFlush();const epoch=p.epoch;p.setView(view(4000,.25));p.safeFlush();p.presented(1,epoch);assert.ok(p.states.has(1));p.presented(1,p.epoch);assert.equal(p.states.size,0);p.destroy();});
 
 test('a late fallback request cannot clear CPU strokes absent from the completed GPU submission',()=>{const {p}=setup(),r=record();p.enqueue(live(r));p.enqueue(live(r,10));p.safeFlush();p.fallback=true;p.fallbackPresented(0,p.epoch,false);p.presented(1,p.epoch);assert.ok(p.states.has(10));p.fallbackPresented(1,p.epoch,true);assert.equal(p.states.size,0);p.destroy();});
+
+test('subpixel line coverage preserves mass at every pixel phase instead of vanishing',()=>{for(const r of [.001,.05,.1,.25,.49])for(const phase of [0,.1,.25,.5,.9]){let sum=0;for(let x=-3;x<=3;x++)sum+=thinCoverage(r,Math.abs(x+.5-phase));assert.ok(Math.abs(sum-2*r)<1e-12);assert.ok(sum>0);}});
+test('broad auto profiles retain a CSS sampling floor on low and high density screens',()=>{for(const dpr of [1,1.25,2,3,4]){const v=view(4000,0,dpr),p=previewPlan(v,{size:32/v[6]});assert.ok(p.scale>=Math.min(dpr,1.4));if(dpr===3)assert.equal(p.ratio,1/4);}});
+test('opaque stable interiors need no repeated pixel coverage evaluation',()=>{const {p}=setup(),r=record(1024);p.enqueue(live(r,1,Math.floor(r.commands.length/2)));p.safeFlush();p.enqueue(live(r));p.safeFlush();assert.ok(p.metrics.skippedRasterPixels>0);p.destroy();});

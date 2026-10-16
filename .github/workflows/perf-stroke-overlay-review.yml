@@ -120,6 +120,7 @@ jobs:
           OVERLAY_SIZES: '2000,4000,8000'
           OVERLAY_LAYOUTS: 'phone,tablet'
           OVERLAY_MODES: 'A,C'
+          OVERLAY_BRUSHES: 'thin,broad,pencil,erase,lower,fade,fine,marker,technical,soft'
         run: |
           node scripts/stroke-overlay-formal.mjs
           node scripts/stroke-overlay-quality.mjs
@@ -237,7 +238,116 @@ jobs:
         env:
           RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
-        run: node scripts/stroke-overlay-history.mjs
+        run: |
+          node scripts/stroke-overlay-history.mjs
+          node scripts/stroke-overlay-allocation.mjs
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: overlay-history, path: /tmp/overlay-history/}
+        with:
+          name: overlay-history
+          path: |
+            /tmp/overlay-history/
+            /tmp/overlay-allocation/
+  publish:
+    needs: [regression, quality, performance, profiles, history]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - uses: actions/download-artifact@v4
+        with: {name: overlay-app, path: review-build}
+      - uses: actions/download-artifact@v4
+        with: {name: overlay-before-app, path: review-before}
+      - uses: actions/download-artifact@v4
+        with: {name: overlay-quality-webgl2, path: review-evidence/quality/webgl2}
+      - uses: actions/download-artifact@v4
+        with: {name: overlay-quality-webgpu, path: review-evidence/quality/webgpu}
+      - uses: actions/download-artifact@v4
+        with: {name: overlay-profiles, path: review-evidence/profiles}
+      - uses: actions/download-artifact@v4
+        with: {name: overlay-history, path: review-evidence/history}
+      - uses: actions/download-artifact@v4
+        with: {name: overlay-regression, path: review-evidence/regression}
+      - uses: actions/download-artifact@v4
+        with: {pattern: 'overlay-performance-*', path: review-performance}
+      - name: Assemble exact-source measurements and block unproved improvement
+        env: {EXPECTED_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          mkdir -p review-evidence/performance
+          for folder in review-performance/overlay-performance-*; do
+            name=$(basename "$folder")
+            cp -a "$folder" "review-evidence/performance/${name#overlay-performance-}"
+          done
+          node scripts/stroke-overlay-report.mjs review-evidence
+      - run: |
+          npm install --prefix /tmp/overlay-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/overlay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify actual comparison shell and evidence gallery before publishing
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          OVERLAY_APP_ROOT: review-build
+          OVERLAY_BEFORE_APP_ROOT: review-before
+          OVERLAY_EVIDENCE_ROOT: review-evidence
+          INSTANT_BROWSER_OUTPUT: /tmp/overlay-local-qa/report.json
+        run: node scripts/stroke-overlay-browser.mjs
+      - name: Preserve every previous QA file and publish only this directory
+        run: |
+          (cd site && find qa -type f ! -path 'qa/perf-stroke-overlay/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
+          mkdir -p site/qa/perf-stroke-overlay/app site/qa/perf-stroke-overlay/before site/qa/perf-stroke-overlay/evidence
+          cp qa/perf-stroke-overlay/*.html site/qa/perf-stroke-overlay/
+          cp -a review-build/. site/qa/perf-stroke-overlay/app/
+          cp -a review-before/. site/qa/perf-stroke-overlay/before/
+          cp -a review-evidence/. site/qa/perf-stroke-overlay/evidence/
+          cp -a /tmp/overlay-local-qa site/qa/perf-stroke-overlay/evidence/local-browser
+          (cd site && find qa -type f ! -path 'qa/perf-stroke-overlay/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after
+          diff -u /tmp/old-qa.before /tmp/old-qa.after
+          cp /tmp/old-qa.before site/qa/perf-stroke-overlay/evidence/previous-qa.sha256
+      - name: Publish isolated QA with source lease
+        working-directory: site
+        run: |
+          current=$(git ls-remote origin refs/heads/perf/stroke-overlay-2026-10-16 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-stroke-overlay
+          git diff --cached --quiet || git commit -m 'qa: publish stroke-only preview and quality comparison'
+          git push origin HEAD:gh-pages
+      - name: Wait for exact source on public GitHub Pages
+        env: {EXPECTED_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          ready=0
+          for i in $(seq 1 36); do
+            curl -fsSL "https://totoro0419.github.io/illustro/qa/perf-stroke-overlay/evidence/qa-status.json?build=$GITHUB_SHA" -o /tmp/public-overlay.json || true
+            if node -e "try{process.exit(JSON.parse(require('fs').readFileSync('/tmp/public-overlay.json')).sourceCommit===process.env.EXPECTED_COMMIT_SHA?0:1)}catch{process.exit(1)}"; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+      - name: Real published drawing, history, saved work, touch and comparison images
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          HANDOFF_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-stroke-overlay/app/
+          MOBILE_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-stroke-overlay/app/
+          HANDOFF_OPERATIONS_OUTPUT: /tmp/overlay-public/operations/report.json
+          MOBILE_HOME: '1'
+          MOBILE_INPUT_OUTPUT: /tmp/overlay-public/mobile/report.json
+          INSTANT_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-stroke-overlay/
+          INSTANT_BROWSER_OUTPUT: /tmp/overlay-public/qa-page/report.json
+        run: |
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/mobile-input-smoke.mjs
+          node scripts/stroke-overlay-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: overlay-public-verification
+          path: |
+            /tmp/overlay-public/
+            /tmp/overlay-local-qa/
+            review-evidence/qa-status.json
+            review-evidence/RESULTS.md
