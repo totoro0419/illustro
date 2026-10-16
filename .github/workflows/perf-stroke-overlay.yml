@@ -1,0 +1,52 @@
+name: Stroke overlay
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: stroke-overlay-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build current and immutable PR30 baseline
+        run: |
+          npm run prep:check
+          npm run brush:build > /tmp/brush-build.log
+          git diff --exit-code -- prototypes/brush-rt/dist/illustro-brush-rt.html
+          node --test packages/brush-rt/test/*.test.mjs > /tmp/brush-tests.log
+          node scripts/check-test-summary.mjs /tmp/brush-tests.log
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          git worktree add --detach /tmp/overlay-before d9f52391bb2eeed4750e571262c8a089171d011e
+          cd /tmp/overlay-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/overlay-before-build.log
+      - run: |
+          npm install --prefix /tmp/overlay-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/overlay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Strict pixels, record identity and history on both backends
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          FORMAL_BEFORE_ROOT: /tmp/overlay-before/packages/brush-rt/dist
+          FORMAL_QUALITY_OUTPUT: /tmp/overlay-quality/formal/report.json
+        run: node scripts/stroke-overlay-formal.mjs
+      - name: Fit-view live/final images on both backends
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/stroke-overlay-quality.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stroke-overlay-prototype
+          path: |
+            /tmp/overlay-quality/
+            /tmp/brush-tests.log

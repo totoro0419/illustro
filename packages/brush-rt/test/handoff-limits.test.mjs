@@ -15,3 +15,5 @@ test('retained dirty pixels under preview pressure do not start an empty submiss
  const backend={previewPressure:true,dirtyConfirmed:new Set(['0,0']),previews:new Map,render(){assert.fail('no formal work or new feedback can relieve pressure');}},r=new GpuRenderer(backend,128,128,{strokeHandoff:true});
  r.needsFrame=false;assert.equal(r.frame(performance.now()),false);assert.equal(r.inflight,false);assert.equal(r.performance.renders,0);
 });
+
+test('a cached unchanged frame acknowledges already displayed exact GPU feedback',async()=>{const backend={previews:new Map,dirtyConfirmed:new Set,lastSubmission:{presentationSubmitted:false},render:()=>Promise.resolve()},r=new GpuRenderer(backend,128,128,{strokeHandoff:true});r.strokeFrames.set(7,1);r.frame(performance.now());await new Promise(resolve=>setTimeout(resolve,0));assert.deepEqual(r.errors,[]);assert.ok(r.presentedStrokes.has(7));clearTimeout(r.workTimer);r.disposed=true;});
