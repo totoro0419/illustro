@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "417c02800332c73d491434e95b2efbb35068823c",
+  "sourceCommit": "aac68dc3afdd018ebed48d77af8fa160bb2cd05e",
   "scope": "Exact physical backing pixels, cached dirty rectangles versus unchanged direct presentation shader; software GPU, no physical phone",
   "cases": [
     {

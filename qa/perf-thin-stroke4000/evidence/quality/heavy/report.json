@@ -1,6 +1,6 @@
 {
   "heavyArea": true,
-  "commit": "417c02800332c73d491434e95b2efbb35068823c",
+  "commit": "aac68dc3afdd018ebed48d77af8fa160bb2cd05e",
   "scope": "Canonical records and occupied strict GPU tiles; sparse live feedback against final pixels. Chromium software GPU, no physical Android.",
   "cases": [
     {
@@ -81,8 +81,8 @@
       "heavyMetrics": {
         "raw": 120,
         "commands": 120,
-        "endToFinishMs": 6836.900000000023,
-        "totalMs": 7289.200000000012,
+        "endToFinishMs": 6807.20000000007,
+        "totalMs": 7155.20000000007,
         "renders": 14,
         "metrics": {
           "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
@@ -98,7 +98,7 @@
           "frameIntervalP95Ms": null,
           "inputToSubmissionP95Ms": null,
           "cpuSubmitP95Ms": null,
-          "queueCompletionProxyMs": 1031.5999999999767,
+          "queueCompletionProxyMs": 1031.4000000000233,
           "gpuExecutionMs": null,
           "historyGpuReservedBytes": 0,
           "historyGpuBudgetBytes": 16777216,
@@ -143,7 +143,7 @@
         "frameIntervalP95Ms": null,
         "inputToSubmissionP95Ms": null,
         "cpuSubmitP95Ms": null,
-        "queueCompletionProxyMs": 16.600000000034925,
+        "queueCompletionProxyMs": 16.699999999953434,
         "gpuExecutionMs": null,
         "historyGpuReservedBytes": 3145728,
         "historyGpuBudgetBytes": 16777216,
@@ -251,8 +251,8 @@
       "heavyMetrics": {
         "raw": 120,
         "commands": 120,
-        "endToFinishMs": 11578,
-        "totalMs": 11626.400000000023,
+        "endToFinishMs": 11511.900000000023,
+        "totalMs": 11560.79999999993,
         "renders": 14,
         "metrics": {
           "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
@@ -268,7 +268,7 @@
           "frameIntervalP95Ms": null,
           "inputToSubmissionP95Ms": null,
           "cpuSubmitP95Ms": null,
-          "queueCompletionProxyMs": 2025.600000000035,
+          "queueCompletionProxyMs": 2013.9000000000233,
           "gpuExecutionMs": null,
           "historyGpuReservedBytes": 0,
           "historyGpuBudgetBytes": 16777216,
@@ -313,7 +313,7 @@
         "frameIntervalP95Ms": null,
         "inputToSubmissionP95Ms": null,
         "cpuSubmitP95Ms": null,
-        "queueCompletionProxyMs": 0.40000000002328306,
+        "queueCompletionProxyMs": 0.5999999999767169,
         "gpuExecutionMs": null,
         "historyGpuReservedBytes": 3145728,
         "historyGpuBudgetBytes": 16777216,
