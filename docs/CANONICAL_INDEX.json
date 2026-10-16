@@ -1914,6 +1914,42 @@
     {
       "path": "packages/brush-rt/test/pending-solid-pruning.test.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": ".github/workflows/perf-thin-stroke4000.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/THIN_STROKE_4000_2026-10-15.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/viewport-cache.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/thin-stroke-benchmark.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/thin-stroke-report.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/viewport-cache-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/preview-pressure-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/formal-resource-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/FORMAL_STROKE_RESOURCES_2026-10-16.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

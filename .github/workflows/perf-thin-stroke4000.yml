@@ -1,0 +1,235 @@
+name: Thin strokes 4000 canvas
+on:
+  push:
+    branches: ['perf/thin-stroke-4000-2026-10-15']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: thin-stroke-4000-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source integrity, color preservation, Core and unit regression
+        run: |
+          git diff --exit-code 45357428592c0366a90aa4ecac97a1ba72937fc8 -- apps/editor/src/color
+          npm run prep:check
+          npm run core:check
+          npm run brush:build > /tmp/brush-build.log
+          npx vitest run apps/editor/src
+          node --test packages/brush-rt/test/*.test.mjs > /tmp/brush-tests.log
+          node scripts/check-test-summary.mjs /tmp/brush-tests.log
+      - name: Build exact review app
+        env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Real browser color, gesture, persistence, export and prior features
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          M08_PERF_REVIEW: '1'
+          M05_EXPECT_MILESTONE: M07
+          M06_EXPECT_MILESTONE: M07
+          M08_CORRUPT_ALL_RENDER_CACHES: '1'
+        run: |
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-orbit-smoke.mjs
+          node scripts/editor-color-hit-smoke.mjs
+          node scripts/editor-gesture-cancel-smoke.mjs
+          node scripts/editor-m05-smoke.mjs
+          node scripts/editor-m06-smoke.mjs
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-home-smoke.mjs
+          node scripts/editor-works-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        with: {name: thin-build, path: apps/editor/dist/}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thin-regression
+          path: |
+            /tmp/*-evidence/
+            /tmp/illustro-m05/
+            /tmp/brush-tests.log
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run brush:build > /tmp/brush-build.log
+      - run: |
+          npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Prepare immutable formal-resource baseline
+        run: |
+          git worktree add --detach /tmp/handoff-before 417c02800332c73d491434e95b2efbb35068823c
+          cd /tmp/handoff-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/formal-before-build.log
+      - name: Four sizes, three layer counts, seven brushes, both GPUs, overlap and history
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/formal-resource-quality.mjs
+          node scripts/stroke-handoff-quality.mjs
+          HANDOFF_HEAVY_AREA=1 HANDOFF_QUALITY_OUTPUT=/tmp/handoff-quality/heavy/report.json node scripts/stroke-handoff-quality.mjs
+          VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
+          UNDO_QUALITY_CANVAS_SIZE=4000 UNDO_QUALITY_OUTPUT=/tmp/handoff-quality/navigation/report.json node scripts/undo-navigation-quality.mjs
+          MOBILE_QUALITY_OUTPUT=/tmp/handoff-quality/direct.json node scripts/mobile-composition-quality.mjs
+          MOBILE_INPUT_OUTPUT=/tmp/handoff-quality/input/report.json node scripts/mobile-input-smoke.mjs
+          MOBILE_HOME=1 MOBILE_INPUT_OUTPUT=/tmp/handoff-quality/home/report.json node scripts/mobile-input-smoke.mjs
+          VIEWPORT_QUALITY_OUTPUT=/tmp/handoff-quality/viewport/report.json node scripts/viewport-cache-quality.mjs
+          PRESSURE_QUALITY_OUTPUT=/tmp/handoff-quality/pressure/report.json node scripts/preview-pressure-quality.mjs
+          HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=12 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_PREVIEW_BUDGET_MIB=1 HANDOFF_STRESS_OUTPUT=/tmp/handoff-quality/pressure-input/report.json node scripts/stroke-handoff-stress.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: thin-quality, path: /tmp/handoff-quality/}
+  performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare immutable baseline
+        run: |
+          git worktree add --detach /tmp/handoff-before 417c02800332c73d491434e95b2efbb35068823c
+          cd /tmp/handoff-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/handoff-before-build.log
+          VITE_COMMIT_SHA=417c02800332c73d491434e95b2efbb35068823c npm --workspace @illustro/editor exec -- vite build --base=./
+      - run: |
+          npm run brush:build > /tmp/brush-build.log
+          VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Complete1100 short strokes with explicit admission pacing
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          HANDOFF_STRESS_ADMISSION=1 HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/stress/report.json node scripts/stroke-handoff-stress.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: thin-stress-checkpoint, path: /tmp/handoff-evidence/stress/}
+      - name: Complete100 long strokes with explicit admission pacing
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          HANDOFF_STRESS_ADMISSION=1 HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=100 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/long/report.json node scripts/stroke-handoff-stress.mjs
+      - name: Fixed offered200-stroke load with explicit capacity refusals
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          HANDOFF_STRESS_OVERLOAD=1 HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=200 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/overload/report.json node scripts/stroke-handoff-stress.mjs
+      - name: Balanced thin-stroke comparison, scaling and broad controls
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_OUTPUT=/tmp/handoff-evidence/comparison.json node scripts/thin-stroke-benchmark.mjs
+          THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=16 THIN_ROUNDS=1 THIN_SIZES=512x384,2048,3000 THIN_OUTPUT=/tmp/handoff-evidence/scaling.json node scripts/thin-stroke-benchmark.mjs
+          THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=1,16 THIN_POINT_INTERVAL_MS=0 THIN_INTER_STROKE_MS=0 THIN_OUTPUT=/tmp/handoff-evidence/burst.json node scripts/thin-stroke-benchmark.mjs
+          THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=256,512 THIN_ROUNDS=1 THIN_OUTPUT=/tmp/handoff-evidence/broad.json node scripts/thin-stroke-benchmark.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: thin-performance, path: /tmp/handoff-evidence/}
+  publish:
+    needs: [regression, quality, performance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/download-artifact@v4
+        with: {name: thin-build, path: review-build}
+      - uses: actions/download-artifact@v4
+        with: {name: thin-performance, path: review-evidence}
+      - uses: actions/download-artifact@v4
+        with: {name: thin-quality, path: review-evidence/quality}
+      - uses: actions/download-artifact@v4
+        with: {name: thin-regression, path: review-evidence/regression}
+      - name: Verify evidence and preserve every other QA page
+        env: {EXPECTED_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          node scripts/thin-stroke-report.mjs review-evidence
+          (cd site && find qa -type f ! -path 'qa/perf-thin-stroke4000/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
+          mkdir -p site/qa/perf-thin-stroke4000/app site/qa/perf-thin-stroke4000/evidence
+          node -e "const fs=require('fs'),p='site/qa/perf-thin-stroke4000/evidence/qa-status.json';if(fs.existsSync(p)&&JSON.parse(fs.readFileSync(p)).sourceCommit==='417c02800332c73d491434e95b2efbb35068823c'){const d='site/qa/perf-thin-stroke4000/evidence/prior-417';fs.mkdirSync(d,{recursive:true});fs.copyFileSync(p,d+'/qa-status.json');}"
+          cp -a review-build/. site/qa/perf-thin-stroke4000/app/
+          cp -a review-evidence/. site/qa/perf-thin-stroke4000/evidence/
+          printf '%s\n' '<!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro 4000px細い線の描画確認</title><script>location.replace("./app/"+location.search+location.hash)</script><a href="./app/">4000px細い線の描画確認ページを開く</a></html>' > site/qa/perf-thin-stroke4000/index.html
+          (cd site && find qa -type f ! -path 'qa/perf-thin-stroke4000/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after
+          diff -u /tmp/old-qa.before /tmp/old-qa.after
+      - name: Publish isolated QA only
+        working-directory: site
+        run: |
+          current=$(git ls-remote origin refs/heads/perf/thin-stroke-4000-2026-10-15 | cut -f1)
+          if [ "$current" != "$GITHUB_SHA" ]; then echo 'Newer source exists; preserving it.'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-thin-stroke4000
+          git diff --cached --quiet || git commit -m 'qa: publish isolated thin-stroke4000 review'
+          git push origin HEAD:gh-pages
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Wait for the exact source on public Pages
+        env:
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          PUBLIC_EVIDENCE_URL: https://totoro0419.github.io/illustro/qa/perf-thin-stroke4000/evidence/qa-status.json
+        run: |
+          ready=0
+          for i in $(seq 1 36); do
+            curl -fsSL "$PUBLIC_EVIDENCE_URL?build=$GITHUB_SHA" -o /tmp/public-handoff.json || true
+            if node -e "try{process.exit(JSON.parse(require('fs').readFileSync('/tmp/public-handoff.json')).sourceCommit===process.env.EXPECTED_COMMIT_SHA?0:1)}catch{process.exit(1)}"; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+      - name: Install public-verification browser
+        run: |
+          npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify real drawing, immediate history and fixed save on public build
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          HANDOFF_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-thin-stroke4000/app/
+          UNDO_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-thin-stroke4000/app/
+          UNDO_QUALITY_QUICK: '1'
+          UNDO_QUALITY_CANVAS_SIZE: '4000'
+          MOBILE_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-thin-stroke4000/app/
+          MOBILE_INPUT_OUTPUT: /tmp/handoff-public/mobile/report.json
+          UNDO_QUALITY_OUTPUT: /tmp/handoff-public/navigation/report.json
+          HANDOFF_OPERATIONS_OUTPUT: /tmp/handoff-public/report.json
+        run: |
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/undo-navigation-quality.mjs
+          node scripts/mobile-input-smoke.mjs
+          MOBILE_HOME=1 MOBILE_INPUT_OUTPUT=/tmp/handoff-public/home/report.json node scripts/mobile-input-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: thin-public-verification, path: /tmp/handoff-public/}
