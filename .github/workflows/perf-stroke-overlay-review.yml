@@ -1,0 +1,172 @@
+name: Stroke overlay review
+on:
+  push:
+    branches: ['perf/stroke-overlay-2026-10-16']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: stroke-overlay-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Canonical preservation, discovered tests and editor build
+        run: |
+          git diff --exit-code d9f52391bb2eeed4750e571262c8a089171d011e -- apps/editor/src/color packages/brush-rt/src/foundation.mjs packages/brush-rt/src/model.mjs packages/brush-rt/src/shaders.mjs packages/brush-rt/src/canonical.worker.mjs packages/core
+          npm run prep:check
+          npm run core:check
+          npm run brush:build > /tmp/brush-build.log
+          git diff --exit-code -- prototypes/brush-rt/dist/illustro-brush-rt.html
+          npx vitest run apps/editor/src
+          node --test packages/brush-rt/test/*.test.mjs > /tmp/brush-tests.log
+          node scripts/check-test-summary.mjs /tmp/brush-tests.log
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
+      - run: |
+          npm install --prefix /tmp/overlay-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/overlay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Brushes, views, history, save, Recovery, export, color and home
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          M08_PERF_REVIEW: '1'
+          M05_EXPECT_MILESTONE: M07
+          M06_EXPECT_MILESTONE: M07
+          M08_CORRUPT_ALL_RENDER_CACHES: '1'
+          MOBILE_HOME: '1'
+          MOBILE_INPUT_OUTPUT: /tmp/overlay-regression/mobile/report.json
+          UNDO_QUALITY_CANVAS_SIZE: '4000'
+          UNDO_QUALITY_OUTPUT: /tmp/overlay-regression/navigation/report.json
+        run: |
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-orbit-smoke.mjs
+          node scripts/editor-color-hit-smoke.mjs
+          node scripts/editor-gesture-cancel-smoke.mjs
+          node scripts/editor-m05-smoke.mjs
+          node scripts/editor-m06-smoke.mjs
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-home-smoke.mjs
+          node scripts/editor-works-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+          node scripts/mobile-input-smoke.mjs
+          node scripts/undo-navigation-quality.mjs
+      - uses: actions/upload-artifact@v4
+        with: {name: overlay-app, path: apps/editor/dist/}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: overlay-regression
+          path: |
+            /tmp/overlay-regression/
+            /tmp/*-evidence/
+            /tmp/illustro-m05/
+            /tmp/brush-tests.log
+  quality:
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [webgl2, webgpu]
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: |
+          npm run brush:build > /tmp/brush-build.log
+          git worktree add --detach /tmp/overlay-before d9f52391bb2eeed4750e571262c8a089171d011e
+          cd /tmp/overlay-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/overlay-before-build.log
+          VITE_COMMIT_SHA=d9f52391bb2eeed4750e571262c8a089171d011e npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/upload-artifact@v4
+        if: matrix.backend == 'webgl2'
+        with: {name: overlay-before-app, path: /tmp/overlay-before/apps/editor/dist/}
+      - run: |
+          npm install --prefix /tmp/overlay-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/overlay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Exact strict pixels and fit-view visual comparison
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          FORMAL_BEFORE_ROOT: /tmp/overlay-before/packages/brush-rt/dist
+          FORMAL_QUALITY_OUTPUT: /tmp/overlay-quality/formal/report.json
+          OVERLAY_BACKENDS: ${{ matrix.backend }}
+          OVERLAY_SIZES: '2000,4000,8000'
+          OVERLAY_LAYOUTS: 'phone,tablet'
+          OVERLAY_MODES: 'A,C'
+        run: |
+          node scripts/stroke-overlay-formal.mjs
+          node scripts/stroke-overlay-quality.mjs
+      - name: Existing strict pressure and presentation cache quality
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          HANDOFF_QUALITY_OUTPUT: /tmp/overlay-quality/strict/report.json
+          VIEWPORT_QUALITY_OUTPUT: /tmp/overlay-quality/viewport/report.json
+          PRESSURE_QUALITY_OUTPUT: /tmp/overlay-quality/pressure/report.json
+        run: |
+          node scripts/stroke-handoff-quality.mjs
+          node scripts/viewport-cache-quality.mjs
+          node scripts/preview-pressure-quality.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'overlay-quality-${{ matrix.backend }}', path: /tmp/overlay-quality/}
+  performance:
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [webgl2, webgpu]
+        size: ['512x384', '2000', '4000', '8000']
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: |
+          npm run brush:build > /tmp/brush-build.log
+          git worktree add --detach /tmp/overlay-before d9f52391bb2eeed4750e571262c8a089171d011e
+          cd /tmp/overlay-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/overlay-before-build.log
+      - run: |
+          npm install --prefix /tmp/overlay-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/overlay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Matched same-runner PR30 and stroke-only matrix
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          INSTANT_BACKENDS: ${{ matrix.backend }}
+          INSTANT_SIZES: ${{ matrix.size }}
+          INSTANT_OUTPUT: /tmp/overlay-performance/matrix.json
+        run: node scripts/stroke-overlay-benchmark.mjs
+      - name: Three balanced 4000px fit repetitions
+        if: matrix.size == '4000'
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          INSTANT_BACKENDS: ${{ matrix.backend }}
+          INSTANT_SIZES: '4000'
+          INSTANT_VIEWS: fit
+          INSTANT_KINDS: long
+          INSTANT_MODES: 'A,C'
+          INSTANT_ROUNDS: '3'
+          INSTANT_OUTPUT: /tmp/overlay-performance/paired.json
+        run: node scripts/stroke-overlay-benchmark.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'overlay-performance-${{ matrix.backend }}-${{ matrix.size }}', path: /tmp/overlay-performance/}

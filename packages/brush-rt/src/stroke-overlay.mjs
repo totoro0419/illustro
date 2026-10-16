@@ -56,7 +56,7 @@ export class StrokeOverlay{
  suspend(){this.suspended=true;this.ready=false;this.epoch++;}
  invalidate(){this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.fallback=false;this.suspended=false;this.ready=this.enabled&&!!this.view;if(this.view)this.plan=previewPlan(this.view,this.preferred??{},this.ratio);}
  clearRaster(){this.states.clear();this.footprints.clear();this.cells.clear();this.dirty.clear();this.allocatedBytes=0;this.sink.hide();}
- canUse(p,surfaceKey=this.backend.surfaceStack.at(-1)){return this.enabled&&this.ready&&!this.fallback&&this.plan?.visibleArea>0&&this.view[12]<.5&&this.view[14]<.5&&directOverlaySupported(p,surfaceKey,this.backend);}
+ canUse(p,surfaceKey=this.backend.surfaceStack.at(-1)){return this.enabled&&this.ready&&!this.fallback&&this.plan?.visibleArea>0&&this.view[12]<.5&&this.view[14]<.5&&(!this.backend.device||this.backend.viewportCache?.valid&&this.backend.viewportCache?.image)&&directOverlaySupported(p,surfaceKey,this.backend);}
  enqueue(state){if(!this.enabled||!this.view||this.suspended)return false;
   if(this.fallback&&!this.states.size&&!this.backend.previews.size)this.fallback=false;
   if(!this.canUse(state.preset,state.surfaceKey)){this.fallback=true;this.metrics.fallbacks++;return false;}
@@ -97,10 +97,22 @@ export class StrokeOverlay{
   // historical proxy base. It prevents transparent feedback double-painting
   // while the independently owned GPU canvas publishes its exact result.
   const x=Math.max(0,Math.floor(bounds[0]*plan.density)),y=Math.max(0,Math.floor(bounds[1]*plan.density)),w=Math.min(source.width-x,Math.ceil(bounds[2]*plan.density)-x),h=Math.min(source.height-y,Math.ceil(bounds[3]*plan.density)-y);if(w<=0||h<=0)return true;
-  const bitmap=await createImageBitmap(source,x,y,w,h);if(this.disposed||epoch!==this.epoch){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;for(const key of this.cells.keys())this.dirty.add(key);this.present(performance.now());return true;
+  const bitmap=await transitionSnapshot(this.backend,x,y,w,h);if(this.disposed||epoch!==this.epoch){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;for(const key of this.cells.keys())this.dirty.add(key);this.present(performance.now());return true;
  }
  closeGuards(){for(const g of this.guards)g.bitmap.close();this.guards=[];}
  fallbackPresented(submittedAt,epoch){if(epoch!==this.epoch)return;if(this.fallback){this.closeGuards();this.clearRaster();this.pending.clear();return;}if(this.guards.length){this.closeGuards();for(const key of this.cells.keys())this.dirty.add(key);this.schedulePresentation();}}
  summary(){return {scope:'CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured',kind:'stroke-only',transport:'2d',coupled:false,ready:this.ready,viewEpoch:this.epoch,generation:this.generation,...this.plan,polygon:undefined,pixels:this.sink.pixels,width:this.sink.element?.width??0,height:this.sink.element?.height??0,bytes:this.allocatedBytes+this.sink.pixels*4,byteBudget:MAX_BYTES,pendingStrokes:this.footprints.size,fallback:this.fallback,allocations:this.sink.allocations,...this.metrics,samples:this.measure?this.metrics.samples:[]};}
  destroy(){this.disposed=true;this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.sink.destroy();}
+}
+
+// WebGPU canvas textures are automatically expired after presentation. Read a
+// cropped region of the retained screen cache instead, once per handoff. Never
+// read the artwork or the whole viewport every input/frame.
+async function transitionSnapshot(b,x,y,w,h){
+ if(!b.device)return createImageBitmap(b.canvas,x,y,w,h);
+ const image=b.viewportCache?.valid&&b.viewportCache.image;if(!image)throw Error('Retained presentation unavailable');
+ const d=b.device,stride=Math.ceil(w*4/256)*256,buffer=d.createBuffer({size:stride*h,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+ try{const e=d.createCommandEncoder();e.copyTextureToBuffer({texture:image,origin:{x,y}},{buffer,bytesPerRow:stride},[w,h]);d.queue.submit([e.finish()]);await buffer.mapAsync(GPUMapMode.READ);const raw=new Uint8Array(buffer.getMappedRange()),data=new ImageData(w,h),bgra=b.format.startsWith('bgra');
+  for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const from=yy*stride+xx*4,to=(yy*w+xx)*4;data.data[to]=raw[from+(bgra?2:0)];data.data[to+1]=raw[from+1];data.data[to+2]=raw[from+(bgra?0:2)];data.data[to+3]=255;}buffer.unmap();return await createImageBitmap(data);
+ }finally{buffer.destroy();}
 }
