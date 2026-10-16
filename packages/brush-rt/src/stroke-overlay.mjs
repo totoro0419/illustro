@@ -42,7 +42,7 @@ export class StrokeSink{
   }this.element.style.display='block';
  }
  hide(){this.element.style.display='none';this.rect=null;this.element.width=1;this.element.height=1;}
- showGuard(plan,g){if(!this.guardElement){this.guardElement=document.createElement('canvas');this.guardElement.className='illustro-transition-guard';this.guardElement.setAttribute('aria-hidden','true');Object.assign(this.guardElement.style,{position:'absolute',pointerEvents:'none'});this.element.before(this.guardElement);}const e=this.guardElement;e.width=g.width;e.height=g.height;Object.assign(e.style,{display:'block',left:this.source.offsetLeft+'px',top:this.source.offsetTop+'px',transform:'translate('+g.x+'px,'+g.y+'px)',transformOrigin:'0 0',width:g.width/plan.density+'px',height:g.height/plan.density+'px',clipPath:'polygon('+plan.polygon.map(p=>(p.x-g.x)+'px '+(p.y-g.y)+'px').join(',')+')'});const z=getComputedStyle(this.source).zIndex;if(z!=='auto')e.style.zIndex=z;e.getContext('2d',{alpha:false}).drawImage(g.bitmap,0,0);}
+ showGuard(plan,g){if(!this.guardElement){this.guardElement=document.createElement('canvas');this.guardElement.className='illustro-transition-guard';this.guardElement.setAttribute('aria-hidden','true');Object.assign(this.guardElement.style,{position:'absolute',pointerEvents:'none'});this.element.before(this.guardElement);}const e=this.guardElement;e.width=g.width;e.height=g.height;Object.assign(e.style,{display:'block',left:this.source.offsetLeft+'px',top:this.source.offsetTop+'px',transform:'translate('+g.x+'px,'+g.y+'px) scale('+1/plan.density+')',transformOrigin:'0 0',width:g.width+'px',height:g.height+'px',clipPath:'polygon('+plan.polygon.map(p=>((p.x-g.x)*plan.density)+'px '+((p.y-g.y)*plan.density)+'px').join(',')+')'});const z=getComputedStyle(this.source).zIndex;if(z!=='auto')e.style.zIndex=z;e.getContext('2d',{alpha:false}).drawImage(g.bitmap,0,0);}
  hideGuard(){if(this.guardElement){this.guardElement.style.display='none';this.guardElement.width=1;this.guardElement.height=1;}}
  destroy(){this.element.remove();this.guardElement?.remove();}
  get pixels(){return this.rect?this.element.width*this.element.height:0;}
@@ -106,7 +106,7 @@ export class StrokeOverlay{
   // A cropped, full-DPR snapshot is a SHORT-LIVED transition guard, not a
   // historical proxy base. It prevents transparent feedback double-painting
   // while the independently owned GPU canvas publishes its exact result.
-  const x=Math.max(0,Math.floor(bounds[0]*plan.density)),y=Math.max(0,Math.floor(bounds[1]*plan.density)),w=Math.min(source.width-x,Math.ceil(bounds[2]*plan.density)-x),h=Math.min(source.height-y,Math.ceil(bounds[3]*plan.density)-y);if(w<=0||h<=0)return true;
+  const x=Math.max(0,Math.floor(Math.floor(bounds[0])*plan.density)),y=Math.max(0,Math.floor(Math.floor(bounds[1])*plan.density)),w=Math.min(source.width-x,Math.ceil(Math.ceil(bounds[2])*plan.density)-x),h=Math.min(source.height-y,Math.ceil(Math.ceil(bounds[3])*plan.density)-y);if(w<=0||h<=0)return true;
   const bitmap=await transitionSnapshot(this.backend,x,y,w,h);if(this.disposed||epoch!==this.epoch){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;this.sink.showGuard?.(plan,this.guards[0]);return true;
  }
  closeGuards(){for(const g of this.guards)g.bitmap.close();this.guards=[];this.sink.hideGuard?.();}

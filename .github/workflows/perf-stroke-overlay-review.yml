@@ -5,8 +5,24 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
+concurrency:
+  group: stroke-overlay-review-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
+  supersede:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stop superseded comparison runs on this review branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/perf-stroke-overlay-review.yml/runs?branch=perf%2Fstroke-overlay-2026-10-16&per_page=20" --jq ".workflow_runs[] | select(.id < $GITHUB_RUN_ID and (.status == \"in_progress\" or .status == \"queued\")) | .id" > /tmp/old-overlay-runs
+          while read -r obsolete_run; do
+            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$obsolete_run/cancel" || true
+          done < /tmp/old-overlay-runs
   regression:
+    needs: supersede
     runs-on: ubuntu-latest
     timeout-minutes: 80
     steps:
@@ -68,6 +84,7 @@ jobs:
             /tmp/illustro-m05/
             /tmp/brush-tests.log
   quality:
+    needs: supersede
     strategy:
       fail-fast: false
       matrix:
@@ -121,6 +138,7 @@ jobs:
         if: always()
         with: {name: 'overlay-quality-${{ matrix.backend }}', path: /tmp/overlay-quality/}
   performance:
+    needs: supersede
     strategy:
       fail-fast: false
       matrix:
@@ -168,6 +186,7 @@ jobs:
         if: always()
         with: {name: 'overlay-performance-${{ matrix.backend }}-${{ matrix.size }}', path: /tmp/overlay-performance/}
   profiles:
+    needs: supersede
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
@@ -186,6 +205,7 @@ jobs:
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
           OVERLAY_BACKENDS: webgl2
           OVERLAY_MODES: C
+          OVERLAY_PROFILE_COMPARE: '1'
           OVERLAY_BRUSHES: 'thin,broad,pencil,fine'
           OVERLAY_RATIOS: '1,0.5,0.25,0.125,0.0625,0.03125,0.015625,0.0078125'
           OVERLAY_QUALITY_OUTPUT: /tmp/overlay-profiles/report.json
@@ -195,6 +215,7 @@ jobs:
         with: {name: overlay-profiles, path: /tmp/overlay-profiles/}
 
   history:
+    needs: supersede
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
