@@ -1,0 +1,39 @@
+{
+  "sourceCommit": "1828947625dea1a16ec7532fd5275c4e0ccaec53",
+  "scope": "Canvas2D allocation/upload microbenchmark at identical grid and patches. CPU timings and explicit bitmap sizes only, not compositor/VRAM/physical drawing latency.",
+  "cases": [
+    {
+      "mode": "viewport",
+      "allocations": 1,
+      "contexts": 1,
+      "peakPixels": 2260440,
+      "bitmapBytes": 9041760,
+      "updatedPixels": 102400,
+      "cpuMs": 1.8999999999941792,
+      "cpuP95Ms": 0,
+      "hash": "b2cd1e46225a2e7d019bb59e2c5d6071d7ee0f65263cd0a41e336fc272ce94f5"
+    },
+    {
+      "mode": "cells",
+      "allocations": 30,
+      "contexts": 30,
+      "peakPixels": 30720,
+      "bitmapBytes": 122880,
+      "updatedPixels": 102400,
+      "cpuMs": 1.7000000000407454,
+      "cpuP95Ms": 0.10000000000582077,
+      "hash": "b2cd1e46225a2e7d019bb59e2c5d6071d7ee0f65263cd0a41e336fc272ce94f5"
+    },
+    {
+      "mode": "growing",
+      "allocations": 9,
+      "contexts": 1,
+      "peakPixels": 229376,
+      "bitmapBytes": 917504,
+      "updatedPixels": 215040,
+      "cpuMs": 3.3999999999650754,
+      "cpuP95Ms": 0.20000000001164153,
+      "hash": "b2cd1e46225a2e7d019bb59e2c5d6071d7ee0f65263cd0a41e336fc272ce94f5"
+    }
+  ]
+}

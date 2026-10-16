@@ -1,0 +1,61 @@
+{
+  "sourceCommit": "1828947625dea1a16ec7532fd5275c4e0ccaec53",
+  "scope": "Actual retained GPU scene RGBA, layer visibility/opacity and twelve pending overlays. No physical input/FPS claim.",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "preparationClean": true,
+      "preparationWallMs": 362.5999999999767,
+      "transparentLive": [
+        89,
+        0,
+        128,
+        217
+      ],
+      "eraseLive": [
+        178,
+        0,
+        0,
+        178
+      ],
+      "overlapLive": [
+        95,
+        0,
+        119,
+        214
+      ],
+      "normalHiddenUpperDirect": true,
+      "history": true,
+      "underlyingLayerOpacityUnchanged": true,
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "preparationClean": true,
+      "preparationWallMs": 281.6000000000058,
+      "transparentLive": [
+        89,
+        0,
+        128,
+        217
+      ],
+      "eraseLive": [
+        178,
+        0,
+        0,
+        178
+      ],
+      "overlapLive": [
+        95,
+        0,
+        119,
+        214
+      ],
+      "normalHiddenUpperDirect": true,
+      "history": true,
+      "underlyingLayerOpacityUnchanged": true,
+      "errors": []
+    }
+  ],
+  "errors": []
+}
