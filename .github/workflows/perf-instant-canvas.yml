@@ -133,7 +133,7 @@ jobs:
   performance:
     strategy:
       fail-fast: false
-      matrix: {backend: [webgl2, webgpu]}
+      matrix: {backend: [webgl2, webgpu], size: ['512x384', '2000', '4000', '8000']}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -156,13 +156,15 @@ jobs:
           RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
           INSTANT_BACKENDS: ${{ matrix.backend }}
+          INSTANT_SIZES: ${{ matrix.size }}
           INSTANT_RATIOS: '0.015625'
           INSTANT_OUTPUT: /tmp/instant-evidence/matrix.json
         run: node scripts/instant-canvas-benchmark.mjs
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: 'instant-matrix-${{ matrix.backend }}', path: /tmp/instant-evidence/matrix.json}
+        with: {name: 'instant-matrix-${{ matrix.backend }}-${{ matrix.size }}', path: /tmp/instant-evidence/matrix.json}
       - name: Three balanced matched 4000px repetitions
+        if: matrix.size == '4000'
         env:
           RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
@@ -175,7 +177,7 @@ jobs:
           INSTANT_OUTPUT: /tmp/instant-evidence/paired.json
         run: node scripts/instant-canvas-benchmark.mjs
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ always() && matrix.size == '4000' }}
         with: {name: 'instant-performance-${{ matrix.backend }}', path: /tmp/instant-evidence/}
   publish:
     needs: [regression, quality, performance]
@@ -198,6 +200,8 @@ jobs:
         with: {name: instant-performance-webgl2, path: review-evidence/webgl2}
       - uses: actions/download-artifact@v4
         with: {name: instant-performance-webgpu, path: review-evidence/webgpu}
+      - uses: actions/download-artifact@v4
+        with: {pattern: 'instant-matrix-*', path: review-evidence/matrix}
       - name: Validate exact-source evidence and preserve prior QA files
         env: {EXPECTED_COMMIT_SHA: '${{ github.sha }}'}
         run: |

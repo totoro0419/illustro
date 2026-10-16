@@ -92,8 +92,9 @@ export class ScreenProxy{
  }
  setSource(source,live=()=>[]){this.source=source;this.live=live;this.invalidate();}
  setEnabled(value){if(this.enabled===value)return;this.enabled=value;this.invalidate();}
- setView(view){this.view=Float64Array.from(view);if(this.displayView&&this.displayPlan)this.sink.reproject?.(this.displayView,this.view,this.displayPlan);this.thin=(this.preferredSize??16)*this.view[6]<2;this.invalidate(false,true);const epoch=this.epoch;this.rebuildTimer=setTimeout(()=>{if(epoch===this.epoch&&this.enabled&&!this.disposed&&this.view[12]<.5&&this.view[14]<.5){try{this.rebuild();}catch(error){this.fail(error);}}},40);}
- prepare(size){this.preferredSize=size;if(!this.ready||!this.enabled||!this.view||this.footprints.size||this.pending.size||this.finalizing)return;const thin=size*this.view[6]<2;if(thin!==this.thin){this.thin=thin;this.invalidate();}}
+ setView(view){this.view=Float64Array.from(view);if(this.displayView&&this.displayPlan)this.sink.reproject?.(this.displayView,this.view,this.displayPlan);this.baseScale=proxyPlan(this.view,this.ratio).scale;this.thin=this.needsThinRescue(this.preferredSize??16);this.invalidate(false,true);const epoch=this.epoch;this.rebuildTimer=setTimeout(()=>{if(epoch===this.epoch&&this.enabled&&!this.disposed&&this.view[12]<.5&&this.view[14]<.5){try{this.rebuild();}catch(error){this.fail(error);}}},40);}
+ needsThinRescue(size){return size*this.view[6]*this.baseScale<2;}
+ prepare(size){this.preferredSize=size;if(!this.ready||!this.enabled||!this.view||this.footprints.size||this.pending.size||this.finalizing)return;const thin=this.needsThinRescue(size);if(thin!==this.thin){this.thin=thin;this.invalidate();}}
  suspend(){this.epoch++;this.ready=false;this.commits=[];this.finalizing=false;}
  invalidate(rebuild=true,preserveDisplay=false){clearTimeout(this.rebuildTimer);this.suspend();this.states.clear();this.pending.clear();this.bases.clear();this.footprints.clear();this.folded.clear();this.dirty.clear();if(!preserveDisplay)this.sink.hide();if(rebuild&&this.enabled&&this.view&&this.view[12]<.5&&this.view[14]<.5){try{this.rebuild();}catch(error){this.fail(error);}}}
  configure(thin=false){this.plan=proxyPlan(this.view,this.ratio,thin,Math.min(MAX_PIXELS,Math.floor(MAX_BYTES/(Math.max(1,this.backend.surfaceStack.length)*4+64))));this.image=new ImageData(this.plan.width,this.plan.height);const n=this.plan.pixels;this.docX=new Float64Array(n);this.docY=new Float64Array(n);this.inside=new Uint8Array(n);
@@ -122,7 +123,7 @@ export class ScreenProxy{
  enqueue(state){if(!this.enabled||!this.view||this.view[12]>.5||this.view[14]>.5)return false;if(!proxySupported(state.preset)){this.metrics.fallbacks++;return false;}
   // Resolution is stable during a stroke. Thin rescue changes only disposable
   // display buffers and never rounds input/command coordinates.
-  const thin=state.preset.size*this.view?.[6]<2;if(thin&&!this.thin&&this.ready){this.thin=true;this.invalidate();}
+  const thin=this.needsThinRescue(state.preset.size);if(thin&&!this.thin&&this.ready){this.thin=true;this.invalidate();}
   if(this.pending.has(state.id))this.metrics.superseded++;this.pending.set(state.id,state);if(this.coupled)return this.canUse(state.preset);
   if(!this.scheduled){this.scheduled=true;queueMicrotask(()=>{this.scheduled=false;this.safeFlush();});}return this.canUse(state.preset);
  }

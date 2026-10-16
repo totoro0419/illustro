@@ -22,6 +22,10 @@ test('zoom outside screen is clipped and DPR never multiplies the budget without
 test('inverse mapping preserves floating input through rotation and both flips',()=>{
  const v=view(4000,1.1);v[10]=-1;v[11]=-1;v[8]=41.25;v[9]=-50.5;const q={x:1234.123456789,y:2345.987654321},s=toScreen(v,q.x,q.y),back=toDocument(v,s.x,s.y);assert.ok(Math.abs(back.x-q.x)<1e-9);assert.ok(Math.abs(back.y-q.y)<1e-9);
 });
+test('thin rescue measures brush width in proxy pixels, including DPR and ratio',()=>{
+ const {p}=setup(1/64),v=view(512,0,2);v[0]=2364;v[1]=1436;v[2]=1182;v[3]=718;v[5]=384;v[6]=1.7576041666666666;p.prepare(4);p.setView(v);p.invalidate();
+ assert.ok(4*v[6]>2,'CSS width alone would miss this case');assert.equal(p.thin,true);assert.equal(p.plan.effectiveRatio,1/8);assert.ok(4*v[6]*p.plan.scale>3);p.destroy();
+});
 test('erase removes layer alpha and reveals the lower color',()=>{
  const lower=[1,0,0,1],upper=[0,0,1,1],erased=composePixel(upper,[0,0,0,1],'erase');assert.equal(erased[3],0);assert.deepEqual(composePixel(lower,[0,0,0,0]),lower);assert.deepEqual(composePixel(lower,[0,0,1,1]),upper);
 });
