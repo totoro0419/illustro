@@ -1950,6 +1950,11 @@
     {
       "path": "docs/research/FORMAL_STROKE_RESOURCES_2026-10-16.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/INSTANT_CANVAS_2026-10-16.md",
+      "status": "EXPERIMENTAL",
+      "note": "Screen-area transient feedback, immutable A/B/C comparison and exact strict regression; physical user acceptance remains unverified."
     }
   ]
 }

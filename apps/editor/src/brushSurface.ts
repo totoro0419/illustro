@@ -33,7 +33,7 @@ export class BrushSurface{
     // Only then is it used; any failure in auto mode falls back to WebGL2.
     const backend:'auto'|'webgl2'|'webgpu'=this.backendOverride??(requested==='webgpu'||requested==='webgl2'?requested:'auto');
     try{
-      this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:false,strokeHandoff:true,historyGpuBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?64*1024*1024:32*1024*1024});
+      this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:false,strokeHandoff:true,instantPreview:new URLSearchParams(location.search).get('instant')==='legacy'?false:{ratio:Number(new URLSearchParams(location.search).get('proxyRatio'))||1/64,coupled:new URLSearchParams(location.search).get('instant')==='coupled',transport:new URLSearchParams(location.search).get('proxyTransport')||'2d'},historyGpuBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?64*1024*1024:32*1024*1024});
     }catch(error){
       const message=error instanceof Error?error.message:String(error);
       this._initializationError='GPU initialization failed: '+message;
@@ -48,7 +48,7 @@ export class BrushSurface{
     window.addEventListener('keydown',this.keyDown,{signal:this.abort.signal});
     window.addEventListener('keyup',this.keyUp,{signal:this.abort.signal});
     this.canvas.addEventListener('wheel',this.wheel,{signal:this.abort.signal,passive:false});
-    this.renderer.setSurfaceStack(this.surfaceKeys());this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.handoff=new StrokeHandoff(this.controller,(reservation,record,additional)=>this.publishStroke(reservation,record,additional));this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);
+    this.renderer.setSurfaceStack(this.surfaceKeys());this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.handoff=new StrokeHandoff(this.controller,(reservation,record,additional)=>this.publishStroke(reservation,record,additional));this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);(this.renderer as any).proxy?.prepare(this.preset.size);
     const options={signal:this.abort.signal};this.canvas.addEventListener('pointerdown',this.down,options);this.canvas.addEventListener('pointermove',this.move,options);this.canvas.addEventListener('pointerup',this.up,options);this.canvas.addEventListener('pointercancel',this.cancel,options);this.canvas.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
   private pointerLocation(e:PointerEvent|WheelEvent):Point{const r=this.canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
   private setBackingSize(exact?:{width:number;height:number}){if(!this.view)return;const r=this.canvas.getBoundingClientRect();if(r.width<=0||r.height<=0)return;
@@ -150,7 +150,7 @@ export class BrushSurface{
       rendererErrors:[...(this.renderer?.errors??[])].slice(-8),sessionErrors:[...(this.session?.errors??[])].slice(-8),
       committedStrokes:this.controller.committedStrokeCount,rawAccepted:this.session?.rawAccepted??0,
       completeFrames:this.presentedFrames,latestGpuMetrics:this.renderer?.completions.slice(-2),
-      fingerDrawing:this.fingerDrawing,previewPresent:false,previewVisible:false,previewContext:null,
+      fingerDrawing:this.fingerDrawing,previewPresent:!!(this.renderer as any)?.proxy,previewVisible:((this.renderer as any)?.proxy?.footprints.size??0)>0,previewContext:(this.renderer as any)?.proxy?.transport??null,
       browserPredictionSamples:this.session?.browserPredictions??0,
       canvasCss:{background:getComputedStyle(this.canvas).backgroundColor,opacity:getComputedStyle(this.canvas).opacity}
     };
@@ -262,7 +262,7 @@ export class BrushSurface{
     const originalFrame=renderer.frame;
     try{
       this.syncLayerStack();const operations=this.controller.document.operationsTo(),geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
-      const geometry=geometryIndex>=0,visibleOperations=geometry?operations.slice(geometryIndex+1):operations;
+      const geometry=geometryIndex>=0;((this.renderer as any).proxy)?.setEnabled(!geometry);const visibleOperations=geometry?operations.slice(geometryIndex+1):operations;
       const entries:Array<{operation:SemanticOperation;record:StrokeRecord;surfaceKey:string;keys:string[]}>=[];for(const operation of visibleOperations){
         if(operation.kind==='brush.stroke'){const record=validateRecord(operation.parameters.strokeRecord);this.restoredRecords.set(operation.parameters.strokeRecord as object,record);entries.push({operation,record,surfaceKey:this.surfaceForOperation(operation),keys:this.runtimeKeys(operation)});}
         else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
@@ -290,7 +290,7 @@ export class BrushSurface{
       complete=true;
     }finally{
       renderer.frame=originalFrame;if(held)renderer.backend?.setPresentationHeld?.(false);
-      if(complete)await renderer.backend?.presentCurrent?.();
+      if(complete){await renderer.backend?.presentCurrent?.();(this.renderer as any).proxy?.invalidate();}
       this._projectionRestoreMs=performance.now()-started;this.historySyncing=false;this.onStateChanged();
     }
   }
@@ -354,7 +354,7 @@ export class BrushSurface{
    }
    return null;
   }
-  select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];}}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024)this.preset.size=value;}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
+  select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset.size);}}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset.size);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024){this.preset.size=value;(this.renderer as any)?.proxy?.prepare(value);}}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
   setPerformanceEnabled(enabled:boolean){this.renderer?.setPerformanceEnabled(enabled);}
   handoffProbe(){return {renderer:this.renderer,session:this.session,controller:this.controller};}
   get performanceDiagnostics(){const r=this.renderer as any;return {...this.renderer?.performanceSummary(),handoff:{accepted:this.handoffAccepted,rejected:this.handoffRejected,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,protectionQueue:this.protectionQueueLength,fault:this.handoffFault,traces:this.traceHandoff?this.handoffTraces:[]},frameState:{lastFrameAt:this.lastFrameAt,disposed:this.disposed,pointer:this.pointer,finishing:this.finishing,historySyncing:this.historySyncing,inflight:r?.inflight,viewPending:r?.viewPending,cancellingStroke:!!r?.cancellingStroke,needsFrame:r?.needsFrame,jobs:r?.document.jobs.length,presentationHeld:r?.backend.presentationHeld,glFence:!!r?.backend.fence,pending:!!r?.backend.pending,errors:r?.errors,sessionErrors:this.session?.errors},checkpoint:{...this.checkpointMetrics},strokeReplayFallbacks:this.historyReplayFallbacks,fullDocumentRebuilds:this.session?.fullDocumentRebuilds??0,fullReplayStrokes:this.session?.fullReplayStrokes??0,cancelledStrokeCount:this.session?.cancelledStrokeCount??0,projectionRestoreMode:this._projectionRestoreMode};}
