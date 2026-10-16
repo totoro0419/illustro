@@ -152,7 +152,7 @@ jobs:
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: |
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_OUTPUT=/tmp/handoff-evidence/comparison.json node scripts/thin-stroke-benchmark.mjs
-          THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=16 THIN_ROUNDS=1 THIN_SIZES=512,2048,3000 THIN_OUTPUT=/tmp/handoff-evidence/scaling.json node scripts/thin-stroke-benchmark.mjs
+          THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=16 THIN_ROUNDS=1 THIN_SIZES=512x384,2048,3000 THIN_OUTPUT=/tmp/handoff-evidence/scaling.json node scripts/thin-stroke-benchmark.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=1,16 THIN_POINT_INTERVAL_MS=0 THIN_INTER_STROKE_MS=0 THIN_OUTPUT=/tmp/handoff-evidence/burst.json node scripts/thin-stroke-benchmark.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=256,512 THIN_ROUNDS=1 THIN_OUTPUT=/tmp/handoff-evidence/broad.json node scripts/thin-stroke-benchmark.mjs
       - uses: actions/upload-artifact@v4
