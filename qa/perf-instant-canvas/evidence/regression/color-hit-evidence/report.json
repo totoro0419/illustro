@@ -1,0 +1,5467 @@
+{
+  "commit": "d9f52391bb2eeed4750e571262c8a089171d011e",
+  "baseline": false,
+  "scope": "Color UI and trusted Chromium touch emulation; physical Android unverified",
+  "cases": [
+    {
+      "width": 390,
+      "dpr": 3,
+      "touch": true,
+      "hit": {
+        "bounds": {
+          "left": 79,
+          "top": 856.71875,
+          "width": 289,
+          "height": 144.5,
+          "viewport": [
+            390,
+            1100
+          ]
+        },
+        "count": 123,
+        "backOccluded": 15,
+        "backExposed": 40,
+        "misses": [],
+        "points": [
+          {
+            "angle": 0,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.98,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.02,
+            "alpha": 225,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.08,
+            "alpha": 225,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.08,
+            "alpha": 240,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.98,
+            "alpha": 244,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.5,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.02,
+            "alpha": 228,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.08,
+            "alpha": 228,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.92,
+            "alpha": 240,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.98,
+            "alpha": 240,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.5,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.08,
+            "alpha": 230,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 255,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 300,
+            "t": 0.02,
+            "alpha": 238,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.02,
+            "alpha": 245,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.02,
+            "alpha": 244,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.02,
+            "alpha": 242,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.98,
+            "alpha": 240,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "frontFace": true,
+            "x": 110,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 160,
+            "y": 134,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 210,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          }
+        ]
+      },
+      "sv": {
+        "checked": 625,
+        "misses": [],
+        "naturalSize": [
+          129,
+          129
+        ],
+        "rotation": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)"
+      },
+      "rotation": {
+        "h": 278,
+        "s": 100,
+        "v": 100,
+        "color": "#A200FF",
+        "gesture": "rotate"
+      },
+      "slide": {
+        "h": 46,
+        "s": 100,
+        "v": 100,
+        "color": "#FFC400",
+        "gesture": "slide"
+      },
+      "cross": {
+        "h": 319,
+        "s": 100,
+        "v": 100,
+        "color": "#FF00AE",
+        "gesture": "rotate"
+      },
+      "errors": []
+    },
+    {
+      "width": 600,
+      "dpr": 2,
+      "touch": true,
+      "hit": {
+        "bounds": {
+          "left": 175.5,
+          "top": 847.875,
+          "width": 306,
+          "height": 153,
+          "viewport": [
+            600,
+            1100
+          ]
+        },
+        "count": 123,
+        "backOccluded": 15,
+        "backExposed": 40,
+        "misses": [],
+        "points": [
+          {
+            "angle": 0,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.02,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.98,
+            "alpha": 237,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.08,
+            "alpha": 240,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.02,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.08,
+            "alpha": 211,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.5,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.92,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.98,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.02,
+            "alpha": 228,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.08,
+            "alpha": 228,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.5,
+            "alpha": 228,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.92,
+            "alpha": 224,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.98,
+            "alpha": 224,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.98,
+            "alpha": 226,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.02,
+            "alpha": 232,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.02,
+            "alpha": 246,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 255,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 300,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.02,
+            "alpha": 246,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.02,
+            "alpha": 223,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.08,
+            "alpha": 242,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.92,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.98,
+            "alpha": 243,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.5,
+            "alpha": 242,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.92,
+            "alpha": 225,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "frontFace": true,
+            "x": 110,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 160,
+            "y": 134,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 210,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          }
+        ]
+      },
+      "sv": {
+        "checked": 625,
+        "misses": [],
+        "naturalSize": [
+          136,
+          136
+        ],
+        "rotation": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)"
+      },
+      "rotation": {
+        "h": 278,
+        "s": 100,
+        "v": 100,
+        "color": "#A200FF",
+        "gesture": "rotate"
+      },
+      "slide": {
+        "h": 46,
+        "s": 100,
+        "v": 100,
+        "color": "#FFC400",
+        "gesture": "slide"
+      },
+      "cross": {
+        "h": 319,
+        "s": 100,
+        "v": 100,
+        "color": "#FF00AE",
+        "gesture": "rotate"
+      },
+      "errors": []
+    },
+    {
+      "width": 900,
+      "dpr": 2,
+      "touch": true,
+      "hit": {
+        "bounds": {
+          "left": 567.5,
+          "top": 587.875,
+          "width": 306,
+          "height": 153,
+          "viewport": [
+            900,
+            1100
+          ]
+        },
+        "count": 123,
+        "backOccluded": 15,
+        "backExposed": 40,
+        "misses": [],
+        "points": [
+          {
+            "angle": 0,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.02,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.98,
+            "alpha": 237,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.08,
+            "alpha": 240,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.02,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.08,
+            "alpha": 211,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.5,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.92,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.98,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.02,
+            "alpha": 228,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.08,
+            "alpha": 228,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.5,
+            "alpha": 228,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.92,
+            "alpha": 224,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.98,
+            "alpha": 224,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.98,
+            "alpha": 226,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.02,
+            "alpha": 232,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.02,
+            "alpha": 246,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 255,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 300,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.02,
+            "alpha": 246,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.02,
+            "alpha": 223,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.08,
+            "alpha": 242,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.92,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.98,
+            "alpha": 243,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.5,
+            "alpha": 242,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.92,
+            "alpha": 225,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "frontFace": true,
+            "x": 110,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 160,
+            "y": 134,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 210,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          }
+        ]
+      },
+      "sv": {
+        "checked": 625,
+        "misses": [],
+        "naturalSize": [
+          136,
+          136
+        ],
+        "rotation": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)"
+      },
+      "rotation": {
+        "h": 278,
+        "s": 100,
+        "v": 100,
+        "color": "#A200FF",
+        "gesture": "rotate"
+      },
+      "slide": {
+        "h": 46,
+        "s": 100,
+        "v": 100,
+        "color": "#FFC400",
+        "gesture": "slide"
+      },
+      "cross": {
+        "h": 319,
+        "s": 100,
+        "v": 100,
+        "color": "#FF00AE",
+        "gesture": "rotate"
+      },
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "dpr": 1,
+      "touch": false,
+      "hit": {
+        "bounds": {
+          "left": 1119,
+          "top": 580.515625,
+          "width": 299,
+          "height": 149.5,
+          "viewport": [
+            1440,
+            1000
+          ]
+        },
+        "count": 123,
+        "backOccluded": 15,
+        "backExposed": 40,
+        "misses": [],
+        "points": [
+          {
+            "angle": 0,
+            "t": 0.02,
+            "alpha": 202,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.08,
+            "alpha": 202,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.5,
+            "alpha": 202,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.92,
+            "alpha": 194,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.98,
+            "alpha": 207,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.5,
+            "alpha": 203,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.92,
+            "alpha": 204,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.5,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.92,
+            "alpha": 230,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.02,
+            "alpha": 202,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.08,
+            "alpha": 226,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.5,
+            "alpha": 199,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.92,
+            "alpha": 207,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.02,
+            "alpha": 171,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.92,
+            "alpha": 243,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.02,
+            "alpha": 168,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.08,
+            "alpha": 227,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.98,
+            "alpha": 235,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.02,
+            "alpha": 191,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.02,
+            "alpha": 190,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.98,
+            "alpha": 235,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.02,
+            "alpha": 190,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.08,
+            "alpha": 226,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.98,
+            "alpha": 212,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.02,
+            "alpha": 214,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.5,
+            "alpha": 226,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.08,
+            "alpha": 211,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.5,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.92,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.02,
+            "alpha": 218,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.08,
+            "alpha": 215,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.5,
+            "alpha": 216,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.92,
+            "alpha": 216,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.98,
+            "alpha": 231,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.02,
+            "alpha": 228,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.08,
+            "alpha": 228,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.5,
+            "alpha": 228,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.92,
+            "alpha": 224,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.98,
+            "alpha": 231,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.08,
+            "alpha": 203,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.5,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.92,
+            "alpha": 225,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.02,
+            "alpha": 232,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.98,
+            "alpha": 233,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.02,
+            "alpha": 210,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.08,
+            "alpha": 207,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.92,
+            "alpha": 203,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.98,
+            "alpha": 216,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.02,
+            "alpha": 233,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.92,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 255,
+            "t": 0.02,
+            "alpha": 144,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.5,
+            "alpha": 229,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.98,
+            "alpha": 193,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.02,
+            "alpha": 173,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.02,
+            "alpha": 181,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.98,
+            "alpha": 236,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 300,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.98,
+            "alpha": 233,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.02,
+            "alpha": 234,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.5,
+            "alpha": 241,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.92,
+            "alpha": 215,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.98,
+            "alpha": 192,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.5,
+            "alpha": 226,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.92,
+            "alpha": 227,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.5,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.92,
+            "alpha": 225,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.98,
+            "alpha": 214,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "frontFace": true,
+            "x": 110,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 160,
+            "y": 134,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 210,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          }
+        ]
+      },
+      "sv": {
+        "checked": 625,
+        "misses": [],
+        "naturalSize": [
+          133,
+          133
+        ],
+        "rotation": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)"
+      },
+      "rotation": {
+        "h": 278,
+        "s": 100,
+        "v": 100,
+        "color": "#A200FF",
+        "gesture": "rotate"
+      },
+      "slide": {
+        "h": 46,
+        "s": 100,
+        "v": 100,
+        "color": "#FFC400",
+        "gesture": "slide"
+      },
+      "cross": {
+        "h": 319,
+        "s": 100,
+        "v": 100,
+        "color": "#FF00AE",
+        "gesture": "rotate"
+      },
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "dpr": 3,
+      "touch": false,
+      "hit": {
+        "bounds": {
+          "left": 1119,
+          "top": 580.515625,
+          "width": 299,
+          "height": 149.5,
+          "viewport": [
+            1440,
+            1000
+          ]
+        },
+        "count": 123,
+        "backOccluded": 15,
+        "backExposed": 40,
+        "misses": [],
+        "points": [
+          {
+            "angle": 0,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 0,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.08,
+            "alpha": 229,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 15,
+            "t": 0.98,
+            "alpha": 244,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.02,
+            "alpha": 227,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 30,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.02,
+            "alpha": 232,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 45,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 60,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 75,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 90,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 105,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 120,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 135,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.08,
+            "alpha": 240,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 150,
+            "t": 0.98,
+            "alpha": 243,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.02,
+            "alpha": 242,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 165,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.02,
+            "alpha": 228,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.08,
+            "alpha": 228,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.5,
+            "alpha": 228,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.92,
+            "alpha": 224,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 180,
+            "t": 0.98,
+            "alpha": 224,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.02,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.5,
+            "alpha": 229,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.92,
+            "alpha": 240,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 195,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.5,
+            "alpha": 226,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 210,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 225,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.08,
+            "alpha": 231,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 240,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 255,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 255,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 270,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 285,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitPlane",
+            "coveredBySv": true
+          },
+          {
+            "angle": 300,
+            "t": 0.02,
+            "alpha": 238,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 300,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 315,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.08,
+            "alpha": 242,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 330,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.02,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.08,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.5,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.92,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "angle": 345,
+            "t": 0.98,
+            "alpha": 255,
+            "target": "colorOrbitTopArc",
+            "coveredBySv": false
+          },
+          {
+            "frontFace": true,
+            "x": 110,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 160,
+            "y": 134,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          },
+          {
+            "frontFace": true,
+            "x": 210,
+            "y": 130.91604592732025,
+            "alpha": 255,
+            "target": "colorOrbitFrontArc"
+          }
+        ]
+      },
+      "sv": {
+        "checked": 625,
+        "misses": [],
+        "naturalSize": [
+          133,
+          133
+        ],
+        "rotation": "matrix(0.707107, 0.707107, -0.707107, 0.707107, 0, 0)"
+      },
+      "rotation": {
+        "h": 278,
+        "s": 100,
+        "v": 100,
+        "color": "#A200FF",
+        "gesture": "rotate"
+      },
+      "slide": {
+        "h": 46,
+        "s": 100,
+        "v": 100,
+        "color": "#FFC400",
+        "gesture": "slide"
+      },
+      "cross": {
+        "h": 319,
+        "s": 100,
+        "v": 100,
+        "color": "#FF00AE",
+        "gesture": "rotate"
+      },
+      "errors": []
+    }
+  ],
+  "errors": [],
+  "activeCase": {
+    "width": 1440,
+    "dpr": 3,
+    "touch": false,
+    "hit": {
+      "bounds": {
+        "left": 1119,
+        "top": 580.515625,
+        "width": 299,
+        "height": 149.5,
+        "viewport": [
+          1440,
+          1000
+        ]
+      },
+      "count": 123,
+      "backOccluded": 15,
+      "backExposed": 40,
+      "misses": [],
+      "points": [
+        {
+          "angle": 0,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 0,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 0,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 0,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 0,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 15,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 15,
+          "t": 0.08,
+          "alpha": 229,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 15,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 15,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 15,
+          "t": 0.98,
+          "alpha": 244,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 30,
+          "t": 0.02,
+          "alpha": 227,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 30,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 30,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 30,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 30,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 45,
+          "t": 0.02,
+          "alpha": 232,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 45,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 45,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 45,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 45,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 60,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 60,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 60,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 60,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 60,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 75,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 75,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 75,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 75,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 75,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 90,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 90,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 90,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 90,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 90,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 105,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 105,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 105,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 105,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 105,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 120,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 120,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 120,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 120,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 120,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 135,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 135,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 135,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 135,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 135,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 150,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 150,
+          "t": 0.08,
+          "alpha": 240,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 150,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 150,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 150,
+          "t": 0.98,
+          "alpha": 243,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 165,
+          "t": 0.02,
+          "alpha": 242,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 165,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 165,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 165,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 165,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 180,
+          "t": 0.02,
+          "alpha": 228,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 180,
+          "t": 0.08,
+          "alpha": 228,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 180,
+          "t": 0.5,
+          "alpha": 228,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 180,
+          "t": 0.92,
+          "alpha": 224,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 180,
+          "t": 0.98,
+          "alpha": 224,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 195,
+          "t": 0.02,
+          "alpha": 229,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 195,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 195,
+          "t": 0.5,
+          "alpha": 229,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 195,
+          "t": 0.92,
+          "alpha": 240,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 195,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 210,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 210,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 210,
+          "t": 0.5,
+          "alpha": 226,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 210,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 210,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 225,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 225,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 225,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 225,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 225,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 240,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 240,
+          "t": 0.08,
+          "alpha": 231,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 240,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 240,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 240,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 255,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 255,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 255,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 255,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 255,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 270,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 270,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 270,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 270,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 270,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 285,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 285,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 285,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 285,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 285,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitPlane",
+          "coveredBySv": true
+        },
+        {
+          "angle": 300,
+          "t": 0.02,
+          "alpha": 238,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 300,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 300,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 300,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 300,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 315,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 315,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 315,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 315,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 315,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 330,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 330,
+          "t": 0.08,
+          "alpha": 242,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 330,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 330,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 330,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 345,
+          "t": 0.02,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 345,
+          "t": 0.08,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 345,
+          "t": 0.5,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 345,
+          "t": 0.92,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "angle": 345,
+          "t": 0.98,
+          "alpha": 255,
+          "target": "colorOrbitTopArc",
+          "coveredBySv": false
+        },
+        {
+          "frontFace": true,
+          "x": 110,
+          "y": 130.91604592732025,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc"
+        },
+        {
+          "frontFace": true,
+          "x": 160,
+          "y": 134,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc"
+        },
+        {
+          "frontFace": true,
+          "x": 210,
+          "y": 130.91604592732025,
+          "alpha": 255,
+          "target": "colorOrbitFrontArc"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,4136 @@
+{
+  "sourceCommit": "d9f52391bb2eeed4750e571262c8a089171d011e",
+  "baselineCommit": "aac68dc3afdd018ebed48d77af8fa160bb2cd05e",
+  "scope": "Matched Chromium/SwiftShader, 390x644 CSS DPR3; same actual sample counts and canonical algorithm. Upload/completion proxies, NOT physical screen latency or hardware FPS.",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 0,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2479.100000000035,
+      "inputMs": 1789.600000000035,
+      "settleMs": 689.5,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 8.5,
+          "inputToUpload": {
+            "count": 12,
+            "p50": 7.2999999999883585,
+            "p95": 20,
+            "max": 20
+          },
+          "updates": 12
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 75.5,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 27,
+            "p95": 71.60000000003492,
+            "max": 71.60000000003492
+          },
+          "updates": 3
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 172,
+          "inputToUpload": {
+            "count": 2,
+            "p50": 38.600000000034925,
+            "p95": 42.29999999998836,
+            "max": 42.29999999998836
+          },
+          "updates": 2
+        }
+      ],
+      "inputToUpload": {
+        "count": 17,
+        "p50": 11.5,
+        "p95": 71.60000000003492,
+        "max": 71.60000000003492
+      },
+      "updateInterval": {
+        "count": 16,
+        "p50": 48.699999999953434,
+        "p95": 312.70000000001164,
+        "max": 312.70000000001164
+      },
+      "uploadFps": 9.606724707295106,
+      "stallsOver50Ms": 7,
+      "longTasks": {
+        "count": 2,
+        "p50": 51,
+        "p95": 63,
+        "max": 63
+      },
+      "formalCompletionProxy": {
+        "count": 19,
+        "p50": 88.29999999998836,
+        "p95": 448.30000000004657,
+        "max": 448.30000000004657
+      },
+      "cpuSubmission": {
+        "count": 19,
+        "p50": 5.100000000034925,
+        "p95": 62.70000000001164,
+        "max": 62.70000000001164
+      },
+      "gpuSubmissions": 19,
+      "formalJobs": 236,
+      "formalCommands": 317,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 0,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2117.899999999965,
+      "inputMs": 1856.899999999965,
+      "settleMs": 261,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 6.2999999999883585,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 2.900000000023283,
+            "p95": 3.599999999976717,
+            "max": 4.2000000000116415
+          },
+          "updates": 31
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 289.3999999999651,
+          "inputToUpload": {
+            "count": 8,
+            "p50": 4.300000000046566,
+            "p95": 18.199999999953434,
+            "max": 18.199999999953434
+          },
+          "updates": 8
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 169.5,
+          "inputToUpload": {
+            "count": 17,
+            "p50": 3.2999999999883585,
+            "p95": 11.5,
+            "max": 11.5
+          },
+          "updates": 17
+        }
+      ],
+      "inputToUpload": {
+        "count": 56,
+        "p50": 3.099999999976717,
+        "p95": 11.5,
+        "max": 18.199999999953434
+      },
+      "updateInterval": {
+        "count": 55,
+        "p50": 16.699999999953434,
+        "p95": 187.5,
+        "max": 457.5
+      },
+      "uploadFps": 30.683403068340308,
+      "stallsOver50Ms": 4,
+      "longTasks": {
+        "count": 1,
+        "p50": 138,
+        "p95": 138,
+        "max": 138
+      },
+      "formalCompletionProxy": {
+        "count": 60,
+        "p50": 17.099999999976717,
+        "p95": 187.90000000002328,
+        "max": 464.29999999998836
+      },
+      "cpuSubmission": {
+        "count": 60,
+        "p50": 0.40000000002328306,
+        "p95": 32.09999999997672,
+        "max": 137.59999999997672
+      },
+      "gpuSubmissions": 60,
+      "formalJobs": 236,
+      "formalCommands": 316,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 65,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 65,
+        "updatedPixels": 56064,
+        "rasterPixels": 25588,
+        "commands": 547,
+        "superseded": 127,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 0,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2118.7999999999884,
+      "inputMs": 1859.2000000000116,
+      "settleMs": 259.5999999999767,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 10.5,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.30000000004656613,
+            "p95": 1.6000000000349246,
+            "max": 7.400000000023283
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 8.299999999988358,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.6000000000349246,
+            "p95": 1.6999999999534339,
+            "max": 7.400000000023283
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 1.599999999976717,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.5,
+            "p95": 0.9000000000232831,
+            "max": 1
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.5,
+        "p95": 1.2000000000116415,
+        "max": 7.400000000023283
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.299999999988358,
+        "p95": 10.600000000034925,
+        "max": 152.40000000002328
+      },
+      "uploadFps": 101.57950549757477,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 1,
+        "p50": 118,
+        "p95": 118,
+        "max": 118
+      },
+      "formalCompletionProxy": {
+        "count": 6,
+        "p50": 203.69999999995343,
+        "p95": 485.4000000000233,
+        "max": 485.4000000000233
+      },
+      "cpuSubmission": {
+        "count": 6,
+        "p50": 34.79999999998836,
+        "p95": 118.20000000001164,
+        "max": 118.20000000001164
+      },
+      "gpuSubmissions": 6,
+      "formalJobs": 236,
+      "formalCommands": 316,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 92928,
+        "rasterPixels": 25668,
+        "commands": 549,
+        "superseded": 0,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 1,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2097.7999999999884,
+      "inputMs": 1846,
+      "settleMs": 251.79999999998836,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 7,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.3999999999650754,
+            "p95": 1.599999999976717,
+            "max": 3.5
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 8.900000000023283,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.5999999999767169,
+            "p95": 2.2999999999883585,
+            "max": 8.099999999976717
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 1.400000000023283,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.5,
+            "p95": 0.8999999999650754,
+            "max": 1
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.5,
+        "p95": 1.6999999999534339,
+        "max": 8.099999999976717
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.200000000011642,
+        "p95": 10.700000000011642,
+        "max": 148.29999999998836
+      },
+      "uploadFps": 101.85807029325905,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 1,
+        "p50": 116,
+        "p95": 116,
+        "max": 116
+      },
+      "formalCompletionProxy": {
+        "count": 6,
+        "p50": 194.39999999996508,
+        "p95": 467.30000000004657,
+        "max": 467.30000000004657
+      },
+      "cpuSubmission": {
+        "count": 6,
+        "p50": 32.899999999965075,
+        "p95": 116,
+        "max": 116
+      },
+      "gpuSubmissions": 6,
+      "formalJobs": 236,
+      "formalCommands": 317,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 93184,
+        "rasterPixels": 25668,
+        "commands": 549,
+        "superseded": 0,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 1,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2085.7000000000116,
+      "inputMs": 1829.9000000000233,
+      "settleMs": 255.79999999998836,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 7.699999999953434,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 3.2000000000116415,
+            "p95": 4.800000000046566,
+            "max": 5.199999999953434
+          },
+          "updates": 31
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 257.69999999995343,
+          "inputToUpload": {
+            "count": 9,
+            "p50": 5.600000000034925,
+            "p95": 19.399999999965075,
+            "max": 19.399999999965075
+          },
+          "updates": 9
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 155.70000000001164,
+          "inputToUpload": {
+            "count": 18,
+            "p50": 3.7000000000116415,
+            "p95": 11.799999999988358,
+            "max": 11.799999999988358
+          },
+          "updates": 18
+        }
+      ],
+      "inputToUpload": {
+        "count": 58,
+        "p50": 3.599999999976717,
+        "p95": 11.799999999988358,
+        "max": 19.399999999965075
+      },
+      "updateInterval": {
+        "count": 57,
+        "p50": 16.600000000034925,
+        "p95": 186.5,
+        "max": 407.5
+      },
+      "uploadFps": 32.13077790304397,
+      "stallsOver50Ms": 4,
+      "longTasks": {
+        "count": 1,
+        "p50": 120,
+        "p95": 120,
+        "max": 120
+      },
+      "formalCompletionProxy": {
+        "count": 62,
+        "p50": 17,
+        "p95": 186.89999999996508,
+        "max": 414.5
+      },
+      "cpuSubmission": {
+        "count": 62,
+        "p50": 0.30000000004656613,
+        "p95": 31.5,
+        "max": 119.70000000001164
+      },
+      "gpuSubmissions": 62,
+      "formalJobs": 236,
+      "formalCommands": 316,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 67,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 67,
+        "updatedPixels": 57088,
+        "rasterPixels": 25588,
+        "commands": 547,
+        "superseded": 125,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 1,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2546.5,
+      "inputMs": 1913.7999999999884,
+      "settleMs": 632.7000000000116,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 55.70000000001164,
+          "inputToUpload": {
+            "count": 13,
+            "p50": 11,
+            "p95": 50.09999999997672,
+            "max": 50.09999999997672
+          },
+          "updates": 13
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 47.20000000001164,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 46.20000000001164,
+            "p95": 129.70000000001164,
+            "max": 129.70000000001164
+          },
+          "updates": 3
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 57.5,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 33.70000000001164,
+            "p95": 38.5,
+            "max": 38.5
+          },
+          "updates": 3
+        }
+      ],
+      "inputToUpload": {
+        "count": 19,
+        "p50": 14.5,
+        "p95": 129.70000000001164,
+        "max": 129.70000000001164
+      },
+      "updateInterval": {
+        "count": 18,
+        "p50": 46.699999999953434,
+        "p95": 316.9000000000233,
+        "max": 316.9000000000233
+      },
+      "uploadFps": 10.035122930255831,
+      "stallsOver50Ms": 9,
+      "longTasks": {
+        "count": 3,
+        "p50": 56,
+        "p95": 123,
+        "max": 123
+      },
+      "formalCompletionProxy": {
+        "count": 21,
+        "p50": 71.60000000003492,
+        "p95": 355.70000000001164,
+        "max": 408.1000000000349
+      },
+      "cpuSubmission": {
+        "count": 21,
+        "p50": 7.900000000023283,
+        "p95": 51.29999999998836,
+        "max": 122.20000000001164
+      },
+      "gpuSubmissions": 21,
+      "formalJobs": 236,
+      "formalCommands": 316,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 2,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2535.2000000000116,
+      "inputMs": 1939,
+      "settleMs": 596.2000000000116,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 58.399999999965075,
+          "inputToUpload": {
+            "count": 12,
+            "p50": 6.2000000000116415,
+            "p95": 55.79999999998836,
+            "max": 55.79999999998836
+          },
+          "updates": 12
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 262.20000000001164,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 8.900000000023283,
+            "p95": 13.100000000034925,
+            "max": 13.100000000034925
+          },
+          "updates": 3
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 67.79999999998836,
+          "inputToUpload": {
+            "count": 4,
+            "p50": 20.800000000046566,
+            "p95": 49.899999999965075,
+            "max": 49.899999999965075
+          },
+          "updates": 4
+        }
+      ],
+      "inputToUpload": {
+        "count": 19,
+        "p50": 8.900000000023283,
+        "p95": 55.79999999998836,
+        "max": 55.79999999998836
+      },
+      "updateInterval": {
+        "count": 18,
+        "p50": 50.5,
+        "p95": 487.5,
+        "max": 487.5
+      },
+      "uploadFps": 9.638038123795065,
+      "stallsOver50Ms": 10,
+      "longTasks": {
+        "count": 2,
+        "p50": 58,
+        "p95": 194,
+        "max": 194
+      },
+      "formalCompletionProxy": {
+        "count": 22,
+        "p50": 77.20000000001164,
+        "p95": 337.5,
+        "max": 457.70000000001164
+      },
+      "cpuSubmission": {
+        "count": 22,
+        "p50": 5.5,
+        "p95": 50.5,
+        "max": 194
+      },
+      "gpuSubmissions": 22,
+      "formalJobs": 236,
+      "formalCommands": 316,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 2,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2083,
+      "inputMs": 1821.7000000000116,
+      "settleMs": 261.29999999998836,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 8.5,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 3.400000000023283,
+            "p95": 5.900000000023283,
+            "max": 9.899999999965075
+          },
+          "updates": 31
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 257.69999999995343,
+          "inputToUpload": {
+            "count": 10,
+            "p50": 2.900000000023283,
+            "p95": 19.5,
+            "max": 19.5
+          },
+          "updates": 10
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 153.29999999998836,
+          "inputToUpload": {
+            "count": 17,
+            "p50": 4.599999999976717,
+            "p95": 11.900000000023283,
+            "max": 11.900000000023283
+          },
+          "updates": 17
+        }
+      ],
+      "inputToUpload": {
+        "count": 58,
+        "p50": 3.7000000000116415,
+        "p95": 9.899999999965075,
+        "max": 19.5
+      },
+      "updateInterval": {
+        "count": 57,
+        "p50": 16.70000000001164,
+        "p95": 176.5,
+        "max": 403.3999999999651
+      },
+      "uploadFps": 32.46938194246653,
+      "stallsOver50Ms": 4,
+      "longTasks": {
+        "count": 1,
+        "p50": 121,
+        "p95": 121,
+        "max": 121
+      },
+      "formalCompletionProxy": {
+        "count": 62,
+        "p50": 17,
+        "p95": 177,
+        "max": 415.5999999999767
+      },
+      "cpuSubmission": {
+        "count": 62,
+        "p50": 0.29999999998835847,
+        "p95": 30.400000000023283,
+        "max": 119.90000000002328
+      },
+      "gpuSubmissions": 62,
+      "formalJobs": 236,
+      "formalCommands": 316,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 67,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 67,
+        "updatedPixels": 57344,
+        "rasterPixels": 25652,
+        "commands": 548,
+        "superseded": 125,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "thin",
+      "kind": "long",
+      "round": 2,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 2082.9000000000233,
+      "inputMs": 1828.5,
+      "settleMs": 254.40000000002328,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 14.199999999953434,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.29999999998835847,
+            "p95": 1.099999999976717,
+            "max": 6.599999999976717
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 7.599999999976717,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.5999999999767169,
+            "p95": 1.2000000000116415,
+            "max": 6.5
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 1.7000000000116415,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.5,
+            "p95": 1,
+            "max": 1
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.5,
+        "p95": 1.099999999976717,
+        "max": 6.599999999976717
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.200000000011642,
+        "p95": 9.700000000011642,
+        "max": 148.40000000002328
+      },
+      "uploadFps": 103.28585210827785,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 1,
+        "p50": 118,
+        "p95": 118,
+        "max": 118
+      },
+      "formalCompletionProxy": {
+        "count": 6,
+        "p50": 190.09999999997672,
+        "p95": 488.29999999998836,
+        "max": 488.29999999998836
+      },
+      "cpuSubmission": {
+        "count": 6,
+        "p50": 33.09999999997672,
+        "p95": 117.90000000002328,
+        "max": 117.90000000002328
+      },
+      "gpuSubmissions": 6,
+      "formalJobs": 236,
+      "formalCommands": 317,
+      "formalAllocatedBytes": 15466496,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 92928,
+        "rasterPixels": 25668,
+        "commands": 549,
+        "superseded": 0,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 0,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 9250.099999999977,
+      "inputMs": 1892.899999999965,
+      "settleMs": 7357.200000000012,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 62.600000000034925,
+          "inputToUpload": {
+            "count": 2,
+            "p50": 60.90000000002328,
+            "p95": 71.29999999998836,
+            "max": 71.29999999998836
+          },
+          "updates": 2
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 340.79999999998836,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 189.79999999998836,
+            "p95": 189.79999999998836,
+            "max": 189.79999999998836
+          },
+          "updates": 1
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": null,
+          "inputToUpload": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "updates": 0
+        }
+      ],
+      "inputToUpload": {
+        "count": 3,
+        "p50": 71.29999999998836,
+        "p95": 189.79999999998836,
+        "max": 189.79999999998836
+      },
+      "updateInterval": {
+        "count": 2,
+        "p50": 278.29999999998836,
+        "p95": 653.5999999999767,
+        "max": 653.5999999999767
+      },
+      "uploadFps": 2.146153020710457,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 8,
+        "p50": 65,
+        "p95": 262,
+        "max": 262
+      },
+      "formalCompletionProxy": {
+        "count": 19,
+        "p50": 392.1000000000349,
+        "p95": 1934,
+        "max": 1934
+      },
+      "cpuSubmission": {
+        "count": 19,
+        "p50": 30.199999999953434,
+        "p95": 260.79999999998836,
+        "max": 260.79999999998836
+      },
+      "gpuSubmissions": 19,
+      "formalJobs": 968,
+      "formalCommands": 2534,
+      "formalAllocatedBytes": 63438848,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 0,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 5669.899999999965,
+      "inputMs": 2015.2999999999884,
+      "settleMs": 3654.5999999999767,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 11.400000000023283,
+          "inputToUpload": {
+            "count": 32,
+            "p50": 7.7000000000116415,
+            "p95": 8.200000000011642,
+            "max": 9.200000000011642
+          },
+          "updates": 32
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 111.5,
+          "inputToUpload": {
+            "count": 5,
+            "p50": 7.699999999953434,
+            "p95": 14.800000000046566,
+            "max": 14.800000000046566
+          },
+          "updates": 5
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 43,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 8.799999999988358,
+            "p95": 11.899999999965075,
+            "max": 11.899999999965075
+          },
+          "updates": 3
+        }
+      ],
+      "inputToUpload": {
+        "count": 40,
+        "p50": 7.7000000000116415,
+        "p95": 10.299999999988358,
+        "max": 14.800000000046566
+      },
+      "updateInterval": {
+        "count": 39,
+        "p50": 16.70000000001164,
+        "p95": 204.20000000001164,
+        "max": 251.10000000003492
+      },
+      "uploadFps": 21.150821628071338,
+      "stallsOver50Ms": 8,
+      "longTasks": {
+        "count": 5,
+        "p50": 65,
+        "p95": 103,
+        "max": 103
+      },
+      "formalCompletionProxy": {
+        "count": 53,
+        "p50": 17.20000000001164,
+        "p95": 416.8999999999651,
+        "max": 553.3999999999651
+      },
+      "cpuSubmission": {
+        "count": 53,
+        "p50": 0.40000000002328306,
+        "p95": 62.100000000034925,
+        "max": 101.89999999996508
+      },
+      "gpuSubmissions": 53,
+      "formalJobs": 968,
+      "formalCommands": 2536,
+      "formalAllocatedBytes": 63438848,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 49,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 99225,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 49,
+        "updatedPixels": 44448,
+        "rasterPixels": 90927,
+        "commands": 532,
+        "superseded": 143,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 0,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4964.800000000047,
+      "inputMs": 1834.3000000000466,
+      "settleMs": 3130.5,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 8.299999999988358,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.5,
+            "p95": 1.5,
+            "max": 3.599999999976717
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 6.399999999965075,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.8999999999650754,
+            "p95": 2.7999999999883585,
+            "max": 5.599999999976717
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 1.8000000000465661,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1,
+            "p95": 2.099999999976717,
+            "max": 4.900000000023283
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.8000000000465661,
+        "p95": 2.2999999999883585,
+        "max": 5.599999999976717
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.200000000011642,
+        "p95": 14.400000000023283,
+        "max": 106.70000000001164
+      },
+      "uploadFps": 101.60218835482677,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 3,
+        "p50": 67,
+        "p95": 83,
+        "max": 83
+      },
+      "formalCompletionProxy": {
+        "count": 32,
+        "p50": 82.79999999998836,
+        "p95": 468.79999999998836,
+        "max": 517
+      },
+      "cpuSubmission": {
+        "count": 32,
+        "p50": 10.600000000034925,
+        "p95": 67,
+        "max": 82.70000000001164
+      },
+      "gpuSubmissions": 32,
+      "formalJobs": 972,
+      "formalCommands": 2540,
+      "formalAllocatedBytes": 63700992,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 99225,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 138800,
+        "rasterPixels": 93995,
+        "commands": 549,
+        "superseded": 0,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 1,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4898.399999999965,
+      "inputMs": 1834.899999999965,
+      "settleMs": 3063.5,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 7.2999999999883585,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.5,
+            "p95": 1.099999999976717,
+            "max": 3.199999999953434
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 3.7999999999883585,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1,
+            "p95": 2.7000000000116415,
+            "max": 4.2000000000116415
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 1.8000000000465661,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1.2000000000116415,
+            "p95": 1.900000000023283,
+            "max": 5.599999999976717
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.9000000000232831,
+        "p95": 2.1000000000349246,
+        "max": 5.599999999976717
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.299999999988358,
+        "p95": 14.900000000023283,
+        "max": 110
+      },
+      "uploadFps": 101.48887525790178,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 5,
+        "p50": 56,
+        "p95": 80,
+        "max": 80
+      },
+      "formalCompletionProxy": {
+        "count": 29,
+        "p50": 89.90000000002328,
+        "p95": 582.7000000000116,
+        "max": 698.2000000000116
+      },
+      "cpuSubmission": {
+        "count": 29,
+        "p50": 10.700000000011642,
+        "p95": 65.60000000003492,
+        "max": 79.29999999998836
+      },
+      "gpuSubmissions": 29,
+      "formalJobs": 972,
+      "formalCommands": 2538,
+      "formalAllocatedBytes": 63700992,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 99225,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 139056,
+        "rasterPixels": 93995,
+        "commands": 549,
+        "superseded": 0,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 1,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 5785.299999999988,
+      "inputMs": 2047.2999999999884,
+      "settleMs": 3738,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 10.299999999988358,
+          "inputToUpload": {
+            "count": 32,
+            "p50": 3.5,
+            "p95": 6.800000000046566,
+            "max": 7.2999999999883585
+          },
+          "updates": 32
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 108.90000000002328,
+          "inputToUpload": {
+            "count": 5,
+            "p50": 10.799999999988358,
+            "p95": 15.199999999953434,
+            "max": 15.199999999953434
+          },
+          "updates": 5
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 47.399999999965075,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 4.900000000023283,
+            "p95": 10.099999999976717,
+            "max": 10.099999999976717
+          },
+          "updates": 3
+        }
+      ],
+      "inputToUpload": {
+        "count": 40,
+        "p50": 3.7000000000116415,
+        "p95": 10.799999999988358,
+        "max": 15.199999999953434
+      },
+      "updateInterval": {
+        "count": 39,
+        "p50": 16.70000000001164,
+        "p95": 219.89999999996508,
+        "max": 269.4000000000233
+      },
+      "uploadFps": 20.608750792644642,
+      "stallsOver50Ms": 8,
+      "longTasks": {
+        "count": 6,
+        "p50": 59,
+        "p95": 114,
+        "max": 114
+      },
+      "formalCompletionProxy": {
+        "count": 53,
+        "p50": 17.29999999998836,
+        "p95": 424.3999999999651,
+        "max": 547.1999999999534
+      },
+      "cpuSubmission": {
+        "count": 53,
+        "p50": 0.5,
+        "p95": 61.5,
+        "max": 112.79999999998836
+      },
+      "gpuSubmissions": 53,
+      "formalJobs": 968,
+      "formalCommands": 2534,
+      "formalAllocatedBytes": 63438848,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 49,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 99225,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 49,
+        "updatedPixels": 44704,
+        "rasterPixels": 91600,
+        "commands": 536,
+        "superseded": 143,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 1,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 9331.799999999988,
+      "inputMs": 1843.899999999965,
+      "settleMs": 7487.900000000023,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 61,
+          "inputToUpload": {
+            "count": 2,
+            "p50": 58.100000000034925,
+            "p95": 59.100000000034925,
+            "max": 59.100000000034925
+          },
+          "updates": 2
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 345.29999999998836,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 161.39999999996508,
+            "p95": 161.39999999996508,
+            "max": 161.39999999996508
+          },
+          "updates": 1
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": null,
+          "inputToUpload": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "updates": 0
+        }
+      ],
+      "inputToUpload": {
+        "count": 3,
+        "p50": 59.100000000034925,
+        "p95": 161.39999999996508,
+        "max": 161.39999999996508
+      },
+      "updateInterval": {
+        "count": 2,
+        "p50": 273.79999999998836,
+        "p95": 649.5999999999767,
+        "max": 649.5999999999767
+      },
+      "uploadFps": 2.1659085986572184,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 6,
+        "p50": 71,
+        "p95": 249,
+        "max": 249
+      },
+      "formalCompletionProxy": {
+        "count": 19,
+        "p50": 379.9000000000233,
+        "p95": 1930.2999999999884,
+        "max": 1930.2999999999884
+      },
+      "cpuSubmission": {
+        "count": 19,
+        "p50": 31.70000000001164,
+        "p95": 247.5,
+        "max": 247.5
+      },
+      "gpuSubmissions": 19,
+      "formalJobs": 968,
+      "formalCommands": 2534,
+      "formalAllocatedBytes": 63438848,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 2,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 9249.5,
+      "inputMs": 1857.0999999999767,
+      "settleMs": 7392.400000000023,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 61.399999999965075,
+          "inputToUpload": {
+            "count": 2,
+            "p50": 58.59999999997672,
+            "p95": 63.399999999965075,
+            "max": 63.399999999965075
+          },
+          "updates": 2
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 315.5999999999767,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 164.09999999997672,
+            "p95": 164.09999999997672,
+            "max": 164.09999999997672
+          },
+          "updates": 1
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": null,
+          "inputToUpload": {
+            "count": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "updates": 0
+        }
+      ],
+      "inputToUpload": {
+        "count": 3,
+        "p50": 63.399999999965075,
+        "p95": 164.09999999997672,
+        "max": 164.09999999997672
+      },
+      "updateInterval": {
+        "count": 2,
+        "p50": 272.29999999998836,
+        "p95": 628,
+        "max": 628
+      },
+      "uploadFps": 2.2214817283128134,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 7,
+        "p50": 72,
+        "p95": 269,
+        "max": 269
+      },
+      "formalCompletionProxy": {
+        "count": 19,
+        "p50": 378.70000000001164,
+        "p95": 1949.0999999999767,
+        "max": 1949.0999999999767
+      },
+      "cpuSubmission": {
+        "count": 19,
+        "p50": 30.29999999998836,
+        "p95": 266.5999999999767,
+        "max": 266.5999999999767
+      },
+      "gpuSubmissions": 19,
+      "formalJobs": 968,
+      "formalCommands": 2534,
+      "formalAllocatedBytes": 63438848,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 2,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 5683.699999999953,
+      "inputMs": 2029,
+      "settleMs": 3654.6999999999534,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 18.29999999998836,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 3.900000000023283,
+            "p95": 8,
+            "max": 9
+          },
+          "updates": 31
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 95.79999999998836,
+          "inputToUpload": {
+            "count": 5,
+            "p50": 8.5,
+            "p95": 10.399999999965075,
+            "max": 10.399999999965075
+          },
+          "updates": 5
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 20.100000000034925,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 11.099999999976717,
+            "p95": 11.5,
+            "max": 11.5
+          },
+          "updates": 3
+        }
+      ],
+      "inputToUpload": {
+        "count": 39,
+        "p50": 4.099999999976717,
+        "p95": 11.099999999976717,
+        "max": 11.5
+      },
+      "updateInterval": {
+        "count": 38,
+        "p50": 16.70000000001164,
+        "p95": 219.90000000002328,
+        "max": 254.89999999996508
+      },
+      "uploadFps": 20.728780274928955,
+      "stallsOver50Ms": 8,
+      "longTasks": {
+        "count": 8,
+        "p50": 55,
+        "p95": 103,
+        "max": 103
+      },
+      "formalCompletionProxy": {
+        "count": 52,
+        "p50": 17.29999999998836,
+        "p95": 428.29999999998836,
+        "max": 536.7000000000116
+      },
+      "cpuSubmission": {
+        "count": 52,
+        "p50": 0.40000000002328306,
+        "p95": 63.5,
+        "max": 101.70000000001164
+      },
+      "gpuSubmissions": 52,
+      "formalJobs": 968,
+      "formalCommands": 2534,
+      "formalAllocatedBytes": 63438848,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 48,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 99225,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 48,
+        "updatedPixels": 43968,
+        "rasterPixels": 89792,
+        "commands": 526,
+        "superseded": 144,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "broad",
+      "kind": "long",
+      "round": 2,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4932.599999999977,
+      "inputMs": 1859.0999999999767,
+      "settleMs": 3073.5,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 11.400000000023283,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.40000000002328306,
+            "p95": 1.400000000023283,
+            "max": 4.5
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 5.099999999976717,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.9000000000232831,
+            "p95": 3.2000000000116415,
+            "max": 4.2999999999883585
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 5.2999999999883585,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1.5,
+            "p95": 4.2000000000116415,
+            "max": 5
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.9000000000232831,
+        "p95": 3.5,
+        "max": 5
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.299999999988358,
+        "p95": 16.20000000001164,
+        "max": 115.89999999996508
+      },
+      "uploadFps": 100.35288928098937,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 5,
+        "p50": 56,
+        "p95": 75,
+        "max": 75
+      },
+      "formalCompletionProxy": {
+        "count": 29,
+        "p50": 89.5,
+        "p95": 591,
+        "max": 731.0999999999767
+      },
+      "cpuSubmission": {
+        "count": 29,
+        "p50": 11.100000000034925,
+        "p95": 74.29999999998836,
+        "max": 74.70000000001164
+      },
+      "gpuSubmissions": 29,
+      "formalJobs": 972,
+      "formalCommands": 2538,
+      "formalAllocatedBytes": 63700992,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 99225,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 140560,
+        "rasterPixels": 94037,
+        "commands": 549,
+        "superseded": 0,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 0,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4096.399999999965,
+      "inputMs": 1955.2999999999884,
+      "settleMs": 2141.0999999999767,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 105.29999999998836,
+          "inputToUpload": {
+            "count": 10,
+            "p50": 12.200000000011642,
+            "p95": 102.90000000002328,
+            "max": 102.90000000002328
+          },
+          "updates": 10
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 139.40000000002328,
+          "inputToUpload": {
+            "count": 2,
+            "p50": 52.70000000001164,
+            "p95": 113,
+            "max": 113
+          },
+          "updates": 2
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 183.5,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 43.100000000034925,
+            "p95": 43.100000000034925,
+            "max": 43.100000000034925
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 13,
+        "p50": 12.599999999976717,
+        "p95": 113,
+        "max": 113
+      },
+      "updateInterval": {
+        "count": 12,
+        "p50": 52,
+        "p95": 392.9000000000233,
+        "max": 392.9000000000233
+      },
+      "uploadFps": 8.108655990269485,
+      "stallsOver50Ms": 7,
+      "longTasks": {
+        "count": 4,
+        "p50": 64,
+        "p95": 110,
+        "max": 110
+      },
+      "formalCompletionProxy": {
+        "count": 19,
+        "p50": 116.60000000003492,
+        "p95": 762.9000000000233,
+        "max": 762.9000000000233
+      },
+      "cpuSubmission": {
+        "count": 19,
+        "p50": 9.799999999988358,
+        "p95": 110.20000000001164,
+        "max": 110.20000000001164
+      },
+      "gpuSubmissions": 19,
+      "formalJobs": 282,
+      "formalCommands": 420,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 0,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3500.9000000000233,
+      "inputMs": 1774.600000000035,
+      "settleMs": 1726.2999999999884,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 6.5,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 3.2999999999883585,
+            "p95": 4,
+            "max": 4.099999999976717
+          },
+          "updates": 31
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 524.5999999999767,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 14.299999999988358,
+            "p95": 14.299999999988358,
+            "max": 14.299999999988358
+          },
+          "updates": 1
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 322.0999999999767,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 8.899999999965075,
+            "p95": 8.899999999965075,
+            "max": 8.899999999965075
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 33,
+        "p50": 3.2999999999883585,
+        "p95": 8.899999999965075,
+        "max": 14.299999999988358
+      },
+      "updateInterval": {
+        "count": 32,
+        "p50": 16.599999999976717,
+        "p95": 379,
+        "max": 658.2999999999884
+      },
+      "uploadFps": 20.94240837696335,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 4,
+        "p50": 77,
+        "p95": 112,
+        "max": 112
+      },
+      "formalCompletionProxy": {
+        "count": 38,
+        "p50": 17.099999999976717,
+        "p95": 628.7000000000116,
+        "max": 683.2000000000116
+      },
+      "cpuSubmission": {
+        "count": 38,
+        "p50": 0.40000000002328306,
+        "p95": 101.60000000003492,
+        "max": 111.5
+      },
+      "gpuSubmissions": 38,
+      "formalJobs": 282,
+      "formalCommands": 420,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 42,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 42,
+        "updatedPixels": 42496,
+        "rasterPixels": 24432,
+        "commands": 387,
+        "superseded": 150,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 0,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3518.5999999999767,
+      "inputMs": 1730.7999999999884,
+      "settleMs": 1787.7999999999884,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 7.600000000034925,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.3999999999650754,
+            "p95": 1.6999999999534339,
+            "max": 4.2999999999883585
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 1.5,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.7999999999883585,
+            "p95": 1.1000000000349246,
+            "max": 4.2000000000116415
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 1.400000000023283,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.6000000000349246,
+            "p95": 1.099999999976717,
+            "max": 3.6000000000349246
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.5999999999767169,
+        "p95": 1.2999999999883585,
+        "max": 4.2999999999883585
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.299999999988358,
+        "p95": 10.099999999976717,
+        "max": 131.20000000001164
+      },
+      "uploadFps": 106.88905855406047,
+      "stallsOver50Ms": 1,
+      "longTasks": {
+        "count": 2,
+        "p50": 80,
+        "p95": 105,
+        "max": 105
+      },
+      "formalCompletionProxy": {
+        "count": 11,
+        "p50": 163.40000000002328,
+        "p95": 779.7999999999884,
+        "max": 779.7999999999884
+      },
+      "cpuSubmission": {
+        "count": 11,
+        "p50": 8.099999999976717,
+        "p95": 105.20000000001164,
+        "max": 105.20000000001164
+      },
+      "gpuSubmissions": 11,
+      "formalJobs": 282,
+      "formalCommands": 421,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 93696,
+        "rasterPixels": 33894,
+        "commands": 537,
+        "superseded": 0,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 1,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3484.2999999999884,
+      "inputMs": 1735,
+      "settleMs": 1749.2999999999884,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 11.400000000023283,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.40000000002328306,
+            "p95": 1.5,
+            "max": 9
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 2.5,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.7999999999883585,
+            "p95": 1.400000000023283,
+            "max": 2.099999999976717
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 1.099999999976717,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.7000000000116415,
+            "p95": 1.2999999999883585,
+            "max": 4.7000000000116415
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.6000000000349246,
+        "p95": 1.5,
+        "max": 9
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.299999999988358,
+        "p95": 10,
+        "max": 137.40000000002328
+      },
+      "uploadFps": 106.92045588062435,
+      "stallsOver50Ms": 1,
+      "longTasks": {
+        "count": 2,
+        "p50": 73,
+        "p95": 107,
+        "max": 107
+      },
+      "formalCompletionProxy": {
+        "count": 11,
+        "p50": 166,
+        "p95": 768,
+        "max": 768
+      },
+      "cpuSubmission": {
+        "count": 11,
+        "p50": 10.400000000023283,
+        "p95": 107.5,
+        "max": 107.5
+      },
+      "gpuSubmissions": 11,
+      "formalJobs": 282,
+      "formalCommands": 421,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 93696,
+        "rasterPixels": 33894,
+        "commands": 537,
+        "superseded": 0,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 1,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3482.7000000000116,
+      "inputMs": 1765.399999999965,
+      "settleMs": 1717.3000000000466,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 8.799999999988358,
+          "inputToUpload": {
+            "count": 32,
+            "p50": 7.7000000000116415,
+            "p95": 8.5,
+            "max": 8.5
+          },
+          "updates": 32
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 498.20000000001164,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 12.799999999988358,
+            "p95": 12.799999999988358,
+            "max": 12.799999999988358
+          },
+          "updates": 1
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 303.5999999999767,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 14.099999999976717,
+            "p95": 14.099999999976717,
+            "max": 14.099999999976717
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 34,
+        "p50": 7.7999999999883585,
+        "p95": 12.799999999988358,
+        "max": 14.099999999976717
+      },
+      "updateInterval": {
+        "count": 33,
+        "p50": 16.600000000034925,
+        "p95": 367.3999999999651,
+        "max": 621.7000000000116
+      },
+      "uploadFps": 22.103148024112524,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 3,
+        "p50": 86,
+        "p95": 103,
+        "max": 103
+      },
+      "formalCompletionProxy": {
+        "count": 39,
+        "p50": 17.099999999976717,
+        "p95": 602.2000000000116,
+        "max": 643.5
+      },
+      "cpuSubmission": {
+        "count": 39,
+        "p50": 0.30000000004656613,
+        "p95": 76.20000000001164,
+        "max": 103
+      },
+      "gpuSubmissions": 39,
+      "formalJobs": 282,
+      "formalCommands": 420,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 43,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 43,
+        "updatedPixels": 43520,
+        "rasterPixels": 24547,
+        "commands": 388,
+        "superseded": 149,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 1,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4099.200000000012,
+      "inputMs": 1944.5999999999767,
+      "settleMs": 2154.600000000035,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 96.59999999997672,
+          "inputToUpload": {
+            "count": 11,
+            "p50": 11.100000000034925,
+            "p95": 94.69999999995343,
+            "max": 94.69999999995343
+          },
+          "updates": 11
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 117.69999999995343,
+          "inputToUpload": {
+            "count": 2,
+            "p50": 46.79999999998836,
+            "p95": 108.69999999995343,
+            "max": 108.69999999995343
+          },
+          "updates": 2
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 174,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 41.600000000034925,
+            "p95": 41.600000000034925,
+            "max": 41.600000000034925
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 14,
+        "p50": 12,
+        "p95": 108.69999999995343,
+        "max": 108.69999999995343
+      },
+      "updateInterval": {
+        "count": 13,
+        "p50": 52.90000000002328,
+        "p95": 394.4000000000233,
+        "max": 394.4000000000233
+      },
+      "uploadFps": 8.85799945489213,
+      "stallsOver50Ms": 8,
+      "longTasks": {
+        "count": 5,
+        "p50": 94,
+        "p95": 104,
+        "max": 104
+      },
+      "formalCompletionProxy": {
+        "count": 19,
+        "p50": 115,
+        "p95": 809.9000000000233,
+        "max": 809.9000000000233
+      },
+      "cpuSubmission": {
+        "count": 19,
+        "p50": 7.099999999976717,
+        "p95": 103.5,
+        "max": 103.5
+      },
+      "gpuSubmissions": 19,
+      "formalJobs": 282,
+      "formalCommands": 420,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 2,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4168.199999999953,
+      "inputMs": 1989.399999999965,
+      "settleMs": 2178.7999999999884,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 112.90000000002328,
+          "inputToUpload": {
+            "count": 11,
+            "p50": 12.299999999988358,
+            "p95": 105.40000000002328,
+            "max": 105.40000000002328
+          },
+          "updates": 11
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 133.10000000003492,
+          "inputToUpload": {
+            "count": 2,
+            "p50": 44,
+            "p95": 122.20000000001164,
+            "max": 122.20000000001164
+          },
+          "updates": 2
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 215.20000000001164,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 44.79999999998836,
+            "p95": 44.79999999998836,
+            "max": 44.79999999998836
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 14,
+        "p50": 16.20000000001164,
+        "p95": 122.20000000001164,
+        "max": 122.20000000001164
+      },
+      "updateInterval": {
+        "count": 13,
+        "p50": 52.29999999998836,
+        "p95": 411.70000000001164,
+        "max": 411.70000000001164
+      },
+      "uploadFps": 8.544761403970224,
+      "stallsOver50Ms": 11,
+      "longTasks": {
+        "count": 5,
+        "p50": 72,
+        "p95": 114,
+        "max": 114
+      },
+      "formalCompletionProxy": {
+        "count": 19,
+        "p50": 118.59999999997672,
+        "p95": 772.2000000000116,
+        "max": 772.2000000000116
+      },
+      "cpuSubmission": {
+        "count": 19,
+        "p50": 8.100000000034925,
+        "p95": 114,
+        "max": 114
+      },
+      "gpuSubmissions": 19,
+      "formalJobs": 282,
+      "formalCommands": 421,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 2,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3516.2999999999884,
+      "inputMs": 1816.2000000000116,
+      "settleMs": 1700.0999999999767,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 11.700000000011642,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 7.7000000000116415,
+            "p95": 8.599999999976717,
+            "max": 8.899999999965075
+          },
+          "updates": 31
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 507.20000000001164,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 9.100000000034925,
+            "p95": 9.100000000034925,
+            "max": 9.100000000034925
+          },
+          "updates": 1
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 317.5,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 19.599999999976717,
+            "p95": 19.599999999976717,
+            "max": 19.599999999976717
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 33,
+        "p50": 7.7000000000116415,
+        "p95": 9.100000000034925,
+        "max": 19.599999999976717
+      },
+      "updateInterval": {
+        "count": 32,
+        "p50": 16.70000000001164,
+        "p95": 372.69999999995343,
+        "max": 638.6000000000349
+      },
+      "uploadFps": 21.117930442816768,
+      "stallsOver50Ms": 2,
+      "longTasks": {
+        "count": 5,
+        "p50": 61,
+        "p95": 108,
+        "max": 108
+      },
+      "formalCompletionProxy": {
+        "count": 38,
+        "p50": 17.100000000034925,
+        "p95": 595,
+        "max": 657.7999999999884
+      },
+      "cpuSubmission": {
+        "count": 38,
+        "p50": 0.30000000004656613,
+        "p95": 65.79999999998836,
+        "max": 108
+      },
+      "gpuSubmissions": 38,
+      "formalJobs": 282,
+      "formalCommands": 420,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 42,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 42,
+        "updatedPixels": 42240,
+        "rasterPixels": 24502,
+        "commands": 387,
+        "superseded": 150,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "pencil",
+      "kind": "long",
+      "round": 2,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3532.5999999999767,
+      "inputMs": 1753.399999999965,
+      "settleMs": 1779.2000000000116,
+      "byStroke": [
+        {
+          "id": 1,
+          "firstInputToUploadMs": 6.5,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.40000000002328306,
+            "p95": 1.5,
+            "max": 4.599999999976717
+          },
+          "updates": 61
+        },
+        {
+          "id": 10,
+          "firstInputToUploadMs": 1.599999999976717,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.7999999999883585,
+            "p95": 1.900000000023283,
+            "max": 3.7999999999883585
+          },
+          "updates": 61
+        },
+        {
+          "id": 19,
+          "firstInputToUploadMs": 2,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.7000000000116415,
+            "p95": 1.5,
+            "max": 3.099999999976717
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 0.5999999999767169,
+        "p95": 1.7999999999883585,
+        "max": 4.599999999976717
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.299999999988358,
+        "p95": 10.799999999988358,
+        "max": 137.29999999998836
+      },
+      "uploadFps": 105.75246949447995,
+      "stallsOver50Ms": 1,
+      "longTasks": {
+        "count": 2,
+        "p50": 104,
+        "p95": 111,
+        "max": 111
+      },
+      "formalCompletionProxy": {
+        "count": 11,
+        "p50": 167.69999999995343,
+        "p95": 795.7999999999884,
+        "max": 795.7999999999884
+      },
+      "cpuSubmission": {
+        "count": 11,
+        "p50": 8.599999999976717,
+        "p95": 110.79999999998836,
+        "max": 110.79999999998836
+      },
+      "gpuSubmissions": 11,
+      "formalJobs": 282,
+      "formalCommands": 420,
+      "formalAllocatedBytes": 73924608,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 3,
+        "generation": 192,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.125,
+        "density": 2,
+        "budget": 32400,
+        "width": 180,
+        "height": 180,
+        "pixels": 32400,
+        "scale": 0.49999998013178587,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 810000,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 192,
+        "updatedPixels": 93696,
+        "rasterPixels": 33894,
+        "commands": 537,
+        "superseded": 0,
+        "rebuilds": 1,
+        "fallbacks": 0,
+        "retirements": 3
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 0,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 6068,
+      "inputMs": 1805.100000000035,
+      "settleMs": 4262.899999999965,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 6.199999999953434,
+          "inputToUpload": {
+            "count": 4,
+            "p50": 9.799999999988358,
+            "p95": 22,
+            "max": 22
+          },
+          "updates": 4
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 334,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 69.40000000002328,
+            "p95": 69.40000000002328,
+            "max": 69.40000000002328
+          },
+          "updates": 1
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 316.5,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 97.79999999998836,
+            "p95": 97.79999999998836,
+            "max": 97.79999999998836
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 6,
+        "p50": 12,
+        "p95": 97.79999999998836,
+        "max": 97.79999999998836
+      },
+      "updateInterval": {
+        "count": 5,
+        "p50": 163.20000000001164,
+        "p95": 624,
+        "max": 624
+      },
+      "uploadFps": 3.33555703802535,
+      "stallsOver50Ms": 4,
+      "longTasks": {
+        "count": 5,
+        "p50": 77,
+        "p95": 90,
+        "max": 90
+      },
+      "formalCompletionProxy": {
+        "count": 17,
+        "p50": 366.20000000001164,
+        "p95": 924.5,
+        "max": 924.5
+      },
+      "cpuSubmission": {
+        "count": 17,
+        "p50": 25.099999999976717,
+        "p95": 87.39999999996508,
+        "max": 87.39999999996508
+      },
+      "gpuSubmissions": 17,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 0,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4299.099999999977,
+      "inputMs": 1803.2000000000116,
+      "settleMs": 2495.899999999965,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 6.5,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 3.7999999999883585,
+            "p95": 5.7999999999883585,
+            "max": 9.599999999976717
+          },
+          "updates": 31
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 68,
+          "inputToUpload": {
+            "count": 5,
+            "p50": 6.2000000000116415,
+            "p95": 13.399999999965075,
+            "max": 13.399999999965075
+          },
+          "updates": 5
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 126.29999999998836,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 10.5,
+            "p95": 10.899999999965075,
+            "max": 10.899999999965075
+          },
+          "updates": 3
+        }
+      ],
+      "inputToUpload": {
+        "count": 39,
+        "p50": 4,
+        "p95": 10.899999999965075,
+        "max": 13.399999999965075
+      },
+      "updateInterval": {
+        "count": 38,
+        "p50": 16.70000000001164,
+        "p95": 198.20000000001164,
+        "max": 203.59999999997672
+      },
+      "uploadFps": 21.978021978021978,
+      "stallsOver50Ms": 8,
+      "longTasks": {
+        "count": 1,
+        "p50": 60,
+        "p95": 60,
+        "max": 60
+      },
+      "formalCompletionProxy": {
+        "count": 48,
+        "p50": 17.29999999998836,
+        "p95": 441.3999999999651,
+        "max": 490.3999999999651
+      },
+      "cpuSubmission": {
+        "count": 48,
+        "p50": 0.3999999999650754,
+        "p95": 40.699999999953434,
+        "max": 55.70000000001164
+      },
+      "gpuSubmissions": 48,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 54,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 115101,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 54,
+        "updatedPixels": 37920,
+        "rasterPixels": 41738,
+        "commands": 398,
+        "superseded": 160,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 5
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 0,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3753.4000000000233,
+      "inputMs": 1651.9000000000233,
+      "settleMs": 2101.5,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 2.300000000046566,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.7999999999883585,
+            "p95": 1.6000000000349246,
+            "max": 2
+          },
+          "updates": 61
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 1.2999999999883585,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1.099999999976717,
+            "p95": 2.400000000023283,
+            "max": 4.699999999953434
+          },
+          "updates": 61
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 1.7000000000116415,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1.2999999999883585,
+            "p95": 4.900000000023283,
+            "max": 6.2000000000116415
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 1.099999999976717,
+        "p95": 2.5,
+        "max": 6.2000000000116415
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.299999999988358,
+        "p95": 10.099999999976717,
+        "max": 51.79999999998836
+      },
+      "uploadFps": 112.24175146469318,
+      "stallsOver50Ms": 1,
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "formalCompletionProxy": {
+        "count": 25,
+        "p50": 44.09999999997672,
+        "p95": 422.8999999999651,
+        "max": 446.0999999999767
+      },
+      "cpuSubmission": {
+        "count": 25,
+        "p50": 5.7999999999883585,
+        "p95": 39.20000000001164,
+        "max": 39.399999999965075
+      },
+      "gpuSubmissions": 25,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 195,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 115101,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 195,
+        "updatedPixels": 102144,
+        "rasterPixels": 41738,
+        "commands": 398,
+        "superseded": 16,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 5
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 1,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3736.2999999999884,
+      "inputMs": 1640.600000000035,
+      "settleMs": 2095.6999999999534,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 5.099999999976717,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.8999999999650754,
+            "p95": 2.1000000000349246,
+            "max": 4.400000000023283
+          },
+          "updates": 61
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 1.2999999999883585,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1,
+            "p95": 2.3999999999650754,
+            "max": 3.099999999976717
+          },
+          "updates": 61
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 1.7000000000116415,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1.2000000000116415,
+            "p95": 5.399999999965075,
+            "max": 6.2000000000116415
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 1.1000000000349246,
+        "p95": 2.5,
+        "max": 6.2000000000116415
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.299999999988358,
+        "p95": 10.199999999953434,
+        "max": 44.79999999998836
+      },
+      "uploadFps": 113.18407960199005,
+      "stallsOver50Ms": 0,
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "formalCompletionProxy": {
+        "count": 25,
+        "p50": 39.40000000002328,
+        "p95": 417.6000000000349,
+        "max": 426.20000000001164
+      },
+      "cpuSubmission": {
+        "count": 25,
+        "p50": 6,
+        "p95": 34.20000000001164,
+        "max": 41.5
+      },
+      "gpuSubmissions": 25,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 195,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 115101,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 195,
+        "updatedPixels": 102144,
+        "rasterPixels": 41738,
+        "commands": 398,
+        "superseded": 16,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 5
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 1,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4304.200000000012,
+      "inputMs": 1814.7000000000116,
+      "settleMs": 2489.5,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 5.7000000000116415,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 7.7999999999883585,
+            "p95": 8.400000000023283,
+            "max": 8.600000000034925
+          },
+          "updates": 31
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 70.20000000001164,
+          "inputToUpload": {
+            "count": 5,
+            "p50": 11.5,
+            "p95": 12.399999999965075,
+            "max": 12.399999999965075
+          },
+          "updates": 5
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 111.39999999996508,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 10.699999999953434,
+            "p95": 11.899999999965075,
+            "max": 11.899999999965075
+          },
+          "updates": 3
+        }
+      ],
+      "inputToUpload": {
+        "count": 39,
+        "p50": 7.7999999999883585,
+        "p95": 11.899999999965075,
+        "max": 12.399999999965075
+      },
+      "updateInterval": {
+        "count": 38,
+        "p50": 16.70000000001164,
+        "p95": 190.70000000001164,
+        "max": 217.79999999998836
+      },
+      "uploadFps": 21.92602850383735,
+      "stallsOver50Ms": 8,
+      "longTasks": {
+        "count": 2,
+        "p50": 57,
+        "p95": 62,
+        "max": 62
+      },
+      "formalCompletionProxy": {
+        "count": 48,
+        "p50": 17.20000000001164,
+        "p95": 445.69999999995343,
+        "max": 488
+      },
+      "cpuSubmission": {
+        "count": 48,
+        "p50": 0.3999999999650754,
+        "p95": 40.20000000001164,
+        "max": 54.699999999953434
+      },
+      "gpuSubmissions": 48,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 54,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 115101,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 54,
+        "updatedPixels": 37664,
+        "rasterPixels": 41786,
+        "commands": 398,
+        "superseded": 160,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 5
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 1,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 6270.900000000023,
+      "inputMs": 1741.600000000035,
+      "settleMs": 4529.299999999988,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 3.2999999999883585,
+          "inputToUpload": {
+            "count": 5,
+            "p50": 12.299999999988358,
+            "p95": 32.29999999998836,
+            "max": 32.29999999998836
+          },
+          "updates": 5
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 305.4000000000233,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 68.5,
+            "p95": 68.5,
+            "max": 68.5
+          },
+          "updates": 1
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 190.59999999997672,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 73.59999999997672,
+            "p95": 73.59999999997672,
+            "max": 73.59999999997672
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 7,
+        "p50": 27.800000000046566,
+        "p95": 73.59999999997672,
+        "max": 73.59999999997672
+      },
+      "updateInterval": {
+        "count": 6,
+        "p50": 163,
+        "p95": 470.8999999999651,
+        "max": 470.8999999999651
+      },
+      "uploadFps": 4.459640255686157,
+      "stallsOver50Ms": 6,
+      "longTasks": {
+        "count": 3,
+        "p50": 65,
+        "p95": 91,
+        "max": 91
+      },
+      "formalCompletionProxy": {
+        "count": 18,
+        "p50": 348.8999999999651,
+        "p95": 837.5,
+        "max": 837.5
+      },
+      "cpuSubmission": {
+        "count": 18,
+        "p50": 26,
+        "p95": 89.79999999998836,
+        "max": 89.79999999998836
+      },
+      "gpuSubmissions": 18,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 2,
+      "mode": "A",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 6101.299999999988,
+      "inputMs": 1801.9000000000233,
+      "settleMs": 4299.399999999965,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 4,
+          "inputToUpload": {
+            "count": 4,
+            "p50": 10.799999999988358,
+            "p95": 23.899999999965075,
+            "max": 23.899999999965075
+          },
+          "updates": 4
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 346.70000000001164,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 75.90000000002328,
+            "p95": 75.90000000002328,
+            "max": 75.90000000002328
+          },
+          "updates": 1
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 305.70000000001164,
+          "inputToUpload": {
+            "count": 1,
+            "p50": 89.10000000003492,
+            "p95": 89.10000000003492,
+            "max": 89.10000000003492
+          },
+          "updates": 1
+        }
+      ],
+      "inputToUpload": {
+        "count": 6,
+        "p50": 11.799999999988358,
+        "p95": 89.10000000003492,
+        "max": 89.10000000003492
+      },
+      "updateInterval": {
+        "count": 5,
+        "p50": 163.39999999996508,
+        "p95": 631.3000000000466,
+        "max": 631.3000000000466
+      },
+      "uploadFps": 3.3360021350413924,
+      "stallsOver50Ms": 5,
+      "longTasks": {
+        "count": 5,
+        "p50": 70,
+        "p95": 86,
+        "max": 86
+      },
+      "formalCompletionProxy": {
+        "count": 17,
+        "p50": 366.1000000000349,
+        "p95": 925,
+        "max": 925
+      },
+      "cpuSubmission": {
+        "count": 17,
+        "p50": 28.900000000023283,
+        "p95": 85.90000000002328,
+        "max": 85.90000000002328
+      },
+      "gpuSubmissions": 17,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": null,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 2,
+      "mode": "B",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 4300.400000000023,
+      "inputMs": 1796.2000000000116,
+      "settleMs": 2504.2000000000116,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 5.600000000034925,
+          "inputToUpload": {
+            "count": 31,
+            "p50": 8.099999999976717,
+            "p95": 8.600000000034925,
+            "max": 8.700000000011642
+          },
+          "updates": 31
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 70.69999999995343,
+          "inputToUpload": {
+            "count": 5,
+            "p50": 8.700000000011642,
+            "p95": 10,
+            "max": 10
+          },
+          "updates": 5
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 121.30000000004657,
+          "inputToUpload": {
+            "count": 3,
+            "p50": 8.200000000011642,
+            "p95": 8.599999999976717,
+            "max": 8.599999999976717
+          },
+          "updates": 3
+        }
+      ],
+      "inputToUpload": {
+        "count": 39,
+        "p50": 8.099999999976717,
+        "p95": 8.700000000011642,
+        "max": 10
+      },
+      "updateInterval": {
+        "count": 38,
+        "p50": 16.70000000001164,
+        "p95": 194,
+        "max": 218.19999999995343
+      },
+      "uploadFps": 21.937420621175235,
+      "stallsOver50Ms": 8,
+      "longTasks": {
+        "count": 2,
+        "p50": 57,
+        "p95": 64,
+        "max": 64
+      },
+      "formalCompletionProxy": {
+        "count": 48,
+        "p50": 17.199999999953434,
+        "p95": 440.3999999999651,
+        "max": 494.4000000000233
+      },
+      "cpuSubmission": {
+        "count": 48,
+        "p50": 0.29999999998835847,
+        "p95": 47.399999999965075,
+        "max": 63.79999999998836
+      },
+      "gpuSubmissions": 48,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": true,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 53,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 115101,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 53,
+        "updatedPixels": 37424,
+        "rasterPixels": 41786,
+        "commands": 398,
+        "superseded": 160,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 5
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "view": "fit",
+      "brush": "eraser",
+      "kind": "long",
+      "round": 2,
+      "mode": "C",
+      "ratio": 0.015625,
+      "transport": "2d",
+      "rawAccepted": 183,
+      "records": 3,
+      "elapsedMs": 3869.9000000000233,
+      "inputMs": 1618.1999999999534,
+      "settleMs": 2251.70000000007,
+      "byStroke": [
+        {
+          "id": 19,
+          "firstInputToUploadMs": 4.400000000023283,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 0.8999999999068677,
+            "p95": 2.199999999953434,
+            "max": 3.699999999953434
+          },
+          "updates": 61
+        },
+        {
+          "id": 28,
+          "firstInputToUploadMs": 1.3000000000465661,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1.099999999976717,
+            "p95": 2.299999999930151,
+            "max": 3.900000000023283
+          },
+          "updates": 61
+        },
+        {
+          "id": 37,
+          "firstInputToUploadMs": 1.6999999999534339,
+          "inputToUpload": {
+            "count": 61,
+            "p50": 1.2000000000698492,
+            "p95": 2.5,
+            "max": 4.900000000023283
+          },
+          "updates": 61
+        }
+      ],
+      "inputToUpload": {
+        "count": 183,
+        "p50": 1.099999999976717,
+        "p95": 2.5,
+        "max": 4.900000000023283
+      },
+      "updateInterval": {
+        "count": 182,
+        "p50": 8.300000000046566,
+        "p95": 10,
+        "max": 46.300000000046566
+      },
+      "uploadFps": 114.221162294463,
+      "stallsOver50Ms": 0,
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "formalCompletionProxy": {
+        "count": 33,
+        "p50": 53,
+        "p95": 351.89999999990687,
+        "max": 413.69999999995343
+      },
+      "cpuSubmission": {
+        "count": 33,
+        "p50": 5.299999999930151,
+        "p95": 35.39999999990687,
+        "max": 47.800000000046566
+      },
+      "gpuSubmissions": 33,
+      "formalJobs": 684,
+      "formalCommands": 2003,
+      "formalAllocatedBytes": 44826624,
+      "jsHeapBytes": 10000000,
+      "proxy": {
+        "scope": "CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 4,
+        "generation": 195,
+        "visibleArea": 129600.01029968285,
+        "ratio": 0.015625,
+        "effectiveRatio": 0.015625,
+        "density": 2,
+        "budget": 4050,
+        "width": 63,
+        "height": 63,
+        "pixels": 3969,
+        "scale": 0.17499999304612504,
+        "x": 14.999992847442627,
+        "y": 141.99999284744263,
+        "cssWidth": 360.00001430511475,
+        "cssHeight": 360.00001430511475,
+        "bytes": 115101,
+        "byteBudget": 33554432,
+        "pendingStrokes": 0,
+        "updates": 195,
+        "updatedPixels": 102144,
+        "rasterPixels": 41758,
+        "commands": 398,
+        "superseded": 16,
+        "rebuilds": 2,
+        "fallbacks": 0,
+        "retirements": 5
+      },
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "remainingPreviews": 0,
+      "errors": []
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,74 @@
+{
+  "commit": "d9f52391bb2eeed4750e571262c8a089171d011e",
+  "mode": "local",
+  "tests": [
+    {
+      "name": "HOME-APPROVED-ACTIONS",
+      "status": "PASS"
+    },
+    {
+      "name": "DESKTOP-LAYOUT-AND-PRODUCTION-QA-SEPARATION",
+      "status": "PASS",
+      "bg": "rgb(247, 249, 252)",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "canvasHidden": true,
+      "heroGrid": "647.141px 506.453px",
+      "prodButtons": "none"
+    },
+    {
+      "name": "MY-WORKS-REAL-EMPTY-STATE",
+      "status": "PASS"
+    },
+    {
+      "name": "TRIVIA-DETAIL-AND-BROWSER-BACK",
+      "status": "PASS"
+    },
+    {
+      "name": "HOME-NATIVE-FILE-PICKER-AND-INVALID-FILE-SAFETY",
+      "status": "PASS"
+    },
+    {
+      "name": "NEW-DOCUMENT-PRESET-AND-REAL-EDITOR",
+      "status": "PASS"
+    },
+    {
+      "name": "LOGO-HOME-AND-EDITOR-IMAGE-BOUNDARIES",
+      "status": "PASS",
+      "source": "/brand/illustro-logo-canvas-soft.webp",
+      "inside": true,
+      "fit": "contain"
+    },
+    {
+      "name": "HOME-EDITOR-ROUNDTRIP-NO-RECREATE",
+      "status": "PASS"
+    },
+    {
+      "name": "HOME-APPROVED-ACTIONS",
+      "status": "PASS"
+    },
+    {
+      "name": "TABLET-RESPONSIVE",
+      "status": "PASS",
+      "width": 820,
+      "scrollWidth": 820,
+      "header": 83
+    },
+    {
+      "name": "HOME-APPROVED-ACTIONS",
+      "status": "PASS"
+    },
+    {
+      "name": "MOBILE-TOUCH-NAVIGATION-AND-NO-OVERFLOW",
+      "status": "PASS",
+      "width": 390,
+      "scrollWidth": 390,
+      "columns": "minmax(0px, 1fr) minmax(300px, 0.89fr)"
+    },
+    {
+      "name": "LEGACY-M08-QA-UNCHANGED",
+      "status": "PASS"
+    }
+  ],
+  "errors": []
+}
