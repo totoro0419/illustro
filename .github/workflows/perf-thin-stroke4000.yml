@@ -90,12 +90,14 @@ jobs:
           MOBILE_QUALITY_OUTPUT=/tmp/handoff-quality/direct.json node scripts/mobile-composition-quality.mjs
           MOBILE_INPUT_OUTPUT=/tmp/handoff-quality/input/report.json node scripts/mobile-input-smoke.mjs
           VIEWPORT_QUALITY_OUTPUT=/tmp/handoff-quality/viewport/report.json node scripts/viewport-cache-quality.mjs
+          PRESSURE_QUALITY_OUTPUT=/tmp/handoff-quality/pressure/report.json node scripts/preview-pressure-quality.mjs
+          HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=12 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_PREVIEW_BUDGET_MIB=1 HANDOFF_STRESS_OUTPUT=/tmp/handoff-quality/pressure-input/report.json node scripts/stroke-handoff-stress.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: thin-quality, path: /tmp/handoff-quality/}
   performance:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
@@ -114,26 +116,27 @@ jobs:
           VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
           npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Sustained1100 short strokes and refusal diagnostics
+      - name: Complete1100 short strokes with explicit admission pacing
         env:
           RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: |
-          if ! HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/stress/report.json node scripts/stroke-handoff-stress.mjs; then
-            baseline_result=0
-            HANDOFF_APP_ROOT=/tmp/handoff-before/apps/editor/dist EXPECTED_COMMIT_SHA=efaf43766aa96befa18984f34d8853543c7d7eed HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/baseline-overload/report.json node scripts/stroke-handoff-stress.mjs || baseline_result=$?
-            echo "Failed candidate; diagnostic baseline exit $baseline_result"
-            exit 1
-          fi
+          HANDOFF_STRESS_ADMISSION=1 HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/stress/report.json node scripts/stroke-handoff-stress.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: thin-stress-checkpoint, path: /tmp/handoff-evidence/stress/}
-      - name: Sustained100 long strokes
+      - name: Complete100 long strokes with explicit admission pacing
         env:
           RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: |
-          HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=100 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/long/report.json node scripts/stroke-handoff-stress.mjs
+          HANDOFF_STRESS_ADMISSION=1 HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=100 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/long/report.json node scripts/stroke-handoff-stress.mjs
+      - name: Fixed offered200-stroke load with explicit capacity refusals
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          HANDOFF_STRESS_OVERLOAD=1 HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=200 HANDOFF_STRESS_OUTPUT=/tmp/handoff-evidence/overload/report.json node scripts/stroke-handoff-stress.mjs
       - name: Balanced thin-stroke comparison, scaling and broad controls
         env:
           RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright

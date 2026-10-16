@@ -1938,6 +1938,10 @@
     {
       "path": "scripts/viewport-cache-quality.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/preview-pressure-quality.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

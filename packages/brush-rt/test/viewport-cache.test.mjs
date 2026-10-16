@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PresentationPyramid,ViewportCache,presentationRectangles} from '../dist/rt/minification.mjs';
-import {GpuRenderer,needsFormalFeedback,boundedFormalJobs} from '../dist/rt/renderer.mjs';
+import {GpuRenderer,needsFormalFeedback,boundedFormalJobs,previewMemoryDemand} from '../dist/rt/renderer.mjs';
 function harness(){
  let id=0;const released=[],b={width:4000,height:4000,canvas:{width:1000,height:1600},sparsePreview:true,gl:{RGBA8:1,UNSIGNED_BYTE:2},liveTarget:{id:0},surface:(w,h)=>({id:++id,w,h}),release:x=>released.push(x)};
  b.presentationPyramid=new PresentationPyramid(b,'');b.presentationPyramid.initialize=()=>{};b.presentationPyramid.draw=()=>{};b.viewportCache=new ViewportCache(b);
@@ -32,6 +32,12 @@ test('normal formal batches bound command overhead as well as pixel work',()=>{
 
 test('active input bounds batch overhead while idle and held reconstruction recover throughput',async()=>{
  const limits=[],backend={previews:new Map,dirtyConfirmed:new Set,presentationHeld:false,lastSubmission:{presentationSubmitted:false},render:()=>Promise.resolve()},r=new GpuRenderer(backend,512,512,{strokeHandoff:true});r.requestWork=()=>{};r.document.peekMany=limit=>{limits.push(limit);return [];};
- for(const [finished,held]of [[false,false],[true,false],[false,true]]){r.snapshot={finished,preset:{}};backend.presentationHeld=held;r.needsFrame=true;r.frame(0);await Promise.resolve();}
- assert.deepEqual(limits,[32,128,128]);assert.equal(r.document.jobs.length,0);
+ for(const [finished,held,pressure]of [[false,false,false],[true,false,false],[false,true,false],[false,false,true]]){r.snapshot={finished,preset:{}};backend.presentationHeld=held;backend.previewPressure=pressure;r.needsFrame=true;r.frame(0);await Promise.resolve();}
+ assert.deepEqual(limits,[32,128,128,128]);assert.equal(r.document.jobs.length,0);
+});
+
+test('preview budget preflight uses frozen published geometry without consuming it',()=>{
+ const command=x=>{const c=new Float32Array(24);c[0]=x;c[1]=64;c[2]=4;c[13]=x;c[18]=2;c[19]=1;return c;},source=[64,192,320].map(command),v={stableCursor:1,index:0,tiles:new Map([['0,0',{}]])},b={width:512,height:128,previewBytes:262144,previews:new Map([[1,v]])},state={id:1,preset:{tip:'round'},stableSource:source,stableEnd:2,commands:[source[0]]};
+ assert.equal(previewMemoryDemand(b,[state]),2*262144);assert.equal(v.stableCursor,1);assert.equal(v.index,0);assert.equal(v.lastState,undefined);assert.deepEqual([...v.tiles.keys()],['0,0']);
+ v.lastState=state;assert.equal(previewMemoryDemand(b,[state]),262144);
 });
