@@ -48,7 +48,7 @@ export class BrushSurface{
     window.addEventListener('keydown',this.keyDown,{signal:this.abort.signal});
     window.addEventListener('keyup',this.keyUp,{signal:this.abort.signal});
     this.canvas.addEventListener('wheel',this.wheel,{signal:this.abort.signal,passive:false});
-    this.renderer.setSurfaceStack(this.surfaceKeys());this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.handoff=new StrokeHandoff(this.controller,(reservation,record,additional)=>this.publishStroke(reservation,record,additional));this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);(this.renderer as any).proxy?.prepare(this.preset);
+    this.renderer.setSurfaceStack(this.surfaceKeys());this.syncLayerStyles();this.session=new engine.RealtimeSession(this.renderer,workerUrl);this.handoff=new StrokeHandoff(this.controller,(reservation,record,additional)=>this.publishStroke(reservation,record,additional));this.brushes=engine.referenceBrushes;this.preset=structuredClone(this.brushes[0]!);(this.renderer as any).proxy?.prepare(this.preset);
     const options={signal:this.abort.signal};this.canvas.addEventListener('pointerdown',this.down,options);this.canvas.addEventListener('pointermove',this.move,options);this.canvas.addEventListener('pointerup',this.up,options);this.canvas.addEventListener('pointercancel',this.cancel,options);this.canvas.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
   private pointerLocation(e:PointerEvent|WheelEvent):Point{const r=this.canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
   private setBackingSize(exact?:{width:number;height:number}){if(!this.view)return;const r=this.canvas.getBoundingClientRect();if(r.width<=0||r.height<=0)return;
@@ -316,8 +316,9 @@ export class BrushSurface{
     }}
     if(backend.device)await backend.device.queue.onSubmittedWorkDone();
   }
-  syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);}
+  syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);this.syncLayerStyles();}
   discardRedoProjection(){this.session?.discardRedo();}
+  private syncLayerStyles(){this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({surfaceKey:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity})));}
   private surfaceKeys(){return this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId);}
   private surfaceForOperation(operation:SemanticOperation,revisionId?:RevisionId){const target=operation.targetEntityIds[0],root=revisionId?this.controller.document.revision(revisionId).root:this.controller.document.root;if(!target||!root.hasLayer(target))throw new Error('History target layer missing');return root.getLayer(target).surface.descriptor.surfaceId;}
   private strokeRecord(operation:SemanticOperation){const record=operation.parameters.strokeRecord;if(!record||typeof record!=='object'||!Array.isArray((record as StrokeRecord).commands))throw new Error('History stroke record missing');return this.restoredRecords.get(record as object)??record as StrokeRecord;}

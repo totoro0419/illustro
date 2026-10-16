@@ -241,6 +241,7 @@ jobs:
         run: |
           node scripts/stroke-overlay-history.mjs
           node scripts/stroke-overlay-allocation.mjs
+          node scripts/stroke-overlay-layers.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -248,6 +249,7 @@ jobs:
           path: |
             /tmp/overlay-history/
             /tmp/overlay-allocation/
+            /tmp/overlay-layers/
   publish:
     needs: [regression, quality, performance, profiles, history]
     runs-on: ubuntu-latest
