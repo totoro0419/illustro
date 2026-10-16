@@ -9,8 +9,9 @@ concurrency:
   group: instant-canvas-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  baseline:
+  prototype:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
@@ -18,25 +19,61 @@ jobs:
         with: {node-version: '24'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run brush:build > /tmp/brush-build.log
-      - run: VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
+      - run: |
+          npm run core:check
+          npx vitest run apps/editor/src
+          node --test packages/brush-rt/test/*.test.mjs > /tmp/brush-tests.log
+          node scripts/check-test-summary.mjs /tmp/brush-tests.log
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
+      - run: |
+          git worktree add --detach /tmp/instant-before aac68dc3afdd018ebed48d77af8fa160bb2cd05e
+          cd /tmp/instant-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/instant-before-build.log
       - run: |
           npm install --prefix /tmp/instant-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/instant-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Preserve browser for reproducible local comparison
-        run: tar -czf /tmp/instant-chromium.tgz -C "$HOME/.cache/ms-playwright" chromium-1234
-      - uses: actions/upload-artifact@v4
-        with: {name: instant-chromium, path: /tmp/instant-chromium.tgz, retention-days: 2}
-      - name: Measure unchanged A baseline
+      - name: Record initial A B C comparison
         env:
           RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
-          THIN_BEFORE_ROOT: apps/editor/dist
-          THIN_AFTER_ROOT: apps/editor/dist
-          THIN_BEFORE_SHA: ${{ github.sha }}
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          THIN_ROUNDS: '1'
-          THIN_BRUSHES: '1,64'
-          THIN_OUTPUT: /tmp/instant-baseline/comparison.json
-        run: node scripts/thin-stroke-benchmark.mjs
+          INSTANT_SIZES: '4000'
+          INSTANT_VIEWS: fit
+          INSTANT_BRUSHES: thin,broad
+          INSTANT_KINDS: short,long
+        run: node scripts/instant-canvas-benchmark.mjs
+      - name: Exact strict pixels and records versus immutable A
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          FORMAL_BEFORE_ROOT: /tmp/instant-before/packages/brush-rt/dist
+        run: node scripts/instant-canvas-quality.mjs
+      - name: Real app drawing gestures and immediate history
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          MOBILE_HOME: '1'
+          MOBILE_INPUT_OUTPUT: /tmp/instant-quality/mobile/report.json
+        run: node scripts/mobile-input-smoke.mjs
+      - name: Compare area ratios and upload backends
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          INSTANT_SIZES: '4000'
+          INSTANT_VIEWS: fit
+          INSTANT_BRUSHES: broad,thin
+          INSTANT_KINDS: long
+          INSTANT_MODES: C
+          INSTANT_RATIOS: '0.0625,0.03125,0.015625'
+          INSTANT_TRANSPORTS: 2d,webgl2,offscreen2d
+          INSTANT_OUTPUT: /tmp/instant-evidence/selection.json
+        run: node scripts/instant-canvas-benchmark.mjs
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: instant-baseline, path: /tmp/instant-baseline/}
+        with:
+          name: instant-prototype
+          path: |
+            /tmp/instant-evidence/
+            /tmp/instant-quality/
+            /tmp/brush-tests.log

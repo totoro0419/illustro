@@ -33,7 +33,7 @@ export class BrushSurface{
     // Only then is it used; any failure in auto mode falls back to WebGL2.
     const backend:'auto'|'webgl2'|'webgpu'=this.backendOverride??(requested==='webgpu'||requested==='webgl2'?requested:'auto');
     try{
-      this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:false,strokeHandoff:true,historyGpuBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?64*1024*1024:32*1024*1024});
+      this.renderer=await engine.GpuRenderer.create(this.canvas,target.width,target.height,backend,{webglDesynchronized:false,strokeHandoff:true,instantPreview:new URLSearchParams(location.search).get('instant')==='legacy'?false:{ratio:Number(new URLSearchParams(location.search).get('proxyRatio'))||1/32,coupled:new URLSearchParams(location.search).get('instant')==='coupled',transport:new URLSearchParams(location.search).get('proxyTransport')||'2d'},historyGpuBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?64*1024*1024:32*1024*1024});
     }catch(error){
       const message=error instanceof Error?error.message:String(error);
       this._initializationError='GPU initialization failed: '+message;
@@ -262,7 +262,7 @@ export class BrushSurface{
     const originalFrame=renderer.frame;
     try{
       this.syncLayerStack();const operations=this.controller.document.operationsTo(),geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
-      const geometry=geometryIndex>=0,visibleOperations=geometry?operations.slice(geometryIndex+1):operations;
+      const geometry=geometryIndex>=0;((this.renderer as any).proxy)?.setEnabled(!geometry);const visibleOperations=geometry?operations.slice(geometryIndex+1):operations;
       const entries:Array<{operation:SemanticOperation;record:StrokeRecord;surfaceKey:string;keys:string[]}>=[];for(const operation of visibleOperations){
         if(operation.kind==='brush.stroke'){const record=validateRecord(operation.parameters.strokeRecord);this.restoredRecords.set(operation.parameters.strokeRecord as object,record);entries.push({operation,record,surfaceKey:this.surfaceForOperation(operation),keys:this.runtimeKeys(operation)});}
         else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
@@ -290,7 +290,7 @@ export class BrushSurface{
       complete=true;
     }finally{
       renderer.frame=originalFrame;if(held)renderer.backend?.setPresentationHeld?.(false);
-      if(complete)await renderer.backend?.presentCurrent?.();
+      if(complete){await renderer.backend?.presentCurrent?.();(this.renderer as any).proxy?.invalidate();}
       this._projectionRestoreMs=performance.now()-started;this.historySyncing=false;this.onStateChanged();
     }
   }
