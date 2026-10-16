@@ -9,24 +9,141 @@ concurrency:
   group: instant-canvas-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  prototype:
+  regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm run brush:build > /tmp/brush-build.log
-      - run: |
+      - name: Preserve color/Foundation/Core and validate source lock
+        run: |
+          git diff --exit-code aac68dc3afdd018ebed48d77af8fa160bb2cd05e -- apps/editor/src/color packages/brush-rt/src/foundation.mjs packages/brush-rt/src/model.mjs packages/brush-rt/src/shaders.mjs packages/brush-rt/src/canonical.worker.mjs packages/core
+          npm run prep:check
           npm run core:check
+          npm run brush:build > /tmp/brush-build.log
+          git diff --exit-code -- prototypes/brush-rt/dist/illustro-brush-rt.html
           npx vitest run apps/editor/src
           node --test packages/brush-rt/test/*.test.mjs > /tmp/brush-tests.log
           node scripts/check-test-summary.mjs /tmp/brush-tests.log
           npm --workspace @illustro/editor exec -- tsc --noEmit
           VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
       - run: |
+          npm install --prefix /tmp/instant-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/instant-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Real browser color, layers, gestures, history, persistence, export and home
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          M08_PERF_REVIEW: '1'
+          M05_EXPECT_MILESTONE: M07
+          M06_EXPECT_MILESTONE: M07
+          M08_CORRUPT_ALL_RENDER_CACHES: '1'
+        run: |
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-orbit-smoke.mjs
+          node scripts/editor-color-hit-smoke.mjs
+          node scripts/editor-gesture-cancel-smoke.mjs
+          node scripts/editor-m05-smoke.mjs
+          node scripts/editor-m06-smoke.mjs
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-home-smoke.mjs
+          node scripts/editor-works-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        with: {name: instant-app, path: apps/editor/dist/}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: instant-regression
+          path: |
+            /tmp/*-evidence/
+            /tmp/illustro-m05/
+            /tmp/brush-tests.log
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: |
+          npm run brush:build > /tmp/brush-build.log
+          VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
+          git worktree add --detach /tmp/instant-before aac68dc3afdd018ebed48d77af8fa160bb2cd05e
+          cd /tmp/instant-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/instant-before-build.log
+          VITE_COMMIT_SHA=aac68dc3afdd018ebed48d77af8fa160bb2cd05e npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/upload-artifact@v4
+        with: {name: instant-before-app, path: /tmp/instant-before/apps/editor/dist/}
+      - run: |
+          npm install --prefix /tmp/instant-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/instant-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Exact strict pixels, history and record identity
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          FORMAL_BEFORE_ROOT: /tmp/instant-before/packages/brush-rt/dist
+        run: node scripts/instant-canvas-quality.mjs
+      - name: Existing strict renderer quality and view-cache checks
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          HANDOFF_QUALITY_OUTPUT: /tmp/instant-quality/strict/report.json
+          VIEWPORT_QUALITY_OUTPUT: /tmp/instant-quality/viewport/report.json
+          PRESSURE_QUALITY_OUTPUT: /tmp/instant-quality/pressure/report.json
+        run: |
+          node scripts/stroke-handoff-quality.mjs
+          node scripts/viewport-cache-quality.mjs
+          node scripts/preview-pressure-quality.mjs
+      - name: Touch, continuous Undo/Redo and the actual A/B/C QA page
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          MOBILE_HOME: '1'
+          MOBILE_INPUT_OUTPUT: /tmp/instant-quality/mobile/report.json
+          UNDO_QUALITY_CANVAS_SIZE: '4000'
+          UNDO_QUALITY_OUTPUT: /tmp/instant-quality/navigation/report.json
+        run: |
+          node scripts/mobile-input-smoke.mjs
+          node scripts/undo-navigation-quality.mjs
+          node scripts/instant-canvas-browser.mjs
+      - name: Sustained accepted-input and protection queue
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          HANDOFF_STRESS_ADMISSION: '1'
+          HANDOFF_STRESS_SIZE: '4000'
+          HANDOFF_STRESS_MOBILE: '1'
+          HANDOFF_STRESS_BRUSH_SIZE: '16'
+          HANDOFF_STRESS_COUNT: '200'
+          HANDOFF_STRESS_POINTS: '9'
+          HANDOFF_STRESS_POINT_INTERVAL_MS: '8'
+          HANDOFF_STRESS_OUTPUT: /tmp/instant-quality/stress/report.json
+        run: node scripts/stroke-handoff-stress.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: instant-quality, path: /tmp/instant-quality/}
+  performance:
+    strategy:
+      fail-fast: false
+      matrix: {backend: [webgl2, webgpu]}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: |
+          npm run brush:build > /tmp/brush-build.log
           git worktree add --detach /tmp/instant-before aac68dc3afdd018ebed48d77af8fa160bb2cd05e
           cd /tmp/instant-before
           npm ci --ignore-scripts --no-audit --no-fund
@@ -34,46 +151,103 @@ jobs:
       - run: |
           npm install --prefix /tmp/instant-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/instant-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Record initial A B C comparison
+      - name: Full size/view/brush/short-and-long A B C matrix
         env:
           RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          INSTANT_SIZES: '4000'
-          INSTANT_VIEWS: fit
-          INSTANT_BRUSHES: thin,broad
-          INSTANT_KINDS: short,long
-        run: node scripts/instant-canvas-benchmark.mjs
-      - name: Exact strict pixels and records versus immutable A
-        env:
-          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          FORMAL_BEFORE_ROOT: /tmp/instant-before/packages/brush-rt/dist
-        run: node scripts/instant-canvas-quality.mjs
-      - name: Real app drawing gestures and immediate history
-        env:
-          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          MOBILE_HOME: '1'
-          MOBILE_INPUT_OUTPUT: /tmp/instant-quality/mobile/report.json
-        run: node scripts/mobile-input-smoke.mjs
-      - name: Compare area ratios and upload backends
-        env:
-          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
-          INSTANT_SIZES: '4000'
-          INSTANT_VIEWS: fit
-          INSTANT_BRUSHES: broad,thin
-          INSTANT_KINDS: long
-          INSTANT_MODES: C
-          INSTANT_RATIOS: '0.0625,0.03125,0.015625'
-          INSTANT_TRANSPORTS: 2d,webgl2,offscreen2d
-          INSTANT_OUTPUT: /tmp/instant-evidence/selection.json
+          INSTANT_BACKENDS: ${{ matrix.backend }}
+          INSTANT_RATIOS: '0.015625'
+          INSTANT_OUTPUT: /tmp/instant-evidence/matrix.json
         run: node scripts/instant-canvas-benchmark.mjs
       - uses: actions/upload-artifact@v4
         if: always()
-        with:
-          name: instant-prototype
-          path: |
-            /tmp/instant-evidence/
-            /tmp/instant-quality/
-            /tmp/brush-tests.log
+        with: {name: 'instant-matrix-${{ matrix.backend }}', path: /tmp/instant-evidence/matrix.json}
+      - name: Three balanced matched 4000px repetitions
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          INSTANT_BACKENDS: ${{ matrix.backend }}
+          INSTANT_SIZES: '4000'
+          INSTANT_VIEWS: fit
+          INSTANT_KINDS: long
+          INSTANT_RATIOS: '0.015625'
+          INSTANT_ROUNDS: '3'
+          INSTANT_OUTPUT: /tmp/instant-evidence/paired.json
+        run: node scripts/instant-canvas-benchmark.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'instant-performance-${{ matrix.backend }}', path: /tmp/instant-evidence/}
+  publish:
+    needs: [regression, quality, performance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - uses: actions/download-artifact@v4
+        with: {name: instant-app, path: review-build}
+      - uses: actions/download-artifact@v4
+        with: {name: instant-before-app, path: review-before}
+      - uses: actions/download-artifact@v4
+        with: {name: instant-quality, path: review-evidence/quality}
+      - uses: actions/download-artifact@v4
+        with: {name: instant-regression, path: review-evidence/regression}
+      - uses: actions/download-artifact@v4
+        with: {name: instant-performance-webgl2, path: review-evidence/webgl2}
+      - uses: actions/download-artifact@v4
+        with: {name: instant-performance-webgpu, path: review-evidence/webgpu}
+      - name: Validate exact-source evidence and preserve prior QA files
+        env: {EXPECTED_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          node scripts/instant-canvas-report.mjs review-evidence
+          (cd site && find qa -type f ! -path 'qa/perf-instant-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
+          mkdir -p site/qa/perf-instant-canvas/app site/qa/perf-instant-canvas/before site/qa/perf-instant-canvas/evidence
+          cp qa/perf-instant-canvas/index.html site/qa/perf-instant-canvas/index.html
+          cp -a review-build/. site/qa/perf-instant-canvas/app/
+          cp -a review-before/. site/qa/perf-instant-canvas/before/
+          cp -a review-evidence/. site/qa/perf-instant-canvas/evidence/
+          (cd site && find qa -type f ! -path 'qa/perf-instant-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after
+          diff -u /tmp/old-qa.before /tmp/old-qa.after
+      - name: Publish only this dedicated QA directory
+        working-directory: site
+        run: |
+          current=$(git ls-remote origin refs/heads/perf/instant-canvas-2026-10-16 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-instant-canvas
+          git diff --cached --quiet || git commit -m 'qa: publish isolated instant-canvas comparison'
+          git push origin HEAD:gh-pages
+      - name: Wait for the exact source on public Pages
+        env: {EXPECTED_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          ready=0
+          for i in $(seq 1 36); do
+            curl -fsSL "https://totoro0419.github.io/illustro/qa/perf-instant-canvas/evidence/qa-status.json?build=$GITHUB_SHA" -o /tmp/public-instant.json || true
+            if node -e "try{process.exit(JSON.parse(require('fs').readFileSync('/tmp/public-instant.json')).sourceCommit===process.env.EXPECTED_COMMIT_SHA?0:1)}catch{process.exit(1)}"; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+      - run: |
+          npm install --prefix /tmp/instant-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/instant-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Public source, real drawing, navigation and saved work
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/instant-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          HANDOFF_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-instant-canvas/app/
+          MOBILE_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-instant-canvas/app/
+          HANDOFF_OPERATIONS_OUTPUT: /tmp/instant-public/operations/report.json
+          MOBILE_HOME: '1'
+          MOBILE_INPUT_OUTPUT: /tmp/instant-public/mobile/report.json
+          INSTANT_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-instant-canvas/
+          INSTANT_BROWSER_OUTPUT: /tmp/instant-public/qa-page/report.json
+        run: |
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/mobile-input-smoke.mjs
+          node scripts/instant-canvas-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: instant-public-verification, path: /tmp/instant-public/}

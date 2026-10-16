@@ -17,7 +17,7 @@ try{
    const page=await browser.newPage();page.on('pageerror',e=>report.errors.push(e.message));await page.goto(`http://127.0.0.1:${server.address().port}/${mode}/`);
    builds[mode]=await page.evaluate(async({backend,mode})=>{
     const {GpuRenderer,RealtimeSession,referenceBrushes}=await import(`/${mode}/rt/index.mjs`);
-    const r=await GpuRenderer.create(document.querySelector('canvas'),4000,4000,backend,{strokeHandoff:true,...(mode==='after'?{instantPreview:{ratio:1/32}}:{})}),s=new RealtimeSession(r,new URL(`/${mode}/rt/canonical.worker.mjs`,location.href));r.setViewTransform(new Float32Array([390,844,390,844,4000,4000,.09,0,0,0,1,1,0,0,0,0]));r.setSurfaceStack(['a','b','c']);s.prediction=false;
+    const r=await GpuRenderer.create(document.querySelector('canvas'),4000,4000,backend,{strokeHandoff:true,...(mode==='after'?{instantPreview:{ratio:1/64}}:{})}),s=new RealtimeSession(r,new URL(`/${mode}/rt/canonical.worker.mjs`,location.href));r.setViewTransform(new Float32Array([390,844,390,844,4000,4000,.09,0,0,0,1,1,0,0,0,0]));r.setSurfaceStack(['a','b','c']);s.prediction=false;
     const b=r.backend,seen=new WeakSet,allocations=[],tile=b.tile.bind(b),render=b.render.bind(b),frames=[];let computePasses=0;
     b.tile=function(...args){const t=tile(...args);if(!seen.has(t)){seen.add(t);let stroke=t.stroke;Object.defineProperty(t,'stroke',{configurable:true,get:()=>stroke,set:v=>{stroke=v;if(v)allocations.push(v);}});}return t;};
     if(b.device){const create=b.device.createCommandEncoder.bind(b.device);b.device.createCommandEncoder=function(...args){const e=create(...args),begin=e.beginComputePass.bind(e);e.beginComputePass=function(...a){computePasses++;return begin(...a);};return e;};}

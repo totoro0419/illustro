@@ -4,7 +4,7 @@ import {ScreenProxy,proxyPlan,polygonArea,clipPolygon,composePixel,toScreen,toDo
 import {CanonicalBuilder,referenceBrushes} from '../dist/rt/index.mjs';
 globalThis.ImageData??=class{constructor(w,h){this.width=w;this.height=h;this.data=new Uint8ClampedArray(w*h*4);}};
 const view=(size=4000,angle=0,dpr=1)=>new Float64Array([400*dpr,600*dpr,400,600,size,size,.09,angle,0,0,1,1,0,0,0,0]);
-function setup(ratio=1/32){const sink={images:[],resize(){},upload(image,rects){this.images.push({data:image.data.slice(),rects});},hide(){},destroy(){}},backend={canvas:{},surfaceStack:['a','b']},p=new ScreenProxy(backend,{ratio,sink});p.setView(view());return {p,sink};}
+function setup(ratio=1/32){const sink={images:[],resize(){},upload(image,rects){this.images.push({data:image.data.slice(),rects});},hide(){},destroy(){}},backend={canvas:{},surfaceStack:['a','b']},p=new ScreenProxy(backend,{ratio,sink});p.setView(view());p.invalidate();return {p,sink};}
 function stroke(preset=referenceBrushes[2],x=1000,y=1300){const b=new CanonicalBuilder({...structuredClone(preset),size:160});for(let i=0;i<12;i++)b.accept({x:x+i*40,y,t:100+i*4,pressure:.7,pointerType:'pen'});b.finish();return b.record();}
 const delay=()=>new Promise(r=>setTimeout(r,5));
 
@@ -37,4 +37,13 @@ test('formal handoff removes one pending stroke and retains newer overlapping fe
 });
 test('cancel removes disposable coverage without mutating a committed base',async()=>{
  const {p}=setup(),record=stroke();p.committed(1,record,'a');while(p.finalizing)await delay();p.presented(1);const before=p.bases.get('a').slice();p.enqueue({id:10,preset:record.preset,surfaceKey:'a',stableSource:record.commands,stableEnd:12,commands:[]});p.safeFlush();p.cancel(10);assert.deepEqual(p.bases.get('a'),before);assert.equal(p.footprints.size,0);p.destroy();
+});
+test('bottom-layer paint stays below upper ink; upper erase reveals the colored lower layer',async()=>{
+ const {p}=setup(),red=stroke({...referenceBrushes[2],color:[1,0,0]}),blue=stroke({...referenceBrushes[2],color:[0,0,1]}),green=stroke({...referenceBrushes[2],color:[0,1,0]}),erase=stroke({...referenceBrushes[2],blend:'erase'});
+ for(const [id,record,surface]of [[1,red,'a'],[10,blue,'b']]){p.committed(id,record,surface);while(p.finalizing)await delay();p.presented(id);}
+ const at=()=>{const q=toScreen(p.view,1200,1300),x=Math.floor((q.x-p.plan.x)*p.plan.scale),y=Math.floor((q.y-p.plan.y)*p.plan.scale),i=(y*p.plan.width+x)*4;return [...p.image.data.subarray(i,i+4)];};
+ const live=(id,record,surface)=>{p.enqueue({id,preset:record.preset,surfaceKey:surface,stableSource:record.commands,stableEnd:record.commands.length,commands:[]});p.safeFlush();};
+ live(19,green,'a');assert.deepEqual(at(),[0,0,255,255]);p.cancel(19);
+ live(28,erase,'b');assert.deepEqual(at(),[255,0,0,255]);p.cancel(28);
+ p.styles=new Map([['b',{opacity:.5}]]);live(37,red,'a');const c=at();assert.ok(Math.abs(c[0]-128)<=1&&Math.abs(c[2]-128)<=1);p.destroy();
 });

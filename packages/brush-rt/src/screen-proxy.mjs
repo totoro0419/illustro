@@ -69,12 +69,14 @@ export class ProxySink{
   }
  }
  resize(plan){const e=this.element;e.width=plan.width;e.height=plan.height;const s=this.source;e.style.left=s.offsetLeft+plan.x+'px';e.style.top=s.offsetTop+plan.y+'px';e.style.width=plan.cssWidth+'px';e.style.height=plan.cssHeight+'px';
+  e.style.transform='none';
   // Match the host canvas' stacking context; no input handlers or fixed z-index.
   const z=getComputedStyle(s).zIndex;if(z!=='auto')e.style.zIndex=z;
   const poly=plan.polygon.map(p=>(p.x-plan.x)+'px '+(p.y-plan.y)+'px').join(',');e.style.clipPath=poly?'polygon('+poly+')':'none';
   if(this.gl){const g=this.gl;g.bindTexture(g.TEXTURE_2D,this.texture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,plan.width,plan.height,0,g.RGBA,g.UNSIGNED_BYTE,null);}
   if(this.offscreen){this.offscreen.width=plan.width;this.offscreen.height=plan.height;}
  }
+ reproject(oldView,newView,plan){const map=(x,y)=>{const d=toDocument(oldView,x,y);return toScreen(newView,d.x,d.y);},o=map(plan.x,plan.y),x=map(plan.x+1,plan.y),y=map(plan.x,plan.y+1);this.element.style.left=this.source.offsetLeft+o.x+'px';this.element.style.top=this.source.offsetTop+o.y+'px';this.element.style.transform=`matrix(${x.x-o.x},${x.y-o.y},${y.x-o.x},${y.y-o.y},0,0)`;}
  upload(image,rects){if(!rects.length)return;const e=this.element;e.style.display='block';
   if(this.gl){const g=this.gl;g.bindTexture(g.TEXTURE_2D,this.texture);g.pixelStorei(g.UNPACK_ROW_LENGTH,image.width);for(const [x,y,w,h]of rects){g.pixelStorei(g.UNPACK_SKIP_PIXELS,x);g.pixelStorei(g.UNPACK_SKIP_ROWS,y);g.texSubImage2D(g.TEXTURE_2D,0,x,y,w,h,g.RGBA,g.UNSIGNED_BYTE,image.data);}g.pixelStorei(g.UNPACK_ROW_LENGTH,0);g.pixelStorei(g.UNPACK_SKIP_PIXELS,0);g.pixelStorei(g.UNPACK_SKIP_ROWS,0);g.viewport(0,0,e.width,e.height);g.useProgram(this.program);g.uniform1i(g.getUniformLocation(this.program,'image'),0);g.enable(g.SCISSOR_TEST);for(const [x,y,w,h]of rects){g.scissor(x,e.height-y-h,w,h);g.drawArrays(g.TRIANGLES,0,3);}g.disable(g.SCISSOR_TEST);g.flush();}
   else if(this.offscreen){for(const [x,y,w,h]of rects){this.offscreenContext.putImageData(image,0,0,x,y,w,h);this.context.clearRect(x,y,w,h);this.context.drawImage(this.offscreen,x,y,w,h,x,y,w,h);}}
@@ -85,24 +87,25 @@ export class ProxySink{
 }
 
 export class ScreenProxy{
- constructor(backend,{ratio=1/32,transport='2d',coupled=false,sink=null}={}){
+ constructor(backend,{ratio=1/64,transport='2d',coupled=false,sink=null}={}){
   this.backend=backend;this.ratio=ratio;this.coupled=coupled;this.sink=sink??new ProxySink(backend.canvas,transport);this.transport=transport;this.epoch=0;this.generation=0;this.states=new Map;this.pending=new Map;this.bases=new Map;this.dirty=new Set;this.footprints=new Map;this.folded=new Set;this.source=()=>[];this.ready=false;this.enabled=true;this.metrics={updates:0,updatedPixels:0,rasterPixels:0,commands:0,superseded:0,rebuilds:0,fallbacks:0,samples:[],retirements:0};
  }
  setSource(source,live=()=>[]){this.source=source;this.live=live;this.invalidate();}
  setEnabled(value){if(this.enabled===value)return;this.enabled=value;this.invalidate();}
- setView(view){this.view=Float64Array.from(view);this.invalidate();}
+ setView(view){this.view=Float64Array.from(view);if(this.displayView&&this.displayPlan)this.sink.reproject?.(this.displayView,this.view,this.displayPlan);this.thin=(this.preferredSize??16)*this.view[6]<2;this.invalidate(false,true);const epoch=this.epoch;this.rebuildTimer=setTimeout(()=>{if(epoch===this.epoch&&this.enabled&&!this.disposed&&this.view[12]<.5&&this.view[14]<.5){try{this.rebuild();}catch(error){this.fail(error);}}},40);}
+ prepare(size){this.preferredSize=size;if(!this.ready||!this.enabled||!this.view||this.footprints.size||this.pending.size||this.finalizing)return;const thin=size*this.view[6]<2;if(thin!==this.thin){this.thin=thin;this.invalidate();}}
  suspend(){this.epoch++;this.ready=false;this.commits=[];this.finalizing=false;}
- invalidate(){this.suspend();this.states.clear();this.pending.clear();this.bases.clear();this.footprints.clear();this.folded.clear();this.dirty.clear();this.sink.hide();if(this.enabled&&this.view&&this.view[12]<.5&&this.view[14]<.5)this.rebuild();}
- configure(thin=false){this.plan=proxyPlan(this.view,this.ratio,thin,Math.min(MAX_PIXELS,Math.floor(MAX_BYTES/(Math.max(1,this.backend.surfaceStack.length)*4+64))));this.image=new ImageData(this.plan.width,this.plan.height);this.sink.resize(this.plan);const n=this.plan.pixels;this.docX=new Float64Array(n);this.docY=new Float64Array(n);this.inside=new Uint8Array(n);
+ invalidate(rebuild=true,preserveDisplay=false){clearTimeout(this.rebuildTimer);this.suspend();this.states.clear();this.pending.clear();this.bases.clear();this.footprints.clear();this.folded.clear();this.dirty.clear();if(!preserveDisplay)this.sink.hide();if(rebuild&&this.enabled&&this.view&&this.view[12]<.5&&this.view[14]<.5){try{this.rebuild();}catch(error){this.fail(error);}}}
+ configure(thin=false){this.plan=proxyPlan(this.view,this.ratio,thin,Math.min(MAX_PIXELS,Math.floor(MAX_BYTES/(Math.max(1,this.backend.surfaceStack.length)*4+64))));this.image=new ImageData(this.plan.width,this.plan.height);const n=this.plan.pixels;this.docX=new Float64Array(n);this.docY=new Float64Array(n);this.inside=new Uint8Array(n);
   for(let y=0;y<this.plan.height;y++)for(let x=0;x<this.plan.width;x++){const i=y*this.plan.width+x,q=toDocument(this.view,this.plan.x+(x+.5)/this.plan.scale,this.plan.y+(y+.5)/this.plan.scale);this.docX[i]=q.x;this.docY[i]=q.y;this.inside[i]=+(q.x>=0&&q.y>=0&&q.x<this.view[4]&&q.y<this.view[5]);}
  }
  rebuild(){
   const epoch=this.epoch,entries=this.source(),built=new Map;if(entries.some(e=>!proxySupported(e.record.preset))){this.metrics.fallbacks++;return;}this.configure(this.thin??false);this.metrics.rebuilds++;let index=0,command=0,current=null;
-  const step=()=>{if(epoch!==this.epoch||this.disposed)return;const at=performance.now();
+  const step=()=>{if(epoch!==this.epoch||this.disposed)return;try{const at=performance.now();
    while(index<entries.length){const entry=entries[index];current??=this.makeState(entry.id,entry.record.preset,entry.surfaceKey);while(command<entry.record.commands.length){this.raster(current,[entry.record.commands[command++]],false);if(performance.now()-at>3){setTimeout(step,0);return;}}
     this.fold(current);this.folded.add(entry.id);built.set(entry.id,new Set(current.tiles.keys()));index++;command=0;current=null;
    }
-   this.dirty.clear();for(const state of this.live?.()??[]){const keys=built.get(state.id);if(keys){this.footprints.set(state.id,keys);for(const key of keys)this.dirty.add(key);}else this.pending.set(state.id,state);}this.ready=true;this.flush();
+   this.dirty.clear();for(const state of this.live?.()??[]){const keys=built.get(state.id);if(keys){this.footprints.set(state.id,keys);for(const key of keys)this.dirty.add(key);}else this.pending.set(state.id,state);}this.ready=true;this.sink.resize(this.plan);this.flush();if(!this.footprints.size)this.sink.hide();}catch(error){this.fail(error);}
   };step();
  }
  canUse(p){return this.enabled&&this.ready&&this.plan?.visibleArea>0&&proxySupported(p)&&this.view[12]<.5&&this.view[14]<.5;}
@@ -114,7 +117,9 @@ export class ScreenProxy{
   if(this.pending.has(state.id))this.metrics.superseded++;this.pending.set(state.id,state);if(this.coupled)return this.canUse(state.preset);
   if(!this.scheduled){this.scheduled=true;queueMicrotask(()=>{this.scheduled=false;this.safeFlush();});}return this.canUse(state.preset);
  }
- safeFlush(){try{this.flush();}catch(error){this.error=String(error);this.metrics.fallbacks++;this.enabled=false;this.invalidate();}}
+ fail(error){this.error=String(error);this.metrics.fallbacks++;this.enabled=false;this.fallbackAt=performance.now();this.suspend();}
+ fallbackPresented(submittedAt,epoch){if(epoch===this.epoch&&!this.ready)this.sink.hide();if(this.fallbackAt!==undefined&&submittedAt>=this.fallbackAt){this.sink.hide();this.fallbackAt=undefined;this.states.clear();this.bases.clear();this.footprints.clear();}}
+ safeFlush(){try{this.flush();}catch(error){this.fail(error);}}
  flush(){if(!this.ready||this.disposed)return;const start=performance.now(),tips=[];
   for(const [id,state]of this.pending){if(!this.canUse(state.preset))continue;let v=this.states.get(id);if(this.folded.has(id)){this.pending.delete(id);continue;}
    if(!v||state.resetPreview&&v.last!==state){if(v)for(const key of v.tiles.keys())this.dirty.add(key);v=this.makeState(id,state.preset,state.surfaceKey);this.states.set(id,v);}
@@ -143,13 +148,13 @@ export class ScreenProxy{
  base(surfaceKey){let b=this.bases.get(surfaceKey);if(!b){b=new Uint8ClampedArray(this.plan.pixels*4);this.bases.set(surfaceKey,b);}return b;}
  fold(v){const base=this.base(v.surfaceKey);for(const key of v.tiles.keys()){const [tx,ty]=key.split(',').map(Number);for(let y=ty*CELL;y<Math.min(this.plan.height,(ty+1)*CELL);y++)for(let x=tx*CELL;x<Math.min(this.plan.width,(tx+1)*CELL);x++){const at=(y*this.plan.width+x)*4,i=((y%CELL)*CELL+x%CELL)*4,paint=paintAt(v,key,i);if(!paint[3])continue;const c=composePixel(Array.from(base.subarray(at,at+4),n=>n/255),paint,v.preset.blend);for(let j=0;j<4;j++)base[at+j]=Math.round(c[j]*255);}}
  }
- committed(id,record,surfaceKey){if(!this.ready)return;this.safeFlush();if(this.folded.has(id))return;this.commits.push({id,record,surfaceKey});this.finishCommit();}
+ committed(id,record,surfaceKey){if(!this.ready)return;this.safeFlush();if(!this.ready||this.folded.has(id))return;this.commits.push({id,record,surfaceKey});this.finishCommit();}
  finishCommit(){if(this.finalizing||!this.ready||!this.commits.length)return;this.finalizing=true;const epoch=this.epoch,item=this.commits[0],v=this.makeState(item.id,item.record.preset,item.surfaceKey);let index=0;
   const step=()=>{if(this.disposed||epoch!==this.epoch)return;const start=performance.now();try{
     while(index<item.record.commands.length){this.raster(v,[item.record.commands[index++]],false);if(performance.now()-start>3){setTimeout(step,0);return;}}
     const old=this.footprints.get(item.id)??new Set;for(const key of v.tiles.keys())old.add(key);this.fold(v);this.folded.add(item.id);this.footprints.set(item.id,old);this.states.delete(item.id);this.pending.delete(item.id);for(const key of old)this.dirty.add(key);this.commits.shift();this.finalizing=false;
     if(item.presented)this.presented(item.id,epoch);else this.present(performance.now(),[]);this.finishCommit();
-   }catch(error){this.error=String(error);this.enabled=false;this.metrics.fallbacks++;this.invalidate();}
+   }catch(error){this.fail(error);}
   };setTimeout(step,0);
  }
  presented(id,epoch=this.epoch){if(epoch!==this.epoch)return;const item=this.commits?.find(c=>c.id===id);if(item){item.presented=true;return;}const keys=this.footprints.get(id);if(!keys)return;this.footprints.delete(id);this.folded.delete(id);this.states.delete(id);this.pending.delete(id);for(const key of keys)this.dirty.add(key);this.metrics.retirements++;this.present(performance.now(),[]);}
@@ -164,11 +169,11 @@ export class ScreenProxy{
     for(let j=0;j<3;j++)this.image.data[at+j]=Math.round((composed[j]*composed[3]+1-composed[3])*255);this.image.data[at+3]=255;
    }
   }
-  this.sink.upload(this.image,rects);this.generation++;const end=performance.now(),pixels=rects.reduce((n,r)=>n+r[2]*r[3],0);this.metrics.updates++;this.metrics.updatedPixels+=pixels;
+  this.sink.upload(this.image,rects);this.displayView=Float64Array.from(this.view);this.displayPlan=this.plan;this.generation++;const end=performance.now(),pixels=rects.reduce((n,r)=>n+r[2]*r[3],0);this.metrics.updates++;this.metrics.updatedPixels+=pixels;
   if(this.measure)for(const t of tips){this.metrics.samples.push({...t,at:end,cpuMs:end-start,inputToUploadMs:Math.max(0,end-t.inputAt),updatedPixels:pixels,proxyPixels:this.plan.pixels,visibleArea:this.plan.visibleArea,viewEpoch:this.epoch,generation:this.generation});if(this.metrics.samples.length>2400)this.metrics.samples.shift();}
   if(!this.footprints.size)this.sink.hide();
  }
  bytes(){let bytes=(this.plan?.pixels??0)*(21+this.bases.size*4);for(const v of this.states.values())bytes+=v.tiles.size*CELL*CELL*32;return bytes;}
  summary(){return {scope:'CPU raster and canvas upload only; compositor, physical display and GPU execution unmeasured',transport:this.transport,coupled:this.coupled,ready:this.ready,viewEpoch:this.epoch,generation:this.generation,...this.plan,polygon:undefined,bytes:this.bytes(),byteBudget:MAX_BYTES,pendingStrokes:this.footprints.size,...this.metrics,samples:this.measure?this.metrics.samples:[]};}
- destroy(){this.disposed=true;this.epoch++;this.sink.destroy();this.states.clear();this.pending.clear();this.bases.clear();}
+ destroy(){clearTimeout(this.rebuildTimer);this.disposed=true;this.epoch++;this.sink.destroy();this.states.clear();this.pending.clear();this.bases.clear();}
 }
