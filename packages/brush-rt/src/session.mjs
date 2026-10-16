@@ -53,7 +53,7 @@ export class RealtimeSession {
   const ids=[];for(const [index,item]of [record,...additional].entries()){
    let current=id;if(index){const dx=item.commands[0][0]-record.commands[0][0],dy=item.commands[0][1]-record.commands[0][1],x=dx===0?0:dx>0?1:2,y=dy===0?0:dy>0?1:2;current=id+x*3+y;}
    const preset=this.presetForRecord(item);this.renderer.document.append(current,preset,item.commands,null,surfaceKey);const keys=this.renderer.document.end(current,preset,surfaceKey);
-   if(!keys.length)continue;this.recordIds.set(item,current);this.recordSurfaces.set(item,surfaceKey);this.records.push(item);this.indexRecord(item,keys,surfaceKey);this.renderer.markEnded(current);this.renderer.proxy?.committed(current);ids.push(current);
+   if(!keys.length)continue;this.recordIds.set(item,current);this.recordSurfaces.set(item,surfaceKey);this.records.push(item);this.indexRecord(item,keys,surfaceKey);this.renderer.markEnded(current);ids.push(current);
   }
   this.staged.delete(id);this.renderer.needsFrame=true;this.renderer.requestWork();return ids;
  }

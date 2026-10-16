@@ -31,13 +31,13 @@
     {
       "path": "packages/brush-rt/src/index.d.ts",
       "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "b3f8c0f7e7999e1206b7881917ffff28c273cabac6f38f38766c6d27e0ccc578",
+      "sha256": "55fb135adcef736b464bac0903f167b2076a73b73d4b48afa845447c80012a06",
       "m08Exception": "M08 Seamless Tile view-only preview and one-step raster seam copies; brush geometry algorithms unchanged. Exact SHA-256 recalculated and 93/93 regression required.",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified.",
       "undoNavigationException": "User-authorized continuous Undo: ordered bounded command admission, exact grouped history copies, final-head dirty reconstruction, pending derived GPU supersession, bounded32/64MiB editor cache. Canonical records, brush precision and shaders unchanged. Requires both-backend exact pixels, mixed directions, portable/history/layer tests and all prior regressions; physical Android remains unverified.",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim.",
-      "strokeOverlayException": "User-authorized stroke-only preview replaces historical low-resolution rebuild; exact Foundation/model/shaders/Core retained. Requires PR30 exact pixels, fit-view quality and regression evidence. No hardware acceptance claim."
+      "strokeOverlayException": "User-authorized stroke-only feedback and exact transition synchronization. Requires exact PR30 pixels, fit-view screenshots, performance and regressions; no physical acceptance claim."
     },
     {
       "path": "packages/brush-rt/src/index.mjs",
@@ -52,7 +52,7 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "26e9e10f5c6fc06217d7b3a6e6afa88ef71d512404e92084ed89f35b2c488177",
+      "sha256": "6b24b4792802bf47ec73c6c7fff14db30cfe79dea557397cc1096b9e34b0e67e",
       "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
@@ -67,13 +67,13 @@
     {
       "path": "packages/brush-rt/src/session.mjs",
       "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "5d38c4609e8dc0f3415b9155bab16ce2e72e4df319b6414623b39118a5d7989c",
+      "sha256": "b34351e9a153a69703aecbeb82146fc0275e01097962fb792e29f57cbef8ddfa",
       "m08Exception": "M08 Seamless Tile view-only preview and one-step raster seam copies; brush geometry algorithms unchanged. Exact SHA-256 recalculated and 93/93 regression required.",
       "performanceException": "Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified.",
       "undoNavigationException": "User-authorized continuous Undo: ordered bounded command admission, exact grouped history copies, final-head dirty reconstruction, pending derived GPU supersession, bounded32/64MiB editor cache. Canonical records, brush precision and shaders unchanged. Requires both-backend exact pixels, mixed directions, portable/history/layer tests and all prior regressions; physical Android remains unverified. Reuse completed base images only when no removed pending stroke has committed any layer tile; partially committed tiles must reconstruct.",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim.",
-      "strokeOverlayException": "User-authorized stroke-only preview replaces historical low-resolution rebuild; exact Foundation/model/shaders/Core retained. Requires PR30 exact pixels, fit-view quality and regression evidence. No hardware acceptance claim."
+      "strokeOverlayException": "User-authorized stroke-only feedback and exact transition synchronization. Requires exact PR30 pixels, fit-view screenshots, performance and regressions; no physical acceptance claim."
     },
     {
       "path": "packages/brush-rt/src/shaders.mjs",
@@ -229,7 +229,7 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "e80f2b01a722f347cf434dfcd5d95d1be68f9a72202c83473cfd14c16ae8b4d7",
+      "sha256": "05f075884f6868b4941a89f5601b6c468fce42a565606b0cd4a5d63e2686703e",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
       "undoNavigationException": "User-authorized continuous Undo: ordered bounded command admission, exact grouped history copies, final-head dirty reconstruction, pending derived GPU supersession, bounded32/64MiB editor cache. Canonical records, brush precision and shaders unchanged. Requires both-backend exact pixels, mixed directions, portable/history/layer tests and all prior regressions; physical Android remains unverified. Reuse completed base images only when no removed pending stroke has committed any layer tile; partially committed tiles must reconstruct.",
@@ -367,14 +367,14 @@
     {
       "path": "packages/brush-rt/src/stroke-overlay.mjs",
       "sourceBranch": "perf/stroke-overlay-2026-10-16",
-      "sha256": "1e4843f54032ef50e7b03c9e7c42bddcea83171b85a13aa45bb245b7c654e12b",
+      "sha256": "8f5b8bdab98276aff49398d495ba83fe1d78325bb957b29dbed8a23fe25f56e2",
       "strokeOverlayException": "User-authorized stroke-only feedback and exact transition synchronization. Requires exact PR30 pixels, fit-view screenshots, performance and regressions; no physical acceptance claim."
     },
     {
       "path": "packages/brush-rt/test/stroke-overlay.test.mjs",
       "sourceBranch": "perf/stroke-overlay-2026-10-16",
-      "sha256": "4a5ca669f709855b99c9695c1d2f6f2e4efc3814f0051d1eb147f17ab834c0e3",
-      "strokeOverlayException": "Stroke-only display feedback; formal Brush Foundation unchanged."
+      "sha256": "d2922d7097a667261a49e101af21b7bb2126efead8c956139dd47264b98330e4",
+      "strokeOverlayException": "User-authorized stroke-only feedback and exact transition synchronization. Requires exact PR30 pixels, fit-view screenshots, performance and regressions; no physical acceptance claim."
     }
   ],
   "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Artwork alpha remains preserved in internal renderer targets and read/export results. Visible presentation must not depend on browser compositing of a transparent GPU canvas over CSS paper: the final GPU presentation pass composites the transparent artwork over the current paper background and writes an opaque frame. WebGL2 and WebGPU share this rule. No secondary full-size presentation/latency Canvas or OffscreenCanvas bridge is allowed. Browser predicted events feed the existing GPU preview path. Live preview scheduling is latest-state/coalesced: WebGL2 and WebGPU may submit the newest Foundation preview immediately after an input batch instead of waiting for the next RAF, and coalesced pointer samples preserve every canonical input while publishing only one GPU preview notification for the batch. Backend selection must not depend on viewport size. Production uses capability-based auto selection: WebGPU is selected only after adapter acquisition, device creation, renderer pipeline initialization, canvas configuration, and initial presentation all succeed; otherwise the failure stage/reason is recorded and the renderer falls back to WebGL2. A fully initialized WebGPU path must never be bypassed merely because of device class or viewport. Explicit backend QA remains available and explicit WebGPU failure must not silently fall back. Workspace open/close must never change Renderer settings, Canvas ownership, or Document state. M03 History is Document-owned. Recent Stroke Undo/Redo may use a strictly bounded 16 MiB GPU hot tile cache for one-frame-class response. Cache memory never grows beyond the fixed budget; evicted/oversized history falls back to rebuilding only affected 128px runtime tiles from active formal StrokeRecords. Fallback rebuild presentation is atomic: the old completed canvas remains visible until the rebuilt dirty tiles are complete, then the result is presented once. Full-canvas readback, visible stroke-by-stroke replay, unbounded GPU history, and rebuilding unrelated tiles are forbidden. M04 formal Eraser integration keys runtime artwork by formal Raster SurfaceId so erase never operates on a flattened multi-layer result; erase remains brush.stroke with blend:'erase'. Canonical straight-alpha erase preserves destination hidden RGB even when alpha reaches zero. Brush/Eraser switching must use stable preset identity/meaning rather than preset array position."

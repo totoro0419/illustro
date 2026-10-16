@@ -1,0 +1,49 @@
+# Stroke-only display feedback — 2026-10-16
+
+Status: EXPERIMENTAL. Physical Android performance and user acceptance are unverified.
+
+PR31 inherits the exact current PR30 head `d9f52391bb2eeed4750e571262c8a089171d011e`. PR25–30 color, layer, history, navigation and persistence work remains in its ancestry. Main, production integration and previous QA directories are not changed.
+
+## Audit and design
+
+The preceding `ScreenProxy` reconstructed semantic history into a screen-resolution `bases` image for every completed surface. A new view replayed all previous commands; `finishCommit` replayed the just-ended record again and `fold` accumulated another low-resolution completed picture. Opaque replacement cells then substituted that coarse picture for the high-quality completed GPU image. DPR was not represented as a full physical pixel grid. Thus moving a fine line across existing artwork could visibly blur the artwork around the line. This was reproduced in PR30 fit-view screenshots; it is separate from the unchanged final artwork pixels.
+
+The replacement has three owners:
+
+- Existing strict 128px tiles, PresentationPyramid and ViewportCache retain completed artwork. Their area-average/bilinear display rules remain the final display authority.
+- StrokeOverlay owns only current/unpresented command coverage. A clipped transformed document polygon determines visible area. Brush screen diameter and effective backing/CSS density determine the proxy sampling grid. Fine lines and material brushes initially retain full physical density. Broad lines can use lower area ratios; manual 1/2 through 1/128 profiles exist only for comparison.
+- GpuRenderer owns formal work, stroke IDs and presentation acknowledgment. Stable input prefixes are consumed once, mutable tails replace only their prior touched cells. Notifications coalesce; actual canonical samples and formal work are never dropped.
+
+A 32px sparse raster cell stores only touched coverage. A single output canvas grows in reusable 128px allocation bands around pending stroke bounds. Changed cells upload only changed rectangles; a resize redraws cached coverage, not semantic history. Geometry remains floating point. No completed low-resolution base, historical source callback, `rebuild`, `fold`, or final-record proxy replay remains.
+
+Top, visible, full-opacity, normal Foundation paint can directly overlay the completed image. Erase, lower layers, source-dependent/unsupported semantics, seamless/reference modes and external raster projections retain the existing exact sparse GPU feedback route. B and C use the same fast code for qualifying paint; C denotes the correctness fallback conditions, not a second duplicate overlay algorithm. Current editor layer semantics remain unchanged. Future layer styles must provide complete compositor metadata before qualifying for the direct route.
+
+## Handoff and contention
+
+A transparent CPU line cannot remain above its own newly published formal image. Formal intermediate coverage for independent IDs therefore stays out of presentation. The existing strict layer ping-pong predecessor retains the preceding image during partial commit; no additional full artwork texture is allocated. Once an entire stroke is ready, its dirty keys are published.
+
+A short-lived, full-density **cropped transition guard** preserves the old completed appearance under pending CPU lines until the formal presentation is acknowledged. WebGL2 can snapshot its preserved drawing buffer. WebGPU automatically expires presented canvas textures; its guard copies only the relevant region of the already-retained ViewportCache texture into a mapped buffer. This is a per-handoff cropped readback, not an input/frame-wide artwork readback. It has a real synchronization/copy cost and is included in formal catch-up measurements. Guard and matching stroke removal happen in one event-loop update. Newer IDs survive an older acknowledgment; stale view epochs cannot retire transformed feedback. A fallback requested during an in-flight normal submission cannot clear strokes absent from that submission.
+
+Independent Canvas2D updates do not pass through the formal `inflight` gate. They still share the main thread and browser compositor and may contend for hardware. No GPU preemption or physical independence is assumed. Formal batches retain the PR30 bounded/adaptive work limits. Existing save checkpoints defer while input/history is active, and thumbnails run only while the home screen is idle.
+
+## Comparison and limits
+
+A is immutable PR30. B is qualifying direct one-stroke paint. C uses B for normal paint and the exact GPU route where direct compositing is incorrect. Same-runner input, browser, view/DPR, samples, brushes and sizes are used. Quality uses deterministic sample times and actual compositor PNG screenshots; reading an expired WebGPU canvas is explicitly invalid as a quality measurement. The first prototype caught a fallback scheduling omission, which was corrected before publication.
+
+Initial prototype run [38921385450](https://github.com/totoro0419/illustro/actions/runs/38921385450) verified exact same-backend formal brush pixels, 12 overlapping records, history and replay, with equal command/job/strict-target/compute-pass counts. Its WebGL2 images demonstrate the PR30 background-blur defect and its removal. Its original WebGPU image-readback quality numbers are invalid (expired canvas), and are not acceptance evidence. Final-source workflows separately generate real screenshots and corrected fallback evidence.
+
+CPU upload latency/cadence, rAF, compositor screencast delivery and GPU queue completion are distinct. None measures physical input-to-photon, unobstructed physical FPS, isolated GPU execution or Android device behavior. Memory counters model explicitly owned arrays/canvases/guards, not browser RSS or VRAM. User acceptance remains false until explicitly approved.
+
+## Official research and applicability
+
+| Primary source | Publicly documented behavior | Application and boundary |
+|---|---|---|
+| [Krita Instant Preview](https://docs.krita.org/en/reference_manual/instant_preview.html) | Reduced feedback while exact work continues; brush limitations and popping | Separate disposable feedback from final pixels, qualify brush semantics; do not copy an unconditional coarse-grid policy |
+| [Photoshop performance preferences](https://helpx.adobe.com/photoshop/desktop/get-started/settings-and-preferences/configure-photoshop-performance-preferences.html) | Image caches improve redraw; brush changes benefit from smaller tile work | Retain completed display caches and bounded changes; Photoshop's proprietary brush/queue internals are unknown |
+| [CSP stroke preview](https://support.clip-studio.com/en-us/faq/articles/20250039) and [coarse display guidance](https://support.clip-studio.com/en-us/faq/articles/20190027) | Optional lag-reduction preview; high-quality display improves low-scale preview | Evaluate live and final display independently at fit view; no claim about its internal renderer |
+| [ibisPaint Stabilizer](https://ibispaint.com/lecture/index.jsp?no=50) | Real-time versus after-input correction; per-brush Force Fade | Preserve exact existing input/final-taper semantics; do not infer a proprietary raster algorithm |
+| [HTML Canvas / OffscreenCanvas](https://html.spec.whatwg.org/multipage/canvas.html) | Bitmap/CSS resolution, smoothing, software-friendly read hints, worker presentation | Full effective DPR for fine strokes; Canvas2D selected from earlier transport comparison; a worker or extra canvas does not guarantee independent hardware or fast output |
+| [WebGPU GPUQueue reference](https://gpuweb.github.io/types/interfaces/GPUQueue.html) | Submission schedules work; completion waits for preceding queue work | Bound jobs before submit, distinguish completion from scanout; no assumed interruption of running GPU work |
+| [WebGL2 specification](https://registry.khronos.org/webgl/specs/latest/2.0/) | Fence synchronization/readback, context-specific sync objects | Preserve exact backend and fence handling; no cross-context texture sharing assumption |
+
+Earlier PR30 compared direct Canvas2D, a second WebGL2 upload context and main-thread OffscreenCanvas. This iteration removes completed-proxy work and spends the saved work on line quality; worker transport has not been measured anew. The dedicated comparison page is `/qa/perf-stroke-overlay/`; old QA remains immutable.

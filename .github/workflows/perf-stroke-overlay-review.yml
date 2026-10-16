@@ -5,9 +5,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency:
-  group: stroke-overlay-review-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   regression:
     runs-on: ubuntu-latest
@@ -170,3 +167,56 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: 'overlay-performance-${{ matrix.backend }}-${{ matrix.size }}', path: /tmp/overlay-performance/}
+  profiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run brush:build > /tmp/brush-build.log
+      - run: |
+          npm install --prefix /tmp/overlay-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/overlay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Quality and workload at all area ratios
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          OVERLAY_BACKENDS: webgl2
+          OVERLAY_MODES: C
+          OVERLAY_BRUSHES: 'thin,broad,pencil,fine'
+          OVERLAY_RATIOS: '1,0.5,0.25,0.125,0.0625,0.03125,0.015625,0.0078125'
+          OVERLAY_QUALITY_OUTPUT: /tmp/overlay-profiles/report.json
+        run: node scripts/stroke-overlay-quality.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: overlay-profiles, path: /tmp/overlay-profiles/}
+
+  history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: |
+          npm run brush:build > /tmp/brush-build.log
+          git worktree add --detach /tmp/overlay-before d9f52391bb2eeed4750e571262c8a089171d011e
+          cd /tmp/overlay-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/overlay-before-build.log
+      - run: |
+          npm install --prefix /tmp/overlay-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/overlay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Completed histories do not participate in normal preview
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/stroke-overlay-history.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: overlay-history, path: /tmp/overlay-history/}
