@@ -105,12 +105,21 @@ export class ScreenProxy{
    while(index<entries.length){const entry=entries[index];current??=this.makeState(entry.id,entry.record.preset,entry.surfaceKey);while(command<entry.record.commands.length){this.raster(current,[entry.record.commands[command++]],false);if(performance.now()-at>3){setTimeout(step,0);return;}}
     this.fold(current);this.folded.add(entry.id);built.set(entry.id,new Set(current.tiles.keys()));index++;command=0;current=null;
    }
+   // Actual records can arrive while a view rebuild yields. Catch up to the
+   // current immutable prefix before publishing a base, including strokes whose
+   // strict GPU presentation has already retired their live notifications.
+   const latest=this.source();if(latest.length!==entries.length||entries.some((e,i)=>e.record!==latest[i]?.record||e.surfaceKey!==latest[i]?.surfaceKey)){
+    if(latest.length>=entries.length&&entries.every((e,i)=>e.record===latest[i]?.record&&e.surfaceKey===latest[i]?.surfaceKey)){
+     const added=latest.slice(entries.length);if(added.some(e=>!proxySupported(e.record.preset))){this.metrics.fallbacks++;this.pending.clear();return;}entries.push(...added);setTimeout(step,0);return;
+    }
+    this.invalidate();return;
+   }
    this.dirty.clear();for(const state of this.live?.()??[]){const keys=built.get(state.id);if(keys){this.footprints.set(state.id,keys);for(const key of keys)this.dirty.add(key);}else this.pending.set(state.id,state);}this.ready=true;this.sink.resize(this.plan);this.flush();if(!this.footprints.size)this.sink.hide();}catch(error){this.fail(error);}
   };step();
  }
  canUse(p){return this.enabled&&this.ready&&this.plan?.visibleArea>0&&proxySupported(p)&&this.view[12]<.5&&this.view[14]<.5;}
  makeState(id,preset,surfaceKey){return {id,preset,surfaceKey,tiles:new Map,tailKeys:new Set,cursor:0,last:null};}
- enqueue(state){if(!this.enabled)return false;if(!proxySupported(state.preset)){this.metrics.fallbacks++;return false;}
+ enqueue(state){if(!this.enabled||!this.view||this.view[12]>.5||this.view[14]>.5)return false;if(!proxySupported(state.preset)){this.metrics.fallbacks++;return false;}
   // Resolution is stable during a stroke. Thin rescue changes only disposable
   // display buffers and never rounds input/command coordinates.
   const thin=state.preset.size*this.view?.[6]<2;if(thin&&!this.thin&&this.ready){this.thin=true;this.invalidate();}
@@ -157,7 +166,7 @@ export class ScreenProxy{
    }catch(error){this.fail(error);}
   };setTimeout(step,0);
  }
- presented(id,epoch=this.epoch){if(epoch!==this.epoch)return;const item=this.commits?.find(c=>c.id===id);if(item){item.presented=true;return;}const keys=this.footprints.get(id);if(!keys)return;this.footprints.delete(id);this.folded.delete(id);this.states.delete(id);this.pending.delete(id);for(const key of keys)this.dirty.add(key);this.metrics.retirements++;this.present(performance.now(),[]);}
+ presented(id,epoch=this.epoch){if(epoch!==this.epoch)return;const item=this.commits?.find(c=>c.id===id);if(item){item.presented=true;return;}this.pending.delete(id);const keys=this.footprints.get(id);if(!keys){this.states.delete(id);this.folded.delete(id);return;}this.footprints.delete(id);this.folded.delete(id);this.states.delete(id);for(const key of keys)this.dirty.add(key);this.metrics.retirements++;this.present(performance.now(),[]);}
  cancel(id){const keys=this.footprints.get(id)??this.states.get(id)?.tiles.keys()??[];for(const key of keys)this.dirty.add(key);this.pending.delete(id);this.states.delete(id);this.footprints.delete(id);this.present(performance.now(),[]);}
  present(start,tips){if(!this.ready||!this.dirty.size)return;const rects=[],keys=[...this.dirty],stack=this.backend.surfaceStack,active=[...this.states.values()].sort((a,b)=>a.id-b.id),footprints=[...this.footprints.values()];this.dirty.clear();
   for(const key of keys){const [tx,ty]=key.split(',').map(Number),x0=tx*CELL,y0=ty*CELL,w=Math.min(CELL,this.plan.width-x0),h=Math.min(CELL,this.plan.height-y0);if(w<=0||h<=0)continue;rects.push([x0,y0,w,h]);const needed=footprints.some(s=>s.has(key));

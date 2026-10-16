@@ -47,3 +47,14 @@ test('bottom-layer paint stays below upper ink; upper erase reveals the colored 
  live(28,erase,'b');assert.deepEqual(at(),[255,0,0,255]);p.cancel(28);
  p.styles=new Map([['b',{opacity:.5}]]);live(37,red,'a');const c=at();assert.ok(Math.abs(c[0]-128)<=1&&Math.abs(c[2]-128)<=1);p.destroy();
 });
+test('view rebuild includes a committed stroke that arrives while reconstruction yields',async()=>{
+ const {p}=setup(),red=stroke({...referenceBrushes[2],color:[1,0,0]}),blue=stroke({...referenceBrushes[2],color:[0,0,1]}),slow={...red,commands:Array.from({length:200},()=>red.commands).flat()},entries=[{id:1,record:slow,surfaceKey:'a'}];
+ p.setSource(()=>entries.slice());assert.equal(p.ready,false,'exercise an outstanding reconstruction task');entries.push({id:10,record:blue,surfaceKey:'a'});p.committed(10,blue,'a');
+ const at=performance.now();while(!p.ready){assert.ok(performance.now()-at<10000);assert.equal(p.error,undefined);await delay();}
+ const q=toScreen(p.view,1200,1300),x=Math.floor((q.x-p.plan.x)*p.plan.scale),y=Math.floor((q.y-p.plan.y)*p.plan.scale),i=(y*p.plan.width+x)*4;
+ assert.deepEqual([...p.bases.get('a').subarray(i,i+4)],[0,0,255,255]);assert.ok(p.folded.has(10));p.destroy();
+});
+test('exact-feedback fallback and completed offscreen strokes do not retain stale notifications',()=>{
+ const {p}=setup(),record=stroke(),state={id:1,preset:record.preset,surfaceKey:'a',stableSource:record.commands,stableEnd:12,commands:[]};
+ p.view[12]=1;p.enqueue(state);assert.equal(p.pending.size,0);p.view[12]=0;p.ready=false;p.enqueue(state);assert.equal(p.pending.size,1);p.presented(1);assert.equal(p.pending.size,0);p.destroy();
+});

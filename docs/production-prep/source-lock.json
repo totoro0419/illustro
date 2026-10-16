@@ -225,7 +225,7 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "0dd1ed2383b5af487055e9f463f691236affe0fcd62433faa47407b895080256",
+      "sha256": "d98a157962fb3cb7925d0cb3f56ed5f2636d8a0561550c7a5f59816998889a22",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
       "undoNavigationException": "User-authorized continuous Undo: ordered bounded command admission, exact grouped history copies, final-head dirty reconstruction, pending derived GPU supersession, bounded32/64MiB editor cache. Canonical records, brush precision and shaders unchanged. Requires both-backend exact pixels, mixed directions, portable/history/layer tests and all prior regressions; physical Android remains unverified. Reuse completed base images only when no removed pending stroke has committed any layer tile; partially committed tiles must reconstruct.",
@@ -355,7 +355,7 @@
     {
       "path": "packages/brush-rt/src/screen-proxy.mjs",
       "sourceBranch": "perf/instant-canvas-2026-10-16",
-      "sha256": "fcc8d263d31c63565ebd8576ab70fb6b1679798e4722809c2dc5afd720c843cc",
+      "sha256": "988eb28e1ccec65e116bb4122553306ab51e64916572955553337c1007e41a19",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim."
     },
     {
@@ -367,7 +367,7 @@
     {
       "path": "packages/brush-rt/test/screen-proxy.test.mjs",
       "sourceBranch": "perf/instant-canvas-2026-10-16",
-      "sha256": "806344ed002436d33e1d9f54ff29960e12a82f9117343491f7fdd832a247fc02",
+      "sha256": "f76f13f6d1e313578e76d59fcc52b061e3eb949b3ee2365cd12f2d646c106810",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim."
     }
   ],
