@@ -1,0 +1,95 @@
+{
+  "milestone": "M05",
+  "mode": "local",
+  "url": "http://127.0.0.1:44505/",
+  "status": "PASS",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "status": "PASS",
+      "opfs": "opfs-sync",
+      "autosaveIndependentFromPortable": true,
+      "roundTrip": true,
+      "snapshotIsolation": true,
+      "saveDurationMs": 64.39999999996508,
+      "snapshotCaptureMs": 0.20000000001164153
+    },
+    {
+      "backend": "webgpu",
+      "status": "PASS",
+      "opfs": "opfs-sync",
+      "autosaveIndependentFromPortable": true,
+      "roundTrip": true,
+      "snapshotIsolation": true,
+      "saveDurationMs": 69.69999999995343,
+      "snapshotCaptureMs": 0.29999999998835847
+    }
+  ],
+  "recovery": {
+    "status": "PASS",
+    "strategy": "finished-state-cache",
+    "protectedThrough": "180",
+    "recoveredRevision": "1062efb7-4623-4027-9f7c-69bac839a341",
+    "workerDurationMs": null,
+    "projectionRestoreMs": 318.5,
+    "wallMs": 2209,
+    "strokeTotal": 180
+  },
+  "gap": {
+    "status": "PASS",
+    "deletedSequence": 2,
+    "recoveredStrokeCount": 1
+  },
+  "lastGood": null,
+  "offline": {
+    "status": "PASS",
+    "serviceWorker": true,
+    "networkUnavailable": true,
+    "draw": true,
+    "recoveryStore": true,
+    "save": true,
+    "open": true,
+    "navigatorOnline": true,
+    "backend": "opfs-sync"
+  },
+  "directPicker": {
+    "status": "PASS",
+    "staleReadsSimulated": 3,
+    "verificationRetried": true,
+    "firstBytes": 23934,
+    "secondBytes": 47517,
+    "autosaveIndependent": true
+  },
+  "explicitSaveWithoutRecovery": {
+    "status": "PASS",
+    "protectedThrough": "0",
+    "fileBytes": 1715,
+    "createdRecoveryCommit": false
+  },
+  "checkpointCadence": {
+    "status": "PASS",
+    "operationInterval": 12,
+    "idleMs": 800,
+    "protectedThrough": "12"
+  },
+  "corruptedProjectionCaches": [
+    {
+      "file": "projection-v2.frame",
+      "mode": "corrupted",
+      "beforeBytes": 2409,
+      "afterBytes": 4
+    },
+    {
+      "file": "projection.frame",
+      "mode": "removed",
+      "priorFailureStage": "open file",
+      "priorFailureName": "NotFoundError"
+    }
+  ],
+  "repairFallback": {
+    "status": "PASS",
+    "cacheCorrupted": true,
+    "strategy": "stroke-replay",
+    "strokeCount": 3
+  }
+}

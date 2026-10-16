@@ -1,0 +1,187 @@
+{
+  "sourceCommit": "417c02800332c73d491434e95b2efbb35068823c",
+  "scope": "Exact retained scene/mip pixels, direct versus prior scratch composition; software GPU, physical Android unverified",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "comparisons": [
+        {
+          "label": "pending-1",
+          "exactPixels": true,
+          "previewCount": 1,
+          "direct": {
+            "tiles": {},
+            "scene": "37f4675c669ee5d5522ee4010d8fe3028f43ea217eabf1da8433591a028e3e72",
+            "mips": [
+              "00e385cb32de81e946c1a293ac6cb2626b310dbe6ea73f7b148ab98de41b05e1"
+            ]
+          }
+        },
+        {
+          "label": "pending-4",
+          "exactPixels": true,
+          "previewCount": 4,
+          "direct": {
+            "tiles": {},
+            "scene": "4579ff511234af76130b09d9e21eefbe52e329e2026c75fdd5b881866bffbd50",
+            "mips": [
+              "dd5f390dac7d12e79ad7bac9ed344f1c6a100da8dcffa7484eacdbf3ae084cbd"
+            ]
+          }
+        },
+        {
+          "label": "pending-7",
+          "exactPixels": true,
+          "previewCount": 7,
+          "direct": {
+            "tiles": {},
+            "scene": "d1eb3e61ccaf695c8afe0acbaa4d8a4a3c77794836e5abbe61213ccb1f797ff4",
+            "mips": [
+              "4bcca96c86c2562d563430027ef131423dde63e1ae5c0531411ece9a02792aeb"
+            ]
+          }
+        },
+        {
+          "label": "pending-12",
+          "exactPixels": true,
+          "previewCount": 12,
+          "direct": {
+            "tiles": {},
+            "scene": "b18b1977da537c8d560e7687053c2dd20d036c8894f2b76302f5986922555b92",
+            "mips": [
+              "d0b0a5e7860f118e425635ca51d981ed755084ed010d892c75a79fb18e0faf6b"
+            ]
+          }
+        },
+        {
+          "label": "formally-completed",
+          "exactPixels": true,
+          "previewCount": 0,
+          "direct": {
+            "tiles": {
+              "a\u00000,0": "5b9e0b5b3e54db667a45f59972305c1158682e3b0c03e5a2654d29916927fd9a",
+              "a\u00000,1": "e21c8dfed99451e959bb6de3277d02e31e5f00b8197b156bda7a5ad75ccec6bf",
+              "a\u00001,0": "fa52ea7c7062aebec8c7adbf89403c6cac70d56b3f2770b433cf8c0c710e1e84",
+              "a\u00001,1": "8dc3f8383fd371cfa4d53fa270ff6f8fd004e3cf1fa9b20c65030edb66713a74",
+              "a\u00002,0": "bacb52f0ca188c5685d5cdd7975f99a52867ab336db1400017052640f14ef568",
+              "a\u00002,1": "e429b7e0f44d2c036ee6ef26865adc636d4957aed642a6352d136ccae2357c99",
+              "b\u00000,0": "c72e67281130c702f2b1762112504918c6b2249ebcad9f6bd679371b29ada295",
+              "b\u00000,1": "08fccb0bcab63c67383ca9f5cb79550d2beabcb1dc0982e6e8fc94e8e461a3f3",
+              "b\u00001,0": "de91d32372bf490f7901c0e46c8c5eda8103be669c9bbb36cc5c38dbd4721301",
+              "b\u00001,1": "0877ea553c2323446bafe9c6360f17e7f49b8d8e48244ee0a01c43240d8f7dac",
+              "b\u00002,0": "53e7debe25b529cb31b3ca8dbeff91429bcd28e9dd7a6f0a6ffd30724c3f11e7",
+              "b\u00002,1": "d1d85edb4314f1a0d9f42a4ab6d58caa1b9e6d55d78d081a307b364fed2d193f",
+              "b\u000030,30": "477d68716eb93da9599d296e03a9101f51eef9e3dad8e8357c2488869e4ca3d4",
+              "b\u000030,31": "d0a9f64a4998fcde6bd8f73a4978ebe753e0c37342dc276a1e4306428cebb635",
+              "b\u000031,30": "2f68cd083463e8d41a16109c64c6f80f0315626e9b49b6016390872f7f429765",
+              "b\u000031,31": "ff107e129981b2e050e65bf327816bda3b44f4bc9db918c1368b61449824198a",
+              "c\u000030,30": "02dcfa52c260436e882784c8850bfa593cdde5ae3558d3e39d2e0002fc03a9d9",
+              "c\u000030,31": "93ea9288c8083b1afd07ccced6a35f712815518dd15a0d3d0d509f25d53272db",
+              "c\u000031,30": "6aabee07a1730fdc8dcbd508fa12797329e50235a66199c048a1594708635c0b",
+              "c\u000031,31": "0523adbe08719cb57039535fea4e76ae5a983a7713c226d91cb523f07a4b401b"
+            },
+            "scene": "b18b1977da537c8d560e7687053c2dd20d036c8894f2b76302f5986922555b92",
+            "mips": [
+              "d0b0a5e7860f118e425635ca51d981ed755084ed010d892c75a79fb18e0faf6b"
+            ]
+          }
+        }
+      ],
+      "rebuildMatch": true,
+      "unprunedMatch": true,
+      "pruned": 1920,
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "comparisons": [
+        {
+          "label": "pending-1",
+          "exactPixels": true,
+          "previewCount": 1,
+          "direct": {
+            "tiles": {},
+            "scene": "5e2b817d511b9476403cd302a383b804ab7a5560e8162625cf8a1d4921ee5158",
+            "mips": [
+              "8d86f681e4bee133d5a534a6f51a2c6f8b2f86234300f73cf817f53cb6d54b40"
+            ]
+          }
+        },
+        {
+          "label": "pending-4",
+          "exactPixels": true,
+          "previewCount": 4,
+          "direct": {
+            "tiles": {},
+            "scene": "a3612008836fbad8f38d27d045f7f796197361ec63ce6e9abdd83a2d6fd76b26",
+            "mips": [
+              "a457a848b0d80161ae4d27e8d4f45e74524c64fcfa66a7fef91bfe387faaca2c"
+            ]
+          }
+        },
+        {
+          "label": "pending-7",
+          "exactPixels": true,
+          "previewCount": 7,
+          "direct": {
+            "tiles": {},
+            "scene": "0b739ac4532d0baae1600382cebd69d47689181d92b5e1fa9bc0aa351d11d6a1",
+            "mips": [
+              "9cc7b736654c9ab083a10ba93d274a0e040a6a714e3fef84bd8bbb22ed4ca538"
+            ]
+          }
+        },
+        {
+          "label": "pending-12",
+          "exactPixels": true,
+          "previewCount": 12,
+          "direct": {
+            "tiles": {},
+            "scene": "60ba1cb954d212ca939cb2f59900df10ee840796ff4f19e5fd789f723659dee7",
+            "mips": [
+              "a9b7a86ff75068bb134e8d9d9321e7fd6dc50f1e5f90ee86871eb0adaa699a4b"
+            ]
+          }
+        },
+        {
+          "label": "formally-completed",
+          "exactPixels": true,
+          "previewCount": 0,
+          "direct": {
+            "tiles": {
+              "a\u00000,0": "5b9e0b5b3e54db667a45f59972305c1158682e3b0c03e5a2654d29916927fd9a",
+              "a\u00000,1": "ba788b12ff951c75ddb0ad32bccd4330afc1388f1b7caf4e6c1bfcedb5abab13",
+              "a\u00001,0": "f8e12eb0c183055af7582e9add6a9843c6b33b98854af8b256e92cf491f265bc",
+              "a\u00001,1": "820c8b6f041ada257ba13e6e9ee56f4733c8321ffab3ed290846451243dc2282",
+              "a\u00002,0": "1db00d72c34ad105e5c65a53b79b74928e07b4d7aac5ea19806c3ba652cae047",
+              "a\u00002,1": "fcec9c30a03dbbf31fd10f23ae1e57f7a1b83293fa741a34fa3f614951ecc70d",
+              "b\u00000,0": "3462be51ad01fc0704003092e441e8431f2872eae267d70ce35f544afdd34e49",
+              "b\u00000,1": "65e1d518110fbebd71fdf4c79bcaaff3da35edd88c7beade5b26119327a65ae7",
+              "b\u00001,0": "4c823ce942591848181318fb75508b29ac4a4b693d8e2c608b6c4580bff614f3",
+              "b\u00001,1": "84c07f12eddf21cdfdaffc374e88180a2de2a0111ee662aadd29093203d1cc7b",
+              "b\u00002,0": "4cfdb787f808713f0c70bad19d4f351a67415c4f5e313a67c32b866a1b173a49",
+              "b\u00002,1": "2d918afd64492edf687152cfa2e789cda2d8bf77348f1f36a46871fab1770ed8",
+              "b\u000030,30": "4112eba95c6b4a42cb2ca138cb879c21767a4c326e39bef6648a3647db7e1f2b",
+              "b\u000030,31": "b81e409616d4b18396768ed0774fb5717911bee1380332a0d847315b1b16adc3",
+              "b\u000031,30": "0040513fe055defecc20c548302064ffc98fc2d8b90a25c7a9bc31e071611516",
+              "b\u000031,31": "ac3c5f7208530b980ab951f654fb231aedd90e54b81ccaf898d61efbe72ac7b2",
+              "c\u000030,30": "98c05fc52bd4a5f09931224c83fd3db07acfa91adb744c1651da0c89cf6d7c8c",
+              "c\u000030,31": "3367ab3953cc1633d7ae5958724544f92e0ceb3acafdf8e54433f3bf4bd56c69",
+              "c\u000031,30": "eaa5a09f04d0d5433a69fd6e37c224639af9349b11c6f6c0463cbd72a1a8a3be",
+              "c\u000031,31": "cf19c2fc44ef2783413e14328362d9f22f9fcfa1ed4d8e2b2a65955b91da0fcb"
+            },
+            "scene": "60ba1cb954d212ca939cb2f59900df10ee840796ff4f19e5fd789f723659dee7",
+            "mips": [
+              "a9b7a86ff75068bb134e8d9d9321e7fd6dc50f1e5f90ee86871eb0adaa699a4b"
+            ]
+          }
+        }
+      ],
+      "rebuildMatch": true,
+      "unprunedMatch": true,
+      "pruned": 1914,
+      "errors": []
+    }
+  ],
+  "errors": []
+}

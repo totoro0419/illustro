@@ -1,0 +1,927 @@
+{
+  "sourceCommit": "417c02800332c73d491434e95b2efbb35068823c",
+  "scope": "Exact physical backing pixels, cached dirty rectangles versus unchanged direct presentation shader; software GPU, no physical phone",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "canvasSize": 4000,
+      "comparisons": [
+        {
+          "label": "view-0",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-0-0",
+          "exactPixels": true,
+          "screenPixels": 1369,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1369
+        },
+        {
+          "label": "dirty-0-1",
+          "exactPixels": true,
+          "screenPixels": 1444,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1444
+        },
+        {
+          "label": "dirty-0-2",
+          "exactPixels": true,
+          "screenPixels": 1406,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1406,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-1",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-1-0",
+          "exactPixels": true,
+          "screenPixels": 7056,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 7056
+        },
+        {
+          "label": "dirty-1-1",
+          "exactPixels": true,
+          "screenPixels": 7140,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 7140
+        },
+        {
+          "label": "dirty-1-2",
+          "exactPixels": true,
+          "screenPixels": 7056,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 7056,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-2",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-2-0",
+          "exactPixels": true,
+          "screenPixels": 14161,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 14161
+        },
+        {
+          "label": "dirty-2-1",
+          "exactPixels": true,
+          "screenPixels": 14042,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 14042
+        },
+        {
+          "label": "dirty-2-2",
+          "exactPixels": true,
+          "screenPixels": 14042,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 14042,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-3",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-3-0",
+          "exactPixels": true,
+          "screenPixels": 156816,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 156816
+        },
+        {
+          "label": "dirty-3-1",
+          "exactPixels": true,
+          "screenPixels": 125928,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 125928
+        },
+        {
+          "label": "dirty-3-2",
+          "exactPixels": true,
+          "screenPixels": 104808,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 104808,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-4",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-4-0",
+          "exactPixels": true,
+          "screenPixels": 444889,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 444889
+        },
+        {
+          "label": "dirty-4-1",
+          "exactPixels": true,
+          "screenPixels": 111776,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 111776
+        },
+        {
+          "label": "dirty-4-2",
+          "exactPixels": true,
+          "screenPixels": 0,
+          "screenRects": 0,
+          "screenCacheHit": true,
+          "screenCopiedPixels": 0,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "before-edge",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "clipped-image-edge",
+          "exactPixels": true,
+          "screenPixels": 289,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 289
+        },
+        {
+          "label": "seamless-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "reference-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "backing-resize",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 889200
+        },
+        {
+          "label": "budget-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "cleared-cache",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 889200
+        }
+      ],
+      "cacheBytes": 3556800,
+      "budget": 33554432,
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "canvasSize": 4001,
+      "comparisons": [
+        {
+          "label": "view-0",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-0-0",
+          "exactPixels": true,
+          "screenPixels": 1369,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1369
+        },
+        {
+          "label": "dirty-0-1",
+          "exactPixels": true,
+          "screenPixels": 1369,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1369
+        },
+        {
+          "label": "dirty-0-2",
+          "exactPixels": true,
+          "screenPixels": 1444,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1444,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-1",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-1-0",
+          "exactPixels": true,
+          "screenPixels": 7140,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 7140
+        },
+        {
+          "label": "dirty-1-1",
+          "exactPixels": true,
+          "screenPixels": 7056,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 7056
+        },
+        {
+          "label": "dirty-1-2",
+          "exactPixels": true,
+          "screenPixels": 7056,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 7056,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-2",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-2-0",
+          "exactPixels": true,
+          "screenPixels": 14042,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 14042
+        },
+        {
+          "label": "dirty-2-1",
+          "exactPixels": true,
+          "screenPixels": 14161,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 14161
+        },
+        {
+          "label": "dirty-2-2",
+          "exactPixels": true,
+          "screenPixels": 14161,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 14161,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-3",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-3-0",
+          "exactPixels": true,
+          "screenPixels": 157212,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 157212
+        },
+        {
+          "label": "dirty-3-1",
+          "exactPixels": true,
+          "screenPixels": 126720,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 126720
+        },
+        {
+          "label": "dirty-3-2",
+          "exactPixels": true,
+          "screenPixels": 104940,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 104940,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-4",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-4-0",
+          "exactPixels": true,
+          "screenPixels": 444889,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 444889
+        },
+        {
+          "label": "dirty-4-1",
+          "exactPixels": true,
+          "screenPixels": 113226,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 113226
+        },
+        {
+          "label": "dirty-4-2",
+          "exactPixels": true,
+          "screenPixels": 0,
+          "screenRects": 0,
+          "screenCacheHit": true,
+          "screenCopiedPixels": 0,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "before-edge",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "clipped-image-edge",
+          "exactPixels": true,
+          "screenPixels": 289,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 289
+        },
+        {
+          "label": "seamless-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "reference-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "backing-resize",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 889200
+        },
+        {
+          "label": "budget-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "cleared-cache",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 889200
+        }
+      ],
+      "cacheBytes": 3556800,
+      "budget": 33554432,
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "canvasSize": 4000,
+      "comparisons": [
+        {
+          "label": "view-0",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-0-0",
+          "exactPixels": true,
+          "screenPixels": 1369,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-0-1",
+          "exactPixels": true,
+          "screenPixels": 1444,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-0-2",
+          "exactPixels": true,
+          "screenPixels": 1406,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-1",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-1-0",
+          "exactPixels": true,
+          "screenPixels": 7056,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-1-1",
+          "exactPixels": true,
+          "screenPixels": 7140,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-1-2",
+          "exactPixels": true,
+          "screenPixels": 7056,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-2",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-2-0",
+          "exactPixels": true,
+          "screenPixels": 14161,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-2-1",
+          "exactPixels": true,
+          "screenPixels": 14042,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-2-2",
+          "exactPixels": true,
+          "screenPixels": 14042,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-3",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-3-0",
+          "exactPixels": true,
+          "screenPixels": 156816,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-3-1",
+          "exactPixels": true,
+          "screenPixels": 125928,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-3-2",
+          "exactPixels": true,
+          "screenPixels": 104808,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-4",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-4-0",
+          "exactPixels": true,
+          "screenPixels": 444889,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-4-1",
+          "exactPixels": true,
+          "screenPixels": 111776,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-4-2",
+          "exactPixels": true,
+          "screenPixels": 0,
+          "screenRects": 0,
+          "screenCacheHit": true,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "before-edge",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "clipped-image-edge",
+          "exactPixels": true,
+          "screenPixels": 289,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "seamless-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "reference-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "backing-resize",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 889200
+        },
+        {
+          "label": "budget-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "cleared-cache",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 889200
+        }
+      ],
+      "cacheBytes": 3556800,
+      "budget": 33554432,
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "canvasSize": 4001,
+      "comparisons": [
+        {
+          "label": "view-0",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-0-0",
+          "exactPixels": true,
+          "screenPixels": 1369,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-0-1",
+          "exactPixels": true,
+          "screenPixels": 1369,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-0-2",
+          "exactPixels": true,
+          "screenPixels": 1444,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-1",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-1-0",
+          "exactPixels": true,
+          "screenPixels": 7140,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-1-1",
+          "exactPixels": true,
+          "screenPixels": 7056,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-1-2",
+          "exactPixels": true,
+          "screenPixels": 7056,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-2",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-2-0",
+          "exactPixels": true,
+          "screenPixels": 14042,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-2-1",
+          "exactPixels": true,
+          "screenPixels": 14161,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-2-2",
+          "exactPixels": true,
+          "screenPixels": 14161,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-3",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-3-0",
+          "exactPixels": true,
+          "screenPixels": 157212,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-3-1",
+          "exactPixels": true,
+          "screenPixels": 126720,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-3-2",
+          "exactPixels": true,
+          "screenPixels": 104940,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "view-4",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-4-0",
+          "exactPixels": true,
+          "screenPixels": 444889,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-4-1",
+          "exactPixels": true,
+          "screenPixels": 113226,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "dirty-4-2",
+          "exactPixels": true,
+          "screenPixels": 0,
+          "screenRects": 0,
+          "screenCacheHit": true,
+          "screenCopiedPixels": 1305000,
+          "unchangedAfterTask": true
+        },
+        {
+          "label": "before-edge",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "clipped-image-edge",
+          "exactPixels": true,
+          "screenPixels": 289,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 1305000
+        },
+        {
+          "label": "seamless-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "reference-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 1305000,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "backing-resize",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 889200
+        },
+        {
+          "label": "budget-direct-fallback",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 0
+        },
+        {
+          "label": "cleared-cache",
+          "exactPixels": true,
+          "screenPixels": 889200,
+          "screenRects": 1,
+          "screenCacheHit": false,
+          "screenCopiedPixels": 889200
+        }
+      ],
+      "cacheBytes": 3556800,
+      "budget": 33554432,
+      "errors": []
+    }
+  ],
+  "errors": []
+}
