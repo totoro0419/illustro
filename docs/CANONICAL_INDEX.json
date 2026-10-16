@@ -1942,6 +1942,14 @@
     {
       "path": "scripts/preview-pressure-quality.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/formal-resource-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/FORMAL_STROKE_RESOURCES_2026-10-16.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

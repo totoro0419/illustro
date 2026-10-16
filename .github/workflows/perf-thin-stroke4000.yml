@@ -71,6 +71,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
@@ -78,17 +79,25 @@ jobs:
       - run: |
           npm install --prefix /tmp/handoff-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/handoff-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Prepare immutable formal-resource baseline
+        run: |
+          git worktree add --detach /tmp/handoff-before 417c02800332c73d491434e95b2efbb35068823c
+          cd /tmp/handoff-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/formal-before-build.log
       - name: Four sizes, three layer counts, seven brushes, both GPUs, overlap and history
         env:
           RT_PLAYWRIGHT_PATH: /tmp/handoff-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: |
+          node scripts/formal-resource-quality.mjs
           node scripts/stroke-handoff-quality.mjs
           HANDOFF_HEAVY_AREA=1 HANDOFF_QUALITY_OUTPUT=/tmp/handoff-quality/heavy/report.json node scripts/stroke-handoff-quality.mjs
           VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
           UNDO_QUALITY_CANVAS_SIZE=4000 UNDO_QUALITY_OUTPUT=/tmp/handoff-quality/navigation/report.json node scripts/undo-navigation-quality.mjs
           MOBILE_QUALITY_OUTPUT=/tmp/handoff-quality/direct.json node scripts/mobile-composition-quality.mjs
           MOBILE_INPUT_OUTPUT=/tmp/handoff-quality/input/report.json node scripts/mobile-input-smoke.mjs
+          MOBILE_HOME=1 MOBILE_INPUT_OUTPUT=/tmp/handoff-quality/home/report.json node scripts/mobile-input-smoke.mjs
           VIEWPORT_QUALITY_OUTPUT=/tmp/handoff-quality/viewport/report.json node scripts/viewport-cache-quality.mjs
           PRESSURE_QUALITY_OUTPUT=/tmp/handoff-quality/pressure/report.json node scripts/preview-pressure-quality.mjs
           HANDOFF_STRESS_SIZE=4000 HANDOFF_STRESS_MOBILE=1 HANDOFF_STRESS_BRUSH_SIZE=16 HANDOFF_STRESS_COUNT=12 HANDOFF_STRESS_POINTS=61 HANDOFF_STRESS_POINT_INTERVAL_MS=8 HANDOFF_STRESS_PREVIEW_BUDGET_MIB=1 HANDOFF_STRESS_OUTPUT=/tmp/handoff-quality/pressure-input/report.json node scripts/stroke-handoff-stress.mjs
@@ -106,11 +115,11 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Prepare immutable baseline
         run: |
-          git worktree add --detach /tmp/handoff-before efaf43766aa96befa18984f34d8853543c7d7eed
+          git worktree add --detach /tmp/handoff-before 417c02800332c73d491434e95b2efbb35068823c
           cd /tmp/handoff-before
           npm ci --ignore-scripts --no-audit --no-fund
           npm run brush:build > /tmp/handoff-before-build.log
-          VITE_COMMIT_SHA=efaf43766aa96befa18984f34d8853543c7d7eed npm --workspace @illustro/editor exec -- vite build --base=./
+          VITE_COMMIT_SHA=417c02800332c73d491434e95b2efbb35068823c npm --workspace @illustro/editor exec -- vite build --base=./
       - run: |
           npm run brush:build > /tmp/brush-build.log
           VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
@@ -144,6 +153,7 @@ jobs:
         run: |
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_OUTPUT=/tmp/handoff-evidence/comparison.json node scripts/thin-stroke-benchmark.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=16 THIN_ROUNDS=1 THIN_SIZES=512,2048,3000 THIN_OUTPUT=/tmp/handoff-evidence/scaling.json node scripts/thin-stroke-benchmark.mjs
+          THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=1,16 THIN_POINT_INTERVAL_MS=0 THIN_INTER_STROKE_MS=0 THIN_OUTPUT=/tmp/handoff-evidence/burst.json node scripts/thin-stroke-benchmark.mjs
           THIN_BEFORE_ROOT=/tmp/handoff-before/apps/editor/dist THIN_BRUSHES=256,512 THIN_ROUNDS=1 THIN_OUTPUT=/tmp/handoff-evidence/broad.json node scripts/thin-stroke-benchmark.mjs
       - uses: actions/upload-artifact@v4
         if: always()
@@ -169,6 +179,7 @@ jobs:
           node scripts/thin-stroke-report.mjs review-evidence
           (cd site && find qa -type f ! -path 'qa/perf-thin-stroke4000/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
           mkdir -p site/qa/perf-thin-stroke4000/app site/qa/perf-thin-stroke4000/evidence
+          node -e "const fs=require('fs'),p='site/qa/perf-thin-stroke4000/evidence/qa-status.json';if(fs.existsSync(p)&&JSON.parse(fs.readFileSync(p)).sourceCommit==='417c02800332c73d491434e95b2efbb35068823c'){const d='site/qa/perf-thin-stroke4000/evidence/prior-417';fs.mkdirSync(d,{recursive:true});fs.copyFileSync(p,d+'/qa-status.json');}"
           cp -a review-build/. site/qa/perf-thin-stroke4000/app/
           cp -a review-evidence/. site/qa/perf-thin-stroke4000/evidence/
           printf '%s\n' '<!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro 4000px細い線の描画確認</title><script>location.replace("./app/"+location.search+location.hash)</script><a href="./app/">4000px細い線の描画確認ページを開く</a></html>' > site/qa/perf-thin-stroke4000/index.html
@@ -218,6 +229,7 @@ jobs:
           node scripts/stroke-handoff-operations.mjs
           node scripts/undo-navigation-quality.mjs
           node scripts/mobile-input-smoke.mjs
+          MOBILE_HOME=1 MOBILE_INPUT_OUTPUT=/tmp/handoff-public/home/report.json node scripts/mobile-input-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: thin-public-verification, path: /tmp/handoff-public/}
