@@ -8,6 +8,7 @@ function harness(){
  const gl={RGBA8:1,UNSIGNED_BYTE:1,TEXTURE_2D:1,RGBA:1,bindTexture(_,image){bound=image;},texSubImage2D(...args){bound.pixels.set(args.at(-1));}};
  const b={gl,layered:true,archiveIds:new Map,tiles:new Map,surface(){const image={pixels:new Uint8Array(65536)};image.t=image;return image;},copySurface(a,z){z.pixels.set(a.pixels);},release(image){released.push(image);}};
  b.zeroLayer=b.surface();const h=new TileHistory(b,{archive}),tile={key:'0,0',surfaceKey:'a',layer:[b.surface(),b.surface()],l:0,preset:{id:'p'},uncommittedOwner:1};b.tiles.set('a\0'+'0,0',tile);
+ b.tile=(key,surfaceKey)=>{const q=surfaceKey+'\0'+key;let t=b.tiles.get(q);if(!t){t={key,surfaceKey,layer:[b.surface(),b.surface()],l:0,preset:{id:'p'},active:null};b.tiles.set(q,t);}return t;};
  const stroke=(id,value)=>{h.before(id,'0,0',tile,{id:'p'});tile.l=1-tile.l;tile.layer[tile.l].pixels.fill(value);tile.committedId=id;tile.preset={id:'p'};h.after(id,'0,0',tile);delete tile.uncommittedOwner;};
  return {b,h,tile,stroke,archive,stored,released};
 }
@@ -37,4 +38,8 @@ test('Undo then paint releases the abandoned Redo images without touching the sh
  const {h,stroke,tile,released}=harness();stroke(1,50);stroke(2,100);publish(h,await h.prepare([{id:2,direction:'undo'}]));h.drop([2]);stroke(3,200);
  assert.equal(tile.layer[tile.l].pixels[0],200);assert.equal(h.patches.has(2),false);assert.equal(h.metrics.copies,3);assert.equal(released.length,1);
  h.clear();assert.equal(h.gpuBytes,0);assert.equal(h.versions.size,0);assert.equal(h.patches.size,0);assert.equal(h.current.size,0);
+});
+test('empty Undo frees document GPU tiles and Redo recreates identical pixels',async()=>{
+ const {h,b,stroke}=harness();stroke(1,77);const undo=await h.prepare([{id:1,direction:'undo'}]);publish(h,undo);assert.equal(b.tiles.size,0);assert.equal(h.current.get('a\0'+'0,0').version,null);
+ const redo=await h.prepare([{id:1,direction:'redo'}]);assert.equal(b.tiles.get('a\0'+'0,0').layer[0].pixels[0],0,'old empty image remains visible while staged');publish(h,redo);const t=b.tiles.get('a\0'+'0,0');assert.equal(t.layer[t.l].pixels[0],77);assert.equal(t.committedId,1);
 });

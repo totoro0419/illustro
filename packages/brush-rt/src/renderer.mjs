@@ -437,15 +437,16 @@ export class GpuRenderer {
   const started=performance.now();let held=false,prepared;
   try{
    const plan=await h.prepare(steps);if(!plan)return false;prepared=plan;
-   const keys=new Set(b.dirtyConfirmed);for(const {t}of plan.staged)keys.add(t.key);
+   const keys=new Set(b.dirtyConfirmed);for(const {q}of plan.staged)keys.add(q.slice(q.indexOf('\u0000')+1));
    // No image read can fail after this point. Stage in existing layer slots;
    // hold all presentation while the final dirty union is composed in slices.
    b.setPresentationHeld(true);held=true;h.publish(plan);b.dirtyConfirmed.clear();
-   const all=[...keys];for(let offset=0;offset<all.length;offset+=8){
-    for(const key of all.slice(offset,offset+8))b.dirtyConfirmed.add(key);
-    let done=false,error;const pending=Promise.resolve(b.render(null,[],[])).then(()=>{done=true;},e=>{error=e;done=true;});
+   const all=[...keys];let limit=8;for(let offset=0;offset<all.length;){
+    const batch=all.slice(offset,offset+limit);offset+=batch.length;for(const key of batch)b.dirtyConfirmed.add(key);
+    const submittedAt=performance.now();let done=false,error;const pending=Promise.resolve(b.render(null,[],[])).then(()=>{done=true;},e=>{error=e;done=true;});const cpuMs=performance.now()-submittedAt;
     const waitStarted=performance.now();while(!done){await historyYield();b.poll?.();if(performance.now()-waitStarted>30000)throw Error('History composition GPU timeout');}await pending;if(error)throw error;
     this.performance.renders++;this.performance.compositedTiles+=b.lastSubmission?.compositedTiles??0;this.performance.compositedLayerPasses+=b.lastSubmission?.compositedLayerPasses??0;
+    limit=Math.max(8,Math.min(64,Math.floor(batch.length*4/Math.max(.5,cpuMs))));
     await historyYield();
    }
    b.setPresentationHeld(false);held=false;this.syncOverlayView();await b.presentCurrent();this.viewPending=false;

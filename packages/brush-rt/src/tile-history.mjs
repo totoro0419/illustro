@@ -68,7 +68,9 @@ export class TileHistory {
   this.busy=true;const plan=await this.plan(steps);if(!plan){this.busy=false;return null;}
   plan.pinned=[...new Set([...plan.tiles.values()].map(p=>p.target.version).filter(v=>v?.gpu))];for(const v of plan.pinned)v.pins++;
   const staged=[];let complete=false;try{
-   const entries=[...plan.tiles];for(let offset=0;offset<entries.length;offset+=8){
+   const entries=[];
+   for(const [q,p]of plan.tiles){if(p.target.version)entries.push([q,p]);else{const t=this.backend.tiles.get(q);staged.push({q,t,state:p.target});this.metrics.emptyTiles++;}}
+   for(let offset=0;offset<entries.length;offset+=8){
     const batch=entries.slice(offset,offset+8),cold=new Map;
     // Fetch and validate the whole small batch before issuing any GPU copies.
     const missing=batch.filter(([,p])=>p.target.version&&!p.target.version.gpu);
@@ -76,9 +78,8 @@ export class TileHistory {
     const loaded=!missing.length?[]:this.archive.getMany?await this.archive.getMany(missing.map(([,p])=>p.target.version.id)):await Promise.all(missing.map(([,p])=>this.archive.get(p.target.version.id)));
     for(let i=0;i<missing.length;i++){const [q,p]=missing[i],result=loaded[i];if(result.missing){p.target.version.archived=false;this.metrics.recoveryFallbacks++;return null;}cold.set(q,result.pixels);}
     const b=this.backend,encoder=b.device?.createCommandEncoder(),start=performance.now();
-    for(const [q,p]of batch){const t=b.tiles.get(q);if(!t){this.metrics.recoveryFallbacks++;return null;}const target=t.layer[1-t.l],v=p.target.version;
-     if(!v){copyHistoryImage(b,b.zeroLayer,target,encoder);this.metrics.emptyTiles++;}
-     else if(v.gpu){copyHistoryImage(b,v.gpu,target,encoder);this.metrics.hotTiles++;}
+    for(const [q,p]of batch){const t=b.tiles.get(q)??b.tile(p.key,p.surfaceKey),target=t.layer[1-t.l],v=p.target.version;
+     if(v.gpu){copyHistoryImage(b,v.gpu,target,encoder);this.metrics.hotTiles++;}
      else{uploadHistoryImage(b,cold.get(q),target);this.metrics.coldTiles++;}
      staged.push({q,t,state:p.target});
     }
@@ -88,8 +89,10 @@ export class TileHistory {
   }catch(error){this.metrics.storageErrors++;return null;}finally{if(!complete){if(this.backend.device)await this.backend.device.queue.onSubmittedWorkDone();this.complete(plan);}}
  }
  publish(plan){
-  for(const {q,t,state}of plan.staged){t.l=1-t.l;t.committedId=state.committedId;t.preset=state.preset;t.active=null;
-   if(!this.backend.layered){if(state.archiveId===undefined)this.backend.archiveIds.delete(t.key);else this.backend.archiveIds.set(t.key,state.archiveId);}
+  for(const {q,t,state}of plan.staged){
+   if(!state.version){if(t){for(const image of t.layer)releaseHistoryImage(this.backend,image);if(t.stroke)for(const image of t.stroke)releaseHistoryImage(this.backend,image);this.backend.tiles.delete(q);}}
+   else{t.l=1-t.l;t.committedId=state.committedId;t.preset=state.preset;t.active=null;}
+   if(!this.backend.layered){const key=q.slice(q.indexOf('\u0000')+1);if(state.archiveId===undefined)this.backend.archiveIds.delete(key);else this.backend.archiveIds.set(key,state.archiveId);}
    this.release(this.current.get(q)?.version);this.current.set(q,{...state,version:this.retain(state.version)});
   }
   for(const [id,state]of plan.states)this.patches.get(id).state=state;this.metrics.restores++;

@@ -62,6 +62,7 @@ jobs:
       RT_PLAYWRIGHT_PATH: /tmp/history-browser/node_modules/playwright
       HANDOFF_OPERATIONS_OUTPUT: /tmp/tile-history-regression/operations/report.json
       M05_EVIDENCE_DIRECTORY: /tmp/tile-history-regression/recovery
+      M05_EXPECT_MILESTONE: M07
       M08_EVIDENCE_DIRECTORY: /tmp/tile-history-regression/canvas
       M09_EVIDENCE_DIRECTORY: /tmp/tile-history-regression/color
       HOME_EVIDENCE_DIRECTORY: /tmp/tile-history-regression/works
