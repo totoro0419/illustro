@@ -88,11 +88,19 @@ function makeReferencePattern(){
  return a;
 }
 const PRESENT_GL_VERTEX=`#version 300 es
-void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.0-1.0,0.0,1.0);}`;
+precision highp float;
+uniform vec4 viewScreen,viewDocument,viewMotion;
+out vec2 documentPosition;
+void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.0-1.0,0.0,1.0);
+ vec2 screen=vec2(p.x,1.-p.y)*viewScreen.zw;
+ vec2 pos=(screen-viewScreen.zw*.5-viewMotion.xy)/viewDocument.z;
+ float c=cos(viewDocument.w),s=sin(viewDocument.w);
+ documentPosition=vec2(pos.x*c+pos.y*s,-pos.x*s+pos.y*c)*viewMotion.zw+viewDocument.xy*.5;
+}`;
 const PRESENT_GL_FRAGMENT=`#version 300 es
 precision highp float;
 uniform sampler2D source;uniform vec4 viewScreen,viewDocument,viewMotion,viewOptions;
-out vec4 outColor;
+in vec2 documentPosition;out vec4 outColor;
 vec4 takePixel(ivec2 p){
  ivec2 size=textureSize(source,0);
  if(viewOptions.x>0.5||viewOptions.z>0.5)p=ivec2((p.x%size.x+size.x)%size.x,(p.y%size.y+size.y)%size.y);
@@ -100,10 +108,7 @@ vec4 takePixel(ivec2 p){
  return texelFetch(source,p,0);
 }
 void main(){
- vec2 screen=vec2(gl_FragCoord.x,viewScreen.y-gl_FragCoord.y)*viewScreen.zw/viewScreen.xy;
- vec2 pos=(screen-viewScreen.zw*.5-viewMotion.xy)/viewDocument.z;
- float c=cos(viewDocument.w),s=sin(viewDocument.w);
- vec2 doc=vec2(pos.x*c+pos.y*s,-pos.x*s+pos.y*c)*viewMotion.zw+viewDocument.xy*.5;
+ vec2 doc=documentPosition;
  if(viewOptions.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=viewDocument.x||doc.y>=viewDocument.y)){
   vec2 outside=max(max(-doc,doc-viewDocument.xy),vec2(0.));
   float shadow=.075*exp(-length(outside)*viewDocument.z/13.);
@@ -123,11 +128,15 @@ void main(){
  float outline=(1.-smoothstep(0.,1.25,distanceToEdge))*.6;
  outColor=vec4(mix(paperColor,vec3(.60,.68,.81),outline),1.);
 }`;
-const PRESENT_WGSL=`struct VertexOut{@builtin(position) position:vec4f}
+const PRESENT_WGSL=`struct VertexOut{@builtin(position) position:vec4f,@location(0) doc:vec2f}
 struct PresentView{screen:vec4f,document:vec4f,motion:vec4f,options:vec4f}
 @vertex fn vertex(@builtin(vertex_index) i:u32)->VertexOut{
  var p=array<vec2f,3>(vec2f(-1.,-1.),vec2f(3.,-1.),vec2f(-1.,3.));
- var o:VertexOut;o.position=vec4f(p[i],0.,1.);return o;
+ var o:VertexOut;o.position=vec4f(p[i],0.,1.);
+ let screen=(p[i]*vec2f(.5,-.5)+vec2f(.5))*view.screen.zw;
+ let pos=(screen-view.screen.zw*.5-view.motion.xy)/view.document.z;
+ let c=cos(view.document.w);let s=sin(view.document.w);
+ o.doc=vec2f(pos.x*c+pos.y*s,-pos.x*s+pos.y*c)*view.motion.zw+view.document.xy*.5;return o;
 }
 @group(0) @binding(0) var source:texture_2d<f32>;
 @group(0) @binding(1) var<uniform> view:PresentView;
@@ -138,10 +147,7 @@ fn takePixel(p:vec2i)->vec4f{
  return textureLoad(source,q,0);
 }
 @fragment fn fragment(in:VertexOut)->@location(0) vec4f{
- let screen=in.position.xy*view.screen.zw/view.screen.xy;
- let pos=(screen-view.screen.zw*.5-view.motion.xy)/view.document.z;
- let c=cos(view.document.w);let s=sin(view.document.w);
- let doc=vec2f(pos.x*c+pos.y*s,-pos.x*s+pos.y*c)*view.motion.zw+view.document.xy*.5;
+ let doc=in.doc;
  if(view.options.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=view.document.x||doc.y>=view.document.y)){
   let outside=max(max(-doc,doc-view.document.xy),vec2f(0.));
   let shadow=.075*exp(-length(outside)*view.document.z/13.);
@@ -350,7 +356,7 @@ export class GpuRenderer {
    const finish=()=>{if(finished||this.disposed)return;finished=true;this.finishSubmission=null;const end=performance.now();if(presentationReady&&!this.backend.presentationHeld&&this.backend.lastSubmission?.presentationSubmitted!==false)this.proxy?.fallbackPresented(submittedAt,proxyEpoch,fallbackRendered);if(this.performanceEnabled)for(const input of firstInputs){this.inputPreviewSamples.push({submitMs:submittedAt-input.at,completeMs:end-input.at});if(this.inputPreviewSamples.length>1200)this.inputPreviewSamples.shift();}for(const j of jobs){this.document.complete(j);if(j.t!==null)this.confirmedTime=Math.max(this.confirmedTime,j.commands.at(-1)?.[20]??0);}if(this.strokeHandoff)for(const [id,frame]of this.strokeFrames)if(frame<=submission&&presentationReady&&(!this.proxy?.footprints.get(id)?.size||this.backend.lastSubmission?.presentationSubmitted!==false)&&(!this.proxy||proxyEpoch===this.proxy.epoch)){this.strokeFrames.delete(id);this.presentedStrokes.add(id);this.inputStarts.delete(id);this.proxy?.presented(id,proxyEpoch);}if(job)this.lastConfirmed=end;const work=end-submittedAt;this.lastGpuWork=work;if(instant&&jobs.length){const cpuLimit=cpuSubmitMs>12?Math.max(4,Math.floor(jobs.length*12/cpuSubmitMs)):this.instantJobLimit+2;this.instantJobLimit=Math.min(active?64:128,cpuLimit,work>48?Math.max(4,Math.floor(this.instantJobLimit*.7)):this.instantJobLimit+2);}this.formalQuantum=work>50?Math.max(1,Math.floor(this.formalQuantum/2)):work<34?Math.min(8,this.formalQuantum+1):this.formalQuantum;
    if(s&&s.tip){const m={stage:'gpu-complete-proxy',revision:s.revision,completedAt:end,inputAge:end-s.tip.t,latestInputAge:end-(s.inputTip??s.tip).t,tip:{...s.tip},previewTip:{...(s.previewTip??s.tip)},previewQueueAge:this.mailbox.value?.tip?Math.max(0,end-(this.mailbox.value.inputTip??this.mailbox.value.tip).t):0,oldestQueueAge:Number.isFinite(this.document.oldestTime)?Math.max(0,end-this.document.oldestTime):0,confirmedLag:Math.max(0,(s.inputTip??s.tip).t-Math.min(this.document.knownTime,this.document.oldestTime)),obsoletePreviewCount:this.mailbox.obsolete+(this.backend.obsoleteFinished??0),formalJobs:this.document.jobs.length,inFlightSubmissions:1,gpuWorkMs:work,...(this.backend.lastSubmission?{submission:{...this.backend.lastSubmission}}:{})};this.completions.push(m);if(this.completions.length>24000)this.completions.splice(0,12000);this.onComplete?.(m);}for(const j of jobs)if(j.commit&&this.ended.has(j.id)&&!this.document.jobs.some(q=>q.id===j.id)){releaseOverlayPublication(this.backend,j.id);this.backend.retirePreview(j.id);this.previewStates.delete(j.id);this.ended.delete(j.id);if(this.strokeHandoff)this.strokeFrames.set(j.id,submission+1);if(this.snapshot?.id===j.id)this.snapshot=null;}
    // Preserve a newer zoom/pan/rotation invalidation issued while GPU work was in flight.
-   this.inflight=false;this.needsFrame=this.needsFrame||!!job||!!this.backend.previewGpuPending;this.requestWork();};
+   this.inflight=false;this.needsFrame=this.needsFrame||!!job||!!this.backend.previewGpuPending||this.strokeFrames.size>0;this.requestWork();};
    this.finishSubmission=finish;const states=[...this.previewStates.values()].sort((a,b)=>a.id-b.id),gpuStates=states.filter(state=>!this.proxy?.canUse(state.preset,state.surfaceKey));this.backend.independentPreviewIds=new Set(this.proxy?states.filter(state=>this.proxy.canUse(state.preset,state.surfaceKey)).map(state=>state.id):[]);if(this.proxy?.fallback)for(const id of [...this.backend.overlayHoldIds])releaseOverlayPublication(this.backend,id);for(const state of states)if(this.proxy?.canUse(state.preset,state.surfaceKey)&&this.backend.previews.has(state.id))this.backend.retirePreview(state.id);fallbackRendered=!!this.proxy?.fallback;const pending=this.backend.render(s,jobs,gpuStates);cpuSubmitMs=performance.now()-submittedAt;if(jobs.length)this.lastFormalSubmitCpuMs=cpuSubmitMs;presentationReady=!this.backend.presentationHeld;if(this.backend.lastSubmission?.previewDeferred){presentationReady=false;for(const input of firstInputs)input.submitted=false;firstInputs.length=0;}this.performance.compositedTiles+=this.backend.lastSubmission?.compositedTiles??initialDirty;this.performance.compositedLayerPasses+=this.backend.lastSubmission?.compositedLayerPasses??0;
    if(!this.backend.presentationHeld){this.viewPending=false;if(this.backend.lastSubmission?.presentationSubmitted!==false)this.recordPresentation(now,submittedAt,'content');}
    Promise.resolve(pending).then(finish).catch(e=>{this.errors.push(e.message);this.inflight=false;this.disposed=true;});return true;
@@ -473,7 +479,7 @@ class WebGpuBackend {
   this.display=await d.createRenderPipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[this.displayLayout]}),vertex:{module:module(S.wgDisplay),entryPoint:'vertex'},fragment:{module:module(S.wgDisplay),entryPoint:'fragment',targets:[{format:this.format}]},primitive:{topology:'triangle-list'}});
   this.displayLayered=await d.createRenderPipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[this.displayLayout]}),vertex:{module:module(S.wgDisplay),entryPoint:'vertex'},fragment:{module:module(S.wgDisplay),entryPoint:'fragment',targets:[{format:this.format,blend:{color:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'},alpha:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'}}}]},primitive:{topology:'triangle-list'}});
   this.sweepDisplayLayered=await d.createRenderPipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[this.displayLayout]}),vertex:{module:module(S.wgDisplay),entryPoint:'vertex'},fragment:{module:module(S.wgDisplay),entryPoint:'fragmentSweepDisplay',targets:[{format:this.format,blend:{color:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'},alpha:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'}}}]},primitive:{topology:'triangle-list'}});
-  this.presentLayout=d.createBindGroupLayout({entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'float'}},{binding:1,visibility:GPUShaderStage.FRAGMENT,buffer:{type:'uniform'}}]});this.presentUniform=d.createBuffer({size:64,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+  this.presentLayout=d.createBindGroupLayout({entries:[{binding:0,visibility:GPUShaderStage.FRAGMENT,texture:{sampleType:'float'}},{binding:1,visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,buffer:{type:'uniform'}}]});this.presentUniform=d.createBuffer({size:64,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
   this.present=await d.createRenderPipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[this.presentLayout]}),vertex:{module:module(PRESENT_WGSL),entryPoint:'vertex'},fragment:{module:module(PRESENT_WGSL),entryPoint:'fragment',targets:[{format:this.format}]},primitive:{topology:'triangle-list'}});
   this.presentationPyramid=new PresentationPyramid(this,PRESENT_GL_VERTEX);this.presentationPyramid.initialize();this.viewportCache=new ViewportCache(this);
   const error=await d.popErrorScope();if(error)throw error;

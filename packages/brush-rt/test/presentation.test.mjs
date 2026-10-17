@@ -51,3 +51,12 @@ test('navigation presents before old formal jobs and applies only the latest ove
  assert.equal(calls.presents,1);assert.equal(calls.renders,0);assert.equal(peeks,0);
  r.proxy=null;r.frame(16.7);assert.equal(calls.renders,1);
 });
+
+
+test('a view change during final publication retries the new epoch instead of leaving stroke completion stuck',()=>{
+ const {r,backend}=harness();r.strokeHandoff=true;r.requestWork=()=>{};backend.poll=()=>false;backend.previews=new Map;
+ r.proxy={epoch:0,ready:true,fallback:false,footprints:new Map,guards:[],canUse:()=>false,setView(){this.epoch++;},fallbackPresented(){},presented(){}};
+ r.strokeFrames.set(7,1);r.needsFrame=true;r.frame(0);r.setViewTransform(view(20));r.frame(16.7);r.finishSubmission();
+ assert.equal(r.strokeFrames.has(7),true);assert.equal(r.needsFrame,true,'the new view must schedule a matching content acknowledgement');
+ r.frame(33.4);r.finishSubmission();assert.equal(r.strokeFrames.size,0);assert.equal(r.presentedStrokes.has(7),true);
+});
