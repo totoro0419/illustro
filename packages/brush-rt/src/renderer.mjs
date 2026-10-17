@@ -352,8 +352,12 @@ export class GpuRenderer {
  frame(now){if(this.disposed)return false;if(this.backend.poll?.()===true)this.finishSubmission?.();
  // View input has its own bounded presentation lane. Never attach an old
  // stroke's compute/composition batch to the first response to pan/zoom/rotate.
- this.syncOverlayView();
- if(this.viewPending&&!this.backend.presentationHeld)return this.presentView(now);
+ // Keep the CPU overlay at the last submitted GPU scene while a new
+ // presentation is blocked or held. Otherwise the same art appears twice.
+ if(this.viewPending&&!this.backend.presentationHeld){
+  const presented=this.presentView(now);if(presented)this.syncOverlayView();return presented;
+ }
+ if(!this.viewPending)this.syncOverlayView();
  if(this.inflight||this.guardPreparing||this.cancellingStroke||this.historyPreparing)return false;
  if(this.navigationActive&&!this.backend.presentationHeld)return false;
  // A blocked view submission must not be followed by another formal batch.

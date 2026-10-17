@@ -82,3 +82,17 @@ test('held reconstruction drains formal work while retaining its pending view un
  r.frame(0);assert.equal(calls.renders,1,'a pending hidden view must not stop reconstruction');assert.equal(calls.presents,0);assert.equal(r.viewPending,true);
  backend.presentationHeld=false;r.frame(16.7);assert.equal(calls.presents,1);assert.equal(r.viewPending,false);
 });
+
+test('blocked GPU navigation does not reproject CPU strokes ahead of the canvas',()=>{
+ const {r,backend}=harness(),positions=[];r.proxy={setView:v=>positions.push(v[8])};
+ backend.presentView=()=>false;r.setViewTransform(view(20));assert.equal(r.frame(0),false);
+ assert.deepEqual(positions,[]);assert.equal(r.viewPending,true);
+ r.setViewTransform(view(35));backend.presentView=()=>true;assert.equal(r.frame(16.7),true);
+ assert.deepEqual(positions,[35]);assert.equal(r.viewPending,false);
+});
+test('history-held GPU scene does not leave a separately moved overlay',()=>{
+ const {r,backend}=harness(),positions=[];r.proxy={setView:v=>positions.push(v[8])};
+ backend.presentationHeld=true;r.setViewTransform(view(17));r.frame(0);
+ assert.deepEqual(positions,[]);assert.equal(r.viewPending,true);
+ backend.presentationHeld=false;assert.equal(r.frame(16.7),true);assert.deepEqual(positions,[17]);
+});
