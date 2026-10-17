@@ -15,4 +15,11 @@ describe('continuous history navigation',()=>{
  it('reports failed work and rejects save barriers instead of pretending completion',async()=>{
   const errors:Array<[string,number]>=[];const q=new HistoryNavigation({prepare:async()=>{throw Error('GPU unavailable');},apply:async()=>{},state:()=>{},failed:(m,n)=>errors.push([m,n])});q.enqueue('undo');q.enqueue('redo');await expect(q.barrier()).rejects.toThrow('GPU unavailable');expect(errors).toEqual([['GPU unavailable',2]]);expect(q.diagnostics.accepted).toBe(2);expect(q.diagnostics.fault).toBe('GPU unavailable');
  });
+ it('projects an admitted burst once, including commands beyond the old 32-item slice',async()=>{
+  const gate=deferred(),batches:HistoryDirection[][]=[];const q=new HistoryNavigation({prepare:()=>gate.promise,apply:async ds=>{batches.push([...ds]);},state:()=>{},failed:m=>{throw Error(m);}},true);
+  const commands=Array.from({length:96},(_,i)=>i%3===0?'redo':'undo') as HistoryDirection[];
+  for(const d of commands)expect(q.enqueue(d)).toBe(true);
+  let saved=false;const save=q.barrier().then(()=>{saved=true;});await Promise.resolve();expect(saved).toBe(false);
+  gate.resolve();await save;expect(batches).toEqual([commands]);expect(q.diagnostics.batches).toBe(1);expect(q.diagnostics.traces.map(t=>t.sequence)).toEqual(commands.map((_,i)=>i+1));
+ });
 });

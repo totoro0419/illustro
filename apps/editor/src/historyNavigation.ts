@@ -23,7 +23,9 @@ export class HistoryNavigation{
     try{
       await this.ports.prepare();
       while(this.requests.length){
-        this.active=this.requests.splice(0,32);const start=performance.now();await this.ports.apply(this.active.map(r=>r.direction));this.batches++;
+        // Admission already bounds this batch. A fixed 32-command slice forced
+        // repeated dirty reconstruction/presentation for an already queued burst.
+        this.active=this.requests.splice(0);const start=performance.now();await this.ports.apply(this.active.map(r=>r.direction));this.batches++;
         const end=performance.now();for(const r of this.active){this.finished=r.sequence;if(this.measure)this.traces.push({sequence:r.sequence,direction:r.direction,queueMs:start-r.at,completeMs:end-r.at});}
         if(this.traces.length>1200)this.traces.splice(0,this.traces.length-1200);this.active=[];
         this.waiters=this.waiters.filter(w=>{if(w.through>this.finished)return true;w.resolve();return false;});this.ports.state();

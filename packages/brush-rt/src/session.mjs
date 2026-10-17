@@ -88,13 +88,15 @@ export class RealtimeSession {
   for(const record of this.records)if(pendingIds.has(this.recordIds.get(record))){const surface=this.recordSurfaces.get(record)??'default',recordKeys=this.recordTiles.get(record)??[];pendingEntries.push({record,id:this.recordIds.get(record),surfaceKey:surface,keys:recordKeys});let keys=pendingKeys.get(surface);if(!keys)pendingKeys.set(surface,keys=new Set);for(const key of recordKeys)keys.add(key);}
   const retained=new Set(records),{discarded,baseReused}=this.renderer.discardPendingForHistory(pendingEntries,pendingEntries.every(p=>!retained.has(p.record)));
   this.records=records;this.redoRecords=redo;for(const p of plans){if(p.direction==='undo')this.unindexRecord(p.record);else this.reindexRecord(p.record);}
-  const renderPlans=baseReused?plans.filter(p=>!pendingIds.has(p.id)):plans;
+  // Core and the record index have visited every requested head in order. Only
+  // the derived image can cancel adjacent inverse moves of the same record.
+  const renderPlans=[];for(const p of baseReused?plans.filter(p=>!pendingIds.has(p.id)):plans){const last=renderPlans.at(-1);if(last?.record===p.record&&last.direction!==p.direction)renderPlans.pop();else renderPlans.push(p);}
   if(baseReused&&!renderPlans.length){await this.renderer.drain();return;}
   if((!discarded||baseReused)&&await this.renderer.applyHistory(renderPlans)){this.historyPatchHits+=renderPlans.length;return;}
   this.historyReplayFallbacks+=renderPlans.length;
-  if(!discarded&&plans.every(p=>p.direction==='redo')){
+  if(!discarded&&renderPlans.every(p=>p.direction==='redo')){
    // Redo is an exact suffix: reuse the completed base and evaluate only that suffix.
-   for(const p of plans){if(p.id!==undefined)this.renderer.dropHistory([p.id]);const id=++this.id,preset=this.presetForRecord(p.record);this.recordIds.set(p.record,id);this.renderer.document.append(id,preset,p.record.commands,null,p.surfaceKey);this.renderer.document.end(id,preset,p.surfaceKey);}await this.renderer.drain();return;
+   for(const p of renderPlans){if(p.id!==undefined)this.renderer.dropHistory([p.id]);const id=++this.id,preset=this.presetForRecord(p.record);this.recordIds.set(p.record,id);this.renderer.document.append(id,preset,p.record.commands,null,p.surfaceKey);this.renderer.document.end(id,preset,p.surfaceKey);}await this.renderer.drain();return;
   }
   // A cold batch reconstructs each changed tile once at the final logical head.
   const groups=baseReused?new Map:pendingKeys;for(const p of renderPlans){let keys=groups.get(p.surfaceKey);if(!keys)groups.set(p.surfaceKey,keys=new Set);for(const key of p.keys)keys.add(key);}
