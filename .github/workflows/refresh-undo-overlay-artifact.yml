@@ -2,7 +2,7 @@ name: Temporary synchronize generated brush artifact
 on:
   push:
     branches: ['fix/undo-repeat-2026-10-17']
-    paths: ['.github/workflows/refresh-undo-overlay-artifact.yml']
+    paths: ['.github/workflows/refresh-undo-overlay-artifact.yml', 'packages/brush-rt/src/stroke-overlay.mjs']
 permissions:
   contents: write
 jobs:
