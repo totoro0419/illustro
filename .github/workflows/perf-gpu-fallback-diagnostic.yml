@@ -1,0 +1,44 @@
+name: GPU fallback transition diagnostic
+on:
+  push:
+    branches: ['perf/stroke-handoff-latency-2026-10-17']
+    paths: ['.github/workflows/perf-gpu-fallback-diagnostic.yml', 'scripts/gpu-fallback-diagnostic.mjs']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/diagnostic-build.log
+          VITE_COMMIT_SHA=e78fcc41bffaaa351153b1ba3cdd22f75223ecd8 npm --workspace @illustro/editor exec -- vite build --base=./
+          git worktree add --detach /tmp/latency-before 1828947625dea1a16ec7532fd5275c4e0ccaec53
+          cd /tmp/latency-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/before-build.log
+          VITE_COMMIT_SHA=1828947625dea1a16ec7532fd5275c4e0ccaec53 npm --workspace @illustro/editor exec -- vite build --base=./
+      - run: |
+          npm install --prefix /tmp/latency-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/latency-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Trace every submission crossing the next pointerdown
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/latency-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: e78fcc41bffaaa351153b1ba3cdd22f75223ecd8
+          LATENCY_BACKENDS: webgpu
+          LATENCY_BRUSHES: eraser
+          LATENCY_VIEWS: fit,100
+          LATENCY_FADE: off
+          LATENCY_SCENARIOS: short-next,long-next
+          LATENCY_ROUNDS: '1'
+          LATENCY_MODES: A,C
+        run: node scripts/gpu-fallback-diagnostic.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: gpu-fallback-diagnostic, path: /tmp/gpu-fallback-diagnostic/}
