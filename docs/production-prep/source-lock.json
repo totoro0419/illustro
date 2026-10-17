@@ -236,7 +236,7 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "3039aab08168444b7e7d1f831560f6b2e18ce9b2b5499e96f08699a214a7f686",
+      "sha256": "e36504f6c715ee2f16c8fc0cf2f240d5440aa7833a031d3c291c60c971ea186e",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
       "undoNavigationException": "User-authorized continuous Undo: ordered bounded command admission, exact grouped history copies, final-head dirty reconstruction, pending derived GPU supersession, bounded32/64MiB editor cache. Canonical records, brush precision and shaders unchanged. Requires both-backend exact pixels, mixed directions, portable/history/layer tests and all prior regressions; physical Android remains unverified. Reuse completed base images only when no removed pending stroke has committed any layer tile; partially committed tiles must reconstruct.",
@@ -377,7 +377,7 @@
     {
       "path": "packages/brush-rt/src/stroke-overlay.mjs",
       "sourceBranch": "perf/stroke-overlay-2026-10-16",
-      "sha256": "71fd74f428e9704795d46f3a15f9493cca77bc73b7e0c8a6c1dfda748460f577",
+      "sha256": "cad61ac85928346ffb40a067e1526c963f626539db7da3e83d8bdc3cf80a7e64",
       "strokeOverlayException": "User-authorized stroke-only feedback and exact transition synchronization. Requires exact PR30 pixels, fit-view screenshots, performance and regressions; no physical acceptance claim.",
       "handoffLatencyException": "User-authorized long-stroke handoff improvement from exact PR31 1828947625dea1a16ec7532fd5275c4e0ccaec53: isolated pending-stroke bitmaps, cooperative final feedback from canonical worker and CPU/queue-bounded formal batches. Canonical math/input/order unchanged; exact records/pixels, visibility while prior work is held, matched transition performance and regressions required. Physical device and user acceptance unverified.",
       "canvasNavigationRefinementException": "User-authorized per-stroke affine image reuse during navigation, cooperative settled refinement and presentation-coordinate interpolation at vertices. Completed artwork resolution and sampler, formal brush/deposit shaders and legacy records retained. Full both-backend pixels, viewport, input/undo/save and matched performance required."
@@ -385,7 +385,7 @@
     {
       "path": "packages/brush-rt/test/stroke-overlay.test.mjs",
       "sourceBranch": "perf/stroke-overlay-2026-10-16",
-      "sha256": "03073004915068a3e27858ebaaa8afa04e33804dc3601018886319ce6f4ecc25",
+      "sha256": "e8ae5814f054cccefe4dff62867f75ddc77bba534335c76ddfb7a0ff383cbe72",
       "strokeOverlayException": "User-authorized stroke-only feedback and exact transition synchronization. Requires exact PR30 pixels, fit-view screenshots, performance and regressions; no physical acceptance claim.",
       "canvasNavigationRefinementException": "User-authorized per-stroke affine image reuse during navigation, cooperative settled refinement and presentation-coordinate interpolation at vertices. Completed artwork resolution and sampler, formal brush/deposit shaders and legacy records retained. Full both-backend pixels, viewport, input/undo/save and matched performance required."
     },

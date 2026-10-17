@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {StrokeOverlay,previewPlan,polygonArea,clipPolygon,directOverlaySupported,toScreen,toDocument,thinCoverage,viewAffine} from '../dist/rt/stroke-overlay.mjs';
+import {StrokeSink,StrokeOverlay,previewPlan,polygonArea,clipPolygon,directOverlaySupported,toScreen,toDocument,thinCoverage,viewAffine} from '../dist/rt/stroke-overlay.mjs';
 import {CanonicalBuilder,referenceBrushes} from '../dist/rt/index.mjs';
 import {forceFadePreviewCommands} from '../dist/rt/model.mjs';
 globalThis.ImageData??=class{constructor(w,h){this.width=w;this.height=h;this.data=new Uint8ClampedArray(w*h*4);}};
@@ -56,4 +56,12 @@ test('a held gesture defers even background refinement until release',async()=>{
  const {p,layers,sink}=isolated(),r=record(64);sink.reproject=()=>{};p.enqueue(live(r));p.safeFlush();layers.get(1).reproject=()=>{};
  const before=p.metrics.rasterPixels;p.setNavigationActive(true);p.setView(view(4000,.2));await new Promise(ok=>setTimeout(ok,100));assert.equal(p.metrics.rasterPixels,before);assert.equal(p.finalizations.size,0);
  p.setNavigationActive(false);const at=performance.now();while(p.viewRefineTimer||p.finalizations.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,5));}assert.ok(p.metrics.rasterPixels>before);p.destroy();
+});
+
+
+test('a reused pending-stroke allocation updates its document clip after view refinement',()=>{
+ const element={style:{}},sink={rect:[0,0,128,128],scale:1,element};
+ const plan={scale:1,screenWidth:400,screenHeight:600,polygon:[{x:12,y:14},{x:110,y:14},{x:90,y:100}]};
+ assert.equal(StrokeSink.prototype.configure.call(sink,plan,[20,20,80,80]),false);
+ assert.equal(element.style.clipPath,'polygon(12px 14px,110px 14px,90px 100px)');assert.deepEqual(sink.rect,[0,0,128,128]);
 });
