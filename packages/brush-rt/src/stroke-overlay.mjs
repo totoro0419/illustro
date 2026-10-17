@@ -31,11 +31,11 @@ function accumulate(a,i,c,k,p){k*=c[6];const old=a[i+3];if(p.__foundation.covera
 // A growing image per pending stroke, rounded to reusable allocation bands.
 // A new short stroke never resizes or recomposes a preceding long stroke.
 export class StrokeSink{
- constructor(source){this.source=source;this.element=document.createElement('canvas');this.element.className='illustro-stroke-overlay';this.element.setAttribute('aria-hidden','true');Object.assign(this.element.style,{position:'absolute',pointerEvents:'none',transformOrigin:'0 0',display:'none',background:'transparent',aspectRatio:'auto'});source.insertAdjacentElement('afterend',this.element);this.element.width=this.element.height=CHUNK;this.context=this.element.getContext('2d',{alpha:true,willReadFrequently:true});if(!this.context)throw Error('Overlay Canvas2D unavailable');this.allocations=1;this.layers=new Map;this.updateOrigin();}
+ constructor(source){this.source=source;this.element=document.createElement('canvas');this.element.className='illustro-stroke-overlay';this.element.setAttribute('aria-hidden','true');Object.assign(this.element.style,{position:'absolute',pointerEvents:'none',transformOrigin:'0 0',display:'none',background:'transparent',aspectRatio:'auto'});source.insertAdjacentElement('afterend',this.element);this.element.width=this.element.height=CHUNK;this.context=this.element.getContext('2d',{alpha:true,willReadFrequently:true});if(!this.context)throw Error('Overlay Canvas2D unavailable');this.allocations=1;this.retiredAllocations=0;this.layers=new Map;this.updateOrigin();}
  updateOrigin(){this.originX=this.source.offsetLeft;this.originY=this.source.offsetTop;this.zIndex=getComputedStyle(this.source).zIndex;for(const layer of this.layers.values())layer.updateOrigin();}
  forStroke(id){let layer=this.layers.get(id);if(!layer){const previous=[...this.layers.values()].at(-1);layer=new StrokeSink(this.source);(previous?.element??this.element).after(layer.element);this.layers.set(id,layer);}return layer;}
- retireStroke(id){this.layers.get(id)?.destroy();this.layers.delete(id);}
- get totalAllocations(){return this.allocations+[...this.layers.values()].reduce((n,s)=>n+s.totalAllocations,0);}
+ retireStroke(id){const layer=this.layers.get(id);if(layer){this.retiredAllocations+=layer.totalAllocations;layer.destroy();this.layers.delete(id);}}
+ get totalAllocations(){return this.allocations+this.retiredAllocations+[...this.layers.values()].reduce((n,s)=>n+s.totalAllocations,0);}
  configure(plan,bounds){const scale=plan.scale,unit=CHUNK/scale,x=Math.max(0,Math.floor(bounds[0]/unit)*unit),y=Math.max(0,Math.floor(bounds[1]/unit)*unit),right=Math.min(plan.screenWidth,Math.ceil(bounds[2]/unit)*unit),bottom=Math.min(plan.screenHeight,Math.ceil(bounds[3]/unit)*unit),w=Math.max(1,Math.ceil((right-x)*scale)),h=Math.max(1,Math.ceil((bottom-y)*scale));
   if(this.rect&&this.scale===scale&&x>=this.rect[0]&&y>=this.rect[1]&&right<=this.rect[2]&&bottom<=this.rect[3])return false;
   this.rect=[x,y,right,bottom];this.scale=scale;const e=this.element;if(e.width!==w||e.height!==h){if(e.width!==w)e.width=w;if(e.height!==h)e.height=h;this.allocations++;}else this.context.clearRect(0,0,w,h);Object.assign(e.style,{left:this.originX+x+'px',top:this.originY+y+'px',width:w/scale+'px',height:h/scale+'px',transform:'none'});const z=this.zIndex;if(z!=='auto')e.style.zIndex=z;e.style.clipPath='polygon('+plan.polygon.map(p=>(p.x-x)+'px '+(p.y-y)+'px').join(',')+')';this.context.imageSmoothingEnabled=true;this.context.imageSmoothingQuality='high';return true;
@@ -46,7 +46,7 @@ export class StrokeSink{
   for(const {key,image}of cells){const [x,y]=key.split(',').map(Number);this.context.putImageData(image,x*CELL-x0,y*CELL-y0);}this.element.style.display='block';
  }
 
- hide(){for(const layer of this.layers.values())layer.destroy();this.layers.clear();this.element.style.display='none';this.rect=null;if(this.element.width*this.element.height>CHUNK*CHUNK){this.element.width=this.element.height=CHUNK;this.allocations++;}else this.context.clearRect(0,0,this.element.width,this.element.height);}
+ hide(){for(const id of [...this.layers.keys()])this.retireStroke(id);this.element.style.display='none';this.rect=null;if(this.element.width*this.element.height>CHUNK*CHUNK){this.element.width=this.element.height=CHUNK;this.allocations++;}else this.context.clearRect(0,0,this.element.width,this.element.height);}
  showGuard(plan,g){if(!this.guardElement){this.guardElement=document.createElement('canvas');this.guardElement.className='illustro-transition-guard';this.guardElement.setAttribute('aria-hidden','true');Object.assign(this.guardElement.style,{position:'absolute',pointerEvents:'none'});this.element.before(this.guardElement);}const e=this.guardElement;e.width=g.width;e.height=g.height;Object.assign(e.style,{display:'block',left:this.originX+'px',top:this.originY+'px',transform:'translate('+g.x+'px,'+g.y+'px) scale('+1/plan.density+')',transformOrigin:'0 0',width:g.width+'px',height:g.height+'px',clipPath:'polygon('+plan.polygon.map(p=>((p.x-g.x)*plan.density)+'px '+((p.y-g.y)*plan.density)+'px').join(',')+')'});const z=this.zIndex;if(z!=='auto')e.style.zIndex=z;e.getContext('2d',{alpha:false}).drawImage(g.bitmap,0,0);}
  hideGuard(){if(this.guardElement){this.guardElement.style.display='none';this.guardElement.width=1;this.guardElement.height=1;}}
  destroy(){for(const layer of this.layers.values())layer.destroy();this.layers.clear();this.element.remove();this.guardElement?.remove();}
@@ -94,6 +94,9 @@ export class StrokeOverlay{
      }
     }if(changed){if(full){const name=tail?'tailLowerBound':'prefixLowerBound';tile[name]=Math.max(tile[name]??0,ceiling);}v.dirty.add(key);if(!v.private)this.dirty.add(key);if(tail)v.tailKeys.add(key);}yield;
    }
+   // Offscreen commands also form cooperative boundaries; a long invisible
+   // prefix must not run to completion inside one generator step.
+   yield;
   }
  }
 
