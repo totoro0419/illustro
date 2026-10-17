@@ -16,7 +16,7 @@ try{for(const backend of ['webgl2','webgpu']){
  await p.locator('#new').click();await p.waitForFunction(()=>document.getElementById('status').textContent.includes('描画できます'),null,{timeout:60000});
  assert.equal(await p.locator('#canvas').getAttribute('data-commit'),process.env.EXPECTED_COMMIT_SHA);
  const idle=()=>p.waitForFunction(()=>{const m=window.__illustroPerformance.read();return !m.historyNavigation.pending&&!m.handoff.pendingLogical&&!m.handoff.pendingGpu&&!m.frameState.inflight&&!m.frameState.jobs&&document.getElementById('canvas').dataset.historyBusy==='false';},null,{timeout:60000});
- await p.locator('#addLayer').click();await idle();
+ await p.evaluate(()=>document.getElementById('addLayer').click());await idle();
  await p.evaluate(()=>{
   const port=window.__illustroPerformance,{renderer:r}=port.probe(),b=r.backend,render=b.render.bind(b);window.__historyRenders=[];
   b.render=function(...args){const record={held:this.presentationHeld,privateHistory:!!this.deferredHistoryDirty,jobs:args[1].length};window.__historyRenders.push(record);const pending=render(...args);return Promise.resolve(pending).then(value=>{Object.assign(record,{composited:this.lastSubmission.compositedTiles,presented:this.lastSubmission.presentationSubmitted});return value;});};
