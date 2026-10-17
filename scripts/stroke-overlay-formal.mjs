@@ -28,7 +28,7 @@ try{
     const steps=[],records=[];
     for(let i=0;i<referenceBrushes.length;i++){
      const p=structuredClone(referenceBrushes[i]);p.size=p.id.includes('marker')?128:p.id.includes('eraser')?96:32;if(p.forceFade)p.forceFade.enabled=p.id.includes('g-pen');const surface=p.blend==='erase'?'a':['a','b','c'][i%3];
-     const id=s.begin(p,0,{},surface);for(let q=0;q<40;q++)s.accept({x:160+q*4,y:180+Math.sin(q/6)*22,t:1000+i*1000+q*4,pressure:.3+q/80,pointerType:'pen'});const record=await s.end();records.push(record);s.commitRecord(record,[],surface);await r.waitStroke([id]);await settle();const committed=await pixels();await s.undoDerived(record,s.recordTiles.get(record),surface);await s.redoDerived(record,s.recordTiles.get(record),surface);await settle();if(JSON.stringify(await pixels())!==JSON.stringify(committed))throw Error('history '+p.id);steps.push({brush:p.id,pixels:committed});
+     const id=s.begin(p,0,mode==='after'?{forceFadeGeometry:'legacy'}:{},surface);for(let q=0;q<40;q++)s.accept({x:160+q*4,y:180+Math.sin(q/6)*22,t:1000+i*1000+q*4,pressure:.3+q/80,pointerType:'pen'});const record=await s.end();records.push(record);s.commitRecord(record,[],surface);await r.waitStroke([id]);await settle();const committed=await pixels();await s.undoDerived(record,s.recordTiles.get(record),surface);await s.redoDerived(record,s.recordTiles.get(record),surface);await settle();if(JSON.stringify(await pixels())!==JSON.stringify(committed))throw Error('history '+p.id);steps.push({brush:p.id,pixels:committed});
     }
     // Keep all twelve translucent/erasing strokes pending, then finish in input order.
     const peek=r.document.peekMany.bind(r.document);r.document.peekMany=()=>[];const ids=[];

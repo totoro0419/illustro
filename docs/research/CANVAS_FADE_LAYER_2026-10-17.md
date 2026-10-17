@@ -1,0 +1,41 @@
+# キャンバス操作・強制入り抜き・下層レイヤー表示
+
+状態: 実装・比較検証中。ユーザー合格ではない。
+開始基準: PR #32 `45d93027eabdd3d17fd74db185146c2533994f51`。
+作業: `fix/canvas-fade-layer-2026-10-17` / PR #33。
+
+## 確認した原因と変更
+
+- キャンバス操作: `GpuRenderer.frame()` が表示の変更要求より先に古い正式計算を同じ送信へ組み込み、入力通知ごとにCPU仮画像の表示条件を破棄していた。最新の表示位置を一回の更新にまとめ、作品の合成済み画像を使う表示専用処理を優先する。作品の画素数、DPR、縮小画像の平均化、ブラシシェーダーを変更しない。GPUへ送信済みの処理は中断できない。
+- 設定の不一致: 前回の比較ページが、アプリの入り抜きON/OFFを一筆ごとに外側のチェック状態で上書きしていた。外側は初期状態がOFF、内側のGペンはONで一致していなかった。新QAは実際のアプリ設定を操作・表示し、入力開始時の隠れた書き換えを削除する。
+- 入力点の少ない強制入り抜き: 基準実装は入力点に対応する命令位置でだけ太さを評価する。同じ300pxの直線でも2点では両端の3%幅だけが命令になり、胴の太さを失う。端末性能が原因と確認された事実ではなく、入力点の間隔による再現可能な形状不良。新しい連続形状の強制入り抜きは、従来の長さ式・曲線・最小幅を保ちながら、曲線の折れ点と必要な中間位置を補間する。最終の形だけをWorkerで生成する。速度・筆圧・pointerTypeは補間の太さに使わない。
+- 下層の消失: 最終入り抜きへのreset通知で表示中のGPU仮線を先に破棄し、WebGPUでは新しい仮線を8区画ずつ準備する間、未準備区画が消える。新しい仮画像を非表示で準備し、全区画が揃った送信内で差し替える。旧新の仮画像を同時には合成しない。上層を含む既存の正確な合成順を維持する。仮画像の増加分と待機区画も既存のメモリ上限へ計上する。
+
+スマートフォン実機で報告された差と、今回再現した設定・入力点数の不良は区別する。実機で同じ原因が発生したと断定しない。
+
+## 保存済みの線と仕様の保持
+
+`forceFadeGeometry: adaptive-v1` を新しいストロークのcontextに記録する。contextは既存の保存形式にある再生条件であり、作品の画素や履歴の代わりではない。フラグのない以前の記録は従来の形状計算で再生する。新しい形状も記録を再生成して一致を検査する。
+
+従来の長さ式 `cap=500+700*level; length=cap*tanh(total*level/cap)`、左右が全長を超えたときの比例調整、最小幅、入り抜き曲線、点だけのタップ、OFF時の筆圧・通常の入り抜きは維持する。補間対象は連続した丸い形状。スタンプの間隔・乱数・質感を勝手に変更しない。
+
+過去に合格した色相環・菱形、Workspace、ホーム、作品管理、Core、保存、消しゴム・正式塗りシェーダーは変更対象外。旧QA公開物を上書きせず、新しい専用QAを作る。
+
+## 公式資料から採用した点
+
+- [ibisPaint Stabilizer](https://ibispaint.com/lecture/index.jsp?lang=en&no=50): 明確なForce Fade ON/OFFと開始・終了の長さ。アプリ表示と有効設定を一致させる。内部計算方式は公開資料から断定しない。
+- [CLIP STUDIO Starting and ending](https://help.clip-studio.com/en-us/manual_en/810_subtools/S.htm): 開始・終了の効果を通常の筆圧と区別する。独自の速度依存機構へ置き換えない。
+- [Procreate Brush Studio](https://help.procreate.com/procreate/handbook/5.3/brushes/brush-studio-settings): Touch TaperとPressure Taperの区別。指にペンの筆圧を要求しない。Illustroの既存の長さ設定をProcreateの設定値に置き換えるものではない。
+- [Krita Display Settings](https://docs.krita.org/en/reference_manual/preferences/display_settings.html): GPUによる移動・回転・拡大縮小と表示補間の区別。既存の合成画像と高品質な縮小用画像を再利用する。今回は作品全体の画質を落とすInstant Previewを導入しない。
+- [Photoshop GPU usage](https://helpx.adobe.com/photoshop/desktop/get-started/technical-requirements-installation/photoshop-and-graphics-processor-gpu-card-usage.html): 表示操作にGPUを使う公開方針。非公開の画像キャッシュ実装を模倣したとは主張しない。
+- [Pointer Events](https://www.w3.org/TR/pointerevents3/): pointerupのpressureは0。これを強制入り抜きの強さに使わない。まとめられた実入力と推測入力を区別し、既存の入力保持を維持する。
+
+## 検証と限界
+
+基本検査、入力点数・指/ペン/マウス・速度/筆圧の形状比較、旧保存記録の一致、上下レイヤーの半透明画素検査、両GPUの正式画素/再生比較、4kでの操作と連続描画の前後比較、既存機能のブラウザ回帰を行う。実施した結果は証拠ファイルとCIに紐づけて別途追記する。
+
+Chromium SwiftShaderの測定はソフトウェア環境での表示要求・完了通知・ブラウザのフレーム配送であり、Android実機の実FPSや物理的な指から発光までの時間ではない。実機・発熱/消費電力・ユーザー合格は未確認。
+
+## 再開時
+
+最新のPR #33 HEADとActionsの実行対象SHAを確認する。検査失敗を成功扱いにしない。最終の証拠とアプリのソース一致、旧QA保持、公開URLの描画・設定・レイヤー確認が終わるまで完了扱いにしない。

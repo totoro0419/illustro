@@ -6,8 +6,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: touch-navigation-${{ github.ref }}
-  cancel-in-progress: true
+  group: canvas-fade-${{ github.sha }}
+  cancel-in-progress: false
 jobs:
   review:
     runs-on: ubuntu-latest
@@ -40,7 +40,22 @@ jobs:
           TOUCH_BACKENDS: ${{ matrix.backend }}
         run: |
           node scripts/touch-navigation-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: touch-navigation-initial-${{ matrix.backend }}
+          path: /tmp/touch-navigation/
+      - name: Exact existing record and artwork comparison
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/touch-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
           FORMAL_BEFORE_ROOT=/tmp/touch-before/packages/brush-rt/dist FORMAL_QUALITY_OUTPUT=/tmp/touch-navigation/formal/report.json OVERLAY_BASELINE_SHA=45d93027eabdd3d17fd74db185146c2533994f51 node scripts/stroke-overlay-formal.mjs
+      - name: Continuous drawing comparison
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/touch-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
           LATENCY_BASELINE_SHA=45d93027eabdd3d17fd74db185146c2533994f51 LATENCY_BEFORE_APP=/tmp/touch-before/apps/editor/dist LATENCY_OUTPUT=/tmp/touch-navigation/latency/report.json LATENCY_BACKENDS=${{ matrix.backend }} LATENCY_BRUSHES=thin,broad,pencil LATENCY_VIEWS=fit,100 LATENCY_SCENARIOS=short-next,long-next LATENCY_ROUNDS=3 node scripts/handoff-latency-benchmark.mjs
       - uses: actions/upload-artifact@v4
         if: always()
@@ -62,7 +77,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Canonical preservation, discovered tests and editor build
         run: |
-          git diff --exit-code 45d93027eabdd3d17fd74db185146c2533994f51 -- apps/editor/src/color packages/brush-rt/src/foundation.mjs packages/brush-rt/src/model.mjs packages/brush-rt/src/shaders.mjs packages/brush-rt/src/canonical.worker.mjs packages/core
+          git diff --exit-code 45d93027eabdd3d17fd74db185146c2533994f51 -- apps/editor/src/color packages/brush-rt/src/shaders.mjs packages/brush-rt/src/canonical.worker.mjs packages/core
           npm run prep:check
           npm run core:check
           npm run brush:build > /tmp/brush-build.log

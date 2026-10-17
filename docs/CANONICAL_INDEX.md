@@ -48,3 +48,5 @@ V2のIdentity/Raster/Brush/Persistence/Region契約はArchitectureから参照�
 - 描画表示の追加比較（EXPERIMENTAL・実機未確認）: [一筆限定プレビュー](research/STROKE_OVERLAY_2026-10-16.md)。PR #30を継承し、正式Brush Foundationの規則は変更しない。
 
 - 長線後の次の一筆（EXPERIMENTAL・実機未確認）: [遅延の原因・修正・比較方法](research/STROKE_HANDOFF_LATENCY_2026-10-17.md)。PR #31を継承し、正式計算・既存の画質を維持する。
+
+- 操作・入り抜き・下層表示の追加修正（EXPERIMENTAL・実機未確認）: [修正内容と再開条件](research/CANVAS_FADE_LAYER_2026-10-17.md)。PR #32の高速描画を継承。
