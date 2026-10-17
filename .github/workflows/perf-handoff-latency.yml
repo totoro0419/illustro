@@ -151,6 +151,7 @@ jobs:
           FORMAL_BEFORE_ROOT: /tmp/latency-before/packages/brush-rt/dist
           FORMAL_QUALITY_OUTPUT: /tmp/latency-quality/formal/report.json
           OVERLAY_BEFORE_ROOT: /tmp/latency-before/packages/brush-rt/dist
+          OVERLAY_QUALITY_OUTPUT: /tmp/latency-quality/report.json
           OVERLAY_BEFORE_STROKE_ONLY: '1'
           OVERLAY_BASELINE_SHA: 1828947625dea1a16ec7532fd5275c4e0ccaec53
           OVERLAY_BACKENDS: ${{ matrix.backend }}

@@ -11,7 +11,49 @@ concurrency:
   group: handoff-latency-publication
   cancel-in-progress: true
 jobs:
+  quality-images:
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [webgl2, webgpu]
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Reproduce actual fit-view images from the unchanged tested renderer
+        run: |
+          git diff --exit-code e78fcc41bffaaa351153b1ba3cdd22f75223ecd8 -- apps packages prototypes scripts/stroke-overlay-quality.mjs
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/latency-visual-build.log
+          git worktree add --detach /tmp/latency-before 1828947625dea1a16ec7532fd5275c4e0ccaec53
+          cd /tmp/latency-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/latency-before-build.log
+      - run: |
+          npm install --prefix /tmp/latency-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/latency-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Capture all fit-view evidence in the explicit artifact directory
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/latency-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: e78fcc41bffaaa351153b1ba3cdd22f75223ecd8
+          OVERLAY_BEFORE_ROOT: /tmp/latency-before/packages/brush-rt/dist
+          OVERLAY_BEFORE_STROKE_ONLY: '1'
+          OVERLAY_BASELINE_SHA: 1828947625dea1a16ec7532fd5275c4e0ccaec53
+          OVERLAY_QUALITY_OUTPUT: /tmp/latency-visual/report.json
+          OVERLAY_BACKENDS: ${{ matrix.backend }}
+          OVERLAY_SIZES: '2000,4000,8000'
+          OVERLAY_LAYOUTS: 'phone,tablet'
+          OVERLAY_MODES: 'A,C'
+          OVERLAY_BRUSHES: 'thin,broad,pencil,erase,lower,fade,fine,marker,technical,soft'
+        run: node scripts/stroke-overlay-quality.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'latency-visual-${{ matrix.backend }}', path: /tmp/latency-visual/}
   publish:
+    needs: quality-images
     runs-on: ubuntu-latest
     timeout-minutes: 75
     env:
@@ -54,7 +96,12 @@ jobs:
           done
           cp /tmp/latency-run.json review-evidence/measurement-run.json
           cp /tmp/latency-jobs.json review-evidence/measurement-jobs.json
-          node scripts/handoff-latency-report.mjs review-evidence
+      - uses: actions/download-artifact@v4
+        with: {name: latency-visual-webgl2, path: review-evidence/quality/webgl2}
+      - uses: actions/download-artifact@v4
+        with: {name: latency-visual-webgpu, path: review-evidence/quality/webgpu}
+      - name: Check matched quality, timings, exact formal pixels and held-work visibility
+        run: node scripts/handoff-latency-report.mjs review-evidence
       - run: |
           npm install --prefix /tmp/latency-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/latency-browser/node_modules/.bin/playwright install --with-deps chromium
