@@ -1,0 +1,16 @@
+{
+  "source": "ededeb817d8e19dd75c43af9fcc5277de512f4b4",
+  "ciRun": "https://github.com/totoro0419/illustro/actions/runs/39080088236",
+  "publicationCommit": "4869ab5fe8878945a1ca447df58d300e5c36df12",
+  "changedPublicFiles": 25,
+  "outsideDedicatedDirectory": [],
+  "browserVersion": "153.0.8010.0",
+  "scope": "Chromium software GPU; isolated public production UI; no physical device claim",
+  "canvas": 4000,
+  "url": "https://totoro0419.github.io/illustro/qa/undo-tile-history/after/#editor",
+  "realMouseInput": true,
+  "undoRedo": true,
+  "autosavedWorkReopen": true,
+  "revision": "c7d382c9-2a7d-45ed-927f-1c95f7f8191b",
+  "errors": []
+}
