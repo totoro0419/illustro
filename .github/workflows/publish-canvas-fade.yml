@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      EXPECTED_COMMIT_SHA: 27d5a39b1094fcfddbe6d322cb7e0eaccc5b3699
-      CANVAS_REVIEW_RUN: '39016964745'
+      EXPECTED_COMMIT_SHA: d386929fd188e10d90b682edbfc513c882da4cbb
+      CANVAS_REVIEW_RUN: '39017405971'
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +102,7 @@ jobs:
           MOBILE_INPUT_OUTPUT: /tmp/canvas-public/mobile/report.json
           MOBILE_HOME: '1'
         run: |
-          node scripts/touch-navigation-review.mjs
+          node scripts/canvas-fade-public.mjs
           node scripts/stroke-handoff-operations.mjs
           node scripts/mobile-input-smoke.mjs
       - uses: actions/upload-artifact@v4
