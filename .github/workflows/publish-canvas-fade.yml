@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      EXPECTED_COMMIT_SHA: ce816789701c484841895aca2617df5efd77cefd
-      CANVAS_REVIEW_RUN: '39017899155'
+      EXPECTED_COMMIT_SHA: 8376eb2d359c42e4469fbe3f6f5acde01231e21f
+      CANVAS_REVIEW_RUN: '39035397279'
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
       - name: Require successful verification of this exact application
         run: |
           git merge-base --is-ancestor "$EXPECTED_COMMIT_SHA" HEAD
-          git diff --exit-code "$EXPECTED_COMMIT_SHA" -- apps packages prototypes package.json package-lock.json scripts/touch-navigation-review.mjs scripts/stroke-overlay-formal.mjs scripts/handoff-latency-benchmark.mjs
+          git diff --exit-code "$EXPECTED_COMMIT_SHA" -- apps packages prototypes package.json package-lock.json scripts/touch-navigation-review.mjs scripts/navigation-presentation-review.mjs scripts/stroke-overlay-formal.mjs scripts/handoff-latency-benchmark.mjs
           ready=0
           for i in $(seq 1 180); do
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANVAS_REVIEW_RUN" > /tmp/canvas-review-run.json
@@ -60,6 +60,11 @@ jobs:
       - name: Preserve previous QA and add the verified repair directory
         run: |
           (cd site && find qa -type f ! -path 'qa/perf-canvas-fade-layer/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/canvas-old-qa.before
+          if ! test -d site/qa/perf-canvas-fade-layer/previous-ce816789; then
+            node --input-type=module -e "import fs from 'node:fs';import assert from 'node:assert/strict';assert.equal(JSON.parse(fs.readFileSync('site/qa/perf-canvas-fade-layer/evidence/qa-status.json')).sourceCommit,'ce816789701c484841895aca2617df5efd77cefd');"
+            cp -a site/qa/perf-canvas-fade-layer/app site/qa/perf-canvas-fade-layer/previous-ce816789
+            cp -a site/qa/perf-canvas-fade-layer/evidence site/qa/perf-canvas-fade-layer/previous-ce816789-evidence
+          fi
           mkdir -p site/qa/perf-canvas-fade-layer/app site/qa/perf-canvas-fade-layer/before site/qa/perf-canvas-fade-layer/evidence
           cp qa/perf-canvas-fade-layer/*.html site/qa/perf-canvas-fade-layer/
           cp -a review-build/. site/qa/perf-canvas-fade-layer/app/
