@@ -1,63 +1,74 @@
 # 長線の直後の一筆 — 比較結果
 
-Source: `e78fcc41bffaaa351153b1ba3cdd22f75223ecd8`
+Source: `df364354d71ec199a49c7e2a7a3d16ebc13aaeca`
 PR #31 baseline: `1828947625dea1a16ec7532fd5275c4e0ccaec53`
 
 4,000×4,000、390×844相当・DPR 3、同一runner・同一ブラウザ・同一入力。全体/100%、短線後・長線後・150ms待機・正式表示後・長線3連続、強制入り抜きON/OFFを各3反復（A/C順序を交替）。合計720ケース。ソフトウェアGPUのCPU/命令送信プロキシで、Android実機や物理表示の測定ではありません。
 
 |処理|表示|ブラシ|入り抜き|次の仮表示まで p50 (ms) PR31→新|予定入力から更新 p50 (ms) PR31→新|前の線の正式表示 p50 (ms) PR31→新|
 |---|---|---|---|---:|---:|---:|
-|webgl2|fit|thin|off|66.1 → 5.8|208.5 → 42.1|1882.6 → 2396.3|
-|webgl2|fit|thin|on|29.1 → 8.1|276.7 → 42.4|1910.8 → 2424.0|
-|webgl2|100|thin|off|87.2 → 12.8|113.7 → 37.7|527.1 → 512.2|
-|webgl2|100|thin|on|69.7 → 17.3|182.4 → 38.5|630.6 → 577.5|
-|webgl2|fit|broad|off|8.8 → 8.1|61.0 → 45.9|2060.7 → 2303.8|
-|webgl2|fit|broad|on|14.9 → 25.1|146.8 → 69.7|2324.4 → 2560.6|
-|webgl2|100|broad|off|19.7 → 15.2|47.9 → 42.6|704.9 → 720.2|
-|webgl2|100|broad|on|57.0 → 67.2|216.4 → 91.3|1115.5 → 1104.3|
-|webgl2|fit|pencil|off|60.2 → 7.0|127.1 → 41.4|4264.8 → 4898.2|
-|webgl2|100|pencil|off|122.1 → 28.4|144.1 → 51.0|1139.4 → 1106.3|
-|webgl2|fit|eraser|off|153.2 → 66.3|162.0 → 73.0|3030.5 → 2905.0|
-|webgl2|100|eraser|off|29.2 → 123.7|54.0 → 132.5|787.7 → 754.3|
-|webgpu|fit|thin|off|39.6 → 4.0|61.0 → 21.8|2740.3 → 2708.7|
-|webgpu|fit|thin|on|17.8 → 3.6|92.6 → 21.6|2774.7 → 2727.0|
-|webgpu|100|thin|off|91.1 → 5.2|109.1 → 20.4|561.8 → 565.9|
-|webgpu|100|thin|on|56.1 → 7.0|146.7 → 23.7|650.1 → 660.6|
-|webgpu|fit|broad|off|6.3 → 5.4|35.5 → 38.1|5323.3 → 5072.0|
-|webgpu|fit|broad|on|12.5 → 17.4|139.4 → 56.8|5613.7 → 5391.6|
-|webgpu|100|broad|off|24.1 → 13.7|61.2 → 45.7|1232.1 → 1212.4|
-|webgpu|100|broad|on|130.5 → 45.9|389.3 → 51.7|1936.2 → 1818.3|
-|webgpu|fit|pencil|off|42.5 → 2.7|50.7 → 12.3|3827.7 → 3861.3|
-|webgpu|100|pencil|off|78.8 → 10.6|86.4 → 20.6|992.3 → 962.0|
-|webgpu|fit|eraser|off|1527.7 → 1506.6|1549.0 → 1512.7|7450.4 → 7435.5|
-|webgpu|100|eraser|off|141.4 → 107.3|148.5 → 145.8|923.2 → 923.9|
+|webgl2|fit|thin|off|25.8 → 8.7|31.5 → 43.0|1934.5 → 2356.3|
+|webgl2|fit|thin|on|27.3 → 6.8|264.4 → 52.3|1899.6 → 2425.3|
+|webgl2|100|thin|off|100.0 → 10.9|132.0 → 35.4|528.1 → 510.6|
+|webgl2|100|thin|on|61.6 → 13.8|186.0 → 39.5|626.4 → 589.5|
+|webgl2|fit|broad|off|12.3 → 12.0|119.0 → 73.1|4009.1 → 4470.3|
+|webgl2|fit|broad|on|23.4 → 28.7|224.6 → 107.7|4259.6 → 4871.0|
+|webgl2|100|broad|off|28.7 → 13.5|74.2 → 48.9|1165.4 → 1225.2|
+|webgl2|100|broad|on|118.1 → 37.8|391.6 → 45.6|1856.7 → 1819.1|
+|webgl2|fit|pencil|off|51.3 → 5.4|101.2 → 29.4|2770.0 → 3165.7|
+|webgl2|100|pencil|off|89.2 → 20.4|106.5 → 37.8|770.6 → 816.5|
+|webgl2|fit|eraser|off|56.9 → 60.0|76.4 → 74.9|1926.4 → 1901.7|
+|webgl2|100|eraser|off|23.4 → 16.1|29.0 → 29.2|521.2 → 535.1|
+|webgpu|fit|thin|off|61.1 → 3.7|79.2 → 21.1|2740.2 → 2732.9|
+|webgpu|fit|thin|on|17.9 → 3.7|89.2 → 24.0|2784.1 → 2759.1|
+|webgpu|100|thin|off|95.7 → 5.9|112.1 → 25.3|571.9 → 574.7|
+|webgpu|100|thin|on|34.1 → 11.3|133.1 → 25.1|640.0 → 650.3|
+|webgpu|fit|broad|off|6.1 → 7.1|40.7 → 37.4|4542.0 → 4337.5|
+|webgpu|fit|broad|on|11.8 → 15.4|128.2 → 54.1|4795.0 → 4615.3|
+|webgpu|100|broad|off|14.6 → 13.4|49.9 → 55.4|1188.8 → 1177.8|
+|webgpu|100|broad|on|100.1 → 44.1|352.8 → 50.7|1824.1 → 1678.8|
+|webgpu|fit|pencil|off|78.2 → 4.5|93.0 → 20.2|8346.4 → 8415.1|
+|webgpu|100|pencil|off|102.7 → 20.5|120.1 → 35.5|2100.9 → 2033.8|
+|webgpu|fit|eraser|off|1486.0 → 52.7|1491.9 → 85.4|7410.4 → 7858.3|
+|webgpu|100|eraser|off|131.4 → 130.4|138.6 → 155.9|916.3 → 1089.5|
 
 |処理|表示|ブラシ|入り抜き|修正後・短線の後 p50 (ms)|修正後・長線の後 p50 (ms)|
 |---|---|---|---|---:|---:|
-|webgl2|fit|thin|off|7.5|5.8|
-|webgl2|fit|thin|on|7.5|8.1|
-|webgl2|100|thin|off|8.4|12.8|
-|webgl2|100|thin|on|7.4|17.3|
-|webgl2|fit|broad|off|6.1|8.1|
-|webgl2|fit|broad|on|9.7|25.1|
-|webgl2|100|broad|off|7.0|15.2|
-|webgl2|100|broad|on|59.2|67.2|
-|webgl2|fit|pencil|off|9.3|7.0|
-|webgl2|100|pencil|off|14.6|28.4|
-|webgl2|fit|eraser|off|605.2|66.3|
-|webgl2|100|eraser|off|596.1|123.7|
-|webgpu|fit|thin|off|7.6|4.0|
-|webgpu|fit|thin|on|6.1|3.6|
-|webgpu|100|thin|off|6.3|5.2|
-|webgpu|100|thin|on|10.2|7.0|
-|webgpu|fit|broad|off|6.6|5.4|
-|webgpu|fit|broad|on|23.6|17.4|
-|webgpu|100|broad|off|11.5|13.7|
-|webgpu|100|broad|on|95.9|45.9|
-|webgpu|fit|pencil|off|6.6|2.7|
-|webgpu|100|pencil|off|9.3|10.6|
-|webgpu|fit|eraser|off|203.5|1506.6|
-|webgpu|100|eraser|off|178.4|107.3|
+|webgl2|fit|thin|off|4.3|8.7|
+|webgl2|fit|thin|on|8.0|6.8|
+|webgl2|100|thin|off|8.4|10.9|
+|webgl2|100|thin|on|8.5|13.8|
+|webgl2|fit|broad|off|7.2|12.0|
+|webgl2|fit|broad|on|22.8|28.7|
+|webgl2|100|broad|off|14.9|13.5|
+|webgl2|100|broad|on|83.5|37.8|
+|webgl2|fit|pencil|off|5.7|5.4|
+|webgl2|100|pencil|off|9.4|20.4|
+|webgl2|fit|eraser|off|485.2|60.0|
+|webgl2|100|eraser|off|456.2|16.1|
+|webgpu|fit|thin|off|10.1|3.7|
+|webgpu|fit|thin|on|8.2|3.7|
+|webgpu|100|thin|off|7.9|5.9|
+|webgpu|100|thin|on|12.2|11.3|
+|webgpu|fit|broad|off|7.8|7.1|
+|webgpu|fit|broad|on|14.1|15.4|
+|webgpu|100|broad|off|14.1|13.4|
+|webgpu|100|broad|on|88.0|44.1|
+|webgpu|fit|pencil|off|6.9|4.5|
+|webgpu|100|pencil|off|17.1|20.5|
+|webgpu|fit|eraser|off|264.9|52.7|
+|webgpu|100|eraser|off|171.4|130.4|
+
+追加のWebGPU消しゴム比較（各3反復。GPU表示要求の時刻であり物理表示ではない）
+
+|表示|条件|次の表示要求 p50 PR31→新 (ms)|前線の正式表示 p50 PR31→新 (ms)|
+|---|---|---:|---:|
+|fit|short-next|211.2 → 277.4|839.9 → 1101.9|
+|fit|long-next|1550.3 → 63.4|7438.0 → 7860.7|
+|fit|long-chain|374.4 → 75.5|8829.1 → 8998.5|
+|100|short-next|179.1 → 178.2|617.8 → 629.2|
+|100|long-next|142.0 → 133.8|926.9 → 1091.2|
+|100|long-chain|74.4 → 154.9|1962.9 → 2363.8|
 
 「予定入力から更新」は前のpointerup直前を起点とする自動入力の待ちを含みます。「次の仮表示」はイベント到着からCPU仮画像更新まで（消しゴムのみGPU命令送信まで）。物理表示ではありません。p50/p95/p99・短線後との比較・CPU長時間処理・更新間隔・所有メモリ・待機条件は `qa-status.json` と `performance/*/report.json` に記録しています。p95/p99は3反復では高い信頼度の推定にならないため、標本数と最大値を併記します。
 
@@ -66,7 +77,7 @@ PR #31 baseline: `1828947625dea1a16ec7532fd5275c4e0ccaec53`
 - Android phone/tablet stylus/finger performance and physical display timing remain unmeasured; user acceptance is false
 - CPU upload is not a displayed frame; timer dispatch delay includes main-task scheduling and the synthetic driver
 - p95/p99 of three per-condition repetitions are sparse order statistics; raw cases and sample counts are retained
-- Eraser/lower-layer cases keep the exact sparse GPU feedback route; already submitted GPU work cannot be preempted
+- Exact WebGPU feedback is bounded to 8 queued tiles per submission where eligible; CPU-to-GPU guarded transitions and resource-pressure paths retain correctness-first draining. Already submitted GPU work cannot be preempted
 - Per-stroke bitmaps and private final-taper replacement add bounded transient memory; owned bytes are estimates, not RSS or VRAM
 - Broad active strokes can still have heavier individual raster updates; no unconditional frame-time guarantee
 - No submitted canonical stroke, input pressure/coordinates or Foundation taper was discarded or simplified

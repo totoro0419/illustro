@@ -1,5 +1,5 @@
 {
-  "commit": "e78fcc41bffaaa351153b1ba3cdd22f75223ecd8",
+  "commit": "df364354d71ec199a49c7e2a7a3d16ebc13aaeca",
   "baseline": false,
   "scope": "Color UI and trusted Chromium touch emulation; physical Android unverified",
   "cases": [
