@@ -61,14 +61,11 @@ export class StrokeSink{
 export class StrokeOverlay{
  constructor(backend,{ratio='auto',sink=null}={}){this.backend=backend;this.ratio=ratio;this.sink=sink??new StrokeSink(backend.canvas);this.states=new Map;this.finalizations=new Map;this.preparedBytes=0;this.pending=new Map;this.footprints=new Map;this.cells=new Map;this.dirty=new Set;this.guards=[];this.epoch=0;this.generation=0;this.ready=false;this.enabled=true;this.fallback=false;this.suspended=false;this.allocatedBytes=0;this.metrics={updates:0,updatedPixels:0,rasterPixels:0,skippedRasterPixels:0,commands:0,historyReplayCommands:0,historyRebuilds:0,guardPixels:0,guardCaptures:0,guardCaptureMs:0,peakBytes:0,peakPixels:0,superseded:0,rebuilds:0,fallbacks:0,retirements:0,samples:[],maxCpuMs:0,backgroundSlices:0,maxBackgroundMs:0,finalizationSwaps:0,obsoleteFinalizations:0};}
  setEnabled(value){this.enabled=value;this.invalidate();}
- setNavigationActive(value){this.navigationActive=!!value;if(value){this.closeGuards();clearTimeout(this.viewRefineTimer);this.viewRefineTimer=null;for(const id of [...this.finalizations.keys()])this.discardFinalization(id);}else if(this.viewRefineNeeded){this.viewRefineNeeded=false;this.setView(this.view);}}
+ setNavigationActive(value){this.navigationActive=!!value;if(value){clearTimeout(this.viewRefineTimer);this.viewRefineTimer=null;for(const id of [...this.finalizations.keys()])this.discardFinalization(id);}else if(this.viewRefineNeeded){this.viewRefineNeeded=false;this.setView(this.view);}}
  setView(view){
   const old=new Map([...this.states.values()].filter(v=>v.last).map(v=>[v.id,v.finalState??v.last]));for(const [id,state]of this.pending)old.set(id,state);
   const sameSpace=this.view&&[0,1,2,3,4,5,12,14].every(i=>this.view[i]===view[i]);
   const reusable=this.sink.reproject&&sameSpace&&old.size&&[...old.keys()].every(id=>this.states.has(id))&&[...old.values()].every(state=>state.finished);
-  // The captured guard includes the complete scene, not only the pending stroke.
-  // Reprojecting it next to the moved GPU image exposes a stale second canvas.
-  if(this.guards.length)this.closeGuards();
   this.view=Float64Array.from(view);this.sink.updateOrigin?.();this.epoch++;
   if(reusable){
    // No coverage evaluation, image allocation or upload during navigation.
@@ -147,14 +144,14 @@ export class StrokeOverlay{
  presented(id,epoch=this.epoch){if(epoch!==this.epoch)return;this.removeState(id);this.metrics.retirements++;}
  cancel(id){this.removeState(id);}
 
- async protect(){if(this.navigationActive)return true;this.safeFlush();if(this.guards.length||!this.cells.size)return true;const epoch=this.epoch,plan=this.plan,source=this.backend.canvas,bounds=this.bounds();if(!bounds)return true;
+ async protect(){this.safeFlush();if(this.guards.length||!this.cells.size)return true;const epoch=this.epoch,plan=this.plan,source=this.backend.canvas,bounds=this.bounds();if(!bounds)return true;
   // A cropped, full-DPR snapshot is a SHORT-LIVED transition guard, not a
   // historical proxy base. It prevents transparent feedback double-painting
   // while the independently owned GPU canvas publishes its exact result.
   const x=Math.max(0,Math.floor(Math.floor(bounds[0])*plan.density)),y=Math.max(0,Math.floor(Math.floor(bounds[1])*plan.density)),w=Math.min(source.width-x,Math.ceil(Math.ceil(bounds[2])*plan.density)-x),h=Math.min(source.height-y,Math.ceil(Math.ceil(bounds[3])*plan.density)-y);if(w<=0||h<=0)return true;
-  const started=performance.now(),bitmap=await transitionSnapshot(this.backend,x,y,w,h);if(this.disposed||this.navigationActive||epoch!==this.epoch){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h,density:plan.density,view:this.view.slice()}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;this.metrics.guardCaptureMs+=performance.now()-started;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.sink.pixels*4+w*h*12);this.sink.showGuard?.(plan,this.guards[0]);if(this.sink.showGuard){bitmap.close();this.guards[0].bitmap=null;}return true;
+  const started=performance.now(),bitmap=await transitionSnapshot(this.backend,x,y,w,h);if(this.disposed||epoch!==this.epoch){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h,density:plan.density,view:this.view.slice()}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;this.metrics.guardCaptureMs+=performance.now()-started;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.sink.pixels*4+w*h*12);this.sink.showGuard?.(plan,this.guards[0]);if(this.sink.showGuard){bitmap.close();this.guards[0].bitmap=null;}return true;
  }
- closeGuards(){if(!this.guards.length)return;for(const g of this.guards)g.bitmap?.close();this.guards=[];this.sink.hideGuard?.();}
+ closeGuards(){for(const g of this.guards)g.bitmap?.close();this.guards=[];this.sink.hideGuard?.();}
  fallbackPresented(submittedAt,epoch,fallbackRendered=false){if(epoch!==this.epoch)return;if(this.fallback&&fallbackRendered){this.closeGuards();this.clearRaster();this.pending.clear();return;}if(this.guards.length)this.closeGuards();}
  summary(){return {scope:'CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured',kind:'stroke-only',transport:'2d',coupled:false,ready:this.ready,viewEpoch:this.epoch,generation:this.generation,...this.plan,polygon:undefined,pixels:this.sink.pixels,width:this.sink.element?.width??0,height:this.sink.element?.height??0,bytes:this.allocatedBytes+this.preparedBytes+this.sink.pixels*4+this.guards.reduce((n,g)=>n+g.width*g.height*4,0),rasterByteBudget:MAX_BYTES,pendingStrokes:this.footprints.size,fallback:this.fallback,allocations:this.sink.totalAllocations??this.sink.allocations,pendingFinalizations:this.finalizations.size,...this.metrics,samples:this.measure?this.metrics.samples:[]};}
  destroy(){this.disposed=true;this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.sink.destroy();}

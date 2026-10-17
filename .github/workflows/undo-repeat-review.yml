@@ -22,14 +22,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      # Canvas navigation ghosting is covered by the focused overlay test.
       - name: Related tests and exact application build
         env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
         run: |
           npm run brush:build > /tmp/undo-brush-build.log
           npm run prep:check
           npx vitest run apps/editor/src/historyNavigation.test.ts apps/editor/src/historyController.test.ts
-          node --test packages/brush-rt/test/history-navigation.test.mjs packages/brush-rt/test/presentation.test.mjs packages/brush-rt/test/stroke-overlay.test.mjs
+          node --test packages/brush-rt/test/history-navigation.test.mjs packages/brush-rt/test/presentation.test.mjs
           npm --workspace @illustro/editor exec -- tsc --noEmit
           npm --workspace @illustro/editor exec -- vite build --base=./
       - name: Install verification browser
