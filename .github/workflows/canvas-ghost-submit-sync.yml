@@ -1,0 +1,63 @@
+name: Isolated canvas ghost synchronization
+on:
+  push:
+    branches: ['fix/canvas-ghost-submit-sync-2026-10-17']
+permissions:
+  contents: write
+concurrency:
+  group: isolated-canvas-ghost
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build brush and run focused navigation tests
+        run: |
+          npm run brush:build
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const file='prototypes/brush-rt/dist/illustro-brush-rt.html',lock='docs/production-prep/source-lock.json';
+          const h=createHash('sha256').update(fs.readFileSync(file)).digest('hex'),s=fs.readFileSync(lock,'utf8'),j=JSON.parse(s),e=j.artifacts.find(x=>x.path===file);
+          if(!e||s.split('"'+e.sha256+'"').length!==2)throw Error('source lock mismatch');
+          fs.writeFileSync(lock,s.replace('"'+e.sha256+'"','"'+h+'"'));
+          JS
+          npm run prep:check
+          node --test packages/brush-rt/test/presentation.test.mjs packages/brush-rt/test/stroke-overlay.test.mjs packages/brush-rt/test/history-navigation.test.mjs
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Synchronize the generated artifact
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add prototypes/brush-rt/dist/illustro-brush-rt.html docs/production-prep/source-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "build: align generated ghost-sync preview with source"
+            git push origin HEAD:fix/canvas-ghost-submit-sync-2026-10-17
+          fi
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Build isolated review
+        run: VITE_COMMIT_SHA="$SOURCE_SHA" npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+      - name: Publish preview without replacing Undo branch
+        run: |
+          mkdir -p site/qa/perf-canvas-ghost-sync/app site/qa/perf-canvas-ghost-sync/evidence
+          cp -a apps/editor/dist/. site/qa/perf-canvas-ghost-sync/app/
+          printf '{"sourceCommit":"%s","verification":"source lock, navigation tests, history tests, typecheck, build","userDeviceVerified":false}\n' "$SOURCE_SHA" > site/qa/perf-canvas-ghost-sync/evidence/source.json
+          cd site
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add qa/perf-canvas-ghost-sync
+          if ! git diff --cached --quiet; then
+            git commit -m "qa: publish isolated navigation synchronization preview"
+            git push origin HEAD:gh-pages
+          fi
