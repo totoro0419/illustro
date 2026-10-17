@@ -337,12 +337,12 @@ export class GpuRenderer {
  // View input has its own bounded presentation lane. Never attach an old
  // stroke's compute/composition batch to the first response to pan/zoom/rotate.
  this.syncOverlayView();
- if(this.viewPending)return this.presentView(now);
+ if(this.viewPending&&!this.backend.presentationHeld)return this.presentView(now);
  if(this.inflight||this.guardPreparing||this.cancellingStroke||this.historyPreparing)return false;
  if(this.navigationActive&&!this.backend.presentationHeld)return false;
  // A blocked view submission must not be followed by another formal batch.
  // Keep the lane free between gesture events as well, until a short quiet gap.
- if(this.strokeHandoff&&performance.now()<(this.navigationUntil??0)&&this.document.jobs.length&&(!this.snapshot||this.snapshot.finished)&&!this.mailbox.value)return false;
+ if(this.strokeHandoff&&!this.backend.presentationHeld&&performance.now()<(this.navigationUntil??0)&&this.document.jobs.length&&(!this.snapshot||this.snapshot.finished)&&!this.mailbox.value)return false;
  const latest=this.mailbox.take();if(latest?.resetPreview&&!this.backend.sparsePreview)this.backend.retirePreview(latest.id);if(latest)this.snapshot=latest;
  // Keep the measured batch bound after pointerup too. Empty preview frames
  // must not ramp it to 128 before the first long formal submission.

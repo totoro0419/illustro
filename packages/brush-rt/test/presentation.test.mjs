@@ -75,3 +75,10 @@ test('a held navigation gesture never resumes formal work between sparse move ev
  let peeks=0;r.document.peekMany=()=>{peeks++;return [];};r.frame(performance.now()+10000);
  assert.equal(calls.renders,0);assert.equal(peeks,0);r.setNavigationActive(false);r.navigationUntil=0;r.frame(performance.now());assert.equal(calls.renders,1);
 });
+
+
+test('held reconstruction drains formal work while retaining its pending view until release',()=>{
+ const {r,backend,calls}=harness();backend.presentationHeld=true;r.needsFrame=true;r.setViewTransform(view(45));
+ r.frame(0);assert.equal(calls.renders,1,'a pending hidden view must not stop reconstruction');assert.equal(calls.presents,0);assert.equal(r.viewPending,true);
+ backend.presentationHeld=false;r.frame(16.7);assert.equal(calls.presents,1);assert.equal(r.viewPending,false);
+});
