@@ -4,7 +4,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const {chromium}=createRequire(import.meta.url)(process.env.RT_PLAYWRIGHT_PATH??'playwright');
-const baseline='1828947625dea1a16ec7532fd5275c4e0ccaec53',roots={A:path.resolve(process.env.LATENCY_BEFORE_APP??'/tmp/latency-before/apps/editor/dist'),C:path.resolve('apps/editor/dist')};
+const baseline=process.env.LATENCY_BASELINE_SHA??'1828947625dea1a16ec7532fd5275c4e0ccaec53',roots={A:path.resolve(process.env.LATENCY_BEFORE_APP??'/tmp/latency-before/apps/editor/dist'),C:path.resolve('apps/editor/dist')};
 const output=process.env.LATENCY_OUTPUT??'/tmp/handoff-latency/report.json';
 const server=http.createServer(async(req,res)=>{try{const [,mode,...parts]=new URL(req.url,'http://localhost').pathname.split('/'),root=roots[mode];if(!root)throw Error('mode');const file=path.resolve(root,parts.join('/')||'index.html');if(!file.startsWith(root+path.sep))throw Error('path');res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(await fs.readFile(file));}catch{res.writeHead(404).end();}});
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));

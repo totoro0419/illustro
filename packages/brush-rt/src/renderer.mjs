@@ -305,7 +305,7 @@ export class GpuRenderer {
    }
    this.wrapPreviews.set(state.id,active);
   }
-  if(this.proxy?.enqueue(state))this.backend.overlayHoldIds.add(state.id);this.mailbox.set(state);this.requestPreview();
+  this.syncOverlayView();if(this.proxy?.enqueue(state))this.backend.overlayHoldIds.add(state.id);this.mailbox.set(state);this.requestPreview();
  }
  // One deferred request consumes the newest notification after an input batch.
  // Do not launch a GPU submission for every coalesced input sample.
@@ -327,7 +327,13 @@ export class GpuRenderer {
  performanceSummary(){const p=this.performance,a=p.samples,intervals=a.slice(1).map((v,i)=>v.at-a[i].at),p95=values=>values.length?[...values].sort((x,y)=>x-y)[Math.ceil(values.length*.95)-1]:null;
   return {instantPreview:this.proxy?.summary()??null,scope:'submission-proxy; physical scanout and GPU execution time unmeasured',inputToPreviewSubmitP95Ms:p95(this.inputPreviewSamples.map(x=>x.submitMs)),inputToPreviewCompletionP95Ms:p95(this.inputPreviewSamples.map(x=>x.completeMs)),presentations:p.presentations,viewPresentations:p.viewPresentations,renders:p.renders,compositedTiles:p.compositedTiles,compositedLayerPasses:p.compositedLayerPasses,supersededViews:p.supersededViews,submissionFps:a.length>1?(a.length-1)*1000/(a.at(-1).at-a[0].at):null,frameIntervalP95Ms:p95(intervals),inputToSubmissionP95Ms:p95(a.filter(x=>x.kind==='view').map(x=>x.at-x.inputAt)),cpuSubmitP95Ms:p95(a.map(x=>x.cpuMs)),queueCompletionProxyMs:this.lastGpuWork,gpuExecutionMs:null,historyGpuReservedBytes:this.backend.historyReservedBytes??0,historyGpuBudgetBytes:this.backend.historyBudget??HISTORY_GPU_BUDGET,historyBaseReuses:this.historyBaseReuses,historySupersededGpuJobs:this.historySupersededGpuJobs,historySupersededGpuCommands:this.historySupersededGpuCommands,historyCachedStrokes:this.backend.historyPatches?.size??0,historyRetirementPeakBytes:this.backend.historyRetirementPeak??0,historyRetiredPendingBytes:(this.backend.historyRetired?.length??0)*TILE*TILE*4,occupiedGpuTiles:this.backend.tiles?.size??0,minificationBytes:this.backend.presentationPyramid?.bytes??0,minificationUpdates:this.backend.presentationPyramid?.updates??0,previewBytes:this.backend.previewBytes??0,previewBudgetBytes:this.backend.previewLimitBytes??PREVIEW_LIMIT,previewPressure:!!this.backend.previewPressure,previewDeferredFrames:this.backend.previewDeferredFrames??0,previewPoolBytes:this.backend.previewPoolBytes??0,peakPreviewBytes:this.backend.peakPreviewBytes??0,viewportCacheBytes:this.backend.viewportCache?.bytes??0,viewportCacheBudgetBytes:this.backend.viewportCache?.budget??0,screenShadedPixels:this.backend.viewportCache?.shadedPixels??0,screenCopiedPixels:this.backend.viewportCache?.copiedPixels??0,screenCacheHits:this.backend.viewportCache?.hits??0,formalJobs:this.document.jobs.length,formalBatchLimit:this.instantJobLimit,formalSubmitCpuMs:this.lastFormalSubmitCpuMs??0,formalCommands:this.document.count,formalCommandsPruned:this.document.formalCommandsPruned};
  }
- frame(now){if(this.disposed)return false;if(this.backend.poll?.()===true)this.finishSubmission?.();if(this.inflight||this.guardPreparing||this.cancellingStroke||this.historyPreparing)return this.presentView(now);const latest=this.mailbox.take();if(latest?.resetPreview)this.backend.retirePreview(latest.id);if(latest)this.snapshot=latest;if(this.strokeHandoff)for(const state of this.previewStates.values())if(state.resetPreview&&this.backend.previews.get(state.id)?.resetState!==state){this.backend.retirePreview(state.id);}
+ frame(now){if(this.disposed)return false;if(this.backend.poll?.()===true)this.finishSubmission?.();
+ // View input has its own bounded presentation lane. Never attach an old
+ // stroke's compute/composition batch to the first response to pan/zoom/rotate.
+ this.syncOverlayView();
+ if(this.viewPending){const shown=this.presentView(now);if(shown||this.disposed||this.inflight||this.guardPreparing||this.cancellingStroke||this.historyPreparing)return shown;}
+ if(this.inflight||this.guardPreparing||this.cancellingStroke||this.historyPreparing)return false;
+ const latest=this.mailbox.take();if(latest?.resetPreview&&!this.backend.sparsePreview)this.backend.retirePreview(latest.id);if(latest)this.snapshot=latest;
  // Keep the measured batch bound after pointerup too. Empty preview frames
  // must not ramp it to 128 before the first long formal submission.
  const instant=!!this.proxy?.ready&&!this.proxy.fallback,active=!!this.snapshot&&!this.snapshot.finished,catchup=!!this.backend.previewPressure;
@@ -400,8 +406,9 @@ export class GpuRenderer {
  async redoCommit(id){await this.drain(false);const ok=await this.backend.redoCommit(id);if(!ok)return false;this.needsFrame=true;await this.drain();return true;}
  dropHistory(ids){this.backend.dropHistory(ids);}
  destroy(){clearTimeout(this.workTimer);this.proxy?.destroy();if(this.backend.sparsePreview)destroySparse(this.backend);this.disposed=true;this.wrapPreviews.clear();this.wrapCaches.clear();this.backend.destroy();}
+ syncOverlayView(){if(this.overlayViewPending){const view=this.overlayViewPending;this.overlayViewPending=null;this.proxy?.setView(view);}}
  setViewTransform(values){const previous=this.backend.viewTransform;if(previous&&previous.length===values.length&&values.every((v,i)=>v===previous[i]))return;
-  if(this.viewPending)this.performance.supersededViews++;this.backend.setViewTransform(values);this.proxy?.setView(values);this.viewPending=true;this.viewRequestedAt=performance.now();}
+  if(this.viewPending)this.performance.supersededViews++;this.backend.setViewTransform(values);this.overlayViewPending=values.slice();this.viewPending=true;this.viewRequestedAt=performance.now();}
  get info(){return this.backend.info;}
 }
 class WebGlBackend {
@@ -539,7 +546,7 @@ function acquirePreviewTile(b,depth){
  }
  t.bytes=bytes;t.hasDepth=depth;t.fresh=true;t.depthFresh=true;b.previewBytes+=bytes;b.peakPreviewBytes=Math.max(b.peakPreviewBytes,b.previewBytes+b.previewPoolBytes);return t;
 }
-function retireSparsePreview(b,v){for(const key of v.keys)b.dirtyConfirmed.add(key);for(const t of v.tiles.values()){b.previewBytes-=t.bytes;if(b.previewPoolBytes+t.bytes<=PREVIEW_POOL_BUDGET){b.previewPool.push(t);b.previewPoolBytes+=t.bytes;}else dropPreviewTile(b,t);}b.previews.delete(v.id);}
+function retireSparsePreview(b,v){if(v.replacement){const next=v.replacement;v.replacement=null;retireSparsePreview(b,next);}for(const key of v.keys)b.dirtyConfirmed.add(key);for(const t of v.tiles.values()){b.previewBytes-=t.bytes;if(b.previewPoolBytes+t.bytes<=PREVIEW_POOL_BUDGET){b.previewPool.push(t);b.previewPoolBytes+=t.bytes;}else dropPreviewTile(b,t);}b.previews.delete(v.id);}
 function destroySparse(b){for(const v of [...b.previews.values()])if(v.tiles)retireSparsePreview(b,v);clearPreviewPool(b);for(const t of b.feedbackScratch??[])b.gl?b.release(t):t.destroy();}
 // Preflight all allocations before consuming any published cursor. When the
 // bounded preview cannot fit, retain the last complete image and drain formal
@@ -549,8 +556,8 @@ export function previewMemoryDemand(b,states){
  let bytes=b.previewBytes??0;
  // Unallocated queued tiles are reservations too, even when their snapshot
  // object is unchanged. They must fit before any canonical cursor advances.
- for(const v of b.previews.values())for(const key of v.pendingGpuWork?.keys()??[])if(!v.tiles.has(key))bytes+=TILE*TILE*(16+(continuous(v.preset)?4:0));
- for(const state of states){const v=b.previews.get(state.id);if(v?.lastState===state)continue;const keys=new Set,add=c=>{for(const key of keysFor(c,b.width,b.height))if(!v?.tiles.has(key)&&!v?.pendingGpuWork?.has(key))keys.add(key);};
+ for(const old of b.previews.values())for(const v of [old,old.replacement].filter(Boolean))for(const key of v.pendingGpuWork?.keys()??[])if(!v.tiles.has(key))bytes+=TILE*TILE*(16+(continuous(v.preset)?4:0));
+ for(const state of states){const old=b.previews.get(state.id),v=state.resetPreview&&old?.resetState!==state?(old?.replacement?.resetState===state?old.replacement:null):old;if(v?.lastState===state)continue;const keys=new Set,add=c=>{for(const key of keysFor(c,b.width,b.height))if(!v?.tiles.has(key)&&!v?.pendingGpuWork?.has(key))keys.add(key);};
   if(state.stableSource){const start=v?.stableCursor??0,end=state.stableEnd;if(!Number.isInteger(end)||end<start||end>state.stableSource.length)throw Error('invalid stable snapshot cursor');for(let i=start;i<end;i++)add(state.stableSource[i]);}
   else for(const c of state.stableCommands??[])if(c[13]>(v?.index??-1))add(c);
   for(const c of state.commands??[])add(c);bytes+=keys.size*TILE*TILE*(16+(continuous(state.preset)?4:0));
@@ -561,8 +568,22 @@ function prepareSparseMemory(b,states,dirty,diag){
  if(demand>(b.previewLimitBytes??PREVIEW_LIMIT)){for(const key of dirty)b.dirtyConfirmed.add(key);b.previewPressure=true;b.previewDeferredFrames++;diag.previewDeferred=true;return false;}
  b.previewPressure=false;diag.previewDeferred=false;return true;
 }
+function newSparsePreview(state){return {id:state.id,preset:state.preset,surfaceKey:state.surfaceKey??'default',keys:new Set,index:-1,tiles:new Map,resetState:state.resetPreview?state:null};}
+export function sparsePreviewTarget(b,state){
+ let old=b.previews.get(state.id);if(!old){old=newSparsePreview(state);b.previews.set(old.id,old);}
+ if(state.resetPreview&&old.resetState!==state){
+  if(old.replacement?.resetState!==state){if(old.replacement){const stale=old.replacement;old.replacement=null;retireSparsePreview(b,stale);b.previews.set(old.id,old);}old.replacement=newSparsePreview(state);}
+  return old.replacement;
+ }return old;
+}
+export function publishSparseReplacements(b,dirty){
+ for(const old of [...b.previews.values()]){const v=old.replacement;if(!v||v.pendingGpuWork?.size)continue;
+  for(const key of old.keys)dirty.add(key);for(const key of v.keys)dirty.add(key);
+  old.replacement=null;retireSparsePreview(b,old);b.previews.set(v.id,v);
+ }
+}
 function sparseWork(b,state,dirty,diag){
- let v=b.previews.get(state.id);if(!v){v={id:state.id,preset:state.preset,surfaceKey:state.surfaceKey??'default',keys:new Set,index:-1,tiles:new Map,resetState:state.resetPreview?state:null};b.previews.set(v.id,v);}
+ const v=sparsePreviewTarget(b,state);
  if(v.lastState===state)return null;if(v.surfaceKey!==(state.surfaceKey??'default'))throw Error('Preview surface changed');v.lastState=state;
  const p=state.preset,live=state.commands??[],published=publishedCommands(state,v),{stable,vertexCount,sectors}=livePrefixCommands(v,p,published,b.width,b.height,live),oldTail=v.tailKeys??new Set;
  previewDirty(v,stable,live,b.width,b.height,dirty,state.inputTip?.t??state.tip?.t??Infinity);diag.publishedCommands+=stable.length;diag.liveCommands+=live.length;
@@ -586,6 +607,7 @@ function renderSparseGl(b,states,dirty,diag){
  const g=b.gl;for(const state of states){const data=sparseWork(b,state,dirty,diag);if(!data)continue;const {v,p,work,vertexCount,sectors}=data;for(const item of work.values()){let tile=v.tiles.get(item.key);if(!tile){tile=acquirePreviewTile(b,continuous(p));v.tiles.set(item.key,tile);}const [tx,ty]=item.key.split(',').map(Number);if(tile.fresh){for(const target of [tile.prefix,tile.tail]){g.bindFramebuffer(g.FRAMEBUFFER,target.f);g.clearColor(0,0,0,0);g.depthMask(true);g.clearDepth(1);g.clear(g.COLOR_BUFFER_BIT|(target.depth?g.DEPTH_BUFFER_BIT:0));}tile.fresh=false;}
    glLiveDraw(b,tile.prefix,item.stable,p,tx*TILE,ty*TILE,false,vertexCount,sectors);glLiveDraw(b,tile.tail,item.live,p,tx*TILE,ty*TILE,item.clear,6,sectors);diag.previewPasses+=+(item.stable.length>0)+ +(item.clear||item.live.length>0);if(item.clear)diag.tailClearPixels+=TILE*TILE;
  }}
+ publishSparseReplacements(b,dirty);
  // Clear all changed regions together, then keep the large scene target bound.
  // compose() already produces quantized RGBA8 values, so the intermediate
  // straight-alpha scratch image is redundant for up to eight overlays.
@@ -617,7 +639,7 @@ export function queueGpuPreview(v,data,dirty){
 export function takeGpuPreviewWork(b,states,limit){
  const order=[...states];if(Number.isFinite(limit))order.sort((a,b)=>Number(a.finished)-Number(b.finished)||b.id-a.id);
  const selected=[];
- for(const state of order){const v=b.previews.get(state.id);if(!v)continue;for(const [key,task]of v.pendingGpuWork??[]){if(selected.length>=limit)return selected;v.pendingGpuWork.delete(key);selected.push({v,p:v.preset,task});}}
+ for(const state of order){const old=b.previews.get(state.id),v=old?.replacement??old;if(!v)continue;for(const [key,task]of v.pendingGpuWork??[]){if(selected.length>=limit)return selected;v.pendingGpuWork.delete(key);selected.push({v,p:v.preset,task});}}
  return selected;
 }
 function renderSparseGpu(b,e,states,dirty,diag){
@@ -630,8 +652,9 @@ function renderSparseGpu(b,e,states,dirty,diag){
   gpuLiveDraw(b,e,tile,tile.tail,task.live,p,tx*TILE,ty*TILE,task.clear,6,task.sectors);
   diag.previewPasses+=+(task.clear||task.live.length>0);if(task.clear)diag.tailClearPixels+=TILE*TILE;if(task.dirty)dirty.add(task.key);
  }
- b.previewGpuPending=[...b.previews.values()].some(v=>v.pendingGpuWork?.size);
- diag.previewQueuedTiles=[...b.previews.values()].reduce((n,v)=>n+(v.pendingGpuWork?.size??0),0);diag.previewAppliedTiles=selected.length;
+ publishSparseReplacements(b,dirty);
+ b.previewGpuPending=[...b.previews.values()].some(v=>(v.replacement??v).pendingGpuWork?.size);
+ diag.previewQueuedTiles=[...b.previews.values()].reduce((n,v)=>n+((v.replacement??v).pendingGpuWork?.size??0),0);diag.previewAppliedTiles=selected.length;
  // Copy clears before the scene render pass. Direct tile/layer draws then share
  // one pass; an oversized overlay group alone needs the exact scratch fallback.
  for(const key of dirty){const [tx,ty]=key.split(',').map(Number),x=tx*TILE,y=ty*TILE,w=Math.min(TILE,b.width-x),h=Math.min(TILE,b.height-y);if(w<=0||h<=0)continue;e.copyTextureToTexture({texture:b.zeroPresentTile},{texture:b.liveTarget,origin:[x,y]},[w,h]);diag.compositedTiles++;}

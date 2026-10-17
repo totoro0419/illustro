@@ -38,7 +38,10 @@ jobs:
           RT_PLAYWRIGHT_PATH: /tmp/touch-browser/node_modules/playwright
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
           TOUCH_BACKENDS: ${{ matrix.backend }}
-        run: node scripts/touch-navigation-review.mjs
+        run: |
+          node scripts/touch-navigation-review.mjs
+          FORMAL_BEFORE_ROOT=/tmp/touch-before/packages/brush-rt/dist FORMAL_QUALITY_OUTPUT=/tmp/touch-navigation/formal/report.json OVERLAY_BASELINE_SHA=45d93027eabdd3d17fd74db185146c2533994f51 node scripts/stroke-overlay-formal.mjs
+          LATENCY_BASELINE_SHA=45d93027eabdd3d17fd74db185146c2533994f51 LATENCY_BEFORE_APP=/tmp/touch-before/apps/editor/dist LATENCY_OUTPUT=/tmp/touch-navigation/latency/report.json LATENCY_BACKENDS=${{ matrix.backend }} LATENCY_BRUSHES=thin,broad,pencil LATENCY_VIEWS=fit,100 LATENCY_SCENARIOS=short-next,long-next LATENCY_ROUNDS=3 node scripts/handoff-latency-benchmark.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -47,3 +50,67 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: matrix.backend == 'webgl2'
         with: {name: touch-app, path: apps/editor/dist/}
+
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Canonical preservation, discovered tests and editor build
+        run: |
+          git diff --exit-code 45d93027eabdd3d17fd74db185146c2533994f51 -- apps/editor/src/color packages/brush-rt/src/foundation.mjs packages/brush-rt/src/model.mjs packages/brush-rt/src/shaders.mjs packages/brush-rt/src/canonical.worker.mjs packages/core
+          npm run prep:check
+          npm run core:check
+          npm run brush:build > /tmp/brush-build.log
+          git diff --exit-code -- prototypes/brush-rt/dist/illustro-brush-rt.html
+          npx vitest run apps/editor/src
+          node --test packages/brush-rt/test/*.test.mjs > /tmp/brush-tests.log
+          node scripts/check-test-summary.mjs /tmp/brush-tests.log
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
+      - run: |
+          npm install --prefix /tmp/overlay-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/overlay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Brushes, views, history, save, Recovery, export, color and home
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/overlay-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          M08_PERF_REVIEW: '1'
+          M05_EXPECT_MILESTONE: M07
+          M06_EXPECT_MILESTONE: M07
+          M08_CORRUPT_ALL_RENDER_CACHES: '1'
+          MOBILE_HOME: '1'
+          MOBILE_INPUT_OUTPUT: /tmp/latency-regression/mobile/report.json
+          LATENCY_VISIBILITY_OUTPUT: /tmp/latency-regression/visibility/report.json
+          UNDO_QUALITY_CANVAS_SIZE: '4000'
+          UNDO_QUALITY_OUTPUT: /tmp/latency-regression/navigation/report.json
+        run: |
+          node scripts/handoff-latency-visibility.mjs
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-orbit-smoke.mjs
+          node scripts/editor-color-hit-smoke.mjs
+          node scripts/editor-gesture-cancel-smoke.mjs
+          node scripts/editor-m05-smoke.mjs
+          node scripts/editor-m06-smoke.mjs
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-home-smoke.mjs
+          node scripts/editor-works-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+          node scripts/mobile-input-smoke.mjs
+          node scripts/undo-navigation-quality.mjs
+      - uses: actions/upload-artifact@v4
+        with: {name: latency-app, path: apps/editor/dist/}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: latency-regression
+          path: |
+            /tmp/latency-regression/
+            /tmp/*-evidence/
+            /tmp/illustro-m05/
+            /tmp/brush-tests.log

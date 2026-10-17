@@ -41,3 +41,13 @@ test('zero confirmation delay does not skip formal work after same-RAF fence ack
  const original=backend.render.bind(backend);backend.render=(s,jobs,states)=>{seen.push(jobs.map(x=>x.id));return original(s,jobs,states);};
  r.frame(0);r.frame(0);assert.deepEqual(seen,[[1],[2]],'a stale RAF timestamp must not create an empty formal submission');
 });
+
+
+test('navigation presents before old formal jobs and applies only the latest overlay view',()=>{
+ const {r,backend,calls}=harness();let views=[];r.proxy={setView:v=>views.push(v[8])};r.needsFrame=true;
+ let peeks=0;r.document.peekMany=()=>{peeks++;return [];};
+ for(let i=1;i<=40;i++)r.setViewTransform(view(i));
+ assert.deepEqual(views,[]);assert.equal(r.frame(0),true);assert.deepEqual(views,[40]);
+ assert.equal(calls.presents,1);assert.equal(calls.renders,0);assert.equal(peeks,0);
+ r.proxy=null;r.frame(16.7);assert.equal(calls.renders,1);
+});

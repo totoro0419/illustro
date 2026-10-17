@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {queueGpuPreview,takeGpuPreviewWork,previewMemoryDemand,GpuRenderer} from '../dist/rt/renderer.mjs';
+import {queueGpuPreview,takeGpuPreviewWork,previewMemoryDemand,GpuRenderer,sparsePreviewTarget,publishSparseReplacements} from '../dist/rt/renderer.mjs';
 
 function preview(id){return {id,preset:{tip:'round'},tiles:new Map};}
 function change(v,key,stable,live=[],clear=false,vertexCount=6,sectors=16){queueGpuPreview(v,{work:new Map([[key,{key,stable,live,clear}]]),vertexCount,sectors},new Set([key]));}
@@ -43,4 +43,23 @@ test('first fallback GPU preview submits before old formal jobs and queued previ
  assert.equal(r.frame(performance.now()),true);await Promise.resolve();
  assert.deepEqual(submittedJobs,[]);assert.equal(queuedCalls,0);assert.equal(backend.previewTileBudget,8);assert.equal(r.needsFrame,true);
  r.needsFrame=true;r.frame(performance.now());await Promise.resolve();assert.equal(queuedCalls,1);
+});
+
+
+test('final taper keeps the displayed lower-layer image until every replacement tile is ready',()=>{
+ const old={...preview(7),keys:new Set(['0,0','1,0']),surfaceKey:'lower',resetState:null},b={previews:new Map([[7,old]]),dirtyConfirmed:new Set,previewBytes:0};
+ const state={id:7,preset:old.preset,surfaceKey:'lower',resetPreview:true,finished:true,commands:[]},next=sparsePreviewTarget(b,state);
+ assert.equal(b.previews.get(7),old);assert.notEqual(next,old);assert.equal(next.surfaceKey,'lower');
+ change(next,'0,0',[new Float32Array([1])]);change(next,'1,0',[new Float32Array([2])]);
+ const dirty=new Set;assert.equal(takeGpuPreviewWork(b,[state],1)[0].v,next);publishSparseReplacements(b,dirty);
+ assert.equal(b.previews.get(7),old,'partly rebuilt taper must stay private');
+ takeGpuPreviewWork(b,[state],1);publishSparseReplacements(b,dirty);
+ assert.equal(b.previews.get(7),next);assert.deepEqual([...dirty].sort(),['0,0','1,0']);assert.equal(old.replacement,null);
+});
+
+test('replacement memory is reserved without resetting the visible preview cursor',()=>{
+ const old={...preview(3),keys:new Set,stableCursor:40},b={width:512,height:512,previews:new Map([[3,old]]),previewBytes:128*128*16};
+ const c=new Float64Array(24);c[0]=c[16]=20;c[1]=c[17]=20;c[2]=2;c[18]=1;c[19]=1;
+ const state={id:3,preset:old.preset,resetPreview:true,stableSource:[c],stableEnd:1,commands:[]};
+ assert.equal(previewMemoryDemand(b,[state]),2*128*128*16);assert.equal(old.stableCursor,40);
 });
