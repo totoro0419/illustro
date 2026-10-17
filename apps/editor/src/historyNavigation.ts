@@ -15,7 +15,7 @@ export class HistoryNavigation{
   enqueue(direction:HistoryDirection){
     if(this.fault||this.requests.length+this.active.length>=this.capacity){this.refused++;this.ports.failed(this.fault?.message??'Undo / Redoの受付上限です。反映が進んでからもう一度操作してください。',0);return false;}
     this.requests.push({direction,sequence:++this.issued,at:performance.now()});this.accepted++;this.peak=Math.max(this.peak,this.requests.length+this.active.length);
-    if(!this.running){this.running=true;this.ports.state();void this.pump();}else this.ports.state();return true;
+    if(!this.running){this.running=true;this.ports.state();void this.pump();}return true;
   }
   barrier(){if(this.fault)return Promise.reject(this.fault);if(this.finished===this.issued)return Promise.resolve();return new Promise<void>((resolve,reject)=>this.waiters.push({through:this.issued,resolve,reject}));}
   get diagnostics(){return {pending:this.pending,queued:this.requests.length,active:this.active.length,accepted:this.accepted,refused:this.refused,batches:this.batches,peak:this.peak,fault:this.fault?.message??null,traces:this.measure?this.traces:[]};}
