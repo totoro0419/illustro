@@ -65,3 +65,17 @@ test('a reused pending-stroke allocation updates its document clip after view re
  assert.equal(StrokeSink.prototype.configure.call(sink,plan,[20,20,80,80]),false);
  assert.equal(element.style.clipPath,'polygon(12px 14px,110px 14px,90px 100px)');assert.deepEqual(sink.rect,[0,0,128,128]);
 });
+
+test('captured scene guard is retired on pan without losing pending stroke preview',async()=>{
+ const {p,sink}=setup(),r=record();p.enqueue(live(r));p.safeFlush();
+ const active=p.states.get(1);let closed=0,hidden=0;sink.hideGuard=()=>hidden++;
+ p.guards=[{bitmap:{close(){closed++;}},view:p.view.slice()}];p.setNavigationActive(true);
+ assert.equal(p.guards.length,0);assert.equal(closed,1);assert.equal(hidden,1);
+ assert.equal(p.states.get(1),active);assert.equal(await p.protect(),true);assert.equal(p.guards.length,0);
+ p.setNavigationActive(false);p.destroy();
+});
+test('view changes discard a captured scene even without a held gesture',()=>{
+ const {p,sink}=setup();let hidden=0;sink.hideGuard=()=>hidden++;
+ p.guards=[{bitmap:null,view:p.view.slice()}];const next=view(4000,.35);next[8]=36;
+ p.setView(next);assert.equal(p.guards.length,0);assert.equal(hidden,1);p.destroy();
+});
