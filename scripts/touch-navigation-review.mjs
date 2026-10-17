@@ -1,0 +1,68 @@
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {execFileSync} from 'node:child_process';
+const {chromium}=createRequire(import.meta.url)(process.env.RT_PLAYWRIGHT_PATH??'playwright');
+const out=process.env.TOUCH_OUTPUT??'/tmp/touch-navigation/report.json',beforeSha='45d93027eabdd3d17fd74db185146c2533994f51';
+const roots={app:path.resolve(process.env.TOUCH_APP_ROOT??'apps/editor/dist'),before:path.resolve(process.env.TOUCH_BEFORE_ROOT??'/tmp/touch-before/apps/editor/dist')};
+const server=http.createServer(async(req,res)=>{try{const parts=new URL(req.url,'http://localhost').pathname.split('/').filter(Boolean);let file;
+ if(parts[0]==='qa'){res.setHeader('Content-Type','text/html');let html=await fs.readFile('qa/perf-stroke-handoff-latency/index.html','utf8');html=html.replaceAll("'./'", "'../'").replaceAll('href="./app/', 'href="../app/');return res.end(html);}
+ const root=roots[parts.shift()];if(!root)throw Error('root');file=path.resolve(root,parts.join('/')||'index.html');if(!file.startsWith(root+path.sep))throw Error('path');res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'application/octet-stream');res.end(await fs.readFile(file));
+}catch{res.writeHead(404).end();}});await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
+const browser=await chromium.launch({headless:true,executablePath:process.env.RT_CHROMIUM_PATH||undefined,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
+const report={sourceCommit:process.env.EXPECTED_COMMIT_SHA??'',baseline:beforeSha,scope:'Trusted CDP touch / phone DPR3 and tablet DPR2; Chromium SwiftShader. Submission cadence and retained scene pixels, not physical device FPS. Canonical records and artwork/history are checked separately.',cases:[],qa:[],errors:[]};
+await fs.mkdir(path.dirname(out),{recursive:true});const origin=`http://127.0.0.1:${server.address().port}`;
+const save=()=>fs.writeFile(out,JSON.stringify(report,null,2));
+try{
+ for(const backend of (process.env.TOUCH_BACKENDS??'webgl2,webgpu').split(',')){
+  for(const mode of (process.env.TOUCH_MODES??'before,app').split(','))for(const tablet of [false,true]){
+   const context=await browser.newContext({viewport:tablet?{width:1024,height:1366}:{width:390,height:844},deviceScaleFactor:tablet?2:3,isMobile:true,hasTouch:true});
+   const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));await page.goto(`${origin}/${mode}/?m09=1&perf=1&backend=${backend}`);
+   await page.waitForFunction(()=>window.__illustroPerformance);await page.evaluate(()=>{document.getElementById('newCanvasWidth').value='4000';document.getElementById('newCanvasHeight').value='4000';document.getElementById('new').click();});
+   await page.waitForFunction(()=>document.getElementById('status').textContent.includes('描画できます'),null,{timeout:120000});
+   const commit=await page.locator('#canvas').getAttribute('data-commit');assert.equal(commit,mode==='before'?beforeSha:process.env.EXPECTED_COMMIT_SHA);
+   await page.evaluate(()=>{for(const id of ['qaPanel','canvasPerformance'])document.getElementById(id).hidden=true;const finger=document.getElementById('finger');finger.checked=true;finger.dispatchEvent(new Event('change'));const size=document.getElementById('size');size.value='64';size.dispatchEvent(new Event('input'));const force=document.getElementById('force');force.checked=true;force.dispatchEvent(new Event('change'));});
+   const idle=()=>page.waitForFunction(()=>{const p=window.__illustroPerformance,m=p.read(),{renderer:r,session:s}=p.probe();return !s.active&&!s.resolvers.size&&!r.inflight&&!r.guardPreparing&&!r.document.jobs.length&&!r.needsFrame&&!r.mailbox.value&&!m.handoff.pendingLogical&&!m.handoff.pendingGpu;},null,{timeout:180000});
+   await idle();const cdp=await context.newCDPSession(page),touch=(type,points)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y,radiusX:4,radiusY:4,force:.7}))});
+   const box=await page.locator('#canvas').boundingBox();assert.ok(box);const x=box.x+box.width*.25,y=box.y+box.height*.45,length=box.width*.48;
+   await touch('touchStart',[[0,x,y]]);for(let i=1;i<=48;i++)await touch('touchMove',[[0,x+length*i/48,y]]);await touch('touchEnd',[]);await idle();
+   const fade=await page.evaluate(()=>{const {session:s}=window.__illustroPerformance.probe(),r=s.records.at(-1),commands=r.commands,d=commands.map(c=>c[2]);return {enabled:r.preset.__foundation.preset.forceFade.enabled,first:d[0],last:d.at(-1),maximum:Math.max(...d),raw:r.raw?.length??r.input?.length,pointerTypes:[...new Set(r.raw?.map(p=>p.pointerType)??r.input?.map(p=>p.pointerType)??[])]};});
+   assert.equal(fade.enabled,true);assert.ok(fade.first<fade.maximum*.1&&fade.last<fade.maximum*.1,'Trusted finger final taper missing');
+   const navStart=await page.evaluate(()=>{const p=window.__illustroPerformance,{renderer:r}=p.probe();r.setPerformanceEnabled(true);const m=p.read();window.navReview={events:[],frames:[],overlays:[],rasters:r.proxy.metrics.rasterPixels,start:performance.now(),before:{revision:m.revision,strokes:m.strokes,raw:p.probe().session.rawAccepted}};const n=window.navReview,sv=r.setViewTransform.bind(r);r.setViewTransform=(...a)=>{const at=performance.now(),v=sv(...a);n.events.push({at,ms:performance.now()-at});return v;};const pv=r.proxy.setView.bind(r.proxy);r.proxy.setView=(...a)=>{const at=performance.now(),v=pv(...a);n.overlays.push(performance.now()-at);return v;};const op=r.onPresentation;r.onPresentation=s=>{n.frames.push({at:performance.now(),kind:s.kind,cpuMs:s.cpuMs,inputAt:s.inputAt});op?.(s);};return n.before;});
+   const frames=[];cdp.on('Page.screencastFrame',f=>{frames.push(f.metadata.timestamp);void cdp.send('Page.screencastFrameAck',{sessionId:f.sessionId}).catch(()=>{});});await cdp.send('Page.startScreencast',{format:'jpeg',quality:40,everyNthFrame:1});
+   const cx=x+length*.5,cy=y;await touch('touchStart',[[0,cx-35,cy],[1,cx+35,cy]]);const navAt=Date.now();
+   for(let i=1;i<=72;i++){const t=i/72,a=.55*Math.sin(t*Math.PI*2),d=40+18*Math.sin(t*Math.PI*2),px=22*Math.sin(t*Math.PI*4),py=18*Math.cos(t*Math.PI*2);await touch('touchMove',[[0,cx+px-d*Math.cos(a),cy+py-d*Math.sin(a)],[1,cx+px+d*Math.cos(a),cy+py+d*Math.sin(a)]]);await new Promise(ok=>setTimeout(ok,8));}
+   await touch('touchEnd',[]);await idle();await cdp.send('Page.stopScreencast');const nav=await page.evaluate(()=>{const n=window.navReview,p=window.__illustroPerformance,m=p.read(),r=p.probe().renderer;return {...n,rasterPixels:r.proxy.metrics.rasterPixels-n.rasters,after:{revision:m.revision,strokes:m.strokes,raw:p.probe().session.rawAccepted},metrics:r.performanceSummary(),errors:[...r.errors,...p.probe().session.errors]};});
+   assert.deepEqual(nav.before,nav.after);assert.deepEqual(nav.errors,[]);const intervals=nav.frames.slice(1).map((v,i)=>v.at-nav.frames[i].at),p95=a=>[...a].sort((a,b)=>a-b)[Math.ceil(a.length*.95)-1]??null;
+   const name=[mode,backend,tablet?'tablet':'phone'].join('-');await page.screenshot({path:path.join(path.dirname(out),name+'-navigation.png')});
+   const item={mode,backend,tablet,commit,fade,navigation:{durationMs:Date.now()-navAt,viewInputs:nav.events.length,presentations:nav.frames.length,frameP95Ms:p95(intervals),viewCallP95Ms:p95(nav.events.map(e=>e.ms)),overlayCallP95Ms:p95(nav.overlays),compositorFrames:frames.length,rasterPixels:nav.rasterPixels,unchangedArtwork:JSON.stringify(nav.before)===JSON.stringify(nav.after),metrics:nav.metrics}};
+   report.cases.push(item);console.log('TOUCH_NAV '+JSON.stringify(item));await save();
+   if(!tablet){
+    // A fully drawn lower-layer preview must survive pointer-up while formal
+    // work is deliberately held. Read a few retained scene pixels per submission.
+    await page.evaluate(async()=>{document.getElementById('addLayer').click();});await idle();
+    await page.evaluate(()=>{const list=document.getElementById('layerList');[...list.querySelectorAll('button')].find(e=>e.textContent.includes('Layer 1'))?.click();document.getElementById('fitView').click();});await idle();
+    await page.evaluate(()=>{
+     const p=window.__illustroPerformance,{renderer:r,session:s,controller:c}=p.probe(),b=r.backend,canvas=document.getElementById('canvas');canvas.setPointerCapture=()=>{};s.prediction=false;
+     const lower=c.document.layers?.[0];window.lowerReview={samples:[],recordCount:s.records.length,hold:true};const f=window.lowerReview,peek=r.document.peekMany.bind(r.document);r.document.peekMany=(...a)=>f.hold?[]:peek(...a);
+     const read=async()=>{const pts=f.points;if(!pts)return [];if(b.gl){const g=b.gl;g.bindFramebuffer(g.FRAMEBUFFER,b.liveTarget.f);return pts.map(([x,y])=>{const a=new Uint8Array(4);g.readPixels(x,b.height-y-1,1,1,g.RGBA,g.UNSIGNED_BYTE,a);return [...a];});}const d=b.device,e=d.createCommandEncoder(),buffer=d.createBuffer({size:pts.length*256,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});for(const [i,[x,y]]of pts.entries())e.copyTextureToBuffer({texture:b.liveTarget,origin:[x,y]},{buffer,offset:i*256,bytesPerRow:256},[1,1]);d.queue.submit([e.finish()]);await buffer.mapAsync(GPUMapMode.READ);const a=new Uint8Array(buffer.getMappedRange()),pixels=pts.map((_,i)=>[...a.slice(i*256,i*256+4)]);buffer.unmap();buffer.destroy();return pixels;};
+     const render=b.render.bind(b);b.render=function(...args){const value=render(...args);if(!f.released)return value;return Promise.resolve(value).then(async()=>{f.samples.push({at:performance.now(),pixels:await read(),pending:[...b.previews.values()].map(v=>({id:v.id,tiles:v.tiles.size,queued:v.pendingGpuWork?.size??0,finished:v.lastState?.finished,reset:!!v.resetState})),jobs:args[1].length});});};
+     const size=document.getElementById('size');size.value='128';size.dispatchEvent(new Event('input'));const force=document.getElementById('force');force.checked=true;force.dispatchEvent(new Event('change'));const v=b.viewTransform,zoom=v[6],x0=500,x1=3500,yy=2400;f.points=[.25,.5,.75].map(t=>[Math.floor(x0+(x1-x0)*t),yy]);let clock=10000;const emit=(type,x,y)=>{const q={x:v[2]/2+(x-2000)*zoom,y:v[3]/2+(y-2000)*zoom},box=canvas.getBoundingClientRect(),event=new PointerEvent(type,{bubbles:true,pointerType:'touch',pointerId:79,button:0,buttons:type==='pointerup'?0:1,pressure:.7,clientX:box.x+q.x,clientY:box.y+q.y});Object.defineProperty(event,'timeStamp',{value:clock});clock+=8;canvas.dispatchEvent(event);};
+     f.emit=emit;f.r=r;f.s=s;f.p=p;f.canvas=canvas;f.y=yy;f.x0=x0;f.x1=x1;
+    });
+    await page.evaluate(async()=>{const f=window.lowerReview;for(let i=0;i<=120;i++){f.emit(i?'pointermove':'pointerdown',f.x0+(f.x1-f.x0)*i/120,f.y);await new Promise(ok=>setTimeout(ok,8));}});
+    await page.screenshot({path:path.join(path.dirname(out),name+'-lower-down.png')});
+    await page.evaluate(()=>{const f=window.lowerReview;f.released=true;f.emit('pointerup',f.x1,f.y);});await page.waitForTimeout(600);await page.screenshot({path:path.join(path.dirname(out),name+'-lower-released.png')});
+    const held=await page.evaluate(()=>{const f=window.lowerReview;return {samples:f.samples,records:f.s.records.length,previewSurface:[...f.r.previewStates.values()].map(v=>v.surfaceKey),stack:f.r.backend.surfaceStack,errors:[...f.r.errors,...f.s.errors]};});
+    await page.evaluate(()=>{const f=window.lowerReview;f.hold=false;f.r.needsFrame=true;f.r.requestWork();});await idle();await page.screenshot({path:path.join(path.dirname(out),name+'-lower-final.png')});item.lowerLayer=held;assert.deepEqual(held.errors,[]);await save();console.log('LOWER_LAYER '+JSON.stringify({mode,backend,frames:held.samples.length,first:held.samples.slice(0,3)}));
+   }
+   await context.close();
+  }
+  // The comparison wrapper and the application must expose one fade setting.
+  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:3,hasTouch:true,isMobile:true});await page.goto(origin+'/qa/');await page.locator('#conditions').evaluate(e=>e.open=true);await page.locator('#backend').selectOption(backend);await page.waitForFunction(()=>!document.getElementById('repeat').disabled,null,{timeout:120000});const frame=page.frames().find(f=>f.parentFrame());
+  const settings=await page.evaluate(()=>({outer:document.getElementById('fade').checked,inner:document.getElementById('editor').contentDocument.getElementById('force').checked}));await page.locator('#scenario').selectOption('short-next');await page.locator('#repeat').click();await page.waitForFunction(()=>window.__handoffTest&&!document.getElementById('repeat').disabled,null,{timeout:120000});const actual=await frame.evaluate(()=>window.__illustroPerformance.probe().session.records.map(r=>({enabled:r.preset.__foundation.preset.forceFade.enabled,first:r.commands[0][2],last:r.commands.at(-1)[2],maximum:Math.max(...r.commands.map(c=>c[2]))})));report.qa.push({backend,settings,actual});console.log('QA_FADE '+JSON.stringify(report.qa.at(-1)));await save();await page.close();
+ }
+}finally{await save();await browser.close();server.close();}
+assert.deepEqual(report.errors,[]);
