@@ -1,0 +1,115 @@
+name: Publish canvas, taper and layer repair QA
+on:
+  push:
+    branches: ['fix/canvas-fade-layer-2026-10-17']
+    paths: ['.github/workflows/publish-canvas-fade.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: canvas-fade-publication
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPECTED_COMMIT_SHA: 27d5a39b1094fcfddbe6d322cb7e0eaccc5b3699
+      CANVAS_REVIEW_RUN: '39016964745'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Require successful verification of this exact application
+        run: |
+          git merge-base --is-ancestor "$EXPECTED_COMMIT_SHA" HEAD
+          git diff --exit-code "$EXPECTED_COMMIT_SHA" -- apps packages prototypes package.json package-lock.json scripts/touch-navigation-review.mjs scripts/stroke-overlay-formal.mjs scripts/handoff-latency-benchmark.mjs
+          ready=0
+          for i in $(seq 1 180); do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANVAS_REVIEW_RUN" > /tmp/canvas-review-run.json
+            status=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/canvas-review-run.json')).status")
+            if test "$status" = completed; then ready=1; break; fi
+            sleep 10
+          done
+          test "$ready" = 1
+          node --input-type=module -e "import fs from 'node:fs';import assert from 'node:assert/strict';const r=JSON.parse(fs.readFileSync('/tmp/canvas-review-run.json'));assert.equal(r.head_sha,process.env.EXPECTED_COMMIT_SHA);assert.equal(r.conclusion,'success');assert.equal(r.head_branch,'fix/canvas-fade-layer-2026-10-17');"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANVAS_REVIEW_RUN/jobs?per_page=100" > /tmp/canvas-review-jobs.json
+          node --input-type=module -e "import fs from 'node:fs';import assert from 'node:assert/strict';const j=JSON.parse(fs.readFileSync('/tmp/canvas-review-jobs.json')).jobs;assert.equal(j.length,3);assert.ok(j.every(v=>v.conclusion==='success'));"
+      - name: Collect exact tested application and comparison evidence
+        run: |
+          gh run download "$CANVAS_REVIEW_RUN" -n touch-app -D review-build
+          for backend in webgl2 webgpu; do
+            gh run download "$CANVAS_REVIEW_RUN" -n "touch-navigation-$backend" -D "review-evidence/$backend"
+          done
+          gh run download "$CANVAS_REVIEW_RUN" -n latency-regression -D review-evidence/regression
+          cp /tmp/canvas-review-run.json review-evidence/measurement-run.json
+          cp /tmp/canvas-review-jobs.json review-evidence/measurement-jobs.json
+          node scripts/canvas-fade-report.mjs review-evidence
+      - name: Rebuild the immutable previous application
+        run: |
+          git worktree add --detach /tmp/canvas-before 45d93027eabdd3d17fd74db185146c2533994f51
+          cd /tmp/canvas-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/canvas-before-build.log
+          VITE_COMMIT_SHA=45d93027eabdd3d17fd74db185146c2533994f51 npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Preserve previous QA and add the verified repair directory
+        run: |
+          (cd site && find qa -type f ! -path 'qa/perf-canvas-fade-layer/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/canvas-old-qa.before
+          mkdir -p site/qa/perf-canvas-fade-layer/app site/qa/perf-canvas-fade-layer/before site/qa/perf-canvas-fade-layer/evidence
+          cp qa/perf-canvas-fade-layer/*.html site/qa/perf-canvas-fade-layer/
+          cp -a review-build/. site/qa/perf-canvas-fade-layer/app/
+          cp -a /tmp/canvas-before/apps/editor/dist/. site/qa/perf-canvas-fade-layer/before/
+          cp -a review-evidence/. site/qa/perf-canvas-fade-layer/evidence/
+          cp /tmp/canvas-old-qa.before site/qa/perf-canvas-fade-layer/evidence/previous-qa.sha256
+          (cd site && find qa -type f ! -path 'qa/perf-canvas-fade-layer/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/canvas-old-qa.after
+          diff -u /tmp/canvas-old-qa.before /tmp/canvas-old-qa.after
+      - name: Publish using the current branch lease
+        working-directory: site
+        run: |
+          current=$(git ls-remote origin refs/heads/fix/canvas-fade-layer-2026-10-17 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-canvas-fade-layer
+          git diff --cached --quiet || git commit -m 'qa: publish canvas navigation, forced taper and lower-layer repair'
+          git push origin HEAD:gh-pages
+      - name: Wait for the exact public source
+        run: |
+          ready=0
+          for i in $(seq 1 60); do
+            curl -fsSL "https://totoro0419.github.io/illustro/qa/perf-canvas-fade-layer/evidence/qa-status.json?build=$GITHUB_SHA" -o /tmp/public-canvas.json || true
+            if node -e "try{const d=JSON.parse(require('fs').readFileSync('/tmp/public-canvas.json'));process.exit(d.sourceCommit===process.env.EXPECTED_COMMIT_SHA?0:1)}catch{process.exit(1)}"; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+      - name: Install verification browser
+        run: |
+          npm install --prefix /tmp/canvas-public-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/canvas-public-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify the public application, touch gestures, taper, layers, save and history
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/canvas-public-browser/node_modules/playwright
+          TOUCH_PUBLIC_ORIGIN: https://totoro0419.github.io/illustro/qa/perf-canvas-fade-layer
+          TOUCH_OUTPUT: /tmp/canvas-public/touch/report.json
+          HANDOFF_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-canvas-fade-layer/app/
+          MOBILE_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-canvas-fade-layer/app/
+          HANDOFF_OPERATIONS_OUTPUT: /tmp/canvas-public/operations/report.json
+          MOBILE_INPUT_OUTPUT: /tmp/canvas-public/mobile/report.json
+          MOBILE_HOME: '1'
+        run: |
+          node scripts/touch-navigation-review.mjs
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/mobile-input-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canvas-fade-public-verification
+          path: |
+            /tmp/canvas-public/
+            review-evidence/qa-status.json
+            review-evidence/RESULTS.md

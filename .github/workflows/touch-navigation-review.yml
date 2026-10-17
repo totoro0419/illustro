@@ -2,6 +2,7 @@ name: Touch fade and canvas navigation review
 on:
   push:
     branches: ['fix/canvas-fade-layer-2026-10-17']
+    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/touch-navigation-review.mjs', 'scripts/stroke-overlay-formal.mjs', 'scripts/handoff-latency-benchmark.mjs', 'qa/perf-canvas-fade-layer/**']
   workflow_dispatch:
 permissions:
   contents: read
