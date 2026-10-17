@@ -1,0 +1,447 @@
+{
+  "sourceCommit": "e78fcc41bffaaa351153b1ba3cdd22f75223ecd8",
+  "scope": "Local/published comparison UI, source identities, synthetic long-next strokes and actual compositor images. Screencast delivery is affected by capture and is not physical FPS/input-to-photon.",
+  "cases": [
+    {
+      "mobile": false,
+      "backend": "webgl2",
+      "mode": "C",
+      "commit": "e78fcc41bffaaa351153b1ba3cdd22f75223ecd8",
+      "state": {
+        "selectedBackend": "webgl2",
+        "strokes": 2,
+        "raw": 492,
+        "errors": [],
+        "proxyError": null,
+        "pending": 0,
+        "images": 0,
+        "rejected": 0
+      },
+      "result": {
+        "test": {
+          "scenario": "long-next",
+          "mode": "C",
+          "nextDispatchMs": 48.29999999998836,
+          "strokes": [
+            {
+              "id": 1,
+              "downAt": 2544.5,
+              "acceptedAt": 2546.0999999999767,
+              "firstUploadAt": 2553.5,
+              "upAt": 4836.099999999977,
+              "endSyncDoneAt": 4837.599999999977,
+              "recordAt": 4848.799999999988,
+              "formalDoneAt": 7336.599999999977
+            },
+            {
+              "id": 10,
+              "downAt": 4884.200000000012,
+              "acceptedAt": 4889.200000000012,
+              "firstUploadAt": 4899.099999999977,
+              "upAt": 4988.299999999988,
+              "endSyncDoneAt": 4988.5,
+              "recordAt": 4993.099999999977,
+              "formalDoneAt": 7437.5
+            }
+          ],
+          "accepted": 2,
+          "rejected": 0
+        },
+        "metrics": "次の仮線更新まで p50 / p95 / p99：14.9 / 14.9 / 14.9 ms（1筆） ／ 正式表示待ち：2筆 ／ 仮画像：245,760画素"
+      },
+      "compositor": {
+        "images": 65,
+        "p50Ms": 26.97587013244629,
+        "p95Ms": 114.7150993347168,
+        "p99Ms": 1877.0408630371094,
+        "captureOverheadUnisolated": true
+      }
+    },
+    {
+      "mobile": false,
+      "backend": "webgl2",
+      "mode": "A",
+      "commit": "1828947625dea1a16ec7532fd5275c4e0ccaec53",
+      "state": {
+        "selectedBackend": "webgl2",
+        "strokes": 2,
+        "raw": 492,
+        "errors": [],
+        "proxyError": null,
+        "pending": 0,
+        "images": null,
+        "rejected": 0
+      },
+      "result": {
+        "test": {
+          "scenario": "long-next",
+          "mode": "A",
+          "nextDispatchMs": 220.60000000003492,
+          "strokes": [
+            {
+              "id": 1,
+              "downAt": 1458.2999999999884,
+              "acceptedAt": 1464.7999999999884,
+              "firstUploadAt": 1475.5,
+              "upAt": 3780.5999999999767,
+              "endSyncDoneAt": 3785.5,
+              "recordAt": 3835.5999999999767,
+              "formalDoneAt": 6361.799999999988
+            },
+            {
+              "id": 10,
+              "downAt": 4001,
+              "acceptedAt": 4002,
+              "firstUploadAt": 4020.0999999999767,
+              "upAt": 4096.700000000012,
+              "endSyncDoneAt": 4097.5,
+              "recordAt": 4102.599999999977,
+              "formalDoneAt": 6364.700000000012
+            }
+          ],
+          "accepted": 2,
+          "rejected": 0
+        },
+        "metrics": "次の仮線更新まで p50 / p95 / p99：19.1 / 19.1 / 19.1 ms（1筆） ／ 正式表示待ち：2筆 ／ 仮画像：262,144画素"
+      },
+      "compositor": {
+        "images": 68,
+        "p50Ms": 26.131868362426758,
+        "p95Ms": 126.28507614135742,
+        "p99Ms": 411.87405586242676,
+        "captureOverheadUnisolated": true
+      }
+    },
+    {
+      "mobile": false,
+      "backend": "webgpu",
+      "mode": "C",
+      "commit": "e78fcc41bffaaa351153b1ba3cdd22f75223ecd8",
+      "state": {
+        "selectedBackend": "webgpu",
+        "strokes": 2,
+        "raw": 492,
+        "errors": [],
+        "proxyError": null,
+        "pending": 0,
+        "images": 0,
+        "rejected": 0
+      },
+      "result": {
+        "test": {
+          "scenario": "long-next",
+          "mode": "C",
+          "nextDispatchMs": 6.699999999953434,
+          "strokes": [
+            {
+              "id": 1,
+              "downAt": 2907.2999999999884,
+              "acceptedAt": 2909.2999999999884,
+              "firstUploadAt": 2917.6999999999534,
+              "upAt": 5285.599999999977,
+              "endSyncDoneAt": 5285.899999999965,
+              "recordAt": 5304.699999999953,
+              "formalDoneAt": 8320.299999999988
+            },
+            {
+              "id": 10,
+              "downAt": 5291.899999999965,
+              "acceptedAt": 5292.899999999965,
+              "firstUploadAt": 5299.799999999988,
+              "upAt": 5381,
+              "endSyncDoneAt": 5381.099999999977,
+              "recordAt": 5384.899999999965,
+              "formalDoneAt": 8382.899999999965
+            }
+          ],
+          "accepted": 2,
+          "rejected": 0
+        },
+        "metrics": "次の仮線更新まで p50 / p95 / p99：7.9 / 7.9 / 7.9 ms（1筆） ／ 正式表示待ち：2筆 ／ 仮画像：245,760画素"
+      },
+      "compositor": {
+        "images": 74,
+        "p50Ms": 34.75499153137207,
+        "p95Ms": 89.4629955291748,
+        "p99Ms": 236.68694496154785,
+        "captureOverheadUnisolated": true
+      }
+    },
+    {
+      "mobile": false,
+      "backend": "webgpu",
+      "mode": "A",
+      "commit": "1828947625dea1a16ec7532fd5275c4e0ccaec53",
+      "state": {
+        "selectedBackend": "webgpu",
+        "strokes": 2,
+        "raw": 492,
+        "errors": [],
+        "proxyError": null,
+        "pending": 0,
+        "images": null,
+        "rejected": 0
+      },
+      "result": {
+        "test": {
+          "scenario": "long-next",
+          "mode": "A",
+          "nextDispatchMs": 99.09999999997672,
+          "strokes": [
+            {
+              "id": 1,
+              "downAt": 2430.5,
+              "acceptedAt": 2432.9000000000233,
+              "firstUploadAt": 2440.4000000000233,
+              "upAt": 4759.400000000023,
+              "endSyncDoneAt": 4764.100000000035,
+              "recordAt": 4817.400000000023,
+              "formalDoneAt": 7642.700000000012
+            },
+            {
+              "id": 10,
+              "downAt": 4858.400000000023,
+              "acceptedAt": 4861.299999999988,
+              "firstUploadAt": 4883.799999999988,
+              "upAt": 4951.5,
+              "endSyncDoneAt": 4951.799999999988,
+              "recordAt": 4956.5,
+              "formalDoneAt": 7643.900000000023
+            }
+          ],
+          "accepted": 2,
+          "rejected": 0
+        },
+        "metrics": "次の仮線更新まで p50 / p95 / p99：25.4 / 25.4 / 25.4 ms（1筆） ／ 正式表示待ち：2筆 ／ 仮画像：262,144画素"
+      },
+      "compositor": {
+        "images": 88,
+        "p50Ms": 25.696992874145508,
+        "p95Ms": 68.39108467102051,
+        "p99Ms": 334.3029022216797,
+        "captureOverheadUnisolated": true
+      }
+    },
+    {
+      "mobile": true,
+      "backend": "webgl2",
+      "mode": "C",
+      "commit": "e78fcc41bffaaa351153b1ba3cdd22f75223ecd8",
+      "state": {
+        "selectedBackend": "webgl2",
+        "strokes": 2,
+        "raw": 492,
+        "errors": [],
+        "proxyError": null,
+        "pending": 0,
+        "images": 0,
+        "rejected": 0
+      },
+      "result": {
+        "test": {
+          "scenario": "long-next",
+          "mode": "C",
+          "nextDispatchMs": 30,
+          "strokes": [
+            {
+              "id": 1,
+              "downAt": 1646.2000000000116,
+              "acceptedAt": 1650.9000000000233,
+              "firstUploadAt": 1660.4000000000233,
+              "upAt": 3760.7000000000116,
+              "endSyncDoneAt": 3760.7999999999884,
+              "recordAt": 3765.2999999999884,
+              "formalDoneAt": 6120.299999999988
+            },
+            {
+              "id": 10,
+              "downAt": 3790.5,
+              "acceptedAt": 3793.7000000000116,
+              "firstUploadAt": 3806.5,
+              "upAt": 3889.9000000000233,
+              "endSyncDoneAt": 3889.9000000000233,
+              "recordAt": 3891.2000000000116,
+              "formalDoneAt": 6151.5
+            }
+          ],
+          "accepted": 2,
+          "rejected": 0
+        },
+        "metrics": "次の仮線更新まで p50 / p95 / p99：16.0 / 16.0 / 16.0 ms（1筆） ／ 正式表示待ち：2筆 ／ 仮画像：442,368画素"
+      },
+      "compositor": {
+        "images": 9,
+        "p50Ms": 123.5189437866211,
+        "p95Ms": 1918.7569618225098,
+        "p99Ms": 1918.7569618225098,
+        "captureOverheadUnisolated": true
+      }
+    },
+    {
+      "mobile": true,
+      "backend": "webgl2",
+      "mode": "A",
+      "commit": "1828947625dea1a16ec7532fd5275c4e0ccaec53",
+      "state": {
+        "selectedBackend": "webgl2",
+        "strokes": 2,
+        "raw": 492,
+        "errors": [],
+        "proxyError": null,
+        "pending": 0,
+        "images": null,
+        "rejected": 0
+      },
+      "result": {
+        "test": {
+          "scenario": "long-next",
+          "mode": "A",
+          "nextDispatchMs": 164.70000000001164,
+          "strokes": [
+            {
+              "id": 1,
+              "downAt": 1353.2000000000116,
+              "acceptedAt": 1359.0999999999767,
+              "firstUploadAt": 1375.7000000000116,
+              "upAt": 3437,
+              "endSyncDoneAt": 3439.2000000000116,
+              "recordAt": 3478.5999999999767,
+              "formalDoneAt": 5279.200000000012
+            },
+            {
+              "id": 10,
+              "downAt": 3601.7000000000116,
+              "acceptedAt": 3606.2000000000116,
+              "firstUploadAt": 3626.4000000000233,
+              "upAt": 3684.7999999999884,
+              "endSyncDoneAt": 3685.0999999999767,
+              "recordAt": 3687.0999999999767,
+              "formalDoneAt": 5280.299999999988
+            }
+          ],
+          "accepted": 2,
+          "rejected": 0
+        },
+        "metrics": "次の仮線更新まで p50 / p95 / p99：24.7 / 24.7 / 24.7 ms（1筆） ／ 正式表示待ち：2筆 ／ 仮画像：589,824画素"
+      },
+      "compositor": {
+        "images": 8,
+        "p50Ms": 492.31696128845215,
+        "p95Ms": 1542.160987854004,
+        "p99Ms": 1542.160987854004,
+        "captureOverheadUnisolated": true
+      }
+    },
+    {
+      "mobile": true,
+      "backend": "webgpu",
+      "mode": "C",
+      "commit": "e78fcc41bffaaa351153b1ba3cdd22f75223ecd8",
+      "state": {
+        "selectedBackend": "webgpu",
+        "strokes": 2,
+        "raw": 492,
+        "errors": [],
+        "proxyError": null,
+        "pending": 0,
+        "images": 0,
+        "rejected": 0
+      },
+      "result": {
+        "test": {
+          "scenario": "long-next",
+          "mode": "C",
+          "nextDispatchMs": 17.70000000001164,
+          "strokes": [
+            {
+              "id": 1,
+              "downAt": 2323.7000000000116,
+              "acceptedAt": 2325.2000000000116,
+              "firstUploadAt": 2337.4000000000233,
+              "upAt": 4370.900000000023,
+              "endSyncDoneAt": 4371.100000000035,
+              "recordAt": 4376.799999999988,
+              "formalDoneAt": 6967
+            },
+            {
+              "id": 10,
+              "downAt": 4388.5,
+              "acceptedAt": 4389.700000000012,
+              "firstUploadAt": 4396.299999999988,
+              "upAt": 4461.400000000023,
+              "endSyncDoneAt": 4461.400000000023,
+              "recordAt": 4462.799999999988,
+              "formalDoneAt": 7051.299999999988
+            }
+          ],
+          "accepted": 2,
+          "rejected": 0
+        },
+        "metrics": "次の仮線更新まで p50 / p95 / p99：7.8 / 7.8 / 7.8 ms（1筆） ／ 正式表示待ち：2筆 ／ 仮画像：442,368画素"
+      },
+      "compositor": {
+        "images": 9,
+        "p50Ms": 325.58202743530273,
+        "p95Ms": 1015.0048732757568,
+        "p99Ms": 1015.0048732757568,
+        "captureOverheadUnisolated": true
+      }
+    },
+    {
+      "mobile": true,
+      "backend": "webgpu",
+      "mode": "A",
+      "commit": "1828947625dea1a16ec7532fd5275c4e0ccaec53",
+      "state": {
+        "selectedBackend": "webgpu",
+        "strokes": 2,
+        "raw": 492,
+        "errors": [],
+        "proxyError": null,
+        "pending": 0,
+        "images": null,
+        "rejected": 0
+      },
+      "result": {
+        "test": {
+          "scenario": "long-next",
+          "mode": "A",
+          "nextDispatchMs": 67.5,
+          "strokes": [
+            {
+              "id": 1,
+              "downAt": 2416.2999999999884,
+              "acceptedAt": 2419.5999999999767,
+              "firstUploadAt": 2427.0999999999767,
+              "upAt": 4455.200000000012,
+              "endSyncDoneAt": 4457.299999999988,
+              "recordAt": 4496,
+              "formalDoneAt": 7050.799999999988
+            },
+            {
+              "id": 10,
+              "downAt": 4522.599999999977,
+              "acceptedAt": 4523.899999999965,
+              "firstUploadAt": 4548.099999999977,
+              "upAt": 4599.899999999965,
+              "endSyncDoneAt": 4600.200000000012,
+              "recordAt": 4602.099999999977,
+              "formalDoneAt": 7052.200000000012
+            }
+          ],
+          "accepted": 2,
+          "rejected": 0
+        },
+        "metrics": "次の仮線更新まで p50 / p95 / p99：25.5 / 25.5 / 25.5 ms（1筆） ／ 正式表示待ち：2筆 ／ 仮画像：589,824画素"
+      },
+      "compositor": {
+        "images": 7,
+        "p50Ms": 225.8758544921875,
+        "p95Ms": 982.6250076293945,
+        "p99Ms": 982.6250076293945,
+        "captureOverheadUnisolated": true
+      }
+    }
+  ],
+  "errors": []
+}
