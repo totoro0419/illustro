@@ -15,7 +15,7 @@ export class HistoryNavigation{
   enqueue(direction:HistoryDirection){
     if(this.fault||this.requests.length+this.active.length>=this.capacity){this.refused++;this.ports.failed(this.fault?.message??'Undo / Redoの受付上限です。反映が進んでからもう一度操作してください。',0);return false;}
     this.requests.push({direction,sequence:++this.issued,at:performance.now()});this.accepted++;this.peak=Math.max(this.peak,this.requests.length+this.active.length);
-    if(!this.running){this.running=true;this.ports.state();void this.pump();}else this.ports.state();return true;
+    if(!this.running){this.running=true;this.ports.state();void this.pump();}return true;
   }
   barrier(){if(this.fault)return Promise.reject(this.fault);if(this.finished===this.issued)return Promise.resolve();return new Promise<void>((resolve,reject)=>this.waiters.push({through:this.issued,resolve,reject}));}
   get diagnostics(){return {pending:this.pending,queued:this.requests.length,active:this.active.length,accepted:this.accepted,refused:this.refused,batches:this.batches,peak:this.peak,fault:this.fault?.message??null,traces:this.measure?this.traces:[]};}
@@ -23,7 +23,9 @@ export class HistoryNavigation{
     try{
       await this.ports.prepare();
       while(this.requests.length){
-        this.active=this.requests.splice(0,32);const start=performance.now();await this.ports.apply(this.active.map(r=>r.direction));this.batches++;
+        // Admission already bounds this batch. A fixed 32-command slice forced
+        // repeated dirty reconstruction/presentation for an already queued burst.
+        this.active=this.requests.splice(0);const start=performance.now();await this.ports.apply(this.active.map(r=>r.direction));this.batches++;
         const end=performance.now();for(const r of this.active){this.finished=r.sequence;if(this.measure)this.traces.push({sequence:r.sequence,direction:r.direction,queueMs:start-r.at,completeMs:end-r.at});}
         if(this.traces.length>1200)this.traces.splice(0,this.traces.length-1200);this.active=[];
         this.waiters=this.waiters.filter(w=>{if(w.through>this.finished)return true;w.resolve();return false;});this.ports.state();

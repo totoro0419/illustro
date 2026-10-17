@@ -1,0 +1,82 @@
+name: Focused Undo repeat verification and QA
+on:
+  push:
+    branches: ['fix/undo-repeat-2026-10-17']
+    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/undo-repeat-review.mjs', '.github/workflows/undo-repeat-review.yml', 'docs/production-prep/source-lock.json']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: undo-repeat-qa
+  cancel-in-progress: true
+jobs:
+  verify-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/undo-browser/node_modules/playwright
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Related tests and exact application build
+        env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
+        run: |
+          npm run brush:build > /tmp/undo-brush-build.log
+          npm run prep:check
+          npx vitest run apps/editor/src/historyNavigation.test.ts apps/editor/src/historyController.test.ts
+          node --test packages/brush-rt/test/history-navigation.test.mjs packages/brush-rt/test/presentation.test.mjs
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install verification browser
+        run: |
+          npm install --prefix /tmp/undo-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/undo-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Repeat, mixed order and cold-cache exact pixels on both backends
+        run: node scripts/undo-repeat-review.mjs
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - name: Publish only the verified Undo QA directory
+        run: |
+          current=$(git ls-remote origin refs/heads/fix/undo-repeat-2026-10-17 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          mkdir -p site/qa/perf-undo-repeat/app site/qa/perf-undo-repeat/evidence
+          cp -a apps/editor/dist/. site/qa/perf-undo-repeat/app/
+          cp /tmp/undo-repeat/report.json site/qa/perf-undo-repeat/evidence/
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report=JSON.parse(fs.readFileSync('/tmp/undo-repeat/report.json'));
+          assert.equal(report.sourceCommit,process.env.EXPECTED_COMMIT_SHA);
+          assert.equal(report.cases.length,2);assert.deepEqual(report.errors,[]);
+          fs.writeFileSync('site/qa/perf-undo-repeat/evidence/qa-status.json',JSON.stringify({sourceCommit:report.sourceCommit,checks:'Related tests, build, both GPU history repeat/order/exact pixels passed',unverified:['Physical Android performance','Hardware latency','User acceptance']},null,2));
+          JS
+          cat > site/qa/perf-undo-repeat/index.html <<'HTML'
+          <!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro Undo確認</title><script>location.replace('./app/'+location.search+location.hash)</script><a href="./app/">確認ページ</a></html>
+          HTML
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-undo-repeat
+          git diff --cached --quiet || git commit -m "qa: publish verified Undo repeat ${GITHUB_SHA}"
+          git push origin HEAD:gh-pages
+      - name: Wait for exact public source
+        run: |
+          ready=0
+          for i in $(seq 1 36); do
+            curl -fsSL "https://totoro0419.github.io/illustro/qa/perf-undo-repeat/evidence/qa-status.json?source=$GITHUB_SHA" -o /tmp/undo-public-status.json || true
+            if node -e "try{process.exit(JSON.parse(require('fs').readFileSync('/tmp/undo-public-status.json')).sourceCommit===process.env.EXPECTED_COMMIT_SHA?0:1)}catch{process.exit(1)}"; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+      - name: Verify the published application's history and exact pixels
+        env:
+          UNDO_REPEAT_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-undo-repeat/app/
+          UNDO_REPEAT_OUTPUT: /tmp/undo-repeat/public.json
+        run: node scripts/undo-repeat-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: undo-repeat-verification, path: /tmp/undo-repeat/}
