@@ -17,3 +17,9 @@ test('retained dirty pixels under preview pressure do not start an empty submiss
 });
 
 test('a cached unchanged frame acknowledges already displayed exact GPU feedback',async()=>{const backend={previews:new Map,dirtyConfirmed:new Set,lastSubmission:{presentationSubmitted:false},render:()=>Promise.resolve()},r=new GpuRenderer(backend,128,128,{strokeHandoff:true});r.strokeFrames.set(7,1);r.frame(performance.now());await new Promise(resolve=>setTimeout(resolve,0));assert.deepEqual(r.errors,[]);assert.ok(r.presentedStrokes.has(7));clearTimeout(r.workTimer);r.disposed=true;});
+
+test('empty preview frames do not inflate the next ended stroke formal batch',async()=>{
+ const counts=[],backend={previews:new Map,dirtyConfirmed:new Set,lastSubmission:{presentationSubmitted:false},render(_s,jobs){counts.push(jobs.length);return Promise.resolve();}},r=new GpuRenderer(backend,4000,4000,{strokeHandoff:true});r.requestWork=()=>{};r.proxy={ready:true,fallback:false,footprints:new Map,epoch:0,canUse:()=>true,fallbackPresented(){}};
+ for(let n=0;n<100;n++){r.needsFrame=true;r.frame(performance.now());await Promise.resolve();}
+ assert.equal(r.instantJobLimit,16);r.snapshot={finished:true};const jobs=Array.from({length:140},(_,id)=>({id,key:'0,0',preset:{},commands:[],commit:true}));r.document.jobs=jobs.slice();r.frame(performance.now());await Promise.resolve();assert.equal(counts.at(-1),16);assert.equal(r.document.jobs.length,124);assert.ok(r.instantJobLimit<=18);r.disposed=true;
+});

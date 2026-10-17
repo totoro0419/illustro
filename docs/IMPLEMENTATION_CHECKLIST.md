@@ -159,3 +159,7 @@ mainへはManager/ユーザーの明示判断なしにmergeしない。
 ## 一筆限定プレビューの追加検証（2026-10-16）
 
 ユーザー指示によりPR #30を継承した `perf/stroke-overlay-2026-10-16` / PR #31で実装・比較中。正式描画・履歴・保存の基準は維持する。検証記録は [STROKE_OVERLAY_2026-10-16](research/STROKE_OVERLAY_2026-10-16.md)。専用QAは `/qa/perf-stroke-overlay/`。実機の合否は未判定であり、既存マイルストーンの受入状態は変更しない。
+
+## 長線後の一筆の追加検証（2026-10-17）
+
+ユーザー指示によりPR #31を継承した `perf/stroke-handoff-latency-2026-10-17` / PR #32で修正・比較する。[検証記録](research/STROKE_HANDOFF_LATENCY_2026-10-17.md)。専用QAは `/qa/perf-stroke-handoff-latency/`。正式記録・画素・履歴・保存の基準と既存の受入状態は維持する。実機快適性・ユーザー受入は未判定。
