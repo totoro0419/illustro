@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {TileHistory} from '../dist/rt/tile-history.mjs';
+
+function publish(h,plan){h.publish(plan);h.complete(plan);}
+function harness(){
+ let bound;const released=[],stored=new Map,archive={metrics:{},async put(id,pixels){stored.set(id,pixels);return {available:true};},async get(id){return stored.has(id)?{pixels:stored.get(id)}:{missing:true};},drop(ids){ids.forEach(id=>stored.delete(id));},destroy(){}};
+ const gl={RGBA8:1,UNSIGNED_BYTE:1,TEXTURE_2D:1,RGBA:1,bindTexture(_,image){bound=image;},texSubImage2D(...args){bound.pixels.set(args.at(-1));}};
+ const b={gl,layered:true,archiveIds:new Map,tiles:new Map,surface(){const image={pixels:new Uint8Array(65536)};image.t=image;return image;},copySurface(a,z){z.pixels.set(a.pixels);},release(image){released.push(image);}};
+ b.zeroLayer=b.surface();const h=new TileHistory(b,{archive}),tile={key:'0,0',surfaceKey:'a',layer:[b.surface(),b.surface()],l:0,preset:{id:'p'},uncommittedOwner:1};b.tiles.set('a\0'+'0,0',tile);
+ const stroke=(id,value)=>{h.before(id,'0,0',tile,{id:'p'});tile.l=1-tile.l;tile.layer[tile.l].pixels.fill(value);tile.committedId=id;tile.preset={id:'p'};h.after(id,'0,0',tile);delete tile.uncommittedOwner;};
+ return {b,h,tile,stroke,archive,stored,released};
+}
+test('adjacent strokes share the previous after image and copy only the changed tile',()=>{
+ const {h,stroke}=harness();stroke(1,50);stroke(2,100);
+ assert.equal(h.metrics.copies,2);assert.equal(h.patches.get(1).tiles.values().next().value.after.version,h.patches.get(2).tiles.values().next().value.before.version);
+ assert.equal(h.versions.size,2);assert.equal(h.current.size,1);
+});
+test('mixed Undo/Redo prepares one final tile, keeps old layer readable, then publishes exactly',async()=>{
+ const {h,stroke,tile}=harness();stroke(1,50);stroke(2,100);stroke(3,150);
+ const plan=await h.prepare([{id:3,direction:'undo'},{id:2,direction:'undo'},{id:2,direction:'redo'}]);
+ assert.equal(plan.staged.length,1);assert.equal(tile.layer[tile.l].pixels[0],150,'old layer remains authoritative until publication');
+ publish(h,plan);assert.equal(tile.layer[tile.l].pixels[0],100);assert.equal(tile.committedId,2);assert.equal(h.patches.get(2).state,'applied');assert.equal(h.patches.get(3).state,'undone');
+ const redo=await h.prepare([{id:3,direction:'redo'}]);publish(h,redo);assert.equal(tile.layer[tile.l].pixels[0],150);
+});
+test('cold snapshots restore identical bytes without creating a GPU history copy',async()=>{
+ const {h,stroke,tile,stored,b}=harness();stroke(1,50);stroke(2,100);
+ const before=h.patches.get(2).tiles.values().next().value.before.version;stored.set(before.id,before.gpu.pixels.slice());before.archived=true;h.gpuBytes-=65536;before.gpu=null;
+ const copies=h.metrics.copies,plan=await h.prepare([{id:2,direction:'undo'}]);assert.ok(plan);h.publish(plan);
+ assert.equal(tile.layer[tile.l].pixels[0],50);assert.equal(h.metrics.coldTiles,1);assert.equal(h.metrics.copies,copies);
+});
+test('an unavailable/corrupt archive never publishes a partly restored head',async()=>{
+ const {h,stroke,tile}=harness();stroke(1,50);stroke(2,100);const v=h.patches.get(2).tiles.values().next().value.before.version;v.archived=true;v.gpu=null;
+ assert.equal(await h.prepare([{id:2,direction:'undo'}]),null);assert.equal(tile.layer[tile.l].pixels[0],100);assert.equal(h.patches.get(2).state,'applied');assert.equal(h.busy,false);
+});
+test('Undo then paint releases the abandoned Redo images without touching the shared base',async()=>{
+ const {h,stroke,tile,released}=harness();stroke(1,50);stroke(2,100);publish(h,await h.prepare([{id:2,direction:'undo'}]));h.drop([2]);stroke(3,200);
+ assert.equal(tile.layer[tile.l].pixels[0],200);assert.equal(h.patches.has(2),false);assert.equal(h.metrics.copies,3);assert.equal(released.length,1);
+ h.clear();assert.equal(h.gpuBytes,0);assert.equal(h.versions.size,0);assert.equal(h.patches.size,0);assert.equal(h.current.size,0);
+});

@@ -341,7 +341,7 @@ historyNavigation=new HistoryNavigation({
 async function applyHistoryBatch(directions:readonly HistoryDirection[]){
   const changes:EditorHistoryChange[]=[],selectedBefore=controller.selectedLayerId;
   try{
-    for(const direction of directions){const change=direction==='undo'?controller.undo():controller.redo();if(change.changed)changes.push(change);}
+    let slice=performance.now();for(const direction of directions){const change=direction==='undo'?controller.undo():controller.redo();if(change.changed)changes.push(change);if(performance.now()-slice>6){await new Promise(resolve=>setTimeout(resolve,0));slice=performance.now();}}
     if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
     updateQa();
     if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
