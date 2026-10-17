@@ -93,11 +93,15 @@ try{for(const backend of backends)for(const size of sizes){
   }
   // Undo while moving/rotating the canvas. Verify pixels and overlay retirement.
   await page.evaluate(()=>{document.getElementById('undo').click();const p=window.__illustroPerformance,b=p.probe().renderer.backend;p.view(b.viewTransform[6]*1.12,.18);const box=b.canvas.getBoundingClientRect();for(const [type,dx,dy]of [['pointerdown',0,0],['pointermove',23,17],['pointerup',23,17]])b.canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:19,pointerType:'mouse',button:1,buttons:type==='pointerup'?0:4,clientX:box.x+box.width/2+dx,clientY:box.y+box.height/2+dy}));});await page.evaluate(()=>window.__idle());assert.deepEqual(await page.evaluate(()=>window.__hash()),expected[23]);
-  if(mode==='after')await page.evaluate(async()=>{
-   const {renderer:r}=window.__illustroPerformance.probe(),b=r.backend;
-   const capture=async()=>{const bitmap=await createImageBitmap(b.canvas),canvas=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0);bitmap.close();const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;let ink=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]<100&&pixels[i+1]<100&&pixels[i+2]<100&&pixels[i+3]>0)ink++;if(ink<20)throw Error('Navigation comparison must contain visible painted pixels');return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',pixels))).join(',');};
-   const before=await capture();b.viewportCache.clear();await b.presentCurrent();const after=await capture();if(before!==after)throw Error('Stale transformed history screen: forced repaint differs');
-  });
+  if(mode==='after'){
+   // Read the browser compositor: createImageBitmap(WebGPUCanvas) may see a
+   // discarded swapchain texture instead of the picture shown on the screen.
+   const before=await page.locator('#canvas').screenshot({path:path.join(path.dirname(out),`navigation-${backend}-${size}.png`)});
+   const ink=await page.evaluate(async png=>{const bytes=Uint8Array.from(atob(png),x=>x.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'})),c=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=c.getContext('2d');ctx.drawImage(bitmap,0,0);bitmap.close();const pixels=ctx.getImageData(0,0,c.width,c.height).data;let ink=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]<100&&pixels[i+1]<100&&pixels[i+2]<100&&pixels[i+3]>0)ink++;return ink;},before.toString('base64'));
+   assert.ok(ink>=20,'navigation comparison contains visible painted pixels');
+   await page.evaluate(async()=>{const b=window.__illustroPerformance.probe().renderer.backend;b.viewportCache.clear();await b.presentCurrent();});
+   assert.deepEqual(await page.locator('#canvas').screenshot(),before,'stale transformed history screen: forced repaint differs');
+  }
   await page.evaluate(()=>window.__draw(24));await page.evaluate(()=>window.__idle());assert.equal(await page.evaluate(()=>window.__illustroPerformance.probe().controller.canRedo),false);
   const metrics=await page.evaluate(()=>window.__illustroPerformance.read());assert.deepEqual(metrics.frameState.errors,[]);assert.deepEqual(metrics.frameState.sessionErrors,[]);assert.equal(metrics.historyNavigation.refused,0);
   if(mode==='after'){assert.equal(metrics.instantPreview.pendingStrokes,0);assert.equal(metrics.instantPreview.pendingFinalizations,0);}
