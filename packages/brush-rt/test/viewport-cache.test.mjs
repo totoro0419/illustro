@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {PresentationPyramid,ViewportCache,presentationRectangles} from '../dist/rt/minification.mjs';
+import {PresentationPyramid,ViewportCache,presentationRectangles,navigationRectangle} from '../dist/rt/minification.mjs';
 import {GpuRenderer,needsFormalFeedback,boundedFormalJobs,previewMemoryDemand} from '../dist/rt/renderer.mjs';
 function harness(){
  let id=0;const released=[],b={width:4000,height:4000,canvas:{width:1000,height:1600},sparsePreview:true,gl:{RGBA8:1,UNSIGNED_BYTE:2},liveTarget:{id:0},surface:(w,h)=>({id:++id,w,h}),release:x=>released.push(x)};
@@ -22,6 +22,26 @@ test('view-only, seamless and budget fallbacks retain the direct presentation pa
 });
 test('offscreen edits and flips produce conservative clipped screen rectangles',()=>{
  const {view}=harness();view[6]=1;assert.deepEqual(presentationRectangles(view,1000,1600,['0,0'],1),[]);const normal=presentationRectangles(view,1000,1600,['15,15'],1);view[10]=-1;view[11]=-1;const flipped=presentationRectangles(view,1000,1600,['15,15'],1);assert.ok(normal.length&&flipped.length);for(const rects of [normal,flipped])for(const [x,y,x1,y1]of rects){assert.ok(x>=0&&y>=0&&x1<=1000&&y1<=1600&&x1>x&&y1>y);}
+});
+test('navigation bounds include every visible artwork corner through rotation and flips',()=>{
+ const {view}=harness(),width=1000,height=1600;
+ for(const angle of [0,.43,-1.1,Math.PI])for(const flipX of [-1,1])for(const flipY of [-1,1])for(const zoom of [.025,.09,1,32]){
+  Object.assign(view,{6:zoom,7:angle,8:75,9:-300,10:flipX,11:flipY});const [x0,y0,x1,y1]=navigationRectangle(view,width,height);
+  for(const x of [0,2000,4000])for(const y of [0,2000,4000]){
+   const dx=(x-2000)*flipX,dy=(y-2000)*flipY,px=(200+75+zoom*(dx*Math.cos(angle)-dy*Math.sin(angle)))*2.5,py=(320-300+zoom*(dx*Math.sin(angle)+dy*Math.cos(angle)))*2.5;
+   if(px>=0&&py>=0&&px<width&&py<height)assert.ok(px>=x0&&px<x1&&py>=y0&&py<y1);
+  }
+ }
+ view[12]=1;assert.deepEqual(navigationRectangle(view,width,height),[0,0,width,height]);
+});
+test('an entirely offscreen navigation clears the old image and leaves normal caching unchanged',()=>{
+ const {b,c,view}=harness();b.navigationPresentation=true;view[8]=100000;const hidden=c.plan(view,null,true);assert.equal(hidden.clearBackground,true);assert.deepEqual(hidden.rects,[]);assert.equal(c.last.screenPixels,0);
+ b.navigationPresentation=false;assert.deepEqual(c.plan(view,null,true).rects,[[0,0,1000,1600]]);assert.equal(c.plan(view).cached,true);
+});
+test('ending a gesture schedules the exact idle presentation even without another view input',()=>{
+ const backend={previews:new Map,viewTransform:new Float32Array(16)},r=new GpuRenderer(backend,512,512,{strokeHandoff:true});let work=0;r.requestWork=()=>{work++;};
+ r.setNavigationActive(true);assert.equal(backend.navigationPresentation,true);assert.equal(r.viewPending,false);
+ r.setNavigationActive(false);assert.equal(backend.navigationPresentation,false);assert.equal(r.viewPending,true);assert.equal(work,1);assert.equal(r.document.jobs.length,0);
 });
 test('intermediate coverage can reuse ended feedback, while commits and partial feedback publish',()=>{
  const job={id:1,key:'0,0',surfaceKey:'a',commit:false},feedback={lastState:{finished:true},surfaceKey:'a',tiles:new Map([['0,0',{}]])},backend={sparsePreview:true,previews:new Map([[1,feedback]])};assert.equal(needsFormalFeedback(backend,job),false);assert.equal(needsFormalFeedback(backend,{...job,commit:true}),true);assert.equal(needsFormalFeedback(backend,{...job,surfaceKey:'b'}),true);assert.equal(needsFormalFeedback(backend,{...job,key:'1,0'}),true);feedback.lastState.finished=false;assert.equal(needsFormalFeedback(backend,job),true);backend.previews.clear();assert.equal(needsFormalFeedback(backend,job),true);

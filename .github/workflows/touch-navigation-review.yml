@@ -2,7 +2,7 @@ name: Touch fade and canvas navigation review
 on:
   push:
     branches: ['fix/canvas-fade-layer-2026-10-17']
-    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/touch-navigation-review.mjs', 'scripts/stroke-overlay-formal.mjs', 'scripts/handoff-latency-benchmark.mjs', 'qa/perf-canvas-fade-layer/**']
+    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/touch-navigation-review.mjs', 'scripts/navigation-presentation-review.mjs', 'scripts/stroke-overlay-formal.mjs', 'scripts/handoff-latency-benchmark.mjs', 'qa/perf-canvas-fade-layer/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,9 +31,20 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm run brush:build > /tmp/before-build.log
           VITE_COMMIT_SHA=45d93027eabdd3d17fd74db185146c2533994f51 npm --workspace @illustro/editor exec -- vite build --base=./
+          cd "$GITHUB_WORKSPACE"
+          git worktree add --detach /tmp/navigation-before 579c31de4f34f2a4ec7777590ecd3e7137dc3aa8
+          cd /tmp/navigation-before
+          node prototypes/brush-rt/build.mjs > /tmp/navigation-before-build.log
       - run: |
           npm install --prefix /tmp/touch-browser playwright@1.62.1 --no-audit --no-fund
           /tmp/touch-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Exact idle display and paired navigation presentation comparison
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/touch-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          NAV_PRESENT_BACKENDS: ${{ matrix.backend }}
+          NAV_PRESENT_OUTPUT: /tmp/touch-navigation/navigation-presentation/report.json
+        run: node scripts/navigation-presentation-review.mjs
       - name: Measure trusted touch, navigation and lower-layer release
         env:
           RT_PLAYWRIGHT_PATH: /tmp/touch-browser/node_modules/playwright
