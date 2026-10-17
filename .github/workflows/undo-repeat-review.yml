@@ -22,6 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      # Canvas navigation ghosting is covered by the focused overlay test.
       - name: Related tests and exact application build
         env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
         run: |
