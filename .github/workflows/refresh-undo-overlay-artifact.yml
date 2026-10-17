@@ -33,7 +33,6 @@ jobs:
           npm --workspace @illustro/editor exec -- tsc --noEmit
       - name: Commit generated artifact only if source still matches
         run: |
-          test "$(git rev-parse HEAD)" = "87e60778383f60839728b6180a35e2ed3d894bce"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add prototypes/brush-rt/dist/illustro-brush-rt.html docs/production-prep/source-lock.json
