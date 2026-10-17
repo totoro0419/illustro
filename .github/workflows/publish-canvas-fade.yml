@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      EXPECTED_COMMIT_SHA: d386929fd188e10d90b682edbfc513c882da4cbb
-      CANVAS_REVIEW_RUN: '39017405971'
+      EXPECTED_COMMIT_SHA: ce816789701c484841895aca2617df5efd77cefd
+      CANVAS_REVIEW_RUN: '39017899155'
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
