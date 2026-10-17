@@ -67,7 +67,7 @@ export class TileHistory {
  async prepare(steps){
   this.busy=true;const plan=await this.plan(steps);if(!plan){this.busy=false;return null;}
   plan.pinned=[...new Set([...plan.tiles.values()].map(p=>p.target.version).filter(v=>v?.gpu))];for(const v of plan.pinned)v.pins++;
-  const staged=[];let complete=false;try{
+  const staged=[];let complete=false,slice=performance.now();try{
    const entries=[];
    for(const [q,p]of plan.tiles){if(p.target.version)entries.push([q,p]);else{const t=this.backend.tiles.get(q);staged.push({q,t,state:p.target});this.metrics.emptyTiles++;}}
    for(let offset=0;offset<entries.length;offset+=8){
@@ -77,13 +77,14 @@ export class TileHistory {
     if(missing.some(([,p])=>!p.target.version.archived)){this.metrics.recoveryFallbacks++;return null;}
     const loaded=!missing.length?[]:this.archive.getMany?await this.archive.getMany(missing.map(([,p])=>p.target.version.id)):await Promise.all(missing.map(([,p])=>this.archive.get(p.target.version.id)));
     for(let i=0;i<missing.length;i++){const [q,p]=missing[i],result=loaded[i];if(result.missing){p.target.version.archived=false;this.metrics.recoveryFallbacks++;return null;}cold.set(q,result.pixels);}
+    if(missing.length)slice=performance.now(); // Worker I/O already admitted UI tasks.
     const b=this.backend,encoder=b.device?.createCommandEncoder(),start=performance.now();
     for(const [q,p]of batch){const t=b.tiles.get(q)??b.tile(p.key,p.surfaceKey),target=t.layer[1-t.l],v=p.target.version;
      if(v.gpu){copyHistoryImage(b,v.gpu,target,encoder);this.metrics.hotTiles++;}
      else{uploadHistoryImage(b,cold.get(q),target);this.metrics.coldTiles++;}
      staged.push({q,t,state:p.target});
     }
-    if(encoder)b.device.queue.submit([encoder.finish()]);this.metrics.maxSliceMs=Math.max(this.metrics.maxSliceMs,performance.now()-start);await historyYield();
+    if(encoder)b.device.queue.submit([encoder.finish()]);this.metrics.maxSliceMs=Math.max(this.metrics.maxSliceMs,performance.now()-start);if(performance.now()-slice>=4){await historyYield();slice=performance.now();}
    }
    complete=true;return {...plan,staged};
   }catch(error){this.metrics.storageErrors++;return null;}finally{if(!complete){if(this.backend.device)await this.backend.device.queue.onSubmittedWorkDone();this.complete(plan);}}

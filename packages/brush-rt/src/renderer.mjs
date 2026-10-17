@@ -441,7 +441,7 @@ export class GpuRenderer {
    // No image read can fail after this point. Stage in existing layer slots;
    // hold all presentation while the final dirty union is composed in slices.
    b.setPresentationHeld(true);held=true;h.publish(plan);b.dirtyConfirmed.clear();
-   const all=[...keys];let limit=8;for(let offset=0;offset<all.length;){
+   const all=[...keys];let limit=32;for(let offset=0;offset<all.length;){
     const batch=all.slice(offset,offset+limit);offset+=batch.length;for(const key of batch)b.dirtyConfirmed.add(key);
     const submittedAt=performance.now();let done=false,error;const pending=Promise.resolve(b.render(null,[],[])).then(()=>{done=true;},e=>{error=e;done=true;});const cpuMs=performance.now()-submittedAt;
     const waitStarted=performance.now();while(!done){await historyYield();b.poll?.();if(performance.now()-waitStarted>30000)throw Error('History composition GPU timeout');}await pending;if(error)throw error;
@@ -728,9 +728,9 @@ function renderSparseGpu(b,e,states,dirty,diag){
 }
 
 function boundHistoryCopies(b,jobs){
- const h=b.imageHistory;if(!h||b.presentationHeld)return jobs;let copies=0;const seen=new Set,out=[];
+ const h=b.imageHistory;if(!h||b.presentationHeld)return jobs;let copies=0;const limit=Math.max(8,Math.min(32,Math.floor(h.gpuBudget/(TILE*TILE*4*16))));const seen=new Set,out=[];
  for(const job of jobs){let cost=0;const q=surfaceTileKey(job.surfaceKey,job.key);
   if(!job.skip){if(job.commit)cost=1;else if(!seen.has(q)&&!h.current.has(q)&&b.tiles.has(q))cost=1;}
-  if(out.length&&copies+cost>8)break;out.push(job);copies+=cost;seen.add(q);
+  if(out.length&&copies+cost>limit)break;out.push(job);copies+=cost;seen.add(q);
  }return out;
 }

@@ -2,7 +2,7 @@ name: Verify and publish tiered image history
 on:
   push:
     branches: ['perf/tile-history-2026-10-18']
-    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/tile-history-review.mjs', '.github/workflows/tile-history.yml', 'docs/production-prep/source-lock.json']
+    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/tile-history-*.mjs', '.github/workflows/tile-history.yml', 'docs/production-prep/source-lock.json']
   workflow_dispatch:
 permissions:
   contents: write
@@ -47,6 +47,13 @@ jobs:
           /tmp/history-browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Matched 512, 2000 and 4000px tests on WebGL2 and WebGPU
         run: node scripts/tile-history-review.mjs
+      - name: Normal 32MiB capacity and trusted resident history controls
+        run: |
+          HISTORY_SIZES=4000 HISTORY_GPU_MIB=32 HISTORY_OUTPUT=/tmp/tile-history-capacity/normal/report.json node scripts/tile-history-review.mjs
+          HISTORY_RESIDENT_OUTPUT=/tmp/tile-history-capacity/resident/report.json node scripts/tile-history-resident.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: tile-history-normal-capacity, path: /tmp/tile-history-capacity/}
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: tile-history-comparison, path: /tmp/tile-history/}
@@ -110,6 +117,8 @@ jobs:
         with: {name: tile-history-comparison, path: site/qa/undo-tile-history/evidence}
       - uses: actions/download-artifact@v4
         with: {name: tile-history-regression, path: site/qa/undo-tile-history/evidence/regression}
+      - uses: actions/download-artifact@v4
+        with: {name: tile-history-normal-capacity, path: site/qa/undo-tile-history/evidence/normal-capacity}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - name: Require both-backend comparison and publish only the new directory

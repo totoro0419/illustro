@@ -11,7 +11,9 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'h
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const browser=await chromium.launch({headless:true,...(process.env.HANDOFF_CHROMIUM?{executablePath:process.env.HANDOFF_CHROMIUM}:{}),args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
 const report={sourceCommit:process.env.EXPECTED_COMMIT_SHA??'working-tree',baselineCommit:'24993dff35835ec4bd6da12763b0fa328e20b5ca',scope:'Chromium software GPU. Click handler, logical completion and GPU presentation proxies. No physical Android/input-to-photon or RSS/VRAM claim.',cases:[],errors:[]};
-const sizes=process.env.HISTORY_QUICK?[512]:[512,2000,4000],backends=(process.env.HISTORY_BACKENDS??'webgl2,webgpu').split(',');
+const sizes=process.env.HISTORY_SIZES?process.env.HISTORY_SIZES.split(',').map(Number):process.env.HISTORY_QUICK?[512]:[512,2000,4000],backends=(process.env.HISTORY_BACKENDS??'webgl2,webgpu').split(',');
+const gpuBudgetMiB=Number(process.env.HISTORY_GPU_MIB??2);
+report.gpuBudgetMiB=gpuBudgetMiB;
 const save=()=>fs.writeFile(out,JSON.stringify(report,null,2));
 try{for(const backend of backends)for(const size of sizes){
  const pair={backend,width:size,height:size===512?384:size,builds:{}};
@@ -23,9 +25,11 @@ try{for(const backend of backends)for(const size of sizes){
   await page.goto(origin+'/'+mode+'/?m09=1&perf=1&backend='+backend);
   await page.evaluate(([w,h])=>{document.getElementById('newCanvasWidth').value=String(w);document.getElementById('newCanvasHeight').value=String(h);},[pair.width,pair.height]);
   await page.evaluate(()=>document.getElementById('new').click());await page.waitForFunction(()=>document.getElementById('status').textContent.includes('描画できます'),null,{timeout:90000});
+  assert.equal(await page.locator('#canvas').getAttribute('data-commit'),mode==='before'?report.baselineCommit:process.env.EXPECTED_COMMIT_SHA??await page.locator('#canvas').getAttribute('data-commit'),'exact application source');
   await page.evaluate(()=>document.getElementById('addLayer').click());
-  await page.evaluate(async()=>{
+  await page.evaluate(async gpuBudgetMiB=>{
    const port=window.__illustroPerformance,{renderer:r}=port.probe(),b=r.backend;
+   r.setPerformanceEnabled(true);
    window.__hist={longTasks:[],beats:[],frames:[],draws:[]};const original=r.onPresentation;r.onPresentation=sample=>{window.__hist.frames.push({at:performance.now(),kind:sample.kind,held:b.presentationHeld});original?.(sample);};
    new PerformanceObserver(list=>{window.__hist.longTasks.push(...list.getEntries().map(e=>({at:e.startTime,ms:e.duration})));}).observe({type:'longtask',buffered:false});
    setInterval(()=>window.__hist.beats.push(performance.now()),4);
@@ -49,8 +53,8 @@ try{for(const backend of backends)for(const size of sizes){
     const inputMs=performance.now()-at;await window.__idle();window.__hist.draws.push({inputMs,completionMs:performance.now()-at});
    };
    // Same constrained GPU capacity for both builds. New lower tiers stay bounded.
-   b.historyBudget=2*1024*1024;if(b.imageHistory)b.imageHistory.gpuBudget=b.historyBudget;
-  });
+   b.historyBudget=gpuBudgetMiB*1024*1024;if(b.imageHistory)b.imageHistory.gpuBudget=b.historyBudget;
+  },gpuBudgetMiB);
   await page.evaluate(()=>window.__idle());const empty=await page.evaluate(()=>window.__hash());
   const expected={0:empty};for(let i=0;i<24;i++){await page.evaluate(i=>window.__draw(i),i);if([3,22,23].includes(i))expected[i+1]=await page.evaluate(()=>window.__hash());}
   const final=await page.evaluate(()=>window.__hash()),phases=[];
@@ -78,7 +82,7 @@ try{for(const backend of backends)for(const size of sizes){
     const oldScene=await page.evaluate(async()=>{const b=window.__illustroPerformance.probe().renderer.backend;return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await b.readViewport()))).join(',');});
     await page.evaluate(()=>{const a=window.__illustroPerformance.probe().renderer.backend.imageHistory.archive,original=a.getMany.bind(a);a.getMany=async ids=>{if(ids.length){a.getMany=original;await new Promise(resolve=>window.__releaseTileRead=resolve);}return original(ids);};document.getElementById('undo').click();});
     await page.waitForFunction(()=>typeof window.__releaseTileRead==='function');
-    await page.evaluate(()=>window.__illustroPerformance.view(31,27));
+    await page.evaluate(()=>{const p=window.__illustroPerformance,b=p.probe().renderer.backend;p.view(b.viewTransform[6]*1.12,.18);});
     await page.waitForFunction(()=>!window.__illustroPerformance.read().frameState.viewPending);
     assert.equal(await page.evaluate(async()=>{const b=window.__illustroPerformance.probe().renderer.backend;return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await b.readViewport()))).join(',');}),oldScene,'old coherent composite remains available during cold I/O');
     await page.evaluate(()=>window.__releaseTileRead());await page.evaluate(()=>window.__idle());assert.deepEqual(await page.evaluate(()=>window.__hash()),expected[23]);
@@ -88,10 +92,10 @@ try{for(const backend of backends)for(const size of sizes){
    }
   }
   // Undo while moving/rotating the canvas. Verify pixels and overlay retirement.
-  await page.evaluate(()=>{document.getElementById('undo').click();window.__illustroPerformance.view(31,27);});await page.evaluate(()=>window.__idle());assert.deepEqual(await page.evaluate(()=>window.__hash()),expected[23]);
+  await page.evaluate(()=>{document.getElementById('undo').click();const p=window.__illustroPerformance,b=p.probe().renderer.backend;p.view(b.viewTransform[6]*1.12,.18);const box=b.canvas.getBoundingClientRect();for(const [type,dx,dy]of [['pointerdown',0,0],['pointermove',23,17],['pointerup',23,17]])b.canvas.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:19,pointerType:'mouse',button:1,buttons:type==='pointerup'?0:4,clientX:box.x+box.width/2+dx,clientY:box.y+box.height/2+dy}));});await page.evaluate(()=>window.__idle());assert.deepEqual(await page.evaluate(()=>window.__hash()),expected[23]);
   if(mode==='after')await page.evaluate(async()=>{
    const {renderer:r}=window.__illustroPerformance.probe(),b=r.backend;
-   const capture=async()=>{const bitmap=await createImageBitmap(b.canvas),canvas=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0);bitmap.close();return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',ctx.getImageData(0,0,canvas.width,canvas.height).data))).join(',');};
+   const capture=async()=>{const bitmap=await createImageBitmap(b.canvas),canvas=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0);bitmap.close();const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;let ink=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]<100&&pixels[i+1]<100&&pixels[i+2]<100&&pixels[i+3]>0)ink++;if(ink<20)throw Error('Navigation comparison must contain visible painted pixels');return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',pixels))).join(',');};
    const before=await capture();b.viewportCache.clear();await b.presentCurrent();const after=await capture();if(before!==after)throw Error('Stale transformed history screen: forced repaint differs');
   });
   await page.evaluate(()=>window.__draw(24));await page.evaluate(()=>window.__idle());assert.equal(await page.evaluate(()=>window.__illustroPerformance.probe().controller.canRedo),false);
