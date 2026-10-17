@@ -1,0 +1,122 @@
+name: Publish long-stroke handoff QA
+on:
+  push:
+    branches: ['perf/stroke-handoff-latency-2026-10-17']
+    paths: ['qa/perf-stroke-handoff-latency/**', 'scripts/handoff-latency-browser.mjs', 'scripts/handoff-latency-report.mjs', '.github/workflows/publish-handoff-latency.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: handoff-latency-publication
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      EXPECTED_COMMIT_SHA: e78fcc41bffaaa351153b1ba3cdd22f75223ecd8
+      LATENCY_EVIDENCE_RUN: '38991686750'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Verify immutable tested application and successful complete measurements
+        run: |
+          git merge-base --is-ancestor "$EXPECTED_COMMIT_SHA" HEAD
+          git diff --exit-code "$EXPECTED_COMMIT_SHA" -- apps packages prototypes package.json package-lock.json scripts/handoff-latency-benchmark.mjs scripts/handoff-latency-visibility.mjs scripts/stroke-overlay-quality.mjs scripts/stroke-overlay-formal.mjs
+          ready=0
+          for i in $(seq 1 120); do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$LATENCY_EVIDENCE_RUN" > /tmp/latency-run.json
+            status=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/latency-run.json')).status")
+            if test "$status" = completed; then ready=1; break; fi
+            sleep 20
+          done
+          test "$ready" = 1
+          node --input-type=module -e "import fs from 'node:fs';import assert from 'node:assert/strict';const r=JSON.parse(fs.readFileSync('/tmp/latency-run.json'));assert.equal(r.head_sha,process.env.EXPECTED_COMMIT_SHA);assert.equal(r.conclusion,'success');assert.equal(r.head_branch,'perf/stroke-handoff-latency-2026-10-17');"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$LATENCY_EVIDENCE_RUN/jobs?per_page=100" > /tmp/latency-jobs.json
+          node --input-type=module -e "import fs from 'node:fs';import assert from 'node:assert/strict';const j=JSON.parse(fs.readFileSync('/tmp/latency-jobs.json')).jobs;assert.equal(j.length,11);assert.ok(j.every(v=>v.conclusion==='success'));"
+      - name: Download the exact tested applications and evidence
+        run: |
+          gh run download "$LATENCY_EVIDENCE_RUN" -n latency-app -D review-build
+          gh run download "$LATENCY_EVIDENCE_RUN" -n latency-before-quality-app -D review-before
+          gh run download "$LATENCY_EVIDENCE_RUN" -n latency-quality-webgl2 -D review-evidence/quality/webgl2
+          gh run download "$LATENCY_EVIDENCE_RUN" -n latency-quality-webgpu -D review-evidence/quality/webgpu
+          gh run download "$LATENCY_EVIDENCE_RUN" -n latency-regression -D review-evidence/regression
+          for backend in webgl2 webgpu; do
+            for brush in thin broad pencil eraser; do
+              gh run download "$LATENCY_EVIDENCE_RUN" -n "handoff-latency-$backend-$brush" -D "review-evidence/performance/$backend-$brush"
+            done
+          done
+          cp /tmp/latency-run.json review-evidence/measurement-run.json
+          cp /tmp/latency-jobs.json review-evidence/measurement-jobs.json
+          node scripts/handoff-latency-report.mjs review-evidence
+      - run: |
+          npm install --prefix /tmp/latency-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/latency-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify new comparison controls and gallery before publication
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/latency-browser/node_modules/playwright
+          LATENCY_APP_ROOT: review-build
+          LATENCY_BEFORE_APP_ROOT: review-before
+          LATENCY_EVIDENCE_ROOT: review-evidence
+          LATENCY_BROWSER_OUTPUT: /tmp/latency-local-qa/report.json
+        run: node scripts/handoff-latency-browser.mjs
+      - name: Preserve every prior QA and add only the new directory
+        run: |
+          (cd site && find qa -type f ! -path 'qa/perf-stroke-handoff-latency/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
+          mkdir -p site/qa/perf-stroke-handoff-latency/app site/qa/perf-stroke-handoff-latency/before site/qa/perf-stroke-handoff-latency/evidence
+          cp qa/perf-stroke-handoff-latency/*.html site/qa/perf-stroke-handoff-latency/
+          cp -a review-build/. site/qa/perf-stroke-handoff-latency/app/
+          cp -a review-before/. site/qa/perf-stroke-handoff-latency/before/
+          cp -a review-evidence/. site/qa/perf-stroke-handoff-latency/evidence/
+          cp -a /tmp/latency-local-qa site/qa/perf-stroke-handoff-latency/evidence/local-browser
+          (cd site && find qa -type f ! -path 'qa/perf-stroke-handoff-latency/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after
+          diff -u /tmp/old-qa.before /tmp/old-qa.after
+          cp /tmp/old-qa.before site/qa/perf-stroke-handoff-latency/evidence/previous-qa.sha256
+      - name: Publish with the current branch head lease
+        working-directory: site
+        run: |
+          current=$(git ls-remote origin refs/heads/perf/stroke-handoff-latency-2026-10-17 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-stroke-handoff-latency
+          git diff --cached --quiet || git commit -m 'qa: publish long-stroke to next-stroke latency comparison'
+          git push origin HEAD:gh-pages
+      - name: Wait for the exact source at the public URL
+        run: |
+          ready=0
+          for i in $(seq 1 36); do
+            curl -fsSL "https://totoro0419.github.io/illustro/qa/perf-stroke-handoff-latency/evidence/qa-status.json?build=$GITHUB_SHA" -o /tmp/public-latency.json || true
+            if node -e "try{const d=JSON.parse(require('fs').readFileSync('/tmp/public-latency.json'));process.exit(d.sourceCommit===process.env.EXPECTED_COMMIT_SHA&&d.publicationCommit===process.env.GITHUB_SHA?0:1)}catch{process.exit(1)}"; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+      - name: Verify actual public long-next drawing, touch, history, save and images
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/latency-browser/node_modules/playwright
+          HANDOFF_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-stroke-handoff-latency/app/
+          MOBILE_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-stroke-handoff-latency/app/
+          HANDOFF_OPERATIONS_OUTPUT: /tmp/latency-public/operations/report.json
+          MOBILE_HOME: '1'
+          MOBILE_INPUT_OUTPUT: /tmp/latency-public/mobile/report.json
+          LATENCY_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/perf-stroke-handoff-latency/
+          LATENCY_BROWSER_OUTPUT: /tmp/latency-public/qa-page/report.json
+        run: |
+          node scripts/handoff-latency-browser.mjs
+          node scripts/stroke-handoff-operations.mjs
+          node scripts/mobile-input-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: latency-public-verification
+          path: |
+            /tmp/latency-public/
+            /tmp/latency-local-qa/
+            review-evidence/qa-status.json
+            review-evidence/RESULTS.md

@@ -2,6 +2,9 @@ name: Stroke transition latency
 on:
   push:
     branches: ['perf/stroke-handoff-latency-2026-10-17']
+    # QA/docs-only changes reuse immutable evidence and run the QA publication
+    # browser checks. Dispatch this workflow for test/config-only changes.
+    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/handoff-latency-benchmark.mjs', 'scripts/handoff-latency-visibility.mjs', 'scripts/stroke-overlay-quality.mjs', 'scripts/stroke-overlay-formal.mjs']
   workflow_dispatch:
 permissions:
   contents: write
