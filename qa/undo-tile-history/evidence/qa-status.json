@@ -1,7 +1,7 @@
 {
-  "sourceCommit": "236a363e828b410b26732bf0deaff795be96d83c",
+  "sourceCommit": "ededeb817d8e19dd75c43af9fcc5277de512f4b4",
   "baselineCommit": "24993dff35835ec4bd6da12763b0fa328e20b5ca",
-  "workflowRun": "39079440453",
+  "workflowRun": "39080088236",
   "checks": "Matched pixels, ordered history, GPU/memory/OPFS, missing archive, navigation, save and recovery verified in Chromium software GPU",
   "unverified": [
     "Physical Android latency/FPS/temperature",
