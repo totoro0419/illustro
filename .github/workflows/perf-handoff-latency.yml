@@ -1,0 +1,50 @@
+name: Stroke transition latency
+on:
+  push:
+    branches: ['perf/stroke-handoff-latency-2026-10-17']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: handoff-latency-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  transition:
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [webgl2, webgpu]
+        brush: [thin, broad]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/brush-build.log
+          VITE_COMMIT_SHA=${{ github.sha }} npm --workspace @illustro/editor exec -- vite build --base=./
+          git worktree add --detach /tmp/latency-before 1828947625dea1a16ec7532fd5275c4e0ccaec53
+          cd /tmp/latency-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/before-build.log
+          VITE_COMMIT_SHA=1828947625dea1a16ec7532fd5275c4e0ccaec53 npm --workspace @illustro/editor exec -- vite build --base=./
+      - run: |
+          npm install --prefix /tmp/latency-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/latency-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Measure immutable PR31 immediate transitions
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/latency-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          LATENCY_BACKENDS: ${{ matrix.backend }}
+          LATENCY_BRUSHES: ${{ matrix.brush }}
+          LATENCY_VIEWS: fit,100
+          LATENCY_FADE: off,on
+          LATENCY_SCENARIOS: short-next,long-next
+          LATENCY_MODES: A
+        run: node scripts/handoff-latency-benchmark.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'handoff-latency-${{ matrix.backend }}-${{ matrix.brush }}', path: /tmp/handoff-latency/}
