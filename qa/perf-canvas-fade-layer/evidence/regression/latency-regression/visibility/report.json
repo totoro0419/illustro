@@ -1,0 +1,1271 @@
+{
+  "sourceCommit": "ce816789701c484841895aca2617df5efd77cefd",
+  "scope": "Actual editor events and compositor PNGs under deliberately held formal submission/completion. Deterministic independence/visibility test, not a timing or hardware benchmark.",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "view": "fit",
+      "hold": "queued",
+      "fade": false,
+      "pending": {
+        "bluePixels": 908,
+        "redPixels": 23379,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 492,
+          "pending": 1
+        },
+        "inflight": false,
+        "formalJobs": 512,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2335.4000000000087,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2338,
+            "id": 1
+          },
+          {
+            "at": 4483.100000000006,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 884,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4483.600000000006,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgl2",
+      "view": "fit",
+      "hold": "queued",
+      "fade": true,
+      "pending": {
+        "bluePixels": 825,
+        "redPixels": 28724,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 498,
+          "pending": 1
+        },
+        "inflight": false,
+        "formalJobs": 518,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 1263.5,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 1271.1000000000058,
+            "id": 1
+          },
+          {
+            "at": 3464.100000000006,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 975,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 3466.4000000000087,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgl2",
+      "view": "fit",
+      "hold": "inflight",
+      "fade": false,
+      "pending": {
+        "bluePixels": 908,
+        "redPixels": 23379,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 492,
+          "pending": 1
+        },
+        "inflight": true,
+        "formalJobs": 512,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 1172.199999999997,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 1177.699999999997,
+            "id": 1
+          },
+          {
+            "at": 3323.399999999994,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 884,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 3324.0999999999913,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgl2",
+      "view": "fit",
+      "hold": "inflight",
+      "fade": true,
+      "pending": {
+        "bluePixels": 825,
+        "redPixels": 28724,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 498,
+          "pending": 1
+        },
+        "inflight": true,
+        "formalJobs": 518,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 1126.3999999999942,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 1131.699999999997,
+            "id": 1
+          },
+          {
+            "at": 3283.399999999994,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 975,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 3284.300000000003,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgl2",
+      "view": "100",
+      "hold": "queued",
+      "fade": false,
+      "pending": {
+        "bluePixels": 2207,
+        "redPixels": 60531,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 12,
+          "pending": 1
+        },
+        "inflight": false,
+        "formalJobs": 16,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 1104.5999999999913,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 1107,
+            "id": 1
+          },
+          {
+            "at": 3292.800000000003,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 557,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 3293.5,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgl2",
+      "view": "100",
+      "hold": "queued",
+      "fade": true,
+      "pending": {
+        "bluePixels": 2951,
+        "redPixels": 80002,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 12,
+          "pending": 1
+        },
+        "inflight": false,
+        "formalJobs": 16,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 1466.4000000000087,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 1468.7000000000116,
+            "id": 1
+          },
+          {
+            "at": 3594.800000000003,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 580,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 3595.600000000006,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgl2",
+      "view": "100",
+      "hold": "inflight",
+      "fade": false,
+      "pending": {
+        "bluePixels": 2207,
+        "redPixels": 60531,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 12,
+          "pending": 1
+        },
+        "inflight": true,
+        "formalJobs": 16,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 1459.5999999999913,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 1461.3999999999942,
+            "id": 1
+          },
+          {
+            "at": 3542.300000000003,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 557,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 3543.0999999999913,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgl2",
+      "view": "100",
+      "hold": "inflight",
+      "fade": true,
+      "pending": {
+        "bluePixels": 2951,
+        "redPixels": 80002,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 12,
+          "pending": 1
+        },
+        "inflight": true,
+        "formalJobs": 16,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 1105.2000000000116,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 1107.8000000000175,
+            "id": 1
+          },
+          {
+            "at": 3287.2000000000116,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 580,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 3291.100000000006,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgpu",
+      "view": "fit",
+      "hold": "queued",
+      "fade": false,
+      "pending": {
+        "bluePixels": 908,
+        "redPixels": 23379,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 492,
+          "pending": 1
+        },
+        "inflight": false,
+        "formalJobs": 512,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2391.2000000000116,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2393.899999999994,
+            "id": 1
+          },
+          {
+            "at": 4458.600000000006,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 884,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4459.3000000000175,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgpu",
+      "view": "fit",
+      "hold": "queued",
+      "fade": true,
+      "pending": {
+        "bluePixels": 825,
+        "redPixels": 28724,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 498,
+          "pending": 1
+        },
+        "inflight": false,
+        "formalJobs": 518,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2424.0999999999767,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2426.5,
+            "id": 1
+          },
+          {
+            "at": 4512.1999999999825,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 975,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4512.799999999988,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgpu",
+      "view": "fit",
+      "hold": "inflight",
+      "fade": false,
+      "pending": {
+        "bluePixels": 908,
+        "redPixels": 23379,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 492,
+          "pending": 1
+        },
+        "inflight": true,
+        "formalJobs": 512,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2376.100000000006,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2378.399999999994,
+            "id": 1
+          },
+          {
+            "at": 4456.899999999994,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 884,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4457.700000000012,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgpu",
+      "view": "fit",
+      "hold": "inflight",
+      "fade": true,
+      "pending": {
+        "bluePixels": 825,
+        "redPixels": 28724,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 498,
+          "pending": 1
+        },
+        "inflight": true,
+        "formalJobs": 518,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2367.3000000000175,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2369.600000000006,
+            "id": 1
+          },
+          {
+            "at": 4468.5,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 975,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4469.200000000012,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgpu",
+      "view": "100",
+      "hold": "queued",
+      "fade": false,
+      "pending": {
+        "bluePixels": 2207,
+        "redPixels": 60531,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 12,
+          "pending": 1
+        },
+        "inflight": false,
+        "formalJobs": 16,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2406.8000000000175,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2408.7000000000116,
+            "id": 1
+          },
+          {
+            "at": 4504.3000000000175,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 557,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4505,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgpu",
+      "view": "100",
+      "hold": "queued",
+      "fade": true,
+      "pending": {
+        "bluePixels": 2951,
+        "redPixels": 80002,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 12,
+          "pending": 1
+        },
+        "inflight": false,
+        "formalJobs": 16,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2359.7000000000116,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2362,
+            "id": 1
+          },
+          {
+            "at": 4454.3000000000175,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 580,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4455.100000000006,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgpu",
+      "view": "100",
+      "hold": "inflight",
+      "fade": false,
+      "pending": {
+        "bluePixels": 2207,
+        "redPixels": 60531,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 12,
+          "pending": 1
+        },
+        "inflight": true,
+        "formalJobs": 16,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2412,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2414.600000000006,
+            "id": 1
+          },
+          {
+            "at": 4505.899999999994,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 557,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4506.5,
+            "id": 10
+          }
+        ]
+      }
+    },
+    {
+      "backend": "webgpu",
+      "view": "100",
+      "hold": "inflight",
+      "fade": true,
+      "pending": {
+        "bluePixels": 2951,
+        "redPixels": 80002,
+        "heldBeforeNext": {
+          "inflight": true,
+          "jobs": 12,
+          "pending": 1
+        },
+        "inflight": true,
+        "formalJobs": 16,
+        "accepted": 2,
+        "rejected": 0,
+        "ids": [
+          1,
+          10
+        ],
+        "visibleImages": [
+          {
+            "id": 1,
+            "display": "block",
+            "pixels": 393216
+          },
+          {
+            "id": 10,
+            "display": "block",
+            "pixels": 49152
+          }
+        ],
+        "pendingFinalizations": 0
+      },
+      "final": {
+        "records": 2,
+        "remaining": 0,
+        "images": 0,
+        "bytes": 65536,
+        "errors": [],
+        "attempts": [
+          {
+            "at": 2372.399999999994,
+            "eventAt": 1000,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2374.6999999999825,
+            "id": 1
+          },
+          {
+            "at": 4486.899999999994,
+            "eventAt": 2924,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 1,
+              "formalCommands": 580,
+              "pendingRaw": 0,
+              "protectionQueue": 1
+            },
+            "acceptedAt": 4487.5,
+            "id": 10
+          }
+        ]
+      }
+    }
+  ],
+  "errors": []
+}
