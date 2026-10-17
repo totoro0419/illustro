@@ -1,0 +1,93 @@
+{
+  "commit": "a1b202eab4b287199eb9c5bbf5347134211362df",
+  "scope": "Trusted mouse input: immediate history and delayed portable save while later drawing continues",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "pendingAtUndo": {
+        "inputAttempts": [
+          {
+            "at": 3124.800000000003,
+            "eventAt": 3119.5,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 3125.9000000000015,
+            "id": 1
+          }
+        ],
+        "accepted": 1,
+        "rejected": 0,
+        "pendingLogical": 1,
+        "pendingGpu": 0,
+        "protectionQueue": 0,
+        "fault": null,
+        "traces": [
+          {
+            "id": 1,
+            "upAt": 3386.5,
+            "readyMs": 1.0999999999985448,
+            "uiStateMs": 0.7999999999956344
+          }
+        ]
+      },
+      "undoRedo": true,
+      "savedRevision": "21fa32bc-d4b4-4bee-9492-7eff9fea3549",
+      "saveDuringLaterInput": true,
+      "reopenedStrokeCount": 2,
+      "portableBytes": 56878
+    },
+    {
+      "backend": "webgpu",
+      "pendingAtUndo": {
+        "inputAttempts": [
+          {
+            "at": 2704.5,
+            "eventAt": 2703.399999999994,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2706.0999999999913,
+            "id": 1
+          }
+        ],
+        "accepted": 1,
+        "rejected": 0,
+        "pendingLogical": 1,
+        "pendingGpu": 0,
+        "protectionQueue": 0,
+        "fault": null,
+        "traces": [
+          {
+            "id": 1,
+            "upAt": 2944.300000000003,
+            "readyMs": 1.0999999999912689,
+            "uiStateMs": 0.8000000000029104
+          }
+        ]
+      },
+      "undoRedo": true,
+      "savedRevision": "8bc2999c-5e1b-4efb-961a-ffd947a15ab6",
+      "saveDuringLaterInput": true,
+      "reopenedStrokeCount": 2,
+      "portableBytes": 56052
+    }
+  ],
+  "errors": []
+}

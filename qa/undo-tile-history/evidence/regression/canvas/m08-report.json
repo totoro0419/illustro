@@ -1,0 +1,1017 @@
+{
+  "commit": "a1b202eab4b287199eb9c5bbf5347134211362df",
+  "mode": "local",
+  "tests": [
+    {
+      "kind": "webgl2",
+      "dpr": 1,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        1182,
+        718
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.5385156249999998,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 1.25,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        1478,
+        898
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.5385156249999998,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 1.5,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        1773,
+        1077
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.5385156249999998,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2,
+      "width": 512,
+      "height": 384,
+      "result": "VIEWPORT-RESIZE-PASS",
+      "portrait": {
+        "css": [
+          802,
+          758.15625
+        ],
+        "backing": [
+          1604,
+          1516
+        ]
+      }
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2,
+      "width": 512,
+      "height": 384,
+      "result": "REFERENCE-PASS",
+      "pixels": [
+        {
+          "x": 40,
+          "y": 40,
+          "rgba": [
+            245,
+            245,
+            245,
+            255
+          ]
+        },
+        {
+          "x": 41,
+          "y": 40,
+          "rgba": [
+            20,
+            20,
+            20,
+            255
+          ]
+        },
+        {
+          "x": 192,
+          "y": 64,
+          "rgba": [
+            0,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 193,
+          "y": 64,
+          "rgba": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "x": 400,
+          "y": 40,
+          "rgba": [
+            32,
+            223,
+            128,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "webgl2",
+      "result": "PAPER-FOLLOWS-PAN-PASS",
+      "start": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "moved": [
+        241,
+        244,
+        249,
+        255
+      ]
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2,
+      "width": 512,
+      "height": 384,
+      "result": "PREVIEW-FINAL-PASS",
+      "live": [
+        31,
+        38,
+        51,
+        255
+      ],
+      "final": [
+        31,
+        38,
+        51,
+        255
+      ],
+      "difference": 0
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        2364,
+        1436
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.509140625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2.5,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        2955,
+        1795
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.509140625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2.75,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        3251,
+        1975
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.509140625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 3,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        3546,
+        2154
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.509140625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGL2",
+      "width": 2048,
+      "ordinal": 1,
+      "elapsedMs": 2176,
+      "softwareGpu": false
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGL2",
+      "width": 2048,
+      "ordinal": 2,
+      "elapsedMs": 1321,
+      "softwareGpu": false
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2,
+      "width": 2048,
+      "height": 1536,
+      "result": "PASS",
+      "backing": [
+        2364,
+        1436
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 2048,
+        "documentHeight": 1536,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 0.37728515625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGL2",
+      "width": 2560,
+      "ordinal": 1,
+      "elapsedMs": 2594,
+      "softwareGpu": false
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGL2",
+      "width": 2560,
+      "ordinal": 2,
+      "elapsedMs": 1558,
+      "softwareGpu": false
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2,
+      "width": 2560,
+      "height": 1440,
+      "result": "PASS",
+      "backing": [
+        2364,
+        1436
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 2560,
+        "documentHeight": 1440,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 0.301828125,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGL2",
+      "width": 3000,
+      "ordinal": 1,
+      "elapsedMs": 2608,
+      "softwareGpu": false
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGL2",
+      "width": 3000,
+      "ordinal": 2,
+      "elapsedMs": 1584,
+      "softwareGpu": false
+    },
+    {
+      "kind": "webgl2",
+      "dpr": 2,
+      "width": 3000,
+      "height": 2000,
+      "result": "PASS",
+      "backing": [
+        2364,
+        1436
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 3000,
+        "documentHeight": 2000,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 0.25756,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGL2",
+      "errors": []
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 1,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        1182,
+        718
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.5385156249999998,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 1.25,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        1478,
+        898
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.5385156249999998,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 1.5,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        1773,
+        1077
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.5385156249999998,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2,
+      "width": 512,
+      "height": 384,
+      "result": "VIEWPORT-RESIZE-PASS",
+      "portrait": {
+        "css": [
+          802,
+          758.15625
+        ],
+        "backing": [
+          1604,
+          1516
+        ]
+      }
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2,
+      "width": 512,
+      "height": 384,
+      "result": "REFERENCE-PASS",
+      "pixels": [
+        {
+          "x": 40,
+          "y": 40,
+          "rgba": [
+            245,
+            245,
+            245,
+            255
+          ]
+        },
+        {
+          "x": 41,
+          "y": 40,
+          "rgba": [
+            20,
+            20,
+            20,
+            255
+          ]
+        },
+        {
+          "x": 192,
+          "y": 64,
+          "rgba": [
+            0,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 193,
+          "y": 64,
+          "rgba": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "x": 400,
+          "y": 40,
+          "rgba": [
+            32,
+            223,
+            128,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "webgpu",
+      "result": "PAPER-FOLLOWS-PAN-PASS",
+      "start": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "moved": [
+        241,
+        244,
+        249,
+        255
+      ]
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2,
+      "width": 512,
+      "height": 384,
+      "result": "PREVIEW-FINAL-PASS",
+      "live": [
+        31,
+        38,
+        51,
+        255
+      ],
+      "final": [
+        31,
+        38,
+        51,
+        255
+      ],
+      "difference": 0
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        2364,
+        1436
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.509140625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2.5,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        2955,
+        1795
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.509140625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2.75,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        3251,
+        1975
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.509140625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 3,
+      "width": 512,
+      "height": 384,
+      "result": "PASS",
+      "backing": [
+        3546,
+        2154
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 512,
+        "documentHeight": 384,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 1.509140625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGPU",
+      "width": 2048,
+      "ordinal": 1,
+      "elapsedMs": 1387,
+      "softwareGpu": false
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGPU",
+      "width": 2048,
+      "ordinal": 2,
+      "elapsedMs": 1306,
+      "softwareGpu": false
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2,
+      "width": 2048,
+      "height": 1536,
+      "result": "PASS",
+      "backing": [
+        2364,
+        1436
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 2048,
+        "documentHeight": 1536,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 0.37728515625,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGPU",
+      "width": 2560,
+      "ordinal": 1,
+      "elapsedMs": 1608,
+      "softwareGpu": true
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGPU",
+      "width": 2560,
+      "ordinal": 2,
+      "elapsedMs": 1454,
+      "softwareGpu": true
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2,
+      "width": 2560,
+      "height": 1440,
+      "result": "PASS",
+      "backing": [
+        2364,
+        1436
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 2560,
+        "documentHeight": 1440,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 0.301828125,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGPU",
+      "width": 3000,
+      "ordinal": 1,
+      "elapsedMs": 1645,
+      "softwareGpu": true
+    },
+    {
+      "result": "MEASURED-LARGE-STROKE",
+      "backend": "WebGPU",
+      "width": 3000,
+      "ordinal": 2,
+      "elapsedMs": 1524,
+      "softwareGpu": true
+    },
+    {
+      "kind": "webgpu",
+      "dpr": 2,
+      "width": 3000,
+      "height": 2000,
+      "result": "PASS",
+      "backing": [
+        2364,
+        1436
+      ],
+      "css": [
+        1182,
+        718
+      ],
+      "view": {
+        "documentWidth": 3000,
+        "documentHeight": 2000,
+        "cssWidth": 1182,
+        "cssHeight": 718,
+        "zoom": 0.25756,
+        "rotation": 0,
+        "panX": 0,
+        "panY": 0,
+        "flipX": true,
+        "flipY": true,
+        "seamless": false,
+        "reference": false
+      },
+      "backend": "WebGPU",
+      "errors": []
+    }
+  ],
+  "errors": [],
+  "referencePixels": {
+    "webgl2": [
+      [
+        245,
+        245,
+        245,
+        255
+      ],
+      [
+        20,
+        20,
+        20,
+        255
+      ],
+      [
+        0,
+        0,
+        0,
+        255
+      ],
+      [
+        255,
+        255,
+        255,
+        255
+      ],
+      [
+        32,
+        223,
+        128,
+        255
+      ]
+    ],
+    "webgpu": [
+      [
+        245,
+        245,
+        245,
+        255
+      ],
+      [
+        20,
+        20,
+        20,
+        255
+      ],
+      [
+        0,
+        0,
+        0,
+        255
+      ],
+      [
+        255,
+        255,
+        255,
+        255
+      ],
+      [
+        32,
+        223,
+        128,
+        255
+      ]
+    ]
+  },
+  "referenceLatencyMs": {
+    "webgl2": 2739,
+    "webgpu": 1182
+  }
+}
