@@ -50,3 +50,10 @@ test('affine stroke reprojection matches direct document mapping under pan, zoom
  const [a,b,c,d,e,f]=viewAffine(from,to);
  for(const point of [[0,0],[2000,1600],[3900,3100]]){const p=toScreen(from,...point),q=toScreen(to,...point);assert.ok(Math.hypot(a*p.x+c*p.y+e-q.x,b*p.x+d*p.y+f-q.y)<1e-8);}
 });
+
+
+test('a held gesture defers even background refinement until release',async()=>{
+ const {p,layers,sink}=isolated(),r=record(64);sink.reproject=()=>{};p.enqueue(live(r));p.safeFlush();layers.get(1).reproject=()=>{};
+ const before=p.metrics.rasterPixels;p.setNavigationActive(true);p.setView(view(4000,.2));await new Promise(ok=>setTimeout(ok,100));assert.equal(p.metrics.rasterPixels,before);assert.equal(p.finalizations.size,0);
+ p.setNavigationActive(false);const at=performance.now();while(p.viewRefineTimer||p.finalizations.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,5));}assert.ok(p.metrics.rasterPixels>before);p.destroy();
+});

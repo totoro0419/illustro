@@ -68,3 +68,10 @@ test('blocked view presentation never admits more formal work behind it',()=>{
  r.setViewTransform(view(12));for(let i=0;i<20;i++)r.frame(i*16.7);
  assert.equal(calls.renders,0);assert.equal(peeks,0);assert.equal(r.viewPending,true);
 });
+
+
+test('a held navigation gesture never resumes formal work between sparse move events',()=>{
+ const {r,backend,calls}=harness();r.strokeHandoff=true;r.requestWork=()=>{};r.needsFrame=true;r.setNavigationActive(true);r.navigationUntil=0;
+ let peeks=0;r.document.peekMany=()=>{peeks++;return [];};r.frame(performance.now()+10000);
+ assert.equal(calls.renders,0);assert.equal(peeks,0);r.setNavigationActive(false);r.navigationUntil=0;r.frame(performance.now());assert.equal(calls.renders,1);
+});
