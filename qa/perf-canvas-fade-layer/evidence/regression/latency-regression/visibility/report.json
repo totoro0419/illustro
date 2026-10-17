@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "ce816789701c484841895aca2617df5efd77cefd",
+  "sourceCommit": "8376eb2d359c42e4469fbe3f6f5acde01231e21f",
   "scope": "Actual editor events and compositor PNGs under deliberately held formal submission/completion. Deterministic independence/visibility test, not a timing or hardware benchmark.",
   "cases": [
     {
@@ -45,7 +45,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2335.4000000000087,
+            "at": 1822.8999999999942,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -58,11 +58,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2338,
+            "acceptedAt": 1825,
             "id": 1
           },
           {
-            "at": 4483.100000000006,
+            "at": 3904.2999999999884,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -75,7 +75,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4483.600000000006,
+            "acceptedAt": 3904.7000000000116,
             "id": 10
           }
         ]
@@ -124,7 +124,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 1263.5,
+            "at": 967.2000000000116,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -137,11 +137,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 1271.1000000000058,
+            "acceptedAt": 969.3000000000175,
             "id": 1
           },
           {
-            "at": 3464.100000000006,
+            "at": 3413.100000000006,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -154,7 +154,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 3466.4000000000087,
+            "acceptedAt": 3413.600000000006,
             "id": 10
           }
         ]
@@ -203,7 +203,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 1172.199999999997,
+            "at": 895.8000000000175,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -216,11 +216,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 1177.699999999997,
+            "acceptedAt": 898,
             "id": 1
           },
           {
-            "at": 3323.399999999994,
+            "at": 3172.100000000006,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -233,7 +233,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 3324.0999999999913,
+            "acceptedAt": 3172.7000000000116,
             "id": 10
           }
         ]
@@ -282,7 +282,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 1126.3999999999942,
+            "at": 858.2000000000116,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -295,11 +295,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 1131.699999999997,
+            "acceptedAt": 859.8000000000175,
             "id": 1
           },
           {
-            "at": 3283.399999999994,
+            "at": 3116.899999999994,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -312,7 +312,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 3284.300000000003,
+            "acceptedAt": 3117.399999999994,
             "id": 10
           }
         ]
@@ -361,7 +361,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 1104.5999999999913,
+            "at": 865.8999999999942,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -374,11 +374,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 1107,
+            "acceptedAt": 870,
             "id": 1
           },
           {
-            "at": 3292.800000000003,
+            "at": 3128.899999999994,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -391,7 +391,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 3293.5,
+            "acceptedAt": 3129.5999999999767,
             "id": 10
           }
         ]
@@ -403,8 +403,8 @@
       "hold": "queued",
       "fade": true,
       "pending": {
-        "bluePixels": 2951,
-        "redPixels": 80002,
+        "bluePixels": 2327,
+        "redPixels": 67891,
         "heldBeforeNext": {
           "inflight": true,
           "jobs": 12,
@@ -440,7 +440,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 1466.4000000000087,
+            "at": 1175.7000000000116,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -453,11 +453,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 1468.7000000000116,
+            "acceptedAt": 1177.1000000000058,
             "id": 1
           },
           {
-            "at": 3594.800000000003,
+            "at": 3215.600000000006,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -470,7 +470,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 3595.600000000006,
+            "acceptedAt": 3216.2999999999884,
             "id": 10
           }
         ]
@@ -519,7 +519,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 1459.5999999999913,
+            "at": 883.2000000000116,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -532,11 +532,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 1461.3999999999942,
+            "acceptedAt": 887.6000000000058,
             "id": 1
           },
           {
-            "at": 3542.300000000003,
+            "at": 3179.100000000006,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -549,7 +549,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 3543.0999999999913,
+            "acceptedAt": 3180.899999999994,
             "id": 10
           }
         ]
@@ -598,7 +598,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 1105.2000000000116,
+            "at": 862.6000000000058,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -611,11 +611,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 1107.8000000000175,
+            "acceptedAt": 864.1000000000058,
             "id": 1
           },
           {
-            "at": 3287.2000000000116,
+            "at": 3124.5,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -628,7 +628,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 3291.100000000006,
+            "acceptedAt": 3133.2000000000116,
             "id": 10
           }
         ]
@@ -677,7 +677,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2391.2000000000116,
+            "at": 1910.1000000000058,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -690,11 +690,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2393.899999999994,
+            "acceptedAt": 1912.1000000000058,
             "id": 1
           },
           {
-            "at": 4458.600000000006,
+            "at": 3955.5,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -707,7 +707,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4459.3000000000175,
+            "acceptedAt": 3955.9000000000233,
             "id": 10
           }
         ]
@@ -756,7 +756,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2424.0999999999767,
+            "at": 1910,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -769,11 +769,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2426.5,
+            "acceptedAt": 1911.9000000000233,
             "id": 1
           },
           {
-            "at": 4512.1999999999825,
+            "at": 3962.4000000000233,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -786,7 +786,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4512.799999999988,
+            "acceptedAt": 3963.100000000006,
             "id": 10
           }
         ]
@@ -835,7 +835,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2376.100000000006,
+            "at": 1925.2000000000116,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -848,11 +848,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2378.399999999994,
+            "acceptedAt": 1927.1000000000058,
             "id": 1
           },
           {
-            "at": 4456.899999999994,
+            "at": 3971.100000000006,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -865,7 +865,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4457.700000000012,
+            "acceptedAt": 3971.5,
             "id": 10
           }
         ]
@@ -914,7 +914,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2367.3000000000175,
+            "at": 1947.6000000000058,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -927,11 +927,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2369.600000000006,
+            "acceptedAt": 1949,
             "id": 1
           },
           {
-            "at": 4468.5,
+            "at": 3998.600000000006,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -944,7 +944,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4469.200000000012,
+            "acceptedAt": 3998.899999999994,
             "id": 10
           }
         ]
@@ -993,7 +993,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2406.8000000000175,
+            "at": 1925.3999999999942,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -1006,11 +1006,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2408.7000000000116,
+            "acceptedAt": 1927.3999999999942,
             "id": 1
           },
           {
-            "at": 4504.3000000000175,
+            "at": 3972.2999999999884,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -1023,7 +1023,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4505,
+            "acceptedAt": 3973,
             "id": 10
           }
         ]
@@ -1072,7 +1072,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2359.7000000000116,
+            "at": 1927.5,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -1085,11 +1085,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2362,
+            "acceptedAt": 1928.8999999999942,
             "id": 1
           },
           {
-            "at": 4454.3000000000175,
+            "at": 3975.100000000006,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -1102,7 +1102,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4455.100000000006,
+            "acceptedAt": 3975.6999999999825,
             "id": 10
           }
         ]
@@ -1151,7 +1151,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2412,
+            "at": 1899.2000000000116,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -1164,11 +1164,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2414.600000000006,
+            "acceptedAt": 1901.1000000000058,
             "id": 1
           },
           {
-            "at": 4505.899999999994,
+            "at": 3946.100000000006,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -1181,7 +1181,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4506.5,
+            "acceptedAt": 3946.600000000006,
             "id": 10
           }
         ]
@@ -1230,7 +1230,7 @@
         "errors": [],
         "attempts": [
           {
-            "at": 2372.399999999994,
+            "at": 1923.7000000000116,
             "eventAt": 1000,
             "reason": null,
             "state": {
@@ -1243,11 +1243,11 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2374.6999999999825,
+            "acceptedAt": 1925.7000000000116,
             "id": 1
           },
           {
-            "at": 4486.899999999994,
+            "at": 3981.399999999994,
             "eventAt": 2924,
             "reason": null,
             "state": {
@@ -1260,7 +1260,7 @@
               "pendingRaw": 0,
               "protectionQueue": 1
             },
-            "acceptedAt": 4487.5,
+            "acceptedAt": 3981.7999999999884,
             "id": 10
           }
         ]
