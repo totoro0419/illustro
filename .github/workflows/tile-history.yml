@@ -2,7 +2,7 @@ name: Verify and publish tiered image history
 on:
   push:
     branches: ['perf/tile-history-2026-10-18']
-    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/tile-history-*.mjs', '.github/workflows/tile-history.yml', 'docs/production-prep/source-lock.json']
+    paths: ['apps/**', 'packages/**', 'prototypes/**', 'scripts/tile-history-*.mjs', 'scripts/stroke-handoff-operations.mjs', '.github/workflows/tile-history.yml', 'docs/production-prep/source-lock.json']
   workflow_dispatch:
 permissions:
   contents: write
@@ -68,6 +68,7 @@ jobs:
       EXPECTED_COMMIT_SHA: ${{ github.sha }}
       RT_PLAYWRIGHT_PATH: /tmp/history-browser/node_modules/playwright
       HANDOFF_OPERATIONS_OUTPUT: /tmp/tile-history-regression/operations/report.json
+      HANDOFF_OPERATIONS_CANVAS: '4000'
       M05_EVIDENCE_DIRECTORY: /tmp/tile-history-regression/recovery
       M05_EXPECT_MILESTONE: M07
       M08_EVIDENCE_DIRECTORY: /tmp/tile-history-regression/canvas
