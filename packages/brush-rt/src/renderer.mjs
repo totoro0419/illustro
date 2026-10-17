@@ -317,7 +317,7 @@ export class GpuRenderer {
  // Do not launch a GPU submission for every coalesced input sample.
  requestWork(){if(!this.strokeHandoff)return this.requestPreview();if(this.disposed||this.inflight||this.previewRequested)return;this.previewRequested=true;const run=()=>{this.previewRequested=false;this.frame(performance.now());};if(this.proxy)this.workTimer=setTimeout(run,0);else queueMicrotask(run);}
  requestPreview(){if(this.strokeHandoff)return this.requestWork();if(this.disposed||this.inflight||this.previewRequested||!this.backend.immediatePreview||!foundationUnion(this.mailbox.value?.preset)||this.mailbox.value.finished)return;this.previewRequested=true;queueMicrotask(()=>{this.previewRequested=false;this.frame(performance.now());});}
- markEnded(id){this.ended.add(id);}
+ markEnded(id){this.ended.add(id);this.releaseInteractiveUntil=performance.now()+120;}
 
  presentView(now){
   if(!this.viewPending||this.backend.presentationHeld)return false;
@@ -337,8 +337,11 @@ export class GpuRenderer {
  // View input has its own bounded presentation lane. Never attach an old
  // stroke's compute/composition batch to the first response to pan/zoom/rotate.
  this.syncOverlayView();
- if(this.viewPending){const shown=this.presentView(now);if(shown||this.disposed||this.inflight||this.guardPreparing||this.cancellingStroke||this.historyPreparing)return shown;}
+ if(this.viewPending)return this.presentView(now);
  if(this.inflight||this.guardPreparing||this.cancellingStroke||this.historyPreparing)return false;
+ // A blocked view submission must not be followed by another formal batch.
+ // Keep the lane free between gesture events as well, until a short quiet gap.
+ if(this.strokeHandoff&&performance.now()<(this.navigationUntil??0)&&this.document.jobs.length&&(!this.snapshot||this.snapshot.finished)&&!this.mailbox.value)return false;
  const latest=this.mailbox.take();if(latest?.resetPreview&&!this.backend.sparsePreview)this.backend.retirePreview(latest.id);if(latest)this.snapshot=latest;
  // Keep the measured batch bound after pointerup too. Empty preview frames
  // must not ramp it to 128 before the first long formal submission.
@@ -349,7 +352,8 @@ export class GpuRenderer {
  this.backend.previewTileBudget=cooperativeGpu?(this.gpuPreviewTileLimit??8):Infinity;
  const firstGpuPreview=cooperativeGpu&&!instant&&!catchup&&latest&&!this.inputStarts.get(latest.id)?.submitted;
  const fallbackLimit=cooperativeGpu&&!catchup&&!this.backend.presentationHeld&&!this.document.jobs[0]?.commit?16:catchup||this.backend.presentationHeld||!this.snapshot||this.snapshot.finished?128:this.handoffJobLimit;
- const jobs=firstGpuPreview?[]:instant?boundedFormalJobs(this.document,active?1000000:2000000,this.instantJobLimit):this.strokeHandoff?boundedFormalJobs(this.document,this.snapshot&&!this.snapshot.finished&&!catchup?1_000_000:2_000_000,fallbackLimit):(this.confirmDelay<=0||now-this.lastConfirmed>=this.confirmDelay)?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[],job=jobs[0]??null;if((!latest||instant)&&!job&&!this.needsFrame&&!(this.backend.dirtyConfirmed?.size&&!catchup))return this.presentView(now);if(this.proxy?.footprints.size&&!this.proxy.guards.length&&(this.strokeFrames.size||this.proxy.fallback)){
+ const releaseLimit=performance.now()<(this.releaseInteractiveUntil??0)?1:Infinity;
+ const jobs=firstGpuPreview?[]:instant?boundedFormalJobs(this.document,active?1000000:2000000,Math.min(this.instantJobLimit,releaseLimit)):this.strokeHandoff?boundedFormalJobs(this.document,this.snapshot&&!this.snapshot.finished&&!catchup?1_000_000:2_000_000,Math.min(fallbackLimit,releaseLimit)):(this.confirmDelay<=0||now-this.lastConfirmed>=this.confirmDelay)?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[],job=jobs[0]??null;if((!latest||instant)&&!job&&!this.needsFrame&&!(this.backend.dirtyConfirmed?.size&&!catchup))return this.presentView(now);if(this.proxy?.footprints.size&&!this.proxy.guards.length&&(this.strokeFrames.size||this.proxy.fallback)){
   this.presentView(now);this.guardPreparing=true;this.proxy.protect().then(()=>{this.guardPreparing=false;this.needsFrame=true;this.requestWork();}).catch(error=>{this.guardPreparing=false;this.errors.push('Overlay transition: '+error.message);this.disposed=true;});return false;
  }this.needsFrame=false;const s=this.snapshot;this.inflight=true;
   try{const submittedAt=performance.now(),submission=++this.submissionNumber,proxyEpoch=this.proxy?.epoch,firstInputs=[];if(this.strokeHandoff)for(const id of new Set([...this.previewStates.keys(),...this.strokeFrames.keys()])){const input=this.inputStarts.get(id);if(input&&!input.submitted){input.submitted=true;firstInputs.push(input);}}let finished=false,presentationReady=true,fallbackRendered=false,cpuSubmitMs=0;this.performance.renders++;const initialDirty=this.backend.dirtyConfirmed?.size??0;
@@ -414,7 +418,7 @@ export class GpuRenderer {
  destroy(){clearTimeout(this.workTimer);this.proxy?.destroy();if(this.backend.sparsePreview)destroySparse(this.backend);this.disposed=true;this.wrapPreviews.clear();this.wrapCaches.clear();this.backend.destroy();}
  syncOverlayView(){if(this.overlayViewPending){const view=this.overlayViewPending;this.overlayViewPending=null;this.proxy?.setView(view);}}
  setViewTransform(values){const previous=this.backend.viewTransform;if(previous&&previous.length===values.length&&values.every((v,i)=>v===previous[i]))return;
-  if(this.viewPending)this.performance.supersededViews++;this.backend.setViewTransform(values);this.overlayViewPending=values.slice();this.viewPending=true;this.viewRequestedAt=performance.now();}
+  if(this.viewPending)this.performance.supersededViews++;this.backend.setViewTransform(values);this.overlayViewPending=values.slice();this.navigationUntil=performance.now()+80;this.viewPending=true;this.viewRequestedAt=performance.now();}
  get info(){return this.backend.info;}
 }
 class WebGlBackend {

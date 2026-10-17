@@ -60,3 +60,11 @@ test('a view change during final publication retries the new epoch instead of le
  assert.equal(r.strokeFrames.has(7),true);assert.equal(r.needsFrame,true,'the new view must schedule a matching content acknowledgement');
  r.frame(33.4);r.finishSubmission();assert.equal(r.strokeFrames.size,0);assert.equal(r.presentedStrokes.has(7),true);
 });
+
+
+test('blocked view presentation never admits more formal work behind it',()=>{
+ const {r,backend,calls}=harness();r.strokeHandoff=true;r.needsFrame=true;r.requestWork=()=>{};
+ let peeks=0;r.document.peekMany=()=>{peeks++;return [];};backend.presentView=()=>false;
+ r.setViewTransform(view(12));for(let i=0;i<20;i++)r.frame(i*16.7);
+ assert.equal(calls.renders,0);assert.equal(peeks,0);assert.equal(r.viewPending,true);
+});
