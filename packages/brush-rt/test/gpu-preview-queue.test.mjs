@@ -45,6 +45,17 @@ test('first fallback GPU preview submits before old formal jobs and queued previ
  r.needsFrame=true;r.frame(performance.now());await Promise.resolve();assert.equal(queuedCalls,1);
 });
 
+test('history spill pressure admits current GPU feedback without allocating new formal snapshots',async()=>{
+ let scheduled=0,submitted,peeks=0;const backend={device:{},canvas:{width:512,height:512},viewportCache:{enabled:true,budget:32*1024*1024},previews:new Map,dirtyConfirmed:new Set,lastSubmission:{presentationSubmitted:false},render:(state,jobs)=>{submitted={state,jobs};return Promise.resolve();}};
+ const r=new GpuRenderer(backend,512,512,{strokeHandoff:true});r.requestWork=()=>{};
+ backend.imageHistory={pressure:true,schedule(){scheduled++;}};
+ r.proxy={ready:false,fallback:true,footprints:new Map,guards:[],canUse:()=>false};
+ const state={id:2,finished:false,preset:{}};r.snapshot=state;r.previewStates.set(2,state);r.mailbox.value=state;r.inputStarts.set(2,{at:performance.now(),submitted:true});r.document.jobs.push({id:1});
+ r.document.peekMany=()=>{peeks++;return [];};
+ assert.equal(r.frame(performance.now()),true,'storage pressure must not stop GPU brush feedback');await Promise.resolve();clearTimeout(r.workTimer);
+ assert.equal(submitted.state,state);assert.deepEqual(submitted.jobs,[]);assert.equal(peeks,0);assert.equal(r.document.jobs.length,1);assert.ok(scheduled>0);
+});
+
 
 test('final taper keeps the displayed lower-layer image until every replacement tile is ready',()=>{
  const old={...preview(7),keys:new Set(['0,0','1,0']),surfaceKey:'lower',resetState:null},b={previews:new Map([[7,old]]),dirtyConfirmed:new Set,previewBytes:0};
