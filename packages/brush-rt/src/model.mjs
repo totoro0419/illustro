@@ -63,7 +63,28 @@ export function forceFadeLengths(f,total){if(!(total>0))return {start:0,end:0};l
 function forceFadeScale(f,d,total){if(!(total>0))return 1;let scale=1;const {start,end}=forceFadeLengths(f,total);if(start>0){const progress=clamp(d/start),shaped=Math.sqrt(progress);scale=Math.min(scale,f.minimum+(1-f.minimum)*curve(f.curve,shaped));}if(end>0){const remaining=clamp((total-d)/end),shaped=Math.pow(remaining,.4);scale=Math.min(scale,f.minimum+(1-f.minimum)*curve(f.curve,shaped));}return scale;}
 export function forceFadePreviewCommands(commands,p){if(!forceFadeConfig(p))return null;const base=Math.max(.01,p.__foundation?.preset.size??p.size);return commands.map(source=>{const c=source.slice();c[2]=base;c[18]=base/2;c[23]=base/2;return c;});}
 function finalizeForceFade(commands,p,total){const f=commands.length>1?forceFadeConfig(p):null;if(!f||!(total>.5))return commands.map(c=>c.slice());const base=Math.max(.01,p.__foundation?.preset.size??p.size),out=[];let previous=null;for(const source of commands){const c=source.slice(),desired=Math.max(.01,base*forceFadeScale(f,c[21],total));c[18]=(previous??desired)/2;c[2]=desired;c[23]=desired/2;previous=desired;out.push(c);}return out;}
-function finalizeFoundationRecord(commands,p,totalDistance,totalTime){if(forceFadeConfig(p))return finalizeForceFade(commands,p,totalDistance);return releaseEnvelope(p)?finalizeFoundationCommands(commands,0,p,totalDistance,totalTime):commands.map(c=>{const a=c.slice();a[2]*=taper(p,a[21],totalDistance,true);a[18]*=taper(p,a[22],totalDistance,true);return a;});}
+// Reconstruct only new, explicitly versioned forced solid strokes. Existing
+// records keep the old command-for-sample evaluator through their context.
+// Evaluate the same accepted length law/curve on geometry rather than relying
+// on the device to have delivered samples at the taper's important positions.
+export function adaptiveForceFade(commands,p,total){
+ const f=forceFadeConfig(p);if(!f||commands.length<2||!(total>.5)||commands.some(c=>c[19]!==1))return finalizeForceFade(commands,p,total);
+ const base=Math.max(.01,p.__foundation.preset.size),width=d=>Math.max(.01,base*forceFadeScale(f,d,total)),lengths=forceFadeLengths(f,total),knots=new Set([0,total,lengths.start,total-lengths.end]);
+ for(const [x]of f.curve){if(lengths.start)knots.add(lengths.start*x*x);if(lengths.end)knots.add(total-lengths.end*Math.pow(x,2.5));}
+ const breaks=[...knots].filter(d=>d>=0&&d<=total).sort((a,b)=>a-b),out=[],error=Math.min(.2,base*.002);
+ for(const source of commands){const end=source[21],distance=Math.hypot(source[0]-source[16],source[1]-source[17]),start=end-distance;
+  const append=d=>{if(out.length>=2000000)throw Error('force fade command limit');const c=source.slice(),prev=out.at(-1),at=distance>0?clamp((d-start)/distance):1;
+   c[0]=source[16]+(source[0]-source[16])*at;c[1]=source[17]+(source[1]-source[17])*at;c[2]=width(d);c[13]=out.length;
+   c[16]=prev?.[0]??c[0];c[17]=prev?.[1]??c[1];c[18]=(prev?.[2]??c[2])/2;c[21]=d;c[22]=prev?.[21]??d;c[23]=c[2]/2;out.push(c);
+  };
+  if(!distance){append(end);continue;}
+  const split=(a,b,depth=0)=>{const wa=width(a),wb=width(b);let deviation=0;for(const t of [.25,.5,.75])deviation=Math.max(deviation,Math.abs(width(a+(b-a)*t)-(wa+(wb-wa)*t)));
+   if(deviation>error&&b-a>.125&&depth<12){const mid=(a+b)/2;split(a,mid,depth+1);split(mid,b,depth+1);}else append(b);
+  };
+  const cuts=[start,...breaks.filter(d=>d>start&&d<end),end];for(let i=1;i<cuts.length;i++)split(cuts[i-1],cuts[i]);
+ }return out;
+}
+function finalizeFoundationRecord(commands,p,totalDistance,totalTime,context={}){if(forceFadeConfig(p))return context.forceFadeGeometry==='adaptive-v1'?adaptiveForceFade(commands,p,totalDistance):finalizeForceFade(commands,p,totalDistance);return releaseEnvelope(p)?finalizeFoundationCommands(commands,0,p,totalDistance,totalTime):commands.map(c=>{const a=c.slice();a[2]*=taper(p,a[21],totalDistance,true);a[18]*=taper(p,a[22],totalDistance,true);return a;});}
 function releaseEnvelope(p){const e=p.__foundation?.preset.taper.size.end;return e?.mode==='release'?e:null;}
 function releasePosition(e,c,totalDistance,totalTime){return e.unit==='time'?Math.max(0,totalTime-c[20]):Math.max(0,totalDistance-c[21]);}
 function releaseScale(e,c,totalDistance,totalTime){const v=e.length?releasePosition(e,c,totalDistance,totalTime)/e.length:1;return e.minimum+(1-e.minimum)*curve(e.curve,clamp(v));}
@@ -87,7 +108,7 @@ export class CanonicalBuilder {
  ready(finish=false){let n=this.published,limit=this.commands.length-(this.sweep&&!finish?1:0),endTime=this.commands.at(-1)?.[20]??0,e=this.foundation?releaseEnvelope(this.p):null;while(n<limit&&(finish||(e?releaseReady(e,this.commands[n],this.distance,endTime):this.commands[n][21]<=this.distance-this.p.taperEnd)))n++;if(this.foundation&&finish&&e){const out=finalizeFoundationCommands(this.commands,this.published,this.p,this.distance,endTime);this.published=n;return out;}const out=[];for(;this.published<n;this.published++){const c=this.commands[this.published].slice();c[2]*=taper(this.p,c[21],this.distance,finish);c[18]*=taper(this.p,c[22],this.distance,finish);out.push(c);}return out;}
  release(s){normalize(s);if(s.predicted||s.origin==='predicted')throw Error('prediction cannot be canonical');if(s.t<(this.raw.at(-1)?.t??0))throw Error('out-of-order release');this.releaseInput={...s,phase:'release'};}
  finish(){if(this.finished)throw Error('closed');this.finished=true;return this.ready(true);}
- record(){if(!this.finished)throw Error('not finalized');const endTime=this.commands.at(-1)?.[20]??0,finalCommands=this.foundation?finalizeFoundationRecord(this.commands,this.p,this.distance,endTime).map(c=>Array.from(c)):this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;});return {...(this.foundation?{foundation:this.foundation,context:this.context,...(this.releaseInput?{releaseInput:this.releaseInput}:{})}:{}),version:this.foundation?3:2,engine:this.replayEngine??(this.foundation?FOUNDATION:VERSION),smoothing:'local-regression-adaptive-48ms-bounded-2',fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:finalCommands};}
+ record(){if(!this.finished)throw Error('not finalized');const endTime=this.commands.at(-1)?.[20]??0,finalCommands=this.foundation?finalizeFoundationRecord(this.commands,this.p,this.distance,endTime,this.context).map(c=>Array.from(c)):this.commands.map(c=>{const a=Array.from(c);a[2]*=taper(this.p,a[21],this.distance,true);a[18]*=taper(this.p,a[22],this.distance,true);return a;});return {...(this.foundation?{foundation:this.foundation,context:this.context,...(this.releaseInput?{releaseInput:this.releaseInput}:{})}:{}),version:this.foundation?3:2,engine:this.replayEngine??(this.foundation?FOUNDATION:VERSION),smoothing:'local-regression-adaptive-48ms-bounded-2',fast:this.fast,random:'philox4x32-10',seed:this.seed,preset:this.p,raw:this.raw,geometry:this.geometry,commands:finalCommands};}
 }
 export function commandBounds(c){const solid=c[19]>0,r=Math.max(c[2]/2,c[18])*(solid?1:Math.SQRT2)+2,ax=solid?c[16]:c[0],ay=solid?c[17]:c[1];return {x0:Math.min(c[0],ax)-r,y0:Math.min(c[1],ay)-r,x1:Math.max(c[0],ax)+r,y1:Math.max(c[1],ay)+r};}
 export function keysFor(c,width,height){const b=commandBounds(c),out=[];for(let y=Math.max(0,Math.floor(b.y0/TILE));y<=Math.min(Math.ceil(height/TILE)-1,Math.floor(b.y1/TILE));y++)for(let x=Math.max(0,Math.floor(b.x0/TILE));x<=Math.min(Math.ceil(width/TILE)-1,Math.floor(b.x1/TILE));x++)out.push(x+','+y);return out;}

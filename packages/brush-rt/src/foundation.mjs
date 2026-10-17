@@ -57,7 +57,8 @@ export class RendererRegistry {
 export const rendererRegistry=new RendererRegistry;
 export function compilePreset(input,context={}){
  const p=copy(validateFoundation(input));
- keys(context,['commonStabilization','commonForceFade','deviceCurve','knownLength','knownDuration'],'stroke context');
+ keys(context,['commonStabilization','commonForceFade','deviceCurve','knownLength','knownDuration','forceFadeGeometry'],'stroke context');
+ if(context.forceFadeGeometry!==undefined&&!['legacy','adaptive-v1'].includes(context.forceFadeGeometry))throw Error('unsupported force fade geometry');
  if(context.deviceCurve){checkCurve(context.deviceCurve);p.pressure.deviceCurve=copy(context.deviceCurve);}
  if(p.stabilization.scope==='common'&&context.commonStabilization){keys(context.commonStabilization,['constant','fast','speedMode','post'],'common stabilization');p.stabilization={...p.stabilization,...context.commonStabilization};}
  if(p.forceFade?.scope==='common'&&context.commonForceFade){keys(context.commonForceFade,['enabled','start','end','minimum','curve'],'common force fade');p.forceFade={...p.forceFade,...copy(context.commonForceFade)};}

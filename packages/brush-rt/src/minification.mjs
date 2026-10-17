@@ -38,6 +38,23 @@ const copyWgsl=`@group(0) @binding(0) var source:texture_2d<f32>;
 @vertex fn vertex(@builtin(vertex_index) i:u32)->@builtin(position) vec4f{var p=array<vec2f,3>(vec2f(-1.,-1.),vec2f(3.,-1.),vec2f(-1.,3.));return vec4f(p[i],0.,1.);}
 @fragment fn fragment(@builtin(position) pos:vec4f)->@location(0) vec4f{return textureLoad(source,vec2i(pos.xy),0);}`;
 
+// Outside this 128 CSS-pixel band the existing exponential shadow is below
+// 0.002 of one RGBA8 step. Clearing to the same background is byte-identical.
+// This bounds presentation work, never clips artwork or lowers its resolution.
+export function navigationRectangle(view,width,height){
+ if(view[12]>.5)return [0,0,width,height];
+ const [, ,cw,ch,dw,dh,zoom,angle,panX,panY,flipX,flipY]=view;
+ if(!(cw>0&&ch>0&&zoom>0))return [0,0,width,height];
+ const margin=128/zoom,c=Math.cos(angle),s=Math.sin(angle);
+ let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+ for(const x of [-margin,dw+margin])for(const y of [-margin,dh+margin]){
+  const dx=(x-dw*.5)*flipX,dy=(y-dh*.5)*flipY;
+  const px=(cw*.5+panX+zoom*(dx*c-dy*s))*width/cw,py=(ch*.5+panY+zoom*(dx*s+dy*c))*height/ch;
+  x0=Math.min(x0,px);y0=Math.min(y0,py);x1=Math.max(x1,px);y1=Math.max(y1,py);
+ }
+ return [Math.max(0,Math.min(width,Math.floor(x0)-2)),Math.max(0,Math.min(height,Math.floor(y0)-2)),Math.max(0,Math.min(width,Math.ceil(x1)+2)),Math.max(0,Math.min(height,Math.ceil(y1)+2))];
+}
+
 // One viewport-sized derived image, never artwork or history. Reuse unchanged
 // screen pixels while preserving the original presentation shader and sampler.
 export class ViewportCache{
@@ -47,23 +64,29 @@ export class ViewportCache{
  release(){if(this.image){this.backend.gl?this.backend.release(this.image):this.image.destroy();this.image=null;}this.group=null;this.bytes=0;this.clear();}
  plan(view,encoder,direct,refresh=false){
   const b=this.backend,p=b.presentationPyramid,w=b.canvas.width,h=b.canvas.height,generation=p.generation,keys=[...this.dirty],full=this.full,image=p.source(view,encoder),eligible=this.enabled&&b.sparsePreview&&!direct&&view[12]<.5&&view[14]<.5&&w>0&&h>0&&w*h*4<=this.budget;
-  if(!eligible){this.valid=false;if(w*h*4>this.budget)this.release();this.last={screenPixels:w*h,screenRects:1,screenCacheHit:false,screenCopiedPixels:0};this.shadedPixels+=w*h;return {image,rects:[[0,0,w,h]],cached:false};}
+  if(!eligible){this.valid=false;if(w*h*4>this.budget)this.release();
+   const bounded=direct&&b.navigationPresentation&&b.navigationCull!==false,rect=bounded?navigationRectangle(view,w,h):[0,0,w,h],rects=rect[2]>rect[0]&&rect[3]>rect[1]?[rect]:[],pixels=Math.max(0,rect[2]-rect[0])*Math.max(0,rect[3]-rect[1]);
+   this.last={screenPixels:pixels,screenRects:rects.length,screenCacheHit:false,screenCopiedPixels:0,navigationCulledPixels:w*h-pixels};this.shadedPixels+=pixels;return {image,rects,cached:false,clearBackground:bounded};}
   if(!this.image||this.width!==w||this.height!==h){this.release();this.image=b.gl?b.surface(w,h,b.gl.RGBA8,b.gl.UNSIGNED_BYTE):b.device.createTexture({size:[w,h],format:b.format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_SRC});this.width=w;this.height=h;this.bytes=w*h*4;}
   const same=this.view?.length===view.length&&view.every((v,i)=>v===this.view[i]),fresh=!this.valid||!same||full||(this.generation!==generation&&this.generation!==generation-1)||(this.generation!==generation&&!keys.length);
   const rects=fresh?[[0,0,w,h]]:this.generation===generation?[]:presentationRectangles(view,w,h,keys,image.scale);
   this.view=Float32Array.from(view);this.generation=generation;this.valid=true;this.full=false;this.dirty.clear();const pixels=rects.reduce((n,[x,y,x1,y1])=>n+(x1-x)*(y1-y),0),copy=b.gl?pixels:rects.length||refresh?w*h:0;this.last={screenPixels:pixels,screenRects:rects.length,screenCacheHit:!rects.length,screenCopiedPixels:copy};this.shadedPixels+=pixels;this.copiedPixels+=copy;if(!rects.length)this.hits++;return {image,rects,cached:true};
  }
  presentGl(view,direct=false){
-  const b=this.backend,g=b.gl,{image,rects,cached}=this.plan(view,null,direct);if(!rects.length)return false;const w=b.canvas.width,h=b.canvas.height,values=view.slice();values[15]=image.scale;
-  g.bindFramebuffer(g.FRAMEBUFFER,cached?this.image.f:null);g.viewport(0,0,w,h);g.disable(g.BLEND);g.disable(g.DEPTH_TEST);g.bindVertexArray(b.vao);g.useProgram(b.present);g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,image.source.t);g.uniform1i(b.uniformLocation(b.present,'source'),0);for(const [i,name]of ['viewScreen','viewDocument','viewMotion','viewOptions'].entries())g.uniform4fv(b.uniformLocation(b.present,name),values.subarray(i*4,i*4+4));
-  if(cached)g.enable(g.SCISSOR_TEST);for(const [x,y,x1,y1]of rects){if(cached)g.scissor(x,h-y1,x1-x,y1-y);g.drawArrays(g.TRIANGLES,0,3);}g.disable(g.SCISSOR_TEST);
+  const b=this.backend,g=b.gl,{image,rects,cached,clearBackground}=this.plan(view,null,direct);if(!rects.length&&!clearBackground)return false;const w=b.canvas.width,h=b.canvas.height,values=view.slice();values[15]=image.scale;
+  const filtered=direct&&b.navigationPresentation&&b.navigationLinear!==false,program=filtered?b.presentLinear:b.present;
+  g.bindFramebuffer(g.FRAMEBUFFER,cached?this.image.f:null);g.viewport(0,0,w,h);g.disable(g.BLEND);g.disable(g.DEPTH_TEST);g.disable(g.SCISSOR_TEST);
+  if(clearBackground){g.clearColor(.945,.955,.977,1);g.clear(g.COLOR_BUFFER_BIT);}
+  g.bindVertexArray(b.vao);g.useProgram(program);g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,image.source.t);g.bindSampler(0,filtered?(view[12]>.5||view[14]>.5?b.presentRepeat:b.presentClamp):null);g.uniform1i(b.uniformLocation(program,'source'),0);for(const [i,name]of ['viewScreen','viewDocument','viewMotion','viewOptions'].entries())g.uniform4fv(b.uniformLocation(program,name),values.subarray(i*4,i*4+4));
+  if(cached||clearBackground)g.enable(g.SCISSOR_TEST);for(const [x,y,x1,y1]of rects){if(cached||clearBackground)g.scissor(x,h-y1,x1-x,y1-y);g.drawArrays(g.TRIANGLES,0,3);}g.disable(g.SCISSOR_TEST);g.bindSampler(0,null);this.last.navigationLinear=!!filtered;
   if(cached){g.bindFramebuffer(g.READ_FRAMEBUFFER,this.image.f);g.bindFramebuffer(g.DRAW_FRAMEBUFFER,null);for(const [x,y,x1,y1]of rects)g.blitFramebuffer(x,h-y1,x1,h-y,x,h-y1,x1,h-y,g.COLOR_BUFFER_BIT,g.NEAREST);}g.flush();return true;
  }
  encodeGpu(e,view,direct=false,refresh=false){
-  const b=this.backend,d=b.device,{image,rects,cached}=this.plan(view,e,direct,refresh);
+  const b=this.backend,d=b.device,{image,rects,cached,clearBackground}=this.plan(view,e,direct,refresh);
   if(cached&&!rects.length&&!refresh)return false;
-  if(rects.length){const values=view.slice();values[15]=image.scale;d.queue.writeBuffer(b.presentUniform,0,values);
-  const pass=e.beginRenderPass({colorAttachments:[{view:(cached?this.image:b.context.getCurrentTexture()).createView(),clearValue:{r:1,g:1,b:1,a:1},loadOp:cached?'load':'clear',storeOp:'store'}]});pass.setPipeline(b.present);pass.setBindGroup(0,d.createBindGroup({layout:b.presentLayout,entries:[{binding:0,resource:image.source.createView()},{binding:1,resource:{buffer:b.presentUniform}}]}));for(const [x,y,x1,y1]of rects){pass.setScissorRect(x,y,x1-x,y1-y);pass.draw(3);}pass.end();
+  const filtered=direct&&b.navigationPresentation&&b.navigationLinear!==false;this.last.navigationLinear=!!filtered;
+  if(rects.length||clearBackground){const values=view.slice();values[15]=image.scale;d.queue.writeBuffer(b.presentUniform,0,values);
+  const pass=e.beginRenderPass({colorAttachments:[{view:(cached?this.image:b.context.getCurrentTexture()).createView(),clearValue:clearBackground?{r:.945,g:.955,b:.977,a:1}:{r:1,g:1,b:1,a:1},loadOp:cached?'load':'clear',storeOp:'store'}]});pass.setPipeline(filtered?b.presentLinear:b.present);pass.setBindGroup(0,d.createBindGroup({layout:b.presentLayout,entries:[{binding:0,resource:image.source.createView()},{binding:1,resource:{buffer:b.presentUniform}},{binding:2,resource:view[12]>.5||view[14]>.5?b.presentRepeat:b.presentClamp}]}));for(const [x,y,x1,y1]of rects){pass.setScissorRect(x,y,x1-x,y1-y);pass.draw(3);}pass.end();
   }
   // Explicit canvas refreshes copy the retained image even without edits. An
   // unchanged automatic formal batch returns above before acquiring a current

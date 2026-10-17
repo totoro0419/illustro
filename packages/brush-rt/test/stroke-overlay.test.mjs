@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {StrokeOverlay,previewPlan,polygonArea,clipPolygon,directOverlaySupported,toScreen,toDocument,thinCoverage} from '../dist/rt/stroke-overlay.mjs';
+import {StrokeSink,StrokeOverlay,previewPlan,polygonArea,clipPolygon,directOverlaySupported,toScreen,toDocument,thinCoverage,viewAffine} from '../dist/rt/stroke-overlay.mjs';
 import {CanonicalBuilder,referenceBrushes} from '../dist/rt/index.mjs';
 import {forceFadePreviewCommands} from '../dist/rt/model.mjs';
 globalThis.ImageData??=class{constructor(w,h){this.width=w;this.height=h;this.data=new Uint8ClampedArray(w*h*4);}};
@@ -33,3 +33,35 @@ function faded(){const p=structuredClone(referenceBrushes[0]);p.size=48;p.forceF
 test('a newer stroke does not resize or redraw an older long stroke bitmap',()=>{const {p,layers}=isolated(),r=record(64);p.enqueue({...live(r),finished:false});p.safeFlush();const old=layers.get(1),count=old.frames.length;p.enqueue(live(record(4),10));p.safeFlush();assert.equal(layers.get(1),old);assert.equal(old.frames.length,count);assert.ok(layers.get(10).frames.length);p.presented(1);assert.equal(layers.has(1),false);assert.ok(layers.has(10));p.destroy();});
 test('final taper builds cooperatively while the previous image and newer input stay available',async()=>{const {p,layers}=isolated(),r=faded(),raw={...r,commands:forceFadePreviewCommands(r.commands,r.preset)},before=JSON.stringify(r);p.enqueue({...live(raw),finished:false});p.safeFlush();const old=p.states.get(1),image=layers.get(1),frames=image.frames.length;p.enqueue({...live(r),resetPreview:true});p.safeFlush();assert.equal(p.states.get(1),old);assert.equal(p.finalizations.size,1);p.enqueue({...live(record(4),10),finished:false});p.safeFlush();assert.equal(image.frames.length,frames);assert.ok(layers.get(10).frames.length);const at=performance.now();while(p.finalizations.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,2));}assert.equal(p.states.get(1).last.stableSource,r.commands);assert.ok(p.states.has(10));assert.ok(p.metrics.backgroundSlices>0);assert.equal(JSON.stringify(r),before);assert.equal(p.error,undefined);p.destroy();});
 test('formal presentation cancels obsolete final preview work without removing the next line',async()=>{const {p,layers}=isolated(),r=faded();p.enqueue({...live({...r,commands:forceFadePreviewCommands(r.commands,r.preset)}),finished:false});p.safeFlush();p.enqueue({...live(r),resetPreview:true});p.safeFlush();p.enqueue(live(record(4),10));p.safeFlush();p.presented(1);await new Promise(ok=>setTimeout(ok,15));assert.equal(p.finalizations.size,0);assert.ok(p.states.has(10));assert.ok(layers.has(10));assert.equal(p.error,undefined);p.destroy();});
+
+
+test('pending stroke navigation reuses its image while a new line gets the newest independent grid',async()=>{
+ const {p,layers,sink}=isolated(),r=record(64);sink.reproject=()=>{};p.enqueue(live(r));p.safeFlush();
+ const old=p.states.get(1),originalView=old.view.slice(),commands=p.metrics.commands,pixels=p.metrics.rasterPixels;let transforms=0;
+ layers.get(1).reproject=()=>transforms++;const next=view(4000,.4);next[8]=20;
+ for(let i=0;i<30;i++){next[8]=i;p.setView(next);p.safeFlush();}
+ assert.equal(p.states.get(1),old);assert.equal(p.metrics.commands,commands);assert.equal(p.metrics.rasterPixels,pixels);assert.equal(transforms,30);
+ const fresh=record(4);p.enqueue({...live(fresh,10),finished:false});p.safeFlush();assert.deepEqual(p.states.get(10).view,p.view);assert.deepEqual(old.view,originalView);
+ const at=performance.now();while(p.viewRefineTimer||p.finalizations.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,5));}
+ assert.deepEqual(p.states.get(1).view,p.view);assert.ok(p.states.has(10));assert.equal(p.error,undefined);p.destroy();
+});
+test('affine stroke reprojection matches direct document mapping under pan, zoom, rotation and flips',()=>{
+ const from=view(4000,.3),to=view(4000,-.8);to[6]*=1.6;to[8]=31;to[9]=-40;to[10]=-1;
+ const [a,b,c,d,e,f]=viewAffine(from,to);
+ for(const point of [[0,0],[2000,1600],[3900,3100]]){const p=toScreen(from,...point),q=toScreen(to,...point);assert.ok(Math.hypot(a*p.x+c*p.y+e-q.x,b*p.x+d*p.y+f-q.y)<1e-8);}
+});
+
+
+test('a held gesture defers even background refinement until release',async()=>{
+ const {p,layers,sink}=isolated(),r=record(64);sink.reproject=()=>{};p.enqueue(live(r));p.safeFlush();layers.get(1).reproject=()=>{};
+ const before=p.metrics.rasterPixels;p.setNavigationActive(true);p.setView(view(4000,.2));await new Promise(ok=>setTimeout(ok,100));assert.equal(p.metrics.rasterPixels,before);assert.equal(p.finalizations.size,0);
+ p.setNavigationActive(false);const at=performance.now();while(p.viewRefineTimer||p.finalizations.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,5));}assert.ok(p.metrics.rasterPixels>before);p.destroy();
+});
+
+
+test('a reused pending-stroke allocation updates its document clip after view refinement',()=>{
+ const element={style:{}},sink={rect:[0,0,128,128],scale:1,element};
+ const plan={scale:1,screenWidth:400,screenHeight:600,polygon:[{x:12,y:14},{x:110,y:14},{x:90,y:100}]};
+ assert.equal(StrokeSink.prototype.configure.call(sink,plan,[20,20,80,80]),false);
+ assert.equal(element.style.clipPath,'polygon(12px 14px,110px 14px,90px 100px)');assert.deepEqual(sink.rect,[0,0,128,128]);
+});

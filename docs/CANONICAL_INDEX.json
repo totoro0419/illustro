@@ -1963,6 +1963,10 @@
     {
       "path": "docs/research/STROKE_HANDOFF_LATENCY_2026-10-17.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/CANVAS_FADE_LAYER_2026-10-17.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }
