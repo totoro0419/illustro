@@ -9,7 +9,7 @@ const output=process.env.FORMAL_QUALITY_OUTPUT??'/tmp/instant-quality/formal/rep
 const server=http.createServer(async(req,res)=>{try{const [,mode,...parts]=new URL(req.url,'http://localhost').pathname.split('/'),root=roots[mode];if(!root)throw Error('root');if(!parts.join('')){res.setHeader('Content-Type','text/html');return res.end('<!doctype html><canvas width="390" height="844"></canvas>');}const file=path.resolve(root,parts.join('/'));if(!file.startsWith(root+path.sep))throw Error('path');res.setHeader('Content-Type','text/javascript');res.end(await fs.readFile(file));}catch{res.writeHead(404).end();}});
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const browser=await chromium.launch({headless:true,...(process.env.HANDOFF_CHROMIUM?{executablePath:process.env.HANDOFF_CHROMIUM}:{}),args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
-const report={sourceCommit:process.env.EXPECTED_COMMIT_SHA??'',baselineCommit:'d9f52391bb2eeed4750e571262c8a089171d011e',scope:'Exact same-backend immutable baseline comparison; seven brushes, forced fade, three layers, overlap, hot history and full replay. Software GPU, not physical Android.',cases:[],errors:[]};
+const report={sourceCommit:process.env.EXPECTED_COMMIT_SHA??'',baselineCommit:process.env.OVERLAY_BASELINE_SHA??'d9f52391bb2eeed4750e571262c8a089171d011e',scope:'Exact same-backend immutable baseline comparison; seven brushes, forced fade, three layers, overlap, hot history and full replay. Software GPU, not physical Android.',cases:[],errors:[]};
 try{
  for(const backend of ['webgl2','webgpu']){
   const builds={};

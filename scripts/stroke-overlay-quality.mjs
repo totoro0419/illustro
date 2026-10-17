@@ -4,7 +4,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const {chromium}=createRequire(import.meta.url)(process.env.RT_PLAYWRIGHT_PATH??'playwright');
-const baseline='d9f52391bb2eeed4750e571262c8a089171d011e',roots={before:path.resolve(process.env.OVERLAY_BEFORE_ROOT??'/tmp/overlay-before/packages/brush-rt/dist'),after:path.resolve('packages/brush-rt/dist')},out=process.env.OVERLAY_QUALITY_OUTPUT??'/tmp/overlay-quality/report.json';
+const baseline=process.env.OVERLAY_BASELINE_SHA??'d9f52391bb2eeed4750e571262c8a089171d011e',roots={before:path.resolve(process.env.OVERLAY_BEFORE_ROOT??'/tmp/overlay-before/packages/brush-rt/dist'),after:path.resolve('packages/brush-rt/dist')},out=process.env.OVERLAY_QUALITY_OUTPUT??'/tmp/overlay-quality/report.json';
 const server=http.createServer(async(req,res)=>{try{const [,mode,...parts]=new URL(req.url,'http://localhost').pathname.split('/'),root=roots[mode];if(!root)throw Error('root');if(!parts.join(''))return res.setHeader('Content-Type','text/html').end('<!doctype html><style>body{margin:0}#surface{position:relative}#source{display:block}</style><div id="surface"><canvas id="source"></canvas></div>');const file=path.resolve(root,parts.join('/'));if(!file.startsWith(root+path.sep))throw Error('path');res.setHeader('Content-Type','text/javascript');res.end(await fs.readFile(file));}catch{res.writeHead(404).end();}});
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});

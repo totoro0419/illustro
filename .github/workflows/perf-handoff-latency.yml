@@ -43,8 +43,24 @@ jobs:
           LATENCY_VIEWS: fit,100
           LATENCY_FADE: off,on
           LATENCY_SCENARIOS: short-next,long-next
-          LATENCY_MODES: A
+          LATENCY_MODES: A,C
         run: node scripts/handoff-latency-benchmark.mjs
+      - name: Strict pixels and fit-view quality preserved from PR31
+        if: matrix.brush == 'thin'
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/latency-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          FORMAL_BEFORE_ROOT: /tmp/latency-before/packages/brush-rt/dist
+          FORMAL_QUALITY_OUTPUT: /tmp/handoff-latency/formal/report.json
+          OVERLAY_BEFORE_ROOT: /tmp/latency-before/packages/brush-rt/dist
+          OVERLAY_BASELINE_SHA: 1828947625dea1a16ec7532fd5275c4e0ccaec53
+          OVERLAY_QUALITY_OUTPUT: /tmp/handoff-latency/quality/report.json
+          OVERLAY_BACKENDS: ${{ matrix.backend }}
+          OVERLAY_MODES: A,C
+          OVERLAY_BRUSHES: thin,broad,pencil,erase,lower,fade,fine
+        run: |
+          node scripts/stroke-overlay-formal.mjs
+          node scripts/stroke-overlay-quality.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: 'handoff-latency-${{ matrix.backend }}-${{ matrix.brush }}', path: /tmp/handoff-latency/}
