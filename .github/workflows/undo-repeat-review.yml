@@ -28,7 +28,7 @@ jobs:
           npm run brush:build > /tmp/undo-brush-build.log
           npm run prep:check
           npx vitest run apps/editor/src/historyNavigation.test.ts apps/editor/src/historyController.test.ts
-          node --test packages/brush-rt/test/history-navigation.test.mjs packages/brush-rt/test/presentation.test.mjs
+          node --test packages/brush-rt/test/history-navigation.test.mjs packages/brush-rt/test/presentation.test.mjs packages/brush-rt/test/stroke-overlay.test.mjs
           npm --workspace @illustro/editor exec -- tsc --noEmit
           npm --workspace @illustro/editor exec -- vite build --base=./
       - name: Install verification browser
