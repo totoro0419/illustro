@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "18346db47cacbbd1ae26bd9b9e8b494b0fc4d5cb",
+  "sourceCommit": "24993dff35835ec4bd6da12763b0fa328e20b5ca",
   "scope": "Focused history correctness and operation counts in Chromium/SwiftShader. No hardware latency or Android performance measurement.",
   "cases": [
     {
