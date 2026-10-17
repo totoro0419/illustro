@@ -1,0 +1,33 @@
+{
+  "sourceCommit": "9cee6661075ba13c5e71226d9900b5742ea7e1b4",
+  "scope": "Focused history correctness and operation counts in Chromium/SwiftShader. No hardware latency or Android performance measurement.",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "exactPixels": true,
+      "exactRevisionOrder": true,
+      "trustedKeyboardCommands": 34,
+      "queuedCommands": 92,
+      "queuedProjectionBatches": 1,
+      "privateRebuildFrames": 2,
+      "privateCompositedTiles": 0,
+      "finalCompositePasses": 1,
+      "cacheBudgetBytes": 33554432,
+      "followingStroke": true
+    },
+    {
+      "backend": "webgpu",
+      "exactPixels": true,
+      "exactRevisionOrder": true,
+      "trustedKeyboardCommands": 34,
+      "queuedCommands": 92,
+      "queuedProjectionBatches": 1,
+      "privateRebuildFrames": 2,
+      "privateCompositedTiles": 0,
+      "finalCompositePasses": 1,
+      "cacheBudgetBytes": 33554432,
+      "followingStroke": true
+    }
+  ],
+  "errors": []
+}

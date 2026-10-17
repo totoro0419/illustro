@@ -1,0 +1,9 @@
+{
+  "sourceCommit": "9cee6661075ba13c5e71226d9900b5742ea7e1b4",
+  "checks": "Related tests, build, both GPU history repeat/order/exact pixels passed",
+  "unverified": [
+    "Physical Android performance",
+    "Hardware latency",
+    "User acceptance"
+  ]
+}
