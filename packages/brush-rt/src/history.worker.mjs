@@ -21,7 +21,7 @@ async function writeBlock(key,data){
 }
 async function readBlock(key){if(directory)return new Uint8Array(await(await(await directory.getFileHandle(key)).getFile()).arrayBuffer());if(db){const {store,done}=transaction(false),data=await request(store.get(session+'/'+key));await done;if(!data)throw Error('History block missing');return data;}throw Error('History storage unavailable');}
 async function removeBlock(key){try{if(directory)await directory.removeEntry(key);else if(db){const {store,done}=transaction(true);store.delete(session+'/'+key);await done;}}catch{storageErrors++;}}
-async function erase(key,b){if(b.data)memoryBytes-=b.data.byteLength;if(b.disk){diskBytes-=b.size;await removeBlock(key);}for(const id of b.ids)aliases.delete(id);blocks.delete(key);}
+async function erase(key,b){if(blocks.get(key)!==b)return;blocks.delete(key);if(b.data)memoryBytes-=b.data.byteLength;if(b.disk){diskBytes-=b.size;await removeBlock(key);}for(const id of b.ids)aliases.delete(id);}
 async function trim(target=memoryBudget){
  for(const [key,b]of blocks){if(memoryBytes<=target)break;if(!b.data)continue;
   if(!b.disk&&mode!=='memory'&&diskBytes+b.size<=diskBudget){try{await writeBlock(key,b.data);b.disk=true;diskBytes+=b.size;spills++;}catch{storageErrors++;}}

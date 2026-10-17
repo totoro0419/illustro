@@ -444,7 +444,7 @@ export class GpuRenderer {
    const all=[...keys];for(let offset=0;offset<all.length;offset+=8){
     for(const key of all.slice(offset,offset+8))b.dirtyConfirmed.add(key);
     let done=false,error;const pending=Promise.resolve(b.render(null,[],[])).then(()=>{done=true;},e=>{error=e;done=true;});
-    while(!done){await historyYield();b.poll?.();}await pending;if(error)throw error;
+    const waitStarted=performance.now();while(!done){await historyYield();b.poll?.();if(performance.now()-waitStarted>30000)throw Error('History composition GPU timeout');}await pending;if(error)throw error;
     this.performance.renders++;this.performance.compositedTiles+=b.lastSubmission?.compositedTiles??0;this.performance.compositedLayerPasses+=b.lastSubmission?.compositedLayerPasses??0;
     await historyYield();
    }

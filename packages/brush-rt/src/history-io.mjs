@@ -1,7 +1,9 @@
 import {TILE} from '@rt/model';
 
 export const HISTORY_BYTES=TILE*TILE*4;
-export const historyYield=()=>globalThis.scheduler?.yield?globalThis.scheduler.yield():new Promise(resolve=>setTimeout(resolve,0));
+// A normal task also admits native GPU completion messages. Repeated boosted
+// scheduler.yield continuations can starve those messages while polling a fence.
+export const historyYield=()=>new Promise(resolve=>setTimeout(resolve,0));
 
 /** Read immutable snapshots, not mutable document tiles. At most 512 KiB per
  * transfer. Fence polling/mapAsync yields; readPixels never waits on the CPU. */

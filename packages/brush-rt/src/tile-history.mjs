@@ -46,6 +46,7 @@ export class TileHistory {
     const pixels=await readHistoryImages(this.backend,pending.map(v=>v.gpu));
     for(let i=0;i<pending.length;i++){if(this.busy)break;const v=pending[i];try{const result=await this.archive.put(v.id,pixels[i]);v.archived=result.available;v.archiveFailed=!result.available;this.metrics.spilled++;}catch{v.archiveFailed=true;this.metrics.storageErrors++;}}
     if(epoch!==this.epoch)return;
+   }catch(error){for(const v of victims)v.archiveFailed=true;this.metrics.storageErrors++;
    }finally{this.readbackBytes=0;for(const v of victims){v.pins--;v.evict=!!(v.archived||v.archiveFailed||!v.refs);this.evict(v);if(!v.refs&&v.archived)this.archive.drop([v.id]);}}
    await historyYield();
   }

@@ -29,7 +29,7 @@ try{for(const backend of backends)for(const size of sizes){
    window.__hist={longTasks:[],beats:[],frames:[],draws:[]};const original=r.onPresentation;r.onPresentation=sample=>{window.__hist.frames.push({at:performance.now(),kind:sample.kind,held:b.presentationHeld});original?.(sample);};
    new PerformanceObserver(list=>{window.__hist.longTasks.push(...list.getEntries().map(e=>({at:e.startTime,ms:e.duration})));}).observe({type:'longtask',buffered:false});
    setInterval(()=>window.__hist.beats.push(performance.now()),4);
-   window.__idle=async()=>{const at=performance.now();for(;;){const m=port.read();if(!m.historyNavigation.pending&&!m.handoff.pendingLogical&&!m.handoff.pendingGpu&&!m.frameState.jobs&&!m.frameState.inflight&&!m.frameState.needsFrame)break;if(m.frameState.errors.length||performance.now()-at>180000)throw Error('idle timeout '+JSON.stringify(m.frameState));await new Promise(ok=>setTimeout(ok,5));}};
+   window.__idle=async()=>{const at=performance.now();for(;;){const m=port.read();if(!m.historyNavigation.pending&&!m.handoff.pendingLogical&&!m.handoff.pendingGpu&&!m.frameState.jobs&&!m.frameState.inflight&&!m.frameState.needsFrame)break;if(m.frameState.errors.length||performance.now()-at>60000)throw Error('idle timeout '+JSON.stringify({frame:m.frameState,history:m.tileHistory,handoff:m.handoff}));await new Promise(ok=>setTimeout(ok,5));}};
    window.__hash=async()=>{
     await window.__idle();const result={};
     for(const t of b.tiles.values()){

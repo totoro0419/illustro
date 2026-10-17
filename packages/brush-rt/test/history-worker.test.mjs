@@ -31,3 +31,7 @@ test('storage denial keeps lossless images in bounded memory and allows safe evi
 test('corrupt disk blocks never return pixels and are reclaimed',async()=>{
  const {send,files}=worker();await send('init');await send('put',{id:1,pixels:new Uint8Array(65536).fill(10)});await send('flush');for(const [key]of files)files.set(key,new Uint8Array([1,2,3]));const read=await send('get',{id:1});assert.equal(read.missing,true);assert.ok(read.metrics.storageErrors>0);assert.equal(files.size,0);
 });
+test('parallel reads of one corrupt shared block free its capacity exactly once',async()=>{
+ const {send,files}=worker();await send('init');const pixels=new Uint8Array(65536).fill(11);await send('put',{id:1,pixels});await send('put',{id:2,pixels});await send('flush');for(const [key]of files)files.set(key,new Uint8Array([1,2,3]));
+ const read=await send('get-many',{ids:[1,2]});assert.ok(read.tiles.every(t=>t.missing));assert.equal(read.metrics.diskBytes,0);assert.equal(read.metrics.memoryBytes,0);assert.equal(files.size,0);
+});
