@@ -42,7 +42,7 @@ export class RealtimeSession {
 
  // The canonical worker owns the complete final record. Do not regenerate and
  // copy that same long Force Fade record on the pointerup task as well.
- finishPreview(id,record){if(!this.renderer.strokeHandoff||!record.preset.__foundation?.preset.forceFade?.enabled)return;const old=this.renderer.previewStates.get(id);if(!old)return;const state={...old,stableSource:record.commands,stableEnd:record.commands.length,commands:[],finished:true,resetPreview:true};this.renderer.previewStates.set(id,state);if(this.renderer.proxy?.enqueue(state))this.renderer.backend.overlayHoldIds.add(id);this.renderer.needsFrame=true;this.renderer.requestWork();}
+ finishPreview(id,record){if(this.renderer.hiddenStrokeIds?.has(id))return;if(!this.renderer.strokeHandoff||!record.preset.__foundation?.preset.forceFade?.enabled)return;const old=this.renderer.previewStates.get(id);if(!old)return;const state={...old,stableSource:record.commands,stableEnd:record.commands.length,commands:[],finished:true,resetPreview:true};this.renderer.previewStates.set(id,state);if(this.renderer.proxy?.enqueue(state))this.renderer.backend.overlayHoldIds.add(id);this.renderer.needsFrame=true;this.renderer.requestWork();}
  end(release=null){const a=this.active;if(!a)return Promise.resolve(null);this.flush();const finalized=a.builder.finish(),forceFade=!!a.builder.p.__foundation?.preset.forceFade?.enabled;
   if(forceFade&&!this.renderer.strokeHandoff){const commands=a.builder.record().commands.map(c=>Float64Array.from(c));a.stableSource.length=0;for(const c of commands)a.stableSource.push(c);a.builder.published=a.builder.commands.length;}
   else for(const c of forceFade?forceFadePreviewCommands(finalized,a.preset):finalized)a.stableSource.push(c);
@@ -54,6 +54,18 @@ export class RealtimeSession {
  queueCancel(id){const promise=this.cancelTail.then(()=>this.renderer.cancelStroke(id));this.cancelTail=promise.catch(()=>{});return promise;}
  get pendingRawCount(){let count=0;for(const n of this.pendingInputs.values())count+=n;return count;}
  async discardUncommitted(record){const id=this.recordIds.get(record);if(id===undefined||!this.staged.delete(id))throw Error('Uncommitted record missing');await this.queueCancel(id);}
+ // Parked entries have no authoritative GPU work. Their worker record remains
+ // in staged until Redo, or is explicitly forgotten when a new edit branches.
+ forgetStaged(record){const id=this.recordIds.get(record);if(id===undefined)return;this.staged.delete(id);this.renderer.forgetStrokePreview(id);this.recordIds.delete(record);}
+ commitUndoneRecord(record,additional=[],surfaceKey='default'){
+  const id=this.recordIds.get(record);if(id===undefined||this.staged.get(id)!==record)throw Error('Stroke was not staged');
+  const group=[];for(const [index,item]of [record,...additional].entries()){
+   let current=id;if(index){const dx=item.commands[0][0]-record.commands[0][0],dy=item.commands[0][1]-record.commands[0][1];current=id+(dx===0?0:dx>0?3:6)+(dy===0?0:dy>0?1:2);}
+   const keys=new Set;for(const c of item.commands)for(const key of keysFor(c,this.renderer.document.width,this.renderer.document.height))keys.add(key);if(!keys.size)continue;
+   this.recordIds.set(item,current);this.recordSurfaces.set(item,surfaceKey);this.indexRecord(item,keys,surfaceKey);this.unindexRecord(item);group.push(item);
+   const h=this.renderer.backend.imageHistory;if(h){h.interrupt(current);h.patches.get(current).state='undone';}
+  }this.redoRecords.push(...group.reverse());this.staged.delete(id);
+ }
  // The Core transaction owns authority. Formal GPU work is enqueued only after it succeeds.
  commitRecord(record,additional=[],surfaceKey='default'){
   const id=this.recordIds.get(record);if(id===undefined||this.staged.get(id)!==record)throw Error('Stroke was not staged');
@@ -78,7 +90,7 @@ export class RealtimeSession {
  async rebuild(){try{this.fullDocumentRebuilds++;await this.renderer.reset();this.tileRecords.clear();for(const r of this.records){this.seedSequence=Math.max(this.seedSequence,r.seed?.[1]??0);this.fullReplayStrokes++;const id=++this.id,preset=this.presetForRecord(r),surfaceKey=this.recordSurfaces.get(r)??'default';this.recordIds.set(r,id);this.renderer.document.append(id,preset,r.commands,null,surfaceKey);const keys=this.renderer.document.end(id,preset,surfaceKey);this.indexRecord(r,keys,surfaceKey);}await this.renderer.drain();}finally{this.renderer.proxy?.invalidate();}}
  async rebuildDirty(keys,surfaceKey='default'){const records=this.recordsForKeys(keys,surfaceKey),entries=records.map(r=>({id:++this.id,preset:this.presetForRecord(r),commands:r.commands}));await this.renderer.rebuildTiles(keys,entries,surfaceKey);}
  async navigateDerived(steps){try{
-  await this.settle();if(!steps.length){this.renderer.resumeHistory();await this.renderer.drain();return;}
+  if(this.active)throw Error('Cannot navigate during active input');if(!steps.length){this.renderer.resumeHistory();await this.renderer.drain();return;}
   const records=[...this.records],redo=[...this.redoRecords],plans=[];
   for(const step of steps){const {direction,record,keys,surfaceKey}=step,source=direction==='undo'?records:redo,target=direction==='undo'?redo:records;
    if(source.at(-1)!==record)throw Error('Document/Renderer '+direction+' mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');source.pop();target.push(record);plans.push({...step,id:this.recordIds.get(record)});

@@ -35,7 +35,11 @@ let controller=new EditorController();
 const foreground=new ForegroundColor();
 let eyedropperOriginal=foreground.current;
 let historyNavigation:HistoryNavigation|undefined;
-let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,lastPointerDownTarget:EventTarget|null=null,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
+const admittedHistoryChanges:EditorHistoryChange[]=[];
+const historyInputs:Array<{at:number;eventAt:number;button:string;direction:string;phase:string;pointerType:string;disabled:boolean;reason?:string}>=[];
+function traceHistoryInput(button:HTMLButtonElement,direction:HistoryDirection,phase:string,event:Event,reason?:string){if(!perfMode)return;historyInputs.push({at:performance.now(),eventAt:event.timeStamp,button:button.id,direction,phase,pointerType:(event as PointerEvent).pointerType??'keyboard',disabled:button.disabled,...(reason?{reason}:{})});if(historyInputs.length>1200)historyInputs.shift();}
+
+let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
 let checkpointOperations:SemanticOperation[]=[];let checkpointCancelled=0;const checkpointErrors:Array<{at:string;message:string}>=[];let qaRefreshTimer:number|null=null;
@@ -73,10 +77,10 @@ const renderLayers=()=>{
 
 function updateHistoryButtons(){
   const ready=!!surface&&documentReady,blocked=!ready||geometryBusy||(surface?.inputActive===true&&!historyPending)||!!historyNavigation?.diagnostics.fault;
-  byId<HTMLButtonElement>('undo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes||historyPending);
-  byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes||historyPending);
-  byId<HTMLButtonElement>('redo').disabled=blocked||!(controller.canRedo||historyPending);
-  byId<HTMLButtonElement>('compactRedo').disabled=blocked||!(controller.canRedo||historyPending);
+  byId<HTMLButtonElement>('undo').disabled=blocked||!(surface?.canUndo||historyPending);
+  byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(surface?.canUndo||historyPending);
+  byId<HTMLButtonElement>('redo').disabled=blocked||!(surface?.canRedo||historyPending);
+  byId<HTMLButtonElement>('compactRedo').disabled=blocked||!(surface?.canRedo||historyPending);
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
 }
 function updatePersistenceDisplay(){
@@ -94,7 +98,7 @@ function updatePersistenceDisplay(){
   byId<HTMLButtonElement>('recover').disabled=!recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n);
 }
 
-document.addEventListener('pointerdown',e=>{lastPointerDownTarget=e.target;},{capture:true});
+
 if(qaMode){document.addEventListener('pointerdown',e=>{const canvas=byId<HTMLCanvasElement>('canvas'),target=e.target instanceof HTMLElement?e.target:null;canvas.dataset.lastPointerTarget=target?.id||target?.tagName.toLowerCase()||'unknown';canvas.dataset.lastPointerType=e.pointerType;canvas.dataset.lastPointerX=String(Math.round(e.clientX));canvas.dataset.lastPointerY=String(Math.round(e.clientY));queueMicrotask(updateQa);},{capture:true});}
 const updateQa=()=>{
   const canvas=byId<HTMLCanvasElement>('canvas'),selected=controller.selectedLayer;
@@ -140,7 +144,7 @@ async function createProjectionCheckpoint(){
 function resetCheckpointTracking(){checkpointOperations=[];checkpointOpsSinceLast=0;checkpointNeedsFullSeed=true;lastCheckpointAt=null;if(projectionCheckpointTimer!==null){clearTimeout(projectionCheckpointTimer);projectionCheckpointTimer=null;}}
 function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
-  persistence.noteCommit(controller.document,handoff);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
+  persistence.noteCommit(controller.document,handoff);if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();return;}
@@ -334,6 +338,7 @@ byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.b
 byId<HTMLButtonElement>('addLayerPage').onclick=()=>byId<HTMLButtonElement>('addLayer').click();
 
 historyNavigation=new HistoryNavigation({
+  admit:direction=>{const change=direction==='undo'?controller.undo():controller.redo();surface?.admitHistory(change);admittedHistoryChanges.push(change);},
   prepare:async()=>{await surface?.prepareHistory();},apply:applyHistoryBatch,
   state:()=>{historyPending=historyNavigation?.pending??false;surface?.setInputBarrier(historyPending);if(!historyPending)surface?.resumeHistory();updateHistoryButtons();updatePersistenceDisplay();updateQa();},
   failed:(message,unprocessed)=>{byId('status').textContent=message+(unprocessed?' 未処理のUndo / Redo '+unprocessed+'件は反映していません。':'');},
@@ -341,7 +346,7 @@ historyNavigation=new HistoryNavigation({
 async function applyHistoryBatch(directions:readonly HistoryDirection[]){
   const changes:EditorHistoryChange[]=[],selectedBefore=controller.selectedLayerId;
   try{
-    let slice=performance.now();for(const direction of directions){const change=direction==='undo'?controller.undo():controller.redo();if(change.changed)changes.push(change);if(performance.now()-slice>6){await new Promise(resolve=>setTimeout(resolve,0));slice=performance.now();}}
+    for(const direction of directions){const change=admittedHistoryChanges.shift();if(!change||change.direction!==direction)throw new Error('履歴操作の順序が一致しません。');if(change.changed)changes.push(change);}
     if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
     updateQa();
     if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
@@ -349,25 +354,34 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
     const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';
   }catch(error){
-    for(const change of [...changes].reverse()){if(change.direction==='undo')controller.redo();else controller.undo();}if(controller.document.root.hasLayer(selectedBefore))controller.selectLayer(selectedBefore);
+    for(const change of [...changes,...admittedHistoryChanges.splice(0)].reverse()){if(change.direction==='undo')controller.redo();else controller.undo();}if(controller.document.root.hasLayer(selectedBefore))controller.selectLayer(selectedBefore);
     try{await reloadGeometryProjection();}catch(restoreError){throw new Error('Undo / Redoの表示復旧に失敗しました。'+String(restoreError)+' 原因：'+String(error));}
     throw new Error('Undo / Redoを反映できなかったため、直前の状態へ戻しました。'+String(error));
   }
 }
 function performHistory(direction:HistoryDirection){
   if(!documentReady||!surface||(surface.inputActive&&!historyPending)||geometryBusy)return;
-  const available=historyPending||(direction==='undo'?(controller.canUndo||surface.hasPendingStrokes):controller.canRedo);if(!available)return;
+  const available=historyPending||(direction==='undo'?surface.canUndo:surface.canRedo);if(!available)return;
+  if(!historyPending&&surface.navigatePending(direction)){if(direction==='undo')undoCount++;else redoCount++;byId('status').textContent=direction==='undo'?'線を取り消しました。':'取り消した線をやり直します。';updateHistoryButtons();updatePersistenceDisplay();updateQa();return;}
   historyNavigation!.enqueue(direction);
 }
 function bindHistoryButton(id:string,direction:'undo'|'redo'){
-  const button=byId<HTMLButtonElement>(id);
-  // A real pointer press may land on the button's text <span>, not the
-  // button node itself. Accept any descendant while rejecting genuine
-  // outside-down / inside-up ghost clicks that can affect touch devices.
-  button.onclick=e=>{
-    const startedInside=lastPointerDownTarget instanceof Node&&button.contains(lastPointerDownTarget);
-    if(e.detail>0&&!startedInside){blockedHistoryGhostClicks++;e.preventDefault();updateQa();return;}
-    void performHistory(direction);
+  const button=byId<HTMLButtonElement>(id);let press:number|null=null,touchHandled:number|null=null;
+  button.style.touchAction='manipulation';
+  button.addEventListener('pointerdown',event=>{press=button.disabled?null:event.pointerId;touchHandled=null;traceHistoryInput(button,direction,'down',event);});
+  button.addEventListener('pointercancel',event=>{press=null;traceHistoryInput(button,direction,'cancel',event);});
+  // Touch/pen releases are commands immediately, before a delayed compatibility
+  // click. Each press owns its admission; keyboard activation stays native.
+  button.addEventListener('pointerup',event=>{
+    traceHistoryInput(button,direction,'up',event);if(event.pointerType==='mouse'||press!==event.pointerId||button.disabled)return;
+    const target=document.elementFromPoint(event.clientX,event.clientY);if(!target||!button.contains(target)){press=null;return;}
+    touchHandled=event.pointerId;performHistory(direction);traceHistoryInput(button,direction,'accepted',event);
+  });
+  button.onclick=event=>{
+    const pointerId=(event as PointerEvent).pointerId;
+    if(event.detail>0&&touchHandled!==null&&(pointerId===touchHandled||!pointerId)){touchHandled=null;press=null;traceHistoryInput(button,direction,'compatibility-click',event);return;}
+    if(event.detail>0&&press===null){blockedHistoryGhostClicks++;event.preventDefault();traceHistoryInput(button,direction,'rejected',event,'outside-press');updateQa();return;}
+    press=null;performHistory(direction);traceHistoryInput(button,direction,'accepted',event);
   };
 }
 bindHistoryButton('undo','undo');bindHistoryButton('compactUndo','undo');bindHistoryButton('redo','redo');bindHistoryButton('compactRedo','redo');
@@ -378,7 +392,7 @@ document.addEventListener('keydown',e=>{
   if(isTextEditingTarget(e.target)||e.altKey)return;
   const primary=e.ctrlKey||e.metaKey;if(!primary)return;const key=e.key.toLowerCase();
   const undo=key==='z'&&!e.shiftKey,redo=(key==='z'&&e.shiftKey)||(key==='y'&&e.ctrlKey&&!e.metaKey);
-  if(!undo&&!redo)return;const direction=undo?'undo':'redo',available=direction==='undo'?(controller.canUndo||surface?.hasPendingStrokes):controller.canRedo;
+  if(!undo&&!redo)return;const direction=undo?'undo':'redo',available=direction==='undo'?surface?.canUndo:surface?.canRedo;
   if(!documentReady||!surface||(surface.inputActive&&!historyPending)||geometryBusy||(!available&&!historyPending))return;e.preventDefault();performHistory(direction);
 });
 
@@ -631,7 +645,7 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
 if(perfMode){
  (window as unknown as {__illustroPerformance:unknown}).__illustroPerformance={
-  read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,historyNavigation:historyNavigation?.diagnostics,...surface?.performanceDiagnostics,checkpointErrors}),
+  read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,historyNavigation:historyNavigation?.diagnostics,historyInputs,...surface?.performanceDiagnostics,checkpointErrors}),
   probe:()=>surface?.handoffProbe(),
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},
   capture:async()=>{if(!surface)throw new Error('No document');const before=surface.performanceDiagnostics,delta=await surface.captureProjectionDelta(controller.document.head),after=surface.performanceDiagnostics;return {replace:delta.replace,tiles:delta.tiles.length,bytes:delta.tiles.reduce((n,t)=>n+t.pixels.byteLength,0),before,after};},

@@ -1,0 +1,143 @@
+name: Verify and publish immediate reservation Undo
+on:
+  push:
+    branches: ['fix/immediate-pending-undo-2026-10-18']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: immediate-reservation-undo
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/immediate-browser/node_modules/playwright
+      IMMEDIATE_OUTPUT: /tmp/immediate-evidence/report.json
+      IMMEDIATE_BEFORE: /tmp/immediate-before
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Preserve source and all earlier unit regression gates
+        run: |
+          npm run brush:build > /tmp/immediate-brush-build.log
+          npm run prep:check
+          npm run core:check
+          npm run brush:regression
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Build current and immutable PR36 applications
+        run: |
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          git worktree add --detach /tmp/immediate-base 2d438ae424abdb4d1742f86347caf10886cad864
+          cd /tmp/immediate-base
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/immediate-base-build.log
+          VITE_COMMIT_SHA=2d438ae424abdb4d1742f86347caf10886cad864 npm --workspace @illustro/editor exec -- vite build --base=./
+          cp -a apps/editor/dist /tmp/immediate-before
+      - name: Install actual browser input verifier
+        run: |
+          npm install --prefix /tmp/immediate-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/immediate-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Native touch admission while canonical and registration gates remain closed
+        run: node scripts/immediate-pending-undo-review.mjs
+      - name: CPU constrained native touch control
+        env:
+          IMMEDIATE_STAGES: record,multiple
+          IMMEDIATE_CPU_RATE: '4'
+          IMMEDIATE_OUTPUT: /tmp/immediate-evidence/cpu4/report.json
+        run: node scripts/immediate-pending-undo-review.mjs
+      - name: Small and 2000px canvas native touch controls
+        run: |
+          IMMEDIATE_SIZE=512 IMMEDIATE_STAGES=record,multiple IMMEDIATE_OUTPUT=/tmp/immediate-evidence/512/report.json node scripts/immediate-pending-undo-review.mjs
+          IMMEDIATE_SIZE=2000 IMMEDIATE_STAGES=record,multiple IMMEDIATE_OUTPUT=/tmp/immediate-evidence/2000/report.json node scripts/immediate-pending-undo-review.mjs
+      - name: Prior partial-tile history correctness and exact pixels
+        env:
+          PENDING_BEFORE: /tmp/immediate-before
+          PENDING_OUTPUT: /tmp/immediate-evidence/partial/report.json
+          PENDING_MODES: after
+          PENDING_STAGES: none,coverage,partial,near,inflight,force,erase,retained,complete
+        run: node scripts/pending-stroke-undo-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: immediate-undo-evidence, path: /tmp/immediate-evidence/}
+      - uses: actions/upload-artifact@v4
+        with: {name: immediate-undo-application, path: apps/editor/dist/}
+      - uses: actions/upload-artifact@v4
+        with: {name: immediate-undo-baseline, path: /tmp/immediate-before/}
+  persistence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/immediate-browser/node_modules/playwright
+      HANDOFF_OPERATIONS_CANVAS: '4000'
+      HANDOFF_OPERATIONS_OUTPUT: /tmp/immediate-regression/operations/report.json
+      M05_EVIDENCE_DIRECTORY: /tmp/immediate-regression/recovery
+      M05_EXPECT_MILESTONE: M07
+      M08_EVIDENCE_DIRECTORY: /tmp/immediate-regression/canvas
+      M09_EVIDENCE_DIRECTORY: /tmp/immediate-regression/color
+      HOME_EVIDENCE_DIRECTORY: /tmp/immediate-regression/works
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build exact current source and verification browser
+        run: |
+          npm run brush:build > /tmp/immediate-brush-build.log
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/immediate-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/immediate-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Save while canonical records are delayed, later input and exact reopening
+        run: node scripts/stroke-handoff-operations.mjs
+      - name: Save protection, recovery and offline
+        run: node scripts/editor-m05-smoke.mjs
+      - name: Canvas, color and work safety regression
+        run: |
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: immediate-undo-regression, path: /tmp/immediate-regression/}
+  publish:
+    needs: [verify, persistence]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/download-artifact@v4
+        with: {name: immediate-undo-application, path: site/qa/undo-immediate-reservation/after}
+      - uses: actions/download-artifact@v4
+        with: {name: immediate-undo-baseline, path: site/qa/undo-immediate-reservation/before}
+      - uses: actions/download-artifact@v4
+        with: {name: immediate-undo-evidence, path: site/qa/undo-immediate-reservation/evidence}
+      - uses: actions/download-artifact@v4
+        with: {name: immediate-undo-regression, path: site/qa/undo-immediate-reservation/evidence/regression}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Publish only the independently verified new QA directory
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';import assert from 'node:assert/strict';
+          const p='site/qa/undo-immediate-reservation/evidence/',r=JSON.parse(fs.readFileSync(p+'report.json'));
+          assert.equal(r.sourceCommit,process.env.GITHUB_SHA);assert.deepEqual(r.errors,[]);assert.equal(r.cases.length,24);
+          for(const c of r.cases.filter(c=>c.mode==='after'&&['record','registration','multiple'].includes(c.stage)))assert.equal(c.removedBeforeGate,true);
+          fs.writeFileSync(p+'qa-status.json',JSON.stringify({sourceCommit:r.sourceCommit,baselineCommit:r.baselineCommit,workflowRun:process.env.GITHUB_RUN_ID,checks:'Trusted touch, closed canonical/registration gates, multiple pending entries, exact Undo/Redo, partial 128px history, save/recovery/navigation',unverified:['Physical smartphone latency/FPS/heat','OS-level RSS/VRAM and memory pressure','User acceptance']},null,2));
+          JS
+          cp qa/undo-immediate-reservation/index.html site/qa/undo-immediate-reservation/
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/undo-immediate-reservation
+          test -z "$(git diff --cached --name-only | sed '/^qa\/undo-immediate-reservation\//d')"
+          git diff --cached --quiet || git commit -m "qa: publish verified immediate reservation Undo $GITHUB_SHA"
+          git push origin HEAD:gh-pages

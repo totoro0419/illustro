@@ -1,0 +1,72 @@
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const {chromium}=createRequire(import.meta.url)(process.env.RT_PLAYWRIGHT_PATH??'playwright');
+const out=process.env.IMMEDIATE_OUTPUT??'/tmp/immediate-history/report.json';
+const roots={before:path.resolve(process.env.IMMEDIATE_BEFORE??'/tmp/immediate-before'),after:path.resolve('apps/editor/dist')};
+const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost'),parts=u.pathname.split('/'),root=roots[parts[1]];if(!root)return res.writeHead(404).end();let file=path.resolve(root,'.'+'/'+parts.slice(2).join('/'));if(file!==root&&!file.startsWith(root+path.sep))return res.writeHead(403).end();if(u.pathname.endsWith('/'))file=path.join(file,'index.html');res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.json')?'application/json':'text/html');res.end(await fs.readFile(file));}catch{res.writeHead(404).end();}});await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan','--js-flags=--max-old-space-size=256']});
+const modes=(process.env.IMMEDIATE_MODES??'before,after').split(','),backends=(process.env.IMMEDIATE_BACKENDS??'webgl2,webgpu').split(',');
+const stages=(process.env.IMMEDIATE_STAGES??'record,registration,jobs,inflight,complete,multiple').split(',');
+const size=Number(process.env.IMMEDIATE_SIZE??4000),throttle=Number(process.env.IMMEDIATE_CPU_RATE??1);
+const report={sourceCommit:process.env.EXPECTED_COMMIT_SHA??'working-tree',baselineCommit:'2d438ae424abdb4d1742f86347caf10886cad864',scope:'Chromium software GPU; 390x844/DPR2, deviceMemory=4; trusted CDP touch drawing and touch taps. Controlled canonical, registration and GPU acknowledgement gates. JS heap limit 256MiB is not an operating-system memory limit. Not physical smartphone measurements.',size,throttle,cases:[],errors:[]};
+await fs.mkdir(path.dirname(out),{recursive:true});
+try{for(const backend of backends)for(const stage of stages)for(const mode of modes){
+ const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true});await context.addInitScript(()=>Object.defineProperty(navigator,'deviceMemory',{value:4}));const p=await context.newPage();p.on('pageerror',e=>report.errors.push({backend,stage,mode,message:e.message}));const cdp=await context.newCDPSession(p);if(throttle>1)await cdp.send('Emulation.setCPUThrottlingRate',{rate:throttle});
+ const origin=process.env.IMMEDIATE_PUBLIC_ORIGIN??'http://127.0.0.1:'+server.address().port;
+ await p.goto(origin+'/'+mode+'/?m09=1&perf=1&backend='+backend);await p.evaluate(n=>{for(const id of ['newCanvasWidth','newCanvasHeight'])document.getElementById(id).value=String(n);document.getElementById('new').click();},size);await p.waitForFunction(()=>document.getElementById('status').textContent.includes('描画できます'),null,{timeout:90000});if(mode==='after'&&process.env.EXPECTED_COMMIT_SHA)assert.equal(await p.locator('#canvas').getAttribute('data-commit'),process.env.EXPECTED_COMMIT_SHA);
+ await p.evaluate(()=>{
+  for(const id of ['qaPanel','canvasPerformance']){const el=document.getElementById(id);if(el)el.hidden=true;}
+  const port=window.__illustroPerformance,{renderer:r,session:s,controller:c}=port.probe(),b=r.backend;
+  window.__immediate={port,r,s,c,b,held:[],waits:[],beats:[],tasks:[],input:[],gateReleased:false};const m=window.__immediate;
+  document.getElementById('finger').checked=true;document.getElementById('finger').dispatchEvent(new Event('change'));
+  document.getElementById('size').value='64';document.getElementById('size').dispatchEvent(new Event('input'));
+  for(const type of ['pointerdown','pointerup','click'])document.addEventListener(type,e=>{const button=e.target.closest?.('#undo,#compactUndo,#redo,#compactRedo');if(button){const t={at:performance.now(),eventAt:e.timeStamp,type,trusted:e.isTrusted,pointerType:e.pointerType,button:button.id,disabled:button.disabled};m.input.push(t);if(type==='pointerup'&&button.id.toLowerCase().includes('undo'))m.undoAt=t.at;}},{capture:true});
+  setInterval(()=>m.beats.push(performance.now()),4);new PerformanceObserver(l=>m.tasks.push(...l.getEntries().map(t=>({at:t.startTime,ms:t.duration})))).observe({type:'longtask'});
+  m.idle=async()=>{const at=performance.now();for(;;){const q=port.read();if(!q.historyNavigation.pending&&!q.handoff.pendingLogical&&!q.handoff.pendingGpu&&!q.frameState.inflight&&!q.frameState.jobs&&!q.frameState.needsFrame)return;if(q.frameState.errors.length||q.frameState.sessionErrors.length||performance.now()-at>120000)throw Error('Idle timeout '+JSON.stringify(q.frameState));await new Promise(ok=>setTimeout(ok,4));}};
+  m.hash=async()=>{await m.idle();const hashes=[];for(const l of c.layers){const bytes=await b.read(l.surface.descriptor.surfaceId);hashes.push(Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).join(','));}return hashes;};
+  for(const [obj,name]of [[r,'prepareHistory'],[r,'applyImageHistory'],[s,'settle']]){const fn=obj[name].bind(obj);obj[name]=async(...args)=>{const at=performance.now();try{return await fn(...args);}finally{m.waits.push({name,at,ms:performance.now()-at});}};}
+  const original=r.onPresentation;r.onPresentation=x=>{original?.(x);if(m.undoAt&&!m.firstPresentationAt)m.firstPresentationAt=performance.now();};
+ });
+ const box=await p.locator('#canvas').boundingBox();const clip={x:Math.max(0,box.x),y:Math.max(0,box.y),width:Math.min(390-box.x,box.width),height:Math.min(844-box.y,box.height)};
+ const screen=()=>p.screenshot({clip,animations:'disabled'});
+ const draw=async(offset=0)=>{const points=await p.evaluate(o=>{const {b}=window.__immediate,v=b.viewTransform,box=b.canvas.getBoundingClientRect(),a=[];for(let i=0;i<=120;i++){const t=i/120,x=v[4]*(.12+.76*t),y=v[5]*(.5+.22*Math.sin(t*Math.PI*8))+o;const X=box.x+v[2]/2+v[8]+v[6]*(x-v[4]/2),Y=box.y+v[3]/2+v[9]+v[6]*(y-v[5]/2);a.push({x:X,y:Y,id:9,radiusX:2,radiusY:2,force:.6});}return a;},offset);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[points[0]]});for(const point of points.slice(1))await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
+ const tap=async(direction)=>{const selector=await p.evaluate(d=>{for(const id of [d==='undo'?'compactUndo':'compactRedo',d]){const el=document.getElementById(id),r=el.getBoundingClientRect();if(r.width&&r.height&&getComputedStyle(el).visibility!=='hidden')return '#'+id;}throw Error('Missing visible history button');},direction);assert.equal(await p.locator(selector).isEnabled(),true,'actual touch target must be enabled');await p.locator(selector).tap();};
+ await p.evaluate(()=>window.__immediate.idle());const basePixels=await p.evaluate(()=>window.__immediate.hash()),baseImage=await screen();
+ await p.evaluate(stage=>{
+  const m=window.__immediate,{r,s,c}=m;m.stage=stage;m.originalHead=c.document.head;
+  if(stage==='record'||stage==='multiple'){
+   const fn=s.worker.onmessage;s.worker.onmessage=e=>{if(e.data.type==='record'&&!m.gateReleased){m.held.push(()=>fn(e));m.gated=true;return;}fn(e);};
+  }else if(stage==='registration'){
+   const fn=c.finishStroke.bind(c);c.finishStroke=(...args)=>new Promise((resolve,reject)=>{m.held.push(()=>fn(...args).then(resolve,reject));m.gated=true;});
+  }else if(stage==='jobs'){
+   const fn=s.commitRecord.bind(s);s.commitRecord=(...args)=>{const ids=fn(...args);r.historyPreparing=true;m.gated=true;return ids;};
+  }else if(stage==='inflight'){
+   const fn=r.backend.render.bind(r.backend);r.backend.render=(...args)=>{const pending=fn(...args);if(!m.gateReleased&&args[1].some(j=>j.commit)){m.gated=true;return Promise.resolve(pending).then(()=>m.gateReleased?undefined:new Promise(resolve=>m.held.push(resolve)));}return pending;};
+  }
+  m.release=()=>{m.gateReleased=true;for(const fn of m.held.splice(0))fn();if(stage==='jobs')r.resumeHistory();};
+ },stage);
+ await draw();if(stage==='complete')await p.evaluate(()=>window.__immediate.idle());else await p.waitForFunction(()=>window.__immediate.gated,null,{timeout:30000});
+ let keptAImage;if(stage==='multiple'){keptAImage=await screen();await draw(size*.08);await p.waitForFunction(()=>window.__immediate.held.length>=2);}
+ const before=await p.evaluate(()=>{const m=window.__immediate;return {at:performance.now(),logical:m.port.read().handoff.pendingLogical,gpu:m.port.read().handoff.pendingGpu,jobs:m.r.document.jobs.length,records:m.s.records.length,strokes:m.c.committedStrokeCount};});
+ await tap('undo');await p.waitForTimeout(80);
+ const earlyImage=await screen(),early=await p.evaluate(()=>{const m=window.__immediate,q=m.port.read();return {at:performance.now(),undoAt:m.undoAt,gateReleased:m.gateReleased,strokes:m.c.committedStrokeCount,historyPending:q.historyNavigation.pending,logical:q.handoff.pendingLogical,visibility:q.handoff.historyVisibility??[],input:m.input,firstPresentationAt:m.firstPresentationAt??null,historyInputs:q.historyInputs??[]};});
+ const removedBeforeGate=earlyImage.equals(stage==='multiple'?keptAImage:baseImage);
+ if(mode==='after'&&['record','registration','multiple'].includes(stage))assert.equal(removedBeforeGate,true,'the line must disappear while its canonical/registration gate is still closed');
+ if(mode==='after'&&stage==='record'){assert.equal(early.logical,0);assert.equal(early.historyPending,false,'unready stroke Undo must finish without joining a canonical barrier');}
+ if(stage==='multiple'&&mode==='after'){await tap('undo');await p.waitForTimeout(50);assert.deepEqual(await screen(),baseImage,'second Undo removes A');await tap('redo');await tap('redo');await tap('undo');await tap('undo');}
+ await p.evaluate(()=>window.__immediate.release());await p.evaluate(()=>window.__immediate.idle());
+ if(stage==='multiple'&&mode==='before'){await tap('undo');await p.evaluate(()=>window.__immediate.idle());}
+ const undone=await p.evaluate(()=>window.__immediate.hash());assert.deepEqual(undone,basePixels,'Undo restores every layer pixel');
+ await tap('redo');await p.evaluate(()=>window.__immediate.idle());if(stage==='multiple'){await tap('redo');await p.evaluate(()=>window.__immediate.idle());}
+ const full=await p.evaluate(()=>window.__immediate.hash());assert.notDeepEqual(full,basePixels,'Redo contains the complete stroke');
+ await tap('undo');await p.evaluate(()=>window.__immediate.idle());if(stage==='multiple'){await tap('undo');await p.evaluate(()=>window.__immediate.idle());}assert.deepEqual(await p.evaluate(()=>window.__immediate.hash()),basePixels);
+ await tap('redo');await p.evaluate(()=>window.__immediate.idle());if(stage==='multiple'){await tap('redo');await p.evaluate(()=>window.__immediate.idle());}assert.deepEqual(await p.evaluate(()=>window.__immediate.hash()),full,'repeat Redo exact pixels');
+ const result=await p.evaluate(()=>{const m=window.__immediate,end=performance.now(),beats=m.beats.filter(t=>t>=m.undoAt&&t<=end);return {input:m.input,waits:m.waits,historyInputs:m.port.read().historyInputs??[],visibility:m.port.read().handoff.historyVisibility??[],longTasks:m.tasks.filter(t=>t.at>=m.undoAt),maxTimerGapMs:Math.max(0,...beats.slice(1).map((t,i)=>t-beats[i])),final:m.port.read()};});
+ assert.deepEqual(result.final.frameState.errors,[]);assert.deepEqual(result.final.frameState.sessionErrors,[]);assert.equal(result.final.historyNavigation.fault,null);assert.ok(result.input.some(x=>x.type==='pointerup'&&x.trusted&&x.pointerType==='touch'),'browser must deliver trusted touch events');
+ const receipt=result.historyInputs.find(x=>x.phase==='accepted'&&x.direction==='undo'),firstTouch=result.input.find(x=>x.type==='pointerup'&&x.button.toLowerCase().includes('undo'));
+ const item={backend,stage,mode,before,early,removedBeforeGate,receiptMs:receipt&&firstTouch?receipt.at-firstTouch.at:null,previewInvalidationMs:early.visibility[0]&&firstTouch?early.visibility[0].invalidatedAt-firstTouch.at:null,exactUndo:true,exactRepeatRedo:true,...result};report.cases.push(item);await fs.writeFile(out,JSON.stringify(report,null,2));console.log('IMMEDIATE '+JSON.stringify({backend,stage,mode,removedBeforeGate,receiptMs:item.receiptMs,previewInvalidationMs:item.previewInvalidationMs}));
+ await context.close();
+}}finally{await fs.writeFile(out,JSON.stringify(report,null,2));await browser.close();server.close();}assert.deepEqual(report.errors,[]);
