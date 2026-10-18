@@ -12,7 +12,7 @@ export class StrokeHandoff{
   private items:Pending[]=[];private redoItems:Pending[]=[];private entries=new Map<StrokeReservation,Pending>();
   private sequence=0;private running=false;private expected:DrawingTarget['baseRevision']|null=null;private fault:unknown=null;
   private waiters:Array<{resolve:()=>void;reject:(error:unknown)=>void}>=[];
-  constructor(private controller:EditorController,private published:(reservation:StrokeReservation,record:StrokeRecord,additional:readonly StrokeRecord[],result:StrokeCommitResult,undone?:boolean)=>void,private discarded:(record:StrokeRecord)=>void=()=>{}){}
+  constructor(private controller:EditorController,private published:(reservation:StrokeReservation,record:StrokeRecord,additional:readonly StrokeRecord[],result:StrokeCommitResult,undone?:boolean)=>void,private discarded:(record:StrokeRecord,reservation:StrokeReservation)=>void=()=>{}){}
   owns(reservation:StrokeReservation){return this.entries.has(reservation);}
   get pending(){return this.items.length;}
   get canUndo(){return this.items.some(item=>!item.hidden&&!item.discarded);}
@@ -26,7 +26,7 @@ export class StrokeHandoff{
     const reservation=Object.freeze({sequence:++this.sequence,target});const item:Pending={reservation,additional:[],hidden:false,discarded:false,publishing:false};
     this.entries.set(reservation,item);this.items.push(item);return reservation;
   }
-  discardRedo(){for(const item of this.redoItems){item.discarded=true;if(item.record&&!item.publishing){this.discarded(item.record);this.entries.delete(item.reservation);}}this.redoItems=[];}
+  discardRedo(){for(const item of this.redoItems){item.discarded=true;if(item.record&&!item.publishing){this.discarded(item.record,item.reservation);this.entries.delete(item.reservation);}}this.redoItems=[];}
   /** Synchronous history admission. No record, GPU or document barrier here. */
   undoPending(){
     const item=this.items.findLast(e=>!e.hidden&&!e.discarded);if(!item)return null;
@@ -44,7 +44,7 @@ export class StrokeHandoff{
   cancel(reservation:StrokeReservation){const item=this.entries.get(reservation);if(!item)return;if(item.record)throw new Error('Cannot cancel a released stroke');item.discarded=true;this.items=this.items.filter(e=>e!==item);this.entries.delete(reservation);void this.pump();}
   release(reservation:StrokeReservation,record:StrokeRecord,additional:readonly StrokeRecord[]=[]):Promise<StrokeCommitResult|null>{
     const item=this.entries.get(reservation);if(!item||item.record)return Promise.reject(new Error('Unknown or repeated stroke release'));if(this.fault)return Promise.reject(this.fault);
-    Object.assign(item,{record,additional});if(item.discarded){this.discarded(record);this.entries.delete(reservation);return Promise.resolve(null);}
+    Object.assign(item,{record,additional});if(item.discarded){this.discarded(record,reservation);this.entries.delete(reservation);return Promise.resolve(null);}
     if(item.hidden)return Promise.resolve(null);
     const result=new Promise<StrokeCommitResult|null>((resolve,reject)=>{Object.assign(item,{resolve,reject});});void this.pump();return result;
   }

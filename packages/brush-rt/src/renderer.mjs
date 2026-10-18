@@ -319,7 +319,7 @@ export class GpuRenderer {
   const state=this.hiddenPreviewStates.get(id);for(const key of [id,...(this.wrapPreviews.get(id)??[])]){this.hiddenStrokeIds.delete(key);this.hiddenPreviewStates.delete(key);this.previewCleanup.delete(key);}
   if(state){if(this.proxy?.suspended)this.proxy.invalidate();this.setLive({...state,resetPreview:true});}
  }
- forgetStrokePreview(id){for(const key of [id,...(this.wrapPreviews.get(id)??[])]){this.hiddenPreviewStates.delete(key);this.hiddenStrokeIds.delete(key);}this.wrapPreviews.delete(id);this.wrapCaches.delete(id);}
+ forgetStrokePreview(id){for(const key of [id,...(this.wrapPreviews.get(id)??[])]){this.hiddenPreviewStates.delete(key);this.hiddenStrokeIds.delete(key);releaseOverlayPublication(this.backend,key);}this.wrapPreviews.delete(id);this.wrapCaches.delete(id);}
  setLive(state){
   if(this.hiddenStrokeIds.has(state.id))return;
   if(this.strokeHandoff&&!this.inputStarts.has(state.id))this.inputStarts.set(state.id,{at:performance.now(),submitted:false});

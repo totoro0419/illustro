@@ -106,8 +106,45 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: immediate-undo-regression, path: /tmp/immediate-regression/}
+  variants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/immediate-browser/node_modules/playwright
+      IMMEDIATE_MODES: after
+      IMMEDIATE_STAGES: record
+      IMMEDIATE_FAST_TAP: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build exact source and browser for controlled variants
+        run: |
+          npm run brush:build > /tmp/immediate-brush-build.log
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/immediate-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/immediate-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Pencil and both erasers on trusted-touch precompletion Undo
+        run: |
+          IMMEDIATE_BRUSH=foundation-pencil IMMEDIATE_OUTPUT=/tmp/immediate-variants/pencil/report.json node scripts/immediate-pending-undo-review.mjs
+          IMMEDIATE_BRUSH=foundation-hard-eraser IMMEDIATE_OUTPUT=/tmp/immediate-variants/hard-eraser/report.json node scripts/immediate-pending-undo-review.mjs
+          IMMEDIATE_BRUSH=foundation-soft-eraser IMMEDIATE_OUTPUT=/tmp/immediate-variants/soft-eraser/report.json node scripts/immediate-pending-undo-review.mjs
+      - name: Forced taper, seamless copies and dense input
+        run: |
+          IMMEDIATE_FORCE=1 IMMEDIATE_OUTPUT=/tmp/immediate-variants/force/report.json node scripts/immediate-pending-undo-review.mjs
+          IMMEDIATE_SEAMLESS=1 IMMEDIATE_OUTPUT=/tmp/immediate-variants/seamless/report.json node scripts/immediate-pending-undo-review.mjs
+          IMMEDIATE_POINTS=1600 IMMEDIATE_OUTPUT=/tmp/immediate-variants/dense/report.json node scripts/immediate-pending-undo-review.mjs
+      - name: New input branches away from a canceled unready reservation
+        run: IMMEDIATE_STAGES=branch IMMEDIATE_OUTPUT=/tmp/immediate-variants/branch/report.json node scripts/immediate-pending-undo-review.mjs
+      - name: Ordinary home-to-editor workflow with native mobile Undo
+        run: IMMEDIATE_PRODUCTION=1 IMMEDIATE_OUTPUT=/tmp/immediate-variants/production/report.json node scripts/immediate-pending-undo-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: immediate-undo-variants, path: /tmp/immediate-variants/}
   publish:
-    needs: [verify, persistence]
+    needs: [verify, persistence, variants]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -122,6 +159,8 @@ jobs:
         with: {name: immediate-undo-evidence, path: site/qa/undo-immediate-reservation/evidence}
       - uses: actions/download-artifact@v4
         with: {name: immediate-undo-regression, path: site/qa/undo-immediate-reservation/evidence/regression}
+      - uses: actions/download-artifact@v4
+        with: {name: immediate-undo-variants, path: site/qa/undo-immediate-reservation/evidence/variants}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - name: Publish only the independently verified new QA directory
