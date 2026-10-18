@@ -51,6 +51,7 @@ jobs:
           RT_PLAYWRIGHT_PATH: /tmp/my-works-browser/node_modules/playwright
           MY_WORKS_BASELINE: /tmp/my-works-base/apps/editor/dist
           MY_WORKS_COMPARISON: /tmp/my-works-evidence/comparison.json
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/my-works-compare.mjs
       - uses: actions/upload-artifact@v4
         if: always()
@@ -116,7 +117,9 @@ jobs:
           import fs from 'node:fs';import assert from 'node:assert/strict';
           const file='site/qa/my-works-open/evidence/report.json',result=JSON.parse(fs.readFileSync(file,'utf8'));
           assert.equal(result.commit,process.env.GITHUB_SHA);assert.equal(result.status,'PASS');assert.equal(result.checks.length,5);
-          fs.writeFileSync('site/qa/my-works-open/evidence/qa-status.json',JSON.stringify({sourceCommit:result.commit,runId:process.env.GITHUB_RUN_ID,checks:result.checks,unverified:['Physical smartphone, real GPU and memory pressure','1000-stroke or 10-layer 4000px scale','Manual user acceptance']},null,2));
+          const comparison=JSON.parse(fs.readFileSync('site/qa/my-works-open/evidence/comparison.json','utf8'));
+          assert.equal(comparison.after,process.env.GITHUB_SHA);assert.deepEqual(comparison.errors,[]);assert.equal(comparison.cases.length,3);
+          fs.writeFileSync('site/qa/my-works-open/evidence/qa-status.json',JSON.stringify({sourceCommit:result.commit,runId:process.env.GITHUB_RUN_ID,checks:result.checks,unverified:['Physical smartphone, real GPU and memory pressure','Dense 1000-stroke 4000px multi-layer memory and performance','Manual user acceptance']},null,2));
           JS
           cp qa/my-works-open/index.html site/qa/my-works-open/index.html
           cd site
