@@ -1,0 +1,35 @@
+name: Verify My Works sparse open and previews
+on:
+  push:
+    branches: ['perf/my-works-open-thumbnails-2026-10-18']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: my-works-quality
+  cancel-in-progress: true
+jobs:
+  unit-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build brush engine and run baseline guards
+        run: |
+          npm run brush:build
+          npm run prep:check
+          npm run core:check
+          npm run brush:regression
+      - name: Editor tests, strict TypeScript and browser bundle
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: my-works-test-build
+          path: apps/editor/dist/

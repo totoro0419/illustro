@@ -172,7 +172,7 @@ export function isProjectionCache(value:unknown):value is ProjectionCache{
     if(!layer||typeof layer.surfaceId!=='string'||surfaces.has(layer.surfaceId)||!Array.isArray(layer.tiles))return false;
     surfaces.add(layer.surfaceId);const keys=new Set<string>();
     for(const tile of layer.tiles){
-      if(!tile||typeof tile.key!=='string'||!/^\\d+,\\d+$/.test(tile.key)||keys.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.byteLength!==128*128*4)return false;
+      if(!tile||typeof tile.key!=='string'||!/^\d+,\d+$/.test(tile.key)||keys.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.byteLength!==128*128*4)return false;
       const [tx,ty]=tile.key.split(',').map(Number);if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||tx>=maxX||ty>=maxY)return false;
       keys.add(tile.key);
     }

@@ -325,7 +325,7 @@ export class BrushSurface{
       else{
         if(cache.tileSize!==TILE||!('tiles' in layer))return null;
         const keys=new Set<string>();for(const tile of layer.tiles){
-          if(!/^\\d+,\\d+$/.test(tile.key)||keys.has(tile.key)||tile.pixels.byteLength!==TILE*TILE*4)return null;
+          if(!/^\d+,\d+$/.test(tile.key)||keys.has(tile.key)||tile.pixels.byteLength!==TILE*TILE*4)return null;
           const [tx,ty]=tile.key.split(',').map(Number);
           if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||tx>=Math.ceil(cache.width/TILE)||ty>=Math.ceil(cache.height/TILE))return null;
           keys.add(tile.key);

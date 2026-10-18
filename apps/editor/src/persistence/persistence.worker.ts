@@ -105,7 +105,8 @@ async function handle(message:RequestMessage){
     case 'load-recovery':{
       const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch'),session={documentId,writerEpochId,path:sessionPath(documentId,writerEpochId)};
       const loaded=await loadRecovery(store,session),projectionCache=await loadProjectionCheckpointRaw(store,session,new Set((loaded.snapshot.revisions as readonly {id:string}[]).map(r=>r.id)));const transfers:Transferable[]=[];
-      for(const block of loaded.blocks)transfers.push(block.bytes.buffer as ArrayBuffer);for(const layer of projectionCache?.layers??[])transfers.push(layer.pixels.buffer as ArrayBuffer);
+      for(const block of loaded.blocks)transfers.push(block.bytes.buffer as ArrayBuffer);
+      for(const layer of projectionCache?.layers??[]){if('pixels' in layer)transfers.push(layer.pixels.buffer as ArrayBuffer);else for(const tile of layer.tiles)transfers.push(tile.pixels.buffer as ArrayBuffer);}
       reply(message.id,true,{...loaded,projectionCache},undefined,transfers);break;
     }
     case 'encode-save':{
@@ -118,7 +119,20 @@ async function handle(message:RequestMessage){
       const target=snapshot.revisions.find(r=>r.id===snapshot.snapshotRevisionId);if(!target)throw new Error('save target missing');
       if(currentSession&&currentSession.documentId===target.root.documentId){
         const checkpoint=await loadProjectionCheckpointRaw(store,currentSession,new Set(snapshot.revisions.map(r=>r.id)));
-        if(checkpoint){
+        if(checkpoint?.version===2){
+          const layers=[] as Array<{surfaceId:string;tiles:Array<{key:string;sectionId:string;encoding:ProjectionEncoding;rawLength:number}>}>;
+          for(const layer of checkpoint.layers){
+            const tiles=[] as Array<{key:string;sectionId:string;encoding:ProjectionEncoding;rawLength:number}>;
+            for(const tile of layer.tiles){
+              const encoded=await encodeProjectionPixels(tile.pixels),sectionId='render-cache-tile:'+layer.surfaceId+':'+tile.key;
+              sectionInputs.push({id:sectionId,type:'render.cache.tile.v2',required:false,bytes:encoded.bytes});
+              tiles.push({key:tile.key,sectionId,encoding:encoded.encoding,rawLength:tile.pixels.byteLength});
+            }
+            layers.push({surfaceId:layer.surfaceId,tiles});
+          }
+          const index={version:2,revisionId:checkpoint.revisionId,width:checkpoint.width,height:checkpoint.height,tileSize:128,layers};
+          sectionInputs.push({id:'render-cache',type:'render.cache.index.v2',required:false,bytes:encoder.encode(JSON.stringify(index))});
+        }else if(checkpoint?.version===1){
           const encodedLayers=[] as Array<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number;bytes:Uint8Array}>;
           for(const layer of checkpoint.layers){const encoded=await encodeProjectionPixels(layer.pixels);encodedLayers.push({surfaceId:layer.surfaceId,encoding:encoded.encoding,rawLength:layer.pixels.byteLength,bytes:encoded.bytes});}
           const index={version:1,revisionId:checkpoint.revisionId,width:checkpoint.width,height:checkpoint.height,layers:encodedLayers.map(layer=>({surfaceId:layer.surfaceId,encoding:layer.encoding,rawLength:layer.rawLength,sectionId:'render-cache-layer:'+layer.surfaceId}))};
@@ -148,7 +162,7 @@ async function handle(message:RequestMessage){
     case 'decode-portable':{
       const bytes=uint8(message.bytes,'portable bytes'),decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])}),projectionCache=await decodeProjectionCache(decoded);
       const sections=[...decoded.sections.values()].map(({descriptor,bytes})=>({descriptor,bytes})),transfers=sections.map(x=>x.bytes.buffer as ArrayBuffer);
-      for(const layer of projectionCache?.layers??[])transfers.push(layer.pixels.buffer as ArrayBuffer);
+      for(const layer of projectionCache?.layers??[]){if('pixels' in layer)transfers.push(layer.pixels.buffer as ArrayBuffer);else for(const tile of layer.tiles)transfers.push(tile.pixels.buffer as ArrayBuffer);}
       reply(message.id,true,{manifest:decoded.manifest,sections,projectionCache},undefined,transfers);break;
     }
     default:throw new Error('unknown persistence worker request');
@@ -280,9 +294,30 @@ function tileFileName(key:string,digest?:string){return key.replace(',',':')+(di
 async function digestHex(bytes:Uint8Array){return [...await digest(bytes)].map(value=>value.toString(16).padStart(2,'0')).join('');}
 
 async function decodeProjectionCache(decoded:Awaited<ReturnType<typeof decodeIllustroFile>>):Promise<ProjectionCache|null>{
-  const section=decoded.sections.get('render-cache');if(!section||section.descriptor.type!=='render.cache.index.v1'||section.descriptor.required)return null;
+  const section=decoded.sections.get('render-cache');if(!section||section.descriptor.required)return null;
   try{
-    const raw=JSON.parse(decoder.decode(section.bytes)) as Record<string,unknown>,version=raw.version;if(version!==1) return null;
+    const raw=JSON.parse(decoder.decode(section.bytes)) as Record<string,unknown>,version=raw.version;
+    if(version===2&&section.descriptor.type==='render.cache.index.v2'){
+      const revisionId=uuid(raw.revisionId,'projection revision'),width=dimension(raw.width,'projection width'),height=dimension(raw.height,'projection height');
+      if(raw.tileSize!==128||!Array.isArray(raw.layers)||raw.layers.length>100000)return null;
+      const seen=new Set<string>(),layers:Array<{surfaceId:string;tiles:Array<{key:string;pixels:Uint8Array}>}>=[];
+      for(const item of raw.layers){
+        if(!item||typeof item!=='object')return null;const entry=item as Record<string,unknown>,surfaceId=uuid(entry.surfaceId,'projection surface');
+        if(seen.has(surfaceId)||!Array.isArray(entry.tiles)||entry.tiles.length>1000000)return null;seen.add(surfaceId);
+        const tileKeys=new Set<string>(),tiles:Array<{key:string;pixels:Uint8Array}>=[];
+        for(const row of entry.tiles){
+          if(!row||typeof row!=='object')return null;const t=row as Record<string,unknown>,key=tileKey(t.key),[tx,ty]=parseTileKey(key);
+          if(tx*128>=width||ty*128>=height||tileKeys.has(key))return null;tileKeys.add(key);
+          const sectionId='render-cache-tile:'+surfaceId+':'+key,encoding=projectionEncoding(t.encoding),rawLength=integer(t.rawLength,'projection tile size',0);
+          if(t.sectionId!==sectionId||rawLength!==128*128*4)return null;
+          const payload=decoded.sections.get(sectionId);if(!payload||payload.descriptor.type!=='render.cache.tile.v2'||payload.descriptor.required)return null;
+          tiles.push({key,pixels:await decodeProjectionPixels(payload.bytes,encoding,rawLength)});
+        }
+        layers.push({surfaceId,tiles});
+      }
+      return Object.freeze({version:2 as const,revisionId,width,height,tileSize:128 as const,layers:Object.freeze(layers.map(layer=>Object.freeze({surfaceId:layer.surfaceId,tiles:Object.freeze(layer.tiles.map(tile=>Object.freeze(tile)))})))});
+    }
+    if(version!==1||section.descriptor.type!=='render.cache.index.v1')return null;
     const revisionId=uuid(raw.revisionId,'projection revision'),width=dimension(raw.width,'projection width'),height=dimension(raw.height,'projection height'),list=raw.layers;
     if(!Array.isArray(list)||list.length>100000)return null;const seen=new Set<string>(),layers:Array<{surfaceId:string;pixels:Uint8Array}>=[];
     for(const item of list){if(!item||typeof item!=='object')return null;const x=item as Record<string,unknown>,surfaceId=uuid(x.surfaceId,'projection surface');if(seen.has(surfaceId))return null;seen.add(surfaceId);
