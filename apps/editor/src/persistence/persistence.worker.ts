@@ -19,6 +19,7 @@ const FRAME_MAGIC=encoder.encode('ILJRNL01'),FRAME_HEADER=12,FRAME_HASH=32;
 let storePromise:Promise<WorkingStore>|null=null,currentSession:Session|null=null,serial=Promise.resolve();
 let libraryWork:WorkEntry|null=null;
 let previewTask:PreviewTask|null=null;
+let justInitializedRoot:Readonly<{documentId:string;writerEpochId:string;revisionId:string;root:CorePersistenceSnapshotV1['revisions'][number]['root']}>|null=null;
 
 self.onmessage=(event:MessageEvent<RequestMessage>)=>{
   const message=event.data;serial=serial.then(()=>handle(message)).catch(error=>reply(message.id,false,undefined,error));
@@ -29,13 +30,22 @@ async function handle(message:RequestMessage){
   switch(message.type){
     case 'library-list':{reply(message.id,true,{works:await listWorks(),lastWorkId:await lastWorkId()});break;}
     case 'library-bind':{
-      const session=requireSession(message),snapshot=await loadRecovery(store,session);
-      const document=CoreDocument.restore({snapshot:snapshot.snapshot,blockPayloads:new Map(snapshot.blocks.map(b=>[b.id,b.bytes]))});
-      const old=await getWork(session.documentId),root=document.root,now=Date.now();
-      const entry:WorkEntry={documentId:session.documentId,writerEpochId:session.writerEpochId,revisionId:document.head,protectedThrough:snapshot.protectedThrough,
-        name:root.name,width:root.width,height:root.height,createdAt:old?.createdAt??root.metadata.createdAt,updatedAt:old?.updatedAt??now,openedAt:now,
+      const session=requireSession(message),cached=justInitializedRoot?.documentId===session.documentId&&justInitializedRoot.writerEpochId===session.writerEpochId?justInitializedRoot:null;
+      // 'init' has already persisted and read-verified the complete root. Reopening the
+      // journal and rebuilding Core here was duplicate work on every artwork switch.
+      let root:CorePersistenceSnapshotV1['revisions'][number]['root'],revisionId:string,protectedThrough:string;
+      if(cached){root=cached.root;revisionId=cached.revisionId;protectedThrough='0';}
+      else{
+        const loaded=await loadRecovery(store,session);
+        const document=CoreDocument.restore({snapshot:loaded.snapshot,blockPayloads:new Map(loaded.blocks.map(b=>[b.id,b.bytes]))});
+        const current=document.root;root=loaded.snapshot.revisions.find(revision=>revision.id===document.head)!.root;revisionId=document.head;protectedThrough=loaded.protectedThrough;
+        if(current.documentId!==session.documentId)throw new Error('work binding document mismatch');
+      }
+      const old=await getWork(session.documentId),now=Date.now();
+      const entry:WorkEntry={documentId:session.documentId,writerEpochId:session.writerEpochId,revisionId,protectedThrough,
+        name:root.name,width:root.width,height:root.height,createdAt:old?.createdAt??root.createdAt,updatedAt:old?.updatedAt??now,openedAt:now,
         selectedLayerId:uuid(message.selectedLayerId,'selected layer'),thumbnail:old?.thumbnail??null,thumbnailRevision:old?.thumbnailRevision??null,
-        previewLayers:root.rootLayerIds.map(id=>{const layer=root.getLayer(id);return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity};}),
+        previewLayers:root.rootLayerIds.map(id=>{const layer=root.layers.find(layer=>layer.id===id);if(!layer)throw new Error('work binding layer missing');return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity};}),
         previous:old?{writerEpochId:old.writerEpochId,revisionId:old.revisionId,protectedThrough:old.protectedThrough}:null,preserved:message.preserved};
       await publishWork(entry,typeof message.expectedEpoch==='string'?message.expectedEpoch:null);libraryWork=entry;reply(message.id,true,entry);break;
     }
@@ -86,10 +96,13 @@ async function handle(message:RequestMessage){
     case 'init':{
       const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch'),snapshot=message.snapshot as CorePersistenceSnapshotV1,blocks=blockInputs(message.blocks);
       if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid recovery base snapshot');
-      const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};protectionProofs.delete(path);libraryWork=null;
+      const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};protectionProofs.delete(path);libraryWork=null;justInitializedRoot=null;
+      const current=snapshot.revisions.find(revision=>revision.id===snapshot.snapshotRevisionId);
+      if(!current||current.root.documentId!==documentId||!current.root.rootLayerIds.length)throw new Error('invalid work root');
       await writeBlocks(store,path,blocks);await putVerified(store,path+'/base.frame',await frameJson(snapshot));
       const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId};
       await putVerified(store,path+'/meta.frame',await frameJson(meta));
+      justInitializedRoot={documentId,writerEpochId,revisionId:snapshot.snapshotRevisionId,root:current.root};
       const saves=await documentSaveState(store,documentId),storage=await storageInfo();reply(message.id,true,{backend:store.mode,protectedThrough:'0',storage,...saves});break;
     }
     case 'protect':{
@@ -100,13 +113,13 @@ async function handle(message:RequestMessage){
       else await putVerified(store,finalPath,bytes);
       let proof=protectionProofs.get(session.path);if(!proof){proof=new ContiguousProtection<VerifiedHead>(seq===1n?0n:await scanProtected(store,session));protectionProofs.set(session.path,proof);}
       const root=packet.replacementRoot??libraryWork;proof.verified(seq,{revisionId:packet.revision.id,selectedLayerId:uuid(message.selectedLayerId,'selected layer'),width:root?.width??0,height:root?.height??0});const protectedThrough=proof.through;
-      if(proof.value){await writeHead(store,session,proof.value.revisionId);if(libraryWork)await publishCurrent({...proof.value,protectedThrough:protectedThrough.toString(),updatedAt:Date.now()});}
+      if(proof.value){await writeHead(store,session,proof.value.revisionId);if(libraryWork)await publishCurrent({...proof.value,protectedThrough:protectedThrough.toString(),updatedAt:Date.now(),...(packet.revision.id===proof.value.revisionId?{previewLayers:parsePreviewLayers(message.previewLayers)}:{})});}
       await touchMeta(store,session);
       reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
     }
     case 'set-head':{
       const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session);
-      if(libraryWork)await publishCurrent({revisionId,selectedLayerId:typeof message.selectedLayerId==='string'?uuid(message.selectedLayerId,'selected layer'):libraryWork.selectedLayerId,width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,updatedAt:Date.now()});
+      if(libraryWork)await publishCurrent({revisionId,selectedLayerId:typeof message.selectedLayerId==='string'?uuid(message.selectedLayerId,'selected layer'):libraryWork.selectedLayerId,width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,previewLayers:parsePreviewLayers(message.previewLayers),updatedAt:Date.now()});
       reply(message.id,true,{backend:store.mode});break;
     }
     case 'flush':{
@@ -192,6 +205,15 @@ async function handle(message:RequestMessage){
   }
 }
 
+function parsePreviewLayers(value:unknown):readonly {surfaceId:string;visible:boolean;opacity:number}[]{
+  if(!Array.isArray(value)||value.length>100000)throw new Error('Invalid work preview layers');
+  const seen=new Set<string>();return value.map(item=>{
+    if(!item||typeof item!=='object')throw new Error('Invalid preview layer');
+    const x=item as Record<string,unknown>,surfaceId=uuid(x.surfaceId,'preview surface');
+    if(seen.has(surfaceId)||typeof x.visible!=='boolean'||typeof x.opacity!=='number'||!Number.isFinite(x.opacity)||x.opacity<0||x.opacity>1)throw new Error('Invalid preview layer state');
+    seen.add(surfaceId);return {surfaceId,visible:x.visible,opacity:x.opacity};
+  });
+}
 type PreviewTask={
   documentId:string;revisionId:string;writerEpochId:string;session:Session;index:ProjectionDeltaIndex;offset:number;
   layers:readonly {surfaceId:string;visible:boolean;opacity:number}[];
