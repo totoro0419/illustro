@@ -153,6 +153,11 @@ async function handle(message:RequestMessage){
       sectionInputs.push({id:'editor-state',type:'editor.state.v1',required:false,bytes:encoder.encode(JSON.stringify({version:1,selectedLayerId}))});
       const preserved=preservedSections(message.preserved);for(const section of preserved.sections){if(section.required)throw new Error('unknown preserved section cannot be required');if(sectionInputs.some(x=>x.id===section.id))continue;sectionInputs.push(section);}
       const target=snapshot.revisions.find(r=>r.id===snapshot.snapshotRevisionId);if(!target)throw new Error('save target missing');
+      const preview=await getWorkThumbnail(target.root.documentId,snapshot.snapshotRevisionId);
+      if(preview&&preview.size<=8*1024*1024&&preview.type==='image/png'){
+        const image=new Uint8Array(await preview.arrayBuffer());
+        if(image.length>=24&&[137,80,78,71,13,10,26,10].every((v,i)=>image[i]===v))sectionInputs.push({id:'render-preview',type:'render.preview.png.v1',required:false,bytes:image});
+      }
       if(currentSession&&currentSession.documentId===target.root.documentId){
         const checkpoint=await loadProjectionCheckpointRaw(store,currentSession,new Set(snapshot.revisions.map(r=>r.id)));
         if(checkpoint?.version===2){

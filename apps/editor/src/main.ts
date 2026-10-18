@@ -300,7 +300,16 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(true,opened.projectionCache);
     }else throw error;
   }
-  persistence.clearFileDestination();await persistence.initialize(controller,null,opened.preserved,recovered);if(!qaMode)await persistence.bindWork(expectedEpoch);scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
+  persistence.clearFileDestination();await persistence.initialize(controller,null,opened.preserved,recovered);if(!qaMode)await persistence.bindWork(expectedEpoch);
+  // Import a verified optional PNG preview without blocking first editable paint.
+  if(!qaMode&&opened.previewImage){
+    const id=controller.document.root.documentId,revision=controller.document.head,image=opened.previewImage.slice();
+    window.setTimeout(()=>{void (async()=>{
+      const blob=new Blob([image.buffer as ArrayBuffer],{type:'image/png'}),bitmap=await createImageBitmap(blob);
+      try{if(bitmap.width>0&&bitmap.height>0&&bitmap.width<=320&&bitmap.height<=240)await persistence.storeThumbnail(id,revision,blob);}finally{bitmap.close();}
+    })().catch(error=>console.warn('Imported optional preview ignored:',error));},0);
+  }
+  scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
   }catch(error){
     surface?.destroy();const snapshot=previous.document.capturePersistenceSnapshot();controller=EditorController.restored(CoreDocument.restore({snapshot,blockPayloads:previous.document.persistenceBlockPayloads(snapshot)}),previous.selectedLayerId);surface=makeSurface();documentReady=false;
     if(wasReady){try{await initializeCurrentSurface(true);await persistence.initialize(controller,null,previousPreserved,false);const current=(await persistence.listWorks()).works.find(x=>x.documentId===controller.document.root.documentId);if(!qaMode)await persistence.bindWork(current?.writerEpochId??null);}catch{}}

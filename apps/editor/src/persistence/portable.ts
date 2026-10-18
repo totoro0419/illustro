@@ -15,11 +15,11 @@ export type PreservedPortableData=Readonly<{
 }>;
 export type PortableOpenResult=Readonly<{
   document:CoreDocument;selectedLayerId:LayerId;preserved:PreservedPortableData;
-  generationId:string;snapshotRevisionId:RevisionId;projectionCache?:ProjectionCache;
+  generationId:string;snapshotRevisionId:RevisionId;projectionCache?:ProjectionCache;previewImage?:Uint8Array;
 }>;
 
 export async function createPortableDocument(input:Readonly<{
-  document:CoreDocument;selectedLayerId:LayerId;revisionId?:RevisionId;preserved?:PreservedPortableData;createdAt?:number;generationId?:string;
+  document:CoreDocument;selectedLayerId:LayerId;revisionId?:RevisionId;preserved?:PreservedPortableData;createdAt?:number;generationId?:string;previewImage?:Uint8Array;
 }>){
   const revisionId=input.revisionId??input.document.head,snapshot=input.document.capturePersistenceSnapshot(revisionId),blocks=input.document.persistenceBlockPayloads(snapshot);
   if(!snapshot.revisions.some(r=>r.id===revisionId))throw new Error('save snapshot revision missing');
@@ -28,6 +28,7 @@ export async function createPortableDocument(input:Readonly<{
   const selected=input.document.revision(revisionId).root.hasLayer(input.selectedLayerId)?input.selectedLayerId:input.document.revision(revisionId).root.rootLayerIds[0];
   if(!selected)throw new Error('save snapshot has no selectable layer');
   sections.push(Object.freeze({id:EDITOR_SECTION,type:EDITOR_TYPE,required:false,bytes:textEncoder.encode(JSON.stringify({version:1,selectedLayerId:selected}))}));
+  if(input.previewImage&&isPngPreview(input.previewImage))sections.push(Object.freeze({id:'render-preview',type:'render.preview.png.v1',required:false,bytes:input.previewImage.slice()}));
   for(const section of input.preserved?.optionalSections??[]){if(section.required)throw new Error('cannot preserve unknown required section');if(sections.some(x=>x.id===section.id))continue;sections.push(Object.freeze({...section,bytes:section.bytes.slice(),required:false}));}
   const generationId=input.generationId??crypto.randomUUID(),createdAt=input.createdAt??Date.now(),root=input.document.revision(revisionId).root;
   const manifestExtras=input.preserved?.manifestExtras;const bytes=await encodeIllustroFile({generationId,documentId:root.documentId,snapshotRevisionId:revisionId,createdAt,sections,...(manifestExtras?{manifestExtras}:{})});
@@ -52,11 +53,12 @@ export function openDecodedPortableDocument(decoded:DecodedPortableFile):Portabl
   let selectedLayerId=document.root.rootLayerIds[0];const editor=decoded.sections.get(EDITOR_SECTION);
   if(editor){if(editor.descriptor.type!==EDITOR_TYPE||editor.descriptor.required)throw new Error('invalid editor state section');try{const state=JSON.parse(textDecoder.decode(editor.bytes)) as {version?:unknown;selectedLayerId?:unknown};if(state.version===1&&typeof state.selectedLayerId==='string'&&document.root.hasLayer(state.selectedLayerId as LayerId))selectedLayerId=state.selectedLayerId as LayerId;}catch{throw new Error('malformed editor state section');}}
   if(!selectedLayerId)throw new Error('opened document has no selectable layer');
+  const preview=decoded.sections.get('render-preview'),previewImage=preview&&preview.descriptor.type==='render.preview.png.v1'&&!preview.descriptor.required&&isPngPreview(preview.bytes)?preview.bytes.slice():undefined;
   const optionalSections:PortableSectionInput[]=[];
-  for(const {descriptor,bytes:sectionBytes} of decoded.sections.values()){if(descriptor.id===CORE_SECTION||descriptor.id===EDITOR_SECTION||descriptor.type===BLOCK_TYPE||descriptor.type==='render.cache.index.v1'||descriptor.type==='render.cache.layer.v1'||descriptor.type==='render.cache.index.v2'||descriptor.type==='render.cache.tile.v2')continue;if(descriptor.required)throw new Error('unknown required section');
+  for(const {descriptor,bytes:sectionBytes} of decoded.sections.values()){if(descriptor.id===CORE_SECTION||descriptor.id===EDITOR_SECTION||descriptor.type===BLOCK_TYPE||descriptor.type==='render.cache.index.v1'||descriptor.type==='render.cache.layer.v1'||descriptor.type==='render.cache.index.v2'||descriptor.type==='render.cache.tile.v2'||(descriptor.id==='render-preview'&&descriptor.type==='render.preview.png.v1'))continue;if(descriptor.required)throw new Error('unknown required section');
     optionalSections.push(Object.freeze({id:descriptor.id,type:descriptor.type,required:false,codec:descriptor.codec,bytes:sectionBytes.slice(),descriptorExtras:descriptor.extras}));}
   const preserved=Object.freeze({manifestExtras:decoded.manifest.extras,optionalSections:Object.freeze(optionalSections)});
-  return Object.freeze({document,selectedLayerId,preserved,generationId:decoded.manifest.generationId,snapshotRevisionId:decoded.manifest.snapshotRevisionId as RevisionId});
+  return Object.freeze({document,selectedLayerId,preserved,generationId:decoded.manifest.generationId,snapshotRevisionId:decoded.manifest.snapshotRevisionId as RevisionId,...(previewImage?{previewImage}:{})});
 }
 
 export async function verifyPortableDocument(bytes:Uint8Array){await openPortableDocument(bytes);return true;}
@@ -72,5 +74,9 @@ function validateM05SemanticDependencies(value:unknown){
       for(const item of required)if(!refs.includes(item))throw new Error('brush algorithm dependency missing: '+item);
     }
   }
+}
+export function isPngPreview(bytes:Uint8Array){
+  return bytes.byteLength>=24&&bytes.byteLength<=8*1024*1024&&
+    [137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v);
 }
 function blockSectionId(id:string){return 'block:'+id;}
