@@ -286,3 +286,6 @@ body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [d
 /* Temporary My Works reset button: shown only when ?debugWorks=1. */
 .ih-debug-reset{border:1px solid #ddadad;background:#fff5f5;color:#a43838;border-radius:12px;min-height:44px;padding:0 14px;font:inherit;font-weight:650;cursor:pointer}
 .ih-debug-reset:hover{background:#ffe9e9}.ih-debug-reset:disabled{opacity:.45;cursor:wait}.ih-debug-reset[hidden]{display:none!important}
+
+.ih-works-controls{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+@media(max-width:600px){.ih-works-controls{justify-content:flex-start}.ih-works-bar{align-items:flex-start;flex-direction:column;gap:10px}.ih-debug-reset{width:100%}}
