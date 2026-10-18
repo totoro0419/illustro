@@ -1,0 +1,89 @@
+{
+  "milestone": "M05",
+  "mode": "local",
+  "url": "http://127.0.0.1:39663/",
+  "status": "PASS",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "status": "PASS",
+      "opfs": "opfs-sync",
+      "autosaveIndependentFromPortable": true,
+      "roundTrip": true,
+      "snapshotIsolation": true,
+      "saveDurationMs": 87.39999999999418,
+      "snapshotCaptureMs": 0.19999999999708962
+    },
+    {
+      "backend": "webgpu",
+      "status": "PASS",
+      "opfs": "opfs-sync",
+      "autosaveIndependentFromPortable": true,
+      "roundTrip": true,
+      "snapshotIsolation": true,
+      "saveDurationMs": 337.1999999999971,
+      "snapshotCaptureMs": 0.40000000000873115
+    }
+  ],
+  "recovery": {
+    "status": "PASS",
+    "strategy": "finished-state-cache",
+    "protectedThrough": "180",
+    "recoveredRevision": "775de9f3-d517-411e-a7c8-77009ec50d71",
+    "workerDurationMs": null,
+    "projectionRestoreMs": 222.10000000000582,
+    "wallMs": 2955,
+    "strokeTotal": 180
+  },
+  "gap": {
+    "status": "PASS",
+    "deletedSequence": 2,
+    "recoveredStrokeCount": 1
+  },
+  "lastGood": null,
+  "offline": {
+    "status": "PASS",
+    "serviceWorker": true,
+    "networkUnavailable": true,
+    "draw": true,
+    "recoveryStore": true,
+    "save": true,
+    "open": true,
+    "navigatorOnline": true,
+    "backend": "opfs-sync"
+  },
+  "directPicker": {
+    "status": "PASS",
+    "staleReadsSimulated": 3,
+    "verificationRetried": true,
+    "firstBytes": 31693,
+    "secondBytes": 65677,
+    "autosaveIndependent": true
+  },
+  "explicitSaveWithoutRecovery": {
+    "status": "PASS",
+    "protectedThrough": "0",
+    "fileBytes": 1715,
+    "createdRecoveryCommit": false
+  },
+  "checkpointCadence": {
+    "status": "PASS",
+    "operationInterval": 12,
+    "idleMs": 800,
+    "protectedThrough": "12"
+  },
+  "corruptedProjectionCaches": [
+    {
+      "file": "projection-v2.frame",
+      "mode": "corrupted",
+      "beforeBytes": 2409,
+      "afterBytes": 4
+    }
+  ],
+  "repairFallback": {
+    "status": "PASS",
+    "cacheCorrupted": true,
+    "strategy": "stroke-replay",
+    "strokeCount": 3
+  }
+}

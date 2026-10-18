@@ -1,0 +1,475 @@
+{
+  "commit": "62271b917cf132cc9c4614014f5d1981c6c25d9f",
+  "target": "local",
+  "cases": [
+    {
+      "name": "webgl2-2-desktop",
+      "console": [],
+      "qa": {
+        "display": {
+          "document": {
+            "width": 512,
+            "height": 384
+          },
+          "css": {
+            "width": 1028,
+            "height": 718
+          },
+          "backing": {
+            "width": 2056,
+            "height": 1436
+          },
+          "dpr": 2,
+          "view": {
+            "documentWidth": 512,
+            "documentHeight": 384,
+            "cssWidth": 1028,
+            "cssHeight": 718,
+            "zoom": 1.7576041666666666,
+            "rotation": 0,
+            "panX": 0,
+            "panY": 0,
+            "flipX": false,
+            "flipY": false,
+            "seamless": false,
+            "reference": false
+          }
+        },
+        "milestone": "M09",
+        "commit": "62271b917cf132cc9c4614014f5d1981c6c25d9f",
+        "backend": "WebGL2",
+        "backendSelection": {
+          "requested": "webgl2",
+          "selected": "webgl2",
+          "fallbackUsed": false,
+          "webgpu": {
+            "apiAvailable": true,
+            "attempted": false,
+            "usable": false,
+            "stage": "not-attempted",
+            "error": null
+          }
+        },
+        "initializationError": null,
+        "viewport": "1440x900",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+        "selectedTool": "brush",
+        "selectedPresetId": "foundation-g-pen",
+        "selectedPresetName": "Gペン",
+        "blendMode": "normal",
+        "eraserType": null,
+        "size": 16,
+        "layerCount": 1,
+        "selectedLayerId": "cde32d08-2e00-48ea-8faf-1723160dff4f",
+        "selectedLayerName": "Layer 1",
+        "currentRevision": "64313fc8-8235-431b-b7db-71c22e2229d0",
+        "canUndo": true,
+        "canRedo": false,
+        "seamlessCopyCount": 0,
+        "undoCount": 0,
+        "redoCount": 0,
+        "blockedHistoryGhostClicks": 0,
+        "eraserCommittedStrokeCount": 0,
+        "totalStrokeCount": 2,
+        "committedStrokeCount": 2,
+        "historyPatchHits": 0,
+        "historyReplayFallbacks": 0,
+        "rendererDesynchronized": false,
+        "rendererAlpha": false,
+        "rendererPremultipliedAlpha": true,
+        "rendererArtworkAlpha": true,
+        "presentationOpaque": true,
+        "presentationMode": "direct-gpu",
+        "presentationAlpha": false,
+        "presentationDesynchronized": false,
+        "presentationFrames": 4,
+        "presentationLastAt": 7153.899999999965,
+        "projectionRestoreMs": 19.600000000034925,
+        "projectionRestoreMode": "replay-fallback",
+        "projectionCacheRevision": null,
+        "browserPredictionSamples": 7,
+        "lastInputTarget": "button",
+        "lastInputType": "mouse",
+        "lastInputPoint": "1243,452",
+        "activeElement": "body",
+        "workspaceOpen": true,
+        "workspaceDisplay": "block",
+        "visualViewport": {
+          "width": 1440,
+          "height": 900,
+          "offsetTop": 0,
+          "offsetLeft": 0,
+          "scale": 1
+        },
+        "export": {
+          "last": null,
+          "error": null,
+          "busy": false,
+          "count": 0
+        },
+        "layers": [
+          {
+            "id": "cde32d08-2e00-48ea-8faf-1723160dff4f",
+            "surfaceId": "c260ca57-7fd7-4497-8762-5599b4d8a1df",
+            "name": "Layer 1",
+            "committedStrokes": 2
+          }
+        ],
+        "documentId": "61837c17-846c-46de-b545-5c0f2aba8364",
+        "documentMetadata": {
+          "createdAt": 1792287743073,
+          "modifiedAt": 1792287749531
+        },
+        "writerEpoch": "6c180bbd-f076-4dc4-9f7b-79ba2bdee562",
+        "commitSequence": "2",
+        "persistence": {
+          "currentRevision": "64313fc8-8235-431b-b7db-71c22e2229d0",
+          "savedRevision": null,
+          "dirty": true,
+          "protectionPending": false,
+          "protectedThrough": "2",
+          "saving": false,
+          "recovered": false,
+          "storageError": null,
+          "backend": "opfs-sync",
+          "storagePersisted": false,
+          "storageUsage": 2222354,
+          "storageQuota": 3223447826,
+          "queueLength": 0,
+          "lastProtectionTime": 1792287749651,
+          "lastExplicitSaveTime": null,
+          "saveDurationMs": null,
+          "snapshotCaptureMs": null,
+          "reloadDurationMs": null,
+          "recoveryDurationMs": null,
+          "lastGood": false,
+          "previousGood": false,
+          "offline": false
+        },
+        "autosaveCheckpoint": {
+          "operationInterval": 12,
+          "idleMs": 800,
+          "opsSinceLast": 0,
+          "fullSeedPending": false,
+          "lastCheckpointAt": 1792287750407,
+          "cancelled": 0,
+          "errors": []
+        },
+        "qaStartedAt": "2026-10-18T01:42:22.593Z"
+      }
+    },
+    {
+      "name": "webgpu-2-desktop",
+      "console": [],
+      "qa": {
+        "display": {
+          "document": {
+            "width": 512,
+            "height": 384
+          },
+          "css": {
+            "width": 1028,
+            "height": 718
+          },
+          "backing": {
+            "width": 2056,
+            "height": 1436
+          },
+          "dpr": 2,
+          "view": {
+            "documentWidth": 512,
+            "documentHeight": 384,
+            "cssWidth": 1028,
+            "cssHeight": 718,
+            "zoom": 1.7576041666666666,
+            "rotation": 0,
+            "panX": 0,
+            "panY": 0,
+            "flipX": false,
+            "flipY": false,
+            "seamless": false,
+            "reference": false
+          }
+        },
+        "milestone": "M09",
+        "commit": "62271b917cf132cc9c4614014f5d1981c6c25d9f",
+        "backend": "WebGPU",
+        "backendSelection": {
+          "requested": "webgpu",
+          "selected": "webgpu",
+          "fallbackUsed": false,
+          "webgpu": {
+            "apiAvailable": true,
+            "attempted": true,
+            "usable": true,
+            "stage": "ready",
+            "error": null
+          }
+        },
+        "initializationError": null,
+        "viewport": "1440x900",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+        "selectedTool": "brush",
+        "selectedPresetId": "foundation-g-pen",
+        "selectedPresetName": "Gペン",
+        "blendMode": "normal",
+        "eraserType": null,
+        "size": 16,
+        "layerCount": 1,
+        "selectedLayerId": "71d7bd26-6cc6-421c-8e9a-4996f163cfc1",
+        "selectedLayerName": "Layer 1",
+        "currentRevision": "bb0e6ca6-e458-4807-b739-ba01c0427692",
+        "canUndo": true,
+        "canRedo": false,
+        "seamlessCopyCount": 0,
+        "undoCount": 0,
+        "redoCount": 0,
+        "blockedHistoryGhostClicks": 0,
+        "eraserCommittedStrokeCount": 0,
+        "totalStrokeCount": 2,
+        "committedStrokeCount": 2,
+        "historyPatchHits": 0,
+        "historyReplayFallbacks": 0,
+        "rendererDesynchronized": false,
+        "rendererAlpha": false,
+        "rendererPremultipliedAlpha": false,
+        "rendererArtworkAlpha": true,
+        "presentationOpaque": true,
+        "presentationMode": "direct-gpu",
+        "presentationAlpha": false,
+        "presentationDesynchronized": false,
+        "presentationFrames": 4,
+        "presentationLastAt": 5182.200000000012,
+        "projectionRestoreMs": 358.9000000000233,
+        "projectionRestoreMode": "replay-fallback",
+        "projectionCacheRevision": null,
+        "browserPredictionSamples": 10,
+        "lastInputTarget": "button",
+        "lastInputType": "mouse",
+        "lastInputPoint": "1243,452",
+        "activeElement": "body",
+        "workspaceOpen": true,
+        "workspaceDisplay": "block",
+        "visualViewport": {
+          "width": 1440,
+          "height": 900,
+          "offsetTop": 0,
+          "offsetLeft": 0,
+          "scale": 1
+        },
+        "export": {
+          "last": null,
+          "error": null,
+          "busy": false,
+          "count": 0
+        },
+        "layers": [
+          {
+            "id": "71d7bd26-6cc6-421c-8e9a-4996f163cfc1",
+            "surfaceId": "425d5a1e-fcfa-4d5c-a3f9-509020f4cf24",
+            "name": "Layer 1",
+            "committedStrokes": 2
+          }
+        ],
+        "documentId": "9d6456a6-a79e-4ac9-b920-7bdbf4e85416",
+        "documentMetadata": {
+          "createdAt": 1792287754374,
+          "modifiedAt": 1792287759214
+        },
+        "writerEpoch": "29bab911-a39e-4d31-bc28-9e4339c2f145",
+        "commitSequence": "2",
+        "persistence": {
+          "currentRevision": "bb0e6ca6-e458-4807-b739-ba01c0427692",
+          "savedRevision": null,
+          "dirty": true,
+          "protectionPending": false,
+          "protectedThrough": "2",
+          "saving": false,
+          "recovered": false,
+          "storageError": null,
+          "backend": "opfs-sync",
+          "storagePersisted": false,
+          "storageUsage": 2222440,
+          "storageQuota": 3223447912,
+          "queueLength": 0,
+          "lastProtectionTime": 1792287759334,
+          "lastExplicitSaveTime": null,
+          "saveDurationMs": null,
+          "snapshotCaptureMs": null,
+          "reloadDurationMs": null,
+          "recoveryDurationMs": null,
+          "lastGood": false,
+          "previousGood": false,
+          "offline": false
+        },
+        "autosaveCheckpoint": {
+          "operationInterval": 12,
+          "idleMs": 800,
+          "opsSinceLast": 0,
+          "fullSeedPending": false,
+          "lastCheckpointAt": 1792287760137,
+          "cancelled": 0,
+          "errors": []
+        },
+        "qaStartedAt": "2026-10-18T01:42:34.174Z"
+      }
+    },
+    {
+      "name": "webgl2-2-touch",
+      "console": [],
+      "qa": {
+        "display": {
+          "document": {
+            "width": 512,
+            "height": 384
+          },
+          "css": {
+            "width": 832,
+            "height": 888.15625
+          },
+          "backing": {
+            "width": 1664,
+            "height": 1776
+          },
+          "dpr": 2,
+          "view": {
+            "documentWidth": 512,
+            "documentHeight": 384,
+            "cssWidth": 832,
+            "cssHeight": 888.15625,
+            "zoom": 1.5274999999999999,
+            "rotation": 0,
+            "panX": 0,
+            "panY": 0,
+            "flipX": false,
+            "flipY": false,
+            "seamless": false,
+            "reference": false
+          }
+        },
+        "milestone": "M09",
+        "commit": "62271b917cf132cc9c4614014f5d1981c6c25d9f",
+        "backend": "WebGL2",
+        "backendSelection": {
+          "requested": "webgl2",
+          "selected": "webgl2",
+          "fallbackUsed": false,
+          "webgpu": {
+            "apiAvailable": true,
+            "attempted": false,
+            "usable": false,
+            "stage": "not-attempted",
+            "error": null
+          }
+        },
+        "initializationError": null,
+        "viewport": "900x1120",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+        "selectedTool": "brush",
+        "selectedPresetId": "foundation-g-pen",
+        "selectedPresetName": "Gペン",
+        "blendMode": "normal",
+        "eraserType": null,
+        "size": 16,
+        "layerCount": 1,
+        "selectedLayerId": "7eea497f-8421-478d-8b4b-bdd3ee9c6e5f",
+        "selectedLayerName": "Layer 1",
+        "currentRevision": "39adce3c-2e26-43ce-b072-1f31a66485bb",
+        "canUndo": true,
+        "canRedo": false,
+        "seamlessCopyCount": 0,
+        "undoCount": 0,
+        "redoCount": 0,
+        "blockedHistoryGhostClicks": 0,
+        "eraserCommittedStrokeCount": 0,
+        "totalStrokeCount": 2,
+        "committedStrokeCount": 2,
+        "historyPatchHits": 0,
+        "historyReplayFallbacks": 0,
+        "rendererDesynchronized": false,
+        "rendererAlpha": false,
+        "rendererPremultipliedAlpha": true,
+        "rendererArtworkAlpha": true,
+        "presentationOpaque": true,
+        "presentationMode": "direct-gpu",
+        "presentationAlpha": false,
+        "presentationDesynchronized": false,
+        "presentationFrames": 9,
+        "presentationLastAt": 6408.900000000023,
+        "projectionRestoreMs": 35.70000000001164,
+        "projectionRestoreMode": "replay-fallback",
+        "projectionCacheRevision": null,
+        "browserPredictionSamples": 17,
+        "lastInputTarget": "colorRing",
+        "lastInputType": "touch",
+        "lastInputPoint": "721,303",
+        "activeElement": "colorShowColor",
+        "workspaceOpen": true,
+        "workspaceDisplay": "block",
+        "visualViewport": {
+          "width": 900,
+          "height": 1120,
+          "offsetTop": 0,
+          "offsetLeft": 0,
+          "scale": 1
+        },
+        "export": {
+          "last": null,
+          "error": null,
+          "busy": false,
+          "count": 0
+        },
+        "layers": [
+          {
+            "id": "7eea497f-8421-478d-8b4b-bdd3ee9c6e5f",
+            "surfaceId": "c89aead9-9c11-46de-9cda-571bb4ab687d",
+            "name": "Layer 1",
+            "committedStrokes": 2
+          }
+        ],
+        "documentId": "f0a65ac7-79ca-490a-b349-aac5d9296244",
+        "documentMetadata": {
+          "createdAt": 1792287763706,
+          "modifiedAt": 1792287768316
+        },
+        "writerEpoch": "1b537ed1-6fe3-4f27-a0fc-a10b91084c83",
+        "commitSequence": "2",
+        "persistence": {
+          "currentRevision": "39adce3c-2e26-43ce-b072-1f31a66485bb",
+          "savedRevision": null,
+          "dirty": true,
+          "protectionPending": false,
+          "protectedThrough": "2",
+          "saving": false,
+          "recovered": false,
+          "storageError": null,
+          "backend": "opfs-sync",
+          "storagePersisted": false,
+          "storageUsage": 2222992,
+          "storageQuota": 3223448464,
+          "queueLength": 0,
+          "lastProtectionTime": 1792287768435,
+          "lastExplicitSaveTime": null,
+          "saveDurationMs": null,
+          "snapshotCaptureMs": null,
+          "reloadDurationMs": null,
+          "recoveryDurationMs": null,
+          "lastGood": false,
+          "previousGood": false,
+          "offline": false
+        },
+        "autosaveCheckpoint": {
+          "operationInterval": 12,
+          "idleMs": 800,
+          "opsSinceLast": 0,
+          "fullSeedPending": false,
+          "lastCheckpointAt": 1792287770387,
+          "cancelled": 0,
+          "errors": []
+        },
+        "qaStartedAt": "2026-10-18T01:42:43.490Z"
+      }
+    }
+  ],
+  "errors": []
+}
