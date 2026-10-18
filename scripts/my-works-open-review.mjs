@@ -101,7 +101,9 @@ try{
   const isolated=await browser.newContext({viewport:{width:1100,height:800},serviceWorkers:'block'});
   const tenPage=await isolated.newPage();await tenPage.goto(base+'?backend=webgl2#home');
   const layers10=await newWork(tenPage,'MY WORKS QA 4000 TEN LAYERS',4000,4000);
-  for(let i=1;i<10;i++)await tenPage.locator('#addLayer').click();
+  await tenPage.locator('#layer').click();
+  for(let i=1;i<10;i++)await tenPage.locator('#addLayerPage').click();
+  await tenPage.locator('#layer').click();
   assert.equal(await tenPage.locator('#canvas').getAttribute('data-layer-count'),'10');
   await draw(tenPage);await showWorks(tenPage);
   await tenPage.waitForFunction(()=>{const e=document.getElementById('saveState');return e?.dataset.autosavePending==='false'&&e.dataset.protectedThrough!=='0';},null,{timeout:120000});
