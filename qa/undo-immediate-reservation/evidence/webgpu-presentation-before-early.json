@@ -1,16 +1,16 @@
 {
   "before": {
-    "at": 5678.400000000023,
+    "at": 5836.700000000012,
     "logical": 0,
     "gpu": 1,
     "jobs": 0,
     "records": 1,
     "strokes": 1,
-    "pointerUpAt": 4281.100000000035
+    "pointerUpAt": 4423.300000000047
   },
   "early": {
-    "at": 7010.100000000035,
-    "undoAt": 5728.100000000035,
+    "at": 7189,
+    "undoAt": 5887.100000000035,
     "gateReleased": false,
     "strokes": 0,
     "historyPending": false,
@@ -18,8 +18,8 @@
     "visibility": [],
     "input": [
       {
-        "at": 5727.900000000023,
-        "eventAt": 5712.700000000012,
+        "at": 5886.700000000012,
+        "eventAt": 5871.800000000047,
         "type": "pointerdown",
         "trusted": true,
         "pointerType": "touch",
@@ -27,8 +27,8 @@
         "disabled": false
       },
       {
-        "at": 5728.100000000035,
-        "eventAt": 5712.700000000012,
+        "at": 5887.100000000035,
+        "eventAt": 5871.900000000023,
         "type": "pointerup",
         "trusted": true,
         "pointerType": "touch",
@@ -36,8 +36,8 @@
         "disabled": false
       },
       {
-        "at": 5729.300000000047,
-        "eventAt": 5712.700000000012,
+        "at": 5888.5,
+        "eventAt": 5871.900000000023,
         "type": "click",
         "trusted": true,
         "pointerType": "touch",
@@ -45,12 +45,12 @@
         "disabled": false
       }
     ],
-    "firstPresentationAt": 5752.200000000012,
+    "firstPresentationAt": 5910.700000000012,
     "historyInputs": []
   },
   "state": {
     "commit": "2d438ae424abdb4d1742f86347caf10886cad864",
-    "revision": "3f2f6e63-4383-49ee-8421-53423a07c81c",
+    "revision": "a38af159-8159-4001-9e4a-7c6ef455845d",
     "strokes": 0,
     "historyNavigation": {
       "pending": false,
@@ -65,8 +65,8 @@
         {
           "sequence": 1,
           "direction": "undo",
-          "queueMs": 0.7000000000116415,
-          "completeMs": 1183.4000000000233
+          "queueMs": 0.8000000000465661,
+          "completeMs": 1202.8000000000466
         }
       ]
     },
@@ -105,7 +105,7 @@
       "historyRebuilds": 0,
       "guardPixels": 174720,
       "guardCaptures": 1,
-      "guardCaptureMs": 6.800000000046566,
+      "guardCaptureMs": 6.899999999965075,
       "peakBytes": 4767232,
       "peakPixels": 262144,
       "superseded": 0,
@@ -113,7 +113,7 @@
       "fallbacks": 0,
       "retirements": 1,
       "samples": [],
-      "maxCpuMs": 4,
+      "maxCpuMs": 8.700000000011642,
       "backgroundSlices": 0,
       "maxBackgroundMs": 0,
       "finalizationSwaps": 0,
@@ -124,7 +124,7 @@
     "inputToPreviewCompletionP95Ms": null,
     "presentations": 4,
     "viewPresentations": 1,
-    "renders": 38,
+    "renders": 39,
     "compositedTiles": 422,
     "compositedLayerPasses": 211,
     "supersededViews": 0,
@@ -132,7 +132,7 @@
     "frameIntervalP95Ms": null,
     "inputToSubmissionP95Ms": null,
     "cpuSubmitP95Ms": null,
-    "queueCompletionProxyMs": 892.3999999999651,
+    "queueCompletionProxyMs": 902.2999999999884,
     "gpuExecutionMs": null,
     "historyGpuReservedBytes": 13828096,
     "historyGpuBudgetBytes": 33554432,
@@ -191,17 +191,17 @@
     "viewportCacheBudgetBytes": 33554432,
     "screenShadedPixels": 4080630,
     "screenCopiedPixels": 3977940,
-    "screenCacheHits": 33,
+    "screenCacheHits": 34,
     "formalJobs": 0,
-    "formalBatchLimit": 7,
-    "formalSubmitCpuMs": 0.3999999999650754,
+    "formalBatchLimit": 11,
+    "formalSubmitCpuMs": 0.40000000002328306,
     "formalCommands": 0,
     "formalCommandsPruned": 0,
     "handoff": {
       "inputAttempts": [
         {
-          "at": 2229,
-          "eventAt": 2215.100000000035,
+          "at": 2354.5,
+          "eventAt": 2344.100000000035,
           "reason": null,
           "state": {
             "finishing": false,
@@ -213,7 +213,7 @@
             "pendingRaw": 0,
             "protectionQueue": 0
           },
-          "acceptedAt": 2230.100000000035,
+          "acceptedAt": 2355.8000000000466,
           "id": 1
         }
       ],
@@ -226,18 +226,18 @@
       "traces": [
         {
           "id": 1,
-          "upAt": 4281.100000000035,
-          "readyMs": 1.099999999976717,
-          "uiStateMs": 0.8999999999650754,
-          "recordMs": 14.5,
-          "savePrepareMs": 4.400000000023283,
-          "logicalMs": 23.099999999976717,
-          "gpuMs": 2357
+          "upAt": 4423.300000000047,
+          "readyMs": 1,
+          "uiStateMs": 0.8000000000465661,
+          "recordMs": 13.799999999988358,
+          "savePrepareMs": 4.2000000000116415,
+          "logicalMs": 22.199999999953434,
+          "gpuMs": 2384
         }
       ]
     },
     "frameState": {
-      "lastFrameAt": 7010.700000000012,
+      "lastFrameAt": 7185.300000000047,
       "disposed": false,
       "pointer": null,
       "finishing": false,

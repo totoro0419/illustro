@@ -1,16 +1,16 @@
 {
   "before": {
-    "at": 6690.900000000023,
+    "at": 6765.399999999965,
     "logical": 0,
     "gpu": 0,
     "jobs": 0,
     "records": 1,
     "strokes": 1,
-    "pointerUpAt": 4354.799999999988
+    "pointerUpAt": 4431.099999999977
   },
   "early": {
-    "at": 7169.799999999988,
-    "undoAt": 6752.099999999977,
+    "at": 7224.5,
+    "undoAt": 6811.5,
     "gateReleased": false,
     "strokes": 0,
     "historyPending": false,
@@ -19,15 +19,15 @@
       {
         "direction": "undo",
         "id": 1,
-        "at": 6752.599999999977,
-        "invalidatedAt": 6752.700000000012,
+        "at": 6812,
+        "invalidatedAt": 6812.099999999977,
         "kind": "published"
       }
     ],
     "input": [
       {
-        "at": 6751.799999999988,
-        "eventAt": 6736.799999999988,
+        "at": 6811.200000000012,
+        "eventAt": 6796.200000000012,
         "type": "pointerdown",
         "trusted": true,
         "pointerType": "touch",
@@ -35,8 +35,8 @@
         "disabled": false
       },
       {
-        "at": 6752.099999999977,
-        "eventAt": 6736.799999999988,
+        "at": 6811.5,
+        "eventAt": 6796.299999999988,
         "type": "pointerup",
         "trusted": true,
         "pointerType": "touch",
@@ -44,8 +44,8 @@
         "disabled": false
       },
       {
-        "at": 6758.5,
-        "eventAt": 6736.799999999988,
+        "at": 6817.799999999988,
+        "eventAt": 6796.299999999988,
         "type": "click",
         "trusted": true,
         "pointerType": "touch",
@@ -53,11 +53,11 @@
         "disabled": false
       }
     ],
-    "firstPresentationAt": 7009.5,
+    "firstPresentationAt": 7063.799999999988,
     "historyInputs": [
       {
-        "at": 6751.900000000023,
-        "eventAt": 6736.799999999988,
+        "at": 6811.299999999988,
+        "eventAt": 6796.200000000012,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "down",
@@ -65,8 +65,8 @@
         "disabled": false
       },
       {
-        "at": 6752.200000000012,
-        "eventAt": 6736.799999999988,
+        "at": 6811.599999999977,
+        "eventAt": 6796.299999999988,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "up",
@@ -74,8 +74,8 @@
         "disabled": false
       },
       {
-        "at": 6753.700000000012,
-        "eventAt": 6736.799999999988,
+        "at": 6813,
+        "eventAt": 6796.299999999988,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "accepted",
@@ -84,8 +84,8 @@
         "reason": "accepted"
       },
       {
-        "at": 6758.599999999977,
-        "eventAt": 6736.799999999988,
+        "at": 6817.799999999988,
+        "eventAt": 6796.299999999988,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "compatibility-click",
@@ -95,8 +95,8 @@
     ]
   },
   "state": {
-    "commit": "cce10ab6e12d0c13d7ee5dca5d9f32c3fdf7a66a",
-    "revision": "c90a7ecb-d029-41c1-9a10-15102c545ea4",
+    "commit": "dbe053d32b4f172c84eb3b632b292e2ad4a20b57",
+    "revision": "f1d1f1bb-8175-4b14-9119-131d15f5e9fc",
     "strokes": 0,
     "historyNavigation": {
       "pending": false,
@@ -111,15 +111,15 @@
         {
           "sequence": 1,
           "direction": "undo",
-          "queueMs": 1,
-          "completeMs": 259.29999999998836
+          "queueMs": 0.7999999999883585,
+          "completeMs": 256.69999999995343
         }
       ]
     },
     "historyInputs": [
       {
-        "at": 6751.900000000023,
-        "eventAt": 6736.799999999988,
+        "at": 6811.299999999988,
+        "eventAt": 6796.200000000012,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "down",
@@ -127,8 +127,8 @@
         "disabled": false
       },
       {
-        "at": 6752.200000000012,
-        "eventAt": 6736.799999999988,
+        "at": 6811.599999999977,
+        "eventAt": 6796.299999999988,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "up",
@@ -136,8 +136,8 @@
         "disabled": false
       },
       {
-        "at": 6753.700000000012,
-        "eventAt": 6736.799999999988,
+        "at": 6813,
+        "eventAt": 6796.299999999988,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "accepted",
@@ -146,8 +146,8 @@
         "reason": "accepted"
       },
       {
-        "at": 6758.599999999977,
-        "eventAt": 6736.799999999988,
+        "at": 6817.799999999988,
+        "eventAt": 6796.299999999988,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "compatibility-click",
@@ -190,7 +190,7 @@
       "historyRebuilds": 0,
       "guardPixels": 174720,
       "guardCaptures": 1,
-      "guardCaptureMs": 8,
+      "guardCaptureMs": 6.399999999965075,
       "peakBytes": 4767232,
       "peakPixels": 262144,
       "superseded": 0,
@@ -198,7 +198,7 @@
       "fallbacks": 0,
       "retirements": 1,
       "samples": [],
-      "maxCpuMs": 5.399999999965075,
+      "maxCpuMs": 8,
       "backgroundSlices": 0,
       "maxBackgroundMs": 0,
       "finalizationSwaps": 0,
@@ -217,7 +217,7 @@
     "frameIntervalP95Ms": null,
     "inputToSubmissionP95Ms": null,
     "cpuSubmitP95Ms": null,
-    "queueCompletionProxyMs": 2.7999999999883585,
+    "queueCompletionProxyMs": 1.599999999976717,
     "gpuExecutionMs": null,
     "historyGpuReservedBytes": 13828096,
     "historyGpuBudgetBytes": 33554432,
@@ -279,14 +279,14 @@
     "screenCacheHits": 34,
     "formalJobs": 0,
     "formalBatchLimit": 7,
-    "formalSubmitCpuMs": 0.40000000002328306,
+    "formalSubmitCpuMs": 0.3999999999650754,
     "formalCommands": 0,
     "formalCommandsPruned": 0,
     "handoff": {
       "inputAttempts": [
         {
-          "at": 2285.7999999999884,
-          "eventAt": 2271.7999999999884,
+          "at": 2362.0999999999767,
+          "eventAt": 2354.2999999999884,
           "reason": null,
           "state": {
             "finishing": false,
@@ -298,7 +298,7 @@
             "pendingRaw": 0,
             "protectionQueue": 0
           },
-          "acceptedAt": 2291.5,
+          "acceptedAt": 2366.2000000000116,
           "id": 1
         }
       ],
@@ -316,8 +316,8 @@
         {
           "direction": "undo",
           "id": 1,
-          "at": 6752.599999999977,
-          "invalidatedAt": 6752.700000000012,
+          "at": 6812,
+          "invalidatedAt": 6812.099999999977,
           "kind": "published"
         }
       ],
@@ -326,18 +326,18 @@
       "traces": [
         {
           "id": 1,
-          "upAt": 4354.799999999988,
+          "upAt": 4431.099999999977,
           "readyMs": 1,
-          "uiStateMs": 0.7999999999883585,
-          "recordMs": 14.100000000034925,
-          "savePrepareMs": 3.5,
-          "logicalMs": 21.29999999998836,
-          "gpuMs": 2316.5
+          "uiStateMs": 0.7000000000116415,
+          "recordMs": 14.200000000011642,
+          "savePrepareMs": 3.7000000000116415,
+          "logicalMs": 25,
+          "gpuMs": 2315.600000000035
         }
       ]
     },
     "frameState": {
-      "lastFrameAt": 7167.099999999977,
+      "lastFrameAt": 7226.899999999965,
       "disposed": false,
       "pointer": null,
       "finishing": false,

@@ -1,5 +1,5 @@
 {
-  "commit": "cce10ab6e12d0c13d7ee5dca5d9f32c3fdf7a66a",
+  "commit": "dbe053d32b4f172c84eb3b632b292e2ad4a20b57",
   "mode": "local",
   "tests": [
     {
@@ -336,7 +336,7 @@
       "backend": "WebGL2",
       "width": 2048,
       "ordinal": 1,
-      "elapsedMs": 2360,
+      "elapsedMs": 2748,
       "softwareGpu": false
     },
     {
@@ -344,7 +344,7 @@
       "backend": "WebGL2",
       "width": 2048,
       "ordinal": 2,
-      "elapsedMs": 1096,
+      "elapsedMs": 1237,
       "softwareGpu": false
     },
     {
@@ -383,7 +383,7 @@
       "backend": "WebGL2",
       "width": 2560,
       "ordinal": 1,
-      "elapsedMs": 2501,
+      "elapsedMs": 2904,
       "softwareGpu": false
     },
     {
@@ -391,7 +391,7 @@
       "backend": "WebGL2",
       "width": 2560,
       "ordinal": 2,
-      "elapsedMs": 1239,
+      "elapsedMs": 1409,
       "softwareGpu": false
     },
     {
@@ -430,7 +430,7 @@
       "backend": "WebGL2",
       "width": 3000,
       "ordinal": 1,
-      "elapsedMs": 2368,
+      "elapsedMs": 2785,
       "softwareGpu": false
     },
     {
@@ -438,7 +438,7 @@
       "backend": "WebGL2",
       "width": 3000,
       "ordinal": 2,
-      "elapsedMs": 1274,
+      "elapsedMs": 1476,
       "softwareGpu": false
     },
     {
@@ -806,7 +806,7 @@
       "backend": "WebGPU",
       "width": 2048,
       "ordinal": 1,
-      "elapsedMs": 1377,
+      "elapsedMs": 1506,
       "softwareGpu": false
     },
     {
@@ -814,7 +814,7 @@
       "backend": "WebGPU",
       "width": 2048,
       "ordinal": 2,
-      "elapsedMs": 1341,
+      "elapsedMs": 1448,
       "softwareGpu": false
     },
     {
@@ -853,7 +853,7 @@
       "backend": "WebGPU",
       "width": 2560,
       "ordinal": 1,
-      "elapsedMs": 1578,
+      "elapsedMs": 1764,
       "softwareGpu": true
     },
     {
@@ -861,7 +861,7 @@
       "backend": "WebGPU",
       "width": 2560,
       "ordinal": 2,
-      "elapsedMs": 1483,
+      "elapsedMs": 1715,
       "softwareGpu": true
     },
     {
@@ -900,7 +900,7 @@
       "backend": "WebGPU",
       "width": 3000,
       "ordinal": 1,
-      "elapsedMs": 1667,
+      "elapsedMs": 1924,
       "softwareGpu": true
     },
     {
@@ -908,7 +908,7 @@
       "backend": "WebGPU",
       "width": 3000,
       "ordinal": 2,
-      "elapsedMs": 1545,
+      "elapsedMs": 1779,
       "softwareGpu": true
     },
     {
@@ -1011,7 +1011,7 @@
     ]
   },
   "referenceLatencyMs": {
-    "webgl2": 2695,
-    "webgpu": 1073
+    "webgl2": 3215,
+    "webgpu": 1374
   }
 }

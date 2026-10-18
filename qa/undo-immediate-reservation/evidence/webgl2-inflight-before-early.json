@@ -1,16 +1,16 @@
 {
   "before": {
-    "at": 4144,
+    "at": 4121.100000000006,
     "logical": 0,
     "gpu": 1,
-    "jobs": 211,
+    "jobs": 214,
     "records": 1,
     "strokes": 1,
-    "pointerUpAt": 3591.399999999994
+    "pointerUpAt": 3565.899999999994
   },
   "early": {
-    "at": 4660.100000000006,
-    "undoAt": 4211.799999999988,
+    "at": 4559.1999999999825,
+    "undoAt": 4183.399999999994,
     "gateReleased": false,
     "strokes": 0,
     "historyPending": false,
@@ -18,8 +18,8 @@
     "visibility": [],
     "input": [
       {
-        "at": 4211.5,
-        "eventAt": 4194.399999999994,
+        "at": 4183.100000000006,
+        "eventAt": 4169.600000000006,
         "type": "pointerdown",
         "trusted": true,
         "pointerType": "touch",
@@ -27,8 +27,8 @@
         "disabled": false
       },
       {
-        "at": 4211.799999999988,
-        "eventAt": 4195.700000000012,
+        "at": 4183.399999999994,
+        "eventAt": 4169.6999999999825,
         "type": "pointerup",
         "trusted": true,
         "pointerType": "touch",
@@ -36,8 +36,8 @@
         "disabled": false
       },
       {
-        "at": 4216.600000000006,
-        "eventAt": 4195.700000000012,
+        "at": 4185.1999999999825,
+        "eventAt": 4169.6999999999825,
         "type": "click",
         "trusted": true,
         "pointerType": "touch",
@@ -45,12 +45,12 @@
         "disabled": false
       }
     ],
-    "firstPresentationAt": 4327.100000000006,
+    "firstPresentationAt": 4333.600000000006,
     "historyInputs": []
   },
   "state": {
     "commit": "2d438ae424abdb4d1742f86347caf10886cad864",
-    "revision": "09c6fb3f-3a78-4c67-8c0c-cbf37dc5fa36",
+    "revision": "adf63021-15a3-4127-8011-fe65916de662",
     "strokes": 0,
     "historyNavigation": {
       "pending": false,
@@ -65,8 +65,8 @@
         {
           "sequence": 1,
           "direction": "undo",
-          "queueMs": 37.10000000000582,
-          "completeMs": 112.10000000000582
+          "queueMs": 59.89999999999418,
+          "completeMs": 153.5
         }
       ]
     },
@@ -113,7 +113,7 @@
       "fallbacks": 0,
       "retirements": 0,
       "samples": [],
-      "maxCpuMs": 6.300000000017462,
+      "maxCpuMs": 7.100000000005821,
       "backgroundSlices": 0,
       "maxBackgroundMs": 0,
       "finalizationSwaps": 0,
@@ -132,7 +132,7 @@
     "frameIntervalP95Ms": null,
     "inputToSubmissionP95Ms": null,
     "cpuSubmitP95Ms": null,
-    "queueCompletionProxyMs": 49.90000000002328,
+    "queueCompletionProxyMs": 66.5,
     "gpuExecutionMs": null,
     "historyGpuReservedBytes": 1638400,
     "historyGpuBudgetBytes": 33554432,
@@ -194,14 +194,14 @@
     "screenCacheHits": 18,
     "formalJobs": 0,
     "formalBatchLimit": 7,
-    "formalSubmitCpuMs": 3.7000000000116415,
+    "formalSubmitCpuMs": 3.3999999999941792,
     "formalCommands": 0,
     "formalCommandsPruned": 0,
     "handoff": {
       "inputAttempts": [
         {
-          "at": 1539,
-          "eventAt": 1532.2000000000116,
+          "at": 1497,
+          "eventAt": 1479.1999999999825,
           "reason": null,
           "state": {
             "finishing": false,
@@ -213,7 +213,7 @@
             "pendingRaw": 0,
             "protectionQueue": 0
           },
-          "acceptedAt": 1540.1000000000058,
+          "acceptedAt": 1500.3999999999942,
           "id": 1
         }
       ],
@@ -226,17 +226,17 @@
       "traces": [
         {
           "id": 1,
-          "upAt": 3591.399999999994,
+          "upAt": 3565.899999999994,
           "readyMs": 1,
-          "uiStateMs": 0.6999999999825377,
-          "recordMs": 13.89999999999418,
-          "savePrepareMs": 4.2000000000116415,
-          "logicalMs": 22.300000000017462
+          "uiStateMs": 0.7999999999883585,
+          "recordMs": 14.299999999988358,
+          "savePrepareMs": 5.2000000000116415,
+          "logicalMs": 23.70000000001164
         }
       ]
     },
     "frameState": {
-      "lastFrameAt": 4653.600000000006,
+      "lastFrameAt": 4544.899999999994,
       "disposed": false,
       "pointer": null,
       "finishing": false,

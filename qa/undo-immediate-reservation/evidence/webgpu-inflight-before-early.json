@@ -1,16 +1,16 @@
 {
   "before": {
-    "at": 4693.399999999965,
+    "at": 4703.100000000035,
     "logical": 0,
     "gpu": 1,
     "jobs": 221,
     "records": 1,
     "strokes": 1,
-    "pointerUpAt": 4378.200000000012
+    "pointerUpAt": 4389.200000000012
   },
   "early": {
-    "at": 4984.599999999977,
-    "undoAt": 4744.099999999977,
+    "at": 4997.799999999988,
+    "undoAt": 4753.600000000035,
     "gateReleased": false,
     "strokes": 1,
     "historyPending": false,
@@ -18,8 +18,8 @@
     "visibility": [],
     "input": [
       {
-        "at": 4743.700000000012,
-        "eventAt": 4729.799999999988,
+        "at": 4753.100000000035,
+        "eventAt": 4741.299999999988,
         "type": "pointerdown",
         "trusted": true,
         "pointerType": "touch",
@@ -27,8 +27,8 @@
         "disabled": false
       },
       {
-        "at": 4744.099999999977,
-        "eventAt": 4730,
+        "at": 4753.600000000035,
+        "eventAt": 4741.299999999988,
         "type": "pointerup",
         "trusted": true,
         "pointerType": "touch",
@@ -41,7 +41,7 @@
   },
   "state": {
     "commit": "2d438ae424abdb4d1742f86347caf10886cad864",
-    "revision": "2bf30747-c7a6-4348-a783-38deeea67d4d",
+    "revision": "9d0a6d5a-db6f-4189-ab49-6a5878e33fcb",
     "strokes": 1,
     "historyNavigation": {
       "pending": false,
@@ -97,7 +97,7 @@
       "fallbacks": 0,
       "retirements": 0,
       "samples": [],
-      "maxCpuMs": 7.400000000023283,
+      "maxCpuMs": 4.900000000023283,
       "backgroundSlices": 0,
       "maxBackgroundMs": 0,
       "finalizationSwaps": 0,
@@ -116,7 +116,7 @@
     "frameIntervalP95Ms": null,
     "inputToSubmissionP95Ms": null,
     "cpuSubmitP95Ms": null,
-    "queueCompletionProxyMs": 20.70000000001164,
+    "queueCompletionProxyMs": 20.899999999965075,
     "gpuExecutionMs": null,
     "historyGpuReservedBytes": 1376256,
     "historyGpuBudgetBytes": 33554432,
@@ -178,14 +178,14 @@
     "screenCacheHits": 14,
     "formalJobs": 221,
     "formalBatchLimit": 31,
-    "formalSubmitCpuMs": 1.3999999999650754,
+    "formalSubmitCpuMs": 1.2999999999883585,
     "formalCommands": 18,
     "formalCommandsPruned": 0,
     "handoff": {
       "inputAttempts": [
         {
-          "at": 2325.7999999999884,
-          "eventAt": 2315.7000000000116,
+          "at": 2337.600000000035,
+          "eventAt": 2328.7000000000116,
           "reason": null,
           "state": {
             "finishing": false,
@@ -197,7 +197,7 @@
             "pendingRaw": 0,
             "protectionQueue": 0
           },
-          "acceptedAt": 2327,
+          "acceptedAt": 2341.7999999999884,
           "id": 1
         }
       ],
@@ -210,17 +210,17 @@
       "traces": [
         {
           "id": 1,
-          "upAt": 4378.200000000012,
-          "readyMs": 1,
-          "uiStateMs": 0.8000000000465661,
-          "recordMs": 14,
-          "savePrepareMs": 4.2000000000116415,
-          "logicalMs": 22.399999999965075
+          "upAt": 4389.200000000012,
+          "readyMs": 1.099999999976717,
+          "uiStateMs": 0.7999999999883585,
+          "recordMs": 14.200000000011642,
+          "savePrepareMs": 6.099999999976717,
+          "logicalMs": 24.79999999998836
         }
       ]
     },
     "frameState": {
-      "lastFrameAt": 4991,
+      "lastFrameAt": 4984.700000000012,
       "disposed": false,
       "pointer": null,
       "finishing": false,

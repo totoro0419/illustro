@@ -1,5 +1,5 @@
 {
-  "commit": "cce10ab6e12d0c13d7ee5dca5d9f32c3fdf7a66a",
+  "commit": "dbe053d32b4f172c84eb3b632b292e2ad4a20b57",
   "canvasSize": 4000,
   "scope": "Trusted mouse input: immediate history, delayed portable save while later drawing continues, exact reloaded layer pixels",
   "cases": [
@@ -8,8 +8,8 @@
       "pendingAtUndo": {
         "inputAttempts": [
           {
-            "at": 3163.7999999999956,
-            "eventAt": 3162.899999999994,
+            "at": 3099.699999999997,
+            "eventAt": 3096.7999999999956,
             "reason": null,
             "state": {
               "finishing": false,
@@ -21,7 +21,7 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 3164.899999999994,
+            "acceptedAt": 3100.899999999994,
             "id": 1
           }
         ],
@@ -48,26 +48,26 @@
         "traces": [
           {
             "id": 1,
-            "upAt": 3406.899999999994,
-            "readyMs": 1,
-            "uiStateMs": 0.7999999999956344
+            "upAt": 3351.2999999999956,
+            "readyMs": 2.400000000001455,
+            "uiStateMs": 1
           }
         ]
       },
       "undoRedo": true,
-      "savedRevision": "63fe5c8b-4371-4520-9a71-e7f8163f0ada",
+      "savedRevision": "ef257a02-9eaa-4933-9516-02bc3d4a9b07",
       "saveDuringLaterInput": true,
       "reopenedStrokeCount": 2,
       "exactReloadedPixels": true,
-      "portableBytes": 55651
+      "portableBytes": 55427
     },
     {
       "backend": "webgpu",
       "pendingAtUndo": {
         "inputAttempts": [
           {
-            "at": 2695.7999999999956,
-            "eventAt": 2694.7000000000044,
+            "at": 2513.2999999999884,
+            "eventAt": 2512.199999999997,
             "reason": null,
             "state": {
               "finishing": false,
@@ -79,7 +79,7 @@
               "pendingRaw": 0,
               "protectionQueue": 0
             },
-            "acceptedAt": 2696.7999999999956,
+            "acceptedAt": 2514.5,
             "id": 1
           }
         ],
@@ -106,18 +106,18 @@
         "traces": [
           {
             "id": 1,
-            "upAt": 2931.9999999999927,
-            "readyMs": 3.5,
-            "uiStateMs": 0.7999999999883585
+            "upAt": 2732.0999999999913,
+            "readyMs": 3.3000000000029104,
+            "uiStateMs": 0.8999999999941792
           }
         ]
       },
       "undoRedo": true,
-      "savedRevision": "66ac0b59-a891-4e3c-bf26-487eccadb0d1",
+      "savedRevision": "63f7680b-f518-401b-a510-42156ea74891",
       "saveDuringLaterInput": true,
       "reopenedStrokeCount": 2,
       "exactReloadedPixels": true,
-      "portableBytes": 55878
+      "portableBytes": 55260
     }
   ],
   "errors": []
