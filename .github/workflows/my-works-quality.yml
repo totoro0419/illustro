@@ -102,7 +102,7 @@ jobs:
           node --input-type=module <<'JS'
           import fs from 'node:fs';import assert from 'node:assert/strict';
           const file='site/qa/my-works-open/evidence/report.json',result=JSON.parse(fs.readFileSync(file,'utf8'));
-          assert.equal(result.commit,process.env.GITHUB_SHA);assert.equal(result.status,'PASS');assert.equal(result.checks.length,3);
+          assert.equal(result.commit,process.env.GITHUB_SHA);assert.equal(result.status,'PASS');assert.equal(result.checks.length,4);
           fs.writeFileSync('site/qa/my-works-open/evidence/qa-status.json',JSON.stringify({sourceCommit:result.commit,runId:process.env.GITHUB_RUN_ID,checks:result.checks,unverified:['Physical smartphone, real GPU and memory pressure','1000-stroke or 10-layer 4000px scale','Manual user acceptance']},null,2));
           JS
           cp qa/my-works-open/index.html site/qa/my-works-open/index.html

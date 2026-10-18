@@ -54,7 +54,8 @@ async function eraseThumbnail(page,id){
 }
 try{
   const profile=await fs.mkdtemp('/tmp/my-works-profile-');
-  context=await chromium.launchPersistentContext(profile,{headless:true,viewport:{width:1100,height:800},serviceWorkers:'block',args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
+  context=await chromium.launchPersistentContext(profile,{headless:true,viewport:{width:1100,height:800},serviceWorkers:'block',acceptDownloads:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
+  await context.addInitScript(()=>Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true}));
   let page=context.pages()[0]??await context.newPage();await page.goto(base+'?backend=webgl2#home');
   const id=await newWork(page,'MY WORKS QA 512',512,384);assert.ok(id);await draw(page);await showWorks(page);
   const preview=await waitPreview(page,id);assert.ok(preview.width<=320&&preview.height<=240);
@@ -67,6 +68,13 @@ try{
   report.times.reopen512ms=Date.now()-start;
   assert.equal(await page.locator('#canvas').getAttribute('data-document-id'),id);
   assert.equal(await page.locator('#canvas').getAttribute('data-committed-strokes'),'1');
+  // A downloaded portable work must embed its current verified gallery preview.
+  const waitDownload=page.waitForEvent('download',{timeout:60000});await page.locator('#save').click();
+  const exported=await waitDownload,bytes=await fs.readFile(await exported.path());
+  const manifestLength=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(16,true);
+  const manifest=JSON.parse(bytes.subarray(24,24+manifestLength).toString());
+  assert.ok(manifest.sections.some(section=>section.id==='render-preview'&&section.type==='render.preview.png.v1'&&!section.required));
+  check('portable-png-preview','downloaded .illustro includes an optional preview for the exact saved revision');
   await page.locator('#home').click();await page.locator('#ihApp').waitFor({state:'visible'});
   await page.locator('#ihNavHome').click();
   const large=await newWork(page,'MY WORKS QA 4000',4000,4000);assert.ok(large);

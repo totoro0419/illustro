@@ -529,9 +529,8 @@ async function refreshWorks(){try{const result=await persistence.listWorks();wor
 // 16 at a time, while Home is visible. The input/UI path always takes priority.
 function scheduleThumbnailRepair(delay=750){
   if(qaMode||!app.inert||thumbnailRepairRunning||thumbnailRepairTimer!==null)return;
-  const candidate=works.find(w=>(!w.thumbnail||w.thumbnailRevision!==w.revisionId)&&
-    !thumbnailRepairSkipped.has(w.documentId+':'+w.revisionId)&&
-    true);
+  const candidate=works.find(w=>w.thumbnailRevision!==w.revisionId&&
+    !thumbnailRepairSkipped.has(w.documentId+':'+w.revisionId));
   if(!candidate)return;
   thumbnailRepairTimer=window.setTimeout(()=>{
     thumbnailRepairTimer=null;
