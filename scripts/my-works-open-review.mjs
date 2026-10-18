@@ -71,11 +71,20 @@ try{
   await page.locator('#ihNavHome').click();
   const large=await newWork(page,'MY WORKS QA 4000',4000,4000);assert.ok(large);
   await draw(page);await showWorks(page);
+  await page.waitForFunction(()=>{const state=document.getElementById('saveState');return state?.dataset.autosavePending==='false'&&state.dataset.protectedThrough!=='0';},null,{timeout:90000});
+  await page.waitForTimeout(3500); // let the sparse image checkpoint finish
+  await page.reload();await page.locator('#ihNavWorks').click();
+  await page.locator('[data-work-id="'+large+'"]').waitFor({timeout:45000});
   const startLarge=Date.now();await page.locator('[data-work-id="'+large+'"] .ih-work-preview').click();
   await page.locator('#ihApp').waitFor({state:'hidden',timeout:120000});
   report.times.reopen4000ms=Date.now()-startLarge;
   assert.equal(await page.locator('#canvas').getAttribute('data-document-id'),large);
   assert.equal(await page.locator('#canvas').getAttribute('data-committed-strokes'),'1');
+  const savedRevision=await page.locator('#canvas').getAttribute('data-revision-id');
+  await page.locator('#undo').click();
+  await page.waitForFunction(original=>document.getElementById('canvas')?.dataset.revisionId!==original,savedRevision,{timeout:60000});
+  await page.locator('#redo').click();
+  await page.waitForFunction(original=>document.getElementById('canvas')?.dataset.revisionId===original,savedRevision,{timeout:60000});
   check('save-reopen-4000','4000px document remained editable with the exact saved stroke count');
   report.status='PASS';
 }catch(error){report.errors.push(String(error?.stack??error));throw error;}
