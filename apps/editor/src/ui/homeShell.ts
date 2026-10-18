@@ -84,8 +84,8 @@ const html = [
     '</section>',
     '<section class="ih-screen ih-inner-screen" data-ih-screen="works" hidden aria-labelledby="ihWorksTitle">',
       '<div class="ih-page-top"><span class="ih-overline">YOUR WORKSPACE</span><h1 id="ihWorksTitle">マイ作品<span class="ih-period">.</span></h1><p>作品を選び、続きを描くための場所。</p></div>',
-      '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><span class="ih-works-count">作品を確認しています</span></div>',
-      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名で検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option></select></label><button id="ihWorksReset" type="button" class="ih-debug-reset" hidden>初期化（全作品を削除）</button></div><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
+      '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><div class="ih-works-controls"><span class="ih-works-count">作品を確認しています</span><button id="ihWorksReset" type="button" class="ih-debug-reset" hidden>初期化（全作品を削除）</button></div></div>',
+      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名で検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option></select></label></div><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
       '<div class="ih-empty-works"><div class="ih-empty-art" aria-hidden="true"><span class="ih-empty-sheet ih-sheet-one"></span><span class="ih-empty-sheet ih-sheet-two"></span><span class="ih-empty-spark">'+icon('effects')+'</span></div>',
         '<h2>最初の作品を、ここから。</h2><p>新しく作った作品は自動保存され、ここからいつでも続きを描けます。</p>',
         '<button id="ihWorksStart" type="button" class="ih-solid-button">新しい作品を作る <span aria-hidden="true">↗</span></button>',
@@ -228,7 +228,10 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const loadWorks=async()=>{el('ihWorksLoading').hidden=false;try{const value=await actions.listWorks();setWorks(value.works,value.lastWorkId);}catch(error){notify('作品一覧を読み込めませんでした。'+String(error));}finally{el('ihWorksLoading').hidden=true;}};
   el('ihWorkSearch').addEventListener('input',renderWorks);el('ihWorkSort').addEventListener('change',renderWorks);
   const reset=el<HTMLButtonElement>('ihWorksReset');
-  reset.hidden=new URLSearchParams(location.search).get('debugWorks')!=='1';
+  // The independent review build always exposes its reset control. Main builds
+  // keep it hidden unless explicitly requested for debugging.
+  const isMyWorksQa=location.pathname.includes('/qa/my-works-open/');
+  reset.hidden=!isMyWorksQa&&new URLSearchParams(location.search).get('debugWorks')!=='1';
   reset.onclick=()=>{
     if(!confirm('マイ作品を初期化しますか？\\nアプリ内の全作品・復旧データを削除します。元に戻せません。\\n書き出した .illustro ファイルは削除されません。'))return;
     void run(async()=>{await actions.resetWorks();recovery=[];setWorks([],null);await loadWorks();updateContinue();notify('マイ作品を初期化しました。');},reset);
@@ -301,6 +304,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   })();});
   chooseTrivia(0);setRecoveryCandidates([]);
   // The old milestone QA pages do not install this shell; normal startup is Home.
-  navigate('home',location.hash!=='#home');
+  const initial=location.hash.replace(/^#/,'');
+  navigate(initial==='works'||initial==='settings'||initial==='recovery'?initial:'home',location.hash!==('#'+(initial==='works'||initial==='settings'||initial==='recovery'?initial:'home')));
   return {showHome,showEditor:()=>navigate('editor'),showNew,showRecovery,setRecoveryCandidates,setWorks,notify};
 }
