@@ -18,6 +18,7 @@ const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
 const FRAME_MAGIC=encoder.encode('ILJRNL01'),FRAME_HEADER=12,FRAME_HASH=32;
 let storePromise:Promise<WorkingStore>|null=null,currentSession:Session|null=null,serial=Promise.resolve();
 let libraryWork:WorkEntry|null=null;
+let previewTask:PreviewTask|null=null;
 
 self.onmessage=(event:MessageEvent<RequestMessage>)=>{
   const message=event.data;serial=serial.then(()=>handle(message)).catch(error=>reply(message.id,false,undefined,error));
@@ -34,6 +35,7 @@ async function handle(message:RequestMessage){
       const entry:WorkEntry={documentId:session.documentId,writerEpochId:session.writerEpochId,revisionId:document.head,protectedThrough:snapshot.protectedThrough,
         name:root.name,width:root.width,height:root.height,createdAt:old?.createdAt??root.metadata.createdAt,updatedAt:old?.updatedAt??now,openedAt:now,
         selectedLayerId:uuid(message.selectedLayerId,'selected layer'),thumbnail:old?.thumbnail??null,thumbnailRevision:old?.thumbnailRevision??null,
+        previewLayers:root.rootLayerIds.map(id=>{const layer=root.getLayer(id);return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity};}),
         previous:old?{writerEpochId:old.writerEpochId,revisionId:old.revisionId,protectedThrough:old.protectedThrough}:null,preserved:message.preserved};
       await publishWork(entry,typeof message.expectedEpoch==='string'?message.expectedEpoch:null);libraryWork=entry;reply(message.id,true,entry);break;
     }
@@ -54,6 +56,21 @@ async function handle(message:RequestMessage){
     }
     case 'library-thumbnail':{
       const id=uuid(message.documentId,'document id');await updateWork(id,entry=>entry.revisionId===message.revisionId?{...entry,thumbnail:message.thumbnail as Blob,thumbnailRevision:entry.revisionId}:entry);reply(message.id,true,{});break;
+    }
+    case 'library-preview-step':{
+      const id=uuid(message.documentId,'document id'),entry=await getWork(id);
+      if(!entry){previewTask=null;reply(message.id,true,{state:'unavailable'});break;}
+      if(entry.thumbnail&&entry.thumbnailRevision===entry.revisionId){if(previewTask?.documentId===id)previewTask=null;reply(message.id,true,{state:'current'});break;}
+      try{
+        if(!previewTask||previewTask.documentId!==id||previewTask.revisionId!==entry.revisionId||previewTask.writerEpochId!==entry.writerEpochId){
+          previewTask=null;previewTask=await initPreviewTask(store,entry);
+        }
+        if(!previewTask){reply(message.id,true,{state:'unavailable'});break;}
+        const done=await advancePreviewTask(store,previewTask,16);
+        if(done){previewTask=null;reply(message.id,true,{state:'complete'});}
+        else reply(message.id,true,{state:'pending'});
+      }catch(error){previewTask=null;console.warn('Deferred saved-preview reconstruction:',error);reply(message.id,true,{state:'unavailable'});}
+      break;
     }
     case 'library-rename':{
       const id=uuid(message.documentId,'document id'),name=String(message.name??'').trim().slice(0,120);if(!name)throw new Error('作品名を入力してください。');
@@ -167,6 +184,65 @@ async function handle(message:RequestMessage){
     }
     default:throw new Error('unknown persistence worker request');
   }
+}
+
+type PreviewTask={
+  documentId:string;revisionId:string;writerEpochId:string;session:Session;index:ProjectionDeltaIndex;offset:number;
+  layers:readonly {surfaceId:string;visible:boolean;opacity:number}[];
+  canvases:Map<string,OffscreenCanvas>;contexts:Map<string,OffscreenCanvasRenderingContext2D>;
+  scratch:OffscreenCanvas;scratchContext:OffscreenCanvasRenderingContext2D;scale:number;width:number;height:number;
+};
+async function initPreviewTask(store:WorkingStore,entry:WorkEntry):Promise<PreviewTask|null>{
+  if(typeof OffscreenCanvas==='undefined'||typeof ImageData==='undefined')return null;
+  const session:Session={documentId:entry.documentId,writerEpochId:entry.writerEpochId,path:sessionPath(entry.documentId,entry.writerEpochId)};
+  const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
+  const index=parseProjectionDeltaIndex(await unframeJson(frame));
+  if(index.revisionId!==entry.revisionId||index.tileSize!==128||index.width!==entry.width||index.height!==entry.height)return null;
+  let layers=entry.previewLayers;
+  if(!layers){
+    // Old catalogs did not carry layer styles. Recover them only for this missing preview.
+    const recovered=await loadRecovery(store,session,entry.revisionId,entry.protectedThrough);
+    const latest=recovered.snapshot.revisions.find(revision=>revision.id===entry.revisionId);
+    if(!latest)return null;
+    const root=latest.root;
+    layers=root.rootLayerIds.map(id=>{
+      const layer=root.layers.find(l=>l.id===id);
+      if(!layer)throw new Error('Missing preview layer');
+      return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity};
+    });
+  }
+  const width=Math.max(1,Math.round(index.width*Math.min(1,320/index.width,240/index.height)));
+  const height=Math.max(1,Math.round(index.height*Math.min(1,320/index.width,240/index.height)));
+  const canvases=new Map<string,OffscreenCanvas>(),contexts=new Map<string,OffscreenCanvasRenderingContext2D>();
+  for(const layer of layers){
+    if(!index.surfaceIds.includes(layer.surfaceId))return null;
+    const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');if(!context)return null;
+    canvases.set(layer.surfaceId,canvas);contexts.set(layer.surfaceId,context);
+  }
+  const scratch=new OffscreenCanvas(128,128),scratchContext=scratch.getContext('2d');if(!scratchContext)return null;
+  return {documentId:entry.documentId,revisionId:entry.revisionId,writerEpochId:entry.writerEpochId,session,index,offset:0,
+    layers,canvases,contexts,scratch,scratchContext,scale:Math.min(1,320/index.width,240/index.height),width,height};
+}
+async function advancePreviewTask(store:WorkingStore,task:PreviewTask,limit:number):Promise<boolean>{
+  const end=Math.min(task.offset+limit,task.index.tiles.length);
+  for(let i=task.offset;i<end;i++){
+    const d=task.index.tiles[i]!,context=task.contexts.get(d.surfaceId);
+    if(!context)throw new Error('Unexpected thumbnail layer');
+    const bytes=await store.get(task.session.path+'/projection-v2/'+d.surfaceId+'/'+tileFileName(d.key,d.digest)+'.bin');
+    if(!bytes||(d.digest&&await digestHex(bytes)!==d.digest))throw new Error('Saved preview source changed');
+    const pixels=await decodeProjectionPixels(bytes,d.encoding,d.rawLength),[tx,ty]=parseTileKey(d.key);
+    const w=Math.min(128,task.index.width-tx*128),h=Math.min(128,task.index.height-ty*128);
+    if(w<1||h<1)throw new Error('Saved preview tile outside canvas');
+    task.scratchContext.putImageData(new ImageData(new Uint8ClampedArray(pixels),128,128),0,0);
+    context.drawImage(task.scratch,0,0,w,h,tx*128*task.scale,ty*128*task.scale,w*task.scale,h*task.scale);
+  }
+  task.offset=end;
+  if(task.offset<task.index.tiles.length)return false;
+  const output=new OffscreenCanvas(task.width,task.height),context=output.getContext('2d');if(!context)throw new Error('Thumbnail compositor unavailable');
+  for(const layer of task.layers){if(!layer.visible)continue;context.globalAlpha=Math.max(0,Math.min(1,layer.opacity));context.drawImage(task.canvases.get(layer.surfaceId)!,0,0);}
+  const thumbnail=await output.convertToBlob({type:'image/png'});
+  await updateWork(task.documentId,current=>current.revisionId===task.revisionId&&current.writerEpochId===task.writerEpochId?{...current,thumbnail,thumbnailRevision:task.revisionId}:current);
+  return true;
 }
 
 function requireSession(message:RequestMessage):Session{

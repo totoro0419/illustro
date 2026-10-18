@@ -49,6 +49,7 @@ let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;surface?.setProtectionQueueLength(state.queueLength);updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
 let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=null,workSwitchBusy=false,librarySaving=false;
 let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
+let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thumbnailRepairSkipped=new Set<string>();
 
 document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};byId('saveState').after(retry);}
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
@@ -512,7 +513,26 @@ async function refreshRecoveryCandidates(){
   try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values;updatePersistenceDisplay();homeUi?.setRecoveryCandidates(values);if(recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n)&&!documentReady)byId('status').textContent='自動保存から戻せる作業があります。';}catch{}
 }
 function showStorageError(error:unknown){const text='アプリ内に保存できませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=text;homeUi?.notify(text);}
-async function refreshWorks(){try{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;homeUi?.setWorks(works,lastWorkId);}catch(error){showStorageError(error);}}
+async function refreshWorks(){try{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;homeUi?.setWorks(works,lastWorkId);scheduleThumbnailRepair();}catch(error){showStorageError(error);}}
+// Missing previews for closed artworks are rebuilt from verified saved tiles,
+// 16 at a time, while Home is visible. The input/UI path always takes priority.
+function scheduleThumbnailRepair(delay=750){
+  if(qaMode||!app.inert||thumbnailRepairRunning||thumbnailRepairTimer!==null)return;
+  const candidate=works.find(w=>(!w.thumbnail||w.thumbnailRevision!==w.revisionId)&&
+    !thumbnailRepairSkipped.has(w.documentId+':'+w.revisionId)&&
+    !(documentReady&&w.documentId===controller.document.root.documentId));
+  if(!candidate)return;
+  thumbnailRepairTimer=window.setTimeout(()=>{
+    thumbnailRepairTimer=null;
+    if(!app.inert)return;
+    thumbnailRepairRunning=true;
+    void persistence.repairThumbnail(candidate.documentId).then(result=>{
+      if(result.state==='unavailable')thumbnailRepairSkipped.add(candidate.documentId+':'+candidate.revisionId);
+      if(result.state==='complete'||result.state==='current')void refreshWorks();
+    }).catch(error=>{thumbnailRepairSkipped.add(candidate.documentId+':'+candidate.revisionId);console.warn('Saved preview repair deferred:',error);})
+      .finally(()=>{thumbnailRepairRunning=false;if(app.inert)scheduleThumbnailRepair(60);});
+  },delay);
+}
 function copyOpened(opened:PortableOpenResult,name:string):PortableOpenResult{
   const snapshot=opened.document.capturePersistenceSnapshot(),document=CoreDocument.restore({snapshot:namedSnapshot(snapshot,name,crypto.randomUUID()),blockPayloads:opened.document.persistenceBlockPayloads(snapshot)});
   return {...opened,document,snapshotRevisionId:document.head,generationId:'copy'};

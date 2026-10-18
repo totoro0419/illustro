@@ -7,6 +7,8 @@ export type WorkEntry=Readonly<{
   documentId:string;writerEpochId:string;revisionId:string;protectedThrough:string;
   name:string;width:number;height:number;createdAt:number;updatedAt:number;openedAt:number;
   selectedLayerId:string;thumbnail:Blob|null;thumbnailRevision:string|null;
+  /** Layer order and styles are small metadata for regenerating thumbnails without opening an editor. */
+  previewLayers?:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number}>[];
   previous:Readonly<{writerEpochId:string;revisionId:string;protectedThrough:string}>|null;
   preserved?:unknown;
 }>;
