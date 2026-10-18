@@ -22,7 +22,7 @@ const median=values=>{const s=[...values].sort((a,b)=>a-b);return s[Math.floor(s
 async function buildArtwork(page,width,height,layerCount){
   await page.locator('#ihStart').click();await page.locator('#ihNewWidth').fill(String(width));await page.locator('#ihNewHeight').fill(String(height));
   await page.locator('#ihNewCreate').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:120000});
-  for(let i=1;i<layerCount;i++)await page.locator('#addLayer').click();
+  if(layerCount>1){await page.locator('#layer').click();for(let i=1;i<layerCount;i++)await page.locator('#addLayerPage').click();await page.locator('#layer').click();}
   const id=await page.locator('#canvas').getAttribute('data-document-id'),box=await page.locator('#canvas').boundingBox();assert.ok(id&&box);
   for(let stroke=0;stroke<8;stroke++){
     const y=box.y+box.height*(.3+stroke*.04);await page.mouse.move(box.x+box.width*.25,y);await page.mouse.down();
