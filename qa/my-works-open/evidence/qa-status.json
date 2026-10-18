@@ -1,6 +1,6 @@
 {
-  "sourceCommit": "ce17cec3b4abaeef9407baa2508add7598db8629",
-  "runId": "39135387826",
+  "sourceCommit": "6edf0a4e72244573bb40114cc0abf30efc3a99b2",
+  "runId": "39136110561",
   "checks": [
     {
       "id": "live-preview",
@@ -25,7 +25,7 @@
   ],
   "unverified": [
     "Physical smartphone, real GPU and memory pressure",
-    "1000-stroke or 10-layer 4000px scale",
+    "Dense 1000-stroke 4000px multi-layer memory and performance",
     "Manual user acceptance"
   ]
 }
