@@ -26,7 +26,9 @@ const check=(id,note)=>{report.checks.push({id,note});console.log('PASS '+id+' '
 async function newWork(page,name,width,height){
   await page.locator('#ihStart').click();
   await page.locator('#ihNewName').fill(name);await page.locator('#ihNewWidth').fill(String(width));await page.locator('#ihNewHeight').fill(String(height));
-  await page.locator('#ihNewCreate').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:90000});
+  await page.locator('#ihNewCreate').click();
+  try{await page.locator('#ihApp').waitFor({state:'hidden',timeout:90000});}
+  catch(error){const diagnostic=await page.evaluate(()=>({error:document.getElementById('ihNewError')?.textContent,notice:document.getElementById('ihNotice')?.textContent,status:document.getElementById('status')?.textContent,save:document.getElementById('saveState')?.textContent,history:document.getElementById('canvas')?.dataset.historyBusy}));throw new Error('New work did not open: '+JSON.stringify(diagnostic),{cause:error});}
   return page.locator('#canvas').getAttribute('data-document-id');
 }
 async function draw(page){
@@ -94,17 +96,21 @@ try{
   await page.locator('#redo').click();
   await page.waitForFunction(original=>document.getElementById('canvas')?.dataset.revisionId===original,savedRevision,{timeout:60000});
   check('save-reopen-4000','4000px document remained editable with the exact saved stroke count');
-  await page.locator('#home').click();await page.locator('#ihApp').waitFor({state:'visible'});await page.locator('#ihNavHome').click();
-  const layers10=await newWork(page,'MY WORKS QA 4000 TEN LAYERS',4000,4000);
-  for(let i=1;i<10;i++)await page.locator('#addLayer').click();
-  assert.equal(await page.locator('#canvas').getAttribute('data-layer-count'),'10');
-  await draw(page);await showWorks(page);
-  await page.waitForFunction(()=>{const e=document.getElementById('saveState');return e?.dataset.autosavePending==='false'&&e.dataset.protectedThrough!=='0';},null,{timeout:120000});
-  await page.waitForTimeout(4500);await page.reload();await page.locator('#ihNavWorks').click();
-  await page.locator('[data-work-id="'+layers10+'"] .ih-work-preview').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:120000});
-  assert.equal(await page.locator('#canvas').getAttribute('data-layer-count'),'10');
-  assert.equal(await page.locator('#canvas').getAttribute('data-committed-strokes'),'1');
+  // Run the ten-layer stress case in a clean browser profile: the previous
+  // smoke test deliberately exercised Undo/Redo and external save state.
+  const isolated=await browser.newContext({viewport:{width:1100,height:800},serviceWorkers:'block'});
+  const tenPage=await isolated.newPage();await tenPage.goto(base+'?backend=webgl2#home');
+  const layers10=await newWork(tenPage,'MY WORKS QA 4000 TEN LAYERS',4000,4000);
+  for(let i=1;i<10;i++)await tenPage.locator('#addLayer').click();
+  assert.equal(await tenPage.locator('#canvas').getAttribute('data-layer-count'),'10');
+  await draw(tenPage);await showWorks(tenPage);
+  await tenPage.waitForFunction(()=>{const e=document.getElementById('saveState');return e?.dataset.autosavePending==='false'&&e.dataset.protectedThrough!=='0';},null,{timeout:120000});
+  await tenPage.waitForTimeout(4500);await tenPage.reload();await tenPage.locator('#ihNavWorks').click();
+  await tenPage.locator('[data-work-id="'+layers10+'"] .ih-work-preview').click();await tenPage.locator('#ihApp').waitFor({state:'hidden',timeout:120000});
+  assert.equal(await tenPage.locator('#canvas').getAttribute('data-layer-count'),'10');
+  assert.equal(await tenPage.locator('#canvas').getAttribute('data-committed-strokes'),'1');
   check('reopen-4000-ten-layers','ten layer artwork survives a cold browser reload with its formal stroke');
+  await isolated.close();
   report.status='PASS';
 }catch(error){report.errors.push(String(error?.stack??error));throw error;}
 finally{await fs.writeFile(outfile,JSON.stringify(report,null,2));await context?.close();await browser.close();await new Promise(resolve=>server.close(resolve));}
