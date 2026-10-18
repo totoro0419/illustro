@@ -1,6 +1,6 @@
 import {ContiguousProtection} from './contiguousProtection';
 import {hasPixelData} from './pixelPresence';
-import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,updateWork,deleteWork,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
+import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,updateWork,deleteWork,resetWorkLibrary,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
 
@@ -96,6 +96,16 @@ async function handle(message:RequestMessage){
       await updateWork(id,entry=>({...entry,name,updatedAt:Date.now()}));if(libraryWork?.documentId===id)libraryWork={...libraryWork,name};reply(message.id,true,{});break;
     }
     case 'library-delete':{const id=uuid(message.documentId,'document id');await deleteWork(id);if(libraryWork?.documentId===id)libraryWork=null;try{await store.removeTree('m05/sessions/'+id);await store.removeTree('m05/documents/'+id);}catch{}reply(message.id,true,{});break;}
+    case 'library-reset':{
+      // Debug-only full initialization: remove internal works AND recovery files,
+      // so a deleted artwork cannot reappear under the Resume section.
+      try{await store.removeTree('m05');}catch(error){
+        if(!(error instanceof DOMException&&error.name==='NotFoundError'))throw error;
+      }
+      await resetWorkLibrary();
+      currentSession=null;libraryWork=null;justInitializedRoot=null;previewTask=null;protectionProofs.clear();
+      reply(message.id,true,{reset:true});break;
+    }
     case 'init':{
       const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch'),snapshot=message.snapshot as CorePersistenceSnapshotV1,blocks=blockInputs(message.blocks);
       if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid recovery base snapshot');

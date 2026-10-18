@@ -623,6 +623,18 @@ if(!qaMode){
     renameWork:async(id,name)=>{await persistence.renameWork(id,name);if(documentReady&&controller.document.root.documentId===id){await prepareWorkSwitch();const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);}await refreshWorks();},
     duplicateWork:async(id)=>{if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');const loaded=await persistence.loadWork(id),copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');await activateOpened(copy);await refreshWorks();},
     deleteWork:async(id)=>{await persistence.deleteWork(id);if(documentReady&&controller.document.root.documentId===id){surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();}await refreshWorks();},
+    resetWorks:async()=>{
+      if(workSwitchBusy||!(await prepareWorkSwitch()))throw new Error('現在の操作が終わってから初期化してください。');
+      workSwitchBusy=true;
+      try{
+        if(thumbnailTimer!==null){clearTimeout(thumbnailTimer);thumbnailTimer=null;}
+        if(thumbnailRepairTimer!==null){clearTimeout(thumbnailRepairTimer);thumbnailRepairTimer=null;}
+        surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();
+        await persistence.resetWorks();
+        works=[];lastWorkId=null;recoveryCandidates=[];thumbnailRetryCount=0;thumbnailRepairSkipped.clear();
+        homeUi?.setRecoveryCandidates([]);await refreshWorks();updateHistoryButtons();
+      }finally{workSwitchBusy=false;}
+    },
     hasDocument:()=>documentReady,
   });
   byId<HTMLButtonElement>('home').onclick=()=>{void homeUi?.showHome();};

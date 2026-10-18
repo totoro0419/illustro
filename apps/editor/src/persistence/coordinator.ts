@@ -57,6 +57,12 @@ export class PersistenceCoordinator{
   async repairThumbnail(documentId:string):Promise<{state:'pending'|'complete'|'current'|'unavailable'}>{return this.request('library-preview-step',{documentId});}
   async renameWork(documentId:string,name:string){await this.request('library-rename',{documentId,name});}
   async deleteWork(documentId:string){await this.request('library-delete',{documentId});}
+  async resetWorks(){
+    await this.flushPrepared();
+    await this.request('library-reset',{});
+    this.controller=null;this.queue=[];this.preserved=undefined;this.fileHandle=null;this.externalFingerprint=null;
+    this.patch({currentRevision:null,savedRevision:null,protectedThrough:'0',queueLength:0,protectionPending:false,recovered:false,storageError:null});
+  }
   async selectWorkLayer(selectedLayerId:LayerId){const controller=this.controller;await this.flushPrepared();if(controller!==this.controller||controller?.selectedLayerId!==selectedLayerId)return;await this.request('library-selection',{selectedLayerId});}
   async storeThumbnail(documentId:string,revisionId:string,thumbnail:Blob){await this.request('library-thumbnail',{documentId,revisionId,thumbnail});}
   async barrier(){await this.flushPrepared();await this.request('flush',{});if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);}

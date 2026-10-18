@@ -67,6 +67,12 @@ export async function deleteWork(id:string){const database=await db();await new 
   tx.objectStore('works').delete(id);settings.put(true,'deleted:'+id);request.onsuccess=()=>{if(request.result===id)settings.delete('last-work');};
   tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error);
 });if(await getWork(id))throw new Error('削除結果を確認できませんでした。');}
+/** Clear the My Works catalog without changing the database version. */
+export async function resetWorkLibrary(){const database=await db();await new Promise<void>((resolve,reject)=>{
+  const tx=database.transaction(['works','settings'],'readwrite');
+  tx.objectStore('works').clear();tx.objectStore('settings').clear();
+  tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error);
+});}
 export async function lastWorkId():Promise<string|null>{const database=await db();return new Promise((resolve,reject)=>{
   const tx=database.transaction('settings','readonly'),request=tx.objectStore('settings').get('last-work');tx.oncomplete=()=>resolve(request.result??null);tx.onabort=()=>reject(tx.error);
 });}
