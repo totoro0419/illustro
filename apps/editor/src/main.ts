@@ -135,6 +135,8 @@ async function createProjectionCheckpoint(){
     const delta=await activeSurface.captureProjectionDelta(revisionId,fullSeed?undefined:operations);
     if(surface===activeSurface&&controller.document.head===revisionId&&!activeSurface.busy&&await persistence.storeProjectionDelta(delta)&&surface===activeSurface){
       checkpointOperations.splice(0,operations.length);checkpointOpsSinceLast=checkpointOperations.length;checkpointNeedsFullSeed=false;lastCheckpointAt=Date.now();
+      thumbnailRepairSkipped.delete(controller.document.root.documentId+':'+revisionId);
+      if(app.inert)scheduleThumbnailRepair(100);
     }
   }catch(error){const message=error instanceof Error?error.message:String(error);if(message.includes('stale'))checkpointCancelled++;else{checkpointErrors.push({at:new Date().toISOString(),message});if(checkpointErrors.length>12)checkpointErrors.shift();}}finally{
     projectionCheckpointBusy=false;
@@ -520,7 +522,7 @@ function scheduleThumbnailRepair(delay=750){
   if(qaMode||!app.inert||thumbnailRepairRunning||thumbnailRepairTimer!==null)return;
   const candidate=works.find(w=>(!w.thumbnail||w.thumbnailRevision!==w.revisionId)&&
     !thumbnailRepairSkipped.has(w.documentId+':'+w.revisionId)&&
-    !(documentReady&&w.documentId===controller.document.root.documentId));
+    true);
   if(!candidate)return;
   thumbnailRepairTimer=window.setTimeout(()=>{
     thumbnailRepairTimer=null;
@@ -605,7 +607,7 @@ if(!qaMode){
     },
     prepareHome:async()=>{thumbnailRetryCount=0;scheduleWorkThumbnail();void refreshWorks();
       // Start durable protection after the Home screen has had a chance to paint.
-      window.setTimeout(()=>{void persistence.barrier().then(refreshWorks).catch(showStorageError);},40);
+      window.setTimeout(()=>{void persistence.barrier().then(()=>{void createProjectionCheckpoint();return refreshWorks();}).catch(showStorageError);},40);
       return true;},
     listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
