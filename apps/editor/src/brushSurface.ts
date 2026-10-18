@@ -130,8 +130,8 @@ export class BrushSurface{
     this.handoff.resume();this.onStateChanged();return true;
   }
   admitHistory(change:EditorHistoryChange){
-    if(change.changed&&change.direction==='undo')for(const op of change.operations)if(op.kind==='brush.stroke'){
-      const record=this.strokeRecord(op),id=(this.session as any)?.recordIds.get(record);if(id!==undefined){const at=performance.now();this.renderer?.hideStrokePreview(id);this.historyTraces.push({direction:'undo',id,at,invalidatedAt:performance.now(),kind:'published'});}
+    if(change.changed)for(const op of change.operations)if(op.kind==='brush.stroke'){
+      const record=this.strokeRecord(op),id=(this.session as any)?.recordIds.get(record);if(id!==undefined){const at=performance.now();if(change.direction==='undo')this.renderer?.hideStrokePreview(id);else this.renderer?.restoreStrokePreview(id);this.historyTraces.push({direction:change.direction,id,at,invalidatedAt:performance.now(),kind:'published'});}
     }this.handoff?.rebase();if(this.historyTraces.length>1200)this.historyTraces.splice(0,this.historyTraces.length-1200);
   }
   get canUndo(){return this.handoff?.canUndo||this.controller.canUndo;}

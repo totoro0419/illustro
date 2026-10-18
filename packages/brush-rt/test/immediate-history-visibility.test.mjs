@@ -28,3 +28,18 @@ test('history resumption preserves unrelated pending bitmaps and republishes onl
  const b={retirePreview(){},overlayHoldIds:new Set},r=new GpuRenderer(b,4000,4000,{strokeHandoff:true});const enqueued=[];let resumed=0;
  r.requestWork=()=>{};r.proxy={resumeAfterHistory(){resumed++;},enqueue(s){enqueued.push(s.id);},invalidate(){throw Error('must not discard an unrelated pending bitmap');}};r.previewStates.set(1,{id:1});r.previewStates.set(10,{id:10});r.hiddenStrokeIds.add(1);r.resumeHistory();assert.equal(resumed,1);assert.deepEqual(enqueued,[10]);
 });
+
+test('a deposited stroke waiting for its final frame takes interruption instead of drain',async()=>{
+ const {RealtimeSession}=await import('../dist/rt/session.mjs'),record={},s=Object.create(RealtimeSession.prototype);let interrupted=false;
+ s.records=[record];s.redoRecords=[];s.recordIds=new WeakMap([[record,1]]);s.recordSurfaces=new WeakMap([[record,'lower']]);s.renderer={backend:{imageHistory:{}},document:{jobs:[]},strokeFrames:new Map([[1,3]]),ended:new Set,resumeHistory(){throw Error('must not publish the canceled final frame');},drain(){throw Error('must not drain the canceled final frame');}};s.navigateImageHistory=async()=>{interrupted=true;};
+ await s.navigateDerived([{direction:'undo',record,keys:['0,0'],surfaceKey:'lower'}]);assert.equal(interrupted,true);
+});
+
+test('an exact restored composite completes retained frame waiters without an intermediate publication',async()=>{
+ const b={dirtyConfirmed:new Set,setPresentationHeld(v){this.presentationHeld=v;},async presentCurrent(){},imageHistory:{async prepare(){return {staged:[]};},publish(){},complete(){},schedule(){}}},r=new GpuRenderer(b,4000,4000,{strokeHandoff:true});r.hiddenStrokeIds.add(2);r.strokeFrames.set(1,5);
+ assert.equal(await r.applyImageHistory([{id:2,direction:'undo'}]),true);assert.equal(r.strokeFrames.size,0);assert.ok(r.presentedStrokes.has(1));await r.waitStroke([1]);assert.equal(r.needsFrame,false);
+});
+
+test('a late stroke-completion callback cannot report a currently undone stroke as applied',async()=>{
+ const r=new GpuRenderer({},4000,4000,{strokeHandoff:true});r.presentedStrokes.add(1);r.hiddenStrokeIds.add(1);assert.deepEqual(await r.waitStroke([1]),{superseded:true});assert.equal(r.presentedStrokes.has(1),false);
+});

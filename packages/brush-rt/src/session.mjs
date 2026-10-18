@@ -96,7 +96,7 @@ export class RealtimeSession {
    if(source.at(-1)!==record)throw Error('Document/Renderer '+direction+' mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');source.pop();target.push(record);plans.push({...step,id:this.recordIds.get(record)});
   }
   if(this.renderer.backend?.imageHistory){
-   if(this.renderer.document.jobs.length)return await this.navigateImageHistory(plans,records,redo);
+   if(this.renderer.document.jobs.length||plans.some(p=>p.direction==='undo'&&(this.renderer.strokeFrames.has(p.id)||this.renderer.ended.has(p.id))))return await this.navigateImageHistory(plans,records,redo);
    // Fully deposited strokes keep the established PR35 path. Only unfinished
    // formal work needs interruption and partial before-image restoration.
    this.renderer.resumeHistory();await this.renderer.drain(false);if(this.renderer.strokeFrames.size||this.renderer.backend.overlayDirty?.size)await this.renderer.drain();
@@ -125,9 +125,9 @@ export class RealtimeSession {
   try{
   for(const p of plans){const last=renderPlans.at(-1);if(last?.record===p.record&&last.direction!==p.direction)renderPlans.pop();else renderPlans.push(p);}
   await r.prepareHistory();await r.discardImageHistoryPending(renderPlans);
-  // Only retained strokes may finish. A removed suffix is already absent from
-  // the queue, while its partial before images remain owned by TileHistory.
-  if(r.document.jobs.length||r.strokeFrames.size||r.backend.overlayDirty?.size){r.resumeHistory();await r.drain();await r.prepareHistory();}
+  // Before images already identify the desired predecessor. Retained formal
+  // work resumes AFTER this restoration; publishing a canceled finished stroke
+  // (or draining an unrelated stroke first) is not a history prerequisite.
   this.records=records;this.redoRecords=redo;
   for(const p of plans){if(p.direction==='undo')this.unindexRecord(p.record);else this.reindexRecord(p.record);}
   if(await r.applyHistory(renderPlans)){this.historyPatchHits+=renderPlans.length;return;}

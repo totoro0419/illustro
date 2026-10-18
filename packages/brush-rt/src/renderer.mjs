@@ -317,7 +317,7 @@ export class GpuRenderer {
  flushHiddenPreviews(){if(this.inflight||this.guardPreparing)return;for(const id of this.previewCleanup)this.backend.retirePreview(id);this.previewCleanup.clear();}
  restoreStrokePreview(id){
   const state=this.hiddenPreviewStates.get(id);for(const key of [id,...(this.wrapPreviews.get(id)??[])]){this.hiddenStrokeIds.delete(key);this.hiddenPreviewStates.delete(key);this.previewCleanup.delete(key);}
-  if(state){if(this.proxy?.suspended)this.proxy.invalidate();this.setLive({...state,resetPreview:true});}
+  if(state){this.proxy?.resumeAfterHistory?.();this.setLive({...state,resetPreview:true});}
  }
  forgetStrokePreview(id){for(const key of [id,...(this.wrapPreviews.get(id)??[])]){this.hiddenPreviewStates.delete(key);this.hiddenStrokeIds.delete(key);releaseOverlayPublication(this.backend,key);}this.wrapPreviews.delete(id);this.wrapCaches.delete(id);}
  setLive(state){
@@ -410,7 +410,7 @@ export class GpuRenderer {
    Promise.resolve(pending).then(finish).catch(e=>{this.errors.push(e.message);this.inflight=false;this.disposed=true;});return true;
   }catch(e){this.errors.push(e.message);this.inflight=false;this.disposed=true;return false;}
  }
- async waitStroke(ids){const start=performance.now(),epoch=this.navigationEpoch;while(ids.some(id=>!this.presentedStrokes.has(id))){if(epoch!==this.navigationEpoch||ids.some(id=>this.supersededStrokes?.has(id))){for(const id of ids)this.supersededStrokes?.delete(id);return {superseded:true};}if(this.errors.length||this.disposed)throw Error(this.errors.join(';')||'Renderer stopped');if(performance.now()-start>120000)throw Error('Stroke GPU completion timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}for(const id of ids)this.presentedStrokes.delete(id);}
+ async waitStroke(ids){const start=performance.now(),epoch=this.navigationEpoch;while(ids.some(id=>!this.presentedStrokes.has(id))){if(epoch!==this.navigationEpoch||ids.some(id=>this.supersededStrokes?.has(id))){for(const id of ids)this.supersededStrokes?.delete(id);return {superseded:true};}if(this.errors.length||this.disposed)throw Error(this.errors.join(';')||'Renderer stopped');if(performance.now()-start>120000)throw Error('Stroke GPU completion timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}for(const id of ids)this.presentedStrokes.delete(id);if(ids.some(id=>this.hiddenStrokeIds.has(id)))return {superseded:true};}
  async drain(finalFrame=true){const start=performance.now();while(this.inflight||this.guardPreparing||this.document.jobs.length){if(this.errors.length)throw Error(this.errors.join(';'));if(performance.now()-start>120000)throw Error('confirmed renderer drain timeout');await new Promise(r=>requestAnimationFrame(r));this.frame(performance.now());}if(finalFrame){this.needsFrame=true;this.frame(performance.now());while(this.inflight||this.guardPreparing){await new Promise(r=>requestAnimationFrame(r));this.backend.poll?.();}}if(this.errors.length)throw Error(this.errors.join(';'));}
  async read(surfaceKey='default'){await this.drain();return this.backend.read(surfaceKey);}
  async cancelStroke(id){
@@ -444,7 +444,7 @@ export class GpuRenderer {
   const b=this.backend,h=b.imageHistory;this.supersededStrokes??=new Set;
   const visualIds=new Set(ids);for(const id of ids)for(const copy of this.wrapPreviews.get(id)??[])visualIds.add(copy);
   for(const id of ids){if(pending.has(id))h.interrupt(id);this.supersededStrokes.add(id);this.strokeFrames.delete(id);this.presentedStrokes.delete(id);this.inputStarts.delete(id);this.ended.delete(id);}
-  for(const id of visualIds){this.proxy?.cancel(id);releaseOverlayPublication(b,id);this.previewStates.delete(id);this.wrapPreviews.delete(id);this.wrapCaches.delete(id);b.retirePreview(id);}
+  for(const id of visualIds){this.proxy?.cancel(id);releaseOverlayPublication(b,id);this.previewStates.delete(id);this.hiddenPreviewStates.delete(id);this.wrapPreviews.delete(id);this.wrapCaches.delete(id);b.retirePreview(id);}
   if(visualIds.has(this.snapshot?.id))this.snapshot=null;if(visualIds.has(this.mailbox.value?.id))this.mailbox.value=null;
   const removed=this.document.discardHistory(ids);this.historySupersededGpuJobs+=removed.jobs;this.historySupersededGpuCommands+=removed.commands;
   // Coverage scratch is not the authoritative layer. Committed subsets are
@@ -492,7 +492,11 @@ export class GpuRenderer {
     await historyYield();
    }
    b.setPresentationHeld(false);held=false;this.syncOverlayView();await b.presentCurrent();this.viewPending=false;
-   this.recordPresentation(performance.now(),started,'history');this.needsFrame=false;return true;
+   this.recordPresentation(performance.now(),started,'history');
+   // This exact composite also publishes already deposited retained strokes.
+   // Their old frame markers must not demand an intermediate canceled picture.
+   for(const id of [...this.strokeFrames.keys()])if(!this.document.jobs.some(j=>j.id===id)){this.strokeFrames.delete(id);this.presentedStrokes.add(id);this.inputStarts.delete(id);this.proxy?.presented?.(id,this.proxy.epoch);}
+   this.needsFrame=this.document.jobs.length>0||!!b.previewGpuPending||this.strokeFrames.size>0;return true;
   }finally{if(held)b.setPresentationHeld(false);h.complete(prepared);this.historyPreparing=false;h.schedule();}
  }
  async rebuildTileGroups(groups){
