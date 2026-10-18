@@ -12,51 +12,39 @@ export type WorkEntry=Readonly<{
   previous:Readonly<{writerEpochId:string;revisionId:string;protectedThrough:string}>|null;
   preserved?:unknown;
 }>;
-type PreviewBlob=Readonly<{documentId:string;revisionId:string;image:Blob}>;
+// Keep the v1 database compatible with previously published QA and app builds.
+// Only the gallery result is metadata-only; individual preview Blobs load on demand.
 let dbPromise:Promise<IDBDatabase>|null=null;
 function db(){return dbPromise??=new Promise<IDBDatabase>((resolve,reject)=>{
-  const request=indexedDB.open('illustro-work-library-v1',2);
-  request.onupgradeneeded=(event)=>{
-    const database=request.result,oldVersion=(event as IDBVersionChangeEvent).oldVersion;
-    if(oldVersion<1){database.createObjectStore('works',{keyPath:'documentId'});database.createObjectStore('settings');}
-    if(oldVersion<2){
-      const previews=database.createObjectStore('previews',{keyPath:'documentId'}),works=request.transaction!.objectStore('works');
-      // Atomic v1 migration: a failed upgrade preserves the entire old database.
-      const cursor=works.openCursor();cursor.onsuccess=()=>{
-        const current=cursor.result;if(!current)return;
-        const entry=current.value as WorkEntry;
-        if(entry.thumbnail&&entry.thumbnailRevision){previews.put({documentId:entry.documentId,revisionId:entry.thumbnailRevision,image:entry.thumbnail} satisfies PreviewBlob);}
-        if(entry.thumbnail!==null)current.update({...entry,thumbnail:null});
-        current.continue();
-      };
-    }
-  };
+  const request=indexedDB.open('illustro-work-library-v1',1);
+  request.onupgradeneeded=()=>{request.result.createObjectStore('works',{keyPath:'documentId'});request.result.createObjectStore('settings');};
   request.onsuccess=()=>resolve(request.result);request.onerror=()=>{dbPromise=null;reject(request.error);};
 });}
 export async function listWorks():Promise<WorkEntry[]>{const database=await db();return new Promise((resolve,reject)=>{
-  // The catalog contains metadata only. No thumbnail Blob is cloned for every artwork.
-  const tx=database.transaction('works','readonly'),request=tx.objectStore('works').getAll();
-  tx.oncomplete=()=>resolve(request.result as WorkEntry[]);tx.onabort=()=>reject(tx.error);
+  const result:WorkEntry[]=[],tx=database.transaction('works','readonly'),request=tx.objectStore('works').openCursor();
+  request.onsuccess=()=>{
+    const cursor=request.result;if(!cursor)return;
+    const work=cursor.value as WorkEntry;
+    // Blobs remain durable for old clients, but never cross to the gallery UI.
+    result.push({...work,thumbnail:null});cursor.continue();
+  };
+  tx.oncomplete=()=>resolve(result);tx.onabort=()=>reject(tx.error);
 });}
 export async function getWork(id:string):Promise<WorkEntry|null>{const database=await db();return new Promise((resolve,reject)=>{
   const tx=database.transaction('works','readonly'),request=tx.objectStore('works').get(id);
   tx.oncomplete=()=>resolve(request.result??null);tx.onabort=()=>reject(tx.error);
 });}
 export async function getWorkThumbnail(documentId:string,revisionId:string):Promise<Blob|null>{
-  const database=await db();return new Promise((resolve,reject)=>{
-    const tx=database.transaction('previews','readonly'),request=tx.objectStore('previews').get(documentId);
-    tx.oncomplete=()=>{const item=request.result as PreviewBlob|undefined;resolve(item?.revisionId===revisionId?item.image:null);};
-    tx.onabort=()=>reject(tx.error);
-  });
+  const entry=await getWork(documentId);
+  return entry?.thumbnailRevision===revisionId?entry.thumbnail:null;
 }
 export async function storeWorkThumbnail(documentId:string,revisionId:string,image:Blob):Promise<boolean>{
   const database=await db();return new Promise((resolve,reject)=>{
-    const tx=database.transaction(['works','previews'],'readwrite'),works=tx.objectStore('works'),request=works.get(documentId);let stored=false;
+    const tx=database.transaction('works','readwrite'),works=tx.objectStore('works'),request=works.get(documentId);let stored=false;
     request.onsuccess=()=>{
       const work=request.result as WorkEntry|undefined;
-      if(!work||work.revisionId!==revisionId)return; // Stale work must not overwrite a newer preview.
-      works.put({...work,thumbnail:null,thumbnailRevision:revisionId});
-      tx.objectStore('previews').put({documentId,revisionId,image} satisfies PreviewBlob);stored=true;
+      if(!work||work.revisionId!==revisionId)return;
+      works.put({...work,thumbnail:image,thumbnailRevision:revisionId});stored=true;
     };
     tx.oncomplete=()=>resolve(stored);tx.onabort=()=>reject(tx.error);
   });
@@ -65,7 +53,7 @@ export async function publishWork(entry:WorkEntry,expectedEpoch:string|null){con
   const tx=database.transaction(['works','settings'],'readwrite'),works=tx.objectStore('works'),request=works.get(entry.documentId);let reason:Error|null=null;
   request.onsuccess=()=>{const current=request.result as WorkEntry|undefined;
     if((current?.writerEpochId??null)!==expectedEpoch){reason=new Error('この作品は別の画面で更新されています。マイ作品から開き直すか、作品ファイルを保存してください。');tx.abort();return;}
-    works.put({...entry,thumbnail:null});tx.objectStore('settings').delete('deleted:'+entry.documentId);tx.objectStore('settings').put(entry.documentId,'last-work');
+    works.put(entry);tx.objectStore('settings').delete('deleted:'+entry.documentId);tx.objectStore('settings').put(entry.documentId,'last-work');
   };
   tx.oncomplete=()=>resolve();tx.onabort=()=>reject(reason??tx.error??new Error('作品の保存に失敗しました。'));
 });const read=await getWork(entry.documentId);if(!read||read.revisionId!==entry.revisionId||read.writerEpochId!==entry.writerEpochId)throw new Error('作品の保存結果を確認できませんでした。');}
@@ -75,8 +63,8 @@ export async function updateWork(id:string,change:(entry:WorkEntry)=>WorkEntry){
   tx.oncomplete=()=>resolve();tx.onabort=()=>reject(reason??tx.error);
 });}
 export async function deleteWork(id:string){const database=await db();await new Promise<void>((resolve,reject)=>{
-  const tx=database.transaction(['works','settings','previews'],'readwrite'),settings=tx.objectStore('settings'),request=settings.get('last-work');
-  tx.objectStore('works').delete(id);tx.objectStore('previews').delete(id);settings.put(true,'deleted:'+id);request.onsuccess=()=>{if(request.result===id)settings.delete('last-work');};
+  const tx=database.transaction(['works','settings'],'readwrite'),settings=tx.objectStore('settings'),request=settings.get('last-work');
+  tx.objectStore('works').delete(id);settings.put(true,'deleted:'+id);request.onsuccess=()=>{if(request.result===id)settings.delete('last-work');};
   tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error);
 });if(await getWork(id))throw new Error('削除結果を確認できませんでした。');}
 export async function lastWorkId():Promise<string|null>{const database=await db();return new Promise((resolve,reject)=>{
