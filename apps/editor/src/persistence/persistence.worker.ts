@@ -273,10 +273,24 @@ async function scanProtected(store:WorkingStore,session:Session){
 }
 async function loadRecovery(store:WorkingStore,session:Session,chosenHead?:string,chosenThrough?:string){
   const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)throw new Error('recovery base missing');const base=await unframeJson(baseBytes),protectedThrough=chosenThrough===undefined?await scanProtected(store,session):BigInt(chosenThrough),packets:unknown[]=[];
-  for(let seq=1n;seq<=protectedThrough;seq++){const bytes=await store.get(session.path+'/commits/'+seq.toString().padStart(20,'0')+'.frame');if(!bytes)throw new Error('recovery packet gap');packets.push(await unframeJson(bytes));}
+  // Bounded concurrent reads retain commit order while avoiding one storage round-trip per stroke.
+  for(let seq=1n;seq<=protectedThrough;){
+    const reads:Promise<unknown>[]=[];
+    for(let count=0;count<16&&seq<=protectedThrough;count++,seq++){
+      const file=session.path+'/commits/'+seq.toString().padStart(20,'0')+'.frame';
+      reads.push(store.get(file).then(bytes=>{if(!bytes)throw new Error('recovery packet gap');return unframeJson(bytes);}));
+    }
+    packets.push(...await Promise.all(reads));
+  }
   let headRevisionId:string|undefined;const headBytes=await store.get(session.path+'/head.frame');if(headBytes){try{const head=await unframeJson(headBytes) as {revisionId?:unknown};if(typeof head.revisionId==='string')headRevisionId=head.revisionId;}catch{}}
   const snapshot=mergeCoreRecovery(base,packets,chosenHead??headRevisionId),blocks:Array<{id:string;bytes:Uint8Array}>=[];
-  for(const descriptor of snapshot.blocks){const bytes=await store.get(session.path+'/blocks/'+descriptor.id+'.bin');if(!bytes)throw new Error('recovery block dependency missing');blocks.push({id:descriptor.id,bytes});}
+  for(let offset=0;offset<snapshot.blocks.length;offset+=8){
+    const group=await Promise.all(snapshot.blocks.slice(offset,offset+8).map(async descriptor=>{
+      const bytes=await store.get(session.path+'/blocks/'+descriptor.id+'.bin');if(!bytes)throw new Error('recovery block dependency missing');
+      return {id:descriptor.id,bytes};
+    }));
+    blocks.push(...group);
+  }
   return {snapshot,blocks,protectedThrough:protectedThrough.toString(),documentId:session.documentId,writerEpochId:session.writerEpochId};
 }
 async function storeProjectionCheckpoint(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,layers:readonly {surfaceId:string;pixels:Uint8Array}[]){
