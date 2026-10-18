@@ -80,7 +80,7 @@
     {
       "path": "packages/brush-rt/src/session.mjs",
       "sourceCommit": "510204de121c11c78aa27421d4d1d2c464e34a02",
-      "sha256": "e46c5b9dc0ae06f84495dbcca8269210bceadf5390b8f24478c0201b2e5f5584",
+      "sha256": "87057717b3794a1efcbd0520bab596a70a89af83528b69d38b7150f65fca995d",
       "m08Exception": "M08 Seamless Tile view-only preview and one-step raster seam copies; brush geometry algorithms unchanged. Exact SHA-256 recalculated and 93/93 regression required.",
       "performanceException": "Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified.",
@@ -248,7 +248,7 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "952b8bb09042ac8c9cc4333e44520688b3256cd0018aa6de3346effd8c7c7425",
+      "sha256": "d762790902169193d24b37325192330c4678adcd22063f58bff7d0973a979454",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
       "undoNavigationException": "User-authorized continuous Undo: ordered bounded command admission, exact grouped history copies, final-head dirty reconstruction, pending derived GPU supersession, bounded32/64MiB editor cache. Canonical records, brush precision and shaders unchanged. Requires both-backend exact pixels, mixed directions, portable/history/layer tests and all prior regressions; physical Android remains unverified. Reuse completed base images only when no removed pending stroke has committed any layer tile; partially committed tiles must reconstruct.",

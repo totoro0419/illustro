@@ -14,3 +14,12 @@ test('restoring B does not clear the retained preview of A',()=>{
  r.requestWork=()=>{};r.proxy={cancel(){},closeGuards(){},suspended:false,invalidate(){invalidations++;}};r.previewStates.set(10,{id:10});r.previewStates.set(1,{id:1});r.hideStrokePreview(10);r.setLive=state=>r.previewStates.set(state.id,state);r.restoreStrokePreview(10);
  assert.ok(r.previewStates.has(1));assert.ok(r.previewStates.has(10));assert.equal(invalidations,0);
 });
+
+test('publication canceled during a document port wait stages exact canonical Redo without GPU jobs',async()=>{
+ const {RealtimeSession}=await import('../dist/rt/session.mjs');
+ const command=Array(24).fill(0);Object.assign(command,{0:100,1:100,2:20,16:90,17:90,18:10,19:1});const record={commands:[command],preset:{},seed:[1,2]};
+ const patches=new Map,history={patches,interrupt(id){patches.set(id,{state:'applied',incomplete:true});}};
+ const renderer={document:{width:4000,height:4000,append(){throw Error('undone data must not be sent to the GPU');}},backend:{imageHistory:history}},s=Object.create(RealtimeSession.prototype);
+ Object.assign(s,{renderer,staged:new Map([[1,record]]),recordIds:new WeakMap([[record,1]]),recordSurfaces:new WeakMap,recordOrder:new WeakMap,recordTiles:new WeakMap,tileRecords:new Map,nextRecordOrder:0,redoRecords:[]});
+ s.commitUndoneRecord(record,[],'lower');assert.deepEqual(s.redoRecords,[record]);assert.equal(s.staged.size,0);assert.equal(s.tileRecords.size,0);assert.equal(s.recordSurfaces.get(record),'lower');assert.ok(s.recordTiles.get(record).length>0);assert.equal(patches.get(1).state,'undone');assert.equal(patches.get(1).incomplete,true);
+});

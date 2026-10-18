@@ -1,5 +1,5 @@
 import {foundationDabs,predictFoundation,cursorState,geometryContext} from '@rt/foundation';
-import {CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,forceFadePreviewCommands,LatestMailbox,validateRecord,STRIDE} from '@rt/model';
+import {CanonicalBuilder,Stabilizer,predict,taper,continuous,limitFoundationDiameter,forceFadePreviewCommands,LatestMailbox,validateRecord,keysFor,STRIDE} from '@rt/model';
 import {makeDab} from '@legacy/dynamics';
 // A predicted stamp is emitted only when the next spatial/time deposit is due.
 // The builder, random index and all canonical input remain unchanged.
