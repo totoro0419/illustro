@@ -4,7 +4,7 @@ on:
     branches: ['perf/my-works-open-thumbnails-2026-10-18']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: my-works-quality
   cancel-in-progress: true
@@ -29,8 +29,51 @@ jobs:
           npm --workspace @illustro/editor exec -- vitest run
           npm --workspace @illustro/editor exec -- tsc --noEmit
           npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install and exercise the real browser
+        run: |
+          npm install --prefix /tmp/my-works-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/my-works-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Browser reopen, gallery preview, cold-start repair and 4000px
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/my-works-browser/node_modules/playwright
+          MY_WORKS_EVIDENCE: /tmp/my-works-evidence/report.json
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/my-works-open-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: my-works-evidence
+          path: /tmp/my-works-evidence/
       - uses: actions/upload-artifact@v4
         if: success()
         with:
           name: my-works-test-build
           path: apps/editor/dist/
+  publish:
+    needs: unit-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/download-artifact@v4
+        with: {name: my-works-test-build, path: site/qa/my-works-open/app}
+      - uses: actions/download-artifact@v4
+        with: {name: my-works-evidence, path: site/qa/my-works-open/evidence}
+      - name: Verify source revision and publish ONLY the QA directory
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';import assert from 'node:assert/strict';
+          const file='site/qa/my-works-open/evidence/report.json',result=JSON.parse(fs.readFileSync(file,'utf8'));
+          assert.equal(result.commit,process.env.GITHUB_SHA);assert.equal(result.status,'PASS');assert.equal(result.checks.length,3);
+          fs.writeFileSync('site/qa/my-works-open/evidence/qa-status.json',JSON.stringify({sourceCommit:result.commit,runId:process.env.GITHUB_RUN_ID,checks:result.checks,unverified:['Physical smartphone, real GPU and memory pressure','1000-stroke or 10-layer 4000px scale','Manual user acceptance']},null,2));
+          JS
+          cp qa/my-works-open/index.html site/qa/my-works-open/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/my-works-open
+          test -z "$(git diff --cached --name-only | sed '/^qa\/my-works-open\//d')"
+          git diff --cached --quiet || git commit -m "qa: publish verified My Works review $GITHUB_SHA"
+          git push origin HEAD:gh-pages
