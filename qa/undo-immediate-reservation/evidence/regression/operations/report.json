@@ -1,0 +1,124 @@
+{
+  "commit": "cce10ab6e12d0c13d7ee5dca5d9f32c3fdf7a66a",
+  "canvasSize": 4000,
+  "scope": "Trusted mouse input: immediate history, delayed portable save while later drawing continues, exact reloaded layer pixels",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "pendingAtUndo": {
+        "inputAttempts": [
+          {
+            "at": 3163.7999999999956,
+            "eventAt": 3162.899999999994,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 3164.899999999994,
+            "id": 1
+          }
+        ],
+        "accepted": 1,
+        "rejected": 0,
+        "pendingLogical": 1,
+        "pendingGpu": 0,
+        "pendingEntries": {
+          "pending": 1,
+          "redo": 0,
+          "publishing": false,
+          "entries": [
+            {
+              "sequence": 1,
+              "visible": true,
+              "recordReady": false,
+              "phase": "reserved"
+            }
+          ]
+        },
+        "historyVisibility": [],
+        "protectionQueue": 0,
+        "fault": null,
+        "traces": [
+          {
+            "id": 1,
+            "upAt": 3406.899999999994,
+            "readyMs": 1,
+            "uiStateMs": 0.7999999999956344
+          }
+        ]
+      },
+      "undoRedo": true,
+      "savedRevision": "63fe5c8b-4371-4520-9a71-e7f8163f0ada",
+      "saveDuringLaterInput": true,
+      "reopenedStrokeCount": 2,
+      "exactReloadedPixels": true,
+      "portableBytes": 55651
+    },
+    {
+      "backend": "webgpu",
+      "pendingAtUndo": {
+        "inputAttempts": [
+          {
+            "at": 2695.7999999999956,
+            "eventAt": 2694.7000000000044,
+            "reason": null,
+            "state": {
+              "finishing": false,
+              "historySyncing": false,
+              "inputBarrier": false,
+              "pendingLogical": 0,
+              "pendingGpu": 0,
+              "formalCommands": 0,
+              "pendingRaw": 0,
+              "protectionQueue": 0
+            },
+            "acceptedAt": 2696.7999999999956,
+            "id": 1
+          }
+        ],
+        "accepted": 1,
+        "rejected": 0,
+        "pendingLogical": 1,
+        "pendingGpu": 0,
+        "pendingEntries": {
+          "pending": 1,
+          "redo": 0,
+          "publishing": false,
+          "entries": [
+            {
+              "sequence": 1,
+              "visible": true,
+              "recordReady": false,
+              "phase": "reserved"
+            }
+          ]
+        },
+        "historyVisibility": [],
+        "protectionQueue": 0,
+        "fault": null,
+        "traces": [
+          {
+            "id": 1,
+            "upAt": 2931.9999999999927,
+            "readyMs": 3.5,
+            "uiStateMs": 0.7999999999883585
+          }
+        ]
+      },
+      "undoRedo": true,
+      "savedRevision": "66ac0b59-a891-4e3c-bf26-487eccadb0d1",
+      "saveDuringLaterInput": true,
+      "reopenedStrokeCount": 2,
+      "exactReloadedPixels": true,
+      "portableBytes": 55878
+    }
+  ],
+  "errors": []
+}

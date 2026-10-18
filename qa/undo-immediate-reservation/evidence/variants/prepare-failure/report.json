@@ -1,0 +1,31 @@
+{
+  "sourceCommit": "cce10ab6e12d0c13d7ee5dca5d9f32c3fdf7a66a",
+  "baselineCommit": "2d438ae424abdb4d1742f86347caf10886cad864",
+  "scope": "Chromium software GPU; 390x844/DPR2, deviceMemory=4; trusted CDP touch drawing and touch taps. Controlled canonical, registration and GPU acknowledgement gates. JS heap limit 256MiB is not an operating-system memory limit. Not physical smartphone measurements.",
+  "size": 4000,
+  "height": 4000,
+  "throttle": 1,
+  "brush": "foundation-g-pen",
+  "force": false,
+  "points": 120,
+  "seamless": false,
+  "cases": [
+    {
+      "backend": "webgl2",
+      "stage": "prepare-failure",
+      "mode": "after",
+      "exactDocumentRollback": true,
+      "exactPixels": true,
+      "expectedFault": "Controlled history preparation failure"
+    },
+    {
+      "backend": "webgpu",
+      "stage": "prepare-failure",
+      "mode": "after",
+      "exactDocumentRollback": true,
+      "exactPixels": true,
+      "expectedFault": "Controlled history preparation failure"
+    }
+  ],
+  "errors": []
+}

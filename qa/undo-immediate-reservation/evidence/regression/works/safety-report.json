@@ -1,0 +1,19 @@
+{
+  "tests": [
+    {
+      "name": "BROWSER-PROCESS-RESTART",
+      "status": "PASS"
+    },
+    {
+      "name": "INDEXEDDB-FALLBACK-QUOTA-FAILURE-RETRY-PREVIOUS-INTACT",
+      "status": "PASS"
+    },
+    {
+      "name": "BACKGROUND-REAL-RASTER-SAVE-REOPEN-EXPORT",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "commit": "cce10ab6e12d0c13d7ee5dca5d9f32c3fdf7a66a",
+  "mode": "local"
+}
