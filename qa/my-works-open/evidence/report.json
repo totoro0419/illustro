@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "commit": "4364993e69513c1171c9932953abbe4f416a1365",
+  "checks": [
+    {
+      "id": "live-preview",
+      "note": "512px current preview generated with real dimensions"
+    },
+    {
+      "id": "cold-preview-repair",
+      "note": "thumbnail reconstructed from saved tiles after browser reload"
+    },
+    {
+      "id": "save-reopen-4000",
+      "note": "4000px document remained editable with the exact saved stroke count"
+    }
+  ],
+  "times": {
+    "reopen512ms": 1187,
+    "reopen4000ms": 139
+  },
+  "errors": []
+}
