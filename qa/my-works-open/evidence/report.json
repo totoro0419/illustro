@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "commit": "911c49100062c8b6d024d12044aef6fb1654c3b6",
+  "commit": "ce17cec3b4abaeef9407baa2508add7598db8629",
   "checks": [
     {
       "id": "live-preview",
@@ -11,13 +11,21 @@
       "note": "thumbnail reconstructed from saved tiles after browser reload"
     },
     {
+      "id": "portable-png-preview",
+      "note": "downloaded .illustro includes an optional preview for the exact saved revision"
+    },
+    {
       "id": "save-reopen-4000",
       "note": "4000px document remained editable with the exact saved stroke count"
+    },
+    {
+      "id": "reopen-4000-ten-layers",
+      "note": "ten layer artwork survives a cold browser reload with its formal stroke"
     }
   ],
   "times": {
-    "reopen512ms": 1736,
-    "reopen4000ms": 2325
+    "reopen512ms": 1069,
+    "reopen4000ms": 995
   },
   "errors": []
 }
