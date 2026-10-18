@@ -13,6 +13,7 @@ export class StrokeHandoff{
   private sequence=0;private running=false;private expected:DrawingTarget['baseRevision']|null=null;private fault:unknown=null;
   private waiters:Array<{resolve:()=>void;reject:(error:unknown)=>void}>=[];
   constructor(private controller:EditorController,private published:(reservation:StrokeReservation,record:StrokeRecord,additional:readonly StrokeRecord[],result:StrokeCommitResult,undone?:boolean)=>void,private discarded:(record:StrokeRecord)=>void=()=>{}){}
+  owns(reservation:StrokeReservation){return this.entries.has(reservation);}
   get pending(){return this.items.length;}
   get canUndo(){return this.items.some(item=>!item.hidden&&!item.discarded);}
   get canRedo(){return this.redoItems.length>0;}

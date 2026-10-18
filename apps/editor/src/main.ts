@@ -360,10 +360,10 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
   }
 }
 function performHistory(direction:HistoryDirection){
-  if(!documentReady||!surface||(surface.inputActive&&!historyPending)||geometryBusy)return;
-  const available=historyPending||(direction==='undo'?surface.canUndo:surface.canRedo);if(!available)return;
-  if(!historyPending&&surface.navigatePending(direction)){if(direction==='undo')undoCount++;else redoCount++;byId('status').textContent=direction==='undo'?'線を取り消しました。':'取り消した線をやり直します。';updateHistoryButtons();updatePersistenceDisplay();updateQa();return;}
-  historyNavigation!.enqueue(direction);
+  if(!documentReady||!surface||geometryBusy)return 'not-ready';if(surface.inputActive&&!historyPending)return 'active-input';
+  const available=historyPending||(direction==='undo'?surface.canUndo:surface.canRedo);if(!available)return 'no-target';
+  if(!historyPending&&surface.navigatePending(direction)){if(direction==='undo')undoCount++;else redoCount++;byId('status').textContent=direction==='undo'?'線を取り消しました。':'取り消した線をやり直します。';updateHistoryButtons();updatePersistenceDisplay();updateQa();return 'accepted';}
+  return historyNavigation!.enqueue(direction)?'accepted':'capacity-or-fault';
 }
 function bindHistoryButton(id:string,direction:'undo'|'redo'){
   const button=byId<HTMLButtonElement>(id);let press:number|null=null,touchHandled:number|null=null;
@@ -375,13 +375,13 @@ function bindHistoryButton(id:string,direction:'undo'|'redo'){
   button.addEventListener('pointerup',event=>{
     traceHistoryInput(button,direction,'up',event);if(event.pointerType==='mouse'||press!==event.pointerId||button.disabled)return;
     const target=document.elementFromPoint(event.clientX,event.clientY);if(!target||!button.contains(target)){press=null;return;}
-    touchHandled=event.pointerId;performHistory(direction);traceHistoryInput(button,direction,'accepted',event);
+    touchHandled=event.pointerId;const result=performHistory(direction);traceHistoryInput(button,direction,result==='accepted'?'accepted':'rejected',event,result);
   });
   button.onclick=event=>{
     const pointerId=(event as PointerEvent).pointerId;
     if(event.detail>0&&touchHandled!==null&&(pointerId===touchHandled||!pointerId)){touchHandled=null;press=null;traceHistoryInput(button,direction,'compatibility-click',event);return;}
     if(event.detail>0&&press===null){blockedHistoryGhostClicks++;event.preventDefault();traceHistoryInput(button,direction,'rejected',event,'outside-press');updateQa();return;}
-    press=null;performHistory(direction);traceHistoryInput(button,direction,'accepted',event);
+    press=null;const result=performHistory(direction);traceHistoryInput(button,direction,result==='accepted'?'accepted':'rejected',event,result);
   };
 }
 bindHistoryButton('undo','undo');bindHistoryButton('compactUndo','undo');bindHistoryButton('redo','redo');bindHistoryButton('compactRedo','redo');
