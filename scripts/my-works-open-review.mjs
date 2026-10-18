@@ -94,6 +94,17 @@ try{
   await page.locator('#redo').click();
   await page.waitForFunction(original=>document.getElementById('canvas')?.dataset.revisionId===original,savedRevision,{timeout:60000});
   check('save-reopen-4000','4000px document remained editable with the exact saved stroke count');
+  await page.locator('#home').click();await page.locator('#ihApp').waitFor({state:'visible'});await page.locator('#ihNavHome').click();
+  const layers10=await newWork(page,'MY WORKS QA 4000 TEN LAYERS',4000,4000);
+  for(let i=1;i<10;i++)await page.locator('#addLayer').click();
+  assert.equal(await page.locator('#canvas').getAttribute('data-layer-count'),'10');
+  await draw(page);await showWorks(page);
+  await page.waitForFunction(()=>{const e=document.getElementById('saveState');return e?.dataset.autosavePending==='false'&&e.dataset.protectedThrough!=='0';},null,{timeout:120000});
+  await page.waitForTimeout(4500);await page.reload();await page.locator('#ihNavWorks').click();
+  await page.locator('[data-work-id="'+layers10+'"] .ih-work-preview').click();await page.locator('#ihApp').waitFor({state:'hidden',timeout:120000});
+  assert.equal(await page.locator('#canvas').getAttribute('data-layer-count'),'10');
+  assert.equal(await page.locator('#canvas').getAttribute('data-committed-strokes'),'1');
+  check('reopen-4000-ten-layers','ten layer artwork survives a cold browser reload with its formal stroke');
   report.status='PASS';
 }catch(error){report.errors.push(String(error?.stack??error));throw error;}
 finally{await fs.writeFile(outfile,JSON.stringify(report,null,2));await context?.close();await browser.close();await new Promise(resolve=>server.close(resolve));}
