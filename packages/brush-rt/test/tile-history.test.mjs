@@ -43,3 +43,19 @@ test('empty Undo frees document GPU tiles and Redo recreates identical pixels',a
  const {h,b,stroke}=harness();stroke(1,77);const undo=await h.prepare([{id:1,direction:'undo'}]);publish(h,undo);assert.equal(b.tiles.size,0);assert.equal(h.current.get('a\0'+'0,0').version,null);
  const redo=await h.prepare([{id:1,direction:'redo'}]);assert.equal(b.tiles.get('a\0'+'0,0').layer[0].pixels[0],0,'old empty image remains visible while staged');publish(h,redo);const t=b.tiles.get('a\0'+'0,0');assert.equal(t.layer[t.l].pixels[0],77);assert.equal(t.committedId,1);
 });
+test('coverage-only interruption restores before pixels without completing an after image',async()=>{
+ const {h,stroke,tile}=harness();stroke(1,50);h.before(2,'0,0',tile,{id:'p'});h.interrupt(2);
+ const plan=await h.prepare([{id:2,direction:'undo'}]);assert.ok(plan);publish(h,plan);
+ assert.equal(tile.layer[tile.l].pixels[0],50);assert.equal(h.patches.get(2).tiles.values().next().value.after,null);
+ assert.equal(await h.prepare([{id:2,direction:'redo'}]),null,'Redo must regenerate the incomplete canonical suffix');assert.equal(h.busy,false);
+});
+test('partially committed stroke restores both completed and coverage-only tiles atomically',async()=>{
+ const {h,b,stroke,tile}=harness();stroke(1,50);stroke(2,100);
+ const other=b.tile('1,0','a');other.uncommittedOwner=2;h.before(2,'1,0',other,{id:'p'});h.interrupt(2);
+ const plan=await h.prepare([{id:2,direction:'undo'}]);assert.ok(plan);assert.equal(tile.layer[tile.l].pixels[0],100);assert.equal(b.tiles.size,2);
+ publish(h,plan);assert.equal(tile.layer[tile.l].pixels[0],50);assert.equal(b.tiles.size,1);assert.equal(await h.prepare([{id:2,direction:'redo'}]),null);
+});
+test('unsubmitted stroke has an empty reversible before patch and no snapshot copies',async()=>{
+ const {h}=harness();h.interrupt(99);const plan=await h.prepare([{id:99,direction:'undo'}]);assert.ok(plan);assert.equal(plan.staged.length,0);publish(h,plan);
+ assert.equal(h.metrics.copies,0);assert.equal(h.patches.get(99).state,'undone');assert.equal(await h.prepare([{id:99,direction:'redo'}]),null);h.drop([99]);assert.equal(h.patches.size,0);
+});

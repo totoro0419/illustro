@@ -53,11 +53,14 @@ export class TileHistory {
  }
  evict(v){if(v.gpu&&!v.pins&&v.evict){releaseHistoryImage(this.backend,v.gpu);this.gpuBytes-=HISTORY_BYTES;v.gpu=null;}}
  complete(plan){for(const v of plan?.pinned??[]){v.pins--;this.evict(v);}this.busy=false;}
+ // A stopped stroke may have no GPU work, coverage only, or a committed subset.
+ // Its before states are authoritative; its after states are not a complete Redo.
+ interrupt(id){let patch=this.patches.get(id);if(!patch)this.patches.set(id,patch={state:'applied',tiles:new Map});patch.incomplete=true;}
  async plan(steps){
   const states=new Map,tiles=new Map;let slice=performance.now();
   for(const {id,direction}of steps){const patch=this.patches.get(id),state=states.get(id)??patch?.state;
-   if(!patch||state!==(direction==='undo'?'applied':'undone'))return null;
-   for(const [q,p]of patch.tiles){const target=direction==='undo'?p.before:p.after;if(!target||!p.after)return null;tiles.set(q,{...p,target});if(performance.now()-slice>6){await historyYield();slice=performance.now();}}
+   if(!patch||state!==(direction==='undo'?'applied':'undone')||direction==='redo'&&patch.incomplete)return null;
+   for(const [q,p]of patch.tiles){const target=direction==='undo'?p.before:p.after;if(!target||direction==='redo'&&!p.after)return null;tiles.set(q,{...p,target});if(performance.now()-slice>6){await historyYield();slice=performance.now();}}
    states.set(id,direction==='undo'?'undone':'applied');
   }
   return {states,tiles};

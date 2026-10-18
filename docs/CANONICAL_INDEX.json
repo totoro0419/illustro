@@ -1971,6 +1971,14 @@
     {
       "path": "docs/research/TILE_HISTORY_2026-10-18.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/TILE_HISTORY_RECHECK_2026-10-18.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/PENDING_STROKE_UNDO_2026-10-18.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

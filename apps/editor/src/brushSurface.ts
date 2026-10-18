@@ -117,7 +117,10 @@ export class BrushSurface{
   setInputBarrier(enabled:boolean){this.inputBarrier=enabled;}
   setProtectionQueueLength(count:number){this.protectionQueueLength=count;}
   async settleLogicalStrokes(){await this.handoff?.barrier();}
-  async prepareHistory(){await this.settleLogicalStrokes();await this.renderer?.prepareHistory();}
+  async prepareHistory(){
+    if(this.hasPendingStrokes){await this.renderer?.prepareHistory();await this.settleLogicalStrokes();}
+    else{await this.settleLogicalStrokes();await this.renderer?.prepareHistory();}
+  }
   resumeHistory(){this.renderer?.resumeHistory();}
   async settleStrokes(){await this.settleLogicalStrokes();await Promise.all(this.gpuFinishes.values());if(this.handoffFault)throw new Error(this.handoffFault);}
   get hasUncommittedInput(){return this.pointer!==null||(this.handoff?.pending??0)>0;}
