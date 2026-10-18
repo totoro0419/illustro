@@ -26,7 +26,7 @@ export async function listWorks():Promise<WorkEntry[]>{const database=await db()
     const cursor=request.result;if(!cursor)return;
     const work=cursor.value as WorkEntry;
     // Blobs remain durable for old clients, but never cross to the gallery UI.
-    result.push({...work,thumbnail:null});cursor.continue();
+    result.push({...work,thumbnail:null,thumbnailRevision:work.thumbnail instanceof Blob?work.thumbnailRevision:null});cursor.continue();
   };
   tx.oncomplete=()=>resolve(result);tx.onabort=()=>reject(tx.error);
 });}
