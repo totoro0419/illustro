@@ -50,3 +50,7 @@ describe('reserved history before record completion',()=>{
   expect(q.undoPending()).toBe(a);expect(q.canRedo).toBe(true);resume();await released;await q.barrier();expect(flags).toEqual([true]);expect(c.committedStrokeCount).toBe(0);expect(c.canRedo).toBe(true);expect(q.canRedo).toBe(false);
  });
 });
+
+it('a different document edit discards reserved Redo before the worker record arrives',async()=>{
+ const c=new EditorController(),discarded:StrokeRecord[]=[],q=new StrokeHandoff(c,()=>{},r=>discarded.push(r)),a=q.reserve(c.target());q.undoPending();q.discardRedo();c.addRasterLayer();await q.release(a,record());expect(q.canRedo).toBe(false);expect(discarded).toHaveLength(1);expect(c.committedStrokeCount).toBe(0);
+});

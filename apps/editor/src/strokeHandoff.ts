@@ -22,11 +22,11 @@ export class StrokeHandoff{
   reserve(target:DrawingTarget){
     if(this.fault)throw this.fault;if(!this.items.length&&!this.running)this.expected=target.baseRevision;
     if(this.controller.document.head!==this.expected)throw new Error('描画中に作品の状態が変わりました。');
-    for(const item of this.redoItems){item.discarded=true;if(item.record&&!item.publishing){this.discarded(item.record);this.entries.delete(item.reservation);}}
-    this.redoItems=[];
+    this.discardRedo();
     const reservation=Object.freeze({sequence:++this.sequence,target});const item:Pending={reservation,additional:[],hidden:false,discarded:false,publishing:false};
     this.entries.set(reservation,item);this.items.push(item);return reservation;
   }
+  discardRedo(){for(const item of this.redoItems){item.discarded=true;if(item.record&&!item.publishing){this.discarded(item.record);this.entries.delete(item.reservation);}}this.redoItems=[];}
   /** Synchronous history admission. No record, GPU or document barrier here. */
   undoPending(){
     const item=this.items.findLast(e=>!e.hidden&&!e.discarded);if(!item)return null;

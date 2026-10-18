@@ -338,7 +338,7 @@ export class BrushSurface{
     if(backend.device)await backend.device.queue.onSubmittedWorkDone();
   }
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);this.syncLayerStyles();}
-  discardRedoProjection(){this.session?.discardRedo();}
+  discardRedoProjection(){this.handoff?.discardRedo();this.session?.discardRedo();}
   private syncLayerStyles(){this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({surfaceKey:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity})));}
   private surfaceKeys(){return this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId);}
   private surfaceForOperation(operation:SemanticOperation,revisionId?:RevisionId){const target=operation.targetEntityIds[0],root=revisionId?this.controller.document.revision(revisionId).root:this.controller.document.root;if(!target||!root.hasLayer(target))throw new Error('History target layer missing');return root.getLayer(target).surface.descriptor.surfaceId;}
