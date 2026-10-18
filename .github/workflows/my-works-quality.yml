@@ -39,6 +39,19 @@ jobs:
           MY_WORKS_EVIDENCE: /tmp/my-works-evidence/report.json
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/my-works-open-review.mjs
+      - name: Build immutable Undo baseline for matched performance comparison
+        run: |
+          git worktree add --detach /tmp/my-works-base dbe053d32b4f172c84eb3b632b292e2ad4a20b57
+          cd /tmp/my-works-base
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/my-works-base-brush.log
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Matched original and optimized work reopen measurements
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/my-works-browser/node_modules/playwright
+          MY_WORKS_BASELINE: /tmp/my-works-base/apps/editor/dist
+          MY_WORKS_COMPARISON: /tmp/my-works-evidence/comparison.json
+        run: node scripts/my-works-compare.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
