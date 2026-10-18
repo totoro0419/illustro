@@ -9,9 +9,11 @@ export type HomeActions = Readonly<{
   createDocument: (width:number,height:number,name:string,background:'transparent'|'white')=>Promise<boolean>;
   listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
   openWork:(id:string)=>Promise<boolean>;
+  readThumbnail:(id:string,revisionId:string)=>Promise<Blob|null>;
   renameWork:(id:string,name:string)=>Promise<void>;
   duplicateWork:(id:string)=>Promise<void>;
   deleteWork:(id:string)=>Promise<void>;
+  resetWorks:()=>Promise<void>;
   openFile: ()=>void;
   resume: (documentId:string,writerEpochId:string)=>Promise<boolean|'cancelled'>;
   prepareHome: ()=>Promise<boolean>;
@@ -82,7 +84,7 @@ const html = [
     '</section>',
     '<section class="ih-screen ih-inner-screen" data-ih-screen="works" hidden aria-labelledby="ihWorksTitle">',
       '<div class="ih-page-top"><span class="ih-overline">YOUR WORKSPACE</span><h1 id="ihWorksTitle">マイ作品<span class="ih-period">.</span></h1><p>作品を選び、続きを描くための場所。</p></div>',
-      '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><span class="ih-works-count">作品を確認しています</span></div>',
+      '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><div class="ih-works-controls"><span class="ih-works-count">作品を確認しています</span><button id="ihWorksReset" type="button" class="ih-debug-reset" hidden>初期化（全作品を削除）</button></div></div>',
       '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名で検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option></select></label></div><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
       '<div class="ih-empty-works"><div class="ih-empty-art" aria-hidden="true"><span class="ih-empty-sheet ih-sheet-one"></span><span class="ih-empty-sheet ih-sheet-two"></span><span class="ih-empty-spark">'+icon('effects')+'</span></div>',
         '<h2>最初の作品を、ここから。</h2><p>新しく作った作品は自動保存され、ここからいつでも続きを描けます。</p>',
@@ -124,6 +126,29 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const el=<T extends HTMLElement=HTMLElement>(id:string)=>root.querySelector<T>('#'+id)!;
   const dialog=el<HTMLDialogElement>('ihNewDialog');
   let screen:Screen='home',featureIndex=0,recovery:readonly RecoverySummary[]=[],works:readonly WorkEntry[]=[],lastWorkId:string|null=null,workUrls=new Map<string,{revision:string|null;url:string}>();
+  const previewPending=new Set<string>();
+  const fetchVisiblePreview=async(work:WorkEntry)=>{
+    if(!work.thumbnailRevision||work.thumbnailRevision!==work.revisionId)return;
+    const id=work.documentId,revision=work.thumbnailRevision,key=id+':'+revision;
+    if(previewPending.has(key)||workUrls.get(id)?.revision===revision)return;
+    previewPending.add(key);
+    try{
+      const blob=await actions.readThumbnail(id,revision);if(!blob)return;
+      const card=[...el('ihWorkGrid').querySelectorAll<HTMLElement>('.ih-work-card')].find(item=>item.dataset.workId===id);
+      if(!card||card.dataset.workRevision!==revision||card.dataset.thumbnailRevision!==revision)return;
+      const existing=workUrls.get(id);if(existing)URL.revokeObjectURL(existing.url);
+      const url=URL.createObjectURL(blob);workUrls.set(id,{revision,url});
+      const button=card.querySelector<HTMLButtonElement>('.ih-work-preview');if(!button)return;
+      const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=url;button.replaceChildren(img);
+    }catch(error){console.warn('Preview read deferred:',error);}
+    finally{previewPending.delete(key);}
+  };
+  const previewObserver=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{
+    for(const entry of entries)if(entry.isIntersecting){
+      const element=entry.target as HTMLElement,work=works.find(w=>w.documentId===element.dataset.workId);
+      if(work)void fetchVisiblePreview(work);previewObserver?.unobserve(element);
+    }
+  },{rootMargin:'280px'});
   const setButton=(id:string,handler:()=>void)=>{el<HTMLButtonElement>(id).addEventListener('click',handler);};
   const notify=(message:string)=>{const notice=el('ihNotice');notice.textContent=message;notice.hidden=!message;};
   const updateEditorLink=()=>{el('ihReturnEditor').hidden=!actions.hasDocument();};
@@ -168,10 +193,13 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     const filtered=works.filter(work=>work.name.toLocaleLowerCase('ja-JP').includes(query)).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ja-JP'):sort==='created'?b.createdAt-a.createdAt:b.updatedAt-a.updatedAt);
     root.querySelector('.ih-works-count')!.textContent=works.length+'作品';(root.querySelector('.ih-empty-works') as HTMLElement).hidden=works.length>0;
     el('ihWorkNoResults').hidden=works.length===0||filtered.length>0;
+    previewObserver?.disconnect();
     el('ihWorkGrid').replaceChildren(...filtered.map(work=>{
       const card=document.createElement('article');card.className='ih-work-card';card.dataset.workId=work.documentId;card.dataset.workRevision=work.revisionId;card.dataset.thumbnailRevision=work.thumbnailRevision??'';
       const open=document.createElement('button');open.type='button';open.className='ih-work-preview';open.setAttribute('aria-label',work.name+'を開く');
-      if(work.thumbnail){const img=document.createElement('img');img.alt='';img.loading='lazy';const cached=workUrls.get(work.documentId);if(cached?.revision===work.thumbnailRevision)img.src=cached.url;else{if(cached)URL.revokeObjectURL(cached.url);img.src=URL.createObjectURL(work.thumbnail);workUrls.set(work.documentId,{revision:work.thumbnailRevision,url:img.src});}open.append(img);}else{open.textContent='プレビューを準備中';}
+      const cached=workUrls.get(work.documentId);
+      if(cached?.revision===work.thumbnailRevision&&work.thumbnailRevision===work.revisionId){const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=cached.url;open.append(img);}
+      else{open.textContent='プレビューを準備中';}
       open.onclick=()=>void run(async()=>{if(await actions.openWork(work.documentId))navigate('editor');},open);
       const info=document.createElement('div');info.className='ih-work-info';
       const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
@@ -184,6 +212,12 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const id=document.createElement('small');id.textContent='識別番号 '+work.documentId;details.append(id);
       info.append(title,meta,details);card.append(open,info);return card;
     }));
+    for(const element of el('ihWorkGrid').querySelectorAll<HTMLElement>('.ih-work-card')){
+      const work=filtered.find(w=>w.documentId===element.dataset.workId);
+      if(!work||workUrls.get(work.documentId)?.revision===work.thumbnailRevision)continue;
+      if(previewObserver)previewObserver.observe(element);
+      else void fetchVisiblePreview(work);
+    }
   };
   const updateContinue=()=>{
     const last=works.find(x=>x.documentId===lastWorkId);
@@ -193,6 +227,15 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const setWorks=(values:readonly WorkEntry[],last:string|null)=>{works=values;lastWorkId=last;if(screen==='works')renderWorks();updateContinue();};
   const loadWorks=async()=>{el('ihWorksLoading').hidden=false;try{const value=await actions.listWorks();setWorks(value.works,value.lastWorkId);}catch(error){notify('作品一覧を読み込めませんでした。'+String(error));}finally{el('ihWorksLoading').hidden=true;}};
   el('ihWorkSearch').addEventListener('input',renderWorks);el('ihWorkSort').addEventListener('change',renderWorks);
+  const reset=el<HTMLButtonElement>('ihWorksReset');
+  // The independent review build always exposes its reset control. Main builds
+  // keep it hidden unless explicitly requested for debugging.
+  const isMyWorksQa=location.pathname.includes('/qa/my-works-open/');
+  reset.hidden=!isMyWorksQa&&new URLSearchParams(location.search).get('debugWorks')!=='1';
+  reset.onclick=()=>{
+    if(!confirm('マイ作品を初期化しますか？\\nアプリ内の全作品・復旧データを削除します。元に戻せません。\\n書き出した .illustro ファイルは削除されません。'))return;
+    void run(async()=>{await actions.resetWorks();recovery=[];setWorks([],null);await loadWorks();updateContinue();notify('マイ作品を初期化しました。');},reset);
+  };
   const rename=document.createElement('dialog');rename.className='ih-new-dialog';rename.setAttribute('aria-label','作品名を変更');rename.innerHTML='<form class="ih-dialog-content"><h2>作品名を変更</h2><label class="ih-name-field">作品名<input name="title" maxlength="120" required></label><p role="status"></p><div class="ih-dialog-actions"><button type="button" class="ih-quiet-button">キャンセル</button><button type="submit" class="ih-solid-button">変更する</button></div></form>';root.append(rename);
   let renamedWork:WorkEntry|null=null;
   const showRename=(work:WorkEntry)=>{renamedWork=work;rename.querySelector<HTMLInputElement>('input')!.value=work.name;rename.querySelector('p')!.textContent='';rename.showModal();rename.querySelector<HTMLInputElement>('input')!.focus();};
@@ -261,6 +304,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   })();});
   chooseTrivia(0);setRecoveryCandidates([]);
   // The old milestone QA pages do not install this shell; normal startup is Home.
-  navigate('home',location.hash!=='#home');
+  const initial=location.hash.replace(/^#/,'');
+  navigate(initial==='works'||initial==='settings'||initial==='recovery'?initial:'home',location.hash!==('#'+(initial==='works'||initial==='settings'||initial==='recovery'?initial:'home')));
   return {showHome,showEditor:()=>navigate('editor'),showNew,showRecovery,setRecoveryCandidates,setWorks,notify};
 }

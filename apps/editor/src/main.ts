@@ -48,7 +48,8 @@ let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;surface?.setProtectionQueueLength(state.queueLength);updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
 let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=null,workSwitchBusy=false,librarySaving=false;
-let thumbnailTimer:number|null=null,thumbnailInProgress=false;
+let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
+let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thumbnailRepairSkipped=new Set<string>();
 
 document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};byId('saveState').after(retry);}
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
@@ -134,6 +135,8 @@ async function createProjectionCheckpoint(){
     const delta=await activeSurface.captureProjectionDelta(revisionId,fullSeed?undefined:operations);
     if(surface===activeSurface&&controller.document.head===revisionId&&!activeSurface.busy&&await persistence.storeProjectionDelta(delta)&&surface===activeSurface){
       checkpointOperations.splice(0,operations.length);checkpointOpsSinceLast=checkpointOperations.length;checkpointNeedsFullSeed=false;lastCheckpointAt=Date.now();
+      thumbnailRepairSkipped.delete(controller.document.root.documentId+':'+revisionId);
+      if(app.inert)scheduleThumbnailRepair(100);
     }
   }catch(error){const message=error instanceof Error?error.message:String(error);if(message.includes('stale'))checkpointCancelled++;else{checkpointErrors.push({at:new Date().toISOString(),message});if(checkpointErrors.length>12)checkpointErrors.shift();}}finally{
     projectionCheckpointBusy=false;
@@ -297,7 +300,16 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(true,opened.projectionCache);
     }else throw error;
   }
-  persistence.clearFileDestination();await persistence.initialize(controller,null,opened.preserved,recovered);if(!qaMode)await persistence.bindWork(expectedEpoch);scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
+  persistence.clearFileDestination();await persistence.initialize(controller,null,opened.preserved,recovered);if(!qaMode)await persistence.bindWork(expectedEpoch);
+  // Import a verified optional PNG preview without blocking first editable paint.
+  if(!qaMode&&opened.previewImage){
+    const id=controller.document.root.documentId,revision=controller.document.head,image=opened.previewImage.slice();
+    window.setTimeout(()=>{void (async()=>{
+      const blob=new Blob([image.buffer as ArrayBuffer],{type:'image/png'}),bitmap=await createImageBitmap(blob);
+      try{if(bitmap.width>0&&bitmap.height>0&&bitmap.width<=320&&bitmap.height<=240)await persistence.storeThumbnail(id,revision,blob);}finally{bitmap.close();}
+    })().catch(error=>console.warn('Imported optional preview ignored:',error));},0);
+  }
+  scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
   }catch(error){
     surface?.destroy();const snapshot=previous.document.capturePersistenceSnapshot();controller=EditorController.restored(CoreDocument.restore({snapshot,blockPayloads:previous.document.persistenceBlockPayloads(snapshot)}),previous.selectedLayerId);surface=makeSurface();documentReady=false;
     if(wasReady){try{await initializeCurrentSurface(true);await persistence.initialize(controller,null,previousPreserved,false);const current=(await persistence.listWorks()).works.find(x=>x.documentId===controller.document.root.documentId);if(!qaMode)await persistence.bindWork(current?.writerEpochId??null);}catch{}}
@@ -512,7 +524,25 @@ async function refreshRecoveryCandidates(){
   try{const values=await persistence.listRecoveryCandidates();recoveryCandidates=values;updatePersistenceDisplay();homeUi?.setRecoveryCandidates(values);if(recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n)&&!documentReady)byId('status').textContent='自動保存から戻せる作業があります。';}catch{}
 }
 function showStorageError(error:unknown){const text='アプリ内に保存できませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=text;homeUi?.notify(text);}
-async function refreshWorks(){try{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;homeUi?.setWorks(works,lastWorkId);}catch(error){showStorageError(error);}}
+async function refreshWorks(){try{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;homeUi?.setWorks(works,lastWorkId);scheduleThumbnailRepair();}catch(error){showStorageError(error);}}
+// Missing previews for closed artworks are rebuilt from verified saved tiles,
+// 16 at a time, while Home is visible. The input/UI path always takes priority.
+function scheduleThumbnailRepair(delay=750){
+  if(qaMode||!app.inert||thumbnailRepairRunning||thumbnailRepairTimer!==null)return;
+  const candidate=works.find(w=>w.thumbnailRevision!==w.revisionId&&
+    !thumbnailRepairSkipped.has(w.documentId+':'+w.revisionId));
+  if(!candidate)return;
+  thumbnailRepairTimer=window.setTimeout(()=>{
+    thumbnailRepairTimer=null;
+    if(!app.inert)return;
+    thumbnailRepairRunning=true;
+    void persistence.repairThumbnail(candidate.documentId).then(result=>{
+      if(result.state==='unavailable')thumbnailRepairSkipped.add(candidate.documentId+':'+candidate.revisionId);
+      if(result.state==='complete'||result.state==='current')void refreshWorks();
+    }).catch(error=>{thumbnailRepairSkipped.add(candidate.documentId+':'+candidate.revisionId);console.warn('Saved preview repair deferred:',error);})
+      .finally(()=>{thumbnailRepairRunning=false;if(app.inert)scheduleThumbnailRepair(60);});
+  },delay);
+}
 function copyOpened(opened:PortableOpenResult,name:string):PortableOpenResult{
   const snapshot=opened.document.capturePersistenceSnapshot(),document=CoreDocument.restore({snapshot:namedSnapshot(snapshot,name,crypto.randomUUID()),blockPayloads:opened.document.persistenceBlockPayloads(snapshot)});
   return {...opened,document,snapshotRevisionId:document.head,generationId:'copy'};
@@ -527,26 +557,33 @@ async function storeBlankThumbnail(documentId:string,revisionId:string,width:num
 async function createWorkThumbnail(){
   if(qaMode||!documentReady||!surface||surface.busy)return;
   const active=surface,doc=controller.document,revision=doc.head,documentId=doc.root.documentId;
-  if(works.some(work=>work.documentId===documentId&&work.thumbnail&&work.thumbnailRevision===revision))return;
+  if(works.some(work=>work.documentId===documentId&&work.thumbnailRevision===revision))return;
   const blob=await active.captureWorkThumbnail();
   if(surface===active&&controller.document===doc&&doc.head===revision)await persistence.storeThumbnail(documentId,revision,blob);
 }
-// Thumbnail updates are best-effort background work, never part of opening or leaving an artwork.
-function scheduleWorkThumbnail(){
+// Never block opening or leaving a work on thumbnail generation. Retry busy GPU
+// reads while Home is active, instead of silently abandoning the only attempt.
+function scheduleWorkThumbnail(delay=120){
   if(qaMode||!documentReady||!surface)return;
   if(thumbnailTimer!==null)clearTimeout(thumbnailTimer);
   thumbnailTimer=window.setTimeout(()=>{
     thumbnailTimer=null;
+    const retry=()=>{
+      if(!app.inert||thumbnailRetryCount>=12)return;
+      thumbnailRetryCount++;
+      scheduleWorkThumbnail(Math.min(4000,250*2**Math.min(thumbnailRetryCount,4)));
+    };
     const run=async()=>{
-      if(!app.inert||thumbnailInProgress||!documentReady||!surface||surface.busy)return;
+      if(!app.inert||!documentReady||!surface)return;
+      if(thumbnailInProgress||surface.busy){retry();return;}
       thumbnailInProgress=true;
-      try{await createWorkThumbnail();await refreshWorks();}
-      catch(error){console.warn('Thumbnail update deferred:',error);}
+      try{await createWorkThumbnail();thumbnailRetryCount=0;await refreshWorks();}
+      catch(error){console.warn('Thumbnail update deferred:',error);retry();}
       finally{thumbnailInProgress=false;}
     };
     const idle=(window as Window&{requestIdleCallback?:(callback:()=>void,options?:{timeout:number})=>number}).requestIdleCallback;
     if(idle)idle(()=>{void run();},{timeout:1500});else void run();
-  },120);
+  },delay);
 }
 async function prepareWorkSwitch(){
   if(!documentReady)return true;
@@ -560,7 +597,7 @@ async function openWork(id:string):Promise<boolean>{
   if(workSwitchBusy)return false;workSwitchBusy=true;
   try{if(documentReady&&controller.document.root.documentId===id){homeUi?.showEditor();return true;}
     if(!(await prepareWorkSwitch()))return false;
-    const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);await refreshWorks();homeUi?.showEditor();
+    const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);homeUi?.showEditor();window.setTimeout(()=>void refreshWorks(),0);
     if(loaded.fallback)homeUi?.notify('最新の保存を読み込めなかったため、前の正常な保存から開きました。');return true;
   }catch(error){showStorageError(error);return false;}finally{workSwitchBusy=false;}
 }
@@ -576,15 +613,28 @@ if(!qaMode){
       const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
       return candidate?recoverCandidate(candidate):false;
     },
-    prepareHome:async()=>{scheduleWorkThumbnail();void refreshWorks();
+    prepareHome:async()=>{thumbnailRetryCount=0;scheduleWorkThumbnail();void refreshWorks();
       // Start durable protection after the Home screen has had a chance to paint.
-      window.setTimeout(()=>{void persistence.barrier().then(refreshWorks).catch(showStorageError);},40);
+      window.setTimeout(()=>{void persistence.barrier().then(()=>{void createProjectionCheckpoint();return refreshWorks();}).catch(showStorageError);},40);
       return true;},
     listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
+    readThumbnail:(id,revisionId)=>persistence.readThumbnail(id,revisionId),
     renameWork:async(id,name)=>{await persistence.renameWork(id,name);if(documentReady&&controller.document.root.documentId===id){await prepareWorkSwitch();const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);}await refreshWorks();},
     duplicateWork:async(id)=>{if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');const loaded=await persistence.loadWork(id),copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');await activateOpened(copy);await refreshWorks();},
     deleteWork:async(id)=>{await persistence.deleteWork(id);if(documentReady&&controller.document.root.documentId===id){surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();}await refreshWorks();},
+    resetWorks:async()=>{
+      if(workSwitchBusy||!(await prepareWorkSwitch()))throw new Error('現在の操作が終わってから初期化してください。');
+      workSwitchBusy=true;
+      try{
+        if(thumbnailTimer!==null){clearTimeout(thumbnailTimer);thumbnailTimer=null;}
+        if(thumbnailRepairTimer!==null){clearTimeout(thumbnailRepairTimer);thumbnailRepairTimer=null;}
+        surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();
+        await persistence.resetWorks();
+        works=[];lastWorkId=null;recoveryCandidates=[];thumbnailRetryCount=0;thumbnailRepairSkipped.clear();
+        homeUi?.setRecoveryCandidates([]);await refreshWorks();updateHistoryButtons();
+      }finally{workSwitchBusy=false;}
+    },
     hasDocument:()=>documentReady,
   });
   byId<HTMLButtonElement>('home').onclick=()=>{void homeUi?.showHome();};

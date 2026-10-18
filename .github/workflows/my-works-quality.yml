@@ -1,0 +1,131 @@
+name: Verify My Works sparse open and previews
+on:
+  push:
+    branches: ['perf/my-works-open-thumbnails-2026-10-18']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: my-works-quality
+  cancel-in-progress: true
+jobs:
+  unit-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build brush engine and run baseline guards
+        run: |
+          npm run brush:build
+          npm run prep:check
+          npm run core:check
+          npm run brush:regression
+      - name: Editor tests, strict TypeScript and browser bundle
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install and exercise the real browser
+        run: |
+          npm install --prefix /tmp/my-works-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/my-works-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Browser reopen, gallery preview, cold-start repair and 4000px
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/my-works-browser/node_modules/playwright
+          MY_WORKS_EVIDENCE: /tmp/my-works-evidence/report.json
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/my-works-open-review.mjs
+      - name: Build immutable Undo baseline for matched performance comparison
+        run: |
+          git worktree add --detach /tmp/my-works-base dbe053d32b4f172c84eb3b632b292e2ad4a20b57
+          cd /tmp/my-works-base
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/my-works-base-brush.log
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Matched original and optimized work reopen measurements
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/my-works-browser/node_modules/playwright
+          MY_WORKS_BASELINE: /tmp/my-works-base/apps/editor/dist
+          MY_WORKS_COMPARISON: /tmp/my-works-evidence/comparison.json
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/my-works-compare.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: my-works-evidence
+          path: /tmp/my-works-evidence/
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: my-works-test-build
+          path: apps/editor/dist/
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/immediate-browser/node_modules/playwright
+      HANDOFF_OPERATIONS_CANVAS: '4000'
+      HANDOFF_OPERATIONS_OUTPUT: /tmp/my-works-regression/operations/report.json
+      M05_EVIDENCE_DIRECTORY: /tmp/my-works-regression/recovery
+      M05_EXPECT_MILESTONE: M07
+      M08_EVIDENCE_DIRECTORY: /tmp/my-works-regression/canvas
+      M09_EVIDENCE_DIRECTORY: /tmp/my-works-regression/color
+      HOME_EVIDENCE_DIRECTORY: /tmp/my-works-regression/works
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build source and Chromium
+        run: |
+          npm run brush:build > /tmp/my-works-brush-build.log
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/immediate-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/immediate-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Strokes and undo across save, reopen and checkpoints
+        run: node scripts/stroke-handoff-operations.mjs
+      - name: Journal, previous-good, crash and offline
+        run: node scripts/editor-m05-smoke.mjs
+      - name: Canvas, color and gallery regression
+        run: |
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: my-works-regression, path: /tmp/my-works-regression/}
+  publish:
+    needs: [unit-and-build, regression]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/download-artifact@v4
+        with: {name: my-works-test-build, path: site/qa/my-works-open/app}
+      - uses: actions/download-artifact@v4
+        with: {name: my-works-evidence, path: site/qa/my-works-open/evidence}
+      - name: Verify source revision and publish ONLY the QA directory
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';import assert from 'node:assert/strict';
+          const file='site/qa/my-works-open/evidence/report.json',result=JSON.parse(fs.readFileSync(file,'utf8'));
+          assert.equal(result.commit,process.env.GITHUB_SHA);assert.equal(result.status,'PASS');assert.equal(result.checks.length,5);
+          const comparison=JSON.parse(fs.readFileSync('site/qa/my-works-open/evidence/comparison.json','utf8'));
+          assert.equal(comparison.after,process.env.GITHUB_SHA);assert.deepEqual(comparison.errors,[]);assert.equal(comparison.cases.length,3);
+          fs.writeFileSync('site/qa/my-works-open/evidence/qa-status.json',JSON.stringify({sourceCommit:result.commit,runId:process.env.GITHUB_RUN_ID,checks:result.checks,unverified:['Physical smartphone, real GPU and memory pressure','Dense 1000-stroke 4000px multi-layer memory and performance','Manual user acceptance']},null,2));
+          JS
+          cp qa/my-works-open/index.html site/qa/my-works-open/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/my-works-open
+          test -z "$(git diff --cached --name-only | sed '/^qa\/my-works-open\//d')"
+          git diff --cached --quiet || git commit -m "qa: publish verified My Works review $GITHUB_SHA"
+          git push origin HEAD:gh-pages

@@ -9,7 +9,7 @@ import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?w
 import type {EditorController,EditorHistoryChange} from './controller';
 import {CanvasView,type Point} from './canvasView';
 import {wrappedCopies} from './seamlessStroke';
-import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
+import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
 
 
 export class BrushSurface{
@@ -275,7 +275,7 @@ export class BrushSurface{
     for(const layer of this.controller.layers){const bytes=await this.renderer.read(layer.surface.descriptor.surfaceId);result.set(layer.id,new Uint8Array(bytes));}
     return result;
   }
-  async restoreDocumentProjection(cache?:ProjectionCacheV1){
+  async restoreDocumentProjection(cache?:ProjectionCache){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
     const started=performance.now();this.historySyncing=true;this.onStateChanged();let held=false,complete=false;
     const renderer=this.renderer as unknown as {backend?:any;formalQuantum?:number;frame:(now:number)=>boolean;document:{append:(id:number,preset:unknown,commands:readonly Float64Array[],filter:Set<string>|null,surfaceKey:string)=>void;end:(id:number,preset:unknown,surfaceKey:string)=>readonly string[]};drain:(finalFrame?:boolean)=>Promise<void>;reset:()=>Promise<void>;needsFrame:boolean};
@@ -315,26 +315,47 @@ export class BrushSurface{
       this._projectionRestoreMs=performance.now()-started;this.historySyncing=false;this.onStateChanged();
     }
   }
-  private validProjectionCache(cache?:ProjectionCacheV1){
-    if(!cache||cache.version!==1||cache.width!==this.controller.document.root.width||cache.height!==this.controller.document.root.height||!this.controller.document.hasRevision(cache.revisionId as RevisionId))return null;
+  private validProjectionCache(cache?:ProjectionCache){
+    if(!cache||(cache.version!==1&&cache.version!==2)||cache.width!==this.controller.document.root.width||cache.height!==this.controller.document.root.height||!this.controller.document.hasRevision(cache.revisionId as RevisionId))return null;
     if(!canExtendProjection(this.controller.document.operationsTo(cache.revisionId as RevisionId),this.controller.document.operationsTo()))return null;
     const root=this.controller.document.revision(cache.revisionId as RevisionId).root,expected=new Set<string>(root.rootLayerIds.map(id=>root.getLayer(id).surface.descriptor.surfaceId)),seen=new Set<string>(),bytes=cache.width*cache.height*4;
-    for(const layer of cache.layers){if(!expected.has(layer.surfaceId)||seen.has(layer.surfaceId)||layer.pixels.byteLength!==bytes)return null;seen.add(layer.surfaceId);}if(seen.size!==expected.size)return null;return cache;
+    for(const layer of cache.layers){
+      if(!expected.has(layer.surfaceId)||seen.has(layer.surfaceId))return null;seen.add(layer.surfaceId);
+      if(cache.version===1){if(!('pixels' in layer)||layer.pixels.byteLength!==bytes)return null;}
+      else{
+        if(cache.tileSize!==TILE||!('tiles' in layer))return null;
+        const keys=new Set<string>();for(const tile of layer.tiles){
+          if(!/^\d+,\d+$/.test(tile.key)||keys.has(tile.key)||tile.pixels.byteLength!==TILE*TILE*4)return null;
+          const [tx=NaN,ty=NaN]=tile.key.split(',').map(Number);
+          if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||tx>=Math.ceil(cache.width/TILE)||ty>=Math.ceil(cache.height/TILE))return null;
+          keys.add(tile.key);
+        }
+      }
+    }if(seen.size!==expected.size)return null;return cache;
   }
   private resetDerivedRuntime(runtime:{id:number;recordSurfaces:WeakMap<StrokeRecord,string>;recordTiles:WeakMap<StrokeRecord,string[]>;recordIds:WeakMap<StrokeRecord,number>;recordOrder:WeakMap<StrokeRecord,number>;tileRecords:Map<string,StrokeRecord[]>;nextRecordOrder:number}){
     runtime.recordSurfaces=new WeakMap();runtime.recordTiles=new WeakMap();runtime.recordIds=new WeakMap();runtime.recordOrder=new WeakMap();runtime.tileRecords=new Map();runtime.nextRecordOrder=0;runtime.id=0;
   }
-  private async seedProjectionCache(cache:ProjectionCacheV1,backend:any){
-    if(!backend?.tile||!backend?.dirtyConfirmed)throw new Error('Projection cache upload unavailable');const width=cache.width,height=cache.height;
-    for(const layer of cache.layers){for(let ty=0;ty<Math.ceil(height/TILE);ty++)for(let tx=0;tx<Math.ceil(width/TILE);tx++){
-      const tile=new Uint8Array(TILE*TILE*4);let nonEmpty=false;const copyW=Math.min(TILE,width-tx*TILE),copyH=Math.min(TILE,height-ty*TILE);
-      for(let y=0;y<copyH;y++){const source=((ty*TILE+y)*width+tx*TILE)*4,target=y*TILE*4,row=layer.pixels.subarray(source,source+copyW*4);tile.set(row,target);if(hasPixelData(row))nonEmpty=true;}
-      if(!nonEmpty)continue;const key=tx+','+ty,t=backend.tile(key,layer.surfaceId),target=t.layer[t.l];
-      if(backend.gl){const g=backend.gl;g.bindTexture(g.TEXTURE_2D,target.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,tile);}
-      else if(backend.device){backend.device.queue.writeTexture({texture:target},tile,{bytesPerRow:TILE*4},[TILE,TILE]);}
+  private async seedProjectionCache(cache:ProjectionCache,backend:any){
+    if(!backend?.tile||!backend?.dirtyConfirmed)throw new Error('Projection cache upload unavailable');
+    const upload=(key:string,surfaceId:string,pixels:Uint8Array)=>{
+      if(!hasPixelData(pixels))return;
+      const t=backend.tile(key,surfaceId),target=t.layer[t.l];
+      if(backend.gl){const g=backend.gl;g.bindTexture(g.TEXTURE_2D,target.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,TILE,TILE,g.RGBA,g.UNSIGNED_BYTE,pixels);}
+      else if(backend.device){backend.device.queue.writeTexture({texture:target},pixels,{bytesPerRow:TILE*4},[TILE,TILE]);}
       else throw new Error('Projection cache upload backend unsupported');
       t.committedId=-1;backend.dirtyConfirmed.add(key);
-    }}
+    };
+    if(cache.version===2){
+      for(const layer of cache.layers)for(const tile of layer.tiles)upload(tile.key,layer.surfaceId,tile.pixels);
+    }else{
+      const width=cache.width,height=cache.height;
+      for(const layer of cache.layers)for(let ty=0;ty<Math.ceil(height/TILE);ty++)for(let tx=0;tx<Math.ceil(width/TILE);tx++){
+        const tile=new Uint8Array(TILE*TILE*4);const copyW=Math.min(TILE,width-tx*TILE),copyH=Math.min(TILE,height-ty*TILE);
+        for(let y=0;y<copyH;y++){const source=((ty*TILE+y)*width+tx*TILE)*4,target=y*TILE*4;tile.set(layer.pixels.subarray(source,source+copyW*4),target);}
+        upload(tx+','+ty,layer.surfaceId,tile);
+      }
+    }
     if(backend.device)await backend.device.queue.onSubmittedWorkDone();
   }
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);this.syncLayerStyles();}
