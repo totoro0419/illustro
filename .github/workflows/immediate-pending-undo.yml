@@ -141,7 +141,7 @@ jobs:
       - name: Mixed registered and reserved history while GPU restoration is held
         run: IMMEDIATE_STAGES=mixed IMMEDIATE_OUTPUT=/tmp/immediate-variants/mixed/report.json node scripts/immediate-pending-undo-review.mjs
       - name: Ordinary home-to-editor workflow with native mobile Undo
-        run: IMMEDIATE_PRODUCTION=1 IMMEDIATE_OUTPUT=/tmp/immediate-variants/production/report.json node scripts/immediate-pending-undo-review.mjs
+        run: IMMEDIATE_PRODUCTION=1 IMMEDIATE_KEEP_PERF_PANEL=1 IMMEDIATE_OUTPUT=/tmp/immediate-variants/production/report.json node scripts/immediate-pending-undo-review.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: immediate-undo-variants, path: /tmp/immediate-variants/}

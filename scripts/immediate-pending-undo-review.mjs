@@ -20,8 +20,8 @@ try{for(const backend of backends)for(const stage of stages)for(const mode of mo
  const production=process.env.IMMEDIATE_PRODUCTION==='1';await p.goto(origin+'/'+mode+'/?'+(production?'':'m09=1&')+'perf=1&backend='+backend);
  if(production){await p.locator('#ihStart').tap();await p.locator('#ihNewWidth').fill(String(size));await p.locator('#ihNewHeight').fill(String(size));await p.locator('#ihNewCreate').tap();await p.locator('#ihNewDialog').waitFor({state:'hidden',timeout:90000});}
  else await p.evaluate(n=>{for(const id of ['newCanvasWidth','newCanvasHeight'])document.getElementById(id).value=String(n);document.getElementById('new').click();},size);await p.waitForFunction(()=>document.getElementById('status').textContent.includes('描画できます'),null,{timeout:90000});if(mode==='after'&&process.env.EXPECTED_COMMIT_SHA)assert.equal(await p.locator('#canvas').getAttribute('data-commit'),process.env.EXPECTED_COMMIT_SHA);
- await p.evaluate(()=>{
-  for(const id of ['qaPanel','canvasPerformance']){const el=document.getElementById(id);if(el)el.hidden=true;}
+ await p.evaluate(keepPerf=>{
+  for(const id of ['qaPanel','canvasPerformance']){const el=document.getElementById(id);if(el&&!(keepPerf&&id==='canvasPerformance'))el.hidden=true;}
   const port=window.__illustroPerformance,{renderer:r,session:s,controller:c}=port.probe(),b=r.backend;
   window.__immediate={port,r,s,c,b,held:[],waits:[],beats:[],tasks:[],input:[],coreMoves:[],gateReleased:false};const m=window.__immediate;
   document.getElementById('finger').checked=true;document.getElementById('finger').dispatchEvent(new Event('change'));
@@ -33,7 +33,7 @@ try{for(const backend of backends)for(const stage of stages)for(const mode of mo
   for(const [obj,name]of [[r,'prepareHistory'],[r,'applyImageHistory'],[s,'settle'],[b.imageHistory,'prepare']]){const fn=obj[name].bind(obj);obj[name]=async(...args)=>{const at=performance.now();try{return await fn(...args);}finally{m.waits.push({name,at,ms:performance.now()-at});}};}
   for(const name of ['undo','redo']){const fn=c[name].bind(c);c[name]=(...args)=>{m.coreMoves.push({name,at:performance.now()});return fn(...args);};}
   const original=r.onPresentation;r.onPresentation=x=>{original?.(x);if(m.undoAt&&!m.firstPresentationAt)m.firstPresentationAt=performance.now();};
- });
+ },process.env.IMMEDIATE_KEEP_PERF_PANEL==='1');
  const box=await p.locator('#canvas').boundingBox();const clip={x:Math.max(0,box.x),y:Math.max(0,box.y),width:Math.min(390-box.x,box.width),height:Math.min(844-box.y,box.height)};
  const screen=()=>p.screenshot({clip,animations:'disabled'});
  const draw=async(offset=0)=>{const inputPoints=await p.evaluate(({o,count,seamless})=>{const {b}=window.__immediate,v=b.viewTransform,box=b.canvas.getBoundingClientRect(),a=[];for(let i=0;i<=count;i++){const t=i/count,x=v[4]*(seamless?.06+.88*t:.12+.76*t),y=v[5]*(.5+.22*Math.sin(t*Math.PI*8))+o;const X=box.x+v[2]/2+v[8]+v[6]*(x-v[4]/2),Y=box.y+v[3]/2+v[9]+v[6]*(y-v[5]/2);a.push({x:X,y:Y,id:9,radiusX:2,radiusY:2,force:seamless?1:.6});}return a;},{o:offset,count:points,seamless});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[inputPoints[0]]});for(const point of inputPoints.slice(1))await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
