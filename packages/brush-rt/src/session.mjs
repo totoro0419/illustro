@@ -83,7 +83,12 @@ export class RealtimeSession {
   for(const step of steps){const {direction,record,keys,surfaceKey}=step,source=direction==='undo'?records:redo,target=direction==='undo'?redo:records;
    if(source.at(-1)!==record)throw Error('Document/Renderer '+direction+' mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');source.pop();target.push(record);plans.push({...step,id:this.recordIds.get(record)});
   }
-  if(this.renderer.backend?.imageHistory)return await this.navigateImageHistory(plans,records,redo);
+  if(this.renderer.backend?.imageHistory){
+   if(this.renderer.document.jobs.length)return await this.navigateImageHistory(plans,records,redo);
+   // Fully deposited strokes keep the established PR35 path. Only unfinished
+   // formal work needs interruption and partial before-image restoration.
+   this.renderer.resumeHistory();await this.renderer.drain(false);if(this.renderer.strokeFrames.size||this.renderer.backend.overlayDirty?.size)await this.renderer.drain();
+  }
   await this.renderer.prepareHistory();
   const pendingIds=new Set(this.renderer.document.jobs.map(j=>j.id)),pendingKeys=new Map,pendingEntries=[];
   for(const record of this.records)if(pendingIds.has(this.recordIds.get(record))){const surface=this.recordSurfaces.get(record)??'default',recordKeys=this.recordTiles.get(record)??[];pendingEntries.push({record,id:this.recordIds.get(record),surfaceKey:surface,keys:recordKeys});let keys=pendingKeys.get(surface);if(!keys)pendingKeys.set(surface,keys=new Set);for(const key of recordKeys)keys.add(key);}
