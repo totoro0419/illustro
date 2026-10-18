@@ -57,7 +57,14 @@ try{for(const backend of backends)for(const stage of stages)for(const mode of mo
   }
   m.release=()=>{m.gateReleased=true;m.gateReleasedAt=performance.now();for(const fn of m.held.splice(0))fn();if(stage==='jobs'||stage==='presentation')r.resumeHistory();};
  },stage);
- await draw();if(stage==='complete')await p.evaluate(()=>window.__immediate.idle());else await p.waitForFunction(()=>window.__immediate.gated,null,{timeout:30000});
+ await draw();if(stage==='complete'||stage==='prepare-failure')await p.evaluate(()=>window.__immediate.idle());else await p.waitForFunction(()=>window.__immediate.gated,null,{timeout:30000});
+ if(stage==='prepare-failure'){
+  const fixed=await p.evaluate(async()=>{const m=window.__immediate;return {head:m.c.document.head,pixels:await m.hash()};});
+  await p.evaluate(()=>{window.__immediate.r.prepareHistory=async()=>{throw Error('Controlled history preparation failure');};});await tap('undo');await p.waitForFunction(()=>window.__immediate.port.read().historyNavigation.fault);
+  const recovered=await p.evaluate(async()=>{const m=window.__immediate,pixels=[];for(const l of m.c.layers){const bytes=await m.b.read(l.surface.descriptor.surfaceId);pixels.push(Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).join(','));}return {head:m.c.document.head,pixels,state:m.port.read()};});
+  assert.equal(recovered.head,fixed.head,'failed preparation must restore the synchronously admitted document head');assert.deepEqual(recovered.pixels,fixed.pixels,'failed preparation must preserve every layer image');assert.equal(recovered.state.handoff.fault,null);
+  report.cases.push({backend,stage,mode,exactDocumentRollback:true,exactPixels:true,expectedFault:recovered.state.historyNavigation.fault});await fs.writeFile(out,JSON.stringify(report,null,2));console.log('IMMEDIATE_PREPARE_FAILURE '+JSON.stringify({backend,exactDocumentRollback:true,exactPixels:true}));await context.close();continue;
+ }
  if(stage==='multiple'){keptAImage=await screen();await draw(size*.08);await p.waitForFunction(()=>window.__immediate.held.length>=2);}
  const before=await p.evaluate(()=>{const m=window.__immediate;return {at:performance.now(),logical:m.port.read().handoff.pendingLogical,gpu:m.port.read().handoff.pendingGpu,jobs:m.r.document.jobs.length,records:m.s.records.length,strokes:m.c.committedStrokeCount,pointerUpAt:m.port.read().handoff.traces.at(-1)?.upAt??null};});
  await tap('undo');await p.waitForTimeout(80);

@@ -341,7 +341,14 @@ historyNavigation=new HistoryNavigation({
   admit:direction=>{const change=direction==='undo'?controller.undo():controller.redo();surface?.admitHistory(change);admittedHistoryChanges.push(change);},
   prepare:async()=>{await surface?.prepareHistory();},apply:applyHistoryBatch,
   state:()=>{historyPending=historyNavigation?.pending??false;surface?.setInputBarrier(historyPending);if(!historyPending)surface?.resumeHistory();updateHistoryButtons();updatePersistenceDisplay();updateQa();},
-  failed:(message,unprocessed)=>{byId('status').textContent=message+(unprocessed?' 未処理のUndo / Redo '+unprocessed+'件は反映していません。':'');},
+  failed:(message,unprocessed)=>{
+    // Preparation can fail before applyHistoryBatch owns the admitted changes.
+    // Refused capacity requests have no admitted change and must keep the queue.
+    if(unprocessed)for(const change of admittedHistoryChanges.splice(0).filter(change=>change.changed).reverse()){
+      const inverse=change.direction==='undo'?controller.redo():controller.undo();surface?.admitHistory(inverse);
+    }
+    byId('status').textContent=message+(unprocessed?' 未処理のUndo / Redo '+unprocessed+'件は反映していません。':'');
+  },
 },perfMode);
 async function applyHistoryBatch(directions:readonly HistoryDirection[]){
   const changes:EditorHistoryChange[]=[],selectedBefore=controller.selectedLayerId;
