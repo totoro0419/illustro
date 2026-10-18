@@ -83,9 +83,7 @@ export class RealtimeSession {
   for(const step of steps){const {direction,record,keys,surfaceKey}=step,source=direction==='undo'?records:redo,target=direction==='undo'?redo:records;
    if(source.at(-1)!==record)throw Error('Document/Renderer '+direction+' mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');source.pop();target.push(record);plans.push({...step,id:this.recordIds.get(record)});
   }
-  // Image history completes only the already accepted formal suffix. Do not
-  // discard its snapshots and fall back to replay when navigating immediately.
-  if(this.renderer.backend?.imageHistory){this.renderer.resumeHistory();await this.renderer.drain(false);if(this.renderer.strokeFrames.size||this.renderer.backend.overlayDirty?.size)await this.renderer.drain();}
+  if(this.renderer.backend?.imageHistory)return await this.navigateImageHistory(plans,records,redo);
   await this.renderer.prepareHistory();
   const pendingIds=new Set(this.renderer.document.jobs.map(j=>j.id)),pendingKeys=new Map,pendingEntries=[];
   for(const record of this.records)if(pendingIds.has(this.recordIds.get(record))){const surface=this.recordSurfaces.get(record)??'default',recordKeys=this.recordTiles.get(record)??[];pendingEntries.push({record,id:this.recordIds.get(record),surfaceKey:surface,keys:recordKeys});let keys=pendingKeys.get(surface);if(!keys)pendingKeys.set(surface,keys=new Set);for(const key of recordKeys)keys.add(key);}
@@ -105,6 +103,30 @@ export class RealtimeSession {
   const groups=baseReused?new Map:pendingKeys;for(const p of renderPlans){let keys=groups.get(p.surfaceKey);if(!keys)groups.set(p.surfaceKey,keys=new Set);for(const key of p.keys)keys.add(key);}
   await this.renderer.rebuildTileGroups([...groups].map(([surfaceKey,keys])=>({surfaceKey,keys:[...keys],entries:this.recordsForKeys(keys,surfaceKey).map(record=>({id:++this.id,preset:this.presetForRecord(record),commands:record.commands}))})));
  }finally{this.renderer.proxy?.invalidate();}}
+ async navigateImageHistory(plans,records,redo){
+  const r=this.renderer,renderPlans=[];
+  try{
+  for(const p of plans){const last=renderPlans.at(-1);if(last?.record===p.record&&last.direction!==p.direction)renderPlans.pop();else renderPlans.push(p);}
+  await r.prepareHistory();await r.discardImageHistoryPending(renderPlans);
+  // Only retained strokes may finish. A removed suffix is already absent from
+  // the queue, while its partial before images remain owned by TileHistory.
+  if(r.document.jobs.length||r.strokeFrames.size||r.backend.overlayDirty?.size){r.resumeHistory();await r.drain();await r.prepareHistory();}
+  this.records=records;this.redoRecords=redo;
+  for(const p of plans){if(p.direction==='undo')this.unindexRecord(p.record);else this.reindexRecord(p.record);}
+  if(await r.applyHistory(renderPlans)){this.historyPatchHits+=renderPlans.length;return;}
+  this.historyReplayFallbacks+=renderPlans.length;
+  if(renderPlans.every(p=>p.direction==='redo')){
+   // An interrupted after image is intentionally incomplete. Redo recreates
+   // that suffix from its unchanged canonical record, then caches full images.
+   for(const p of renderPlans){if(p.id!==undefined)r.dropHistory([p.id]);const id=++this.id,preset=this.presetForRecord(p.record);this.recordIds.set(p.record,id);r.document.append(id,preset,p.record.commands,null,p.surfaceKey);r.document.end(id,preset,p.surfaceKey);}
+   r.resumeHistory();await r.drain();return;
+  }
+  // Missing/failed lower-tier data and exceptional mixed navigation retain the
+  // exact recovery path. No interrupted image is mistaken for a complete one.
+  const groups=new Map;for(const p of renderPlans){let keys=groups.get(p.surfaceKey);if(!keys)groups.set(p.surfaceKey,keys=new Set);for(const key of p.keys)keys.add(key);}
+  r.resumeHistory();await r.rebuildTileGroups([...groups].map(([surfaceKey,keys])=>({surfaceKey,keys:[...keys],entries:this.recordsForKeys(keys,surfaceKey).map(record=>({id:++this.id,preset:this.presetForRecord(record),commands:record.commands}))})));
+  }finally{r.resumeHistory();}
+ }
  async undoDerived(expected,keys,surfaceKey='default'){try{await this.settle();const record=this.records.at(-1);if(record!==expected)throw Error('Document/Renderer undo mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');const id=this.recordIds.get(record);this.records.pop();this.redoRecords.push(record);this.unindexRecord(record);const hot=id!==undefined&&await this.renderer.undoCommit(id);if(hot)this.historyPatchHits++;else{this.historyReplayFallbacks++;await this.rebuildDirty(keys,surfaceKey);}}finally{this.renderer.proxy?.invalidate();}}
  async redoDerived(expected,keys,surfaceKey='default'){try{await this.settle();const record=this.redoRecords.at(-1);if(record!==expected)throw Error('Document/Renderer redo mismatch');if((this.recordSurfaces.get(record)??'default')!==surfaceKey)throw Error('Document/Renderer surface mismatch');if(!keys.length)throw Error('history dirty footprint missing');const id=this.recordIds.get(record);this.redoRecords.pop();this.records.push(record);this.reindexRecord(record);const hot=id!==undefined&&await this.renderer.redoCommit(id);if(hot)this.historyPatchHits++;else{this.historyReplayFallbacks++;await this.rebuildDirty(keys,surfaceKey);}}finally{this.renderer.proxy?.invalidate();}}
  async rollbackLatest(expected){try{await this.settle();const record=this.records.at(-1);if(record!==expected)throw Error('Renderer rollback mismatch');const keys=[...(this.recordTiles.get(record)??[])],surfaceKey=this.recordSurfaces.get(record)??'default',id=this.recordIds.get(record);this.records.pop();this.unindexRecord(record);const hot=id!==undefined&&await this.renderer.undoCommit(id);if(!hot&&keys.length)await this.rebuildDirty(keys,surfaceKey);if(id!==undefined)this.renderer.dropHistory([id]);}finally{this.renderer.proxy?.invalidate();}}

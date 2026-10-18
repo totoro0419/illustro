@@ -1,5 +1,5 @@
 import {TileHistory} from '@rt/tile-history';
-import {historyYield} from '@rt/history-io';
+import {historyYield,releaseHistoryImage} from '@rt/history-io';
 import * as B from '@rt/baseline-shaders';
 import {referenceFeedbackGl,referenceFeedbackGpu} from '@rt/reference-feedback';
 import {StrokeOverlay} from '@rt/stroke-overlay';
@@ -264,6 +264,13 @@ export class TileDocument {
   for(const key of keys)this.full.delete(surfaceKey+'\u0000'+id+':'+key);
   this.touched.delete(id);this.solidSeen.delete(id);return {surfaceKey,keys};
  }
+ discardHistory(ids){
+  const wanted=new Set(ids);let jobs=0,commands=0;
+  this.jobs=this.jobs.filter(j=>{if(!wanted.has(j.id))return true;jobs++;commands+=j.commands.length-j.offset;this.full.delete(j.surfaceKey+'\u0000'+j.id+':'+j.key);return false;});this.count-=commands;
+  for(const [tag,j]of this.open)if(wanted.has(j.id))this.open.delete(tag);
+  for(const id of wanted){this.touched.delete(id);this.solidSeen.delete(id);}
+  return {jobs,commands};
+ }
  reset(){this.jobs=[];this.open.clear();this.touched.clear();this.count=0;this.knownTime=0;this.full.clear();this.solidSeen.clear();}
 }
 export class GpuRenderer {
@@ -388,7 +395,7 @@ export class GpuRenderer {
    Promise.resolve(pending).then(finish).catch(e=>{this.errors.push(e.message);this.inflight=false;this.disposed=true;});return true;
   }catch(e){this.errors.push(e.message);this.inflight=false;this.disposed=true;return false;}
  }
- async waitStroke(ids){const start=performance.now(),epoch=this.navigationEpoch;while(ids.some(id=>!this.presentedStrokes.has(id))){if(epoch!==this.navigationEpoch)return {superseded:true};if(this.errors.length||this.disposed)throw Error(this.errors.join(';')||'Renderer stopped');if(performance.now()-start>120000)throw Error('Stroke GPU completion timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}for(const id of ids)this.presentedStrokes.delete(id);}
+ async waitStroke(ids){const start=performance.now(),epoch=this.navigationEpoch;while(ids.some(id=>!this.presentedStrokes.has(id))){if(epoch!==this.navigationEpoch||ids.some(id=>this.supersededStrokes?.has(id))){for(const id of ids)this.supersededStrokes?.delete(id);return {superseded:true};}if(this.errors.length||this.disposed)throw Error(this.errors.join(';')||'Renderer stopped');if(performance.now()-start>120000)throw Error('Stroke GPU completion timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}for(const id of ids)this.presentedStrokes.delete(id);}
  async drain(finalFrame=true){const start=performance.now();while(this.inflight||this.guardPreparing||this.document.jobs.length){if(this.errors.length)throw Error(this.errors.join(';'));if(performance.now()-start>120000)throw Error('confirmed renderer drain timeout');await new Promise(r=>requestAnimationFrame(r));this.frame(performance.now());}if(finalFrame){this.needsFrame=true;this.frame(performance.now());while(this.inflight||this.guardPreparing){await new Promise(r=>requestAnimationFrame(r));this.backend.poll?.();}}if(this.errors.length)throw Error(this.errors.join(';'));}
  async read(surfaceKey='default'){await this.drain();return this.backend.read(surfaceKey);}
  async cancelStroke(id){
@@ -415,6 +422,23 @@ export class GpuRenderer {
   while(this.inflight||this.guardPreparing){if(this.errors.length||this.disposed||performance.now()-started>120000)throw Error('History submission wait failed');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}
  }
  resumeHistory(){this.historyPreparing=false;this.requestWork();}
+ async discardImageHistoryPending(steps){
+  if(this.inflight||this.guardPreparing||!this.historyPreparing)throw Error('Image history must acknowledge submitted work before interruption');
+  const pending=new Set(this.document.jobs.map(j=>j.id)),ids=new Set(steps.filter(p=>p.direction==='undo'&&(pending.has(p.id)||this.ended.has(p.id)||this.strokeFrames.has(p.id))).map(p=>p.id));if(!ids.size)return {jobs:0,commands:0};
+  const b=this.backend,h=b.imageHistory;this.supersededStrokes??=new Set;
+  const visualIds=new Set(ids);for(const id of ids)for(const copy of this.wrapPreviews.get(id)??[])visualIds.add(copy);
+  for(const id of ids){if(pending.has(id))h.interrupt(id);this.supersededStrokes.add(id);this.strokeFrames.delete(id);this.presentedStrokes.delete(id);this.inputStarts.delete(id);this.ended.delete(id);}
+  for(const id of visualIds){this.proxy?.cancel(id);releaseOverlayPublication(b,id);this.previewStates.delete(id);this.wrapPreviews.delete(id);this.wrapCaches.delete(id);b.retirePreview(id);}
+  if(visualIds.has(this.snapshot?.id))this.snapshot=null;if(visualIds.has(this.mailbox.value?.id))this.mailbox.value=null;
+  const removed=this.document.discardHistory(ids);this.historySupersededGpuJobs+=removed.jobs;this.historySupersededGpuCommands+=removed.commands;
+  // Coverage scratch is not the authoritative layer. Committed subsets are
+  // restored atomically by TileHistory, never deleted or replayed here.
+  let slice=performance.now();for(const t of b.tiles.values())if(ids.has(t.active)){
+   for(const image of t.stroke??[])releaseHistoryImage(b,image);t.stroke=null;t.active=null;t.preset=t.previousPreset??t.preset;delete t.previousPreset;
+   if(performance.now()-slice>=4){await historyYield();slice=performance.now();}
+  }
+  return removed;
+ }
  discardPendingForHistory(entries,allRemoved){
   if(this.inflight||this.guardPreparing)throw Error('History preparation still owns an active submission');const discarded=this.document.jobs.length>0,ids=entries.map(p=>p.id),wanted=new Set(ids),pending=new Set(this.document.jobs.map(j=>j.id));
   const baseReused=discarded&&allRemoved&&pending.size===wanted.size&&[...this.backend.tiles.values()].every(t=>!wanted.has(t.committedId));
