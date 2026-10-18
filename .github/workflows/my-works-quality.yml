@@ -49,8 +49,44 @@ jobs:
         with:
           name: my-works-test-build
           path: apps/editor/dist/
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/immediate-browser/node_modules/playwright
+      HANDOFF_OPERATIONS_CANVAS: '4000'
+      HANDOFF_OPERATIONS_OUTPUT: /tmp/my-works-regression/operations/report.json
+      M05_EVIDENCE_DIRECTORY: /tmp/my-works-regression/recovery
+      M05_EXPECT_MILESTONE: M07
+      M08_EVIDENCE_DIRECTORY: /tmp/my-works-regression/canvas
+      M09_EVIDENCE_DIRECTORY: /tmp/my-works-regression/color
+      HOME_EVIDENCE_DIRECTORY: /tmp/my-works-regression/works
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build source and Chromium
+        run: |
+          npm run brush:build > /tmp/my-works-brush-build.log
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/immediate-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/immediate-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Strokes and undo across save, reopen and checkpoints
+        run: node scripts/stroke-handoff-operations.mjs
+      - name: Journal, previous-good, crash and offline
+        run: node scripts/editor-m05-smoke.mjs
+      - name: Canvas, color and gallery regression
+        run: |
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: my-works-regression, path: /tmp/my-works-regression/}
   publish:
-    needs: unit-and-build
+    needs: [unit-and-build, regression]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
