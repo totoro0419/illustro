@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "commit": "eea482dad75ef390be35540856990bb8f49ca43a",
+  "commit": "5c7e954dd4e255b73bc6d58878130df1de7a42e6",
   "checks": [
     {
       "id": "live-preview",
@@ -16,8 +16,8 @@
     }
   ],
   "times": {
-    "reopen512ms": 1634,
-    "reopen4000ms": 2112
+    "reopen512ms": 1231,
+    "reopen4000ms": 2355
   },
   "errors": []
 }
