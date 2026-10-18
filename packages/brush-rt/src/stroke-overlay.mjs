@@ -80,6 +80,7 @@ export class StrokeOverlay{
   for(const state of old.values())this.pending.set(state.id,state);if(this.ready)this.schedule();
  }
  prepare(preset){this.preferred=typeof preset==='number'?{size:preset}:preset;if(!this.view||this.states.size)return;this.plan=previewPlan(this.view,this.preferred,this.ratio);this.ready=this.enabled&&!this.suspended;}
+ resumeAfterHistory(){this.suspended=false;this.ready=this.enabled&&!!this.view;this.schedule();}
  suspend(){this.suspended=true;this.ready=false;this.epoch++;}
  invalidate(){this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.fallback=false;this.suspended=false;this.ready=this.enabled&&!!this.view;if(this.view)this.plan=previewPlan(this.view,this.preferred??{},this.ratio);}
  clearRaster(){clearTimeout(this.viewRefineTimer);this.viewRefineTimer=null;this.finalizations.clear();this.preparedBytes=0;this.states.clear();this.footprints.clear();this.cells.clear();this.dirty.clear();this.allocatedBytes=0;this.sink.hide();}

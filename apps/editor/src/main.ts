@@ -362,7 +362,7 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
 function performHistory(direction:HistoryDirection){
   if(!documentReady||!surface||geometryBusy)return 'not-ready';if(surface.inputActive&&!historyPending)return 'active-input';
   const available=historyPending||(direction==='undo'?surface.canUndo:surface.canRedo);if(!available)return 'no-target';
-  if(!historyPending&&surface.navigatePending(direction)){if(direction==='undo')undoCount++;else redoCount++;byId('status').textContent=direction==='undo'?'線を取り消しました。':'取り消した線をやり直します。';updateHistoryButtons();updatePersistenceDisplay();updateQa();return 'accepted';}
+  if(surface.navigatePending(direction)){if(direction==='undo')undoCount++;else redoCount++;byId('status').textContent=direction==='undo'?'線を取り消しました。':'取り消した線をやり直します。';updateHistoryButtons();updatePersistenceDisplay();updateQa();return 'accepted';}
   return historyNavigation!.enqueue(direction)?'accepted':'capacity-or-fault';
 }
 function bindHistoryButton(id:string,direction:'undo'|'redo'){

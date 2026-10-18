@@ -119,7 +119,7 @@ export class RealtimeSession {
   // A cold batch reconstructs each changed tile once at the final logical head.
   const groups=baseReused?new Map:pendingKeys;for(const p of renderPlans){let keys=groups.get(p.surfaceKey);if(!keys)groups.set(p.surfaceKey,keys=new Set);for(const key of p.keys)keys.add(key);}
   await this.renderer.rebuildTileGroups([...groups].map(([surfaceKey,keys])=>({surfaceKey,keys:[...keys],entries:this.recordsForKeys(keys,surfaceKey).map(record=>({id:++this.id,preset:this.presetForRecord(record),commands:record.commands}))})));
- }finally{this.renderer.proxy?.invalidate();}}
+ }finally{this.renderer.refreshHistoryPreviews?.();}}
  async navigateImageHistory(plans,records,redo){
   const r=this.renderer,renderPlans=[];
   try{

@@ -10,7 +10,7 @@ type Pending={reservation:StrokeReservation;record?:StrokeRecord;additional:read
  * Only a visible prefix is published into the immutable document. */
 export class StrokeHandoff{
   private items:Pending[]=[];private redoItems:Pending[]=[];private entries=new Map<StrokeReservation,Pending>();
-  private sequence=0;private running=false;private expected:DrawingTarget['baseRevision']|null=null;private fault:unknown=null;
+  private publicationHeld=false;private sequence=0;private running=false;private expected:DrawingTarget['baseRevision']|null=null;private fault:unknown=null;
   private waiters:Array<{resolve:()=>void;reject:(error:unknown)=>void}>=[];
   constructor(private controller:EditorController,private published:(reservation:StrokeReservation,record:StrokeRecord,additional:readonly StrokeRecord[],result:StrokeCommitResult,undone?:boolean)=>void,private discarded:(record:StrokeRecord,reservation:StrokeReservation)=>void=()=>{}){}
   owns(reservation:StrokeReservation){return this.entries.has(reservation);}
@@ -39,6 +39,7 @@ export class StrokeHandoff{
     // The caller restores preview ownership before publication starts.
     return item.reservation;
   }
+  setPublicationHeld(held:boolean){this.publicationHeld=held;if(!held)void this.pump();}
   resume(){void this.pump();}
   rebase(){if(!this.items.length&&!this.running)this.expected=this.controller.document.head;}
   cancel(reservation:StrokeReservation){const item=this.entries.get(reservation);if(!item)return;if(item.record)throw new Error('Cannot cancel a released stroke');item.discarded=true;this.items=this.items.filter(e=>e!==item);this.entries.delete(reservation);void this.pump();}
@@ -51,8 +52,8 @@ export class StrokeHandoff{
   fail(error:unknown){this.fault=error;for(const item of this.entries.values())item.reject?.(error);for(const waiter of this.waiters)waiter.reject(error);this.waiters=[];}
   barrier():Promise<void>{if(this.fault)return Promise.reject(this.fault);if(!this.items.length&&!this.running)return Promise.resolve();return new Promise((resolve,reject)=>this.waiters.push({resolve,reject}));}
   private async pump(){
-    if(this.running||this.fault)return;this.running=true;
-    try{while(this.items[0]?.record){const item=this.items[0],record=item.record!,additional=item.additional;
+    if(this.running||this.fault||this.publicationHeld)return;this.running=true;
+    try{while(!this.publicationHeld&&this.items[0]?.record){const item=this.items[0],record=item.record!,additional=item.additional;
       if(this.controller.document.head!==this.expected)throw new Error('描画中に作品の状態が変わりました。');
       try{item.publishing=true;const target={...item.reservation.target,baseRevision:this.expected!},result=await this.controller.finishStroke(target,record,additional);
         this.expected=result.revisionId;this.items.shift();

@@ -116,7 +116,7 @@ export class BrushSurface{
     const session=this.session!,started=performance.now();this.pendingBranch=false;this.pendingStrokeIds.delete(reservation);let ids:number[];try{session.discardRedo();if(undone){session.commitUndoneRecord(record,additional,reservation.target.surfaceId);this.onCommitted();return;}ids=session.commitRecord(record,additional,reservation.target.surfaceId);this.onCommitted();}catch(error){this.handoffFault=error instanceof Error?error.message:String(error);this.status('線の記録後に表示更新で問題が起きました。'+this.handoffFault);throw error;}const trace=this.handoffTraces.find(item=>item.id===ids[0]);if(trace)trace.savePrepareMs=performance.now()-started;
     const promise=session.renderer.waitStroke(ids).then(completion=>{if(trace&&!completion?.superseded)trace.gpuMs=performance.now()-trace.upAt;if(ids[0]!==undefined)session.renderer.clearSeamlessPreviews(ids[0]);if(!completion?.superseded&&!this.disposed&&this.pointer===null&&this.gpuFinishes.size===1)this.status(record.preset.blend==='erase'?'消した内容を作品に反映しました。':'線を作品に反映しました。');}).catch(error=>{this.handoffFault=error instanceof Error?error.message:String(error);if(!this.disposed)this.status('線の記録後に表示更新で問題が起きました。'+this.handoffFault);}).finally(()=>{this.gpuFinishes.delete(reservation.sequence);if(!this.disposed)this.onStateChanged();});this.gpuFinishes.set(reservation.sequence,promise);
   }
-  setInputBarrier(enabled:boolean){this.inputBarrier=enabled;}
+  setInputBarrier(enabled:boolean){this.inputBarrier=enabled;this.handoff?.setPublicationHeld(enabled);}
   setProtectionQueueLength(count:number){this.protectionQueueLength=count;}
   async settleLogicalStrokes(){await this.handoff?.barrier();}
   /** Consume a reserved entry immediately. Worker completion stays independent. */

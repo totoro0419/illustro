@@ -23,3 +23,8 @@ test('publication canceled during a document port wait stages exact canonical Re
  Object.assign(s,{renderer,staged:new Map([[1,record]]),recordIds:new WeakMap([[record,1]]),recordSurfaces:new WeakMap,recordOrder:new WeakMap,recordTiles:new WeakMap,tileRecords:new Map,nextRecordOrder:0,redoRecords:[]});
  s.commitUndoneRecord(record,[],'lower');assert.deepEqual(s.redoRecords,[record]);assert.equal(s.staged.size,0);assert.equal(s.tileRecords.size,0);assert.equal(s.recordSurfaces.get(record),'lower');assert.ok(s.recordTiles.get(record).length>0);assert.equal(patches.get(1).state,'undone');assert.equal(patches.get(1).incomplete,true);
 });
+
+test('history resumption preserves unrelated pending bitmaps and republishes only visible states',()=>{
+ const b={retirePreview(){},overlayHoldIds:new Set},r=new GpuRenderer(b,4000,4000,{strokeHandoff:true});const enqueued=[];let resumed=0;
+ r.requestWork=()=>{};r.proxy={resumeAfterHistory(){resumed++;},enqueue(s){enqueued.push(s.id);},invalidate(){throw Error('must not discard an unrelated pending bitmap');}};r.previewStates.set(1,{id:1});r.previewStates.set(10,{id:10});r.hiddenStrokeIds.add(1);r.resumeHistory();assert.equal(resumed,1);assert.deepEqual(enqueued,[10]);
+});

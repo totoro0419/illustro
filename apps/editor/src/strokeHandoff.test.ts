@@ -54,3 +54,8 @@ describe('reserved history before record completion',()=>{
 it('a different document edit discards reserved Redo before the worker record arrives',async()=>{
  const c=new EditorController(),discarded:StrokeRecord[]=[],q=new StrokeHandoff(c,()=>{},r=>discarded.push(r)),a=q.reserve(c.target());q.undoPending();q.discardRedo();c.addRasterLayer();await q.release(a,record());expect(q.canRedo).toBe(false);expect(discarded).toHaveLength(1);expect(c.committedStrokeCount).toBe(0);
 });
+
+it('accepts reserved Redo while older image restoration owns publication, then publishes in order',async()=>{
+ const c=new EditorController(),published:number[]=[],q=new StrokeHandoff(c,r=>published.push(r.sequence)),a=q.reserve(c.target());await q.release(a,record());const b=q.reserve(c.target());q.undoPending();q.setPublicationHeld(true);
+ c.undo();q.rebase();c.redo();q.rebase();expect(q.redoPending()).toBe(b);q.resume();const pending=q.release(b,record(60));await Promise.resolve();expect(c.committedStrokeCount).toBe(1);expect(published).toEqual([1]);q.setPublicationHeld(false);await pending;await q.barrier();expect(c.committedStrokeCount).toBe(2);expect(published).toEqual([1,2]);
+});

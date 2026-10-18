@@ -310,8 +310,8 @@ export class GpuRenderer {
  // waits only for the already submitted batch, never for a canonical record.
  hideStrokePreview(id){
   const ids=[id,...(this.wrapPreviews.get(id)??[])];
-  for(const key of ids){this.hiddenStrokeIds.add(key);const state=this.previewStates.get(key);if(state)this.hiddenPreviewStates.set(key,state);this.previewStates.delete(key);this.proxy?.cancel(key);this.previewCleanup.add(key);}
-  this.proxy?.closeGuards();if(ids.includes(this.snapshot?.id))this.snapshot=null;if(ids.includes(this.mailbox.value?.id))this.mailbox.value=null;
+  for(const key of ids){this.hiddenStrokeIds.add(key);const state=this.previewStates.get(key);if(state)this.hiddenPreviewStates.set(key,state);this.previewStates.delete(key);this.proxy?.cancel?.(key);this.previewCleanup.add(key);}
+  this.proxy?.closeGuards?.();if(ids.includes(this.snapshot?.id))this.snapshot=null;if(ids.includes(this.mailbox.value?.id))this.mailbox.value=null;
   this.flushHiddenPreviews();this.needsFrame=true;this.requestWork();
  }
  flushHiddenPreviews(){if(this.inflight||this.guardPreparing)return;for(const id of this.previewCleanup)this.backend.retirePreview(id);this.previewCleanup.clear();}
@@ -436,7 +436,8 @@ export class GpuRenderer {
   this.proxy?.suspend();this.historyPreparing=true;const started=performance.now();
   while(this.inflight||this.guardPreparing){if(this.errors.length||this.disposed||performance.now()-started>120000)throw Error('History submission wait failed');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}
  }
- resumeHistory(){this.historyPreparing=false;this.requestWork();}
+ refreshHistoryPreviews(){this.proxy?.resumeAfterHistory?.();for(const state of this.previewStates.values())if(!this.hiddenStrokeIds.has(state.id))this.proxy?.enqueue?.(state);}
+ resumeHistory(){this.historyPreparing=false;this.refreshHistoryPreviews();this.requestWork();}
  async discardImageHistoryPending(steps){
   if(this.inflight||this.guardPreparing||!this.historyPreparing)throw Error('Image history must acknowledge submitted work before interruption');
   const pending=new Set(this.document.jobs.map(j=>j.id)),ids=new Set(steps.filter(p=>p.direction==='undo'&&(pending.has(p.id)||this.ended.has(p.id)||this.strokeFrames.has(p.id))).map(p=>p.id));if(!ids.size)return {jobs:0,commands:0};
@@ -474,7 +475,7 @@ export class GpuRenderer {
   const b=this.backend,h=b.imageHistory;if(!steps.length&&!b.dirtyConfirmed.size)return true;this.historyPreparing=true;
   // Ended CPU feedback/guards belong to the old view and may not outlive a
   // history publication. Completion was drained before this point.
-  this.proxy?.invalidate();this.proxy?.suspend();
+  for(const step of steps)if(step.direction==='undo'&&!this.hiddenStrokeIds.has(step.id))this.hideStrokePreview(step.id);this.proxy?.closeGuards?.();this.proxy?.suspend();
   const started=performance.now();let held=false,prepared;
   try{
    const plan=await h.prepare(steps);if(!plan)return false;prepared=plan;

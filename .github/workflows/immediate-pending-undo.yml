@@ -138,6 +138,8 @@ jobs:
           IMMEDIATE_POINTS=1600 IMMEDIATE_OUTPUT=/tmp/immediate-variants/dense/report.json node scripts/immediate-pending-undo-review.mjs
       - name: New input branches away from a canceled unready reservation
         run: IMMEDIATE_STAGES=branch IMMEDIATE_OUTPUT=/tmp/immediate-variants/branch/report.json node scripts/immediate-pending-undo-review.mjs
+      - name: Mixed registered and reserved history while GPU restoration is held
+        run: IMMEDIATE_STAGES=mixed IMMEDIATE_OUTPUT=/tmp/immediate-variants/mixed/report.json node scripts/immediate-pending-undo-review.mjs
       - name: Ordinary home-to-editor workflow with native mobile Undo
         run: IMMEDIATE_PRODUCTION=1 IMMEDIATE_OUTPUT=/tmp/immediate-variants/production/report.json node scripts/immediate-pending-undo-review.mjs
       - uses: actions/upload-artifact@v4
