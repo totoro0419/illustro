@@ -52,6 +52,7 @@ export class PersistenceCoordinator{
   async loadWork(documentId:string){const raw=await this.request('library-load',{documentId});
     const document=CoreDocument.restore({snapshot:raw.snapshot,blockPayloads:new Map(raw.blocks.map((b:{id:string;bytes:Uint8Array})=>[b.id,b.bytes]))});
     const selected=raw.entry.selectedLayerId;return {opened:{document,selectedLayerId:document.root.hasLayer(selected)?selected:document.root.rootLayerIds[0]!,preserved:raw.entry.preserved??{manifestExtras:{},optionalSections:[]},generationId:'library',snapshotRevisionId:document.head,projectionCache:raw.projectionCache??undefined} as PortableOpenResult,entry:raw.entry as WorkEntry,fallback:Boolean(raw.fallback)};}
+  async readThumbnail(documentId:string,revisionId:string):Promise<Blob|null>{const result=await this.request('library-thumbnail-read',{documentId,revisionId});return result.image??null;}
   async repairThumbnail(documentId:string):Promise<{state:'pending'|'complete'|'current'|'unavailable'}>{return this.request('library-preview-step',{documentId});}
   async renameWork(documentId:string,name:string){await this.request('library-rename',{documentId,name});}
   async deleteWork(documentId:string){await this.request('library-delete',{documentId});}

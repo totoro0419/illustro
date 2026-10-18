@@ -9,6 +9,7 @@ export type HomeActions = Readonly<{
   createDocument: (width:number,height:number,name:string,background:'transparent'|'white')=>Promise<boolean>;
   listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
   openWork:(id:string)=>Promise<boolean>;
+  readThumbnail:(id:string,revisionId:string)=>Promise<Blob|null>;
   renameWork:(id:string,name:string)=>Promise<void>;
   duplicateWork:(id:string)=>Promise<void>;
   deleteWork:(id:string)=>Promise<void>;
@@ -124,6 +125,29 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const el=<T extends HTMLElement=HTMLElement>(id:string)=>root.querySelector<T>('#'+id)!;
   const dialog=el<HTMLDialogElement>('ihNewDialog');
   let screen:Screen='home',featureIndex=0,recovery:readonly RecoverySummary[]=[],works:readonly WorkEntry[]=[],lastWorkId:string|null=null,workUrls=new Map<string,{revision:string|null;url:string}>();
+  const previewPending=new Set<string>();
+  const fetchVisiblePreview=async(work:WorkEntry)=>{
+    if(!work.thumbnailRevision||work.thumbnailRevision!==work.revisionId)return;
+    const id=work.documentId,revision=work.thumbnailRevision,key=id+':'+revision;
+    if(previewPending.has(key)||workUrls.get(id)?.revision===revision)return;
+    previewPending.add(key);
+    try{
+      const blob=await actions.readThumbnail(id,revision);if(!blob)return;
+      const card=[...el('ihWorkGrid').querySelectorAll<HTMLElement>('.ih-work-card')].find(item=>item.dataset.workId===id);
+      if(!card||card.dataset.workRevision!==revision||card.dataset.thumbnailRevision!==revision)return;
+      const existing=workUrls.get(id);if(existing)URL.revokeObjectURL(existing.url);
+      const url=URL.createObjectURL(blob);workUrls.set(id,{revision,url});
+      const button=card.querySelector<HTMLButtonElement>('.ih-work-preview');if(!button)return;
+      const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=url;button.replaceChildren(img);
+    }catch(error){console.warn('Preview read deferred:',error);}
+    finally{previewPending.delete(key);}
+  };
+  const previewObserver=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{
+    for(const entry of entries)if(entry.isIntersecting){
+      const element=entry.target as HTMLElement,work=works.find(w=>w.documentId===element.dataset.workId);
+      if(work)void fetchVisiblePreview(work);previewObserver?.unobserve(element);
+    }
+  },{rootMargin:'280px'});
   const setButton=(id:string,handler:()=>void)=>{el<HTMLButtonElement>(id).addEventListener('click',handler);};
   const notify=(message:string)=>{const notice=el('ihNotice');notice.textContent=message;notice.hidden=!message;};
   const updateEditorLink=()=>{el('ihReturnEditor').hidden=!actions.hasDocument();};
@@ -168,10 +192,13 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     const filtered=works.filter(work=>work.name.toLocaleLowerCase('ja-JP').includes(query)).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ja-JP'):sort==='created'?b.createdAt-a.createdAt:b.updatedAt-a.updatedAt);
     root.querySelector('.ih-works-count')!.textContent=works.length+'作品';(root.querySelector('.ih-empty-works') as HTMLElement).hidden=works.length>0;
     el('ihWorkNoResults').hidden=works.length===0||filtered.length>0;
+    previewObserver?.disconnect();
     el('ihWorkGrid').replaceChildren(...filtered.map(work=>{
       const card=document.createElement('article');card.className='ih-work-card';card.dataset.workId=work.documentId;card.dataset.workRevision=work.revisionId;card.dataset.thumbnailRevision=work.thumbnailRevision??'';
       const open=document.createElement('button');open.type='button';open.className='ih-work-preview';open.setAttribute('aria-label',work.name+'を開く');
-      if(work.thumbnail){const img=document.createElement('img');img.alt='';img.loading='lazy';const cached=workUrls.get(work.documentId);if(cached?.revision===work.thumbnailRevision)img.src=cached.url;else{if(cached)URL.revokeObjectURL(cached.url);img.src=URL.createObjectURL(work.thumbnail);workUrls.set(work.documentId,{revision:work.thumbnailRevision,url:img.src});}open.append(img);}else{open.textContent='プレビューを準備中';}
+      const cached=workUrls.get(work.documentId);
+      if(cached?.revision===work.thumbnailRevision&&work.thumbnailRevision===work.revisionId){const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=cached.url;open.append(img);}
+      else{open.textContent='プレビューを準備中';}
       open.onclick=()=>void run(async()=>{if(await actions.openWork(work.documentId))navigate('editor');},open);
       const info=document.createElement('div');info.className='ih-work-info';
       const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
@@ -184,6 +211,12 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const id=document.createElement('small');id.textContent='識別番号 '+work.documentId;details.append(id);
       info.append(title,meta,details);card.append(open,info);return card;
     }));
+    for(const element of el('ihWorkGrid').querySelectorAll<HTMLElement>('.ih-work-card')){
+      const work=filtered.find(w=>w.documentId===element.dataset.workId);
+      if(!work||workUrls.get(work.documentId)?.revision===work.thumbnailRevision)continue;
+      if(previewObserver)previewObserver.observe(element);
+      else void fetchVisiblePreview(work);
+    }
   };
   const updateContinue=()=>{
     const last=works.find(x=>x.documentId===lastWorkId);

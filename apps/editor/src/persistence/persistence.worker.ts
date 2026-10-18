@@ -1,6 +1,6 @@
 import {ContiguousProtection} from './contiguousProtection';
 import {hasPixelData} from './pixelPresence';
-import {listWorks,getWork,publishWork,updateWork,deleteWork,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
+import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,updateWork,deleteWork,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
 import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
 
@@ -51,16 +51,22 @@ async function handle(message:RequestMessage){
       const projectionCache=await loadProjectionCheckpointRaw(store,session,new Set(snapshot.revisions.map(r=>r.id)));
       reply(message.id,true,{...loaded,snapshot,entry,fallback,projectionCache});break;
     }
+    case 'library-thumbnail-read':{
+      const entry=await getWork(uuid(message.documentId,'document id'));
+      const revisionId=String(message.revisionId??'');
+      const image=entry?.thumbnailRevision===revisionId?await getWorkThumbnail(entry.documentId,revisionId):null;
+      reply(message.id,true,{image});break;
+    }
     case 'library-selection':{
       if(libraryWork)await publishCurrent({selectedLayerId:uuid(message.selectedLayerId,'selected layer')});reply(message.id,true,{});break;
     }
     case 'library-thumbnail':{
-      const id=uuid(message.documentId,'document id');await updateWork(id,entry=>entry.revisionId===message.revisionId?{...entry,thumbnail:message.thumbnail as Blob,thumbnailRevision:entry.revisionId}:entry);reply(message.id,true,{});break;
+      const id=uuid(message.documentId,'document id');const stored=await storeWorkThumbnail(id,String(message.revisionId??''),message.thumbnail as Blob);reply(message.id,true,{stored});break;
     }
     case 'library-preview-step':{
       const id=uuid(message.documentId,'document id'),entry=await getWork(id);
       if(!entry){previewTask=null;reply(message.id,true,{state:'unavailable'});break;}
-      if(entry.thumbnail&&entry.thumbnailRevision===entry.revisionId){if(previewTask?.documentId===id)previewTask=null;reply(message.id,true,{state:'current'});break;}
+      if(entry.thumbnailRevision===entry.revisionId&&await getWorkThumbnail(id,entry.revisionId)){if(previewTask?.documentId===id)previewTask=null;reply(message.id,true,{state:'current'});break;}
       try{
         if(!previewTask||previewTask.documentId!==id||previewTask.revisionId!==entry.revisionId||previewTask.writerEpochId!==entry.writerEpochId){
           previewTask=null;previewTask=await initPreviewTask(store,entry);
@@ -241,7 +247,7 @@ async function advancePreviewTask(store:WorkingStore,task:PreviewTask,limit:numb
   const output=new OffscreenCanvas(task.width,task.height),context=output.getContext('2d');if(!context)throw new Error('Thumbnail compositor unavailable');
   for(const layer of task.layers){if(!layer.visible)continue;context.globalAlpha=Math.max(0,Math.min(1,layer.opacity));context.drawImage(task.canvases.get(layer.surfaceId)!,0,0);}
   const thumbnail=await output.convertToBlob({type:'image/png'});
-  await updateWork(task.documentId,current=>current.revisionId===task.revisionId&&current.writerEpochId===task.writerEpochId?{...current,thumbnail,thumbnailRevision:task.revisionId}:current);
+  await storeWorkThumbnail(task.documentId,task.revisionId,thumbnail);
   return true;
 }
 

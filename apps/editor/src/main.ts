@@ -547,7 +547,7 @@ async function storeBlankThumbnail(documentId:string,revisionId:string,width:num
 async function createWorkThumbnail(){
   if(qaMode||!documentReady||!surface||surface.busy)return;
   const active=surface,doc=controller.document,revision=doc.head,documentId=doc.root.documentId;
-  if(works.some(work=>work.documentId===documentId&&work.thumbnail&&work.thumbnailRevision===revision))return;
+  if(works.some(work=>work.documentId===documentId&&work.thumbnailRevision===revision))return;
   const blob=await active.captureWorkThumbnail();
   if(surface===active&&controller.document===doc&&doc.head===revision)await persistence.storeThumbnail(documentId,revision,blob);
 }
@@ -609,6 +609,7 @@ if(!qaMode){
       return true;},
     listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
+    readThumbnail:(id,revisionId)=>persistence.readThumbnail(id,revisionId),
     renameWork:async(id,name)=>{await persistence.renameWork(id,name);if(documentReady&&controller.document.root.documentId===id){await prepareWorkSwitch();const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);}await refreshWorks();},
     duplicateWork:async(id)=>{if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');const loaded=await persistence.loadWork(id),copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');await activateOpened(copy);await refreshWorks();},
     deleteWork:async(id)=>{await persistence.deleteWork(id);if(documentReady&&controller.document.root.documentId===id){surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();}await refreshWorks();},
