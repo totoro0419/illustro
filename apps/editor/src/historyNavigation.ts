@@ -1,6 +1,6 @@
 export type HistoryDirection='undo'|'redo';
 type Request=Readonly<{direction:HistoryDirection;sequence:number;at:number}>;
-type Ports={prepare:()=>Promise<void>;apply:(directions:readonly HistoryDirection[])=>Promise<void>;state:()=>void;failed:(message:string,unprocessed:number)=>void};
+type Ports={admit?:(direction:HistoryDirection)=>void;prepare:()=>Promise<void>;apply:(directions:readonly HistoryDirection[])=>Promise<void>;state:()=>void;failed:(message:string,unprocessed:number)=>void};
 
 /** A bounded command queue. Every accepted command keeps its order; only derived
  * presentation is batched. No debounce timer, repeat suppression or dropped clicks. */
@@ -14,7 +14,7 @@ export class HistoryNavigation{
   get pending(){return this.running||this.requests.length>0;}
   enqueue(direction:HistoryDirection){
     if(this.fault||this.requests.length+this.active.length>=this.capacity){this.refused++;this.ports.failed(this.fault?.message??'Undo / Redoの受付上限です。反映が進んでからもう一度操作してください。',0);return false;}
-    this.requests.push({direction,sequence:++this.issued,at:performance.now()});this.accepted++;this.peak=Math.max(this.peak,this.requests.length+this.active.length);
+    this.ports.admit?.(direction);this.requests.push({direction,sequence:++this.issued,at:performance.now()});this.accepted++;this.peak=Math.max(this.peak,this.requests.length+this.active.length);
     if(!this.running){this.running=true;this.ports.state();void this.pump();}return true;
   }
   barrier(){if(this.fault)return Promise.reject(this.fault);if(this.finished===this.issued)return Promise.resolve();return new Promise<void>((resolve,reject)=>this.waiters.push({through:this.issued,resolve,reject}));}

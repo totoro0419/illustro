@@ -65,3 +65,11 @@ test('a reused pending-stroke allocation updates its document clip after view re
  assert.equal(StrokeSink.prototype.configure.call(sink,plan,[20,20,80,80]),false);
  assert.equal(element.style.clipPath,'polygon(12px 14px,110px 14px,90px 100px)');assert.deepEqual(sink.rect,[0,0,128,128]);
 });
+
+
+test('a transition capture requested before Undo cannot resurrect canceled feedback',async()=>{
+ const previous=globalThis.createImageBitmap;let resume,closed=0;globalThis.createImageBitmap=()=>new Promise(resolve=>resume=resolve);
+ const {p,backend}=setup();backend.canvas.width=1200;backend.canvas.height=1800;
+ try{p.enqueue(live(record(64)));p.safeFlush();const pending=p.protect();assert.equal(typeof resume,'function');p.cancel(1);p.closeGuards();resume({close(){closed++;}});assert.equal(await pending,false);assert.equal(p.guards.length,0);assert.equal(p.states.size,0);assert.equal(closed,1);}
+ finally{p.destroy();if(previous===undefined)delete globalThis.createImageBitmap;else globalThis.createImageBitmap=previous;}
+});

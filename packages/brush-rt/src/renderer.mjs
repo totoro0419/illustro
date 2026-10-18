@@ -298,7 +298,7 @@ export class GpuRenderer {
   try{const r=new WebGlBackend(canvas,width,height,options.webglDesynchronized??true,!!options.strokeHandoff);r.info.selection=selection;if(options.strokeHandoff){await initializeSparseBackend(r);if(options.strokeOverlay)await prepareDrawingBackend(r);}return new GpuRenderer(r,width,height,options);}
   catch(e){const message=e instanceof Error?e.message:String(e);throw Error((selection.fallbackUsed?'WebGPU unavailable ('+selection.webgpu.stage+': '+selection.webgpu.error+'); ':'')+'WebGL2 initialization failed: '+message,{cause:e});}
  }
- constructor(backend,width,height,options={}){backend.historyBudget=Number.isSafeInteger(options.historyGpuBudgetBytes)?Math.max(HISTORY_TILE_RESERVATION,Math.min(64*1024*1024,options.historyGpuBudgetBytes)):HISTORY_GPU_BUDGET;if(typeof Worker==='function'&&options.tileHistory!==false&&options.strokeHandoff&&(backend.gl||backend.device))backend.imageHistory=new TileHistory(backend,{gpuBudget:backend.historyBudget,memoryBudget:options.historyMemoryBudgetBytes,diskBudget:options.historyDiskBudgetBytes,storageDisabled:options.historyStorageDisabled});this.historyPreparing=false;this.navigationActive=false;this.navigationEpoch=0;this.historySupersededGpuJobs=0;this.historySupersededGpuCommands=0;this.historyBaseReuses=0;this.strokeHandoff=!!options.strokeHandoff;this.handoffJobLimit=32;this.inputStarts=new Map;this.inputPreviewSamples=[];this.strokeFrames=new Map;this.presentedStrokes=new Set;this.submissionNumber=0;this.backend=backend;this.document=new TileDocument(width,height);this.document.pruneSolid=this.strokeHandoff;this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.seamlessPreview=false;this.wrapPreviews=new Map;this.wrapCaches=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;this.needsFrame=true;this.viewPending=false;this.finishSubmission=null;this.onPresentation=null;this.proxy=null;if(options.strokeOverlay&&this.strokeHandoff){try{this.proxy=new StrokeOverlay(backend,options.strokeOverlay);}catch(error){backend.info.proxyUnavailable=String(error);}}this.instantJobLimit=16;this.workTimer=null;this.guardPreparing=false;backend.overlayHoldIds=new Set;backend.overlayDirty=new Map;this.performance={presentations:0,viewPresentations:0,renders:0,compositedTiles:0,compositedLayerPasses:0,supersededViews:0,samples:[]};}
+ constructor(backend,width,height,options={}){backend.historyBudget=Number.isSafeInteger(options.historyGpuBudgetBytes)?Math.max(HISTORY_TILE_RESERVATION,Math.min(64*1024*1024,options.historyGpuBudgetBytes)):HISTORY_GPU_BUDGET;if(typeof Worker==='function'&&options.tileHistory!==false&&options.strokeHandoff&&(backend.gl||backend.device))backend.imageHistory=new TileHistory(backend,{gpuBudget:backend.historyBudget,memoryBudget:options.historyMemoryBudgetBytes,diskBudget:options.historyDiskBudgetBytes,storageDisabled:options.historyStorageDisabled});this.hiddenStrokeIds=new Set;this.hiddenPreviewStates=new Map;this.previewCleanup=new Set;this.historyPreparing=false;this.navigationActive=false;this.navigationEpoch=0;this.historySupersededGpuJobs=0;this.historySupersededGpuCommands=0;this.historyBaseReuses=0;this.strokeHandoff=!!options.strokeHandoff;this.handoffJobLimit=32;this.inputStarts=new Map;this.inputPreviewSamples=[];this.strokeFrames=new Map;this.presentedStrokes=new Set;this.submissionNumber=0;this.backend=backend;this.document=new TileDocument(width,height);this.document.pruneSolid=this.strokeHandoff;this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.seamlessPreview=false;this.wrapPreviews=new Map;this.wrapCaches=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;this.needsFrame=true;this.viewPending=false;this.finishSubmission=null;this.onPresentation=null;this.proxy=null;if(options.strokeOverlay&&this.strokeHandoff){try{this.proxy=new StrokeOverlay(backend,options.strokeOverlay);}catch(error){backend.info.proxyUnavailable=String(error);}}this.instantJobLimit=16;this.workTimer=null;this.guardPreparing=false;backend.overlayHoldIds=new Set;backend.overlayDirty=new Map;this.performance={presentations:0,viewPresentations:0,renders:0,compositedTiles:0,compositedLayerPasses:0,supersededViews:0,samples:[]};}
  setSurfaceStack(surfaceKeys){if(!Array.isArray(surfaceKeys)||!surfaceKeys.length||new Set(surfaceKeys).size!==surfaceKeys.length||surfaceKeys.some(x=>typeof x!=='string'||!x))throw Error('invalid surface stack');if(this.backend.surfaceStack?.length===surfaceKeys.length&&surfaceKeys.every((key,i)=>key===this.backend.surfaceStack[i]))return;this.backend.setSurfaceStack(surfaceKeys);if(this.proxy?.footprints.size)this.proxy.fallback=true;else this.proxy?.invalidate();this.needsFrame=true;}
  setSurfaceStyles(styles){if(!this.backend.sparsePreview)throw Error('Surface styles require the layered renderer');const next=new Map;for(const s of styles){if(typeof s.surfaceKey!=='string'||next.has(s.surfaceKey)||typeof s.visible!=='boolean'||!Number.isFinite(s.opacity)||s.opacity<0||s.opacity>1)throw Error('Invalid surface style');next.set(s.surfaceKey,{visible:s.visible,opacity:s.opacity});}const signature=JSON.stringify([...next]);if(signature===this.surfaceStyleSignature)return;this.surfaceStyleSignature=signature;this.backend.surfaceStyles=next;for(const t of this.backend.tiles.values())this.backend.dirtyConfirmed.add(t.key);for(const v of this.backend.previews.values())for(const key of v.keys)this.backend.dirtyConfirmed.add(key);if(this.proxy?.footprints.size)this.proxy.fallback=true;else this.proxy?.invalidate();this.needsFrame=true;this.requestWork();}
  setSeamlessPreview(enabled){this.seamlessPreview=!!enabled;}
@@ -306,7 +306,22 @@ export class GpuRenderer {
   for(const key of this.wrapPreviews.get(id)??[]){this.previewStates.delete(key);this.backend.retirePreview(key);}
   this.wrapPreviews.delete(id);this.wrapCaches.delete(id);this.needsFrame=true;
  }
+ // Visibility is revoked synchronously by stable stroke ID. Resource retirement
+ // waits only for the already submitted batch, never for a canonical record.
+ hideStrokePreview(id){
+  const ids=[id,...(this.wrapPreviews.get(id)??[])];
+  for(const key of ids){this.hiddenStrokeIds.add(key);const state=this.previewStates.get(key);if(state)this.hiddenPreviewStates.set(key,state);this.previewStates.delete(key);this.proxy?.cancel?.(key);this.previewCleanup.add(key);}
+  this.proxy?.closeGuards?.();if(ids.includes(this.snapshot?.id))this.snapshot=null;if(ids.includes(this.mailbox.value?.id))this.mailbox.value=null;
+  this.flushHiddenPreviews();this.needsFrame=true;this.requestWork();
+ }
+ flushHiddenPreviews(){if(this.inflight||this.guardPreparing)return;for(const id of this.previewCleanup)this.backend.retirePreview(id);this.previewCleanup.clear();}
+ restoreStrokePreview(id){
+  const state=this.hiddenPreviewStates.get(id);for(const key of [id,...(this.wrapPreviews.get(id)??[])]){this.hiddenStrokeIds.delete(key);this.hiddenPreviewStates.delete(key);this.previewCleanup.delete(key);}
+  if(state){this.proxy?.resumeAfterHistory?.();this.setLive({...state,resetPreview:true});}
+ }
+ forgetStrokePreview(id){for(const key of [id,...(this.wrapPreviews.get(id)??[])]){this.hiddenPreviewStates.delete(key);this.hiddenStrokeIds.delete(key);releaseOverlayPublication(this.backend,key);}this.wrapPreviews.delete(id);this.wrapCaches.delete(id);}
  setLive(state){
+  if(this.hiddenStrokeIds.has(state.id))return;
   if(this.strokeHandoff&&!this.inputStarts.has(state.id))this.inputStarts.set(state.id,{at:performance.now(),submitted:false});
   this.previewStates.set(state.id,{...state});
   if(this.seamlessPreview){
@@ -361,7 +376,7 @@ export class GpuRenderer {
  frame(now){if(this.disposed)return false;if(this.backend.poll?.()===true)this.finishSubmission?.();
  // View input has its own bounded presentation lane. Never attach an old
  // stroke's compute/composition batch to the first response to pan/zoom/rotate.
- this.syncOverlayView();
+ this.flushHiddenPreviews();this.syncOverlayView();
  if(this.viewPending&&!this.backend.presentationHeld)return this.presentView(now);
  if(this.inflight||this.guardPreparing||this.cancellingStroke||this.historyPreparing)return false;
  // Spill pressure bounds new authoritative snapshots, never live GPU feedback.
@@ -395,7 +410,7 @@ export class GpuRenderer {
    Promise.resolve(pending).then(finish).catch(e=>{this.errors.push(e.message);this.inflight=false;this.disposed=true;});return true;
   }catch(e){this.errors.push(e.message);this.inflight=false;this.disposed=true;return false;}
  }
- async waitStroke(ids){const start=performance.now(),epoch=this.navigationEpoch;while(ids.some(id=>!this.presentedStrokes.has(id))){if(epoch!==this.navigationEpoch||ids.some(id=>this.supersededStrokes?.has(id))){for(const id of ids)this.supersededStrokes?.delete(id);return {superseded:true};}if(this.errors.length||this.disposed)throw Error(this.errors.join(';')||'Renderer stopped');if(performance.now()-start>120000)throw Error('Stroke GPU completion timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}for(const id of ids)this.presentedStrokes.delete(id);}
+ async waitStroke(ids){const start=performance.now(),epoch=this.navigationEpoch;while(ids.some(id=>!this.presentedStrokes.has(id))){if(epoch!==this.navigationEpoch||ids.some(id=>this.supersededStrokes?.has(id))){for(const id of ids)this.supersededStrokes?.delete(id);return {superseded:true};}if(this.errors.length||this.disposed)throw Error(this.errors.join(';')||'Renderer stopped');if(performance.now()-start>120000)throw Error('Stroke GPU completion timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}for(const id of ids)this.presentedStrokes.delete(id);if(ids.some(id=>this.hiddenStrokeIds.has(id)))return {superseded:true};}
  async drain(finalFrame=true){const start=performance.now();while(this.inflight||this.guardPreparing||this.document.jobs.length){if(this.errors.length)throw Error(this.errors.join(';'));if(performance.now()-start>120000)throw Error('confirmed renderer drain timeout');await new Promise(r=>requestAnimationFrame(r));this.frame(performance.now());}if(finalFrame){this.needsFrame=true;this.frame(performance.now());while(this.inflight||this.guardPreparing){await new Promise(r=>requestAnimationFrame(r));this.backend.poll?.();}}if(this.errors.length)throw Error(this.errors.join(';'));}
  async read(surfaceKey='default'){await this.drain();return this.backend.read(surfaceKey);}
  async cancelStroke(id){
@@ -415,20 +430,21 @@ export class GpuRenderer {
   }finally{this.cancellingStroke=false;}
   if(this.strokeHandoff)this.requestWork();else await this.drain();
  }
- async reset(){this.proxy?.suspend();await this.drain();this.document.reset();this.backend.overlayHoldIds?.clear();this.backend.overlayDirty?.clear();this.backend.clear();this.snapshot=null;this.mailbox.value=null;this.ended.clear();this.inputStarts.clear();this.strokeFrames.clear();this.presentedStrokes.clear();this.previewStates.clear();this.confirmedTime=0;this.needsFrame=true;}
+ async reset(){this.proxy?.suspend();await this.drain();this.document.reset();this.backend.overlayHoldIds?.clear();this.backend.overlayDirty?.clear();this.backend.clear();this.snapshot=null;this.mailbox.value=null;this.ended.clear();this.inputStarts.clear();this.strokeFrames.clear();this.presentedStrokes.clear();this.previewStates.clear();this.hiddenStrokeIds.clear();this.hiddenPreviewStates.clear();this.previewCleanup.clear();this.confirmedTime=0;this.needsFrame=true;}
  async rebuildTiles(keys,entries,surfaceKey='default'){await this.drain(false);const filter=new Set(keys);if(!filter.size)return;this.backend.setPresentationHeld(true);let complete=false;try{this.backend.invalidateTiles(filter,surfaceKey);this.needsFrame=true;for(const entry of entries){this.document.append(entry.id,entry.preset,entry.commands,filter,surfaceKey);this.document.end(entry.id,entry.preset,surfaceKey);}await this.drain();complete=true;}finally{this.backend.setPresentationHeld(false);}if(complete)await this.backend.presentCurrent();}
  async prepareHistory(){
   this.proxy?.suspend();this.historyPreparing=true;const started=performance.now();
   while(this.inflight||this.guardPreparing){if(this.errors.length||this.disposed||performance.now()-started>120000)throw Error('History submission wait failed');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}
  }
- resumeHistory(){this.historyPreparing=false;this.requestWork();}
+ refreshHistoryPreviews(){this.proxy?.resumeAfterHistory?.();for(const state of this.previewStates.values())if(!this.hiddenStrokeIds.has(state.id))this.proxy?.enqueue?.(state);}
+ resumeHistory(){this.historyPreparing=false;this.refreshHistoryPreviews();this.requestWork();}
  async discardImageHistoryPending(steps){
   if(this.inflight||this.guardPreparing||!this.historyPreparing)throw Error('Image history must acknowledge submitted work before interruption');
   const pending=new Set(this.document.jobs.map(j=>j.id)),ids=new Set(steps.filter(p=>p.direction==='undo'&&(pending.has(p.id)||this.ended.has(p.id)||this.strokeFrames.has(p.id))).map(p=>p.id));if(!ids.size)return {jobs:0,commands:0};
   const b=this.backend,h=b.imageHistory;this.supersededStrokes??=new Set;
   const visualIds=new Set(ids);for(const id of ids)for(const copy of this.wrapPreviews.get(id)??[])visualIds.add(copy);
   for(const id of ids){if(pending.has(id))h.interrupt(id);this.supersededStrokes.add(id);this.strokeFrames.delete(id);this.presentedStrokes.delete(id);this.inputStarts.delete(id);this.ended.delete(id);}
-  for(const id of visualIds){this.proxy?.cancel(id);releaseOverlayPublication(b,id);this.previewStates.delete(id);this.wrapPreviews.delete(id);this.wrapCaches.delete(id);b.retirePreview(id);}
+  for(const id of visualIds){this.proxy?.cancel(id);releaseOverlayPublication(b,id);this.previewStates.delete(id);this.hiddenPreviewStates.delete(id);this.wrapPreviews.delete(id);this.wrapCaches.delete(id);b.retirePreview(id);}
   if(visualIds.has(this.snapshot?.id))this.snapshot=null;if(visualIds.has(this.mailbox.value?.id))this.mailbox.value=null;
   const removed=this.document.discardHistory(ids);this.historySupersededGpuJobs+=removed.jobs;this.historySupersededGpuCommands+=removed.commands;
   // Coverage scratch is not the authoritative layer. Committed subsets are
@@ -459,7 +475,7 @@ export class GpuRenderer {
   const b=this.backend,h=b.imageHistory;if(!steps.length&&!b.dirtyConfirmed.size)return true;this.historyPreparing=true;
   // Ended CPU feedback/guards belong to the old view and may not outlive a
   // history publication. Completion was drained before this point.
-  this.proxy?.invalidate();this.proxy?.suspend();
+  for(const step of steps)if(step.direction==='undo'&&!this.hiddenStrokeIds.has(step.id))this.hideStrokePreview(step.id);this.proxy?.closeGuards?.();this.proxy?.suspend();
   const started=performance.now();let held=false,prepared;
   try{
    const plan=await h.prepare(steps);if(!plan)return false;prepared=plan;
@@ -476,7 +492,11 @@ export class GpuRenderer {
     await historyYield();
    }
    b.setPresentationHeld(false);held=false;this.syncOverlayView();await b.presentCurrent();this.viewPending=false;
-   this.recordPresentation(performance.now(),started,'history');this.needsFrame=false;return true;
+   this.recordPresentation(performance.now(),started,'history');
+   // This exact composite also publishes already deposited retained strokes.
+   // Their old frame markers must not demand an intermediate canceled picture.
+   for(const id of [...this.strokeFrames.keys()])if(!this.document.jobs.some(j=>j.id===id)){this.strokeFrames.delete(id);this.presentedStrokes.add(id);this.inputStarts.delete(id);this.proxy?.presented?.(id,this.proxy.epoch);}
+   this.needsFrame=this.document.jobs.length>0||!!b.previewGpuPending||this.strokeFrames.size>0;return true;
   }finally{if(held)b.setPresentationHeld(false);h.complete(prepared);this.historyPreparing=false;h.schedule();}
  }
  async rebuildTileGroups(groups){

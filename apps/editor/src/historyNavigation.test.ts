@@ -23,3 +23,8 @@ describe('continuous history navigation',()=>{
   gate.resolve();await save;expect(batches).toEqual([commands]);expect(q.diagnostics.batches).toBe(1);expect(q.diagnostics.traces.map(t=>t.sequence)).toEqual(commands.map((_,i)=>i+1));
  });
 });
+
+it('admits each target synchronously before the first GPU barrier',async()=>{
+ const gate=deferred(),events:string[]=[],q=new HistoryNavigation({admit:d=>events.push('admit '+d),prepare:()=>{events.push('gpu');return gate.promise;},apply:async ds=>{events.push(...ds);},state:()=>{},failed:m=>{throw Error(m);}});
+ q.enqueue('undo');q.enqueue('undo');expect(events).toEqual(['admit undo','gpu','admit undo']);gate.resolve();await q.barrier();expect(events.slice(-2)).toEqual(['undo','undo']);
+});

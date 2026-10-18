@@ -35,7 +35,11 @@ let controller=new EditorController();
 const foreground=new ForegroundColor();
 let eyedropperOriginal=foreground.current;
 let historyNavigation:HistoryNavigation|undefined;
-let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,lastPointerDownTarget:EventTarget|null=null,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
+const admittedHistoryChanges:EditorHistoryChange[]=[];
+const historyInputs:Array<{at:number;eventAt:number;button:string;direction:string;phase:string;pointerType:string;disabled:boolean;reason?:string}>=[];
+function traceHistoryInput(button:HTMLButtonElement,direction:HistoryDirection,phase:string,event:Event,reason?:string){if(!perfMode)return;historyInputs.push({at:performance.now(),eventAt:event.timeStamp,button:button.id,direction,phase,pointerType:(event as PointerEvent).pointerType??'keyboard',disabled:button.disabled,...(reason?{reason}:{})});if(historyInputs.length>1200)historyInputs.shift();}
+
+let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
 let checkpointOperations:SemanticOperation[]=[];let checkpointCancelled=0;const checkpointErrors:Array<{at:string;message:string}>=[];let qaRefreshTimer:number|null=null;
@@ -73,10 +77,10 @@ const renderLayers=()=>{
 
 function updateHistoryButtons(){
   const ready=!!surface&&documentReady,blocked=!ready||geometryBusy||(surface?.inputActive===true&&!historyPending)||!!historyNavigation?.diagnostics.fault;
-  byId<HTMLButtonElement>('undo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes||historyPending);
-  byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(controller.canUndo||surface?.hasPendingStrokes||historyPending);
-  byId<HTMLButtonElement>('redo').disabled=blocked||!(controller.canRedo||historyPending);
-  byId<HTMLButtonElement>('compactRedo').disabled=blocked||!(controller.canRedo||historyPending);
+  byId<HTMLButtonElement>('undo').disabled=blocked||!(surface?.canUndo||historyPending);
+  byId<HTMLButtonElement>('compactUndo').disabled=blocked||!(surface?.canUndo||historyPending);
+  byId<HTMLButtonElement>('redo').disabled=blocked||!(surface?.canRedo||historyPending);
+  byId<HTMLButtonElement>('compactRedo').disabled=blocked||!(surface?.canRedo||historyPending);
   for(const button of historyButtons())button.setAttribute('aria-busy',String(historyPending));
 }
 function updatePersistenceDisplay(){
@@ -94,17 +98,17 @@ function updatePersistenceDisplay(){
   byId<HTMLButtonElement>('recover').disabled=!recoveryCandidates.some(candidate=>BigInt(candidate.protectedThrough)>0n);
 }
 
-document.addEventListener('pointerdown',e=>{lastPointerDownTarget=e.target;},{capture:true});
+
 if(qaMode){document.addEventListener('pointerdown',e=>{const canvas=byId<HTMLCanvasElement>('canvas'),target=e.target instanceof HTMLElement?e.target:null;canvas.dataset.lastPointerTarget=target?.id||target?.tagName.toLowerCase()||'unknown';canvas.dataset.lastPointerType=e.pointerType;canvas.dataset.lastPointerX=String(Math.round(e.clientX));canvas.dataset.lastPointerY=String(Math.round(e.clientY));queueMicrotask(updateQa);},{capture:true});}
 const updateQa=()=>{
   const canvas=byId<HTMLCanvasElement>('canvas'),selected=controller.selectedLayer;
   canvas.dataset.commit=import.meta.env.VITE_COMMIT_SHA??'unknown';canvas.dataset.documentId=controller.document.root.documentId;canvas.dataset.documentName=controller.document.root.name;canvas.dataset.documentWidth=String(controller.document.root.width);canvas.dataset.documentHeight=String(controller.document.root.height);canvas.dataset.backend=surface?.backend??'';canvas.dataset.view=JSON.stringify(surface?.viewState??null);canvas.dataset.committedStrokes=String(controller.committedStrokeCount);canvas.dataset.revisionId=controller.document.head;canvas.dataset.dirtyTiles=String(controller.lastCommit?.dirtyTileCount??0);
   canvas.dataset.layerCount=String(controller.layers.length);canvas.dataset.selectedLayerId=controller.selectedLayerId;canvas.dataset.selectedLayerName=selected.name;
-  canvas.dataset.canUndo=String(controller.canUndo);canvas.dataset.canRedo=String(controller.canRedo);canvas.dataset.historyBusy=String(historyPending||surface?.busy===true);canvas.dataset.historyPatchHits=String(surface?.historyPatchHits??0);canvas.dataset.historyReplayFallbacks=String(surface?.historyReplayFallbacks??0);canvas.dataset.selectedTool=selectedTool;canvas.dataset.selectedPresetId=surface?.brushId??'未選択';canvas.dataset.selectedBlend=surface?.blendMode??'normal';canvas.dataset.eraserStrokes=String(controller.committedEraserStrokeCount);
+  canvas.dataset.canUndo=String(surface?.canUndo??controller.canUndo);canvas.dataset.canRedo=String(surface?.canRedo??controller.canRedo);canvas.dataset.historyBusy=String(historyPending||surface?.busy===true);canvas.dataset.historyPatchHits=String(surface?.historyPatchHits??0);canvas.dataset.historyReplayFallbacks=String(surface?.historyReplayFallbacks??0);canvas.dataset.selectedTool=selectedTool;canvas.dataset.selectedPresetId=surface?.brushId??'未選択';canvas.dataset.selectedBlend=surface?.blendMode??'normal';canvas.dataset.eraserStrokes=String(controller.committedEraserStrokeCount);
   if(!qaMode)return;
   const data={display:surface?.displayDiagnostics??null,milestone:m09Mode?'M09':m08Mode?'M08':'M07',commit:(import.meta.env.VITE_COMMIT_SHA??'unknown'),backend:surface?.backend??'未取得',backendSelection:surface?.backendSelection??null,initializationError:surface?.initializationError??null,viewport:`${innerWidth}x${innerHeight}`,userAgent:navigator.userAgent,
     selectedTool,selectedPresetId:surface?.brushId??'未選択',selectedPresetName:surface?.brushName??'未選択',blendMode:surface?.blendMode??'normal',eraserType:surface?.eraserType,size:surface?.brushSize??0,
-    layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:controller.canUndo,canRedo:controller.canRedo,
+    layerCount:controller.layers.length,selectedLayerId:controller.selectedLayerId,selectedLayerName:selected.name,currentRevision:controller.document.head,canUndo:surface?.canUndo??controller.canUndo,canRedo:surface?.canRedo??controller.canRedo,
     seamlessCopyCount:controller.document.currentRevision.command?.operations.filter(op=>op.parameters.seamlessCopy===true).length??0,undoCount,redoCount,blockedHistoryGhostClicks,eraserCommittedStrokeCount:controller.committedEraserStrokeCount,totalStrokeCount:controller.committedStrokeCount,committedStrokeCount:controller.committedStrokeCount,historyPatchHits:surface?.historyPatchHits??0,historyReplayFallbacks:surface?.historyReplayFallbacks??0,rendererDesynchronized:surface?.rendererDesynchronized??false,rendererAlpha:surface?.rendererAlpha??false,rendererPremultipliedAlpha:surface?.rendererPremultipliedAlpha??false,rendererArtworkAlpha:surface?.rendererArtworkAlpha??false,presentationOpaque:surface?.presentationOpaque??false,presentationMode:surface?.presentationMode??'未取得',presentationAlpha:surface?.presentationAlpha??null,presentationDesynchronized:surface?.presentationDesynchronized??null,presentationFrames:surface?.presentationFrames??0,presentationLastAt:surface?.presentationLastAt??0,projectionRestoreMs:surface?.projectionRestoreMs??0,projectionRestoreMode:surface?.projectionRestoreMode??'none',projectionCacheRevision:surface?.projectionCacheRevision??null,browserPredictionSamples:surface?.browserPredictionSamples??0,
     lastInputTarget:canvas.dataset.lastPointerTarget??'まだ入力なし',lastInputType:canvas.dataset.lastPointerType??'—',lastInputPoint:canvas.dataset.lastPointerX&&canvas.dataset.lastPointerY?`${canvas.dataset.lastPointerX},${canvas.dataset.lastPointerY}`:'—',
     activeElement:document.activeElement instanceof HTMLElement?(document.activeElement.id||document.activeElement.tagName.toLowerCase()):'unknown',workspaceOpen:!workspace.inert,workspaceDisplay:getComputedStyle(workspace).display,
@@ -140,7 +144,7 @@ async function createProjectionCheckpoint(){
 function resetCheckpointTracking(){checkpointOperations=[];checkpointOpsSinceLast=0;checkpointNeedsFullSeed=true;lastCheckpointAt=null;if(projectionCheckpointTimer!==null){clearTimeout(projectionCheckpointTimer);projectionCheckpointTimer=null;}}
 function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
-  persistence.noteCommit(controller.document,handoff);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
+  persistence.noteCommit(controller.document,handoff);if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{byId('status').textContent=text;},()=>{queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();return;}
@@ -334,14 +338,22 @@ byId<HTMLButtonElement>('addLayer').onclick=()=>{if(!surface)return;if(surface.b
 byId<HTMLButtonElement>('addLayerPage').onclick=()=>byId<HTMLButtonElement>('addLayer').click();
 
 historyNavigation=new HistoryNavigation({
+  admit:direction=>{const change=direction==='undo'?controller.undo():controller.redo();surface?.admitHistory(change);admittedHistoryChanges.push(change);},
   prepare:async()=>{await surface?.prepareHistory();},apply:applyHistoryBatch,
   state:()=>{historyPending=historyNavigation?.pending??false;surface?.setInputBarrier(historyPending);if(!historyPending)surface?.resumeHistory();updateHistoryButtons();updatePersistenceDisplay();updateQa();},
-  failed:(message,unprocessed)=>{byId('status').textContent=message+(unprocessed?' 未処理のUndo / Redo '+unprocessed+'件は反映していません。':'');},
+  failed:(message,unprocessed)=>{
+    // Preparation can fail before applyHistoryBatch owns the admitted changes.
+    // Refused capacity requests have no admitted change and must keep the queue.
+    if(unprocessed)for(const change of admittedHistoryChanges.splice(0).filter(change=>change.changed).reverse()){
+      const inverse=change.direction==='undo'?controller.redo():controller.undo();surface?.admitHistory(inverse);
+    }
+    byId('status').textContent=message+(unprocessed?' 未処理のUndo / Redo '+unprocessed+'件は反映していません。':'');
+  },
 },perfMode);
 async function applyHistoryBatch(directions:readonly HistoryDirection[]){
   const changes:EditorHistoryChange[]=[],selectedBefore=controller.selectedLayerId;
   try{
-    let slice=performance.now();for(const direction of directions){const change=direction==='undo'?controller.undo():controller.redo();if(change.changed)changes.push(change);if(performance.now()-slice>6){await new Promise(resolve=>setTimeout(resolve,0));slice=performance.now();}}
+    for(const direction of directions){const change=admittedHistoryChanges.shift();if(!change||change.direction!==direction)throw new Error('履歴操作の順序が一致しません。');if(change.changed)changes.push(change);}
     if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
     updateQa();
     if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
@@ -349,25 +361,34 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
     const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';
   }catch(error){
-    for(const change of [...changes].reverse()){if(change.direction==='undo')controller.redo();else controller.undo();}if(controller.document.root.hasLayer(selectedBefore))controller.selectLayer(selectedBefore);
+    for(const change of [...changes,...admittedHistoryChanges.splice(0)].filter(change=>change.changed).reverse()){if(change.direction==='undo')controller.redo();else controller.undo();}if(controller.document.root.hasLayer(selectedBefore))controller.selectLayer(selectedBefore);
     try{await reloadGeometryProjection();}catch(restoreError){throw new Error('Undo / Redoの表示復旧に失敗しました。'+String(restoreError)+' 原因：'+String(error));}
     throw new Error('Undo / Redoを反映できなかったため、直前の状態へ戻しました。'+String(error));
   }
 }
 function performHistory(direction:HistoryDirection){
-  if(!documentReady||!surface||(surface.inputActive&&!historyPending)||geometryBusy)return;
-  const available=historyPending||(direction==='undo'?(controller.canUndo||surface.hasPendingStrokes):controller.canRedo);if(!available)return;
-  historyNavigation!.enqueue(direction);
+  if(!documentReady||!surface||geometryBusy)return 'not-ready';if(surface.inputActive&&!historyPending)return 'active-input';
+  const available=historyPending||(direction==='undo'?surface.canUndo:surface.canRedo);if(!available)return 'no-target';
+  if(surface.navigatePending(direction)){if(direction==='undo')undoCount++;else redoCount++;byId('status').textContent=direction==='undo'?'線を取り消しました。':'取り消した線をやり直します。';updateHistoryButtons();updatePersistenceDisplay();updateQa();return 'accepted';}
+  return historyNavigation!.enqueue(direction)?'accepted':'capacity-or-fault';
 }
 function bindHistoryButton(id:string,direction:'undo'|'redo'){
-  const button=byId<HTMLButtonElement>(id);
-  // A real pointer press may land on the button's text <span>, not the
-  // button node itself. Accept any descendant while rejecting genuine
-  // outside-down / inside-up ghost clicks that can affect touch devices.
-  button.onclick=e=>{
-    const startedInside=lastPointerDownTarget instanceof Node&&button.contains(lastPointerDownTarget);
-    if(e.detail>0&&!startedInside){blockedHistoryGhostClicks++;e.preventDefault();updateQa();return;}
-    void performHistory(direction);
+  const button=byId<HTMLButtonElement>(id);let press:number|null=null,touchHandled:number|null=null;
+  button.style.touchAction='manipulation';
+  button.addEventListener('pointerdown',event=>{press=button.disabled?null:event.pointerId;touchHandled=null;traceHistoryInput(button,direction,'down',event);});
+  button.addEventListener('pointercancel',event=>{press=null;traceHistoryInput(button,direction,'cancel',event);});
+  // Touch/pen releases are commands immediately, before a delayed compatibility
+  // click. Each press owns its admission; keyboard activation stays native.
+  button.addEventListener('pointerup',event=>{
+    traceHistoryInput(button,direction,'up',event);if(event.pointerType==='mouse'||press!==event.pointerId||button.disabled)return;
+    const target=document.elementFromPoint(event.clientX,event.clientY);if(!target||!button.contains(target)){press=null;return;}
+    touchHandled=event.pointerId;const result=performHistory(direction);traceHistoryInput(button,direction,result==='accepted'?'accepted':'rejected',event,result);
+  });
+  button.onclick=event=>{
+    const pointerId=(event as PointerEvent).pointerId;
+    if(event.detail>0&&touchHandled!==null&&(pointerId===touchHandled||!pointerId)){touchHandled=null;press=null;traceHistoryInput(button,direction,'compatibility-click',event);return;}
+    if(event.detail>0&&press===null){blockedHistoryGhostClicks++;event.preventDefault();traceHistoryInput(button,direction,'rejected',event,'outside-press');updateQa();return;}
+    press=null;const result=performHistory(direction);traceHistoryInput(button,direction,result==='accepted'?'accepted':'rejected',event,result);
   };
 }
 bindHistoryButton('undo','undo');bindHistoryButton('compactUndo','undo');bindHistoryButton('redo','redo');bindHistoryButton('compactRedo','redo');
@@ -378,7 +399,7 @@ document.addEventListener('keydown',e=>{
   if(isTextEditingTarget(e.target)||e.altKey)return;
   const primary=e.ctrlKey||e.metaKey;if(!primary)return;const key=e.key.toLowerCase();
   const undo=key==='z'&&!e.shiftKey,redo=(key==='z'&&e.shiftKey)||(key==='y'&&e.ctrlKey&&!e.metaKey);
-  if(!undo&&!redo)return;const direction=undo?'undo':'redo',available=direction==='undo'?(controller.canUndo||surface?.hasPendingStrokes):controller.canRedo;
+  if(!undo&&!redo)return;const direction=undo?'undo':'redo',available=direction==='undo'?surface?.canUndo:surface?.canRedo;
   if(!documentReady||!surface||(surface.inputActive&&!historyPending)||geometryBusy||(!available&&!historyPending))return;e.preventDefault();performHistory(direction);
 });
 
@@ -631,13 +652,13 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
 if(perfMode){
  (window as unknown as {__illustroPerformance:unknown}).__illustroPerformance={
-  read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,historyNavigation:historyNavigation?.diagnostics,...surface?.performanceDiagnostics,checkpointErrors}),
+  read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,historyNavigation:historyNavigation?.diagnostics,historyInputs,...surface?.performanceDiagnostics,checkpointErrors}),
   probe:()=>surface?.handoffProbe(),
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},
   capture:async()=>{if(!surface)throw new Error('No document');const before=surface.performanceDiagnostics,delta=await surface.captureProjectionDelta(controller.document.head),after=surface.performanceDiagnostics;return {replace:delta.replace,tiles:delta.tiles.length,bytes:delta.tiles.reduce((n,t)=>n+t.pixels.byteLength,0),before,after};},
   view:(zoom:number,angle:number)=>{surface?.setViewZoom(zoom,false);surface?.setViewRotation(angle,false);},
  };
- const panel=document.createElement('details');panel.id='canvasPerformance';panel.style.cssText='position:fixed;left:80px;bottom:20px;z-index:80;max-width:min(420px,calc(100vw - 100px));max-height:45vh;overflow:auto;background:#fffaf0;color:#302c26;border:1px solid #decba4;border-radius:12px;padding:8px 12px;font-size:12px';
+ const panel=document.createElement('details');panel.id='canvasPerformance';panel.style.cssText='position:fixed;left:80px;bottom:calc(var(--bottom, 56px) + env(safe-area-inset-bottom) + 16px);z-index:80;max-width:min(420px,calc(100vw - 100px));max-height:45vh;overflow:auto;background:#fffaf0;color:#302c26;border:1px solid #decba4;border-radius:12px;padding:8px 12px;font-size:12px';
  panel.innerHTML='<summary>キャンバスの軽さを確認</summary><p>実機確認用の検証版です。性能合格は未判定です。</p><label style="display:block;padding:8px 0"><input id="performanceEnabled" type="checkbox"> 動作の測定を表示する</label><p>数値はGPUへの表示要求を測った目安です。画面そのものの更新や指から光までの時間は未測定です。</p><output id="performanceReadout" style="white-space:pre-wrap"></output><details id="performanceRawDetails"><summary>詳しい動作記録</summary><pre id="performanceRaw"></pre></details><p><a href="../../m09/" target="_blank" rel="noopener">改善前のM09を開く</a> · <a href="../evidence/qa-status.json" target="_blank" rel="noopener">検査結果と未確認事項</a></p>';
  document.body.append(panel);const enabled=byId<HTMLInputElement>('performanceEnabled');
  enabled.onchange=()=>{surface?.setPerformanceEnabled(enabled.checked);byId('performanceReadout').textContent='';};
@@ -645,6 +666,8 @@ if(perfMode){
   // Enable only on transition; the history window must survive refreshes.
   const value=(n:unknown)=>typeof n==='number'&&Number.isFinite(n)?n.toFixed(1):'未測定';
   byId('performanceReadout').textContent='次の入力まで：'+value(data?.handoff.traces.at(-1)?.readyMs)+' ms\n正式確定まで：'+value(data?.handoff.traces.at(-1)?.logicalMs)+' ms\n処理待ち：'+((data?.handoff.pendingLogical??0)+(data?.handoff.pendingGpu??0))+' 筆\n入力の制限：'+(data?.handoff.rejected??0)+' 回\n表示要求：'+value(metrics?.submissionFps)+' 回/秒\n反映までの目安：'+value(metrics?.inputToPreviewSubmitP95Ms)+' ms\n遅い側の表示間隔：'+value(metrics?.frameIntervalP95Ms)+' ms\nGPU完了待ちの目安：'+value(metrics?.queueCompletionProxyMs)+' ms\n画像の読み出し：'+value(data?.checkpoint.lastMs)+' ms\nUndo / Redoの処理待ち：'+((historyNavigation?.diagnostics.queued??0)+(historyNavigation?.diagnostics.active??0))+' 件\n履歴キャッシュ上限：'+value(Number(metrics?.historyGpuBudgetBytes??0)/1048576)+' MiB\nGPUの処理時間：未測定';
-  if(byId<HTMLDetailsElement>('performanceRawDetails').open)byId('performanceRaw').textContent=JSON.stringify({backend:surface?.backend,...data,checkpointErrors},null,2);
+  const receipt=historyInputs.findLast(x=>x.phase==='accepted'&&x.direction==='undo');
+  if(receipt){const up=historyInputs.findLast(x=>x.phase==='up'&&x.button===receipt.button&&x.at<=receipt.at),visibility=data?.handoff.historyVisibility.findLast(x=>x.direction==='undo'&&x.at<=receipt.at);byId('performanceReadout').textContent+='\n取り消しの受付まで：'+value(receipt.at-receipt.eventAt)+' ms';if(up&&visibility)byId('performanceReadout').textContent+='\n線の表示を消す指示まで：'+value(visibility.invalidatedAt-up.at)+' ms';}
+  if(byId<HTMLDetailsElement>('performanceRawDetails').open)byId('performanceRaw').textContent=JSON.stringify({backend:surface?.backend,...data,historyInputs,historyNavigation:historyNavigation?.diagnostics,checkpointErrors},null,2);
  },500);
 }
