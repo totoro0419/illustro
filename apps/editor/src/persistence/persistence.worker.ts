@@ -52,14 +52,17 @@ async function handle(message:RequestMessage){
     case 'library-load':{
       const entry=await getWork(uuid(message.documentId,'document id'));if(!entry)throw new Error('作品が見つかりません。');
       const session={documentId:entry.documentId,writerEpochId:entry.writerEpochId,path:sessionPath(entry.documentId,entry.writerEpochId)};
-      let loaded;let fallback=false;
+      let loaded;let fallback=false,projectionSession=session;
       try{loaded=await loadRecovery(store,session,entry.revisionId,entry.protectedThrough);}
       catch(error){if(!entry.previous)throw error;fallback=true;const previous=entry.previous;
-        loaded=await loadRecovery(store,{documentId:entry.documentId,writerEpochId:previous.writerEpochId,path:sessionPath(entry.documentId,previous.writerEpochId)},previous.revisionId,previous.protectedThrough);}
+        projectionSession={documentId:entry.documentId,writerEpochId:previous.writerEpochId,path:sessionPath(entry.documentId,previous.writerEpochId)};
+        loaded=await loadRecovery(store,projectionSession,previous.revisionId,previous.protectedThrough);}
       const snapshot=namedSnapshot(loaded.snapshot,entry.name);
       // Main thread restores and validates this exact snapshot once. Avoid a duplicate full restoration in the worker.
-      const projectionCache=await loadProjectionCheckpointRaw(store,session,new Set(snapshot.revisions.map(r=>r.id)));
-      reply(message.id,true,{...loaded,snapshot,entry,fallback,projectionCache});break;
+      const projectionCache=await loadProjectionCheckpointRaw(store,projectionSession,new Set(snapshot.revisions.map(r=>r.id)));
+      const transfers:Transferable[]=loaded.blocks.map(block=>block.bytes.buffer as ArrayBuffer);
+      for(const layer of projectionCache?.layers??[]){if('pixels' in layer)transfers.push(layer.pixels.buffer as ArrayBuffer);else for(const tile of layer.tiles)transfers.push(tile.pixels.buffer as ArrayBuffer);}
+      reply(message.id,true,{...loaded,snapshot,entry,fallback,projectionCache},undefined,transfers);break;
     }
     case 'library-thumbnail-read':{
       const entry=await getWork(uuid(message.documentId,'document id'));
