@@ -1,0 +1,21 @@
+name: Prepare Undo browser runtime
+on:
+  push:
+    branches: ['qa/undo-browser-runtime-2026-10-18']
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm install --prefix /tmp/undo-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/undo-browser/node_modules/.bin/playwright install --with-deps chromium-headless-shell
+      - uses: actions/upload-artifact@v4
+        with:
+          name: undo-chromium-runtime
+          path: /home/runner/.cache/ms-playwright/chromium_headless_shell-1234/
+          retention-days: 1
