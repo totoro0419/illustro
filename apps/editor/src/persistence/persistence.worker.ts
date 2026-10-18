@@ -11,7 +11,7 @@ type StoreMode='opfs-sync'|'opfs-async'|'indexeddb';
 type ProjectionEncoding='raw-rgba8'|'gzip-rgba8';
 type ProjectionIndex=Readonly<{version:1;generationId:string;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
 type ProjectionDeltaIndex=Readonly<{version:2|3;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number;digest?:string}>[]}>;
-type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>;
+type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>|Readonly<{version:2;revisionId:string;width:number;height:number;tileSize:128;layers:readonly Readonly<{surfaceId:string;tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[]}>[]}>;
 
 const out=self as unknown as {postMessage:(value:unknown,transfer?:Transferable[])=>void};
 const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
@@ -45,7 +45,7 @@ async function handle(message:RequestMessage){
       catch(error){if(!entry.previous)throw error;fallback=true;const previous=entry.previous;
         loaded=await loadRecovery(store,{documentId:entry.documentId,writerEpochId:previous.writerEpochId,path:sessionPath(entry.documentId,previous.writerEpochId)},previous.revisionId,previous.protectedThrough);}
       const snapshot=namedSnapshot(loaded.snapshot,entry.name);
-      CoreDocument.restore({snapshot,blockPayloads:new Map(loaded.blocks.map(b=>[b.id,b.bytes]))});
+      // Main thread restores and validates this exact snapshot once. Avoid a duplicate full restoration in the worker.
       const projectionCache=await loadProjectionCheckpointRaw(store,session,new Set(snapshot.revisions.map(r=>r.id)));
       reply(message.id,true,{...loaded,snapshot,entry,fallback,projectionCache});break;
     }
@@ -246,13 +246,22 @@ export async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,
   const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
   try{
     const index=parseProjectionDeltaIndex(await unframeJson(frame));if(!allowedRevisions.has(index.revisionId))return null;
-    const layers=new Map<string,Uint8Array>();for(const surfaceId of index.surfaceIds)layers.set(surfaceId,new Uint8Array(index.width*index.height*4));
-    for(const descriptor of index.tiles){
-      const target=layers.get(descriptor.surfaceId);if(!target)return null;const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key,descriptor.digest)+'.bin');if(!bytes||(descriptor.digest&&await digestHex(bytes)!==descriptor.digest))return null;
-      const pixels=await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength),coords=parseTileKey(descriptor.key),tx=coords[0],ty=coords[1],copyW=Math.min(index.tileSize,index.width-tx*index.tileSize),copyH=Math.min(index.tileSize,index.height-ty*index.tileSize);
-      for(let y=0;y<copyH;y++){const from=y*index.tileSize*4,to=((ty*index.tileSize+y)*index.width+tx*index.tileSize)*4;target.set(pixels.subarray(from,from+copyW*4),to);}
+    // Keep the checkpoint sparse all the way to the GPU. The former code allocated
+    // width*height*4 bytes for EVERY layer, even if the work only had a few marks.
+    if(index.tileSize!==128)return null;
+    const layers=new Map<string,Array<{key:string;pixels:Uint8Array}>>();for(const surfaceId of index.surfaceIds)layers.set(surfaceId,[]);
+    for(let offset=0;offset<index.tiles.length;offset+=8){
+      const batch=index.tiles.slice(offset,offset+8);
+      const decoded=await Promise.all(batch.map(async descriptor=>{
+        const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key,descriptor.digest)+'.bin');
+        if(!bytes||(descriptor.digest&&await digestHex(bytes)!==descriptor.digest))throw new Error('projection tile missing or changed');
+        const [tx,ty]=parseTileKey(descriptor.key);
+        if(tx*index.tileSize>=index.width||ty*index.tileSize>=index.height)throw new Error('projection tile outside canvas');
+        return {descriptor,pixels:await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength)};
+      }));
+      for(const {descriptor,pixels} of decoded){const layer=layers.get(descriptor.surfaceId);if(!layer)return null;layer.push({key:descriptor.key,pixels});}
     }
-    return Object.freeze({version:1 as const,revisionId:index.revisionId,width:index.width,height:index.height,layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,pixels:layers.get(surfaceId)!})))});
+    return Object.freeze({version:2 as const,revisionId:index.revisionId,width:index.width,height:index.height,tileSize:128 as const,layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,tiles:Object.freeze(layers.get(surfaceId)!.map(tile=>Object.freeze(tile)))})))});
   }catch{return null;}
 }
 function parseProjectionDeltaIndex(value:unknown):ProjectionDeltaIndex{

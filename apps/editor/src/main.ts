@@ -48,7 +48,7 @@ let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;surface?.setProtectionQueueLength(state.queueLength);updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
 let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=null,workSwitchBusy=false,librarySaving=false;
-let thumbnailTimer:number|null=null,thumbnailInProgress=false;
+let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
 
 document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};byId('saveState').after(retry);}
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
@@ -531,22 +531,29 @@ async function createWorkThumbnail(){
   const blob=await active.captureWorkThumbnail();
   if(surface===active&&controller.document===doc&&doc.head===revision)await persistence.storeThumbnail(documentId,revision,blob);
 }
-// Thumbnail updates are best-effort background work, never part of opening or leaving an artwork.
-function scheduleWorkThumbnail(){
+// Never block opening or leaving a work on thumbnail generation. Retry busy GPU
+// reads while Home is active, instead of silently abandoning the only attempt.
+function scheduleWorkThumbnail(delay=120){
   if(qaMode||!documentReady||!surface)return;
   if(thumbnailTimer!==null)clearTimeout(thumbnailTimer);
   thumbnailTimer=window.setTimeout(()=>{
     thumbnailTimer=null;
+    const retry=()=>{
+      if(!app.inert||thumbnailRetryCount>=12)return;
+      thumbnailRetryCount++;
+      scheduleWorkThumbnail(Math.min(4000,250*2**Math.min(thumbnailRetryCount,4)));
+    };
     const run=async()=>{
-      if(!app.inert||thumbnailInProgress||!documentReady||!surface||surface.busy)return;
+      if(!app.inert||!documentReady||!surface)return;
+      if(thumbnailInProgress||surface.busy){retry();return;}
       thumbnailInProgress=true;
-      try{await createWorkThumbnail();await refreshWorks();}
-      catch(error){console.warn('Thumbnail update deferred:',error);}
+      try{await createWorkThumbnail();thumbnailRetryCount=0;await refreshWorks();}
+      catch(error){console.warn('Thumbnail update deferred:',error);retry();}
       finally{thumbnailInProgress=false;}
     };
     const idle=(window as Window&{requestIdleCallback?:(callback:()=>void,options?:{timeout:number})=>number}).requestIdleCallback;
     if(idle)idle(()=>{void run();},{timeout:1500});else void run();
-  },120);
+  },delay);
 }
 async function prepareWorkSwitch(){
   if(!documentReady)return true;
@@ -560,7 +567,7 @@ async function openWork(id:string):Promise<boolean>{
   if(workSwitchBusy)return false;workSwitchBusy=true;
   try{if(documentReady&&controller.document.root.documentId===id){homeUi?.showEditor();return true;}
     if(!(await prepareWorkSwitch()))return false;
-    const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);await refreshWorks();homeUi?.showEditor();
+    const loaded=await persistence.loadWork(id);await activateOpened(loaded.opened,false,loaded.entry.writerEpochId);homeUi?.showEditor();window.setTimeout(()=>void refreshWorks(),0);
     if(loaded.fallback)homeUi?.notify('最新の保存を読み込めなかったため、前の正常な保存から開きました。');return true;
   }catch(error){showStorageError(error);return false;}finally{workSwitchBusy=false;}
 }
@@ -576,7 +583,7 @@ if(!qaMode){
       const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
       return candidate?recoverCandidate(candidate):false;
     },
-    prepareHome:async()=>{scheduleWorkThumbnail();void refreshWorks();
+    prepareHome:async()=>{thumbnailRetryCount=0;scheduleWorkThumbnail();void refreshWorks();
       // Start durable protection after the Home screen has had a chance to paint.
       window.setTimeout(()=>{void persistence.barrier().then(refreshWorks).catch(showStorageError);},40);
       return true;},

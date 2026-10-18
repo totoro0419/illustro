@@ -1,7 +1,7 @@
 import {CoreDocument,type CorePersistenceSnapshotV1,type LayerId,type RevisionId} from '@illustro/core';
 import {validateRecord} from '@illustro/brush-rt';
 import {decodeIllustroFile,encodeIllustroFile,type DecodedPortableFile,type PortableSectionInput} from './format';
-import type {ProjectionCacheV1} from './projectionCache';
+import type {ProjectionCache} from './projectionCache';
 
 const CORE_SECTION='document';
 const EDITOR_SECTION='editor-state';
@@ -15,7 +15,7 @@ export type PreservedPortableData=Readonly<{
 }>;
 export type PortableOpenResult=Readonly<{
   document:CoreDocument;selectedLayerId:LayerId;preserved:PreservedPortableData;
-  generationId:string;snapshotRevisionId:RevisionId;projectionCache?:ProjectionCacheV1;
+  generationId:string;snapshotRevisionId:RevisionId;projectionCache?:ProjectionCache;
 }>;
 
 export async function createPortableDocument(input:Readonly<{

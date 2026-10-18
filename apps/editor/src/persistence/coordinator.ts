@@ -3,7 +3,7 @@ import {CoreDocument,type CoreRecoveryPacketV1,type LayerId,type PersistenceHand
 import workerUrl from './persistence.worker.ts?worker&url';
 import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortableData} from './portable';
 import type {DecodedPortableFile,PortableManifestSection} from './format';
-import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
+import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
 import {cloneProjectionTiles} from './projectionTransfer';
 
 type WorkerReply={id:number;ok:boolean;result?:unknown;error?:string};
@@ -161,7 +161,21 @@ function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes.s
 function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
 function message(error:unknown){return error instanceof Error?error.message:String(error);}
 
-function isProjectionCache(value:unknown):value is ProjectionCacheV1{
-  if(!value||typeof value!=='object')return false;const x=value as ProjectionCacheV1;
-  return x.version===1&&typeof x.revisionId==='string'&&Number.isSafeInteger(x.width)&&Number.isSafeInteger(x.height)&&x.width>0&&x.height>0&&Array.isArray(x.layers)&&x.layers.every(layer=>typeof layer?.surfaceId==='string'&&layer.pixels instanceof Uint8Array&&layer.pixels.byteLength===x.width*x.height*4);
+export function isProjectionCache(value:unknown):value is ProjectionCache{
+  if(!value||typeof value!=='object')return false;
+  const x=value as ProjectionCache;
+  if(typeof x.revisionId!=='string'||!Number.isSafeInteger(x.width)||!Number.isSafeInteger(x.height)||x.width<1||x.height<1||!Array.isArray(x.layers))return false;
+  if(x.version===1)return x.layers.every(layer=>typeof layer?.surfaceId==='string'&&layer.pixels instanceof Uint8Array&&layer.pixels.byteLength===x.width*x.height*4);
+  if(x.version!==2||x.tileSize!==128)return false;
+  const maxX=Math.ceil(x.width/128),maxY=Math.ceil(x.height/128),surfaces=new Set<string>();
+  for(const layer of x.layers){
+    if(!layer||typeof layer.surfaceId!=='string'||surfaces.has(layer.surfaceId)||!Array.isArray(layer.tiles))return false;
+    surfaces.add(layer.surfaceId);const keys=new Set<string>();
+    for(const tile of layer.tiles){
+      if(!tile||typeof tile.key!=='string'||!/^\\d+,\\d+$/.test(tile.key)||keys.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.byteLength!==128*128*4)return false;
+      const [tx,ty]=tile.key.split(',').map(Number);if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||tx>=maxX||ty>=maxY)return false;
+      keys.add(tile.key);
+    }
+  }
+  return true;
 }
