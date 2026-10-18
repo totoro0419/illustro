@@ -16,7 +16,7 @@ const load=(store:MemoryStore)=>worker.loadProjectionDeltaRaw(store as any,sessi
 const firstPixel=(image:Awaited<ReturnType<typeof load>>,key:string)=>{
  if(!image)return undefined;
  if(image.version===2)return image.layers[0]?.tiles.find(tile=>tile.key===key)?.pixels[0]??0;
- const [x,y]=key.split(',').map(Number);return image.layers[0]?.pixels[(y*128*256+x*128)*4];
+ const [x=0,y=0]=key.split(',').map(Number);return image.layers[0]?.pixels[(y*128*256+x*128)*4];
 };
 describe('sparse checkpoint publication durability',()=>{
  it('an interrupted tile update leaves the previously published image exact',async()=>{
