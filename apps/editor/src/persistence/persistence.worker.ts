@@ -223,7 +223,8 @@ function parsePreviewLayers(value:unknown):readonly {surfaceId:string;visible:bo
   });
 }
 type PreviewTask={
-  documentId:string;revisionId:string;writerEpochId:string;session:Session;index:ProjectionDeltaIndex;offset:number;
+  documentId:string;revisionId:string;writerEpochId:string;session:Session;index:ProjectionDeltaIndex|null;legacyIndex:ProjectionIndex|null;offset:number;
+  legacyLayer:number;legacyPixels:Uint8Array|null;
   layers:readonly {surfaceId:string;visible:boolean;opacity:number}[];
   canvases:Map<string,OffscreenCanvas>;contexts:Map<string,OffscreenCanvasRenderingContext2D>;
   scratch:OffscreenCanvas;scratchContext:OffscreenCanvasRenderingContext2D;scale:number;width:number;height:number;
@@ -231,9 +232,21 @@ type PreviewTask={
 async function initPreviewTask(store:WorkingStore,entry:WorkEntry):Promise<PreviewTask|null>{
   if(typeof OffscreenCanvas==='undefined'||typeof ImageData==='undefined')return null;
   const session:Session={documentId:entry.documentId,writerEpochId:entry.writerEpochId,path:sessionPath(entry.documentId,entry.writerEpochId)};
-  const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
-  const index=parseProjectionDeltaIndex(await unframeJson(frame));
-  if(index.revisionId!==entry.revisionId||index.tileSize!==128||index.width!==entry.width||index.height!==entry.height)return null;
+  const frame=await store.get(session.path+'/projection-v2.frame');
+  let index:ProjectionDeltaIndex|null=null,legacyIndex:ProjectionIndex|null=null;
+  if(frame){try{const parsed=parseProjectionDeltaIndex(await unframeJson(frame));
+    if(parsed.revisionId===entry.revisionId&&parsed.tileSize===128&&parsed.width===entry.width&&parsed.height===entry.height)index=parsed;
+  }catch{}}
+  if(!index){
+    // Older works may only have the original full-layer checkpoint. Decode ONE
+    // layer at a time, and draw only 16 128px cells per background iteration.
+    const oldFrame=await store.get(session.path+'/projection.frame');
+    if(oldFrame)try{const parsed=parseProjectionIndex(await unframeJson(oldFrame));
+      if(parsed.revisionId===entry.revisionId&&parsed.width===entry.width&&parsed.height===entry.height)legacyIndex=parsed;
+    }catch{}
+  }
+  if(!index&&!legacyIndex)return null;
+  const surfaceIds=index?.surfaceIds??legacyIndex!.layers.map(layer=>layer.surfaceId);
   let layers=entry.previewLayers;
   if(!layers){
     // Old catalogs did not carry layer styles. Recover them only for this missing preview.
@@ -247,33 +260,59 @@ async function initPreviewTask(store:WorkingStore,entry:WorkEntry):Promise<Previ
       return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity};
     });
   }
-  const width=Math.max(1,Math.round(index.width*Math.min(1,320/index.width,240/index.height)));
-  const height=Math.max(1,Math.round(index.height*Math.min(1,320/index.width,240/index.height)));
+  const sourceWidth=entry.width,sourceHeight=entry.height,scale=Math.min(1,320/sourceWidth,240/sourceHeight);
+  const width=Math.max(1,Math.round(sourceWidth*scale)),height=Math.max(1,Math.round(sourceHeight*scale));
   const canvases=new Map<string,OffscreenCanvas>(),contexts=new Map<string,OffscreenCanvasRenderingContext2D>();
   for(const layer of layers){
-    if(!index.surfaceIds.includes(layer.surfaceId))return null;
+    if(!surfaceIds.includes(layer.surfaceId))return null;
     const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');if(!context)return null;
     canvases.set(layer.surfaceId,canvas);contexts.set(layer.surfaceId,context);
   }
   const scratch=new OffscreenCanvas(128,128),scratchContext=scratch.getContext('2d');if(!scratchContext)return null;
-  return {documentId:entry.documentId,revisionId:entry.revisionId,writerEpochId:entry.writerEpochId,session,index,offset:0,
-    layers,canvases,contexts,scratch,scratchContext,scale:Math.min(1,320/index.width,240/index.height),width,height};
+  return {documentId:entry.documentId,revisionId:entry.revisionId,writerEpochId:entry.writerEpochId,session,index,legacyIndex,offset:0,legacyLayer:0,legacyPixels:null,
+    layers,canvases,contexts,scratch,scratchContext,scale,width,height};
 }
 async function advancePreviewTask(store:WorkingStore,task:PreviewTask,limit:number):Promise<boolean>{
-  const end=Math.min(task.offset+limit,task.index.tiles.length);
-  for(let i=task.offset;i<end;i++){
-    const d=task.index.tiles[i]!,context=task.contexts.get(d.surfaceId);
-    if(!context)throw new Error('Unexpected thumbnail layer');
-    const bytes=await store.get(task.session.path+'/projection-v2/'+d.surfaceId+'/'+tileFileName(d.key,d.digest)+'.bin');
-    if(!bytes||(d.digest&&await digestHex(bytes)!==d.digest))throw new Error('Saved preview source changed');
-    const pixels=await decodeProjectionPixels(bytes,d.encoding,d.rawLength),[tx,ty]=parseTileKey(d.key);
-    const w=Math.min(128,task.index.width-tx*128),h=Math.min(128,task.index.height-ty*128);
-    if(w<1||h<1)throw new Error('Saved preview tile outside canvas');
-    task.scratchContext.putImageData(new ImageData(new Uint8ClampedArray(pixels),128,128),0,0);
-    context.drawImage(task.scratch,0,0,w,h,tx*128*task.scale,ty*128*task.scale,w*task.scale,h*task.scale);
-  }
-  task.offset=end;
-  if(task.offset<task.index.tiles.length)return false;
+  if(task.index){
+    const end=Math.min(task.offset+limit,task.index.tiles.length);
+    for(let i=task.offset;i<end;i++){
+      const d=task.index.tiles[i]!,context=task.contexts.get(d.surfaceId);
+      if(!context)throw new Error('Unexpected thumbnail layer');
+      const bytes=await store.get(task.session.path+'/projection-v2/'+d.surfaceId+'/'+tileFileName(d.key,d.digest)+'.bin');
+      if(!bytes||(d.digest&&await digestHex(bytes)!==d.digest))throw new Error('Saved preview source changed');
+      const pixels=await decodeProjectionPixels(bytes,d.encoding,d.rawLength),[tx,ty]=parseTileKey(d.key);
+      const w=Math.min(128,task.index.width-tx*128),h=Math.min(128,task.index.height-ty*128);
+      if(w<1||h<1)throw new Error('Saved preview tile outside canvas');
+      task.scratchContext.putImageData(new ImageData(new Uint8ClampedArray(pixels),128,128),0,0);
+      context.drawImage(task.scratch,0,0,w,h,tx*128*task.scale,ty*128*task.scale,w*task.scale,h*task.scale);
+    }
+    task.offset=end;if(task.offset<task.index.tiles.length)return false;
+  }else if(task.legacyIndex){
+    const index=task.legacyIndex,tilesAcross=Math.ceil(index.width/128),tilesDown=Math.ceil(index.height/128),total=tilesAcross*tilesDown;
+    let remaining=limit;
+    while(remaining>0&&task.legacyLayer<index.layers.length){
+      const layer=index.layers[task.legacyLayer]!;
+      if(!task.legacyPixels){
+        const data=await store.get(task.session.path+'/projection-data/'+index.generationId+'/'+layer.surfaceId+'.bin');
+        if(!data)throw new Error('Legacy preview layer is missing');
+        task.legacyPixels=await decodeProjectionPixels(data,layer.encoding,layer.rawLength);
+      }
+      const source=task.legacyPixels,context=task.contexts.get(layer.surfaceId);if(!context)throw new Error('Legacy preview surface is missing');
+      while(remaining>0&&task.offset<total){
+        const tx=task.offset%tilesAcross,ty=Math.floor(task.offset/tilesAcross),w=Math.min(128,index.width-tx*128),h=Math.min(128,index.height-ty*128);
+        const pixels=new Uint8Array(128*128*4);let occupied=false;
+        for(let y=0;y<h;y++){
+          const start=((ty*128+y)*index.width+tx*128)*4,row=source.subarray(start,start+w*4);
+          pixels.set(row,y*128*4);if(hasPixelData(row))occupied=true;
+        }
+        if(occupied){task.scratchContext.putImageData(new ImageData(new Uint8ClampedArray(pixels),128,128),0,0);
+          context.drawImage(task.scratch,0,0,w,h,tx*128*task.scale,ty*128*task.scale,w*task.scale,h*task.scale);}
+        task.offset++;remaining--;
+      }
+      if(task.offset===total){task.legacyPixels=null;task.legacyLayer++;task.offset=0;}
+    }
+    if(task.legacyLayer<index.layers.length)return false;
+  }else throw new Error('Missing thumbnail source');
   const output=new OffscreenCanvas(task.width,task.height),context=output.getContext('2d');if(!context)throw new Error('Thumbnail compositor unavailable');
   for(const layer of task.layers){if(!layer.visible)continue;context.globalAlpha=Math.max(0,Math.min(1,layer.opacity));context.drawImage(task.canvases.get(layer.surfaceId)!,0,0);}
   const thumbnail=await output.convertToBlob({type:'image/png'});
