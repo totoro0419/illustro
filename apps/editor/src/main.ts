@@ -354,7 +354,7 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
     const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';
   }catch(error){
-    for(const change of [...changes,...admittedHistoryChanges.splice(0)].reverse()){if(change.direction==='undo')controller.redo();else controller.undo();}if(controller.document.root.hasLayer(selectedBefore))controller.selectLayer(selectedBefore);
+    for(const change of [...changes,...admittedHistoryChanges.splice(0)].filter(change=>change.changed).reverse()){if(change.direction==='undo')controller.redo();else controller.undo();}if(controller.document.root.hasLayer(selectedBefore))controller.selectLayer(selectedBefore);
     try{await reloadGeometryProjection();}catch(restoreError){throw new Error('Undo / Redoの表示復旧に失敗しました。'+String(restoreError)+' 原因：'+String(error));}
     throw new Error('Undo / Redoを反映できなかったため、直前の状態へ戻しました。'+String(error));
   }

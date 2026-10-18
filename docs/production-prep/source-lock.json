@@ -404,9 +404,10 @@
     {
       "path": "packages/brush-rt/test/stroke-overlay.test.mjs",
       "sourceBranch": "perf/stroke-overlay-2026-10-16",
-      "sha256": "e8ae5814f054cccefe4dff62867f75ddc77bba534335c76ddfb7a0ff383cbe72",
+      "sha256": "80f2aa7b1401f3ea4a8a054b7f32013d35cc1a2618e14b6c664fa711a0ff10a0",
       "strokeOverlayException": "User-authorized stroke-only feedback and exact transition synchronization. Requires exact PR30 pixels, fit-view screenshots, performance and regressions; no physical acceptance claim.",
-      "canvasNavigationRefinementException": "User-authorized per-stroke affine image reuse during navigation, cooperative settled refinement and presentation-coordinate interpolation at vertices. Completed artwork resolution and sampler, formal brush/deposit shaders and legacy records retained. Full both-backend pixels, viewport, input/undo/save and matched performance required."
+      "canvasNavigationRefinementException": "User-authorized per-stroke affine image reuse during navigation, cooperative settled refinement and presentation-coordinate interpolation at vertices. Completed artwork resolution and sampler, formal brush/deposit shaders and legacy records retained. Full both-backend pixels, viewport, input/undo/save and matched performance required.",
+      "immediateHistoryException": "Append a delayed transition-capture cancellation regression; preserve every pre-existing assertion and fixture."
     },
     {
       "path": "packages/brush-rt/test/formal-batch.test.mjs",
