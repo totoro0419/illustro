@@ -1,0 +1,24 @@
+{
+  "commit": "4617cdaef94a135752c0fa122741f11c2d7aff55",
+  "scope": "Downloaded published M10 app assets, served locally with original /qa/m10/app/ path; Chromium 141 headless with SwiftShader. Published commit checked in the DOM on both backends. Not an original-origin live test or physical hardware",
+  "status": "PASS",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "presetCRUD": true,
+      "saveReload": true,
+      "export": true,
+      "drawAndHistory": true,
+      "consoleErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "presetCRUD": true,
+      "saveReload": true,
+      "export": true,
+      "drawAndHistory": true,
+      "consoleErrors": []
+    }
+  ],
+  "errors": []
+}

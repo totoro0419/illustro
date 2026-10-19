@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "4617cdaef94a135752c0fa122741f11c2d7aff55",
+  "publicQa": "https://totoro0419.github.io/illustro/qa/m10/",
+  "publicApp": "https://totoro0419.github.io/illustro/qa/m10/app/?perf=1&overlay=auto",
+  "publishedCommitMatchedInDOM": true,
+  "qaChecklistItems": 20,
+  "cloudBrowser": {
+    "status": "drawing unavailable",
+    "observedStatus": "GPU initialization failed: WebGPU unavailable (request-adapter: requestAdapter returned null); WebGL2 initialization failed: WebGL2 float render targets unavailable"
+  },
+  "workerBrowserAtOriginalOrigin": {
+    "status": "blocked before app operations",
+    "observedError": "ERR_CERT_AUTHORITY_INVALID through the required environment proxy; TLS validation was not bypassed"
+  },
+  "publishedArtifactMirror": {
+    "status": "PASS",
+    "scope": "Downloaded published M10 app assets, served locally with original /qa/m10/app/ path; Chromium 141 headless with SwiftShader. Published commit checked in the DOM on both backends. Not an original-origin live test or physical hardware",
+    "backends": [
+      "webgl2",
+      "webgpu"
+    ]
+  },
+  "physicalDeviceReview": "NOT PERFORMED; USER REVIEW REQUIRED",
+  "milestoneAccepted": false
+}

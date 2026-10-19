@@ -1,0 +1,3912 @@
+{
+  "baseline": "4708ffe5136ad1fa47be5909c129bb5f8fcb7869",
+  "sourceCommit": "4617cdaef94a135752c0fa122741f11c2d7aff55",
+  "controlledCosts": {
+    "cpuExtraMs": 0,
+    "gpuExtraQueueMs": 0
+  },
+  "environment": {
+    "browser": "141.0.7390.37",
+    "gpu": "SwiftShader",
+    "css": [
+      390,
+      644
+    ],
+    "dpr": 3
+  },
+  "formalAfterUpProxy": "waitStroke acknowledgement, including animation-frame polling; upper bound",
+  "scope": "Matched baseline / forced CPU / forced GPU / auto. CPU upload and GPU completion proxies; screenshots sample the browser compositor, not physical display. Longtask observer detects main tasks >=50ms.",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "thin",
+      "mode": "A",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 6.599999999976717,
+        "p95": 18.099999999976717,
+        "max": 48.800000000046566
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 6.600000000093132,
+        "p95": 35.59999999997672,
+        "max": 35.59999999997672
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5,
+        "p95": 1.8999999999068677,
+        "max": 1.8999999999068677
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.10000000009313226,
+        "p95": 0.30000000004656613,
+        "max": 3.5
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 147.5,
+        "p95": 174.19999999995343,
+        "max": 174.19999999995343
+      },
+      "cpuSubmission": {
+        "count": 48,
+        "p50": 0.9000000000232831,
+        "p95": 5.400000000023283,
+        "max": 10.400000000023283
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 128,
+        "p50": 16.699999999999818,
+        "p95": 16.800000000000182,
+        "max": 50
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 204,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.25,
+        "requestedRatio": "auto",
+        "scale": 1.5,
+        "screenWidth": 390,
+        "screenHeight": 644,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 565110,
+        "diameter": 64,
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 27,
+        "pendingFinalizations": 0,
+        "updates": 204,
+        "updatedPixels": 1802240,
+        "rasterPixels": 43849564,
+        "skippedRasterPixels": 450560,
+        "commands": 204,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 1287936,
+        "guardCaptures": 12,
+        "guardCaptureMs": 1.8999999997904524,
+        "peakBytes": 2721792,
+        "peakPixels": 212992,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 48.59999999997672,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": null,
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 18200000,
+      "gpuQueueCompletionProxyMs": 82.80000000004657,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 837.3000000000466,
+          "end": 1103.8000000000466,
+          "first": 35.59999999997672,
+          "formal": 174.19999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1109.9000000000233,
+          "end": 1364.1999999999534,
+          "first": 19.5,
+          "formal": 154,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1369.1999999999534,
+          "end": 1519.5,
+          "first": 7.200000000069849,
+          "formal": 147.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1524.6999999999534,
+          "end": 1668.3000000000466,
+          "first": 7.200000000069849,
+          "formal": 171.59999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 1673.1999999999534,
+          "end": 1820.8000000000466,
+          "first": 5.700000000069849,
+          "formal": 166.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 1827.6999999999534,
+          "end": 1989.9000000000233,
+          "first": 6.600000000093132,
+          "formal": 146.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 1995.1999999999534,
+          "end": 2136.8000000000466,
+          "first": 6.600000000093132,
+          "formal": 132.19999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2142.0999999999767,
+          "end": 2291,
+          "first": 6.400000000023283,
+          "formal": 144.30000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 2296.3000000000466,
+          "end": 2452.5999999999767,
+          "first": 5.699999999953434,
+          "formal": 149,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 2457.5999999999767,
+          "end": 2627.9000000000233,
+          "first": 6.599999999976717,
+          "formal": 140.79999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 2633,
+          "end": 2785.5,
+          "first": 8.800000000046566,
+          "formal": 148.59999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 2791.1999999999534,
+          "end": 2933.5999999999767,
+          "first": 6.300000000046566,
+          "formal": 133.40000000002328,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "thin",
+      "mode": "B",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 0.5,
+        "p95": 1.599999999976717,
+        "max": 4.600000000093132
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 1.1999999999534339,
+        "p95": 5.100000000093132,
+        "max": 5.100000000093132
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5,
+        "p95": 1.099999999976717,
+        "max": 1.099999999976717
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.19999999995343387,
+        "p95": 0.40000000002328306,
+        "max": 2.900000000023283
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 164,
+        "p95": 461.4000000000233,
+        "max": 461.4000000000233
+      },
+      "cpuSubmission": {
+        "count": 40,
+        "p50": 1.5,
+        "p95": 8.899999999906868,
+        "max": 15.79999999993015
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 133,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "max": 16.800000000000182
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 204,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 192,
+        "diameter": 64,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "cpu",
+          "route": "cpu",
+          "reason": "比較用に指定された方式",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": 26.699999999953434,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": null,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 24,
+          "gpuSamples": 0
+        },
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 13,
+        "pendingFinalizations": 0,
+        "updates": 204,
+        "updatedPixels": 208896,
+        "rasterPixels": 19550,
+        "skippedRasterPixels": 0,
+        "commands": 204,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 24864840,
+        "guardCaptures": 11,
+        "guardCaptureMs": 0.9000000000232831,
+        "peakBytes": 27436576,
+        "peakPixels": 65536,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 2.700000000069849,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 217,
+        "maxSliceMs": 3.099999999976717,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "cpu",
+        "route": "cpu",
+        "reason": "比較用に指定された方式",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": 26.699999999953434,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": null,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 0
+      },
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 95.30000000004657,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 901,
+          "end": 1048,
+          "first": 5.100000000093132,
+          "formal": 134.80000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1053.5,
+          "end": 1202.3000000000466,
+          "first": 1.7000000000698492,
+          "formal": 134.69999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1207.4000000000233,
+          "end": 1361.5,
+          "first": 1.599999999976717,
+          "formal": 154.40000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1368.1000000000931,
+          "end": 1518.3000000000466,
+          "first": 1.1999999999534339,
+          "formal": 164,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 1526.5,
+          "end": 1685.9000000000233,
+          "first": 1,
+          "formal": 163.30000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 1691.4000000000233,
+          "end": 1853.4000000000233,
+          "first": 0.9000000000232831,
+          "formal": 163.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 1859.7000000000698,
+          "end": 2019.4000000000233,
+          "first": 3.400000000023283,
+          "formal": 218.90000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2039.6000000000931,
+          "end": 2185.8000000000466,
+          "first": 1.1999999999534339,
+          "formal": 231.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 2190.70000000007,
+          "end": 2350.20000000007,
+          "first": 1.1999999999534339,
+          "formal": 303.19999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 2355.20000000007,
+          "end": 2503.100000000093,
+          "first": 1.099999999976717,
+          "formal": 379.89999999990687,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 2507.70000000007,
+          "end": 2671,
+          "first": 0.7999999999301508,
+          "formal": 461.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 2676.20000000007,
+          "end": 2822.8000000000466,
+          "first": 2,
+          "formal": 309.5999999999767,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "thin",
+      "mode": "C",
+      "inputToDisplayProxy": {
+        "count": 20,
+        "p50": 91.40000000002328,
+        "p95": 111.5,
+        "max": 125
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 117,
+        "p95": 171.19999999995343,
+        "max": 171.19999999995343
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5,
+        "p95": 0.7000000000698492,
+        "max": 0.7000000000698492
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.09999999997671694,
+        "p95": 0.2000000000698492,
+        "max": 0.9000000000232831
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 403.4000000000233,
+        "p95": 603,
+        "max": 603
+      },
+      "cpuSubmission": {
+        "count": 24,
+        "p50": 1.900000000023283,
+        "p95": 6.900000000023283,
+        "max": 8.400000000023283
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 125,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "max": 16.800000000000182
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 0,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 0,
+        "height": 0,
+        "visiblePixelBudget": 192,
+        "diameter": 64,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "gpu",
+          "route": "gpu",
+          "reason": "比較用に指定された方式",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": null,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": 114.5,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 0,
+          "gpuSamples": 20
+        },
+        "pixels": 0,
+        "bytes": 0,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 0,
+        "pendingFinalizations": 0,
+        "updates": 0,
+        "updatedPixels": 0,
+        "rasterPixels": 0,
+        "skippedRasterPixels": 0,
+        "commands": 0,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 0,
+        "guardCaptures": 0,
+        "guardCaptureMs": 0,
+        "peakBytes": 0,
+        "peakPixels": 0,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 0,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 0,
+        "maxSliceMs": 0,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "gpu",
+        "route": "gpu",
+        "reason": "比較用に指定された方式",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": null,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": 114.5,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 0,
+        "gpuSamples": 20
+      },
+      "routes": [
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 83.40000000002328,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 721.0999999999767,
+          "end": 869.8000000000466,
+          "first": 98.20000000006985,
+          "formal": 403.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 875.0999999999767,
+          "end": 1028.9000000000233,
+          "first": 113.90000000002328,
+          "formal": 326.80000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1033.7000000000698,
+          "end": 1183.9000000000233,
+          "first": 141.59999999997672,
+          "formal": 435.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1188.7000000000698,
+          "end": 1344.8000000000466,
+          "first": 167,
+          "formal": 524.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 1349.5999999999767,
+          "end": 1497.5,
+          "first": 86.60000000009313,
+          "formal": 462.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 1502.4000000000233,
+          "end": 1649.5999999999767,
+          "first": 117,
+          "formal": 310.10000000009313,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 1654.4000000000233,
+          "end": 1801.5,
+          "first": 138.59999999997672,
+          "formal": 334,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 1806,
+          "end": 1953,
+          "first": 153.70000000006985,
+          "formal": 483.0999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 1964.3000000000466,
+          "end": 2118.4000000000233,
+          "first": 171.19999999995343,
+          "formal": 603,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 2123.20000000007,
+          "end": 2272.9000000000233,
+          "first": 114,
+          "formal": 544.9000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 2277.8000000000466,
+          "end": 2426.5999999999767,
+          "first": 158.29999999993015,
+          "formal": 391.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 2431.5999999999767,
+          "end": 2582.70000000007,
+          "first": 91.10000000009313,
+          "formal": 235.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "thin",
+      "mode": "D",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 0.30000000004656613,
+        "p95": 1.099999999976717,
+        "max": 6.900000000023283
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 1.3000000000465661,
+        "p95": 8.099999999976717,
+        "max": 8.099999999976717
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.40000000002328306,
+        "p95": 1.1999999999534339,
+        "max": 1.1999999999534339
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.10000000009313226,
+        "p95": 0.30000000004656613,
+        "max": 4
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 154.30000000004657,
+        "p95": 262,
+        "max": 262
+      },
+      "cpuSubmission": {
+        "count": 47,
+        "p50": 1.099999999976717,
+        "p95": 3.400000000023283,
+        "max": 6
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 127,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999955,
+        "max": 16.800000000000182
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 204,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 192,
+        "diameter": 64,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "auto",
+          "route": "cpu",
+          "reason": "比較の記録が少ないため、仮線を表示",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": 26.399999999906868,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": null,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 24,
+          "gpuSamples": 0
+        },
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 13,
+        "pendingFinalizations": 0,
+        "updates": 204,
+        "updatedPixels": 208896,
+        "rasterPixels": 19550,
+        "skippedRasterPixels": 0,
+        "commands": 204,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 27125280,
+        "guardCaptures": 12,
+        "guardCaptureMs": 0.9999999998835847,
+        "peakBytes": 27354656,
+        "peakPixels": 65536,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 4.200000000069849,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 217,
+        "maxSliceMs": 4.200000000069849,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "auto",
+        "route": "cpu",
+        "reason": "比較の記録が少ないため、仮線を表示",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": 26.399999999906868,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": null,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 0
+      },
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 99.39999999990687,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 713,
+          "end": 860.0999999999767,
+          "first": 8.099999999976717,
+          "formal": 153,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 865.6999999999534,
+          "end": 1010.8999999999069,
+          "first": 1.3000000000465661,
+          "formal": 134.40000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1015.5999999999767,
+          "end": 1158,
+          "first": 1.400000000023283,
+          "formal": 153.69999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1165.5,
+          "end": 1324.7999999999302,
+          "first": 1.2999999999301508,
+          "formal": 154.30000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 1331.1999999999534,
+          "end": 1473.5,
+          "first": 1.099999999976717,
+          "formal": 177.69999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 1479.5,
+          "end": 1627.3999999999069,
+          "first": 1.5,
+          "formal": 151,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 1632.1999999999534,
+          "end": 1781.5999999999767,
+          "first": 1.3000000000465661,
+          "formal": 148.29999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 1786.6999999999534,
+          "end": 1931.8999999999069,
+          "first": 0.9000000000232831,
+          "formal": 198.10000000009313,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 1937.1999999999534,
+          "end": 2085,
+          "first": 1.1999999999534339,
+          "formal": 195.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 2098.6999999999534,
+          "end": 2253.6999999999534,
+          "first": 1.6999999999534339,
+          "formal": 209.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 2261.0999999999767,
+          "end": 2415.399999999907,
+          "first": 1.599999999976717,
+          "formal": 247.40000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 2420.1999999999534,
+          "end": 2583.0999999999767,
+          "first": 1,
+          "formal": 262,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "pencil",
+      "mode": "A",
+      "baselineFailure": "Error: page.evaluate: Error: idle {\"r\":[],\"s\":[],\"p\":{\"scope\":\"CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured\",\"kind\":\"stroke-only\",\"transport\":\"2d\",\"coupled\":false,\"ready\":true,\"viewEpoch\":2,\"generation\":1,\"visibleArea\":251160,\"density\":3,\"ratio\":1,\"requestedRatio\":\"auto\",\"scale\":3,\"screenWidth\":390,\"screenHeight\":644,\"width\":128,\"height\":128,\"visiblePixelBudget\":2260440,\"diameter\":2048,\"pixels\":16384,\"bytes\":65536,\"rasterByteBudget\":67108864,\"pendingStrokes\":0,\"fallback\":true,\"allocations\":3,\"pendingFinalizations\":0,\"updates\":1,\"updatedPixels\":2299904,\"rasterPixels\":4136537,\"skippedRasterPixels\":0,\"commands\":2,\"historyReplayCommands\":0,\"historyRebuilds\":0,\"guardPixels\":2260440,\"guardCaptures\":1,\"guardCaptureMs\":0.2999999999301508,\"peakBytes\":103341440,\"peakPixels\":2276824,\"superseded\":0,\"rebuilds\":0,\"fallbacks\":215,\"retirements\":9,\"samples\":[{\"id\":1,\"inputAt\":757.2999999999302,\"finished\":false,\"at\":1037.0999999999767,\"cpuMs\":279.0999999999767,\"inputToUploadMs\":279.80000000004657,\"updatedPixels\":2299904,\"proxyPixels\":2276824,\"visibleArea\":251160,\"viewEpoch\":2,\"generation\":1}],\"maxCpuMs\":279.0999999999767,\"backgroundSlices\":0,\"maxBackgroundMs\":0,\"finalizationSwaps\":0,\"obsoleteFinalizations\":0},\"jobs\":5}\n    at idle (eval at evaluate (:290:30), <anonymous>:5:321)\n    at eval (eval at evaluate (:290:30), <anonymous>:21:10)\n    at async <anonymous>:316:30",
+      "diagnostic": {
+        "summary": {
+          "instantPreview": {
+            "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+            "kind": "stroke-only",
+            "transport": "2d",
+            "coupled": false,
+            "ready": true,
+            "viewEpoch": 2,
+            "generation": 1,
+            "visibleArea": 251160,
+            "density": 3,
+            "ratio": 1,
+            "requestedRatio": "auto",
+            "scale": 3,
+            "screenWidth": 390,
+            "screenHeight": 644,
+            "width": 128,
+            "height": 128,
+            "visiblePixelBudget": 2260440,
+            "diameter": 2048,
+            "pixels": 16384,
+            "bytes": 65536,
+            "rasterByteBudget": 67108864,
+            "pendingStrokes": 0,
+            "fallback": true,
+            "allocations": 3,
+            "pendingFinalizations": 0,
+            "updates": 1,
+            "updatedPixels": 2299904,
+            "rasterPixels": 4136537,
+            "skippedRasterPixels": 0,
+            "commands": 2,
+            "historyReplayCommands": 0,
+            "historyRebuilds": 0,
+            "guardPixels": 2260440,
+            "guardCaptures": 1,
+            "guardCaptureMs": 0.2999999999301508,
+            "peakBytes": 103341440,
+            "peakPixels": 2276824,
+            "superseded": 0,
+            "rebuilds": 0,
+            "fallbacks": 215,
+            "retirements": 9,
+            "samples": [
+              {
+                "id": 1,
+                "inputAt": 757.2999999999302,
+                "finished": false,
+                "at": 1037.0999999999767,
+                "cpuMs": 279.0999999999767,
+                "inputToUploadMs": 279.80000000004657,
+                "updatedPixels": 2299904,
+                "proxyPixels": 2276824,
+                "visibleArea": 251160,
+                "viewEpoch": 2,
+                "generation": 1
+              }
+            ],
+            "maxCpuMs": 279.0999999999767,
+            "backgroundSlices": 0,
+            "maxBackgroundMs": 0,
+            "finalizationSwaps": 0,
+            "obsoleteFinalizations": 0
+          },
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": 467.9000000000233,
+          "inputToPreviewCompletionP95Ms": 581.4000000000233,
+          "presentations": 21,
+          "viewPresentations": 1,
+          "renders": 20,
+          "compositedTiles": 19,
+          "compositedLayerPasses": 19,
+          "supersededViews": 0,
+          "submissionFps": 10.007783831868714,
+          "frameIntervalP95Ms": 114.40000000002328,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": 9.899999999906868,
+          "queueCompletionProxyMs": 83.09999999997672,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 720896,
+          "historyGpuBudgetBytes": 16777216,
+          "historyBaseReuses": 0,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "tileHistory": {
+            "copies": 11,
+            "sharedBefore": 10,
+            "spilled": 0,
+            "hotTiles": 0,
+            "coldTiles": 0,
+            "emptyTiles": 0,
+            "restores": 0,
+            "recoveryFallbacks": 0,
+            "storageErrors": 0,
+            "maxSliceMs": 0,
+            "gpuBytes": 720896,
+            "gpuBudget": 16777216,
+            "peakGpuBytes": 720896,
+            "readbackBytes": 0,
+            "patches": 11,
+            "versions": 11,
+            "pressure": false,
+            "archive": {
+              "mode": "opfs",
+              "memoryBudget": 8388608,
+              "memoryBytes": 0,
+              "diskBudget": 52659714,
+              "diskBytes": 0,
+              "blocks": 0,
+              "aliases": 0,
+              "hits": 0,
+              "diskHits": 0,
+              "memoryHits": 0,
+              "misses": 0,
+              "spills": 0,
+              "evictions": 0,
+              "storageErrors": 0,
+              "hashDeduplications": 0
+            }
+          },
+          "historyCachedStrokes": 11,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 1,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 786432,
+          "previewBudgetBytes": 268435456,
+          "previewPressure": false,
+          "previewDeferredFrames": 0,
+          "previewPoolBytes": 0,
+          "peakPreviewBytes": 786432,
+          "viewportCacheBytes": 9041760,
+          "viewportCacheBudgetBytes": 33554432,
+          "screenShadedPixels": 49729680,
+          "screenCopiedPixels": 47469240,
+          "screenCacheHits": 3,
+          "formalJobs": 5,
+          "formalBatchLimit": 16,
+          "formalSubmitCpuMs": 4.5,
+          "formalCommands": 34,
+          "formalCommandsPruned": 0
+        },
+        "error": "Error: Overlay memory pressure; exact GPU feedback retained"
+      }
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "pencil",
+      "mode": "B",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 0.40000000002328306,
+        "p95": 1.099999999976717,
+        "max": 6.300000000046566
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 1.1999999999534339,
+        "p95": 7.200000000069849,
+        "max": 7.200000000069849
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.40000000002328306,
+        "p95": 1.6000000000931323,
+        "max": 1.6000000000931323
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.19999999995343387,
+        "p95": 0.30000000004656613,
+        "max": 2
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 237.60000000009313,
+        "p95": 607,
+        "max": 607
+      },
+      "cpuSubmission": {
+        "count": 35,
+        "p50": 1.7000000000698492,
+        "p95": 11.900000000023283,
+        "max": 13.5
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 140,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "max": 16.800000000000182
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 216,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 192,
+        "diameter": 2048,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "cpu",
+          "route": "cpu",
+          "reason": "比較用に指定された方式",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": 27.29999999993015,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": null,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 24,
+          "gpuSamples": 0
+        },
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 13,
+        "pendingFinalizations": 0,
+        "updates": 216,
+        "updatedPixels": 221184,
+        "rasterPixels": 78336,
+        "skippedRasterPixels": 0,
+        "commands": 408,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 24864840,
+        "guardCaptures": 11,
+        "guardCaptureMs": 0.8000000001629815,
+        "peakBytes": 27534880,
+        "peakPixels": 81920,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 1.3000000000465661,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 218,
+        "maxSliceMs": 5.599999999976717,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "cpu",
+        "route": "cpu",
+        "reason": "比較用に指定された方式",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": 27.29999999993015,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": null,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 0
+      },
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 149.5,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 687.5,
+          "end": 831.7000000000698,
+          "first": 7.200000000069849,
+          "formal": 154.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 842.4000000000233,
+          "end": 993,
+          "first": 1.900000000023283,
+          "formal": 164.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1001.1000000000931,
+          "end": 1156.3000000000466,
+          "first": 1.5,
+          "formal": 167.59999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1162,
+          "end": 1314.1000000000931,
+          "first": 1.3000000000465661,
+          "formal": 189.29999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 1324.3000000000466,
+          "end": 1481.2000000000698,
+          "first": 1,
+          "formal": 206.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 1485.9000000000233,
+          "end": 1632.5,
+          "first": 1.3000000000465661,
+          "formal": 237.60000000009313,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 1637.2000000000698,
+          "end": 1805.8000000000466,
+          "first": 1.1999999999534339,
+          "formal": 316.69999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 1814.4000000000233,
+          "end": 1966.3000000000466,
+          "first": 1.099999999976717,
+          "formal": 355.80000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 1971.7000000000698,
+          "end": 2123.600000000093,
+          "first": 0.7999999999301508,
+          "formal": 465.5999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 2128.4000000000233,
+          "end": 2281,
+          "first": 1.099999999976717,
+          "formal": 607,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 2285.9000000000233,
+          "end": 2438.600000000093,
+          "first": 3.900000000023283,
+          "formal": 597.1999999999534,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 2443.3000000000466,
+          "end": 2607.4000000000233,
+          "first": 1.1999999999534339,
+          "formal": 428.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "pencil",
+      "mode": "C",
+      "inputToDisplayProxy": {
+        "count": 18,
+        "p50": 104.5,
+        "p95": 124.39999999990687,
+        "max": 124.39999999990687
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 140.90000000002328,
+        "p95": 200.59999999997672,
+        "max": 200.59999999997672
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5,
+        "p95": 1.6999999999534339,
+        "max": 1.6999999999534339
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.09999999997671694,
+        "p95": 0.2000000000698492,
+        "max": 4.5
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 457.5999999999767,
+        "p95": 554.4000000000233,
+        "max": 554.4000000000233
+      },
+      "cpuSubmission": {
+        "count": 23,
+        "p50": 1.7000000000698492,
+        "p95": 6.099999999976717,
+        "max": 6.5
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 128,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "max": 16.799999999999955
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 0,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 0,
+        "height": 0,
+        "visiblePixelBudget": 192,
+        "diameter": 2048,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "gpu",
+          "route": "gpu",
+          "reason": "比較用に指定された方式",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": null,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": 132.19999999995343,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 0,
+          "gpuSamples": 18
+        },
+        "pixels": 0,
+        "bytes": 0,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 0,
+        "pendingFinalizations": 0,
+        "updates": 0,
+        "updatedPixels": 0,
+        "rasterPixels": 0,
+        "skippedRasterPixels": 0,
+        "commands": 0,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 0,
+        "guardCaptures": 0,
+        "guardCaptureMs": 0,
+        "peakBytes": 0,
+        "peakPixels": 0,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 0,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 0,
+        "maxSliceMs": 0,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "gpu",
+        "route": "gpu",
+        "reason": "比較用に指定された方式",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": null,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": 132.19999999995343,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 0,
+        "gpuSamples": 18
+      },
+      "routes": [
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 83.20000000006985,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 711.8000000000466,
+          "end": 857.4000000000233,
+          "first": 100.5,
+          "formal": 341.0999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 863,
+          "end": 1009.0999999999767,
+          "first": 136.90000000002328,
+          "formal": 486.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1014.4000000000233,
+          "end": 1155.7000000000698,
+          "first": 184,
+          "formal": 339.5999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1160.5,
+          "end": 1307.2000000000698,
+          "first": 137.20000000006985,
+          "formal": 457.5999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 1314.8000000000466,
+          "end": 1459.8000000000466,
+          "first": 180.5,
+          "formal": 518.1999999999534,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 1469.5999999999767,
+          "end": 1614.9000000000233,
+          "first": 111.60000000009313,
+          "formal": 363.0999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 1623.9000000000233,
+          "end": 1773.3000000000466,
+          "first": 140.90000000002328,
+          "formal": 509.79999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 1778.0999999999767,
+          "end": 1922.7000000000698,
+          "first": 199.90000000002328,
+          "formal": 360.39999999990687,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 1927.5,
+          "end": 2075,
+          "first": 139,
+          "formal": 487.70000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 2082.5,
+          "end": 2224.0999999999767,
+          "first": 200.59999999997672,
+          "formal": 554.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 2228.8000000000466,
+          "end": 2374.0999999999767,
+          "first": 149.69999999995343,
+          "formal": 486.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 2380.8000000000466,
+          "end": 2524.8000000000466,
+          "first": 181.90000000002328,
+          "formal": 335.5,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgl2",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "pencil",
+      "mode": "D",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 0.5,
+        "p95": 1,
+        "max": 15.199999999953434
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 1.2000000000698492,
+        "p95": 6.800000000046566,
+        "max": 6.800000000046566
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.40000000002328306,
+        "p95": 0.7000000000698492,
+        "max": 0.7000000000698492
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.19999999995343387,
+        "p95": 0.30000000004656613,
+        "max": 2.199999999953434
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 279.20000000006985,
+        "p95": 564.7999999999302,
+        "max": 564.7999999999302
+      },
+      "cpuSubmission": {
+        "count": 33,
+        "p50": 1.400000000023283,
+        "p95": 4.5,
+        "max": 7.700000000069849
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 142,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000273,
+        "max": 16.800000000000182
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 216,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 192,
+        "diameter": 2048,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "auto",
+          "route": "cpu",
+          "reason": "比較の記録が少ないため、仮線を表示",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": 16.400000000023283,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": null,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 24,
+          "gpuSamples": 0
+        },
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 13,
+        "pendingFinalizations": 0,
+        "updates": 216,
+        "updatedPixels": 221184,
+        "rasterPixels": 78336,
+        "skippedRasterPixels": 0,
+        "commands": 408,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 24864840,
+        "guardCaptures": 11,
+        "guardCaptureMs": 0.8000000002793968,
+        "peakBytes": 27518496,
+        "peakPixels": 81920,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 3.599999999976717,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 217,
+        "maxSliceMs": 14.800000000046566,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "auto",
+        "route": "cpu",
+        "reason": "比較の記録が少ないため、仮線を表示",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": 16.400000000023283,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": null,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 0
+      },
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 99.70000000006985,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 752.7999999999302,
+          "end": 898,
+          "first": 6.800000000046566,
+          "formal": 154.69999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 909.2999999999302,
+          "end": 1063.5,
+          "first": 2,
+          "formal": 154.59999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1072.2999999999302,
+          "end": 1221.7999999999302,
+          "first": 1.3000000000465661,
+          "formal": 181.70000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1230.5999999999767,
+          "end": 1389.9000000000233,
+          "first": 1.400000000023283,
+          "formal": 213.69999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 1394.7999999999302,
+          "end": 1542.2999999999302,
+          "first": 1.400000000023283,
+          "formal": 276.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 1547.1999999999534,
+          "end": 1700,
+          "first": 1.400000000023283,
+          "formal": 318.5999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 1706.1999999999534,
+          "end": 1857.5,
+          "first": 1.2000000000698492,
+          "formal": 428,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 1862.1999999999534,
+          "end": 2006.2999999999302,
+          "first": 1,
+          "formal": 279.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 2011.0999999999767,
+          "end": 2156.4000000000233,
+          "first": 1.1999999999534339,
+          "formal": 362.19999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 2161.6999999999534,
+          "end": 2313.29999999993,
+          "first": 0.9000000000232831,
+          "formal": 507.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 2318,
+          "end": 2471,
+          "first": 1.099999999976717,
+          "formal": 564.7999999999302,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 2479.5,
+          "end": 2631.9000000000233,
+          "first": 1.099999999976717,
+          "formal": 502.5999999999767,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "thin",
+      "mode": "A",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 6.100000000093132,
+        "p95": 17.099999999976717,
+        "max": 39.10000000009313
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 6.5,
+        "p95": 34.90000000002328,
+        "max": 34.90000000002328
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.39999999990686774,
+        "p95": 0.7999999999301508,
+        "max": 0.7999999999301508
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.09999999997671694,
+        "p95": 0.2000000000698492,
+        "max": 0.8000000000465661
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 146,
+        "p95": 279.20000000006985,
+        "max": 279.20000000006985
+      },
+      "cpuSubmission": {
+        "count": 48,
+        "p50": 0.2999999999301508,
+        "p95": 0.6000000000931323,
+        "max": 1.3999999999068677
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 85,
+        "p50": 16.699999999999818,
+        "p95": 83.30000000000018,
+        "max": 100
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 204,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.25,
+        "requestedRatio": "auto",
+        "scale": 1.5,
+        "screenWidth": 390,
+        "screenHeight": 644,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 565110,
+        "diameter": 64,
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 27,
+        "pendingFinalizations": 0,
+        "updates": 204,
+        "updatedPixels": 1802240,
+        "rasterPixels": 43849564,
+        "skippedRasterPixels": 450560,
+        "commands": 204,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 1287936,
+        "guardCaptures": 12,
+        "guardCaptureMs": 75.4000000001397,
+        "peakBytes": 2705408,
+        "peakPixels": 147456,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 38.60000000009313,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": null,
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 97.09999999997672,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 1506.5,
+          "end": 1762.1999999999534,
+          "first": 34.90000000002328,
+          "formal": 279.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1767.9000000000233,
+          "end": 2027.5,
+          "first": 20.099999999976717,
+          "formal": 162,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 2034.9000000000233,
+          "end": 2186.6999999999534,
+          "first": 5.799999999930151,
+          "formal": 157.80000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 2191.5,
+          "end": 2332.5999999999767,
+          "first": 6.299999999930151,
+          "formal": 146,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 2337.29999999993,
+          "end": 2480.29999999993,
+          "first": 7,
+          "formal": 144.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 2485.1999999999534,
+          "end": 2625.0999999999767,
+          "first": 5.400000000023283,
+          "formal": 147.90000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 2629.79999999993,
+          "end": 2769.29999999993,
+          "first": 5.5,
+          "formal": 141.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2774,
+          "end": 2913.79999999993,
+          "first": 5.799999999930151,
+          "formal": 142.30000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 2918.4000000000233,
+          "end": 3058,
+          "first": 6.5,
+          "formal": 148.29999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 3062.6999999999534,
+          "end": 3203.4000000000233,
+          "first": 6.800000000046566,
+          "formal": 138.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 3208.29999999993,
+          "end": 3368.9000000000233,
+          "first": 6.5,
+          "formal": 157.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 3373.5,
+          "end": 3529.4000000000233,
+          "first": 6.900000000023283,
+          "formal": 126.39999999990687,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "thin",
+      "mode": "B",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 0.40000000002328306,
+        "p95": 1.3000000000465661,
+        "max": 23.300000000046566
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 1.3999999999068677,
+        "p95": 5.099999999976717,
+        "max": 5.099999999976717
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5,
+        "p95": 1.2000000000698492,
+        "max": 1.2000000000698492
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.19999999995343387,
+        "p95": 0.5,
+        "max": 22.699999999953434
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 179.60000000009313,
+        "p95": 204.40000000002328,
+        "max": 204.40000000002328
+      },
+      "cpuSubmission": {
+        "count": 48,
+        "p50": 0.2999999999301508,
+        "p95": 0.9000000000232831,
+        "max": 1.3000000000465661
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 89,
+        "p50": 16.699999999999818,
+        "p95": 83.29999999999995,
+        "max": 116.70000000000005
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 204,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 192,
+        "diameter": 64,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "cpu",
+          "route": "cpu",
+          "reason": "比較用に指定された方式",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": 47.40000000002328,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": null,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 24,
+          "gpuSamples": 0
+        },
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 13,
+        "pendingFinalizations": 0,
+        "updates": 204,
+        "updatedPixels": 208896,
+        "rasterPixels": 19550,
+        "skippedRasterPixels": 0,
+        "commands": 204,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 27125280,
+        "guardCaptures": 12,
+        "guardCaptureMs": 382.4000000000233,
+        "peakBytes": 27354656,
+        "peakPixels": 65536,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 5.300000000046566,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 216,
+        "maxSliceMs": 5.300000000046566,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "cpu",
+        "route": "cpu",
+        "reason": "比較用に指定された方式",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": 47.40000000002328,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": null,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 0
+      },
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 33100000,
+      "gpuQueueCompletionProxyMs": 107.29999999993015,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 1626.6999999999534,
+          "end": 1773.3999999999069,
+          "first": 5.099999999976717,
+          "formal": 185,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1779,
+          "end": 1954.2999999999302,
+          "first": 1.3999999999068677,
+          "formal": 204.40000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1959.0999999999767,
+          "end": 2137.899999999907,
+          "first": 1.1999999999534339,
+          "formal": 186.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 2143.29999999993,
+          "end": 2319.5999999999767,
+          "first": 3.599999999976717,
+          "formal": 191,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 2325.399999999907,
+          "end": 2494.899999999907,
+          "first": 1.1000000000931323,
+          "formal": 179.60000000009313,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 2500.899999999907,
+          "end": 2676.0999999999767,
+          "first": 2.1000000000931323,
+          "formal": 166.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 2680.899999999907,
+          "end": 2852.0999999999767,
+          "first": 1.3000000000465661,
+          "formal": 189.59999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2856.79999999993,
+          "end": 3016,
+          "first": 1.5,
+          "formal": 175.29999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 3021.79999999993,
+          "end": 3189.1999999999534,
+          "first": 2.300000000046566,
+          "formal": 185.19999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 3194.0999999999767,
+          "end": 3385.899999999907,
+          "first": 1.1999999999534339,
+          "formal": 173.60000000009313,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 3392.0999999999767,
+          "end": 3576.399999999907,
+          "first": 1.599999999976717,
+          "formal": 165.10000000009313,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 3581.0999999999767,
+          "end": 3751.6999999999534,
+          "first": 1,
+          "formal": 156,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "thin",
+      "mode": "C",
+      "inputToDisplayProxy": {
+        "count": 17,
+        "p50": 111.59999999997672,
+        "p95": 132.09999999997672,
+        "max": 132.09999999997672
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 153.79999999993015,
+        "p95": 206.40000000002328,
+        "max": 206.40000000002328
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5,
+        "p95": 0.6000000000931323,
+        "max": 0.6000000000931323
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.09999999997671694,
+        "p95": 0.2999999999301508,
+        "max": 5.599999999976717
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 500.89999999990687,
+        "p95": 675,
+        "max": 675
+      },
+      "cpuSubmission": {
+        "count": 20,
+        "p50": 0.5999999999767169,
+        "p95": 1,
+        "max": 1.5
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 57,
+        "p50": 16.700000000000045,
+        "p95": 83.40000000000009,
+        "max": 100
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 0,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 0,
+        "height": 0,
+        "visiblePixelBudget": 192,
+        "diameter": 64,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "gpu",
+          "route": "gpu",
+          "reason": "比較用に指定された方式",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": null,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": 132.09999999997672,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 0,
+          "gpuSamples": 17
+        },
+        "pixels": 0,
+        "bytes": 0,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 0,
+        "pendingFinalizations": 0,
+        "updates": 0,
+        "updatedPixels": 0,
+        "rasterPixels": 0,
+        "skippedRasterPixels": 0,
+        "commands": 0,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 0,
+        "guardCaptures": 0,
+        "guardCaptureMs": 0,
+        "peakBytes": 0,
+        "peakPixels": 0,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 0,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 0,
+        "maxSliceMs": 0,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "gpu",
+        "route": "gpu",
+        "reason": "比較用に指定された方式",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": null,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": 132.09999999997672,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 0,
+        "gpuSamples": 17
+      },
+      "routes": [
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 128.79999999993015,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 1725.3000000000466,
+          "end": 1876.0999999999767,
+          "first": 122.90000000002328,
+          "formal": 530.8000000000466,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1883.0999999999767,
+          "end": 2028.2000000000698,
+          "first": 177.20000000006985,
+          "formal": 378.79999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 2033.3000000000466,
+          "end": 2180.0999999999767,
+          "first": 136.19999999995343,
+          "formal": 660,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 2186,
+          "end": 2330.3000000000466,
+          "first": 206.40000000002328,
+          "formal": 509.79999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 2335.3000000000466,
+          "end": 2477.9000000000233,
+          "first": 164.09999999997672,
+          "formal": 362.19999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 2484.5,
+          "end": 2624.4000000000233,
+          "first": 121.80000000004657,
+          "formal": 649.1999999999534,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 2631.0999999999767,
+          "end": 2772.70000000007,
+          "first": 195.40000000002328,
+          "formal": 500.89999999990687,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2777.8000000000466,
+          "end": 2921.0999999999767,
+          "first": 155.5,
+          "formal": 352.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 2926,
+          "end": 3068.5,
+          "first": 116.70000000006985,
+          "formal": 675,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 3073.4000000000233,
+          "end": 3214.0999999999767,
+          "first": 192.69999999995343,
+          "formal": 529.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 3219.3000000000466,
+          "end": 3362.3000000000466,
+          "first": 153.79999999993015,
+          "formal": 381.19999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 3367.0999999999767,
+          "end": 3515,
+          "first": 132.5,
+          "formal": 359.20000000006985,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "thin",
+      "mode": "D",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 0.30000000004656613,
+        "p95": 1.1999999999534339,
+        "max": 4.900000000023283
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 1.1999999999534339,
+        "p95": 5.200000000069849,
+        "max": 5.200000000069849
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.40000000002328306,
+        "p95": 0.5999999999767169,
+        "max": 0.5999999999767169
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.19999999995343387,
+        "p95": 0.30000000004656613,
+        "max": 2.300000000046566
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 169.30000000004657,
+        "p95": 182.59999999997672,
+        "max": 182.59999999997672
+      },
+      "cpuSubmission": {
+        "count": 48,
+        "p50": 0.2000000000698492,
+        "p95": 0.40000000002328306,
+        "max": 0.5
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 87,
+        "p50": 16.699999999999818,
+        "p95": 83.40000000000009,
+        "max": 99.89999999999964
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 204,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 192,
+        "diameter": 64,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "auto",
+          "route": "cpu",
+          "reason": "前の仮線との重なり順を守るため、今回も仮線を表示",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": 35.90000000002328,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": null,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 24,
+          "gpuSamples": 0
+        },
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 13,
+        "pendingFinalizations": 0,
+        "updates": 204,
+        "updatedPixels": 208896,
+        "rasterPixels": 19550,
+        "skippedRasterPixels": 0,
+        "commands": 204,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 27125280,
+        "guardCaptures": 12,
+        "guardCaptureMs": 368.30000000004657,
+        "peakBytes": 27354656,
+        "peakPixels": 49152,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 2.900000000023283,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 216,
+        "maxSliceMs": 3,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "auto",
+        "route": "cpu",
+        "reason": "前の仮線との重なり順を守るため、今回も仮線を表示",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": 35.90000000002328,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": null,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 0
+      },
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 33100000,
+      "gpuQueueCompletionProxyMs": 105.10000000009313,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 1462.7999999999302,
+          "end": 1608.8999999999069,
+          "first": 5.200000000069849,
+          "formal": 179.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1617.7999999999302,
+          "end": 1797.1999999999534,
+          "first": 1.3000000000465661,
+          "formal": 174.69999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1803.5,
+          "end": 1969.0999999999767,
+          "first": 1.3999999999068677,
+          "formal": 169.5,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1973.8999999999069,
+          "end": 2140.5999999999767,
+          "first": 1,
+          "formal": 152.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 2145.5999999999767,
+          "end": 2310.79999999993,
+          "first": 0.9000000000232831,
+          "formal": 163.40000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 2316.0999999999767,
+          "end": 2485.29999999993,
+          "first": 1.1999999999534339,
+          "formal": 169.30000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 2491.29999999993,
+          "end": 2665.899999999907,
+          "first": 1.099999999976717,
+          "formal": 155.40000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2670.6999999999534,
+          "end": 2839,
+          "first": 1.1999999999534339,
+          "formal": 182.59999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 2848.399999999907,
+          "end": 3016.899999999907,
+          "first": 2.300000000046566,
+          "formal": 154.30000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 3022,
+          "end": 3200.899999999907,
+          "first": 1.1999999999534339,
+          "formal": 176.10000000009313,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 3206,
+          "end": 3369.29999999993,
+          "first": 1,
+          "formal": 171.70000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 3381,
+          "end": 3553.6999999999534,
+          "first": 1.1999999999534339,
+          "formal": 150.80000000004657,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "pencil",
+      "mode": "A",
+      "baselineFailure": "Error: page.evaluate: Error: idle {\"r\":[],\"s\":[],\"p\":{\"scope\":\"CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured\",\"kind\":\"stroke-only\",\"transport\":\"2d\",\"coupled\":false,\"ready\":true,\"viewEpoch\":2,\"generation\":1,\"visibleArea\":251160,\"density\":3,\"ratio\":1,\"requestedRatio\":\"auto\",\"scale\":3,\"screenWidth\":390,\"screenHeight\":644,\"width\":128,\"height\":128,\"visiblePixelBudget\":2260440,\"diameter\":2048,\"pixels\":16384,\"bytes\":65536,\"rasterByteBudget\":67108864,\"pendingStrokes\":0,\"fallback\":true,\"allocations\":3,\"pendingFinalizations\":0,\"updates\":1,\"updatedPixels\":2299904,\"rasterPixels\":4136537,\"skippedRasterPixels\":0,\"commands\":2,\"historyReplayCommands\":0,\"historyRebuilds\":0,\"guardPixels\":2260440,\"guardCaptures\":1,\"guardCaptureMs\":34.09999999997672,\"peakBytes\":103341440,\"peakPixels\":2276824,\"superseded\":0,\"rebuilds\":0,\"fallbacks\":215,\"retirements\":8,\"samples\":[{\"id\":1,\"inputAt\":1442.5,\"finished\":false,\"at\":1761,\"cpuMs\":317.9000000000233,\"inputToUploadMs\":318.5,\"updatedPixels\":2299904,\"proxyPixels\":2276824,\"visibleArea\":251160,\"viewEpoch\":2,\"generation\":1}],\"maxCpuMs\":317.9000000000233,\"backgroundSlices\":0,\"maxBackgroundMs\":0,\"finalizationSwaps\":0,\"obsoleteFinalizations\":0},\"jobs\":8}\n    at idle (eval at evaluate (:290:30), <anonymous>:5:321)\n    at eval (eval at evaluate (:290:30), <anonymous>:21:10)\n    at async <anonymous>:316:30",
+      "diagnostic": {
+        "summary": {
+          "instantPreview": {
+            "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+            "kind": "stroke-only",
+            "transport": "2d",
+            "coupled": false,
+            "ready": true,
+            "viewEpoch": 2,
+            "generation": 1,
+            "visibleArea": 251160,
+            "density": 3,
+            "ratio": 1,
+            "requestedRatio": "auto",
+            "scale": 3,
+            "screenWidth": 390,
+            "screenHeight": 644,
+            "width": 128,
+            "height": 128,
+            "visiblePixelBudget": 2260440,
+            "diameter": 2048,
+            "pixels": 16384,
+            "bytes": 65536,
+            "rasterByteBudget": 67108864,
+            "pendingStrokes": 0,
+            "fallback": true,
+            "allocations": 3,
+            "pendingFinalizations": 0,
+            "updates": 1,
+            "updatedPixels": 2299904,
+            "rasterPixels": 4136537,
+            "skippedRasterPixels": 0,
+            "commands": 2,
+            "historyReplayCommands": 0,
+            "historyRebuilds": 0,
+            "guardPixels": 2260440,
+            "guardCaptures": 1,
+            "guardCaptureMs": 34.09999999997672,
+            "peakBytes": 103341440,
+            "peakPixels": 2276824,
+            "superseded": 0,
+            "rebuilds": 0,
+            "fallbacks": 215,
+            "retirements": 8,
+            "samples": [
+              {
+                "id": 1,
+                "inputAt": 1442.5,
+                "finished": false,
+                "at": 1761,
+                "cpuMs": 317.9000000000233,
+                "inputToUploadMs": 318.5,
+                "updatedPixels": 2299904,
+                "proxyPixels": 2276824,
+                "visibleArea": 251160,
+                "viewEpoch": 2,
+                "generation": 1
+              }
+            ],
+            "maxCpuMs": 317.9000000000233,
+            "backgroundSlices": 0,
+            "maxBackgroundMs": 0,
+            "finalizationSwaps": 0,
+            "obsoleteFinalizations": 0
+          },
+          "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+          "inputToPreviewSubmitP95Ms": 549.1999999999534,
+          "inputToPreviewCompletionP95Ms": 684.1999999999534,
+          "presentations": 16,
+          "viewPresentations": 1,
+          "renders": 15,
+          "compositedTiles": 14,
+          "compositedLayerPasses": 14,
+          "supersededViews": 0,
+          "submissionFps": 7.555064799209829,
+          "frameIntervalP95Ms": 195.30000000004657,
+          "inputToSubmissionP95Ms": null,
+          "cpuSubmitP95Ms": 1.599999999976717,
+          "queueCompletionProxyMs": 130.19999999995343,
+          "gpuExecutionMs": null,
+          "historyGpuReservedBytes": 524288,
+          "historyGpuBudgetBytes": 16777216,
+          "historyBaseReuses": 0,
+          "historySupersededGpuJobs": 0,
+          "historySupersededGpuCommands": 0,
+          "tileHistory": {
+            "copies": 8,
+            "sharedBefore": 8,
+            "spilled": 0,
+            "hotTiles": 0,
+            "coldTiles": 0,
+            "emptyTiles": 0,
+            "restores": 0,
+            "recoveryFallbacks": 0,
+            "storageErrors": 0,
+            "maxSliceMs": 0,
+            "gpuBytes": 524288,
+            "gpuBudget": 16777216,
+            "peakGpuBytes": 524288,
+            "readbackBytes": 0,
+            "patches": 9,
+            "versions": 8,
+            "pressure": false,
+            "archive": {
+              "mode": "opfs",
+              "memoryBudget": 8388608,
+              "memoryBytes": 0,
+              "diskBudget": 54589451,
+              "diskBytes": 0,
+              "blocks": 0,
+              "aliases": 0,
+              "hits": 0,
+              "diskHits": 0,
+              "memoryHits": 0,
+              "misses": 0,
+              "spills": 0,
+              "evictions": 0,
+              "storageErrors": 0,
+              "hashDeduplications": 0
+            }
+          },
+          "historyCachedStrokes": 9,
+          "historyRetirementPeakBytes": 0,
+          "historyRetiredPendingBytes": 0,
+          "occupiedGpuTiles": 1,
+          "minificationBytes": 0,
+          "minificationUpdates": 0,
+          "previewBytes": 1048576,
+          "previewBudgetBytes": 268435456,
+          "previewPressure": false,
+          "previewDeferredFrames": 0,
+          "previewPoolBytes": 0,
+          "peakPreviewBytes": 1048576,
+          "viewportCacheBytes": 9041760,
+          "viewportCacheBudgetBytes": 33554432,
+          "screenShadedPixels": 38427480,
+          "screenCopiedPixels": 36167040,
+          "screenCacheHits": 3,
+          "formalJobs": 8,
+          "formalBatchLimit": 16,
+          "formalSubmitCpuMs": 0.6999999999534339,
+          "formalCommands": 52,
+          "formalCommandsPruned": 0
+        },
+        "error": "Error: Overlay memory pressure; exact GPU feedback retained"
+      }
+    },
+    {
+      "backend": "webgpu",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "pencil",
+      "mode": "B",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 0.5,
+        "p95": 1.1000000000931323,
+        "max": 5.300000000046566
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 1.1999999999534339,
+        "p95": 6.099999999976717,
+        "max": 6.099999999976717
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5,
+        "p95": 0.7999999999301508,
+        "max": 0.7999999999301508
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.19999999995343387,
+        "p95": 0.39999999990686774,
+        "max": 2
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 281,
+        "p95": 319.30000000004657,
+        "max": 319.30000000004657
+      },
+      "cpuSubmission": {
+        "count": 44,
+        "p50": 0.2999999999301508,
+        "p95": 0.5999999999767169,
+        "max": 0.7999999999301508
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 105,
+        "p50": 16.699999999999818,
+        "p95": 83.29999999999973,
+        "max": 83.40000000000009
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 216,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 192,
+        "diameter": 2048,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "cpu",
+          "route": "cpu",
+          "reason": "比較用に指定された方式",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": 19.300000000046566,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": null,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 24,
+          "gpuSamples": 0
+        },
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 13,
+        "pendingFinalizations": 0,
+        "updates": 216,
+        "updatedPixels": 221184,
+        "rasterPixels": 78336,
+        "skippedRasterPixels": 0,
+        "commands": 408,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 27125280,
+        "guardCaptures": 12,
+        "guardCaptureMs": 414.9000000001397,
+        "peakBytes": 27371040,
+        "peakPixels": 65536,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 3.300000000046566,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 216,
+        "maxSliceMs": 3.5,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "cpu",
+        "route": "cpu",
+        "reason": "比較用に指定された方式",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": 19.300000000046566,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": null,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 0
+      },
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 33100000,
+      "gpuQueueCompletionProxyMs": 107.20000000006985,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 1498.4000000000233,
+          "end": 1644,
+          "first": 6.099999999976717,
+          "formal": 203.90000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1652.6999999999534,
+          "end": 1827.1999999999534,
+          "first": 2.099999999976717,
+          "formal": 237.30000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1833.2999999999302,
+          "end": 2013.2999999999302,
+          "first": 1.2000000000698492,
+          "formal": 251.10000000009313,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 2018.2999999999302,
+          "end": 2190.0999999999767,
+          "first": 1.400000000023283,
+          "formal": 257.5999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 2194.9000000000233,
+          "end": 2369.1999999999534,
+          "first": 1,
+          "formal": 261.80000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 2374.29999999993,
+          "end": 2549.5,
+          "first": 1.3000000000465661,
+          "formal": 283.5999999999767,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 2554.29999999993,
+          "end": 2730.0999999999767,
+          "first": 1.2000000000698492,
+          "formal": 286.9000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2734.9000000000233,
+          "end": 2916.5999999999767,
+          "first": 1.1999999999534339,
+          "formal": 281,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 2921.4000000000233,
+          "end": 3098.5,
+          "first": 1.1999999999534339,
+          "formal": 302.29999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 3107.29999999993,
+          "end": 3278.29999999993,
+          "first": 1.1000000000931323,
+          "formal": 319.30000000004657,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 3285.29999999993,
+          "end": 3464.4000000000233,
+          "first": 1.1000000000931323,
+          "formal": 316.19999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 3469.9000000000233,
+          "end": 3656.5,
+          "first": 1.1999999999534339,
+          "formal": 290.79999999993015,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "pencil",
+      "mode": "C",
+      "inputToDisplayProxy": {
+        "count": 13,
+        "p50": 117.90000000002328,
+        "p95": 211.90000000002328,
+        "max": 211.90000000002328
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 162.09999999997672,
+        "p95": 1217,
+        "max": 1217
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5999999999767169,
+        "p95": 3.5,
+        "max": 3.5
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.09999999997671694,
+        "p95": 0.2000000000698492,
+        "max": 0.7999999999301508
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 781.2000000000698,
+        "p95": 1221.8000000000466,
+        "max": 1221.8000000000466
+      },
+      "cpuSubmission": {
+        "count": 17,
+        "p50": 0.6999999999534339,
+        "p95": 1.3999999999068677,
+        "max": 1.3999999999068677
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 56,
+        "p50": 16.699999999999818,
+        "p95": 166.60000000000036,
+        "max": 166.69999999999982
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 0,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 0,
+        "height": 0,
+        "visiblePixelBudget": 192,
+        "diameter": 2048,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "gpu",
+          "route": "gpu",
+          "reason": "比較用に指定された方式",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": null,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": 220.5,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 0,
+          "gpuSamples": 13
+        },
+        "pixels": 0,
+        "bytes": 0,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 0,
+        "pendingFinalizations": 0,
+        "updates": 0,
+        "updatedPixels": 0,
+        "rasterPixels": 0,
+        "skippedRasterPixels": 0,
+        "commands": 0,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 0,
+        "guardCaptures": 0,
+        "guardCaptureMs": 0,
+        "peakBytes": 0,
+        "peakPixels": 0,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 0,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 0,
+        "maxSliceMs": 0,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "gpu",
+        "route": "gpu",
+        "reason": "比較用に指定された方式",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": null,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": 220.5,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 0,
+        "gpuSamples": 13
+      },
+      "routes": [
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu",
+        "gpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 10000000,
+      "gpuQueueCompletionProxyMs": 97.40000000002328,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 1479.6999999999534,
+          "end": 1625.4000000000233,
+          "first": 106.5,
+          "formal": 555.9000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1631.0999999999767,
+          "end": 1773.9000000000233,
+          "first": 169.20000000006985,
+          "formal": 407.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1784.6999999999534,
+          "end": 1925.0999999999767,
+          "first": 125.60000000009313,
+          "formal": 1221.8000000000466,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 1929.9000000000233,
+          "end": 2078.0999999999767,
+          "first": 1217,
+          "formal": 1068.8000000000466,
+          "firstProxyKind": "formal completion upper bound; no live timing sample"
+        },
+        {
+          "id": 37,
+          "at": 2083.5,
+          "end": 2237.5,
+          "first": 207,
+          "formal": 909.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 2242.5999999999767,
+          "end": 2385,
+          "first": 159.70000000006985,
+          "formal": 1080.1999999999534,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 2390.4000000000233,
+          "end": 2533.4000000000233,
+          "first": 196.90000000002328,
+          "formal": 931.9000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2540.5,
+          "end": 2684.0999999999767,
+          "first": 162.09999999997672,
+          "formal": 781.2000000000698,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 2689,
+          "end": 2835.0999999999767,
+          "first": 125.09999999997672,
+          "formal": 845.2000000000698,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 2839.8000000000466,
+          "end": 2983.0999999999767,
+          "first": 840.5,
+          "formal": 697.2000000000698,
+          "firstProxyKind": "formal completion upper bound; no live timing sample"
+        },
+        {
+          "id": 91,
+          "at": 2988.3000000000466,
+          "end": 3133.5,
+          "first": 144.19999999995343,
+          "formal": 546.8000000000466,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 3138.0999999999767,
+          "end": 3287,
+          "first": 542.2000000000698,
+          "formal": 393.30000000004657,
+          "firstProxyKind": "formal completion upper bound; no live timing sample"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "backend": "webgpu",
+      "width": 4000,
+      "height": 4000,
+      "zoom": "64",
+      "brush": "pencil",
+      "mode": "D",
+      "inputToDisplayProxy": {
+        "count": 204,
+        "p50": 0.5,
+        "p95": 1.2000000000698492,
+        "max": 50.39999999990687
+      },
+      "firstDisplayProxy": {
+        "count": 12,
+        "p50": 1.1999999999534339,
+        "p95": 5.399999999906868,
+        "max": 5.399999999906868
+      },
+      "nextStrokeAdmission": {
+        "count": 12,
+        "p50": 0.5,
+        "p95": 0.8000000000465661,
+        "max": 0.8000000000465661
+      },
+      "inputCpuMs": {
+        "count": 204,
+        "p50": 0.19999999995343387,
+        "p95": 0.30000000004656613,
+        "max": 2.6000000000931323
+      },
+      "formalAfterUp": {
+        "count": 12,
+        "p50": 245.70000000006985,
+        "p95": 358.79999999993015,
+        "max": 358.79999999993015
+      },
+      "cpuSubmission": {
+        "count": 42,
+        "p50": 0.2999999999301508,
+        "p95": 0.5,
+        "max": 0.5999999999767169
+      },
+      "longTasks": {
+        "count": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "frameInterval": {
+        "count": 105,
+        "p50": 16.699999999999818,
+        "p95": 66.70000000000027,
+        "max": 100
+      },
+      "proxy": {
+        "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+        "kind": "stroke-only",
+        "transport": "2d",
+        "coupled": false,
+        "ready": true,
+        "viewEpoch": 2,
+        "generation": 216,
+        "visibleArea": 251160,
+        "density": 3,
+        "ratio": 0.00002712673611111111,
+        "requestedRatio": "auto",
+        "scale": 1,
+        "screenWidth": 4000,
+        "screenHeight": 4000,
+        "width": 128,
+        "height": 128,
+        "visiblePixelBudget": 192,
+        "diameter": 2048,
+        "clip": [
+          1994,
+          1992,
+          2006,
+          2008
+        ],
+        "sampling": "document-analytic",
+        "samplesPerDocumentPixel": 1,
+        "selection": {
+          "mode": "auto",
+          "route": "cpu",
+          "reason": "前の仮線との重なり順を守るため、今回も仮線を表示",
+          "switches": 0,
+          "profiles": 1,
+          "cpuP95Ms": 9.900000000023283,
+          "cpuWaitLowerBoundP95Ms": null,
+          "gpuP95Ms": null,
+          "cpuUnpresentedSamples": 0,
+          "cpuSamples": 24,
+          "gpuSamples": 0
+        },
+        "pixels": 16384,
+        "bytes": 65536,
+        "rasterByteBudget": 67108864,
+        "pendingStrokes": 0,
+        "fallback": false,
+        "allocations": 13,
+        "pendingFinalizations": 0,
+        "updates": 216,
+        "updatedPixels": 221184,
+        "rasterPixels": 78336,
+        "skippedRasterPixels": 0,
+        "commands": 408,
+        "historyReplayCommands": 0,
+        "historyRebuilds": 0,
+        "guardPixels": 27125280,
+        "guardCaptures": 12,
+        "guardCaptureMs": 398.30000000004657,
+        "peakBytes": 27371040,
+        "peakPixels": 65536,
+        "superseded": 0,
+        "rebuilds": 0,
+        "fallbacks": 0,
+        "retirements": 12,
+        "maxCpuMs": 3.299999999930151,
+        "backgroundSlices": 0,
+        "maxBackgroundMs": 0,
+        "foregroundSlices": 217,
+        "maxSliceMs": 6.299999999930151,
+        "cancelledUpdates": 0,
+        "deadlineFallbacks": 0,
+        "finalizationSwaps": 0,
+        "obsoleteFinalizations": 0
+      },
+      "selection": {
+        "mode": "auto",
+        "route": "cpu",
+        "reason": "前の仮線との重なり順を守るため、今回も仮線を表示",
+        "switches": 0,
+        "profiles": 1,
+        "cpuP95Ms": 9.900000000023283,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": null,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 0
+      },
+      "routes": [
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "rawAccepted": 204,
+      "records": 12,
+      "remainingJobs": 0,
+      "remainingCommands": 0,
+      "jsHeapBytes": 33100000,
+      "gpuQueueCompletionProxyMs": 108.19999999995343,
+      "strokes": [
+        {
+          "id": 1,
+          "at": 1608.9000000000233,
+          "end": 1752.4000000000233,
+          "first": 5.399999999906868,
+          "formal": 204.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 10,
+          "at": 1758.2999999999302,
+          "end": 1936.6999999999534,
+          "first": 2.6000000000931323,
+          "formal": 235.90000000002328,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 19,
+          "at": 1944.6999999999534,
+          "end": 2117.4000000000233,
+          "first": 1.7000000000698492,
+          "formal": 254.79999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 28,
+          "at": 2125.0999999999767,
+          "end": 2315.5,
+          "first": 1.400000000023283,
+          "formal": 240.09999999997672,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 37,
+          "at": 2324.5,
+          "end": 2505.79999999993,
+          "first": 1.1999999999534339,
+          "formal": 233.70000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 46,
+          "at": 2510.5999999999767,
+          "end": 2694.0999999999767,
+          "first": 1.099999999976717,
+          "formal": 245,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 55,
+          "at": 2699.1999999999534,
+          "end": 2859.6999999999534,
+          "first": 1.400000000023283,
+          "formal": 245.70000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 64,
+          "at": 2864.5,
+          "end": 3024.1999999999534,
+          "first": 0.7999999999301508,
+          "formal": 264.4000000000233,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 73,
+          "at": 3028.79999999993,
+          "end": 3184.9000000000233,
+          "first": 1,
+          "formal": 310.69999999995343,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 82,
+          "at": 3189.5,
+          "end": 3361.79999999993,
+          "first": 0.7999999999301508,
+          "formal": 326.70000000006985,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 91,
+          "at": 3367.1999999999534,
+          "end": 3513,
+          "first": 1.099999999976717,
+          "formal": 358.79999999993015,
+          "firstProxyKind": "live upload/completion"
+        },
+        {
+          "id": 100,
+          "at": 3549.79999999993,
+          "end": 3697.29999999993,
+          "first": 1.8000000000465661,
+          "formal": 324.5,
+          "firstProxyKind": "live upload/completion"
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "errors": []
+}
