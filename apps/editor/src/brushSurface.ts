@@ -1,4 +1,5 @@
 import {StrokeHandoff,type StrokeReservation} from './strokeHandoff';
+import {nativeBrushSensors} from './brushInput';
 import {EmptyStrokeError} from './strokeCommit';
 import {hasPixelData} from './persistence/pixelPresence';
 import {canExtendProjection} from './persistence/projectionLineage';
@@ -85,7 +86,7 @@ export class BrushSurface{
   setViewRotation(angle:number,notify=true){if(this.view){this.view.setRotation(angle);this.updateView(notify);}}
   setSeamless(enabled:boolean){if(this.view){this.view.seamless=enabled;this.updateView(true);}}
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
-  private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0),t:e.timeStamp,pressure:e.pressure,pointerType:e.pointerType,tilt:Math.min(1,Math.hypot(e.tiltX,e.tiltY)/90),azimuth:Math.atan2(e.tiltY,e.tiltX),twist:e.twist/360};}
+  private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0),t:e.timeStamp,...nativeBrushSensors(e)};}
   private gesture(){const points=[...this.touchPoints.values()];if(points.length<2)return null;const a=points[0]!,b=points[1]!;return {center:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},distance:Math.max(1,Math.hypot(b.x-a.x,b.y-a.y)),angle:Math.atan2(b.y-a.y,b.x-a.x)};}
   private touchMovement(e:PointerEvent){if(!this.touchPoints.has(e.pointerId)||!this.view)return false;this.touchPoints.set(e.pointerId,this.pointerLocation(e));
     if(this.touchPoints.size>=2){const next=this.gesture();if(next&&this.lastGesture){this.view.zoomAt(next.distance/this.lastGesture.distance,this.lastGesture.center);this.view.rotateAt(next.angle-this.lastGesture.angle,this.lastGesture.center);this.view.pan(next.center.x-this.lastGesture.center.x,next.center.y-this.lastGesture.center.y);this.updateView();}this.lastGesture=next;return true;}
