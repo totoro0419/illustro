@@ -19,11 +19,12 @@ jobs:
         with: {node-version: '24'}
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Frozen foundation and CANONICAL document guards
-        run: npm run prep:check
-      - name: Core and Brush regression
+      - name: Build frozen Brush artifact and check canonical/source-lock
         run: |
           npm run brush:build
+          npm run prep:check
+      - name: Core and Brush regression
+        run: |
           npm run core:check
           npm run brush:regression
       - name: M10 and older editor tests and TypeScript
