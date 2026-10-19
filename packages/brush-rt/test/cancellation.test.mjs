@@ -41,10 +41,10 @@ test('in-flight cancellation waits for resource safety, preserves layer identity
    poll(){if(ready){ready=false;resolveSubmission();return true;}},setViewTransform(v){this.viewTransform=v;},presentView(){calls.views++;return true;},
    cancelStroke(id,keys,surface){assert.equal(r.inflight,false);calls.cancels.push({id,keys,surface});},retirePreview(id){calls.retired.push(id);},clear(){calls.resets++;},
   };
-  const r=new GpuRenderer(backend,512,384),b=new CanonicalBuilder(referenceBrushes[0]);for(let i=0;i<50;i++)b.accept({x:40+i*3,y:40,t:i,pointerType:'touch'});b.finish();
+  const r=new GpuRenderer(backend,512,384),b=new CanonicalBuilder(referenceBrushes[0]);backend.canvas={style:{}};const view=new Float32Array([800,600,800,600,512,384,1,0,0,0,1,1,0,0,0,0]);backend.viewTransform=view;r.presentationView=view.slice();for(let i=0;i<50;i++)b.accept({x:40+i*3,y:40,t:i,pointerType:'touch'});b.finish();
   backend.tiles.set('a\u00000,0',committed);r.document.append(1,b.p,b.commands,null,'a');r.frame(0);assert.equal(r.inflight,true);
   r.previewStates.set(1,{id:1});r.previewStates.set(8000001,{id:8000001});r.wrapPreviews.set(1,[8000001]);r.wrapCaches.set(1,{});r.snapshot={id:1};r.mailbox.set({id:1});
-  const cancelled=r.cancelStroke(1);r.setViewTransform(new Float32Array([1,2,3]));r.frame(1);assert.equal(calls.views,1,'navigation is not blocked by cancellation completion');assert.equal(calls.cancels.length,0);
+  const cancelled=r.cancelStroke(1);const next=view.slice();next[8]=20;r.setViewTransform(next);r.frame(1);assert.equal(backend.canvas.style.transform,'matrix(1,0,0,1,20,0)','navigation is not blocked by cancellation completion');assert.equal(calls.views,0);assert.equal(calls.cancels.length,0);
   ready=true;await cancelled;assert.equal(backend.tiles.get('a\u00000,0'),committed);assert.equal(calls.resets,0);assert.equal(r.document.jobs.length,0);assert.equal(r.document.count,0);
   assert.equal(calls.cancels.length,1);assert.equal(calls.cancels[0].surface,'a');assert.deepEqual(calls.retired,[1,8000001]);assert.equal(r.previewStates.size,0);assert.equal(r.wrapPreviews.size,0);assert.equal(r.wrapCaches.size,0);assert.equal(r.snapshot,null);assert.equal(r.mailbox.value,null);assert.deepEqual(r.errors,[]);
  }finally{globalThis.requestAnimationFrame=original;}

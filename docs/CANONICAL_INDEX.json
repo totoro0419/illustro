@@ -2023,6 +2023,18 @@
     {
       "path": "scripts/m10-preview-availability.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-navigation-review.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-navigation-validation.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_NAVIGATION_2026-10-19.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

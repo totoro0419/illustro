@@ -29,7 +29,7 @@ test('opaque stable interiors need no repeated pixel coverage evaluation',()=>{c
 
 test('hidden upper layers do not block top-visible paint, while layer opacity stays exact-only',()=>{const r=record(),b={surfaceStack:['a','b'],surfaceStyles:new Map([['b',{visible:false,opacity:1}]])};assert.equal(directOverlaySupported(r.preset,'a',b),true);assert.equal(directOverlaySupported(r.preset,'b',b),false);b.surfaceStyles.set('a',{visible:true,opacity:.5});assert.equal(directOverlaySupported(r.preset,'a',b),false);});
 
-function isolated(){const value=setup(),layers=new Map;value.sink.forStroke=id=>{if(!layers.has(id))layers.set(id,{pixels:0,frames:[],configure(p,b){this.scale=p.scale;this.pixels=Math.ceil((b[2]-b[0])*p.scale)*Math.ceil((b[3]-b[1])*p.scale);return true;},draw(p,r,g,c){this.frames.push(c);}});return layers.get(id);};value.sink.retireStroke=id=>layers.delete(id);return {...value,layers};}
+function isolated(){const value=setup(),layers=new Map;value.sink.forStroke=id=>{if(!layers.has(id))layers.set(id,{pixels:0,frames:[],reproject(){},configure(p,b){this.scale=p.scale;this.pixels=Math.ceil((b[2]-b[0])*p.scale)*Math.ceil((b[3]-b[1])*p.scale);return true;},draw(p,r,g,c){this.frames.push(c);}});return layers.get(id);};value.sink.retireStroke=id=>layers.delete(id);return {...value,layers};}
 function faded(){const p=structuredClone(referenceBrushes[0]);p.size=48;p.forceFade.enabled=true;const b=new CanonicalBuilder(p);for(let n=0;n<180;n++)b.accept({x:600+n*12,y:1800+Math.sin(n/8)*100,t:100+n*4,pressure:.7,pointerType:'pen'});b.finish();return b.record();}
 test('a newer stroke does not resize or redraw an older long stroke bitmap',()=>{const {p,layers}=isolated(),r=record(64);p.enqueue({...live(r),finished:false});flush(p);const old=layers.get(1),count=old.frames.length;p.enqueue(live(record(4),10));flush(p);assert.equal(layers.get(1),old);assert.equal(old.frames.length,count);assert.ok(layers.get(10).frames.length);p.presented(1);assert.equal(layers.has(1),false);assert.ok(layers.has(10));p.destroy();});
 test('final taper builds cooperatively while the previous image and newer input stay available',async()=>{const {p,layers}=isolated(),r=faded(),raw={...r,commands:forceFadePreviewCommands(r.commands,r.preset)},before=JSON.stringify(r);p.enqueue({...live(raw),finished:false});flush(p);const old=p.states.get(1),image=layers.get(1),frames=image.frames.length;p.enqueue({...live(r),resetPreview:true});flush(p);assert.equal(p.states.get(1),old);assert.equal(p.finalizations.size,1);p.enqueue({...live(record(4),10),finished:false});flush(p);assert.equal(image.frames.length,frames);assert.ok(layers.get(10).frames.length);const at=performance.now();while(p.finalizations.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,2));}assert.equal(p.states.get(1).last.stableSource,r.commands);assert.ok(p.states.has(10));assert.ok(p.metrics.backgroundSlices>0);assert.equal(JSON.stringify(r),before);assert.equal(p.error,undefined);p.destroy();});
@@ -42,9 +42,9 @@ test('pending stroke navigation reuses its image while a new line gets the newes
  layers.get(1).reproject=()=>transforms++;const next=view(4000,.4);next[8]=20;
  for(let i=0;i<30;i++){next[8]=i;p.setView(next);flush(p);}
  assert.equal(p.states.get(1),old);assert.equal(p.metrics.commands,commands);assert.equal(p.metrics.rasterPixels,pixels);assert.equal(transforms,30);
- const fresh=record(4);p.enqueue({...live(fresh,10),finished:false});flush(p);assert.deepEqual(p.states.get(10).view,p.view);assert.deepEqual(old.view,originalView);
- const at=performance.now();while(p.viewRefineTimer||p.finalizations.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,5));}
- assert.deepEqual(p.states.get(1).view,p.view);assert.ok(p.states.has(10));assert.equal(p.error,undefined);p.destroy();
+ const fresh=record(4);p.enqueue({...live(fresh,10),finished:false});flush(p);assert.deepEqual(p.states.get(10).view,p.view);assert.deepEqual(old.view,originalView);const afterNewInput=p.metrics.rasterPixels;
+ await new Promise(ok=>setTimeout(ok,120));assert.equal(p.finalizations.size,0);assert.equal('viewRefineTimer' in p,false);
+ assert.deepEqual(p.states.get(1).view,originalView);assert.equal(p.metrics.rasterPixels,afterNewInput);assert.ok(p.states.has(10));assert.equal(p.error,undefined);p.destroy();
 });
 test('affine stroke reprojection matches direct document mapping under pan, zoom, rotation and flips',()=>{
  const from=view(4000,.3),to=view(4000,-.8);to[6]*=1.6;to[8]=31;to[9]=-40;to[10]=-1;
@@ -53,10 +53,16 @@ test('affine stroke reprojection matches direct document mapping under pan, zoom
 });
 
 
-test('a held gesture defers even background refinement until release',async()=>{
+test('a gesture and its release never rebuild the previous stroke image',async()=>{
  const {p,layers,sink}=isolated(),r=record(64);sink.reproject=()=>{};p.enqueue(live(r));flush(p);layers.get(1).reproject=()=>{};
  const before=p.metrics.rasterPixels;p.setNavigationActive(true);p.setView(view(4000,.2));await new Promise(ok=>setTimeout(ok,100));assert.equal(p.metrics.rasterPixels,before);assert.equal(p.finalizations.size,0);
- p.setNavigationActive(false);const at=performance.now();while(p.viewRefineTimer||p.finalizations.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,5));}assert.ok(p.metrics.rasterPixels>before);p.destroy();
+ p.setNavigationActive(false);await new Promise(ok=>setTimeout(ok,120));assert.equal(p.metrics.rasterPixels,before);assert.equal('viewRefineTimer' in p,false);assert.equal(p.finalizations.size,0);p.destroy();
+});
+
+test('navigation cancels private CPU work and never revives it after release',async()=>{
+ const {p,sink}=isolated();sink.reproject=()=>{};const r=record(1024),input=live(r),original=JSON.stringify(r);p.sliceMs=.25;p.enqueue(input);p.safeFlush();assert.ok(p.pending.size||p.states.get(1)?.work,'exercise unfinished CPU work');
+ p.setNavigationActive(true);const pixels=p.metrics.rasterPixels;for(let i=0;i<12;i++){const next=view(4000,i*.03);next[8]=i;p.setView(next);}p.setNavigationActive(false);await new Promise(ok=>setTimeout(ok,120));
+ assert.equal(p.pending.size,0);assert.equal(p.finalizations.size,0);assert.equal(p.metrics.rasterPixels,pixels);for(const v of p.states.values())assert.equal(v.work,null);assert.equal(JSON.stringify(r),original);p.destroy();
 });
 
 
@@ -77,4 +83,4 @@ test('a transition capture requested before Undo cannot resurrect canceled feedb
 
 test('pending bitmap reprojection follows the selected nearest or smooth presentation',()=>{const sink={layers:new Map,rect:[0,0,32,32],element:{style:{}}},from=view(),to=view();to[6]=64;to[13]=1;StrokeSink.prototype.reproject.call(sink,from,to);assert.equal(sink.element.style.imageRendering,'pixelated');to[13]=0;StrokeSink.prototype.reproject.call(sink,from,to);assert.equal(sink.element.style.imageRendering,'auto');});
 
-test('a finer new brush uses its own grid without invalidating the previous pending image',()=>{const {p}=setup(),wide=record(1024);p.enqueue(live(wide));flush(p);const epoch=p.epoch,old=p.states.get(1),count=p.metrics.commands,fine=record(1);p.enqueue({...live(fine,10),finished:false});flush(p);assert.equal(p.epoch,epoch);assert.equal(p.states.get(1),old);assert.equal(p.metrics.commands-count,fine.commands.length);assert.equal(p.viewRefineTimer,null);p.destroy();});
+test('a finer new brush uses its own grid without invalidating the previous pending image',()=>{const {p}=setup(),wide=record(1024);p.enqueue(live(wide));flush(p);const epoch=p.epoch,old=p.states.get(1),count=p.metrics.commands,fine=record(1);p.enqueue({...live(fine,10),finished:false});flush(p);assert.equal(p.epoch,epoch);assert.equal(p.states.get(1),old);assert.equal(p.metrics.commands-count,fine.commands.length);assert.equal('viewRefineTimer' in p,false);p.destroy();});

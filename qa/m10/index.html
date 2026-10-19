@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f7f9fc"><title>Illustro M10｜ブラシの描き心地を確認</title><style>
 :root{color-scheme:light;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#253044;background:#f5f7ff}*{box-sizing:border-box}body{margin:0;padding:clamp(16px,4vw,36px);line-height:1.7}.wrap{max-width:850px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}h1{font-size:clamp(24px,4vw,34px);letter-spacing:-.025em;margin:12px 0 6px}p{color:#526179;margin:0 0 16px}a.primary{display:inline-block;padding:12px 19px;background:#405ed8;color:white;text-decoration:none;border-radius:12px;font-weight:700}.summary{margin:20px 0;color:#46516b}fieldset{background:white;border:1px solid #dce4f6;border-radius:18px;padding:22px;margin:14px 0;box-shadow:0 4px 16px #25315b0b}legend{font-weight:750;padding:0 8px;color:#333f5c}.item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid #eef0f7;cursor:pointer}.item:last-child{border-bottom:0}.item input{width:20px;height:20px;margin-top:4px;accent-color:#5471e4;flex-shrink:0}.small{font-size:13px;color:#6a778e}.badge{font-size:12px;background:#e9eeff;border-radius:99px;padding:6px 10px;font-weight:700;color:#4159ae}footer{font-size:13px;color:#65738c;margin:24px 0}
-</style></head><body><div class="wrap"><div class="top"><span class="badge">M10 · BRUSH QUALITY</span><a class="primary" href="./app/">描画画面を開く →</a></div><h1>線の描き心地を確認する</h1><p>描画画面を開き、下の項目を実際に試してください。各項目を確認したらチェックを付けられます。合格判定はユーザー自身の確認後に行います。</p><div class="summary"><strong id="progress">0 / 20 項目を確認</strong><div class="small">チェックはこのブラウザーに保存されます。線の品質だけでなく、以前使えていた機能も確かめてください。</div></div><fieldset><legend>線の形・描き心地</legend>
+</style></head><body><div class="wrap"><div class="top"><span class="badge">M10 · BRUSH QUALITY</span><a class="primary" href="./app/">描画画面を開く →</a></div><h1>線の描き心地を確認する</h1><p>描画画面を開き、下の項目を実際に試してください。各項目を確認したらチェックを付けられます。合格判定はユーザー自身の確認後に行います。</p><div class="summary"><strong id="progress">0 / 27 項目を確認</strong><div class="small">チェックはこのブラウザーに保存されます。線の品質だけでなく、以前使えていた機能も確かめてください。</div></div><fieldset><legend>線の形・描き心地</legend>
 <label class="item"><input type="checkbox"><span>細い線をゆっくり描き、ギザギザや太さの揺れが目立たないか</span></label>
 <label class="item"><input type="checkbox"><span>素早く曲線を描き、角ばらず自然についてくるか</span></label>
 <label class="item"><input type="checkbox"><span>ペンで弱く押した線から強く押した線へ、自然に太くなるか</span></label>
@@ -27,6 +27,16 @@
 <p><a href="./app/?perf=1&overlay=auto">自動で選ぶ</a> · <a href="./app/?perf=1&overlay=cpu">仮線を使う</a> · <a href="./app/?perf=1&overlay=gpu">直接表示する</a></p>
 <p class="small">同じ作品サイズ・ブラシ・倍率で比べてください。画面左下の「キャンバスの軽さを確認」を開くと、選ばれた方法と記録を確認できます。比較の記録が少ないときは仮線を使い、記録が集まると別の一筆で直接表示も比較します。一筆の途中では通常は変更しません。</p>
 <p class="small"><a href="./evidence/preview/report.json">描画の測定記録</a> · <a href="./evidence/preview/qa-status.json">検査済みの範囲と未確認事項</a></p>
+</fieldset><fieldset><legend>描いた直後の画面操作</legend>
+<p class="small">描いて指・ペンを離したら、すぐ2本指で移動・拡大・回転してください。マウスではSpaceを押しながらドラッグし、ホイールも試してください。512×384、2000×2000、4000×4000、全体表示から6400%までで比べてください。</p>
+<label class="item"><input type="checkbox"><span>短い線を描いた直後、待たずにキャンバスを動かせるか</span></label>
+<label class="item"><input type="checkbox"><span>長い線・10本以上の連続描画の直後にも、画面を動かせるか</span></label>
+<label class="item"><input type="checkbox"><span>4000×4000の作品でも、描いた直後の移動が長時間止まらないか</span></label>
+<label class="item"><input type="checkbox"><span>描いた直後の拡大・縮小・回転がすぐ画面に反映されるか</span></label>
+<label class="item"><input type="checkbox"><span>動かした線が消えたり、古い位置へ戻ったりしないか</span></label>
+<label class="item"><input type="checkbox"><span>薄い線・鉛筆・消しゴムでも、二重表示や濃さの変化がないか</span></label>
+<label class="item"><input type="checkbox"><span>画面操作後の次の一筆・Undo・Redo・保存・再読み込みが正しいか</span></label>
+<p class="small">上の3つの表示方法を同じ条件で比べてください。完了を待たず表示済み画像を動かすため、画面外から現れる部分は後から更新される場合があります。<a href="./evidence/navigation/summary.json">今回の操作遅延・検査範囲</a></p>
 </fieldset><p class="small">未対応端末ではペンの筆圧を確認できない場合があります。確認できない項目は無理にチェックせず、端末名とともに報告してください。</p><footer>M10の確認用ページです。過去のM01～M09の確認ページには変更を加えません。</footer></div><script>
 const boxes=[...document.querySelectorAll('input[type="checkbox"]')];let data=[];try{data=JSON.parse(localStorage.getItem('illustro-m10-review')||'[]')}catch{}
 const status=document.querySelector('#progress');function update(){status.textContent=boxes.filter(x=>x.checked).length+' / '+boxes.length+' 項目を確認';}
