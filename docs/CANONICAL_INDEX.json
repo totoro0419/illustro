@@ -1979,6 +1979,18 @@
     {
       "path": "docs/research/PENDING_STROKE_UNDO_2026-10-18.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/brushPresets.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/brushPresets.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_BRUSH_QUALITY_RESEARCH.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }
