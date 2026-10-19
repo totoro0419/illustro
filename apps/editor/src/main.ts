@@ -36,6 +36,7 @@ const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();
 const foreground=new ForegroundColor();
 const brushPresets=new BrushPresetLibrary();
+let builtInBrushes:FoundationPreset[]=[];
 let eyedropperOriginal=foreground.current;
 let historyNavigation:HistoryNavigation|undefined;
 const admittedHistoryChanges:EditorHistoryChange[]=[];
@@ -298,7 +299,8 @@ byId('geometryApply').onclick=()=>{void applyGeometry();};
 async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache']){
   if(!surface)throw new Error('描画面がありません。');
   await surface.initialize();
-  surface.setBrushes(brushPresets.all(surface.brushes));
+  builtInBrushes=surface.brushes.map(p=>structuredClone(p));
+  surface.setBrushes(brushPresets.all(builtInBrushes));
   refreshBrushOptions();
   if(brushPresets.loadError)byId('brushLibraryStatus').textContent='保存済みブラシを読み取れませんでした: '+brushPresets.loadError;
   lastBrushPresetId=surface.brushes.some(p=>p.id===lastBrushPresetId)?lastBrushPresetId:surface.brushes.find(p=>p.blend!=='erase')?.id??surface.brushes[0]?.id??lastBrushPresetId;
@@ -449,7 +451,7 @@ function refreshBrushOptions(){
 }
 function refreshBrushCatalog(selectId?:string){
  if(!surface)return;
- surface.setBrushes(brushPresets.all(surface.brushes.filter(p=>!brushPresets.isUser(p.id))));
+ surface.setBrushes(brushPresets.all(builtInBrushes));
  refreshBrushOptions();
  if(selectId)selectPreset(selectId);else if(surface.preset)selectPreset(surface.preset.id);
 }
