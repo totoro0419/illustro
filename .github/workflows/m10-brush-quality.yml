@@ -1,0 +1,123 @@
+name: M10 Brush Quality (partial implementation)
+on:
+  push:
+    branches: ['milestone/M10-brush-quality']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: m10-brush-quality
+  cancel-in-progress: true
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Frozen foundation and CANONICAL document guards
+        run: npm run prep:check
+      - name: Core and Brush regression
+        run: |
+          npm run brush:build
+          npm run core:check
+          npm run brush:regression
+      - name: M10 and older editor tests and TypeScript
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Build production editor for QA
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm --workspace @illustro/editor exec -- vite build --base=./
+          test -f apps/editor/dist/index.html
+          test -f apps/editor/dist/sw.js
+      - name: Chromium and software WebGL2/WebGPU checks
+        run: |
+          npm install --prefix /tmp/m10-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/m10-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: M10 brush management, stroke/Undo and save-reload review
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m10-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          M10_EVIDENCE: /tmp/m10-evidence/brush.json
+        run: node scripts/m10-brush-review.mjs
+      - name: WebGL2/WebGPU M08 presentation regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m10-browser/node_modules/playwright
+          M08_EVIDENCE_DIRECTORY: /tmp/m10-evidence/m08
+          M08_SMOKE_QUICK: '1'
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m08-smoke.mjs
+      - name: M09 Color picker and palette regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m10-browser/node_modules/playwright
+          M09_EVIDENCE_DIRECTORY: /tmp/m10-evidence/m09
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m09-smoke.mjs
+      - name: M05 save/recovery regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m10-browser/node_modules/playwright
+          M05_EVIDENCE_DIRECTORY: /tmp/m10-evidence/m05
+          M05_EXPECT_MILESTONE: M07
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-m05-smoke.mjs
+      - name: My Works open/recovery regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m10-browser/node_modules/playwright
+          MY_WORKS_EVIDENCE: /tmp/m10-evidence/my-works.json
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/my-works-open-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m10-evidence
+          path: /tmp/m10-evidence
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: m10-verified-editor
+          path: apps/editor/dist/
+  publish-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [verification]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site, fetch-depth: 0}
+      - uses: actions/download-artifact@v4
+        with: {name: m10-verified-editor, path: site/qa/m10/app}
+      - uses: actions/download-artifact@v4
+        with: {name: m10-evidence, path: site/qa/m10/evidence}
+      - name: Preserve prior milestones and publish only M10
+        run: |
+          cp qa/m10/index.html site/qa/m10/index.html
+          touch site/.nojekyll
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for m in 01 02 03 04 05 06 07 08 09; do test -f "qa/m$m/index.html"; done
+          git add qa/m10
+          test -z "$(git diff --cached --name-only | sed '/^qa\/m10\//d')"
+          git diff --cached --quiet || git commit -m "qa: publish M10 brush review $GITHUB_SHA"
+          git push origin HEAD:gh-pages
+      - name: Public deployment HTTP smoke
+        run: |
+          for i in $(seq 1 20); do
+            status=$(curl -L -sS -o /tmp/m10-public.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m10/?source=$GITHUB_SHA" || true)
+            app=$(curl -L -sS -o /tmp/m10-app.html -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m10/app/?source=$GITHUB_SHA" || true)
+            if [ "$status" = 200 ] && [ "$app" = 200 ] && grep -q 'ブラシの描き心地' /tmp/m10-public.html; then break; fi
+            sleep 6
+          done
+          test "$status" = 200
+          test "$app" = 200
+          for m in 01 02 03 04 05 06 07 08 09; do
+            code=$(curl -L -sS -o /dev/null -w '%{http_code}' "https://totoro0419.github.io/illustro/qa/m$m/")
+            test "$code" = 200
+          done
