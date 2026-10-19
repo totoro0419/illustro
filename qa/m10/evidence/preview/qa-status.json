@@ -1,0 +1,40 @@
+{
+  "sourceCommit": "4617cdaef94a135752c0fa122741f11c2d7aff55",
+  "baseline": "4708ffe5136ad1fa47be5909c129bb5f8fcb7869",
+  "status": "AUTOMATED CHECKS PASSED; USER REVIEW REQUIRED",
+  "milestoneAccepted": false,
+  "userAccepted": false,
+  "physicalDevicesVerified": false,
+  "matrixCases": 1120,
+  "sustainedCases": 84,
+  "autoComparisons": 280,
+  "baselineMemoryFailures": 8,
+  "forcedGpuCasesWithZeroCpuWork": 280,
+  "highZoomMaterialReductionCases": 8,
+  "availabilityCases": 4,
+  "quality": [
+    {
+      "directory": "quality-fit",
+      "exactFinalScreenshots": 88,
+      "cpuPreviewsWithinBaseline": 36
+    },
+    {
+      "directory": "quality-zoom",
+      "exactFinalScreenshots": 8,
+      "cpuPreviewsWithinBaseline": 4
+    },
+    {
+      "directory": "quality-rotated",
+      "exactFinalScreenshots": 8,
+      "cpuPreviewsWithinBaseline": 4
+    }
+  ],
+  "scope": "Matched baseline / forced CPU / forced GPU / auto. CPU upload and GPU completion proxies; screenshots sample the browser compositor, not physical display. Longtask observer detects main tasks >=50ms.",
+  "limits": [
+    "CPU canvas uploads and GPU completion are different proxies; physical display latency is unmeasured.",
+    "Cold-route sampling can be slower on an exploratory stroke; steady choices reuse recent contextual samples.",
+    "Task budget bounds cooperative calculations; driver, canvas allocation and GC can exceed it.",
+    "Actual Android pen/touch feel, physical VRAM, heat/power and complete device-loss recovery require separate verification.",
+    "Other unfinished M10 quality items remain unfinished."
+  ]
+}

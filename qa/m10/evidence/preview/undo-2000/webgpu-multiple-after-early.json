@@ -1,0 +1,404 @@
+{
+  "before": {
+    "at": 10787.299999999814,
+    "logical": 2,
+    "gpu": 0,
+    "jobs": 0,
+    "records": 0,
+    "strokes": 0,
+    "pointerUpAt": 10754.799999999814
+  },
+  "early": {
+    "at": 11025.399999999441,
+    "undoAt": 10819.199999999255,
+    "gateReleased": false,
+    "strokes": 0,
+    "historyPending": false,
+    "logical": 1,
+    "visibility": [
+      {
+        "direction": "undo",
+        "id": 10,
+        "at": 10819.699999999255,
+        "invalidatedAt": 10820.099999999627,
+        "kind": "reserved"
+      }
+    ],
+    "input": [
+      {
+        "at": 10802.899999999441,
+        "eventAt": 10798,
+        "type": "pointerdown",
+        "trusted": true,
+        "pointerType": "touch",
+        "button": "compactUndo",
+        "disabled": false
+      },
+      {
+        "at": 10819.199999999255,
+        "eventAt": 10803.5,
+        "type": "pointerup",
+        "trusted": true,
+        "pointerType": "touch",
+        "button": "compactUndo",
+        "disabled": false
+      }
+    ],
+    "firstPresentationAt": null,
+    "historyInputs": [
+      {
+        "at": 10803,
+        "eventAt": 10798,
+        "button": "compactUndo",
+        "direction": "undo",
+        "phase": "down",
+        "pointerType": "touch",
+        "disabled": false
+      },
+      {
+        "at": 10819.299999999814,
+        "eventAt": 10803.5,
+        "button": "compactUndo",
+        "direction": "undo",
+        "phase": "up",
+        "pointerType": "touch",
+        "disabled": false
+      },
+      {
+        "at": 10821.699999999255,
+        "eventAt": 10803.5,
+        "button": "compactUndo",
+        "direction": "undo",
+        "phase": "accepted",
+        "pointerType": "touch",
+        "disabled": false,
+        "reason": "accepted"
+      }
+    ]
+  },
+  "state": {
+    "commit": "4617cdaef94a135752c0fa122741f11c2d7aff55",
+    "revision": "b63aa18e-6a11-45c9-b718-4bdbf9dbcf2a",
+    "strokes": 0,
+    "historyNavigation": {
+      "pending": false,
+      "queued": 0,
+      "active": 0,
+      "accepted": 0,
+      "refused": 0,
+      "batches": 0,
+      "peak": 0,
+      "fault": null,
+      "traces": []
+    },
+    "historyInputs": [
+      {
+        "at": 10803,
+        "eventAt": 10798,
+        "button": "compactUndo",
+        "direction": "undo",
+        "phase": "down",
+        "pointerType": "touch",
+        "disabled": false
+      },
+      {
+        "at": 10819.299999999814,
+        "eventAt": 10803.5,
+        "button": "compactUndo",
+        "direction": "undo",
+        "phase": "up",
+        "pointerType": "touch",
+        "disabled": false
+      },
+      {
+        "at": 10821.699999999255,
+        "eventAt": 10803.5,
+        "button": "compactUndo",
+        "direction": "undo",
+        "phase": "accepted",
+        "pointerType": "touch",
+        "disabled": false,
+        "reason": "accepted"
+      }
+    ],
+    "instantPreview": {
+      "scope": "CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured",
+      "kind": "stroke-only",
+      "transport": "2d",
+      "coupled": false,
+      "ready": true,
+      "viewEpoch": 7,
+      "generation": 120,
+      "visibleArea": 98570.87279119359,
+      "density": 2,
+      "ratio": 1,
+      "requestedRatio": "auto",
+      "scale": 2,
+      "screenWidth": 334,
+      "screenHeight": 595.5,
+      "width": 128,
+      "height": 128,
+      "visiblePixelBudget": 394284,
+      "diameter": 10.046719551086426,
+      "sampling": "screen",
+      "samplesPerDocumentPixel": 0.3139599859714508,
+      "selection": {
+        "mode": "auto",
+        "route": "cpu",
+        "reason": "別の一筆で、未計測または古くなった表示方法を比較",
+        "switches": 2,
+        "profiles": 1,
+        "cpuP95Ms": 34.09999999962747,
+        "cpuWaitLowerBoundP95Ms": null,
+        "gpuP95Ms": 121.40000000037253,
+        "cpuUnpresentedSamples": 0,
+        "cpuSamples": 24,
+        "gpuSamples": 24
+      },
+      "pixels": 16384,
+      "bytes": 65536,
+      "rasterByteBudget": 67108864,
+      "pendingStrokes": 0,
+      "fallback": false,
+      "allocations": 9,
+      "pendingFinalizations": 0,
+      "updates": 120,
+      "updatedPixels": 681984,
+      "rasterPixels": 164436,
+      "skippedRasterPixels": 0,
+      "commands": 123,
+      "historyReplayCommands": 0,
+      "historyRebuilds": 0,
+      "guardPixels": 0,
+      "guardCaptures": 0,
+      "guardCaptureMs": 0,
+      "peakBytes": 3227648,
+      "peakPixels": 344064,
+      "superseded": 2,
+      "rebuilds": 0,
+      "fallbacks": 0,
+      "retirements": 0,
+      "samples": [],
+      "maxCpuMs": 3.6000000005587935,
+      "backgroundSlices": 0,
+      "maxBackgroundMs": 0,
+      "foregroundSlices": 127,
+      "maxSliceMs": 4.2999999998137355,
+      "cancelledUpdates": 0,
+      "deadlineFallbacks": 1,
+      "finalizationSwaps": 0,
+      "obsoleteFinalizations": 0
+    },
+    "previewSelection": {
+      "mode": "auto",
+      "route": "cpu",
+      "reason": "別の一筆で、未計測または古くなった表示方法を比較",
+      "switches": 2,
+      "profiles": 1,
+      "cpuP95Ms": 34.09999999962747,
+      "cpuWaitLowerBoundP95Ms": null,
+      "gpuP95Ms": 121.40000000037253,
+      "cpuUnpresentedSamples": 0,
+      "cpuSamples": 24,
+      "gpuSamples": 24
+    },
+    "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+    "inputToPreviewSubmitP95Ms": null,
+    "inputToPreviewCompletionP95Ms": null,
+    "presentations": 96,
+    "viewPresentations": 1,
+    "renders": 99,
+    "compositedTiles": 345,
+    "compositedLayerPasses": 345,
+    "supersededViews": 0,
+    "submissionFps": null,
+    "frameIntervalP95Ms": null,
+    "inputToSubmissionP95Ms": null,
+    "cpuSubmitP95Ms": null,
+    "queueCompletionProxyMs": 3.2000000001862645,
+    "gpuExecutionMs": null,
+    "historyGpuReservedBytes": 0,
+    "historyGpuBudgetBytes": 33554432,
+    "historyBaseReuses": 0,
+    "historySupersededGpuJobs": 0,
+    "historySupersededGpuCommands": 0,
+    "tileHistory": {
+      "copies": 0,
+      "sharedBefore": 0,
+      "spilled": 0,
+      "hotTiles": 0,
+      "coldTiles": 0,
+      "emptyTiles": 0,
+      "restores": 0,
+      "recoveryFallbacks": 0,
+      "storageErrors": 0,
+      "maxSliceMs": 0,
+      "gpuBytes": 0,
+      "gpuBudget": 33554432,
+      "peakGpuBytes": 0,
+      "readbackBytes": 0,
+      "patches": 0,
+      "versions": 0,
+      "pressure": false,
+      "archive": {
+        "mode": "opfs",
+        "memoryBudget": 8388608,
+        "memoryBytes": 0,
+        "diskBudget": 110866290,
+        "diskBytes": 0,
+        "blocks": 0,
+        "aliases": 0,
+        "hits": 0,
+        "diskHits": 0,
+        "memoryHits": 0,
+        "misses": 0,
+        "spills": 0,
+        "evictions": 0,
+        "storageErrors": 0,
+        "hashDeduplications": 0
+      }
+    },
+    "historyCachedStrokes": 0,
+    "historyRetirementPeakBytes": 0,
+    "historyRetiredPendingBytes": 0,
+    "occupiedGpuTiles": 0,
+    "minificationBytes": 4000000,
+    "minificationUpdates": 96,
+    "previewBytes": 29818880,
+    "previewBudgetBytes": 268435456,
+    "previewPressure": false,
+    "previewDeferredFrames": 0,
+    "previewPoolBytes": 0,
+    "peakPreviewBytes": 29818880,
+    "viewportCacheBytes": 3182352,
+    "viewportCacheBudgetBytes": 33554432,
+    "screenShadedPixels": 3879628,
+    "screenCopiedPixels": 77172036,
+    "screenCacheHits": 5,
+    "formalJobs": 0,
+    "formalBatchLimit": 16,
+    "formalSubmitCpuMs": 0,
+    "formalCommands": 0,
+    "formalCommandsPruned": 0,
+    "handoff": {
+      "inputAttempts": [
+        {
+          "at": 2089,
+          "eventAt": 2074.899999999441,
+          "reason": null,
+          "state": {
+            "finishing": false,
+            "historySyncing": false,
+            "inputBarrier": false,
+            "pendingLogical": 0,
+            "pendingGpu": 0,
+            "formalCommands": 0,
+            "pendingRaw": 0,
+            "protectionQueue": 0
+          },
+          "acceptedAt": 2093.5999999996275,
+          "id": 1
+        },
+        {
+          "at": 6737.799999999814,
+          "eventAt": 6724.799999999814,
+          "reason": null,
+          "state": {
+            "finishing": false,
+            "historySyncing": false,
+            "inputBarrier": false,
+            "pendingLogical": 1,
+            "pendingGpu": 0,
+            "formalCommands": 0,
+            "pendingRaw": 121,
+            "protectionQueue": 0
+          },
+          "acceptedAt": 6738.5,
+          "id": 10
+        }
+      ],
+      "accepted": 2,
+      "rejected": 0,
+      "pendingLogical": 1,
+      "pendingGpu": 0,
+      "pendingEntries": {
+        "pending": 1,
+        "redo": 1,
+        "publishing": false,
+        "entries": [
+          {
+            "sequence": 1,
+            "visible": true,
+            "recordReady": false,
+            "phase": "reserved"
+          },
+          {
+            "sequence": 2,
+            "visible": false,
+            "recordReady": false,
+            "phase": "undone"
+          }
+        ]
+      },
+      "historyVisibility": [
+        {
+          "direction": "undo",
+          "id": 10,
+          "at": 10819.699999999255,
+          "invalidatedAt": 10820.099999999627,
+          "kind": "reserved"
+        }
+      ],
+      "protectionQueue": 0,
+      "fault": null,
+      "traces": [
+        {
+          "id": 1,
+          "upAt": 6469.299999999814,
+          "readyMs": 1.099999999627471,
+          "uiStateMs": 0.7999999998137355
+        },
+        {
+          "id": 10,
+          "upAt": 10754.799999999814,
+          "readyMs": 1.099999999627471,
+          "uiStateMs": 1
+        }
+      ]
+    },
+    "frameState": {
+      "lastFrameAt": 11017.799999999814,
+      "disposed": false,
+      "pointer": null,
+      "finishing": false,
+      "historySyncing": false,
+      "inputBarrier": false,
+      "pendingRawCount": 242,
+      "formalCommands": 0,
+      "inflight": false,
+      "viewPending": false,
+      "cancellingStroke": false,
+      "needsFrame": false,
+      "jobs": 0,
+      "presentationHeld": false,
+      "glFence": false,
+      "pending": false,
+      "errors": [],
+      "sessionErrors": []
+    },
+    "checkpoint": {
+      "captures": 0,
+      "tiles": 0,
+      "batches": 0,
+      "bytes": 0,
+      "lastMs": 0
+    },
+    "strokeReplayFallbacks": 0,
+    "fullDocumentRebuilds": 1,
+    "fullReplayStrokes": 0,
+    "cancelledStrokeCount": 0,
+    "projectionRestoreMode": "replay-fallback",
+    "checkpointErrors": []
+  },
+  "status": "線を取り消しました。"
+}

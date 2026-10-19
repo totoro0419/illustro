@@ -1,5 +1,5 @@
 {
-  "commit": "4708ffe5136ad1fa47be5909c129bb5f8fcb7869",
+  "commit": "4617cdaef94a135752c0fa122741f11c2d7aff55",
   "mode": "local",
   "tests": [
     {
@@ -150,7 +150,7 @@
       "backend": "WebGL2",
       "width": 2048,
       "ordinal": 1,
-      "elapsedMs": 2109,
+      "elapsedMs": 2396,
       "softwareGpu": false
     },
     {
@@ -158,7 +158,7 @@
       "backend": "WebGL2",
       "width": 2048,
       "ordinal": 2,
-      "elapsedMs": 1135,
+      "elapsedMs": 1109,
       "softwareGpu": false
     },
     {
@@ -229,6 +229,6 @@
     ]
   },
   "referenceLatencyMs": {
-    "webgl2": 2718
+    "webgl2": 3138
   }
 }
