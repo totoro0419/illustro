@@ -212,11 +212,12 @@ try{
   }
 
   // Checkpoint policy: every operation is journaled; finished-state checkpoint is forced
-  // at 12 operations even without an idle gap.
+  // at 12 operations even without an idle gap. Wait for the latest finished
+  // checkpoint; an earlier idle checkpoint must not satisfy this completion gate.
   {
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     for(let i=0;i<12;i++){const y=.10+(i%10)*.075;await draw(page,[.12,y],[.82,y],2);await waitStroke(page,i+1);}
-    await waitProtected(page,12);await page.waitForFunction(()=>{try{const q=JSON.parse(document.querySelector('#qaAuto')?.textContent??'{}');return q.autosaveCheckpoint?.fullSeedPending===false&&q.autosaveCheckpoint?.lastCheckpointAt!==null;}catch{return false;}},{timeout:30000});
+    await waitProtected(page,12);await page.waitForFunction(()=>{try{const q=JSON.parse(document.querySelector('#qaAuto')?.textContent??'{}');return q.autosaveCheckpoint?.fullSeedPending===false&&q.autosaveCheckpoint?.lastCheckpointAt!==null&&q.autosaveCheckpoint?.opsSinceLast===0;}catch{return false;}},null,{timeout:30000});
     const state=await qa(page);assert.equal(state.autosaveCheckpoint.operationInterval,12);assert.equal(state.autosaveCheckpoint.idleMs,800);assert.equal(state.autosaveCheckpoint.opsSinceLast,0);report.checkpointCadence={status:'PASS',operationInterval:12,idleMs:800,protectedThrough:state.persistence.protectedThrough};await context.close();
   }
 
