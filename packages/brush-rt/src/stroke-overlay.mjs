@@ -45,7 +45,7 @@ function accumulate(a,i,c,k,p){k*=c[6];const old=a[i+3];if(p.__foundation.covera
 // A growing image per pending stroke, rounded to reusable allocation bands.
 // A new short stroke never resizes or recomposes a preceding long stroke.
 export class StrokeSink{
- constructor(source){this.source=source;this.element=document.createElement('canvas');this.element.className='illustro-stroke-overlay';this.element.setAttribute('aria-hidden','true');Object.assign(this.element.style,{position:'absolute',pointerEvents:'none',transformOrigin:'0 0',display:'none',background:'transparent',aspectRatio:'auto'});source.insertAdjacentElement('afterend',this.element);this.element.width=this.element.height=CHUNK;this.context=this.element.getContext('2d',{alpha:true,willReadFrequently:true});if(!this.context)throw Error('Overlay Canvas2D unavailable');this.allocations=1;this.retiredAllocations=0;this.layers=new Map;this.updateOrigin();}
+ constructor(source){this.source=source;this.element=document.createElement('canvas');this.element.className='illustro-stroke-overlay';this.element.setAttribute('aria-hidden','true');Object.assign(this.element.style,{position:'absolute',pointerEvents:'none',transformOrigin:'0 0',display:'none',background:'transparent',aspectRatio:'auto'});source.insertAdjacentElement('afterend',this.element);this.element.width=this.element.height=CHUNK;this.context=this.element.getContext('2d',{alpha:true,willReadFrequently:true});if(!this.context){this.element.remove();throw Error('Overlay Canvas2D unavailable');}this.allocations=1;this.retiredAllocations=0;this.layers=new Map;this.updateOrigin();}
  updateOrigin(){this.originX=this.source.offsetLeft;this.originY=this.source.offsetTop;this.zIndex=getComputedStyle(this.source).zIndex;if(this.rect){this.element.style.left=this.originX+this.rect[0]+'px';this.element.style.top=this.originY+this.rect[1]+'px';}if(this.guardElement){this.guardElement.style.left=this.originX+'px';this.guardElement.style.top=this.originY+'px';}for(const layer of this.layers.values())layer.updateOrigin();}
  forStroke(id){let layer=this.layers.get(id);if(!layer){const previous=[...this.layers.values()].at(-1);layer=new StrokeSink(this.source);(previous?.element??this.element).after(layer.element);this.layers.set(id,layer);}return layer;}
  reproject(from,to){this.element.style.imageRendering=to[13]>.5?'pixelated':'auto';for(const layer of this.layers.values())layer.reproject(from,to);if(!this.rect)return;const [a,b,c,d,e,f]=viewAffine(from,to),[x,y]=this.rect;this.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
@@ -99,14 +99,14 @@ export class StrokeOverlay{
   if(this.fallback&&!this.states.size&&!this.backend.previews.size)this.fallback=false;
   const eligible=this.canUse(state.preset,state.surfaceKey),key=this.policy.choices.get(state.id)?.key??previewContext(this.view,state.preset,this.backend);
   const cpuOrderPending=[...this.states.keys(),...this.pending.keys()].some(id=>id<state.id),newerGpuPending=[...this.policy.choices.values()].some(c=>c.id>state.id&&c.route==='gpu'&&(!this.liveStates||this.liveStates.has(c.id)));
-  const choice=this.policy.choose(state.id,key,{cpuAvailable:eligible,cpuOrderPending,newerGpuPending,gpuAvailable:!this.backend.lost&&!this.backend.error,gpuWaitMs:this.gpuWaitMs??0,memoryPressure:this.allocatedBytes>MAX_BYTES*.8});
+  const choice=this.policy.choose(state.id,key,{cpuAvailable:eligible,cpuOrderPending,newerGpuPending,gpuAvailable:!this.backend.lost&&!this.backend.error,gpuWaitMs:this.gpuWaitMs??0,memoryPressure:this.allocatedBytes+this.preparedBytes+(this.sink?.pixels??0)*4>MAX_BYTES*.8});
   if(choice.route==='gpu'){
    if((!eligible||cpuOrderPending||this.footprints.has(state.id))&&(this.states.size||this.pending.size)){this.fallback=true;this.metrics.fallbacks++;}
    if(!choice.cpuHasPresented&&(this.states.has(state.id)||this.pending.has(state.id)))this.removeState(state.id,true);
    return false;
   }
   if(!eligible){this.fallback=true;this.metrics.fallbacks++;return false;}
-  this.sink??=new StrokeSink(this.backend.canvas);
+  if(!this.sink)try{this.sink=new StrokeSink(this.backend.canvas);}catch(error){this.backend.info??={};this.backend.info.proxyUnavailable=String(error);this.policy.choose(state.id,key,{cpuAvailable:false});choice.reason='仮線用の画面を用意できないため、直接表示';this.setEnabled(false);this.metrics.fallbacks++;return false;}
   this.preferred=state.preset;this.plan=previewPlan(this.view,state.preset,this.ratio);
   if(this.pending.has(state.id))this.metrics.superseded++;this.pending.set(state.id,state);this.schedule();return true;
  }

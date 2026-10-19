@@ -2019,6 +2019,10 @@
     {
       "path": "docs/research/M10_PREVIEW_2026-10-19.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-preview-availability.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

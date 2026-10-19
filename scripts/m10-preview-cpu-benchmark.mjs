@@ -7,7 +7,7 @@ const root=path.resolve(process.env.M10_CPU_ROOT??'packages/brush-rt/dist'),out=
 const {StrokeOverlay}=await import(pathToFileURL(path.join(root,'rt/stroke-overlay.mjs')));
 const {CanonicalBuilder,referenceBrushes}=await import(pathToFileURL(path.join(root,'rt/index.mjs')));
 const stats=a=>{const b=[...a].sort((a,b)=>a-b);return {count:b.length,p50:b[Math.ceil(b.length*.5)-1]??null,p95:b[Math.ceil(b.length*.95)-1]??null,max:b.at(-1)??null};};
-const report={baseline:'4708ffe5136ad1fa47be5909c129bb5f8fcb7869',scope:'Node 24 CPU raster and fake upload sink. Same 390x644 CSS, DPR3, inputs and presets. Not visible latency.',cases:[]};
+const report={sourceRoot:root,sourceCommit:process.env.M10_CPU_SOURCE_SHA??(process.env.M10_CPU_ROOT?null:process.env.EXPECTED_COMMIT_SHA??null),baseline:'4708ffe5136ad1fa47be5909c129bb5f8fcb7869',scope:'Node 24 CPU raster and fake upload sink. Same 390x644 CSS, DPR3, inputs and presets. Not visible latency.',cases:[]};
 for(const size of (process.env.M10_CPU_SIZES??'512,2000,3000,4000').split(',').map(Number))for(const zoom of (process.env.M10_CPU_ZOOMS??'fit,1,4,16,64').split(','))for(const brush of (process.env.M10_CPU_BRUSHES??'thin,normal,broad,pencil,marker').split(',')){
  const z=zoom==='fit'?360/size:Number(zoom),index=brush==='pencil'?4:brush==='marker'?3:0,preset=structuredClone(referenceBrushes[index]);preset.size={thin:1,normal:16,broad:256,pencil:32,marker:64}[brush];preset.forceFade.enabled=false;
  const builder=new CanonicalBuilder(preset);for(let i=0;i<9;i++)builder.accept({x:size/2+(-30+i*8)/z,y:size/2+Math.sin(i*.5)*10/z,t:100+i*8,pressure:.7,pointerType:'pen'});builder.finish();const record=builder.record(),times=[],pixels=[],slices=[],bytes=[];
