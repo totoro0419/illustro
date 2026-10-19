@@ -1,4 +1,5 @@
-import {commandBounds,referenceCoverage,continuous} from '@rt/model';
+import {commandBounds,referenceCoverage,continuous,capsuleCoverage,sweptCoverage} from '@rt/model';
+import {PreviewPolicy,previewContext} from '@rt/preview-policy';
 import {textureFactor} from '@rt/foundation';
 
 // Only active/unpresented strokes live here. Completed artwork is borrowed from
@@ -22,7 +23,17 @@ export function previewPlan(view,preset={},ratio='auto'){
  let selected=ratio==='auto'?(material||diameter<12?1:[1/128,1/64,1/32,1/16,1/8,1/4,1/2,1].find(r=>density*Math.sqrt(r)>=target)):Number(ratio);
  if(![1,1/2,1/4,1/8,1/16,1/32,1/64,1/128].includes(selected))throw Error('Invalid overlay area ratio');
  const scale=density*Math.sqrt(selected),visibleArea=polygonArea(polygon);
- return {polygon,visibleArea,density,ratio:selected,requestedRatio:ratio,scale,screenWidth:view[2],screenHeight:view[3],width:Math.ceil(view[2]*scale),height:Math.ceil(view[3]*scale),visiblePixelBudget:Math.ceil(visibleArea*scale*scale),diameter};
+ // At high zoom evaluate the SAME document-pixel coverage as the strict GPU
+ // raster. Subpixel position, analytic AA and texture phase remain in document
+ // coordinates. CSS compositing only magnifies these pixels; it does not
+ // rerasterize the brush at display density. Explicit area-ratio QA stays intact.
+ if(ratio==='auto'&&view[6]>=4){
+  const rasterView=Float64Array.from([view[4],view[5],view[4],view[5],view[4],view[5],1,0,0,0,1,1,0,view[13],0,0]);
+  const halo=2*view[6],poly=clipPolygon([[-halo,-halo],[view[2]+halo,-halo],[view[2]+halo,view[3]+halo],[-halo,view[3]+halo]].map(([x,y])=>toDocument(view,x,y)),0,0,view[4],view[5]);
+  const xs=poly.map(p=>p.x),ys=poly.map(p=>p.y),clip=poly.length?[Math.max(0,Math.floor(Math.min(...xs))),Math.max(0,Math.floor(Math.min(...ys))),Math.min(view[4],Math.ceil(Math.max(...xs))),Math.min(view[5],Math.ceil(Math.max(...ys)))]:[0,0,0,0];
+  return {polygon:poly,visibleArea,density,ratio:1/(density*view[6])**2,requestedRatio:ratio,scale:1,screenWidth:view[4],screenHeight:view[5],width:view[4],height:view[5],visiblePixelBudget:(clip[2]-clip[0])*(clip[3]-clip[1]),diameter,rasterView,clip,sampling:'document-analytic',samplesPerDocumentPixel:1};
+ }
+ return {polygon,visibleArea,density,ratio:selected,requestedRatio:ratio,scale,screenWidth:view[2],screenHeight:view[3],width:Math.ceil(view[2]*scale),height:Math.ceil(view[3]*scale),visiblePixelBudget:Math.ceil(visibleArea*scale*scale),diameter,sampling:'screen',samplesPerDocumentPixel:scale*view[6]};
 }
 export function directOverlaySupported(p,surfaceKey,backend){
  const style=backend.surfaceStyles?.get(surfaceKey);
@@ -59,14 +70,14 @@ export class StrokeSink{
 }
 
 export class StrokeOverlay{
- constructor(backend,{ratio='auto',sink=null}={}){this.backend=backend;this.ratio=ratio;this.sink=sink??new StrokeSink(backend.canvas);this.states=new Map;this.finalizations=new Map;this.preparedBytes=0;this.pending=new Map;this.footprints=new Map;this.cells=new Map;this.dirty=new Set;this.guards=[];this.guardGeneration=0;this.epoch=0;this.generation=0;this.ready=false;this.enabled=true;this.fallback=false;this.suspended=false;this.allocatedBytes=0;this.metrics={updates:0,updatedPixels:0,rasterPixels:0,skippedRasterPixels:0,commands:0,historyReplayCommands:0,historyRebuilds:0,guardPixels:0,guardCaptures:0,guardCaptureMs:0,peakBytes:0,peakPixels:0,superseded:0,rebuilds:0,fallbacks:0,retirements:0,samples:[],maxCpuMs:0,backgroundSlices:0,maxBackgroundMs:0,finalizationSwaps:0,obsoleteFinalizations:0};}
+ constructor(backend,{ratio='auto',sink=null,mode='auto',sliceMs=3,onFallback=null}={}){this.backend=backend;this.policy=new PreviewPolicy({mode});this.onFallback=onFallback;this.sliceMs=Math.max(.25,Math.min(4,sliceMs));this.ratio=ratio;this.sink=sink;this.states=new Map;this.finalizations=new Map;this.preparedBytes=0;this.pending=new Map;this.footprints=new Map;this.cells=new Map;this.dirty=new Set;this.guards=[];this.guardGeneration=0;this.epoch=0;this.generation=0;this.ready=false;this.enabled=true;this.fallback=false;this.suspended=false;this.allocatedBytes=0;this.metrics={updates:0,updatedPixels:0,rasterPixels:0,skippedRasterPixels:0,commands:0,historyReplayCommands:0,historyRebuilds:0,guardPixels:0,guardCaptures:0,guardCaptureMs:0,peakBytes:0,peakPixels:0,superseded:0,rebuilds:0,fallbacks:0,retirements:0,samples:[],maxCpuMs:0,backgroundSlices:0,maxBackgroundMs:0,foregroundSlices:0,maxSliceMs:0,cancelledUpdates:0,deadlineFallbacks:0,finalizationSwaps:0,obsoleteFinalizations:0};}
  setEnabled(value){this.enabled=value;this.invalidate();}
  setNavigationActive(value){this.navigationActive=!!value;if(value){clearTimeout(this.viewRefineTimer);this.viewRefineTimer=null;for(const id of [...this.finalizations.keys()])this.discardFinalization(id);}else if(this.viewRefineNeeded){this.viewRefineNeeded=false;this.setView(this.view);}}
  setView(view){
   const old=new Map([...this.states.values()].filter(v=>v.last).map(v=>[v.id,v.finalState??v.last]));for(const [id,state]of this.pending)old.set(id,state);
   const sameSpace=this.view&&[0,1,2,3,4,5,12,14].every(i=>this.view[i]===view[i]);
-  const reusable=this.sink.reproject&&sameSpace&&old.size&&[...old.keys()].every(id=>this.states.has(id))&&[...old.values()].every(state=>state.finished);
-  this.view=Float64Array.from(view);this.sink.updateOrigin?.();this.epoch++;
+  const reusable=this.sink?.reproject&&sameSpace&&old.size&&[...old.keys()].every(id=>this.states.has(id))&&[...old.values()].every(state=>state.finished);
+  this.view=Float64Array.from(view);this.sink?.updateOrigin?.();this.epoch++;
   if(reusable){
    // No coverage evaluation, image allocation or upload during navigation.
    for(const id of [...this.finalizations.keys()])this.discardFinalization(id);
@@ -83,39 +94,85 @@ export class StrokeOverlay{
  resumeAfterHistory(){this.suspended=false;this.ready=this.enabled&&!!this.view;this.schedule();}
  suspend(){this.suspended=true;this.ready=false;this.epoch++;}
  invalidate(){this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.fallback=false;this.suspended=false;this.ready=this.enabled&&!!this.view;if(this.view)this.plan=previewPlan(this.view,this.preferred??{},this.ratio);}
- clearRaster(){clearTimeout(this.viewRefineTimer);this.viewRefineTimer=null;this.finalizations.clear();this.preparedBytes=0;this.states.clear();this.footprints.clear();this.cells.clear();this.dirty.clear();this.allocatedBytes=0;this.sink.hide();}
- canUse(p,surfaceKey=this.backend.surfaceStack.at(-1)){return this.enabled&&this.ready&&!this.fallback&&this.plan?.visibleArea>0&&this.view[12]<.5&&this.view[14]<.5&&(!this.backend.device||this.backend.viewportCache?.enabled&&this.view[0]*this.view[1]*4<=this.backend.viewportCache.budget)&&directOverlaySupported(p,surfaceKey,this.backend);}
+ clearRaster(){clearTimeout(this.workHandle);this.workHandle=null;this.scheduled=false;clearTimeout(this.viewRefineTimer);this.viewRefineTimer=null;this.finalizations.clear();this.preparedBytes=0;this.states.clear();this.footprints.clear();this.cells.clear();this.dirty.clear();this.allocatedBytes=0;this.sink?.hide();}
+ canUse(p,surfaceKey=this.backend.surfaceStack.at(-1),id=null){return (id===null||this.policy.choices.get(id)?.route!=='gpu')&& this.enabled&&this.ready&&!this.fallback&&this.plan?.visibleArea>0&&this.view[12]<.5&&this.view[14]<.5&&(!this.backend.device||this.backend.viewportCache?.enabled&&this.view[0]*this.view[1]*4<=this.backend.viewportCache.budget)&&directOverlaySupported(p,surfaceKey,this.backend);}
  enqueue(state){if(!this.enabled||!this.view||this.suspended)return false;
   if(this.fallback&&!this.states.size&&!this.backend.previews.size)this.fallback=false;
-  if(!this.canUse(state.preset,state.surfaceKey)){this.fallback=true;this.metrics.fallbacks++;return false;}
+  const eligible=this.canUse(state.preset,state.surfaceKey),key=this.policy.choices.get(state.id)?.key??previewContext(this.view,state.preset,this.backend);
+  const choice=this.policy.choose(state.id,key,{cpuAvailable:eligible,gpuAvailable:!this.backend.lost&&!this.backend.error,gpuWaitMs:this.gpuWaitMs??0,memoryPressure:this.allocatedBytes>MAX_BYTES*.8});
+  if(choice.route==='gpu'){
+   if(!eligible&&this.footprints.size){this.fallback=true;this.metrics.fallbacks++;}
+   return false;
+  }
+  if(!eligible){this.fallback=true;this.metrics.fallbacks++;return false;}
+  this.sink??=new StrokeSink(this.backend.canvas);
   const wanted=previewPlan(this.view,state.preset,this.ratio);if(wanted.scale>this.plan.scale){this.preferred=state.preset;this.setView(this.view);}else if(!this.states.size&&!this.pending.size)this.prepare(state.preset);
   if(this.pending.has(state.id))this.metrics.superseded++;this.pending.set(state.id,state);this.schedule();return true;
  }
- schedule(){if(this.scheduled)return;this.scheduled=true;queueMicrotask(()=>{this.scheduled=false;this.safeFlush();});}
- safeFlush(){try{this.flush();}catch(error){this.error=String(error);this.fallback=true;this.metrics.fallbacks++;}}
- flush(){if(!this.ready||this.disposed||this.fallback)return;const start=performance.now(),tips=[];
-  for(const [id,state]of [...this.pending].sort((a,b)=>Number(!!a[1].finished)-Number(!!b[1].finished))){let v=this.states.get(id);if(v&&state.finished&&state.resetPreview&&v.last!==state){this.queueFinalization(state,v);this.pending.delete(id);continue;}if(!v||state.resetPreview&&v.last!==state){if(v)this.removeState(id);v={id,preset:state.preset,surfaceKey:state.surfaceKey,view:this.view.slice(),plan:this.plan,tiles:new Map,tailKeys:new Set,dirty:new Set,cursor:0,last:null};this.states.set(id,v);}if(v.last===state){this.pending.delete(id);continue;}
-   const oldTail=[...v.tailKeys];for(const key of oldTail){v.tiles.get(key)?.tail?.fill(0);v.tiles.get(key).tailLowerBound=0;v.dirty.add(key);this.dirty.add(key);}v.tailKeys.clear();
-   const source=state.stableSource??state.stableCommands??[],end=state.stableEnd??source.length;if(end<v.cursor||end>source.length)throw Error('Overlay stable cursor mismatch');this.raster(v,source,v.cursor,end,false);v.cursor=end;this.raster(v,state.commands??[],0,(state.commands??[]).length,true);v.last=state;
-   for(const key of oldTail)if(!v.tailKeys.has(key)){const t=v.tiles.get(key);if(t?.tail){this.allocatedBytes-=t.tail.byteLength;t.tail=null;}}
-   this.footprints.set(id,new Set(v.tiles.keys()));const tip=state.inputTip??state.tip;if(tip)tips.push({id,inputAt:tip.t,finished:!!state.finished});this.pending.delete(id);
-  }this.present(start,tips);
+ schedule(){if(this.scheduled||this.disposed||!this.ready||!this.pending.size)return;this.scheduled=true;const run=()=>{this.scheduled=false;this.workHandle=null;this.safeFlush();};
+  // A task boundary allows input, paint and Undo to run. Microtasks cannot do so.
+  if(globalThis.scheduler?.postTask)globalThis.scheduler.postTask(run,{priority:'user-visible'}).catch(error=>{this.error=String(error);});else this.workHandle=setTimeout(run,0);
  }
- raster(v,commands,start,end,tail){for(const unused of this.rasterWork(v,commands,start,end,tail)){} }
+ safeFlush(){try{this.flush();}catch(error){this.error=String(error);this.fallback=true;this.metrics.fallbacks++;}}
+ flush(){if(!this.ready||this.disposed||this.fallback)return;const start=performance.now(),deadline=start+this.sliceMs,tips=[];let advanced=false;
+  // New active input precedes released strokes. There is one latest notification
+  // and at most one resumable job per stroke, never a FIFO of old pointer moves.
+  for(const [id,state]of [...this.pending].sort((a,b)=>Number(!!a[1].finished)-Number(!!b[1].finished)||b[0]-a[0])){
+   let v=this.states.get(id);
+   if(v&&state.finished&&state.resetPreview&&v.last!==state){this.queueFinalization(state,v);this.pending.delete(id);continue;}
+   if(!v||state.resetPreview&&v.last!==state&&!v.work){if(v){this.removeState(id,true);this.pending.set(id,state);}const plan=previewPlan(this.view,state.preset,this.ratio);v={id,preset:state.preset,surfaceKey:state.surfaceKey,view:plan.rasterView??this.view.slice(),plan,tiles:new Map,tailKeys:new Set,dirty:new Set,cursor:0,last:null};this.states.set(id,v);}
+   const choice=this.policy.choices.get(id);
+   // If this stroke has never been shown, switching cannot double-paint or
+   // remove an existing image. Shed private CPU work after a measured 50ms
+   // no-feedback deadline and retry the SAME immutable input on the GPU.
+   if(!v.last&&choice&&!choice.cpuHasPresented&&this.onFallback&&!this.backend.lost&&!this.backend.error&&performance.now()-choice.at>50&&this.policy.fallbackCpu(id,performance.now()-choice.at)){this.metrics.deadlineFallbacks++;this.removeState(id,true);this.onFallback(state);continue;}
+   if(v.last===state&&!v.work){this.pending.delete(id);continue;}
+   if(!v.work){v.work=this.updateWork(v,state);}
+   // Stable work already started is resumed exactly once. Obsolete mutable-tail
+   // work aborts at the next cell boundary; no partial deposit is replayed.
+   do{const step=v.work.next();advanced=true;if(step.done){v.work=null;if(v.last===this.pending.get(id))this.pending.delete(id);if(v.last){const tip=v.last.inputTip??v.last.tip;if(tip)tips.push({id,inputAt:tip.t,finished:!!v.last.finished});}break;}}while(performance.now()<deadline);
+   if(performance.now()>=deadline)break;
+  }
+  if(advanced){this.metrics.foregroundSlices++;this.present(start,tips);const ms=performance.now()-start;this.metrics.maxSliceMs=Math.max(this.metrics.maxSliceMs,ms);}
+  this.schedule();
+ }
+ *updateWork(v,state){
+  v.coherent=false;if(v.prepared){this.preparedBytes-=v.prepared.size*CELL*CELL*4;delete v.prepared;}
+  const source=state.stableSource??state.stableCommands??[],end=state.stableEnd??source.length;
+  if(end<v.cursor||end>source.length)throw Error('Overlay stable cursor mismatch');
+  const oldTail=[...v.tailKeys];for(const key of oldTail){const t=v.tiles.get(key);t?.tail?.fill(0);if(t)t.tailLowerBound=0;v.dirty.add(key);}v.tailKeys.clear();
+  for(let n=v.cursor;n<end;n++){yield* this.rasterWork(v,source,n,n+1,false);v.cursor=n+1;}
+  if(this.pending.get(v.id)!==state){this.metrics.cancelledUpdates++;return;}
+  const tail=this.rasterWork(v,state.commands??[],0,(state.commands??[]).length,true);
+  for(const step of tail){yield step;if(this.pending.get(v.id)!==state){this.metrics.cancelledUpdates++;return;}}
+  // Convert dirty cells cooperatively too: moving raster into tasks must not
+  // leave a large synchronous Float32 -> RGBA8 conversion at publication.
+  v.prepared=new Map;
+  for(const key of v.dirty){if(this.pending.get(v.id)!==state){this.metrics.cancelledUpdates++;return;}if(this.allocatedBytes+this.preparedBytes+CELL*CELL*4>MAX_BYTES)throw Error('Overlay preparation memory pressure; exact GPU feedback retained');v.prepared.set(key,this.composedCell(key,[v.id]));this.preparedBytes+=CELL*CELL*4;yield;}
+  if(this.pending.get(v.id)!==state){this.metrics.cancelledUpdates++;return;}
+  v.last=state;v.coherent=true;
+  for(const key of oldTail)if(!v.tailKeys.has(key)){const t=v.tiles.get(key);if(t?.tail){this.allocatedBytes-=t.tail.byteLength;v.bytes-=t.tail.byteLength;t.tail=null;}}
+  this.footprints.set(v.id,new Set(v.tiles.keys()));
+  // Only a complete, current prefix/tail pair is publishable. Superseded partial
+  // pixels remain private, and can never resurrect after cancel / view changes.
+  for(const key of v.dirty)this.dirty.add(key);
+ }
  *rasterWork(v,commands,start,end,tail){const plan=v.plan??this.plan,view=v.view??this.view,p=v.preset,z=view[6]*plan.scale,angle=view[7],cos=Math.cos(angle),sin=Math.sin(angle),stepX=cos*view[10]/z,stepY=-sin*view[11]/z,qPreset={...p,__foundation:undefined,grainScale:p.grainScale*z};
-  for(let n=start;n<end;n++){const c=commands[n];this.metrics.commands++;const b=commandBounds(c),corners=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]].map(([x,y])=>toScreen(view,x,y)),xs=corners.map(q=>q.x),ys=corners.map(q=>q.y),x0=Math.max(0,Math.floor(Math.min(...xs)*plan.scale)-2),y0=Math.max(0,Math.floor(Math.min(...ys)*plan.scale)-2),x1=Math.min(plan.width,Math.ceil(Math.max(...xs)*plan.scale)+2),y1=Math.min(plan.height,Math.ceil(Math.max(...ys)*plan.scale)+2);
+  for(let n=start;n<end;n++){const c=commands[n];this.metrics.commands++;const b=commandBounds(c),corners=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]].map(([x,y])=>toScreen(view,x,y)),xs=corners.map(q=>q.x),ys=corners.map(q=>q.y),x0=Math.max(plan.clip?.[0]??0,Math.floor(Math.min(...xs)*plan.scale)-2),y0=Math.max(plan.clip?.[1]??0,Math.floor(Math.min(...ys)*plan.scale)-2),x1=Math.min(plan.clip?.[2]??plan.width,Math.ceil(Math.max(...xs)*plan.scale)+2),y1=Math.min(plan.clip?.[3]??plan.height,Math.ceil(Math.max(...ys)*plan.scale)+2);
    const a=toScreen(view,c[0],c[1]),f=toScreen(view,c[16],c[17]),ax=a.x*plan.scale,ay=a.y*plan.scale,fx=f.x*plan.scale,fy=f.y*plan.scale,dx=ax-fx,dy=ay-fy,den=Math.max(1e-6,dx*dx+dy*dy),packed=Float64Array.from(c);packed[0]=ax;packed[1]=ay;packed[2]*=z;packed[4]=angle+Math.atan2(Math.sin(c[4])*view[11],Math.cos(c[4])*view[10]);packed[7]=0;
    for(let ty=Math.floor(y0/CELL);ty<Math.ceil(y1/CELL);ty++)for(let tx=Math.floor(x0/CELL);tx<Math.ceil(x1/CELL);tx++){const key=tx+','+ty,name=tail?'tail':'prefix',left=Math.max(x0,tx*CELL),right=Math.min(x1,(tx+1)*CELL),top=Math.max(y0,ty*CELL),bottom=Math.min(y1,(ty+1)*CELL);let tile=v.tiles.get(key),pixels=tile?.[name],changed=false;const union=p.__foundation.coverageUnion||continuous(p),ceiling=c[5]*c[6];
     if(union&&(tail?Math.max(tile?.prefixLowerBound??0,tile?.tailLowerBound??0):tile?.prefixLowerBound??0)>=ceiling){this.metrics.skippedRasterPixels+=(right-left)*(bottom-top);yield;continue;}
     const corners=[[tx*CELL+.5,ty*CELL+.5],[(tx+1)*CELL-.5,ty*CELL+.5],[tx*CELL+.5,(ty+1)*CELL-.5],[(tx+1)*CELL-.5,(ty+1)*CELL-.5]],full=union&&!c[7]&&c[19]===1&&left===tx*CELL&&right===(tx+1)*CELL&&top===ty*CELL&&bottom===(ty+1)*CELL&&corners.every(([x,y])=>{const doc=toDocument(view,x/plan.scale,y/plan.scale),t=clamp(((x-fx)*dx+(y-fy)*dy)/den),radius=(c[18]+(c[2]/2-c[18])*t)*z;return doc.x>=0&&doc.y>=0&&doc.x<view[4]&&doc.y<view[5]&&Math.hypot(x-fx-dx*t,y-fy-dy*t)<=radius-.5;});
     for(let y=top;y<bottom;y++){const row=toDocument(view,(left+.5)/plan.scale,(y+.5)/plan.scale);let docX=row.x,docY=row.y;
      for(let x=left;x<right;x++,docX+=stepX,docY+=stepY){if(docX<0||docY<0||docX>=view[4]||docY>=view[5])continue;this.metrics.rasterPixels++;let k;
-      if(c[19]>0){const t=clamp(((x+.5-fx)*dx+(y+.5-fy)*dy)/den),r=(c[18]+(c[2]/2-c[18])*t)*z,px=x+.5-fx-dx*t,py=y+.5-fy-dy*t,d=Math.sqrt(px*px+py*py),h=r*(c[19]===1?1:p.hardness);k=r<.5?thinCoverage(r,d):c[19]===1?clamp(r+.5-d):d<=h?1:clamp((r+.5-d)/Math.max(.5,r-h));}
+      if(plan.sampling==='document-analytic')k=c[19]===1?capsuleCoverage(c,docX,docY):c[19]===2?sweptCoverage(c,docX,docY,p):referenceCoverage(c,docX,docY,p);
+      else if(c[19]>0){const t=clamp(((x+.5-fx)*dx+(y+.5-fy)*dy)/den),r=(c[18]+(c[2]/2-c[18])*t)*z,px=x+.5-fx-dx*t,py=y+.5-fy-dy*t,d=Math.sqrt(px*px+py*py),h=r*(c[19]===1?1:p.hardness);k=r<.5?thinCoverage(r,d):c[19]===1?clamp(r+.5-d):d<=h?1:clamp((r+.5-d)/Math.max(.5,r-h));}
       else k=referenceCoverage(packed,x+.5,y+.5,qPreset);
-      if(c[7]&&k)k*=textureFactor(c,docX,docY,p);if(!k)continue;
-      if(!tile){tile={prefix:null,tail:null};v.tiles.set(key,tile);if(!v.private){let ids=this.cells.get(key);if(!ids)this.cells.set(key,ids=new Set);ids.add(v.id);}}if(!pixels){const bytes=CELL*CELL*16;if(this.allocatedBytes+bytes>MAX_BYTES)throw Error('Overlay memory pressure; exact GPU feedback retained');pixels=tile[name]=new Float32Array(CELL*CELL*4);this.allocatedBytes+=bytes;v.bytes=(v.bytes??0)+bytes;}const i=((y%CELL)*CELL+x%CELL)*4;accumulate(pixels,i,c,k,p);changed=true;
+      if(plan.sampling!=='document-analytic'&&c[7]&&k)k*=textureFactor(c,docX,docY,p);if(!k)continue;
+      if(!tile){tile={prefix:null,tail:null};v.tiles.set(key,tile);if(!v.private){let ids=this.cells.get(key);if(!ids)this.cells.set(key,ids=new Set);ids.add(v.id);}}if(!pixels){const bytes=CELL*CELL*16;if(this.allocatedBytes+this.preparedBytes+bytes>MAX_BYTES)throw Error('Overlay memory pressure; exact GPU feedback retained');pixels=tile[name]=new Float32Array(CELL*CELL*4);this.allocatedBytes+=bytes;v.bytes=(v.bytes??0)+bytes;}const i=((y%CELL)*CELL+x%CELL)*4;accumulate(pixels,i,c,k,p);changed=true;
      }
-    }if(changed){if(full){const name=tail?'tailLowerBound':'prefixLowerBound';tile[name]=Math.max(tile[name]??0,ceiling);}v.dirty.add(key);if(!v.private)this.dirty.add(key);if(tail)v.tailKeys.add(key);}yield;
+     if((y-top)%4===3)yield;
+    }if(changed){if(full){const name=tail?'tailLowerBound':'prefixLowerBound';tile[name]=Math.max(tile[name]??0,ceiling);}v.dirty.add(key);if(!v.private&&!v.work)this.dirty.add(key);if(tail)v.tailKeys.add(key);}yield;
    }
    // Offscreen commands also form cooperative boundaries; a long invisible
    // prefix must not run to completion inside one generator step.
@@ -128,20 +185,20 @@ export class StrokeOverlay{
    r=(v.union?Math.max(v.a?.[i]??0,v.b?.[i]??0):(v.b?.[i]??0)+(v.a?.[i]??0)*invTail)*opacity+r*inv;
    g=(v.union?Math.max(v.a?.[i+1]??0,v.b?.[i+1]??0):(v.b?.[i+1]??0)+(v.a?.[i+1]??0)*invTail)*opacity+g*inv;
    b=(v.union?Math.max(v.a?.[i+2]??0,v.b?.[i+2]??0):(v.b?.[i+2]??0)+(v.a?.[i+2]??0)*invTail)*opacity+b*inv;a=alpha+a*inv;
-  }if(a){image.data[i]=Math.round(clamp(r/a)*255);image.data[i+1]=Math.round(clamp(g/a)*255);image.data[i+2]=Math.round(clamp(b/a)*255);image.data[i+3]=Math.round(clamp(a)*255);}}return {key,image};}
+  }if(a){image.data[i]=Math.round(clamp(r/a)*255);image.data[i+1]=Math.round(clamp(g/a)*255);image.data[i+2]=Math.round(clamp(b/a)*255);image.data[i+3]=Math.round(clamp(a)*255);if(!image.data[i+3])image.data[i]=image.data[i+1]=image.data[i+2]=0;}}return {key,image};}
 
  bounds(){let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const v of this.states.values()){const scale=(v.plan??this.plan).scale,affine=viewAffine(v.view??this.view,this.view),[a,b,c,d,e,f]=affine;for(const key of v.tiles.keys()){const [tx,ty]=key.split(',').map(Number);for(const x of [tx*CELL/scale,(tx+1)*CELL/scale])for(const y of [ty*CELL/scale,(ty+1)*CELL/scale]){const xx=a*x+c*y+e,yy=b*x+d*y+f;x0=Math.min(x0,xx);y0=Math.min(y0,yy);x1=Math.max(x1,xx);y1=Math.max(y1,yy);}}}return x0===Infinity?null:[Math.max(0,x0),Math.max(0,y0),Math.min(this.view[2],x1),Math.min(this.view[3],y1)];}
  // Each pending stroke owns its bitmap. Growing/removing the preceding long
  // stroke never clears or recomposes a newer stroke's image.
  present(start,tips=[]){if(!this.ready||this.disposed||!this.dirty.size)return;this.dirty.clear();let updatedPixels=0,changed=false;
-  for(const v of [...this.states.values()].sort((a,b)=>Number(!!a.last?.finished)-Number(!!b.last?.finished))){if(!v.dirty.size)continue;const plan=v.plan??this.plan,view=v.view??this.view;const keys=[...v.tiles.keys()];if(!keys.length)continue;let x0=Infinity,y0=Infinity,x1=0,y1=0;for(const key of keys){const [x,y]=key.split(',').map(Number);x0=Math.min(x0,x*CELL);y0=Math.min(y0,y*CELL);x1=Math.max(x1,(x+1)*CELL);y1=Math.max(y1,(y+1)*CELL);}const bounds=[Math.max(0,x0/plan.scale),Math.max(0,y0/plan.scale),Math.min(view[2],x1/plan.scale),Math.min(view[3],y1/plan.scale)],sink=this.sink.forStroke?.(v.id)??this.sink,resized=sink.configure(plan,bounds);if(resized)for(const key of keys)v.dirty.add(key);const dirty=[...v.dirty];v.dirty.clear();const cells=dirty.map(key=>v.prepared?.get(key)??this.composedCell(key,[v.id]));sink.draw(plan,[],[],cells);sink.reproject?.(view,this.view);updatedPixels+=dirty.length*CELL*CELL;changed=true;if(v.prepared){this.preparedBytes-=v.prepared.size*CELL*CELL*4;delete v.prepared;}}
-  if(!changed)return;this.generation++;const end=performance.now();this.metrics.updates++;this.metrics.updatedPixels+=updatedPixels;this.metrics.peakPixels=Math.max(this.metrics.peakPixels,this.sink.pixels);this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.preparedBytes+this.sink.pixels*4);this.metrics.maxCpuMs=Math.max(this.metrics.maxCpuMs,end-start);if(this.measure)for(const t of tips){this.metrics.samples.push({...t,at:end,cpuMs:end-start,inputToUploadMs:Math.max(0,end-t.inputAt),updatedPixels,proxyPixels:this.sink.pixels,visibleArea:this.plan.visibleArea,viewEpoch:this.epoch,generation:this.generation});if(this.metrics.samples.length>3000)this.metrics.samples.shift();}
+  for(const v of [...this.states.values()].filter(v=>!v.work&&v.coherent!==false).sort((a,b)=>Number(!!a.last?.finished)-Number(!!b.last?.finished))){if(!v.dirty.size)continue;const plan=v.plan??this.plan,view=v.view??this.view;const keys=[...v.tiles.keys()];if(!keys.length)continue;let x0=Infinity,y0=Infinity,x1=0,y1=0;for(const key of keys){const [x,y]=key.split(',').map(Number);x0=Math.min(x0,x*CELL);y0=Math.min(y0,y*CELL);x1=Math.max(x1,(x+1)*CELL);y1=Math.max(y1,(y+1)*CELL);}const bounds=[Math.max(0,x0/plan.scale),Math.max(0,y0/plan.scale),Math.min(view[2],x1/plan.scale),Math.min(view[3],y1/plan.scale)],sink=this.sink.forStroke?.(v.id)??this.sink,resized=sink.configure(plan,bounds);if(resized)for(const key of keys)v.dirty.add(key);const dirty=[...v.dirty];v.dirty.clear();const cells=dirty.map(key=>v.prepared?.get(key)??this.composedCell(key,[v.id]));sink.draw(plan,[],[],cells);const choice=this.policy.choices.get(v.id);if(choice)choice.cpuHasPresented=true;sink.reproject?.(view,this.view);updatedPixels+=dirty.length*CELL*CELL;changed=true;if(v.prepared){this.preparedBytes-=v.prepared.size*CELL*CELL*4;delete v.prepared;}}
+  if(!changed)return;this.generation++;const end=performance.now();this.metrics.updates++;this.metrics.updatedPixels+=updatedPixels;this.metrics.peakPixels=Math.max(this.metrics.peakPixels,(this.sink?.pixels??0));this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.preparedBytes+(this.sink?.pixels??0)*4);this.metrics.maxCpuMs=Math.max(this.metrics.maxCpuMs,end-start);for(const t of tips)if(!t.finished)this.policy.observe(t.id,'cpu',{latency:Math.max(0,end-t.inputAt),cpuMs:end-start,bytes:this.allocatedBytes});if(this.measure)for(const t of tips){this.metrics.samples.push({...t,at:end,cpuMs:end-start,inputToUploadMs:Math.max(0,end-t.inputAt),updatedPixels,proxyPixels:(this.sink?.pixels??0),visibleArea:this.plan.visibleArea,viewEpoch:this.epoch,generation:this.generation});if(this.metrics.samples.length>3000)this.metrics.samples.shift();}
  }
  discardFinalization(id){const job=this.finalizations.get(id);if(!job)return;this.allocatedBytes-=job.v.bytes??0;this.preparedBytes-=(job.v.prepared?.size??0)*CELL*CELL*4;this.finalizations.delete(id);this.metrics.obsoleteFinalizations++;}
- queueFinalization(state,old){old.finalState=state;this.discardFinalization(state.id);if(this.navigationActive){this.viewRefineNeeded=true;return;}const v={id:state.id,preset:state.preset,surfaceKey:state.surfaceKey,view:this.view.slice(),plan:previewPlan(this.view,state.preset,this.ratio),tiles:new Map,tailKeys:new Set,dirty:new Set,cursor:state.stableEnd??state.stableSource.length,last:state,private:true,prepared:new Map};const steps=this.finalizeWork(v,state,old);this.finalizations.set(state.id,{v,state,steps,epoch:this.epoch});this.scheduleFinalizations();}
+ queueFinalization(state,old){old.finalState=state;this.discardFinalization(state.id);if(this.navigationActive){this.viewRefineNeeded=true;return;}const v={id:state.id,preset:state.preset,surfaceKey:state.surfaceKey,view:(previewPlan(this.view,state.preset,this.ratio).rasterView??this.view).slice(),plan:previewPlan(this.view,state.preset,this.ratio),tiles:new Map,tailKeys:new Set,dirty:new Set,cursor:state.stableEnd??state.stableSource.length,last:state,private:true,prepared:new Map};const steps=this.finalizeWork(v,state,old);this.finalizations.set(state.id,{v,state,steps,epoch:this.epoch});this.scheduleFinalizations();}
  *finalizeWork(v,state,old){yield* this.rasterWork(v,state.stableSource??[],0,state.stableEnd??state.stableSource.length,false);yield* this.rasterWork(v,state.commands??[],0,(state.commands??[]).length,true);for(const key of new Set([...old.tiles.keys(),...v.tiles.keys()])){v.prepared.set(key,this.composedCell(key,[v.id],v));this.preparedBytes+=CELL*CELL*4;v.dirty.add(key);yield;}}
- scheduleFinalizations(){if(this.finalizationScheduled||!this.finalizations.size||this.disposed)return;this.finalizationScheduled=true;const run=()=>{this.finalizationScheduled=false;if(this.disposed||!this.finalizations.size)return;const start=performance.now(),job=this.finalizations.values().next().value;try{let step;do{step=job.steps.next();}while(!step.done&&performance.now()-start<3);this.metrics.backgroundSlices++;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.preparedBytes+this.sink.pixels*4);this.metrics.maxBackgroundMs=Math.max(this.metrics.maxBackgroundMs,performance.now()-start);if(step.done&&job.epoch===this.epoch&&this.finalizations.get(job.v.id)===job){this.finalizations.delete(job.v.id);this.removeState(job.v.id,true);job.v.private=false;this.states.set(job.v.id,job.v);for(const key of job.v.tiles.keys()){let ids=this.cells.get(key);if(!ids)this.cells.set(key,ids=new Set);ids.add(job.v.id);}this.footprints.set(job.v.id,new Set(job.v.tiles.keys()));for(const key of job.v.dirty)this.dirty.add(key);this.metrics.finalizationSwaps++;this.present(performance.now(),[{id:job.v.id,inputAt:job.state.inputTip?.t??performance.now(),finished:true}]);}}catch(error){this.discardFinalization(job.v.id);this.error=String(error);this.fallback=true;this.metrics.fallbacks++;}this.scheduleFinalizations();};if(globalThis.scheduler?.postTask)globalThis.scheduler.postTask(run,{priority:'background'}).catch(error=>{this.error=String(error);});else setTimeout(run,0);}
- removeState(id,keepSink=false){this.discardFinalization(id);const v=this.states.get(id);if(v){if(v.prepared)this.preparedBytes-=v.prepared.size*CELL*CELL*4;for(const [key,tile]of v.tiles){this.allocatedBytes-=(tile.prefix?.byteLength??0)+(tile.tail?.byteLength??0);this.cells.get(key)?.delete(id);if(!this.cells.get(key)?.size)this.cells.delete(key);}this.states.delete(id);}if(!keepSink)this.sink.retireStroke?.(id);this.pending.delete(id);this.footprints.delete(id);}
+ scheduleFinalizations(){if(this.finalizationScheduled||!this.finalizations.size||this.disposed)return;this.finalizationScheduled=true;const run=()=>{this.finalizationScheduled=false;if(this.disposed||!this.finalizations.size)return;const start=performance.now(),job=this.finalizations.values().next().value;try{let step;do{step=job.steps.next();}while(!step.done&&performance.now()-start<3);this.metrics.backgroundSlices++;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.preparedBytes+(this.sink?.pixels??0)*4);this.metrics.maxBackgroundMs=Math.max(this.metrics.maxBackgroundMs,performance.now()-start);if(step.done&&job.epoch===this.epoch&&this.finalizations.get(job.v.id)===job){this.finalizations.delete(job.v.id);this.removeState(job.v.id,true);job.v.private=false;this.states.set(job.v.id,job.v);for(const key of job.v.tiles.keys()){let ids=this.cells.get(key);if(!ids)this.cells.set(key,ids=new Set);ids.add(job.v.id);}this.footprints.set(job.v.id,new Set(job.v.tiles.keys()));for(const key of job.v.dirty)this.dirty.add(key);this.metrics.finalizationSwaps++;this.present(performance.now(),[{id:job.v.id,inputAt:job.state.inputTip?.t??performance.now(),finished:true}]);}}catch(error){this.discardFinalization(job.v.id);this.error=String(error);this.fallback=true;this.metrics.fallbacks++;}this.scheduleFinalizations();};if(globalThis.scheduler?.postTask)globalThis.scheduler.postTask(run,{priority:'background'}).catch(error=>{this.error=String(error);});else setTimeout(run,0);}
+ removeState(id,keepSink=false){this.discardFinalization(id);if(!keepSink)this.policy.forget(id);const v=this.states.get(id);if(v){v.work=null;if(v.prepared)this.preparedBytes-=v.prepared.size*CELL*CELL*4;for(const [key,tile]of v.tiles){this.allocatedBytes-=(tile.prefix?.byteLength??0)+(tile.tail?.byteLength??0);this.cells.get(key)?.delete(id);if(!this.cells.get(key)?.size)this.cells.delete(key);}this.states.delete(id);}if(!keepSink)this.sink?.retireStroke?.(id);this.pending.delete(id);this.footprints.delete(id);}
  presented(id,epoch=this.epoch){if(epoch!==this.epoch)return;this.removeState(id);this.metrics.retirements++;}
  cancel(id){this.removeState(id);}
 
@@ -150,12 +207,12 @@ export class StrokeOverlay{
   // historical proxy base. It prevents transparent feedback double-painting
   // while the independently owned GPU canvas publishes its exact result.
   const x=Math.max(0,Math.floor(Math.floor(bounds[0])*plan.density)),y=Math.max(0,Math.floor(Math.floor(bounds[1])*plan.density)),w=Math.min(source.width-x,Math.ceil(Math.ceil(bounds[2])*plan.density)-x),h=Math.min(source.height-y,Math.ceil(Math.ceil(bounds[3])*plan.density)-y);if(w<=0||h<=0)return true;
-  const started=performance.now(),bitmap=await transitionSnapshot(this.backend,x,y,w,h);if(this.disposed||epoch!==this.epoch||guardGeneration!==this.guardGeneration){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h,density:plan.density,view:this.view.slice()}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;this.metrics.guardCaptureMs+=performance.now()-started;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.sink.pixels*4+w*h*12);this.sink.showGuard?.(plan,this.guards[0]);if(this.sink.showGuard){bitmap.close();this.guards[0].bitmap=null;}return true;
+  const started=performance.now(),bitmap=await transitionSnapshot(this.backend,x,y,w,h);if(this.disposed||epoch!==this.epoch||guardGeneration!==this.guardGeneration){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h,density:plan.density,view:this.view.slice()}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;this.metrics.guardCaptureMs+=performance.now()-started;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+(this.sink?.pixels??0)*4+w*h*12);this.sink.showGuard?.(plan,this.guards[0]);if(this.sink.showGuard){bitmap.close();this.guards[0].bitmap=null;}return true;
  }
- closeGuards(){this.guardGeneration++;for(const g of this.guards)g.bitmap?.close();this.guards=[];this.sink.hideGuard?.();}
+ closeGuards(){this.guardGeneration++;for(const g of this.guards)g.bitmap?.close();this.guards=[];this.sink?.hideGuard?.();}
  fallbackPresented(submittedAt,epoch,fallbackRendered=false){if(epoch!==this.epoch)return;if(this.fallback&&fallbackRendered){this.closeGuards();this.clearRaster();this.pending.clear();return;}if(this.guards.length)this.closeGuards();}
- summary(){return {scope:'CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured',kind:'stroke-only',transport:'2d',coupled:false,ready:this.ready,viewEpoch:this.epoch,generation:this.generation,...this.plan,polygon:undefined,pixels:this.sink.pixels,width:this.sink.element?.width??0,height:this.sink.element?.height??0,bytes:this.allocatedBytes+this.preparedBytes+this.sink.pixels*4+this.guards.reduce((n,g)=>n+g.width*g.height*4,0),rasterByteBudget:MAX_BYTES,pendingStrokes:this.footprints.size,fallback:this.fallback,allocations:this.sink.totalAllocations??this.sink.allocations,pendingFinalizations:this.finalizations.size,...this.metrics,samples:this.measure?this.metrics.samples:[]};}
- destroy(){this.disposed=true;this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.sink.destroy();}
+ summary(){return {scope:'CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured',kind:'stroke-only',transport:'2d',coupled:false,ready:this.ready,viewEpoch:this.epoch,generation:this.generation,...this.plan,polygon:undefined,rasterView:undefined,selection:this.policy.summary(),pixels:(this.sink?.pixels??0),width:this.sink?.element?.width??0,height:this.sink?.element?.height??0,bytes:this.allocatedBytes+this.preparedBytes+(this.sink?.pixels??0)*4+this.guards.reduce((n,g)=>n+g.width*g.height*4,0),rasterByteBudget:MAX_BYTES,pendingStrokes:this.footprints.size,fallback:this.fallback,allocations:this.sink?.totalAllocations??this.sink?.allocations??0,pendingFinalizations:this.finalizations.size,...this.metrics,samples:this.measure?this.metrics.samples:[]};}
+ destroy(){this.disposed=true;this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.sink?.destroy();}
 }
 
 // WebGPU canvas textures are automatically expired after presentation. Read a

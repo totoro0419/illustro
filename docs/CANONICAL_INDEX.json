@@ -1991,6 +1991,34 @@
     {
       "path": "docs/research/M10_BRUSH_QUALITY_RESEARCH.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/src/preview-policy.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/document-preview.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/preview-policy.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-preview-cpu-benchmark.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-preview-review.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-preview-validation.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_PREVIEW_2026-10-19.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

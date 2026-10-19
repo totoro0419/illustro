@@ -50,3 +50,5 @@ V2のIdentity/Raster/Brush/Persistence/Region契約はArchitectureから参照�
 - 長線後の次の一筆（EXPERIMENTAL・実機未確認）: [遅延の原因・修正・比較方法](research/STROKE_HANDOFF_LATENCY_2026-10-17.md)。PR #31を継承し、正式計算・既存の画質を維持する。
 
 - 操作・入り抜き・下層表示の追加修正（EXPERIMENTAL・実機未確認）: [修正内容と再開条件](research/CANVAS_FADE_LAYER_2026-10-17.md)。PR #32の高速描画を継承。
+
+- M10高倍率仮線・分割処理・経路選択（EXPERIMENTAL・ユーザー実機確認が必要）: [変更と検証の範囲](research/M10_PREVIEW_2026-10-19.md)。正式ブラシ・保存・既存受入状態は維持する。

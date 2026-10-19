@@ -84,10 +84,110 @@ jobs:
         with:
           name: m10-verified-editor
           path: apps/editor/dist/
+  preview-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/m10-preview-browser/node_modules/playwright
+      M10_BEFORE_ROOT: /tmp/m10-baseline/dist
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build current and immutable M10 baseline from the same source graph
+        run: |
+          npm run brush:build > /tmp/m10-current-build.log
+          npm run prep:check
+          git worktree add --detach /tmp/m10-baseline-source 4708ffe5136ad1fa47be5909c129bb5f8fcb7869
+          cd /tmp/m10-baseline-source
+          node prototypes/brush-rt/build.mjs > /tmp/m10-baseline-build.log
+          mkdir -p /tmp/m10-baseline
+          cp -a packages/brush-rt/dist /tmp/m10-baseline/dist
+      - name: Matched CPU work, slices and memory comparison
+        run: |
+          mkdir -p /tmp/m10-preview-evidence
+          M10_CPU_ROOT=/tmp/m10-baseline/dist M10_CPU_OUTPUT=/tmp/m10-preview-evidence/cpu-before.json node scripts/m10-preview-cpu-benchmark.mjs
+          M10_CPU_OUTPUT=/tmp/m10-preview-evidence/cpu-after.json node scripts/m10-preview-cpu-benchmark.mjs
+      - name: Install matched Chromium and image decoder
+        run: |
+          npm install --prefix /tmp/m10-preview-browser playwright@1.56.1 pngjs@7.0.0 --no-audit --no-fund
+          /tmp/m10-preview-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: All sizes, zooms, seven brushes and four routes on both GPU backends
+        env:
+          M10_STROKES: '1'
+          M10_POINTS: '5'
+          M10_PREVIEW_OUTPUT: /tmp/m10-preview-evidence/report.json
+        run: node scripts/m10-preview-review.mjs
+      - name: Sustained 4000px, twelve strokes with all seven brushes on both backends
+        env:
+          M10_SIZES: '4000'
+          M10_ZOOMS: '1,64'
+          M10_MODES: 'B,C,D'
+          M10_STROKES: '12'
+          M10_POINTS: '17'
+          M10_PREVIEW_OUTPUT: /tmp/m10-preview-evidence/sustained/report.json
+        run: node scripts/m10-preview-review.mjs
+      - name: Selection follows actual CPU work and GPU queue delay
+        env:
+          M10_SIZES: '512x384'
+          M10_ZOOMS: '1'
+          M10_MODES: 'D'
+          M10_BRUSHES: 'thin'
+          M10_BACKENDS: 'webgl2'
+          M10_STROKES: '12'
+          M10_POINTS: '9'
+        run: |
+          M10_CPU_EXTRA_WORK_MS=30 M10_EXPECT_LAST_ROUTE=gpu M10_PREVIEW_OUTPUT=/tmp/m10-preview-evidence/adapt-gpu/report.json node scripts/m10-preview-review.mjs
+          M10_GPU_EXTRA_QUEUE_MS=50 M10_EXPECT_LAST_ROUTE=cpu M10_PREVIEW_OUTPUT=/tmp/m10-preview-evidence/adapt-cpu/report.json node scripts/m10-preview-review.mjs
+      - name: Baseline and current live-final compositor images
+        env:
+          OVERLAY_BEFORE_ROOT: /tmp/m10-baseline/dist
+          OVERLAY_BEFORE_STROKE_ONLY: '1'
+          OVERLAY_BASELINE_SHA: '4708ffe5136ad1fa47be5909c129bb5f8fcb7869'
+          OVERLAY_MODES: 'A,B,C'
+          OVERLAY_BRUSHES: 'thin,broad,pencil,marker,soft,erase,lower,fade'
+        run: |
+          OVERLAY_SIZES=512,2000,3000,4000 OVERLAY_QUALITY_OUTPUT=/tmp/m10-preview-evidence/quality-fit/report.json node scripts/stroke-overlay-quality.mjs
+          OVERLAY_ZOOM=64 OVERLAY_DOCUMENT_SIZE=1 OVERLAY_BRUSHES=thin,pencil OVERLAY_QUALITY_OUTPUT=/tmp/m10-preview-evidence/quality-zoom/report.json node scripts/stroke-overlay-quality.mjs
+      - name: Exact formal records, layer pixels, history and replay on both backends
+        env:
+          FORMAL_BEFORE_ROOT: /tmp/m10-baseline/dist
+          OVERLAY_BASELINE_SHA: '4708ffe5136ad1fa47be5909c129bb5f8fcb7869'
+          FORMAL_QUALITY_OUTPUT: /tmp/m10-preview-evidence/formal/report.json
+        run: node scripts/stroke-overlay-formal.mjs
+      - name: Native touch Undo preserves PR37 while record or GPU completion is held
+        env:
+          IMMEDIATE_MODES: 'after'
+          IMMEDIATE_FAST_TAP: '1'
+          IMMEDIATE_POINTS: '120'
+        run: |
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          IMMEDIATE_STAGES=record,multiple,presentation IMMEDIATE_OUTPUT=/tmp/m10-preview-evidence/undo-4000/report.json node scripts/immediate-pending-undo-review.mjs
+          IMMEDIATE_SIZE=512 IMMEDIATE_STAGES=record,multiple IMMEDIATE_OUTPUT=/tmp/m10-preview-evidence/undo-512/report.json node scripts/immediate-pending-undo-review.mjs
+          IMMEDIATE_SIZE=2000 IMMEDIATE_STAGES=record,multiple IMMEDIATE_OUTPUT=/tmp/m10-preview-evidence/undo-2000/report.json node scripts/immediate-pending-undo-review.mjs
+          IMMEDIATE_BRUSH=foundation-pencil IMMEDIATE_STAGES=record,multiple IMMEDIATE_OUTPUT=/tmp/m10-preview-evidence/undo-pencil/report.json node scripts/immediate-pending-undo-review.mjs
+      - name: Portable save and reopen after interrupted Undo
+        env:
+          PENDING_MODES: 'after'
+          PENDING_SAVE_OUTPUT: /tmp/m10-preview-evidence/interrupted-save/report.json
+        run: node scripts/pending-stroke-save-review.mjs
+      - name: Validate measured work, first feedback, quality and route decisions
+        env:
+          M10_PREVIEW_EVIDENCE: /tmp/m10-preview-evidence
+          RT_PNG_PATH: /tmp/m10-preview-browser/node_modules/pngjs
+        run: node scripts/m10-preview-validation.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: m10-preview-evidence
+          path: /tmp/m10-preview-evidence/
   publish-qa:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [verification]
+    needs: [verification, preview-verification]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -96,6 +196,8 @@ jobs:
         with: {name: m10-verified-editor, path: site/qa/m10/app}
       - uses: actions/download-artifact@v4
         with: {name: m10-evidence, path: site/qa/m10/evidence}
+      - uses: actions/download-artifact@v4
+        with: {name: m10-preview-evidence, path: site/qa/m10/evidence/preview}
       - name: Preserve prior milestones and publish only M10
         run: |
           cp qa/m10/index.html site/qa/m10/index.html
