@@ -31,9 +31,9 @@ export function previewPlan(view,preset={},ratio='auto'){
   const rasterView=Float64Array.from([view[4],view[5],view[4],view[5],view[4],view[5],1,0,0,0,1,1,0,view[13],0,0]);
   const halo=2*view[6],poly=clipPolygon([[-halo,-halo],[view[2]+halo,-halo],[view[2]+halo,view[3]+halo],[-halo,view[3]+halo]].map(([x,y])=>toDocument(view,x,y)),0,0,view[4],view[5]);
   const xs=poly.map(p=>p.x),ys=poly.map(p=>p.y),clip=poly.length?[Math.max(0,Math.floor(Math.min(...xs))),Math.max(0,Math.floor(Math.min(...ys))),Math.min(view[4],Math.ceil(Math.max(...xs))),Math.min(view[5],Math.ceil(Math.max(...ys)))]:[0,0,0,0];
-  return {polygon:poly,visibleArea,density,ratio:1/(density*view[6])**2,requestedRatio:ratio,scale:1,screenWidth:view[4],screenHeight:view[5],width:view[4],height:view[5],visiblePixelBudget:(clip[2]-clip[0])*(clip[3]-clip[1]),diameter,rasterView,clip,sampling:'document-analytic',samplesPerDocumentPixel:1};
+  return {polygon:poly,screenPolygon:polygon,visibleArea,density,ratio:1/(density*view[6])**2,requestedRatio:ratio,scale:1,screenWidth:view[4],screenHeight:view[5],width:view[4],height:view[5],visiblePixelBudget:(clip[2]-clip[0])*(clip[3]-clip[1]),diameter,rasterView,clip,sampling:'document-analytic',samplesPerDocumentPixel:1};
  }
- return {polygon,visibleArea,density,ratio:selected,requestedRatio:ratio,scale,screenWidth:view[2],screenHeight:view[3],width:Math.ceil(view[2]*scale),height:Math.ceil(view[3]*scale),visiblePixelBudget:Math.ceil(visibleArea*scale*scale),diameter,sampling:'screen',samplesPerDocumentPixel:scale*view[6]};
+ return {polygon,screenPolygon:polygon,visibleArea,density,ratio:selected,requestedRatio:ratio,scale,screenWidth:view[2],screenHeight:view[3],width:Math.ceil(view[2]*scale),height:Math.ceil(view[3]*scale),visiblePixelBudget:Math.ceil(visibleArea*scale*scale),diameter,sampling:'screen',samplesPerDocumentPixel:scale*view[6]};
 }
 export function directOverlaySupported(p,surfaceKey,backend){
  const style=backend.surfaceStyles?.get(surfaceKey);
@@ -48,7 +48,7 @@ export class StrokeSink{
  constructor(source){this.source=source;this.element=document.createElement('canvas');this.element.className='illustro-stroke-overlay';this.element.setAttribute('aria-hidden','true');Object.assign(this.element.style,{position:'absolute',pointerEvents:'none',transformOrigin:'0 0',display:'none',background:'transparent',aspectRatio:'auto'});source.insertAdjacentElement('afterend',this.element);this.element.width=this.element.height=CHUNK;this.context=this.element.getContext('2d',{alpha:true,willReadFrequently:true});if(!this.context)throw Error('Overlay Canvas2D unavailable');this.allocations=1;this.retiredAllocations=0;this.layers=new Map;this.updateOrigin();}
  updateOrigin(){this.originX=this.source.offsetLeft;this.originY=this.source.offsetTop;this.zIndex=getComputedStyle(this.source).zIndex;if(this.rect){this.element.style.left=this.originX+this.rect[0]+'px';this.element.style.top=this.originY+this.rect[1]+'px';}if(this.guardElement){this.guardElement.style.left=this.originX+'px';this.guardElement.style.top=this.originY+'px';}for(const layer of this.layers.values())layer.updateOrigin();}
  forStroke(id){let layer=this.layers.get(id);if(!layer){const previous=[...this.layers.values()].at(-1);layer=new StrokeSink(this.source);(previous?.element??this.element).after(layer.element);this.layers.set(id,layer);}return layer;}
- reproject(from,to){for(const layer of this.layers.values())layer.reproject(from,to);if(!this.rect)return;const [a,b,c,d,e,f]=viewAffine(from,to),[x,y]=this.rect;this.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
+ reproject(from,to){this.element.style.imageRendering=to[13]>.5?'pixelated':'auto';for(const layer of this.layers.values())layer.reproject(from,to);if(!this.rect)return;const [a,b,c,d,e,f]=viewAffine(from,to),[x,y]=this.rect;this.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  reprojectGuard(from,to,g){if(!this.guardElement)return;const [a,b,c,d,e,f]=viewAffine(from,to),z=1/g.density;this.guardElement.style.transform=`matrix(${a*z},${b*z},${c*z},${d*z},${e+a*g.x+c*g.y},${f+b*g.x+d*g.y})`;}
  retireStroke(id){const layer=this.layers.get(id);if(layer){this.retiredAllocations+=layer.totalAllocations;layer.destroy();this.layers.delete(id);}}
  get totalAllocations(){return this.allocations+this.retiredAllocations+[...this.layers.values()].reduce((n,s)=>n+s.totalAllocations,0);}
@@ -70,7 +70,7 @@ export class StrokeSink{
 }
 
 export class StrokeOverlay{
- constructor(backend,{ratio='auto',sink=null,mode='auto',sliceMs=3,onFallback=null}={}){this.backend=backend;this.policy=new PreviewPolicy({mode});this.onFallback=onFallback;this.sliceMs=Math.max(.25,Math.min(4,sliceMs));this.ratio=ratio;this.sink=sink;this.states=new Map;this.finalizations=new Map;this.preparedBytes=0;this.pending=new Map;this.footprints=new Map;this.cells=new Map;this.dirty=new Set;this.guards=[];this.guardGeneration=0;this.epoch=0;this.generation=0;this.ready=false;this.enabled=true;this.fallback=false;this.suspended=false;this.allocatedBytes=0;this.metrics={updates:0,updatedPixels:0,rasterPixels:0,skippedRasterPixels:0,commands:0,historyReplayCommands:0,historyRebuilds:0,guardPixels:0,guardCaptures:0,guardCaptureMs:0,peakBytes:0,peakPixels:0,superseded:0,rebuilds:0,fallbacks:0,retirements:0,samples:[],maxCpuMs:0,backgroundSlices:0,maxBackgroundMs:0,foregroundSlices:0,maxSliceMs:0,cancelledUpdates:0,deadlineFallbacks:0,finalizationSwaps:0,obsoleteFinalizations:0};}
+ constructor(backend,{ratio='auto',sink=null,mode='auto',sliceMs=3,onFallback=null,liveStates=null}={}){this.backend=backend;this.policy=new PreviewPolicy({mode});this.onFallback=onFallback;this.liveStates=liveStates;this.sliceMs=Math.max(.25,Math.min(4,sliceMs));this.ratio=ratio;this.sink=sink;this.states=new Map;this.finalizations=new Map;this.preparedBytes=0;this.pending=new Map;this.footprints=new Map;this.cells=new Map;this.dirty=new Set;this.guards=[];this.guardGeneration=0;this.epoch=0;this.generation=0;this.ready=false;this.enabled=true;this.fallback=false;this.suspended=false;this.allocatedBytes=0;this.metrics={updates:0,updatedPixels:0,rasterPixels:0,skippedRasterPixels:0,commands:0,historyReplayCommands:0,historyRebuilds:0,guardPixels:0,guardCaptures:0,guardCaptureMs:0,peakBytes:0,peakPixels:0,superseded:0,rebuilds:0,fallbacks:0,retirements:0,samples:[],maxCpuMs:0,backgroundSlices:0,maxBackgroundMs:0,foregroundSlices:0,maxSliceMs:0,cancelledUpdates:0,deadlineFallbacks:0,finalizationSwaps:0,obsoleteFinalizations:0};}
  setEnabled(value){this.enabled=value;this.invalidate();}
  setNavigationActive(value){this.navigationActive=!!value;if(value){clearTimeout(this.viewRefineTimer);this.viewRefineTimer=null;for(const id of [...this.finalizations.keys()])this.discardFinalization(id);}else if(this.viewRefineNeeded){this.viewRefineNeeded=false;this.setView(this.view);}}
  setView(view){
@@ -87,7 +87,6 @@ export class StrokeOverlay{
    clearTimeout(this.viewRefineTimer);if(this.navigationActive){this.viewRefineNeeded=true;return;}this.viewRefineTimer=setTimeout(()=>{this.viewRefineTimer=null;if(this.disposed||!this.ready)return;for(const [id,state]of old){const v=this.states.get(id);if(v)this.queueFinalization(state,v);}},80);return;
   }
   clearTimeout(this.viewRefineTimer);this.viewRefineTimer=null;this.pending.clear();this.closeGuards();this.clearRaster();this.ready=this.enabled&&!this.suspended;this.plan=previewPlan(this.view,this.preferred??{},this.ratio);
-  for(const state of old.values()){const plan=previewPlan(this.view,state.preset,this.ratio);if(plan.scale>this.plan.scale)this.plan=plan;}
   for(const state of old.values())this.pending.set(state.id,state);if(this.ready)this.schedule();
  }
  prepare(preset){this.preferred=typeof preset==='number'?{size:preset}:preset;if(!this.view||this.states.size)return;this.plan=previewPlan(this.view,this.preferred,this.ratio);this.ready=this.enabled&&!this.suspended;}
@@ -99,14 +98,16 @@ export class StrokeOverlay{
  enqueue(state){if(!this.enabled||!this.view||this.suspended)return false;
   if(this.fallback&&!this.states.size&&!this.backend.previews.size)this.fallback=false;
   const eligible=this.canUse(state.preset,state.surfaceKey),key=this.policy.choices.get(state.id)?.key??previewContext(this.view,state.preset,this.backend);
-  const choice=this.policy.choose(state.id,key,{cpuAvailable:eligible,gpuAvailable:!this.backend.lost&&!this.backend.error,gpuWaitMs:this.gpuWaitMs??0,memoryPressure:this.allocatedBytes>MAX_BYTES*.8});
+  const cpuOrderPending=[...this.states.keys(),...this.pending.keys()].some(id=>id<state.id),newerGpuPending=[...this.policy.choices.values()].some(c=>c.id>state.id&&c.route==='gpu'&&(!this.liveStates||this.liveStates.has(c.id)));
+  const choice=this.policy.choose(state.id,key,{cpuAvailable:eligible,cpuOrderPending,newerGpuPending,gpuAvailable:!this.backend.lost&&!this.backend.error,gpuWaitMs:this.gpuWaitMs??0,memoryPressure:this.allocatedBytes>MAX_BYTES*.8});
   if(choice.route==='gpu'){
-   if(!eligible&&this.footprints.size){this.fallback=true;this.metrics.fallbacks++;}
+   if((!eligible||cpuOrderPending||this.footprints.has(state.id))&&(this.states.size||this.pending.size)){this.fallback=true;this.metrics.fallbacks++;}
+   if(!choice.cpuHasPresented&&(this.states.has(state.id)||this.pending.has(state.id)))this.removeState(state.id,true);
    return false;
   }
   if(!eligible){this.fallback=true;this.metrics.fallbacks++;return false;}
   this.sink??=new StrokeSink(this.backend.canvas);
-  const wanted=previewPlan(this.view,state.preset,this.ratio);if(wanted.scale>this.plan.scale){this.preferred=state.preset;this.setView(this.view);}else if(!this.states.size&&!this.pending.size)this.prepare(state.preset);
+  this.preferred=state.preset;this.plan=previewPlan(this.view,state.preset,this.ratio);
   if(this.pending.has(state.id))this.metrics.superseded++;this.pending.set(state.id,state);this.schedule();return true;
  }
  schedule(){if(this.scheduled||this.disposed||!this.ready||!this.pending.size)return;this.scheduled=true;const run=()=>{this.scheduled=false;this.workHandle=null;this.safeFlush();};
@@ -125,7 +126,7 @@ export class StrokeOverlay{
    // If this stroke has never been shown, switching cannot double-paint or
    // remove an existing image. Shed private CPU work after a measured 50ms
    // no-feedback deadline and retry the SAME immutable input on the GPU.
-   if(!v.last&&choice&&!choice.cpuHasPresented&&this.onFallback&&!this.backend.lost&&!this.backend.error&&performance.now()-choice.at>50&&this.policy.fallbackCpu(id,performance.now()-choice.at)){this.metrics.deadlineFallbacks++;this.removeState(id,true);this.onFallback(state);continue;}
+   if(!v.last&&choice&&!choice.cpuHasPresented&&this.onFallback&&!this.backend.lost&&!this.backend.error&&performance.now()-choice.at>50&&this.policy.fallbackCpu(id,performance.now()-choice.at)){this.metrics.deadlineFallbacks++;if([...this.states.keys(),...this.pending.keys()].some(other=>other<id))this.fallback=true;this.removeState(id,true);this.onFallback(state);continue;}
    if(v.last===state&&!v.work){this.pending.delete(id);continue;}
    if(!v.work){v.work=this.updateWork(v,state);}
    // Stable work already started is resumed exactly once. Obsolete mutable-tail
@@ -202,7 +203,7 @@ export class StrokeOverlay{
  presented(id,epoch=this.epoch){if(epoch!==this.epoch)return;this.removeState(id);this.metrics.retirements++;}
  cancel(id){this.removeState(id);}
 
- async protect(){this.safeFlush();if(this.guards.length||!this.cells.size)return true;const epoch=this.epoch,guardGeneration=this.guardGeneration,plan=this.plan,source=this.backend.canvas,bounds=this.bounds();if(!bounds)return true;
+ async protect(){this.safeFlush();if(this.guards.length||!this.cells.size)return true;const epoch=this.epoch,guardGeneration=this.guardGeneration,plan={...this.plan,polygon:this.plan.screenPolygon??this.plan.polygon},source=this.backend.canvas,bounds=this.bounds();if(!bounds)return true;
   // A cropped, full-DPR snapshot is a SHORT-LIVED transition guard, not a
   // historical proxy base. It prevents transparent feedback double-painting
   // while the independently owned GPU canvas publishes its exact result.
@@ -211,7 +212,7 @@ export class StrokeOverlay{
  }
  closeGuards(){this.guardGeneration++;for(const g of this.guards)g.bitmap?.close();this.guards=[];this.sink?.hideGuard?.();}
  fallbackPresented(submittedAt,epoch,fallbackRendered=false){if(epoch!==this.epoch)return;if(this.fallback&&fallbackRendered){this.closeGuards();this.clearRaster();this.pending.clear();return;}if(this.guards.length)this.closeGuards();}
- summary(){return {scope:'CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured',kind:'stroke-only',transport:'2d',coupled:false,ready:this.ready,viewEpoch:this.epoch,generation:this.generation,...this.plan,polygon:undefined,rasterView:undefined,selection:this.policy.summary(),pixels:(this.sink?.pixels??0),width:this.sink?.element?.width??0,height:this.sink?.element?.height??0,bytes:this.allocatedBytes+this.preparedBytes+(this.sink?.pixels??0)*4+this.guards.reduce((n,g)=>n+g.width*g.height*4,0),rasterByteBudget:MAX_BYTES,pendingStrokes:this.footprints.size,fallback:this.fallback,allocations:this.sink?.totalAllocations??this.sink?.allocations??0,pendingFinalizations:this.finalizations.size,...this.metrics,samples:this.measure?this.metrics.samples:[]};}
+ summary(){return {scope:'CPU stroke raster/upload and cropped transition snapshots; physical display/GPU execution unmeasured',kind:'stroke-only',transport:'2d',coupled:false,ready:this.ready,viewEpoch:this.epoch,generation:this.generation,...this.plan,polygon:undefined,screenPolygon:undefined,rasterView:undefined,selection:this.policy.summary(),pixels:(this.sink?.pixels??0),width:this.sink?.element?.width??0,height:this.sink?.element?.height??0,bytes:this.allocatedBytes+this.preparedBytes+(this.sink?.pixels??0)*4+this.guards.reduce((n,g)=>n+g.width*g.height*4,0),rasterByteBudget:MAX_BYTES,pendingStrokes:this.footprints.size,fallback:this.fallback,allocations:this.sink?.totalAllocations??this.sink?.allocations??0,pendingFinalizations:this.finalizations.size,...this.metrics,samples:this.measure?this.metrics.samples:[]};}
  destroy(){this.disposed=true;this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.sink?.destroy();}
 }
 

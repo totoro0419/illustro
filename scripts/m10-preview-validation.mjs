@@ -18,7 +18,7 @@ assert.equal(exactGpuElisions,280);assert.equal(sustained.cases.length,84);
 for(const c of sustained.cases){assert.deepEqual(c.errors,[]);assert.equal(c.remainingJobs,0);assert.equal(c.remainingCommands,0);assert.equal(c.strokes.length,12);assert.equal(c.rawAccepted,12*17+(['hard','soft'].includes(c.brush)?5:0));}
 for(const [file,route]of [['adapt-gpu/report.json','gpu'],['adapt-cpu/report.json','cpu']]){const r=await read(file);assert.deepEqual(r.errors,[]);assert.equal(r.cases.length,1);const c=r.cases[0];assert.equal(c.routes.at(-1),route);assert.ok(c.routes.slice(-6).filter(x=>x===route).length>=4);assert.equal(c.records,12);assert.equal(c.rawAccepted,108);assert.deepEqual(c.errors,[]);}
 const quality=[];
-for(const directory of ['quality-fit','quality-zoom']){
+for(const directory of ['quality-fit','quality-zoom','quality-rotated']){
  const r=await read(directory+'/report.json');assert.deepEqual(r.errors,[]);let exact=0,previews=0;
  for(const b of r.cases.filter(c=>c.mode==='B'||c.mode==='C')){
   const a=r.cases.find(c=>c.mode==='A'&&c.backend===b.backend&&c.size===b.size&&c.layout===b.layout&&c.brush===b.brush&&c.ratio===b.ratio);assert.ok(a);

@@ -152,6 +152,7 @@ jobs:
         run: |
           OVERLAY_SIZES=512,2000,3000,4000 OVERLAY_QUALITY_OUTPUT=/tmp/m10-preview-evidence/quality-fit/report.json node scripts/stroke-overlay-quality.mjs
           OVERLAY_ZOOM=64 OVERLAY_DOCUMENT_SIZE=1 OVERLAY_BRUSHES=thin,pencil OVERLAY_QUALITY_OUTPUT=/tmp/m10-preview-evidence/quality-zoom/report.json node scripts/stroke-overlay-quality.mjs
+          OVERLAY_ZOOM=16 OVERLAY_ANGLE=0.4 OVERLAY_FLIP_X=-1 OVERLAY_FLIP_Y=-1 OVERLAY_NEAREST=1 OVERLAY_DOCUMENT_SIZE=1 OVERLAY_BRUSHES=thin,pencil OVERLAY_QUALITY_OUTPUT=/tmp/m10-preview-evidence/quality-rotated/report.json node scripts/stroke-overlay-quality.mjs
       - name: Exact formal records, layer pixels, history and replay on both backends
         env:
           FORMAL_BEFORE_ROOT: /tmp/m10-baseline/dist

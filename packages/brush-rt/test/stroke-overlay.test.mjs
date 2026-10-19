@@ -74,3 +74,7 @@ test('a transition capture requested before Undo cannot resurrect canceled feedb
  try{p.enqueue(live(record(64)));flush(p);const pending=p.protect();assert.equal(typeof resume,'function');p.cancel(1);p.closeGuards();resume({close(){closed++;}});assert.equal(await pending,false);assert.equal(p.guards.length,0);assert.equal(p.states.size,0);assert.equal(closed,1);}
  finally{p.destroy();if(previous===undefined)delete globalThis.createImageBitmap;else globalThis.createImageBitmap=previous;}
 });
+
+test('pending bitmap reprojection follows the selected nearest or smooth presentation',()=>{const sink={layers:new Map,rect:[0,0,32,32],element:{style:{}}},from=view(),to=view();to[6]=64;to[13]=1;StrokeSink.prototype.reproject.call(sink,from,to);assert.equal(sink.element.style.imageRendering,'pixelated');to[13]=0;StrokeSink.prototype.reproject.call(sink,from,to);assert.equal(sink.element.style.imageRendering,'auto');});
+
+test('a finer new brush uses its own grid without invalidating the previous pending image',()=>{const {p}=setup(),wide=record(1024);p.enqueue(live(wide));flush(p);const epoch=p.epoch,old=p.states.get(1),count=p.metrics.commands,fine=record(1);p.enqueue({...live(fine,10),finished:false});flush(p);assert.equal(p.epoch,epoch);assert.equal(p.states.get(1),old);assert.equal(p.metrics.commands-count,fine.commands.length);assert.equal(p.viewRefineTimer,null);p.destroy();});

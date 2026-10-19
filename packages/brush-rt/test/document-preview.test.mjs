@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {StrokeOverlay,previewPlan} from '../dist/rt/stroke-overlay.mjs';
+import {StrokeOverlay,previewPlan,polygonArea} from '../dist/rt/stroke-overlay.mjs';
 import {CanonicalBuilder,referenceBrushes,cpuReference} from '../dist/rt/index.mjs';
 globalThis.ImageData??=class{constructor(w,h){this.width=w;this.height=h;this.data=new Uint8ClampedArray(w*h*4);}};
 const view=(zoom=4,angle=0,flip=1)=>Float64Array.from([768,768,256,256,64,64,zoom,angle,0,0,flip,1,0,0,0,0]);
@@ -20,3 +20,5 @@ test('a real missed first-feedback deadline retries the identical record on GPU 
 });
 
 test('GPU-only mode allocates no CPU canvas or raster buffer',()=>{const p=new StrokeOverlay({canvas:{},previews:new Map,surfaceStack:['a']},{mode:'gpu'});p.setView(view(64));const r=record();assert.equal(p.enqueue(state(r)),false);assert.equal(p.sink,null);assert.equal(p.summary().pixels,0);assert.equal(p.summary().bytes,0);assert.equal(p.summary().allocations,0);p.presented(1);p.cancel(2);p.invalidate();assert.equal(p.sink,null);p.destroy();});
+
+test('native-grid handoff guards clip in actual screen coordinates',async()=>{const {p}=setup(view(64)),previous=globalThis.createImageBitmap;globalThis.createImageBitmap=async()=>({close(){}});p.backend.canvas.width=p.backend.canvas.height=768;let area=0;p.sink.showGuard=plan=>area=polygonArea(plan.polygon);try{p.enqueue(state(record(0,4)));drain(p);await p.protect();assert.equal(area,256*256);}finally{p.destroy();if(previous===undefined)delete globalThis.createImageBitmap;else globalThis.createImageBitmap=previous;}});
