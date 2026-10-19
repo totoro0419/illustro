@@ -53,6 +53,7 @@ jobs:
           RT_PLAYWRIGHT_PATH: /tmp/m10-browser/node_modules/playwright
           M08_EVIDENCE_DIRECTORY: /tmp/m10-evidence/m08
           M08_SMOKE_QUICK: '1'
+          M08_PERF_REVIEW: '1'
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: node scripts/editor-m08-smoke.mjs
       - name: M09 Color picker and palette regression
