@@ -3,7 +3,7 @@ import {EmptyStrokeError} from './strokeCommit';
 import {hasPixelData} from './persistence/pixelPresence';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
-import {TILE,validateRecord,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
+import {TILE,validateRecord,validateFoundation,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
 import {CANONICAL_TILE_SIZE,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import type {EditorController,EditorHistoryChange} from './controller';
@@ -396,6 +396,26 @@ export class BrushSurface{
     finally{buffer.destroy();}
    }
    return null;
+  }
+  /** Refresh preset catalog without mutating an in-flight stroke or the artwork. */
+  setBrushes(brushes:readonly FoundationPreset[]){
+    if(!brushes.length||brushes.length>256)throw Error('invalid brush collection');
+    const seen=new Set<string>();
+    this.brushes=brushes.map(p=>{
+      const valid=structuredClone(validateFoundation(p));
+      if(seen.has(valid.id))throw Error('duplicate brush preset ID');
+      seen.add(valid.id);return valid;
+    });
+    if(this.preset&&!seen.has(this.preset.id))this.select(0);
+  }
+  /** Apply a validated preset for subsequent strokes only; existing records stay unchanged. */
+  applyPreset(candidate:FoundationPreset){
+    if(this.inputActive)throw Error('描画中はブラシ設定を変更できません');
+    const validated=structuredClone(validateFoundation(candidate));
+    if(!this.brushes.some(p=>p.id===validated.id))throw Error('unknown brush ID');
+    this.preset=validated;
+    if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];
+    (this.renderer as any)?.proxy?.prepare(this.preset);
   }
   select(index:number){const p=this.brushes[index];if(p){this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}}selectById(id:string){const p=this.brushes.find(item=>item.id===id);if(!p)throw new Error('brush preset not found');this.preset=structuredClone(p);if(this.preset.blend!=='erase')this.preset.color=[...this.foreground];(this.renderer as any)?.proxy?.prepare(this.preset);}setSize(value:number){if(this.preset&&Number.isFinite(value)&&value>=.1&&value<=1024){this.preset.size=value;(this.renderer as any)?.proxy?.prepare(this.preset);}}setForceFade(enabled:boolean){if(this.preset?.forceFade)this.preset.forceFade.enabled=enabled;}
   setPerformanceEnabled(enabled:boolean){this.renderer?.setPerformanceEnabled(enabled);}
