@@ -225,8 +225,14 @@ jobs:
       - name: CPU preview work and transition capture cannot gate navigation
         env:
           NAV_ROUTES: cpu,auto
-          NAV_STAGES: cpu-work,snapshot
+          NAV_STAGES: cpu-work
           NAV_OUTPUT: /tmp/m10-navigation-evidence/tasks/report.json
+        run: node scripts/m10-navigation-review.mjs
+      - name: A visible CPU image and delayed transition capture
+        env:
+          NAV_ROUTES: cpu
+          NAV_STAGES: snapshot
+          NAV_OUTPUT: /tmp/m10-navigation-evidence/capture/report.json
         run: node scripts/m10-navigation-review.mjs
       - name: Three sizes, all five zooms and four brushes through actual gestures
         env:

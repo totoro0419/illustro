@@ -28,6 +28,7 @@ export class BrushSurface{
   // Navigation transforms the published canvas, not its fixed input viewport.
   private get inputViewport(){return document.body.classList.contains('canvas-viewport')&&this.canvas.parentElement?.classList.contains('surface')?this.canvas.parentElement:this.canvas;}
   private layoutRect(){return this.inputViewport.getBoundingClientRect();}
+  get viewportRect(){return this.layoutRect();}
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'view-command'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
   async initialize(){const engine=await import('@illustro/brush-rt'),target=this.controller.target();this.view=new CanvasView(target.width,target.height,document.body.classList.contains('canvas-viewport')?.94:1);
@@ -193,7 +194,7 @@ export class BrushSurface{
     }catch(e){diagnostics.gpuVisibleCanvasError=String(e);}
     return diagnostics;
   }
-  private clampPredicted(last:Sample,predicted:Sample[]){if(!predicted.length)return[];const r=this.canvas.getBoundingClientRect(),target=this.target??this.controller.target(),maxLead=Math.max(1,target.width/Math.max(1,r.width)*3),out:Sample[]=[];let anchor=last;for(const p of predicted){let x=p.x,y=p.y;const dx=x-anchor.x,dy=y-anchor.y,d=Math.hypot(dx,dy);if(d>maxLead){const k=maxLead/d;x=anchor.x+dx*k;y=anchor.y+dy*k;}out.push({...p,x,y});anchor={...p,x,y};}return out;}
+  private clampPredicted(last:Sample,predicted:Sample[]){if(!predicted.length)return[];const r=this.layoutRect(),target=this.target??this.controller.target(),maxLead=Math.max(1,target.width/Math.max(1,r.width)*3),out:Sample[]=[];let anchor=last;for(const p of predicted){let x=p.x,y=p.y;const dx=x-anchor.x,dy=y-anchor.y,d=Math.hypot(dx,dy);if(d>maxLead){const k=maxLead/d;x=anchor.x+dx*k;y=anchor.y+dy*k;}out.push({...p,x,y});anchor={...p,x,y};}return out;}
   async syncHistory(change:EditorHistoryChange){await this.syncHistoryBatch([change]);}
   async syncHistoryBatch(changes:readonly EditorHistoryChange[]){
     if(!changes.length)return;if(!this.session)throw new Error('Renderer is not initialized');if(this.pointer!==null||this.finishing||this.historySyncing)throw new Error('History is busy');

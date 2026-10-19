@@ -162,7 +162,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new Bru
  const color=rgb(...(fromComposite&&alpha>0&&alpha<1?channels.map(v=>Math.min(1,v/alpha)):channels) as [number,number,number]);
  if(phase==='preview'){
   foreground.begin();foreground.preview(color);
-  if(point&&surface){const loupe=byId<HTMLElement>('colorSampleLoupe'),box=byId<HTMLCanvasElement>('canvas').getBoundingClientRect(),screen=surface.documentToScreen(point);
+  if(point&&surface){const loupe=byId<HTMLElement>('colorSampleLoupe'),box=surface.viewportRect,screen=surface.documentToScreen(point);
    byId<HTMLElement>('colorSampledSwatch').style.backgroundColor=hex(color);
    byId<HTMLElement>('colorBeforeSwatch').style.backgroundColor=hex(eyedropperOriginal);
    byId('colorSampleCode').textContent=hex(color);
@@ -251,7 +251,7 @@ cropOverlay.addEventListener('pointerdown',e=>{
 });
 cropOverlay.addEventListener('pointermove',e=>{
  if(!draggingCrop||!surface)return;e.preventDefault();
- const box=byId<HTMLCanvasElement>('canvas').getBoundingClientRect(),p=surface.screenToDocument({x:e.clientX-box.left,y:e.clientY-box.top}),root=controller.document.root,c=draggingCrop;
+ const box=surface.viewportRect,p=surface.screenToDocument({x:e.clientX-box.left,y:e.clientY-box.top}),root=controller.document.root,c=draggingCrop;
  const x=Math.max(0,Math.min(root.width,Math.round(p.x))),y=Math.max(0,Math.min(root.height,Math.round(p.y)));
  let x0=c.startX,y0=c.startY,x1=c.endX,y1=c.endY;
  if(c.corner.includes('l'))x0=Math.min(x,x1-1);else x1=Math.max(x,x0+1);
