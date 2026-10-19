@@ -138,11 +138,14 @@ async function test(kind,dpr,touch=false){
   const valueAfterPicker=await current(p);
   assert.notEqual(valueAfterPicker,'#FF0000','ibis-style diamond drag updates current color');
   // Clicking the masked center gap may not silently change hue.
-  const beforeGapClick=await current(p),circleCenter={x:wheel.x+wheel.width/2,y:wheel.y+wheel.height/2};
-  await p.mouse.click(circleCenter.x,circleCenter.y-wheel.width/2+33);
+  // Reacquire the current ring geometry after the SV drag: a dynamic
+  // workspace can scroll during pointer capture or layout updates.
+  const ringNow=await p.locator('#colorRing').boundingBox();assert.ok(ringNow);
+  const beforeGapClick=await current(p),circleCenter={x:ringNow.x+ringNow.width/2,y:ringNow.y+ringNow.height/2};
+  await p.mouse.click(circleCenter.x,circleCenter.y-ringNow.width/2+33);
   assert.equal(await current(p),beforeGapClick,'transparent hue-ring center is not a clickable hue');
-  await p.mouse.click(circleCenter.x,circleCenter.y-wheel.width/2+11);
-  assert.notEqual(await current(p),beforeGapClick,'hue changes when clicking the colored annulus');
+  await p.mouse.click(circleCenter.x,circleCenter.y-ringNow.width/2+11);
+  assert.notEqual(await current(p),beforeGapClick,'hue changes when clicking the colored annulus at '+JSON.stringify(ringNow));
 
   assert.ok((await state(p)).currentRevision===rev2);
   await p.locator('#colorShowPalette').click();
