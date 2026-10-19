@@ -21,7 +21,7 @@ try {
  const url='http://127.0.0.1:'+server.address().port+'/';
  browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
  for(const backend of ['webgl2','webgpu']){
-  const context=await browser.newContext({viewport:{width:1100,height:900},deviceScaleFactor:2,hasTouch:true,acceptDownloads:true});
+  const context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:2,hasTouch:true,acceptDownloads:true});
   const page=await context.newPage(),pageErrors=[];
   page.on('pageerror',error=>pageErrors.push(error.message));
   page.on('console',msg=>{if(msg.type()==='error'&&!/favicon/.test(msg.text()))pageErrors.push(msg.text());});
