@@ -65,6 +65,14 @@ test('navigation cancels private CPU work and never revives it after release',as
  assert.equal(p.pending.size,0);assert.equal(p.finalizations.size,0);assert.equal(p.metrics.rasterPixels,pixels);for(const v of p.states.values())assert.equal(v.work,null);assert.equal(JSON.stringify(r),original);p.destroy();
 });
 
+test('a view invalidated during GPU map skips pixel conversion and releases the readback buffer',async()=>{
+ const {p,backend}=setup(),r=record(64),previousUsage=globalThis.GPUBufferUsage,previousMap=globalThis.GPUMapMode;let resume,reads=0,destroyed=0;
+ globalThis.GPUBufferUsage={COPY_DST:1,MAP_READ:2};globalThis.GPUMapMode={READ:1};
+ p.enqueue(live(r));flush(p);backend.canvas={width:1200,height:1800};backend.viewTransform=p.view;backend.format='bgra8unorm';backend.viewportCache={valid:true,image:{},view:p.view.slice()};backend.device={createBuffer:()=>({mapAsync:()=>new Promise(ok=>resume=ok),getMappedRange(){reads++;throw Error('stale pixels must not be read');},destroy(){destroyed++;}}),createCommandEncoder:()=>({copyTextureToBuffer(){},finish(){return {};}}),queue:{submit(){}}};
+ try{const pending=p.protect();assert.equal(typeof resume,'function');const next=p.view.slice();next[8]+=10;p.setView(next);resume();assert.equal(await pending,false);assert.equal(reads,0);assert.equal(destroyed,1);assert.equal(p.guards.length,0);}
+ finally{p.destroy();if(previousUsage===undefined)delete globalThis.GPUBufferUsage;else globalThis.GPUBufferUsage=previousUsage;if(previousMap===undefined)delete globalThis.GPUMapMode;else globalThis.GPUMapMode=previousMap;}
+});
+
 
 test('a reused pending-stroke allocation updates its document clip after view refinement',()=>{
  const element={style:{}},sink={rect:[0,0,128,128],scale:1,element};

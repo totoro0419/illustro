@@ -30,7 +30,7 @@ This is a transient view of already available pixels. Newly revealed areas and e
 
 ## Retained correctness mechanisms
 
-The cropped transition guard remains for a CPU-to-formal publication that really replaces a CPU image. It prevents translucent ink from being displayed twice while independent GPU and DOM surfaces change. A view change invalidates an old capture; navigation never waits for its readback, conversion or completion. Keeping this bounded handoff is preferable to removing its protection without an atomic replacement.
+The cropped transition guard remains for a CPU-to-formal publication that really replaces a CPU image. It prevents translucent ink from being displayed twice while independent GPU and DOM surfaces change. A view change invalidates an old capture; navigation never waits for its readback, conversion or completion. A stale GPU map skips CPU pixel conversion entirely. A still-current conversion yields to ordinary tasks after about 3ms, checked every sixteen rows, so its callback cannot consume the whole image in one synchronous task. Keeping this bounded handoff is preferable to removing its protection without an atomic replacement.
 
 Semantic forced taper can still build a corrected private image when idle; a gesture cancels it instead of scheduling refinement on release. GPU resource ownership, TileHistory's 128px before/after images, canonical StrokeRecords, formal shaders, brush reconstruction, persistence, recovery and offline formats are unchanged.
 

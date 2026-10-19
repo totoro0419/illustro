@@ -1,6 +1,7 @@
 import {commandBounds,referenceCoverage,continuous,capsuleCoverage,sweptCoverage} from '@rt/model';
 import {PreviewPolicy,previewContext} from '@rt/preview-policy';
 import {textureFactor} from '@rt/foundation';
+import {historyYield} from '@rt/history-io';
 
 // Only active/unpresented strokes live here. Completed artwork is borrowed from
 // the existing GPU presentation, never reconstructed from semantic history.
@@ -212,7 +213,8 @@ export class StrokeOverlay{
   // historical proxy base. It prevents transparent feedback double-painting
   // while the independently owned GPU canvas publishes its exact result.
   const x=Math.max(0,Math.floor(Math.floor(bounds[0])*plan.density)),y=Math.max(0,Math.floor(Math.floor(bounds[1])*plan.density)),w=Math.min(source.width-x,Math.ceil(Math.ceil(bounds[2])*plan.density)-x),h=Math.min(source.height-y,Math.ceil(Math.ceil(bounds[3])*plan.density)-y);if(w<=0||h<=0)return true;
-  const started=performance.now(),bitmap=await transitionSnapshot(this.backend,x,y,w,h);if(this.disposed||epoch!==this.epoch||guardGeneration!==this.guardGeneration){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h,density:plan.density,view:this.view.slice()}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;this.metrics.guardCaptureMs+=performance.now()-started;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+(this.sink?.pixels??0)*4+w*h*12);this.sink.showGuard?.(plan,this.guards[0]);if(this.sink.showGuard){bitmap.close();this.guards[0].bitmap=null;}return true;
+  const current=()=>!this.disposed&&epoch===this.epoch&&guardGeneration===this.guardGeneration;
+  const started=performance.now(),bitmap=await transitionSnapshot(this.backend,x,y,w,h,current);if(!bitmap)return false;if(!current()){bitmap.close();return false;}this.guards=[{bitmap,x:x/plan.density,y:y/plan.density,width:w,height:h,density:plan.density,view:this.view.slice()}];this.metrics.guardCaptures++;this.metrics.guardPixels+=w*h;this.metrics.guardCaptureMs+=performance.now()-started;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+(this.sink?.pixels??0)*4+w*h*12);this.sink.showGuard?.(plan,this.guards[0]);if(this.sink.showGuard){bitmap.close();this.guards[0].bitmap=null;}return true;
  }
  closeGuards(){this.guardGeneration++;for(const g of this.guards)g.bitmap?.close();this.guards=[];this.sink?.hideGuard?.();}
  fallbackPresented(submittedAt,epoch,fallbackRendered=false){if(epoch!==this.epoch)return;if(this.fallback&&fallbackRendered){this.closeGuards();this.clearRaster();this.pending.clear();return;}if(this.guards.length)this.closeGuards();}
@@ -223,12 +225,17 @@ export class StrokeOverlay{
 // WebGPU canvas textures are automatically expired after presentation. Read a
 // cropped region of the retained screen cache instead, once per handoff. Never
 // read the artwork or the whole viewport every input/frame.
-async function transitionSnapshot(b,x,y,w,h){
+async function transitionSnapshot(b,x,y,w,h,current){
  if(!b.device)return createImageBitmap(b.canvas,x,y,w,h);
  if(!b.viewportCache?.valid||!b.viewportCache.view?.every((v,i)=>v===b.viewTransform[i]))await b.presentCurrent();
+ if(!current())return null;
  const image=b.viewportCache?.valid&&b.viewportCache.image;if(!image)throw Error('Retained presentation unavailable');
  const d=b.device,stride=Math.ceil(w*4/256)*256,buffer=d.createBuffer({size:stride*h,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
- try{const e=d.createCommandEncoder();e.copyTextureToBuffer({texture:image,origin:{x,y}},{buffer,bytesPerRow:stride},[w,h]);d.queue.submit([e.finish()]);await buffer.mapAsync(GPUMapMode.READ);const raw=new Uint8Array(buffer.getMappedRange()),data=new ImageData(w,h),bgra=b.format.startsWith('bgra');
-  for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const from=yy*stride+xx*4,to=(yy*w+xx)*4;data.data[to]=raw[from+(bgra?2:0)];data.data[to+1]=raw[from+1];data.data[to+2]=raw[from+(bgra?0:2)];data.data[to+3]=255;}buffer.unmap();return await createImageBitmap(data);
+ try{const e=d.createCommandEncoder();e.copyTextureToBuffer({texture:image,origin:{x,y}},{buffer,bytesPerRow:stride},[w,h]);d.queue.submit([e.finish()]);await buffer.mapAsync(GPUMapMode.READ);if(!current())return null;const raw=new Uint8Array(buffer.getMappedRange()),data=new ImageData(w,h),bgra=b.format.startsWith('bgra');let slice=performance.now();
+  for(let yy=0;yy<h;yy++){for(let xx=0;xx<w;xx++){const from=yy*stride+xx*4,to=(yy*w+xx)*4;data.data[to]=raw[from+(bgra?2:0)];data.data[to+1]=raw[from+1];data.data[to+2]=raw[from+(bgra?0:2)];data.data[to+3]=255;}
+   // A retained handoff must not turn the GPU map callback into one long CPU
+   // task. A newer view makes the entire private conversion unnecessary.
+   if((yy&15)===15&&performance.now()-slice>=3){await historyYield();if(!current())return null;slice=performance.now();}
+  }buffer.unmap();if(!current())return null;return await createImageBitmap(data);
  }finally{buffer.destroy();}
 }
