@@ -160,6 +160,7 @@ jobs:
       - name: Exact formal records, layer pixels, history and replay on both backends
         env:
           FORMAL_BEFORE_ROOT: /tmp/m10-baseline/dist
+          FORMAL_MATCH_CONTEXT: '1'
           OVERLAY_BASELINE_SHA: '4708ffe5136ad1fa47be5909c129bb5f8fcb7869'
           FORMAL_QUALITY_OUTPUT: /tmp/m10-preview-evidence/formal/report.json
         run: node scripts/stroke-overlay-formal.mjs
