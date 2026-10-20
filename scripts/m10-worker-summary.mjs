@@ -8,24 +8,28 @@ const root=process.env.WORKER_EVIDENCE??'/tmp/m10-worker-evidence';
 const read=async name=>JSON.parse(await fs.readFile(path.join(root,name,'report.json'),'utf8'));
 const matrix=await read(''),gated=await read('gated'),short=await read('short'),sustained=await read('sustained'),formal=await read('formal');
 const histories=await Promise.all(['history','history-512','history-2000'].map(read));
-for(const r of [matrix,gated,short,sustained,formal,...histories]){assert.equal(r.source,matrix.source);assert.equal(r.status,'AUTOMATED_CHECKS_PASSED');assert.deepEqual(r.errors,[]);}
+const continuous=await read('through-completion');
+for(const r of [matrix,gated,short,sustained,formal,continuous,...histories]){assert.equal(r.source,matrix.source);assert.equal(r.status,'AUTOMATED_CHECKS_PASSED');assert.deepEqual(r.errors,[]);}
 assert.equal(matrix.cases.length,432);assert.equal(gated.cases.length,12);assert.equal(formal.formal.length,2);
-const all=[...matrix.cases,...gated.cases,...short.cases,...sustained.cases];
+assert.equal(short.cases.length,8);assert.equal(sustained.cases.length,8);assert.deepEqual(histories.map(r=>r.cases.length),[12,4,4]);assert.ok(histories.every(r=>r.cases.every(c=>c.exactUndoRedo&&c.exactNativeSave)));
+assert.equal(continuous.cases.length,4);assert.ok(continuous.cases.every(c=>c.early.diag.handoff.pendingGpu===0));
+const all=[...matrix.cases,...gated.cases,...short.cases,...sustained.cases,...continuous.cases];
 assert.ok(all.every(c=>c.initial.phase==='before-release'&&Number.isFinite(c.metrics.releaseToGestureEventMs)),'source images must precede release, with the native gap measured');
 const pct=(a,p)=>{a=a.filter(Number.isFinite).sort((x,y)=>x-y);return a.length?a[Math.max(0,Math.min(a.length-1,Math.ceil(a.length*p)-1))]:null;};
 const maximum=a=>pct(a,1),median=a=>pct(a,.5),key=c=>[c.backend,c.route,c.brush,c.width,c.delay].join('/');
 const summary={source:matrix.source,baseline:matrix.baseline,browser:matrix.browser,
  status:'AUTOMATED_FUNCTIONAL_CHECKS_PASSED; PHYSICAL_ACCEPTANCE_PENDING',userReview:'REQUIRED',
  method:'Source PNG and screencast start BEFORE release. The requested delay is the only inserted wait before the next native touch. Actual native release-to-gesture timestamps are reported. Composed PNGs and distinct screencast images confirm visible movement; rAF is only a scheduling proxy.',
- counts:{matrix:matrix.cases.length,gated:gated.cases.length,short:short.cases.length,sustained:sustained.cases.length,history:histories.reduce((n,r)=>n+r.cases.length,0)},
+ counts:{matrix:matrix.cases.length,gated:gated.cases.length,short:short.cases.length,sustained:sustained.cases.length,throughCompletion:continuous.cases.length,history:histories.reduce((n,r)=>n+r.cases.length,0)},
  groups:[],regressions:[],formal:formal.formal.map(c=>({backend:c.backend,records:c.matchedRecords,layerImages:c.matchedLayerImages})),
  minMappedInkFraction:Math.min(...all.map(c=>c.visual.fraction)),
  limits:['Software GPU and emulated touch/CPU load, not a physical smartphone.','GPU execution time, physical scanout/input-to-photon time, VRAM and thermal/power behavior are unmeasured.','Worker, image transfer and compositor may share the same physical GPU.','Completion acknowledgement holding is a lifecycle test; it does not simulate physical GPU occupancy.','Each matrix condition is one sample; the case-p95 median is not a pooled input percentile.']};
+summary.continuous=continuous.cases.map(c=>({backend:c.backend,brush:c.brush,gestureMs:c.early.at-c.early.gestureAt,completedDuringGesture:c.early.diag.handoff.pendingGpu===0,...c.metrics}));
 for(const backend of ['webgl2','webgpu'])for(const version of ['before','after']){
  const cases=matrix.cases.filter(c=>c.backend===backend&&c.version===version),instant=cases.filter(c=>c.delay===0),metric=k=>cases.map(c=>c.metrics[k]);
  summary.groups.push({backend,version,cases:cases.length,inputCaseP95MedianMs:median(metric('inputReceiptP95Ms')),inputMaxMs:maximum(metric('inputReceiptMaxMs')),
   frameCaseP95MedianMs:median(metric('frameIntervalP95Ms')),frameMaxMs:maximum(metric('frameIntervalMaxMs')),mainLongTaskMaxMs:maximum(metric('mainLongTaskMaxMs')),
-  viewComputeP95MaxMs:maximum(cases.map(c=>c.early.diag.viewComputeP95Ms)),formalCpuMaxMs:maximum(metric('formalCpuMaxMs')),
+  viewComputeP95MaxMs:maximum(cases.map(c=>c.early.diag.viewComputeP95Ms)),formalCpuMaxMs:maximum(metric('formalCpuMaxMs')),compositedTilesMax:maximum(cases.flatMap(c=>c.final.formal.map(t=>t.compositedTiles))),
   formalCompletionMedianMs:median(cases.flatMap(c=>c.final.diagnostics.handoff.traces.map(t=>t.gpuMs))),formalCompletionMaxMs:maximum(cases.flatMap(c=>c.final.diagnostics.handoff.traces.map(t=>t.gpuMs))),
   requestedZero:{inputMaxMs:maximum(instant.map(c=>c.metrics.inputReceiptMaxMs)),nativeGapMinMs:pct(instant.map(c=>c.metrics.releaseToGestureEventMs),0),nativeGapMaxMs:maximum(instant.map(c=>c.metrics.releaseToGestureEventMs))}});
 }
@@ -35,6 +39,7 @@ await fs.writeFile(path.join(root,'summary.json'),JSON.stringify(summary,null,2)
 const escape=x=>String(x).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const ms=x=>Number.isFinite(x)?x.toFixed(1):'未観測';
 const rows=summary.groups.map(g=>`<tr><th>${g.backend} ${g.version==='before'?'修正前':'修正後'}</th><td>${ms(g.inputCaseP95MedianMs)}</td><td>${ms(g.frameCaseP95MedianMs)}</td><td>${ms(g.inputMaxMs)}</td><td>${ms(g.frameMaxMs)}</td><td>${ms(g.mainLongTaskMaxMs)}</td></tr>`).join('');
+const longRows=summary.continuous.map(c=>`<tr><th>${c.backend} ${c.brush==='gpen'?'Gペン':'鉛筆'}</th><td>${(c.gestureMs/1000).toFixed(1)}秒</td><td>${ms(c.inputReceiptP95Ms)}</td><td>${ms(c.inputReceiptMaxMs)}</td><td>${ms(c.frameIntervalMaxMs)}</td><td>${ms(c.mainLongTaskMaxMs)}</td></tr>`).join('');
 const work=summary.groups.map(g=>`<tr><th>${g.backend} ${g.version==='before'?'修正前':'修正後'}</th><td>${ms(g.formalCpuMaxMs)}</td><td>${ms(g.formalCompletionMedianMs)}</td><td>${ms(g.formalCompletionMaxMs)}</td></tr>`).join('');
 const gap=summary.groups.map(g=>`<tr><th>${g.backend} ${g.version==='before'?'修正前':'修正後'}</th><td>${ms(g.requestedZero.nativeGapMinMs)}〜${ms(g.requestedZero.nativeGapMaxMs)}</td><td>${ms(g.requestedZero.inputMaxMs)}</td></tr>`).join('');
 const regressions=summary.regressions.map(g=>`<tr><td>${escape(g.condition)}</td><td>${g.metric==='inputReceiptP95Ms'?'入力受付p95':'rAF間隔p95'}</td><td>${ms(g.beforeMs)}</td><td>${ms(g.afterMs)}</td></tr>`).join('');
@@ -53,9 +58,11 @@ const html=`<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="vie
 <h2>悪化・未確認事項</h2><p>同条件の入力p95またはrAF p95が5msを超えて悪化した指標は${summary.regressions.length}件。修正後に入力またはrAF最大が50msを超えた条件は${summary.outliers.length}件です。単発標本であり原因の断定や安定した分位値の保証には使いません。詳細は<a href="summary.json">小さな集計JSON</a>にすべて残しています。</p>
 <div class="table"><table><tr><th>backend/表示/ブラシ/太さ/指定間隔</th><th>指標</th><th>前</th><th>後</th></tr>${regressions||'<tr><td colspan="4">今回の標本では該当なし</td></tr>'}</table></div>
 <p>正式描画、画像転送、ブラウザーの画面合成は同じ物理GPUを共有する可能性があります。worker化や1タイル送信を別GPUの保証とは扱いません。実機のペン・指、GPU実占有、発光までの遅延、VRAM、発熱・電力、GPU喪失後の完全復旧は未確認です。</p>
-<h2>画素と操作の確認</h2><p>太い線の対比較432条件、正式通知保留12条件、4倍CPU負荷の短線8条件・12筆連続8条件で、変換後の検査対象画素は最小${(summary.minMappedInkFraction*100).toFixed(2)}%一致。PNGの移動先と操作中の異なる連続録画画像も検査します。正式通知保留は表示の独立性を調べるもので、物理GPUを占有させる試験とは区別します。</p>
-<p>両GPUで同じ13筆・3レイヤーのStrokeRecordと12枚ずつの全レイヤーRGBAが修正前と完全一致。Undo/Redo/再構成、確定前Undo、指・ペンから操作への切替、実際の.illustro保存・再読込は18条件で画素一致を確認します。ブラシ品質を落とした合格ではありません。</p>
-${examples}<h2>生の記録</h2><p><a href="report.json">432条件</a> · <a href="gated/report.json">正式通知保留・連続画像</a> · <a href="short/report.json">短い線・4倍CPU</a> · <a href="sustained/report.json">12筆連続・4倍CPU</a> · <a href="formal/report.json">正式画質・履歴・再構成</a> · <a href="history/report.json">4000px Undoと保存</a> · <a href="history-512/report.json">512px</a> · <a href="history-2000/report.json">2000px</a></p>
+<h2>画素と操作の確認</h2><p>太い線の対比較432条件、正式通知保留12条件、4倍CPU負荷の短線8条件・12筆連続8条件、さらに約20秒の連続操作4条件で、変換後の検査対象画素は最小${(summary.minMappedInkFraction*100).toFixed(2)}%一致。PNGの移動先と操作中の異なる連続録画画像も検査します。正式通知保留は表示の独立性を調べるもので、物理GPUを占有させる試験とは区別します。</p>
+<p>約20秒の連続操作4条件では、指を置いたまま正式画像の完成・仮線退去をまたぎました。下表には、この長い操作中の外れ値も示します。入力p95と最大値、rAF最大値、main long task最大値はmsです。<a href="through-completion/report.json">完成をまたぐ連続操作の全記録</a>を確認できます。</p>
+<div class="table"><table><tr><th>条件</th><th>操作時間</th><th>入力p95</th><th>入力最大</th><th>rAF最大</th><th>main long task最大</th></tr>${longRows}</table></div>
+<p>両GPUで同じ13筆・3レイヤーのStrokeRecordと12枚ずつの全レイヤーRGBAが修正前と完全一致。Undo/Redo/再構成、確定前Undo、指・ペンから操作への切替、実際の.illustro保存・再読込は20条件で画素一致を確認します。ブラシ品質を落とした合格ではありません。</p>
+${examples}<h2>生の記録</h2><p><a href="report.json">432条件</a> · <a href="gated/report.json">正式通知保留・連続画像</a> · <a href="through-completion/report.json">完成まで続けた操作</a> · <a href="short/report.json">短い線・4倍CPU</a> · <a href="sustained/report.json">12筆連続・4倍CPU</a> · <a href="formal/report.json">正式画質・履歴・再構成</a> · <a href="history/report.json">4000px Undoと保存</a> · <a href="history-512/report.json">512px</a> · <a href="history-2000/report.json">2000px</a></p>
 <p><a href="https://github.com/totoro0419/illustro/pull/39">Draft PR #39</a> · <a href="https://github.com/totoro0419/illustro/actions">CI</a>。M01〜M09を維持し、M11には進みません。</p></main></html>`;
 await fs.writeFile(path.join(root,'summary.html'),html);
 console.log(JSON.stringify({source:summary.source,counts:summary.counts,regressions:summary.regressions.length,outliers:summary.outliers.length,userReview:summary.userReview}));

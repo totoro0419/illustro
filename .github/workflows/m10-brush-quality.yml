@@ -178,7 +178,7 @@ jobs:
           path: /tmp/m10-preview-evidence/
   worker-verification:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       EXPECTED_COMMIT_SHA: ${{ github.sha }}
       RT_PLAYWRIGHT_PATH: /tmp/m10-worker-browser/node_modules/playwright
@@ -216,6 +216,16 @@ jobs:
           WORKER_GATE: '1'
           WORKER_KEEP_FRAMES: '1'
           WORKER_OUTPUT: /tmp/m10-worker-evidence/gated/report.json
+        run: node scripts/m10-worker-review.mjs
+      - name: The same continuous gesture spans full 512px stroke completion
+        env:
+          WORKER_VERSIONS: after
+          WORKER_WIDTHS: '512'
+          WORKER_DELAYS: '0'
+          WORKER_ROUTES: auto
+          WORKER_GESTURE_STEPS: '600'
+          WORKER_EXPECT_COMPLETED: '1'
+          WORKER_OUTPUT: /tmp/m10-worker-evidence/through-completion/report.json
         run: node scripts/m10-worker-review.mjs
       - name: Short strokes and twelve-stroke queues with 4x CPU load
         env:

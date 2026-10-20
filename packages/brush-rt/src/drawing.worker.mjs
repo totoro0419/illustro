@@ -11,14 +11,15 @@ globalThis.requestAnimationFrame=fn=>setTimeout(()=>fn(performance.now()),8);
 let renderer,session,sink,gpuFrame,publishing=false,publishRequested=false,visibilityEpoch=0;
 let serial=0,captured=0,baseDirty=false,inRender=false,diagnostics=false,lastSent=0,acknowledged=0;
 let formalGate=null,recordGate=false;const heldRecords=[];const records=new Map,recordTokens=new WeakMap,metrics={gpuCaptures:0,bitmapBytes:0,publications:0,formal:[]};
+const privateWrites=new Set;
 const tokenFor=record=>recordTokens.get(record);
 function remember(token,record){records.set(token,record);recordTokens.set(record,token);return record;}
 function record(token){const value=records.get(token);if(!value)throw Error('Unknown stroke token');return value;}
 function stats(includeTiles=false){if(!renderer)return null;const r=renderer,b=r.backend,p=r.performanceSummary();
  if(p.instantPreview)p.instantPreview.samples=p.instantPreview.samples?.slice(-32);
- return {info:r.info,errors:r.errors,completions:r.completions.slice(-4),performance:{...p,execution:'drawing-worker',publication:{...metrics,formal:includeTiles?metrics.formal:[]}},
+ return {info:r.info,errors:r.errors,completions:r.completions.slice(-4),performance:{...p,formalBatchLimit:1,compositionBatchLimit:1,execution:'drawing-worker',publication:{...metrics,pendingComposition:b.dirtyConfirmed.size,privateWrites:privateWrites.size,formal:includeTiles?metrics.formal:[]}},
   document:{width:r.document.width,height:r.document.height,count:r.document.count,jobs:r.document.jobs.length},inflight:r.inflight,needsFrame:r.needsFrame,viewPending:r.viewPending,historyPreparing:r.historyPreparing,guardPreparing:r.guardPreparing,
-  gates:{formal:!!formalGate,record:recordGate,heldRecords:heldRecords.length},proxy:{pending:r.proxy?.pending.size??0,finalizations:r.proxy?.finalizations.size??0,footprints:r.proxy?.footprints.size??0,error:r.proxy?.error},
+  gates:{formal:!!formalGate,held:formalGate?.held??null,record:recordGate,heldRecords:heldRecords.length},proxy:{pending:r.proxy?.pending.size??0,finalizations:r.proxy?.finalizations.size??0,footprints:r.proxy?.footprints.size??0,error:r.proxy?.error},
   session:{id:session?.id??0,errors:session?.errors??[],pendingRawCount:session?.pendingRawCount??0,rawAccepted:session?.rawAccepted??0,browserPredictions:session?.browserPredictions??0,historyPatchHits:session?.historyPatchHits??0,historyReplayFallbacks:session?.historyReplayFallbacks??0,fullDocumentRebuilds:session?.fullDocumentRebuilds??0,fullReplayStrokes:session?.fullReplayStrokes??0,cancelledStrokeCount:session?.cancelledStrokeCount??0},
   ...(includeTiles?{tiles:[...b.tiles.values()].map(({surfaceKey,key,x,y})=>({surfaceKey,key,x,y})),recordIds:[...records].map(([token,value])=>[token,session.recordIds.get(value)])}:{}),presentationHeld:b.presentationHeld};
 }
@@ -29,6 +30,7 @@ async function publish(){
  publishing=true;publishRequested=false;
  // Freeze all surfaces in the same task. The packet is applied atomically by
  // the window; CPU -> formal retirement needs no guard readback or DOM fence.
+ if(gpuFrame&&gpuFrame.epoch!==visibilityEpoch){gpuFrame.bitmap.close();gpuFrame=null;baseDirty=false;}
  const base=baseDirty?gpuFrame:null;if(base){gpuFrame=null;baseDirty=false;}
  const epoch=visibilityEpoch,sequence=++metrics.publications,images=sink.snapshot();
  try{const {layers,retired}=await images;if(!base&&!layers.length&&!retired.length)return;
@@ -37,25 +39,44 @@ async function publish(){
   lastSent=sequence;postMessage({type:'picture',sequence,epoch,base,layers,retired,state:stats()},transfer);
  }finally{publishing=false;if(publishRequested)requestPublish();}
 }
-function capture(){const b=renderer.backend;if(b.presentationHeld)return Promise.resolve();const id=++serial,view=Array.from(b.viewTransform??[]),epoch=visibilityEpoch;
+function pictureReady(){
+ for(const id of privateWrites)if(!renderer.ended.has(id)&&!renderer.document.jobs.some(j=>j.id===id)&&(!renderer.hiddenStrokeIds.has(id)||!renderer.strokeFrames.has(id)))privateWrites.delete(id);
+ if(privateWrites.size)return false;
+ if(!renderer.backend.dirtyConfirmed.size)return true;
+ if(renderer.strokeFrames.size)return false;
+ // Live GPU feedback may show a partial new stroke. A completed stroke or
+ // layer change remains private until its entire composition is coherent.
+ return [...renderer.previewStates.values()].some(s=>!s.finished&&!renderer.proxy?.canUse(s.preset,s.surfaceKey,s.id));
+}
+function capture(ready=true){const b=renderer.backend;if(b.presentationHeld||!pictureReady())return Promise.resolve();const id=++serial,view=Array.from(b.viewTransform??[]),epoch=visibilityEpoch;
  // Snapshot before a WebGPU canvas texture expires at the task boundary.
  const image=b.device?Promise.resolve(b.canvas.transferToImageBitmap()):createImageBitmap(b.canvas);metrics.gpuCaptures++;
- return image.then(bitmap=>{if(id<captured||epoch!==visibilityEpoch){bitmap.close();return;}captured=id;gpuFrame?.bitmap.close();gpuFrame={bitmap,view};baseDirty=true;});
+ return image.then(bitmap=>{if(id<captured||epoch!==visibilityEpoch){bitmap.close();return;}captured=id;gpuFrame?.bitmap.close();gpuFrame={bitmap,view,epoch};baseDirty=ready;});
 }
 async function init(m){const nativeNow=performance.now.bind(performance),offset=performance.timeOrigin-m.timeOrigin;Object.defineProperty(performance,'now',{value:()=>nativeNow()+offset});Object.defineProperty(performance,'timeOrigin',{value:m.timeOrigin});diagnostics=!!m.diagnostics;sink=new WorkerStrokeSink(requestPublish);
  renderer=await GpuRenderer.create(new OffscreenCanvas(m.width,m.height),m.documentWidth,m.documentHeight,m.backend,{...m.options,strokeOverlay:{...m.options.strokeOverlay,sink}});
  session=new RealtimeSession(renderer,m.canonicalUrl);const receiveRecord=session.worker.onmessage;session.worker.onmessage=event=>{if(recordGate&&event.data.type==='record')heldRecords.push(event);else receiveRecord(event);};const b=renderer.backend,render=b.render.bind(b),poll=b.poll?.bind(b),present=b.presentCurrent.bind(b);
+ // Private tile commits also refresh the private minification pyramid. They
+ // need no full viewport copy or ImageBitmap until a complete image exists.
+ const encode=b.encodePresentation?.bind(b);if(encode)b.encodePresentation=(encoder,direct=false,refresh=false)=>{if(!refresh&&!pictureReady()){b.presentationPyramid.source(b.viewTransform,encoder);return false;}return encode(encoder,direct,refresh);};
  // The acknowledgement joins exact GPU work AND its immutable screen image.
  // poll() still resolves the original fence, but cannot retire overlays early.
  if(poll)b.poll=()=>{poll();return false;};
- b.render=(...args)=>{const at=performance.now();inRender=true;let pending;try{pending=render(...args);}finally{inRender=false;}
-  const snap=b.lastSubmission?.presentationSubmitted===false?Promise.resolve():capture(),cpuMs=performance.now()-at;
-  if(diagnostics){metrics.formal.push({at:performance.timeOrigin+at,cpuMs,jobs:args[1].length,tiles:new Set(args[1].map(j=>j.key)).size,commands:args[1].reduce((n,j)=>n+j.commands.length,0),previewTiles:b.lastSubmission?.dirtyTiles??0});if(metrics.formal.length>1200)metrics.formal.shift();}
-  return Promise.all([pending,snap]).then(async value=>{if(formalGate&&args[1].length)await formalGate.promise;return value;});
+ b.render=(...args)=>{const at=performance.now(),jobs=args[1];
+  // Formal commits update a PRIVATE image tile by tile. A partial CPU stroke
+  // may never replace the window's retained base or retire its CPU picture.
+  for(const job of jobs)if(renderer.proxy?.canUse(job.preset,job.surfaceKey,job.id))privateWrites.add(job.id);
+  inRender=true;let pending;try{pending=render(...args);}finally{inRender=false;}
+  if(!pictureReady()&&b.lastSubmission?.presentationSubmitted){b.lastSubmission.privatePresentation=true;b.lastSubmission.presentationSubmitted=false;}
+  const snap=b.lastSubmission?.presentationSubmitted===false?Promise.resolve():capture(false),cpuMs=performance.now()-at;
+  if(diagnostics){metrics.formal.push({at:performance.timeOrigin+at,cpuMs,jobs:args[1].length,tiles:new Set(args[1].map(j=>j.key)).size,commands:args[1].reduce((n,j)=>n+j.commands.length,0),compositedTiles:b.lastSubmission?.compositedTiles??0,previewTiles:b.lastSubmission?.dirtyTiles??0});if(metrics.formal.length>1200)metrics.formal.shift();}
+  return Promise.all([pending,snap]).then(async value=>{if(formalGate&&(formalGate.stage==='picture'?!args[1].length&&renderer.strokeFrames.size:args[1].length)){formalGate.held=formalGate.stage;await formalGate.promise;}return value;});
  };
- b.presentCurrent=(...args)=>{const pending=present(...args);if(inRender)return pending;return Promise.all([pending,capture()]).then(requestPublish);};
- const view=b.presentView.bind(b);b.presentView=()=>{inRender=true;let ok;try{ok=view();}finally{inRender=false;}if(ok)capture().then(requestPublish).catch(fail);return ok;};
- renderer.onContentReady=requestPublish;
+ b.presentCurrent=(...args)=>{if(b.gl&&inRender&&!args[0]&&!pictureReady()){b.presentationPyramid.source(b.viewTransform);return false;}const pending=present(...args);if(inRender)return pending;return Promise.all([pending,capture()]).then(requestPublish);};
+ const view=b.presentView.bind(b);b.presentView=()=>{if(renderer.historyPreparing)return false;inRender=true;let ok;try{ok=view();}finally{inRender=false;}if(ok)capture().then(requestPublish).catch(fail);return ok;};
+ // CPU pictures may publish while a formal submission is in flight. Its new
+ // base remains staged until retirement and exact completion are one packet.
+ renderer.onContentReady=()=>{if(gpuFrame)baseDirty=true;requestPublish();};
  // No pointer-lifetime or post-release quiet timer may pause formal work in
  // this worker. The independent window can navigate any published picture.
  renderer.setPerformanceEnabled(diagnostics);
@@ -119,7 +140,7 @@ async function command(method,a){const r=renderer,s=session;
  case 'measure':r.setPerformanceEnabled(a);return;
  case 'tick':s.frame(performance.now());if(r.errors.length||s.errors.length)throw Error([...r.errors,...s.errors].join(';'));return;
  case 'recordGate':if(!diagnostics)throw Error('Diagnostics are disabled');recordGate=!!a;if(!a){const receive=session.worker.onmessage;for(const event of heldRecords.splice(0))receive(event);}return;
- case 'gate':if(!diagnostics)throw Error('Diagnostics are disabled');if(a){if(!formalGate){let release;const promise=new Promise(ok=>release=ok);formalGate={promise,release};}}else{formalGate?.release();formalGate=null;}return;
+ case 'gate':if(!diagnostics)throw Error('Diagnostics are disabled');if(a){if(!formalGate){let release;const promise=new Promise(ok=>release=ok);formalGate={promise,release,stage:a==='picture'?'picture':'formal',held:null};}}else{formalGate?.release();formalGate=null;}return;
  case 'inspect':return stats(true);
  case 'destroy':s.destroy();close();return;
  default:throw Error('Unknown drawing worker command: '+method);
