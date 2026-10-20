@@ -163,3 +163,7 @@ mainへはManager/ユーザーの明示判断なしにmergeしない。
 ## 長線後の一筆の追加検証（2026-10-17）
 
 ユーザー指示によりPR #31を継承した `perf/stroke-handoff-latency-2026-10-17` / PR #32で修正・比較する。[検証記録](research/STROKE_HANDOFF_LATENCY_2026-10-17.md)。専用QAは `/qa/perf-stroke-handoff-latency/`。正式記録・画素・履歴・保存の基準と既存の受入状態は維持する。実機快適性・ユーザー受入は未判定。
+
+## 太い線の後の操作停止（2026-10-20）
+
+最新M10 `8fa3857` を継承してPR #39上で描画workerと共通viewへ再設計。[変更と検査範囲](research/M10_DRAWING_WORKER_2026-10-20.md)。自動検査・公開を進める段階。ユーザーの実機不具合は未解決扱いとし、M10は未合格・Draft維持・M11未着手。

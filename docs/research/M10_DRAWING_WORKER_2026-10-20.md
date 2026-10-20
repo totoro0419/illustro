@@ -1,0 +1,74 @@
+# M10: 仮線を保ったまま自由に操作する描画境界
+
+状態: 実装・自動検査中。ユーザーが報告した実機不具合は、ユーザー確認まで未解決扱い。PR #39はDraft、M11へ進まない。
+
+## 出発点と確認した原因
+
+PR #39、`milestone/M10-brush-quality` の `8fa3857b5ce8deb4dadacce45f06e121a16e8d85` をGitHubとクリーンなcloneで確認。baseはPR #38 `e510ea18b447a5e6d74721bd23b07acab15c391d`、祖先関係も確認。mainへ変更・mergeしない。
+
+IMPLEMENTATION_BASELINE、CANONICAL_INDEXの両形式、CHECKLIST、Brush Foundation採用基準、Architecture V2/Brush–Raster契約、Performance正本、M08表示境界、M10の既存調査を入口にした。古いM09やPR #38から再開していない。
+
+旧版は移動のCSS変換を同期で行う一方、その同じwindow上で `GpuRenderer.frame()` → `backend.render()` → `renderSparseGl/Gpu()` と正式タイルのGPU命令を組み立てていた。128pxタイルの数、コマンド、合成、資源確保が増えれば、入力イベント自体を処理できない時間が生まれる。CSSを設定できた時刻だけではこの停止を検査できなかった。
+
+今回の探索測定では、Chromium 141.0.7390.37 / SwiftShader、390×844 CSS / DPR2、4000px、512pxブラシ、100入力の長線で、旧WebGL2直接表示のCPU命令作成はGペン最大197.9ms、鉛筆82.1ms。正式完了までの窓にlong taskも記録した。CPU仮線の同じ探索条件では最大23.3 / 30.9msだった。ユーザー端末の原因を断定する値ではない。最終の対比較はCIの同一ジョブ内のbefore/afterで取り直す。
+
+## 三つの責任
+
+| 責任 | 所有者 | 仕事・禁止する依存 |
+|---|---|---|
+| 入力と画面操作 | windowのBrushSurface / DrawingHost | 受領時点の作品座標、移動・拡大・回転・反転。最新viewはここだけが所有。描画workerやGPUの返答を待たず、保持済みの全画像へ同じviewを適用する |
+| 仮線の画素 | drawing workerの既存StrokeOverlay + WorkerStrokeSink | 既存の同じcoverage・模様・入り抜きで私有Canvas2D画像を作る。DOMやwindowのview状態を所有しない。画像が未更新でも表示済み部分はwindowだけで動かせる |
+| 正式描画と派生履歴 | drawing workerの既存GpuRenderer / RealtimeSession / TileHistory | 同じmodel・shader・128px区画・before/after履歴。Coreの正式Transactionは従来どおりwindow側で公開し、成功後に正式描画を許可する。保存の正本はCoreと筆跡記録のまま |
+
+入力はwindowで共通viewを使って作品座標へ変換してから送る。遅れて処理されても、その時点のviewで入力を再解釈しない。workerの時計はwindowのtimeOriginへ合わせ、予測・待ち時間にworker起動時刻のずれを混ぜない。実入力はまとめて転送しても一件も省略しない。独立canonical worker、Foundationの記録形式とseedは維持する。
+
+DrawingHostはGPUを所有しない。windowのCanvasは `bitmaprenderer` で受け取ったImageBitmapを表示するだけ。基準となるviewを画像ごとに添え、遅れて届いた画像もwindowの**現在の**viewへ変換する。非同期の完了が最新viewを書き戻す経路はない。
+
+## 画像の受け渡しと削除
+
+正式なGPU画像のsnapshotと、それで置き換えられるCPU画像の削除を一つのpacketとして送る。windowは同じJavaScript taskでbaseの交換、仮線の交換・削除、最新viewへの変換を行う。この原子的な表示交換により、worker経路は旧CPU→GPU用のcrop guard、GPU readback、guardの変換・解除待ちを使わない。
+
+GPU完了だけでなく、そのGPU画像のimmutable snapshotも完成してから正式表示を公開する。WebGPUのcanvas textureがtask末尾で失効する前にsnapshot要求を出す。正式終了の通知はwindowがpacketを適用した応答まで待つが、画面操作はこの応答に依存しない。未完成の画像を正式な画像として保存しない。
+
+転送は未受領packetを一個に制限し、windowが忙しければworker側で最新baseと変更済み仮線を保持する。これは転送資源の所有・上限であり、入力受付やviewを待たせるフラグではない。古い私有baseはcloseする。stroke IDとvisibility epochで、Undo前の遅いpacketが取り消した表示を復活させない。CPU仮線はwindowでもIDごとに即時非表示にできる。
+
+削除した主な仕事:
+
+- 編集画面のwindowでのBrush再構成、CPU仮線評価、GPU命令作成、正式タイルreadback/upload。
+- 編集画面のwindowからGPUの内部資源を直接触る復元経路。疎な画像復元と読出しはworkerの明示portへ統一。
+- pen-up後120msの正式描画抑制、view変更後80msのquiet-gap待ち。
+- workerの表示切替でのguard取得・重複保護画像・guard解除待ち。
+- メインフレームごとの未応答tick蓄積。ひとつの未応答tickに集約し、実入力は別に全件保持。
+
+固定prototypeとExportで使われる直接Rendererのguardは、別々のCanvasを直接表示する経路の安全性にまだ必要なので残す。worker経路はこれを呼ばない。正式shader、Brush model、模様、筆圧、taper式、保存形式、TileHistoryは変更しない。
+
+## 入力の仕様
+
+- 指描きの途中に2本目の指を置いた場合、すでに入力した線を終了・保持し、その完了を待たず操作へ移る。
+- 同じtimestampで到着した最初の2接点はジェスチャーとして扱い、移動入力のない最初の一時点だけを取り消す。実際に描いた途中の線を取り消さない。
+- ペン描画中に指を置く場合も、それまでのペン線を保持して操作へ移る。操作中の後続ペンmoveを別の場所の線として混ぜない。
+- pointercancelは従来どおり未完成の入力だけを取り消す。
+
+## 検査と限界
+
+`m10-worker-review.mjs` は8fa3857と同一ブラウザー・入力条件で太いGペン/鉛筆、128/256/512px、6間隔、CPU/GPU/自動、両GPUを比較する。実CDP touchで線を引き、2本指の移動・ピンチ・回転を行う。座標設定の時刻だけでは合格にせず、ブラウザーが合成したPNG内で元の線の画素が新しい位置にあることを検査し、screencast連続フレームも採取する。
+
+正式完了通知を保留する12条件でも、保留解除前の画像追従を検査する。これはGPUが物理的に何ms占有されたかを示すものではない。正式描画・画像転送・compositorは同じ物理GPUを共有し得る。workerへ移しただけでGPUが独立したとは主張しない。送信は既存の面積/区画単位で限定し、未送信仕事を無制限にGPUへ積まない。
+
+正式画質は13筆（太いGペン/鉛筆6条件＋7本のFoundation）、3レイヤー、同一raw/seed/record、Undo/Redo、再構成について同一backendでRGBA完全一致を要求する。保存は別に実アプリの`.illustro`ダウンロード・再読込で全レイヤーhashを比較する。
+
+`m10-worker-history.mjs` はrecord保留、複数record保留、正式通知保留、描画途中の指/ペン→ジェスチャーを実タッチで検査する。同期のUndo受付とwindow上のCPU画像取り消し、後の正式復元を区別する。旧検査の内部GPU objectへの注入はworkerの明示診断portへ置き換え、同じ受付・画素・保存の条件は維持する。
+
+調査中の検査誤りも記録する。幾何画像の比較でforce fadeをOFFにした後にプリセットを切り替えたため、ONへ戻った入り抜きの完成変化を画像追従の欠落と誤判定した。プリセット選択の後にOFFにし直し、画質検査は別にONを含める。許容差を広げて通していない。M08で検出した、古いheld renderのdiagnosticsが新しいview snapshotまで抑制する不具合は、現在の表示要求自身の可否で判定するよう修正した。
+
+M05のoffline検査は、ChromiumのService Workerからのfresh fetchがPlaywrightのcontext offline設定を経由せず404応答を返し、ネットワーク断のnegative controlにならない実行があった。ローカルHTTP server自身も接続を拒否する状態にし、cache済みのアプリ・全workerで描画・復旧・保存できることと、未cache probeのfetchが失敗することを別々に要求する。製品のService Workerは変更していない。
+
+実機の指/実ペン、入力から発光までの時間、実GPU占有、VRAM、発熱/電力、全てのdevice loss後復旧は未確認。CI成功で実機不具合を解決済みにしない。**👤 USER REVIEW REQUIRED**。
+
+## 公式資料と採用範囲
+
+- WHATWG HTML: [OffscreenCanvas / bitmaprenderer](https://html.spec.whatwg.org/multipage/canvas.html)、[ImageBitmap](https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html)。画像所有の移譲を使う。APIのtransferを物理zero-copyの保証と扱わない。
+- [Krita Instant Preview](https://docs.krita.org/en/reference_manual/instant_preview.html): 仮表示と正式計算を分ける公開挙動を参照。非公開GPU実装の推測はしない。
+- 既存[M10主要アプリ比較](M10_BRUSH_QUALITY_RESEARCH.md)のブラシ・指/ペン・taperの採用基準を維持する。
+
+UI検証はui-implementation-qualityのPERF.01（入力から可視変化）、PERF.03（遅い側と連続操作）、PERF.06（直接操作の連続性）、作品保持・Undo・Saveの安全性を適用。ユーザーの物理端末は未検証と記録する。

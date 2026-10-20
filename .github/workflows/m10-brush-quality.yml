@@ -165,167 +165,88 @@ jobs:
           OVERLAY_BASELINE_SHA: '4708ffe5136ad1fa47be5909c129bb5f8fcb7869'
           FORMAL_QUALITY_OUTPUT: /tmp/m10-preview-evidence/formal/report.json
         run: node scripts/stroke-overlay-formal.mjs
-      - name: Native touch Undo preserves PR37 while record or GPU completion is held
-        env:
-          IMMEDIATE_MODES: 'after'
-          IMMEDIATE_FAST_TAP: '1'
-          IMMEDIATE_POINTS: '120'
-        run: |
-          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
-          IMMEDIATE_STAGES=record,multiple,presentation IMMEDIATE_OUTPUT=/tmp/m10-preview-evidence/undo-4000/report.json node scripts/immediate-pending-undo-review.mjs
-          IMMEDIATE_SIZE=512 IMMEDIATE_STAGES=record,multiple IMMEDIATE_OUTPUT=/tmp/m10-preview-evidence/undo-512/report.json node scripts/immediate-pending-undo-review.mjs
-          IMMEDIATE_SIZE=2000 IMMEDIATE_STAGES=record,multiple IMMEDIATE_OUTPUT=/tmp/m10-preview-evidence/undo-2000/report.json node scripts/immediate-pending-undo-review.mjs
-          IMMEDIATE_BRUSH=foundation-pencil IMMEDIATE_STAGES=record,multiple IMMEDIATE_OUTPUT=/tmp/m10-preview-evidence/undo-pencil/report.json node scripts/immediate-pending-undo-review.mjs
-      - name: Portable save and reopen after interrupted Undo
-        env:
-          PENDING_MODES: 'after'
-          PENDING_SAVE_OUTPUT: /tmp/m10-preview-evidence/interrupted-save/report.json
-        run: node scripts/pending-stroke-save-review.mjs
       - name: Validate measured work, first feedback, quality and route decisions
         env:
           M10_PREVIEW_EVIDENCE: /tmp/m10-preview-evidence
           RT_PNG_PATH: /tmp/m10-preview-browser/node_modules/pngjs
         run: node scripts/m10-preview-validation.mjs
+        continue-on-error: false
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: m10-preview-evidence
           path: /tmp/m10-preview-evidence/
-  navigation-verification:
+  worker-verification:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
       EXPECTED_COMMIT_SHA: ${{ github.sha }}
-      RT_PLAYWRIGHT_PATH: /tmp/m10-navigation-browser/node_modules/playwright
-      RT_PNG_PATH: /tmp/m10-navigation-browser/node_modules/pngjs
-      NAV_BEFORE_ROOT: /tmp/m10-navigation-source/apps/editor/dist
+      RT_PLAYWRIGHT_PATH: /tmp/m10-worker-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-worker-browser/node_modules/pngjs
+      WORKER_BEFORE_ROOT: /tmp/m10-worker-baseline/apps/editor/dist
+      WORKER_BEFORE_RT: /tmp/m10-worker-baseline/packages/brush-rt/dist
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Build current and immutable post-preview M10 editor
+      - name: Build current and immutable 8fa3857 before version
         run: |
-          npm run brush:build > /tmp/navigation-build.log
+          npm run brush:build > /tmp/worker-current-build.log
           VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
-          git worktree add --detach /tmp/m10-navigation-source 4617cdaef94a135752c0fa122741f11c2d7aff55
-          cd /tmp/m10-navigation-source
+          git worktree add --detach /tmp/m10-worker-baseline 8fa3857b5ce8deb4dadacce45f06e121a16e8d85
+          cd /tmp/m10-worker-baseline
           npm ci --ignore-scripts --no-audit --no-fund
-          npm run brush:build > /tmp/navigation-before-build.log
-          VITE_COMMIT_SHA=4617cdaef94a135752c0fa122741f11c2d7aff55 npm --workspace @illustro/editor exec -- vite build --base=./
-      - name: Install matched Chromium and image decoder
+          npm run brush:build > /tmp/worker-before-build.log
+          VITE_COMMIT_SHA=8fa3857b5ce8deb4dadacce45f06e121a16e8d85 npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Matched Chromium, software GPU and image decoder
         run: |
-          npm install --prefix /tmp/m10-navigation-browser playwright@1.56.1 pngjs@7.0.0 --no-audit --no-fund
-          /tmp/m10-navigation-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Actual gestures with held canonical, formal and GPU view acknowledgements
+          npm install --prefix /tmp/m10-worker-browser playwright@1.56.1 pngjs@7.0.0 --no-audit --no-fund
+          /tmp/m10-worker-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: 4000px, both broad brushes, 128/256/512px, all six intervals, three routes and both GPU backends
         env:
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/controlled/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: CPU preview work and transition capture cannot gate navigation
+          WORKER_OUTPUT: /tmp/m10-worker-evidence/report.json
+        run: node scripts/m10-worker-review.mjs
+      - name: Composed frames while formal acknowledgement remains held
         env:
-          NAV_ROUTES: cpu,auto
-          NAV_STAGES: cpu-work
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/tasks/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: A visible CPU image and delayed transition capture
+          WORKER_VERSIONS: after
+          WORKER_WIDTHS: '512'
+          WORKER_DELAYS: '0'
+          WORKER_GATE: '1'
+          WORKER_KEEP_FRAMES: '1'
+          WORKER_OUTPUT: /tmp/m10-worker-evidence/gated/report.json
+        run: node scripts/m10-worker-review.mjs
+      - name: Short strokes and twelve-stroke queues with 4x CPU load
         env:
-          NAV_ROUTES: cpu
-          NAV_STAGES: snapshot
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/capture/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Three sizes, all five zooms and four brushes through actual gestures
+          WORKER_WIDTHS: '512'
+          WORKER_DELAYS: '0'
+          WORKER_ROUTES: auto
+          WORKER_CPU_RATE: '4'
+        run: |
+          WORKER_POINTS=6 WORKER_OUTPUT=/tmp/m10-worker-evidence/short/report.json node scripts/m10-worker-review.mjs
+          WORKER_STROKES=12 WORKER_OUTPUT=/tmp/m10-worker-evidence/sustained/report.json node scripts/m10-worker-review.mjs
+      - name: Exact baseline formal records, thirteen broad/standard strokes, three layers, history and replay
         env:
-          NAV_ROUTES: auto
-          NAV_STAGES: normal
-          NAV_SIZES: '512,2000,4000'
-          NAV_ZOOMS: fit,1,4,16,64
-          NAV_BRUSHES: gpen,pencil,broad,eraser
-          NAV_POINTS: '6'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/matrix/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: All seven post-release intervals and all routes
+          WORKER_FORMAL: only
+          WORKER_OUTPUT: /tmp/m10-worker-evidence/formal/report.json
+        run: node scripts/m10-worker-review.mjs
+      - name: Actual touch Undo, mid-stroke gesture handoff and native save/reopen
         env:
-          NAV_STAGES: normal
-          NAV_ZOOMS: '64'
-          NAV_DELAYS: '0,16,50,100,250,500,1000'
-          NAV_POINTS: '6'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/intervals/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Space drag, wheel and tablet-size touch with 4x CPU slowdown
-        env:
-          NAV_VERSIONS: after
-          NAV_STAGES: record,inflight
-          NAV_ROUTES: auto
-          NAV_INPUTS: space,wheel,touch
-          NAV_WIDTH: '1024'
-          NAV_CPU_RATE: '4'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/inputs/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Long and twelve-stroke queues followed immediately by navigation
-        env:
-          NAV_STAGES: normal
-          NAV_ROUTES: auto
-          NAV_POINTS: '80'
-          NAV_STROKES: '12'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/sustained/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Existing ink transforms in screenshots before the gate opens
-        env:
-          NAV_VERSIONS: after
-          NAV_STAGES: record,view-ack
-          NAV_ROUTES: cpu,gpu
-          NAV_VISUAL: '1'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/visual/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Navigation then next stroke, native Undo/Redo and portable save/reopen
-        env:
-          NAV_VERSIONS: after
-          NAV_STAGES: record,inflight
-          NAV_ROUTES: auto
-          NAV_SEQUENCE: '1'
-          NAV_HISTORY_DELAY_MS: '100'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/sequence/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Navigation while pending canonical/formal work is being saved
-        env:
-          NAV_VERSIONS: after
-          NAV_STAGES: record,inflight
-          NAV_ROUTES: auto
-          NAV_SAVE_PENDING: '1'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/pending-save/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Next stroke admission while the previous formal acknowledgement is held
-        env:
-          NAV_VERSIONS: after
-          NAV_STAGES: inflight
-          NAV_ROUTES: auto
-          NAV_NEXT_PENDING: '1'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/next-pending/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Viewport resize during pending save retains visible pixels and navigation
-        env:
-          NAV_VERSIONS: after
-          NAV_STAGES: inflight
-          NAV_ROUTES: auto
-          NAV_SAVE_PENDING: '1'
-          NAV_RESIZE_PENDING: '1'
-          NAV_VISUAL: '1'
-          NAV_OUTPUT: /tmp/m10-navigation-evidence/resize-pending/report.json
-        run: node scripts/m10-navigation-review.mjs
-      - name: Validate navigation response and censored baseline waits
-        env:
-          NAV_EVIDENCE: /tmp/m10-navigation-evidence
-        run: node scripts/m10-navigation-validation.mjs
+          WORKER_HISTORY_OUTPUT: /tmp/m10-worker-evidence/history/report.json
+        run: |
+          node scripts/m10-worker-history.mjs
+          WORKER_HISTORY_SIZE=512 WORKER_HISTORY_STAGES=record,multiple WORKER_HISTORY_OUTPUT=/tmp/m10-worker-evidence/history-512/report.json node scripts/m10-worker-history.mjs
+          WORKER_HISTORY_SIZE=2000 WORKER_HISTORY_STAGES=record,multiple WORKER_HISTORY_OUTPUT=/tmp/m10-worker-evidence/history-2000/report.json node scripts/m10-worker-history.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: m10-navigation-evidence
-          path: /tmp/m10-navigation-evidence/
+          name: m10-worker-evidence
+          path: /tmp/m10-worker-evidence/
   publish-qa:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [verification, preview-verification, navigation-verification]
+    needs: [verification, preview-verification, worker-verification]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -337,7 +258,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with: {name: m10-preview-evidence, path: site/qa/m10/evidence/preview}
       - uses: actions/download-artifact@v4
-        with: {name: m10-navigation-evidence, path: site/qa/m10/evidence/navigation}
+        with: {name: m10-worker-evidence, path: site/qa/m10/evidence/worker}
       - name: Preserve prior milestones and publish only M10
         run: |
           cp qa/m10/index.html site/qa/m10/index.html
