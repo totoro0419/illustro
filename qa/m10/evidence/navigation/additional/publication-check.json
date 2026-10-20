@@ -1,0 +1,124 @@
+{
+  "commit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
+  "status": "PASS",
+  "scope": "Original public HTTPS bytes equal the published Git tree; original-origin GPU drawing and physical scanout are not established by this check.",
+  "qaChecks": 27,
+  "unchangedMilestones": [
+    "m01",
+    "m02",
+    "m03",
+    "m04",
+    "m05",
+    "m06",
+    "m07",
+    "m08",
+    "m09"
+  ],
+  "files": {
+    "qa/m10/index.html": "7d3fedcac33837fc4fea2174340e906d0775c88fbe0744e3c46ba55b9cbfe9b3",
+    "qa/m10/app/offline-assets.json": "c0ce4aec1880c61770698259ba334b9eb2c9014384f551eb6febe0ff4f0cfbb2",
+    "qa/m10/app/sw.js": "16f2295d7c134fe2968cc0e2f365723363bac4f0dcd72d3130cb423005bc9e2f",
+    "qa/m10/app/index.html": "991116baefc3978192cfe4e423bdb54e68aeebe2902b9453de53b027fea47a7b",
+    "qa/m10/evidence/navigation/summary.json": "7ca5947fe56d0109b1ccfc0109ef2d3731a529004ce5ee35369de1d2fdd9dbd7",
+    "qa/m10/app/brand/illustro-logo.png": "90c4eb3aeefcd4681fc998dad50d823ec61be2159d6fbbf36e1c6192f9ae1c99",
+    "qa/m10/app/brand/illustro-logo-canvas-soft.webp": "cd2f63ed019160b76ec7d8f3ddeac3f521429e99f1ff50ccb6b1f42a75009c73",
+    "qa/m10/app/assets/canonical.worker-DlVcgjhR.js": "dbe7d2863409ad7617dcd626dfc5ce75f100b0143b4b8ec557b438541ec5385d",
+    "qa/m10/app/assets/index-DjPUtyFw.js": "5157a80aa4991c93562d1137300a5d02cfc147541f82c4dfdb58881ac63e4ace",
+    "qa/m10/app/assets/index-CfpEAJyE.css": "057934f74269826828323127c637de34889e99b130ba8b5311379a854d59986a",
+    "qa/m10/app/assets/persistence.worker-ByoUVGoH.js": "39a00d379255b50fdb74c20be3aafdc2a093801c2ef3065a2957338bacecc97a",
+    "qa/m10/app/assets/history.worker-BU_44-gV.js": "a66a9928166c6f4b4eeeb1cce30b1d0efcf9b6fd8df73f98cbdcc2c4e6425c66"
+  },
+  "navigationCases": 420,
+  "browserReview": {
+    "browser": "141.0.7390.37",
+    "scope": "Downloaded published HTTPS bytes, exact original /qa/m10/app/ paths on loopback. Original-origin GPU access and physical scanout are unverified. Trusted CDP pointer/touch input. Software GL/WebGPU. Event receipt, view-state change, presentation submission and two-rAF proxies; physical display is not measured.",
+    "cases": [
+      {
+        "backend": "webgl2",
+        "route": "cpu",
+        "stage": "inflight",
+        "sequence": {
+          "undo": true,
+          "redo": true,
+          "saveReload": true,
+          "exactLayerPixels": true,
+          "historyDelayMs": 100,
+          "bytes": 69141
+        }
+      },
+      {
+        "backend": "webgl2",
+        "route": "gpu",
+        "stage": "inflight",
+        "sequence": {
+          "undo": true,
+          "redo": true,
+          "saveReload": true,
+          "exactLayerPixels": true,
+          "historyDelayMs": 100,
+          "bytes": 69548
+        }
+      },
+      {
+        "backend": "webgl2",
+        "route": "auto",
+        "stage": "inflight",
+        "sequence": {
+          "undo": true,
+          "redo": true,
+          "saveReload": true,
+          "exactLayerPixels": true,
+          "historyDelayMs": 100,
+          "bytes": 69146
+        }
+      },
+      {
+        "backend": "webgpu",
+        "route": "cpu",
+        "stage": "inflight",
+        "sequence": {
+          "undo": true,
+          "redo": true,
+          "saveReload": true,
+          "exactLayerPixels": true,
+          "historyDelayMs": 100,
+          "bytes": 69888
+        }
+      },
+      {
+        "backend": "webgpu",
+        "route": "gpu",
+        "stage": "inflight",
+        "sequence": {
+          "undo": true,
+          "redo": true,
+          "saveReload": true,
+          "exactLayerPixels": true,
+          "historyDelayMs": 100,
+          "bytes": 69520
+        }
+      },
+      {
+        "backend": "webgpu",
+        "route": "auto",
+        "stage": "inflight",
+        "sequence": {
+          "undo": true,
+          "redo": true,
+          "saveReload": true,
+          "exactLayerPixels": true,
+          "historyDelayMs": 100,
+          "bytes": 69907
+        }
+      }
+    ],
+    "errors": []
+  },
+  "originalOriginCloudBrowser": {
+    "qaChecklistCount": 27,
+    "appCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
+    "gpuDrawing": "unavailable: requestAdapter returned null; WebGL2 float render targets unavailable"
+  },
+  "physicalUserAccepted": false,
+  "sourceDeploymentCommit": "5f392760446633cd71788c005bca7db9b1f9dce6"
+}

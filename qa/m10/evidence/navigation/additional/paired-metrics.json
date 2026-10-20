@@ -1,0 +1,291 @@
+{
+  "commit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
+  "baseline": "4617cdaef94a135752c0fa122741f11c2d7aff55",
+  "scope": "Derived from paired reports in the same CI job. Latest matching view command; not scanout. Censored waits are lower bounds. Long tasks are >=50ms.",
+  "sourceReports": [
+    "../matrix/report.json",
+    "../controlled/report.json"
+  ],
+  "metrics": {
+    "matrix webgl2 before": {
+      "cases": 60,
+      "latestRequestMs": {
+        "n": 60,
+        "mean": 3.982,
+        "median": 0.4,
+        "p95": 16.7,
+        "max": 83.2
+      },
+      "notPresentedBeforeRelease": 0,
+      "censoredLowerBoundMs": {
+        "n": 0
+      },
+      "eventReceiptMaxMs": {
+        "n": 60,
+        "mean": 33.788,
+        "median": 33.4,
+        "p95": 36.1,
+        "max": 37
+      },
+      "activeNavigationLongTaskMaxMs": {
+        "n": 60,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "throughFormalSettleLongTaskMaxMs": {
+        "n": 60,
+        "mean": 8.35,
+        "median": 0.0,
+        "p95": 65,
+        "max": 182
+      }
+    },
+    "matrix webgl2 after": {
+      "cases": 60,
+      "latestRequestMs": {
+        "n": 60,
+        "mean": 0.022,
+        "median": 0.0,
+        "p95": 0.1,
+        "max": 0.1
+      },
+      "notPresentedBeforeRelease": 0,
+      "censoredLowerBoundMs": {
+        "n": 0
+      },
+      "eventReceiptMaxMs": {
+        "n": 60,
+        "mean": 34.115,
+        "median": 34.05,
+        "p95": 36.7,
+        "max": 47.5
+      },
+      "activeNavigationLongTaskMaxMs": {
+        "n": 60,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "throughFormalSettleLongTaskMaxMs": {
+        "n": 60,
+        "mean": 14.767,
+        "median": 0.0,
+        "p95": 95,
+        "max": 189
+      }
+    },
+    "matrix webgpu before": {
+      "cases": 60,
+      "latestRequestMs": {
+        "n": 60,
+        "mean": 12.968,
+        "median": 15.65,
+        "p95": 33.6,
+        "max": 34.2
+      },
+      "notPresentedBeforeRelease": 0,
+      "censoredLowerBoundMs": {
+        "n": 0
+      },
+      "eventReceiptMaxMs": {
+        "n": 60,
+        "mean": 55.587,
+        "median": 52.15,
+        "p95": 71,
+        "max": 77.9
+      },
+      "activeNavigationLongTaskMaxMs": {
+        "n": 60,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "throughFormalSettleLongTaskMaxMs": {
+        "n": 60,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      }
+    },
+    "matrix webgpu after": {
+      "cases": 60,
+      "latestRequestMs": {
+        "n": 60,
+        "mean": 0.02,
+        "median": 0.0,
+        "p95": 0.1,
+        "max": 0.1
+      },
+      "notPresentedBeforeRelease": 0,
+      "censoredLowerBoundMs": {
+        "n": 0
+      },
+      "eventReceiptMaxMs": {
+        "n": 60,
+        "mean": 54.318,
+        "median": 51.6,
+        "p95": 69.4,
+        "max": 73.6
+      },
+      "activeNavigationLongTaskMaxMs": {
+        "n": 60,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "throughFormalSettleLongTaskMaxMs": {
+        "n": 60,
+        "mean": 0,
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      }
+    },
+    "controlled webgl2 before": {
+      "cases": 3,
+      "latestRequestMs": {
+        "n": 0
+      },
+      "notPresentedBeforeRelease": 3,
+      "censoredLowerBoundMs": {
+        "n": 3,
+        "mean": 121.833,
+        "median": 121.5,
+        "p95": 122.7,
+        "max": 122.7
+      },
+      "eventReceiptMaxMs": {
+        "n": 3,
+        "mean": 32.567,
+        "median": 32.6,
+        "p95": 32.6,
+        "max": 32.6
+      },
+      "activeNavigationLongTaskMaxMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "throughFormalSettleLongTaskMaxMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      }
+    },
+    "controlled webgl2 after": {
+      "cases": 3,
+      "latestRequestMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "notPresentedBeforeRelease": 0,
+      "censoredLowerBoundMs": {
+        "n": 0
+      },
+      "eventReceiptMaxMs": {
+        "n": 3,
+        "mean": 32.4,
+        "median": 32.4,
+        "p95": 32.5,
+        "max": 32.5
+      },
+      "activeNavigationLongTaskMaxMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "throughFormalSettleLongTaskMaxMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      }
+    },
+    "controlled webgpu before": {
+      "cases": 3,
+      "latestRequestMs": {
+        "n": 0
+      },
+      "notPresentedBeforeRelease": 3,
+      "censoredLowerBoundMs": {
+        "n": 3,
+        "mean": 121.367,
+        "median": 121.4,
+        "p95": 121.4,
+        "max": 121.4
+      },
+      "eventReceiptMaxMs": {
+        "n": 3,
+        "mean": 54.333,
+        "median": 54.8,
+        "p95": 56.8,
+        "max": 56.8
+      },
+      "activeNavigationLongTaskMaxMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "throughFormalSettleLongTaskMaxMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      }
+    },
+    "controlled webgpu after": {
+      "cases": 3,
+      "latestRequestMs": {
+        "n": 3,
+        "mean": 0.067,
+        "median": 0.1,
+        "p95": 0.1,
+        "max": 0.1
+      },
+      "notPresentedBeforeRelease": 0,
+      "censoredLowerBoundMs": {
+        "n": 0
+      },
+      "eventReceiptMaxMs": {
+        "n": 3,
+        "mean": 39.467,
+        "median": 32.4,
+        "p95": 53.6,
+        "max": 53.6
+      },
+      "activeNavigationLongTaskMaxMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "throughFormalSettleLongTaskMaxMs": {
+        "n": 3,
+        "mean": 0,
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      }
+    }
+  }
+}
