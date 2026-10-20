@@ -284,6 +284,7 @@ jobs:
           NAV_STAGES: record,inflight
           NAV_ROUTES: auto
           NAV_SEQUENCE: '1'
+          NAV_HISTORY_DELAY_MS: '100'
           NAV_OUTPUT: /tmp/m10-navigation-evidence/sequence/report.json
         run: node scripts/m10-navigation-review.mjs
       - name: Navigation while pending canonical/formal work is being saved
