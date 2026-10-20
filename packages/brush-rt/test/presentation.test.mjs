@@ -20,6 +20,14 @@ test('newest view reprojects the published image while formal work is in flight'
  r.setViewTransform(view(30));r.setViewTransform(view(-20));r.frame(16.7);
  assert.equal(calls.renders,1);assert.equal(calls.presents,0,'navigation must not queue GPU work behind the stroke');assert.equal(backend.viewTransform[8],-20);assert.equal(r.inflight,true);assert.equal(backend.canvas.style.transform,'matrix(1,0,0,1,-20,0)');
 });
+test('layout and density changes reproject retained pixels without clearing a blocked backing',()=>{
+ const {r,backend,calls}=harness(),from=view(0);backend.canvas={width:800,height:600,style:{}};backend.viewTransform=from;r.presentationView=from;r.inflight=true;backend.poll=()=>false;
+ const to=view(37);to[0]=1200;to[1]=750;to[2]=600;to[3]=500;let submitted;r.onPresentation=s=>submitted=s;r.setViewTransform(to);r.frame(0);
+ assert.equal(submitted.kind,'view-transform');assert.equal(backend.canvas.width,800);assert.equal(backend.canvas.height,600);assert.equal(calls.presents,0);assert.equal(calls.renders,0);assert.equal(r.viewPending,true);
+ const [a,b,c,d,e,f]=backend.canvas.style.transform.slice(7,-1).split(',').map(Number);
+ // The browser stretches the backing to the latest CSS box before its transform.
+ assert.ok(Math.abs(a*(600/800)-1)<1e-9);assert.equal(b,0);assert.equal(c,0);assert.ok(Math.abs(d*(500/600)-1)<1e-9);assert.equal(e,-63);assert.equal(f,-50);
+});
 test('bounded presentation backpressure retains newest request until it can submit',()=>{
  const {r,backend,calls}=harness();backend.presentView=()=>false;r.setViewTransform(view(10));r.frame(0);assert.equal(r.viewPending,true);
  r.setViewTransform(view(40));backend.presentView=()=>{calls.presents++;return true;};r.frame(16.7);assert.equal(r.viewPending,false);assert.equal(backend.viewTransform[8],40);

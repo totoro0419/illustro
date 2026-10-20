@@ -51,6 +51,11 @@ test('affine stroke reprojection matches direct document mapping under pan, zoom
  const [a,b,c,d,e,f]=viewAffine(from,to);
  for(const point of [[0,0],[2000,1600],[3900,3100]]){const p=toScreen(from,...point),q=toScreen(to,...point);assert.ok(Math.hypot(a*p.x+c*p.y+e-q.x,b*p.x+d*p.y+f-q.y)<1e-8);}
 });
+test('viewport resize preserves pending stroke pixels and only updates their placement',()=>{
+ const {p,layers,sink}=isolated();sink.reproject=()=>{};let origins=0;sink.updateOrigin=()=>origins++;p.enqueue(live(record(64)));flush(p);const old=p.states.get(1),image=layers.get(1),frames=image.frames.length,pixels=p.metrics.rasterPixels;let transforms=0;image.reproject=()=>transforms++;
+ const next=view();next[0]=900;next[1]=1250;next[2]=450;next[3]=625;p.setView(next);flush(p);
+ assert.equal(p.states.get(1),old);assert.equal(layers.get(1),image);assert.equal(image.frames.length,frames);assert.equal(p.metrics.rasterPixels,pixels);assert.equal(origins,1);assert.equal(transforms,1);assert.equal(p.finalizations.size,0);p.destroy();
+});
 
 
 test('a gesture and its release never rebuild the previous stroke image',async()=>{

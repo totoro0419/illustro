@@ -80,10 +80,10 @@ export class StrokeOverlay{
   for(const id of [...this.finalizations.keys()])this.discardFinalization(id);
  }else this.schedule();}
  setView(view){
-  const old=new Map([...this.states.values()].filter(v=>v.last).map(v=>[v.id,v.finalState??v.last]));for(const [id,state]of this.pending)old.set(id,state);
-  const sameSpace=this.view&&[0,1,2,3,4,5,12,14].every(i=>this.view[i]===view[i]);
+  const sameLayout=this.view&&[0,1,2,3].every(i=>this.view[i]===view[i]);
+  const sameSpace=this.view&&[4,5,12,14].every(i=>this.view[i]===view[i]);
   const reusable=this.sink?.reproject&&sameSpace;
-  this.view=Float64Array.from(view);if(!sameSpace)this.sink?.updateOrigin?.();this.epoch++;
+  this.view=Float64Array.from(view);if(!sameLayout)this.sink?.updateOrigin?.();this.epoch++;
   if(reusable){
    // No coverage evaluation, image allocation or upload during navigation.
    for(const id of [...this.finalizations.keys()])this.discardFinalization(id);
@@ -91,6 +91,7 @@ export class StrokeOverlay{
    for(const g of this.guards)this.sink.reprojectGuard?.(g.view,this.view,g);
    this.ready=this.enabled&&!this.suspended;this.plan=previewPlan(this.view,this.preferred??{},this.ratio);return;
   }
+  const old=new Map([...this.states.values()].filter(v=>v.last).map(v=>[v.id,v.finalState??v.last]));for(const [id,state]of this.pending)old.set(id,state);
   this.pending.clear();this.closeGuards();this.clearRaster();this.ready=this.enabled&&!this.suspended;this.plan=previewPlan(this.view,this.preferred??{},this.ratio);
   for(const state of old.values())this.pending.set(state.id,state);if(this.ready)this.schedule();
  }

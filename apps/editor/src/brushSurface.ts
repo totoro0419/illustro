@@ -66,7 +66,10 @@ export class BrushSurface{
     // DPR-aware backing rather than silently downgrading device output resolution.
     const w=exact&&Math.abs(exact.width-estimatedW)<=3?Math.max(1,exact.width):estimatedW;
     const h=exact&&Math.abs(exact.height-estimatedH)<=3?Math.max(1,exact.height):estimatedH;
-    if(this.canvas.width!==w)this.canvas.width=w;if(this.canvas.height!==h)this.canvas.height=h;this.updateView();}
+    // Resizing a canvas destroys its displayed pixels. Keep the published
+    // backing until the renderer can replace it; view input still updates now.
+    if(!this.renderer){if(this.canvas.width!==w)this.canvas.width=w;if(this.canvas.height!==h)this.canvas.height=h;}
+    this.updateView(false,[w,h]);}
   private densityChanged=()=>{this.observeDensity();this.setBackingSize();};
   private observeDensity(){this.densityMedia?.removeEventListener('change',this.densityChanged);this.densityMedia=window.matchMedia('(resolution: '+(window.devicePixelRatio||1)+'dppx)');this.densityMedia.addEventListener('change',this.densityChanged);}
   private windowResize=()=>this.setBackingSize();
@@ -74,7 +77,7 @@ export class BrushSurface{
   private keyUp=(e:KeyboardEvent)=>{if(e.code==='Space')this.keyboardSpace=false;};
   private syncNavigationActivity(){this.renderer?.setNavigationActive(!!this.panning||this.touchPoints.size>=2||performance.now()<this.wheelNavigationUntil);}
   private wheel=(e:WheelEvent)=>{if(!this.view)return;e.preventDefault();this.wheelNavigationUntil=performance.now()+120;this.syncNavigationActivity();if(this.wheelNavigationTimer!==null)clearTimeout(this.wheelNavigationTimer);this.wheelNavigationTimer=window.setTimeout(()=>{this.wheelNavigationTimer=null;this.syncNavigationActivity();},125);this.view.zoomAt(Math.exp(-e.deltaY*.0018),this.pointerLocation(e));this.updateView();};
-  private updateView(immediate=false){if(this.view&&this.renderer){(this.renderer as GpuRenderer&{setViewTransform:(value:Float32Array)=>void}).setViewTransform(this.view.uniform(this.canvas.width,this.canvas.height));this.viewNotificationPending=!immediate;if(immediate)this.onStateChanged('view-command');}}
+  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
   screenToDocument(point:Point){return this.view?.document(point)??point;}

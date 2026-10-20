@@ -16,6 +16,8 @@ The renderer retains one view matrix describing the canvas it submitted. On each
 
 The latest GPU view remains coalesced in `viewPending`. A GPU refresh is submitted once the outstanding content/capture lane is free; bounded backend presentation requests remain bounded. Submitting that fresh view resets the temporary transform in the same JavaScript turn. An older asynchronous completion cannot reset the latest view. The GPU uses the existing composite, not a replay of strokes.
 
+Pending save exposed a second dependency in CI: wrapping status text resized the viewport and immediately cleared its backing, disabling affine reuse until formal completion. Layout/DPR changes now update the desired view immediately and keep the published backing. Its CSS transform compensates for the browser's layout stretch; backing reallocation occurs only inside an actual replacement GPU presentation, after view backpressure admits it. Pending stroke images also reuse their old grids across viewport resize. A dedicated real-input test forces a resize while save and formal acknowledgement are held, checks the unchanged old backing, then verifies exact saved layer pixels.
+
 This is a transient view of already available pixels. Newly revealed areas and exact resampling can arrive later. It does not reduce the canonical artwork resolution or change the final sampler.
 
 ## Removed work
