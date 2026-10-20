@@ -1979,6 +1979,90 @@
     {
       "path": "docs/research/PENDING_STROKE_UNDO_2026-10-18.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/brushPresets.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/brushPresets.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_BRUSH_QUALITY_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/src/preview-policy.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/document-preview.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/preview-policy.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-preview-cpu-benchmark.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-preview-review.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-preview-validation.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_PREVIEW_2026-10-19.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-preview-availability.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-navigation-review.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-navigation-validation.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_NAVIGATION_2026-10-19.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_DRAWING_WORKER_2026-10-20.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/src/worker-stroke-sink.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/src/drawing-host.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/src/drawing.worker.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-worker-review.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-worker-history.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-worker-summary.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

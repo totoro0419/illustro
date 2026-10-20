@@ -23,7 +23,7 @@ if(!base){
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{}),args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
 const output={commit:expected,mode:target?'public':'local',tests:[],errors:[]};
 async function draw(page,minimumStrokes=1){
- const b=await page.locator('#canvas').boundingBox();assert.ok(b&&b.width>100&&b.height>100,'canvas visible');
+ const b=await page.locator('.surface').boundingBox();assert.ok(b&&b.width>100&&b.height>100,'canvas visible');
  const diag=await page.evaluate(()=>{const q=JSON.parse(document.getElementById('qaAuto')?.textContent||'{}');return {width:q.display?.document?.width,backend:q.backend};});
  const second=minimumStrokes>1,started=Date.now();
  await page.mouse.move(b.x+b.width*(second?.28:.25),b.y+b.height*(second?.68:.34));
@@ -34,7 +34,7 @@ async function draw(page,minimumStrokes=1){
  await page.waitForFunction(minimum=>Number(document.getElementById('canvas')?.dataset.committedStrokes??'0')>=minimum&&document.getElementById('canvas')?.dataset.historyBusy==='false',minimumStrokes,{timeout:softGpuLarge?150000:45000});
  if(diag.width>=2048)output.tests.push({result:'MEASURED-LARGE-STROKE',backend:diag.backend,width:diag.width,ordinal:minimumStrokes,elapsedMs:Date.now()-started,softwareGpu:softGpuLarge});
 }
-async function getState(page){return page.evaluate(()=>{const c=document.getElementById('canvas'),r=c.getBoundingClientRect(),q=JSON.parse(document.getElementById('qaAuto')?.textContent||'{}');return {performance:window.__illustroPerformance?.read?.()??null,trace:window.__m08Trace??[],status:document.getElementById('status')?.textContent,cssWidth:r.width,cssHeight:r.height,backingWidth:c.width,backingHeight:c.height,dpr:devicePixelRatio,qa:q,revision:c.dataset.revisionId,strokes:c.dataset.committedStrokes,backend:q.backend,view:q.display?.view,document:q.display?.document}});}
+async function getState(page){return page.evaluate(()=>{const c=document.getElementById('canvas'),r=c.parentElement.getBoundingClientRect(),q=JSON.parse(document.getElementById('qaAuto')?.textContent||'{}');return {performance:window.__illustroPerformance?.read?.()??null,trace:window.__m08Trace??[],status:document.getElementById('status')?.textContent,cssWidth:r.width,cssHeight:r.height,backingWidth:c.width,backingHeight:c.height,dpr:devicePixelRatio,qa:q,revision:c.dataset.revisionId,strokes:c.dataset.committedStrokes,backend:q.backend,view:q.display?.view,document:q.display?.document}});}
 async function geometrySmoke(page){
  // Document workspace box is initially collapsed by M07.
  await page.locator('#workspaceToggle').click();
@@ -67,9 +67,9 @@ async function geometrySmoke(page){
  await history(oldW,oldH,Math.max(64,Math.floor(oldW/2)),Math.max(64,Math.floor(oldH/2)));
 }
 async function seamPixel(page,x,y){
- const screenshot=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
+ const screenshot=(await page.locator('.surface').screenshot({type:'png',animations:'disabled'})).toString('base64');
  return page.evaluate(async ({png,x,y})=>{
-  const c=document.getElementById('canvas'),q=JSON.parse(document.getElementById('qaAuto').textContent),v=q.display.view,r=c.getBoundingClientRect();
+  const c=document.getElementById('canvas'),q=JSON.parse(document.getElementById('qaAuto').textContent),v=q.display.view,r=c.parentElement.getBoundingClientRect();
   const bytes=Uint8Array.from(atob(png),t=>t.charCodeAt(0)),bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
   const imageWidth=bitmap.width,imageHeight=bitmap.height,t=document.createElement('canvas');t.width=imageWidth;t.height=imageHeight;
   const ctx=t.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0);bitmap.close();
@@ -79,9 +79,11 @@ async function seamPixel(page,x,y){
   return [...ctx.getImageData(px,py,1,1).data];
  },{png:screenshot,x,y});
 }
+// Input and screenshots use the fixed viewport; the published canvas may be
+// affinely transformed while the GPU catches up. Pixel assertions stay strict.
 // Regression: the white paper must move. The GPU canvas itself fills the viewport.
 async function paperViewportSmoke(page,kind){
- const canvas=await page.locator('#canvas').boundingBox(),stage=await page.locator('.surface').boundingBox();
+ const canvas=await page.locator('#canvas').evaluate(c=>{const r=c.parentElement.getBoundingClientRect();return {x:r.x,y:r.y,width:c.clientWidth,height:c.clientHeight};}),stage=await page.locator('.surface').boundingBox();
  assert.ok(canvas&&stage,'M08 viewport elements must exist');
  assert.ok(Math.abs(canvas.width-stage.width)<2&&Math.abs(canvas.height-stage.height)<2,
   'M08 canvas must fill the interaction viewport');
@@ -91,7 +93,7 @@ async function paperViewportSmoke(page,kind){
  await page.locator('#view100').click();
  await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='hidden';});
  const centerPixel=async()=>{
-  const png=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
+  const png=(await page.locator('.surface').screenshot({type:'png',animations:'disabled'})).toString('base64');
   return page.evaluate(async encoded=>{
    const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
    const bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
@@ -128,7 +130,7 @@ async function previewFinalSmoke(page,kind){
  if(before.view.flipX)await page.locator('#flipH').click();
  if(before.view.flipY)await page.locator('#flipV').click();
  await page.locator('#fitView').click();
- const state=await getState(page),v=state.view,rect=await page.locator('#canvas').boundingBox();
+ const state=await getState(page),v=state.view,rect=await page.locator('.surface').boundingBox();
  const x0=rect.x+v.cssWidth/2+(v.documentWidth*.2-v.documentWidth/2)*v.zoom+v.panX;
  const x1=rect.x+v.cssWidth/2+(v.documentWidth*.7-v.documentWidth/2)*v.zoom+v.panX;
  const y=rect.y+v.cssHeight/2+(v.documentHeight*.16-v.documentHeight/2)*v.zoom+v.panY;
@@ -150,7 +152,7 @@ async function seamlessSmoke(page){
  if(initial.view.flipY)await page.locator('#flipV').click();
  await page.locator('#view100').click();
  await page.evaluate(()=>{const c=document.querySelector('#seamless');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));});
- const before=await getState(page),rect=await page.locator('#canvas').boundingBox(),v=before.view;
+ const before=await getState(page),rect=await page.locator('.surface').boundingBox(),v=before.view;
  assert.ok(v.seamless,'seamless must be enabled');
  const sx=x=>rect.x+v.cssWidth/2+(x-w/2)*v.zoom+v.panX;
  const sy=y=>rect.y+v.cssHeight/2+(y-h/2)*v.zoom+v.panY;
@@ -204,10 +206,10 @@ async function run(kind,dpr,width,height){
   if(dpr===2&&width===512){
     const original=initial.document,oldRevision=initial.revision;
     await page.setViewportSize({width:870,height:990});
-    await page.waitForFunction(dpr=>{const c=document.querySelector('#canvas'),r=c.getBoundingClientRect();return Math.abs(c.width-r.width*dpr)<=2.1&&Math.abs(c.height-r.height*dpr)<=2.1;},dpr,{timeout:45000});
+    await page.waitForFunction(dpr=>{const c=document.querySelector('#canvas'),r=c.parentElement.getBoundingClientRect();return Math.abs(c.width-r.width*dpr)<=2.1&&Math.abs(c.height-r.height*dpr)<=2.1;},dpr,{timeout:45000});
     const portrait=await getState(page);assert.deepEqual(portrait.document,original);assert.equal(portrait.revision,oldRevision);
     await page.setViewportSize({width:1250,height:900});
-    await page.waitForFunction(dpr=>{const c=document.querySelector('#canvas'),r=c.getBoundingClientRect();return Math.abs(c.width-r.width*dpr)<=2.1&&Math.abs(c.height-r.height*dpr)<=2.1;},dpr,{timeout:45000});
+    await page.waitForFunction(dpr=>{const c=document.querySelector('#canvas'),r=c.parentElement.getBoundingClientRect();return Math.abs(c.width-r.width*dpr)<=2.1&&Math.abs(c.height-r.height*dpr)<=2.1;},dpr,{timeout:45000});
     const restored=await getState(page);assert.deepEqual(restored.document,original);assert.equal(restored.revision,oldRevision);
     output.tests.push({kind,dpr,width,height,result:'VIEWPORT-RESIZE-PASS',portrait:{css:[portrait.cssWidth,portrait.cssHeight],backing:[portrait.backingWidth,portrait.backingHeight]}});
   }
@@ -220,10 +222,10 @@ async function run(kind,dpr,width,height){
     // The floating QA overlay must not obscure reference source pixels.
     await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='hidden';});
     const screenshotPixels=async()=>{
-      const screenshot=(await page.locator('#canvas').screenshot({type:'png',animations:'disabled'})).toString('base64');
+      const screenshot=(await page.locator('.surface').screenshot({type:'png',animations:'disabled'})).toString('base64');
       return page.evaluate(async png=>{
         const canvas=document.querySelector('#canvas'),q=JSON.parse(document.querySelector('#qaAuto').textContent||'{}'),v=q.display.view;
-        const rect=canvas.getBoundingClientRect(),bytes=Uint8Array.from(atob(png),ch=>ch.charCodeAt(0));
+        const rect=canvas.parentElement.getBoundingClientRect(),bytes=Uint8Array.from(atob(png),ch=>ch.charCodeAt(0));
         const bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
         const width=bitmap.width,height=bitmap.height,scratch=document.createElement('canvas');scratch.width=width;scratch.height=height;
         const ctx=scratch.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0);bitmap.close();

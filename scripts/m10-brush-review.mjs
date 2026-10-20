@@ -1,0 +1,84 @@
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const {chromium}=createRequire(import.meta.url)(process.env.RT_PLAYWRIGHT_PATH??'playwright');
+const evidence=process.env.M10_EVIDENCE??'/tmp/m10-review/report.json';
+const root=path.resolve('apps/editor/dist'),errors=[],cases=[];
+await fs.mkdir(path.dirname(evidence),{recursive:true});
+let server;let browser;
+try {
+ server=http.createServer(async(request,response)=>{try{
+  const url=decodeURIComponent((request.url??'/').split('?')[0]);
+  const file=path.resolve(root,'.'+(url==='/'?'/index.html':url));
+  if(!file.startsWith(root+path.sep))return response.writeHead(403).end();
+  const bytes=await fs.readFile(file),ext=path.extname(file);
+  response.setHeader('content-type',{'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json'}[ext]??'application/octet-stream');
+  response.end(bytes);
+ }catch{response.writeHead(404).end();}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const url='http://127.0.0.1:'+server.address().port+'/';
+ browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
+ for(const backend of ['webgl2','webgpu']){
+  const context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:2,hasTouch:true,acceptDownloads:true});
+  const page=await context.newPage(),pageErrors=[];
+  page.on('pageerror',error=>pageErrors.push(error.message));
+  page.on('console',msg=>{if(msg.type()==='error'&&!/favicon/.test(msg.text()))pageErrors.push(msg.text());});
+  await page.goto(url+'?qa=1&backend='+backend,{waitUntil:'domcontentloaded'});
+  await page.locator('#new').click();
+  await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
+  assert.equal(await page.locator('#brush option').count(),7,'standard brush catalog');
+  await page.locator('#brushSearch').fill('鉛筆');
+  assert.ok(await page.locator('#brush option').count()<=2,'filtered option list');
+  await page.locator('#brushSearch').fill('');
+  await page.locator('#brush').selectOption('foundation-g-pen');
+  await page.locator('#brushDuplicate').click();
+  const id=await page.locator('#brush').inputValue();
+  assert.ok(id.startsWith('user-brush-'),'stable user brush ID');
+  assert.equal(await page.locator('#brushSave').isDisabled(),false);
+  await page.locator('#brushFlow').evaluate(el=>{el.value='35';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert.equal(await page.locator('#brushFlowValue').textContent(),'35%');
+  await page.locator('#brushStabilization').evaluate(el=>{el.value='60';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.locator('#brushSave').click();
+  page.once('dialog',dialog=>dialog.accept('M10 検証ペン'));
+  await page.locator('#brushRename').click();
+  assert.equal(await page.locator('#brush option:checked').textContent(),'M10 検証ペン · 自作');
+  await page.reload();
+  await page.locator('#new').click();
+  await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
+  await page.locator('#brush').selectOption(id);
+  assert.equal(await page.locator('#brushFlowValue').textContent(),'35%');
+  assert.equal(await page.locator('#brushStabilizationValue').textContent(),'60%');
+  const first=await page.locator('#canvas').boundingBox();assert.ok(first?.width>100);
+  await page.mouse.move(first.x+first.width*.3,first.y+first.height*.45);
+  await page.mouse.down();await page.mouse.move(first.x+first.width*.7,first.y+first.height*.55,{steps:24});await page.mouse.up();
+  await page.waitForFunction(()=>Number(document.querySelector('canvas')?.dataset.committedStrokes)>=1,null,{timeout:90000});
+  assert.equal(await page.locator('#undo').isDisabled(),false,'Undo enabled after a stroke');
+  await page.locator('#undo').click();
+  await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='0',null,{timeout:90000});
+  await page.locator('#redo').click();
+  await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',null,{timeout:90000});
+  await page.locator('#brushSearch').fill('M10 検証');
+  assert.equal(await page.locator('#brush option').count(),1);
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('#brushExport').click();
+  const download=await downloadPromise;
+  const json=await fs.readFile(await download.path(),'utf8');
+  const pack=JSON.parse(json);
+  assert.ok(pack.presets.some(p=>p.id===id),'export preserved preset ID');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('#brushDelete').click();
+  assert.equal(await page.locator('#brush option[value="'+id+'"]').count(),0,'deleted custom brush removed');
+  await context.close();
+  assert.deepEqual(pageErrors,[],backend+' browser console');
+  cases.push({backend,presetCRUD:true,saveReload:true,export:true,drawAndHistory:true,consoleErrors:pageErrors});
+ }
+} catch(error){errors.push(error.stack??String(error));}
+finally{
+ if(browser)await browser.close();
+ if(server)server.close();
+ await fs.writeFile(evidence,JSON.stringify({commit:process.env.EXPECTED_COMMIT_SHA??'',scope:'software Chromium GPU only, not smartphone hardware',status:errors.length?'FAIL':'PASS',cases,errors},null,2));
+}
+if(errors.length)throw Error(errors.join('\n'));
+console.log('M10_BROWSER_REVIEW '+cases.length+' '+JSON.stringify(cases));

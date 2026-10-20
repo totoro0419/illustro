@@ -5,6 +5,7 @@ const bytes=TILE*TILE*4;
 export async function readGpuTiles(backend:any,requests:readonly TileReadRequest[],valid:()=>boolean){
  if(requests.length>16)throw new Error('GPU readback batch exceeds 1 MiB');
  if(!valid())throw new Error('Projection checkpoint capture is stale');
+ if(backend.readTiles){const result=await backend.readTiles(requests);if(!valid())throw new Error('Projection checkpoint capture is stale');return result as Array<TileReadRequest&{pixels:Uint8Array}>;}
  const result=requests.map(r=>({...r,pixels:new Uint8Array(bytes)}));
  const occupied=result.map((r,i)=>({i,t:backend.tiles.get(r.surfaceId+'\u0000'+r.key)})).filter(x=>x.t);
  if(!occupied.length)return result;

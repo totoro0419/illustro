@@ -15,10 +15,18 @@ test('WebGL completed formal work can submit the next frame in the same RAF',()=
  const {r,calls}=harness();r.needsFrame=true;r.frame(0);assert.equal(r.inflight,true);
  r.needsFrame=true;r.frame(16.7);assert.equal(calls.renders,2,'completion cannot cost a third RAF');
 });
-test('newest view remains responsive while formal work is in flight',()=>{
- const {r,backend,calls}=harness();r.needsFrame=true;r.frame(0);backend.poll=()=>false;
+test('newest view reprojects the published image while formal work is in flight',()=>{
+ const {r,backend,calls}=harness();backend.canvas={style:{}};backend.viewTransform=view(0);r.presentationView=view(0);r.needsFrame=true;r.frame(0);backend.poll=()=>false;
  r.setViewTransform(view(30));r.setViewTransform(view(-20));r.frame(16.7);
- assert.equal(calls.renders,1);assert.equal(calls.presents,1);assert.equal(backend.viewTransform[8],-20);assert.equal(r.inflight,true);
+ assert.equal(calls.renders,1);assert.equal(calls.presents,0,'navigation must not queue GPU work behind the stroke');assert.equal(backend.viewTransform[8],-20);assert.equal(r.inflight,true);assert.equal(backend.canvas.style.transform,'matrix(1,0,0,1,-20,0)');
+});
+test('layout and density changes reproject retained pixels without clearing a blocked backing',()=>{
+ const {r,backend,calls}=harness(),from=view(0);backend.canvas={width:800,height:600,style:{}};backend.viewTransform=from;r.presentationView=from;r.inflight=true;backend.poll=()=>false;
+ const to=view(37);to[0]=1200;to[1]=750;to[2]=600;to[3]=500;let submitted;r.onPresentation=s=>submitted=s;r.setViewTransform(to);r.frame(0);
+ assert.equal(submitted.kind,'view-transform');assert.equal(backend.canvas.width,800);assert.equal(backend.canvas.height,600);assert.equal(calls.presents,0);assert.equal(calls.renders,0);assert.equal(r.viewPending,true);
+ const [a,b,c,d,e,f]=backend.canvas.style.transform.slice(7,-1).split(',').map(Number);
+ // The browser stretches the backing to the latest CSS box before its transform.
+ assert.ok(Math.abs(a*(600/800)-1)<1e-9);assert.equal(b,0);assert.equal(c,0);assert.ok(Math.abs(d*(500/600)-1)<1e-9);assert.equal(e,-63);assert.equal(f,-50);
 });
 test('bounded presentation backpressure retains newest request until it can submit',()=>{
  const {r,backend,calls}=harness();backend.presentView=()=>false;r.setViewTransform(view(10));r.frame(0);assert.equal(r.viewPending,true);
@@ -58,7 +66,21 @@ test('a view change during final publication retries the new epoch instead of le
  r.proxy={epoch:0,ready:true,fallback:false,footprints:new Map,guards:[],canUse:()=>false,setView(){this.epoch++;},fallbackPresented(){},presented(){}};
  r.strokeFrames.set(7,1);r.needsFrame=true;r.frame(0);r.setViewTransform(view(20));r.frame(16.7);r.finishSubmission();
  assert.equal(r.strokeFrames.has(7),true);assert.equal(r.needsFrame,true,'the new view must schedule a matching content acknowledgement');
- r.frame(33.4);r.finishSubmission();assert.equal(r.strokeFrames.size,0);assert.equal(r.presentedStrokes.has(7),true);
+ r.frame(33.4);r.frame(50.1);r.finishSubmission();assert.equal(r.strokeFrames.size,0);assert.equal(r.presentedStrokes.has(7),true);
+});
+
+test('view transforms are independent of held history, snapshot preparation and GPU backpressure',()=>{
+ for(const blocked of ['presentationHeld','guardPreparing','inflight','backpressure']){
+  const {r,backend,calls}=harness();backend.canvas={style:{}};backend.viewTransform=view(0);r.presentationView=view(0);if(blocked==='presentationHeld')backend.presentationHeld=true;else if(blocked==='backpressure')backend.presentView=()=>false;else r[blocked]=true;
+  let received;r.onPresentation=s=>received=s;r.setViewTransform(view(37));
+  assert.equal(received.kind,'view-transform');assert.equal(backend.canvas.style.transform,'matrix(1,0,0,1,37,0)');assert.equal(calls.presents,0);assert.equal(calls.renders,0);assert.equal(r.viewPending,true);
+ }
+});
+
+test('an old completion retains the newest affine view instead of resetting it',()=>{
+ const {r,backend}=harness();backend.canvas={style:{}};backend.viewTransform=view(0);r.presentationView=view(0);r.needsFrame=true;r.frame(0);backend.poll=()=>false;
+ r.setViewTransform(view(80));r.finishSubmission();assert.equal(backend.canvas.style.transform,'matrix(1,0,0,1,80,0)');assert.equal(r.viewPending,true);
+ r.frame(1);assert.equal(backend.canvas.style.transform,'matrix(1,0,0,1,0,0)');assert.equal(r.viewPending,false);
 });
 
 

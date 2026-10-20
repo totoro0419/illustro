@@ -11,10 +11,11 @@ const expectedCommit=(process.env.EXPECTED_COMMIT_SHA??'').trim();
 const evidence=path.resolve(process.env.M05_EVIDENCE_DIRECTORY??'/tmp/illustro-m05');
 await fs.mkdir(evidence,{recursive:true});
 
-let server=null,base=publicBase;
+let server=null,base=publicBase,localNetworkDisabled=false;
 if(!publicBase){
   const root=path.resolve(import.meta.dirname,'../apps/editor/dist');
   server=http.createServer(async(req,res)=>{
+    if(localNetworkDisabled){req.socket.destroy();return;}
     try{
       const pathname=decodeURIComponent((req.url??'/').split('?')[0]);
       const file=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
@@ -212,11 +213,12 @@ try{
   }
 
   // Checkpoint policy: every operation is journaled; finished-state checkpoint is forced
-  // at 12 operations even without an idle gap.
+  // at 12 operations even without an idle gap. Wait for the latest finished
+  // checkpoint; an earlier idle checkpoint must not satisfy this completion gate.
   {
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     for(let i=0;i<12;i++){const y=.10+(i%10)*.075;await draw(page,[.12,y],[.82,y],2);await waitStroke(page,i+1);}
-    await waitProtected(page,12);await page.waitForFunction(()=>{try{const q=JSON.parse(document.querySelector('#qaAuto')?.textContent??'{}');return q.autosaveCheckpoint?.fullSeedPending===false&&q.autosaveCheckpoint?.lastCheckpointAt!==null;}catch{return false;}},{timeout:30000});
+    await waitProtected(page,12);await page.waitForFunction(()=>{try{const q=JSON.parse(document.querySelector('#qaAuto')?.textContent??'{}');return q.autosaveCheckpoint?.fullSeedPending===false&&q.autosaveCheckpoint?.lastCheckpointAt!==null&&q.autosaveCheckpoint?.opsSinceLast===0;}catch{return false;}},null,{timeout:30000});
     const state=await qa(page);assert.equal(state.autosaveCheckpoint.operationInterval,12);assert.equal(state.autosaveCheckpoint.idleMs,800);assert.equal(state.autosaveCheckpoint.opsSinceLast,0);report.checkpointCadence={status:'PASS',operationInterval:12,idleMs:800,protectedThrough:state.persistence.protectedThrough};await context.close();
   }
 
@@ -284,14 +286,14 @@ try{
     await page.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForFunction(()=>navigator.serviceWorker.controller!==null,{timeout:15000});
     const qaPanel=page.locator('#qaPanel');if(await qaPanel.count())await qaPanel.evaluate(el=>{el.open=false;});
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await waitReady(page);await draw(page);await waitStroke(page,1);await waitProtected(page,1);
-    const onlineSave=await saveDownload(page);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded',timeout:45000});assert.ok((await page.locator('body').innerText()).includes('Illustro'));
+    const onlineSave=await saveDownload(page);await context.setOffline(true);localNetworkDisabled=!!server;await page.reload({waitUntil:'domcontentloaded',timeout:45000});assert.ok((await page.locator('body').innerText()).includes('Illustro'));
     const offlineQaPanel=page.locator('#qaPanel');if(await offlineQaPanel.count())await offlineQaPanel.evaluate(el=>{el.open=false;});
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await waitReady(page);await draw(page,[.18,.45],[.82,.45]);await waitStroke(page,1);await waitProtected(page,1);
     const offlineSave=await saveDownload(page);assert.ok(offlineSave.filePath);await page.locator('#openFile').setInputFiles(onlineSave.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('作品ファイルを開きました。自動保存を開始しました。'),{timeout:30000});await waitReady(page);
     assert.deepEqual(errors,[],'Offline app operations produced a browser error before the intentional network probe');
     const networkUnavailable=await page.evaluate(async()=>{try{await fetch('./__m05_network_probe__?t='+Date.now(),{cache:'no-store'});return false;}catch{return true;}});
     const navigatorOnline=await page.evaluate(()=>navigator.onLine),offlineState=await qa(page);assert.equal(networkUnavailable,true);
-    report.offline={status:'PASS',serviceWorker:true,networkUnavailable,draw:true,recoveryStore:true,save:true,open:true,navigatorOnline,backend:offlineState.persistence.backend};await context.setOffline(false);await context.close();
+    report.offline={status:'PASS',serviceWorker:true,networkUnavailable,draw:true,recoveryStore:true,save:true,open:true,navigatorOnline,backend:offlineState.persistence.backend};localNetworkDisabled=false;await context.setOffline(false);await context.close();
   }
 
   report.status='PASS';
