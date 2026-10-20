@@ -12,7 +12,7 @@ for(const r of [matrix,gated,short,sustained,formal,...histories]){assert.equal(
 assert.equal(matrix.cases.length,432);assert.equal(gated.cases.length,12);assert.equal(formal.formal.length,2);
 const all=[...matrix.cases,...gated.cases,...short.cases,...sustained.cases];
 assert.ok(all.every(c=>c.initial.phase==='before-release'&&Number.isFinite(c.metrics.releaseToGestureEventMs)),'source images must precede release, with the native gap measured');
-const pct=(a,p)=>{a=a.filter(Number.isFinite).sort((x,y)=>x-y);return a.length?a[Math.min(a.length-1,Math.ceil(a.length*p)-1)]:null;};
+const pct=(a,p)=>{a=a.filter(Number.isFinite).sort((x,y)=>x-y);return a.length?a[Math.max(0,Math.min(a.length-1,Math.ceil(a.length*p)-1))]:null;};
 const maximum=a=>pct(a,1),median=a=>pct(a,.5),key=c=>[c.backend,c.route,c.brush,c.width,c.delay].join('/');
 const summary={source:matrix.source,baseline:matrix.baseline,browser:matrix.browser,
  status:'AUTOMATED_FUNCTIONAL_CHECKS_PASSED; PHYSICAL_ACCEPTANCE_PENDING',userReview:'REQUIRED',
