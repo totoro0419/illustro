@@ -41,8 +41,9 @@ export class DrawingHost {
   if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}
   for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  }
- setViewTransform(view){const start=performance.now(),old=this.backend.viewTransform;if(old&&view.every((n,i)=>n===old[i]))return;this.backend.viewTransform=Array.from(view);this.reproject();this.send('view',view);(this.viewSamples??=[]).push(performance.now()-start);if(this.viewSamples.length>240)this.viewSamples.shift();this.onPresentation?.({kind:'view-transform',at:performance.now()});}
- setNavigationActive(active){this.navigationActive=!!active;}
+ setViewTransform(view){const start=performance.now(),old=this.backend.viewTransform;if(old&&view.every((n,i)=>n===old[i]))return;this.backend.viewTransform=Array.from(view);this.reproject();if(!this.navigationActive)this.forwardView();(this.viewSamples??=[]).push(performance.now()-start);if(this.viewSamples.length>240)this.viewSamples.shift();this.onPresentation?.({kind:'view-transform',at:performance.now()});}
+ forwardView(){const view=this.backend.viewTransform;if(view&&view!==this.sentView){this.sentView=view;this.send('view',view);}}
+ setNavigationActive(active){this.navigationActive=!!active;if(!active)this.forwardView();}
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
  setSeamlessPreview(active){this.send('seamless',active);}

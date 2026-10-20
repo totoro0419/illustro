@@ -39,7 +39,7 @@ async function publish(){
 }
 function capture(){const b=renderer.backend;if(b.presentationHeld)return Promise.resolve();const id=++serial,view=Array.from(b.viewTransform??[]),epoch=visibilityEpoch;
  // Snapshot before a WebGPU canvas texture expires at the task boundary.
- const image=createImageBitmap(b.canvas);metrics.gpuCaptures++;
+ const image=b.device?Promise.resolve(b.canvas.transferToImageBitmap()):createImageBitmap(b.canvas);metrics.gpuCaptures++;
  return image.then(bitmap=>{if(id<captured||epoch!==visibilityEpoch){bitmap.close();return;}captured=id;gpuFrame?.bitmap.close();gpuFrame={bitmap,view};baseDirty=true;});
 }
 async function init(m){const nativeNow=performance.now.bind(performance),offset=performance.timeOrigin-m.timeOrigin;Object.defineProperty(performance,'now',{value:()=>nativeNow()+offset});Object.defineProperty(performance,'timeOrigin',{value:m.timeOrigin});diagnostics=!!m.diagnostics;sink=new WorkerStrokeSink(requestPublish);
