@@ -43,6 +43,8 @@ Semantic forced taper can still build a corrected private image when idle; a ges
 
 Geometric screenshot checks disable forced taper in that fixture to isolate image motion; the separate brush-quality suite retains its taper cases. A changing semantic taper is not used as a frozen-image reference. Portable save/reload and real Undo/Redo after navigation compare every layer hash exactly.
 
+The resize fixture changes the viewport again when its completion gate opens. The final check independently requires unchanged document/navigation coordinates and dimensions matching the actual current viewport/backing. A legitimate status/layout resize is therefore checked as a new size, rather than being misclassified as an old view restoring itself.
+
 CI publishes the navigation reports under [M10 evidence](https://totoro0419.github.io/illustro/qa/m10/evidence/navigation/summary.json), alongside the existing brush, M08/M09, TileHistory, pending Undo, persistence and preview quality evidence. The scripts fail on a lost latest view, an old completion restoring stale coordinates, unexpected preview regeneration, runtime errors or a failed exact save/history roundtrip.
 
 Numbers are event receipt, CSS/GPU submission and animation-frame proxies. Neither a GPU submission nor two animation frames establishes physical scanout. Controlled completion delays establish a dependency, not a hardware execution duration. Real phone/tablet pen and touch, physical input-to-light, thermal load and the exact user's incident remain unverified until user review.
