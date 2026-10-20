@@ -493,12 +493,12 @@ export class GpuRenderer {
    // No image read can fail after this point. Stage in existing layer slots;
    // hold all presentation while the final dirty union is composed in slices.
    b.setPresentationHeld(true);held=true;h.publish(plan);b.dirtyConfirmed.clear();
-   const all=[...keys];let limit=32;for(let offset=0;offset<all.length;){
+   const all=[...keys],atomic=!!this.proxy?.sink?.atomic;let limit=atomic?1:32;for(let offset=0;offset<all.length;){
     const batch=all.slice(offset,offset+limit);offset+=batch.length;for(const key of batch)b.dirtyConfirmed.add(key);
     const submittedAt=performance.now();let done=false,error;const pending=Promise.resolve(b.render(null,[],[])).then(()=>{done=true;},e=>{error=e;done=true;});const cpuMs=performance.now()-submittedAt;
     const waitStarted=performance.now();while(!done){await historyYield();b.poll?.();if(performance.now()-waitStarted>30000)throw Error('History composition GPU timeout');}await pending;if(error)throw error;
     this.performance.renders++;this.performance.compositedTiles+=b.lastSubmission?.compositedTiles??0;this.performance.compositedLayerPasses+=b.lastSubmission?.compositedLayerPasses??0;
-    limit=Math.max(8,Math.min(64,Math.floor(batch.length*4/Math.max(.5,cpuMs))));
+    limit=atomic?1:Math.max(8,Math.min(64,Math.floor(batch.length*4/Math.max(.5,cpuMs))));
     await historyYield();
    }
    b.setPresentationHeld(false);held=false;this.syncOverlayView();await b.presentCurrent();this.viewPending=false;
@@ -506,7 +506,7 @@ export class GpuRenderer {
    // This exact composite also publishes already deposited retained strokes.
    // Their old frame markers must not demand an intermediate canceled picture.
    for(const id of [...this.strokeFrames.keys()])if(!this.document.jobs.some(j=>j.id===id)){this.strokeFrames.delete(id);this.presentedStrokes.add(id);this.inputStarts.delete(id);this.proxy?.presented?.(id,this.proxy.epoch);}
-   this.needsFrame=this.document.jobs.length>0||!!b.previewGpuPending||this.strokeFrames.size>0;return true;
+   this.needsFrame=this.document.jobs.length>0||!!b.previewGpuPending||this.strokeFrames.size>0;this.onContentReady?.();return true;
   }finally{if(held)b.setPresentationHeld(false);h.complete(prepared);this.historyPreparing=false;h.schedule();}
  }
  async rebuildTileGroups(groups){

@@ -72,7 +72,7 @@ async function init(m){const nativeNow=performance.now.bind(performance),offset=
   if(diagnostics){metrics.formal.push({at:performance.timeOrigin+at,cpuMs,jobs:args[1].length,tiles:new Set(args[1].map(j=>j.key)).size,commands:args[1].reduce((n,j)=>n+j.commands.length,0),compositedTiles:b.lastSubmission?.compositedTiles??0,previewTiles:b.lastSubmission?.dirtyTiles??0});if(metrics.formal.length>1200)metrics.formal.shift();}
   return Promise.all([pending,snap]).then(async value=>{if(formalGate&&(formalGate.stage==='picture'?!args[1].length&&renderer.strokeFrames.size:args[1].length)){formalGate.held=formalGate.stage;await formalGate.promise;}return value;});
  };
- b.presentCurrent=(...args)=>{if(b.gl&&inRender&&!args[0]&&!pictureReady()){b.presentationPyramid.source(b.viewTransform);return false;}const pending=present(...args);if(inRender)return pending;return Promise.all([pending,capture()]).then(requestPublish);};
+ b.presentCurrent=(...args)=>{if(b.gl&&inRender&&!args[0]&&!pictureReady()){b.presentationPyramid.source(b.viewTransform);return false;}const pending=present(...args);if(inRender)return pending;const history=renderer.historyPreparing;return Promise.all([pending,capture(!history)]).then(()=>{if(!history)requestPublish();});};
  const view=b.presentView.bind(b);b.presentView=()=>{if(renderer.historyPreparing)return false;inRender=true;let ok;try{ok=view();}finally{inRender=false;}if(ok)capture().then(requestPublish).catch(fail);return ok;};
  // CPU pictures may publish while a formal submission is in flight. Its new
  // base remains staged until retirement and exact completion are one packet.

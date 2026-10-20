@@ -43,3 +43,14 @@ test('an exact restored composite completes retained frame waiters without an in
 test('a late stroke-completion callback cannot report a currently undone stroke as applied',async()=>{
  const r=new GpuRenderer({},4000,4000,{strokeHandoff:true});r.presentedStrokes.add(1);r.hiddenStrokeIds.add(1);assert.deepEqual(await r.waitStroke([1]),{superseded:true});assert.equal(r.presentedStrokes.has(1),false);
 });
+
+test('private history publication composes every restored tile before completing image waiters',async()=>{
+ const keys=['0,0','1,0','2,0'],composed=[];
+ const b={dirtyConfirmed:new Set,setPresentationHeld(v){this.presentationHeld=v;},
+  async render(){const key=this.dirtyConfirmed.values().next().value;if(key!==undefined){this.dirtyConfirmed.delete(key);composed.push(key);}this.lastSubmission={compositedTiles:key===undefined?0:1};},
+  async presentCurrent(){assert.equal(this.dirtyConfirmed.size,0,'a partial restored image must stay private');assert.deepEqual(composed,keys);},
+  imageHistory:{async prepare(){return {staged:keys.map(key=>({q:'lower\u0000'+key}))};},publish(){},complete(){},schedule(){}}};
+ const r=new GpuRenderer(b,4000,4000,{strokeHandoff:true});r.proxy={sink:{atomic:true},closeGuards(){},suspend(){},presented(){}};r.hiddenStrokeIds.add(2);r.strokeFrames.set(1,5);let published=false;
+ r.onContentReady=()=>{assert.deepEqual(composed,keys);assert.ok(r.presentedStrokes.has(1));assert.equal(r.strokeFrames.size,0);published=true;};
+ assert.equal(await r.applyImageHistory([{id:2,direction:'undo'}]),true);assert.equal(published,true);assert.deepEqual(composed,keys);
+});
