@@ -2059,6 +2059,10 @@
     {
       "path": "scripts/m10-worker-history.mjs",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/m10-worker-summary.mjs",
+      "status": "EXPERIMENTAL"
     }
   ]
 }

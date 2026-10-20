@@ -238,6 +238,8 @@ jobs:
           node scripts/m10-worker-history.mjs
           WORKER_HISTORY_SIZE=512 WORKER_HISTORY_STAGES=record,multiple WORKER_HISTORY_OUTPUT=/tmp/m10-worker-evidence/history-512/report.json node scripts/m10-worker-history.mjs
           WORKER_HISTORY_SIZE=2000 WORKER_HISTORY_STAGES=record,multiple WORKER_HISTORY_OUTPUT=/tmp/m10-worker-evidence/history-2000/report.json node scripts/m10-worker-history.mjs
+      - name: Publish measured native gaps, regressions and physical-device limits
+        run: node scripts/m10-worker-summary.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
