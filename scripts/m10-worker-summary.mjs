@@ -13,6 +13,7 @@ for(const r of [matrix,gated,short,sustained,formal,continuous,...histories]){as
 assert.equal(matrix.cases.length,432);assert.equal(gated.cases.length,12);assert.equal(formal.formal.length,2);
 assert.equal(short.cases.length,8);assert.equal(sustained.cases.length,8);assert.deepEqual(histories.map(r=>r.cases.length),[12,4,4]);assert.ok(histories.every(r=>r.cases.every(c=>c.exactUndoRedo&&c.exactNativeSave)));
 assert.equal(continuous.cases.length,4);assert.ok(continuous.cases.every(c=>c.early.diag.handoff.pendingGpu===0));
+assert.ok(continuous.cases.every(c=>c.gestureStepsSent>=600&&c.completionChecks.length&&c.completionChecks.at(-1).pendingGpu===0&&c.completionChecks.at(-1).pendingLogical===0&&c.completionChecks.at(-1).at<=c.early.at&&!c.early.events.some(e=>e.type==='pointerup')),'formal completion is observed before either gesture contact is released');
 const all=[...matrix.cases,...gated.cases,...short.cases,...sustained.cases,...continuous.cases];
 assert.ok(all.every(c=>c.initial.phase==='before-release'&&Number.isFinite(c.metrics.releaseToGestureEventMs)),'source images must precede release, with the native gap measured');
 const pct=(a,p)=>{a=a.filter(Number.isFinite).sort((x,y)=>x-y);return a.length?a[Math.max(0,Math.min(a.length-1,Math.ceil(a.length*p)-1))]:null;};
@@ -24,7 +25,7 @@ const summary={source:matrix.source,baseline:matrix.baseline,browser:matrix.brow
  groups:[],regressions:[],formal:formal.formal.map(c=>({backend:c.backend,records:c.matchedRecords,layerImages:c.matchedLayerImages})),
  minMappedInkFraction:Math.min(...all.map(c=>c.visual.fraction)),
  limits:['Software GPU and emulated touch/CPU load, not a physical smartphone.','GPU execution time, physical scanout/input-to-photon time, VRAM and thermal/power behavior are unmeasured.','Worker, image transfer and compositor may share the same physical GPU.','Completion acknowledgement holding is a lifecycle test; it does not simulate physical GPU occupancy.','Each matrix condition is one sample; the case-p95 median is not a pooled input percentile.']};
-summary.continuous=continuous.cases.map(c=>({backend:c.backend,brush:c.brush,gestureMs:c.early.at-c.early.gestureAt,completedDuringGesture:c.early.diag.handoff.pendingGpu===0,...c.metrics}));
+summary.continuous=continuous.cases.map(c=>({backend:c.backend,brush:c.brush,gestureMs:c.early.at-c.early.gestureAt,steps:c.gestureStepsSent,completionChecks:c.completionChecks,completedDuringGesture:c.early.diag.handoff.pendingGpu===0,...c.metrics}));
 for(const backend of ['webgl2','webgpu'])for(const version of ['before','after']){
  const cases=matrix.cases.filter(c=>c.backend===backend&&c.version===version),instant=cases.filter(c=>c.delay===0),metric=k=>cases.map(c=>c.metrics[k]);
  summary.groups.push({backend,version,cases:cases.length,inputCaseP95MedianMs:median(metric('inputReceiptP95Ms')),inputMaxMs:maximum(metric('inputReceiptMaxMs')),
@@ -58,8 +59,8 @@ const html=`<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="vie
 <h2>悪化・未確認事項</h2><p>同条件の入力p95またはrAF p95が5msを超えて悪化した指標は${summary.regressions.length}件。修正後に入力またはrAF最大が50msを超えた条件は${summary.outliers.length}件です。単発標本であり原因の断定や安定した分位値の保証には使いません。詳細は<a href="summary.json">小さな集計JSON</a>にすべて残しています。</p>
 <div class="table"><table><tr><th>backend/表示/ブラシ/太さ/指定間隔</th><th>指標</th><th>前</th><th>後</th></tr>${regressions||'<tr><td colspan="4">今回の標本では該当なし</td></tr>'}</table></div>
 <p>正式描画、画像転送、ブラウザーの画面合成は同じ物理GPUを共有する可能性があります。worker化や1タイル送信を別GPUの保証とは扱いません。実機のペン・指、GPU実占有、発光までの遅延、VRAM、発熱・電力、GPU喪失後の完全復旧は未確認です。</p>
-<h2>画素と操作の確認</h2><p>太い線の対比較432条件、正式通知保留12条件、4倍CPU負荷の短線8条件・12筆連続8条件、さらに約20秒の連続操作4条件で、変換後の検査対象画素は最小${(summary.minMappedInkFraction*100).toFixed(2)}%一致。PNGの移動先と操作中の異なる連続録画画像も検査します。正式通知保留は表示の独立性を調べるもので、物理GPUを占有させる試験とは区別します。</p>
-<p>約20秒の連続操作4条件では、指を置いたまま正式画像の完成・仮線退去をまたぎました。下表には、この長い操作中の外れ値も示します。入力p95と最大値、rAF最大値、main long task最大値はmsです。<a href="through-completion/report.json">完成をまたぐ連続操作の全記録</a>を確認できます。</p>
+<h2>画素と操作の確認</h2><p>太い線の対比較432条件、正式通知保留12条件、4倍CPU負荷の短線8条件・12筆連続8条件、さらに600更新以上の連続操作4条件で、変換後の検査対象画素は最小${(summary.minMappedInkFraction*100).toFixed(2)}%一致。PNGの移動先と操作中の異なる連続録画画像も検査します。正式通知保留は表示の独立性を調べるもので、物理GPUを占有させる試験とは区別します。</p>
+<p>600更新以上の連続操作4条件では、指を置いたまま正式画像の完成・仮線退去をまたぎました。下表には、この長い操作中の外れ値も示します。入力p95と最大値、rAF最大値、main long task最大値はmsです。<a href="through-completion/report.json">完成をまたぐ連続操作の全記録</a>を確認できます。</p>
 <div class="table"><table><tr><th>条件</th><th>操作時間</th><th>入力p95</th><th>入力最大</th><th>rAF最大</th><th>main long task最大</th></tr>${longRows}</table></div>
 <p>両GPUで同じ13筆・3レイヤーのStrokeRecordと12枚ずつの全レイヤーRGBAが修正前と完全一致。Undo/Redo/再構成、確定前Undo、指・ペンから操作への切替、実際の.illustro保存・再読込は20条件で画素一致を確認します。ブラシ品質を落とした合格ではありません。</p>
 ${examples}<h2>生の記録</h2><p><a href="report.json">432条件</a> · <a href="gated/report.json">正式通知保留・連続画像</a> · <a href="through-completion/report.json">完成まで続けた操作</a> · <a href="short/report.json">短い線・4倍CPU</a> · <a href="sustained/report.json">12筆連続・4倍CPU</a> · <a href="formal/report.json">正式画質・履歴・再構成</a> · <a href="history/report.json">4000px Undoと保存</a> · <a href="history-512/report.json">512px</a> · <a href="history-2000/report.json">2000px</a></p>
