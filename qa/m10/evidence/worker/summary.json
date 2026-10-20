@@ -1,0 +1,365 @@
+{
+  "source": "34a24724499c69b3867338e5a37fca36c9f117a8",
+  "baseline": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
+  "browser": "141.0.7390.37",
+  "status": "AUTOMATED_FUNCTIONAL_CHECKS_PASSED; PHYSICAL_ACCEPTANCE_PENDING",
+  "userReview": "REQUIRED",
+  "method": "Source PNG and screencast start BEFORE release. The requested delay is the only inserted wait before the next native touch. Actual native release-to-gesture timestamps are reported. Composed PNGs and distinct screencast images confirm visible movement; rAF is only a scheduling proxy.",
+  "counts": {
+    "matrix": 432,
+    "gated": 12,
+    "short": 8,
+    "sustained": 8,
+    "throughCompletion": 4,
+    "history": 20
+  },
+  "groups": [
+    {
+      "backend": "webgl2",
+      "version": "before",
+      "cases": 108,
+      "inputCaseP95MedianMs": 32,
+      "inputMaxMs": 54.40000000002328,
+      "frameCaseP95MedianMs": 18.79999999998836,
+      "frameMaxMs": 23.5,
+      "mainLongTaskMaxMs": 202,
+      "viewComputeP95MaxMs": null,
+      "formalCpuMaxMs": 201.89999999990687,
+      "compositedTilesMax": 231,
+      "formalCompletionMedianMs": 2231.5,
+      "formalCompletionMaxMs": 6796.899999999907,
+      "requestedZero": {
+        "inputMaxMs": 38.60000000009313,
+        "nativeGapMinMs": 9.699999999953434,
+        "nativeGapMaxMs": 20.5
+      }
+    },
+    {
+      "backend": "webgl2",
+      "version": "after",
+      "cases": 108,
+      "inputCaseP95MedianMs": 26.20000000001164,
+      "inputMaxMs": 38.300000000046566,
+      "frameCaseP95MedianMs": 18.199999999953434,
+      "frameMaxMs": 22.800000000046566,
+      "mainLongTaskMaxMs": null,
+      "viewComputeP95MaxMs": 0.2999999999301508,
+      "formalCpuMaxMs": 59.10000000009313,
+      "compositedTilesMax": 1,
+      "formalCompletionMedianMs": 4752.399999999907,
+      "formalCompletionMaxMs": 13230.800000000047,
+      "requestedZero": {
+        "inputMaxMs": 38.300000000046566,
+        "nativeGapMinMs": 9.5,
+        "nativeGapMaxMs": 23.400000000023283
+      }
+    },
+    {
+      "backend": "webgpu",
+      "version": "before",
+      "cases": 108,
+      "inputCaseP95MedianMs": 68.39999999990687,
+      "inputMaxMs": 387.89999999990687,
+      "frameCaseP95MedianMs": 49.299999999813735,
+      "frameMaxMs": 379.1999999997206,
+      "mainLongTaskMaxMs": null,
+      "viewComputeP95MaxMs": null,
+      "formalCpuMaxMs": 10.100000000093132,
+      "compositedTilesMax": 231,
+      "formalCompletionMedianMs": 2982.7000000001863,
+      "formalCompletionMaxMs": 11008.100000000093,
+      "requestedZero": {
+        "inputMaxMs": 119.19999999995343,
+        "nativeGapMinMs": 12.900000000372529,
+        "nativeGapMaxMs": 46.799999999813735
+      }
+    },
+    {
+      "backend": "webgpu",
+      "version": "after",
+      "cases": 108,
+      "inputCaseP95MedianMs": 29.199999999720603,
+      "inputMaxMs": 60.10000000009313,
+      "frameCaseP95MedianMs": 18.100000000093132,
+      "frameMaxMs": 94,
+      "mainLongTaskMaxMs": null,
+      "viewComputeP95MaxMs": 0.5,
+      "formalCpuMaxMs": 7,
+      "compositedTilesMax": 1,
+      "formalCompletionMedianMs": 2723.7000000001863,
+      "formalCompletionMaxMs": 16536.100000000093,
+      "requestedZero": {
+        "inputMaxMs": 49.89999999990687,
+        "nativeGapMinMs": 7.100000000093132,
+        "nativeGapMaxMs": 21.399999999906868
+      }
+    }
+  ],
+  "regressions": [
+    {
+      "condition": "webgl2/cpu/pencil/128/250",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 26.600000000034925,
+      "afterMs": 33.5
+    },
+    {
+      "condition": "webgl2/cpu/pencil/512/500",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 24.29999999993015,
+      "afterMs": 30
+    },
+    {
+      "condition": "webgl2/gpu/gpen/256/16",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 27,
+      "afterMs": 33.5
+    },
+    {
+      "condition": "webgl2/gpu/pencil/128/500",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 24,
+      "afterMs": 31.099999999976717
+    },
+    {
+      "condition": "webgl2/gpu/pencil/256/0",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 27.400000000023283,
+      "afterMs": 38.20000000006985
+    },
+    {
+      "condition": "webgl2/gpu/pencil/256/100",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 25.899999999906868,
+      "afterMs": 33.200000000186265
+    },
+    {
+      "condition": "webgl2/gpu/pencil/256/250",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 25.200000000186265,
+      "afterMs": 35.799999999813735
+    },
+    {
+      "condition": "webgl2/gpu/pencil/512/100",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 23.300000000046566,
+      "afterMs": 32.0999999998603
+    },
+    {
+      "condition": "webgl2/gpu/pencil/512/250",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 22.399999999906868,
+      "afterMs": 34.800000000046566
+    },
+    {
+      "condition": "webgl2/auto/pencil/256/250",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 22.899999999906868,
+      "afterMs": 33
+    },
+    {
+      "condition": "webgpu/cpu/pencil/128/250",
+      "metric": "inputReceiptP95Ms",
+      "beforeMs": 22.100000000093132,
+      "afterMs": 31.899999999906868
+    },
+    {
+      "condition": "webgpu/gpu/pencil/256/100",
+      "metric": "frameIntervalP95Ms",
+      "beforeMs": 29.59999999962747,
+      "afterMs": 37.5
+    },
+    {
+      "condition": "webgpu/gpu/pencil/256/250",
+      "metric": "frameIntervalP95Ms",
+      "beforeMs": 32.799999999813735,
+      "afterMs": 42.5
+    },
+    {
+      "condition": "webgpu/gpu/pencil/256/500",
+      "metric": "frameIntervalP95Ms",
+      "beforeMs": 36.60000000009313,
+      "afterMs": 43.5
+    },
+    {
+      "condition": "webgpu/gpu/pencil/512/500",
+      "metric": "frameIntervalP95Ms",
+      "beforeMs": 47.799999999813735,
+      "afterMs": 58.89999999990687
+    }
+  ],
+  "formal": [
+    {
+      "backend": "webgl2",
+      "records": 13,
+      "layerImages": 12
+    },
+    {
+      "backend": "webgpu",
+      "records": 13,
+      "layerImages": 12
+    }
+  ],
+  "minMappedInkFraction": 1,
+  "limits": [
+    "Software GPU and emulated touch/CPU load, not a physical smartphone.",
+    "GPU execution time, physical scanout/input-to-photon time, VRAM and thermal/power behavior are unmeasured.",
+    "Worker, image transfer and compositor may share the same physical GPU.",
+    "Completion acknowledgement holding is a lifecycle test; it does not simulate physical GPU occupancy.",
+    "Each matrix condition is one sample; the case-p95 median is not a pooled input percentile."
+  ],
+  "continuous": [
+    {
+      "backend": "webgl2",
+      "brush": "gpen",
+      "gestureMs": 20043.099999999977,
+      "steps": 600,
+      "completionChecks": [
+        {
+          "at": 24771.599999999977,
+          "pendingGpu": 0,
+          "pendingLogical": 0,
+          "errors": [],
+          "sessionErrors": []
+        }
+      ],
+      "completedDuringGesture": true,
+      "releaseToGestureReceiptMs": 24.800000000017462,
+      "releaseToGestureEventMs": 16,
+      "inputReceiptP95Ms": 24.39999999999418,
+      "inputReceiptMaxMs": 25.70000000001164,
+      "frameIntervalP95Ms": 17.20000000001164,
+      "frameIntervalMaxMs": 19.39999999999418,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 7.2000000000116415
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "gestureMs": 20095.70000000001,
+      "steps": 600,
+      "completionChecks": [
+        {
+          "at": 23956.5,
+          "pendingGpu": 0,
+          "pendingLogical": 0,
+          "errors": [],
+          "sessionErrors": []
+        }
+      ],
+      "completedDuringGesture": true,
+      "releaseToGestureReceiptMs": 23.20000000001164,
+      "releaseToGestureEventMs": 14.10000000000582,
+      "inputReceiptP95Ms": 24.400000000023283,
+      "inputReceiptMaxMs": 33.60000000000582,
+      "frameIntervalP95Ms": 17.79999999998836,
+      "frameIntervalMaxMs": 20.89999999999418,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 7.2999999999883585
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "gestureMs": 20145.300000000047,
+      "steps": 600,
+      "completionChecks": [
+        {
+          "at": 24763.400000000023,
+          "pendingGpu": 0,
+          "pendingLogical": 0,
+          "errors": [],
+          "sessionErrors": []
+        }
+      ],
+      "completedDuringGesture": true,
+      "releaseToGestureReceiptMs": 30.79999999998836,
+      "releaseToGestureEventMs": 13.300000000046566,
+      "inputReceiptP95Ms": 24.5,
+      "inputReceiptMaxMs": 54.90000000002328,
+      "frameIntervalP95Ms": 17.20000000001164,
+      "frameIntervalMaxMs": 52.5,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 4
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "gestureMs": 20290.900000000023,
+      "steps": 600,
+      "completionChecks": [
+        {
+          "at": 24844,
+          "pendingGpu": 0,
+          "pendingLogical": 0,
+          "errors": [],
+          "sessionErrors": []
+        }
+      ],
+      "completedDuringGesture": true,
+      "releaseToGestureReceiptMs": 28.70000000001164,
+      "releaseToGestureEventMs": 17.599999999976717,
+      "inputReceiptP95Ms": 24.5,
+      "inputReceiptMaxMs": 63.399999999965075,
+      "frameIntervalP95Ms": 17.600000000034925,
+      "frameIntervalMaxMs": 60.29999999998836,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 3.7999999999883585
+    }
+  ],
+  "outliers": [
+    {
+      "condition": "webgpu/gpu/pencil/256/100",
+      "releaseToGestureReceiptMs": 120.60000000009313,
+      "releaseToGestureEventMs": 116.59999999962747,
+      "inputReceiptP95Ms": 51.200000000186265,
+      "inputReceiptMaxMs": 51.3000000002794,
+      "frameIntervalP95Ms": 37.5,
+      "frameIntervalMaxMs": 49.10000000009313,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 4.2999999998137355
+    },
+    {
+      "condition": "webgpu/gpu/pencil/256/500",
+      "releaseToGestureReceiptMs": 516.3999999999069,
+      "releaseToGestureEventMs": 508.5,
+      "inputReceiptP95Ms": 59.89999999990687,
+      "inputReceiptMaxMs": 60.10000000009313,
+      "frameIntervalP95Ms": 43.5,
+      "frameIntervalMaxMs": 47.6999999997206,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 3.8999999999068677
+    },
+    {
+      "condition": "webgpu/gpu/pencil/512/16",
+      "releaseToGestureReceiptMs": 37.3000000002794,
+      "releaseToGestureEventMs": 41.5,
+      "inputReceiptP95Ms": 59.40000000037253,
+      "inputReceiptMaxMs": 59.700000000186265,
+      "frameIntervalP95Ms": 39.299999999813735,
+      "frameIntervalMaxMs": 53.89999999990687,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 4.800000000279397
+    },
+    {
+      "condition": "webgpu/gpu/pencil/512/50",
+      "releaseToGestureReceiptMs": 81.39999999990687,
+      "releaseToGestureEventMs": 55.90000000037253,
+      "inputReceiptP95Ms": 48.39999999990687,
+      "inputReceiptMaxMs": 48.60000000009313,
+      "frameIntervalP95Ms": 33.200000000186265,
+      "frameIntervalMaxMs": 94,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 4.800000000279397
+    },
+    {
+      "condition": "webgpu/gpu/pencil/512/500",
+      "releaseToGestureReceiptMs": 513.6999999997206,
+      "releaseToGestureEventMs": 519.6000000000931,
+      "inputReceiptP95Ms": 56.89999999990687,
+      "inputReceiptMaxMs": 57,
+      "frameIntervalP95Ms": 58.89999999990687,
+      "frameIntervalMaxMs": 74.5,
+      "mainLongTaskMaxMs": null,
+      "formalCpuMaxMs": 3.7000000001862645
+    }
+  ]
+}

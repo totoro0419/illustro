@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "96965de56ab82f30dfc91042fc34897562c09217",
+  "sourceCommit": "34a24724499c69b3867338e5a37fca36c9f117a8",
   "baselineCommit": "4708ffe5136ad1fa47be5909c129bb5f8fcb7869",
   "strokeContext": "same M10 default on both builds",
   "scope": "Exact same-backend immutable baseline comparison; seven brushes, forced fade, three layers, overlap, hot history and full replay. Software GPU, not physical Android.",

@@ -1,6 +1,6 @@
 {
   "baseline": "4708ffe5136ad1fa47be5909c129bb5f8fcb7869",
-  "sourceCommit": "96965de56ab82f30dfc91042fc34897562c09217",
+  "sourceCommit": "34a24724499c69b3867338e5a37fca36c9f117a8",
   "controlledCosts": {
     "cpuExtraMs": 30,
     "gpuExtraQueueMs": 0
@@ -26,39 +26,39 @@
       "mode": "D",
       "inputToDisplayProxy": {
         "count": 13,
-        "p50": 90.39999999990687,
-        "p95": 156.10000000009313,
-        "max": 156.10000000009313
+        "p50": 91.10000000009313,
+        "p95": 145.10000000009313,
+        "max": 145.10000000009313
       },
       "firstDisplayProxy": {
         "count": 12,
-        "p50": 126.3000000002794,
-        "p95": 220.39999999990687,
-        "max": 220.39999999990687
+        "p50": 120.70000000018626,
+        "p95": 241.79999999981374,
+        "max": 241.79999999981374
       },
       "nextStrokeAdmission": {
         "count": 12,
         "p50": 0.6999999997206032,
-        "p95": 1.7000000001862645,
-        "max": 1.7000000001862645
+        "p95": 2.3999999999068677,
+        "max": 2.3999999999068677
       },
       "inputCpuMs": {
         "count": 108,
         "p50": 0.10000000009313226,
         "p95": 0.3000000002793968,
-        "max": 3.2000000001862645
+        "max": 4.100000000093132
       },
       "formalAfterUp": {
         "count": 12,
-        "p50": 216.20000000018626,
-        "p95": 339.39999999990687,
-        "max": 339.39999999990687
+        "p50": 190,
+        "p95": 361.39999999990687,
+        "max": 361.39999999990687
       },
       "cpuSubmission": {
-        "count": 16,
-        "p50": 3.8999999999068677,
-        "p95": 10.399999999906868,
-        "max": 10.399999999906868
+        "count": 17,
+        "p50": 4.600000000093132,
+        "p95": 15.100000000093132,
+        "max": 15.100000000093132
       },
       "longTasks": {
         "count": 0,
@@ -67,9 +67,9 @@
         "max": null
       },
       "frameInterval": {
-        "count": 84,
+        "count": 87,
         "p50": 16.699999999999818,
-        "p95": 16.799999999999727,
+        "p95": 16.799999999999955,
         "max": 33.40000000000009
       },
       "proxy": {
@@ -100,8 +100,8 @@
           "switches": 5,
           "profiles": 1,
           "cpuP95Ms": null,
-          "cpuWaitLowerBoundP95Ms": 67.70000000018626,
-          "gpuP95Ms": 180.60000000009313,
+          "cpuWaitLowerBoundP95Ms": 72.10000000009313,
+          "gpuP95Ms": 196.60000000009313,
           "cpuUnpresentedSamples": 3,
           "cpuSamples": 3,
           "gpuSamples": 13
@@ -133,7 +133,7 @@
         "backgroundSlices": 0,
         "maxBackgroundMs": 0,
         "foregroundSlices": 6,
-        "maxSliceMs": 32.10000000009313,
+        "maxSliceMs": 32,
         "cancelledUpdates": 0,
         "deadlineFallbacks": 3,
         "finalizationSwaps": 0,
@@ -146,8 +146,8 @@
         "switches": 5,
         "profiles": 1,
         "cpuP95Ms": null,
-        "cpuWaitLowerBoundP95Ms": 67.70000000018626,
-        "gpuP95Ms": 180.60000000009313,
+        "cpuWaitLowerBoundP95Ms": 72.10000000009313,
+        "gpuP95Ms": 196.60000000009313,
         "cpuUnpresentedSamples": 3,
         "cpuSamples": 3,
         "gpuSamples": 13
@@ -171,102 +171,102 @@
       "remainingJobs": 0,
       "remainingCommands": 0,
       "jsHeapBytes": 10000000,
-      "gpuQueueCompletionProxyMs": 83.3000000002794,
+      "gpuQueueCompletionProxyMs": 83.1999999997206,
       "strokes": [
         {
           "id": 1,
-          "at": 1533.6000000000931,
-          "end": 1671,
-          "first": 119.3000000002794,
-          "formal": 211.40000000037253,
+          "at": 1452.5,
+          "end": 1590.6000000000931,
+          "first": 120,
+          "formal": 225,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 10,
-          "at": 1676.9000000003725,
-          "end": 1756.9000000003725,
-          "first": 127.89999999990687,
-          "formal": 212.09999999962747,
+          "at": 1600.2000000001863,
+          "end": 1682.7000000001863,
+          "first": 126.60000000009313,
+          "formal": 206.1999999997206,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 19,
-          "at": 1762,
-          "end": 1839.4000000003725,
-          "first": 120.3000000002794,
-          "formal": 195.29999999981374,
+          "at": 1687.8000000002794,
+          "end": 1771.6000000000931,
+          "first": 127.6999999997206,
+          "formal": 184.10000000009313,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 28,
-          "at": 1845.9000000003725,
-          "end": 1986.3000000002794,
-          "first": 188.79999999981374,
-          "formal": 218.29999999981374,
+          "at": 1776.3999999999069,
+          "end": 1915.8999999999069,
+          "first": 179.3000000002794,
+          "formal": 207.90000000037253,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 37,
-          "at": 1991.7000000001863,
-          "end": 2071,
-          "first": 126.29999999981374,
-          "formal": 213.5,
+          "at": 1920.8999999999069,
+          "end": 2001.7000000001863,
+          "first": 120.70000000018626,
+          "formal": 190,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 46,
-          "at": 2077.8000000002794,
-          "end": 2152.600000000093,
-          "first": 126.79999999981374,
-          "formal": 216.20000000018626,
+          "at": 2006.8000000002794,
+          "end": 2087.399999999907,
+          "first": 117,
+          "formal": 185,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 55,
-          "at": 2158.100000000093,
-          "end": 2238.600000000093,
-          "first": 126.3000000002794,
-          "formal": 197.70000000018626,
+          "at": 2093.100000000093,
+          "end": 2177.2000000001863,
+          "first": 98.60000000009313,
+          "formal": 179.39999999990687,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 64,
-          "at": 2244.5,
-          "end": 2321,
-          "first": 124.3000000002794,
-          "formal": 221.60000000009313,
+          "at": 2182.2000000001863,
+          "end": 2262.600000000093,
+          "first": 90.10000000009313,
+          "formal": 157.20000000018626,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 73,
-          "at": 2326.7000000001863,
-          "end": 2402.2000000001863,
-          "first": 109.5,
-          "formal": 284.70000000018626,
+          "at": 2267.5,
+          "end": 2344.899999999907,
+          "first": 89,
+          "formal": 171.90000000037253,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 82,
-          "at": 2407.8000000002794,
-          "end": 2488.9000000003725,
-          "first": 134.79999999981374,
-          "formal": 315.09999999962747,
+          "at": 2357.2000000001863,
+          "end": 2432.600000000093,
+          "first": 159.60000000009313,
+          "formal": 340.10000000009313,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 91,
-          "at": 2496.600000000093,
-          "end": 2576.2000000001863,
-          "first": 190.3000000002794,
-          "formal": 339.39999999990687,
+          "at": 2437.5,
+          "end": 2526.100000000093,
+          "first": 203.70000000018626,
+          "formal": 361.39999999990687,
           "firstProxyKind": "live upload/completion"
         },
         {
           "id": 100,
-          "at": 2583.600000000093,
-          "end": 2720.7000000001863,
-          "first": 220.39999999990687,
-          "formal": 277.20000000018626,
+          "at": 2530.8000000002794,
+          "end": 2666.7000000001863,
+          "first": 241.79999999981374,
+          "formal": 301.39999999990687,
           "firstProxyKind": "live upload/completion"
         }
       ],

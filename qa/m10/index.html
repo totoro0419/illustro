@@ -49,7 +49,7 @@
 <label class="item"><input type="checkbox"><span>移動・拡大・回転・左右上下の反転で、仮の線と完成した線の位置がずれないか</span></label>
 <label class="item"><input type="checkbox"><span>仮表示から完成した線へ切り替わるときに、消失・二重表示・ちらつきがないか</span></label>
 <label class="item"><input type="checkbox"><span>操作後も鉛筆の模様・筆圧・入り抜き・レイヤーの重なりが正しく、元に戻す・やり直す・保存・読み直しができるか</span></label>
-<p class="small"><a href="./evidence/worker/report.json">太い線と2本指操作の修正前後比較</a> · <a href="./evidence/worker/gated/report.json">描画の完了を保留した間の画面追従</a> · <a href="./evidence/worker/history/report.json">元に戻す・保存・読み直しの検査</a>。自動検査はソフトウェアGPUの結果です。実機で確認するまで合格にはしません。</p>
+<p class="small"><a href="./evidence/worker/summary.html">修正前後の測定・画像・残る問題</a> · <a href="./evidence/worker/gated/report.json">描画の完了を保留した間の画面追従</a> · <a href="./evidence/worker/history/report.json">元に戻す・保存・読み直しの検査</a>。自動検査はソフトウェアGPUの結果です。実機で確認するまで合格にはしません。</p>
 </fieldset><p class="small">未対応端末ではペンの筆圧を確認できない場合があります。確認できない項目は無理にチェックせず、端末名とともに報告してください。</p><footer>M10の確認用ページです。過去のM01～M09の確認ページには変更を加えません。</footer></div><script>
 const boxes=[...document.querySelectorAll('input[type="checkbox"]')];let data=[];try{data=JSON.parse(localStorage.getItem('illustro-m10-review')||'[]')}catch{}
 const status=document.querySelector('#progress');function update(){status.textContent=boxes.filter(x=>x.checked).length+' / '+boxes.length+' 項目を確認';}
