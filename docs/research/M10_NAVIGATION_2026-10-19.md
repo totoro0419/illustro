@@ -26,6 +26,7 @@ This is a transient view of already available pixels. Newly revealed areas and e
 - The synchronous preview flush before a transition capture.
 - Per-stroke layout/style reads on every view change; origin changes remain for actual layout/viewport changes.
 - Transition captures for an unrelated stroke's completion: a handoff must match an actually pending CPU image.
+- A first-finger gesture stroke with no submitted resources no longer waits for, or scans, an unrelated formal queue. Cancellation that owns strict/preview resources keeps its safety barrier. Only new input arriving during navigation resumes afterward.
 - GPU view submissions behind an unfinished content/capture batch. Immediate response uses the already displayed image instead.
 
 ## Retained correctness mechanisms

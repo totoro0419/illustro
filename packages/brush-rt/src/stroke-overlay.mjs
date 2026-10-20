@@ -78,7 +78,7 @@ export class StrokeOverlay{
   // semantic input and strict GPU work remain owned by the session/renderer.
   this.pending.clear();for(const v of this.states.values()){v.work=null;if(v.prepared){this.preparedBytes-=v.prepared.size*CELL*CELL*4;delete v.prepared;}}
   for(const id of [...this.finalizations.keys()])this.discardFinalization(id);
- }}
+ }else this.schedule();}
  setView(view){
   const old=new Map([...this.states.values()].filter(v=>v.last).map(v=>[v.id,v.finalState??v.last]));for(const [id,state]of this.pending)old.set(id,state);
   const sameSpace=this.view&&[0,1,2,3,4,5,12,14].every(i=>this.view[i]===view[i]);

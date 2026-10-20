@@ -424,13 +424,16 @@ export class GpuRenderer {
   if(this.cancellingStroke)throw Error('stroke cancellation already pending');
   this.cancellingStroke=true;
   const copies=this.wrapPreviews.get(id)??[],started=performance.now();
+  // Handoff strokes have no strict work before publication. A first finger
+  // cancelled by a gesture must not join an unrelated stroke's GPU barrier.
+  const ownsResources=!this.strokeHandoff||[id,...copies].some(key=>this.document.touched.has(key)||this.backend.previews?.has(key));
   this.proxy?.cancel(id);releaseOverlayPublication(this.backend,id);this.previewStates.delete(id);this.inputStarts.delete(id);for(const copy of copies)this.previewStates.delete(copy);
   if(this.mailbox.value?.id===id)this.mailbox.value=null;if(this.snapshot?.id===id)this.snapshot=null;
   try{
    // A submitted batch still owns its queued jobs/resources. Acknowledge it before
    // deleting remaining jobs. View-only frames remain available during this wait.
-   while(this.inflight||this.guardPreparing){if(this.disposed||this.errors.length)throw Error(this.errors.join(';')||'renderer disposed');if(performance.now()-started>120000)throw Error('stroke cancellation GPU timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}
-   const {surfaceKey,keys}=this.document.cancel(id);this.backend.cancelStroke(id,keys,surfaceKey);
+   while(ownsResources&&(this.inflight||this.guardPreparing)){if(this.disposed||this.errors.length)throw Error(this.errors.join(';')||'renderer disposed');if(performance.now()-started>120000)throw Error('stroke cancellation GPU timeout');await new Promise(resolve=>requestAnimationFrame(resolve));this.frame(performance.now());}
+   if(ownsResources){const {surfaceKey,keys}=this.document.cancel(id);this.backend.cancelStroke(id,keys,surfaceKey);}
    this.backend.retirePreview(id);for(const copy of copies)this.backend.retirePreview(copy);
    this.wrapPreviews.delete(id);this.wrapCaches.delete(id);this.needsFrame=true;
   }finally{this.cancellingStroke=false;}

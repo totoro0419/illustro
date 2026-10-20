@@ -49,3 +49,17 @@ test('in-flight cancellation waits for resource safety, preserves layer identity
   assert.equal(calls.cancels.length,1);assert.equal(calls.cancels[0].surface,'a');assert.deepEqual(calls.retired,[1,8000001]);assert.equal(r.previewStates.size,0);assert.equal(r.wrapPreviews.size,0);assert.equal(r.wrapCaches.size,0);assert.equal(r.snapshot,null);assert.equal(r.mailbox.value,null);assert.deepEqual(r.errors,[]);
  }finally{globalThis.requestAnimationFrame=original;}
 });
+
+test('an unsubmitted gesture stroke never waits for another stroke GPU acknowledgement',async()=>{
+ const calls=[],backend={previews:new Map([[1,{owner:'submitted old stroke'}]]),tiles:new Map,dirtyConfirmed:new Set,cancelStroke(id,keys){calls.push({id,keys});},retirePreview(id){calls.push({retired:id});}};
+ const r=new GpuRenderer(backend,512,384,{strokeHandoff:true});r.requestWork=()=>{};r.inflight=true;r.guardPreparing=true;r.previewStates.set(10,{id:10});r.mailbox.set({id:10});r.inputStarts.set(10,{});r.document.cancel=()=>{throw Error('an unrelated queue must not be scanned');};
+ await r.cancelStroke(10);assert.equal(r.inflight,true);assert.equal(r.guardPreparing,true);assert.equal(r.cancellingStroke,false);assert.equal(r.previewStates.has(10),false);assert.equal(r.mailbox.value,null);assert.equal(backend.previews.has(1),true);assert.deepEqual(calls,[{retired:10}]);
+});
+
+test('handoff cancellation keeps the safety barrier for its own formal or preview resources',async()=>{
+ const previous=globalThis.requestAnimationFrame;try{for(const kind of ['formal','preview']){
+  let resume,done=false;globalThis.requestAnimationFrame=fn=>{resume=fn;};const calls=[],backend={previews:new Map(kind==='preview'?[[10,{}]]:[]),tiles:new Map,dirtyConfirmed:new Set,cancelStroke(id){calls.push(id);},retirePreview(id){this.previews.delete(id);}};
+  const r=new GpuRenderer(backend,512,384,{strokeHandoff:true});r.requestWork=()=>{};if(kind==='formal')r.document.touched.set(10,{surfaceKey:'a',keys:new Set});r.inflight=r.guardPreparing=true;
+  const pending=r.cancelStroke(10).then(()=>done=true);assert.equal(typeof resume,'function');assert.equal(done,false);assert.deepEqual(calls,[]);r.inflight=r.guardPreparing=false;resume(performance.now());await pending;assert.equal(done,true);assert.deepEqual(calls,[10]);assert.equal(backend.previews.has(10),false);
+ }}finally{if(previous===undefined)delete globalThis.requestAnimationFrame;else globalThis.requestAnimationFrame=previous;}
+});

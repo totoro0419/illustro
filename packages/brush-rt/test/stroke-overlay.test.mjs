@@ -65,6 +65,11 @@ test('navigation cancels private CPU work and never revives it after release',as
  assert.equal(p.pending.size,0);assert.equal(p.finalizations.size,0);assert.equal(p.metrics.rasterPixels,pixels);for(const v of p.states.values())assert.equal(v.work,null);assert.equal(JSON.stringify(r),original);p.destroy();
 });
 
+test('only new input queued during navigation resumes after release',async()=>{
+ const {p,sink,layers}=isolated();sink.reproject=()=>{};p.enqueue(live(record(32)));flush(p);p.setNavigationActive(true);const commands=p.metrics.commands;p.enqueue(live(record(4),10));assert.equal(p.metrics.commands,commands);assert.equal(p.pending.size,1);p.setNavigationActive(false);
+ const at=performance.now();while(p.pending.size){assert.ok(performance.now()-at<10000);await new Promise(ok=>setTimeout(ok,2));}assert.ok(layers.get(10)?.frames.length);assert.equal(p.states.get(1).work,null);assert.equal(p.finalizations.size,0);assert.ok(p.metrics.commands>commands);p.destroy();
+});
+
 test('a view invalidated during GPU map skips pixel conversion and releases the readback buffer',async()=>{
  const {p,backend}=setup(),r=record(64),previousUsage=globalThis.GPUBufferUsage,previousMap=globalThis.GPUMapMode;let resume,reads=0,destroyed=0;
  globalThis.GPUBufferUsage={COPY_DST:1,MAP_READ:2};globalThis.GPUMapMode={READ:1};

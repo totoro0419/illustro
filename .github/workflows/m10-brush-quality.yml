@@ -294,6 +294,14 @@ jobs:
           NAV_SAVE_PENDING: '1'
           NAV_OUTPUT: /tmp/m10-navigation-evidence/pending-save/report.json
         run: node scripts/m10-navigation-review.mjs
+      - name: Next stroke admission while the previous formal acknowledgement is held
+        env:
+          NAV_VERSIONS: after
+          NAV_STAGES: inflight
+          NAV_ROUTES: auto
+          NAV_NEXT_PENDING: '1'
+          NAV_OUTPUT: /tmp/m10-navigation-evidence/next-pending/report.json
+        run: node scripts/m10-navigation-review.mjs
       - name: Validate navigation response and censored baseline waits
         env:
           NAV_EVIDENCE: /tmp/m10-navigation-evidence
