@@ -1,7 +1,7 @@
 {
   "milestone": "M05",
   "mode": "local",
-  "url": "http://127.0.0.1:46749/",
+  "url": "http://127.0.0.1:43853/",
   "status": "PASS",
   "backends": [
     {
@@ -11,8 +11,8 @@
       "autosaveIndependentFromPortable": true,
       "roundTrip": true,
       "snapshotIsolation": true,
-      "saveDurationMs": 52.20000000001164,
-      "snapshotCaptureMs": 0.29999999998835847
+      "saveDurationMs": 58.899999999965075,
+      "snapshotCaptureMs": 0.3999999999650754
     },
     {
       "backend": "webgpu",
@@ -21,18 +21,18 @@
       "autosaveIndependentFromPortable": true,
       "roundTrip": true,
       "snapshotIsolation": true,
-      "saveDurationMs": 73.79999999998836,
-      "snapshotCaptureMs": 0.20000000001164153
+      "saveDurationMs": 57.899999999965075,
+      "snapshotCaptureMs": 0.5
     }
   ],
   "recovery": {
     "status": "PASS",
     "strategy": "finished-state-cache",
     "protectedThrough": "180",
-    "recoveredRevision": "2e10547c-7c1e-4b5a-8684-84af892eab6b",
+    "recoveredRevision": "bc8a28b5-59c0-4d6e-af53-88c844e412b7",
     "workerDurationMs": null,
-    "projectionRestoreMs": 381.29999999993015,
-    "wallMs": 3076,
+    "projectionRestoreMs": 329.29999999998836,
+    "wallMs": 2871,
     "strokeTotal": 180
   },
   "gap": {
@@ -56,8 +56,8 @@
     "status": "PASS",
     "staleReadsSimulated": 3,
     "verificationRetried": true,
-    "firstBytes": 30823,
-    "secondBytes": 65982,
+    "firstBytes": 30631,
+    "secondBytes": 61288,
     "autosaveIndependent": true
   },
   "explicitSaveWithoutRecovery": {

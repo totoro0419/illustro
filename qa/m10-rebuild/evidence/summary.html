@@ -1,40 +1,58 @@
-<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Illustro 再設計の検査記録</title><style>body{font:15px/1.8 system-ui;max-width:1100px;margin:auto;padding:24px;color:#263248}table{border-collapse:collapse;display:block;overflow:auto}td,th{padding:10px;border-bottom:1px solid #ccd6e7;text-align:right}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6fa;padding:16px}</style><h1>キャンバス操作の再設計・検査記録</h1><p><strong>自動検査とQA公開の記録です。実機合格・M10全体の完了は未判定です。</strong></p><p><small>0cf84ec691370422d8cf5ddd8aa170759e3cff1e</small></p><h2>原因と変更</h2><p>旧Worker版では、画面内を切り取った画像だけを保持し、指を動かしている間は新しい表示位置を描画側へ送っていませんでした。急な縮小で見える領域の欠落を、以前の青い線が操作中に消える例として再現しました。再設計版は変更した作品区画を別の表示処理へ渡し、作品全体の表示用画像を保持します。表示位置は操作中も受け取り、保持画像の合成で応答します。通常の移動・拡大・回転では、操作ごとのGPU画像の作り直しを省き、操作終了時にM08の精密な表示へ更新します。正式描画と作品区画の反映は操作中も続きます。変更区画を作品座標の画像として画面側にも疎に保持し、新しい表示画像のGPU処理中も、画面外だった場所をすぐ見せます。</p><p>入力を担当する処理からブラシ計算・正式GPU命令・表示GPU命令・画素読出しを分離しました。ブラウザー起動から監視し、画面側にGL/WebGPU描画面を作っていないことも検査しています。画面の保護画像、正式確定を待つ表示切替、描画終了後の120ms抑制、操作後の80ms抑制を新経路から撤去しています。ブラシの計算、128px区画の履歴、保存形式は再利用しています。</p><h2>修正前後の計測</h2><p>単位はms、正式反映のみ秒です。入力・表示更新間隔・rAFのp95欄は36条件それぞれのp95の中央値です。画面反映は要求した変換が線を2 CSS px以上動かせる大きさになってから、キャプチャ画像内でその移動を観測するまでの時間です。最初の微小入力からの時間も生データに残し、ゆっくり動かす時間と反映遅延を区別しています。画面更新間隔は線の重心が0.5 CSS px以上動いた異なる合成画像の間隔で、入力送信の間隔やキャプチャの負荷も含みます。rAFは処理周期の目安であり、画面が光った時刻ではありません。GPUの実行時間・占有率は未測定で、送信数・区画数・完了待ち時間を生データに記録しています。</p><table><tr><th>方式</th><th>版</th><th>入力 p95</th><th>入力 最大</th><th>画面反映 中央値</th><th>画面更新 p95</th><th>rAF p95</th><th>CPU停止 最大</th><th>正式反映 中央値(秒)</th><th>正式反映 最大(秒)</th></tr><tr><td>webgl2</td><td>前回公開版</td><td>26.5</td><td>35.3</td><td>85.9</td><td>49.9</td><td>18.4</td><td>未観測</td><td>1.5</td><td>4.2</td></tr><tr><td>webgl2</td><td>今回の修正版</td><td>27.3</td><td>36.0</td><td>53.6</td><td>40.8</td><td>18.3</td><td>未観測</td><td>1.6</td><td>4.3</td></tr><tr><td>webgpu</td><td>前回公開版</td><td>30.9</td><td>113.4</td><td>135.2</td><td>140.6</td><td>18.3</td><td>未観測</td><td>2.2</td><td>6.9</td></tr><tr><td>webgpu</td><td>今回の修正版</td><td>25.7</td><td>85.9</td><td>99.7</td><td>82.9</td><td>18.0</td><td>未観測</td><td>2.3</td><td>6.9</td></tr></table><h2>悪化した値・外れ値</h2><p>5ms以上悪化した入力・合成画像・rAF指標：13件。再設計版で入力・合成画像・rAF・CPU停止のいずれかが50msを超えた条件：53件。これらも隠さず残しています。</p><details><summary>詳細</summary><pre>{
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Illustro 再設計の検査記録</title><style>body{font:15px/1.8 system-ui;max-width:1100px;margin:auto;padding:24px;color:#263248}table{border-collapse:collapse;display:block;overflow:auto}td,th{padding:10px;border-bottom:1px solid #ccd6e7;text-align:right}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6fa;padding:16px}</style><h1>キャンバス操作の再設計・検査記録</h1><p><strong>自動検査とQA公開の記録です。実機合格・M10全体の完了は未判定です。</strong></p><p><small>05848ee040949dc472381b6e713644ac957a6c41</small></p><h2>原因と変更</h2><p>旧Worker版では、画面内を切り取った画像だけを保持し、指を動かしている間は新しい表示位置を描画側へ送っていませんでした。急な縮小で見える領域の欠落を、以前の青い線が操作中に消える例として再現しました。再設計版は変更した作品区画を別の表示処理へ渡し、作品全体の表示用画像を保持します。表示位置は操作中も受け取り、保持画像の合成で応答します。通常の移動・拡大・回転では、操作ごとのGPU画像の作り直しを省き、操作終了時にM08の精密な表示へ更新します。正式描画と作品区画の反映は操作中も続きます。変更区画を作品座標の画像として画面側にも疎に保持し、新しい表示画像のGPU処理中も、画面外だった場所をすぐ見せます。</p><p>入力を担当する処理からブラシ計算・正式GPU命令・表示GPU命令・画素読出しを分離しました。ブラウザー起動から監視し、画面側にGL/WebGPU描画面を作っていないことも検査しています。画面の保護画像、正式確定を待つ表示切替、描画終了後の120ms抑制、操作後の80ms抑制を新経路から撤去しています。ブラシの計算、128px区画の履歴、保存形式は再利用しています。</p><h2>修正前後の計測</h2><p>単位はms、正式反映のみ秒です。入力・表示更新間隔・rAFのp95欄は36条件それぞれのp95の中央値です。画面反映は要求した変換が線を2 CSS px以上動かせる大きさになってから、キャプチャ画像内でその移動を観測するまでの時間です。最初の微小入力からの時間も生データに残し、ゆっくり動かす時間と反映遅延を区別しています。画面更新間隔は線の重心が0.5 CSS px以上動いた異なる合成画像の間隔で、入力送信の間隔やキャプチャの負荷も含みます。rAFは処理周期の目安であり、画面が光った時刻ではありません。GPUの実行時間・占有率は未測定で、送信数・区画数・完了待ち時間を生データに記録しています。</p><table><tr><th>方式</th><th>版</th><th>入力 p95</th><th>入力 最大</th><th>画面反映 中央値</th><th>画面更新 p95</th><th>rAF p95</th><th>CPU停止 最大</th><th>正式反映 中央値(秒)</th><th>正式反映 最大(秒)</th></tr><tr><td>webgl2</td><td>前回公開版</td><td>26.9</td><td>36.1</td><td>80.4</td><td>50.0</td><td>18.4</td><td>未観測</td><td>1.5</td><td>4.4</td></tr><tr><td>webgl2</td><td>今回の修正版</td><td>27.0</td><td>34.8</td><td>49.4</td><td>39.5</td><td>18.0</td><td>115.0</td><td>1.6</td><td>4.5</td></tr><tr><td>webgpu</td><td>前回公開版</td><td>31.8</td><td>111.2</td><td>124.0</td><td>136.3</td><td>17.8</td><td>未観測</td><td>2.3</td><td>7.1</td></tr><tr><td>webgpu</td><td>今回の修正版</td><td>33.6</td><td>74.1</td><td>84.0</td><td>55.5</td><td>18.2</td><td>未観測</td><td>2.2</td><td>7.0</td></tr></table><h2>悪化した値・外れ値</h2><p>5ms以上悪化した入力・合成画像・rAF指標：24件。再設計版で入力・合成画像・rAF・CPU停止のいずれかが50msを超えた条件：48件。これらも隠さず残しています。</p><details><summary>詳細</summary><pre>{
   "regressions": [
     {
       "backend": "webgl2",
       "brush": "gpen",
       "width": 128,
+      "delay": 16,
+      "metric": "inputReceiptP95Ms",
+      "before": 25,
+      "after": 34.29999999998836
+    },
+    {
+      "backend": "webgl2",
+      "brush": "gpen",
+      "width": 128,
       "delay": 500,
       "metric": "composedMotionIntervalP95Ms",
-      "before": 81.69091796875,
-      "after": 100.97900390625
+      "before": 73.488037109375,
+      "after": 128.669189453125
     },
     {
       "backend": "webgl2",
       "brush": "gpen",
       "width": 512,
-      "delay": 100,
-      "metric": "composedMotionIntervalP95Ms",
-      "before": 35.5458984375,
-      "after": 40.583740234375
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 128,
-      "delay": 500,
+      "delay": 0,
       "metric": "inputReceiptP95Ms",
-      "before": 26.5,
-      "after": 32.199999999953434
+      "before": 25.5,
+      "after": 31
+    },
+    {
+      "backend": "webgl2",
+      "brush": "gpen",
+      "width": 512,
+      "delay": 16,
+      "metric": "composedMotionIntervalP95Ms",
+      "before": 35.107177734375,
+      "after": 42.548828125
+    },
+    {
+      "backend": "webgl2",
+      "brush": "gpen",
+      "width": 512,
+      "delay": 50,
+      "metric": "inputReceiptP95Ms",
+      "before": 24.10000000000582,
+      "after": 33.90000000002328
     },
     {
       "backend": "webgl2",
       "brush": "pencil",
       "width": 128,
-      "delay": 500,
-      "metric": "composedFirstMotionMs",
-      "before": 49.715869140578434,
-      "after": 67.47709960932843
+      "delay": 50,
+      "metric": "inputReceiptP95Ms",
+      "before": 25.800000000017462,
+      "after": 33.69999999998254
     },
     {
       "backend": "webgl2",
@@ -42,17 +60,8 @@
       "width": 256,
       "delay": 0,
       "metric": "inputReceiptP95Ms",
-      "before": 24.79999999998836,
-      "after": 32.09999999997672
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 100,
-      "metric": "inputReceiptP95Ms",
-      "before": 25.899999999965075,
-      "after": 31.5
+      "before": 22.400000000023283,
+      "after": 28.400000000023283
     },
     {
       "backend": "webgl2",
@@ -60,44 +69,134 @@
       "width": 512,
       "delay": 0,
       "metric": "inputReceiptP95Ms",
-      "before": 24.300000000046566,
-      "after": 31.199999999953434
+      "before": 26,
+      "after": 32.09999999997672
     },
     {
-      "backend": "webgl2",
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 128,
+      "delay": 0,
+      "metric": "inputReceiptP95Ms",
+      "before": 57.79999999998836,
+      "after": 69.09999999997672
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 128,
+      "delay": 16,
+      "metric": "composedFirstMotionMs",
+      "before": 81.82080078125,
+      "after": 95.64003906247672
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 128,
+      "delay": 16,
+      "metric": "composedMotionIntervalP95Ms",
+      "before": 53.0126953125,
+      "after": 59.283935546875
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 256,
+      "delay": 0,
+      "metric": "inputReceiptP95Ms",
+      "before": 61.40000000002328,
+      "after": 73.70000000001164
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 256,
+      "delay": 0,
+      "metric": "composedFirstMotionMs",
+      "before": 80.32304687501164,
+      "after": 94.95688476564828
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 256,
+      "delay": 16,
+      "metric": "inputReceiptP95Ms",
+      "before": 33.40000000002328,
+      "after": 57.60000000009313
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 256,
+      "delay": 16,
+      "metric": "composedFirstMotionMs",
+      "before": 78.79189453122672,
+      "after": 92.73876953125
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 256,
+      "delay": 50,
+      "metric": "inputReceiptP95Ms",
+      "before": 31.79999999993015,
+      "after": 39.09999999997672
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 0,
+      "metric": "inputReceiptP95Ms",
+      "before": 63.09999999997672,
+      "after": 72.79999999993015
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 16,
+      "metric": "inputReceiptP95Ms",
+      "before": 55.09999999997672,
+      "after": 70.40000000002328
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 100,
+      "metric": "inputReceiptP95Ms",
+      "before": 25.099999999976717,
+      "after": 39.199999999953434
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 500,
+      "metric": "inputReceiptP95Ms",
+      "before": 24.70000000006985,
+      "after": 34.09999999997672
+    },
+    {
+      "backend": "webgpu",
       "brush": "pencil",
       "width": 512,
       "delay": 16,
       "metric": "inputReceiptP95Ms",
-      "before": 27.20000000001164,
-      "after": 33.29999999998836
+      "before": 54.20000000006985,
+      "after": 61.59999999997672
     },
     {
-      "backend": "webgl2",
+      "backend": "webgpu",
       "brush": "pencil",
       "width": 512,
       "delay": 50,
       "metric": "inputReceiptP95Ms",
-      "before": 26.599999999976717,
-      "after": 33.5
-    },
-    {
-      "backend": "webgpu",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 500,
-      "metric": "inputReceiptP95Ms",
-      "before": 25.600000000093132,
-      "after": 31.900000000023283
-    },
-    {
-      "backend": "webgpu",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 500,
-      "metric": "composedFirstMotionMs",
-      "before": 151.35991210944485,
-      "after": 166.885009765625
+      "before": 23.699999999953434,
+      "after": 50
     },
     {
       "backend": "webgpu",
@@ -105,17 +204,17 @@
       "width": 512,
       "delay": 100,
       "metric": "inputReceiptP95Ms",
-      "before": 45.70000000006985,
-      "after": 85.80000000004657
+      "before": 25.599999999976717,
+      "after": 43.300000000046566
     },
     {
       "backend": "webgpu",
       "brush": "pencil",
       "width": 512,
-      "delay": 250,
+      "delay": 500,
       "metric": "inputReceiptP95Ms",
       "before": 24.300000000046566,
-      "after": 34.0999999998603
+      "after": 33.90000000002328
     }
   ],
   "outliers": [
@@ -125,17 +224,17 @@
       "width": 128,
       "delay": 0,
       "metrics": {
-        "composedFirstMotionMs": 54.79672851564828,
-        "composedMotionIntervalP95Ms": 41.75,
-        "composedMotionIntervalMaxMs": 41.75,
-        "releaseToGestureReceiptMs": 21.79999999998836,
-        "releaseToGestureEventMs": 14.10000000000582,
-        "inputReceiptP95Ms": 24.800000000017462,
-        "inputReceiptMaxMs": 25.10000000000582,
-        "frameIntervalP95Ms": 17.79999999998836,
-        "frameIntervalMaxMs": 18,
+        "composedFirstMotionMs": 118.09809570312791,
+        "composedMotionIntervalP95Ms": 36.390869140625,
+        "composedMotionIntervalMaxMs": 36.390869140625,
+        "releaseToGestureReceiptMs": 28.5,
+        "releaseToGestureEventMs": 16,
+        "inputReceiptP95Ms": 26.60000000000582,
+        "inputReceiptMaxMs": 26.80000000000291,
+        "frameIntervalP95Ms": 21.5,
+        "frameIntervalMaxMs": 22,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 14.699999999982538
+        "formalCpuMaxMs": 35.59999999999127
       }
     },
     {
@@ -144,74 +243,17 @@
       "width": 128,
       "delay": 16,
       "metrics": {
-        "composedFirstMotionMs": 67.64418945313082,
-        "composedMotionIntervalP95Ms": 34.946044921875,
-        "composedMotionIntervalMaxMs": 34.946044921875,
-        "releaseToGestureReceiptMs": 36.10000000000582,
-        "releaseToGestureEventMs": 28.5,
-        "inputReceiptP95Ms": 24.29999999998836,
-        "inputReceiptMaxMs": 25.29999999998836,
-        "frameIntervalP95Ms": 17.699999999982538,
-        "frameIntervalMaxMs": 18.20000000001164,
+        "composedFirstMotionMs": 72.42714843749127,
+        "composedMotionIntervalP95Ms": 35.13427734375,
+        "composedMotionIntervalMaxMs": 35.13427734375,
+        "releaseToGestureReceiptMs": 42.09999999999127,
+        "releaseToGestureEventMs": 34.69999999999709,
+        "inputReceiptP95Ms": 34.29999999998836,
+        "inputReceiptMaxMs": 34.79999999998836,
+        "frameIntervalP95Ms": 18,
+        "frameIntervalMaxMs": 18.5,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 9.200000000011642
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "gpen",
-      "width": 128,
-      "delay": 50,
-      "metrics": {
-        "composedFirstMotionMs": 54.55400390623254,
-        "composedMotionIntervalP95Ms": 36.856201171875,
-        "composedMotionIntervalMaxMs": 36.856201171875,
-        "releaseToGestureReceiptMs": 68.29999999998836,
-        "releaseToGestureEventMs": 63.70000000001164,
-        "inputReceiptP95Ms": 27,
-        "inputReceiptMaxMs": 27.400000000023283,
-        "frameIntervalP95Ms": 17.20000000001164,
-        "frameIntervalMaxMs": 17.5,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 10.10000000000582
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "gpen",
-      "width": 128,
-      "delay": 100,
-      "metrics": {
-        "composedFirstMotionMs": 51.09404296876164,
-        "composedMotionIntervalP95Ms": 35.222900390625,
-        "composedMotionIntervalMaxMs": 35.222900390625,
-        "releaseToGestureReceiptMs": 116.30000000001746,
-        "releaseToGestureEventMs": 116.60000000000582,
-        "inputReceiptP95Ms": 27.70000000001164,
-        "inputReceiptMaxMs": 28,
-        "frameIntervalP95Ms": 17.20000000001164,
-        "frameIntervalMaxMs": 17.39999999999418,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 9.200000000011642
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "gpen",
-      "width": 128,
-      "delay": 250,
-      "metrics": {
-        "composedFirstMotionMs": 55.35205078125,
-        "composedMotionIntervalP95Ms": 36.637939453125,
-        "composedMotionIntervalMaxMs": 36.637939453125,
-        "releaseToGestureReceiptMs": 267.30000000001746,
-        "releaseToGestureEventMs": 267.79999999998836,
-        "inputReceiptP95Ms": 29.20000000001164,
-        "inputReceiptMaxMs": 29.60000000000582,
-        "frameIntervalP95Ms": 17.60000000000582,
-        "frameIntervalMaxMs": 17.79999999998836,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 11
+        "formalCpuMaxMs": 12.89999999999418
       }
     },
     {
@@ -220,17 +262,17 @@
       "width": 128,
       "delay": 500,
       "metrics": {
-        "composedFirstMotionMs": 132.31801757813082,
-        "composedMotionIntervalP95Ms": 100.97900390625,
-        "composedMotionIntervalMaxMs": 100.97900390625,
+        "composedFirstMotionMs": 42.67094726562209,
+        "composedMotionIntervalP95Ms": 128.669189453125,
+        "composedMotionIntervalMaxMs": 128.669189453125,
         "releaseToGestureReceiptMs": 516.1000000000058,
-        "releaseToGestureEventMs": 519,
-        "inputReceiptP95Ms": 27.29999999998836,
-        "inputReceiptMaxMs": 27.699999999982538,
-        "frameIntervalP95Ms": 19.800000000017462,
-        "frameIntervalMaxMs": 20.599999999976717,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 11.89999999999418
+        "releaseToGestureEventMs": 511.70000000001164,
+        "inputReceiptP95Ms": 33.30000000000291,
+        "inputReceiptMaxMs": 33.5,
+        "frameIntervalP95Ms": 18.79999999998836,
+        "frameIntervalMaxMs": 19.89999999999418,
+        "mainLongTaskMaxMs": 115,
+        "formalCpuMaxMs": 18.80000000000291
       }
     },
     {
@@ -239,283 +281,264 @@
       "width": 256,
       "delay": 0,
       "metrics": {
-        "composedFirstMotionMs": 56.43203125000582,
-        "composedMotionIntervalP95Ms": 36.282958984375,
-        "composedMotionIntervalMaxMs": 36.282958984375,
-        "releaseToGestureReceiptMs": 22.79999999998836,
-        "releaseToGestureEventMs": 18.10000000000582,
-        "inputReceiptP95Ms": 23.70000000001164,
-        "inputReceiptMaxMs": 23.900000000023283,
-        "frameIntervalP95Ms": 17.79999999998836,
-        "frameIntervalMaxMs": 18.099999999976717,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 11.399999999965075
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "gpen",
-      "width": 256,
-      "delay": 16,
-      "metrics": {
-        "composedFirstMotionMs": 52.48681640625,
-        "composedMotionIntervalP95Ms": 36.94189453125,
-        "composedMotionIntervalMaxMs": 36.94189453125,
-        "releaseToGestureReceiptMs": 33.59999999997672,
-        "releaseToGestureEventMs": 31.600000000034925,
-        "inputReceiptP95Ms": 28.399999999965075,
-        "inputReceiptMaxMs": 28.599999999976717,
-        "frameIntervalP95Ms": 17.300000000046566,
-        "frameIntervalMaxMs": 17.399999999965075,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 10
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "gpen",
-      "width": 256,
-      "delay": 50,
-      "metrics": {
-        "composedFirstMotionMs": 53.599951171840075,
-        "composedMotionIntervalP95Ms": 37.190185546875,
-        "composedMotionIntervalMaxMs": 37.190185546875,
-        "releaseToGestureReceiptMs": 68,
-        "releaseToGestureEventMs": 67.5,
-        "inputReceiptP95Ms": 26.099999999976717,
-        "inputReceiptMaxMs": 26.5,
-        "frameIntervalP95Ms": 17.399999999965075,
-        "frameIntervalMaxMs": 17.5,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 11.799999999988358
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "gpen",
-      "width": 256,
-      "delay": 100,
-      "metrics": {
-        "composedFirstMotionMs": 50.919042968715075,
-        "composedMotionIntervalP95Ms": 36.5771484375,
-        "composedMotionIntervalMaxMs": 36.5771484375,
-        "releaseToGestureReceiptMs": 116.40000000002328,
-        "releaseToGestureEventMs": 116.59999999997672,
-        "inputReceiptP95Ms": 26.099999999976717,
-        "inputReceiptMaxMs": 26.400000000023283,
+        "composedFirstMotionMs": 74.06591796875,
+        "composedMotionIntervalP95Ms": 36.35791015625,
+        "composedMotionIntervalMaxMs": 36.35791015625,
+        "releaseToGestureReceiptMs": 27.89999999999418,
+        "releaseToGestureEventMs": 17.10000000000582,
+        "inputReceiptP95Ms": 33.89999999999418,
+        "inputReceiptMaxMs": 34.19999999999709,
         "frameIntervalP95Ms": 17.5,
-        "frameIntervalMaxMs": 17.800000000046566,
+        "frameIntervalMaxMs": 18.60000000000582,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 10.799999999988358
+        "formalCpuMaxMs": 16.5
       }
     },
     {
       "backend": "webgl2",
       "brush": "gpen",
       "width": 256,
-      "delay": 250,
-      "metrics": {
-        "composedFirstMotionMs": 51.300048828125,
-        "composedMotionIntervalP95Ms": 35.472900390625,
-        "composedMotionIntervalMaxMs": 35.472900390625,
-        "releaseToGestureReceiptMs": 266,
-        "releaseToGestureEventMs": 266.69999999995343,
-        "inputReceiptP95Ms": 29.79999999998836,
-        "inputReceiptMaxMs": 30.099999999976717,
-        "frameIntervalP95Ms": 17.300000000046566,
-        "frameIntervalMaxMs": 17.400000000023283,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 8.699999999953434
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "gpen",
-      "width": 256,
-      "delay": 500,
-      "metrics": {
-        "composedFirstMotionMs": 54.19887695310172,
-        "composedMotionIntervalP95Ms": 38.815185546875,
-        "composedMotionIntervalMaxMs": 38.815185546875,
-        "releaseToGestureReceiptMs": 516.7999999999884,
-        "releaseToGestureEventMs": 516.2000000000116,
-        "inputReceiptP95Ms": 28.79999999998836,
-        "inputReceiptMaxMs": 29.100000000034925,
-        "frameIntervalP95Ms": 18.800000000046566,
-        "frameIntervalMaxMs": 19.20000000001164,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 10.200000000011642
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 128,
-      "delay": 100,
-      "metrics": {
-        "composedFirstMotionMs": 76.12983398436336,
-        "composedMotionIntervalP95Ms": 45.849853515625,
-        "composedMotionIntervalMaxMs": 45.849853515625,
-        "releaseToGestureReceiptMs": 121.30000000004657,
-        "releaseToGestureEventMs": 116.09999999997672,
-        "inputReceiptP95Ms": 34.90000000002328,
-        "inputReceiptMaxMs": 35.29999999998836,
-        "frameIntervalP95Ms": 19.20000000001164,
-        "frameIntervalMaxMs": 19.29999999998836,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 23.29999999998836
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 128,
-      "delay": 250,
-      "metrics": {
-        "composedFirstMotionMs": 57.77495117188664,
-        "composedMotionIntervalP95Ms": 46.326904296875,
-        "composedMotionIntervalMaxMs": 46.326904296875,
-        "releaseToGestureReceiptMs": 266,
-        "releaseToGestureEventMs": 264.5999999999767,
-        "inputReceiptP95Ms": 28.899999999965075,
-        "inputReceiptMaxMs": 29.29999999998836,
-        "frameIntervalP95Ms": 18.20000000001164,
-        "frameIntervalMaxMs": 20.29999999998836,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 23.20000000001164
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 128,
-      "delay": 500,
-      "metrics": {
-        "composedFirstMotionMs": 67.47709960932843,
-        "composedMotionIntervalP95Ms": 38.468017578125,
-        "composedMotionIntervalMaxMs": 38.468017578125,
-        "releaseToGestureReceiptMs": 515.6999999999534,
-        "releaseToGestureEventMs": 515.5999999999767,
-        "inputReceiptP95Ms": 32.199999999953434,
-        "inputReceiptMaxMs": 32.5,
-        "frameIntervalP95Ms": 19.300000000046566,
-        "frameIntervalMaxMs": 20,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 14.899999999965075
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 100,
-      "metrics": {
-        "composedFirstMotionMs": 67.20903320313664,
-        "composedMotionIntervalP95Ms": 46.171142578125,
-        "composedMotionIntervalMaxMs": 46.171142578125,
-        "releaseToGestureReceiptMs": 116.70000000001164,
-        "releaseToGestureEventMs": 116.79999999998836,
-        "inputReceiptP95Ms": 31.5,
-        "inputReceiptMaxMs": 31.800000000046566,
-        "frameIntervalP95Ms": 19,
-        "frameIntervalMaxMs": 23.20000000001164,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 15.699999999953434
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 250,
-      "metrics": {
-        "composedFirstMotionMs": 53.5810546875,
-        "composedMotionIntervalP95Ms": 52.142822265625,
-        "composedMotionIntervalMaxMs": 52.142822265625,
-        "releaseToGestureReceiptMs": 266.0999999999767,
-        "releaseToGestureEventMs": 268.5,
-        "inputReceiptP95Ms": 27.600000000034925,
-        "inputReceiptMaxMs": 28,
-        "frameIntervalP95Ms": 18.5,
-        "frameIntervalMaxMs": 19.800000000046566,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 20.29999999998836
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 512,
-      "delay": 0,
-      "metrics": {
-        "composedFirstMotionMs": 67.44111328123836,
-        "composedMotionIntervalP95Ms": 44.681884765625,
-        "composedMotionIntervalMaxMs": 44.681884765625,
-        "releaseToGestureReceiptMs": 24.600000000034925,
-        "releaseToGestureEventMs": 15.800000000046566,
-        "inputReceiptP95Ms": 31.199999999953434,
-        "inputReceiptMaxMs": 31.599999999976717,
-        "frameIntervalP95Ms": 19.199999999953434,
-        "frameIntervalMaxMs": 20.20000000001164,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 15
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 512,
       "delay": 16,
       "metrics": {
-        "composedFirstMotionMs": 65.35712890623836,
-        "composedMotionIntervalP95Ms": 46.904052734375,
-        "composedMotionIntervalMaxMs": 46.904052734375,
-        "releaseToGestureReceiptMs": 35.600000000034925,
-        "releaseToGestureEventMs": 30.899999999965075,
-        "inputReceiptP95Ms": 33.29999999998836,
-        "inputReceiptMaxMs": 33.79999999998836,
-        "frameIntervalP95Ms": 19.70000000001164,
-        "frameIntervalMaxMs": 19.900000000023283,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 14.600000000034925
-      }
-    },
-    {
-      "backend": "webgl2",
-      "brush": "pencil",
-      "width": 512,
-      "delay": 50,
-      "metrics": {
-        "composedFirstMotionMs": 66.48784179688664,
-        "composedMotionIntervalP95Ms": 46.203125,
-        "composedMotionIntervalMaxMs": 46.203125,
-        "releaseToGestureReceiptMs": 67.09999999997672,
-        "releaseToGestureEventMs": 68.90000000002328,
-        "inputReceiptP95Ms": 33.5,
-        "inputReceiptMaxMs": 36,
-        "frameIntervalP95Ms": 19.5,
-        "frameIntervalMaxMs": 19.600000000034925,
+        "composedFirstMotionMs": 74.60502929688664,
+        "composedMotionIntervalP95Ms": 36.595947265625,
+        "composedMotionIntervalMaxMs": 36.595947265625,
+        "releaseToGestureReceiptMs": 41.5,
+        "releaseToGestureEventMs": 35,
+        "inputReceiptP95Ms": 24.10000000000582,
+        "inputReceiptMaxMs": 24.20000000001164,
+        "frameIntervalP95Ms": 18,
+        "frameIntervalMaxMs": 18.10000000000582,
         "mainLongTaskMaxMs": null,
         "formalCpuMaxMs": 14
       }
     },
     {
       "backend": "webgl2",
+      "brush": "gpen",
+      "width": 512,
+      "delay": 0,
+      "metrics": {
+        "composedFirstMotionMs": 59.85395507814246,
+        "composedMotionIntervalP95Ms": 36.668212890625,
+        "composedMotionIntervalMaxMs": 36.668212890625,
+        "releaseToGestureReceiptMs": 30.60000000000582,
+        "releaseToGestureEventMs": 15,
+        "inputReceiptP95Ms": 31,
+        "inputReceiptMaxMs": 31.39999999999418,
+        "frameIntervalP95Ms": 17.29999999998836,
+        "frameIntervalMaxMs": 17.39999999999418,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 17.70000000001164
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "gpen",
+      "width": 512,
+      "delay": 16,
+      "metrics": {
+        "composedFirstMotionMs": 50.01806640625,
+        "composedMotionIntervalP95Ms": 42.548828125,
+        "composedMotionIntervalMaxMs": 42.548828125,
+        "releaseToGestureReceiptMs": 44.39999999999418,
+        "releaseToGestureEventMs": 34.60000000000582,
+        "inputReceiptP95Ms": 31,
+        "inputReceiptMaxMs": 31.20000000001164,
+        "frameIntervalP95Ms": 17.29999999998836,
+        "frameIntervalMaxMs": 17.5,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 15.60000000000582
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 128,
+      "delay": 0,
+      "metrics": {
+        "composedFirstMotionMs": 56.39003906250582,
+        "composedMotionIntervalP95Ms": 37.501953125,
+        "composedMotionIntervalMaxMs": 37.501953125,
+        "releaseToGestureReceiptMs": 38,
+        "releaseToGestureEventMs": 15.89999999999418,
+        "inputReceiptP95Ms": 24.29999999998836,
+        "inputReceiptMaxMs": 24.39999999999418,
+        "frameIntervalP95Ms": 18.60000000000582,
+        "frameIntervalMaxMs": 20.300000000017462,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 93.39999999999418
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 128,
+      "delay": 16,
+      "metrics": {
+        "composedFirstMotionMs": 69.79692382813664,
+        "composedMotionIntervalP95Ms": 39.535888671875,
+        "composedMotionIntervalMaxMs": 39.535888671875,
+        "releaseToGestureReceiptMs": 37.90000000002328,
+        "releaseToGestureEventMs": 35.5,
+        "inputReceiptP95Ms": 23.89999999999418,
+        "inputReceiptMaxMs": 24.099999999976717,
+        "frameIntervalP95Ms": 18.699999999982538,
+        "frameIntervalMaxMs": 18.89999999999418,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 87.89999999999418
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 128,
+      "delay": 50,
+      "metrics": {
+        "composedFirstMotionMs": 58.73593749999418,
+        "composedMotionIntervalP95Ms": 44.9248046875,
+        "composedMotionIntervalMaxMs": 44.9248046875,
+        "releaseToGestureReceiptMs": 68.60000000000582,
+        "releaseToGestureEventMs": 68.70000000001164,
+        "inputReceiptP95Ms": 33.69999999998254,
+        "inputReceiptMaxMs": 33.89999999999418,
+        "frameIntervalP95Ms": 18.199999999982538,
+        "frameIntervalMaxMs": 20.70000000001164,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 26.5
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 0,
+      "metrics": {
+        "composedFirstMotionMs": 74.04707031248836,
+        "composedMotionIntervalP95Ms": 40.72998046875,
+        "composedMotionIntervalMaxMs": 40.72998046875,
+        "releaseToGestureReceiptMs": 29.899999999965075,
+        "releaseToGestureEventMs": 13.799999999988358,
+        "inputReceiptP95Ms": 28.400000000023283,
+        "inputReceiptMaxMs": 28.800000000046566,
+        "frameIntervalP95Ms": 19.20000000001164,
+        "frameIntervalMaxMs": 20.29999999998836,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 44.300000000046566
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 16,
+      "metrics": {
+        "composedFirstMotionMs": 72.61899414064828,
+        "composedMotionIntervalP95Ms": 47.8759765625,
+        "composedMotionIntervalMaxMs": 47.8759765625,
+        "releaseToGestureReceiptMs": 35.5,
+        "releaseToGestureEventMs": 33.79999999998836,
+        "inputReceiptP95Ms": 24.20000000001164,
+        "inputReceiptMaxMs": 24.399999999965075,
+        "frameIntervalP95Ms": 19.70000000001164,
+        "frameIntervalMaxMs": 19.899999999965075,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 30.5
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 50,
+      "metrics": {
+        "composedFirstMotionMs": 55.72187499998836,
+        "composedMotionIntervalP95Ms": 43.946044921875,
+        "composedMotionIntervalMaxMs": 43.946044921875,
+        "releaseToGestureReceiptMs": 67.79999999998836,
+        "releaseToGestureEventMs": 70.79999999998836,
+        "inputReceiptP95Ms": 33,
+        "inputReceiptMaxMs": 33.29999999998836,
+        "frameIntervalP95Ms": 18.29999999998836,
+        "frameIntervalMaxMs": 20.100000000034925,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 34.600000000034925
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 512,
+      "delay": 0,
+      "metrics": {
+        "composedFirstMotionMs": 101.74492187501164,
+        "composedMotionIntervalP95Ms": 39.907958984375,
+        "composedMotionIntervalMaxMs": 39.907958984375,
+        "releaseToGestureReceiptMs": 30.20000000001164,
+        "releaseToGestureEventMs": 16.699999999953434,
+        "inputReceiptP95Ms": 32.09999999997672,
+        "inputReceiptMaxMs": 32.199999999953434,
+        "frameIntervalP95Ms": 19.29999999998836,
+        "frameIntervalMaxMs": 20.70000000001164,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 49.199999999953434
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 512,
+      "delay": 16,
+      "metrics": {
+        "composedFirstMotionMs": 97.94692382810172,
+        "composedMotionIntervalP95Ms": 41.626953125,
+        "composedMotionIntervalMaxMs": 41.626953125,
+        "releaseToGestureReceiptMs": 40.399999999965075,
+        "releaseToGestureEventMs": 29.29999999998836,
+        "inputReceiptP95Ms": 23.599999999976717,
+        "inputReceiptMaxMs": 23.79999999998836,
+        "frameIntervalP95Ms": 18.800000000046566,
+        "frameIntervalMaxMs": 19.70000000001164,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 52.600000000034925
+      }
+    },
+    {
+      "backend": "webgl2",
+      "brush": "pencil",
+      "width": 512,
+      "delay": 50,
+      "metrics": {
+        "composedFirstMotionMs": 81.49101562501164,
+        "composedMotionIntervalP95Ms": 40.97509765625,
+        "composedMotionIntervalMaxMs": 40.97509765625,
+        "releaseToGestureReceiptMs": 69.70000000001164,
+        "releaseToGestureEventMs": 63.899999999965075,
+        "inputReceiptP95Ms": 25.29999999998836,
+        "inputReceiptMaxMs": 25.699999999953434,
+        "frameIntervalP95Ms": 18.400000000023283,
+        "frameIntervalMaxMs": 19,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 49.09999999997672
+      }
+    },
+    {
+      "backend": "webgl2",
       "brush": "pencil",
       "width": 512,
       "delay": 100,
       "metrics": {
-        "composedFirstMotionMs": 68.6669921875,
-        "composedMotionIntervalP95Ms": 48.900146484375,
-        "composedMotionIntervalMaxMs": 48.900146484375,
-        "releaseToGestureReceiptMs": 116.29999999993015,
-        "releaseToGestureEventMs": 117.10000000009313,
-        "inputReceiptP95Ms": 27.900000000023283,
-        "inputReceiptMaxMs": 29.300000000046566,
-        "frameIntervalP95Ms": 18.399999999906868,
-        "frameIntervalMaxMs": 18.699999999953434,
+        "composedFirstMotionMs": 59.29985351563664,
+        "composedMotionIntervalP95Ms": 42.6162109375,
+        "composedMotionIntervalMaxMs": 42.6162109375,
+        "releaseToGestureReceiptMs": 121.09999999997672,
+        "releaseToGestureEventMs": 117.5,
+        "inputReceiptP95Ms": 24.79999999998836,
+        "inputReceiptMaxMs": 25,
+        "frameIntervalP95Ms": 20.300000000046566,
+        "frameIntervalMaxMs": 21.300000000046566,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 15
+        "formalCpuMaxMs": 36.800000000046566
       }
     },
     {
@@ -524,17 +547,17 @@
       "width": 512,
       "delay": 250,
       "metrics": {
-        "composedFirstMotionMs": 86.25498046877328,
-        "composedMotionIntervalP95Ms": 41.39404296875,
-        "composedMotionIntervalMaxMs": 41.39404296875,
-        "releaseToGestureReceiptMs": 266.4000000000233,
-        "releaseToGestureEventMs": 266.79999999993015,
-        "inputReceiptP95Ms": 26.900000000023283,
-        "inputReceiptMaxMs": 27.29999999993015,
-        "frameIntervalP95Ms": 17.400000000023283,
-        "frameIntervalMaxMs": 18.800000000046566,
+        "composedFirstMotionMs": 50.76298828126164,
+        "composedMotionIntervalP95Ms": 50.01806640625,
+        "composedMotionIntervalMaxMs": 50.01806640625,
+        "releaseToGestureReceiptMs": 266.5,
+        "releaseToGestureEventMs": 268.79999999998836,
+        "inputReceiptP95Ms": 27,
+        "inputReceiptMaxMs": 27.5,
+        "frameIntervalP95Ms": 20.20000000001164,
+        "frameIntervalMaxMs": 20.29999999998836,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 13.400000000023283
+        "formalCpuMaxMs": 39.300000000046566
       }
     },
     {
@@ -543,17 +566,17 @@
       "width": 512,
       "delay": 500,
       "metrics": {
-        "composedFirstMotionMs": 76.21503906254657,
-        "composedMotionIntervalP95Ms": 70.594970703125,
-        "composedMotionIntervalMaxMs": 70.594970703125,
-        "releaseToGestureReceiptMs": 518.7999999999302,
-        "releaseToGestureEventMs": 514.8999999999069,
-        "inputReceiptP95Ms": 26.699999999953434,
-        "inputReceiptMaxMs": 26.900000000023283,
-        "frameIntervalP95Ms": 19.5,
-        "frameIntervalMaxMs": 20.199999999953434,
+        "composedFirstMotionMs": 60.7421875,
+        "composedMotionIntervalP95Ms": 42.626953125,
+        "composedMotionIntervalMaxMs": 42.626953125,
+        "releaseToGestureReceiptMs": 515.5,
+        "releaseToGestureEventMs": 515,
+        "inputReceiptP95Ms": 28.70000000001164,
+        "inputReceiptMaxMs": 29,
+        "frameIntervalP95Ms": 17.70000000001164,
+        "frameIntervalMaxMs": 20.79999999998836,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 17
+        "formalCpuMaxMs": 36.300000000046566
       }
     },
     {
@@ -562,17 +585,17 @@
       "width": 128,
       "delay": 0,
       "metrics": {
-        "composedFirstMotionMs": 60.28476562502328,
-        "composedMotionIntervalP95Ms": 55.72998046875,
-        "composedMotionIntervalMaxMs": 55.72998046875,
-        "releaseToGestureReceiptMs": 23,
-        "releaseToGestureEventMs": 17.899999999906868,
-        "inputReceiptP95Ms": 23.900000000023283,
-        "inputReceiptMaxMs": 24.199999999953434,
-        "frameIntervalP95Ms": 17.5,
-        "frameIntervalMaxMs": 18.79999999993015,
+        "composedFirstMotionMs": 60.399169921875,
+        "composedMotionIntervalP95Ms": 48.76708984375,
+        "composedMotionIntervalMaxMs": 48.76708984375,
+        "releaseToGestureReceiptMs": 18.900000000023283,
+        "releaseToGestureEventMs": 23,
+        "inputReceiptP95Ms": 69.09999999997672,
+        "inputReceiptMaxMs": 69.69999999995343,
+        "frameIntervalP95Ms": 18.599999999976717,
+        "frameIntervalMaxMs": 70,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 3
+        "formalCpuMaxMs": 2.599999999976717
       }
     },
     {
@@ -581,17 +604,17 @@
       "width": 128,
       "delay": 16,
       "metrics": {
-        "composedFirstMotionMs": 54.9697265625,
-        "composedMotionIntervalP95Ms": 48.696044921875,
-        "composedMotionIntervalMaxMs": 48.696044921875,
-        "releaseToGestureReceiptMs": 34,
-        "releaseToGestureEventMs": 33.90000000002328,
-        "inputReceiptP95Ms": 26.699999999953434,
-        "inputReceiptMaxMs": 27,
-        "frameIntervalP95Ms": 17.29999999993015,
-        "frameIntervalMaxMs": 17.699999999953434,
+        "composedFirstMotionMs": 95.64003906247672,
+        "composedMotionIntervalP95Ms": 59.283935546875,
+        "composedMotionIntervalMaxMs": 59.283935546875,
+        "releaseToGestureReceiptMs": 42.399999999965075,
+        "releaseToGestureEventMs": 35.399999999965075,
+        "inputReceiptP95Ms": 63.29999999998836,
+        "inputReceiptMaxMs": 63.70000000001164,
+        "frameIntervalP95Ms": 18,
+        "frameIntervalMaxMs": 20,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 3.199999999953434
+        "formalCpuMaxMs": 2.699999999953434
       }
     },
     {
@@ -600,17 +623,17 @@
       "width": 128,
       "delay": 50,
       "metrics": {
-        "composedFirstMotionMs": 54.58603515627328,
-        "composedMotionIntervalP95Ms": 52.792236328125,
-        "composedMotionIntervalMaxMs": 52.792236328125,
-        "releaseToGestureReceiptMs": 66.80000000004657,
-        "releaseToGestureEventMs": 69.19999999995343,
-        "inputReceiptP95Ms": 23.900000000023283,
-        "inputReceiptMaxMs": 24.099999999976717,
-        "frameIntervalP95Ms": 18.300000000046566,
-        "frameIntervalMaxMs": 19.099999999976717,
+        "composedFirstMotionMs": 60.14614257810172,
+        "composedMotionIntervalP95Ms": 42.26708984375,
+        "composedMotionIntervalMaxMs": 42.26708984375,
+        "releaseToGestureReceiptMs": 94.29999999998836,
+        "releaseToGestureEventMs": 67.79999999998836,
+        "inputReceiptP95Ms": 29.29999999998836,
+        "inputReceiptMaxMs": 29.70000000001164,
+        "frameIntervalP95Ms": 18.400000000023283,
+        "frameIntervalMaxMs": 19,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1.5
+        "formalCpuMaxMs": 2.599999999976717
       }
     },
     {
@@ -619,17 +642,17 @@
       "width": 128,
       "delay": 100,
       "metrics": {
-        "composedFirstMotionMs": 50.65605468756985,
-        "composedMotionIntervalP95Ms": 44.319091796875,
-        "composedMotionIntervalMaxMs": 44.319091796875,
-        "releaseToGestureReceiptMs": 116.20000000006985,
-        "releaseToGestureEventMs": 117,
-        "inputReceiptP95Ms": 28.5,
-        "inputReceiptMaxMs": 29,
-        "frameIntervalP95Ms": 18.099999999976717,
-        "frameIntervalMaxMs": 18.400000000023283,
+        "composedFirstMotionMs": 57.62407226563664,
+        "composedMotionIntervalP95Ms": 44.2373046875,
+        "composedMotionIntervalMaxMs": 44.2373046875,
+        "releaseToGestureReceiptMs": 119.09999999997672,
+        "releaseToGestureEventMs": 118,
+        "inputReceiptP95Ms": 26.600000000034925,
+        "inputReceiptMaxMs": 27,
+        "frameIntervalP95Ms": 18.29999999998836,
+        "frameIntervalMaxMs": 19.399999999965075,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1.2999999999301508
+        "formalCpuMaxMs": 2.300000000046566
       }
     },
     {
@@ -638,17 +661,17 @@
       "width": 128,
       "delay": 250,
       "metrics": {
-        "composedFirstMotionMs": 99.7080078125,
-        "composedMotionIntervalP95Ms": 43.14892578125,
-        "composedMotionIntervalMaxMs": 43.14892578125,
-        "releaseToGestureReceiptMs": 266,
-        "releaseToGestureEventMs": 264.9000000000233,
-        "inputReceiptP95Ms": 25.099999999976717,
-        "inputReceiptMaxMs": 25.20000000006985,
-        "frameIntervalP95Ms": 20.5,
-        "frameIntervalMaxMs": 20.800000000046566,
+        "composedFirstMotionMs": 55.58320312498836,
+        "composedMotionIntervalP95Ms": 39.69091796875,
+        "composedMotionIntervalMaxMs": 39.69091796875,
+        "releaseToGestureReceiptMs": 267.5,
+        "releaseToGestureEventMs": 263.5,
+        "inputReceiptP95Ms": 27.100000000034925,
+        "inputReceiptMaxMs": 27.70000000001164,
+        "frameIntervalP95Ms": 19.29999999998836,
+        "frameIntervalMaxMs": 19.800000000046566,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 0.6999999999534339
+        "formalCpuMaxMs": 1.900000000023283
       }
     },
     {
@@ -657,15 +680,15 @@
       "width": 128,
       "delay": 500,
       "metrics": {
-        "composedFirstMotionMs": 101.251953125,
-        "composedMotionIntervalP95Ms": 150.875244140625,
-        "composedMotionIntervalMaxMs": 150.875244140625,
-        "releaseToGestureReceiptMs": 518.9000000000233,
-        "releaseToGestureEventMs": 514.1999999999534,
-        "inputReceiptP95Ms": 23.899999999906868,
-        "inputReceiptMaxMs": 24.099999999976717,
-        "frameIntervalP95Ms": 22,
-        "frameIntervalMaxMs": 102.39999999990687,
+        "composedFirstMotionMs": 55.034912109375,
+        "composedMotionIntervalP95Ms": 110.60498046875,
+        "composedMotionIntervalMaxMs": 110.60498046875,
+        "releaseToGestureReceiptMs": 515.6000000000349,
+        "releaseToGestureEventMs": 521.3999999999651,
+        "inputReceiptP95Ms": 27.70000000001164,
+        "inputReceiptMaxMs": 28.20000000001164,
+        "frameIntervalP95Ms": 18.600000000034925,
+        "frameIntervalMaxMs": 46.20000000001164,
         "mainLongTaskMaxMs": null,
         "formalCpuMaxMs": 0.8000000000465661
       }
@@ -676,34 +699,15 @@
       "width": 256,
       "delay": 0,
       "metrics": {
-        "composedFirstMotionMs": 57.40200195310172,
-        "composedMotionIntervalP95Ms": 35.406005859375,
-        "composedMotionIntervalMaxMs": 35.406005859375,
-        "releaseToGestureReceiptMs": 22.900000000023283,
-        "releaseToGestureEventMs": 16.70000000006985,
-        "inputReceiptP95Ms": 24.099999999976717,
-        "inputReceiptMaxMs": 24.100000000093132,
-        "frameIntervalP95Ms": 17.5,
-        "frameIntervalMaxMs": 18,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1.599999999976717
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "gpen",
-      "width": 256,
-      "delay": 16,
-      "metrics": {
-        "composedFirstMotionMs": 58.28305664064828,
-        "composedMotionIntervalP95Ms": 35.43896484375,
-        "composedMotionIntervalMaxMs": 35.43896484375,
-        "releaseToGestureReceiptMs": 35.29999999993015,
-        "releaseToGestureEventMs": 34.10000000009313,
-        "inputReceiptP95Ms": 24.900000000023283,
-        "inputReceiptMaxMs": 25.099999999976717,
-        "frameIntervalP95Ms": 17.29999999993015,
-        "frameIntervalMaxMs": 17.400000000023283,
+        "composedFirstMotionMs": 94.95688476564828,
+        "composedMotionIntervalP95Ms": 55.50390625,
+        "composedMotionIntervalMaxMs": 55.50390625,
+        "releaseToGestureReceiptMs": 32,
+        "releaseToGestureEventMs": 19.399999999965075,
+        "inputReceiptP95Ms": 73.70000000001164,
+        "inputReceiptMaxMs": 74.09999999997672,
+        "frameIntervalP95Ms": 20.20000000001164,
+        "frameIntervalMaxMs": 59.70000000001164,
         "mainLongTaskMaxMs": null,
         "formalCpuMaxMs": 3
       }
@@ -712,57 +716,38 @@
       "backend": "webgpu",
       "brush": "gpen",
       "width": 256,
+      "delay": 16,
+      "metrics": {
+        "composedFirstMotionMs": 92.73876953125,
+        "composedMotionIntervalP95Ms": 47.869140625,
+        "composedMotionIntervalMaxMs": 47.869140625,
+        "releaseToGestureReceiptMs": 41.199999999953434,
+        "releaseToGestureEventMs": 35.5,
+        "inputReceiptP95Ms": 57.60000000009313,
+        "inputReceiptMaxMs": 58.10000000009313,
+        "frameIntervalP95Ms": 17.599999999976717,
+        "frameIntervalMaxMs": 20.900000000023283,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 2.199999999953434
+      }
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 256,
       "delay": 50,
       "metrics": {
-        "composedFirstMotionMs": 54.260009765625,
-        "composedMotionIntervalP95Ms": 48.205810546875,
-        "composedMotionIntervalMaxMs": 48.205810546875,
-        "releaseToGestureReceiptMs": 66.29999999993015,
-        "releaseToGestureEventMs": 67.59999999997672,
-        "inputReceiptP95Ms": 28,
-        "inputReceiptMaxMs": 28.400000000023283,
-        "frameIntervalP95Ms": 17.699999999953434,
-        "frameIntervalMaxMs": 18.29999999993015,
+        "composedFirstMotionMs": 50.20395507803187,
+        "composedMotionIntervalP95Ms": 36.955810546875,
+        "composedMotionIntervalMaxMs": 36.955810546875,
+        "releaseToGestureReceiptMs": 100.19999999995343,
+        "releaseToGestureEventMs": 68.90000000002328,
+        "inputReceiptP95Ms": 39.09999999997672,
+        "inputReceiptMaxMs": 39.5,
+        "frameIntervalP95Ms": 18.599999999976717,
+        "frameIntervalMaxMs": 19,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 3.300000000046566
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "gpen",
-      "width": 256,
-      "delay": 100,
-      "metrics": {
-        "composedFirstMotionMs": 53.22407226555515,
-        "composedMotionIntervalP95Ms": 59.39111328125,
-        "composedMotionIntervalMaxMs": 59.39111328125,
-        "releaseToGestureReceiptMs": 116.59999999997672,
-        "releaseToGestureEventMs": 115.79999999993015,
-        "inputReceiptP95Ms": 29,
-        "inputReceiptMaxMs": 29.5,
-        "frameIntervalP95Ms": 19.29999999993015,
-        "frameIntervalMaxMs": 20,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 0.6000000000931323
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "gpen",
-      "width": 256,
-      "delay": 250,
-      "metrics": {
-        "composedFirstMotionMs": 52.67890624993015,
-        "composedMotionIntervalP95Ms": 57.35302734375,
-        "composedMotionIntervalMaxMs": 57.35302734375,
-        "releaseToGestureReceiptMs": 265.80000000004657,
-        "releaseToGestureEventMs": 265.10000000009313,
-        "inputReceiptP95Ms": 28.5,
-        "inputReceiptMaxMs": 29,
-        "frameIntervalP95Ms": 18.79999999993015,
-        "frameIntervalMaxMs": 19.29999999993015,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1.8000000000465661
+        "formalCpuMaxMs": 2.299999999930151
       }
     },
     {
@@ -771,17 +756,36 @@
       "width": 256,
       "delay": 500,
       "metrics": {
-        "composedFirstMotionMs": 80.9921875,
-        "composedMotionIntervalP95Ms": 42.572998046875,
-        "composedMotionIntervalMaxMs": 42.572998046875,
-        "releaseToGestureReceiptMs": 516,
-        "releaseToGestureEventMs": 515,
-        "inputReceiptP95Ms": 27,
-        "inputReceiptMaxMs": 28.099999999976717,
-        "frameIntervalP95Ms": 19.5,
-        "frameIntervalMaxMs": 19.599999999976717,
+        "composedFirstMotionMs": 56.01914062502328,
+        "composedMotionIntervalP95Ms": 39.997802734375,
+        "composedMotionIntervalMaxMs": 39.997802734375,
+        "releaseToGestureReceiptMs": 516.0999999999767,
+        "releaseToGestureEventMs": 514.9000000000233,
+        "inputReceiptP95Ms": 27.599999999976717,
+        "inputReceiptMaxMs": 28,
+        "frameIntervalP95Ms": 17.899999999906868,
+        "frameIntervalMaxMs": 19.5,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2
+        "formalCpuMaxMs": 1.3000000000465661
+      }
+    },
+    {
+      "backend": "webgpu",
+      "brush": "gpen",
+      "width": 512,
+      "delay": 0,
+      "metrics": {
+        "composedFirstMotionMs": 41.219970703125,
+        "composedMotionIntervalP95Ms": 36.954833984375,
+        "composedMotionIntervalMaxMs": 36.954833984375,
+        "releaseToGestureReceiptMs": 33,
+        "releaseToGestureEventMs": 14.800000000046566,
+        "inputReceiptP95Ms": 57.59999999997672,
+        "inputReceiptMaxMs": 58,
+        "frameIntervalP95Ms": 17.600000000093132,
+        "frameIntervalMaxMs": 18.5,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 2.400000000023283
       }
     },
     {
@@ -790,17 +794,17 @@
       "width": 128,
       "delay": 0,
       "metrics": {
-        "composedFirstMotionMs": 163.65078124997672,
-        "composedMotionIntervalP95Ms": 159.2080078125,
-        "composedMotionIntervalMaxMs": 159.2080078125,
-        "releaseToGestureReceiptMs": 25.70000000006985,
-        "releaseToGestureEventMs": 18.300000000046566,
-        "inputReceiptP95Ms": 31.900000000023283,
-        "inputReceiptMaxMs": 32.300000000046566,
-        "frameIntervalP95Ms": 18,
-        "frameIntervalMaxMs": 20.400000000023283,
+        "composedFirstMotionMs": 154.29277343745343,
+        "composedMotionIntervalP95Ms": 107.1328125,
+        "composedMotionIntervalMaxMs": 107.1328125,
+        "releaseToGestureReceiptMs": 35,
+        "releaseToGestureEventMs": 12.900000000023283,
+        "inputReceiptP95Ms": 51.5,
+        "inputReceiptMaxMs": 51.90000000002328,
+        "frameIntervalP95Ms": 18.79999999993015,
+        "frameIntervalMaxMs": 48.40000000002328,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1.1999999999534339
+        "formalCpuMaxMs": 2.3999999999068677
       }
     },
     {
@@ -809,17 +813,17 @@
       "width": 128,
       "delay": 16,
       "metrics": {
-        "composedFirstMotionMs": 121.794189453125,
-        "composedMotionIntervalP95Ms": 140.776123046875,
-        "composedMotionIntervalMaxMs": 140.776123046875,
-        "releaseToGestureReceiptMs": 39.10000000009313,
-        "releaseToGestureEventMs": 29.800000000046566,
-        "inputReceiptP95Ms": 26.5,
-        "inputReceiptMaxMs": 26.70000000006985,
-        "frameIntervalP95Ms": 19.400000000023283,
-        "frameIntervalMaxMs": 20.300000000046566,
+        "composedFirstMotionMs": 156.43623046879657,
+        "composedMotionIntervalP95Ms": 151.01708984375,
+        "composedMotionIntervalMaxMs": 151.01708984375,
+        "releaseToGestureReceiptMs": 90.70000000006985,
+        "releaseToGestureEventMs": 31.099999999976717,
+        "inputReceiptP95Ms": 24.400000000023283,
+        "inputReceiptMaxMs": 24.600000000093132,
+        "frameIntervalP95Ms": 17.900000000023283,
+        "frameIntervalMaxMs": 18.400000000023283,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2.099999999976717
+        "formalCpuMaxMs": 1.8999999999068677
       }
     },
     {
@@ -828,17 +832,17 @@
       "width": 128,
       "delay": 50,
       "metrics": {
-        "composedFirstMotionMs": 153.48325195314828,
-        "composedMotionIntervalP95Ms": 143.0322265625,
-        "composedMotionIntervalMaxMs": 143.0322265625,
-        "releaseToGestureReceiptMs": 66.29999999993015,
-        "releaseToGestureEventMs": 65.70000000006985,
-        "inputReceiptP95Ms": 27.699999999953434,
-        "inputReceiptMaxMs": 28.199999999953434,
-        "frameIntervalP95Ms": 18,
+        "composedFirstMotionMs": 186.43427734368015,
+        "composedMotionIntervalP95Ms": 153.68212890625,
+        "composedMotionIntervalMaxMs": 153.68212890625,
+        "releaseToGestureReceiptMs": 99.09999999997672,
+        "releaseToGestureEventMs": 68.19999999995343,
+        "inputReceiptP95Ms": 29.699999999953434,
+        "inputReceiptMaxMs": 30.099999999976717,
+        "frameIntervalP95Ms": 17.699999999953434,
         "frameIntervalMaxMs": 19.199999999953434,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2
+        "formalCpuMaxMs": 2.699999999953434
       }
     },
     {
@@ -847,15 +851,72 @@
       "width": 128,
       "delay": 100,
       "metrics": {
-        "composedFirstMotionMs": 254.06000976567157,
-        "composedMotionIntervalP95Ms": 243.703857421875,
-        "composedMotionIntervalMaxMs": 243.703857421875,
-        "releaseToGestureReceiptMs": 115.70000000006985,
-        "releaseToGestureEventMs": 117.70000000006985,
-        "inputReceiptP95Ms": 25.5,
-        "inputReceiptMaxMs": 25.900000000023283,
-        "frameIntervalP95Ms": 17.300000000046566,
-        "frameIntervalMaxMs": 19.199999999953434,
+        "composedFirstMotionMs": 176.84687499993015,
+        "composedMotionIntervalP95Ms": 148.0537109375,
+        "composedMotionIntervalMaxMs": 148.0537109375,
+        "releaseToGestureReceiptMs": 118.5,
+        "releaseToGestureEventMs": 114.59999999997672,
+        "inputReceiptP95Ms": 23.79999999993015,
+        "inputReceiptMaxMs": 25.100000000093132,
+        "frameIntervalP95Ms": 18,
+        "frameIntervalMaxMs": 21.599999999976717,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 0.8000000000465661
+      }
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 128,
+      "delay": 250,
+      "metrics": {
+        "composedFirstMotionMs": 194.797119140625,
+        "composedMotionIntervalP95Ms": 184.9951171875,
+        "composedMotionIntervalMaxMs": 184.9951171875,
+        "releaseToGestureReceiptMs": 265.9000000000233,
+        "releaseToGestureEventMs": 263.69999999995343,
+        "inputReceiptP95Ms": 26,
+        "inputReceiptMaxMs": 26.400000000023283,
+        "frameIntervalP95Ms": 18.599999999976717,
+        "frameIntervalMaxMs": 19.20000000006985,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 1.2000000000698492
+      }
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 128,
+      "delay": 500,
+      "metrics": {
+        "composedFirstMotionMs": 56.597900390625,
+        "composedMotionIntervalP95Ms": 52.298095703125,
+        "composedMotionIntervalMaxMs": 52.298095703125,
+        "releaseToGestureReceiptMs": 515.6000000000931,
+        "releaseToGestureEventMs": 514.3000000000466,
+        "inputReceiptP95Ms": 25.800000000046566,
+        "inputReceiptMaxMs": 26.300000000046566,
+        "frameIntervalP95Ms": 18.100000000093132,
+        "frameIntervalMaxMs": 19.099999999976717,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 1.400000000023283
+      }
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 0,
+      "metrics": {
+        "composedFirstMotionMs": 87.41093749995343,
+        "composedMotionIntervalP95Ms": 82.213134765625,
+        "composedMotionIntervalMaxMs": 82.213134765625,
+        "releaseToGestureReceiptMs": 29.099999999976717,
+        "releaseToGestureEventMs": 19.900000000023283,
+        "inputReceiptP95Ms": 72.79999999993015,
+        "inputReceiptMaxMs": 73.19999999995343,
+        "frameIntervalP95Ms": 18.899999999906868,
+        "frameIntervalMaxMs": 57.5,
         "mainLongTaskMaxMs": null,
         "formalCpuMaxMs": 2.199999999953434
       }
@@ -863,132 +924,18 @@
     {
       "backend": "webgpu",
       "brush": "pencil",
-      "width": 128,
-      "delay": 250,
-      "metrics": {
-        "composedFirstMotionMs": 262.19609374995343,
-        "composedMotionIntervalP95Ms": 219.587158203125,
-        "composedMotionIntervalMaxMs": 219.587158203125,
-        "releaseToGestureReceiptMs": 266.79999999993015,
-        "releaseToGestureEventMs": 263.5,
-        "inputReceiptP95Ms": 27,
-        "inputReceiptMaxMs": 27.20000000006985,
-        "frameIntervalP95Ms": 18.699999999953434,
-        "frameIntervalMaxMs": 20.599999999976717,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2.900000000023283
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "pencil",
-      "width": 128,
-      "delay": 500,
-      "metrics": {
-        "composedFirstMotionMs": 81.73183593759313,
-        "composedMotionIntervalP95Ms": 82.85205078125,
-        "composedMotionIntervalMaxMs": 82.85205078125,
-        "releaseToGestureReceiptMs": 517.2999999999302,
-        "releaseToGestureEventMs": 517.2000000000698,
-        "inputReceiptP95Ms": 25.20000000006985,
-        "inputReceiptMaxMs": 25.599999999976717,
-        "frameIntervalP95Ms": 17.5,
-        "frameIntervalMaxMs": 19.099999999976717,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 0,
-      "metrics": {
-        "composedFirstMotionMs": 118.92192382819485,
-        "composedMotionIntervalP95Ms": 180.548095703125,
-        "composedMotionIntervalMaxMs": 180.548095703125,
-        "releaseToGestureReceiptMs": 22.599999999976717,
-        "releaseToGestureEventMs": 17.5,
-        "inputReceiptP95Ms": 25.099999999976717,
-        "inputReceiptMaxMs": 25.79999999993015,
-        "frameIntervalP95Ms": 18.800000000046566,
-        "frameIntervalMaxMs": 19.599999999976717,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 5
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "pencil",
       "width": 256,
       "delay": 16,
       "metrics": {
-        "composedFirstMotionMs": 134.51982421881985,
-        "composedMotionIntervalP95Ms": 172.584228515625,
-        "composedMotionIntervalMaxMs": 172.584228515625,
-        "releaseToGestureReceiptMs": 37.20000000006985,
-        "releaseToGestureEventMs": 33.59999999997672,
-        "inputReceiptP95Ms": 24.400000000023283,
-        "inputReceiptMaxMs": 26,
+        "composedFirstMotionMs": 141.51787109370343,
+        "composedMotionIntervalP95Ms": 113.35498046875,
+        "composedMotionIntervalMaxMs": 113.35498046875,
+        "releaseToGestureReceiptMs": 40.699999999953434,
+        "releaseToGestureEventMs": 25.199999999953434,
+        "inputReceiptP95Ms": 70.40000000002328,
+        "inputReceiptMaxMs": 70.80000000004657,
         "frameIntervalP95Ms": 18.400000000023283,
-        "frameIntervalMaxMs": 21.599999999976717,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2.800000000046566
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 50,
-      "metrics": {
-        "composedFirstMotionMs": 182.851806640625,
-        "composedMotionIntervalP95Ms": 190.9951171875,
-        "composedMotionIntervalMaxMs": 190.9951171875,
-        "releaseToGestureReceiptMs": 66.5,
-        "releaseToGestureEventMs": 66.90000000002328,
-        "inputReceiptP95Ms": 24.699999999953434,
-        "inputReceiptMaxMs": 24.900000000023283,
-        "frameIntervalP95Ms": 17.900000000023283,
-        "frameIntervalMaxMs": 19.400000000023283,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 3.099999999976717
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 100,
-      "metrics": {
-        "composedFirstMotionMs": 230.50600585935172,
-        "composedMotionIntervalP95Ms": 211.6689453125,
-        "composedMotionIntervalMaxMs": 211.6689453125,
-        "releaseToGestureReceiptMs": 115.90000000002328,
-        "releaseToGestureEventMs": 115.5,
-        "inputReceiptP95Ms": 27.099999999976717,
-        "inputReceiptMaxMs": 27.5,
-        "frameIntervalP95Ms": 17.699999999953434,
-        "frameIntervalMaxMs": 21.199999999953434,
-        "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 3.800000000046566
-      }
-    },
-    {
-      "backend": "webgpu",
-      "brush": "pencil",
-      "width": 256,
-      "delay": 250,
-      "metrics": {
-        "composedFirstMotionMs": 375.76191406254657,
-        "composedMotionIntervalP95Ms": 355.572998046875,
-        "composedMotionIntervalMaxMs": 355.572998046875,
-        "releaseToGestureReceiptMs": 267.70000000006985,
-        "releaseToGestureEventMs": 265.79999999993015,
-        "inputReceiptP95Ms": 24.900000000023283,
-        "inputReceiptMaxMs": 25.100000000093132,
-        "frameIntervalP95Ms": 18.599999999976717,
-        "frameIntervalMaxMs": 20,
+        "frameIntervalMaxMs": 19.300000000046566,
         "mainLongTaskMaxMs": null,
         "formalCpuMaxMs": 1.900000000023283
       }
@@ -997,19 +944,76 @@
       "backend": "webgpu",
       "brush": "pencil",
       "width": 256,
+      "delay": 50,
+      "metrics": {
+        "composedFirstMotionMs": 198.39394531259313,
+        "composedMotionIntervalP95Ms": 160.955810546875,
+        "composedMotionIntervalMaxMs": 160.955810546875,
+        "releaseToGestureReceiptMs": 96,
+        "releaseToGestureEventMs": 63.90000000002328,
+        "inputReceiptP95Ms": 36,
+        "inputReceiptMaxMs": 36.10000000009313,
+        "frameIntervalP95Ms": 18.400000000023283,
+        "frameIntervalMaxMs": 20.300000000046566,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 1.6999999999534339
+      }
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 100,
+      "metrics": {
+        "composedFirstMotionMs": 193.25102539069485,
+        "composedMotionIntervalP95Ms": 161.873046875,
+        "composedMotionIntervalMaxMs": 161.873046875,
+        "releaseToGestureReceiptMs": 133.29999999993015,
+        "releaseToGestureEventMs": 118.29999999993015,
+        "inputReceiptP95Ms": 39.199999999953434,
+        "inputReceiptMaxMs": 39.699999999953434,
+        "frameIntervalP95Ms": 17.70000000006985,
+        "frameIntervalMaxMs": 19.600000000093132,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 0.9000000000232831
+      }
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 256,
+      "delay": 250,
+      "metrics": {
+        "composedFirstMotionMs": 197.38710937497672,
+        "composedMotionIntervalP95Ms": 176.953125,
+        "composedMotionIntervalMaxMs": 176.953125,
+        "releaseToGestureReceiptMs": 266.5,
+        "releaseToGestureEventMs": 267.0999999999767,
+        "inputReceiptP95Ms": 26.699999999953434,
+        "inputReceiptMaxMs": 27.199999999953434,
+        "frameIntervalP95Ms": 17.899999999906868,
+        "frameIntervalMaxMs": 21.099999999976717,
+        "mainLongTaskMaxMs": null,
+        "formalCpuMaxMs": 0.8999999999068677
+      }
+    },
+    {
+      "backend": "webgpu",
+      "brush": "pencil",
+      "width": 256,
       "delay": 500,
       "metrics": {
-        "composedFirstMotionMs": 166.885009765625,
-        "composedMotionIntervalP95Ms": 119.126953125,
-        "composedMotionIntervalMaxMs": 119.126953125,
-        "releaseToGestureReceiptMs": 517.5,
-        "releaseToGestureEventMs": 514.5,
-        "inputReceiptP95Ms": 31.900000000023283,
-        "inputReceiptMaxMs": 32.10000000009313,
-        "frameIntervalP95Ms": 18,
-        "frameIntervalMaxMs": 23.400000000023283,
+        "composedFirstMotionMs": 84.02382812509313,
+        "composedMotionIntervalP95Ms": 56.500732421875,
+        "composedMotionIntervalMaxMs": 56.500732421875,
+        "releaseToGestureReceiptMs": 515.8000000000466,
+        "releaseToGestureEventMs": 512.2999999999302,
+        "inputReceiptP95Ms": 34.09999999997672,
+        "inputReceiptMaxMs": 34.40000000002328,
+        "frameIntervalP95Ms": 18.400000000023283,
+        "frameIntervalMaxMs": 20.70000000006985,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1.7999999999301508
+        "formalCpuMaxMs": 1.7000000000698492
       }
     },
     {
@@ -1018,17 +1022,17 @@
       "width": 512,
       "delay": 0,
       "metrics": {
-        "composedFirstMotionMs": 165.59990234370343,
-        "composedMotionIntervalP95Ms": 140.104248046875,
-        "composedMotionIntervalMaxMs": 140.104248046875,
-        "releaseToGestureReceiptMs": 25.899999999906868,
+        "composedFirstMotionMs": 244.18403320317157,
+        "composedMotionIntervalP95Ms": 129.822021484375,
+        "composedMotionIntervalMaxMs": 129.822021484375,
+        "releaseToGestureReceiptMs": 17.5,
         "releaseToGestureEventMs": 15,
-        "inputReceiptP95Ms": 23.300000000046566,
-        "inputReceiptMaxMs": 23.400000000023283,
-        "frameIntervalP95Ms": 17.699999999953434,
-        "frameIntervalMaxMs": 19.5,
+        "inputReceiptP95Ms": 70.39999999990687,
+        "inputReceiptMaxMs": 70.89999999990687,
+        "frameIntervalP95Ms": 18.399999999906868,
+        "frameIntervalMaxMs": 55.59999999997672,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1.3999999999068677
+        "formalCpuMaxMs": 1.2999999999301508
       }
     },
     {
@@ -1037,17 +1041,17 @@
       "width": 512,
       "delay": 16,
       "metrics": {
-        "composedFirstMotionMs": 272.1182617187733,
-        "composedMotionIntervalP95Ms": 241.18505859375,
-        "composedMotionIntervalMaxMs": 241.18505859375,
-        "releaseToGestureReceiptMs": 38.59999999997672,
-        "releaseToGestureEventMs": 32.59999999997672,
-        "inputReceiptP95Ms": 24.800000000046566,
-        "inputReceiptMaxMs": 24.900000000023283,
-        "frameIntervalP95Ms": 17.699999999953434,
-        "frameIntervalMaxMs": 19.29999999993015,
+        "composedFirstMotionMs": 198.84287109377328,
+        "composedMotionIntervalP95Ms": 93.712158203125,
+        "composedMotionIntervalMaxMs": 93.712158203125,
+        "releaseToGestureReceiptMs": 37.5,
+        "releaseToGestureEventMs": 31.800000000046566,
+        "inputReceiptP95Ms": 61.59999999997672,
+        "inputReceiptMaxMs": 62,
+        "frameIntervalP95Ms": 19.099999999976717,
+        "frameIntervalMaxMs": 19.5,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2.400000000023283
+        "formalCpuMaxMs": 3.599999999976717
       }
     },
     {
@@ -1056,17 +1060,17 @@
       "width": 512,
       "delay": 50,
       "metrics": {
-        "composedFirstMotionMs": 309.00507812504657,
-        "composedMotionIntervalP95Ms": 178.72900390625,
-        "composedMotionIntervalMaxMs": 178.72900390625,
-        "releaseToGestureReceiptMs": 68.09999999997672,
-        "releaseToGestureEventMs": 61.90000000002328,
-        "inputReceiptP95Ms": 26.199999999953434,
-        "inputReceiptMaxMs": 26.400000000023283,
-        "frameIntervalP95Ms": 18,
-        "frameIntervalMaxMs": 20.29999999993015,
+        "composedFirstMotionMs": 205.48896484379657,
+        "composedMotionIntervalP95Ms": 43.1142578125,
+        "composedMotionIntervalMaxMs": 43.1142578125,
+        "releaseToGestureReceiptMs": 104.30000000004657,
+        "releaseToGestureEventMs": 64.59999999997672,
+        "inputReceiptP95Ms": 50,
+        "inputReceiptMaxMs": 50.40000000002328,
+        "frameIntervalP95Ms": 17.70000000006985,
+        "frameIntervalMaxMs": 18.800000000046566,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2.699999999953434
+        "formalCpuMaxMs": 3
       }
     },
     {
@@ -1075,17 +1079,17 @@
       "width": 512,
       "delay": 100,
       "metrics": {
-        "composedFirstMotionMs": 349.1429199218983,
-        "composedMotionIntervalP95Ms": 162.0068359375,
-        "composedMotionIntervalMaxMs": 162.0068359375,
-        "releaseToGestureReceiptMs": 117.40000000002328,
-        "releaseToGestureEventMs": 112.70000000006985,
-        "inputReceiptP95Ms": 85.80000000004657,
-        "inputReceiptMaxMs": 85.90000000002328,
-        "frameIntervalP95Ms": 19.199999999953434,
-        "frameIntervalMaxMs": 82.30000000004657,
+        "composedFirstMotionMs": 235.03085937490687,
+        "composedMotionIntervalP95Ms": 56.612060546875,
+        "composedMotionIntervalMaxMs": 56.612060546875,
+        "releaseToGestureReceiptMs": 133.5,
+        "releaseToGestureEventMs": 115.40000000002328,
+        "inputReceiptP95Ms": 43.300000000046566,
+        "inputReceiptMaxMs": 43.800000000046566,
+        "frameIntervalP95Ms": 18.199999999953434,
+        "frameIntervalMaxMs": 20.5,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2.199999999953434
+        "formalCpuMaxMs": 1.5
       }
     },
     {
@@ -1094,17 +1098,17 @@
       "width": 512,
       "delay": 250,
       "metrics": {
-        "composedFirstMotionMs": 413.3490234373603,
-        "composedMotionIntervalP95Ms": 222.70703125,
-        "composedMotionIntervalMaxMs": 222.70703125,
-        "releaseToGestureReceiptMs": 263.30000000004657,
-        "releaseToGestureEventMs": 267.19999999995343,
-        "inputReceiptP95Ms": 34.0999999998603,
-        "inputReceiptMaxMs": 34.39999999990687,
-        "frameIntervalP95Ms": 19.100000000093132,
-        "frameIntervalMaxMs": 19.800000000046566,
+        "composedFirstMotionMs": 190.65693359368015,
+        "composedMotionIntervalP95Ms": 76.949951171875,
+        "composedMotionIntervalMaxMs": 76.949951171875,
+        "releaseToGestureReceiptMs": 265.80000000004657,
+        "releaseToGestureEventMs": 265.30000000004657,
+        "inputReceiptP95Ms": 25.29999999993015,
+        "inputReceiptMaxMs": 25.699999999953434,
+        "frameIntervalP95Ms": 18,
+        "frameIntervalMaxMs": 19.300000000046566,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 2.5
+        "formalCpuMaxMs": 0.9000000000232831
       }
     },
     {
@@ -1113,17 +1117,17 @@
       "width": 512,
       "delay": 500,
       "metrics": {
-        "composedFirstMotionMs": 206.94921875,
-        "composedMotionIntervalP95Ms": 153.64599609375,
-        "composedMotionIntervalMaxMs": 153.64599609375,
-        "releaseToGestureReceiptMs": 512.6999999999534,
-        "releaseToGestureEventMs": 515.3000000000466,
-        "inputReceiptP95Ms": 26.700000000186265,
-        "inputReceiptMaxMs": 27.100000000093132,
-        "frameIntervalP95Ms": 17.800000000046566,
-        "frameIntervalMaxMs": 18.899999999906868,
+        "composedFirstMotionMs": 70.68115234375,
+        "composedMotionIntervalP95Ms": 58.632080078125,
+        "composedMotionIntervalMaxMs": 58.632080078125,
+        "releaseToGestureReceiptMs": 516.3000000000466,
+        "releaseToGestureEventMs": 513.9000000000233,
+        "inputReceiptP95Ms": 33.90000000002328,
+        "inputReceiptMaxMs": 34,
+        "frameIntervalP95Ms": 17.5,
+        "frameIntervalMaxMs": 17.699999999953434,
         "mainLongTaskMaxMs": null,
-        "formalCpuMaxMs": 1.8000000000465661
+        "formalCpuMaxMs": 2.099999999976717
       }
     }
   ]

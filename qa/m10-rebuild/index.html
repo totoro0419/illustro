@@ -2,7 +2,7 @@
 <style>body{font:16px/1.8 system-ui,sans-serif;color:#263248;background:#f6f8fc;margin:auto;max-width:850px;padding:24px}a{color:#304fb5}h1{font-size:1.65rem;line-height:1.4}section{padding:20px;background:white;border:1px solid #d9e0f0;border-radius:16px;margin:20px 0}.button{display:inline-block;background:#334eae;color:white;border-radius:12px;padding:12px 18px;text-decoration:none}li{margin:12px 0}small{word-break:break-all}label{display:block;margin:10px 0}textarea{width:95%;min-height:100px;font:inherit}table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #dde3ef;text-align:left;padding:10px}</style>
 <h1>太い線の直後も動かせるキャンバスへ</h1>
 <p><strong>再設計の検証版です。スマートフォン実機での合格は未確認です。</strong><br>既存のM10・PR #39とは別の確認用リンクです。</p>
-<section><a class="button" href="app/">再設計版を開く</a><p><a href="app/?backend=webgl2">WebGL2で開く</a> · <a href="app/?backend=webgpu">WebGPUで開く</a></p><small>公開コミット：0cf84ec691370422d8cf5ddd8aa170759e3cff1e</small></section>
+<section><a class="button" href="app/">再設計版を開く</a><p><a href="app/?backend=webgl2">WebGL2で開く</a> · <a href="app/?backend=webgpu">WebGPUで開く</a></p><small>公開コミット：05848ee040949dc472381b6e713644ac957a6c41</small></section>
 <section><h2>確認してほしいこと</h2><p>4000×4000pxの作品を作り、Gペンと鉛筆を128・256・512pxにして確認してください。</p><ol>
 <li>太い線を続けて描き、指を離した直後に2本指で移動・拡大・回転できる。</li>
 <li>線の反映が終わっていなくても、次の線を描ける。</li>
@@ -12,4 +12,4 @@
 <li>元に戻す・やり直し、下のレイヤーへの描画、保存して開き直す操作が正常。</li>
 </ol><label>確認結果<select id="result"><option>まだ確認していない</option><option>3項目とも問題なし</option><option>問題が残っている</option></select></label><label>端末名・使ったブラシ・気になった動き<textarea id="note"></textarea></label><button id="copy">結果をコピー</button><output id="notice"></output></section>
 <section><h2>比較・検査記録</h2><p><a href="evidence/summary.html">原因・計測結果・検査できていないこと</a></p><p><a href="../m10/app/">比較用：旧Worker版</a> · <a href="../m10-before-worker/">比較用：Worker変更前</a> · <a href="https://github.com/totoro0419/illustro/tree/rebuild/M10-presentation-correctness-2026-10-21">再設計ブランチ</a></p><p>自動検査の成功と、実機で快適に使えることは別に判定します。マージとM10全体の合格は行っていません。</p></section>
-<script>document.getElementById('copy').onclick=async()=>{const text='Illustro キャンバス再設計 0cf84ec691370422d8cf5ddd8aa170759e3cff1e\n'+document.getElementById('result').value+'\n'+document.getElementById('note').value;try{await navigator.clipboard.writeText(text);document.getElementById('notice').textContent=' コピーしました。';}catch{document.getElementById('notice').textContent=' コピーできませんでした。メモの内容をそのまま送ってください。';}};</script></html>
+<script>document.getElementById('copy').onclick=async()=>{const text='Illustro キャンバス再設計 05848ee040949dc472381b6e713644ac957a6c41\n'+document.getElementById('result').value+'\n'+document.getElementById('note').value;try{await navigator.clipboard.writeText(text);document.getElementById('notice').textContent=' コピーしました。';}catch{document.getElementById('notice').textContent=' コピーできませんでした。メモの内容をそのまま送ってください。';}};</script></html>

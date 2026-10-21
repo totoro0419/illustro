@@ -2,24 +2,24 @@
   "input": [
     {
       "type": "pointerdown",
-      "at": 4944.099999999977,
-      "eventAt": 4933.199999999953,
+      "at": 5104.200000000012,
+      "eventAt": 5095.799999999988,
       "id": "compactUndo",
       "trusted": true,
       "pointerType": "touch"
     },
     {
       "type": "pointerup",
-      "at": 4960,
-      "eventAt": 4944.5,
+      "at": 5120.200000000012,
+      "eventAt": 5105,
       "id": "compactUndo",
       "trusted": true,
       "pointerType": "touch"
     }
   ],
   "diag": {
-    "commit": "0cf84ec691370422d8cf5ddd8aa170759e3cff1e",
-    "revision": "fc0543d9-7d25-471d-9385-659eb512a248",
+    "commit": "05848ee040949dc472381b6e713644ac957a6c41",
+    "revision": "2e35cde2-e6c2-4f8f-abc5-dcfad121ee7f",
     "strokes": 0,
     "historyNavigation": {
       "pending": false,
@@ -34,8 +34,8 @@
     },
     "historyInputs": [
       {
-        "at": 4944.199999999953,
-        "eventAt": 4933.199999999953,
+        "at": 5104.400000000023,
+        "eventAt": 5095.799999999988,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "down",
@@ -43,8 +43,8 @@
         "disabled": false
       },
       {
-        "at": 4960,
-        "eventAt": 4944.5,
+        "at": 5120.400000000023,
+        "eventAt": 5105,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "up",
@@ -52,8 +52,8 @@
         "disabled": false
       },
       {
-        "at": 4962.199999999953,
-        "eventAt": 4944.5,
+        "at": 5122.400000000023,
+        "eventAt": 5105,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "accepted",
@@ -62,8 +62,8 @@
         "reason": "accepted"
       },
       {
-        "at": 4963.199999999953,
-        "eventAt": 4944.5,
+        "at": 5124,
+        "eventAt": 5105,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "compatibility-click",
@@ -100,7 +100,7 @@
         "reason": "比較用に指定された方式",
         "switches": 0,
         "profiles": 1,
-        "cpuP95Ms": 37.199999999953434,
+        "cpuP95Ms": 35.10004882811336,
         "cpuWaitLowerBoundP95Ms": null,
         "gpuP95Ms": null,
         "cpuUnpresentedSamples": 0,
@@ -133,11 +133,11 @@
       "samples": [
         {
           "id": 10,
-          "inputAt": 4393.099999999977,
+          "inputAt": 4553.299999999988,
           "finished": false,
-          "at": 4428,
-          "cpuMs": 1.7000000000116415,
-          "inputToUploadMs": 34.90000000002328,
+          "at": 4588.20004882809,
+          "cpuMs": 2,
+          "inputToUploadMs": 34.90004882810172,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -146,11 +146,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4426.399999999965,
+          "inputAt": 4586.600000000035,
           "finished": false,
-          "at": 4461.099999999977,
-          "cpuMs": 1.5,
-          "inputToUploadMs": 34.70000000001164,
+          "at": 4621.400048828102,
+          "cpuMs": 1.7999999999883585,
+          "inputToUploadMs": 34.80004882806679,
           "updatedPixels": 15360,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -159,11 +159,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4459.799999999988,
+          "inputAt": 4620,
           "finished": false,
-          "at": 4494.399999999965,
-          "cpuMs": 1.5,
-          "inputToUploadMs": 34.59999999997672,
+          "at": 4654.900048828102,
+          "cpuMs": 1.7999999999883585,
+          "inputToUploadMs": 34.90004882810172,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -172,11 +172,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4493.099999999977,
+          "inputAt": 4653.700000000012,
           "finished": false,
-          "at": 4527.699999999953,
-          "cpuMs": 1.3999999999650754,
-          "inputToUploadMs": 34.59999999997672,
+          "at": 4688.100048828113,
+          "cpuMs": 2,
+          "inputToUploadMs": 34.40004882810172,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -185,11 +185,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4526.399999999965,
+          "inputAt": 4686.600000000035,
           "finished": false,
-          "at": 4561.099999999977,
-          "cpuMs": 1.599999999976717,
-          "inputToUploadMs": 34.70000000001164,
+          "at": 4721.600048828113,
+          "cpuMs": 1.900000000023283,
+          "inputToUploadMs": 35.000048828078434,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -198,11 +198,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4559.799999999988,
+          "inputAt": 4720,
           "finished": false,
-          "at": 4594.5,
-          "cpuMs": 1.6000000000349246,
-          "inputToUploadMs": 34.70000000001164,
+          "at": 4754.900048828102,
+          "cpuMs": 1.900000000023283,
+          "inputToUploadMs": 34.90004882810172,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -211,11 +211,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4593.099999999977,
+          "inputAt": 4753.400000000023,
           "finished": false,
-          "at": 4629.799999999988,
-          "cpuMs": 0.5,
-          "inputToUploadMs": 36.70000000001164,
+          "at": 4788.400048828102,
+          "cpuMs": 2,
+          "inputToUploadMs": 35.000048828078434,
           "updatedPixels": 15360,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -224,11 +224,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4626.299999999988,
+          "inputAt": 4786.600000000035,
           "finished": false,
-          "at": 4661.299999999988,
+          "at": 4821.600048828113,
           "cpuMs": 1.7999999999883585,
-          "inputToUploadMs": 35,
+          "inputToUploadMs": 35.000048828078434,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -237,11 +237,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4659.899999999965,
+          "inputAt": 4820,
           "finished": false,
-          "at": 4697.099999999977,
-          "cpuMs": 4.2000000000116415,
-          "inputToUploadMs": 37.20000000001164,
+          "at": 4857.500048828078,
+          "cpuMs": 4.5,
+          "inputToUploadMs": 37.500048828078434,
           "updatedPixels": 77824,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -250,11 +250,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4693,
+          "inputAt": 4853.299999999988,
           "finished": false,
-          "at": 4727.899999999965,
-          "cpuMs": 1.599999999976717,
-          "inputToUploadMs": 34.899999999965075,
+          "at": 4888.20004882809,
+          "cpuMs": 1.7999999999883585,
+          "inputToUploadMs": 34.90004882810172,
           "updatedPixels": 13312,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -263,11 +263,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4726.5,
+          "inputAt": 4886.600000000035,
           "finished": false,
-          "at": 4761.5,
+          "at": 4921.600048828113,
           "cpuMs": 1.900000000023283,
-          "inputToUploadMs": 35,
+          "inputToUploadMs": 35.000048828078434,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -276,11 +276,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4759.799999999988,
+          "inputAt": 4920,
           "finished": false,
-          "at": 4794.399999999965,
-          "cpuMs": 1.5,
-          "inputToUploadMs": 34.59999999997672,
+          "at": 4954.900048828102,
+          "cpuMs": 1.7999999999883585,
+          "inputToUploadMs": 34.90004882810172,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -289,11 +289,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4793.099999999977,
+          "inputAt": 4953.400000000023,
           "finished": false,
-          "at": 4827.899999999965,
-          "cpuMs": 1.7000000000116415,
-          "inputToUploadMs": 34.79999999998836,
+          "at": 4988.20004882809,
+          "cpuMs": 1.8999999999650754,
+          "inputToUploadMs": 34.80004882806679,
           "updatedPixels": 13312,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -302,11 +302,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4826.5,
+          "inputAt": 4986.700000000012,
           "finished": false,
-          "at": 4863.699999999953,
-          "cpuMs": 4,
-          "inputToUploadMs": 37.199999999953434,
+          "at": 5021.70004882809,
+          "cpuMs": 2,
+          "inputToUploadMs": 35.000048828078434,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -315,11 +315,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4859.899999999965,
+          "inputAt": 5020.100000000035,
           "finished": false,
-          "at": 4894.799999999988,
-          "cpuMs": 2,
-          "inputToUploadMs": 34.90000000002328,
+          "at": 5055.000048828078,
+          "cpuMs": 1.8999999999650754,
+          "inputToUploadMs": 34.90004882804351,
           "updatedPixels": 15360,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -328,11 +328,11 @@
         },
         {
           "id": 10,
-          "inputAt": 4859.899999999965,
+          "inputAt": 5020.100000000035,
           "finished": true,
-          "at": 4912.599999999977,
-          "cpuMs": 1.7000000000116415,
-          "inputToUploadMs": 52.70000000001164,
+          "at": 5074.70004882809,
+          "cpuMs": 0.7000000000116415,
+          "inputToUploadMs": 54.60004882805515,
           "updatedPixels": 12288,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -340,11 +340,11 @@
           "generation": 124
         }
       ],
-      "maxCpuMs": 4.399999999965075,
+      "maxCpuMs": 8.299999999988358,
       "backgroundSlices": 0,
       "maxBackgroundMs": 0,
-      "foregroundSlices": 137,
-      "maxSliceMs": 4.399999999965075,
+      "foregroundSlices": 139,
+      "maxSliceMs": 8.299999999988358,
       "cancelledUpdates": 0,
       "deadlineFallbacks": 0,
       "finalizationSwaps": 0,
@@ -356,7 +356,7 @@
       "reason": "比較用に指定された方式",
       "switches": 0,
       "profiles": 1,
-      "cpuP95Ms": 37.199999999953434,
+      "cpuP95Ms": 35.10004882811336,
       "cpuWaitLowerBoundP95Ms": null,
       "gpuP95Ms": null,
       "cpuUnpresentedSamples": 0,
@@ -366,17 +366,17 @@
     "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
     "inputToPreviewSubmitP95Ms": null,
     "inputToPreviewCompletionP95Ms": null,
-    "presentations": 6,
+    "presentations": 5,
     "viewPresentations": 1,
-    "renders": 7,
+    "renders": 6,
     "compositedTiles": 0,
     "compositedLayerPasses": 0,
     "supersededViews": 0,
-    "submissionFps": 16.474464579901152,
-    "frameIntervalP95Ms": 233.09999999997672,
-    "inputToSubmissionP95Ms": 0.9000000000232831,
-    "cpuSubmitP95Ms": 0.5,
-    "queueCompletionProxyMs": 0.8999999999650754,
+    "submissionFps": 11.983223487118453,
+    "frameIntervalP95Ms": 256.4000000000233,
+    "inputToSubmissionP95Ms": 1,
+    "cpuSubmitP95Ms": 0.5999999999767169,
+    "queueCompletionProxyMs": 0.20000000001164153,
     "gpuExecutionMs": null,
     "historyGpuReservedBytes": 0,
     "historyGpuBudgetBytes": 67108864,
@@ -405,7 +405,7 @@
         "mode": "opfs",
         "memoryBudget": 16777216,
         "memoryBytes": 0,
-        "diskBudget": 103254762,
+        "diskBudget": 90483946,
         "diskBytes": 0,
         "blocks": 0,
         "aliases": 0,
@@ -448,7 +448,23 @@
       "publications": 124,
       "formal": [
         {
-          "at": 1792588448316.1,
+          "at": 1792598205826.7,
+          "cpuMs": 0.30000000004656613,
+          "jobs": 0,
+          "tiles": 0,
+          "commands": 0,
+          "compositedTiles": 0
+        },
+        {
+          "at": 1792598205867.7,
+          "cpuMs": 0.7000000000116415,
+          "jobs": 0,
+          "tiles": 0,
+          "commands": 0,
+          "compositedTiles": 0
+        },
+        {
+          "at": 1792598206082.8,
           "cpuMs": 0.29999999998835847,
           "jobs": 0,
           "tiles": 0,
@@ -456,15 +472,15 @@
           "compositedTiles": 0
         },
         {
-          "at": 1792588448350.8,
-          "cpuMs": 0.5,
+          "at": 1792598206117.5,
+          "cpuMs": 0.5999999999767169,
           "jobs": 0,
           "tiles": 0,
           "commands": 0,
           "compositedTiles": 0
         },
         {
-          "at": 1792588448541.5,
+          "at": 1792598206159.8,
           "cpuMs": 0.29999999998835847,
           "jobs": 0,
           "tiles": 0,
@@ -472,32 +488,8 @@
           "compositedTiles": 0
         },
         {
-          "at": 1792588448546,
-          "cpuMs": 0.29999999998835847,
-          "jobs": 0,
-          "tiles": 0,
-          "commands": 0,
-          "compositedTiles": 0
-        },
-        {
-          "at": 1792588448584.2,
-          "cpuMs": 0.1000000000349246,
-          "jobs": 0,
-          "tiles": 0,
-          "commands": 0,
-          "compositedTiles": 0
-        },
-        {
-          "at": 1792588448604.6,
-          "cpuMs": 0.5,
-          "jobs": 0,
-          "tiles": 0,
-          "commands": 0,
-          "compositedTiles": 0
-        },
-        {
-          "at": 1792588448619.8,
-          "cpuMs": 0.20000000001164153,
+          "at": 1792598206160.8,
+          "cpuMs": 0.09999999997671694,
           "jobs": 0,
           "tiles": 0,
           "commands": 0,
@@ -516,7 +508,7 @@
     "displayWorker": {
       "uploads": 0,
       "uploadCpuMaxMs": 0,
-      "renderCpuMaxMs": 0.09999999997671694,
+      "renderCpuMaxMs": 0.19999999995343387,
       "frames": 2,
       "displayGroups": 0
     },
@@ -527,8 +519,8 @@
     "handoff": {
       "inputAttempts": [
         {
-          "at": 861,
-          "eventAt": 851.8999999999651,
+          "at": 1025.5,
+          "eventAt": 1017.9000000000233,
           "reason": null,
           "state": {
             "finishing": false,
@@ -540,12 +532,12 @@
             "pendingRaw": 0,
             "protectionQueue": 0
           },
-          "acceptedAt": 861.2999999999884,
+          "acceptedAt": 1025.9000000000233,
           "id": 1
         },
         {
-          "at": 2894.899999999965,
-          "eventAt": 2880.2999999999884,
+          "at": 3061.5,
+          "eventAt": 3041,
           "reason": null,
           "state": {
             "finishing": false,
@@ -557,7 +549,7 @@
             "pendingRaw": 61,
             "protectionQueue": 0
           },
-          "acceptedAt": 2895.0999999999767,
+          "acceptedAt": 3061.600000000035,
           "id": 10
         }
       ],
@@ -588,8 +580,8 @@
         {
           "direction": "undo",
           "id": 10,
-          "at": 4960.299999999988,
-          "invalidatedAt": 4960.399999999965,
+          "at": 5120.600000000035,
+          "invalidatedAt": 5120.799999999988,
           "kind": "reserved"
         }
       ],
@@ -598,20 +590,20 @@
       "traces": [
         {
           "id": 1,
-          "upAt": 2877.0999999999767,
+          "upAt": 3037.100000000035,
           "readyMs": 1,
-          "uiStateMs": 1
+          "uiStateMs": 0.8999999999650754
         },
         {
           "id": 10,
-          "upAt": 4909.799999999988,
-          "readyMs": 1,
-          "uiStateMs": 0.9000000000232831
+          "upAt": 5070,
+          "readyMs": 1.2999999999883585,
+          "uiStateMs": 1.1999999999534339
         }
       ]
     },
     "frameState": {
-      "lastFrameAt": 4959.399999999965,
+      "lastFrameAt": 5118.900000000023,
       "disposed": false,
       "operationMode": "idle",
       "pointer": null,
