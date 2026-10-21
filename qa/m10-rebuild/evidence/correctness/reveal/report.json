@@ -1,5 +1,5 @@
 {
-  "source": "441c10eda7b6f88e2910a6fd06635d0a9d60935e",
+  "source": "14e2d5eb6db49994c8b724bb0202967031e393cc",
   "browser": "141.0.7390.37",
   "scope": "Native touch and full composed PNGs; independent whole-document premultiplied RGBA comparison. Software GPU; physical phone acceptance unverified.",
   "cases": [
@@ -36,7 +36,7 @@
           0,
           0
         ],
-        "pendingGpu": 2,
+        "pendingGpu": 3,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -82,7 +82,7 @@
           0,
           0
         ],
-        "pendingGpu": 2,
+        "pendingGpu": 3,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -303,7 +303,7 @@
       },
       "blank": {
         "checked": 57329,
-        "mismatch": 0
+        "mismatch": 789
       },
       "early": {
         "view": [
@@ -330,11 +330,11 @@
         "errors": []
       },
       "expectedBlue": 1514,
-      "duringBlue": 1514,
-      "matchedBlue": 1514,
-      "fraction": 1,
-      "geometryMatched": 1514,
-      "geometryFraction": 1,
+      "duringBlue": 1072,
+      "matchedBlue": 1048,
+      "fraction": 0.6922060766182299,
+      "geometryMatched": 1081,
+      "geometryFraction": 0.7140026420079261,
       "errors": []
     },
     {
@@ -514,7 +514,7 @@
           0,
           0
         ],
-        "pendingGpu": 2,
+        "pendingGpu": 3,
         "accepted": 5,
         "strokes": 4,
         "errors": []
