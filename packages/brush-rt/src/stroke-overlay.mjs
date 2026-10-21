@@ -71,7 +71,16 @@ export class StrokeSink{
 }
 
 export class StrokeOverlay{
- constructor(backend,{ratio='auto',sink=null,mode='auto',sliceMs=3,onFallback=null,liveStates=null}={}){this.backend=backend;this.policy=new PreviewPolicy({mode});this.onFallback=onFallback;this.liveStates=liveStates;this.sliceMs=Math.max(.25,Math.min(4,sliceMs));this.ratio=ratio;this.sink=sink;this.states=new Map;this.finalizations=new Map;this.preparedBytes=0;this.pending=new Map;this.footprints=new Map;this.cells=new Map;this.dirty=new Set;this.guards=[];this.guardGeneration=0;this.epoch=0;this.generation=0;this.ready=false;this.enabled=true;this.fallback=false;this.suspended=false;this.allocatedBytes=0;this.metrics={updates:0,updatedPixels:0,rasterPixels:0,skippedRasterPixels:0,commands:0,historyReplayCommands:0,historyRebuilds:0,guardPixels:0,guardCaptures:0,guardCaptureMs:0,peakBytes:0,peakPixels:0,superseded:0,rebuilds:0,fallbacks:0,retirements:0,samples:[],maxCpuMs:0,backgroundSlices:0,maxBackgroundMs:0,foregroundSlices:0,maxSliceMs:0,cancelledUpdates:0,deadlineFallbacks:0,finalizationSwaps:0,obsoleteFinalizations:0};}
+ constructor(backend,{ratio='auto',sink=null,mode='auto',sliceMs=3,onFallback=null,liveStates=null,documentSpace=false}={}){this.documentSpace=documentSpace;this.backend=backend;this.policy=new PreviewPolicy({mode});this.onFallback=onFallback;this.liveStates=liveStates;this.sliceMs=Math.max(.25,Math.min(4,sliceMs));this.ratio=ratio;this.sink=sink;this.states=new Map;this.finalizations=new Map;this.preparedBytes=0;this.pending=new Map;this.footprints=new Map;this.cells=new Map;this.dirty=new Set;this.guards=[];this.guardGeneration=0;this.epoch=0;this.generation=0;this.ready=false;this.enabled=true;this.fallback=false;this.suspended=false;this.allocatedBytes=0;this.metrics={updates:0,updatedPixels:0,rasterPixels:0,skippedRasterPixels:0,commands:0,historyReplayCommands:0,historyRebuilds:0,guardPixels:0,guardCaptures:0,guardCaptureMs:0,peakBytes:0,peakPixels:0,superseded:0,rebuilds:0,fallbacks:0,retirements:0,samples:[],maxCpuMs:0,backgroundSlices:0,maxBackgroundMs:0,foregroundSlices:0,maxSliceMs:0,cancelledUpdates:0,deadlineFallbacks:0,finalizationSwaps:0,obsoleteFinalizations:0};}
+ makePlan(preset={},ratio=this.ratio){
+  if(!this.documentSpace)return previewPlan(this.view,preset,ratio);
+  const w=this.backend.width,h=this.backend.height;
+  // One document pixel at high zoom. At fit, use the original screen coverage
+  // evaluator at the start density, covering the entire document sparsely.
+  const density=Math.min(1,Math.max(1/128,this.view[0]/this.view[2]*this.view[6]));
+  const view=Float64Array.from([w*density,h*density,w,h,w,h,1,0,0,0,1,1,0,this.view[13],0,0]);
+  const plan=previewPlan(view,preset,1);plan.rasterView=view;return plan;
+ }
  setEnabled(value){this.enabled=value;this.invalidate();}
  setNavigationActive(value){this.navigationActive=!!value;if(value){
   // A gesture borrows the last coherent image. Cancel display-only work;
@@ -80,6 +89,11 @@ export class StrokeOverlay{
   for(const id of [...this.finalizations.keys()])this.discardFinalization(id);
  }else this.schedule();}
  setView(view){
+  if(this.documentSpace&&this.view&&[4,5,12,14].every(i=>this.view[i]===view[i])){
+   // Old strokes keep their own immutable grid; a newly started stroke may
+   // choose the density of the latest view. Navigation cancels no work.
+   this.view=Float64Array.from(view);this.ready=this.enabled&&!this.suspended;this.plan=this.makePlan(this.preferred??{},this.ratio);return;
+  }
   const sameLayout=this.view&&[0,1,2,3].every(i=>this.view[i]===view[i]);
   const sameSpace=this.view&&[4,5,12,14].every(i=>this.view[i]===view[i]);
   const reusable=this.sink?.reproject&&sameSpace;
@@ -89,16 +103,16 @@ export class StrokeOverlay{
    for(const id of [...this.finalizations.keys()])this.discardFinalization(id);
    for(const v of this.states.values())this.sink.forStroke(v.id).reproject(v.view??this.view,this.view);
    for(const g of this.guards)this.sink.reprojectGuard?.(g.view,this.view,g);
-   this.ready=this.enabled&&!this.suspended;this.plan=previewPlan(this.view,this.preferred??{},this.ratio);return;
+   this.ready=this.enabled&&!this.suspended;this.plan=this.makePlan(this.preferred??{},this.ratio);return;
   }
   const old=new Map([...this.states.values()].filter(v=>v.last).map(v=>[v.id,v.finalState??v.last]));for(const [id,state]of this.pending)old.set(id,state);
-  this.pending.clear();this.closeGuards();this.clearRaster();this.ready=this.enabled&&!this.suspended;this.plan=previewPlan(this.view,this.preferred??{},this.ratio);
+  this.pending.clear();this.closeGuards();this.clearRaster();this.ready=this.enabled&&!this.suspended;this.plan=this.makePlan(this.preferred??{},this.ratio);
   for(const state of old.values())this.pending.set(state.id,state);if(this.ready)this.schedule();
  }
- prepare(preset){this.preferred=typeof preset==='number'?{size:preset}:preset;if(!this.view||this.states.size)return;this.plan=previewPlan(this.view,this.preferred,this.ratio);this.ready=this.enabled&&!this.suspended;}
+ prepare(preset){this.preferred=typeof preset==='number'?{size:preset}:preset;if(!this.view||this.states.size)return;this.plan=this.makePlan(this.preferred,this.ratio);this.ready=this.enabled&&!this.suspended;}
  resumeAfterHistory(){this.suspended=false;this.ready=this.enabled&&!!this.view;this.schedule();}
  suspend(){this.suspended=true;this.ready=false;this.epoch++;}
- invalidate(){this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.fallback=false;this.suspended=false;this.ready=this.enabled&&!!this.view;if(this.view)this.plan=previewPlan(this.view,this.preferred??{},this.ratio);}
+ invalidate(){this.epoch++;this.closeGuards();this.clearRaster();this.pending.clear();this.fallback=false;this.suspended=false;this.ready=this.enabled&&!!this.view;if(this.view)this.plan=this.makePlan(this.preferred??{},this.ratio);}
  clearRaster(){clearTimeout(this.workHandle);this.workHandle=null;this.scheduled=false;this.finalizations.clear();this.preparedBytes=0;this.states.clear();this.footprints.clear();this.cells.clear();this.dirty.clear();this.allocatedBytes=0;this.sink?.hide();}
  canUse(p,surfaceKey=this.backend.surfaceStack.at(-1),id=null){return (id===null||this.policy.choices.get(id)?.route!=='gpu')&& this.enabled&&this.ready&&!this.fallback&&this.plan?.visibleArea>0&&this.view[12]<.5&&this.view[14]<.5&&(!this.backend.device||this.backend.viewportCache?.enabled&&this.view[0]*this.view[1]*4<=this.backend.viewportCache.budget)&&directOverlaySupported(p,surfaceKey,this.backend);}
  enqueue(state){if(!this.enabled||!this.view||this.suspended)return false;
@@ -113,7 +127,7 @@ export class StrokeOverlay{
   }
   if(!eligible){this.fallback=true;this.metrics.fallbacks++;return false;}
   if(!this.sink)try{this.sink=new StrokeSink(this.backend.canvas);}catch(error){this.backend.info??={};this.backend.info.proxyUnavailable=String(error);this.policy.choose(state.id,key,{cpuAvailable:false});choice.reason='仮線用の画面を用意できないため、直接表示';this.setEnabled(false);this.metrics.fallbacks++;return false;}
-  this.preferred=state.preset;this.plan=previewPlan(this.view,state.preset,this.ratio);
+  this.preferred=state.preset;this.plan=this.makePlan(state.preset,this.ratio);
   if(this.pending.has(state.id))this.metrics.superseded++;this.pending.set(state.id,state);this.schedule();return true;
  }
  schedule(){if(this.scheduled||this.disposed||!this.ready||this.navigationActive||!this.pending.size)return;this.scheduled=true;const run=()=>{this.scheduled=false;this.workHandle=null;if(!this.navigationActive)this.safeFlush();};
@@ -127,7 +141,7 @@ export class StrokeOverlay{
   for(const [id,state]of [...this.pending].sort((a,b)=>Number(!!a[1].finished)-Number(!!b[1].finished)||b[0]-a[0])){
    let v=this.states.get(id);
    if(v&&state.finished&&state.resetPreview&&v.last!==state){this.queueFinalization(state,v);this.pending.delete(id);continue;}
-   if(!v||state.resetPreview&&v.last!==state&&!v.work){if(v){this.removeState(id,true);this.pending.set(id,state);}const plan=previewPlan(this.view,state.preset,this.ratio);v={id,preset:state.preset,surfaceKey:state.surfaceKey,view:plan.rasterView??this.view.slice(),plan,tiles:new Map,tailKeys:new Set,dirty:new Set,cursor:0,last:null};this.states.set(id,v);}
+   if(!v||state.resetPreview&&v.last!==state&&!v.work){if(v){this.removeState(id,true);this.pending.set(id,state);}const plan=this.makePlan(state.preset,this.ratio);v={id,preset:state.preset,surfaceKey:state.surfaceKey,view:plan.rasterView??this.view.slice(),plan,tiles:new Map,tailKeys:new Set,dirty:new Set,cursor:0,last:null};this.states.set(id,v);}
    const choice=this.policy.choices.get(id);
    // If this stroke has never been shown, switching cannot double-paint or
    // remove an existing image. Shed private CPU work after a measured 50ms
@@ -202,7 +216,7 @@ export class StrokeOverlay{
   if(!changed)return;this.generation++;const end=performance.now();this.metrics.updates++;this.metrics.updatedPixels+=updatedPixels;this.metrics.peakPixels=Math.max(this.metrics.peakPixels,(this.sink?.pixels??0));this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.preparedBytes+(this.sink?.pixels??0)*4);this.metrics.maxCpuMs=Math.max(this.metrics.maxCpuMs,end-start);for(const t of tips)if(!t.finished)this.policy.observe(t.id,'cpu',{latency:Math.max(0,end-t.inputAt),cpuMs:end-start,bytes:this.allocatedBytes});if(this.measure)for(const t of tips){this.metrics.samples.push({...t,at:end,cpuMs:end-start,inputToUploadMs:Math.max(0,end-t.inputAt),updatedPixels,proxyPixels:(this.sink?.pixels??0),visibleArea:this.plan.visibleArea,viewEpoch:this.epoch,generation:this.generation});if(this.metrics.samples.length>3000)this.metrics.samples.shift();}
  }
  discardFinalization(id){const job=this.finalizations.get(id);if(!job)return;this.allocatedBytes-=job.v.bytes??0;this.preparedBytes-=(job.v.prepared?.size??0)*CELL*CELL*4;this.finalizations.delete(id);this.metrics.obsoleteFinalizations++;}
- queueFinalization(state,old){old.finalState=state;this.discardFinalization(state.id);if(this.navigationActive)return;const v={id:state.id,preset:state.preset,surfaceKey:state.surfaceKey,view:(previewPlan(this.view,state.preset,this.ratio).rasterView??this.view).slice(),plan:previewPlan(this.view,state.preset,this.ratio),tiles:new Map,tailKeys:new Set,dirty:new Set,cursor:state.stableEnd??state.stableSource.length,last:state,private:true,prepared:new Map};const steps=this.finalizeWork(v,state,old);this.finalizations.set(state.id,{v,state,steps,epoch:this.epoch});this.scheduleFinalizations();}
+ queueFinalization(state,old){old.finalState=state;this.discardFinalization(state.id);if(this.navigationActive)return;const v={id:state.id,preset:state.preset,surfaceKey:state.surfaceKey,view:(this.makePlan(state.preset,this.ratio).rasterView??this.view).slice(),plan:this.makePlan(state.preset,this.ratio),tiles:new Map,tailKeys:new Set,dirty:new Set,cursor:state.stableEnd??state.stableSource.length,last:state,private:true,prepared:new Map};const steps=this.finalizeWork(v,state,old);this.finalizations.set(state.id,{v,state,steps,epoch:this.epoch});this.scheduleFinalizations();}
  *finalizeWork(v,state,old){yield* this.rasterWork(v,state.stableSource??[],0,state.stableEnd??state.stableSource.length,false);yield* this.rasterWork(v,state.commands??[],0,(state.commands??[]).length,true);for(const key of new Set([...old.tiles.keys(),...v.tiles.keys()])){v.prepared.set(key,this.composedCell(key,[v.id],v));this.preparedBytes+=CELL*CELL*4;v.dirty.add(key);yield;}}
  scheduleFinalizations(){if(this.finalizationScheduled||!this.finalizations.size||this.disposed)return;this.finalizationScheduled=true;const run=()=>{this.finalizationScheduled=false;if(this.disposed||!this.finalizations.size)return;const start=performance.now(),job=this.finalizations.values().next().value;try{let step;do{step=job.steps.next();}while(!step.done&&performance.now()-start<3);this.metrics.backgroundSlices++;this.metrics.peakBytes=Math.max(this.metrics.peakBytes,this.allocatedBytes+this.preparedBytes+(this.sink?.pixels??0)*4);this.metrics.maxBackgroundMs=Math.max(this.metrics.maxBackgroundMs,performance.now()-start);if(step.done&&job.epoch===this.epoch&&this.finalizations.get(job.v.id)===job){this.finalizations.delete(job.v.id);this.removeState(job.v.id,true);job.v.private=false;this.states.set(job.v.id,job.v);for(const key of job.v.tiles.keys()){let ids=this.cells.get(key);if(!ids)this.cells.set(key,ids=new Set);ids.add(job.v.id);}this.footprints.set(job.v.id,new Set(job.v.tiles.keys()));for(const key of job.v.dirty)this.dirty.add(key);this.metrics.finalizationSwaps++;this.present(performance.now(),[{id:job.v.id,inputAt:job.state.inputTip?.t??performance.now(),finished:true}]);}}catch(error){this.discardFinalization(job.v.id);this.error=String(error);this.fallback=true;this.metrics.fallbacks++;}this.scheduleFinalizations();};if(globalThis.scheduler?.postTask)globalThis.scheduler.postTask(run,{priority:'background'}).catch(error=>{this.error=String(error);});else setTimeout(run,0);}
  removeState(id,keepSink=false){this.discardFinalization(id);if(!keepSink)this.policy.forget(id);const v=this.states.get(id);if(v){v.work=null;if(v.prepared)this.preparedBytes-=v.prepared.size*CELL*CELL*4;for(const [key,tile]of v.tiles){this.allocatedBytes-=(tile.prefix?.byteLength??0)+(tile.tail?.byteLength??0);this.cells.get(key)?.delete(id);if(!this.cells.get(key)?.size)this.cells.delete(key);}this.states.delete(id);}if(!keepSink)this.sink?.retireStroke?.(id);this.pending.delete(id);this.footprints.delete(id);}
