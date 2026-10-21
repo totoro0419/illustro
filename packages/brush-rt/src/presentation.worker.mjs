@@ -42,7 +42,7 @@ self.onmessage=({data:m})=>{Promise.resolve().then(async()=>{
   documentWidth=m.documentWidth;documentHeight=m.documentHeight;
   renderer=await GpuRenderer.create(new OffscreenCanvas(m.width,m.height),documentWidth,documentHeight,m.backend,{strokeHandoff:true,tileHistory:false});
   postMessage({type:'ready',info:renderer.info});
- }else if(m.method==='view'){view=m.view;again=true;if(!navigation)refresh();}
+ }else if(m.method==='view'){view=m.view;again=true;if(!navigation){if(refreshTimer!==null){clearTimeout(refreshTimer);refreshTimer=null;}void draw();}}
  else if(m.method==='navigation'){navigation=m.active;again=true;if(!navigation)refresh();}
  else if(m.method==='tiles'){
   const started=performance.now(),changed=new Map;

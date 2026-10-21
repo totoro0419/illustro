@@ -115,9 +115,14 @@ export class DrawingHost {
  }
  syncVisibility(){
   const v=this.backend.viewTransform,ordinary=!!v&&v[12]<.5&&v[14]<.5;
+  // An old reference/seamless framebuffer is NOT ordinary white paper.
+  // Do not show its colored pixels when switching to an ordinary blank view;
+  // the retained document backdrop already provides correct white paper.
+  const modeChanged=!!v&&!!this.presentationView&&
+   ((v[12]>.5)!==(this.presentationView[12]>.5)||(v[14]>.5)!==(this.presentationView[14]>.5));
   // Keep the precise M08 image visible if the latest stroke is fully covered
   // by its temporary ink. Only unrepresented edits require the fallback scene.
-  this.canvas.style.opacity=ordinary&&(this.navigationActive||this.presentationVersion<this.uncoveredVersion)?'0':'1';
+  this.canvas.style.opacity=modeChanged||ordinary&&(this.navigationActive||this.presentationVersion<this.uncoveredVersion)?'0':'1';
  }
  reproject(){const to=this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
   if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}

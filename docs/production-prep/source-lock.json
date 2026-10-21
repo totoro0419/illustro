@@ -58,7 +58,7 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "943eebb52f831422032d71a9a0a508bedd8572af985ea1b5ba01a77ea2959a89",
+      "sha256": "d99f81f6c3f8ae3682b3b2e0a73df87ac88495bf93a409d7a3882cf2d338c55b",
       "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
@@ -81,7 +81,8 @@
       "m10NavigationException": "User-authorized presentation-only fix from 4617cda: reproject the already displayed image independently of canonical/GPU/snapshot completion, keep input geometry fixed, cancel obsolete preview work, remove navigation refinement and unnecessary transition work. Formal shaders/model, StrokeRecord, 128px TileHistory and save formats unchanged. Requires trusted touch/mouse/wheel delayed-completion tests, latest-view/quality checks and exact Undo/save roundtrips on both backends; physical acceptance remains required.",
       "presentationRebuildException": "User-authorized rebuild from 8fa3857b: separate input/raster/display roles and immutable dirty document tiles; accepted deposition/sampler/records remain. Require exact transfer/reveal/brush/history/save checks and matched response comparison; physical acceptance UNVERIFIED.",
       "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone.",
-      "gestureBudgetException": "PR40 input-priority formal scheduler: during touch gesture and for 280ms after pen-up submit at most one 16-command job and restrict total estimated pixel work; adaptive 2/4/8 jobs at idle. Formal work continues, unchanged brush and history semantics. Measured both backends and physical touch acceptance required."
+      "gestureBudgetException": "PR40 input-priority formal scheduler: during touch gesture and for 280ms after pen-up submit at most one 16-command job and restrict total estimated pixel work; adaptive 2/4/8 jobs at idle. Formal work continues, unchanged brush and history semantics. Measured both backends and physical touch acceptance required.",
+      "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
@@ -452,7 +453,7 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "c06be85229ec0dc98d154a8cc02fde56f1ecb6688a7f711b2e85cd115a31371d",
+      "sha256": "9d897b502d42a7d3042cbf4326da25f26307be4de26b016daad7fa9d1b7ea469",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
@@ -460,7 +461,8 @@
       "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone.",
       "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending.",
       "stablePictureException": "Never hide the M08 precise background on CPU-covered formal commits. Keep finished preview until exact viewport image is ready, then atomically retire in same task. Retained group fallback only for unrepresented edits/navigation; verifies final pixels on both backends.",
-      "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness."
+      "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness.",
+      "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history."
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
@@ -488,12 +490,13 @@
     },
     {
       "path": "packages/brush-rt/src/presentation.worker.mjs",
-      "sha256": "3068135844ce9cc211704027f9637ed8d8d7a52839d6bca120f03f9035149968",
+      "sha256": "54f81a10170146d4dc2025003c70c5f3d81523e276074f9b2e09c4c88440700c",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
       "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending.",
-      "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness."
+      "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness.",
+      "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history."
     },
     {
       "path": "packages/brush-rt/src/document-presentation.mjs",
