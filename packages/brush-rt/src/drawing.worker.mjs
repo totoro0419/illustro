@@ -118,7 +118,6 @@ async function command(method,a){const r=renderer,s=session;
  case 'readViewport':await r.drain();return r.backend.readViewport();
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
- case 'navigation':r.gestureActive=!!a;return;
  case 'view':latestView=a;if(!initialView){initialView=true;r.setViewTransform(a);r.syncOverlayView();}else r.proxy?.setView(a);return;
  case 'stack':r.setSurfaceStack(a);return;
  case 'styles':r.setSurfaceStyles(a);return;

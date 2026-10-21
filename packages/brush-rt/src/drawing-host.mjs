@@ -1,6 +1,5 @@
 import {viewAffine} from '@rt/stroke-overlay';
 import {DocumentPresentation} from '@rt/document-presentation';
-import {NavigationScene} from '@rt/navigation-scene';
 
 
 // Window-side port: no brush reconstruction, pixel evaluation or GPU commands.
@@ -13,7 +12,7 @@ export class DrawingHost {
    host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend:host.info.selection.selected});await host.presentationReady;return host;
   }catch(error){host.destroy();throw error;}
  }
- constructor(canvas,url,presentationUrl){this.remote=true;this.canvas=canvas;this.context=canvas.getContext('bitmaprenderer');if(!this.context)throw Error('ImageBitmap presentation unavailable');this.uploadSamples=[];this.navigationScene=new NavigationScene(canvas);
+ constructor(canvas,url,presentationUrl){this.remote=true;this.canvas=canvas;this.context=canvas.getContext('bitmaprenderer');if(!this.context)throw Error('ImageBitmap presentation unavailable');this.uploadSamples=[];
   this.presentation=new Worker(presentationUrl,{type:'module'});this.presentationRequests=new Map;this.presentationRequestId=0;this.presentationVersion=0;this.preciseWaiters=[];this.uncoveredVersion=0;this.pendingCoverage=new Map;this.pendingRetirements=new Map;
   this.display={backend:{readViewport:()=>new Promise((resolve,reject)=>{const request=++this.presentationRequestId;this.presentationRequests.set(request,{resolve,reject,read:true});this.presentation.postMessage({method:'read',request});})}};
   this.presentationReady=new Promise((resolve,reject)=>{this.presentationResolve=resolve;this.presentationReject=reject;});
@@ -28,21 +27,13 @@ export class DrawingHost {
      const coverage=this.pendingCoverage.get(m.version);
      if(!coverage?.covered)this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);
      this.pendingCoverage.delete(m.version);
-     this.documentPresentation.update(this.navigationScene.baseView??this.backend.viewTransform);
-     // A retained document is authoritative during navigation. Its exact base
-     // includes retired ink; remove the corresponding overlay in the same task.
-     if(this.navigationActive){this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);this.retireOverlays(m.version);}
+     this.documentPresentation.update(this.backend.viewTransform);
      this.syncVisibility();
     }else for(const t of m.tiles)t.bitmap.close();
     const request=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);request?.resolve({accepted});return;
    }
    if(m.type==='read'){const r=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);r?.resolve(m.pixels);return;}
    if(m.type==='image'){this.presentationMetrics=m.performance;
-    // A late GPU bitmap must not replace the visible scene while a finger moves.
-    const current=this.backend.viewTransform;
-    if(this.navigationActive&&current&&current[12]<.5&&current[14]<.5){
-     m.bitmap.close();this.onPresentation?.({kind:'display-image',at:performance.now(),accepted:false});return;
-    }
     const accepted=m.epoch===this.epoch&&m.version>=this.presentationVersion&&m.version>=this.documentVersion;
     if(accepted){
      // Never expose an empty bitmap: install the complete image, then retire
@@ -100,7 +91,7 @@ export class DrawingHost {
    layer.view=data.view;layer.rect=data.rect;layer.scale=data.scale;layer.polygon=data.polygon;if(layer.element.width!==data.bitmap.width)layer.element.width=data.bitmap.width;if(layer.element.height!==data.bitmap.height)layer.element.height=data.bitmap.height;layer.context.transferFromImageBitmap(data.bitmap);
    const [x,y]=data.rect;Object.assign(layer.element.style,{left:originX+x+'px',top:originY+y+'px',width:layer.element.width/data.scale+'px',height:layer.element.height/data.scale+'px',display:this.hiddenStrokeIds.has(data.id)?'none':'block',clipPath:'polygon('+data.polygon.map(p=>(p.x-x)+'px '+(p.y-y)+'px').join(',')+')'});
   }
-  this.retireOverlays(this.navigationActive?this.documentVersion:this.presentationVersion);this.reproject();this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
+  this.retireOverlays(this.presentationVersion);this.reproject();this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
  }
  waitPrecise(version,epoch){
   if(this.presentationVersion>=version)return Promise.resolve(true);
@@ -128,9 +119,9 @@ export class DrawingHost {
    ((v[12]>.5)!==(this.presentationView[12]>.5)||(v[14]>.5)!==(this.presentationView[14]>.5));
   // Keep the precise M08 image visible if the latest stroke is fully covered
   // by its temporary ink. Only unrepresented edits require the fallback scene.
-  this.canvas.style.opacity=modeChanged||ordinary&&(this.navigationActive||this.presentationVersion<this.uncoveredVersion)?'0':'1';
+  this.canvas.style.opacity=modeChanged||ordinary&&this.presentationVersion<this.uncoveredVersion?'0':'1';
  }
- reproject(){const to=this.navigationScene.baseView??this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
+ reproject(){const to=this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
   if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}
   for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  }
@@ -138,42 +129,14 @@ export class DrawingHost {
   const start=performance.now(),old=this.backend.viewTransform;
   if(old&&view.every((n,i)=>n===old[i]))return;
   this.backend.viewTransform=Array.from(view);
-  if(this.navigationActive){
-   // No Worker view messages, no GPU redraw and no pending-stroke wait.
-   this.navigationScene.move(view);
-  }else{
-   this.reproject();this.presentation.postMessage({method:'view',view});
-   if(!this.drawingView||[0,1,2,3,4,5,12,13,14].some(i=>this.drawingView[i]!==view[i])){
-    this.drawingView=Array.from(view);this.send('view',view);
-   }
-   this.syncVisibility();
+  this.reproject();this.presentation.postMessage({method:'view',view});
+  if(!this.drawingView||[0,1,2,3,4,5,12,13,14].some(i=>this.drawingView[i]!==view[i])){
+   this.drawingView=Array.from(view);this.send('view',view);
   }
+  this.syncVisibility();
   (this.viewSamples??=[]).push(performance.now()-start);
   if(this.viewSamples.length>240)this.viewSamples.shift();
   this.onPresentation?.({kind:'view-transform',at:performance.now()});
- }
- setNavigationActive(active){
-  active=!!active;if(active===this.navigationActive)return;
-  const view=this.backend.viewTransform;
-  if(active){
-   this.navigationScene.begin(view);this.navigationActive=true;
-   this.syncVisibility();
-   this.presentation.postMessage({method:'navigation',active:true});
-   this.send('navigation',true);
-   return;
-  }
-  // Rebase both layers and the outer scene in one browser task on finger-up.
-  const base=this.navigationScene.baseView;
-  this.navigationScene.baseView=null;
-  try{this.reproject();}finally{this.navigationScene.baseView=base;}
-  this.navigationScene.end();this.navigationActive=false;
-  this.syncVisibility();
-  this.presentation.postMessage({method:'navigation',active:false});
-  if(view){
-   this.presentation.postMessage({method:'view',view});
-   this.drawingView=Array.from(view);this.send('view',view);
-  }
-  this.send('navigation',false);
  }
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
@@ -191,7 +154,7 @@ export class DrawingHost {
  performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
- destroy(){if(this.disposed)return;this.disposed=true;for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();this.navigationScene.destroy(this.canvas);for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
+ destroy(){if(this.disposed)return;this.disposed=true;for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 

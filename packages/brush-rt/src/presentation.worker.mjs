@@ -4,7 +4,7 @@ import {uploadTilePages,ATLAS_SIZE} from '@rt/presentation-tiles';
 // The display worker owns both high-resolution GPU rendering and retained
 // 512px document groups. Never create one DOM canvas or transferable bitmap
 // for every 128px history tile on the input thread.
-let renderer,view,epoch=0,running=false,again=false,version=0,navigation=false,documentWidth=0,documentHeight=0,refreshTimer=null;
+let renderer,view,epoch=0,running=false,again=false,version=0,documentWidth=0,documentHeight=0,refreshTimer=null;
 const groups=new Map,metrics={uploads:0,uploadCpuMaxMs:0,renderCpuMaxMs:0,frames:0,displayGroups:0};
 const fail=error=>postMessage({type:'fault',error:String(error)});
 function refresh(){
@@ -15,14 +15,14 @@ function refresh(){
  refreshTimer=setTimeout(()=>{refreshTimer=null;void draw();},120);
 }
 async function draw(){
- if(running||!renderer||!view||navigation&&view[12]<.5&&view[14]<.5)return;running=true;
+ if(running||!renderer||!view)return;running=true;
  try{do{again=false;const b=renderer.backend,v=Array.from(view),generation=version,contentEpoch=epoch;
   b.setViewTransform(v);b.navigationPresentation=false;
   const started=performance.now(),done=b.presentCurrent(true);metrics.renderCpuMaxMs=Math.max(metrics.renderCpuMaxMs,performance.now()-started);
   // Take ownership of the completed backing before yielding a WebGPU task.
   const bitmap=b.canvas.transferToImageBitmap();try{await done;}catch(error){bitmap.close();throw error;}metrics.frames++;
   postMessage({type:'image',bitmap,view:v,epoch:contentEpoch,version:generation,performance:{...metrics}},[bitmap]);
- }while(again&&(!navigation||view[12]>.5||view[14]>.5));
+ }while(again);
  }catch(error){fail(error);}finally{running=false;}
 }
 function groupFor(t){
@@ -42,8 +42,7 @@ self.onmessage=({data:m})=>{Promise.resolve().then(async()=>{
   documentWidth=m.documentWidth;documentHeight=m.documentHeight;
   renderer=await GpuRenderer.create(new OffscreenCanvas(m.width,m.height),documentWidth,documentHeight,m.backend,{strokeHandoff:true,tileHistory:false});
   postMessage({type:'ready',info:renderer.info});
- }else if(m.method==='view'){view=m.view;again=true;if(!navigation){if(refreshTimer!==null){clearTimeout(refreshTimer);refreshTimer=null;}void draw();}}
- else if(m.method==='navigation'){navigation=m.active;again=true;if(!navigation)refresh();}
+ }else if(m.method==='view'){view=m.view;again=true;if(refreshTimer!==null){clearTimeout(refreshTimer);refreshTimer=null;}void draw();}
  else if(m.method==='tiles'){
   const started=performance.now(),changed=new Map;
   // Copy only the changed 128px areas into persistent 512px groups.
