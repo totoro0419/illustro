@@ -357,7 +357,13 @@ export class GpuRenderer {
  // Do not launch a GPU submission for every coalesced input sample.
  requestWork(){if(!this.strokeHandoff)return this.requestPreview();if(this.disposed||this.inflight||this.previewRequested)return;this.previewRequested=true;const run=()=>{this.previewRequested=false;this.frame(performance.now());};if(this.proxy)this.workTimer=setTimeout(run,0);else queueMicrotask(run);}
  requestPreview(){if(this.strokeHandoff)return this.requestWork();if(this.disposed||this.inflight||this.previewRequested||!this.backend.immediatePreview||!foundationUnion(this.mailbox.value?.preset)||this.mailbox.value.finished)return;this.previewRequested=true;queueMicrotask(()=>{this.previewRequested=false;this.frame(performance.now());});}
- markEnded(id){this.ended.add(id);if(!this.tiledPresentation)this.releaseInteractiveUntil=performance.now()+120;}
+ markEnded(id){
+  this.ended.add(id);
+  // Keep submitting small formal jobs immediately after pen-up so the next
+  // gesture is never blocked behind an already-queued 16-tile GPU batch.
+  // This is NOT a delay: formal work continues throughout this interval.
+  this.releaseInteractiveUntil=performance.now()+(this.tiledPresentation?280:120);
+ }
 
  presentView(now){
   if(!this.viewPending||this.backend.presentationHeld||this.inflight||this.guardPreparing)return false;
@@ -405,8 +411,12 @@ export class GpuRenderer {
  this.backend.previewTileBudget=cooperativeGpu?(this.gpuPreviewTileLimit??8):Infinity;
  const firstGpuPreview=cooperativeGpu&&!instant&&!catchup&&latest&&!this.inputStarts.get(latest.id)?.submitted;
  const fallbackLimit=cooperativeGpu&&!catchup&&!this.backend.presentationHeld&&!this.document.jobs[0]?.commit?16:catchup||this.backend.presentationHeld||!this.snapshot||this.snapshot.finished?128:this.handoffJobLimit;
- const releaseLimit=this.tiledPresentation?(this.gestureActive?4:16):performance.now()<(this.releaseInteractiveUntil??0)?1:Infinity;
- let jobs=historyPressure||firstGpuPreview||(this.tiledPresentation&&this.strokeFrames.size)?[]:instant?boundedFormalJobs(this.document,active?1000000:2000000,Math.min(this.instantJobLimit,releaseLimit)):this.strokeHandoff?boundedFormalJobs(this.document,this.snapshot&&!this.snapshot.finished&&!catchup?1_000_000:2_000_000,Math.min(fallbackLimit,releaseLimit)):(this.confirmDelay<=0||now-this.lastConfirmed>=this.confirmDelay)?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[];jobs=boundHistoryCopies(this.backend,jobs);const job=jobs[0]??null;if((!latest||instant)&&!job&&!this.needsFrame&&!(this.backend.dirtyConfirmed?.size&&!catchup))return this.presentView(now);if(!this.tiledPresentation&&this.proxy?.footprints.size&&!this.proxy.guards.length&&(this.proxy.fallback||[...this.strokeFrames.keys()].some(id=>this.proxy.footprints.has(id)))){
+ const interactiveFormal=this.tiledPresentation&&(this.gestureActive||performance.now()<(this.releaseInteractiveUntil??0));
+ const releaseLimit=this.tiledPresentation?(interactiveFormal?1:this.lastGpuWork>48?2:this.lastGpuWork>24?4:8):performance.now()<(this.releaseInteractiveUntil??0)?1:Infinity;
+ // Count pixel-command work as well as tiles; one wide, textured brush can
+ // make four document tiles much more expensive than four thin pencil tiles.
+ const formalWorkBudget=this.tiledPresentation?(interactiveFormal?65536:this.lastGpuWork>48?160000:320000):Infinity;
+ let jobs=historyPressure||firstGpuPreview||(this.tiledPresentation&&this.strokeFrames.size)?[]:instant?boundedFormalJobs(this.document,Math.min(formalWorkBudget,active?1000000:2000000),Math.min(this.instantJobLimit,releaseLimit)):this.strokeHandoff?boundedFormalJobs(this.document,Math.min(formalWorkBudget,this.snapshot&&!this.snapshot.finished&&!catchup?1_000_000:2_000_000),Math.min(fallbackLimit,releaseLimit)):(this.confirmDelay<=0||now-this.lastConfirmed>=this.confirmDelay)?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[];jobs=boundHistoryCopies(this.backend,jobs);const job=jobs[0]??null;if((!latest||instant)&&!job&&!this.needsFrame&&!(this.backend.dirtyConfirmed?.size&&!catchup))return this.presentView(now);if(!this.tiledPresentation&&this.proxy?.footprints.size&&!this.proxy.guards.length&&(this.proxy.fallback||[...this.strokeFrames.keys()].some(id=>this.proxy.footprints.has(id)))){
   this.presentView(now);this.guardPreparing=true;this.proxy.protect().then(()=>{this.guardPreparing=false;this.needsFrame=true;this.requestWork();}).catch(error=>{this.guardPreparing=false;this.errors.push('Overlay transition: '+error.message);this.disposed=true;});return false;
   }this.needsFrame=false;const s=this.snapshot;this.inflight=true;
   try{const submittedAt=performance.now(),submission=++this.submissionNumber,proxyEpoch=this.proxy?.epoch,firstInputs=[];if(this.strokeHandoff)for(const id of new Set([...this.previewStates.keys(),...this.strokeFrames.keys()])){const input=this.inputStarts.get(id);if(input&&!input.submitted){input.submitted=true;firstInputs.push(input);}}let finished=false,presentationReady=true,fallbackRendered=false,cpuSubmitMs=0,submissionGpuStates=[];this.performance.renders++;const initialDirty=this.backend.dirtyConfirmed?.size??0;
