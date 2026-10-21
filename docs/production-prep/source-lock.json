@@ -254,7 +254,7 @@
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "c8cf77f8c74ee63061e7611644a0dfd4106dff3b0328e75d24d64154713c7645",
+      "sha256": "a28291bae6229118ae0e15a6fd9c1ff7424dabdaf7d24318b09ce6b4ea48026c",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
       "undoNavigationException": "User-authorized continuous Undo: ordered bounded command admission, exact grouped history copies, final-head dirty reconstruction, pending derived GPU supersession, bounded32/64MiB editor cache. Canonical records, brush precision and shaders unchanged. Requires both-backend exact pixels, mixed directions, portable/history/layer tests and all prior regressions; physical Android remains unverified. Reuse completed base images only when no removed pending stroke has committed any layer tile; partially committed tiles must reconstruct.",
@@ -404,7 +404,7 @@
     {
       "path": "packages/brush-rt/src/stroke-overlay.mjs",
       "sourceBranch": "perf/stroke-overlay-2026-10-16",
-      "sha256": "3264e5b4f61cff2ad78f73f83bf99a352ff861557424acd2def538fe7720cb01",
+      "sha256": "b1217de9a22ab370734f9f08fd5ec3025d9b1fe81747ac50fbd94e5687c294db",
       "strokeOverlayException": "User-authorized stroke-only feedback and exact transition synchronization. Requires exact PR30 pixels, fit-view screenshots, performance and regressions; no physical acceptance claim.",
       "handoffLatencyException": "User-authorized long-stroke handoff improvement from exact PR31 1828947625dea1a16ec7532fd5275c4e0ccaec53: isolated pending-stroke bitmaps, cooperative final feedback from canonical worker and CPU/queue-bounded formal batches. Canonical math/input/order unchanged; exact records/pixels, visibility while prior work is held, matched transition performance and regressions required. Physical device and user acceptance unverified.",
       "canvasNavigationRefinementException": "User-authorized per-stroke affine image reuse during navigation, cooperative settled refinement and presentation-coordinate interpolation at vertices. Completed artwork resolution and sampler, formal brush/deposit shaders and legacy records retained. Full both-backend pixels, viewport, input/undo/save and matched performance required.",
@@ -438,7 +438,7 @@
     {
       "path": "packages/brush-rt/test/document-preview.test.mjs",
       "sourceBranch": "milestone/M10-brush-quality",
-      "sha256": "7ac248bc32ff5b3289a83fa4a120fa79fe44654c76b2c8958407810200d1c944",
+      "sha256": "3d12ef3c954972ef947b556ebff1ca0fedef6e1d63d168864cce9e9c13ef458f",
       "m10PreviewException": "User-authorized M10 presentation-only optimization from 4708ffe5136ad1fa47be5909c129bb5f8fcb7869: aligned document-pixel analytic feedback, bounded live raster and conversion tasks, current-only tails, measured per-stroke route policy with safe unshown-work fallback. Canonical model, shaders, texture, input, 128px history and save schema unchanged. Require exact same-backend formal pixels, strict-reference coverage, both-backend quality, measured routing, native Undo/save regressions and user review."
     },
     {

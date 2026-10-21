@@ -79,7 +79,7 @@ export class StrokeOverlay{
   // evaluator at the start density, covering the entire document sparsely.
   const density=Math.min(1,Math.max(1/128,this.view[0]/this.view[2]*this.view[6]));
   const view=Float64Array.from([w*density,h*density,w,h,w,h,1,0,0,0,1,1,0,this.view[13],0,0]);
-  const plan=previewPlan(view,preset,1);plan.rasterView=view;return plan;
+  const plan=previewPlan(view,preset,1);plan.rasterView=view;if(density===1){plan.sampling='document-analytic';plan.samplesPerDocumentPixel=1;}return plan;
  }
  setEnabled(value){this.enabled=value;this.invalidate();}
  setNavigationActive(value){this.navigationActive=!!value;if(value){
