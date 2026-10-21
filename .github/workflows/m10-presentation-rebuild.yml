@@ -106,11 +106,11 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm run brush:build > /tmp/rebuild-brush.log
           VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
-          git worktree add --detach /tmp/illustro-start 8fa3857b5ce8deb4dadacce45f06e121a16e8d85
-          (cd /tmp/illustro-start && npm ci --ignore-scripts --no-audit --no-fund && npm run brush:build > /tmp/rebuild-before-brush.log && VITE_COMMIT_SHA=8fa3857b5ce8deb4dadacce45f06e121a16e8d85 npm --workspace @illustro/editor exec -- vite build --base=./)
+          git worktree add --detach /tmp/illustro-start 14e2d5eb6db49994c8b724bb0202967031e393cc
+          (cd /tmp/illustro-start && npm ci --ignore-scripts --no-audit --no-fund && npm run brush:build > /tmp/rebuild-before-brush.log && VITE_COMMIT_SHA=14e2d5eb6db49994c8b724bb0202967031e393cc npm --workspace @illustro/editor exec -- vite build --base=./)
           npm install --prefix /tmp/rebuild-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
           /tmp/rebuild-browser/node_modules/.bin/playwright install --with-deps chromium
-      - name: Matched immutable-start/current, 4000px, six intervals, three widths and two brushes
+      - name: Matched last-published PR40/current, 4000px, six intervals, three widths and two brushes
         run: WORKER_POINTS=40 WORKER_OUTPUT=/tmp/rebuild-response/matrix/report.json node scripts/m10-rebuild-response.mjs
       - name: Twelve consecutive 512px strokes, limited history budget
         run: WORKER_VERSIONS=after WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_STROKES=12 WORKER_POINTS=60 WORKER_OUTPUT=/tmp/rebuild-response/sustained/report.json node scripts/m10-rebuild-response.mjs
