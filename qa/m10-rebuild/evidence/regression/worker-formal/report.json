@@ -1,5 +1,5 @@
 {
-  "source": "b4817e497a958d326a93996a1ef49e7d1f31a021",
+  "source": "441c10eda7b6f88e2910a6fd06635d0a9d60935e",
   "baseline": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
   "scope": "Immutable start vs the actual DrawingHost/drawing/display worker integration. Exact StrokeRecords and all three layer images across draw/Undo/Redo/replay; software GPU, physical acceptance unverified.",
   "cases": [
