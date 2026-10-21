@@ -9,6 +9,9 @@ const groups=new Map,metrics={uploads:0,uploadCpuMaxMs:0,renderCpuMaxMs:0,frames
 const fail=error=>postMessage({type:'fault',error:String(error)});
 function refresh(){
  if(refreshTimer!==null)clearTimeout(refreshTimer);
+ // Seamless wrapping and reference views cannot use the retained-paper
+ // fallback. Refresh those precise images immediately, without the debounce.
+ if(view&&(view[12]>.5||view[14]>.5)){refreshTimer=null;void draw();return;}
  refreshTimer=setTimeout(()=>{refreshTimer=null;void draw();},120);
 }
 async function draw(){
