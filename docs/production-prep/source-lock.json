@@ -243,13 +243,14 @@
     {
       "path": "prototypes/brush-rt/build.mjs",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "bef05b2c7b4f43c02896f1f214cd12bb154f88b3c4b1363f1b9b957121ccf6fa",
+      "sha256": "33b9ae82b8b186ac97f7294f7983e3d98cfe9dcfcaf2e140fc26ead48fcf7e0a",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required.",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim.",
       "strokeOverlayException": "User-authorized stroke-only preview replaces historical low-resolution rebuild; exact Foundation/model/shaders/Core retained. Requires PR30 exact pixels, fit-view quality and regression evidence. No hardware acceptance claim.",
       "tileHistoryException": "User-authorized 128px immutable shared image history, bounded GPU/worker compressed memory/OPFS tiers, cooperative atomic navigation and legacy recovery fallback. Brush geometry, deposition shaders, color UI, canonical records and save journal unchanged. Requires both-backend immutable-baseline pixels, pressure/storage-failure tests, matched timing and save/recovery/navigation regression; physical Android remains unverified.",
       "m10PreviewException": "User-authorized M10 presentation-only optimization from 4708ffe5136ad1fa47be5909c129bb5f8fcb7869: aligned document-pixel analytic feedback, bounded live raster and conversion tasks, current-only tails, measured per-stroke route policy with safe unshown-work fallback. Canonical model, shaders, texture, input, 128px history and save schema unchanged. Require exact same-backend formal pixels, strict-reference coverage, both-backend quality, measured routing, native Undo/save regressions and user review.",
-      "presentationRebuildException": "User-authorized rebuild from 8fa3857b: separate input/raster/display roles and immutable dirty document tiles; accepted deposition/sampler/records remain. Require exact transfer/reveal/brush/history/save checks and matched response comparison; physical acceptance UNVERIFIED."
+      "presentationRebuildException": "User-authorized rebuild from 8fa3857b: separate input/raster/display roles and immutable dirty document tiles; accepted deposition/sampler/records remain. Require exact transfer/reveal/brush/history/save checks and matched response comparison; physical acceptance UNVERIFIED.",
+      "autonomousNavigationException": "Separate editor Worker development from accepted frozen standalone prototype generation. Explicit opt-in required to replace the standalone artifact."
     },
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
@@ -449,17 +450,19 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "129c782eb829d132be0e742b84de73bec3cc09f7d9acd4fae5933d3e6751173f",
+      "sha256": "772555b604261d98b47899a6417303898c27b4c393053aebf233a4e2421295f1",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
-      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21"
+      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
+      "autonomousNavigationException": "Self-driven drawing worker, isolation of input from view updates, and atomic display ownership. Must verify WebGL2/WebGPU, Undo and saved image parity; physical device pending."
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
-      "sha256": "18239e6747c9b6378c244550c9b2d4b9a55830cf8b177c8616d676eeb3a9d91b",
+      "sha256": "86a092521a92e6508b7d5070b23f65e0db93d0249715c1fc074ba8c06a802210",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
-      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21"
+      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
+      "autonomousNavigationException": "Self-driven drawing worker, isolation of input from view updates, and atomic display ownership. Must verify WebGL2/WebGPU, Undo and saved image parity; physical device pending."
     },
     {
       "path": "packages/brush-rt/src/worker-stroke-sink.mjs",

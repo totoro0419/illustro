@@ -13,7 +13,10 @@ const worker=moduleGraph(await fs.readFile(path.join(root,'packages/brush-rt/src
 const map=Object.fromEntries([...sources].map(([id,code])=>[id,'data:text/javascript;base64,'+Buffer.from(code).toString('base64')]));
 let html=await fs.readFile(path.join(root,'prototypes/brush-rt/index.html'),'utf8');
 html=html.replace('<!-- MODULES -->',`<script type="importmap">${JSON.stringify({imports:map}).replaceAll('<','\\u003c')}</script><script>window.__workerSource=${JSON.stringify(worker).replaceAll('<','\\u003c')};</script><script type="module">import {boot} from '@rt/ui';boot();</script>`);
-await fs.writeFile(path.join(out,'illustro-brush-rt.html'),html);
+// Standalone prototype is an accepted, frozen artifact. Building the editor
+// must not overwrite it; an explicit opt-in is required to regenerate it.
+if(process.env.ILLUSTRO_REBUILD_STANDALONE==='1')
+  await fs.writeFile(path.join(out,'illustro-brush-rt.html'),html);
 // Node tests use the same source transpilation without browser-specific import maps.
 for(const base of [out,path.join(root,'packages/brush-rt/dist')])for(const [id,code]of sources){const target=path.join(base,id.slice(1)+'.mjs');await fs.mkdir(path.dirname(target),{recursive:true});const local=code.replace(/from\s+["'](@(?:rt|legacy)\/[\w-]+)["']/g,(_,dep)=>`from '${path.relative(path.dirname(target),path.join(base,dep.slice(1)+'.mjs')).replaceAll('\\','/').replace(/^(?!\.)/,'./')}'`);await fs.writeFile(target,local);}
 console.log('Built self-contained HTML:',(await fs.stat(path.join(out,'illustro-brush-rt.html'))).size,'bytes');
