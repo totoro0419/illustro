@@ -111,7 +111,7 @@ export class BrushSurface{
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
   private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0),t:e.timeStamp,...nativeBrushSensors(e)};}
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset||e.target!==this.canvas&&e.target!==this.inputViewport)return;
-    if(this.eyedropper){if(e.button!==0||this.eyedropperPointer!==null)return;e.preventDefault();this.eyedropperPointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
+    if(this.eyedropper){if(e.button!==0||this.eyedropperPointer!==null)return;e.preventDefault();this.eyedropperPointer=e.pointerId;this.inputViewport.setPointerCapture(e.pointerId);this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'){
       e.preventDefault();
       const penActive=this.pointer!==null&&this.strokePointerType==='pen';
@@ -130,7 +130,7 @@ export class BrushSurface{
       const origin=this.view.document(this.pointerLocation(e)),w=this.target.width,h=this.target.height;
       this.wrapOrigin=this.view.seamless?{x:Math.floor(origin.x/w)*w,y:Math.floor(origin.y/h)*h}:null;
       this.renderer?.setSeamlessPreview(this.view.seamless);
-      this.activeStrokeId=this.session.begin(this.preset,0,{},this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;this.strokeDownAt=e.timeStamp;this.strokePointerType=e.pointerType;this.strokeMoved=false;this.canvas.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
+      this.activeStrokeId=this.session.begin(this.preset,0,{},this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;this.strokeDownAt=e.timeStamp;this.strokePointerType=e.pointerType;this.strokeMoved=false;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'&&this.navigation?.touchMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
      if(this.navigation?.mouseMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
