@@ -48,6 +48,7 @@ jobs:
           git worktree add --detach /tmp/illustro-start 8fa3857b5ce8deb4dadacce45f06e121a16e8d85
           (cd /tmp/illustro-start && node prototypes/brush-rt/build.mjs > /tmp/rebuild-before-brush.log)
           FORMAL_BEFORE_ROOT=/tmp/illustro-start/packages/brush-rt/dist FORMAL_MATCH_CONTEXT=1 OVERLAY_BASELINE_SHA=8fa3857b5ce8deb4dadacce45f06e121a16e8d85 FORMAL_QUALITY_OUTPUT=/tmp/rebuild-regression/formal/report.json node scripts/stroke-overlay-formal.mjs
+          FORMAL_BEFORE_ROOT=/tmp/illustro-start/packages/brush-rt/dist REBUILD_FORMAL_OUTPUT=/tmp/rebuild-regression/worker-formal/report.json node scripts/m10-rebuild-formal.mjs
       - uses: actions/upload-artifact@v4
         with: {name: rebuild-editor, path: apps/editor/dist/}
       - uses: actions/upload-artifact@v4
