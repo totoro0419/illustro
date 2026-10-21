@@ -51,6 +51,35 @@ try{for(const backend of backends)for(const route of routes)for(const version of
   const hashes=await p.evaluate(()=>window.__rebuild.hash()),count=await p.evaluate(()=>window.__rebuild.controller.committedStrokeCount);
   await p.locator('#undo').evaluate(el=>el.click());await p.waitForFunction(count=>window.__rebuild.controller.committedStrokeCount===count-1,count);await p.evaluate(()=>window.__rebuild.idle());await p.locator('#redo').evaluate(el=>el.click());await p.waitForFunction(count=>window.__rebuild.controller.committedStrokeCount===count,count);await p.evaluate(()=>window.__rebuild.idle());assert.deepEqual(await p.evaluate(()=>window.__rebuild.hash()),hashes,'native editor Undo/Redo preserves all layer bytes');
   assert.deepEqual(errors,[]);assert.deepEqual(early.errors,[]);result.history='exact';
+  if(route==='auto'){
+   // Hold the formal GPU completion itself, not just the toast. While held,
+   // the browser must visibly move existing pixels without consulting it.
+   const resting=await p.screenshot({scale:'css'}),inkBefore=blue(resting,box);
+   assert.ok(inkBefore.size>100,'visible completed seed required before GPU hold');
+   await p.evaluate(()=>window.__rebuild.renderer.call('gate','formal'));
+   try{
+    const previousCount=await p.evaluate(()=>window.__rebuild.controller.committedStrokeCount);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[pt(box.width*.26,box.height*.40,7)]});
+    for(let i=1;i<=32;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[pt(box.width*(.26+.36*i/32),box.height*.40,7)]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await p.waitForFunction(async()=>{const m=window.__rebuild;return (await m.renderer.call('inspect')).gates.held==='formal';},null,{timeout:30000});
+    const t1=pt(box.width*.27,box.height*.57,72),t2=pt(box.width*.69,box.height*.57,73);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[t1,t2]});
+    for(let i=1;i<=6;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...t1,x:t1.x+i*5-3*i,y:t1.y+i*1},{...t2,x:t2.x+i*5+3*i,y:t2.y-i*1}]});
+    const duringHold=await p.screenshot({scale:'css'}),inkHeld=blue(duringHold,box);
+    const overlap=[...inkBefore].filter(pixel=>inkHeld.has(pixel)).length;
+    const gateState=await p.evaluate(async()=>({held:(await window.__rebuild.renderer.call('inspect')).gates.held,view:window.__rebuild.renderer.backend.viewTransform}));
+    assert.equal(gateState.held,'formal','formal GPU completion must still be held while scene moves');
+    assert.ok(inkHeld.size>100,'existing completed ink must remain visible');
+    assert.ok(overlap/inkBefore.size<.8,'composed ink must visibly move while formal GPU completion is blocked: '+JSON.stringify({old:inkBefore.size,new:inkHeld.size,overlap}));
+    result.gestureGate={held:gateState.held,movedPixels:inkBefore.size-overlap,whileCompleted:false,committedBefore:previousCount};
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   }finally{
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]}).catch(()=>{});
+    await p.evaluate(()=>window.__rebuild.renderer.call('gate',false));
+   }
+   await p.evaluate(()=>window.__rebuild.idle());
+  }
  }
  await fs.writeFile(path.join(path.dirname(output),Object.values(tag).join('-')+'-during.png'),during);await fs.writeFile(path.join(path.dirname(output),Object.values(tag).join('-')+'-final.png'),final);report.cases.push(result);await fs.writeFile(output,JSON.stringify(report,null,2));console.log('CORRECTNESS_RESULT '+JSON.stringify(result));await context.close();
  }}finally{await browser.close();await new Promise(ok=>server.close(ok));await fs.writeFile(output,JSON.stringify(report,null,2));}
