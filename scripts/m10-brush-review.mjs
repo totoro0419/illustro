@@ -53,12 +53,12 @@ try {
   const first=await page.locator('#canvas').boundingBox();assert.ok(first?.width>100);
   await page.mouse.move(first.x+first.width*.3,first.y+first.height*.45);
   await page.mouse.down();await page.mouse.move(first.x+first.width*.7,first.y+first.height*.55,{steps:24});await page.mouse.up();
-  await page.waitForFunction(()=>Number(document.querySelector('canvas')?.dataset.committedStrokes)>=1,null,{timeout:90000});
+  await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>=1,null,{timeout:90000});
   assert.equal(await page.locator('#undo').isDisabled(),false,'Undo enabled after a stroke');
   await page.locator('#undo').click();
-  await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='0',null,{timeout:90000});
+  await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='0',null,{timeout:90000});
   await page.locator('#redo').click();
-  await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',null,{timeout:90000});
+  await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1',null,{timeout:90000});
   await page.locator('#brushSearch').fill('M10 検証');
   assert.equal(await page.locator('#brush option').count(),1);
   const downloadPromise=page.waitForEvent('download');

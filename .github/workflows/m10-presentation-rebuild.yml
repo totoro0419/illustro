@@ -24,6 +24,7 @@ jobs:
       - run: |
           npm run brush:build > /tmp/rebuild-brush.log
           npm run prep:check
+          node --test scripts/m10-composed-motion.test.mjs
           npm run core:check
           npm run brush:regression
           npm --workspace @illustro/editor exec -- vitest run
@@ -92,7 +93,7 @@ jobs:
       EXPECTED_COMMIT_SHA: ${{ github.sha }}
       RT_PLAYWRIGHT_PATH: /tmp/rebuild-browser/node_modules/playwright
       RT_PNG_PATH: /tmp/rebuild-browser/node_modules/pngjs
-      WORKER_FORMAL: skip
+      RT_JPEG_PATH: /tmp/rebuild-browser/node_modules/jpeg-js
       WORKER_ROUTES: auto
       WORKER_DEVICE_MEMORY: '4'
     steps:
@@ -106,7 +107,7 @@ jobs:
           VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
           git worktree add --detach /tmp/illustro-start 8fa3857b5ce8deb4dadacce45f06e121a16e8d85
           (cd /tmp/illustro-start && npm ci --ignore-scripts --no-audit --no-fund && npm run brush:build > /tmp/rebuild-before-brush.log && VITE_COMMIT_SHA=8fa3857b5ce8deb4dadacce45f06e121a16e8d85 npm --workspace @illustro/editor exec -- vite build --base=./)
-          npm install --prefix /tmp/rebuild-browser playwright@1.56.1 pngjs@7.0.0 --no-audit --no-fund
+          npm install --prefix /tmp/rebuild-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
           /tmp/rebuild-browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Matched immutable-start/current, 4000px, six intervals, three widths and two brushes
         run: WORKER_POINTS=40 WORKER_OUTPUT=/tmp/rebuild-response/matrix/report.json node scripts/m10-rebuild-response.mjs

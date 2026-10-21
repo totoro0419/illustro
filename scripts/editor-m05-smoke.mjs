@@ -41,8 +41,8 @@ const report={milestone:'M05',mode:publicBase?'public':'local',url:base,status:'
 function pageUrl(backend='webgl2'){const suffix=publicBase?`?backend=${backend}&build=${encodeURIComponent(expectedCommit)}&m05-public-check=1`:`?qa=1&backend=${backend}`;return base+suffix;}
 async function qa(page){return JSON.parse((await page.locator('#qaAuto').textContent())??'{}');}
 async function waitReady(page){await page.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});}
-async function waitIdle(page){await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.historyBusy==='false',{timeout:15000});}
-async function waitStroke(page,count){await page.waitForFunction(n=>document.querySelector('canvas')?.dataset.committedStrokes===String(n),count,{timeout:20000});await waitIdle(page);}
+async function waitIdle(page){await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.historyBusy==='false',{timeout:15000});}
+async function waitStroke(page,count){await page.waitForFunction(n=>document.getElementById('canvas')?.dataset.committedStrokes===String(n),count,{timeout:20000});await waitIdle(page);}
 async function waitProtected(page,min){await page.waitForFunction(n=>{try{const raw=document.querySelector('#qaAuto')?.textContent;if(!raw)return false;const p=JSON.parse(raw).persistence;return BigInt(p?.protectedThrough??'0')>=BigInt(n)&&p?.queueLength===0&&!p?.protectionPending&&!p?.storageError;}catch{return false;}},String(min),{timeout:30000});}
 async function draw(page,a=[.16,.35],b=[.84,.35],steps=20){const canvas=page.locator('#canvas'),box=await canvas.boundingBox();assert.ok(box);await page.mouse.move(box.x+a[0]*box.width,box.y+a[1]*box.height);await page.mouse.down();await page.mouse.move(box.x+b[0]*box.width,box.y+b[1]*box.height,{steps});await page.mouse.up();}
 async function freshContext(){const context=await browser.newContext({acceptDownloads:true});await context.addInitScript(()=>{try{Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true});}catch{}});return context;}
@@ -165,7 +165,7 @@ try{
   for(const backend of ['webgl2','webgpu']){
     const context=await freshContext(),page=await context.newPage({viewport:{width:1280,height:900}}),errors=await init(page,backend);
     await draw(page,[.12,.28],[.82,.28]);await waitStroke(page,1);
-    await page.locator('#addLayer').click();await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.layerCount==='2');
+    await page.locator('#addLayer').click();await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.layerCount==='2');
     await draw(page,[.12,.52],[.82,.52]);await waitStroke(page,2);
     await page.locator('#erase').click();await page.locator('#brush').selectOption('foundation-hard-eraser');await draw(page,[.43,.52],[.57,.52],10);await waitStroke(page,3);
     await waitProtected(page,4);await page.waitForTimeout(1200);

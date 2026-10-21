@@ -28,8 +28,7 @@ export class DrawingHost {
    if(m.type==='read'){const r=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);r?.resolve(m.pixels);return;}
    if(m.type==='image'){this.presentationMetrics=m.performance;
     const accepted=m.epoch===this.epoch&&m.version>=this.presentationVersion&&m.version>=this.documentVersion;
-    if(accepted){this.presentationVersion=m.version;this.canvas.style.opacity='1';if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;this.context.transferFromImageBitmap(m.bitmap);this.presentationView=m.view;this.reproject();}else m.bitmap.close();
-    for(const id of m.requests){const request=this.presentationRequests.get(id);this.presentationRequests.delete(id);request?.resolve({accepted});}
+    if(accepted){this.presentationVersion=m.version;this.canvas.style.opacity=this.navigationActive&&this.backend.viewTransform?.[12]<.5&&this.backend.viewTransform?.[14]<.5?'0':'1';if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;this.context.transferFromImageBitmap(m.bitmap);this.presentationView=m.view;this.reproject();}else m.bitmap.close();
     this.onPresentation?.({kind:'display-image',at:performance.now(),accepted});
    }
   };this.presentation.onerror=e=>{this.presentationReject(Error(e.message));this.fault(e.message);};
@@ -72,7 +71,7 @@ export class DrawingHost {
   for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  }
  setViewTransform(view){const start=performance.now(),old=this.backend.viewTransform;if(old&&view.every((n,i)=>n===old[i]))return;this.backend.viewTransform=Array.from(view);this.reproject();this.presentation.postMessage({method:'view',view});this.send('view',view);(this.viewSamples??=[]).push(performance.now()-start);if(this.viewSamples.length>240)this.viewSamples.shift();this.onPresentation?.({kind:'view-transform',at:performance.now()});}
- setNavigationActive(active){this.navigationActive=!!active;}
+ setNavigationActive(active){active=!!active;if(active===this.navigationActive)return;this.navigationActive=active;this.presentation.postMessage({method:'navigation',active});if(active&&this.backend.viewTransform?.[12]<.5&&this.backend.viewTransform?.[14]<.5)this.canvas.style.opacity='0';}
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
  setSeamlessPreview(active){this.send('seamless',active);}

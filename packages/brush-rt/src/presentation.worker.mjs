@@ -4,12 +4,12 @@ import {uploadTilePages} from '@rt/presentation-tiles';
 // A display-only GPU context. No stroke, history, readback or raster queue is
 // shared with it. Pan/pinch/rotation consumes the latest retained document
 // tiles, including regions outside the previous viewport.
-let renderer,view,epoch=0,running=false,again=false,version=0;
-const pending=[],metrics={uploads:0,uploadCpuMaxMs:0,renderCpuMaxMs:0,frames:0};
+let renderer,view,epoch=0,running=false,again=false,version=0,navigation=false;
+const metrics={uploads:0,uploadCpuMaxMs:0,renderCpuMaxMs:0,frames:0};
 const fail=error=>postMessage({type:'fault',error:String(error)});
 async function draw(){
- if(running||!renderer||!view)return;running=true;
- try{do{again=false;const requests=pending.splice(0),b=renderer.backend,v=Array.from(view),generation=version,contentEpoch=epoch;
+ if(running||!renderer||!view||navigation&&view[12]<.5&&view[14]<.5)return;running=true;
+ try{do{again=false;const b=renderer.backend,v=Array.from(view),generation=version,contentEpoch=epoch;
   b.setViewTransform(v);b.navigationPresentation=false;
   // Explicit direct refresh completely populates each new default bitmap.
   // transferToImageBitmap cannot turn a cache hit into a black picture.
@@ -18,14 +18,18 @@ async function draw(){
   // immutable ownership before yielding, then wait for the submitted work;
   // never reacquire a blank/new default bitmap after the GPU acknowledgement.
   const bitmap=b.canvas.transferToImageBitmap();try{await done;}catch(error){bitmap.close();throw error;}metrics.frames++;
-  postMessage({type:'image',bitmap,view:v,epoch:contentEpoch,version:generation,requests,performance:{...metrics}},[bitmap]);
- }while(again||pending.length);
+  postMessage({type:'image',bitmap,view:v,epoch:contentEpoch,version:generation,performance:{...metrics}},[bitmap]);
+ }while(again&&(!navigation||view[12]>.5||view[14]>.5));
  }catch(error){fail(error);}finally{running=false;}
 }
 self.onmessage=({data:m})=>{Promise.resolve().then(async()=>{
  if(m.method==='init'){
   renderer=await GpuRenderer.create(new OffscreenCanvas(m.width,m.height),m.documentWidth,m.documentHeight,m.backend,{strokeHandoff:true,tileHistory:false});postMessage({type:'ready',info:renderer.info});
  }else if(m.method==='view'){view=m.view;again=true;void draw();}
+ // A plain affine gesture is composed from retained document pictures. It
+ // needs no new GPU viewport image for each finger event. Keep the latest view
+ // and refresh M08 once the interaction ends; document updates keep publishing.
+ else if(m.method==='navigation'){navigation=m.active;again=true;void draw();}
  else if(m.method==='tiles'){
   const started=performance.now(),tiles=[];
   // Crop immutable atlas pictures in this worker, never via window Canvas2D or
