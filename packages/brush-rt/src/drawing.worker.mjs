@@ -102,7 +102,7 @@ async function command(method,a){const r=renderer,s=session;
  switch(method){
  case 'begin':{const id=s.begin(a.preset,a.fast,a.context,a.surfaceKey);if(id!==a.id)throw Error('Drawing worker stroke sequence mismatch');return id;}
  case 'samples':s.prediction=a.prediction!==false;for(const sample of a.samples)s.accept(sample,false);s.predictions(a.predictions??[]);s.flush();s.updateLive(performance.now());return;
- case 'end':{const value=await s.end(a.release);if(value)remember(a.token,value);return value;}
+ case 'end':{r.releaseInteractiveUntil=performance.now()+280;const value=await s.end(a.release);if(value)remember(a.token,value);return value;}
  case 'commit':a.additional.forEach((value,i)=>remember(a.token+':copy:'+i,value));return s.commitRecord(record(a.token),a.additional,a.surfaceKey);
  case 'commitUndone':a.additional.forEach((value,i)=>remember(a.token+':copy:'+i,value));return s.commitUndoneRecord(record(a.token),a.additional,a.surfaceKey);
  case 'forget':s.forgetStaged(record(a.token));records.delete(a.token);return;

@@ -462,12 +462,13 @@
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
-      "sha256": "4ad2da836a349dddf29092781bb1116e30896d8a9461db2446a0a24cc3b80bd1",
+      "sha256": "c0b2e35386e00f5b370a615957d491e444b722901db5815f2b4608cf232d0594",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
       "autonomousNavigationException": "Self-driven drawing worker, isolation of input from view updates, and atomic display ownership. Must verify WebGL2/WebGPU, Undo and saved image parity; physical device pending.",
-      "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone."
+      "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone.",
+      "penupBatchException": "Start the formal GPU budget immediately at pen-up even while canonical stroke records finish. This is a batch-size limit, not a 280ms delay. Requires exact pixel/history and native gesture comparison."
     },
     {
       "path": "packages/brush-rt/src/worker-stroke-sink.mjs",
