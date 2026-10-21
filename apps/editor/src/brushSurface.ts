@@ -30,7 +30,7 @@ export class BrushSurface{
   private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'='composite';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private foreground:readonly [number,number,number]=[.12,.15,.2];
   private wheelNavigationUntil=0;private wheelNavigationTimer:number|null=null;private panning:{id:number;point:Point}|null=null;private keyboardSpace=false;private densityMedia:MediaQueryList|null=null;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;private strokeDownAt=0;private strokePointerType='';private strokeMoved=false;
   // Navigation transforms the published canvas, not its fixed input viewport.
-  private get inputViewport(){return document.body.classList.contains('canvas-viewport')?this.canvas.closest('.surface')??this.canvas:this.canvas;}
+  private get inputViewport(){return document.body.classList.contains('canvas-viewport')?this.canvas.closest<HTMLElement>('.surface')??this.canvas:this.canvas;}
   private layoutRect(){return this.inputViewport.getBoundingClientRect();}
   get viewportRect(){return this.layoutRect();}
   readonly abort=new AbortController();brushes:readonly FoundationPreset[]=[];preset:FoundationPreset|null=null;fingerDrawing=false;
