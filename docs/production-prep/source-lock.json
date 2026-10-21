@@ -248,14 +248,15 @@
     {
       "path": "prototypes/brush-rt/build.mjs",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "33b9ae82b8b186ac97f7294f7983e3d98cfe9dcfcaf2e140fc26ead48fcf7e0a",
+      "sha256": "cdba0b4d69ddca690c828678e62dac1ac328d80768f871454d2b85dfc85254d2",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required.",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim.",
       "strokeOverlayException": "User-authorized stroke-only preview replaces historical low-resolution rebuild; exact Foundation/model/shaders/Core retained. Requires PR30 exact pixels, fit-view quality and regression evidence. No hardware acceptance claim.",
       "tileHistoryException": "User-authorized 128px immutable shared image history, bounded GPU/worker compressed memory/OPFS tiers, cooperative atomic navigation and legacy recovery fallback. Brush geometry, deposition shaders, color UI, canonical records and save journal unchanged. Requires both-backend immutable-baseline pixels, pressure/storage-failure tests, matched timing and save/recovery/navigation regression; physical Android remains unverified.",
       "m10PreviewException": "User-authorized M10 presentation-only optimization from 4708ffe5136ad1fa47be5909c129bb5f8fcb7869: aligned document-pixel analytic feedback, bounded live raster and conversion tasks, current-only tails, measured per-stroke route policy with safe unshown-work fallback. Canonical model, shaders, texture, input, 128px history and save schema unchanged. Require exact same-backend formal pixels, strict-reference coverage, both-backend quality, measured routing, native Undo/save regressions and user review.",
       "presentationRebuildException": "User-authorized rebuild from 8fa3857b: separate input/raster/display roles and immutable dirty document tiles; accepted deposition/sampler/records remain. Require exact transfer/reveal/brush/history/save checks and matched response comparison; physical acceptance UNVERIFIED.",
-      "autonomousNavigationException": "Separate editor Worker development from accepted frozen standalone prototype generation. Explicit opt-in required to replace the standalone artifact."
+      "autonomousNavigationException": "Separate editor Worker development from accepted frozen standalone prototype generation. Explicit opt-in required to replace the standalone artifact.",
+      "navigationSceneRebuild": "Single new navigation-scene module in build graph only. Frozen standalone HTML output unchanged."
     },
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
@@ -455,7 +456,7 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "9d897b502d42a7d3042cbf4326da25f26307be4de26b016daad7fa9d1b7ea469",
+      "sha256": "84edb6b125b613e27c465de9c9afc37fbfedbe622e8f3d1810108000fbe0fae2",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
@@ -464,7 +465,8 @@
       "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending.",
       "stablePictureException": "Never hide the M08 precise background on CPU-covered formal commits. Keep finished preview until exact viewport image is ready, then atomically retire in same task. Retained group fallback only for unrepresented edits/navigation; verifies final pixels on both backends.",
       "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness.",
-      "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history."
+      "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history.",
+      "navigationSceneRebuild": "Replaced navigation-time bitmap/view worker requests and per-layer reproject with one DOM compositor scene transform. Commit is not proof of device responsiveness; gesture blocking experiment required."
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
