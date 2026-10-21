@@ -452,13 +452,14 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "be088bbec7a1385744619e3b3e91c47eb2782ea27a9c7f4b686ecbc9630b18a0",
+      "sha256": "8fcbfd1dd73cb56785c7774b778d1f3c6cbc2dfbae1b6bcd72d215fd11caf864",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
       "autonomousNavigationException": "Self-driven drawing worker, isolation of input from view updates, and atomic display ownership. Must verify WebGL2/WebGPU, Undo and saved image parity; physical device pending.",
       "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone.",
-      "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending."
+      "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending.",
+      "stablePictureException": "Never hide the M08 precise background on CPU-covered formal commits. Keep finished preview until exact viewport image is ready, then atomically retire in same task. Retained group fallback only for unrepresented edits/navigation; verifies final pixels on both backends."
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
