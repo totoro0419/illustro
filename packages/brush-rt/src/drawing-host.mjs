@@ -81,7 +81,7 @@ export class DrawingHost {
    this.drawingView=Array.from(view);this.send('view',view);
   }
   this.syncVisibility();(this.viewSamples??=[]).push(performance.now()-start);if(this.viewSamples.length>240)this.viewSamples.shift();this.onPresentation?.({kind:'view-transform',at:performance.now()});}
- setNavigationActive(active){active=!!active;if(active===this.navigationActive)return;this.navigationActive=active;this.presentation.postMessage({method:'navigation',active});this.syncVisibility();}
+ setNavigationActive(active){active=!!active;if(active===this.navigationActive)return;this.navigationActive=active;this.presentation.postMessage({method:'navigation',active});this.send('navigation',active);this.syncVisibility();}
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
  setSeamlessPreview(active){this.send('seamless',active);}
