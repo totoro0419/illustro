@@ -95,7 +95,7 @@ async function command(method,a){const r=renderer,s=session;
  case 'cancel':return s.cancel();
  case 'discardRedo':return s.discardRedo();
  case 'navigate':return s.navigateDerived(a.map(e=>({...e,record:record(e.token)})));
- case 'restore':return restore(a);
+ case 'restore':await restore(a);await settlePictures();return stats(true);
  case 'pictureAck':acknowledged=Math.max(acknowledged,a.sequence);if(!a.accepted&&sentPacket){for(const key of sentPacket.keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of sentPacket.retired)sink.retired.add(id);}sentPacket=null;if(publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size)requestPublish();return;
  case 'waitStroke':{const result=await r.waitStroke(a);await settlePictures();return result;}
  case 'drain':await r.drain(a);await settlePictures();return stats(true);

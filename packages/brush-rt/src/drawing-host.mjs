@@ -1,4 +1,5 @@
 import {viewAffine} from '@rt/stroke-overlay';
+import {DocumentPresentation} from '@rt/document-presentation';
 
 
 // Window-side port: no brush reconstruction, pixel evaluation or GPU commands.
@@ -6,7 +7,7 @@ import {viewAffine} from '@rt/stroke-overlay';
 // arriving after a more recent pan/zoom/rotation. Worker messages never own it.
 export class DrawingHost {
  static async create(canvas,width,height,backend,options,workerUrl,canonicalUrl,diagnostics=false,presentationUrl){
-  const host=new DrawingHost(canvas,workerUrl,presentationUrl);try{
+  const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.documentVersion=0;try{
    host.update(await host.call('init',{width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend,options,canonicalUrl,diagnostics,timeOrigin:performance.timeOrigin}));
    host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend:host.info.selection.selected});await host.presentationReady;return host;
   }catch(error){host.destroy();throw error;}
@@ -16,13 +17,18 @@ export class DrawingHost {
   this.display={backend:{readViewport:()=>new Promise((resolve,reject)=>{const request=++this.presentationRequestId;this.presentationRequests.set(request,{resolve,reject,read:true});this.presentation.postMessage({method:'read',request});})}};
   this.presentationReady=new Promise((resolve,reject)=>{this.presentationResolve=resolve;this.presentationReject=reject;});
   this.presentation.onmessage=({data:m})=>{
-   if(this.disposed){m.bitmap?.close();return;}
+   if(this.disposed){m.bitmap?.close();for(const t of m.tiles??[])t.bitmap.close();return;}
    if(m.type==='ready'){this.presentationResolve();return;}
    if(m.type==='fault'){this.presentationReject(Error(m.error));this.fault(m.error);return;}
+   if(m.type==='document'){
+    const accepted=m.epoch===this.epoch&&m.version>=this.documentVersion;
+    if(accepted){this.documentPresentation.apply(m.tiles);this.documentVersion=m.version;this.documentPresentation.update(this.backend.viewTransform);if(this.presentationVersion<this.documentVersion)this.canvas.style.opacity='0';}else for(const t of m.tiles)t.bitmap.close();
+    const request=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);request?.resolve({accepted});return;
+   }
    if(m.type==='read'){const r=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);r?.resolve(m.pixels);return;}
    if(m.type==='image'){this.presentationMetrics=m.performance;
-    const accepted=m.epoch===this.epoch&&m.version>=this.presentationVersion;
-    if(accepted){this.presentationVersion=m.version;if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;this.context.transferFromImageBitmap(m.bitmap);this.presentationView=m.view;this.reproject();}else m.bitmap.close();
+    const accepted=m.epoch===this.epoch&&m.version>=this.presentationVersion&&m.version>=this.documentVersion;
+    if(accepted){this.presentationVersion=m.version;this.canvas.style.opacity='1';if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;this.context.transferFromImageBitmap(m.bitmap);this.presentationView=m.view;this.reproject();}else m.bitmap.close();
     for(const id of m.requests){const request=this.presentationRequests.get(id);this.presentationRequests.delete(id);request?.resolve({accepted});}
     this.onPresentation?.({kind:'display-image',at:performance.now(),accepted});
    }
@@ -61,7 +67,7 @@ export class DrawingHost {
   }
   this.reproject();this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
  }
- reproject(){const to=this.backend.viewTransform;if(!to)return;
+ reproject(){const to=this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
   if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}
   for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  }
@@ -80,10 +86,10 @@ export class DrawingHost {
  read(surfaceKey='default'){return this.call('read',surfaceKey);}
  readPixel(x,y,surfaceKey){return this.call('pixel',{x,y,surfaceKey});}
  setPerformanceEnabled(enabled){this.send('measure',enabled);}
- performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null};}
+ performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){if(!this.tickRequest&&!this.disposed)this.tickRequest=this.call('tick').catch(error=>{if(!this.disposed)this.fault(error.message);}).finally(()=>{this.tickRequest=null;});return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
- destroy(){if(this.disposed)return;this.disposed=true;this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
+ destroy(){if(this.disposed)return;this.disposed=true;this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 

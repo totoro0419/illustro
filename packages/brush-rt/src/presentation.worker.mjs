@@ -13,8 +13,11 @@ async function draw(){
   b.setViewTransform(v);b.navigationPresentation=false;
   // Explicit direct refresh completely populates each new default bitmap.
   // transferToImageBitmap cannot turn a cache hit into a black picture.
-  const started=performance.now(),done=b.presentCurrent(true);metrics.renderCpuMaxMs=Math.max(metrics.renderCpuMaxMs,performance.now()-started);await done;metrics.frames++;
-  const bitmap=b.canvas.transferToImageBitmap();
+  const started=performance.now(),done=b.presentCurrent(true);metrics.renderCpuMaxMs=Math.max(metrics.renderCpuMaxMs,performance.now()-started);
+  // WebGPU's current canvas texture expires at a task boundary. Transfer its
+  // immutable ownership before yielding, then wait for the submitted work;
+  // never reacquire a blank/new default bitmap after the GPU acknowledgement.
+  const bitmap=b.canvas.transferToImageBitmap();try{await done;}catch(error){bitmap.close();throw error;}metrics.frames++;
   postMessage({type:'image',bitmap,view:v,epoch:contentEpoch,version:generation,requests,performance:{...metrics}},[bitmap]);
  }while(again||pending.length);
  }catch(error){fail(error);}finally{running=false;}
@@ -24,7 +27,12 @@ self.onmessage=({data:m})=>{Promise.resolve().then(async()=>{
   renderer=await GpuRenderer.create(new OffscreenCanvas(m.width,m.height),m.documentWidth,m.documentHeight,m.backend,{strokeHandoff:true,tileHistory:false});postMessage({type:'ready',info:renderer.info});
  }else if(m.method==='view'){view=m.view;again=true;void draw();}
  else if(m.method==='tiles'){
-  const started=performance.now();uploadTilePages(renderer.backend,m.pages);metrics.uploads+=m.pages.length;metrics.uploadCpuMaxMs=Math.max(metrics.uploadCpuMaxMs,performance.now()-started);epoch=m.epoch;version=m.version;pending.push(m.request);again=true;void draw();
+  const started=performance.now(),tiles=[];
+  // Crop immutable atlas pictures in this worker, never via window Canvas2D or
+  // a synchronous GPU read. Keep only changed tiles in the compositor scene.
+  const tasks=[];for(const page of m.pages)for(const t of page.tiles)tasks.push(createImageBitmap(page.bitmap,t.sx,t.sy,t.w,t.h).then(bitmap=>({...t,bitmap})));tiles.push(...await Promise.all(tasks));
+  uploadTilePages(renderer.backend,m.pages);metrics.uploads+=m.pages.length;metrics.uploadCpuMaxMs=Math.max(metrics.uploadCpuMaxMs,performance.now()-started);epoch=m.epoch;version=m.version;
+  postMessage({type:'document',tiles,epoch,version,request:m.request},tiles.map(t=>t.bitmap));again=true;void draw();
  }else if(m.method==='read'){
   const pixels=await renderer.backend.readViewport();postMessage({type:'read',request:m.request,pixels},[pixels.buffer]);
  }else if(m.method==='destroy'){renderer?.destroy();close();}

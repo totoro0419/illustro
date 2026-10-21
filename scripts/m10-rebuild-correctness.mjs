@@ -11,8 +11,15 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enabl
 const report={source:process.env.EXPECTED_COMMIT_SHA??'working-tree',browser:browser.version(),scope:'Native touch and full composed PNGs; independent whole-document premultiplied RGBA comparison. Software GPU; physical phone acceptance unverified.',cases:[]};
 const versions=(process.env.REBUILD_VERSIONS??'before,broken,after').split(','),backends=(process.env.REBUILD_BACKENDS??'webgl2,webgpu').split(','),routes=(process.env.REBUILD_ROUTES??'cpu,gpu,auto').split(',');
 function blue(image,box){const a=PNG.sync.read(image),pixels=new Set;for(let y=Math.ceil(box.y);y<Math.min(a.height,box.y+box.height);y++)for(let x=Math.ceil(box.x);x<Math.min(a.width,box.x+box.width);x++){const i=(y*a.width+x)*4;if(a.data[i+2]>a.data[i]+100&&a.data[i+2]>a.data[i+1]+70)pixels.add(x+','+y);}return pixels;}
+function blankPixels(during,final,box){
+ const a=PNG.sync.read(during),b=PNG.sync.read(final);let checked=0,mismatch=0;
+ const white=(x,y)=>{const i=(y*b.width+x)*4;return b.data[i]>252&&b.data[i+1]>252&&b.data[i+2]>252&&b.data[i+3]===255;};
+ for(let y=Math.ceil(box.y)+3;y<Math.min(b.height-3,box.y+box.height-3);y++)for(let x=Math.ceil(box.x)+3;x<Math.min(b.width-3,box.x+box.width-3);x++){
+  if(![-3,0,3].every(dy=>[-3,0,3].every(dx=>white(x+dx,y+dy))))continue;checked++;const i=(y*a.width+x)*4;if(a.data[i]<230||a.data[i+1]<230||a.data[i+2]<230)mismatch++;
+ }return {checked,mismatch};
+}
 try{for(const backend of backends)for(const route of routes)for(const version of versions){const tag={backend,route,version};console.log('CORRECTNESS_START '+JSON.stringify(tag));
- const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true}),p=await context.newPage(),cdp=await context.newCDPSession(p),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ const context=await browser.newContext({viewport:{width:390,height:Number(process.env.REBUILD_HEIGHT??844)},deviceScaleFactor:2,hasTouch:true}),p=await context.newPage(),cdp=await context.newCDPSession(p),errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.goto(`http://127.0.0.1:${server.address().port}/${version}/?m09=1&perf=1&backend=${backend}&overlay=${route}`);
  await p.evaluate(()=>{document.getElementById('newCanvasWidth').value='4000';document.getElementById('newCanvasHeight').value='4000';document.getElementById('new').click();});await p.waitForFunction(()=>document.getElementById('status').textContent.includes('描画できます'),null,{timeout:90000});
  if(version==='after'&&process.env.EXPECTED_COMMIT_SHA)assert.equal(await p.locator('#canvas').getAttribute('data-commit'),process.env.EXPECTED_COMMIT_SHA,'exact app source');
@@ -34,10 +41,12 @@ try{for(const backend of backends)for(const route of routes)for(const version of
  // or idle/formal wait is inserted before the rapid reveal.
  const during=await p.screenshot({scale:'css'}),early=await p.evaluate(()=>{const m=window.__rebuild,d=m.port.read();return {view:Array.from(m.renderer.backend.viewTransform),pendingGpu:d.handoff.pendingGpu,accepted:d.handoff.accepted,strokes:m.controller.committedStrokeCount,errors:m.renderer.errors};});
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.evaluate(()=>window.__rebuild.idle());
- const final=await p.screenshot({scale:'css'}),expected=blue(final,box),actual=blue(during,box);let matched=0;for(const key of expected)if(actual.has(key))matched++;
- const result={...tag,early,expectedBlue:expected.size,duringBlue:actual.size,matchedBlue:matched,fraction:expected.size?matched/expected.size:null,errors};
+ const final=await p.screenshot({scale:'css'}),expected=blue(final,box),actual=blue(during,box);let matched=0,geometryMatched=0;for(const key of expected){if(actual.has(key))matched++;const [x,y]=key.split(',').map(Number);let found=false;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(actual.has((x+dx)+','+(y+dy)))found=true;if(found)geometryMatched++;}
+ const result={...tag,box,blank:blankPixels(during,final,box),early,expectedBlue:expected.size,duringBlue:actual.size,matchedBlue:matched,fraction:expected.size?matched/expected.size:null,geometryMatched,geometryFraction:expected.size?geometryMatched/expected.size:null,errors};
+ await fs.writeFile(path.join(path.dirname(output),'latest-'+Object.values(tag).join('-')+'.json'),JSON.stringify(result,null,2));await fs.writeFile(path.join(path.dirname(output),'latest-'+Object.values(tag).join('-')+'-during.png'),during);await fs.writeFile(path.join(path.dirname(output),'latest-'+Object.values(tag).join('-')+'-final.png'),final);
  if(version==='after'){
-  assert.ok(expected.size>100,'a seed far outside the initial viewport becomes visible');assert.ok(result.fraction>.99,'the already committed offscreen seed is present during rapid shrink, before formal completion');assert.ok(early.accepted>=4,'all three subsequent heavy strokes were accepted');
+  assert.ok(result.blank.checked>1000);assert.equal(result.blank.mismatch,0,'blank paper must not acquire black rectangles or duplicated ink during the reveal');
+  assert.ok(expected.size>100,'a seed far outside the initial viewport becomes visible');assert.ok(result.geometryFraction>.995,'the entire offscreen seed follows the latest view within one CSS pixel, including its ends; ordinary edge sampling may differ');assert.ok(early.accepted>=4,'all three subsequent heavy strokes were accepted');
   const exact=await p.evaluate(async()=>{const r=window.__rebuild.renderer,a=await r.backend.readViewport(),b=await r.display.backend.readViewport();let count=0,max=0;for(let i=0;i<a.length;i++)if(a[i]!==b[i]){count++;max=Math.max(max,Math.abs(a[i]-b[i]));}return {bytes:a.length,mismatch:count,max};});result.exact=exact;assert.equal(exact.mismatch,0,'the complete retained document image matches the independent raster context');
   const hashes=await p.evaluate(()=>window.__rebuild.hash()),count=await p.evaluate(()=>window.__rebuild.controller.committedStrokeCount);
   await p.locator('#undo').evaluate(el=>el.click());await p.waitForFunction(count=>window.__rebuild.controller.committedStrokeCount===count-1,count);await p.evaluate(()=>window.__rebuild.idle());await p.locator('#redo').evaluate(el=>el.click());await p.waitForFunction(count=>window.__rebuild.controller.committedStrokeCount===count,count);await p.evaluate(()=>window.__rebuild.idle());assert.deepEqual(await p.evaluate(()=>window.__rebuild.hash()),hashes,'native editor Undo/Redo preserves all layer bytes');
