@@ -2,24 +2,24 @@
   "input": [
     {
       "type": "pointerdown",
-      "at": 6224.799999999988,
-      "eventAt": 6215.199999999953,
+      "at": 7134,
+      "eventAt": 7124.599999999977,
       "id": "compactUndo",
       "trusted": true,
       "pointerType": "touch"
     },
     {
       "type": "pointerup",
-      "at": 6240.899999999965,
-      "eventAt": 6225.799999999988,
+      "at": 7150.20000000007,
+      "eventAt": 7134.800000000047,
       "id": "compactUndo",
       "trusted": true,
       "pointerType": "touch"
     }
   ],
   "diag": {
-    "commit": "05848ee040949dc472381b6e713644ac957a6c41",
-    "revision": "32b47f93-5c23-4566-8d62-140537fa83d0",
+    "commit": "74202fdd5c915c928b7f98deab033fed21397f37",
+    "revision": "40b965df-7712-4ea8-9113-cf38e296f2d4",
     "strokes": 0,
     "historyNavigation": {
       "pending": false,
@@ -34,8 +34,8 @@
     },
     "historyInputs": [
       {
-        "at": 6225,
-        "eventAt": 6215.199999999953,
+        "at": 7134.20000000007,
+        "eventAt": 7124.599999999977,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "down",
@@ -43,8 +43,8 @@
         "disabled": false
       },
       {
-        "at": 6241.099999999977,
-        "eventAt": 6225.799999999988,
+        "at": 7150.20000000007,
+        "eventAt": 7134.800000000047,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "up",
@@ -52,8 +52,8 @@
         "disabled": false
       },
       {
-        "at": 6243.299999999988,
-        "eventAt": 6225.799999999988,
+        "at": 7153.20000000007,
+        "eventAt": 7134.800000000047,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "accepted",
@@ -62,8 +62,8 @@
         "reason": "accepted"
       },
       {
-        "at": 6245.199999999953,
-        "eventAt": 6225.799999999988,
+        "at": 7155.400000000023,
+        "eventAt": 7134.800000000047,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "compatibility-click",
@@ -100,7 +100,7 @@
         "reason": "比較用に指定された方式",
         "switches": 0,
         "profiles": 1,
-        "cpuP95Ms": 35.100000000034925,
+        "cpuP95Ms": 37.599902343703434,
         "cpuWaitLowerBoundP95Ms": null,
         "gpuP95Ms": null,
         "cpuUnpresentedSamples": 0,
@@ -133,11 +133,11 @@
       "samples": [
         {
           "id": 10,
-          "inputAt": 5674,
+          "inputAt": 6583.599999999977,
           "finished": false,
-          "at": 5708.799999999988,
-          "cpuMs": 2,
-          "inputToUploadMs": 34.79999999998836,
+          "at": 6619.099902343703,
+          "cpuMs": 2.799999999930151,
+          "inputToUploadMs": 35.49990234372672,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -146,11 +146,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5707.299999999988,
+          "inputAt": 6616.70000000007,
           "finished": false,
-          "at": 5741.899999999965,
-          "cpuMs": 1.7999999999883585,
-          "inputToUploadMs": 34.59999999997672,
+          "at": 6652.39990234375,
+          "cpuMs": 2.800000000046566,
+          "inputToUploadMs": 35.69990234368015,
           "updatedPixels": 15360,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -159,11 +159,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5740.599999999977,
+          "inputAt": 6650,
           "finished": false,
-          "at": 5775.199999999953,
-          "cpuMs": 1.7999999999883585,
-          "inputToUploadMs": 34.59999999997672,
+          "at": 6685.599902343703,
+          "cpuMs": 2.599999999976717,
+          "inputToUploadMs": 35.599902343703434,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -172,11 +172,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5773.899999999965,
+          "inputAt": 6683.300000000047,
           "finished": false,
-          "at": 5808.899999999965,
-          "cpuMs": 2,
-          "inputToUploadMs": 35,
+          "at": 6719.19990234368,
+          "cpuMs": 2.8999999999068677,
+          "inputToUploadMs": 35.899902343633585,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -185,11 +185,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5807.399999999965,
+          "inputAt": 6716.599999999977,
           "finished": false,
-          "at": 5841.899999999965,
-          "cpuMs": 1.7000000000116415,
-          "inputToUploadMs": 34.5,
+          "at": 6752.499902343727,
+          "cpuMs": 2.900000000023283,
+          "inputToUploadMs": 35.89990234375,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -198,11 +198,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5840.699999999953,
+          "inputAt": 6749.900000000023,
           "finished": false,
-          "at": 5875.299999999988,
-          "cpuMs": 1.7999999999883585,
-          "inputToUploadMs": 34.600000000034925,
+          "at": 6785.799902343773,
+          "cpuMs": 2.900000000023283,
+          "inputToUploadMs": 35.89990234375,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -211,11 +211,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5874,
+          "inputAt": 6783.400000000023,
           "finished": false,
-          "at": 5908.699999999953,
-          "cpuMs": 2,
-          "inputToUploadMs": 34.699999999953434,
+          "at": 6819.39990234375,
+          "cpuMs": 0.09999999997671694,
+          "inputToUploadMs": 35.99990234372672,
           "updatedPixels": 15360,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -224,11 +224,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5907.199999999953,
+          "inputAt": 6816.70000000007,
           "finished": false,
-          "at": 5942.199999999953,
-          "cpuMs": 2.099999999976717,
-          "inputToUploadMs": 35,
+          "at": 6852.499902343727,
+          "cpuMs": 2.900000000023283,
+          "inputToUploadMs": 35.79990234365687,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -237,11 +237,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5940.699999999953,
+          "inputAt": 6850.099999999977,
           "finished": false,
-          "at": 5977.899999999965,
-          "cpuMs": 4.5,
-          "inputToUploadMs": 37.20000000001164,
+          "at": 6889.39990234375,
+          "cpuMs": 6.5,
+          "inputToUploadMs": 39.29990234377328,
           "updatedPixels": 77824,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -250,11 +250,11 @@
         },
         {
           "id": 10,
-          "inputAt": 5974,
+          "inputAt": 6883.5,
           "finished": false,
-          "at": 6008.699999999953,
-          "cpuMs": 2,
-          "inputToUploadMs": 34.699999999953434,
+          "at": 6919.19990234368,
+          "cpuMs": 2.799999999930151,
+          "inputToUploadMs": 35.69990234368015,
           "updatedPixels": 13312,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -263,11 +263,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6007.299999999988,
+          "inputAt": 6916.800000000047,
           "finished": false,
-          "at": 6042.099999999977,
-          "cpuMs": 1.900000000023283,
-          "inputToUploadMs": 34.79999999998836,
+          "at": 6952.499902343727,
+          "cpuMs": 2.900000000023283,
+          "inputToUploadMs": 35.69990234368015,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -276,11 +276,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6040.699999999953,
+          "inputAt": 6949.900000000023,
           "finished": false,
-          "at": 6075.199999999953,
-          "cpuMs": 1.6999999999534339,
-          "inputToUploadMs": 34.5,
+          "at": 6985.999902343727,
+          "cpuMs": 3,
+          "inputToUploadMs": 36.099902343703434,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -289,11 +289,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6073.899999999965,
+          "inputAt": 6983.300000000047,
           "finished": false,
-          "at": 6109,
-          "cpuMs": 2.1000000000349246,
-          "inputToUploadMs": 35.100000000034925,
+          "at": 7019.299902343773,
+          "cpuMs": 3,
+          "inputToUploadMs": 35.99990234372672,
           "updatedPixels": 13312,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -302,11 +302,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6107.299999999988,
+          "inputAt": 7016.800000000047,
           "finished": false,
-          "at": 6141.799999999988,
-          "cpuMs": 1.7999999999883585,
-          "inputToUploadMs": 34.5,
+          "at": 7052.499902343727,
+          "cpuMs": 2.800000000046566,
+          "inputToUploadMs": 35.69990234368015,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -315,11 +315,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6140.5,
+          "inputAt": 7050.099999999977,
           "finished": false,
-          "at": 6175.199999999953,
-          "cpuMs": 1.7999999999883585,
-          "inputToUploadMs": 34.699999999953434,
+          "at": 7087.69990234368,
+          "cpuMs": 1.599999999976717,
+          "inputToUploadMs": 37.599902343703434,
           "updatedPixels": 15360,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -328,11 +328,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6140.5,
+          "inputAt": 7050.099999999977,
           "finished": true,
-          "at": 6194.699999999953,
-          "cpuMs": 2.7999999999883585,
-          "inputToUploadMs": 54.199999999953434,
+          "at": 7105.499902343727,
+          "cpuMs": 0.8000000000465661,
+          "inputToUploadMs": 55.39990234375,
           "updatedPixels": 12288,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -340,11 +340,11 @@
           "generation": 124
         }
       ],
-      "maxCpuMs": 4.900000000023283,
+      "maxCpuMs": 6.5,
       "backgroundSlices": 0,
       "maxBackgroundMs": 0,
-      "foregroundSlices": 134,
-      "maxSliceMs": 4.900000000023283,
+      "foregroundSlices": 165,
+      "maxSliceMs": 6.5,
       "cancelledUpdates": 0,
       "deadlineFallbacks": 0,
       "finalizationSwaps": 0,
@@ -356,7 +356,7 @@
       "reason": "比較用に指定された方式",
       "switches": 0,
       "profiles": 1,
-      "cpuP95Ms": 35.100000000034925,
+      "cpuP95Ms": 37.599902343703434,
       "cpuWaitLowerBoundP95Ms": null,
       "gpuP95Ms": null,
       "cpuUnpresentedSamples": 0,
@@ -372,11 +372,11 @@
     "compositedTiles": 0,
     "compositedLayerPasses": 0,
     "supersededViews": 0,
-    "submissionFps": 4.269854824936005,
-    "frameIntervalP95Ms": 773.7000000000116,
-    "inputToSubmissionP95Ms": 1,
-    "cpuSubmitP95Ms": 0.29999999998835847,
-    "queueCompletionProxyMs": 0.20000000001164153,
+    "submissionFps": 2.9832935560860743,
+    "frameIntervalP95Ms": 1089.7999999999302,
+    "inputToSubmissionP95Ms": 1.5,
+    "cpuSubmitP95Ms": 0.30000000004656613,
+    "queueCompletionProxyMs": 2.599999999976717,
     "gpuExecutionMs": null,
     "historyGpuReservedBytes": 0,
     "historyGpuBudgetBytes": 67108864,
@@ -405,7 +405,7 @@
         "mode": "opfs",
         "memoryBudget": 16777216,
         "memoryBytes": 0,
-        "diskBudget": 106617735,
+        "diskBudget": 91938035,
         "diskBytes": 0,
         "blocks": 0,
         "aliases": 0,
@@ -448,15 +448,15 @@
       "publications": 124,
       "formal": [
         {
-          "at": 1792598327666.1,
-          "cpuMs": 0.20000000001164153,
+          "at": 1792622668176.2,
+          "cpuMs": 0.2000000000698492,
           "jobs": 0,
           "tiles": 0,
           "commands": 0,
           "compositedTiles": 0
         },
         {
-          "at": 1792598328446.1,
+          "at": 1792622669273.2998,
           "cpuMs": 0.09999999997671694,
           "jobs": 0,
           "tiles": 0,
@@ -464,7 +464,23 @@
           "compositedTiles": 0
         },
         {
-          "at": 1792598328511.6,
+          "at": 1792622669386.0999,
+          "cpuMs": 0.2000000000698492,
+          "jobs": 0,
+          "tiles": 0,
+          "commands": 0,
+          "compositedTiles": 0
+        },
+        {
+          "at": 1792622669444,
+          "cpuMs": 0.30000000004656613,
+          "jobs": 0,
+          "tiles": 0,
+          "commands": 0,
+          "compositedTiles": 0
+        },
+        {
+          "at": 1792622669508.0999,
           "cpuMs": 0.09999999997671694,
           "jobs": 0,
           "tiles": 0,
@@ -472,24 +488,8 @@
           "compositedTiles": 0
         },
         {
-          "at": 1792598328560.7,
-          "cpuMs": 0,
-          "jobs": 0,
-          "tiles": 0,
-          "commands": 0,
-          "compositedTiles": 0
-        },
-        {
-          "at": 1792598328594.2,
-          "cpuMs": 0.20000000001164153,
-          "jobs": 0,
-          "tiles": 0,
-          "commands": 0,
-          "compositedTiles": 0
-        },
-        {
-          "at": 1792598328603.2,
-          "cpuMs": 0,
+          "at": 1792622669517.0999,
+          "cpuMs": 0.09999999997671694,
           "jobs": 0,
           "tiles": 0,
           "commands": 0,
@@ -504,12 +504,12 @@
       "changed": 0,
       "retired": 0
     },
-    "viewComputeP95Ms": 0.30000000004656613,
+    "viewComputeP95Ms": 0,
     "displayWorker": {
       "uploads": 0,
       "uploadCpuMaxMs": 0,
-      "renderCpuMaxMs": 0.20000000001164153,
-      "frames": 2,
+      "renderCpuMaxMs": 0.19999999995343387,
+      "frames": 1,
       "displayGroups": 0
     },
     "retainedDocumentTiles": 0,
@@ -519,8 +519,8 @@
     "handoff": {
       "inputAttempts": [
         {
-          "at": 2125.2999999999884,
-          "eventAt": 2119.899999999965,
+          "at": 3050.70000000007,
+          "eventAt": 3034.20000000007,
           "reason": null,
           "state": {
             "finishing": false,
@@ -532,12 +532,12 @@
             "pendingRaw": 0,
             "protectionQueue": 0
           },
-          "acceptedAt": 2125.5,
+          "acceptedAt": 3051,
           "id": 1
         },
         {
-          "at": 4164.799999999988,
-          "eventAt": 4149.199999999953,
+          "at": 5085.5,
+          "eventAt": 5073.5,
           "reason": null,
           "state": {
             "finishing": false,
@@ -549,7 +549,7 @@
             "pendingRaw": 61,
             "protectionQueue": 0
           },
-          "acceptedAt": 4165,
+          "acceptedAt": 5085.599999999977,
           "id": 10
         }
       ],
@@ -580,8 +580,8 @@
         {
           "direction": "undo",
           "id": 10,
-          "at": 6241.5,
-          "invalidatedAt": 6241.599999999977,
+          "at": 7150.599999999977,
+          "invalidatedAt": 7150.70000000007,
           "kind": "reserved"
         }
       ],
@@ -590,20 +590,20 @@
       "traces": [
         {
           "id": 1,
-          "upAt": 4141.199999999953,
-          "readyMs": 2,
-          "uiStateMs": 1.8999999999650754
+          "upAt": 5067.900000000023,
+          "readyMs": 1,
+          "uiStateMs": 0.9000000000232831
         },
         {
           "id": 10,
-          "upAt": 6190.599999999977,
-          "readyMs": 1.099999999976717,
-          "uiStateMs": 1.099999999976717
+          "upAt": 7100.20000000007,
+          "readyMs": 1,
+          "uiStateMs": 1
         }
       ]
     },
     "frameState": {
-      "lastFrameAt": 6239.599999999977,
+      "lastFrameAt": 7149.20000000007,
       "disposed": false,
       "operationMode": "idle",
       "pointer": null,
@@ -614,7 +614,6 @@
       "formalCommands": 0,
       "inflight": false,
       "viewPending": false,
-      "navigationActive": false,
       "guardPreparing": false,
       "overlayViewPending": false,
       "overlayPending": 0,

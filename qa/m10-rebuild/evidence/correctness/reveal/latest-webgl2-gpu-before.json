@@ -10,7 +10,7 @@
   },
   "blank": {
     "checked": 57329,
-    "mismatch": 0
+    "mismatch": 1904
   },
   "early": {
     "view": [
@@ -37,10 +37,10 @@
     "errors": []
   },
   "expectedBlue": 1514,
-  "duringBlue": 1514,
-  "matchedBlue": 1514,
-  "fraction": 1,
-  "geometryMatched": 1514,
-  "geometryFraction": 1,
+  "duringBlue": 0,
+  "matchedBlue": 0,
+  "fraction": 0,
+  "geometryMatched": 0,
+  "geometryFraction": 0,
   "errors": []
 }

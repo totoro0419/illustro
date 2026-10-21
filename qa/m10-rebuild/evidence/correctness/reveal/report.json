@@ -1,5 +1,5 @@
 {
-  "source": "05848ee040949dc472381b6e713644ac957a6c41",
+  "source": "74202fdd5c915c928b7f98deab033fed21397f37",
   "browser": "141.0.7390.37",
   "scope": "Native touch and full composed PNGs; independent whole-document premultiplied RGBA comparison. Software GPU; physical phone acceptance unverified.",
   "cases": [
@@ -36,7 +36,7 @@
           0,
           0
         ],
-        "pendingGpu": 2,
+        "pendingGpu": 3,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -82,7 +82,7 @@
           0,
           0
         ],
-        "pendingGpu": 2,
+        "pendingGpu": 3,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -159,7 +159,7 @@
       },
       "blank": {
         "checked": 57329,
-        "mismatch": 0
+        "mismatch": 1904
       },
       "early": {
         "view": [
@@ -186,11 +186,11 @@
         "errors": []
       },
       "expectedBlue": 1514,
-      "duringBlue": 1514,
-      "matchedBlue": 1514,
-      "fraction": 1,
-      "geometryMatched": 1514,
-      "geometryFraction": 1,
+      "duringBlue": 0,
+      "matchedBlue": 0,
+      "fraction": 0,
+      "geometryMatched": 0,
+      "geometryFraction": 0,
       "errors": []
     },
     {
@@ -250,7 +250,7 @@
         "height": 595.5
       },
       "blank": {
-        "checked": 58058,
+        "checked": 57329,
         "mismatch": 0
       },
       "early": {
@@ -277,11 +277,11 @@
         "strokes": 4,
         "errors": []
       },
-      "expectedBlue": 1476,
+      "expectedBlue": 1514,
       "duringBlue": 1475,
-      "matchedBlue": 1475,
-      "fraction": 0.9993224932249323,
-      "geometryMatched": 1476,
+      "matchedBlue": 1413,
+      "fraction": 0.9332892998678997,
+      "geometryMatched": 1514,
       "geometryFraction": 1,
       "errors": [],
       "exact": {
@@ -303,7 +303,7 @@
       },
       "blank": {
         "checked": 57329,
-        "mismatch": 789
+        "mismatch": 1904
       },
       "early": {
         "view": [
@@ -330,11 +330,11 @@
         "errors": []
       },
       "expectedBlue": 1514,
-      "duringBlue": 1072,
-      "matchedBlue": 1048,
-      "fraction": 0.6922060766182299,
-      "geometryMatched": 1081,
-      "geometryFraction": 0.7140026420079261,
+      "duringBlue": 0,
+      "matchedBlue": 0,
+      "fraction": 0,
+      "geometryMatched": 0,
+      "geometryFraction": 0,
       "errors": []
     },
     {
@@ -394,7 +394,7 @@
         "height": 595.5
       },
       "blank": {
-        "checked": 58058,
+        "checked": 57329,
         "mismatch": 0
       },
       "early": {
@@ -421,11 +421,11 @@
         "strokes": 4,
         "errors": []
       },
-      "expectedBlue": 1476,
+      "expectedBlue": 1514,
       "duringBlue": 1475,
-      "matchedBlue": 1475,
-      "fraction": 0.9993224932249323,
-      "geometryMatched": 1476,
+      "matchedBlue": 1413,
+      "fraction": 0.9332892998678997,
+      "geometryMatched": 1514,
       "geometryFraction": 1,
       "errors": [],
       "exact": {
@@ -436,7 +436,7 @@
       "history": "exact",
       "gestureGate": {
         "held": "formal",
-        "movedPixels": 838,
+        "movedPixels": 868,
         "whileCompleted": false,
         "committedBefore": 4
       }
@@ -474,7 +474,7 @@
           0,
           0
         ],
-        "pendingGpu": 2,
+        "pendingGpu": 3,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -688,7 +688,7 @@
         "height": 595.5
       },
       "blank": {
-        "checked": 58058,
+        "checked": 57330,
         "mismatch": 0
       },
       "early": {
@@ -715,11 +715,11 @@
         "strokes": 4,
         "errors": []
       },
-      "expectedBlue": 1476,
+      "expectedBlue": 1514,
       "duringBlue": 1475,
-      "matchedBlue": 1475,
-      "fraction": 0.9993224932249323,
-      "geometryMatched": 1476,
+      "matchedBlue": 1413,
+      "fraction": 0.9332892998678997,
+      "geometryMatched": 1514,
       "geometryFraction": 1,
       "errors": [],
       "exact": {
@@ -832,7 +832,7 @@
         "height": 595.5
       },
       "blank": {
-        "checked": 58058,
+        "checked": 57330,
         "mismatch": 0
       },
       "early": {
@@ -859,11 +859,11 @@
         "strokes": 4,
         "errors": []
       },
-      "expectedBlue": 1476,
+      "expectedBlue": 1514,
       "duringBlue": 1475,
-      "matchedBlue": 1475,
-      "fraction": 0.9993224932249323,
-      "geometryMatched": 1476,
+      "matchedBlue": 1413,
+      "fraction": 0.9332892998678997,
+      "geometryMatched": 1514,
       "geometryFraction": 1,
       "errors": [],
       "exact": {
@@ -874,7 +874,7 @@
       "history": "exact",
       "gestureGate": {
         "held": "formal",
-        "movedPixels": 838,
+        "movedPixels": 868,
         "whileCompleted": false,
         "committedBefore": 4
       }
