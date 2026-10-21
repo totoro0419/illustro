@@ -1,0 +1,21 @@
+{
+  "browser": "141.0.7390.37",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "bytes": 64000000,
+      "mismatch": 0,
+      "max": 0,
+      "firstPageCount": 1,
+      "sourceAlpha": true
+    },
+    {
+      "backend": "webgpu",
+      "bytes": 64000000,
+      "mismatch": 0,
+      "max": 0,
+      "firstPageCount": 1,
+      "sourceAlpha": "premultiplied"
+    }
+  ]
+}

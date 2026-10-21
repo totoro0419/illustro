@@ -1,0 +1,525 @@
+{
+  "sourceCommit": "b4817e497a958d326a93996a1ef49e7d1f31a021",
+  "baselineCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
+  "strokeContext": "same M10 default on both builds",
+  "scope": "Exact same-backend immutable baseline comparison; seven brushes, forced fade, three layers, overlap, hot history and full replay. Software GPU, not physical Android.",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "exactBrushPixels": true,
+      "exactOverlap": true,
+      "exactHistory": true,
+      "exactReplay": true,
+      "exactRecords": true,
+      "before": {
+        "steps": [
+          {
+            "brush": "foundation-g-pen",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0"
+            }
+          },
+          {
+            "brush": "foundation-round-pen",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e"
+            }
+          },
+          {
+            "brush": "foundation-technical",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-marker",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "b688ba32e4c171493d01a871caa8b7733d897314a7528027ec27ef4ab23b7af6",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "5a6380653582109d9a51f5672c66be63a597ab1edaf55926baa245bfdd7b90e5",
+              "a\u00001,1": "ae6c925d402faf40ae99e228a5c2bdc4dfb54684c31558120e781b15255d033c",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "9df0966959b51b31179ddbcc35ef4d65005360fefee7f65057772c8bbf284449",
+              "a\u00002,1": "86d52bd197754fa9f897e3bcae80458d51856cac6b6bffdd69562d9615266e00",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-pencil",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "b688ba32e4c171493d01a871caa8b7733d897314a7528027ec27ef4ab23b7af6",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "5a6380653582109d9a51f5672c66be63a597ab1edaf55926baa245bfdd7b90e5",
+              "a\u00001,1": "ae6c925d402faf40ae99e228a5c2bdc4dfb54684c31558120e781b15255d033c",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "9df0966959b51b31179ddbcc35ef4d65005360fefee7f65057772c8bbf284449",
+              "a\u00002,1": "86d52bd197754fa9f897e3bcae80458d51856cac6b6bffdd69562d9615266e00",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-hard-eraser",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+              "a\u00001,1": "f9a235497b027d146c61d0ea6611fa8623f07c0d77d1ebb59ef821b9221ba5ae",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+              "a\u00002,1": "70b8052436c1d3633766260c5b74d012214792e7267b50d65df5efecff0e6899",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-soft-eraser",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+              "a\u00001,1": "f9a235497b027d146c61d0ea6611fa8623f07c0d77d1ebb59ef821b9221ba5ae",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+              "a\u00002,1": "70b8052436c1d3633766260c5b74d012214792e7267b50d65df5efecff0e6899",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          }
+        ],
+        "final": {
+          "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+          "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+          "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+          "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+          "a\u00001,1": "bfe580cf7be2b31bb82325132deff7a74e40661e986afa7e55044872957d52ba",
+          "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+          "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+          "a\u00002,1": "0ce1858658d9618bf3068f3fb9c407bc51a906f1ed80067a5d07a62178e0fad4",
+          "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+          "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+          "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+          "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+          "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+        },
+        "recordHash": "f93cb29e792930abcf9558b8f95ce8e3afc51ce0a65089bc71035200f64eff62",
+        "targets": 116,
+        "passes": 0,
+        "jobs": 252,
+        "commands": 1282,
+        "remainingTargets": 0,
+        "errors": []
+      },
+      "after": {
+        "steps": [
+          {
+            "brush": "foundation-g-pen",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0"
+            }
+          },
+          {
+            "brush": "foundation-round-pen",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e"
+            }
+          },
+          {
+            "brush": "foundation-technical",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-marker",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "b688ba32e4c171493d01a871caa8b7733d897314a7528027ec27ef4ab23b7af6",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "5a6380653582109d9a51f5672c66be63a597ab1edaf55926baa245bfdd7b90e5",
+              "a\u00001,1": "ae6c925d402faf40ae99e228a5c2bdc4dfb54684c31558120e781b15255d033c",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "9df0966959b51b31179ddbcc35ef4d65005360fefee7f65057772c8bbf284449",
+              "a\u00002,1": "86d52bd197754fa9f897e3bcae80458d51856cac6b6bffdd69562d9615266e00",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-pencil",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "b688ba32e4c171493d01a871caa8b7733d897314a7528027ec27ef4ab23b7af6",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "5a6380653582109d9a51f5672c66be63a597ab1edaf55926baa245bfdd7b90e5",
+              "a\u00001,1": "ae6c925d402faf40ae99e228a5c2bdc4dfb54684c31558120e781b15255d033c",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "9df0966959b51b31179ddbcc35ef4d65005360fefee7f65057772c8bbf284449",
+              "a\u00002,1": "86d52bd197754fa9f897e3bcae80458d51856cac6b6bffdd69562d9615266e00",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-hard-eraser",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+              "a\u00001,1": "f9a235497b027d146c61d0ea6611fa8623f07c0d77d1ebb59ef821b9221ba5ae",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+              "a\u00002,1": "70b8052436c1d3633766260c5b74d012214792e7267b50d65df5efecff0e6899",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-soft-eraser",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+              "a\u00001,1": "f9a235497b027d146c61d0ea6611fa8623f07c0d77d1ebb59ef821b9221ba5ae",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+              "a\u00002,1": "70b8052436c1d3633766260c5b74d012214792e7267b50d65df5efecff0e6899",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          }
+        ],
+        "final": {
+          "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+          "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+          "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+          "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+          "a\u00001,1": "bfe580cf7be2b31bb82325132deff7a74e40661e986afa7e55044872957d52ba",
+          "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+          "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+          "a\u00002,1": "0ce1858658d9618bf3068f3fb9c407bc51a906f1ed80067a5d07a62178e0fad4",
+          "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+          "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+          "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+          "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+          "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+        },
+        "recordHash": "f93cb29e792930abcf9558b8f95ce8e3afc51ce0a65089bc71035200f64eff62",
+        "targets": 116,
+        "passes": 0,
+        "jobs": 252,
+        "commands": 1282,
+        "remainingTargets": 0,
+        "errors": []
+      }
+    },
+    {
+      "backend": "webgpu",
+      "exactBrushPixels": true,
+      "exactOverlap": true,
+      "exactHistory": true,
+      "exactReplay": true,
+      "exactRecords": true,
+      "before": {
+        "steps": [
+          {
+            "brush": "foundation-g-pen",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0"
+            }
+          },
+          {
+            "brush": "foundation-round-pen",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e"
+            }
+          },
+          {
+            "brush": "foundation-technical",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-marker",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "b688ba32e4c171493d01a871caa8b7733d897314a7528027ec27ef4ab23b7af6",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "5a6380653582109d9a51f5672c66be63a597ab1edaf55926baa245bfdd7b90e5",
+              "a\u00001,1": "ae6c925d402faf40ae99e228a5c2bdc4dfb54684c31558120e781b15255d033c",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "9df0966959b51b31179ddbcc35ef4d65005360fefee7f65057772c8bbf284449",
+              "a\u00002,1": "86d52bd197754fa9f897e3bcae80458d51856cac6b6bffdd69562d9615266e00",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-pencil",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "b688ba32e4c171493d01a871caa8b7733d897314a7528027ec27ef4ab23b7af6",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "5a6380653582109d9a51f5672c66be63a597ab1edaf55926baa245bfdd7b90e5",
+              "a\u00001,1": "ae6c925d402faf40ae99e228a5c2bdc4dfb54684c31558120e781b15255d033c",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "9df0966959b51b31179ddbcc35ef4d65005360fefee7f65057772c8bbf284449",
+              "a\u00002,1": "86d52bd197754fa9f897e3bcae80458d51856cac6b6bffdd69562d9615266e00",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-hard-eraser",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+              "a\u00001,1": "f9a235497b027d146c61d0ea6611fa8623f07c0d77d1ebb59ef821b9221ba5ae",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+              "a\u00002,1": "70b8052436c1d3633766260c5b74d012214792e7267b50d65df5efecff0e6899",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-soft-eraser",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+              "a\u00001,1": "f9a235497b027d146c61d0ea6611fa8623f07c0d77d1ebb59ef821b9221ba5ae",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+              "a\u00002,1": "70b8052436c1d3633766260c5b74d012214792e7267b50d65df5efecff0e6899",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          }
+        ],
+        "final": {
+          "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+          "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+          "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+          "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+          "a\u00001,1": "bfe580cf7be2b31bb82325132deff7a74e40661e986afa7e55044872957d52ba",
+          "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+          "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+          "a\u00002,1": "0ce1858658d9618bf3068f3fb9c407bc51a906f1ed80067a5d07a62178e0fad4",
+          "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+          "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+          "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+          "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+          "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+        },
+        "recordHash": "f93cb29e792930abcf9558b8f95ce8e3afc51ce0a65089bc71035200f64eff62",
+        "targets": 116,
+        "passes": 130,
+        "jobs": 252,
+        "commands": 1282,
+        "remainingTargets": 0,
+        "errors": []
+      },
+      "after": {
+        "steps": [
+          {
+            "brush": "foundation-g-pen",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0"
+            }
+          },
+          {
+            "brush": "foundation-round-pen",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e"
+            }
+          },
+          {
+            "brush": "foundation-technical",
+            "pixels": {
+              "a\u00001,1": "642ebc8060c69ce9a4e0512294b7e07bf171ec92c7108034d40ff6760cb65baf",
+              "a\u00002,1": "af331477f4fb4ed0b6919310eca2cbba0d61f11182ebf3b52c6558bf968f81f0",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-marker",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "b688ba32e4c171493d01a871caa8b7733d897314a7528027ec27ef4ab23b7af6",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "5a6380653582109d9a51f5672c66be63a597ab1edaf55926baa245bfdd7b90e5",
+              "a\u00001,1": "ae6c925d402faf40ae99e228a5c2bdc4dfb54684c31558120e781b15255d033c",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "9df0966959b51b31179ddbcc35ef4d65005360fefee7f65057772c8bbf284449",
+              "a\u00002,1": "86d52bd197754fa9f897e3bcae80458d51856cac6b6bffdd69562d9615266e00",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "3d88581b157bcae1b6bc75eb4a9dd94e6c5e6968978ef307a756c4cbc39fcb13",
+              "b\u00002,1": "4c5c6355eb5ee2cda79d25ed70d3f852a002cd4708e9c5b135fa5dc28180126e",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-pencil",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "b688ba32e4c171493d01a871caa8b7733d897314a7528027ec27ef4ab23b7af6",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "5a6380653582109d9a51f5672c66be63a597ab1edaf55926baa245bfdd7b90e5",
+              "a\u00001,1": "ae6c925d402faf40ae99e228a5c2bdc4dfb54684c31558120e781b15255d033c",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "9df0966959b51b31179ddbcc35ef4d65005360fefee7f65057772c8bbf284449",
+              "a\u00002,1": "86d52bd197754fa9f897e3bcae80458d51856cac6b6bffdd69562d9615266e00",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-hard-eraser",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+              "a\u00001,1": "f9a235497b027d146c61d0ea6611fa8623f07c0d77d1ebb59ef821b9221ba5ae",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+              "a\u00002,1": "70b8052436c1d3633766260c5b74d012214792e7267b50d65df5efecff0e6899",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          },
+          {
+            "brush": "foundation-soft-eraser",
+            "pixels": {
+              "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+              "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+              "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+              "a\u00001,1": "f9a235497b027d146c61d0ea6611fa8623f07c0d77d1ebb59ef821b9221ba5ae",
+              "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+              "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+              "a\u00002,1": "70b8052436c1d3633766260c5b74d012214792e7267b50d65df5efecff0e6899",
+              "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+              "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+              "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+              "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+              "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+            }
+          }
+        ],
+        "final": {
+          "a\u00000,0": "efb58282eaa86f33983aca071687aebd75b06ef21720e0caa90135a44ac59608",
+          "a\u00000,1": "9da111cec10e85e4117d9ec349f22079f2d4fa48a1651ce17db80f950f0d6097",
+          "a\u00000,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+          "a\u00001,0": "edaed7bff34419a48dd9dd8f0ac348a7f915ec98b0c11efbd16d025ea8c7ff0c",
+          "a\u00001,1": "bfe580cf7be2b31bb82325132deff7a74e40661e986afa7e55044872957d52ba",
+          "a\u00001,2": "74aac710433084782aff6b83a64f3583f7422278910bf8768cbb9036fa3daabe",
+          "a\u00002,0": "50a230dbe9bf654f96e50401193187bb5ab1b1db4bbebdf10c418710d663d44e",
+          "a\u00002,1": "0ce1858658d9618bf3068f3fb9c407bc51a906f1ed80067a5d07a62178e0fad4",
+          "a\u00002,2": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
+          "b\u00001,1": "0c262ba613c36e4dc87370d0f4db7ba86277dddda8fe2b153828011923ce9df2",
+          "b\u00002,1": "0d9cf7dd633ce401e29afdf33d338d78dc9fcaf5c7a1f0f192a93aa576a33d08",
+          "c\u00001,1": "0d5435b70ea8d2c372d645c770a484ae767cb03506b040a98c8a320268c83dd5",
+          "c\u00002,1": "54120ee24203a636b2312655c17bdf84d78c8da22c6e0fc9568c69d10f6d36bc"
+        },
+        "recordHash": "f93cb29e792930abcf9558b8f95ce8e3afc51ce0a65089bc71035200f64eff62",
+        "targets": 116,
+        "passes": 130,
+        "jobs": 252,
+        "commands": 1282,
+        "remainingTargets": 0,
+        "errors": []
+      }
+    }
+  ],
+  "errors": []
+}
