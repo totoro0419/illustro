@@ -22,18 +22,18 @@ export class DrawingHost {
    if(m.type==='fault'){this.presentationReject(Error(m.error));this.fault(m.error);return;}
    if(m.type==='document'){
     const accepted=m.epoch===this.epoch&&m.version>=this.documentVersion;
-    if(accepted){this.documentPresentation.apply(m.tiles);this.documentVersion=m.version;this.documentPresentation.update(this.backend.viewTransform);if(this.presentationVersion<this.documentVersion)this.canvas.style.opacity='0';}else for(const t of m.tiles)t.bitmap.close();
+    if(accepted){this.documentPresentation.apply(m.tiles);this.documentVersion=m.version;this.documentPresentation.update(this.backend.viewTransform);this.syncVisibility();}else for(const t of m.tiles)t.bitmap.close();
     const request=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);request?.resolve({accepted});return;
    }
    if(m.type==='read'){const r=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);r?.resolve(m.pixels);return;}
    if(m.type==='image'){this.presentationMetrics=m.performance;
     const accepted=m.epoch===this.epoch&&m.version>=this.presentationVersion&&m.version>=this.documentVersion;
-    if(accepted){this.presentationVersion=m.version;this.canvas.style.opacity=this.navigationActive&&this.backend.viewTransform?.[12]<.5&&this.backend.viewTransform?.[14]<.5?'0':'1';if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;this.context.transferFromImageBitmap(m.bitmap);this.presentationView=m.view;this.reproject();}else m.bitmap.close();
+    if(accepted){this.presentationVersion=m.version;this.syncVisibility();if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;this.context.transferFromImageBitmap(m.bitmap);this.presentationView=m.view;this.reproject();}else m.bitmap.close();
     this.onPresentation?.({kind:'display-image',at:performance.now(),accepted});
    }
   };this.presentation.onerror=e=>{this.presentationReject(Error(e.message));this.fault(e.message);};
   this.worker=new Worker(url,{type:'module'});this.requests=new Map;this.requestId=0;this.sequence=0;this.epoch=0;this.hiddenStrokeIds=new Set;this.layers=new Map;this.localFaults=[];this.errors=[];this.info={};this.completions=[];this.document={jobs:{length:0},count:0};this.backend={canvas,tiles:new Map,viewTransform:null,read:key=>this.read(key),readViewport:()=>this.call('readViewport'),readTiles:requests=>this.call('readTiles',requests)};
-  this.proxy={prepare:p=>this.send('prepare',p),setEnabled:value=>this.send('overlayEnabled',value),invalidate:()=>this.send('overlayInvalidate'),pending:new Map,finalizations:new Map,footprints:new Map};this.session=new DrawingSessionPort(this);this.worker.onmessage=({data:m})=>{
+  this.proxy={prepare:p=>this.send('prepare',p),setEnabled:value=>this.send('overlayEnabled',value),invalidate:()=>this.send('overlayInvalidate'),pending:{size:0},finalizations:{size:0},footprints:{size:0}};this.session=new DrawingSessionPort(this);this.worker.onmessage=({data:m})=>{
    if(this.disposed){closePicture(m);return;}if(m.state)this.update(m.state);
    if(m.type==='picture'){this.picture(m).catch(e=>this.fault(e.message));return;}if(m.type==='fault'){this.fault(m.message);return;}
    const request=this.requests.get(m.request);if(!request)return;this.requests.delete(m.request);if(m.error)request.reject(Error(m.error));else request.resolve(m.result);
@@ -45,7 +45,7 @@ export class DrawingHost {
  update(s){if(!s)return;this.info=s.info;this.errors=[...(s.errors??[]),...this.localFaults];this.completions=s.completions;this.summary=s.performance;
   Object.assign(this.document,{width:s.document.width,height:s.document.height,count:s.document.count});this.document.jobs.length=s.document.jobs;
   for(const key of ['inflight','needsFrame','viewPending','historyPreparing','guardPreparing'])this[key]=s[key];this.backend.presentationHeld=s.presentationHeld;
-  for(const [key,size]of [['pending',s.proxy.pending],['finalizations',s.proxy.finalizations],['footprints',s.proxy.footprints]])if(this.proxy[key].size!==size)this.proxy[key]=new Map(Array.from({length:size},(_,i)=>[i,true]));
+  for(const [key,size]of [['pending',s.proxy.pending],['finalizations',s.proxy.finalizations],['footprints',s.proxy.footprints]])this.proxy[key].size=size;
   this.proxy.error=s.proxy.error;const sessionId=this.session.id;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
   if(s.recordIds)for(const [token,id]of s.recordIds){const r=this.session.recordsByToken.get(token);if(r&&id!==undefined)this.session.recordIds.set(r,id);}
  }
@@ -66,12 +66,22 @@ export class DrawingHost {
   }
   this.reproject();this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
  }
+ syncVisibility(){
+  const v=this.backend.viewTransform,ordinary=!!v&&v[12]<.5&&v[14]<.5;
+  this.canvas.style.opacity=ordinary&&(this.navigationActive||this.presentationVersion<this.documentVersion)?'0':'1';
+ }
  reproject(){const to=this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
   if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}
   for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  }
- setViewTransform(view){const start=performance.now(),old=this.backend.viewTransform;if(old&&view.every((n,i)=>n===old[i]))return;this.backend.viewTransform=Array.from(view);this.reproject();this.presentation.postMessage({method:'view',view});this.send('view',view);(this.viewSamples??=[]).push(performance.now()-start);if(this.viewSamples.length>240)this.viewSamples.shift();this.onPresentation?.({kind:'view-transform',at:performance.now()});}
- setNavigationActive(active){active=!!active;if(active===this.navigationActive)return;this.navigationActive=active;this.presentation.postMessage({method:'navigation',active});if(active&&this.backend.viewTransform?.[12]<.5&&this.backend.viewTransform?.[14]<.5)this.canvas.style.opacity='0';}
+ setViewTransform(view){const start=performance.now(),old=this.backend.viewTransform;if(old&&view.every((n,i)=>n===old[i]))return;this.backend.viewTransform=Array.from(view);this.reproject();this.presentation.postMessage({method:'view',view});
+  // Document-space previews only need the new density when a stroke starts.
+  // Do not send every pan/zoom/rotation sample into the formal drawing queue.
+  if(!this.drawingView||[0,1,2,3,4,5,12,13,14].some(i=>this.drawingView[i]!==view[i])){
+   this.drawingView=Array.from(view);this.send('view',view);
+  }
+  this.syncVisibility();(this.viewSamples??=[]).push(performance.now()-start);if(this.viewSamples.length>240)this.viewSamples.shift();this.onPresentation?.({kind:'view-transform',at:performance.now()});}
+ setNavigationActive(active){active=!!active;if(active===this.navigationActive)return;this.navigationActive=active;this.presentation.postMessage({method:'navigation',active});this.syncVisibility();}
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
  setSeamlessPreview(active){this.send('seamless',active);}
@@ -86,7 +96,7 @@ export class DrawingHost {
  readPixel(x,y,surfaceKey){return this.call('pixel',{x,y,surfaceKey});}
  setPerformanceEnabled(enabled){this.send('measure',enabled);}
  performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
- frame(){if(!this.tickRequest&&!this.disposed)this.tickRequest=this.call('tick').catch(error=>{if(!this.disposed)this.fault(error.message);}).finally(()=>{this.tickRequest=null;});return false;}
+ frame(){return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
  destroy(){if(this.disposed)return;this.disposed=true;this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
@@ -94,7 +104,7 @@ function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const 
 
 class DrawingSessionPort {
  constructor(host){this.renderer=host;this.prediction=true;this.id=0;this.recordIds=new WeakMap;this.tokens=new WeakMap;this.recordsByToken=new Map;this.pending=[];this.pendingRawCount=0;this.rawAccepted=0;this.browserPredictions=0;this.errors=[];}
- begin(preset,fast=0,context={},surfaceKey='default'){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};this.renderer.send('begin',{preset,fast,context,surfaceKey,id});return id;}
+ begin(preset,fast=0,context={},surfaceKey='default'){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};if(this.renderer.backend.viewTransform)this.renderer.send('view',this.renderer.backend.viewTransform);this.renderer.send('begin',{preset,fast,context,surfaceKey,id});return id;}
  accept(sample){if(!this.active)return;this.pending.push(sample);this.active.count++;this.rawAccepted++;}
  predictions(samples){this.predicted=samples;this.browserPredictions+=samples.length;}
  flush(){if(!this.active||!this.pending.length)return;this.renderer.send('samples',{samples:this.pending,predictions:this.predicted??[],prediction:this.prediction});this.pending=[];}

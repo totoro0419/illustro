@@ -22,6 +22,21 @@ function stats(includeTiles=false){if(!renderer)return null;const r=renderer,b=r
   ...(includeTiles?{tiles:[...b.tiles.values()].map(({surfaceKey,key,x,y})=>({surfaceKey,key,x,y})),recordIds:[...records].map(([token,value])=>[token,session.recordIds.get(value)])}:{}),presentationHeld:b.presentationHeld};
 }
 function fail(error){postMessage({type:'fault',message:error instanceof Error?error.message:String(error)});}
+// Render work advances within the drawing worker, not from window rAF.
+let frameScheduled=false;
+function scheduleFrame(){
+ if(frameScheduled||!renderer||!session)return;
+ frameScheduled=true;
+ setTimeout(()=>{
+  frameScheduled=false;if(!renderer||renderer.disposed)return;
+  try{
+   session.frame(performance.now());
+   if(renderer.errors.length||session.errors.length)throw Error([...renderer.errors,...session.errors].join(';'));
+  }catch(error){fail(error);return;}
+  if(session.active||renderer.inflight||renderer.needsFrame||renderer.viewPending||renderer.guardPreparing||
+    renderer.document.jobs.length||renderer.mailbox.value||renderer.strokeFrames.size||renderer.backend.previewGpuPending) scheduleFrame();
+ },16);
+}
 function requestPublish(){publishRequested=true;queueMicrotask(()=>publish().catch(fail));}
 function coherent(){const r=renderer;if(!r||r.backend.presentationHeld||r.historyPreparing||r.inflight||r.strokeFrames.size)return false;
  // CPU pictures cover the entire document. Keep them until their exact
@@ -116,7 +131,6 @@ async function command(method,a){const r=renderer,s=session;
  case 'overlayEnabled':r.proxy?.setEnabled(a);return;
  case 'overlayInvalidate':r.proxy?.invalidate();return;
  case 'measure':r.setPerformanceEnabled(a);return;
- case 'tick':s.frame(performance.now());if(r.errors.length||s.errors.length)throw Error([...r.errors,...s.errors].join(';'));return;
  case 'recordGate':if(!diagnostics)throw Error('Diagnostics are disabled');recordGate=!!a;if(!a){const receive=session.worker.onmessage;for(const event of heldRecords.splice(0))receive(event);}return;
  case 'gate':if(!diagnostics)throw Error('Diagnostics are disabled');if(a){if(!formalGate){let release;const promise=new Promise(ok=>release=ok);formalGate={promise,release,stage:a==='picture'?'picture':'formal',held:null};}}else{formalGate?.release();formalGate=null;}return;
  case 'inspect':return stats(true);
@@ -124,4 +138,4 @@ async function command(method,a){const r=renderer,s=session;
  default:throw Error('Unknown drawing worker command: '+method);
  }
 }
-self.onmessage=({data:m})=>{Promise.resolve().then(()=>m.method==='init'?init(m.args):command(m.method,m.args)).then(result=>{if(m.request){const transfer=result instanceof Uint8Array||result instanceof Uint8ClampedArray?[result.buffer]:m.method==='readTiles'?result.map(t=>t.pixels.buffer):[];postMessage({type:'reply',request:m.request,result,state:stats(m.method==='navigate'||m.method==='restore'||m.method==='drain')},transfer);}}).catch(error=>m.request?postMessage({type:'reply',request:m.request,error:String(error),state:stats()}):fail(error));};
+self.onmessage=({data:m})=>{scheduleFrame();Promise.resolve().then(()=>m.method==='init'?init(m.args):command(m.method,m.args)).then(result=>{scheduleFrame();if(m.request){const transfer=result instanceof Uint8Array||result instanceof Uint8ClampedArray?[result.buffer]:m.method==='readTiles'?result.map(t=>t.pixels.buffer):[];postMessage({type:'reply',request:m.request,result,state:stats(m.method==='navigate'||m.method==='restore'||m.method==='drain')},transfer);}}).catch(error=>m.request?postMessage({type:'reply',request:m.request,error:String(error),state:stats()}):fail(error));};
