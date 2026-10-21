@@ -411,7 +411,7 @@ export class GpuRenderer {
  this.backend.previewTileBudget=cooperativeGpu?(this.gpuPreviewTileLimit??8):Infinity;
  const firstGpuPreview=cooperativeGpu&&!instant&&!catchup&&latest&&!this.inputStarts.get(latest.id)?.submitted;
  const fallbackLimit=cooperativeGpu&&!catchup&&!this.backend.presentationHeld&&!this.document.jobs[0]?.commit?16:catchup||this.backend.presentationHeld||!this.snapshot||this.snapshot.finished?128:this.handoffJobLimit;
- const interactiveFormal=this.tiledPresentation&&(this.gestureActive||performance.now()<(this.releaseInteractiveUntil??0));
+ const interactiveFormal=this.tiledPresentation&&(this.gestureActive||active||performance.now()<(this.releaseInteractiveUntil??0));
  const idleBacklog=this.tiledPresentation&&!interactiveFormal&&this.document.jobs.length>512;
  const releaseLimit=this.tiledPresentation?(interactiveFormal?1:idleBacklog?24:this.lastGpuWork>48?4:this.lastGpuWork>24?8:16):performance.now()<(this.releaseInteractiveUntil??0)?1:Infinity;
  // Count pixel-command work as well as tiles; one wide, textured brush can
