@@ -37,7 +37,7 @@ test('navigation does not send view messages to raster or presentation workers w
   reproject(){calls.push(['rebase'])},onPresentation(){calls.push(['observed'])}};
  DrawingHost.prototype.setNavigationActive.call(host,true);
  calls.length=0;
- for(let i=0;i<50;i++)DrawingHost.prototype.setViewTransform.call(host,view(i*3,1+i*.005,i*.004));
+ for(let i=1;i<=50;i++)DrawingHost.prototype.setViewTransform.call(host,view(i*3,1+i*.005,i*.004));
  assert.equal(calls.filter(x=>x[0]==='dom').length,50);
  assert.equal(calls.filter(x=>x[0]==='display'||x[0]==='draw'||x[0]==='rebase').length,0);
  DrawingHost.prototype.setNavigationActive.call(host,false);
