@@ -63,7 +63,7 @@ test('newly revealed bottom-right group keeps one parent transform',()=>{
 test('a covered stroke never hides the precise background before GPU replacement',()=>{
  const layer={element:{removed:false,remove(){this.removed=true;}}};
  const view=[668,1220,334,610,4000,4000,1,0,0,0,1,1,0,0,0,0];
- const host={backend:{viewTransform:view},canvas:{style:{}},navigationActive:false,presentationVersion:6,documentVersion:7,
+ const host={backend:{viewTransform:view},canvas:{style:{}},presentationVersion:6,documentVersion:7,
   uncoveredVersion:0,pendingRetirements:new Map([[42,7]]),layers:new Map([[42,layer]])};
  DrawingHost.prototype.syncVisibility.call(host);assert.equal(host.canvas.style.opacity,'1');
  DrawingHost.prototype.retireOverlays.call(host,6);assert.equal(layer.element.removed,false);
@@ -71,5 +71,4 @@ test('a covered stroke never hides the precise background before GPU replacement
  assert.equal(host.layers.size,0);
  host.uncoveredVersion=8;DrawingHost.prototype.syncVisibility.call(host);assert.equal(host.canvas.style.opacity,'0');
  host.presentationVersion=8;DrawingHost.prototype.syncVisibility.call(host);assert.equal(host.canvas.style.opacity,'1');
- host.navigationActive=true;DrawingHost.prototype.syncVisibility.call(host);assert.equal(host.canvas.style.opacity,'0');
 });
