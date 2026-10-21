@@ -1,5 +1,6 @@
 import {viewAffine} from '@rt/stroke-overlay';
 import {DocumentPresentation} from '@rt/document-presentation';
+import {ViewportScene} from '@rt/viewport-scene';
 
 
 // Window-side port: no brush reconstruction, pixel evaluation or GPU commands.
@@ -12,7 +13,7 @@ export class DrawingHost {
    host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend:host.info.selection.selected});await host.presentationReady;return host;
   }catch(error){host.destroy();throw error;}
  }
- constructor(canvas,url,presentationUrl){this.remote=true;this.canvas=canvas;this.context=canvas.getContext('bitmaprenderer');if(!this.context)throw Error('ImageBitmap presentation unavailable');this.uploadSamples=[];
+ constructor(canvas,url,presentationUrl){this.remote=true;this.canvas=canvas;this.context=canvas.getContext('bitmaprenderer');if(!this.context)throw Error('ImageBitmap presentation unavailable');this.uploadSamples=[];this.viewportScene=new ViewportScene(canvas);
   this.presentation=new Worker(presentationUrl,{type:'module'});this.presentationRequests=new Map;this.presentationRequestId=0;this.presentationVersion=0;this.preciseWaiters=[];this.uncoveredVersion=0;this.pendingCoverage=new Map;this.pendingRetirements=new Map;
   this.display={backend:{readViewport:()=>new Promise((resolve,reject)=>{const request=++this.presentationRequestId;this.presentationRequests.set(request,{resolve,reject,read:true});this.presentation.postMessage({method:'read',request});})}};
   this.presentationReady=new Promise((resolve,reject)=>{this.presentationResolve=resolve;this.presentationReject=reject;});
@@ -27,13 +28,14 @@ export class DrawingHost {
      const coverage=this.pendingCoverage.get(m.version);
      if(!coverage?.covered)this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);
      this.pendingCoverage.delete(m.version);
-     this.documentPresentation.update(this.backend.viewTransform);
+     this.documentPresentation.update(this.viewportScene.baseView??this.backend.viewTransform);
      this.syncVisibility();
     }else for(const t of m.tiles)t.bitmap.close();
     const request=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);request?.resolve({accepted});return;
    }
    if(m.type==='read'){const r=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);r?.resolve(m.pixels);return;}
    if(m.type==='image'){this.presentationMetrics=m.performance;
+    if(this.viewportScene.active){m.bitmap.close();return;}
     const accepted=m.epoch===this.epoch&&m.version>=this.presentationVersion&&m.version>=this.documentVersion;
     if(accepted){
      // Never expose an empty bitmap: install the complete image, then retire
@@ -121,22 +123,35 @@ export class DrawingHost {
   // by its temporary ink. Only unrepresented edits require the fallback scene.
   this.canvas.style.opacity=modeChanged||ordinary&&this.presentationVersion<this.uncoveredVersion?'0':'1';
  }
- reproject(){const to=this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
+ reproject(){const to=this.viewportScene.baseView??this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
   if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}
   for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
  }
  setViewTransform(view){
-  const start=performance.now(),old=this.backend.viewTransform;
+  const old=this.backend.viewTransform;
   if(old&&view.every((n,i)=>n===old[i]))return;
   this.backend.viewTransform=Array.from(view);
-  this.reproject();this.presentation.postMessage({method:'view',view});
-  if(!this.drawingView||[0,1,2,3,4,5,12,13,14].some(i=>this.drawingView[i]!==view[i])){
-   this.drawingView=Array.from(view);this.send('view',view);
+  if(this.viewportScene.active){
+   // No Worker messages, GPU calls or await on the live gesture path.
+   this.viewportScene.move(view);
+  }else{
+   this.reproject();this.presentation.postMessage({method:'view',view});
+   this.send('view',view);this.syncVisibility();
   }
-  this.syncVisibility();
-  (this.viewSamples??=[]).push(performance.now()-start);
+  (this.viewSamples??=[]).push(0);
   if(this.viewSamples.length>240)this.viewSamples.shift();
   this.onPresentation?.({kind:'view-transform',at:performance.now()});
+ }
+ beginViewportNavigation(){
+  if(!this.viewportScene.active)this.viewportScene.begin(this.backend.viewTransform);
+ }
+ endViewportNavigation(){
+  if(!this.viewportScene.active)return;
+  const view=this.backend.viewTransform,base=this.viewportScene.baseView;
+  this.viewportScene.baseView=null;
+  try{this.reproject();}finally{this.viewportScene.baseView=base;}
+  this.viewportScene.complete();this.syncVisibility();
+  if(view){this.presentation.postMessage({method:'view',view});this.send('view',view);}
  }
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
@@ -154,7 +169,7 @@ export class DrawingHost {
  performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
- destroy(){if(this.disposed)return;this.disposed=true;for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
+ destroy(){if(this.disposed)return;this.disposed=true;for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();this.viewportScene.destroy(this.canvas);for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 
