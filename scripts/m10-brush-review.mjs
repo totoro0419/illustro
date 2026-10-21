@@ -53,12 +53,23 @@ try {
   const first=await page.locator('#canvas').boundingBox();assert.ok(first?.width>100);
   await page.mouse.move(first.x+first.width*.3,first.y+first.height*.45);
   await page.mouse.down();await page.mouse.move(first.x+first.width*.7,first.y+first.height*.55,{steps:24});await page.mouse.up();
-  await page.waitForFunction(()=>Number(document.querySelector('canvas')?.dataset.committedStrokes)>=1,null,{timeout:90000});
+  try{await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>=1,null,{timeout:10000});}
+   catch(error){
+    const diagnostic=await page.evaluate(()=>{
+     const canvas=document.getElementById('canvas'),root=canvas?.closest('.surface'),rect=canvas?.getBoundingClientRect(),point=rect?{x:rect.x+rect.width*.5,y:rect.y+rect.height*.5}:null;
+     const hit=point?document.elementFromPoint(point.x,point.y):null,perf=window.__illustroPerformance?.read?.();
+     return {canvasRect:rect?{x:rect.x,y:rect.y,w:rect.width,h:rect.height}:null,rootClass:root?.className,
+      sceneClass:canvas?.parentElement?.className,hit:hit?.tagName,hitId:hit?.id,hitClass:hit?.className,
+      status:document.getElementById('status')?.textContent,committed:canvas?.dataset.committedStrokes,
+      inputAttempts:perf?.handoff?.inputAttempts?.slice(-3),errors:perf?.frameState?.errors,
+      lastEventTarget:document.activeElement?.id};});
+    throw Error('No committed stroke after pointer input; diagnostic='+JSON.stringify(diagnostic)+'; reason='+String(error));
+   }
   assert.equal(await page.locator('#undo').isDisabled(),false,'Undo enabled after a stroke');
   await page.locator('#undo').click();
-  await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='0',null,{timeout:90000});
+  await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='0',null,{timeout:90000});
   await page.locator('#redo').click();
-  await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.committedStrokes==='1',null,{timeout:90000});
+  await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1',null,{timeout:90000});
   await page.locator('#brushSearch').fill('M10 検証');
   assert.equal(await page.locator('#brush option').count(),1);
   const downloadPromise=page.waitForEvent('download');
