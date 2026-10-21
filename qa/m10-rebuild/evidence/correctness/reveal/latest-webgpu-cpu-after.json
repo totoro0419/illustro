@@ -9,7 +9,7 @@
     "height": 595.5
   },
   "blank": {
-    "checked": 57330,
+    "checked": 57369,
     "mismatch": 0
   },
   "early": {
@@ -37,9 +37,9 @@
     "errors": []
   },
   "expectedBlue": 1514,
-  "duringBlue": 1475,
-  "matchedBlue": 1413,
-  "fraction": 0.9332892998678997,
+  "duringBlue": 1476,
+  "matchedBlue": 1409,
+  "fraction": 0.9306472919418758,
   "geometryMatched": 1514,
   "geometryFraction": 1,
   "errors": []

@@ -1,5 +1,5 @@
 {
-  "source": "14e2d5eb6db49994c8b724bb0202967031e393cc",
+  "source": "0cf84ec691370422d8cf5ddd8aa170759e3cff1e",
   "browser": "141.0.7390.37",
   "scope": "Native touch and full composed PNGs; independent whole-document premultiplied RGBA comparison. Software GPU; physical phone acceptance unverified.",
   "cases": [
@@ -36,7 +36,7 @@
           0,
           0
         ],
-        "pendingGpu": 3,
+        "pendingGpu": 2,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -82,7 +82,7 @@
           0,
           0
         ],
-        "pendingGpu": 3,
+        "pendingGpu": 2,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -106,6 +106,58 @@
         "height": 595.5
       },
       "blank": {
+        "checked": 57369,
+        "mismatch": 0
+      },
+      "early": {
+        "view": [
+          668,
+          1191,
+          334,
+          595.5,
+          4000,
+          4000,
+          0.06499993056058884,
+          0.20000018179416656,
+          8,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pendingGpu": 3,
+        "accepted": 5,
+        "strokes": 4,
+        "errors": []
+      },
+      "expectedBlue": 1514,
+      "duringBlue": 1476,
+      "matchedBlue": 1409,
+      "fraction": 0.9306472919418758,
+      "geometryMatched": 1514,
+      "geometryFraction": 1,
+      "errors": [],
+      "exact": {
+        "bytes": 64000000,
+        "mismatch": 0,
+        "max": 0
+      },
+      "history": "exact"
+    },
+    {
+      "backend": "webgl2",
+      "route": "gpu",
+      "version": "before",
+      "box": {
+        "x": 56,
+        "y": 196.5,
+        "width": 334,
+        "height": 595.5
+      },
+      "blank": {
         "checked": 57329,
         "mismatch": 0
       },
@@ -134,63 +186,11 @@
         "errors": []
       },
       "expectedBlue": 1514,
-      "duringBlue": 1475,
-      "matchedBlue": 1413,
-      "fraction": 0.9332892998678997,
+      "duringBlue": 1514,
+      "matchedBlue": 1514,
+      "fraction": 1,
       "geometryMatched": 1514,
       "geometryFraction": 1,
-      "errors": [],
-      "exact": {
-        "bytes": 64000000,
-        "mismatch": 0,
-        "max": 0
-      },
-      "history": "exact"
-    },
-    {
-      "backend": "webgl2",
-      "route": "gpu",
-      "version": "before",
-      "box": {
-        "x": 56,
-        "y": 196.5,
-        "width": 334,
-        "height": 595.5
-      },
-      "blank": {
-        "checked": 57329,
-        "mismatch": 789
-      },
-      "early": {
-        "view": [
-          668,
-          1191,
-          334,
-          595.5,
-          4000,
-          4000,
-          0.06499993056058884,
-          0.20000018179416656,
-          8,
-          0,
-          1,
-          1,
-          0,
-          0,
-          0,
-          0
-        ],
-        "pendingGpu": 3,
-        "accepted": 5,
-        "strokes": 4,
-        "errors": []
-      },
-      "expectedBlue": 1514,
-      "duringBlue": 1072,
-      "matchedBlue": 1048,
-      "fraction": 0.6922060766182299,
-      "geometryMatched": 1081,
-      "geometryFraction": 0.7140026420079261,
       "errors": []
     },
     {
@@ -250,6 +250,58 @@
         "height": 595.5
       },
       "blank": {
+        "checked": 58014,
+        "mismatch": 0
+      },
+      "early": {
+        "view": [
+          668,
+          1191,
+          334,
+          595.5,
+          4000,
+          4000,
+          0.06499993056058884,
+          0.20000018179416656,
+          8,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pendingGpu": 3,
+        "accepted": 5,
+        "strokes": 4,
+        "errors": []
+      },
+      "expectedBlue": 1476,
+      "duringBlue": 1476,
+      "matchedBlue": 1476,
+      "fraction": 1,
+      "geometryMatched": 1476,
+      "geometryFraction": 1,
+      "errors": [],
+      "exact": {
+        "bytes": 64000000,
+        "mismatch": 0,
+        "max": 0
+      },
+      "history": "exact"
+    },
+    {
+      "backend": "webgl2",
+      "route": "auto",
+      "version": "before",
+      "box": {
+        "x": 56,
+        "y": 196.5,
+        "width": 334,
+        "height": 595.5
+      },
+      "blank": {
         "checked": 57329,
         "mismatch": 0
       },
@@ -278,63 +330,11 @@
         "errors": []
       },
       "expectedBlue": 1514,
-      "duringBlue": 1475,
-      "matchedBlue": 1416,
-      "fraction": 0.9352708058124174,
+      "duringBlue": 1514,
+      "matchedBlue": 1514,
+      "fraction": 1,
       "geometryMatched": 1514,
       "geometryFraction": 1,
-      "errors": [],
-      "exact": {
-        "bytes": 64000000,
-        "mismatch": 0,
-        "max": 0
-      },
-      "history": "exact"
-    },
-    {
-      "backend": "webgl2",
-      "route": "auto",
-      "version": "before",
-      "box": {
-        "x": 56,
-        "y": 196.5,
-        "width": 334,
-        "height": 595.5
-      },
-      "blank": {
-        "checked": 57329,
-        "mismatch": 789
-      },
-      "early": {
-        "view": [
-          668,
-          1191,
-          334,
-          595.5,
-          4000,
-          4000,
-          0.06499993056058884,
-          0.20000018179416656,
-          8,
-          0,
-          1,
-          1,
-          0,
-          0,
-          0,
-          0
-        ],
-        "pendingGpu": 3,
-        "accepted": 5,
-        "strokes": 4,
-        "errors": []
-      },
-      "expectedBlue": 1514,
-      "duringBlue": 1072,
-      "matchedBlue": 1048,
-      "fraction": 0.6922060766182299,
-      "geometryMatched": 1081,
-      "geometryFraction": 0.7140026420079261,
       "errors": []
     },
     {
@@ -394,7 +394,7 @@
         "height": 595.5
       },
       "blank": {
-        "checked": 57329,
+        "checked": 58014,
         "mismatch": 0
       },
       "early": {
@@ -421,11 +421,11 @@
         "strokes": 4,
         "errors": []
       },
-      "expectedBlue": 1514,
-      "duringBlue": 1475,
-      "matchedBlue": 1416,
-      "fraction": 0.9352708058124174,
-      "geometryMatched": 1514,
+      "expectedBlue": 1476,
+      "duringBlue": 1476,
+      "matchedBlue": 1476,
+      "fraction": 1,
+      "geometryMatched": 1476,
       "geometryFraction": 1,
       "errors": [],
       "exact": {
@@ -468,7 +468,7 @@
           0,
           0
         ],
-        "pendingGpu": 3,
+        "pendingGpu": 2,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -514,7 +514,7 @@
           0,
           0
         ],
-        "pendingGpu": 3,
+        "pendingGpu": 2,
         "accepted": 5,
         "strokes": 4,
         "errors": []
@@ -538,7 +538,7 @@
         "height": 595.5
       },
       "blank": {
-        "checked": 57330,
+        "checked": 57369,
         "mismatch": 0
       },
       "early": {
@@ -566,9 +566,9 @@
         "errors": []
       },
       "expectedBlue": 1514,
-      "duringBlue": 1475,
-      "matchedBlue": 1413,
-      "fraction": 0.9332892998678997,
+      "duringBlue": 1476,
+      "matchedBlue": 1409,
+      "fraction": 0.9306472919418758,
       "geometryMatched": 1514,
       "geometryFraction": 1,
       "errors": [],
@@ -682,7 +682,7 @@
         "height": 595.5
       },
       "blank": {
-        "checked": 57330,
+        "checked": 58014,
         "mismatch": 0
       },
       "early": {
@@ -709,11 +709,11 @@
         "strokes": 4,
         "errors": []
       },
-      "expectedBlue": 1514,
-      "duringBlue": 1475,
-      "matchedBlue": 1416,
-      "fraction": 0.9352708058124174,
-      "geometryMatched": 1514,
+      "expectedBlue": 1476,
+      "duringBlue": 1476,
+      "matchedBlue": 1476,
+      "fraction": 1,
+      "geometryMatched": 1476,
       "geometryFraction": 1,
       "errors": [],
       "exact": {
@@ -826,7 +826,7 @@
         "height": 595.5
       },
       "blank": {
-        "checked": 57330,
+        "checked": 58014,
         "mismatch": 0
       },
       "early": {
@@ -853,11 +853,11 @@
         "strokes": 4,
         "errors": []
       },
-      "expectedBlue": 1514,
-      "duringBlue": 1475,
-      "matchedBlue": 1416,
-      "fraction": 0.9352708058124174,
-      "geometryMatched": 1514,
+      "expectedBlue": 1476,
+      "duringBlue": 1476,
+      "matchedBlue": 1476,
+      "fraction": 1,
+      "geometryMatched": 1476,
       "geometryFraction": 1,
       "errors": [],
       "exact": {

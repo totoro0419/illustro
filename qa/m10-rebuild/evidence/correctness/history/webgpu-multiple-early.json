@@ -2,24 +2,24 @@
   "input": [
     {
       "type": "pointerdown",
-      "at": 6609,
-      "eventAt": 6598.099999999977,
+      "at": 6202.299999999988,
+      "eventAt": 6190.899999999965,
       "id": "compactUndo",
       "trusted": true,
       "pointerType": "touch"
     },
     {
       "type": "pointerup",
-      "at": 6625,
-      "eventAt": 6609.699999999953,
+      "at": 6218.399999999965,
+      "eventAt": 6202.700000000012,
       "id": "compactUndo",
       "trusted": true,
       "pointerType": "touch"
     }
   ],
   "diag": {
-    "commit": "14e2d5eb6db49994c8b724bb0202967031e393cc",
-    "revision": "3b434196-8a0d-4c69-85e5-ca37a4719ec5",
+    "commit": "0cf84ec691370422d8cf5ddd8aa170759e3cff1e",
+    "revision": "e91c8552-daa3-4edd-a6f8-5be87af8a6f3",
     "strokes": 0,
     "historyNavigation": {
       "pending": false,
@@ -34,8 +34,8 @@
     },
     "historyInputs": [
       {
-        "at": 6609.199999999953,
-        "eventAt": 6598.099999999977,
+        "at": 6202.299999999988,
+        "eventAt": 6190.899999999965,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "down",
@@ -43,8 +43,8 @@
         "disabled": false
       },
       {
-        "at": 6625.099999999977,
-        "eventAt": 6609.699999999953,
+        "at": 6218.5,
+        "eventAt": 6202.700000000012,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "up",
@@ -52,8 +52,8 @@
         "disabled": false
       },
       {
-        "at": 6628.699999999953,
-        "eventAt": 6609.699999999953,
+        "at": 6220.899999999965,
+        "eventAt": 6202.700000000012,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "accepted",
@@ -62,8 +62,8 @@
         "reason": "accepted"
       },
       {
-        "at": 6629.900000000023,
-        "eventAt": 6609.699999999953,
+        "at": 6222.299999999988,
+        "eventAt": 6202.700000000012,
         "button": "compactUndo",
         "direction": "undo",
         "phase": "compatibility-click",
@@ -100,7 +100,7 @@
         "reason": "比較用に指定された方式",
         "switches": 0,
         "profiles": 1,
-        "cpuP95Ms": 36.79990234377328,
+        "cpuP95Ms": 35.29999999998836,
         "cpuWaitLowerBoundP95Ms": null,
         "gpuP95Ms": null,
         "cpuUnpresentedSamples": 0,
@@ -133,11 +133,11 @@
       "samples": [
         {
           "id": 10,
-          "inputAt": 6058,
+          "inputAt": 5651.5,
           "finished": false,
-          "at": 6093.299902343773,
-          "cpuMs": 2.300000000046566,
-          "inputToUploadMs": 35.29990234377328,
+          "at": 5686.799999999988,
+          "cpuMs": 1.900000000023283,
+          "inputToUploadMs": 35.29999999998836,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -146,11 +146,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6091.400000000023,
+          "inputAt": 5685.299999999988,
           "finished": false,
-          "at": 6126.499902343727,
-          "cpuMs": 2.199999999953434,
-          "inputToUploadMs": 35.099902343703434,
+          "at": 5719.599999999977,
+          "cpuMs": 1.3999999999650754,
+          "inputToUploadMs": 34.29999999998836,
           "updatedPixels": 15360,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -159,11 +159,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6124.599999999977,
+          "inputAt": 5718.5,
           "finished": false,
-          "at": 6159.69990234368,
-          "cpuMs": 2,
-          "inputToUploadMs": 35.099902343703434,
+          "at": 5753.399999999965,
+          "cpuMs": 1.7999999999883585,
+          "inputToUploadMs": 34.899999999965075,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -172,11 +172,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6157.900000000023,
+          "inputAt": 5752.200000000012,
           "finished": false,
-          "at": 6193.19990234368,
-          "cpuMs": 2.199999999953434,
-          "inputToUploadMs": 35.29990234365687,
+          "at": 5786.899999999965,
+          "cpuMs": 1.8999999999650754,
+          "inputToUploadMs": 34.699999999953434,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -185,11 +185,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6191.300000000047,
+          "inputAt": 5785.5,
           "finished": false,
-          "at": 6226.299902343773,
-          "cpuMs": 2,
-          "inputToUploadMs": 34.99990234372672,
+          "at": 5819.899999999965,
+          "cpuMs": 1.5,
+          "inputToUploadMs": 34.399999999965075,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -198,11 +198,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6224.599999999977,
+          "inputAt": 5818.799999999988,
           "finished": false,
-          "at": 6259.799902343773,
-          "cpuMs": 2.1000000000931323,
-          "inputToUploadMs": 35.199902343796566,
+          "at": 5853.399999999965,
+          "cpuMs": 1.6999999999534339,
+          "inputToUploadMs": 34.59999999997672,
           "updatedPixels": 14336,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -211,11 +211,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6258,
+          "inputAt": 5852.099999999977,
           "finished": false,
-          "at": 6293.39990234375,
-          "cpuMs": 2.400000000023283,
-          "inputToUploadMs": 35.39990234375,
+          "at": 5886.700000000012,
+          "cpuMs": 1.8000000000465661,
+          "inputToUploadMs": 34.600000000034925,
           "updatedPixels": 15360,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -224,11 +224,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6291.400000000023,
+          "inputAt": 5885.399999999965,
           "finished": false,
-          "at": 6326.599902343703,
-          "cpuMs": 2.299999999930151,
-          "inputToUploadMs": 35.19990234368015,
+          "at": 5920.099999999977,
+          "cpuMs": 1.7999999999883585,
+          "inputToUploadMs": 34.70000000001164,
           "updatedPixels": 13312,
           "proxyPixels": 438900,
           "visibleArea": 16000000,
@@ -237,11 +237,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6324.599999999977,
+          "inputAt": 5918.799999999988,
           "finished": false,
-          "at": 6362.999902343727,
-          "cpuMs": 5.300000000046566,
-          "inputToUploadMs": 38.39990234375,
+          "at": 5955.5,
+          "cpuMs": 4,
+          "inputToUploadMs": 36.70000000001164,
           "updatedPixels": 77824,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -250,11 +250,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6357.900000000023,
+          "inputAt": 5952,
           "finished": false,
-          "at": 6393.099902343703,
-          "cpuMs": 2.099999999976717,
-          "inputToUploadMs": 35.19990234368015,
+          "at": 5986.700000000012,
+          "cpuMs": 1.7000000000116415,
+          "inputToUploadMs": 34.70000000001164,
           "updatedPixels": 13312,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -263,11 +263,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6391.300000000047,
+          "inputAt": 5985.399999999965,
           "finished": false,
-          "at": 6426.599902343703,
-          "cpuMs": 2.299999999930151,
-          "inputToUploadMs": 35.29990234365687,
+          "at": 6019.700000000012,
+          "cpuMs": 1.6000000000349246,
+          "inputToUploadMs": 34.300000000046566,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -276,11 +276,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6424.599999999977,
+          "inputAt": 6018.5,
           "finished": false,
-          "at": 6459.69990234368,
-          "cpuMs": 2.099999999976717,
-          "inputToUploadMs": 35.099902343703434,
+          "at": 6052.899999999965,
+          "cpuMs": 1.5,
+          "inputToUploadMs": 34.399999999965075,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -289,11 +289,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6457.900000000023,
+          "inputAt": 6051.700000000012,
           "finished": false,
-          "at": 6493.099902343703,
-          "cpuMs": 2.099999999976717,
-          "inputToUploadMs": 35.19990234368015,
+          "at": 6086.200000000012,
+          "cpuMs": 1.6000000000349246,
+          "inputToUploadMs": 34.5,
           "updatedPixels": 13312,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -302,11 +302,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6491.300000000047,
+          "inputAt": 6084.799999999988,
           "finished": false,
-          "at": 6526.89990234375,
-          "cpuMs": 2.599999999976717,
-          "inputToUploadMs": 35.599902343703434,
+          "at": 6119.599999999977,
+          "cpuMs": 1.599999999976717,
+          "inputToUploadMs": 34.79999999998836,
           "updatedPixels": 14336,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -315,11 +315,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6524.699999999953,
+          "inputAt": 6118.200000000012,
           "finished": false,
-          "at": 6561.499902343727,
-          "cpuMs": 3.900000000023283,
-          "inputToUploadMs": 36.79990234377328,
+          "at": 6153,
+          "cpuMs": 1.7000000000116415,
+          "inputToUploadMs": 34.79999999998836,
           "updatedPixels": 15360,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -328,11 +328,11 @@
         },
         {
           "id": 10,
-          "inputAt": 6524.699999999953,
+          "inputAt": 6118.200000000012,
           "finished": true,
-          "at": 6579.099902343703,
-          "cpuMs": 3.900000000023283,
-          "inputToUploadMs": 54.39990234375,
+          "at": 6171.5,
+          "cpuMs": 2,
+          "inputToUploadMs": 53.29999999998836,
           "updatedPixels": 12288,
           "proxyPixels": 483560,
           "visibleArea": 16000000,
@@ -340,11 +340,11 @@
           "generation": 124
         }
       ],
-      "maxCpuMs": 5.5,
+      "maxCpuMs": 4.5,
       "backgroundSlices": 0,
       "maxBackgroundMs": 0,
-      "foregroundSlices": 140,
-      "maxSliceMs": 5.5,
+      "foregroundSlices": 136,
+      "maxSliceMs": 4.599999999976717,
       "cancelledUpdates": 0,
       "deadlineFallbacks": 0,
       "finalizationSwaps": 0,
@@ -356,7 +356,7 @@
       "reason": "比較用に指定された方式",
       "switches": 0,
       "profiles": 1,
-      "cpuP95Ms": 36.79990234377328,
+      "cpuP95Ms": 35.29999999998836,
       "cpuWaitLowerBoundP95Ms": null,
       "gpuP95Ms": null,
       "cpuUnpresentedSamples": 0,
@@ -372,10 +372,10 @@
     "compositedTiles": 0,
     "compositedLayerPasses": 0,
     "supersededViews": 0,
-    "submissionFps": 3.700277520814061,
-    "frameIntervalP95Ms": 886.7000000000698,
-    "inputToSubmissionP95Ms": 1.2000000000698492,
-    "cpuSubmitP95Ms": 0.2999999999301508,
+    "submissionFps": 4.451368795904568,
+    "frameIntervalP95Ms": 750.8000000000466,
+    "inputToSubmissionP95Ms": 0.8000000000465661,
+    "cpuSubmitP95Ms": 0.29999999998835847,
     "queueCompletionProxyMs": 0.30000000004656613,
     "gpuExecutionMs": null,
     "historyGpuReservedBytes": 0,
@@ -405,7 +405,7 @@
         "mode": "opfs",
         "memoryBudget": 16777216,
         "memoryBytes": 0,
-        "diskBudget": 96408976,
+        "diskBudget": 110862645,
         "diskBytes": 0,
         "blocks": 0,
         "aliases": 0,
@@ -448,7 +448,7 @@
       "publications": 124,
       "formal": [
         {
-          "at": 1792577427438.4,
+          "at": 1792588559438,
           "cpuMs": 0.09999999997671694,
           "jobs": 0,
           "tiles": 0,
@@ -456,15 +456,7 @@
           "compositedTiles": 0
         },
         {
-          "at": 1792577428331,
-          "cpuMs": 0.10000000009313226,
-          "jobs": 0,
-          "tiles": 0,
-          "commands": 0,
-          "compositedTiles": 0
-        },
-        {
-          "at": 1792577428417.9,
+          "at": 1792588560194.6,
           "cpuMs": 0.09999999997671694,
           "jobs": 0,
           "tiles": 0,
@@ -472,24 +464,32 @@
           "compositedTiles": 0
         },
         {
-          "at": 1792577428465,
-          "cpuMs": 0.10000000009313226,
+          "at": 1792588560258.3,
+          "cpuMs": 0.09999999997671694,
           "jobs": 0,
           "tiles": 0,
           "commands": 0,
           "compositedTiles": 0
         },
         {
-          "at": 1792577428508.9,
-          "cpuMs": 0.2000000000698492,
+          "at": 1792588560297.2,
+          "cpuMs": 0.1000000000349246,
           "jobs": 0,
           "tiles": 0,
           "commands": 0,
           "compositedTiles": 0
         },
         {
-          "at": 1792577428519.5,
+          "at": 1792588560324.3,
           "cpuMs": 0,
+          "jobs": 0,
+          "tiles": 0,
+          "commands": 0,
+          "compositedTiles": 0
+        },
+        {
+          "at": 1792588560336.7,
+          "cpuMs": 0.1000000000349246,
           "jobs": 0,
           "tiles": 0,
           "commands": 0,
@@ -508,16 +508,19 @@
     "displayWorker": {
       "uploads": 0,
       "uploadCpuMaxMs": 0,
-      "renderCpuMaxMs": 0.2999999999301508,
-      "frames": 2
+      "renderCpuMaxMs": 0.19999999995343387,
+      "frames": 2,
+      "displayGroups": 0
     },
     "retainedDocumentTiles": 0,
+    "retainedDocumentGroups": 0,
+    "deferredStrokePictures": 0,
     "retainedDocumentBytes": 0,
     "handoff": {
       "inputAttempts": [
         {
-          "at": 2493,
-          "eventAt": 2490.1999999999534,
+          "at": 2120.399999999965,
+          "eventAt": 2114.899999999965,
           "reason": null,
           "state": {
             "finishing": false,
@@ -529,12 +532,12 @@
             "pendingRaw": 0,
             "protectionQueue": 0
           },
-          "acceptedAt": 2493.3000000000466,
+          "acceptedAt": 2121,
           "id": 1
         },
         {
-          "at": 4526.900000000023,
-          "eventAt": 4512.699999999953,
+          "at": 4154.099999999977,
+          "eventAt": 4139,
           "reason": null,
           "state": {
             "finishing": false,
@@ -546,7 +549,7 @@
             "pendingRaw": 61,
             "protectionQueue": 0
           },
-          "acceptedAt": 4527,
+          "acceptedAt": 4154.200000000012,
           "id": 10
         }
       ],
@@ -577,8 +580,8 @@
         {
           "direction": "undo",
           "id": 10,
-          "at": 6625.400000000023,
-          "invalidatedAt": 6625.400000000023,
+          "at": 6218.700000000012,
+          "invalidatedAt": 6219.599999999977,
           "kind": "reserved"
         }
       ],
@@ -587,20 +590,20 @@
       "traces": [
         {
           "id": 1,
-          "upAt": 4508.5,
-          "readyMs": 1,
-          "uiStateMs": 1
+          "upAt": 4135.599999999977,
+          "readyMs": 0.9000000000232831,
+          "uiStateMs": 0.9000000000232831
         },
         {
           "id": 10,
-          "upAt": 6574.900000000023,
-          "readyMs": 1,
-          "uiStateMs": 0.9000000000232831
+          "upAt": 6168.399999999965,
+          "readyMs": 0.9000000000232831,
+          "uiStateMs": 0.7999999999883585
         }
       ]
     },
     "frameState": {
-      "lastFrameAt": 6624.099999999977,
+      "lastFrameAt": 6217.799999999988,
       "disposed": false,
       "operationMode": "idle",
       "pointer": null,
