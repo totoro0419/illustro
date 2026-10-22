@@ -67,6 +67,11 @@ jobs:
         run: |
           M08_SMOKE_QUICK=1 M08_EVIDENCE_DIRECTORY=/tmp/zero-tick-evidence/m08 node scripts/editor-m08-smoke.mjs
           M09_EVIDENCE_DIRECTORY=/tmp/zero-tick-evidence/m09 node scripts/editor-m09-smoke.mjs
+      - name: M10 brush settings, history, saving and works gallery regression
+        run: |
+          M10_EDITOR_EVIDENCE=/tmp/zero-tick-evidence/m10-brush-editor.json node scripts/m10-brush-editor-review.mjs
+          M05_EVIDENCE_DIRECTORY=/tmp/zero-tick-evidence/m05 M05_EXPECT_MILESTONE=M07 node scripts/editor-m05-smoke.mjs
+          MY_WORKS_EVIDENCE=/tmp/zero-tick-evidence/my-works.json node scripts/my-works-open-review.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: zero-tick-browser-evidence, path: /tmp/zero-tick-evidence/}
