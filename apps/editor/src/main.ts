@@ -13,7 +13,10 @@ import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {BrushPresetLibrary} from './brushPresets';
-import type {FoundationPreset} from '@illustro/brush-rt';
+import {installBrushAdvancedEditor} from './brushAdvancedEditor';
+import {sameEditableBrush} from './brushEditorModel';
+import './ui/brushEditor.css';
+import {compilePreset,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
 import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
@@ -37,6 +40,8 @@ let controller=new EditorController();
 const foreground=new ForegroundColor();
 const brushPresets=new BrushPresetLibrary();
 let builtInBrushes:FoundationPreset[]=[];
+const brushDrafts=new Map<string,FoundationPreset>();
+let advancedBrushEditor:ReturnType<typeof installBrushAdvancedEditor>|null=null;
 let eyedropperOriginal=foreground.current;
 let historyNavigation:HistoryNavigation|undefined;
 const admittedHistoryChanges:EditorHistoryChange[]=[];
@@ -188,6 +193,22 @@ byId('eyedropper').onclick=activateEyedropper;
 byId<HTMLSelectElement>('colorSampleSource').onchange=()=>{if(selectedTool==='eyedropper')surface?.setEyedropper(true,byId<HTMLSelectElement>('colorSampleSource').value as 'composite'|'layer');};
 addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='i'||e.altKey||e.ctrlKey||e.metaKey||e.repeat||(e.target instanceof HTMLElement&&e.target.closest('input,textarea,select,[contenteditable]')))return;e.preventDefault();if(selectedTool==='eyedropper')restoreDrawingTool();else activateEyedropper();});
 
+function savedBrush(id:string):FoundationPreset|undefined{return brushPresets.all(builtInBrushes).find(p=>p.id===id);}
+function applyBrushChange(change:(draft:FoundationPreset)=>void):boolean{
+ if(!surface?.preset)return false;
+ if(surface.inputActive){brushMessage('描画中は設定を変更できません。線を離してから調整してください。');return false;}
+ const draft=structuredClone(surface.preset);
+ try{
+  change(draft);
+  compilePreset(draft,{forceFadeGeometry:'adaptive-v1'});
+  surface.applyPreset(draft);
+  const original=savedBrush(draft.id);
+  if(original&&sameEditableBrush(draft,original))brushDrafts.delete(draft.id);
+  else brushDrafts.set(draft.id,structuredClone(draft));
+  syncPreset();
+  return true;
+ }catch(error){brushMessage('この設定は使えません: '+String(error));return false;}
+}
 function syncPreset(){
  if(!surface?.preset)return;
  const p=surface.preset;
@@ -196,10 +217,16 @@ function syncPreset(){
  for(const [id,value] of [['brushOpacity',p.opacity],['brushFlow',p.flow],['brushSpacing',p.spacing.value],['brushPressure',p.pressure.smoothing],['brushStabilization',p.stabilization.constant],['brushTexture',p.texture.paper.strength]] as const){
   const control=byId<HTMLInputElement>(id);control.value=String(Math.round(value*100));
   byId<HTMLOutputElement>(id+'Value').value=String(Math.round(value*100))+'%';
+  const numeric=document.getElementById(id+'Number') as HTMLInputElement|null;
+  if(numeric&&document.activeElement!==numeric)numeric.value=String(Math.round(value*100));
  }
  byId<HTMLInputElement>('brushAzimuth').checked=p.tip.azimuth;
  byId<HTMLInputElement>('brushTwist').checked=p.tip.twist;
  const user=brushPresets.isUser(p.id);
+ const original=savedBrush(p.id),dirty=Boolean(original&&!sameEditableBrush(p,original));
+ byId('brushModifiedStatus').textContent=dirty?'変更あり・未保存':'保存済み';
+ byId<HTMLButtonElement>('brushReset').disabled=!dirty;
+ advancedBrushEditor?.sync(p);
  byId<HTMLButtonElement>('brushRename').disabled=!user;
  byId<HTMLButtonElement>('brushDelete').disabled=!user;
  updateQa();
@@ -457,7 +484,9 @@ function refreshBrushCatalog(selectId?:string){
 }
 function selectPreset(id:string){
  if(!surface)return;
- surface.setEyedropper(false);surface.selectById(id);surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);
+ surface.setEyedropper(false);surface.selectById(id);
+ const pending=brushDrafts.get(id);if(pending)surface.applyPreset(pending);
+ surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);
  const erasing=surface.blendMode==='erase';selectedTool=erasing?'eraser':'brush';
  if(erasing)lastEraserPresetId=surface.brushId;else lastBrushPresetId=surface.brushId;
  lastDrawingTool=selectedTool;refreshBrushOptions();byId<HTMLSelectElement>('brush').value=surface.brushId;
@@ -467,14 +496,13 @@ function selectPreset(id:string){
 function brushMessage(message:string){byId('brushLibraryStatus').textContent=message;}
 function editBrushParameter(controlId:string,change:(preset:FoundationPreset,value:number)=>void){
  const input=byId<HTMLInputElement>(controlId);
- input.addEventListener('input',()=>{
-  if(!surface?.preset||surface.inputActive)return;
-  const number=Number(input.value);
-  if(!Number.isFinite(number))return;
-  const draft=structuredClone(surface.preset);
-  try{change(draft,number/100);surface.applyPreset(draft);syncPreset();}
-  catch(error){brushMessage('設定を変更できません: '+String(error));}
- });
+ const changeValue=(value:string)=>{
+  const number=Number(value);
+  if(!value||!Number.isFinite(number)||number<0||number>100){brushMessage('0〜100で設定してください');syncPreset();return;}
+  if(!applyBrushChange(p=>change(p,number/100)))syncPreset();
+ };
+ input.addEventListener('input',()=>changeValue(input.value));
+ (document.getElementById(controlId+'Number') as HTMLInputElement|null)?.addEventListener('change',event=>changeValue((event.target as HTMLInputElement).value));
 }
 for(const [id,change] of [
  ['brushOpacity',(p:FoundationPreset,v:number)=>{p.opacity=v;}],
@@ -486,11 +514,20 @@ for(const [id,change] of [
 ] as const)editBrushParameter(id,change);
 for(const [id,key] of [['brushAzimuth','azimuth'],['brushTwist','twist']] as const){
  byId<HTMLInputElement>(id).addEventListener('change',event=>{
-   if(!surface?.preset)return;
-   const draft=structuredClone(surface.preset);draft.tip[key]=(event.target as HTMLInputElement).checked;
-   try{surface.applyPreset(draft);syncPreset();}catch(error){brushMessage(String(error));}
+  if(!applyBrushChange(p=>{p.tip[key]=(event.target as HTMLInputElement).checked;}))syncPreset();
  });
 }
+advancedBrushEditor=installBrushAdvancedEditor({
+ getPreset:()=>surface?.preset??null,
+ edit:applyBrushChange,
+ message:brushMessage
+});
+byId<HTMLButtonElement>('brushReset').onclick=()=>{
+ const current=surface?.preset;if(!current||surface?.inputActive)return;
+ brushDrafts.delete(current.id);
+ selectPreset(current.id);
+ brushMessage('保存済みのブラシ設定に戻しました。');
+};
 byId<HTMLInputElement>('brushSearch').addEventListener('input',refreshBrushOptions);
 byId<HTMLButtonElement>('brushDuplicate').onclick=()=>{
  if(!surface?.preset)return;
@@ -502,8 +539,8 @@ byId<HTMLButtonElement>('brushSave').onclick=()=>{
  try{
   if(!brushPresets.isUser(surface.preset.id)){
    const created=brushPresets.duplicate(surface.preset,surface.preset.name+' のコピー');
-   refreshBrushCatalog(created.id);brushMessage('標準ブラシから自作ブラシを作成して保存しました。');
-  }else{brushPresets.save(surface.preset);refreshBrushCatalog(surface.preset.id);brushMessage('自作ブラシの設定を保存しました。');}
+   brushDrafts.delete(created.id);refreshBrushCatalog(created.id);brushMessage('標準ブラシから自作ブラシを作成して保存しました。');
+  }else{const id=surface.preset.id;brushPresets.save(surface.preset);brushDrafts.delete(id);refreshBrushCatalog(id);brushMessage('自作ブラシの設定を保存しました。');}
  }catch(error){brushMessage('保存できません: '+String(error));}
 };
 byId<HTMLButtonElement>('brushRename').onclick=()=>{
@@ -515,7 +552,7 @@ byId<HTMLButtonElement>('brushRename').onclick=()=>{
 byId<HTMLButtonElement>('brushDelete').onclick=()=>{
  if(!surface?.preset||!brushPresets.isUser(surface.preset.id))return;
  if(!confirm('この自作ブラシを削除しますか？作品に描いた線は消えません。'))return;
- try{const id=surface.preset.id;brushPresets.remove(id);refreshBrushCatalog('foundation-g-pen');brushMessage('自作ブラシを削除しました。');}
+ try{const id=surface.preset.id;brushPresets.remove(id);brushDrafts.delete(id);refreshBrushCatalog('foundation-g-pen');brushMessage('自作ブラシを削除しました。');}
  catch(error){brushMessage('削除できません: '+String(error));}
 };
 byId<HTMLButtonElement>('brushImport').onclick=()=>byId<HTMLInputElement>('brushImportFile').click();
@@ -529,13 +566,23 @@ byId<HTMLButtonElement>('brushExport').onclick=()=>{
  anchor.href=url;anchor.download='illustro-brushes.json';anchor.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);brushMessage('自作ブラシを書き出しました。');}
  catch(error){brushMessage('書き出せません: '+String(error));}
 };
-byId<HTMLSelectElement>('brush').onchange=e=>selectPreset((e.target as HTMLSelectElement).value);for(const id of ['size','sizeNumber'])byId<HTMLInputElement>(id).oninput=e=>{if(!surface)return;const input=e.target as HTMLInputElement,value=Number(input.value);if(!input.validity.valid||input.value==='')return;surface.setSize(value);syncPreset();};
+byId<HTMLSelectElement>('brush').onchange=e=>selectPreset((e.target as HTMLSelectElement).value);
+for(const id of ['size','sizeNumber']){
+ const input=byId<HTMLInputElement>(id);
+ const onSizeInput=()=>{
+  const value=Number(input.value);
+  if(!input.value||!Number.isFinite(value)||value<.1||value>1024){syncPreset();return;}
+  if(!applyBrushChange(p=>{p.size=value;}))syncPreset();
+ };
+ input.addEventListener('input',onSizeInput);
+ if(id==='sizeNumber')input.addEventListener('change',onSizeInput);
+}
 for(const [id,handler] of Object.entries({fitView:()=>surface?.fitView(),zoomOut:()=>surface?.zoomView(1/1.25),zoomIn:()=>surface?.zoomView(1.25),view100:()=>surface?.viewAt100(),actualPixels:()=>surface?.actualPixels(),resetRotation:()=>surface?.resetRotation(),flipH:()=>surface?.flipView('x'),flipV:()=>surface?.flipView('y')}))byId<HTMLButtonElement>(id).onclick=handler;
 byId<HTMLInputElement>('zoomPercent').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewZoom(n/100);};
 byId<HTMLInputElement>('angleDegree').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewRotation(n*Math.PI/180);};
 byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as HTMLInputElement).checked);
 const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
-byId<HTMLInputElement>('force').onchange=e=>{surface?.setForceFade((e.target as HTMLInputElement).checked);updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
+byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.forceFade)p.forceFade.enabled=(e.target as HTMLInputElement).checked;}))syncPreset();updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
 
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 byId<HTMLInputElement>('openFile').onchange=async e=>{
