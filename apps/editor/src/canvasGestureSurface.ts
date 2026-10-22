@@ -17,6 +17,7 @@ export class CanvasGestureSurface {
     private readonly view:CanvasView,
     private readonly drawingTouch:()=>boolean,
     private readonly penDrawing:()=>boolean,
+    private readonly canSingleTouchPan:()=>boolean,
     private readonly endTouchInk:()=>void,
     private readonly changed:()=>void,
     private readonly completed:()=>void
@@ -58,7 +59,7 @@ export class CanvasGestureSurface {
       if(this.touches.size>=2){
         if(this.touches.size===2&&this.drawingTouch()&&!this.penDrawing())this.endTouchInk();
         this.mode='pinch';this.anchor=this.snapshot();
-      }else if(!this.drawingTouch()||this.penDrawing()){
+      }else if((!this.drawingTouch()||this.penDrawing())&&this.canSingleTouchPan()){
         this.mode='pan';this.anchor=null;
       }
       if(this.active){
