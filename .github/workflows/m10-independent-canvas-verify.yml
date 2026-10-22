@@ -56,7 +56,11 @@ jobs:
         run: M10_EDITOR_EVIDENCE=/tmp/independent-evidence/brush-editor.json node scripts/m10-brush-editor-review.mjs
       - name: Canvas interactions and exact display
         run: |
-          REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2 REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/independent-evidence/reveal/report.json node scripts/m10-rebuild-correctness.mjs
+          REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2,webgpu REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/independent-evidence/reveal/report.json node scripts/m10-rebuild-correctness.mjs
+      - name: M08/M09 screen and color regression
+        run: |
+          M08_SMOKE_QUICK=1 M08_PERF_REVIEW=1 M08_EVIDENCE_DIRECTORY=/tmp/independent-evidence/m08 node scripts/editor-m08-smoke.mjs
+          M09_EVIDENCE_DIRECTORY=/tmp/independent-evidence/m09 node scripts/editor-m09-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: independent-canvas-browser, path: /tmp/independent-evidence/}
