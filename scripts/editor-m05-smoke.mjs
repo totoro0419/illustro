@@ -42,7 +42,19 @@ function pageUrl(backend='webgl2'){const suffix=publicBase?`?backend=${backend}&
 async function qa(page){return JSON.parse((await page.locator('#qaAuto').textContent())??'{}');}
 async function waitReady(page){await page.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});}
 async function waitIdle(page){await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.historyBusy==='false',{timeout:15000});}
-async function waitStroke(page,count){await page.waitForFunction(n=>document.getElementById('canvas')?.dataset.committedStrokes===String(n),count,{timeout:20000});await waitIdle(page);}
+async function waitStroke(page,count){
+ try{
+  await page.waitForFunction(n=>document.getElementById('canvas')?.dataset.committedStrokes===String(n),count,{timeout:20000});
+ }catch(error){
+  const diag=await page.evaluate(()=>{
+   const c=document.getElementById('canvas'),s=document.querySelector('.surface'),p=window.__illustroPerformance?.probe?.();
+   return {status:document.getElementById('status')?.textContent,count:c?.dataset.committedStrokes,canvasRect:c?.getBoundingClientRect().toJSON?.(),surfaceRect:s?.getBoundingClientRect().toJSON?.(),ready:window.__illustroPerformance?.read?.(),hostErrors:p?.renderer?.errors,sessionErrors:p?.session?.errors};
+  });
+  console.log('M05_STROKE_DIAG '+JSON.stringify({expect:count,diag}));
+  throw error;
+ }
+ await waitIdle(page);
+}
 async function waitProtected(page,min){await page.waitForFunction(n=>{try{const raw=document.querySelector('#qaAuto')?.textContent;if(!raw)return false;const p=JSON.parse(raw).persistence;return BigInt(p?.protectedThrough??'0')>=BigInt(n)&&p?.queueLength===0&&!p?.protectionPending&&!p?.storageError;}catch{return false;}},String(min),{timeout:30000});}
 async function draw(page,a=[.16,.35],b=[.84,.35],steps=20){const box=await page.locator('.surface').boundingBox();assert.ok(box);await page.mouse.move(box.x+a[0]*box.width,box.y+a[1]*box.height);await page.mouse.down();await page.mouse.move(box.x+b[0]*box.width,box.y+b[1]*box.height,{steps});await page.mouse.up();}
 async function freshContext(){const context=await browser.newContext({acceptDownloads:true});await context.addInitScript(()=>{try{Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true});}catch{}});return context;}
