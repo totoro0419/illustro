@@ -58,7 +58,10 @@ export class BrushSurface{
       ()=>this.fingerDrawing,
       ()=>this.pointer!==null&&this.strokePointerType==='pen',
       ()=>!this.eyedropper,
-      ()=>{if(this.pointer!==null&&this.strokePointerType==='touch')this.finishStroke(this.lastStrokeSample);},
+      ()=>{if(this.pointer!==null&&this.strokePointerType==='touch'){
+        if(!this.strokeMoved)void this.cancelStroke();
+        else this.finishStroke(this.lastStrokeSample);
+      }},
       ()=>this.updateView(false,undefined,true),
       ()=>{(this.renderer as unknown as {publishView?:()=>void})?.publishView?.();this.onStateChanged('view-command');});
     this.resizeObserver=new ResizeObserver(entries=>{const e=entries[0];if(!e)return;const exact=e.devicePixelContentBoxSize?.[0];this.setBackingSize(exact?{width:exact.inlineSize,height:exact.blockSize}:undefined);});
