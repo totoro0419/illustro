@@ -48,6 +48,7 @@ export class ZeroTickGesture {
   private pair():Pair|null{
     if(this.contacts.size<2)return null;
     const [a,b]=this.contacts.values();
+    if(!a||!b)return null;
     const dx=b.x-a.x,dy=b.y-a.y;
     return {middle:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},
       span:Math.max(1,Math.hypot(dx,dy)),angle:Math.atan2(dy,dx)};
