@@ -30,3 +30,30 @@ jobs:
           npm --workspace @illustro/editor exec -- vitest run
           npm --workspace @illustro/editor exec -- tsc --noEmit
           npm --workspace @illustro/editor exec -- vite build --base=./
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/m10-independent-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-independent-browser/node_modules/pngjs
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/brush-build.log
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/m10-independent-browser playwright@1.56.1 pngjs@7.0.0 --no-audit --no-fund
+          /tmp/m10-independent-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Brush detail settings and saved presets
+        run: M10_EDITOR_EVIDENCE=/tmp/independent-evidence/brush-editor.json node scripts/m10-brush-editor-review.mjs
+      - name: Canvas interactions and exact display
+        run: |
+          REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2 REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/independent-evidence/reveal/report.json node scripts/m10-rebuild-correctness.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: independent-canvas-browser, path: /tmp/independent-evidence/}
