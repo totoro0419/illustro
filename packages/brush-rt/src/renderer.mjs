@@ -248,11 +248,12 @@ export class TileDocument {
  end(id,preset,surfaceKey='default'){const touched=this.touched.get(id),keys=[...(touched?.keys??[])];if(touched&&touched.surfaceKey!==surfaceKey)throw Error('stroke surface changed');for(const key of keys){const tag=surfaceKey+'\u0000'+id+':'+key;this.open.delete(tag);this.jobs.push({id,key,surfaceKey,preset,commands:[],offset:0,commit:true});}this.touched.delete(id);this.solidSeen.delete(id);return keys;}
  peek(){const j=this.jobs[0];if(!j)return null;return {...j,commands:j.commands.slice(j.offset,j.offset+16),t:j.commands[j.offset]?.[20]??null};}
  complete(job){const j=this.jobs[0];if(!j||j.id!==job.id||j.key!==job.key||j.surfaceKey!==job.surfaceKey)throw Error('job ordering');const tag=j.surfaceKey+'\u0000'+j.id+':'+j.key;if(!j.commit){if(continuous(j.preset)&&job.commands.some(c=>solidTileCovered(c,j.key)))this.full.add(tag);j.offset+=job.commands.length;this.count-=job.commands.length;}if(j.commit)this.full.delete(tag);if(j.commit||j.offset===j.commands.length){this.jobs.shift();if(this.open.get(tag)===j)this.open.delete(tag);}}
- peekMany(limit=1){
+ peekMany(limit=1,commandQuantum=16){
+  if(!Number.isInteger(commandQuantum)||commandQuantum<1||commandQuantum>16)throw Error('invalid command quantum');
   const out=[];let used=0;
   for(const j of this.jobs){if(used>=limit||out.length>=limit+32)break;const tag=j.surfaceKey+'\u0000'+j.id+':'+j.key;if(this.open.get(tag)===j)this.open.delete(tag);
    if(!j.commit&&continuous(j.preset)&&this.full.has(tag)){out.push({...j,commands:j.commands.slice(j.offset),t:j.commands[j.offset]?.[20]??null,skip:true});continue;}
-   if(j.commit){out.push({...j,commands:[],t:null});used++;}else for(let offset=j.offset;offset<j.commands.length&&used<limit;offset+=16){out.push({...j,commands:j.commands.slice(offset,offset+16),t:j.commands[offset][20]});used++;}
+   if(j.commit){out.push({...j,commands:[],t:null});used++;}else for(let offset=j.offset;offset<j.commands.length&&used<limit;offset+=commandQuantum){out.push({...j,commands:j.commands.slice(offset,offset+commandQuantum),t:j.commands[offset][20]});used++;}
   }return out;
  }
  get oldestTime(){let t=Infinity;for(const j of this.jobs)if(!j.commit&&!this.full.has(j.surfaceKey+'\u0000'+j.id+':'+j.key))t=Math.min(t,j.commands[j.offset]?.[20]??Infinity);return t;}
@@ -422,7 +423,7 @@ export class GpuRenderer {
  // Bound covered pixel-command work as well as tile count. A huge textured
  // brush may exhaust its slice in just one tile.
  const formalWorkBudget=this.tiledPresentation?(interactiveFormal?65536:120000):Infinity;
- let jobs=historyPressure||firstGpuPreview?[]:instant?boundedFormalJobs(this.document,Math.min(formalWorkBudget,active?1000000:2000000),Math.min(this.instantJobLimit,releaseLimit)):this.strokeHandoff?boundedFormalJobs(this.document,Math.min(formalWorkBudget,this.snapshot&&!this.snapshot.finished&&!catchup?1_000_000:2_000_000),Math.min(fallbackLimit,releaseLimit)):(this.confirmDelay<=0||now-this.lastConfirmed>=this.confirmDelay)?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[];jobs=boundHistoryCopies(this.backend,jobs);const job=jobs[0]??null;if((!latest||instant)&&!job&&!this.needsFrame&&!(this.backend.dirtyConfirmed?.size&&!catchup))return this.presentView(now);if(!this.tiledPresentation&&this.proxy?.footprints.size&&!this.proxy.guards.length&&(this.proxy.fallback||[...this.strokeFrames.keys()].some(id=>this.proxy.footprints.has(id)))){
+ let jobs=historyPressure||firstGpuPreview?[]:instant?boundedFormalJobs(this.document,Math.min(formalWorkBudget,active?1000000:2000000),Math.min(this.instantJobLimit,releaseLimit),this.tiledPresentation?4:16):this.strokeHandoff?boundedFormalJobs(this.document,Math.min(formalWorkBudget,this.snapshot&&!this.snapshot.finished&&!catchup?1_000_000:2_000_000),Math.min(fallbackLimit,releaseLimit),this.tiledPresentation?4:16):(this.confirmDelay<=0||now-this.lastConfirmed>=this.confirmDelay)?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[];jobs=boundHistoryCopies(this.backend,jobs);const job=jobs[0]??null;if((!latest||instant)&&!job&&!this.needsFrame&&!(this.backend.dirtyConfirmed?.size&&!catchup))return this.presentView(now);if(!this.tiledPresentation&&this.proxy?.footprints.size&&!this.proxy.guards.length&&(this.proxy.fallback||[...this.strokeFrames.keys()].some(id=>this.proxy.footprints.has(id)))){
   this.presentView(now);this.guardPreparing=true;this.proxy.protect().then(()=>{this.guardPreparing=false;this.needsFrame=true;this.requestWork();}).catch(error=>{this.guardPreparing=false;this.errors.push('Overlay transition: '+error.message);this.disposed=true;});return false;
   }this.needsFrame=false;const s=this.snapshot;this.inflight=true;
   try{const submittedAt=performance.now(),submission=++this.submissionNumber,proxyEpoch=this.proxy?.epoch,firstInputs=[];if(this.strokeHandoff)for(const id of new Set([...this.previewStates.keys(),...this.strokeFrames.keys()])){const input=this.inputStarts.get(id);if(input&&!input.submitted){input.submitted=true;firstInputs.push(input);}}let finished=false,presentationReady=true,fallbackRendered=false,cpuSubmitMs=0,submissionGpuStates=[];this.performance.renders++;const initialDirty=this.backend.dirtyConfirmed?.size??0;
@@ -658,8 +659,8 @@ const PREVIEW_POOL_BUDGET=16*1024*1024,PREVIEW_LIMIT=256*1024*1024;
 // A layout/DPR change first reprojects the retained backing. Reallocation
 // happens only when a replacement presentation will actually be submitted.
 function resizePresentation(b,view){const c=b.canvas;if(c.width!==view[0])c.width=view[0];if(c.height!==view[1])c.height=view[1];}
-export function boundedFormalJobs(document,budget=2_000_000,limit=128){
- const candidates=document.peekMany(limit),out=[];let cost=0;
+export function boundedFormalJobs(document,budget=2_000_000,limit=128,commandQuantum=16){
+ const candidates=document.peekMany(limit,commandQuantum),out=[];let cost=0;
  for(const job of candidates){let work=job.commit?TILE*TILE:0;if(!job.commit){if(continuous(job.preset)){const [tx,ty]=job.key.split(',').map(Number);for(const c of job.commands){const b=commandBounds(c);work+=Math.max(0,Math.min((tx+1)*TILE,b.x1)-Math.max(tx*TILE,b.x0))*Math.max(0,Math.min((ty+1)*TILE,b.y1)-Math.max(ty*TILE,b.y0));}}else work=TILE*TILE*job.commands.length;}if(out.length&&cost+work>budget)break;out.push(job);cost+=work;
  }return out;
 }
