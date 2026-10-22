@@ -28,8 +28,10 @@ export class ZeroTickGesture {
     private readonly finishTouchStroke:()=>void
   ){
     const signal=this.abort.signal;
-    for(const event of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'] as const)
-      region.addEventListener(event,event==='pointerdown'?this.down:event==='pointermove'?this.move:this.up,{capture:true,signal});
+    region.addEventListener('pointerdown',this.down,{capture:true,signal});
+    region.addEventListener('pointermove',this.move,{capture:true,signal});
+    for(const event of ['pointerup','pointercancel','lostpointercapture'] as const)
+      region.addEventListener(event,this.up,{capture:true,signal});
     region.addEventListener('wheel',this.wheel,{passive:false,signal});
     window.addEventListener('keydown',this.onKey,{signal});
     window.addEventListener('keyup',this.onKey,{signal});
