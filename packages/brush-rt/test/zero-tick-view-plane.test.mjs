@@ -38,7 +38,7 @@ test('one CSS transform moves the same visible picture without any worker respon
   assert.equal(stage.displayedRevision(),-1);
   stage.updatePaper(2);
   assert.equal(stage.displayedRevision(),2);
-  assert.equal(canvas.style.visibility,'hidden','newer complete paper can atomically replace old bitmap');
+  assert.equal(canvas.style.visibility,'visible','a sparse paper update must never clear the previous precise picture');
   stage.replacePicture(view(),2);
   assert.equal(canvas.style.visibility,'visible','late source view is reprojected without resetting current camera');
   assert.ok(stage.root.style.transform!==firstStage);
