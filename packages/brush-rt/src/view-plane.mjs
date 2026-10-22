@@ -28,10 +28,12 @@ export class ViewPlane {
  }
  move(view){
   this.start(view);
+  const oldMode=!!this.view&&(this.view[12]>.5||this.view[14]>.5);
+  const newMode=view[12]>.5||view[14]>.5;
   this.view=Array.from(view);
+  // The only DOM style write on a normal pointer move is this transform.
   this.root.style.transform=ViewPlane.matrix(viewAffine(this.anchor,this.view));
-  // Never hide an old picture merely because the user has moved it.
-  this.updateVisibility();
+  if(oldMode!==newMode)this.updateVisibility();
  }
  updatePaper(version){
   this.paperVersion=Math.max(this.paperVersion,version);
