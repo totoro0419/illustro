@@ -35,9 +35,9 @@ test('one CSS transform moves the same visible picture without any worker respon
   const src=toScreen(view(),125,245),dst=toScreen(view(.15,35,.2),125,245);
   assert.ok(Math.abs(a*src.x+c*src.y+e-dst.x)<.00001);
   assert.ok(Math.abs(b*src.x+d*src.y+f-dst.y)<.00001);
-  assert.equal(stage.displayedRevision(),-1);
+  assert.equal(stage.displayedRevision(),1);
   stage.updatePaper(2);
-  assert.equal(stage.displayedRevision(),2);
+  assert.equal(stage.displayedRevision(),1,'sparse paper updates do not cover pending ink yet');
   assert.equal(canvas.style.visibility,'visible','a sparse paper update must never clear the previous precise picture');
   stage.replacePicture(view(),2);
   assert.equal(canvas.style.visibility,'visible','late source view is reprojected without resetting current camera');
