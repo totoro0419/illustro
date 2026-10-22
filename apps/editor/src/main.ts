@@ -577,9 +577,6 @@ for(const id of ['size','sizeNumber']){
  input.addEventListener('input',onSizeInput);
  if(id==='sizeNumber')input.addEventListener('change',onSizeInput);
 }
-for(const [id,handler] of Object.entries({fitView:()=>surface?.fitView(),zoomOut:()=>surface?.zoomView(1/1.25),zoomIn:()=>surface?.zoomView(1.25),view100:()=>surface?.viewAt100(),actualPixels:()=>surface?.actualPixels(),resetRotation:()=>surface?.resetRotation(),flipH:()=>surface?.flipView('x'),flipV:()=>surface?.flipView('y')}))byId<HTMLButtonElement>(id).onclick=handler;
-byId<HTMLInputElement>('zoomPercent').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewZoom(n/100);};
-byId<HTMLInputElement>('angleDegree').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewRotation(n*Math.PI/180);};
 byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as HTMLInputElement).checked);
 const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
 byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.forceFade)p.forceFade.enabled=(e.target as HTMLInputElement).checked;}))syncPreset();updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
@@ -866,7 +863,7 @@ if(perfMode){
   probe:()=>surface?.handoffProbe(),
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},
   capture:async()=>{if(!surface)throw new Error('No document');const before=surface.performanceDiagnostics,delta=await surface.captureProjectionDelta(controller.document.head),after=surface.performanceDiagnostics;return {replace:delta.replace,tiles:delta.tiles.length,bytes:delta.tiles.reduce((n,t)=>n+t.pixels.byteLength,0),before,after};},
-  view:(zoom:number,angle:number)=>{surface?.setViewZoom(zoom,false);surface?.setViewRotation(angle,false);},
+  
  };
  const panel=document.createElement('details');panel.id='canvasPerformance';panel.style.cssText='position:fixed;left:80px;bottom:calc(var(--bottom, 56px) + env(safe-area-inset-bottom) + 16px);z-index:80;max-width:min(420px,calc(100vw - 100px));max-height:45vh;overflow:auto;background:#fffaf0;color:#302c26;border:1px solid #decba4;border-radius:12px;padding:8px 12px;font-size:12px';
  panel.innerHTML='<summary>キャンバスの軽さを確認</summary><p>実機確認用の検証版です。性能合格は未判定です。</p><label style="display:block;padding:8px 0"><input id="performanceEnabled" type="checkbox"> 動作の測定を表示する</label><p>数値はGPUへの表示要求を測った目安です。画面そのものの更新や指から光までの時間は未測定です。</p><output id="performanceReadout" style="white-space:pre-wrap"></output><details id="performanceRawDetails"><summary>詳しい動作記録</summary><pre id="performanceRaw"></pre></details><p><a href="../../m09/" target="_blank" rel="noopener">改善前のM09を開く</a> · <a href="../evidence/qa-status.json" target="_blank" rel="noopener">検査結果と未確認事項</a></p>';
