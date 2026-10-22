@@ -182,6 +182,18 @@ async function seamlessSmoke(page){
  const recovered=await getState(page);
  assert.equal(Number(recovered.strokes),oldCount+1);assert.equal(recovered.document.width,w);assert.equal(recovered.document.height,h);
  const repairedPixel=await seamPixel(page,8,h*.52);
+ if(repairedPixel[0]>=150){
+  const stage=await page.evaluate(()=>{
+   const c=document.querySelector('#canvas'),paper=document.querySelector('.illustro-document-presentation'),plane=document.querySelector('.illustro-view-plane');
+   return {canvas:{visibility:c?.style.visibility,transform:c?.style.transform,clip:c?.style.clipPath,width:c?.width,height:c?.height},
+      paper:{exists:!!paper,display:paper?.style.display,tiles:paper?.children.length,childRects:[...(paper?.children??[])].slice(0,8).map(e=>({left:e.style.left,top:e.style.top,width:e.width,height:e.height}))},
+      plane:{children:[...(plane?.children??[])].map(e=>e.className||e.id),transform:plane?.style.transform},
+      documentCanvasGroup:document.querySelectorAll('.illustro-document-presentation canvas').length};
+  });
+  await page.waitForTimeout(700);
+  const later=await seamPixel(page,8,h*.52);
+  console.log('M08_RECOVERY_SCENE '+JSON.stringify({immediate:repairedPixel,later,stage}));
+ }
  assert.ok(repairedPixel[0]<150,'opposite-edge copy must survive reload '+JSON.stringify(repairedPixel));
  await page.evaluate(()=>{const c=document.querySelector('#seamless');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));});
 }
