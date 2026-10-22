@@ -39,6 +39,8 @@ try{
   assert.equal(await page.locator('#brushFadeStartNumber').inputValue(),'30','switching brushes retains an unsaved draft');
   await page.locator('#brushReset').click();
   assert.equal(await page.locator('#brushFadeStartNumber').inputValue(),'12','reset restores the shipped preset');
+  await page.locator('#brushFadeStartNumber').fill('30');
+  await page.locator('#brushFadeStartNumber').press('Tab');
   await page.locator('#brushCurveAdd').click();
   assert.equal(await page.locator('#brushCurvePoint option').count(),3,'G pen curve inserts a midpoint');
   await page.locator('#brushCurveY').fill('70');
