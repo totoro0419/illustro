@@ -1,4 +1,4 @@
-import type {FoundationPreset,Curve} from '@illustro/brush-rt';
+import type {FoundationPreset} from '@illustro/brush-rt';
 import {addCurvePoint,moveCurvePoint,removeCurvePoint} from './brushEditorModel';
 
 type Hooks={
@@ -21,7 +21,7 @@ const numberFields:NumberField[]=[
  {id:'brushStabilizationFast',minimum:0,maximum:100,read:p=>p.stabilization.fast*100,write:(p,v)=>{p.stabilization.fast=v/100;}},
  {id:'brushScatterRadius',minimum:0,maximum:200,read:p=>p.scatter.radius*100,write:(p,v)=>{p.scatter.radius=v/100;}}
 ];
-const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T|null;
+const el=<T extends Element>(id:string)=>document.getElementById(id) as T|null;
 const readable=(n:number,decimals=0)=>String(Number(n.toFixed(decimals)));
 
 export function installBrushAdvancedEditor(hooks:Hooks):{sync:(preset:FoundationPreset)=>void}{
@@ -58,8 +58,6 @@ export function installBrushAdvancedEditor(hooks:Hooks):{sync:(preset:Foundation
  for(const [id,edit] of toggleFields)el<HTMLInputElement>(id)?.addEventListener('change',e=>apply(p=>edit(p,(e.target as HTMLInputElement).checked)));
  el<HTMLSelectElement>('brushTipShape')?.addEventListener('change',e=>apply(p=>{p.tip.shape=(e.target as HTMLSelectElement).value;}));
  el<HTMLSelectElement>('brushTextureKind')?.addEventListener('change',e=>apply(p=>{p.texture.paper.kind=(e.target as HTMLSelectElement).value as 'paper'|'noise'|'hatch';p.texture.paper.resource=null;}));
- el<HTMLSelectElement>('brushStabilizationScope')?.addEventListener('change',e=>apply(p=>{p.stabilization.scope=(e.target as HTMLSelectElement).value as 'brush'|'common';}));
- el<HTMLSelectElement>('brushFadeScope')?.addEventListener('change',e=>apply(p=>{if(p.forceFade)p.forceFade.scope=(e.target as HTMLSelectElement).value as 'brush'|'common';}));
  function pickPoint(index:number){selectedPoint=index;const p=hooks.getPreset();if(p)sync(p);}
  pointPicker?.addEventListener('change',()=>pickPoint(Number(pointPicker.value)));
  function editPoint(){
@@ -126,8 +124,6 @@ export function installBrushAdvancedEditor(hooks:Hooks):{sync:(preset:Foundation
   const set=(id:string,value:string)=>{const node=el<HTMLInputElement|HTMLSelectElement>(id);if(node)node.value=value;};
   set('brushTipShape',p.tip.shape);
   set('brushTextureKind',p.texture.paper.kind);
-  set('brushStabilizationScope',p.stabilization.scope);
-  set('brushFadeScope',p.forceFade?.scope??'brush');
   const follow=el<HTMLInputElement>('brushTipFollow');if(follow)follow.checked=p.tip.direction;
   const scatter=el<HTMLInputElement>('brushScatterEnabled');if(scatter)scatter.checked=p.scatter.enabled;
   const radius=el<HTMLInputElement>('brushScatterRadius');if(radius)radius.disabled=!p.scatter.enabled;
