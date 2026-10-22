@@ -2043,6 +2043,11 @@
     {
       "path": "docs/research/M10_BRUSH_SETTINGS_DESIGN_2026-10-22.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_ZERO_TICK_ROOT_CAUSE_2026-10-22.md",
+      "status": "EXPERIMENTAL",
+      "note": "Measured old PR41 response delays, distinction from real Android hardware root causes, and zero-wait design constraints; no user-device acceptance claim."
     }
   ]
 }

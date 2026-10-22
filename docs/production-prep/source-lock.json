@@ -58,7 +58,7 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "82450aef5e9785455f6abf81977e8ff74087fa14d93c864ea13bcdea87b4b96d",
+      "sha256": "c099d5488f46d07013c694efa776d00ddfabefb7621c6ca2c193c2056e058054",
       "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
@@ -84,7 +84,9 @@
       "gestureBudgetException": "PR40 input-priority formal scheduler: during touch gesture and for 280ms after pen-up submit at most one 16-command job and restrict total estimated pixel work; adaptive 2/4/8 jobs at idle. Formal work continues, unchanged brush and history semantics. Measured both backends and physical touch acceptance required.",
       "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history.",
       "pendingStrokeFramesException": "Critical deadlock fix: waiting for a previously submitted CPU-stroke presentation must never block subsequent formal tile jobs. Coherent publication still waits for strokeFrames to clear, but GPU work progresses independently. Verify 12-stroke queue drains and exact pixels/history.",
-      "activeStrokeBatchException": "Prioritize live pointer stroke samples with at most one background formal job. Large idle backlog batches only when no live stroke/navigation; precise pixels, stroke history and saving unchanged."
+      "activeStrokeBatchException": "Prioritize live pointer stroke samples with at most one background formal job. Large idle backlog batches only when no live stroke/navigation; precise pixels, stroke history and saving unchanged.",
+      "zeroTickGpuSliceException": "M10: strict small per-submission GPU work limit even after pen-up and during formal backlog, preserving brush math and canonical history; exact both-backend pixels, realistic GPU occupancy, performance and real-device responsiveness must be tested.",
+      "zeroTickGpuQuantizationException": "M10 split 128px formal drawing job into up to four canonical drawing commands per GPU submission, preserving sequence, exact pixels and saved stroke records; verify on both GPUs under 4000px load and device responsiveness."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
@@ -248,7 +250,7 @@
     {
       "path": "prototypes/brush-rt/build.mjs",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "33b9ae82b8b186ac97f7294f7983e3d98cfe9dcfcaf2e140fc26ead48fcf7e0a",
+      "sha256": "abe906a9260121f2be7fa07b013617e0eab5c5a1afc4d84775008e9dbbc11784",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required.",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim.",
       "strokeOverlayException": "User-authorized stroke-only preview replaces historical low-resolution rebuild; exact Foundation/model/shaders/Core retained. Requires PR30 exact pixels, fit-view quality and regression evidence. No hardware acceptance claim.",
@@ -256,7 +258,8 @@
       "m10PreviewException": "User-authorized M10 presentation-only optimization from 4708ffe5136ad1fa47be5909c129bb5f8fcb7869: aligned document-pixel analytic feedback, bounded live raster and conversion tasks, current-only tails, measured per-stroke route policy with safe unshown-work fallback. Canonical model, shaders, texture, input, 128px history and save schema unchanged. Require exact same-backend formal pixels, strict-reference coverage, both-backend quality, measured routing, native Undo/save regressions and user review.",
       "presentationRebuildException": "User-authorized rebuild from 8fa3857b: separate input/raster/display roles and immutable dirty document tiles; accepted deposition/sampler/records remain. Require exact transfer/reveal/brush/history/save checks and matched response comparison; physical acceptance UNVERIFIED.",
       "autonomousNavigationException": "Separate editor Worker development from accepted frozen standalone prototype generation. Explicit opt-in required to replace the standalone artifact.",
-      "navigationSceneRebuild": "Single new navigation-scene module in build graph only. Frozen standalone HTML output unchanged."
+      "navigationSceneRebuild": "Single new navigation-scene module in build graph only. Frozen standalone HTML output unchanged.",
+      "zeroTickBuildException": "Add precisely one view-plane.mjs module to the existing runtime bundler graph, retaining all prior modules and build order. No change to frozen standalone HTML; both GPUs and full regression are required."
     },
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
@@ -456,7 +459,7 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "d746959ac2b6bcb7ba49cbf5fad65ca81b760843af33f99b4f2c433d6edb453a",
+      "sha256": "9949661629ec2cd856c298ca3a239d633220d65f0842d123348584884ffae6f3",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
@@ -466,7 +469,8 @@
       "stablePictureException": "Never hide the M08 precise background on CPU-covered formal commits. Keep finished preview until exact viewport image is ready, then atomically retire in same task. Retained group fallback only for unrepresented edits/navigation; verifies final pixels on both backends.",
       "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness.",
       "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history.",
-      "navigationSceneRebuild": "Replaced navigation-time bitmap/view worker requests and per-layer reproject with one DOM compositor scene transform. Commit is not proof of device responsiveness; gesture blocking experiment required."
+      "navigationSceneRebuild": "Replaced navigation-time bitmap/view worker requests and per-layer reproject with one DOM compositor scene transform. Commit is not proof of device responsiveness; gesture blocking experiment required.",
+      "zeroTickSceneException": "New M10: immediate CSS transform and retained image plane; actual rendering, cross-GPU parity and physical Android responsiveness require independent tests and user acceptance."
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",

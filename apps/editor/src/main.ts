@@ -577,6 +577,22 @@ for(const id of ['size','sizeNumber']){
  input.addEventListener('input',onSizeInput);
  if(id==='sizeNumber')input.addEventListener('change',onSizeInput);
 }
+// Commands use exactly the same camera as touch gestures.
+for(const [id,action] of Object.entries({
+  fitView:()=>surface?.fitView(),view100:()=>surface?.viewAt100(),
+  actualPixels:()=>surface?.actualPixels(),
+  zoomIn:()=>surface?.zoomView(1.25),zoomOut:()=>surface?.zoomView(1/1.25),
+  resetRotation:()=>surface?.resetRotation(),
+  flipH:()=>surface?.flipView('x'),flipV:()=>surface?.flipView('y')
+}))byId<HTMLButtonElement>(id).addEventListener('click',action);
+byId<HTMLInputElement>('zoomPercent').addEventListener('change',e=>{
+  const amount=Number((e.target as HTMLInputElement).value);
+  if(Number.isFinite(amount)&&amount>0)surface?.setViewZoom(amount/100);
+});
+byId<HTMLInputElement>('angleDegree').addEventListener('change',e=>{
+  const degrees=Number((e.target as HTMLInputElement).value);
+  if(Number.isFinite(degrees))surface?.setViewRotation(degrees*Math.PI/180);
+});
 byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as HTMLInputElement).checked);
 const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
 byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.forceFade)p.forceFade.enabled=(e.target as HTMLInputElement).checked;}))syncPreset();updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
@@ -861,6 +877,8 @@ if(perfMode){
  (window as unknown as {__illustroPerformance:unknown}).__illustroPerformance={
   read:()=>({commit:import.meta.env.VITE_COMMIT_SHA,revision:controller.document.head,strokes:controller.committedStrokeCount,historyNavigation:historyNavigation?.diagnostics,historyInputs,...surface?.performanceDiagnostics,checkpointErrors}),
   probe:()=>surface?.handoffProbe(),
+  // QA-only camera control; it invokes the same camera methods as the UI.
+  view:(zoom:number,angle:number)=>{surface?.setViewZoom(zoom);surface?.setViewRotation(angle);},
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},
   capture:async()=>{if(!surface)throw new Error('No document');const before=surface.performanceDiagnostics,delta=await surface.captureProjectionDelta(controller.document.head),after=surface.performanceDiagnostics;return {replace:delta.replace,tiles:delta.tiles.length,bytes:delta.tiles.reduce((n,t)=>n+t.pixels.byteLength,0),before,after};},
   

@@ -1,4 +1,5 @@
 import {DocumentPresentation} from '@rt/document-presentation';
+import {ViewPlane} from '@rt/view-plane';
 
 
 // Window-side port: no brush reconstruction, pixel evaluation or GPU commands.
@@ -6,7 +7,7 @@ import {DocumentPresentation} from '@rt/document-presentation';
 // arriving after a more recent pan/zoom/rotation. Worker messages never own it.
 export class DrawingHost {
  static async create(canvas,width,height,backend,options,workerUrl,canonicalUrl,diagnostics=false,presentationUrl){
-  const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.documentVersion=0;try{
+  const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.viewPlane=new ViewPlane(canvas,host.documentPresentation);host.documentVersion=0;try{
    host.update(await host.call('init',{width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend,options,canonicalUrl,diagnostics,timeOrigin:performance.timeOrigin}));
    host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend:host.info.selection.selected});await host.presentationReady;return host;
   }catch(error){host.destroy();throw error;}
@@ -23,6 +24,8 @@ export class DrawingHost {
     const accepted=m.epoch===this.epoch&&m.version>=this.documentVersion;
     if(accepted){
      this.documentPresentation.apply(m.tiles);this.documentVersion=m.version;
+     this.viewPlane.updatePaper(m.version);
+     this.retireOverlays(this.viewPlane.displayedRevision());
          }else for(const t of m.tiles)t.bitmap.close();
     const request=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);request?.resolve({accepted});return;
    }
@@ -35,7 +38,8 @@ export class DrawingHost {
      if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;
      if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;
      this.context.transferFromImageBitmap(m.bitmap);this.presentationVersion=m.version;
-     this.retireOverlays(m.version);
+     this.viewPlane.replacePicture(m.view,m.version);
+     this.retireOverlays(this.viewPlane.displayedRevision());
     }else m.bitmap.close();
     this.onPresentation?.({kind:'display-image',at:performance.now(),accepted});
    }
@@ -79,8 +83,9 @@ export class DrawingHost {
   for(const data of m.layers){let layer=this.layers.get(data.id);if(!layer){const element=document.createElement('canvas');element.className='illustro-stroke-overlay';element.setAttribute('aria-hidden','true');Object.assign(element.style,{position:'absolute',pointerEvents:'none',transformOrigin:'0 0',background:'transparent',aspectRatio:'auto'});layer={element,context:element.getContext('bitmaprenderer')};if(!layer.context){element.remove();data.bitmap.close();this.fault('Stroke ImageBitmap presentation unavailable');continue;}const next=[...this.layers].filter(([id])=>id>data.id).sort(([a],[b])=>a-b)[0]?.[1];if(next)next.element.before(element);else ([...this.layers].sort(([a],[b])=>a-b).at(-1)?.[1].element??this.canvas).after(element);this.layers.set(data.id,layer);}
    layer.view=data.view;layer.rect=data.rect;layer.scale=data.scale;layer.polygon=data.polygon;if(layer.element.width!==data.bitmap.width)layer.element.width=data.bitmap.width;if(layer.element.height!==data.bitmap.height)layer.element.height=data.bitmap.height;layer.context.transferFromImageBitmap(data.bitmap);
    const [x,y]=data.rect;Object.assign(layer.element.style,{left:originX+x+'px',top:originY+y+'px',width:layer.element.width/data.scale+'px',height:layer.element.height/data.scale+'px',display:this.hiddenStrokeIds.has(data.id)?'none':'block',clipPath:'polygon('+data.polygon.map(p=>(p.x-x)+'px '+(p.y-y)+'px').join(',')+')'});
+   this.viewPlane.placeInk(layer);
   }
-  this.retireOverlays(this.presentationVersion);this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
+  this.retireOverlays(this.viewPlane.displayedRevision());this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
  }
  retireOverlays(version){
   for(const [id,requiredVersion]of this.pendingRetirements){
@@ -89,11 +94,19 @@ export class DrawingHost {
    this.pendingRetirements.delete(id);
   }
  }
- setViewTransform(view){
+ setViewTransform(view,localOnly=false){
   const old=this.backend.viewTransform;
   if(old&&view.every((n,i)=>n===old[i]))return;
   this.backend.viewTransform=Array.from(view);
-  this.presentation.postMessage({method:'view',view});this.send('view',view);
+  // This is the complete live gesture path: no Worker, GPU, bitmap or await.
+  this.viewPlane.move(view);
+  this.onPresentation?.({kind:'local-transform',at:performance.now(),view:Array.from(view)});
+  if(!localOnly)this.publishView();
+ }
+ publishView(){
+  const view=this.backend.viewTransform;if(!view)return;
+  this.presentation.postMessage({method:'view',view});
+  this.send('view',view);
  }
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
@@ -111,7 +124,7 @@ export class DrawingHost {
  performanceSummary(){return {...(this.summary??{}),displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
- destroy(){if(this.disposed)return;this.disposed=true;this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
+ destroy(){if(this.disposed)return;this.disposed=true;this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.viewPlane?.detach();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 
