@@ -58,7 +58,7 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "bbcdb7a87fe7c4aa38054c2185759a079a130aa3b714ded18792a07b9541102a",
+      "sha256": "c099d5488f46d07013c694efa776d00ddfabefb7621c6ca2c193c2056e058054",
       "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
@@ -85,7 +85,8 @@
       "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history.",
       "pendingStrokeFramesException": "Critical deadlock fix: waiting for a previously submitted CPU-stroke presentation must never block subsequent formal tile jobs. Coherent publication still waits for strokeFrames to clear, but GPU work progresses independently. Verify 12-stroke queue drains and exact pixels/history.",
       "activeStrokeBatchException": "Prioritize live pointer stroke samples with at most one background formal job. Large idle backlog batches only when no live stroke/navigation; precise pixels, stroke history and saving unchanged.",
-      "zeroTickGpuSliceException": "M10: strict small per-submission GPU work limit even after pen-up and during formal backlog, preserving brush math and canonical history; exact both-backend pixels, realistic GPU occupancy, performance and real-device responsiveness must be tested."
+      "zeroTickGpuSliceException": "M10: strict small per-submission GPU work limit even after pen-up and during formal backlog, preserving brush math and canonical history; exact both-backend pixels, realistic GPU occupancy, performance and real-device responsiveness must be tested.",
+      "zeroTickGpuQuantizationException": "M10 split 128px formal drawing job into up to four canonical drawing commands per GPU submission, preserving sequence, exact pixels and saved stroke records; verify on both GPUs under 4000px load and device responsiveness."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
