@@ -24,6 +24,7 @@ jobs:
         run: |
           npm run brush:build
           node --test packages/brush-rt/test/zero-tick-view-plane.test.mjs
+          node --test packages/brush-rt/test/zero-tick-gpu-slice.test.mjs
           npm run prep:check
           npm run core:check
           npm run brush:regression
