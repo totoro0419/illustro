@@ -413,10 +413,15 @@ export class GpuRenderer {
  const fallbackLimit=cooperativeGpu&&!catchup&&!this.backend.presentationHeld&&!this.document.jobs[0]?.commit?16:catchup||this.backend.presentationHeld||!this.snapshot||this.snapshot.finished?128:this.handoffJobLimit;
  const interactiveFormal=this.tiledPresentation&&(this.gestureActive||active||performance.now()<(this.releaseInteractiveUntil??0));
  const idleBacklog=this.tiledPresentation&&!interactiveFormal&&this.document.jobs.length>512;
- const releaseLimit=this.tiledPresentation?(interactiveFormal?1:idleBacklog?24:this.lastGpuWork>48?4:this.lastGpuWork>24?8:16):performance.now()<(this.releaseInteractiveUntil??0)?1:Infinity;
- // Count pixel-command work as well as tiles; one wide, textured brush can
- // make four document tiles much more expensive than four thin pencil tiles.
- const formalWorkBudget=this.tiledPresentation?(interactiveFormal?65536:idleBacklog?1200000:this.lastGpuWork>48?240000:640000):Infinity;
+ // The presentation and formal workers share a physical GPU. A long formal
+ // backlog must NEVER switch back to 16/24-tile monolithic submissions merely
+ // because the short post-pen-up timer expired. Keep every submission bounded,
+ // independently of touch state or delayed gesture messages. This intentionally
+ // separates GPU occupation into interruptible batches; it is not a timer fix.
+ const releaseLimit=this.tiledPresentation?(interactiveFormal?1:this.lastGpuWork>32?2:4):performance.now()<(this.releaseInteractiveUntil??0)?1:Infinity;
+ // Bound covered pixel-command work as well as tile count. A huge textured
+ // brush may exhaust its slice in just one tile.
+ const formalWorkBudget=this.tiledPresentation?(interactiveFormal?65536:120000):Infinity;
  let jobs=historyPressure||firstGpuPreview?[]:instant?boundedFormalJobs(this.document,Math.min(formalWorkBudget,active?1000000:2000000),Math.min(this.instantJobLimit,releaseLimit)):this.strokeHandoff?boundedFormalJobs(this.document,Math.min(formalWorkBudget,this.snapshot&&!this.snapshot.finished&&!catchup?1_000_000:2_000_000),Math.min(fallbackLimit,releaseLimit)):(this.confirmDelay<=0||now-this.lastConfirmed>=this.confirmDelay)?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[];jobs=boundHistoryCopies(this.backend,jobs);const job=jobs[0]??null;if((!latest||instant)&&!job&&!this.needsFrame&&!(this.backend.dirtyConfirmed?.size&&!catchup))return this.presentView(now);if(!this.tiledPresentation&&this.proxy?.footprints.size&&!this.proxy.guards.length&&(this.proxy.fallback||[...this.strokeFrames.keys()].some(id=>this.proxy.footprints.has(id)))){
   this.presentView(now);this.guardPreparing=true;this.proxy.protect().then(()=>{this.guardPreparing=false;this.needsFrame=true;this.requestWork();}).catch(error=>{this.guardPreparing=false;this.errors.push('Overlay transition: '+error.message);this.disposed=true;});return false;
   }this.needsFrame=false;const s=this.snapshot;this.inflight=true;
