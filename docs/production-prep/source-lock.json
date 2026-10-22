@@ -506,7 +506,7 @@
       "path": "packages/brush-rt/src/document-presentation.mjs",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
-      "sha256": "9e570d162966a648fa8907a98f73622be7d6ad243c3a158424e7942222805693",
+      "sha256": "42a50ce37ed2cc8e51317877181feacccff5b3c95885ede6e578986366b4a666",
       "presentationRebuildException": "Retain only occupied immutable document pictures for immediate reveal while the M08 viewport is in flight. Requires native reveal/blank-area, exact completed RGBA and history/save checks. Physical acceptance UNVERIFIED.",
       "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending."
     }
