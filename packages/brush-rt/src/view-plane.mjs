@@ -65,9 +65,11 @@ export class ViewPlane {
   if(!this.view)return;
   const specialized=this.view[12]>.5||this.view[14]>.5;
   this.paper.style.display=specialized?'none':'block';
-  // Only an already-applied, coherent newer paper image may replace an older
-  // precise viewport. Switching to a different zoom alone never clears pixels.
-  this.canvas.style.visibility=(!specialized&&this.paperVersion>this.pictureVersion)?'hidden':'visible';
+  // Paper groups are sparse updates, not a complete viewport replacement.
+  // A newer paper version may contain only the changed 512px groups; hiding
+  // the last precise picture would reveal missing document pixels. Retain it
+  // until a new precise image has actually been installed.
+  this.canvas.style.visibility='visible';
  }
  placeInk(layer){
   if(!this.anchor||!layer.view||!layer.rect)return;
@@ -76,7 +78,9 @@ export class ViewPlane {
  }
  displayedRevision(){
   if(!this.view)return -1;
-  return this.view[12]>.5||this.view[14]>.5?this.pictureVersion:this.paperVersion;
+  // Retire temporary ink only after it is covered by an installed precise
+  // picture; sparse paper tile arrival alone cannot prove that coverage.
+  return this.pictureVersion;
  }
  detach(){
   this.root.before(this.paper,this.canvas);this.root.remove();
