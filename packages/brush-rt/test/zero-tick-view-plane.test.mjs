@@ -61,3 +61,28 @@ test('special paper modes never retire overlays using ordinary retained paper',(
  }finally{if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
   if(originalStyle===undefined)delete globalThis.getComputedStyle;else globalThis.getComputedStyle=originalStyle;}
 });
+
+test('a fully restored document replaces the old blank viewport without waiting for display worker',()=>{
+ const originalDocument=globalThis.document,originalStyle=globalThis.getComputedStyle;
+ globalThis.document={createElement:node};globalThis.getComputedStyle=()=>({position:'relative'});
+ try{
+  const parent=node('surface'),paper=node('document'),canvas=node('precise');
+  parent.append(paper,canvas);
+  const stage=new ViewPlane(canvas,{element:paper});
+  const small=view();small[4]=256;small[5]=192;
+  stage.move(small);stage.replacePicture(small,0);
+  assert.equal(stage.hasCompletePaper(),false);
+  assert.equal(canvas.style.visibility,'visible','sparse paper must not hide old pixels');
+  paper.append(node('retained-512-pixel-group'));
+  stage.updatePaper(1);
+  assert.equal(stage.hasCompletePaper(),true);
+  assert.equal(stage.displayedRevision(),1);
+  assert.equal(canvas.style.visibility,'hidden','complete persisted picture wins over outdated white precise bitmap');
+  stage.replacePicture(small,1);
+  assert.equal(canvas.style.visibility,'visible','fresh precise picture becomes visible atomically');
+  stage.detach();
+ }finally{
+  if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
+  if(originalStyle===undefined)delete globalThis.getComputedStyle;else globalThis.getComputedStyle=originalStyle;
+ }
+});
