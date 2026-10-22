@@ -38,6 +38,7 @@ jobs:
         with: {name: independent-canvas-app, path: apps/editor/dist/}
 
   browser:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
