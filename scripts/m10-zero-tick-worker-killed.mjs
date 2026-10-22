@@ -49,6 +49,23 @@ try{
     await probe.renderer.drain();
   });
   await page.waitForTimeout(180);
+  // Interruption regression: the first finger is actively drawing when a
+  // second finger begins a camera gesture. Native lostpointercapture must not
+  // cancel the legitimate stroke before it can be committed.
+  const committedBefore=await page.evaluate(()=>window.__illustroPerformance.probe().controller.committedStrokeCount);
+  const inkStart=pt(.18,.72,5),inkEnd=pt(.48,.7,5),navSecond=pt(.73,.55,6);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[inkStart]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[inkEnd]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[inkEnd,navSecond]});
+  for(let i=1;i<=10;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[
+    {...inkEnd,x:inkEnd.x+i*1.5,y:inkEnd.y+i*.6},
+    {...navSecond,x:navSecond.x+i*2.1,y:navSecond.y-i*.5}
+  ]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await page.waitForFunction(n=>window.__illustroPerformance.probe().controller.committedStrokeCount>=n+1,committedBefore,{timeout:90000});
+  const committedAfter=await page.evaluate(()=>window.__illustroPerformance.probe().controller.committedStrokeCount);
+  assert.equal(committedAfter,committedBefore+1,'two-finger interruption must preserve exactly one canonical stroke');
+  await page.evaluate(async()=>window.__illustroPerformance.probe().renderer.drain());
   const before=PNG.sync.read(await page.screenshot({scale:'css'}));
   const source=inkCentroid(before,rect);
   assert.ok(source.count>100,'picture was not visible before terminating Workers: '+JSON.stringify(source));
