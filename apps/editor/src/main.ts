@@ -569,11 +569,13 @@ byId<HTMLButtonElement>('brushExport').onclick=()=>{
 byId<HTMLSelectElement>('brush').onchange=e=>selectPreset((e.target as HTMLSelectElement).value);
 for(const id of ['size','sizeNumber']){
  const input=byId<HTMLInputElement>(id);
- input.addEventListener(id==='size'?'input':'change',()=>{
+ const onSizeInput=()=>{
   const value=Number(input.value);
   if(!input.value||!Number.isFinite(value)||value<.1||value>1024){syncPreset();return;}
   if(!applyBrushChange(p=>{p.size=value;}))syncPreset();
- });
+ };
+ input.addEventListener('input',onSizeInput);
+ if(id==='sizeNumber')input.addEventListener('change',onSizeInput);
 }
 for(const [id,handler] of Object.entries({fitView:()=>surface?.fitView(),zoomOut:()=>surface?.zoomView(1/1.25),zoomIn:()=>surface?.zoomView(1.25),view100:()=>surface?.viewAt100(),actualPixels:()=>surface?.actualPixels(),resetRotation:()=>surface?.resetRotation(),flipH:()=>surface?.flipView('x'),flipV:()=>surface?.flipView('y')}))byId<HTMLButtonElement>(id).onclick=handler;
 byId<HTMLInputElement>('zoomPercent').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewZoom(n/100);};
