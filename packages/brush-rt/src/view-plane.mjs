@@ -67,22 +67,29 @@ export class ViewPlane {
   if(!this.view)return;
   const specialized=this.view[12]>.5||this.view[14]>.5;
   this.paper.style.display=specialized?'none':'block';
-  // Paper groups are sparse updates, not a complete viewport replacement.
-  // A newer paper version may contain only the changed 512px groups; hiding
-  // the last precise picture would reveal missing document pixels. Retain it
-  // until a new precise image has actually been installed.
-  this.canvas.style.visibility='visible';
+  // Paper groups are normally sparse. Only if ALL document-space 512px
+  // groups are already installed can they replace a stale precise frame.
+  // This fixes recovery's brief white-on-white viewport without hiding the
+  // last precise picture for partially populated large documents.
+  const complete=this.hasCompletePaper();
+  this.canvas.style.visibility=!specialized&&complete&&this.paperVersion>this.pictureVersion?'hidden':'visible';
  }
  placeInk(layer){
   if(!this.anchor||!layer.view||!layer.rect)return;
   const [a,b,c,d,e,f]=viewAffine(layer.view,this.anchor),[x,y]=layer.rect;
   layer.element.style.transform=ViewPlane.matrix([a,b,c,d,e+a*x+c*y-x,f+b*x+d*y-y]);
  }
+ hasCompletePaper(){
+  if(!this.anchor)return false;
+  const count=Math.ceil(this.anchor[4]/512)*Math.ceil(this.anchor[5]/512);
+  return count>0&&this.paper.children.length>=count;
+ }
  displayedRevision(){
   if(!this.view)return -1;
-  // Retire temporary ink only after it is covered by an installed precise
-  // picture; sparse paper tile arrival alone cannot prove that coverage.
-  return this.pictureVersion;
+  // A full retained-document image is coherent and can retire ink; sparse
+  // group updates cannot, because they do not cover the entire viewport.
+  const special=this.view[12]>.5||this.view[14]>.5;
+  return special||!this.hasCompletePaper()?this.pictureVersion:Math.max(this.pictureVersion,this.paperVersion);
  }
  detach(){
   this.root.before(this.paper,this.canvas);this.root.remove();
