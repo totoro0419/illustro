@@ -1,4 +1,5 @@
 import {DocumentPresentation} from '@rt/document-presentation';
+import {viewAffine,toScreen} from '@rt/stroke-overlay';
 
 
 // Window-side port: no brush reconstruction, pixel evaluation or GPU commands.
@@ -6,7 +7,7 @@ import {DocumentPresentation} from '@rt/document-presentation';
 // arriving after a more recent pan/zoom/rotation. Worker messages never own it.
 export class DrawingHost {
  static async create(canvas,width,height,backend,options,workerUrl,canonicalUrl,diagnostics=false,presentationUrl){
-  const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.documentVersion=0;try{
+  const host=new DrawingHost(canvas,workerUrl,presentationUrl);host.documentPresentation=new DocumentPresentation(canvas,width,height);host.scene=new IndependentScene(canvas,host.documentPresentation);host.documentVersion=0;try{
    host.update(await host.call('init',{width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend,options,canonicalUrl,diagnostics,timeOrigin:performance.timeOrigin}));
    host.presentation.postMessage({method:'init',width:canvas.width,height:canvas.height,documentWidth:width,documentHeight:height,backend:host.info.selection.selected});await host.presentationReady;return host;
   }catch(error){host.destroy();throw error;}
@@ -23,19 +24,20 @@ export class DrawingHost {
     const accepted=m.epoch===this.epoch&&m.version>=this.documentVersion;
     if(accepted){
      this.documentPresentation.apply(m.tiles);this.documentVersion=m.version;
+     this.scene.paperUpdated(m.version);this.retireOverlays(m.version);
          }else for(const t of m.tiles)t.bitmap.close();
     const request=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);request?.resolve({accepted});return;
    }
    if(m.type==='read'){const r=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);r?.resolve(m.pixels);return;}
    if(m.type==='image'){this.presentationMetrics=m.performance;
-    const accepted=m.epoch===this.epoch&&m.version>=this.presentationVersion&&m.version>=this.documentVersion;
+    const accepted=m.epoch===this.epoch&&m.version>=this.presentationVersion&&m.version>=this.documentVersion&&this.scene.matches(m.view);
     if(accepted){
      // Never expose an empty bitmap: install the complete image, then retire
      // covered previews and choose the visible base as one browser task.
      if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;
      if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;
      this.context.transferFromImageBitmap(m.bitmap);this.presentationVersion=m.version;
-     this.retireOverlays(m.version);
+     this.scene.preciseUpdated(m.view,m.version);this.retireOverlays(m.version);
     }else m.bitmap.close();
     this.onPresentation?.({kind:'display-image',at:performance.now(),accepted});
    }
@@ -80,7 +82,7 @@ export class DrawingHost {
    layer.view=data.view;layer.rect=data.rect;layer.scale=data.scale;layer.polygon=data.polygon;if(layer.element.width!==data.bitmap.width)layer.element.width=data.bitmap.width;if(layer.element.height!==data.bitmap.height)layer.element.height=data.bitmap.height;layer.context.transferFromImageBitmap(data.bitmap);
    const [x,y]=data.rect;Object.assign(layer.element.style,{left:originX+x+'px',top:originY+y+'px',width:layer.element.width/data.scale+'px',height:layer.element.height/data.scale+'px',display:this.hiddenStrokeIds.has(data.id)?'none':'block',clipPath:'polygon('+data.polygon.map(p=>(p.x-x)+'px '+(p.y-y)+'px').join(',')+')'});
   }
-  this.retireOverlays(this.presentationVersion);this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
+  this.scene.placeAll(this.layers);this.retireOverlays(this.presentationVersion);this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
  }
  retireOverlays(version){
   for(const [id,requiredVersion]of this.pendingRetirements){
@@ -89,10 +91,17 @@ export class DrawingHost {
    this.pendingRetirements.delete(id);
   }
  }
- setViewTransform(view){
+ setViewTransform(view,localOnly=false){
   const old=this.backend.viewTransform;
-  if(old&&view.every((n,i)=>n===old[i]))return;
+  if(old&&view.every((n,i)=>n===old[i])){if(!localOnly)this.publishView();return;}
   this.backend.viewTransform=Array.from(view);
+  this.scene.setView(view);
+  // Observable synchronous screen transform. This is not a Worker completion
+  // or a GPU submission; continuous motion tests measure actual screen frames.
+  this.onPresentation?.({kind:'view-transform',at:performance.now(),view:Array.from(view)});
+  if(!localOnly)this.publishView();
+ }
+ publishView(){const view=this.backend.viewTransform;if(!view)return;
   this.presentation.postMessage({method:'view',view});this.send('view',view);
  }
  setSurfaceStack(keys){this.send('stack',keys);}
@@ -111,7 +120,7 @@ export class DrawingHost {
  performanceSummary(){return {...(this.summary??{}),displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
- destroy(){if(this.disposed)return;this.disposed=true;this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
+ destroy(){if(this.disposed)return;this.disposed=true;this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.scene?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 
@@ -138,4 +147,64 @@ class DrawingSessionPort {
   const data=entries.map((e,i)=>{const token='restored:'+i;this.tokens.set(e.record,token);this.recordsByToken.set(token,e.record);return {record:e.record,surfaceKey:e.surfaceKey,keys:e.keys,cached:e.cached,token};});const state=await this.renderer.call('restore',{entries:data,cache,geometry});this.id=state.session.id;this.renderer.update(state);
  }
  destroy(){this.renderer.destroy();}
+}
+
+/**
+ * Immutable view anchor: live gestures only change the outer CSS matrix.
+ * The precise picture, retained document and each temporary stroke are mapped
+ * into the same anchor. Neither a drawing job nor a GPU fence is in this path.
+ */
+export class IndependentScene {
+ constructor(canvas,paper){
+  this.canvas=canvas;this.paper=paper.element;
+  const parent=canvas.parentElement;
+  this.frame=document.createElement('div');this.frame.className='illustro-retained-stage';
+  Object.assign(this.frame.style,{position:'absolute',inset:'0',overflow:'visible',pointerEvents:'none'});
+  this.motion=document.createElement('div');this.motion.className='illustro-picture-motion';
+  Object.assign(this.motion.style,{position:'absolute',inset:'0',transformOrigin:'0 0',pointerEvents:'none'});
+  if(getComputedStyle(parent).position==='static')parent.style.position='relative';
+  this.paper.before(this.frame);this.frame.append(this.motion);
+  this.motion.append(this.paper,canvas);
+  Object.assign(canvas.style,{position:'absolute',left:'0',top:'0',pointerEvents:'none',transformOrigin:'0 0'});
+  this.anchor=null;this.current=null;this.preciseView=null;this.preciseVersion=-1;this.paperVersion=0;
+ }
+ matrix(m){return 'matrix('+m.join(',')+')';}
+ equal(a,b){return !!a&&!!b&&a.length===b.length&&a.every((n,i)=>Math.abs(n-b[i])<1e-5);}
+ matches(view){return this.equal(this.current,view);}
+ setView(view){
+  if(!view)return;
+  this.current=Array.from(view);
+  if(!this.anchor){
+   this.anchor=Array.from(view);
+   const origin=toScreen(this.anchor,0,0),right=toScreen(this.anchor,1,0),down=toScreen(this.anchor,0,1);
+   Object.assign(this.paper.style,{left:'0px',top:'0px',transform:this.matrix([right.x-origin.x,right.y-origin.y,down.x-origin.x,down.y-origin.y,origin.x,origin.y])});
+  }
+  this.motion.style.transform=this.matrix(viewAffine(this.anchor,this.current));
+  this.visibility();
+ }
+ paperUpdated(version){this.paperVersion=Math.max(this.paperVersion,version);this.visibility();}
+ preciseUpdated(view,version){
+  this.preciseView=Array.from(view);this.preciseVersion=version;
+  Object.assign(this.canvas.style,{width:view[2]+'px',height:view[3]+'px',
+    transform:this.matrix(viewAffine(view,this.anchor))});
+  this.visibility();
+ }
+ visibility(){
+  // Viewport-sized pictures cannot cover document pixels newly revealed on zoom-out.
+  const exact=this.matches(this.preciseView)&&this.preciseVersion>=this.paperVersion;
+  this.canvas.style.visibility=exact?'visible':'hidden';
+  return exact;
+ }
+ placeAll(layers){for(const layer of layers.values())this.placeInk(layer);}
+ placeInk(layer){
+  if(!this.anchor||!layer.view)return;
+  const from=layer.view,[x,y]=layer.rect;
+  const [a,b,c,d,e,f]=viewAffine(from,this.anchor);
+  layer.element.style.transform=this.matrix([a,b,c,d,e+a*x+c*y-x,f+b*x+d*y-y]);
+ }
+ destroy(){
+  this.frame.before(this.canvas);this.frame.remove();
+  for(const prop of ['position','left','top','width','height','transform','transformOrigin','visibility','pointerEvents'])
+   this.canvas.style[prop]='';
+ }
 }

@@ -1,0 +1,100 @@
+name: M10 independent canvas - non-publishing verification
+on:
+  push:
+    branches: ['rebuild/M10-independent-canvas-2026-10-22']
+  pull_request:
+    branches: ['rebuild/M10-delete-legacy-navigation-2026-10-22']
+  workflow_dispatch:
+concurrency:
+  group: m10-independent-canvas-${{ github.event_name }}
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  compile-and-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Brush runtime and source-lock
+        run: |
+          npm run brush:build
+          npm run prep:check
+      - name: Existing functionality
+        run: |
+          npm run core:check
+          npm run brush:regression
+      - name: Editor and gesture type safety
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with: {name: independent-canvas-app, path: apps/editor/dist/}
+
+  browser:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/m10-independent-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-independent-browser/node_modules/pngjs
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/brush-build.log
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/m10-independent-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
+          /tmp/m10-independent-browser/node_modules/.bin/playwright install chromium
+      - name: Brush detail settings and saved presets
+        run: M10_EDITOR_EVIDENCE=/tmp/independent-evidence/brush-editor.json node scripts/m10-brush-editor-review.mjs
+      - name: Canvas interactions and exact display
+        run: |
+          REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2,webgpu REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/independent-evidence/reveal/report.json node scripts/m10-rebuild-correctness.mjs
+      - name: Heavy G-pen while formal drawing is deliberately held - native gesture screenshots
+        env:
+          RT_JPEG_PATH: /tmp/m10-independent-browser/node_modules/jpeg-js
+        run: |
+          WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_GATE=1 WORKER_POINTS=40 WORKER_OUTPUT=/tmp/independent-evidence/paused-formal/report.json node scripts/m10-rebuild-response.mjs
+      - name: M08/M09 screen and color regression
+        run: |
+          M08_SMOKE_QUICK=1 M08_EVIDENCE_DIRECTORY=/tmp/independent-evidence/m08 node scripts/editor-m08-smoke.mjs
+          M09_EVIDENCE_DIRECTORY=/tmp/independent-evidence/m09 node scripts/editor-m09-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: independent-canvas-browser, path: /tmp/independent-evidence/}
+
+  publish:
+    if: github.event_name == 'push'
+    needs: [compile-and-regression, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site, fetch-depth: 0}
+      - uses: actions/download-artifact@v4
+        with: {name: independent-canvas-app, path: site/qa/m10-independent-canvas/app}
+      - uses: actions/download-artifact@v4
+        with: {name: independent-canvas-browser, path: site/qa/m10-independent-canvas/evidence}
+      - name: Publish only isolated M10 independent-canvas QA
+        run: |
+          sed "s/__COMMIT__/$GITHUB_SHA/g" qa/m10-independent-canvas/index.html > site/qa/m10-independent-canvas/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m10-independent-canvas
+          test -z "$(git diff --cached --name-only | sed '/^qa\/m10-independent-canvas\//d')"
+          git diff --cached --quiet || git commit -m "qa: independent M10 canvas $GITHUB_SHA"
+          git push origin HEAD:gh-pages
