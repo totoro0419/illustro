@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "commit": "dfe04a7ae0914ca172466486d6f70a47f5fff0ab",
+  "commit": "6fcd227ad39147087144efb35e278b78c44d1936",
   "checks": [
     {
       "backend": "webgl2",
