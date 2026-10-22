@@ -20,7 +20,7 @@ export function composedMotion(frames,source,box,timeOrigin,events,decode,initia
  // can move this feature by that amount, retaining the raw first-input value.
  let sufficientMoveAt=firstMove?.at??null;
  if(initialView&&baseline.count){const from=initialView,dx=(baseline.x-box.x-from[2]/2-from[8])/from[6],dy=(baseline.y-box.y-from[3]/2-from[9])/from[6],c=Math.cos(from[7]),s=Math.sin(from[7]),docX=(dx*c+dy*s)*from[10]+from[4]/2,docY=(-dx*s+dy*c)*from[11]+from[5]/2;
-  sufficientMoveAt=presentations.filter(p=>p.kind==='view-transform').find(p=>{const v=p.view,x=(docX-v[4]/2)*v[10],y=(docY-v[5]/2)*v[11],cc=Math.cos(v[7]),ss=Math.sin(v[7]);return Math.hypot(v[2]/2+v[8]+v[6]*(x*cc-y*ss)+box.x-baseline.x,v[3]/2+v[9]+v[6]*(x*ss+y*cc)+box.y-baseline.y)>=2;})?.at??null;
+  sufficientMoveAt=presentations.filter(p=>(p.kind==='view-transform'||p.kind==='local-transform')).find(p=>{const v=p.view,x=(docX-v[4]/2)*v[10],y=(docY-v[5]/2)*v[11],cc=Math.cos(v[7]),ss=Math.sin(v[7]);return Math.hypot(v[2]/2+v[8]+v[6]*(x*cc-y*ss)+box.x-baseline.x,v[3]/2+v[9]+v[6]*(x*ss+y*cc)+box.y-baseline.y)>=2;})?.at??null;
  }
  const first=samples.find(s=>s.distance>=2&&sufficientMoveAt!==null&&s.at>=sufficientMoveAt),rawFirst=samples.find(s=>s.distance>=2),intervals=changed.slice(1).map((s,i)=>s.at-changed[i].at);
  return {method:'Capture of ink centroid movement >=2 CSS px after the requested view first moves that feature >=2 CSS px; distinct movement >=0.5 CSS px. Capture timestamps, not scanout.',baseline,firstMoveAt:firstMove?.at??null,sufficientMoveAt,rawFirstInputToMotionMs:rawFirst?rawFirst.at-firstMove.at:null,firstMotionMs:first?first.at-sufficientMoveAt:null,changedFrames:changed.length,intervals,samples};
