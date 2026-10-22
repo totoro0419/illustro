@@ -6,7 +6,7 @@ on:
     branches: ['rebuild/M10-zero-tick-from-PR42-2026-10-22']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: m10-zerotick-${{ github.event_name }}
   cancel-in-progress: true
@@ -35,6 +35,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success()
         with: {name: zero-tick-editor, path: apps/editor/dist/}
+
   browser:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -67,3 +68,28 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: zero-tick-browser-evidence, path: /tmp/zero-tick-evidence/}
+
+  publish-qa:
+    if: github.event_name == 'push'
+    needs: [core, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site, fetch-depth: 0}
+      - uses: actions/download-artifact@v4
+        with: {name: zero-tick-editor, path: site/qa/m10-zero-tick/app}
+      - uses: actions/download-artifact@v4
+        with: {name: zero-tick-browser-evidence, path: site/qa/m10-zero-tick/evidence}
+      - name: Publish only new zero-tick QA when every independent test succeeds
+        run: |
+          sed "s/__COMMIT__/$GITHUB_SHA/g" qa/m10-zero-tick/index.html > site/qa/m10-zero-tick/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m10-zero-tick
+          test -z "$(git diff --cached --name-only | sed '/^qa\/m10-zero-tick\//d')"
+          git diff --cached --quiet || git commit -m "qa: M10 zero-tick $GITHUB_SHA"
+          git push origin HEAD:gh-pages
