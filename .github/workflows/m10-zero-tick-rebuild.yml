@@ -58,6 +58,8 @@ jobs:
           /tmp/m10-zerotick-browser/node_modules/.bin/playwright install chromium
       - name: Exact 4000px reveal and committed pixels in WebGL2 and WebGPU
         run: REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2,webgpu REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/zero-tick-evidence/correctness.json node scripts/m10-rebuild-correctness.mjs
+      - name: Native two-finger movement after both real Workers are terminated
+        run: ZERO_TICK_WORKER_OUTPUT=/tmp/zero-tick-evidence/real-worker-termination/report.json node scripts/m10-zero-tick-worker-killed.mjs
       - name: Heavy native touch and successive browser frames
         run: |
           WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-tick-evidence/heavy/report.json node scripts/m10-rebuild-response.mjs
