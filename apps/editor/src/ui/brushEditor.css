@@ -1,0 +1,33 @@
+/* M10: settings live inside the existing right Brush box, never a modal overlay. */
+.brush-edit-feedback{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0;color:#66758c;font-size:12px}
+.brush-edit-feedback button{font:inherit;padding:5px 9px;border-radius:8px;border:1px solid #c9d6ea;background:#f7faff;color:#2c4b78;cursor:pointer}
+.brush-edit-feedback button:disabled{opacity:.5;cursor:default}
+.brush-editor-advanced{margin:10px 0 4px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.brush-editor-section{border:1px solid #dce5f1;border-radius:11px;background:#fafcff;min-width:0;overflow:clip}
+.brush-editor-section summary{cursor:pointer;user-select:none;padding:11px 12px;font-size:13px;font-weight:650;color:#304461;list-style-position:inside;touch-action:manipulation}
+.brush-editor-section summary:focus-visible{outline:2px solid #728eef;outline-offset:-2px}
+.brush-editor-section[open] summary{border-bottom:1px solid #e0e8f2}
+.brush-editor-section-body{display:flex;flex-direction:column;gap:11px;padding:11px 12px 14px;min-width:0;font-size:12px}
+.brush-editor-section-body p{color:#66758c;line-height:1.5;margin:0}
+.brush-editor-section-body>label{display:flex;align-items:center;justify-content:space-between;gap:9px;min-width:0;font-size:12px}
+.brush-editor-section-body>label select{flex:1;min-width:0;max-width:65%;padding:6px;border-radius:8px;border:1px solid #cbd7e6;background:#fff}
+.brush-editor-section-body>label.checkbox-line{justify-content:flex-start}
+.brush-editor-control{min-width:0;display:flex;flex-direction:column;gap:5px}
+.brush-editor-inputs{display:flex;align-items:center;gap:6px;min-width:0}
+.brush-editor-inputs input[type=range]{min-width:0;width:100%;flex:1;accent-color:#6884e3;touch-action:pan-y}
+.brush-editor-inputs input[type=number]{min-width:0;width:62px;flex:0 0 62px;padding:5px;border-radius:7px;border:1px solid #cbd7e6;background:#fff;color:#253a57;font:inherit;font-variant-numeric:tabular-nums}
+.brush-editor-inputs span{min-width:14px;color:#728099}
+.brush-curve-chart{width:min(100%,228px);aspect-ratio:1;background:linear-gradient(0deg,#f4f7ff,#fff);border:1px solid #c8d5ed;border-radius:9px;display:block;touch-action:none;cursor:crosshair;margin:auto}
+.brush-curve-grid{stroke:#d9e3f5;stroke-width:1;fill:none}
+.brush-curve-line{stroke:#456bc6;stroke-width:2.5;fill:none;stroke-linejoin:round}
+.brush-curve-point{fill:#fff;stroke:#456bc6;stroke-width:2}
+.brush-curve-point.selected{fill:#456bc6;stroke:#fff;stroke-width:2.5}
+.brush-curve-actions{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.brush-curve-actions select{min-width:68px;max-width:100px;padding:5px;border:1px solid #cbd7e6;border-radius:7px}
+.brush-curve-actions button{border:1px solid #c7d3e7;border-radius:7px;background:#fff;color:#31456a;min-height:31px;padding:5px 7px;cursor:pointer;font-size:11px}
+.brush-curve-actions button:disabled{opacity:.45;cursor:default}
+.brush-curve-coordinates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.brush-curve-coordinates label{display:flex;align-items:center;gap:4px}
+.brush-curve-coordinates input{width:100%;min-width:0;padding:5px;border:1px solid #cbd7e6;border-radius:7px;font-variant-numeric:tabular-nums}
+.m10-brush-settings label>input[type=number]{width:65px;min-width:0;padding:4px;border:1px solid #cbd7e6;border-radius:7px;background:#fff}
+@media(max-width:600px){.brush-editor-section summary{padding:12px}.brush-editor-section-body{padding:12px}.brush-editor-inputs input[type=number]{width:70px;flex-basis:70px}}
