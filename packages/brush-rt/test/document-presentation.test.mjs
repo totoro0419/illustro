@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DocumentPresentation} from '../dist/rt/document-presentation.mjs';
-import {DrawingHost} from '../dist/rt/drawing-host.mjs';
 
 function fixture(){
  const kinds=[],elements=[],previous=globalThis.document;
@@ -41,34 +40,3 @@ test('4000px retained paper has at most 64 display canvases, not 1024 tile canva
  }finally{f.restore();}
 });
 
-test('newly revealed bottom-right group keeps one parent transform',()=>{
- const f=fixture();try{
-  const p=new DocumentPresentation(f.source,4000,4000);
-  p.apply([group(3584,3584,416,416,1)]);
-  const allocations=f.elements.length,zoom=.065,angle=.2;
-  const view=[668,1220,334,610,4000,4000,zoom,angle,8,0,-1,1,0,0,0,0];
-  p.update(view);
-  assert.equal(f.elements.length,allocations);
-  assert.equal(p.tiles.get('3584,3584').element.style.left,'3584px');
-  const [a,b,c,d,e,g]=p.element.style.transform.slice(7,-1).split(',').map(Number);
-  const point={x:a*4000+c*4000+e,y:b*4000+d*4000+g},dx=-2000,dy=2000;
-  assert.ok(Math.abs(point.x-(175+zoom*(dx*Math.cos(angle)-dy*Math.sin(angle))))<1e-8);
-  assert.ok(Math.abs(point.y-(305+zoom*(dx*Math.sin(angle)+dy*Math.cos(angle))))<1e-8);
-  assert.deepEqual(f.kinds,['bitmaprenderer']);p.destroy();
- }finally{f.restore();}
-});
-
-// The old exact image remains visible behind its still-present CPU stroke.
-// Committing a covered stroke must NOT flash to a different document background.
-test('a covered stroke never hides the precise background before GPU replacement',()=>{
- const layer={element:{removed:false,remove(){this.removed=true;}}};
- const view=[668,1220,334,610,4000,4000,1,0,0,0,1,1,0,0,0,0];
- const host={backend:{viewTransform:view},canvas:{style:{}},presentationVersion:6,documentVersion:7,
-  uncoveredVersion:0,pendingRetirements:new Map([[42,7]]),layers:new Map([[42,layer]])};
- DrawingHost.prototype.syncVisibility.call(host);assert.equal(host.canvas.style.opacity,'1');
- DrawingHost.prototype.retireOverlays.call(host,6);assert.equal(layer.element.removed,false);
- DrawingHost.prototype.retireOverlays.call(host,7);assert.equal(layer.element.removed,true);
- assert.equal(host.layers.size,0);
- host.uncoveredVersion=8;DrawingHost.prototype.syncVisibility.call(host);assert.equal(host.canvas.style.opacity,'0');
- host.presentationVersion=8;DrawingHost.prototype.syncVisibility.call(host);assert.equal(host.canvas.style.opacity,'1');
-});

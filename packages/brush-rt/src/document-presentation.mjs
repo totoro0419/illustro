@@ -1,4 +1,3 @@
-import {viewAffine} from '@rt/stroke-overlay';
 
 // One document-space group per 512px region. The drawing/history system still
 // works in exact 128px tiles; only the *display* groups tiles together.
@@ -6,7 +5,6 @@ import {viewAffine} from '@rt/stroke-overlay';
 export class DocumentPresentation {
  constructor(source,width,height){
   this.source=source;this.tiles=new Map;this.bytes=0;this.peakBytes=0;
-  this.view=[width,height,width,height,width,height,1,0,0,0,1,1,0,0,0,0];
   this.element=document.createElement('div');this.element.className='illustro-document-presentation';this.element.setAttribute('aria-hidden','true');
   Object.assign(this.element.style,{position:'absolute',left:source.offsetLeft+'px',top:source.offsetTop+'px',width:width+'px',height:height+'px',transformOrigin:'0 0',pointerEvents:'none',overflow:'hidden',background:'#fff'});source.before(this.element);
  }
@@ -22,6 +20,5 @@ export class DocumentPresentation {
    group.context.transferFromImageBitmap(data.bitmap);
   }
  }
- update(view){if(!view)return;this.element.style.display=view[12]>.5||view[14]>.5?'none':'block';this.element.style.imageRendering=view[13]>.5?'pixelated':'auto';this.element.style.transform='matrix('+viewAffine(this.view,view).join(',')+')';}
  destroy(){for(const group of this.tiles.values())group.element.width=group.element.height=1;this.tiles.clear();this.element.remove();this.bytes=0;}
 }
