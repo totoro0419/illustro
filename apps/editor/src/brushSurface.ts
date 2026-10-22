@@ -156,7 +156,13 @@ export class BrushSurface{
   get hasUncommittedInput(){return this.pointer!==null||(this.handoff?.pending??0)>0;}
   get hasPendingStrokes(){return (this.handoff?.pending??0)>0||this.gpuFinishes.size>0;}
   get inputActive(){return this.pointer!==null||this.finishing||this.historySyncing;}
-  private cancel=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}if(e.pointerId===this.pointer)void this.cancelStroke();};
+  private cancel=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}if(e.pointerId===this.pointer){
+      // During finger-to-pinch handoff the original drawing pointer loses
+      // capture before the second finger lifts. Do not cancel its pending
+      // canonical record; the gesture owner settles that stroke afterwards.
+      if(this.strokePointerType==='touch'&&this.gestures?.active)return;
+      void this.cancelStroke();
+    }};
   private async cancelStroke(){const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.lastFrameAt=performance.now();this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}const pressure=!!(this.renderer as any)?.backend.previewPressure;if(pressure!==this.previewPressureShown){this.previewPressureShown=pressure;if(pressure)this.status('表示処理が混み合っています。入力を保持して線の確定を優先しています。');else if(!this.handoffFault&&!this.historySyncing)this.status('描画を続けられます。');this.onStateChanged();}if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;}
