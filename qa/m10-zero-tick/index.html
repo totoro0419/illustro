@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Illustro — ゼロティック操作検証</title>
+<style>
+:root{color-scheme:light}body{font:16px/1.75 system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#f3f6fc;color:#1b304c;margin:0;padding:24px 14px}
+main{max-width:760px;margin:auto;background:white;padding:26px;border:1px solid #d9e2f2;border-radius:18px}
+h1{font-size:1.55rem;margin:0 0 15px;line-height:1.4}h2{font-size:1.15rem;margin-top:24px}
+a{color:#174db1}ol{padding-left:24px}li{margin:12px 0}
+.button{display:block;background:#174db1;color:white;text-align:center;padding:14px;border-radius:12px;text-decoration:none;font-weight:700}
+.note{background:#f4f7fc;padding:13px 16px;border-radius:12px}
+small{word-break:break-all;color:#53617b}
+</style></head><body><main>
+<h1>Illustro — ゼロティック・キャンバス検証</h1>
+<p class="note"><strong>開発途中の独立検証版</strong>です。本番アプリではありません。自動テストの成功は、実機での快適さの保証ではありません。</p>
+<a class="button" href="./app/#home">検証用アプリを開く</a>
+<p><a href="./app/?backend=webgl2#home">WebGL2で試す</a>　｜　<a href="./app/?backend=webgpu#home">WebGPUで試す</a></p>
+<h2>重点確認（4,000 × 4,000px）</h2>
+<ol>
+<li>太いGペン（512px）で長い線を描く。<strong>線を離した直後、正式確定前に</strong>指2本で移動・拡大・回転する。</li>
+<li>鉛筆（128px・256px・512px）でも同じ操作を試す。確定まで待つ必要がないか確認する。</li>
+<li>1本指で描画中、2本目の指を加える。<strong>キャンバス操作が先に動き、描いた線が消えない</strong>ことを確認する。</li>
+<li>仮線がある状態で急に縮小・回転し、線や画像が消えない、黒い四角が出ない、二重表示にならないことを確認する。</li>
+<li>Undo・Redo、別レイヤーへの描画、ブラシ設定、保存・再読込を試す。</li>
+</ol>
+<p>「入力に反応してボタンが変わった」だけではなく、<strong>実際に画面の絵が指に合わせて動くか</strong>を確認してください。操作し始めてから止まる場合は、描画中か、指を離した直後か、正式確定後かを記録してください。</p>
+<h2>情報</h2>
+<p>ソース：<small>dfe04a7ae0914ca172466486d6f70a47f5fff0ab</small></p>
+<p><a href="https://github.com/totoro0419/illustro/pull/44">PR #44（Draft）</a></p>
+</main></body></html>

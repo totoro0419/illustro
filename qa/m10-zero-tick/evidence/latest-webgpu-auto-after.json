@@ -1,0 +1,46 @@
+{
+  "backend": "webgpu",
+  "route": "auto",
+  "version": "after",
+  "box": {
+    "x": 56,
+    "y": 182,
+    "width": 334,
+    "height": 610
+  },
+  "blank": {
+    "checked": 57201,
+    "mismatch": 0
+  },
+  "early": {
+    "view": [
+      668,
+      1220,
+      334,
+      610,
+      4000,
+      4000,
+      0.06499993056058884,
+      0.20000018179416656,
+      8,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "pendingGpu": 3,
+    "accepted": 5,
+    "strokes": 4,
+    "errors": []
+  },
+  "expectedBlue": 1546,
+  "duringBlue": 1474,
+  "matchedBlue": 1473,
+  "fraction": 0.9527813712807245,
+  "geometryMatched": 1546,
+  "geometryFraction": 1,
+  "errors": []
+}

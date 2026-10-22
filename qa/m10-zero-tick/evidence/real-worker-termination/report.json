@@ -1,0 +1,21 @@
+{
+  "kind": "kill actual drawing and presentation Workers, then native 2-finger gesture with composed pixel comparison",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "distance": 52.39382061455047,
+      "sourcePixels": 3677,
+      "destinationPixels": 3558,
+      "passed": true,
+      "workerCountTerminated": 2
+    },
+    {
+      "backend": "webgpu",
+      "distance": 52.46055967706854,
+      "sourcePixels": 3677,
+      "destinationPixels": 3648,
+      "passed": true,
+      "workerCountTerminated": 2
+    }
+  ]
+}
