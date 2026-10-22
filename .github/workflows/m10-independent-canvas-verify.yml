@@ -6,7 +6,7 @@ on:
     branches: ['rebuild/M10-delete-legacy-navigation-2026-10-22']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   compile-and-regression:
     runs-on: ubuntu-latest
@@ -30,6 +30,9 @@ jobs:
           npm --workspace @illustro/editor exec -- vitest run
           npm --workspace @illustro/editor exec -- tsc --noEmit
           npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with: {name: independent-canvas-app, path: apps/editor/dist/}
 
   browser:
     runs-on: ubuntu-latest
@@ -57,3 +60,28 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: independent-canvas-browser, path: /tmp/independent-evidence/}
+
+  publish:
+    if: github.event_name == 'push'
+    needs: [compile-and-regression, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site, fetch-depth: 0}
+      - uses: actions/download-artifact@v4
+        with: {name: independent-canvas-app, path: site/qa/m10-independent-canvas/app}
+      - uses: actions/download-artifact@v4
+        with: {name: independent-canvas-browser, path: site/qa/m10-independent-canvas/evidence}
+      - name: Publish only isolated M10 independent-canvas QA
+        run: |
+          sed "s/__COMMIT__/$GITHUB_SHA/g" qa/m10-independent-canvas/index.html > site/qa/m10-independent-canvas/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m10-independent-canvas
+          test -z "$(git diff --cached --name-only | sed '/^qa\/m10-independent-canvas\//d')"
+          git diff --cached --quiet || git commit -m "qa: independent M10 canvas $GITHUB_SHA"
+          git push origin HEAD:gh-pages
