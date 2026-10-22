@@ -2,6 +2,8 @@ name: M10 independent canvas - non-publishing verification
 on:
   push:
     branches: ['rebuild/M10-independent-canvas-2026-10-22']
+  pull_request:
+    branches: ['rebuild/M10-delete-legacy-navigation-2026-10-22']
   workflow_dispatch:
 permissions:
   contents: read
