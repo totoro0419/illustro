@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "commit": "f1b91c21fe940764657f10098e665475f52bf02b",
+  "checks": [
+    {
+      "backend": "webgl2",
+      "drafts": true,
+      "reset": true,
+      "curve": true,
+      "tipAndTexture": true,
+      "persist": true,
+      "pageErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "drafts": true,
+      "reset": true,
+      "curve": true,
+      "tipAndTexture": true,
+      "persist": true,
+      "pageErrors": []
+    }
+  ],
+  "errors": [],
+  "limitations": "SwiftShader automated browser; physical stylus/GPU not tested"
+}

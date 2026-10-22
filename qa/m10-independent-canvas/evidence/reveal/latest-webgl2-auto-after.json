@@ -1,0 +1,46 @@
+{
+  "backend": "webgl2",
+  "route": "auto",
+  "version": "after",
+  "box": {
+    "x": 56,
+    "y": 196.5,
+    "width": 334,
+    "height": 595.5
+  },
+  "blank": {
+    "checked": 57977,
+    "mismatch": 0
+  },
+  "early": {
+    "view": [
+      668,
+      1191,
+      334,
+      595.5,
+      4000,
+      4000,
+      0.06499993056058884,
+      0.20000018179416656,
+      8,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "pendingGpu": 4,
+    "accepted": 5,
+    "strokes": 5,
+    "errors": []
+  },
+  "expectedBlue": 1476,
+  "duringBlue": 1476,
+  "matchedBlue": 1476,
+  "fraction": 1,
+  "geometryMatched": 1476,
+  "geometryFraction": 1,
+  "errors": []
+}
