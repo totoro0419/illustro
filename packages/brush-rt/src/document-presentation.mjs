@@ -1,4 +1,3 @@
-import {viewAffine} from '@rt/stroke-overlay';
 
 // One document-space group per 512px region. The drawing/history system still
 // works in exact 128px tiles; only the *display* groups tiles together.
@@ -22,6 +21,5 @@ export class DocumentPresentation {
    group.context.transferFromImageBitmap(data.bitmap);
   }
  }
- update(view){if(!view)return;this.element.style.display=view[12]>.5||view[14]>.5?'none':'block';this.element.style.imageRendering=view[13]>.5?'pixelated':'auto';this.element.style.transform='matrix('+viewAffine(this.view,view).join(',')+')';}
  destroy(){for(const group of this.tiles.values())group.element.width=group.element.height=1;this.tiles.clear();this.element.remove();this.bytes=0;}
 }

@@ -1,4 +1,3 @@
-import {viewAffine} from '@rt/stroke-overlay';
 import {DocumentPresentation} from '@rt/document-presentation';
 
 
@@ -13,7 +12,7 @@ export class DrawingHost {
   }catch(error){host.destroy();throw error;}
  }
  constructor(canvas,url,presentationUrl){this.remote=true;this.canvas=canvas;this.context=canvas.getContext('bitmaprenderer');if(!this.context)throw Error('ImageBitmap presentation unavailable');this.uploadSamples=[];
-  this.presentation=new Worker(presentationUrl,{type:'module'});this.presentationRequests=new Map;this.presentationRequestId=0;this.presentationVersion=0;this.preciseWaiters=[];this.uncoveredVersion=0;this.pendingCoverage=new Map;this.pendingRetirements=new Map;
+  this.presentation=new Worker(presentationUrl,{type:'module'});this.presentationRequests=new Map;this.presentationRequestId=0;this.presentationVersion=0;this.pendingCoverage=new Map;this.pendingRetirements=new Map;
   this.display={backend:{readViewport:()=>new Promise((resolve,reject)=>{const request=++this.presentationRequestId;this.presentationRequests.set(request,{resolve,reject,read:true});this.presentation.postMessage({method:'read',request});})}};
   this.presentationReady=new Promise((resolve,reject)=>{this.presentationResolve=resolve;this.presentationReject=reject;});
   this.presentation.onmessage=({data:m})=>{
@@ -24,12 +23,7 @@ export class DrawingHost {
     const accepted=m.epoch===this.epoch&&m.version>=this.documentVersion;
     if(accepted){
      this.documentPresentation.apply(m.tiles);this.documentVersion=m.version;
-     const coverage=this.pendingCoverage.get(m.version);
-     if(!coverage?.covered)this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);
-     this.pendingCoverage.delete(m.version);
-     this.documentPresentation.update(this.backend.viewTransform);
-     this.syncVisibility();
-    }else for(const t of m.tiles)t.bitmap.close();
+         }else for(const t of m.tiles)t.bitmap.close();
     const request=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);request?.resolve({accepted});return;
    }
    if(m.type==='read'){const r=this.presentationRequests.get(m.request);this.presentationRequests.delete(m.request);r?.resolve(m.pixels);return;}
@@ -41,7 +35,7 @@ export class DrawingHost {
      if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;
      if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;
      this.context.transferFromImageBitmap(m.bitmap);this.presentationView=m.view;this.presentationVersion=m.version;
-     this.retireOverlays(m.version);this.reproject();this.syncVisibility();this.releasePreciseWaiters(m.epoch,m.version);
+     this.retireOverlays(m.version);
     }else m.bitmap.close();
     this.onPresentation?.({kind:'display-image',at:performance.now(),accepted});
    }
@@ -53,7 +47,7 @@ export class DrawingHost {
    const request=this.requests.get(m.request);if(!request)return;this.requests.delete(m.request);if(m.error)request.reject(Error(m.error));else request.resolve(m.result);
   };this.worker.onerror=e=>this.fault(e.message||'Drawing worker failed');this.worker.onmessageerror=()=>this.fault('Drawing worker message could not be decoded');
  }
- fault(message){for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.localFaults.push(message);this.errors.push(message);for(const request of this.requests.values())request.reject(Error(message));this.requests.clear();for(const request of this.presentationRequests.values())request.reject(Error(message));this.presentationRequests.clear();}
+ fault(message){this.localFaults.push(message);this.errors.push(message);for(const request of this.requests.values())request.reject(Error(message));this.requests.clear();for(const request of this.presentationRequests.values())request.reject(Error(message));this.presentationRequests.clear();}
  send(method,args){if(!this.disposed)this.worker.postMessage({method,args});}
  call(method,args){if(this.disposed)return Promise.reject(Error('Drawing host disposed'));const request=++this.requestId;return new Promise((resolve,reject)=>{this.requests.set(request,{resolve,reject});this.worker.postMessage({method,args,request});});}
  update(s){if(!s)return;this.info=s.info;this.errors=[...(s.errors??[]),...this.localFaults];this.completions=s.completions;this.summary=s.performance;
@@ -78,12 +72,7 @@ export class DrawingHost {
    this.presentation.postMessage({method:'tiles',pages:m.pages,epoch:m.epoch,version:m.sequence,request},m.pages.map(p=>p.bitmap));
    await shown;
    if(this.disposed||m.epoch!==this.epoch){for(const l of m.layers)l.bitmap.close();this.send('pictureAck',{sequence:m.sequence,accepted:false});return;}
-   // Seamless and reference views have no retained-paper fallback; they must
-   // observe the full precise GPU image before the formal picture is complete.
-   if(this.backend.viewTransform?.[12]>.5||this.backend.viewTransform?.[14]>.5){
-    await this.waitPrecise(m.sequence,m.epoch);
-    if(this.disposed||m.epoch!==this.epoch){for(const l of m.layers)l.bitmap.close();this.send('pictureAck',{sequence:m.sequence,accepted:false});return;}
-   }
+
   }
   for(const id of m.retired){if(this.pendingRetirements.has(id))continue;const layer=this.layers.get(id);layer?.element.remove();this.layers.delete(id);}
   const originX=this.canvas.offsetLeft,originY=this.canvas.offsetTop;
@@ -91,17 +80,7 @@ export class DrawingHost {
    layer.view=data.view;layer.rect=data.rect;layer.scale=data.scale;layer.polygon=data.polygon;if(layer.element.width!==data.bitmap.width)layer.element.width=data.bitmap.width;if(layer.element.height!==data.bitmap.height)layer.element.height=data.bitmap.height;layer.context.transferFromImageBitmap(data.bitmap);
    const [x,y]=data.rect;Object.assign(layer.element.style,{left:originX+x+'px',top:originY+y+'px',width:layer.element.width/data.scale+'px',height:layer.element.height/data.scale+'px',display:this.hiddenStrokeIds.has(data.id)?'none':'block',clipPath:'polygon('+data.polygon.map(p=>(p.x-x)+'px '+(p.y-y)+'px').join(',')+')'});
   }
-  this.retireOverlays(this.presentationVersion);this.reproject();this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
- }
- waitPrecise(version,epoch){
-  if(this.presentationVersion>=version)return Promise.resolve(true);
-  return new Promise(resolve=>this.preciseWaiters.push({version,epoch,resolve}));
- }
- releasePreciseWaiters(epoch,version){
-  this.preciseWaiters=this.preciseWaiters.filter(waiter=>{
-   if(waiter.epoch!==epoch||waiter.version>version)return true;
-   waiter.resolve(true);return false;
-  });
+  this.retireOverlays(this.presentationVersion);this.send('pictureAck',{sequence:m.sequence,accepted:true});this.onPresentation?.({kind:'picture',at:performance.now(),sequence:m.sequence});
  }
  retireOverlays(version){
   for(const [id,requiredVersion]of this.pendingRetirements){
@@ -110,34 +89,18 @@ export class DrawingHost {
    this.pendingRetirements.delete(id);
   }
  }
- syncVisibility(){
-  const v=this.backend.viewTransform,ordinary=!!v&&v[12]<.5&&v[14]<.5;
-  // An old reference/seamless framebuffer is NOT ordinary white paper.
-  // Do not show its colored pixels when switching to an ordinary blank view;
-  // the retained document backdrop already provides correct white paper.
-  const modeChanged=!!v&&!!this.presentationView&&
-   ((v[12]>.5)!==(this.presentationView[12]>.5)||(v[14]>.5)!==(this.presentationView[14]>.5));
-  // Keep the precise M08 image visible if the latest stroke is fully covered
-  // by its temporary ink. Only unrepresented edits require the fallback scene.
-  this.canvas.style.opacity=modeChanged||ordinary&&this.presentationVersion<this.uncoveredVersion?'0':'1';
- }
- reproject(){const to=this.backend.viewTransform;if(!to)return;this.documentPresentation?.update(to);
-  if(this.presentationView?.length){const from=this.presentationView,[a,b,c,d,e,f]=viewAffine(from,to),x=from[2]/to[2],y=from[3]/to[3];Object.assign(this.canvas.style,{transformOrigin:'0 0',imageRendering:to[13]>.5?'pixelated':'auto',transform:`matrix(${[a*x,b*x,c*y,d*y,e,f].join(',')})`});}
-  for(const layer of this.layers.values()){const [a,b,c,d,e,f]=viewAffine(layer.view,to),[x,y]=layer.rect;layer.element.style.imageRendering=to[13]>.5?'pixelated':'auto';layer.element.style.transform=`matrix(${a},${b},${c},${d},${e+a*x+c*y-x},${f+b*x+d*y-y})`;}
- }
  setViewTransform(view){
   const old=this.backend.viewTransform;
   if(old&&view.every((n,i)=>n===old[i]))return;
   this.backend.viewTransform=Array.from(view);
-  this.reproject();this.presentation.postMessage({method:'view',view});this.send('view',view);
-  this.syncVisibility();
+  this.presentation.postMessage({method:'view',view});this.send('view',view);
  }
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
  setSeamlessPreview(active){this.send('seamless',active);}
  clearSeamlessPreviews(id){this.send('clearSeamless',id);}
- hideStrokePreview(id){for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.hiddenStrokeIds.add(id);const layer=this.layers.get(id);if(layer)layer.element.style.display='none';this.send('hide',{id,epoch:++this.epoch});}
- restoreStrokePreview(id){for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.hiddenStrokeIds.delete(id);const layer=this.layers.get(id);if(layer)layer.element.style.display='block';this.send('show',{id,epoch:++this.epoch});}
+ hideStrokePreview(id){this.hiddenStrokeIds.add(id);const layer=this.layers.get(id);if(layer)layer.element.style.display='none';this.send('hide',{id,epoch:++this.epoch});}
+ restoreStrokePreview(id){this.hiddenStrokeIds.delete(id);const layer=this.layers.get(id);if(layer)layer.element.style.display='block';this.send('show',{id,epoch:++this.epoch});}
  prepareHistory(){return this.call('prepareHistory');}
  resumeHistory(){this.send('resumeHistory');}
  async waitStroke(ids){return this.call('waitStroke',ids);}
@@ -148,7 +111,7 @@ export class DrawingHost {
  performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
- destroy(){if(this.disposed)return;this.disposed=true;for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
+ destroy(){if(this.disposed)return;this.disposed=true;this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 
