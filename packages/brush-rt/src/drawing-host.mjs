@@ -151,7 +151,7 @@ class DrawingSessionPort {
  * The precise picture, retained document and each temporary stroke are mapped
  * into the same anchor. Neither a drawing job nor a GPU fence is in this path.
  */
-class IndependentScene {
+export class IndependentScene {
  constructor(canvas,paper){
   this.canvas=canvas;this.paper=paper.element;
   const parent=canvas.parentElement;
