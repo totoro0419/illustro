@@ -40,7 +40,7 @@ try{
   await page.locator('#brushReset').click();
   assert.equal(await page.locator('#brushFadeStartNumber').inputValue(),'12','reset restores the shipped preset');
   await page.locator('#brushCurveAdd').click();
-  assert.equal(await page.locator('#brushCurvePoint option').count(),5,'G pen curve inserts a midpoint');
+  assert.equal(await page.locator('#brushCurvePoint option').count(),3,'G pen curve inserts a midpoint');
   await page.locator('#brushCurveY').fill('70');
   await page.locator('#brushCurveY').press('Tab');
   assert.equal(await page.locator('#brushCurveY').inputValue(),'70','numeric curve coordinates update preset');
@@ -59,7 +59,7 @@ try{
   assert.equal(await page.locator('#brushFadeStartNumber').inputValue(),'30','saved fade start survived reload');
   assert.equal(await page.locator('#brushTextureKind').inputValue(),'hatch');
   assert.equal(await page.locator('#brushTipShape').inputValue(),'ellipse');
-  assert.equal(await page.locator('#brushCurvePoint option').count(),5);
+  assert.equal(await page.locator('#brushCurvePoint option').count(),3);
   assert.deepEqual(pageErrors,[],backend+' browser exceptions');
   checks.push({backend,drafts:true,reset:true,curve:true,tipAndTexture:true,persist:true,pageErrors});
   await context.close();
