@@ -1,0 +1,69 @@
+name: M10 zero-tick rebuild verification (not production)
+on:
+  push:
+    branches: ['rebuild/M10-zero-tick-v2-2026-10-22']
+  pull_request:
+    branches: ['rebuild/M10-zero-tick-from-PR42-2026-10-22']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: m10-zerotick-${{ github.event_name }}
+  cancel-in-progress: true
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source, pure camera, brush/core regressions
+        run: |
+          npm run brush:build
+          node --test packages/brush-rt/test/zero-tick-view-plane.test.mjs
+          npm run prep:check
+          npm run core:check
+          npm run brush:regression
+      - name: Editor typecheck, unit tests and build
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with: {name: zero-tick-editor, path: apps/editor/dist/}
+  browser:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/m10-zerotick-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-zerotick-browser/node_modules/pngjs
+      RT_JPEG_PATH: /tmp/m10-zerotick-browser/node_modules/jpeg-js
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/m10-zerotick-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
+          /tmp/m10-zerotick-browser/node_modules/.bin/playwright install chromium
+      - name: Exact 4000px reveal and committed pixels in WebGL2 and WebGPU
+        run: REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2,webgpu REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/zero-tick-evidence/correctness.json node scripts/m10-rebuild-correctness.mjs
+      - name: Heavy native touch and successive browser frames
+        run: |
+          WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-tick-evidence/heavy/report.json node scripts/m10-rebuild-response.mjs
+      - name: M08 canvas and M09 color regression
+        run: |
+          M08_SMOKE_QUICK=1 M08_EVIDENCE_DIRECTORY=/tmp/zero-tick-evidence/m08 node scripts/editor-m08-smoke.mjs
+          M09_EVIDENCE_DIRECTORY=/tmp/zero-tick-evidence/m09 node scripts/editor-m09-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: zero-tick-browser-evidence, path: /tmp/zero-tick-evidence/}
