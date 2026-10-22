@@ -1,0 +1,37 @@
+name: M10 root cause reproducer (historical PR41, no changes)
+on:
+  push:
+    branches: ['rebuild/M10-zero-tick-v2-2026-10-22']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  historical-heavy-touch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      RT_PLAYWRIGHT_PATH: /tmp/illustro-cause-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/illustro-cause-browser/node_modules/pngjs
+      RT_JPEG_PATH: /tmp/illustro-cause-browser/node_modules/jpeg-js
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 2d383bf19b18eb72a19816f2d340f33c4a6c596c
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build
+          npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/illustro-cause-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
+          /tmp/illustro-cause-browser/node_modules/.bin/playwright install chromium
+      - name: Historical PR41 real GPU-workload vs input/motion, no completion gate
+        run: |
+          WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/cause-evidence/heavy/report.json node scripts/m10-rebuild-response.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: historical-pr41-cause-evidence
+          path: /tmp/cause-evidence/
