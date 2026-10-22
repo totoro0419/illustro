@@ -15,6 +15,7 @@ jobs:
     env:
       EXPECTED_COMMIT_SHA: ${{ github.sha }}
       RT_PLAYWRIGHT_PATH: /tmp/m10-brush-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-brush-browser/node_modules/pngjs
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
@@ -47,6 +48,8 @@ jobs:
         run: |
           M08_SMOKE_QUICK=1 M08_PERF_REVIEW=1 M08_EVIDENCE_DIRECTORY=/tmp/m10-brush-evidence/m08 node scripts/editor-m08-smoke.mjs
           M09_EVIDENCE_DIRECTORY=/tmp/m10-brush-evidence/m09 node scripts/editor-m09-smoke.mjs
+      - name: Rebuild regression for rapid zoom, dark tiles, stale previews and Undo
+        run: REBUILD_VERSIONS=after REBUILD_OUTPUT=/tmp/m10-brush-evidence/rebuild/report.json node scripts/m10-rebuild-correctness.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: m10-brush-evidence, path: /tmp/m10-brush-evidence/}
