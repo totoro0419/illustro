@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: ['rebuild/M10-delete-legacy-navigation-2026-10-22']
   workflow_dispatch:
+concurrency:
+  group: m10-independent-canvas-${{ github.event_name }}
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
