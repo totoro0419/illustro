@@ -1,0 +1,24 @@
+{
+  "commit": "2d383bf19b18eb72a19816f2d340f33c4a6c596c",
+  "scope": "software Chromium GPU only, not smartphone hardware",
+  "status": "PASS",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "presetCRUD": true,
+      "saveReload": true,
+      "export": true,
+      "drawAndHistory": true,
+      "consoleErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "presetCRUD": true,
+      "saveReload": true,
+      "export": true,
+      "drawAndHistory": true,
+      "consoleErrors": []
+    }
+  ],
+  "errors": []
+}
