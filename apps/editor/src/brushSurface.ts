@@ -57,6 +57,7 @@ export class BrushSurface{
     this.gestures=new CanvasGestureSurface(this.inputViewport,this.view!,
       ()=>this.fingerDrawing,
       ()=>this.pointer!==null&&this.strokePointerType==='pen',
+      ()=>!this.eyedropper,
       ()=>{if(this.pointer!==null&&this.strokePointerType==='touch')this.finishStroke(this.lastStrokeSample);},
       ()=>this.updateView(false,undefined,true),
       ()=>{(this.renderer as unknown as {publishView?:()=>void})?.publishView?.();this.onStateChanged('view-command');});
