@@ -4,20 +4,20 @@
   "version": "after",
   "box": {
     "x": 56,
-    "y": 196.5,
+    "y": 182,
     "width": 334,
-    "height": 595.5
+    "height": 610
   },
   "blank": {
-    "checked": 57977,
+    "checked": 57201,
     "mismatch": 0
   },
   "early": {
     "view": [
       668,
-      1191,
+      1220,
       334,
-      595.5,
+      610,
       4000,
       4000,
       0.06499993056058884,
@@ -31,16 +31,16 @@
       0,
       0
     ],
-    "pendingGpu": 4,
+    "pendingGpu": 3,
     "accepted": 5,
-    "strokes": 5,
+    "strokes": 4,
     "errors": []
   },
-  "expectedBlue": 1476,
-  "duringBlue": 1476,
-  "matchedBlue": 1476,
-  "fraction": 1,
-  "geometryMatched": 1476,
+  "expectedBlue": 1546,
+  "duringBlue": 1474,
+  "matchedBlue": 1473,
+  "fraction": 0.9527813712807245,
+  "geometryMatched": 1546,
   "geometryFraction": 1,
   "errors": []
 }

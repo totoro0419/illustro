@@ -1,5 +1,5 @@
 {
-  "source": "f1b91c21fe940764657f10098e665475f52bf02b",
+  "source": "8adb37a7dff65f9bed4f3d6ccd1a4fde552dd011",
   "browser": "141.0.7390.37",
   "scope": "Native touch and full composed PNGs; independent whole-document premultiplied RGBA comparison. Software GPU; physical phone acceptance unverified.",
   "cases": [
@@ -9,20 +9,20 @@
       "version": "after",
       "box": {
         "x": 56,
-        "y": 196.5,
+        "y": 182,
         "width": 334,
-        "height": 595.5
+        "height": 610
       },
       "blank": {
-        "checked": 57977,
+        "checked": 57201,
         "mismatch": 0
       },
       "early": {
         "view": [
           668,
-          1191,
+          1220,
           334,
-          595.5,
+          610,
           4000,
           4000,
           0.06499993056058884,
@@ -36,16 +36,16 @@
           0,
           0
         ],
-        "pendingGpu": 4,
+        "pendingGpu": 3,
         "accepted": 5,
-        "strokes": 5,
+        "strokes": 4,
         "errors": []
       },
-      "expectedBlue": 1476,
-      "duringBlue": 1476,
-      "matchedBlue": 1476,
-      "fraction": 1,
-      "geometryMatched": 1476,
+      "expectedBlue": 1546,
+      "duringBlue": 1474,
+      "matchedBlue": 1473,
+      "fraction": 0.9527813712807245,
+      "geometryMatched": 1546,
       "geometryFraction": 1,
       "errors": [],
       "exact": {
@@ -56,9 +56,67 @@
       "history": "exact",
       "gestureGate": {
         "held": "formal",
-        "movedPixels": 838,
+        "movedPixels": 861,
         "whileCompleted": false,
-        "committedBefore": 5
+        "committedBefore": 4
+      }
+    },
+    {
+      "backend": "webgpu",
+      "route": "auto",
+      "version": "after",
+      "box": {
+        "x": 56,
+        "y": 182,
+        "width": 334,
+        "height": 610
+      },
+      "blank": {
+        "checked": 57202,
+        "mismatch": 0
+      },
+      "early": {
+        "view": [
+          668,
+          1220,
+          334,
+          610,
+          4000,
+          4000,
+          0.06499993056058884,
+          0.20000018179416656,
+          8,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pendingGpu": 3,
+        "accepted": 5,
+        "strokes": 4,
+        "errors": []
+      },
+      "expectedBlue": 1546,
+      "duringBlue": 1474,
+      "matchedBlue": 1473,
+      "fraction": 0.9527813712807245,
+      "geometryMatched": 1546,
+      "geometryFraction": 1,
+      "errors": [],
+      "exact": {
+        "bytes": 64000000,
+        "mismatch": 0,
+        "max": 0
+      },
+      "history": "exact",
+      "gestureGate": {
+        "held": "formal",
+        "movedPixels": 861,
+        "whileCompleted": false,
+        "committedBefore": 4
       }
     }
   ]
