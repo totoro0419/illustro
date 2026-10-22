@@ -5,7 +5,6 @@
 export class DocumentPresentation {
  constructor(source,width,height){
   this.source=source;this.tiles=new Map;this.bytes=0;this.peakBytes=0;
-  this.view=[width,height,width,height,width,height,1,0,0,0,1,1,0,0,0,0];
   this.element=document.createElement('div');this.element.className='illustro-document-presentation';this.element.setAttribute('aria-hidden','true');
   Object.assign(this.element.style,{position:'absolute',left:source.offsetLeft+'px',top:source.offsetTop+'px',width:width+'px',height:height+'px',transformOrigin:'0 0',pointerEvents:'none',overflow:'hidden',background:'#fff'});source.before(this.element);
  }

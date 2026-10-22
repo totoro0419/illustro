@@ -12,7 +12,7 @@ export class DrawingHost {
   }catch(error){host.destroy();throw error;}
  }
  constructor(canvas,url,presentationUrl){this.remote=true;this.canvas=canvas;this.context=canvas.getContext('bitmaprenderer');if(!this.context)throw Error('ImageBitmap presentation unavailable');this.uploadSamples=[];
-  this.presentation=new Worker(presentationUrl,{type:'module'});this.presentationRequests=new Map;this.presentationRequestId=0;this.presentationVersion=0;this.pendingCoverage=new Map;this.pendingRetirements=new Map;
+  this.presentation=new Worker(presentationUrl,{type:'module'});this.presentationRequests=new Map;this.presentationRequestId=0;this.presentationVersion=0;this.pendingRetirements=new Map;
   this.display={backend:{readViewport:()=>new Promise((resolve,reject)=>{const request=++this.presentationRequestId;this.presentationRequests.set(request,{resolve,reject,read:true});this.presentation.postMessage({method:'read',request});})}};
   this.presentationReady=new Promise((resolve,reject)=>{this.presentationResolve=resolve;this.presentationReject=reject;});
   this.presentation.onmessage=({data:m})=>{
@@ -34,7 +34,7 @@ export class DrawingHost {
      // covered previews and choose the visible base as one browser task.
      if(this.canvas.width!==m.bitmap.width)this.canvas.width=m.bitmap.width;
      if(this.canvas.height!==m.bitmap.height)this.canvas.height=m.bitmap.height;
-     this.context.transferFromImageBitmap(m.bitmap);this.presentationView=m.view;this.presentationVersion=m.version;
+     this.context.transferFromImageBitmap(m.bitmap);this.presentationVersion=m.version;
      this.retireOverlays(m.version);
     }else m.bitmap.close();
     this.onPresentation?.({kind:'display-image',at:performance.now(),accepted});
@@ -65,7 +65,7 @@ export class DrawingHost {
    // Preserve both until the NEW precise bitmap is installed; switching the
    // document background on every stroke caused visible flashing.
    const covered=m.retired.length>0&&m.retired.every(id=>(this.layers.has(id)||m.layers.some(layer=>layer.id===id))&&!this.hiddenStrokeIds.has(id));
-   this.pendingCoverage.set(m.sequence,{covered});
+   
    if(covered)for(const id of m.retired)this.pendingRetirements.set(id,m.sequence);
    const request=++this.presentationRequestId;
    const shown=new Promise((resolve,reject)=>this.presentationRequests.set(request,{resolve,reject}));
@@ -108,10 +108,10 @@ export class DrawingHost {
  read(surfaceKey='default'){return this.call('read',surfaceKey);}
  readPixel(x,y,surfaceKey){return this.call('pixel',{x,y,surfaceKey});}
  setPerformanceEnabled(enabled){this.send('measure',enabled);}
- performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
+ performanceSummary(){return {...(this.summary??{}),displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
- destroy(){if(this.disposed)return;this.disposed=true;this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
+ destroy(){if(this.disposed)return;this.disposed=true;this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 
