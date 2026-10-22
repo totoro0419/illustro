@@ -96,6 +96,9 @@ export class DrawingHost {
   if(old&&view.every((n,i)=>n===old[i])){if(!localOnly)this.publishView();return;}
   this.backend.viewTransform=Array.from(view);
   this.scene.setView(view);
+  // Observable synchronous screen transform. This is not a Worker completion
+  // or a GPU submission; continuous motion tests measure actual screen frames.
+  this.onPresentation?.({kind:'view-transform',at:performance.now(),view:Array.from(view)});
   if(!localOnly)this.publishView();
  }
  publishView(){const view=this.backend.viewTransform;if(!view)return;
