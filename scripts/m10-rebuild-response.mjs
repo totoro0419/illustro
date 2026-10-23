@@ -39,6 +39,10 @@ try{
   const draw=async(leaveDown=false)=>{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[pt(box.width*.18,box.height*.43)]});for(let i=1;i<=points;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[pt(box.width*(.18+.64*i/points),box.height*(.43+.06*Math.sin(i/points*8)))]});if(!leaveDown)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
   if(gated&&version==='after'){assert.equal(await p.evaluate(()=>!!window.__workerReview.r.remote),true);await p.evaluate(()=>window.__workerReview.r.call('gate',true));}
   await p.evaluate(()=>window.__workerReview.strokeAt=performance.now());for(let i=0;i<strokes;i++)await draw(i===strokes-1);
+  // Explicit idle control: exactly the same native input and visual measurement
+  // as the heavy case, but no outstanding stroke work at gesture start.
+  // It is an A/B control, never a substitute for the actual heavy GPU case.
+  if(process.env.WORKER_BASELINE_IDLE==='1')await p.evaluate(()=>window.__workerReview.idle());
   // Observe the source ink BEFORE pen-up. A post-release screenshot/evaluate
   // would silently postpone the immediate gesture until heavy work had run.
   const before=await p.screenshot({scale:'css'}),initial=await p.evaluate(()=>{const m=window.__workerReview;m.armGesture=true;return {phase:'before-release',at:performance.now(),timeOrigin:performance.timeOrigin,view:Array.from(m.r.backend.viewTransform),diag:m.port.read(),overlayLayers:m.r.layers?.size??m.r.proxy?.footprints.size??0,layers:m.r.layers?[...m.r.layers].map(([id,l])=>({id,view:l.view,rect:l.rect,scale:l.scale,polygon:l.polygon,style:l.element.style.cssText,element:[l.element.width,l.element.height]})):null};});
