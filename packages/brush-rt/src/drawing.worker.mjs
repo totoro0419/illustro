@@ -42,6 +42,10 @@ let overlayPublishing=false;
 // Worker must not hold newer temporary ink behind that acknowledgment.
 function requestPublish(){
  publishRequested=true;
+ // A document ACK can remain blocked forever. Do not repeatedly capture an
+ // identical empty preview just because the GPU renderer requests a frame.
+ // Fresh ink always schedules immediately; exact raster resumes on ACK.
+ if(lastSent>acknowledged&&!sink?.changed.size)return;
  queueMicrotask(()=> (lastSent>acknowledged?publishPreviewOnly():publish()).catch(fail));
 }
 async function publishPreviewOnly(){
