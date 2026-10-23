@@ -73,7 +73,7 @@ try{
   assert.ok(source.count>100,'picture was not visible before terminating Workers: '+JSON.stringify(source));
   // Actually terminate BOTH Workers. A Promise gate after GPU submission
   // is NOT sufficient evidence, so this test refuses to use one.
-  const frozen=await page.evaluate(()=>{
+  const frozen=await page.evaluate(killTarget=>{
     const host=window.__illustroPerformance.probe().renderer;
     if(!(host.worker instanceof Worker)||!(host.presentation instanceof Worker))throw Error('not the real Workers');
     const stage=document.querySelector('.illustro-view-plane');
@@ -81,7 +81,7 @@ try{
     if(killTarget==='drawing'||killTarget==='both')host.worker.terminate();
     if(killTarget==='presentation'||killTarget==='both')host.presentation.terminate();
     return {before:stage.style.transform,hostPresentationVersion:host.presentationVersion};
-  });
+  },killTarget);
   const a=pt(.25,.62,2),b=pt(.75,.62,3);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[a,b]});
   for(let i=1;i<=24;i++){
