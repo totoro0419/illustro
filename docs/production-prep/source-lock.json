@@ -248,7 +248,7 @@
     {
       "path": "prototypes/brush-rt/build.mjs",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "33b9ae82b8b186ac97f7294f7983e3d98cfe9dcfcaf2e140fc26ead48fcf7e0a",
+      "sha256": "678d6779008a0b815b300b6b48a29e8a1ff0eb68d6e671da08f9bfd195c0ede5",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required.",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim.",
       "strokeOverlayException": "User-authorized stroke-only preview replaces historical low-resolution rebuild; exact Foundation/model/shaders/Core retained. Requires PR30 exact pixels, fit-view quality and regression evidence. No hardware acceptance claim.",
@@ -256,7 +256,9 @@
       "m10PreviewException": "User-authorized M10 presentation-only optimization from 4708ffe5136ad1fa47be5909c129bb5f8fcb7869: aligned document-pixel analytic feedback, bounded live raster and conversion tasks, current-only tails, measured per-stroke route policy with safe unshown-work fallback. Canonical model, shaders, texture, input, 128px history and save schema unchanged. Require exact same-backend formal pixels, strict-reference coverage, both-backend quality, measured routing, native Undo/save regressions and user review.",
       "presentationRebuildException": "User-authorized rebuild from 8fa3857b: separate input/raster/display roles and immutable dirty document tiles; accepted deposition/sampler/records remain. Require exact transfer/reveal/brush/history/save checks and matched response comparison; physical acceptance UNVERIFIED.",
       "autonomousNavigationException": "Separate editor Worker development from accepted frozen standalone prototype generation. Explicit opt-in required to replace the standalone artifact.",
-      "navigationSceneRebuild": "Single new navigation-scene module in build graph only. Frozen standalone HTML output unchanged."
+      "navigationSceneRebuild": "Single new navigation-scene module in build graph only. Frozen standalone HTML output unchanged.",
+      "sourceBranch": "rebuild/M10-remove-presentation-only-2026-10-23",
+      "deletionOnlyException": "Build input list removes only deleted presentation modules; frozen standalone HTML remains untouched."
     },
     {
       "path": "prototypes/brush-rt/dist/illustro-brush-rt.html",
@@ -456,60 +458,38 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "d746959ac2b6bcb7ba49cbf5fad65ca81b760843af33f99b4f2c433d6edb453a",
+      "sha256": "9dd64f070dc6a21138436a7f8da863001e2e51f0f495040437353beba7ae627d",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
-      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
+      "sourceBranch": "rebuild/M10-remove-presentation-only-2026-10-23",
       "autonomousNavigationException": "Self-driven drawing worker, isolation of input from view updates, and atomic display ownership. Must verify WebGL2/WebGPU, Undo and saved image parity; physical device pending.",
       "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone.",
       "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending.",
       "stablePictureException": "Never hide the M08 precise background on CPU-covered formal commits. Keep finished preview until exact viewport image is ready, then atomically retire in same task. Retained group fallback only for unrepresented edits/navigation; verifies final pixels on both backends.",
       "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness.",
       "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history.",
-      "navigationSceneRebuild": "Replaced navigation-time bitmap/view worker requests and per-layer reproject with one DOM compositor scene transform. Commit is not proof of device responsiveness; gesture blocking experiment required."
+      "navigationSceneRebuild": "Replaced navigation-time bitmap/view worker requests and per-layer reproject with one DOM compositor scene transform. Commit is not proof of device responsiveness; gesture blocking experiment required.",
+      "deletionOnlyException": "Remove live connections to legacy view and preview from the editor-owned drawing Worker. Preserve canonical brush/strict GPU formal raster/history. The deleted screen output is not restored. Pending actual-browser regression required."
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
-      "sha256": "91f3be55ccf5af115b72fe1bd61c41c519f1c02e353d03b87d5bc149151abddb",
+      "sha256": "1c3644e220e3cc35945339c44e1c61c826b3e7a1a6acf7e3c109b563619486d1",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
-      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
+      "sourceBranch": "rebuild/M10-remove-presentation-only-2026-10-23",
       "autonomousNavigationException": "Self-driven drawing worker, isolation of input from view updates, and atomic display ownership. Must verify WebGL2/WebGPU, Undo and saved image parity; physical device pending.",
       "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone.",
-      "penupBatchException": "Start the formal GPU budget immediately at pen-up even while canonical stroke records finish. This is a batch-size limit, not a 280ms delay. Requires exact pixel/history and native gesture comparison."
+      "penupBatchException": "Start the formal GPU budget immediately at pen-up even while canonical stroke records finish. This is a batch-size limit, not a 280ms delay. Requires exact pixel/history and native gesture comparison.",
+      "deletionOnlyException": "Remove live connections to legacy view and preview from the editor-owned drawing Worker. Preserve canonical brush/strict GPU formal raster/history. The deleted screen output is not restored. Pending actual-browser regression required."
     },
     {
       "path": "packages/brush-rt/src/worker-stroke-sink.mjs",
-      "sha256": "7399f4c9690c49a556d532d9c5fbf10916e2fe52e63b93e6decbada0e3c00b08",
+      "sha256": "3a6d752078e04f92e4cce3674aba910b6f61b4ceda38bcb24bfee6a26ea624d5",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
-      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21"
-    },
-    {
-      "path": "packages/brush-rt/src/presentation-tiles.mjs",
-      "sha256": "5baa8bf3185fd565254ca1b01accda875ade2bf3fac5800f162c0c4237a8cb0a",
-      "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
-      "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
-      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21"
-    },
-    {
-      "path": "packages/brush-rt/src/presentation.worker.mjs",
-      "sha256": "b2f9b8fc4a9d33bbc6980aec633ef8b368cfc427306d65fb910d745e58191920",
-      "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
-      "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
-      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
-      "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending.",
-      "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness.",
-      "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history."
-    },
-    {
-      "path": "packages/brush-rt/src/document-presentation.mjs",
-      "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
-      "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
-      "sha256": "b16ba0844c57337763c992a1e701be461c3ea0c35e5e5bce173257f7997b0634",
-      "presentationRebuildException": "Retain only occupied immutable document pictures for immediate reveal while the M08 viewport is in flight. Requires native reveal/blank-area, exact completed RGBA and history/save checks. Physical acceptance UNVERIFIED.",
-      "displayGroupException": "PR40 latest: retained display grouping into 512px rectangles, atomic image replacement and delayed M08 quality upgrade. Does not alter history tile size, records, brush algorithms or save format. Requires both backend exact pixel and touch regression, physical acceptance pending."
+      "sourceBranch": "rebuild/M10-remove-presentation-only-2026-10-23",
+      "deletionOnlyException": "PR #46 deletion phase: removed old visual publication, pending-image ACK and bitmap handoff. Preserve canonical brush, formal document and history semantics. No canvas rendering is present; do not treat as production-ready."
     }
   ],
-  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Artwork alpha remains preserved in internal renderer targets and read/export results. Visible presentation must not depend on browser compositing of a transparent GPU canvas over CSS paper: the final GPU presentation pass composites the transparent artwork over the current paper background and writes an opaque frame. WebGL2 and WebGPU share this rule. The user-authorized 2026-10-21 M10 rebuild may own one additional retained RGBA8 display document texture and viewport bitmap in an independent presentation role, plus a sparse immutable 128px document-picture compositor scene bounded by occupied document area. No new document picture is allocated for each stroke; changed tile pictures replace earlier ones. Only changed 128px regions cross the drawing/display boundary. It must reuse the M08 sampler, fully populate transferred bitmaps, atomically retire matching CPU previews, reject old epochs and pass exact-pixel/reveal/history/save and matched response tests. Whole-canvas copies/readbacks per stroke and per-stroke full-document display duplicates remain prohibited. Physical acceptance is UNVERIFIED. Browser predicted events feed the existing GPU preview path. Live preview scheduling is latest-state/coalesced: WebGL2 and WebGPU may submit the newest Foundation preview immediately after an input batch instead of waiting for the next RAF, and coalesced pointer samples preserve every canonical input while publishing only one GPU preview notification for the batch. Backend selection must not depend on viewport size. Production uses capability-based auto selection: WebGPU is selected only after adapter acquisition, device creation, renderer pipeline initialization, canvas configuration, and initial presentation all succeed; otherwise the failure stage/reason is recorded and the renderer falls back to WebGL2. A fully initialized WebGPU path must never be bypassed merely because of device class or viewport. Explicit backend QA remains available and explicit WebGPU failure must not silently fall back. Workspace open/close must never change Renderer settings, Canvas ownership, or Document state. M03 History is Document-owned. Recent Stroke Undo/Redo may use a strictly bounded 16 MiB GPU hot tile cache for one-frame-class response. Cache memory never grows beyond the fixed budget; evicted/oversized history falls back to rebuilding only affected 128px runtime tiles from active formal StrokeRecords. Fallback rebuild presentation is atomic: the old completed canvas remains visible until the rebuilt dirty tiles are complete, then the result is presented once. Full-canvas readback, visible stroke-by-stroke replay, unbounded GPU history, and rebuilding unrelated tiles are forbidden. M04 formal Eraser integration keys runtime artwork by formal Raster SurfaceId so erase never operates on a flattened multi-layer result; erase remains brush.stroke with blend:'erase'. Canonical straight-alpha erase preserves destination hidden RGB even when alpha reaches zero. Brush/Eraser switching must use stable preset identity/meaning rather than preset array position."
+  "corePolicy": "M01 owns packages/core under Architecture V2. Brush Foundation input, prediction, stabilization, forced-fade and stroke semantics remain frozen. Artwork alpha remains preserved in internal renderer targets and read/export results. PR #46 is an intentionally non-publishing deletion stage. The former Canvas/Worker picture-transfer, retained document groups and presentation-acknowledgement path have been removed, not replaced. Existing M08 brush geometry, GPU formal raster targets, recording, history and save contracts are unchanged. No visible canvas output or instant navigation is claimed. Browser predicted events feed the existing GPU preview path. Live preview scheduling is latest-state/coalesced: WebGL2 and WebGPU may submit the newest Foundation preview immediately after an input batch instead of waiting for the next RAF, and coalesced pointer samples preserve every canonical input while publishing only one GPU preview notification for the batch. Backend selection must not depend on viewport size. Production uses capability-based auto selection: WebGPU is selected only after adapter acquisition, device creation, renderer pipeline initialization, canvas configuration, and initial presentation all succeed; otherwise the failure stage/reason is recorded and the renderer falls back to WebGL2. A fully initialized WebGPU path must never be bypassed merely because of device class or viewport. Explicit backend QA remains available and explicit WebGPU failure must not silently fall back. Workspace open/close must never change Renderer settings, Canvas ownership, or Document state. M03 History is Document-owned. Recent Stroke Undo/Redo may use a strictly bounded 16 MiB GPU hot tile cache for one-frame-class response. Cache memory never grows beyond the fixed budget; evicted/oversized history falls back to rebuilding only affected 128px runtime tiles from active formal StrokeRecords. Fallback rebuild presentation is atomic: the old completed canvas remains visible until the rebuilt dirty tiles are complete, then the result is presented once. Full-canvas readback, visible stroke-by-stroke replay, unbounded GPU history, and rebuilding unrelated tiles are forbidden. M04 formal Eraser integration keys runtime artwork by formal Raster SurfaceId so erase never operates on a flattened multi-layer result; erase remains brush.stroke with blend:'erase'. Canonical straight-alpha erase preserves destination hidden RGB even when alpha reaches zero. Brush/Eraser switching must use stable preset identity/meaning rather than preset array position."
 }

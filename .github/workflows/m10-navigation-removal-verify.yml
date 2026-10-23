@@ -1,8 +1,8 @@
-name: M10 legacy navigation removal - non-publishing validation
+name: M10 legacy display removal - non-publishing validation
 
 on:
   push:
-    branches: ['rebuild/M10-delete-legacy-navigation-2026-10-22']
+    branches: ['rebuild/M10-remove-presentation-only-2026-10-23']
   workflow_dispatch:
 
 permissions:
@@ -27,13 +27,27 @@ jobs:
           ! grep -Eq 'CanvasNavigation|\.navigation\?|beginViewportNavigation|endViewportNavigation' apps/editor/src/brushSurface.ts
           ! grep -Eq 'ViewportScene|viewportScene|waitPrecise|syncVisibility|reproject\(' packages/brush-rt/src/drawing-host.mjs
           test -f packages/brush-rt/src/drawing.worker.mjs
-          test -f packages/brush-rt/src/presentation.worker.mjs
+          test ! -e packages/brush-rt/src/presentation.worker.mjs
+          test ! -e packages/brush-rt/src/presentation-tiles.mjs
+          test ! -e packages/brush-rt/src/document-presentation.mjs
+          test ! -e packages/brush-rt/test/document-presentation.test.mjs
+          test ! -e packages/brush-rt/test/presentation-tiles.test.mjs
+          ! grep -Eq 'pictureAck|requestPublish|settlePictures|captureTilePages' packages/brush-rt/src/drawing.worker.mjs
+          ! grep -Eq 'transferFromImageBitmap|retireOverlays|DocumentPresentation|presentationRequests' packages/brush-rt/src/drawing-host.mjs
+          ! grep -Eq 'presentation.worker|presentation-tiles|document-presentation' prototypes/brush-rt/build.mjs apps/editor/src/brushSurface.ts
           test -f apps/editor/src/brushAdvancedEditor.ts
+          # No live editor-to-drawing Worker view, bitmap or overlay-presentation ports.
+          ! grep -Eq "send\('view'|send\('seamless'|send\('hide'|send\('show'|this\.proxy=" packages/brush-rt/src/drawing-host.mjs
+          ! grep -Eq "new WorkerStrokeSink|case 'view':|case 'seamless':|case 'clearSeamless':|case 'hide':|case 'show':|case 'overlayEnabled':|case 'overlayInvalidate':" packages/brush-rt/src/drawing.worker.mjs
+          ! grep -Eq "renderer\??\.hideStrokePreview\(|renderer\??\.restoreStrokePreview\(|renderer\??\.setSeamlessPreview\(" apps/editor/src/brushSurface.ts
+          test -f packages/brush-rt/src/stroke-overlay.mjs
+          test -f packages/brush-rt/src/renderer.mjs
       - name: Install dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Brush runtime build and source-lock check
         run: |
           npm run brush:build
+          sha256sum packages/brush-rt/src/drawing-host.mjs packages/brush-rt/src/drawing.worker.mjs packages/brush-rt/src/worker-stroke-sink.mjs
           npm run prep:check
       - name: Core semantics, brush and history regression
         run: |
@@ -45,3 +59,12 @@ jobs:
           npm --workspace @illustro/editor exec -- tsc --noEmit
       - name: Editor build (not published)
         run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install independent Chromium for deletion-only data test
+        run: |
+          npm install --prefix /tmp/m10-delete-browser playwright@1.56.1 --no-audit --no-fund
+          google-chrome --version
+          test -x "$(command -v google-chrome)"
+      - name: Exact formal raster, Undo and Redo in a real browser (no display expected)
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m10-delete-browser/node_modules/playwright
+        run: node scripts/m10-deletion-data-smoke.mjs
