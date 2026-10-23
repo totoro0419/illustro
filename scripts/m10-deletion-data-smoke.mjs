@@ -38,7 +38,7 @@ try{
    return Array.from(await renderer.read(surface));
   });
   const box=await page.locator('#canvas').boundingBox();assert.ok(box?.width>100&&box?.height>100,'canvas target exists');
-  await page.locator('#brush').selectOption('foundation-g-pen');
+  await page.locator('#brush').evaluate(el=>{el.value='foundation-g-pen';el.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.mouse.move(box.x+box.width*.32,box.y+box.height*.40);
   await page.mouse.down();
   await page.mouse.move(box.x+box.width*.72,box.y+box.height*.55,{steps:20});
