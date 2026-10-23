@@ -458,7 +458,7 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "fde6cf9019c7b8cfa0a27e88870dace68a18dfcc65bfb68e06d2c90da8d3fb14",
+      "sha256": "9dd64f070dc6a21138436a7f8da863001e2e51f0f495040437353beba7ae627d",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-remove-presentation-only-2026-10-23",
@@ -469,18 +469,18 @@
       "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness.",
       "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history.",
       "navigationSceneRebuild": "Replaced navigation-time bitmap/view worker requests and per-layer reproject with one DOM compositor scene transform. Commit is not proof of device responsiveness; gesture blocking experiment required.",
-      "deletionOnlyException": "PR #46 deletion phase: removed old visual publication, pending-image ACK and bitmap handoff. Preserve canonical brush, formal document and history semantics. No canvas rendering is present; do not treat as production-ready."
+      "deletionOnlyException": "Remove live connections to legacy view and preview from the editor-owned drawing Worker. Preserve canonical brush/strict GPU formal raster/history. The deleted screen output is not restored. Pending actual-browser regression required."
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
-      "sha256": "52cc6d1c6af8d474370e6aa1df003baaff10bedc9a90a7a474c693f95d21c0fd",
+      "sha256": "1c3644e220e3cc35945339c44e1c61c826b3e7a1a6acf7e3c109b563619486d1",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-remove-presentation-only-2026-10-23",
       "autonomousNavigationException": "Self-driven drawing worker, isolation of input from view updates, and atomic display ownership. Must verify WebGL2/WebGPU, Undo and saved image parity; physical device pending.",
       "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone.",
       "penupBatchException": "Start the formal GPU budget immediately at pen-up even while canonical stroke records finish. This is a batch-size limit, not a 280ms delay. Requires exact pixel/history and native gesture comparison.",
-      "deletionOnlyException": "PR #46 deletion phase: removed old visual publication, pending-image ACK and bitmap handoff. Preserve canonical brush, formal document and history semantics. No canvas rendering is present; do not treat as production-ready."
+      "deletionOnlyException": "Remove live connections to legacy view and preview from the editor-owned drawing Worker. Preserve canonical brush/strict GPU formal raster/history. The deleted screen output is not restored. Pending actual-browser regression required."
     },
     {
       "path": "packages/brush-rt/src/worker-stroke-sink.mjs",
