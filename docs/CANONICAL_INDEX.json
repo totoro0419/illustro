@@ -2043,6 +2043,10 @@
     {
       "path": "docs/research/M10_BRUSH_SETTINGS_DESIGN_2026-10-22.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_DELETION_AUDIT_2026-10-23.md",
+      "status": "EXPERIMENTAL"
     }
   ]
 }
