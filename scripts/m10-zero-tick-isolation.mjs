@@ -103,10 +103,12 @@ try{
    // two new native strokes must still be admitted and visibly previewed.
    const previous=await page.evaluate(()=>({
     accepted:window.__illustroPerformance.read().handoff.accepted,
-    ink:window.__illustroPerformance.probe().renderer.layers.size
+    ink:window.__illustroPerformance.probe().renderer.layers.size,
+    layerIds:[...window.__illustroPerformance.probe().renderer.layers.keys()],
+    view:window.__illustroPerformance.probe().renderer.backend.viewTransform
    }));
    for(let stroke=0;stroke<2;stroke++){
-    const from=pt(.14,.19+stroke*.09,30+stroke),to=pt(.84,.19+stroke*.09,30+stroke);
+    const from=pt(.25,.45+stroke*.15,30+stroke),to=pt(.72,.45+stroke*.15,30+stroke);
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[from]});
     for(let i=1;i<=10;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[
      {...from,x:from.x+(to.x-from.x)*i/10,y:from.y+(to.y-from.y)*i/10}
@@ -114,7 +116,24 @@ try{
     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
    }
    await page.waitForFunction(n=>window.__illustroPerformance.read().handoff.accepted>=n+2,previous.accepted,{timeout:15000});
-   await page.waitForFunction(n=>window.__illustroPerformance.probe().renderer.layers.size>=n+2,previous.ink,{timeout:30000});
+   try{
+    await page.waitForFunction(ids=>{
+     const host=window.__illustroPerformance.probe().renderer;
+     return [...host.layers.keys()].filter(id=>!ids.includes(id)).length>=2;
+    },previous.layerIds,{timeout:15000});
+   }catch(error){
+    const state=await page.evaluate(()=>({
+     diagnostic:window.__illustroPerformance.read().handoff,
+     layers:[...window.__illustroPerformance.probe().renderer.layers.keys()],
+     publication:window.__illustroPerformance.probe().renderer.performanceSummary(),
+     revision:window.__illustroPerformance.probe().controller.document.head
+    }));
+    throw Error('two preview layers not visible while image Worker dead: '+JSON.stringify({
+     previousIds:previous.layerIds,afterIds:state.layers,accepted:state.diagnostic.accepted,
+     rejected:state.diagnostic.rejected,recentInputs:state.diagnostic.inputAttempts?.slice(-4),
+     publication:state.publication.publication,source:state.revision
+    })+'; '+String(error));
+   }
    const after=await page.evaluate(()=>({
     accepted:window.__illustroPerformance.read().handoff.accepted,
     ink:window.__illustroPerformance.probe().renderer.layers.size,
