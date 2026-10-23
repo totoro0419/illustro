@@ -71,3 +71,20 @@ test('stale worker picture must not replace current ink',async()=>{
   assert.deepEqual(f.messages.filter(m=>m.method==='pictureAck').map(m=>m.args.accepted),[false]);
  }finally{f.restore();}
 });
+
+test('an overlay-only retirement never makes ink disappear while exact raster is blocked',async()=>{
+ const f=hostFixture();
+ try{
+  // A real stalled document request exists. There is no exact replacement
+  // for either old preview yet even when an overlay-only packet arrives.
+  f.host.presentationRequests.set(99,{resolve(){},read:false});
+  await f.host.picture(f.makePicture(2,false));
+  assert.equal(f.host.layers.has(3),true,'old stroke cannot vanish under a blocked image Worker');
+  assert.equal(f.host.layers.has(7),true,'new temporary ink still appears');
+  assert.equal(f.host.pendingRetirements.get(3),2);
+  f.host.retireOverlays(1);
+  assert.equal(f.host.layers.has(3),true,'stale precise image never retires ink');
+  f.host.retireOverlays(2);
+  assert.equal(f.host.layers.has(3),false,'correct newer document can retire the preview');
+ }finally{f.restore();}
+});
