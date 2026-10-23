@@ -1,0 +1,66 @@
+name: M10 independent paper - verify and isolated QA
+on:
+  push:
+    branches: ['rebuild/M10-independent-canvas-2026-10-24']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      PAPER_EVIDENCE: /tmp/independent-paper-evidence
+      RT_PLAYWRIGHT_PATH: /tmp/paper-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/paper-browser/node_modules/pngjs
+      PAPER_CHROME: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build and preserved-source regression
+        run: |
+          npm run brush:build > /tmp/brush-build.log
+          npm run prep:check
+          npm run core:check
+          npm run brush:regression
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Build exact review app
+        env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
+        run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Browser dependencies
+        run: npm install --prefix /tmp/paper-browser playwright@1.56.1 pngjs@7.0.0 --no-audit --no-fund
+      - name: Real formal pixels, touch, history, save/reload, and captured screen motion
+        run: node scripts/m10-paper-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: independent-paper-evidence, path: /tmp/independent-paper-evidence/}
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with: {name: independent-paper-app, path: apps/editor/dist/}
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site, fetch-depth: 0}
+      - uses: actions/download-artifact@v4
+        with: {name: independent-paper-app, path: site/qa/m10-independent-canvas/app/}
+      - uses: actions/download-artifact@v4
+        with: {name: independent-paper-evidence, path: site/qa/m10-independent-canvas/evidence/}
+      - name: Publish only the new QA directory
+        run: |
+          sed "s/__COMMIT__/$GITHUB_SHA/g" qa/m10-independent-canvas/index.html > site/qa/m10-independent-canvas/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m10-independent-canvas
+          test -z "$(git diff --cached --name-only | sed '/^qa\/m10-independent-canvas\//d')"
+          git diff --cached --quiet || git commit -m "qa: independent canvas $GITHUB_SHA"
+          git push origin HEAD:gh-pages

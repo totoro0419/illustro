@@ -1,5 +1,4 @@
-// Deletion-only stage. Stroke, history and document messaging remain;
-// bitmap display, image transfer and temporary canvas presentation are removed.
+// Formal document port. View transforms never cross into the drawing worker.
 export class DrawingHost {
  static async create(canvas,width,height,backend,options,workerUrl,canonicalUrl,diagnostics=false){
   const host=new DrawingHost(canvas,workerUrl);
@@ -15,11 +14,13 @@ export class DrawingHost {
  }
  fault(message){this.localFaults.push(message);this.errors.push(message);for(const request of this.requests.values())request.reject(Error(message));this.requests.clear();}
  send(method,args){if(!this.disposed)this.worker.postMessage({method,args});}
+ connectDisplay(port){this.worker.postMessage({method:'displayPort',args:{port}},[port]);}
+ setDisplayEpoch(epoch){this.send('displayEpoch',epoch);}
  call(method,args){if(this.disposed)return Promise.reject(Error('Drawing host disposed'));const request=++this.requestId;return new Promise((resolve,reject)=>{this.requests.set(request,{resolve,reject});this.worker.postMessage({method,args,request});});}
  update(s){if(!s)return;this.info=s.info;this.errors=[...(s.errors??[]),...this.localFaults];this.completions=s.completions;this.summary=s.performance;
   Object.assign(this.document,{width:s.document.width,height:s.document.height,count:s.document.count});this.document.jobs.length=s.document.jobs;
   for(const key of ['inflight','needsFrame','viewPending','historyPreparing','guardPreparing'])this[key]=s[key];this.backend.presentationHeld=s.presentationHeld;
-  const sessionId=this.session.id;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
+  const sessionId=this.session.id;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);this.session.seedSequence=Math.max(this.session.seedSequence??0,s.session.seedSequence??0);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
   if(s.recordIds)for(const [token,id]of s.recordIds){const r=this.session.recordsByToken.get(token);if(r&&id!==undefined)this.session.recordIds.set(r,id);}
  }
  // CanvasView owns editing coordinates; the formal GPU is not a view renderer.
@@ -39,8 +40,8 @@ export class DrawingHost {
  destroy(){if(this.disposed)return;this.disposed=true;this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();}
 }
 class DrawingSessionPort {
- constructor(host){this.renderer=host;this.prediction=true;this.id=0;this.recordIds=new WeakMap;this.tokens=new WeakMap;this.recordsByToken=new Map;this.pending=[];this.pendingRawCount=0;this.rawAccepted=0;this.browserPredictions=0;this.errors=[];}
- begin(preset,fast=0,context={},surfaceKey='default'){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};this.renderer.send('begin',{preset,fast,context,surfaceKey,id});return id;}
+ constructor(host){this.renderer=host;this.prediction=true;this.id=0;this.seedSequence=0;this.recordIds=new WeakMap;this.tokens=new WeakMap;this.recordsByToken=new Map;this.pending=[];this.pendingRawCount=0;this.rawAccepted=0;this.browserPredictions=0;this.errors=[];}
+ begin(preset,fast=0,context={},surfaceKey='default'){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};this.renderer.send('begin',{preset,fast,context,surfaceKey,id,seedSequence:++this.seedSequence});return id;}
  accept(sample){if(!this.active)return;this.pending.push(sample);this.active.count++;this.rawAccepted++;}
  predictions(samples){this.predicted=samples;this.browserPredictions+=samples.length;}
  flush(){if(!this.active||!this.pending.length)return;this.renderer.send('samples',{samples:this.pending,predictions:this.predicted??[],prediction:this.prediction});this.pending=[];}
