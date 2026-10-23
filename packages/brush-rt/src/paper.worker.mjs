@@ -5,7 +5,7 @@ const PAGE=512,TILE=128,GUTTER=16,JOURNAL_LIMIT=16*1024*1024;
 let width,height,raster,port,epoch=0,serial=0,version=0,scheduled=false,running=false,waiting=false;
 let reference=false,referenceCanvas;
 let styles=[],dirty=new Set,base=new Map,overlays=new Map,covered=new Map,journal=new Map,journalBytes=0;
-const pendingFrames=new Map,acceptedPages=new Map,future=[];let acceptedSerial=0;
+const pendingFrames=new Map,acceptedPages=new Map,future=[];let acceptedSerial=0,acceptedMinDensity=null;
 const metrics={frames:0,accepted:0,dropped:0,pages:0,maxComposeMs:0,baseBytes:0};
 const pause=()=>new Promise(ok=>setTimeout(ok,0));
 function markRect(rect){if(!rect)return;for(let y=Math.max(0,Math.floor((rect[1]-GUTTER)/PAGE));y<Math.min(Math.ceil(height/PAGE),Math.ceil((rect[3]+GUTTER)/PAGE));y++)for(let x=Math.max(0,Math.floor((rect[0]-GUTTER)/PAGE));x<Math.min(Math.ceil(width/PAGE),Math.ceil((rect[2]+GUTTER)/PAGE));x++)dirty.add(x+','+y);}
@@ -29,7 +29,7 @@ function install(m){
  metrics.baseBytes=base.size*TILE*TILE*4;schedule();
 }
 async function compose(){
- if(running||waiting||(!dirty.size&&!covered.size))return;running=true;const at=performance.now(),current=version,keys=[...dirty];dirty.clear();const pages=[],images=[];
+ if(running||waiting||(!dirty.size&&!covered.size))return;running=true;const at=performance.now(),current=version,keys=[...dirty];dirty.clear();const pages=[],images=[],snapshot=raster.sink.snapshot(),strokeStates=[...overlays].map(([id,o])=>[id,{...o}]);const densities=strokeStates.filter(([id,o])=>o.visible&&!covered.has(id)).map(([id])=>snapshot.layers.get(id)?.scale).filter(Number.isFinite),minDensity=densities.length?Math.min(...densities):null;
  try{
   for(const key of keys){
    if(current!==version){pages.forEach(p=>p.bitmap?.close());keys.forEach(k=>dirty.add(k));metrics.dropped++;return;}
@@ -39,7 +39,7 @@ async function compose(){
     if(!style.visible||style.opacity<=0)continue;
     const c=layer.context;c.clearRect(0,0,w,h);c.globalCompositeOperation='source-over';c.globalAlpha=1;
     for(let ty=Math.floor(y/TILE);ty<Math.ceil((y+h)/TILE);ty++)for(let tx=Math.floor(x/TILE);tx<Math.ceil((x+w)/TILE);tx++){const image=base.get(style.surfaceKey+'\u0000'+tx+','+ty);if(image){used=true;c.drawImage(image,tx*TILE-x,ty*TILE-y);}}
-    for(const [id,o]of [...overlays].sort(([a],[b])=>a-b)){if(!o.visible||covered.has(id)||o.surfaceKey!==style.surfaceKey)continue;const s=raster.sink.layers.get(id);if(!s?.rect)continue;const r=s.rect;if(r[0]>=x+w||r[2]<=x||r[1]>=y+h||r[3]<=y)continue;
+    for(const [id,o]of strokeStates.sort(([a],[b])=>a-b)){if(!o.visible||covered.has(id)||o.surfaceKey!==style.surfaceKey)continue;const s=snapshot.layers.get(id);if(!s?.rect)continue;const r=s.rect;if(r[0]>=x+w||r[2]<=x||r[1]>=y+h||r[3]<=y)continue;
      c.globalCompositeOperation=o.blend==='erase'?'destination-out':o.blend==='multiply'?'multiply':o.blend==='screen'?'screen':'source-over';
      used=true;const scale=s.scale,left=Math.floor(x*scale)-1,top=Math.floor(y*scale)-1,small=canvas(Math.ceil(w*scale)+3,Math.ceil(h*scale)+3);
      for(let cy=Math.floor(top/32);cy<=Math.floor((top+small.canvas.height)/32);cy++)for(let cx=Math.floor(left/32);cx<=Math.floor((left+small.canvas.width)/32);cx++){const cell=s.cells.get(cx+','+cy);if(cell)small.context.drawImage(cell,cx*32-left,cy*32-top);}
@@ -50,9 +50,9 @@ async function compose(){
    pages.push({key,x,y,width:w,height:h,gutter:GUTTER,bitmap:used?await createImageBitmap(out.canvas):null});images.push([key,used?out.canvas:null]);await pause();
   }
   if(current!==version){pages.forEach(p=>p.bitmap?.close());keys.forEach(k=>dirty.add(k));metrics.dropped++;return;}
-  const id=++serial;pendingFrames.set(id,{covered:[...covered],images});waiting=true;metrics.frames++;metrics.pages+=pages.length;metrics.maxComposeMs=Math.max(metrics.maxComposeMs,performance.now()-at);
-  postMessage({type:'frame',epoch,serial:id,pages,metrics:{...metrics,rasterBytes:raster.allocatedBytes+raster.preparedBytes+raster.sink.pixels*4,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}},pages.map(p=>p.bitmap).filter(Boolean));
- }catch(error){postMessage({type:'fault',message:String(error)});}finally{running=false;schedule();}
+  const id=++serial;pendingFrames.set(id,{covered:[...covered],images,minDensity});waiting=true;metrics.frames++;metrics.pages+=pages.length;metrics.maxComposeMs=Math.max(metrics.maxComposeMs,performance.now()-at);
+  postMessage({type:'frame',epoch,serial:id,pages,metrics:{...metrics,minPreviewDensity:minDensity,densityUpgrades:raster.densityUpgrades,rasterBytes:raster.residentBytes,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}},pages.map(p=>p.bitmap).filter(Boolean));
+ }catch(error){postMessage({type:'fault',message:String(error)});}finally{snapshot.release();running=false;schedule();}
 }
 function history(m){
  epoch=m.epoch;version++;waiting=false;
@@ -76,6 +76,7 @@ function sample({x,y,surfaceId,serial}){
 onmessage=({data:m})=>{
  try{switch(m.type){
  case 'init':width=m.width;height=m.height;raster=new PaperRaster(width,height,markStroke);raster.onFault=message=>postMessage({type:'fault',message});referenceCanvas=canvas(512,512);{const a=makeReferencePattern();for(let i=0;i<a.length;i+=4)if(a[i+3])for(let j=0;j<3;j++)a[i+j]=Math.min(255,Math.round(a[i+j]*255/a[i+3]));referenceCanvas.context.putImageData(new ImageData(new Uint8ClampedArray(a),512,512),0,0);referenceCanvas=referenceCanvas.canvas;}port=m.port;port.onmessage=({data})=>install(data);port.start();break;
+ case 'density':raster.refineDensity(m.density);break;
  case 'reference':reference=!!m.enabled;version++;for(let y=0;y<Math.ceil(height/PAGE);y++)for(let x=0;x<Math.ceil(width/PAGE);x++)dirty.add(x+','+y);schedule();break;
  case 'sample':try{postMessage({type:'sample',request:m.request,rgba:sample(m)});}catch(error){postMessage({type:'sample',request:m.request,error:String(error)});}break;
  case 'styles':styles=m.styles;version++;markAll();break;
@@ -87,9 +88,9 @@ onmessage=({data:m})=>{
  case 'history':history(m);break;
  case 'accepted':{
   const frame=pendingFrames.get(m.serial),ids=frame?.covered??[];pendingFrames.delete(m.serial);if(m.serial===serial)waiting=false;
-  if(frame&&m.serial>acceptedSerial){acceptedSerial=m.serial;for(const [key,image]of frame.images){if(image)acceptedPages.set(key,image);else acceptedPages.delete(key);}metrics.accepted++;}
+  if(frame&&m.serial>acceptedSerial){acceptedSerial=m.serial;acceptedMinDensity=frame.minDensity;for(const [key,image]of frame.images){if(image)acceptedPages.set(key,image);else acceptedPages.delete(key);}metrics.accepted++;}
   if(m.epoch===epoch){for(const [id,publication]of ids)if(covered.get(id)===publication){const original=overlays.get(id);raster.adopted(id);if(original?.seamless)for(let i=1;i<9;i++)if(!overlays.has(id+i)&&!raster.sink.layers.has(id+i))raster.adopted(id+i);overlays.delete(id);covered.delete(id);}}
-  postMessage({type:'metrics',metrics:{...metrics,rasterBytes:raster.allocatedBytes+raster.preparedBytes+raster.sink.pixels*4,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}});schedule();break;
+  postMessage({type:'metrics',metrics:{...metrics,rasterBytes:raster.residentBytes,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}});schedule();break;
  }
  case 'rejected':pendingFrames.delete(m.serial);if(m.serial===serial)waiting=false;markAll();break;
  }}catch(error){postMessage({type:'fault',message:String(error)});}

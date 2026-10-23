@@ -7,7 +7,7 @@ type Frame={epoch:number;serial:number;pages:Page[];metrics:Record<string,unknow
 export class PaperDisplay {
  readonly world=document.createElement('div');private worker:Worker;private pages=new Map<string,HTMLCanvasElement>();
  private readonly styles=document.createElement('style');private repeats:HTMLDivElement[]=[];private seamless=false;private disposed=false;
- private queuedFrame:Frame|null=null;private presenting=false;
+ private queuedFrame:Frame|null=null;private presenting=false;private lastDensity=0;
  private sampleId=0;private samples=new Map<number,{resolve:(value:number[])=>void;reject:(error:Error)=>void}>();
  epoch=0;frames=0;lastAt=0;acceptedSerial=0;metrics:Record<string,unknown>={};fault:string|null=null;
  readonly transforms:Array<{inputAt:number;receivedAt:number;appliedAt:number;matrix:string}>=[];
@@ -60,6 +60,7 @@ export class PaperDisplay {
   const s=view.state,c=Math.cos(s.rotation)*s.zoom,n=Math.sin(s.rotation)*s.zoom,fx=s.flipX?-1:1,fy=s.flipY?-1:1;
   const a=c*fx,b=n*fx,d=c*fy,e=-n*fy,x=s.cssWidth/2+s.panX-(a*s.documentWidth+e*s.documentHeight)/2,y=s.cssHeight/2+s.panY-(b*s.documentWidth+d*s.documentHeight)/2;
   const matrix=`matrix(${a},${b},${e},${d},${x},${y})`;this.world.style.transform=matrix;this.world.style.imageRendering=s.zoom>=4?'pixelated':'auto';
+  const density=Math.min(1,Math.max(1/128,2**Math.ceil(Math.log2(s.zoom*(window.devicePixelRatio||1)))));if(density!==this.lastDensity){this.lastDensity=density;this.send({type:'density',density});}
   if(s.seamless!==this.seamless){this.seamless=s.seamless;this.world.style.overflow=this.seamless?'visible':'hidden';this.repeats.forEach(e=>e.remove());this.repeats=[];if(this.seamless)for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++){if(!x&&!y)continue;const group=document.createElement('div');Object.assign(group.style,{position:'absolute',left:x*s.documentWidth+'px',top:y*s.documentHeight+'px',width:s.documentWidth+'px',height:s.documentHeight+'px',overflow:'hidden',backgroundColor:'white'});this.repeats.push(group);this.world.append(group);for(const [key,source]of this.pages){const version=this.acceptedSerial;void createImageBitmap(source).then(bitmap=>{if(this.disposed||!group.isConnected||this.acceptedSerial!==version){bitmap.close();return;}const c=source.cloneNode() as HTMLCanvasElement;c.dataset.page=key;c.removeAttribute('data-paper-back');c.className='illustro-paper-page';this.transfer(c,bitmap);group.append(c);});}}}
   this.transforms.push({inputAt,receivedAt,appliedAt:performance.now(),matrix});if(this.transforms.length>600)this.transforms.shift();
  }
