@@ -1,0 +1,41 @@
+name: M10 real GPU zero-wait isolated motion comparison
+on:
+  push:
+    branches: ['investigation/M10-zero-wait-measurements-2026-10-23']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/m10-zero-wait-eval/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-zero-wait-eval/node_modules/pngjs
+      RT_JPEG_PATH: /tmp/m10-zero-wait-eval/node_modules/jpeg-js
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/m10-zero-wait-eval playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
+          /tmp/m10-zero-wait-eval/node_modules/.bin/playwright install chromium
+      - name: Idle baseline with touch held and formal work completed
+        run: |
+          WORKER_BASELINE_IDLE=1 WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-wait-eval/idle/report.json node scripts/m10-rebuild-response.mjs
+      - name: Actual formal GPU work during native touch (never use fake completion gate)
+        run: |
+          WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-wait-eval/real-gpu/report.json node scripts/m10-rebuild-response.mjs
+      - name: Print measured extra display latency (do NOT equate measurement with zero)
+        run: |
+          ZERO_WAIT_EVIDENCE=/tmp/zero-wait-eval node scripts/m10-zero-wait-compare.mjs
+          cat /tmp/zero-wait-eval/comparison.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zero-wait-motion-independent
+          path: /tmp/zero-wait-eval/
