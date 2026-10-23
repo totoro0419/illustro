@@ -67,7 +67,7 @@ export class PaperRaster extends StrokeOverlay {
   if(id<=(this.retiredThrough??-1)||this.retiredIds?.has(id))return;
   const old=this.pending.get(id)??this.states.get(id)?.last;
   if(!old)return;
-  const a=this.finishedInputs?.get(id);if(a)this.enqueueCopies({...a,copies:new Map},{...old,preset:record.preset,stableSource:record.commands,stableEnd:record.commands.length,commands:[],finished:true,resetPreview:true});else this.enqueue({...old,preset:record.preset,stableSource:record.commands,stableEnd:record.commands.length,commands:[],finished:true,resetPreview:true});
+  const a=this.finishedInputs?.get(id);if(a)this.enqueueCopies({...a,copies:new Map},{...old,preset:record.preset,stableSource:record.commands,stableEnd:record.commands.length,commands:[],finished:true,resetPreview:true,canonical:true});else this.enqueue({...old,preset:record.preset,stableSource:record.commands,stableEnd:record.commands.length,commands:[],finished:true,resetPreview:true,canonical:true});
  }
  enqueueCopies(a,state){
   this.enqueue(state);if(!a.seamless)return;a.copies??=new Map;
@@ -84,8 +84,8 @@ export class PaperRaster extends StrokeOverlay {
 }
 
 // Sparse cells avoid a full document-sized rectangle for a long diagonal line.
-// The float coverage budget is 64 MiB; these RGBA8 cells use at most one quarter
-// of that coverage storage. No large per-stroke backing canvas is allocated.
+// The shared budget accounts for coverage, prepared images and retained/pinned
+// RGBA cells. No large per-stroke backing canvas is allocated.
 class PaperCellSink {
  constructor(shared=null){this.shared=shared??{pins:new WeakMap,live:new WeakSet,heldBytes:0};this.layers=new Map;this.cells=new Map;this.changedPages=new Set;this.allocations=0;}
  forStroke(id){let layer=this.layers.get(id);if(!layer)this.layers.set(id,layer=new PaperCellSink(this.shared));return layer;}
