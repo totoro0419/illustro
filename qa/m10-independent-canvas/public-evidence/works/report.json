@@ -1,0 +1,87 @@
+{
+  "tests": [
+    {
+      "name": "webgl2-HOME-NAVIGATION-NONBLOCKING",
+      "status": "PASS"
+    },
+    {
+      "name": "webgl2-A-B-ISOLATION-RELOAD-SELECTED-LAYER",
+      "status": "PASS"
+    },
+    {
+      "name": "webgl2-RENAME-DUPLICATE-DELETE-SEARCH-SORT",
+      "status": "PASS"
+    },
+    {
+      "name": "webgl2-PORTABLE-ROUNDTRIP-NO-DUPLICATE",
+      "status": "PASS"
+    },
+    {
+      "name": "webgl2-CONTINUE-AND-BROWSER-BACK",
+      "status": "PASS"
+    },
+    {
+      "name": "webgl2-PNG-JPEG-WEBP",
+      "status": "PASS"
+    },
+    {
+      "name": "webgl2-OFFLINE-EDIT-SAVE",
+      "status": "PASS"
+    },
+    {
+      "name": "webgl2-FAILED-IMPORT-SAFETY",
+      "status": "PASS"
+    },
+    {
+      "name": "webgpu-HOME-NAVIGATION-NONBLOCKING",
+      "status": "PASS"
+    },
+    {
+      "name": "webgpu-A-B-ISOLATION-RELOAD-SELECTED-LAYER",
+      "status": "PASS"
+    },
+    {
+      "name": "webgpu-RENAME-DUPLICATE-DELETE-SEARCH-SORT",
+      "status": "PASS"
+    },
+    {
+      "name": "webgpu-PORTABLE-ROUNDTRIP-NO-DUPLICATE",
+      "status": "PASS"
+    },
+    {
+      "name": "webgpu-CONTINUE-AND-BROWSER-BACK",
+      "status": "PASS"
+    },
+    {
+      "name": "webgpu-PNG-JPEG-WEBP",
+      "status": "PASS"
+    },
+    {
+      "name": "webgpu-OFFLINE-EDIT-SAVE",
+      "status": "PASS"
+    },
+    {
+      "name": "webgpu-FAILED-IMPORT-SAFETY",
+      "status": "PASS"
+    },
+    {
+      "name": "RESPONSIVE-390",
+      "status": "PASS"
+    },
+    {
+      "name": "RESPONSIVE-820",
+      "status": "PASS"
+    },
+    {
+      "name": "RESPONSIVE-320",
+      "status": "PASS"
+    },
+    {
+      "name": "NO-UNCAUGHT-ERRORS",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "commit": "48a00e6fcaa13f20103e2c6466f07292e488cc33",
+  "mode": "public"
+}
