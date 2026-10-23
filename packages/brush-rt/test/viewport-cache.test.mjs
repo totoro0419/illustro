@@ -61,3 +61,11 @@ test('preview budget preflight uses frozen published geometry without consuming 
  assert.equal(previewMemoryDemand(b,[state]),2*262144);assert.equal(v.stableCursor,1);assert.equal(v.index,0);assert.equal(v.lastState,undefined);assert.deepEqual([...v.tiles.keys()],['0,0']);
  v.lastState=state;assert.equal(previewMemoryDemand(b,[state]),262144);
 });
+
+
+test('an oversized first formal tile is split without changing source jobs or order',()=>{
+ const commands=Array.from({length:16},(_,i)=>Object.assign(new Float64Array(24),{0:64,1:64,2:512,16:64,17:64,18:256,19:1,20:i}));
+ const preset={tip:'round',spacing:.2,aspect:1,hardness:1,flow:1,mappings:[]},job={id:1,key:'0,0',surfaceKey:'a',preset,commands,offset:0,commit:false},commit={...job,commands:[],commit:true};
+ const document={peekMany:()=>[job,commit]};const selected=boundedFormalJobs(document,65536,2);
+ assert.equal(selected.length,1);assert.equal(selected[0].commands.length,4);assert.deepEqual(selected[0].commands,commands.slice(0,4));assert.equal(job.commands.length,16);assert.equal(job.offset,0);
+});

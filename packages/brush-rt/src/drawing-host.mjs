@@ -20,7 +20,7 @@ export class DrawingHost {
  update(s){if(!s)return;this.info=s.info;this.errors=[...(s.errors??[]),...this.localFaults];this.completions=s.completions;this.summary=s.performance;
   Object.assign(this.document,{width:s.document.width,height:s.document.height,count:s.document.count});this.document.jobs.length=s.document.jobs;
   for(const key of ['inflight','needsFrame','viewPending','historyPreparing','guardPreparing'])this[key]=s[key];this.backend.presentationHeld=s.presentationHeld;
-  const sessionId=this.session.id;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);this.session.seedSequence=Math.max(this.session.seedSequence??0,s.session.seedSequence??0);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
+  const sessionId=this.session.id,seedSequence=this.session.seedSequence??0;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);this.session.seedSequence=Math.max(seedSequence,s.session.seedSequence??0);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
   if(s.recordIds)for(const [token,id]of s.recordIds){const r=this.session.recordsByToken.get(token);if(r&&id!==undefined)this.session.recordIds.set(r,id);}
  }
  // CanvasView owns editing coordinates; the formal GPU is not a view renderer.

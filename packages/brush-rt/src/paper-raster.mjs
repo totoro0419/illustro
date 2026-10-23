@@ -11,6 +11,10 @@ export class PaperRaster extends StrokeOverlay {
   // PreviewPolicy's CPU/GPU switching belongs to the old display, not this one.
   this.policy={choices:new Map,forget(){},observe(){},summary(){return {route:'cpu',mode:'cpu'};}};
  }
+ safeFlush(){super.safeFlush();if(this.error&&this.reportedError!==this.error){this.reportedError=this.error;this.onFault?.(this.error);}}
+ presented(){throw Error('Formal completion cannot retire PaperRaster');}
+ fallbackPresented(){throw Error('Formal fallback presentation is not a PaperRaster port');}
+ setNavigationActive(value){if(value)throw Error('Navigation must not suspend PaperRaster');}
  canUse(){return true;}
  enqueue(state){
   if(state.id<=(this.retiredThrough??-1)||this.retiredIds?.has(state.id))return false;
@@ -19,7 +23,7 @@ export class PaperRaster extends StrokeOverlay {
  }
  present(start,tips){
   const dirty=[...this.states.values()].filter(v=>!v.work&&v.coherent!==false&&v.dirty.size).map(v=>v.id);
-  super.present(start,tips);for(const id of dirty)this.changed(id);
+  super.present(start,tips);for(const id of dirty)this.changed(id,true);
  }
  begin({id,preset,seed,context={},surfaceKey,density,seamless=false}){
   if(preset.format==='illustro-brush-preset'&&preset.forceFade?.enabled&&context.forceFadeGeometry===undefined)context={...context,forceFadeGeometry:'adaptive-v1'};
@@ -50,7 +54,7 @@ export class PaperRaster extends StrokeOverlay {
   }
  }
  // Called exclusively by PaperDisplay after its frame was accepted on window.
- adopted(id){this.retiredThrough=Math.max(this.retiredThrough??-1,Math.floor((id-1)/9)*9-1);this.retiredIds??=new Set;this.retiredIds.add(id);for(const key of this.retiredIds)if(key<=this.retiredThrough)this.retiredIds.delete(key);this.finishedInputs?.delete(id);this.inputs.delete(id);this.removeState(id);}
+ adopted(id){this.retiredThrough=Math.max(this.retiredThrough??-1,Math.floor((id-1)/9)*9-1);this.retiredIds??=new Set;this.retiredIds.add(id);for(const key of this.retiredIds)if(key<=this.retiredThrough)this.retiredIds.delete(key);this.finishedInputs?.delete(id);this.inputs.delete(id);this.removeState(id);if(!this.states.size){this.fallback=false;this.error=null;this.reportedError=null;this.onFault?.(null);this.schedule();}}
  drop(id){this.inputs.delete(id);this.finishedInputs?.delete(id);this.removeState(id);this.changed(id);}
 }
 
@@ -58,10 +62,11 @@ export class PaperRaster extends StrokeOverlay {
 // The float coverage budget is 64 MiB; these RGBA8 cells use at most one quarter
 // of that coverage storage. No large per-stroke backing canvas is allocated.
 class PaperCellSink {
- constructor(){this.layers=new Map;this.cells=new Map;this.allocations=0;}
+ constructor(){this.layers=new Map;this.cells=new Map;this.changedPages=new Set;this.allocations=0;}
  forStroke(id){let layer=this.layers.get(id);if(!layer)this.layers.set(id,layer=new PaperCellSink);return layer;}
- configure(plan,bounds){const changed=this.scale!==undefined&&this.scale!==plan.scale;if(changed)this.cells.clear();this.scale=plan.scale;this.rect=bounds;return changed;}
- draw(_plan,_rects,_guards,cells){for(const {key,image}of cells){let ink=false;for(let i=3;i<image.data.length;i+=4)if(image.data[i]){ink=true;break;}if(!ink){this.cells.delete(key);continue;}let c=this.cells.get(key);if(!c){c=new OffscreenCanvas(32,32);this.cells.set(key,c);this.allocations++;}c.getContext('2d').putImageData(image,0,0);}}
+ configure(plan,bounds){const changed=this.scale!==undefined&&this.scale!==plan.scale;if(changed){if(this.rect)this.mark(this.rect);this.cells.clear();}this.scale=plan.scale;this.rect=bounds;return changed;}
+ mark(rect){for(let y=Math.max(0,Math.floor(rect[1]/512));y<Math.ceil(rect[3]/512);y++)for(let x=Math.max(0,Math.floor(rect[0]/512));x<Math.ceil(rect[2]/512);x++)this.changedPages.add(x+','+y);}
+ draw(_plan,_rects,_guards,cells){for(const {key,image}of cells){const [x,y]=key.split(',').map(Number);this.mark([x*32/this.scale,y*32/this.scale,(x+1)*32/this.scale,(y+1)*32/this.scale]);let ink=false;for(let i=3;i<image.data.length;i+=4)if(image.data[i]){ink=true;break;}if(!ink){this.cells.delete(key);continue;}let c=this.cells.get(key);if(!c){c=new OffscreenCanvas(32,32);this.cells.set(key,c);this.allocations++;}c.getContext('2d',{willReadFrequently:true}).putImageData(image,0,0);}}
  reproject(){}
  updateOrigin(){}
  retireStroke(id){this.layers.get(id)?.destroy();this.layers.delete(id);}

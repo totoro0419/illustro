@@ -53,7 +53,7 @@ export class BrushSurface{
       this._initializationError='GPU initialization failed: '+message;
       throw new Error(this._initializationError,{cause:error});
     }
-    const channel=new MessageChannel();this.paper=new PaperDisplay(this.canvas,target.width,target.height,channel.port1);(this.renderer as any).connectDisplay(channel.port2);
+    const channel=new MessageChannel();this.paper=new PaperDisplay(this.canvas,target.width,target.height,channel.port1,()=>this.status('線の一時表示で問題が起きました。作品の処理は別に続きます。'));(this.renderer as any).connectDisplay(channel.port2);
     this.updateView();
     this.resizeObserver=new ResizeObserver(entries=>{const e=entries[0];if(!e)return;const exact=e.devicePixelContentBoxSize?.[0];this.setBackingSize(exact?{width:exact.inlineSize,height:exact.blockSize}:undefined);});
     try{this.resizeObserver.observe(this.canvas,{box:'device-pixel-content-box'});}catch{this.resizeObserver.observe(this.canvas);}
@@ -61,7 +61,7 @@ export class BrushSurface{
     window.addEventListener('orientationchange',this.windowResize,{signal:this.abort.signal});this.observeDensity();
     this.inputViewport.style.touchAction='none';
     this.renderer.setSurfaceStack(this.surfaceKeys());this.syncLayerStyles();this.session=(this.renderer as any).session as RealtimeSession;this.handoff=new StrokeHandoff(this.controller,(reservation,record,additional,result,undone)=>this.publishStroke(reservation,record,additional,undone),(record,reservation)=>{const id=this.pendingStrokeIds.get(reservation);if(id!==undefined)this.paper?.send({type:'drop',id});this.session?.forgetStaged(record);this.pendingStrokeIds.delete(reservation);});this.brushes=referenceBrushes;this.preset=structuredClone(this.brushes[0]!);
-    const options={signal:this.abort.signal},input=this.inputViewport;this.gesture=new PaperGestures(input,this.view!,{finger:()=>this.fingerDrawing,drawingTouch:()=>this.pointer!==null&&this.strokePointerType==='touch',cancelTouch:()=>{void this.cancelStroke();},changed:(at,receivedAt)=>this.updateView(false,undefined,at,receivedAt)},this.abort.signal);this.installViewControls();input.addEventListener('pointerdown',this.down,options);input.addEventListener('pointermove',this.move,options);input.addEventListener('pointerup',this.up,options);input.addEventListener('pointercancel',this.cancel,options);input.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
+    const options={signal:this.abort.signal},input=this.inputViewport;this.gesture=new PaperGestures(input,this.view!,{finger:()=>this.fingerDrawing||this.eyedropper,drawingTouch:()=>this.pointer!==null&&this.strokePointerType==='touch'||this.eyedropperPointer!==null,cancelTouch:()=>{if(this.eyedropperPointer!==null){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);}else void this.cancelStroke();},changed:(at,receivedAt)=>this.updateView(false,undefined,at,receivedAt)},this.abort.signal);this.installViewControls();input.addEventListener('pointerdown',this.down,options);input.addEventListener('pointermove',this.move,options);input.addEventListener('pointerup',this.up,options);input.addEventListener('pointercancel',this.cancel,options);input.addEventListener('lostpointercapture',this.cancel,options);this.frameId=requestAnimationFrame(this.frame);this.onStateChanged();}
   private pointerLocation(e:PointerEvent|WheelEvent):Point{const r=this.layoutRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
   private setBackingSize(exact?:{width:number;height:number}){if(!this.view)return;const r=this.layoutRect();if(r.width<=0||r.height<=0)return;
     this.view.resize(r.width,r.height);const dpr=window.devicePixelRatio||1,estimatedW=Math.max(1,Math.round(r.width*dpr)),estimatedH=Math.max(1,Math.round(r.height*dpr));
@@ -168,13 +168,13 @@ async inspectRendering(){
       time:new Date().toISOString(),backend:this.backend,rendererInfo:this.renderer?.info,
       rendererErrors:[...(this.renderer?.errors??[])].slice(-8),sessionErrors:[...(this.session?.errors??[])].slice(-8),
       committedStrokes:this.controller.committedStrokeCount,rawAccepted:this.session?.rawAccepted??0,
-      completeFrames:this.presentedFrames,latestGpuMetrics:this.renderer?.completions.slice(-2),
-      fingerDrawing:this.fingerDrawing,previewPresent:!!(this.renderer as any)?.proxy,previewVisible:((this.renderer as any)?.proxy?.footprints.size??0)>0,previewContext:(this.renderer as any)?.proxy?.transport??null,
+      completeFrames:this.paper?.frames??0,latestGpuMetrics:this.renderer?.completions.slice(-2),
+      fingerDrawing:this.fingerDrawing,previewPresent:!!this.paper,previewVisible:Number(this.paper?.metrics.overlays??0)>0,previewContext:this.paper?'independent-cpu-raster':null,eventCanvasOnly:true,
       browserPredictionSamples:this.session?.browserPredictions??0,
       canvasCss:{background:getComputedStyle(this.canvas).backgroundColor,opacity:getComputedStyle(this.canvas).opacity}
     };
     if(backend?.gl){diagnostics.webglContext=backend.gl.getContextAttributes();diagnostics.webglLost=backend.gl.isContextLost();diagnostics.webglError=backend.gl.getError();}
-    try{if(backend?.readViewport){const p=await backend.readViewport();diagnostics.gpuArtwork=summarize(p,this.controller.document.root.width,this.controller.document.root.height);}}
+    try{if(!this.paper&&backend?.readViewport){const p=await backend.readViewport();diagnostics.gpuArtwork=summarize(p,this.controller.document.root.width,this.controller.document.root.height);}else diagnostics.formalViewport='Unused: formal document pixels and the display image have separate owners';}
     catch(e){diagnostics.gpuArtworkError=String(e);}
     try{if(this.renderer){const surfaceId=this.controller.selectedLayer.surface.descriptor.surfaceId,p=await this.renderer.read(surfaceId);diagnostics.selectedRasterSurface={surfaceId,...summarize(p,this.controller.document.root.width,this.controller.document.root.height)};}}
     catch(e){diagnostics.selectedRasterSurfaceError=String(e);}
@@ -329,12 +329,13 @@ async inspectRendering(){
   private async flushSamples(){this.sampleRunning=true;const epoch=this.sampleEpoch;try{while(this.pendingSample&&epoch===this.sampleEpoch&&!this.disposed){const requested=this.pendingSample;this.pendingSample=null;let rgba:readonly number[]|null=null;try{rgba=await this.readOnePixel(requested.point);}catch(error){this.status('色を取得できませんでした。'+(error instanceof Error?error.message:String(error)));}
     if(epoch!==this.sampleEpoch||this.disposed)return;if(this.pendingSample&&requested.phase!=='commit')continue;this.onSample(rgba,requested.phase,requested.point);
    }}finally{this.sampleRunning=false;if(this.pendingSample&&!this.disposed)void this.flushSamples();}}
-  /** Read only a 1x1 GPU region. Neither a canvas readback nor a layer recomposition is allowed here. */
+  /** Sample one pixel asynchronously from the display-owned CPU image, without a main-thread GPU readback. */
   private async readOnePixel(point:Point):Promise<readonly number[]|null>{
    const x=Math.floor(point.x),y=Math.floor(point.y),w=this.controller.document.root.width,h=this.controller.document.root.height;
    if(x<0||y<0||x>=w||y>=h)return null;
-   const backend=(this.renderer as unknown as {backend?:any}|null)?.backend;if(!backend)return null;
-   return (this.renderer as any).readPixel(x,y,this.sampleSource==='layer'?this.controller.selectedLayer.surface.descriptor.surfaceId:null);
+   const source=this.sampleSource==='layer'?this.controller.selectedLayer.surface.descriptor.surfaceId:null;
+   if(this.paper)return this.paper.sample(x,y,source);
+   const backend=(this.renderer as unknown as {backend?:any}|null)?.backend;if(!backend)return null;return (this.renderer as any).readPixel(x,y,source);
   }
   /** Refresh preset catalog without mutating an in-flight stroke or the artwork. */
   setBrushes(brushes:readonly FoundationPreset[]){

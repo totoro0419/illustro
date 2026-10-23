@@ -33,7 +33,7 @@ function scheduleFrame(){
   }catch(error){fail(error);return;}
   if(session.active||renderer.inflight||renderer.needsFrame||renderer.viewPending||renderer.guardPreparing||
     renderer.document.jobs.length||renderer.mailbox.value||renderer.strokeFrames.size||renderer.backend.previewGpuPending) scheduleFrame();
- },16);
+ },renderer.inflight||renderer.document.jobs.length?2:16);
 }
 async function init(m){
  const nativeNow=performance.now.bind(performance),offset=performance.timeOrigin-m.timeOrigin;Object.defineProperty(performance,'now',{value:()=>nativeNow()+offset});Object.defineProperty(performance,'timeOrigin',{value:m.timeOrigin});
@@ -107,6 +107,15 @@ async function pixel({x,y,surfaceKey}){const b=renderer.backend;
  if(b.gl){const g=b.gl,a=new Uint8Array(4);g.bindFramebuffer(g.FRAMEBUFFER,layer?t.layer[t.l].f:b.liveTarget.f);g.readPixels(sx,layer?sy:b.height-1-sy,1,1,g.RGBA,g.UNSIGNED_BYTE,a);return [...a];}
  const d=b.device,buffer=d.createBuffer({size:256,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});try{const e=d.createCommandEncoder();e.copyTextureToBuffer({texture:layer?t.layer[t.l]:b.liveTarget,origin:{x:sx,y:sy}},{buffer,bytesPerRow:256},[1,1]);d.queue.submit([e.finish()]);await buffer.mapAsync(GPUMapMode.READ);const a=new Uint8Array(buffer.getMappedRange()),bgra=!layer&&b.format.startsWith('bgra');return [a[bgra?2:0],a[1],a[bgra?0:2],a[3]];}finally{buffer.destroy();}
 }
+// Review-only invariant: splitting GPU submissions must preserve every formal
+// byte. Both runs use the same canonical record and exact deposition shaders.
+async function comparePartition(value){
+ const outputs=[];for(const documentOnly of [false,true]){
+  const r=await GpuRenderer.create(new OffscreenCanvas(512,512),renderer.document.width,renderer.document.height,renderer.backend.gl?'webgl2':'webgpu',{strokeHandoff:true,tileHistory:false,tiledPresentation:true,strokeOverlay:null});
+  try{r.backend.documentOnly=documentOnly;r.document.append(1,value.preset,value.commands);r.document.end(1,value.preset);r.markEnded(1);await r.drain();outputs.push(await r.read('default'));}finally{const gl=r.backend.gl;r.destroy();gl?.getExtension('WEBGL_lose_context')?.loseContext();}
+ }
+ let different=0,maxDelta=0;for(let i=0;i<outputs[0].length;i++){const delta=Math.abs(outputs[0][i]-outputs[1][i]);if(delta)different++;maxDelta=Math.max(maxDelta,delta);}return {bytes:outputs[0].length,different,maxDelta};
+}
 async function command(method,a){const r=renderer,s=session;
  switch(method){
  case 'displayPort':displayPort=a.port;displayPort.start();return;
@@ -133,6 +142,7 @@ async function command(method,a){const r=renderer,s=session;
  case 'prepareHistory':return r.prepareHistory();
  case 'resumeHistory':return r.resumeHistory();
  case 'measure':r.setPerformanceEnabled(a);return;
+ case 'comparePartition':if(!diagnostics)throw Error('Diagnostics are disabled');return comparePartition(record(a.token));
  case 'recordGate':if(!diagnostics)throw Error('Diagnostics are disabled');recordGate=!!a;if(!a){const receive=session.worker.onmessage;for(const event of heldRecords.splice(0))receive(event);}return;
  case 'gate':if(!diagnostics)throw Error('Diagnostics are disabled');if(a){if(!formalGate){let release;const promise=new Promise(ok=>release=ok);formalGate={promise,release,stage:'formal',held:null};}}else{formalGate?.release();formalGate=null;}return;
  case 'inspect':return stats(true);

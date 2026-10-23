@@ -339,7 +339,7 @@ export class GpuRenderer {
  }
  // One deferred request consumes the newest notification after an input batch.
  // Do not launch a GPU submission for every coalesced input sample.
- requestWork(){if(!this.strokeHandoff)return this.requestPreview();if(this.disposed||this.inflight||this.previewRequested)return;this.previewRequested=true;const run=()=>{this.previewRequested=false;this.frame(performance.now());};if(this.proxy)this.workTimer=setTimeout(run,0);else queueMicrotask(run);}
+ requestWork(){if(!this.strokeHandoff)return this.requestPreview();if(this.disposed||this.inflight||this.previewRequested)return;this.previewRequested=true;const run=()=>{this.previewRequested=false;this.frame(performance.now());};if(this.proxy||this.backend.documentOnly)this.workTimer=setTimeout(run,0);else queueMicrotask(run);}
  requestPreview(){if(this.strokeHandoff)return this.requestWork();if(this.disposed||this.inflight||this.previewRequested||!this.backend.immediatePreview||!foundationUnion(this.mailbox.value?.preset)||this.mailbox.value.finished)return;this.previewRequested=true;queueMicrotask(()=>{this.previewRequested=false;this.frame(performance.now());});}
  markEnded(id){
   this.ended.add(id);
@@ -397,10 +397,10 @@ export class GpuRenderer {
  const fallbackLimit=cooperativeGpu&&!catchup&&!this.backend.presentationHeld&&!this.document.jobs[0]?.commit?16:catchup||this.backend.presentationHeld||!this.snapshot||this.snapshot.finished?128:this.handoffJobLimit;
  const interactiveFormal=this.tiledPresentation&&(this.gestureActive||active||performance.now()<(this.releaseInteractiveUntil??0));
  const idleBacklog=this.tiledPresentation&&!interactiveFormal&&this.document.jobs.length>512;
- const releaseLimit=this.tiledPresentation?(interactiveFormal?1:idleBacklog?24:this.lastGpuWork>48?4:this.lastGpuWork>24?8:16):performance.now()<(this.releaseInteractiveUntil??0)?1:Infinity;
+ const releaseLimit=this.backend.documentOnly?2:this.tiledPresentation?(interactiveFormal?1:idleBacklog?24:this.lastGpuWork>48?4:this.lastGpuWork>24?8:16):performance.now()<(this.releaseInteractiveUntil??0)?1:Infinity;
  // Count pixel-command work as well as tiles; one wide, textured brush can
  // make four document tiles much more expensive than four thin pencil tiles.
- const formalWorkBudget=this.tiledPresentation?(interactiveFormal?65536:idleBacklog?1200000:this.lastGpuWork>48?240000:640000):Infinity;
+ const formalWorkBudget=this.backend.documentOnly?65536:this.tiledPresentation?(interactiveFormal?65536:idleBacklog?1200000:this.lastGpuWork>48?240000:640000):Infinity;
  let jobs=historyPressure||firstGpuPreview?[]:instant?boundedFormalJobs(this.document,Math.min(formalWorkBudget,active?1000000:2000000),Math.min(this.instantJobLimit,releaseLimit)):this.strokeHandoff?boundedFormalJobs(this.document,Math.min(formalWorkBudget,this.snapshot&&!this.snapshot.finished&&!catchup?1_000_000:2_000_000),Math.min(fallbackLimit,releaseLimit)):(this.confirmDelay<=0||now-this.lastConfirmed>=this.confirmDelay)?this.document.peekMany(this.snapshot&&!this.snapshot.finished?(this.lastGpuWork>32||this.snapshot.preset?.__foundation?.coverageUnion||(this.backend.immediatePreview&&foundationUnion(this.snapshot.preset))?0:1):this.formalQuantum):[];jobs=boundHistoryCopies(this.backend,jobs);const job=jobs[0]??null;if((!latest||instant)&&!job&&!this.needsFrame&&!(this.backend.dirtyConfirmed?.size&&!catchup))return this.presentView(now);if(!this.tiledPresentation&&this.proxy?.footprints.size&&!this.proxy.guards.length&&(this.proxy.fallback||[...this.strokeFrames.keys()].some(id=>this.proxy.footprints.has(id)))){
   this.presentView(now);this.guardPreparing=true;this.proxy.protect().then(()=>{this.guardPreparing=false;this.needsFrame=true;this.requestWork();}).catch(error=>{this.guardPreparing=false;this.errors.push('Overlay transition: '+error.message);this.disposed=true;});return false;
  }if(this.backend.documentOnly&&jobs.length)jobs=jobs.filter(j=>j.id===jobs[0].id);
@@ -640,7 +640,11 @@ const PREVIEW_POOL_BUDGET=16*1024*1024,PREVIEW_LIMIT=256*1024*1024;
 function resizePresentation(b,view){const c=b.canvas;if(c.width!==view[0])c.width=view[0];if(c.height!==view[1])c.height=view[1];}
 export function boundedFormalJobs(document,budget=2_000_000,limit=128){
  const candidates=document.peekMany(limit),out=[];let cost=0;
- for(const job of candidates){let work=job.commit?TILE*TILE:0;if(!job.commit){if(continuous(job.preset)){const [tx,ty]=job.key.split(',').map(Number);for(const c of job.commands){const b=commandBounds(c);work+=Math.max(0,Math.min((tx+1)*TILE,b.x1)-Math.max(tx*TILE,b.x0))*Math.max(0,Math.min((ty+1)*TILE,b.y1)-Math.max(ty*TILE,b.y0));}}else work=TILE*TILE*job.commands.length;}if(out.length&&cost+work>budget)break;out.push(job);cost+=work;
+ for(const job of candidates){let work=job.commit?TILE*TILE:0;if(!job.commit){if(continuous(job.preset)){const [tx,ty]=job.key.split(',').map(Number);for(const c of job.commands){const b=commandBounds(c);work+=Math.max(0,Math.min((tx+1)*TILE,b.x1)-Math.max(tx*TILE,b.x0))*Math.max(0,Math.min((ty+1)*TILE,b.y1)-Math.max(ty*TILE,b.y0));}}else work=TILE*TILE*job.commands.length;}if(job.skip)work=0;if(out.length&&cost+work>budget)break;
+  // A single 16-command tile can exceed the entire GPU quantum. Split that
+  // prefix too, rather than treating the first job as an unbounded exception.
+  if(!out.length&&!job.skip&&!job.commit&&work>budget&&job.commands.length>1){let used=0;const commands=[];for(const c of job.commands){let n=TILE*TILE;if(continuous(job.preset)){const [tx,ty]=job.key.split(',').map(Number),b=commandBounds(c);n=Math.max(0,Math.min((tx+1)*TILE,b.x1)-Math.max(tx*TILE,b.x0))*Math.max(0,Math.min((ty+1)*TILE,b.y1)-Math.max(ty*TILE,b.y0));}if(commands.length&&used+n>budget)break;commands.push(c);used+=n;}out.push({...job,commands});break;}
+  out.push(job);cost+=work;
  }return out;
 }
 async function initializeSparseBackend(b){

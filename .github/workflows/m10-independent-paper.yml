@@ -12,9 +12,14 @@ jobs:
     env:
       EXPECTED_COMMIT_SHA: ${{ github.sha }}
       PAPER_EVIDENCE: /tmp/independent-paper-evidence
+      PAPER_BOUNDS: 1
+      PAPER_TRACE_EVIDENCE: /tmp/independent-paper-evidence/trace
+      RT_JPEG_PATH: /tmp/paper-browser/node_modules/jpeg-js
       RT_PLAYWRIGHT_PATH: /tmp/paper-browser/node_modules/playwright
       RT_PNG_PATH: /tmp/paper-browser/node_modules/pngjs
       PAPER_CHROME: /usr/bin/google-chrome
+      CHROMIUM_EXECUTABLE: /usr/bin/google-chrome
+      HOME_EVIDENCE_DIRECTORY: /tmp/independent-paper-evidence/works
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
@@ -33,9 +38,15 @@ jobs:
         env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
         run: npm --workspace @illustro/editor exec -- vite build --base=./
       - name: Browser dependencies
-        run: npm install --prefix /tmp/paper-browser playwright@1.56.1 pngjs@7.0.0 --no-audit --no-fund
+        run: npm install --prefix /tmp/paper-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
       - name: Real formal pixels, touch, history, save/reload, and captured screen motion
         run: node scripts/m10-paper-browser.mjs
+      - name: Existing work library, auto-save, recovery, and offline regression
+        run: |
+          node scripts/editor-works-smoke.mjs
+          HOME_EVIDENCE_DIRECTORY=/tmp/independent-paper-evidence/works-safety node scripts/editor-works-safety-smoke.mjs
+      - name: Independent compositor trace while real formal drawing advances
+        run: node scripts/m10-paper-motion-trace.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: independent-paper-evidence, path: /tmp/independent-paper-evidence/}
@@ -57,6 +68,7 @@ jobs:
       - name: Publish only the new QA directory
         run: |
           sed "s/__COMMIT__/$GITHUB_SHA/g" qa/m10-independent-canvas/index.html > site/qa/m10-independent-canvas/index.html
+          find site/qa/m10-independent-canvas/evidence -name '*-trace.json' -delete
           cd site
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
