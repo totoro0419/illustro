@@ -97,7 +97,33 @@ try{
   const distance=Math.hypot(ink.x-source.x,ink.y-source.y);
   assert.ok(distance>12,'existing pixels did not move despite Workers being truly terminated: '+JSON.stringify({source,ink,distance}));
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-  report.cases.push({backend,distance,sourcePixels:source.count,destinationPixels:ink.count,passed:true,workerCountTerminated:killTarget==='both'?2:1});
+  let extraStrokes=null;
+  if(killTarget==='presentation'){
+   // With the real image Worker terminated (no artificial callback gate),
+   // two new native strokes must still be admitted and visibly previewed.
+   const previous=await page.evaluate(()=>({
+    accepted:window.__illustroPerformance.read().handoff.accepted,
+    ink:window.__illustroPerformance.probe().renderer.layers.size
+   }));
+   for(let stroke=0;stroke<2;stroke++){
+    const from=pt(.14,.19+stroke*.09,30+stroke),to=pt(.84,.19+stroke*.09,30+stroke);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[from]});
+    for(let i=1;i<=10;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[
+     {...from,x:from.x+(to.x-from.x)*i/10,y:from.y+(to.y-from.y)*i/10}
+    ]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   }
+   await page.waitForFunction(n=>window.__illustroPerformance.read().handoff.accepted>=n+2,previous.accepted,{timeout:15000});
+   await page.waitForFunction(n=>window.__illustroPerformance.probe().renderer.layers.size>=n+2,previous.ink,{timeout:30000});
+   const after=await page.evaluate(()=>({
+    accepted:window.__illustroPerformance.read().handoff.accepted,
+    ink:window.__illustroPerformance.probe().renderer.layers.size,
+    pendingRasterAcks:window.__illustroPerformance.probe().renderer.presentationRequests.size
+   }));
+   assert.ok(after.pendingRasterAcks>0,'the exact document update must still be stalled');
+   extraStrokes={previous,after,pendingExactPixels:true};
+  }
+  report.cases.push({backend,distance,sourcePixels:source.count,destinationPixels:ink.count,passed:true,workerCountTerminated:killTarget==='both'?2:1,extraStrokes});
   await context.close();
  }
  await fs.writeFile(output,JSON.stringify(report,null,2)+'\n');
