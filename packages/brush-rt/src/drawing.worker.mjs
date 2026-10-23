@@ -15,7 +15,7 @@ function remember(token,record){records.set(token,record);recordTokens.set(recor
 function record(token){const value=records.get(token);if(!value)throw Error('Unknown stroke token');return value;}
 function stats(includeTiles=false){if(!renderer)return null;const r=renderer,b=r.backend,p=r.performanceSummary();
  if(p.instantPreview)p.instantPreview.samples=p.instantPreview.samples?.slice(-16);
- return {info:{...r.info,alpha:false,presentationOpaque:true},errors:r.errors,completions:r.completions.slice(-4),performance:{...p,execution:'document-tile-worker',publication:{...metrics,pendingTiles:pendingTiles.size,publishing,publishRequested,lastSent,acknowledged,changed:sink.changed.size,retired:sink.retired.size,formal:includeTiles?metrics.formal:[]}},
+ return {info:{...r.info,alpha:false,presentationOpaque:true},errors:r.errors,completions:r.completions.slice(-4),performance:{...p,execution:'document-tile-worker',publication:{...metrics,pendingTiles:pendingTiles.size,publishing,publishRequested,lastSent,acknowledged,changed:sink.changed.size,retired:sink.retired.size,retirementPending:[...sink.retirementPending],previewIds:[...sink.layers.keys()],formal:includeTiles?metrics.formal:[]}},
   document:{width:r.document.width,height:r.document.height,count:r.document.count,jobs:r.document.jobs.length},inflight:r.inflight,needsFrame:r.needsFrame,viewPending:r.viewPending,historyPreparing:r.historyPreparing,guardPreparing:r.guardPreparing,
   gates:{formal:!!formalGate,held:formalGate?.held??null,record:recordGate,heldRecords:heldRecords.length},proxy:{pending:r.proxy?.pending.size??0,finalizations:r.proxy?.finalizations.size??0,footprints:r.proxy?.footprints.size??0,error:r.proxy?.error},
   session:{id:session?.id??0,errors:session?.errors??[],pendingRawCount:session?.pendingRawCount??0,rawAccepted:session?.rawAccepted??0,browserPredictions:session?.browserPredictions??0,historyPatchHits:session?.historyPatchHits??0,historyReplayFallbacks:session?.historyReplayFallbacks??0,fullDocumentRebuilds:session?.fullDocumentRebuilds??0,fullReplayStrokes:session?.fullReplayStrokes??0,cancelledStrokeCount:session?.cancelledStrokeCount??0},
@@ -37,7 +37,36 @@ function scheduleFrame(){
     renderer.document.jobs.length||renderer.mailbox.value||renderer.strokeFrames.size||renderer.backend.previewGpuPending) scheduleFrame();
  },16);
 }
-function requestPublish(){publishRequested=true;queueMicrotask(()=>publish().catch(fail));}
+let overlayPublishing=false;
+// The authoritative tile packet has its own acknowledgment. A slow image
+// Worker must not hold newer temporary ink behind that acknowledgment.
+function requestPublish(){
+ publishRequested=true;
+ // A document ACK can remain blocked forever. Do not repeatedly capture an
+ // identical empty preview just because the GPU renderer requests a frame.
+ // Fresh ink always schedules immediately; exact raster resumes on ACK.
+ if(lastSent>acknowledged&&!sink?.changed.size)return;
+ queueMicrotask(()=> (lastSent>acknowledged?publishPreviewOnly():publish()).catch(fail));
+}
+async function publishPreviewOnly(){
+ if(overlayPublishing||publishing||!renderer||!sink||lastSent<=acknowledged)return;
+ overlayPublishing=true;const epoch=visibilityEpoch;
+ try{
+  const result=await sink.snapshot();
+  // Retirement is an authoritative document update, never an overlay update.
+  // Keep its obligation until the exact raster packet can be acknowledged.
+  for(const id of result.retired)sink.retired.add(id);
+  if(epoch!==visibilityEpoch){
+   for(const l of result.layers)l.bitmap.close();
+   for(const id of sink.layers.keys())sink.changed.add(id);
+   return;
+  }
+  if(result.layers.length)postMessage({type:'overlay',epoch,layers:result.layers},result.layers.map(l=>l.bitmap));
+ }finally{
+  overlayPublishing=false;
+  if(sink.changed.size||(publishRequested&&lastSent<=acknowledged))requestPublish();
+ }
+}
 function coherent(){const r=renderer;if(!r||r.backend.presentationHeld||r.historyPreparing||r.inflight||r.strokeFrames.size)return false;
  // CPU pictures cover the entire document. Keep them until their exact
  // replacement is composed; never leak the half-committed stroke underneath.
@@ -45,10 +74,10 @@ function coherent(){const r=renderer;if(!r||r.backend.presentationHeld||r.histor
  return true;
 }
 async function publish(){
- if(publishing||!publishRequested||lastSent>acknowledged||!renderer||renderer.backend.presentationHeld)return;
+ if(publishing||overlayPublishing||!publishRequested||lastSent>acknowledged||!renderer||renderer.backend.presentationHeld)return;
  publishing=true;publishRequested=false;const epoch=visibilityEpoch,ready=coherent(),keys=ready?[...pendingTiles]:[];if(ready)pendingTiles.clear();
  let pages=[];
- try{pages=captureTilePages(renderer.backend,keys);const images=sink.snapshot();const result=await images,layers=result.layers,retired=ready?result.retired:[];if(!ready)for(const id of result.retired)sink.retired.add(id);
+ try{pages=captureTilePages(renderer.backend,keys);const images=sink.snapshot();const result=await images,layers=result.layers,retired=ready&&pages.length?result.retired:[];if(!ready||!pages.length)for(const id of result.retired)sink.retired.add(id);
   if(epoch!==visibilityEpoch){for(const p of pages)p.bitmap.close();for(const l of layers)l.bitmap.close();for(const key of keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of retired)sink.retired.add(id);publishRequested=true;return;}
   if(!pages.length&&!layers.length&&!retired.length)return;
   if(formalGate?.stage==='picture'&&pages.length){formalGate.held='picture';await formalGate.promise;}
@@ -111,8 +140,12 @@ async function command(method,a){const r=renderer,s=session;
  case 'discardRedo':return s.discardRedo();
  case 'navigate':return s.navigateDerived(a.map(e=>({...e,record:record(e.token)})));
  case 'restore':await restore(a);await settlePictures();return stats(true);
- case 'pictureAck':acknowledged=Math.max(acknowledged,a.sequence);if(!a.accepted&&sentPacket){for(const key of sentPacket.keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of sentPacket.retired)sink.retired.add(id);}sentPacket=null;if(publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size)requestPublish();return;
- case 'waitStroke':{const result=await r.waitStroke(a);await settlePictures();return result;}
+ case 'pictureAck':acknowledged=Math.max(acknowledged,a.sequence);if(a.accepted&&sentPacket)sink.acknowledgeRetired(sentPacket.retired);if(!a.accepted&&sentPacket){for(const key of sentPacket.keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of sentPacket.retired)sink.retired.add(id);}sentPacket=null;if(publishRequested||pendingTiles.size||sink.changed.size)requestPublish();return;
+ case 'waitStroke':{
+  // This acknowledgment releases an *input* reservation. Never hold it for
+  // an unrelated image Worker; exact document/export barriers use 'drain'.
+  return r.waitStroke(a);
+ }
  case 'drain':await r.drain(a);await settlePictures();return stats(true);
  case 'read':return r.read(a);
  case 'readViewport':await r.drain();return r.backend.readViewport();

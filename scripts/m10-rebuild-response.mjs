@@ -28,7 +28,7 @@ try{
  if(version==='after'&&process.env.EXPECTED_COMMIT_SHA)assert.equal(await p.locator('#canvas').getAttribute('data-commit'),process.env.EXPECTED_COMMIT_SHA,'exact app source');
   await p.evaluate(async({brush,width})=>{for(const id of ['qaPanel','canvasPerformance'])document.getElementById(id).hidden=true;const port=window.__illustroPerformance,{renderer:r,controller:c,session:s}=port.probe();
    const m=window.__workerReview={r,c,s,port,events:[],presentations:[],longtasks:[],beats:[],formal:[]};
-   m.idle=async()=>{const start=performance.now();for(;;){const d=port.read();if(!d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!d.historyNavigation.pending&&!d.frameState.historySyncing&&!d.frameState.pointer){await r.drain();return;}if(performance.now()-start>120000||r.errors.length||s.errors.length)throw Error('idle '+JSON.stringify(d));await new Promise(ok=>setTimeout(ok,5));}};
+   m.idle=async()=>{const start=performance.now();for(;;){const d=port.read();if(!d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!d.historyNavigation.pending&&!d.frameState.historySyncing&&!d.frameState.pointer){await r.drain();return;}if(performance.now()-start>120000||r.errors.length||s.errors.length)throw Error('idle '+JSON.stringify({at:performance.now(),strokes:d.strokes,handoff:{pendingGpu:d.handoff.pendingGpu,pendingLogical:d.handoff.pendingLogical,fault:d.handoff.fault,rejected:d.handoff.rejected,lastAttempts:d.handoff.inputAttempts?.slice(-3)},frameState:d.frameState,history:d.historyNavigation,errors:r.errors,sessionErrors:s.errors}));await new Promise(ok=>setTimeout(ok,5));}};
    document.getElementById('finger').checked=true;document.getElementById('finger').dispatchEvent(new Event('change'));document.getElementById('force').checked=false;document.getElementById('force').dispatchEvent(new Event('change'));const el=document.getElementById('brush');el.value=brush==='pencil'?'foundation-pencil':'foundation-g-pen';el.dispatchEvent(new Event('change'));document.getElementById('size').value=String(width);document.getElementById('size').dispatchEvent(new Event('input'));document.getElementById('force').checked=false;document.getElementById('force').dispatchEvent(new Event('change'));
    for(const type of ['pointerdown','pointermove','pointerup'])window.addEventListener(type,e=>{if(e.pointerType!=='touch')return;const at=performance.now();m.events.push({type,at,eventAt:e.timeStamp,trusted:e.isTrusted,pointerType:e.pointerType});if(m.armGesture){if(type==='pointerup')m.release={at,eventAt:e.timeStamp};else if(type==='pointerdown'&&m.release&&!m.gesture)m.gesture={at,eventAt:e.timeStamp};}},true);
    const on=r.onPresentation;r.onPresentation=x=>{on?.(x);m.presentations.push({...x,view:Array.from(r.backend.viewTransform)});};
@@ -39,6 +39,22 @@ try{
   const draw=async(leaveDown=false)=>{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[pt(box.width*.18,box.height*.43)]});for(let i=1;i<=points;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[pt(box.width*(.18+.64*i/points),box.height*(.43+.06*Math.sin(i/points*8)))]});if(!leaveDown)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});};
   if(gated&&version==='after'){assert.equal(await p.evaluate(()=>!!window.__workerReview.r.remote),true);await p.evaluate(()=>window.__workerReview.r.call('gate',true));}
   await p.evaluate(()=>window.__workerReview.strokeAt=performance.now());for(let i=0;i<strokes;i++)await draw(i===strokes-1);
+  // Explicit idle control: exactly the same native input and visual measurement
+  // as the heavy case, but no outstanding stroke work at gesture start.
+  // It is an A/B control, never a substitute for the actual heavy GPU case.
+  if(process.env.WORKER_BASELINE_IDLE==='1'){
+    // The last stroke is intentionally HELD DOWN until native touchStart
+    // captures pen-up immediately before the gesture. Waiting for m.idle()
+    // would be a test bug: pendingLogical=1 and frameState.pointer!=null
+    // are expected, even with ZERO completed/queued formal GPU work.
+    await p.waitForFunction(async()=>{
+      const m=window.__workerReview,d=m.port.read(),r=await m.r.inspect();
+      return d.handoff.pendingGpu===0&&d.handoff.pendingLogical===1&&
+        d.frameState.pointer!==null&&r.document.jobs===0&&r.document.count===0&&
+        !r.inflight&&r.performance.publication.pendingTiles===0&&
+        m.r.presentationRequests.size===0;
+    },null,{timeout:120000});
+  }
   // Observe the source ink BEFORE pen-up. A post-release screenshot/evaluate
   // would silently postpone the immediate gesture until heavy work had run.
   const before=await p.screenshot({scale:'css'}),initial=await p.evaluate(()=>{const m=window.__workerReview;m.armGesture=true;return {phase:'before-release',at:performance.now(),timeOrigin:performance.timeOrigin,view:Array.from(m.r.backend.viewTransform),diag:m.port.read(),overlayLayers:m.r.layers?.size??m.r.proxy?.footprints.size??0,layers:m.r.layers?[...m.r.layers].map(([id,l])=>({id,view:l.view,rect:l.rect,scale:l.scale,polygon:l.polygon,style:l.element.style.cssText,element:[l.element.width,l.element.height]})):null};});

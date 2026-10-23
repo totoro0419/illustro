@@ -1,0 +1,111 @@
+name: M10 zero-wait isolation experiment (not production)
+on:
+  push:
+    branches: ['experiment/M10-zero-wait-isolation-2026-10-23']
+  workflow_dispatch:
+concurrency:
+  group: m10-zero-wait-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build exact runtime and unit-test incomplete document handoff
+        run: |
+          npm run brush:build
+          node --test packages/brush-rt/test/zero-wait-publication.test.mjs
+          node --test packages/brush-rt/test/zero-tick-view-plane.test.mjs
+          node --test packages/brush-rt/test/zero-tick-gpu-slice.test.mjs
+          npm run brush:regression
+      - name: Editor typecheck and regression
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: zero-wait-source-evidence, path: apps/editor/dist/}
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/m10-zerowait-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-zerowait-browser/node_modules/pngjs
+      RT_JPEG_PATH: /tmp/m10-zerowait-browser/node_modules/jpeg-js
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/m10-zerowait-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
+          /tmp/m10-zerowait-browser/node_modules/.bin/playwright install chromium
+      - name: Real drawing Worker stopped while display Worker stays alive
+        continue-on-error: true
+        run: ZERO_TICK_KILL_TARGET=drawing ZERO_TICK_WORKER_OUTPUT=/tmp/zero-wait-evidence/drawing-stop/report.json node scripts/m10-zero-tick-isolation.mjs
+      - name: Real image Worker stopped while drawing Worker stays alive
+        continue-on-error: true
+        run: ZERO_TICK_KILL_TARGET=presentation ZERO_TICK_WORKER_OUTPUT=/tmp/zero-wait-evidence/display-stop/report.json node scripts/m10-zero-tick-isolation.mjs
+      - name: Idle baseline — same native gestures after formal drawing has fully completed
+        continue-on-error: true
+        run: |
+          WORKER_BASELINE_IDLE=1 WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-wait-evidence/idle/report.json node scripts/m10-rebuild-response.mjs
+      - name: Actual heavy formal GPU work (no GPU-completion gate)
+        continue-on-error: true
+        run: |
+          WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-wait-evidence/real-gpu/report.json node scripts/m10-rebuild-response.mjs
+      - name: Compare idle vs actual high load — record every observed extra frame stop
+        continue-on-error: true
+        run: ZERO_WAIT_EVIDENCE=/tmp/zero-wait-evidence node scripts/m10-zero-wait-compare.mjs
+      - name: Exact image integrity after interrupted strokes and zoom
+        continue-on-error: true
+        run: REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2,webgpu REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/zero-wait-evidence/correctness.json node scripts/m10-rebuild-correctness.mjs
+      - name: Undo, Redo, and exact .illustro save/reopen under delayed drawing
+        continue-on-error: true
+        run: |
+          WORKER_HISTORY_BACKENDS=webgl2,webgpu WORKER_HISTORY_STAGES=record,formal,picture WORKER_HISTORY_SIZE=4000 WORKER_HISTORY_OUTPUT=/tmp/zero-wait-evidence/history/report.json node scripts/m10-rebuild-history.mjs
+      - name: Fail closed when any browser experiment is incomplete
+        if: always()
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const root='/tmp/zero-wait-evidence';
+          const exists=x=>fs.existsSync(root+'/'+x);
+          for(const file of ['drawing-stop/report.json','display-stop/report.json','idle/report.json','real-gpu/report.json','comparison.json','correctness.json','history/report.json']){
+            if(!exists(file))throw Error('Missing or failed experiment: '+file);
+          }
+          for(const name of ['idle','real-gpu']){
+            const report=JSON.parse(fs.readFileSync(root+'/'+name+'/report.json'));
+            if(report.status!=='AUTOMATED_CHECKS_PASSED')throw Error(name+' failed; no performance acceptance');
+          }
+          const comparison=JSON.parse(fs.readFileSync(root+'/comparison.json'));
+          if(!comparison.allWorkloadOverlapped)throw Error('Heavy test did not overlap actual formal GPU work');
+          for(const target of ['drawing-stop','display-stop']){
+            const report=JSON.parse(fs.readFileSync(root+'/'+target+'/report.json'));
+            if(report.error||report.cases.length!==2||report.cases.some(x=>!x.passed))
+              throw Error(target+' failed an actual Worker isolation case');
+            if(target==='display-stop'&&report.cases.some(x=>!x.extraStrokes||x.extraStrokes.after.accepted-x.extraStrokes.previous.accepted<2||x.extraStrokes.after.ink-x.extraStrokes.previous.ink<2))
+              throw Error('Two subsequent strokes did not stay available with dead display Worker');
+          }
+          const fidelity=JSON.parse(fs.readFileSync(root+'/correctness.json'));
+          if(fidelity.cases.length!==2||fidelity.cases.some(x=>x.history!=='exact'||x.exact?.mismatch!==0||x.blank?.mismatch!==0))
+            throw Error('Incorrect pixels/Undo or incomplete 4000px visual comparison');
+          const history=JSON.parse(fs.readFileSync(root+'/history/report.json'));
+          if(history.status!=='AUTOMATED_CHECKS_PASSED'||history.errors?.length||history.cases.length!==6||
+              history.cases.some(x=>!x.exactUndoRedo||!x.exactNativeSave))
+            throw Error('Undo/Redo or .illustro save/reopen is incomplete');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: zero-wait-browser-evidence, path: /tmp/zero-wait-evidence/}
