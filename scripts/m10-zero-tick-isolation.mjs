@@ -133,6 +133,7 @@ try{
     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
    }
    await page.waitForFunction(n=>window.__illustroPerformance.read().handoff.accepted>=n+2,previous.accepted,{timeout:15000});
+   await page.waitForFunction(n=>window.__illustroPerformance.probe().controller.committedStrokeCount>=n+2,previous.committed,{timeout:30000});
    try{
     await page.waitForFunction(ids=>{
      const host=window.__illustroPerformance.probe().renderer;
@@ -144,15 +145,17 @@ try{
      layers:[...window.__illustroPerformance.probe().renderer.layers.keys()],
      publication:window.__illustroPerformance.probe().renderer.performanceSummary(),
      trace:window.__illustroPerformance.probe().renderer.__isolationTrace?.slice(-40),
-     revision:window.__illustroPerformance.probe().controller.document.head
+     revision:window.__illustroPerformance.probe().controller.document.head,
+     committed:window.__illustroPerformance.probe().controller.committedStrokeCount,
+     gpu:await window.__illustroPerformance.probe().renderer.call('inspect')
     }));
     throw Error('two preview layers not visible while image Worker dead: '+JSON.stringify({
      previousIds:previous.layerIds,afterIds:state.layers,accepted:state.diagnostic.accepted,
      rejected:state.diagnostic.rejected,recentInputs:state.diagnostic.inputAttempts?.slice(-4),
-     publication:state.publication.publication,trace:state.trace,source:state.revision
+     publication:state.publication.publication,trace:state.trace,source:state.revision,committed:state.committed,worker:state.gpu?.performance?.publication
     })+'; '+String(error));
    }
-   await page.waitForFunction(n=>window.__illustroPerformance.probe().controller.committedStrokeCount>=n+2,previous.committed,{timeout:30000});
+
    const after=await page.evaluate(()=>({
     accepted:window.__illustroPerformance.read().handoff.accepted,
     ink:window.__illustroPerformance.probe().renderer.layers.size,
