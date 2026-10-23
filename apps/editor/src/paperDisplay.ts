@@ -1,6 +1,6 @@
 import type {CanvasView} from './canvasView';
 import paperWorkerUrl from '../../../packages/brush-rt/dist/rt/paper.worker.mjs?worker&url';
-type Page={key:string;x:number;y:number;width:number;height:number;bitmap:ImageBitmap|null};
+type Page={key:string;x:number;y:number;width:number;height:number;gutter:number;bitmap:ImageBitmap|null};
 type Frame={epoch:number;serial:number;pages:Page[];metrics:Record<string,unknown>};
 /** The only owner of visible artwork. Navigation touches a retained DOM world
  * synchronously, with no dependency on raster work or image acceptance. */
@@ -26,7 +26,6 @@ export class PaperDisplay {
   void (async()=>{try{while(this.queuedFrame&&!this.disposed){const current=this.queuedFrame;this.queuedFrame=null;try{await this.accept(current);}catch(error){this.fault=String(error);onFault(this.fault);current.pages.forEach(p=>p.bitmap?.close());if(!this.disposed)this.send({type:'rejected',serial:current.serial});}}}finally{this.presenting=false;}})();
  }
  private transfer(canvas:HTMLCanvasElement,bitmap:ImageBitmap){
-  const renderer=canvas.getContext('bitmaprenderer');if(renderer){renderer.transferFromImageBitmap(bitmap);return;}
   const context=canvas.getContext('2d',{willReadFrequently:true});if(!context)throw Error('Canvas presentation context unavailable');context.clearRect(0,0,canvas.width,canvas.height);context.drawImage(bitmap,0,0);bitmap.close();
  }
  private async accept(m:Frame){
@@ -43,7 +42,7 @@ export class PaperDisplay {
   // picture stay usable throughout preparation, including a full-document load.
   for(let i=0;i<operations.length;i++){
    if(!valid()){cleanup();return;}const {page:p,parent,old,bitmap,primary}=operations[i]!;let next:HTMLCanvasElement|null=null;
-   if(bitmap){next=document.createElement('canvas');next.className='illustro-paper-page '+nextClass;next.dataset.paperBack='';next.dataset.page=p.key;next.width=p.width;next.height=p.height;Object.assign(next.style,{position:'absolute',left:p.x+'px',top:p.y+'px',width:p.width+'px',height:p.height+'px',pointerEvents:'none',willChange:'transform',transform:'translateZ(0)',contain:'strict'});this.transfer(next,bitmap);parent.append(next);}
+   if(bitmap){next=document.createElement('canvas');next.className='illustro-paper-page '+nextClass;next.dataset.paperBack='';next.dataset.page=p.key;next.dataset.paperGutter=String(p.gutter);next.width=p.width;next.height=p.height;Object.assign(next.style,{position:'absolute',left:p.x+'px',top:p.y+'px',width:p.width+'px',height:p.height+'px',pointerEvents:'none',willChange:'transform',transform:'translateZ(0)',contain:'strict',background:'transparent',aspectRatio:'auto',clip:`rect(${p.gutter}px,${p.width-p.gutter}px,${p.height-p.gutter}px,${p.gutter}px)`});this.transfer(next,bitmap);parent.append(next);}
    old?.classList.add(previousClass);staged.push({key:p.key,old,next,primary});
    if(i%4===3)await new Promise<void>(resolve=>setTimeout(resolve,0));
   }
@@ -65,12 +64,13 @@ export class PaperDisplay {
  }
  sample(x:number,y:number,surfaceId:string|null){if(this.disposed)return Promise.reject(Error('Display disposed'));const request=++this.sampleId;return new Promise<number[]>((resolve,reject)=>{this.samples.set(request,{resolve,reject});this.send({type:'sample',request,x,y,surfaceId,serial:this.acceptedSerial});});}
  history(steps:Array<{id:number;direction:'undo'|'redo'}>){this.epoch++;this.send({type:'history',epoch:this.epoch,steps});return this.epoch;}
+ private drawPage(context:OffscreenCanvasRenderingContext2D,page:HTMLCanvasElement,x=0,y=0){const g=Number(page.dataset.paperGutter??0),w=page.width-g*2,h=page.height-g*2;context.drawImage(page,g,g,w,h,x+parseFloat(page.style.left)+g,y+parseFloat(page.style.top)+g,w,h);}
  readViewport(){
   const width=this.source.width,height=this.source.height,c=new OffscreenCanvas(width,height),ctx=c.getContext('2d')!,r=this.source.parentElement!.getBoundingClientRect();
   ctx.fillStyle='#edf2fa';ctx.fillRect(0,0,width,height);ctx.scale(width/r.width,height/r.height);const m=new DOMMatrix(this.world.style.transform);ctx.transform(m.a,m.b,m.c,m.d,m.e,m.f);
   ctx.fillStyle='white';ctx.fillRect(0,0,parseFloat(this.world.style.width),parseFloat(this.world.style.height));
-  for(const page of this.pages.values())ctx.drawImage(page,parseFloat(page.style.left),parseFloat(page.style.top));
-  for(const group of this.repeats){const x=parseFloat(group.style.left),y=parseFloat(group.style.top);ctx.fillRect(x,y,parseFloat(group.style.width),parseFloat(group.style.height));for(const page of group.querySelectorAll('canvas'))ctx.drawImage(page,x+parseFloat(page.style.left),y+parseFloat(page.style.top));}
+  for(const page of this.pages.values())this.drawPage(ctx,page);
+  for(const group of this.repeats){const x=parseFloat(group.style.left),y=parseFloat(group.style.top);ctx.fillRect(x,y,parseFloat(group.style.width),parseFloat(group.style.height));for(const page of group.querySelectorAll('canvas'))this.drawPage(ctx,page,x,y);}
   return ctx.getImageData(0,0,width,height).data;
  }
  destroy(){this.disposed=true;this.queuedFrame?.pages.forEach(p=>p.bitmap?.close());this.queuedFrame=null;for(const sample of this.samples.values())sample.reject(Error('Display disposed'));this.samples.clear();this.worker.terminate();this.world.remove();this.styles.remove();this.pages.clear();this.source.style.opacity='';}
