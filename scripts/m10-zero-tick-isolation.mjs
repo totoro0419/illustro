@@ -121,8 +121,8 @@ try{
     view:window.__illustroPerformance.probe().renderer.backend.viewTransform
    }));
    for(let stroke=0;stroke<2;stroke++){
-    const px=Math.max(.12,Math.min(.88,ink.x/rect.width));
-    const py=Math.max(.12,Math.min(.88,ink.y/rect.height));
+    const px=Math.max(.12,Math.min(.88,(ink.x-rect.x)/rect.width));
+    const py=Math.max(.12,Math.min(.88,(ink.y-rect.y)/rect.height));
     // Locate new strokes beside confirmed visible ink after the gesture.
     const from=pt(px-.025,py-.012+stroke*.024,30+stroke);
     const to=pt(px+.025,py-.012+stroke*.024,30+stroke);
