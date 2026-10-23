@@ -2,7 +2,7 @@
 // A publication contains the base and every changed/retired stroke together.
 const CELL=32,CHUNK=128;
 export class WorkerStrokeSink {
- constructor(notify,id=null){this.atomic=true;this.notify=notify;this.id=id;this.layers=new Map;this.changed=new Set;this.retired=new Set;this.allocations=0;}
+ constructor(notify,id=null){this.atomic=true;this.notify=notify;this.id=id;this.layers=new Map;this.changed=new Set;this.retired=new Set;this.retirementPending=new Set;this.allocations=0;}
  updateOrigin(){}
  forStroke(id){let layer=this.layers.get(id);if(!layer){layer=new WorkerStrokeSink(()=>{this.changed.add(id);this.notify();},id);this.layers.set(id,layer);}return layer;}
  configure(plan,bounds){const scale=plan.scale,unit=CHUNK/scale,x=Math.max(0,Math.floor(bounds[0]/unit)*unit),y=Math.max(0,Math.floor(bounds[1]/unit)*unit),right=Math.min(plan.screenWidth,Math.ceil(bounds[2]/unit)*unit),bottom=Math.min(plan.screenHeight,Math.ceil(bounds[3]/unit)*unit),w=Math.max(1,Math.ceil((right-x)*scale)),h=Math.max(1,Math.ceil((bottom-y)*scale));
@@ -20,12 +20,12 @@ export class WorkerStrokeSink {
   // A short completed stroke may finish before its first bitmap gets sent.
   // Retain the FINAL ink pixels until an exact document replacement is
   // actually acknowledged, even if the drawing Worker runs ahead.
-  this.changed.add(id);this.retired.add(id);this.notify();
+  this.changed.add(id);this.retired.add(id);this.retirementPending.add(id);this.notify();
  }
  acknowledgeRetired(ids){
   for(const id of ids){
-   const layer=this.layers.get(id);if(!layer||!this.retired.has(id))continue;
-   layer.destroy();this.layers.delete(id);this.changed.delete(id);this.retired.delete(id);
+   const layer=this.layers.get(id);if(!layer||!this.retirementPending.has(id))continue;
+   layer.destroy();this.layers.delete(id);this.changed.delete(id);this.retired.delete(id);this.retirementPending.delete(id);
   }
  }
  hide(){for(const id of [...this.layers.keys()])this.retireStroke(id);}
