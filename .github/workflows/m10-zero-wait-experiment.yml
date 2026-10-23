@@ -69,6 +69,10 @@ jobs:
       - name: Exact image integrity after interrupted strokes and zoom
         continue-on-error: true
         run: REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2,webgpu REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/zero-wait-evidence/correctness.json node scripts/m10-rebuild-correctness.mjs
+      - name: Undo, Redo, and exact .illustro save/reopen under delayed drawing
+        continue-on-error: true
+        run: |
+          WORKER_HISTORY_BACKENDS=webgl2,webgpu WORKER_HISTORY_STAGES=record,formal,picture WORKER_HISTORY_SIZE=4000 WORKER_HISTORY_OUTPUT=/tmp/zero-wait-evidence/history/report.json node scripts/m10-rebuild-history.mjs
       - name: Fail closed when any browser experiment is incomplete
         if: always()
         run: |
@@ -76,7 +80,7 @@ jobs:
           import fs from 'node:fs';
           const root='/tmp/zero-wait-evidence';
           const exists=x=>fs.existsSync(root+'/'+x);
-          for(const file of ['drawing-stop/report.json','display-stop/report.json','idle/report.json','real-gpu/report.json','comparison.json','correctness.json']){
+          for(const file of ['drawing-stop/report.json','display-stop/report.json','idle/report.json','real-gpu/report.json','comparison.json','correctness.json','history/report.json']){
             if(!exists(file))throw Error('Missing or failed experiment: '+file);
           }
           for(const name of ['idle','real-gpu']){
