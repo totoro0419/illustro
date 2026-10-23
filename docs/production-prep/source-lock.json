@@ -462,7 +462,7 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "93f44005050b6ae41b98ed2f7c78fecf4055841c3e1bae9864521d855a193e7c",
+      "sha256": "1ece1b090afbe9413ce6e8109feb72735ce94d781ce01b4c1c1c9150fd9a3629",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-remove-presentation-only-2026-10-23",
