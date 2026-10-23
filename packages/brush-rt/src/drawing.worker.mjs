@@ -60,7 +60,7 @@ async function publishPreviewOnly(){
   if(result.layers.length)postMessage({type:'overlay',epoch,layers:result.layers},result.layers.map(l=>l.bitmap));
  }finally{
   overlayPublishing=false;
-  if(publishRequested||sink.changed.size)requestPublish();
+  if(sink.changed.size||(publishRequested&&lastSent<=acknowledged))requestPublish();
  }
 }
 function coherent(){const r=renderer;if(!r||r.backend.presentationHeld||r.historyPreparing||r.inflight||r.strokeFrames.size)return false;
