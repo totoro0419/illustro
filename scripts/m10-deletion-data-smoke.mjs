@@ -18,7 +18,7 @@ const server=http.createServer(async(req,res)=>{
  }catch{res.writeHead(404).end();}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
 const report=[];
 try{
  for(const backend of ['webgl2','webgpu']){
@@ -53,7 +53,7 @@ try{
   assert.equal(after.length,before.length,'formal raster size preserved');
   const changed=after.reduce((n,v,i)=>n+(v!==before[i]?1:0),0);
   assert.ok(changed>0,'formal pixels must change after drawing even with screen presentation removed');
-  await page.locator('#undo').click();
+  await page.locator('#undo').evaluate(el=>el.click());
   await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='0',null,{timeout:30000});
   const undone=await page.evaluate(async()=>{
    const {renderer,controller}=window.__illustroPerformance.probe();
@@ -61,7 +61,7 @@ try{
    return Array.from(await renderer.read(surface));
   });
   assert.deepEqual(undone,before,'Undo must restore exact pre-stroke image');
-  await page.locator('#redo').click();
+  await page.locator('#redo').evaluate(el=>el.click());
   await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1',null,{timeout:30000});
   const redone=await page.evaluate(async()=>{
    const {renderer,controller}=window.__illustroPerformance.probe();
