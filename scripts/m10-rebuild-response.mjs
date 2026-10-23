@@ -42,7 +42,19 @@ try{
   // Explicit idle control: exactly the same native input and visual measurement
   // as the heavy case, but no outstanding stroke work at gesture start.
   // It is an A/B control, never a substitute for the actual heavy GPU case.
-  if(process.env.WORKER_BASELINE_IDLE==='1')await p.evaluate(()=>window.__workerReview.idle());
+  if(process.env.WORKER_BASELINE_IDLE==='1'){
+    // The last stroke is intentionally HELD DOWN until native touchStart
+    // captures pen-up immediately before the gesture. Waiting for m.idle()
+    // would be a test bug: pendingLogical=1 and frameState.pointer!=null
+    // are expected, even with ZERO completed/queued formal GPU work.
+    await p.waitForFunction(async()=>{
+      const m=window.__workerReview,d=m.port.read(),r=await m.r.inspect();
+      return d.handoff.pendingGpu===0&&d.handoff.pendingLogical===1&&
+        d.frameState.pointer!==null&&r.document.jobs===0&&r.document.count===0&&
+        !r.inflight&&r.performance.publication.pendingTiles===0&&
+        m.r.presentationRequests.size===0;
+    },null,{timeout:120000});
+  }
   // Observe the source ink BEFORE pen-up. A post-release screenshot/evaluate
   // would silently postpone the immediate gesture until heavy work had run.
   const before=await p.screenshot({scale:'css'}),initial=await p.evaluate(()=>{const m=window.__workerReview;m.armGesture=true;return {phase:'before-release',at:performance.now(),timeOrigin:performance.timeOrigin,view:Array.from(m.r.backend.viewTransform),diag:m.port.read(),overlayLayers:m.r.layers?.size??m.r.proxy?.footprints.size??0,layers:m.r.layers?[...m.r.layers].map(([id,l])=>({id,view:l.view,rect:l.rect,scale:l.scale,polygon:l.polygon,style:l.element.style.cssText,element:[l.element.width,l.element.height]})):null};});
