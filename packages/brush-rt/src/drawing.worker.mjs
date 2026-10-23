@@ -1,11 +1,10 @@
 import {GpuRenderer} from '@rt/renderer';
 import {RealtimeSession} from '@rt/session';
-import {WorkerStrokeSink} from '@rt/worker-stroke-sink';
 import {readHistoryImages} from '@rt/history-io';
 import {TILE} from '@rt/model';
 
 globalThis.requestAnimationFrame=fn=>setTimeout(()=>fn(performance.now()),0);
-let renderer,session,sink,diagnostics=false,latestView,initialView=false;
+let renderer,session,diagnostics=false;
 let formalGate=null,recordGate=false;const heldRecords=[],records=new Map,recordTokens=new WeakMap;
 const metrics={formal:[]};
 const tokenFor=record=>recordTokens.get(record);
@@ -37,8 +36,10 @@ function scheduleFrame(){
 }
 async function init(m){
  const nativeNow=performance.now.bind(performance),offset=performance.timeOrigin-m.timeOrigin;Object.defineProperty(performance,'now',{value:()=>nativeNow()+offset});Object.defineProperty(performance,'timeOrigin',{value:m.timeOrigin});
- diagnostics=!!m.diagnostics;sink=new WorkerStrokeSink();sink.documentSpace=true;
- renderer=await GpuRenderer.create(new OffscreenCanvas(512,512),m.documentWidth,m.documentHeight,m.backend,{...m.options,tiledPresentation:true,strokeOverlay:{...m.options.strokeOverlay,sink,documentSpace:true}});
+ // Old CPU/GPU presentation and overlay feedback are disconnected. Preserve
+ // the canonical input, formal deposition, history and save data paths.
+ diagnostics=!!m.diagnostics;
+ renderer=await GpuRenderer.create(new OffscreenCanvas(512,512),m.documentWidth,m.documentHeight,m.backend,{...m.options,tiledPresentation:true,strokeOverlay:null});
  session=new RealtimeSession(renderer,m.canonicalUrl);const receive=session.worker.onmessage;session.worker.onmessage=event=>{if(recordGate&&event.data.type==='record')heldRecords.push(event);else receive(event);};
  const b=renderer.backend,render=b.render.bind(b),poll=b.poll?.bind(b);if(poll)b.poll=()=>{poll();return false;};
  b.render=(...args)=>{const at=performance.now(),pending=render(...args);
@@ -57,7 +58,7 @@ async function seed(cache){const b=renderer.backend,upload=(surfaceId,key,pixels
  if(cache.version===2){for(const l of cache.layers)for(const t of l.tiles)upload(l.surfaceId,t.key,t.pixels);}
  else for(const l of cache.layers)for(let ty=0;ty<Math.ceil(cache.height/TILE);ty++)for(let tx=0;tx<Math.ceil(cache.width/TILE);tx++){const a=new Uint8Array(TILE*TILE*4),w=Math.min(TILE,cache.width-tx*TILE),h=Math.min(TILE,cache.height-ty*TILE);for(let y=0;y<h;y++){const from=((ty*TILE+y)*cache.width+tx*TILE)*4;a.set(l.pixels.subarray(from,from+w*4),y*TILE*4);}upload(l.surfaceId,tx+','+ty,a);}
 }
-async function restore({entries,cache,geometry}){const r=renderer,s=session,b=r.backend;r.proxy?.setEnabled(!geometry);b.setPresentationHeld(true);
+async function restore({entries,cache,geometry}){const r=renderer,s=session,b=r.backend;b.setPresentationHeld(true);
  try{
   await r.reset();records.clear();s.records=[];s.redoRecords=[];s.id=0;s.recordSurfaces=new WeakMap;s.recordTiles=new WeakMap;s.recordIds=new WeakMap;s.recordOrder=new WeakMap;s.tileRecords=new Map;s.nextRecordOrder=0;
   if(cache)await seed(cache);
@@ -65,7 +66,7 @@ async function restore({entries,cache,geometry}){const r=renderer,s=session,b=r.
    if(!e.cached){const preset=s.presetForRecord(value);r.document.append(id,preset,value.commands,null,e.surfaceKey);r.document.end(id,preset,e.surfaceKey);}}
   r.needsFrame=true;await r.drain();
  }finally{b.setPresentationHeld(false);}
- r.proxy?.invalidate();return stats(true);
+ return stats(true);
 }
 async function pixel({x,y,surfaceKey}){const b=renderer.backend,layer=surfaceKey!==null,t=layer?b.tiles.get(surfaceKey+'\u0000'+Math.floor(x/TILE)+','+Math.floor(y/TILE)):null;if(layer&&!t)return [0,0,0,0];
  const sx=layer?x%TILE:x,sy=layer?y%TILE:y;
@@ -91,18 +92,10 @@ async function command(method,a){const r=renderer,s=session;
  case 'readViewport':await r.drain();return r.backend.readViewport();
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
- case 'view':latestView=a;if(!initialView){initialView=true;r.setViewTransform(a);r.syncOverlayView();}else r.proxy?.setView(a);return;
  case 'stack':r.setSurfaceStack(a);return;
  case 'styles':r.setSurfaceStyles(a);return;
- case 'seamless':r.setSeamlessPreview(a);return;
- case 'clearSeamless':r.clearSeamlessPreviews(a);return;
- case 'hide':r.hideStrokePreview(a.id);return;
- case 'show':r.restoreStrokePreview(a.id);return;
  case 'prepareHistory':return r.prepareHistory();
  case 'resumeHistory':return r.resumeHistory();
- case 'prepare':r.proxy?.prepare(a);return;
- case 'overlayEnabled':r.proxy?.setEnabled(a);return;
- case 'overlayInvalidate':r.proxy?.invalidate();return;
  case 'measure':r.setPerformanceEnabled(a);return;
  case 'recordGate':if(!diagnostics)throw Error('Diagnostics are disabled');recordGate=!!a;if(!a){const receive=session.worker.onmessage;for(const event of heldRecords.splice(0))receive(event);}return;
  case 'gate':if(!diagnostics)throw Error('Diagnostics are disabled');if(a){if(!formalGate){let release;const promise=new Promise(ok=>release=ok);formalGate={promise,release,stage:'formal',held:null};}}else{formalGate?.release();formalGate=null;}return;

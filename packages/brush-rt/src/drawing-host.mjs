@@ -9,7 +9,6 @@ export class DrawingHost {
  constructor(canvas,url){
   this.remote=true;this.canvas=canvas;this.localFaults=[];this.errors=[];this.info={};this.completions=[];this.requests=new Map;this.requestId=0;
   this.document={jobs:{length:0},count:0};this.backend={canvas,tiles:new Map,viewTransform:null,read:key=>this.read(key),readViewport:()=>this.call('readViewport'),readTiles:requests=>this.call('readTiles',requests)};
-  this.proxy={prepare:p=>this.send('prepare',p),setEnabled:value=>this.send('overlayEnabled',value),invalidate:()=>this.send('overlayInvalidate'),pending:{size:0},finalizations:{size:0},footprints:{size:0}};
   this.session=new DrawingSessionPort(this);this.worker=new Worker(url,{type:'module'});
   this.worker.onmessage=({data:m})=>{if(this.disposed)return;if(m.state)this.update(m.state);if(m.type==='fault'){this.fault(m.message);return;}const request=this.requests.get(m.request);if(!request)return;this.requests.delete(m.request);if(m.error)request.reject(Error(m.error));else request.resolve(m.result);};
   this.worker.onerror=e=>this.fault(e.message||'Drawing worker failed');this.worker.onmessageerror=()=>this.fault('Drawing worker message could not be decoded');
@@ -20,17 +19,13 @@ export class DrawingHost {
  update(s){if(!s)return;this.info=s.info;this.errors=[...(s.errors??[]),...this.localFaults];this.completions=s.completions;this.summary=s.performance;
   Object.assign(this.document,{width:s.document.width,height:s.document.height,count:s.document.count});this.document.jobs.length=s.document.jobs;
   for(const key of ['inflight','needsFrame','viewPending','historyPreparing','guardPreparing'])this[key]=s[key];this.backend.presentationHeld=s.presentationHeld;
-  for(const [key,size]of [['pending',s.proxy.pending],['finalizations',s.proxy.finalizations],['footprints',s.proxy.footprints]])this.proxy[key].size=size;
-  this.proxy.error=s.proxy.error;const sessionId=this.session.id;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
+  const sessionId=this.session.id;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
   if(s.recordIds)for(const [token,id]of s.recordIds){const r=this.session.recordsByToken.get(token);if(r&&id!==undefined)this.session.recordIds.set(r,id);}
  }
- setViewTransform(view){this.backend.viewTransform=Array.from(view);this.send('view',view);}
+ // CanvasView owns editing coordinates; the formal GPU is not a view renderer.
+ setViewTransform(view){this.backend.viewTransform=Array.from(view);}
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
- setSeamlessPreview(active){this.send('seamless',active);}
- clearSeamlessPreviews(id){this.send('clearSeamless',id);}
- hideStrokePreview(id){this.send('hide',{id});}
- restoreStrokePreview(id){this.send('show',{id});}
  prepareHistory(){return this.call('prepareHistory');}
  resumeHistory(){this.send('resumeHistory');}
  async waitStroke(ids){return this.call('waitStroke',ids);}
@@ -45,7 +40,7 @@ export class DrawingHost {
 }
 class DrawingSessionPort {
  constructor(host){this.renderer=host;this.prediction=true;this.id=0;this.recordIds=new WeakMap;this.tokens=new WeakMap;this.recordsByToken=new Map;this.pending=[];this.pendingRawCount=0;this.rawAccepted=0;this.browserPredictions=0;this.errors=[];}
- begin(preset,fast=0,context={},surfaceKey='default'){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};if(this.renderer.backend.viewTransform)this.renderer.send('view',this.renderer.backend.viewTransform);this.renderer.send('begin',{preset,fast,context,surfaceKey,id});return id;}
+ begin(preset,fast=0,context={},surfaceKey='default'){if(this.active)throw Error('Stroke already active');const id=this.id+1;this.id+=9;this.active={id,count:0,token:'stroke:'+id};this.renderer.send('begin',{preset,fast,context,surfaceKey,id});return id;}
  accept(sample){if(!this.active)return;this.pending.push(sample);this.active.count++;this.rawAccepted++;}
  predictions(samples){this.predicted=samples;this.browserPredictions+=samples.length;}
  flush(){if(!this.active||!this.pending.length)return;this.renderer.send('samples',{samples:this.pending,predictions:this.predicted??[],prediction:this.prediction});this.pending=[];}
