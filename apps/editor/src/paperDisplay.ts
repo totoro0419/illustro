@@ -26,6 +26,7 @@ export class PaperDisplay {
   void (async()=>{try{while(this.queuedFrame&&!this.disposed){const current=this.queuedFrame;this.queuedFrame=null;try{await this.accept(current);}catch(error){this.fault=String(error);onFault(this.fault);current.pages.forEach(p=>p.bitmap?.close());if(!this.disposed)this.send({type:'rejected',serial:current.serial});}}}finally{this.presenting=false;}})();
  }
  private transfer(canvas:HTMLCanvasElement,bitmap:ImageBitmap){
+  const renderer=canvas.getContext('bitmaprenderer');if(renderer){renderer.transferFromImageBitmap(bitmap);return;}
   const context=canvas.getContext('2d',{willReadFrequently:true});if(!context)throw Error('Canvas presentation context unavailable');context.clearRect(0,0,canvas.width,canvas.height);context.drawImage(bitmap,0,0);bitmap.close();
  }
  private async accept(m:Frame){
