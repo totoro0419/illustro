@@ -15,7 +15,19 @@ export class WorkerStrokeSink {
  }
  draw(_plan,_rects,_guards,cells){const [x,y]=this.rect;for(const {key,image}of cells){const [cx,cy]=key.split(',').map(Number);this.context.putImageData(image,cx*CELL-Math.round(x*this.scale),cy*CELL-Math.round(y*this.scale));}this.notify();}
  reproject(from){this.view=Array.from(from);}
- retireStroke(id){const layer=this.layers.get(id);if(!layer)return;layer.destroy();this.layers.delete(id);this.changed.delete(id);this.retired.add(id);this.notify();}
+ retireStroke(id){
+  const layer=this.layers.get(id);if(!layer)return;
+  // A short completed stroke may finish before its first bitmap gets sent.
+  // Retain the FINAL ink pixels until an exact document replacement is
+  // actually acknowledged, even if the drawing Worker runs ahead.
+  this.changed.add(id);this.retired.add(id);this.notify();
+ }
+ acknowledgeRetired(ids){
+  for(const id of ids){
+   const layer=this.layers.get(id);if(!layer||!this.retired.has(id))continue;
+   layer.destroy();this.layers.delete(id);this.changed.delete(id);this.retired.delete(id);
+  }
+ }
  hide(){for(const id of [...this.layers.keys()])this.retireStroke(id);}
  async snapshot(){const changed=[...this.changed],retired=[...this.retired];this.changed.clear();this.retired.clear();const layers=[];
   const pending=[];for(const id of changed){const s=this.layers.get(id);if(!s?.element||!s.view)continue;const data={id,view:s.view,rect:s.rect,scale:s.scale,polygon:s.plan.polygon};pending.push(createImageBitmap(s.element).then(bitmap=>({...data,bitmap})));}
