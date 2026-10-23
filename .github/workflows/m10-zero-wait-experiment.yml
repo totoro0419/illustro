@@ -52,9 +52,14 @@ jobs:
         run: ZERO_TICK_KILL_TARGET=drawing ZERO_TICK_WORKER_OUTPUT=/tmp/zero-wait-evidence/drawing-stop/report.json node scripts/m10-zero-tick-isolation.mjs
       - name: Real image Worker stopped while drawing Worker stays alive
         run: ZERO_TICK_KILL_TARGET=presentation ZERO_TICK_WORKER_OUTPUT=/tmp/zero-wait-evidence/display-stop/report.json node scripts/m10-zero-tick-isolation.mjs
+      - name: Idle baseline — same native gestures after formal drawing has fully completed
+        run: |
+          WORKER_BASELINE_IDLE=1 WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-wait-evidence/idle/report.json node scripts/m10-rebuild-response.mjs
       - name: Actual heavy formal GPU work (no GPU-completion gate)
         run: |
           WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-wait-evidence/real-gpu/report.json node scripts/m10-rebuild-response.mjs
+      - name: Compare idle vs actual high load — record every observed extra frame stop
+        run: ZERO_WAIT_EVIDENCE=/tmp/zero-wait-evidence node scripts/m10-zero-wait-compare.mjs
       - name: Exact image integrity after interrupted strokes and zoom
         run: REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2,webgpu REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/zero-wait-evidence/correctness.json node scripts/m10-rebuild-correctness.mjs
       - uses: actions/upload-artifact@v4
