@@ -37,7 +37,32 @@ function scheduleFrame(){
     renderer.document.jobs.length||renderer.mailbox.value||renderer.strokeFrames.size||renderer.backend.previewGpuPending) scheduleFrame();
  },16);
 }
-function requestPublish(){publishRequested=true;queueMicrotask(()=>publish().catch(fail));}
+let overlayPublishing=false;
+// The authoritative tile packet has its own acknowledgment. A slow image
+// Worker must not hold newer temporary ink behind that acknowledgment.
+function requestPublish(){
+ publishRequested=true;
+ queueMicrotask(()=> (lastSent>acknowledged?publishPreviewOnly():publish()).catch(fail));
+}
+async function publishPreviewOnly(){
+ if(overlayPublishing||publishing||!renderer||!sink||lastSent<=acknowledged)return;
+ overlayPublishing=true;const epoch=visibilityEpoch;
+ try{
+  const result=await sink.snapshot();
+  // Retirement is an authoritative document update, never an overlay update.
+  // Keep its obligation until the exact raster packet can be acknowledged.
+  for(const id of result.retired)sink.retired.add(id);
+  if(epoch!==visibilityEpoch){
+   for(const l of result.layers)l.bitmap.close();
+   for(const id of sink.layers.keys())sink.changed.add(id);
+   return;
+  }
+  if(result.layers.length)postMessage({type:'overlay',epoch,layers:result.layers},result.layers.map(l=>l.bitmap));
+ }finally{
+  overlayPublishing=false;
+  if(publishRequested||sink.changed.size)requestPublish();
+ }
+}
 function coherent(){const r=renderer;if(!r||r.backend.presentationHeld||r.historyPreparing||r.inflight||r.strokeFrames.size)return false;
  // CPU pictures cover the entire document. Keep them until their exact
  // replacement is composed; never leak the half-committed stroke underneath.
@@ -45,7 +70,7 @@ function coherent(){const r=renderer;if(!r||r.backend.presentationHeld||r.histor
  return true;
 }
 async function publish(){
- if(publishing||!publishRequested||lastSent>acknowledged||!renderer||renderer.backend.presentationHeld)return;
+ if(publishing||overlayPublishing||!publishRequested||lastSent>acknowledged||!renderer||renderer.backend.presentationHeld)return;
  publishing=true;publishRequested=false;const epoch=visibilityEpoch,ready=coherent(),keys=ready?[...pendingTiles]:[];if(ready)pendingTiles.clear();
  let pages=[];
  try{pages=captureTilePages(renderer.backend,keys);const images=sink.snapshot();const result=await images,layers=result.layers,retired=ready?result.retired:[];if(!ready)for(const id of result.retired)sink.retired.add(id);
