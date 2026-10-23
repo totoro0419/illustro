@@ -1,19 +1,19 @@
 {
   "url": "https://totoro0419.github.io/illustro/qa/m10-independent-canvas/app/",
-  "expected": "48a00e6fcaa13f20103e2c6466f07292e488cc33",
+  "expected": "abbd3369eb02fef8d85575d082970bb0de28a37f",
   "physicalDevices": "UNVERIFIED",
   "errors": [],
   "browser": "155.0.8059.39",
-  "commit": "48a00e6fcaa13f20103e2c6466f07292e488cc33",
+  "commit": "abbd3369eb02fef8d85575d082970bb0de28a37f",
   "before": {
-    "hash": "819888636788687beb95dfaeb01633cbd8e25e2ae3f6af81338543c1aca57501",
+    "hash": "8c3bb12807a4ed595ee0e30c85482a575155cf1b1930f4f4b68cad8b22058700",
     "alphaDifferent": 0,
     "premultipliedDifferent": 0,
     "pages": 1
   },
   "pan": 35,
   "after": {
-    "hash": "819888636788687beb95dfaeb01633cbd8e25e2ae3f6af81338543c1aca57501",
+    "hash": "8c3bb12807a4ed595ee0e30c85482a575155cf1b1930f4f4b68cad8b22058700",
     "alphaDifferent": 0,
     "premultipliedDifferent": 0,
     "pages": 1
