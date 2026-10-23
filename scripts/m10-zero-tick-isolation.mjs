@@ -116,11 +116,16 @@ try{
    const previous=await page.evaluate(()=>({
     accepted:window.__illustroPerformance.read().handoff.accepted,
     ink:window.__illustroPerformance.probe().renderer.layers.size,
+    committed:window.__illustroPerformance.probe().controller.committedStrokeCount,
     layerIds:[...window.__illustroPerformance.probe().renderer.layers.keys()],
     view:window.__illustroPerformance.probe().renderer.backend.viewTransform
    }));
    for(let stroke=0;stroke<2;stroke++){
-    const from=pt(.25,.45+stroke*.15,30+stroke),to=pt(.72,.45+stroke*.15,30+stroke);
+    const px=Math.max(.12,Math.min(.88,ink.x/rect.width));
+    const py=Math.max(.12,Math.min(.88,ink.y/rect.height));
+    // Locate new strokes beside confirmed visible ink after the gesture.
+    const from=pt(px-.025,py-.012+stroke*.024,30+stroke);
+    const to=pt(px+.025,py-.012+stroke*.024,30+stroke);
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[from]});
     for(let i=1;i<=10;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[
      {...from,x:from.x+(to.x-from.x)*i/10,y:from.y+(to.y-from.y)*i/10}
@@ -147,6 +152,7 @@ try{
      publication:state.publication.publication,trace:state.trace,source:state.revision
     })+'; '+String(error));
    }
+   await page.waitForFunction(n=>window.__illustroPerformance.probe().controller.committedStrokeCount>=n+2,previous.committed,{timeout:30000});
    const after=await page.evaluate(()=>({
     accepted:window.__illustroPerformance.read().handoff.accepted,
     ink:window.__illustroPerformance.probe().renderer.layers.size,
