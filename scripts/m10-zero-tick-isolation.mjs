@@ -78,6 +78,18 @@ try{
     if(!(host.worker instanceof Worker)||!(host.presentation instanceof Worker))throw Error('not the real Workers');
     const stage=document.querySelector('.illustro-view-plane');
     if(!stage)throw Error('no stable display stage');
+    if(killTarget==='presentation'){
+      const trace=host.__isolationTrace=[];
+      const record=(kind,details)=>{trace.push({kind,at:performance.now(),...details});if(trace.length>80)trace.shift();};
+      host.worker.addEventListener('message',e=>{
+       const m=e.data;if(m.type==='overlay'||m.type==='picture')
+        record('worker-message',{type:m.type,sequence:m.sequence,retired:m.retired,layerIds:m.layers?.map(l=>l.id),pages:m.pages?.length});
+      });
+      const install=host.installInkLayers.bind(host);
+      host.installInkLayers=layers=>{record('before-install',{layerIds:layers.map(x=>x.id),present:[...host.layers.keys()]});install(layers);record('after-install',{present:[...host.layers.keys()]});};
+      const retire=host.retireOverlays.bind(host);
+      host.retireOverlays=version=>{const before=[...host.layers.keys()];retire(version);if(before.length!==host.layers.size)record('retired',{version,before,after:[...host.layers.keys()]});};
+    }
     if(killTarget==='drawing'||killTarget==='both')host.worker.terminate();
     if(killTarget==='presentation'||killTarget==='both')host.presentation.terminate();
     return {before:stage.style.transform,hostPresentationVersion:host.presentationVersion};
@@ -126,12 +138,13 @@ try{
      diagnostic:window.__illustroPerformance.read().handoff,
      layers:[...window.__illustroPerformance.probe().renderer.layers.keys()],
      publication:window.__illustroPerformance.probe().renderer.performanceSummary(),
+     trace:window.__illustroPerformance.probe().renderer.__isolationTrace?.slice(-40),
      revision:window.__illustroPerformance.probe().controller.document.head
     }));
     throw Error('two preview layers not visible while image Worker dead: '+JSON.stringify({
      previousIds:previous.layerIds,afterIds:state.layers,accepted:state.diagnostic.accepted,
      rejected:state.diagnostic.rejected,recentInputs:state.diagnostic.inputAttempts?.slice(-4),
-     publication:state.publication.publication,source:state.revision
+     publication:state.publication.publication,trace:state.trace,source:state.revision
     })+'; '+String(error));
    }
    const after=await page.evaluate(()=>({
