@@ -1,0 +1,62 @@
+name: M10 zero-wait isolation experiment (not production)
+on:
+  push:
+    branches: ['experiment/M10-zero-wait-isolation-2026-10-23']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build exact runtime and unit-test incomplete document handoff
+        run: |
+          npm run brush:build
+          node --test packages/brush-rt/test/zero-wait-publication.test.mjs
+          node --test packages/brush-rt/test/zero-tick-view-plane.test.mjs
+          node --test packages/brush-rt/test/zero-tick-gpu-slice.test.mjs
+          npm run brush:regression
+      - name: Editor typecheck and regression
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: zero-wait-source-evidence, path: apps/editor/dist/}
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/m10-zerowait-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-zerowait-browser/node_modules/pngjs
+      RT_JPEG_PATH: /tmp/m10-zerowait-browser/node_modules/jpeg-js
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build
+          VITE_COMMIT_SHA=$GITHUB_SHA npm --workspace @illustro/editor exec -- vite build --base=./
+          npm install --prefix /tmp/m10-zerowait-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
+          /tmp/m10-zerowait-browser/node_modules/.bin/playwright install chromium
+      - name: Real drawing Worker stopped while display Worker stays alive
+        run: ZERO_TICK_KILL_TARGET=drawing ZERO_TICK_WORKER_OUTPUT=/tmp/zero-wait-evidence/drawing-stop/report.json node scripts/m10-zero-tick-isolation.mjs
+      - name: Real image Worker stopped while drawing Worker stays alive
+        run: ZERO_TICK_KILL_TARGET=presentation ZERO_TICK_WORKER_OUTPUT=/tmp/zero-wait-evidence/display-stop/report.json node scripts/m10-zero-tick-isolation.mjs
+      - name: Actual heavy formal GPU work (no GPU-completion gate)
+        run: |
+          WORKER_VERSIONS=after WORKER_BACKENDS=webgl2,webgpu WORKER_ROUTES=auto WORKER_BRUSHES=gpen,pencil WORKER_WIDTHS=512 WORKER_DELAYS=0 WORKER_POINTS=120 WORKER_STROKES=2 WORKER_CPU_RATE=6 WORKER_GATE=0 WORKER_OUTPUT=/tmp/zero-wait-evidence/real-gpu/report.json node scripts/m10-rebuild-response.mjs
+      - name: Exact image integrity after interrupted strokes and zoom
+        run: REBUILD_VERSIONS=after REBUILD_BACKENDS=webgl2,webgpu REBUILD_ROUTES=auto REBUILD_OUTPUT=/tmp/zero-wait-evidence/correctness.json node scripts/m10-rebuild-correctness.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: zero-wait-browser-evidence, path: /tmp/zero-wait-evidence/}
