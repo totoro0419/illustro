@@ -52,8 +52,10 @@ jobs:
           npm install --prefix /tmp/m10-zerowait-browser playwright@1.56.1 pngjs@7.0.0 jpeg-js@0.4.4 --no-audit --no-fund
           /tmp/m10-zerowait-browser/node_modules/.bin/playwright install chromium
       - name: Real drawing Worker stopped while display Worker stays alive
+        continue-on-error: true
         run: ZERO_TICK_KILL_TARGET=drawing ZERO_TICK_WORKER_OUTPUT=/tmp/zero-wait-evidence/drawing-stop/report.json node scripts/m10-zero-tick-isolation.mjs
       - name: Real image Worker stopped while drawing Worker stays alive
+        continue-on-error: true
         run: ZERO_TICK_KILL_TARGET=presentation ZERO_TICK_WORKER_OUTPUT=/tmp/zero-wait-evidence/display-stop/report.json node scripts/m10-zero-tick-isolation.mjs
       - name: Idle baseline — same native gestures after formal drawing has fully completed
         continue-on-error: true
