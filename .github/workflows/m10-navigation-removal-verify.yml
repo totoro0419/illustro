@@ -41,8 +41,8 @@ jobs:
       - name: Brush runtime build and source-lock check
         run: |
           npm run brush:build
-          npm run prep:check
           sha256sum packages/brush-rt/src/drawing-host.mjs packages/brush-rt/src/drawing.worker.mjs packages/brush-rt/src/worker-stroke-sink.mjs
+          npm run prep:check
       - name: Core semantics, brush and history regression
         run: |
           npm run core:check
