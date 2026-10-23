@@ -123,8 +123,8 @@ export class DrawingHost {
    // This is document upkeep. It happens AFTER the ink is shown and must not
    // control the live camera transform, the next stroke or Undo admission.
    this.presentation.postMessage({method:'tiles',pages:m.pages,epoch:m.epoch,version:m.sequence,request},m.pages.map(p=>p.bitmap));
-   await shown;
-   if(this.disposed||m.epoch!==this.epoch){
+   const displayed=await shown;
+   if(this.disposed||m.epoch!==this.epoch||!displayed.accepted){
     // Ink was already consumed by the bitmap renderer. Its local visibility
     // follows hiddenStrokeIds; later versions will replace its pixels.
     this.send('pictureAck',{sequence:m.sequence,accepted:false});return;
