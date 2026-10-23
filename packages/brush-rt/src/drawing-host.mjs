@@ -107,7 +107,11 @@ export class DrawingHost {
   // The display worker is allowed to take arbitrarily long to finish.
   // It cannot withhold the latest temporary ink or a future input gesture.
   // Retire the old ink ONLY when the replacement document pixels are visible.
-  if(hasPages)for(const id of m.retired)this.pendingRetirements.set(id,m.sequence);
+  // When a previous exact image is still waiting for the display Worker,
+  // an overlay-only retirement must NOT reveal the stale document beneath.
+  // The next precise raster that actually contains the ink may retire it.
+  const exactImagePending=[...this.presentationRequests.values()].some(request=>!request.read);
+  if(hasPages||exactImagePending)for(const id of m.retired)this.pendingRetirements.set(id,m.sequence);
   else for(const id of m.retired){
    const layer=this.layers.get(id);layer?.element.remove();this.layers.delete(id);
   }
