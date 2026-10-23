@@ -53,3 +53,11 @@ jobs:
           npm --workspace @illustro/editor exec -- tsc --noEmit
       - name: Editor build (not published)
         run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install independent Chromium for deletion-only data test
+        run: |
+          npm install --prefix /tmp/m10-delete-browser playwright@1.56.1 --no-audit --no-fund
+          /tmp/m10-delete-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Exact formal raster, Undo and Redo in a real browser (no display expected)
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/m10-delete-browser/node_modules/playwright
+        run: node scripts/m10-deletion-data-smoke.mjs
