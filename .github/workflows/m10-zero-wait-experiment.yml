@@ -89,6 +89,20 @@ jobs:
           }
           const comparison=JSON.parse(fs.readFileSync(root+'/comparison.json'));
           if(!comparison.allWorkloadOverlapped)throw Error('Heavy test did not overlap actual formal GPU work');
+          for(const target of ['drawing-stop','display-stop']){
+            const report=JSON.parse(fs.readFileSync(root+'/'+target+'/report.json'));
+            if(report.error||report.cases.length!==2||report.cases.some(x=>!x.passed))
+              throw Error(target+' failed an actual Worker isolation case');
+            if(target==='display-stop'&&report.cases.some(x=>!x.extraStrokes||x.extraStrokes.after.accepted-x.extraStrokes.previous.accepted<2||x.extraStrokes.after.ink-x.extraStrokes.previous.ink<2))
+              throw Error('Two subsequent strokes did not stay available with dead display Worker');
+          }
+          const fidelity=JSON.parse(fs.readFileSync(root+'/correctness.json'));
+          if(fidelity.cases.length!==2||fidelity.cases.some(x=>x.history!=='exact'||x.exact?.mismatch!==0||x.blank?.mismatch!==0))
+            throw Error('Incorrect pixels/Undo or incomplete 4000px visual comparison');
+          const history=JSON.parse(fs.readFileSync(root+'/history/report.json'));
+          if(history.status!=='AUTOMATED_CHECKS_PASSED'||history.errors?.length||history.cases.length!==6||
+              history.cases.some(x=>!x.exactUndoRedo||!x.exactNativeSave))
+            throw Error('Undo/Redo or .illustro save/reopen is incomplete');
           NODE
       - uses: actions/upload-artifact@v4
         if: always()
