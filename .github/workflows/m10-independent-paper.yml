@@ -76,3 +76,65 @@ jobs:
           test -z "$(git diff --cached --name-only | sed '/^qa\/m10-independent-canvas\//d')"
           git diff --cached --quiet || git commit -m "qa: independent canvas $GITHUB_SHA"
           git push origin HEAD:gh-pages
+
+  public-check:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: {contents: write}
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      PAPER_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m10-independent-canvas/app/
+      HOME_PUBLIC_URL: https://totoro0419.github.io/illustro/qa/m10-independent-canvas/app/
+      PUBLIC_PAPER_EVIDENCE: /tmp/public-paper-evidence
+      HOME_EVIDENCE_DIRECTORY: /tmp/public-paper-evidence/works
+      RT_PLAYWRIGHT_PATH: /tmp/paper-browser/node_modules/playwright
+      PAPER_CHROME: /usr/bin/google-chrome
+      CHROMIUM_EXECUTABLE: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Browser dependencies
+        run: npm install --prefix /tmp/paper-browser playwright@1.56.1 --no-audit --no-fund
+      - name: Wait for the exact public source
+        run: |
+          python - <<'PY'
+          import os,time,urllib.request
+          expected=os.environ['EXPECTED_COMMIT_SHA']
+          url='https://totoro0419.github.io/illustro/qa/m10-independent-canvas/?build='+expected
+          for attempt in range(60):
+              try:
+                  with urllib.request.urlopen(url,timeout=15) as response:
+                      body=response.read().decode()
+                  if expected in body:
+                      print('Public source matches',expected)
+                      break
+              except Exception as error:
+                  print(type(error).__name__)
+              time.sleep(5)
+          else:
+              raise RuntimeError('The exact source did not become publicly reachable')
+          PY
+      - name: Real public canvas, pixels, touch, persistence and work library
+        run: |
+          node scripts/m10-paper-public.mjs
+          node scripts/editor-works-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: independent-paper-public-evidence, path: /tmp/public-paper-evidence/}
+      - uses: actions/checkout@v4
+        if: success()
+        with: {ref: gh-pages, path: site, fetch-depth: 0}
+      - name: Publish public verification evidence only
+        if: success()
+        run: |
+          mkdir -p site/qa/m10-independent-canvas/public-evidence
+          cp -R /tmp/public-paper-evidence/. site/qa/m10-independent-canvas/public-evidence/
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m10-independent-canvas/public-evidence
+          test -z "$(git diff --cached --name-only | sed '/^qa\/m10-independent-canvas\/public-evidence\//d')"
+          git diff --cached --quiet || git commit -m "qa: public canvas verification $GITHUB_SHA"
+          git push origin HEAD:gh-pages
