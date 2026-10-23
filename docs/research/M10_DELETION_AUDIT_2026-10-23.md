@@ -4,7 +4,7 @@
 
 Baseline: PR #42 commit `73f9465b022cb29b1e3f9462b3d51aca3756ba6d`.
 Audited implementation: PR #46 commit `768aa431933a3a6caef01064fbd26cf0101218b6`.
-The successful CI at https://github.com/totoro0419/illustro/actions/runs/39970291133 validates repository assertions, the source lock, builds and existing unit/regression tests. It **does not validate interactive canvas presentation, a physical two-finger gesture during pending formal drawing, or Android GPU contention**.
+The successful CI at https://github.com/totoro0419/illustro/actions/runs/39973892532 validates repository assertions, source lock, builds and existing regressions **plus a real Chromium data-path smoke**: in both WebGL2 and WebGPU at 512×512, one G-pen stroke modified 18,956 RGBA channel values, Undo reproduced the initial buffer byte-for-byte, Redo reproduced the committed buffer byte-for-byte, and no browser page errors were recorded. This is software Chrome, not physical Android. **It does not validate visible canvas presentation, genuine two-finger navigation while formal drawing is pending, save/reopen, 4000px behavior, or Android GPU contention.**
 
 ## Verified deletion
 
@@ -37,7 +37,8 @@ The successful CI at https://github.com/totoro0419/illustro/actions/runs/3997029
 - Full legacy *presentation lifecycle* removal: **FAIL / INCOMPLETE** (items 1–2).
 - Existing source regression/build: **PASS** for tested commands.
 - Operational live canvas: **NOT IMPLEMENTED** by design.
-- Exact record/history/save behavior in a real browser after removal: **NOT VERIFIED** by this CI run.
+- Actual browser formal-raster and Undo/Redo pixel equivalence: **PASS** at 512×512, one G-pen stroke, WebGL2 and WebGPU, software Chrome. No claims beyond this test's coverage.
+- Exact .illustro save/reopen behavior and 4000px high-load browser work: **NOT VERIFIED** by this CI run.
 - User's zero-added-wait requirement: **NOT VERIFIED**.
 
 Keep PR #46 **Draft, unmerged, and un-deployed**. Additional removal must be done without replacing systems or changing canonical brush, formal pixels, history, save, or canvas geometry. Once removal scope is truly clean, separately prototype and measure a new display route under genuine GPU/CPU load before integration.
