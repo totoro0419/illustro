@@ -15,7 +15,7 @@ export class PaperGestures {
  private stop(e:PointerEvent){e.preventDefault();e.stopImmediatePropagation();}
  private down=(e:PointerEvent)=>{
   if(e.target!==this.element&&!(e.target instanceof HTMLCanvasElement))return;
-  if(e.pointerType==='pen'){this.pen=e.pointerId;return;}
+  if(e.pointerType==='pen'){if(this.touches.size){if(this.hooks.drawingTouch())this.hooks.cancelTouch();this.navigating=true;this.previous=[...this.touches.values()].slice(0,2);}this.pen=e.pointerId;return;}
   if(e.pointerType==='mouse'&&(e.button===1||e.button===0&&this.space)){this.mouse=this.point(e);this.element.setPointerCapture(e.pointerId);this.stop(e);return;}
   if(e.pointerType!=='touch')return;
   this.touches.set(e.pointerId,this.point(e));this.element.setPointerCapture(e.pointerId);
