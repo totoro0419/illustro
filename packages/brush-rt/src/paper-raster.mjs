@@ -28,6 +28,7 @@ export class PaperRaster extends StrokeOverlay {
   super.present(start,tips);for(const id of dirty){this.changed(id,true);const v=this.states.get(id);if(v?.last?.finished&&!v.work&&v.coherent!==false){this.floatBytes=Math.max(0,this.floatBytes-(v.bytes??0));v.bytes=0;for(const tile of v.tiles.values()){tile.prefix=null;tile.tail=null;}}}this.scheduleDensityUpgrade();
  }
  get residentBytes(){return this.allocatedBytes+this.preparedBytes;}
+ discardFinalization(id){this.densityJobs?.delete(id);return super.discardFinalization(id);}
  queueFinalization(state,old){const saved=this.view;if(!this.refining)this.view=old.view;try{return super.queueFinalization(state,old);}finally{this.view=saved;}}
  refineDensity(density){this.requestedDensity=Math.max(1/128,Math.min(1,density));this.scheduleDensityUpgrade();}
  scheduleDensityUpgrade(){if(this.densityScheduled||!this.requestedDensity||this.disposed)return;this.densityScheduled=true;setTimeout(()=>{this.densityScheduled=false;this.upgradeDensity();},0);}
