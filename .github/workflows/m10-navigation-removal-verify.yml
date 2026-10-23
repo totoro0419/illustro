@@ -1,8 +1,8 @@
-name: M10 legacy navigation removal - non-publishing validation
+name: M10 legacy display removal - non-publishing validation
 
 on:
   push:
-    branches: ['rebuild/M10-delete-legacy-navigation-2026-10-22']
+    branches: ['rebuild/M10-remove-presentation-only-2026-10-23']
   workflow_dispatch:
 
 permissions:
@@ -27,7 +27,14 @@ jobs:
           ! grep -Eq 'CanvasNavigation|\.navigation\?|beginViewportNavigation|endViewportNavigation' apps/editor/src/brushSurface.ts
           ! grep -Eq 'ViewportScene|viewportScene|waitPrecise|syncVisibility|reproject\(' packages/brush-rt/src/drawing-host.mjs
           test -f packages/brush-rt/src/drawing.worker.mjs
-          test -f packages/brush-rt/src/presentation.worker.mjs
+          test ! -e packages/brush-rt/src/presentation.worker.mjs
+          test ! -e packages/brush-rt/src/presentation-tiles.mjs
+          test ! -e packages/brush-rt/src/document-presentation.mjs
+          test ! -e packages/brush-rt/test/document-presentation.test.mjs
+          test ! -e packages/brush-rt/test/presentation-tiles.test.mjs
+          ! grep -Eq 'pictureAck|requestPublish|settlePictures|captureTilePages' packages/brush-rt/src/drawing.worker.mjs
+          ! grep -Eq 'transferFromImageBitmap|retireOverlays|DocumentPresentation|presentationRequests' packages/brush-rt/src/drawing-host.mjs
+          ! grep -Eq 'presentation.worker|presentation-tiles|document-presentation' prototypes/brush-rt/build.mjs apps/editor/src/brushSurface.ts
           test -f apps/editor/src/brushAdvancedEditor.ts
       - name: Install dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
