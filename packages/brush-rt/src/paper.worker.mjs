@@ -1,3 +1,4 @@
+import {queueFuturePaperPacket} from '@rt/paper-packets';
 import {makeReferencePattern} from '@rt/reference-pattern';
 import {PaperRaster} from '@rt/paper-raster';
 const PAGE=512,TILE=128,GUTTER=16,JOURNAL_LIMIT=16*1024*1024;
@@ -14,7 +15,7 @@ function schedule(){if(scheduled||running||waiting||(!dirty.size&&!covered.size)
 function canvas(w,h){const c=new OffscreenCanvas(w,h);return {canvas:c,context:c.getContext('2d',{alpha:true,willReadFrequently:true})};}
 function put(tile){const c=canvas(TILE,TILE);c.context.putImageData(new ImageData(new Uint8ClampedArray(tile.pixels.buffer,tile.pixels.byteOffset,tile.pixels.byteLength),TILE,TILE),0,0);return c.canvas;}
 function install(m){
- if(m.epoch!==epoch){if(m.epoch>epoch){future.push(m);if(future.length>2)future.shift();}return;}
+ if(m.epoch!==epoch){if(m.epoch>epoch){queueFuturePaperPacket(future,m);}return;}
  version++;
  if(m.replace){markAll();base.clear();journal.clear();journalBytes=0;}
  const before=[],after=[];

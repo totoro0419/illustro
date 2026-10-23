@@ -250,7 +250,7 @@
     {
       "path": "prototypes/brush-rt/build.mjs",
       "sourceCommit": "4a7b48814cb5b66f7674cd816e0ed35e4f9f5ee5",
-      "sha256": "04e9b089c37e51fe1757af707937750fa2a06897e59705278eb65a53e8113ea1",
+      "sha256": "cd2cb2555d5fcfb8d2ac21bd0db5cd75d5a6a468c2783f6fa57c553cc08d79b8",
       "performanceException": "Canvas performance review: presentation scheduling and area-average display cache only; canonical brush geometry unchanged. Full discovered regression required.",
       "instantCanvasException": "User-authorized independent clipped-screen CPU proxy and bounded formal feedback scheduling; strict Foundation/model/shaders/Core unchanged. Exact A baseline pixels/records/history, full regressions and matched A/B/C required. No physical Android or user acceptance claim.",
       "strokeOverlayException": "User-authorized stroke-only preview replaces historical low-resolution rebuild; exact Foundation/model/shaders/Core retained. Requires PR30 exact pixels, fit-view quality and regression evidence. No hardware acceptance claim.",
