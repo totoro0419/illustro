@@ -32,6 +32,19 @@ try{
    document.getElementById('new').click();
   });
   await page.waitForFunction(()=>document.getElementById('status')?.textContent?.includes('描画できます'),null,{timeout:90000});
+  const isolation=await page.evaluate(async()=>{
+   const host=window.__illustroPerformance.probe().renderer;
+   const state=await host.inspect();
+   return {remote:host.remote,overlayPort:!!host.proxy,workerOverlayPending:state.proxy.pending,
+           workerPreviewLayers:state.proxy.footprints,workerViewPending:state.viewPending,
+           canvasHasOldBitmapElements:!!document.querySelector('.illustro-document-presentation')};
+  });
+  assert.equal(isolation.remote,true,'semantic Worker must remain active');
+  assert.equal(isolation.overlayPort,false,'no old overlay port to formal Worker');
+  assert.equal(isolation.workerOverlayPending,0,'no old overlay queue');
+  assert.equal(isolation.workerPreviewLayers,0,'no old overlay snapshot ownership');
+  assert.equal(isolation.workerViewPending,false,'no view-dependent drawing Worker presentation');
+  assert.equal(isolation.canvasHasOldBitmapElements,false,'no old document canvas tiles');
   const before=await page.evaluate(async()=>{
    const {renderer,controller}=window.__illustroPerformance.probe();
    const surface=controller.selectedLayer.surface.descriptor.surfaceId;
@@ -70,7 +83,7 @@ try{
   });
   assert.deepEqual(redone,after,'Redo must restore exact committed image');
   assert.deepEqual(errors,[],'no browser runtime errors');
-  report.push({backend,strokes:1,changedChannels:changed,undoPixelsExact:true,redoPixelsExact:true,blankEditorCanvasExpected:true});
+  report.push({backend,strokes:1,changedChannels:changed,undoPixelsExact:true,redoPixelsExact:true,blankEditorCanvasExpected:true,legacyPortsAbsent:true});
   await context.close();
  }
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

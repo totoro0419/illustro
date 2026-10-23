@@ -36,6 +36,12 @@ jobs:
           ! grep -Eq 'transferFromImageBitmap|retireOverlays|DocumentPresentation|presentationRequests' packages/brush-rt/src/drawing-host.mjs
           ! grep -Eq 'presentation.worker|presentation-tiles|document-presentation' prototypes/brush-rt/build.mjs apps/editor/src/brushSurface.ts
           test -f apps/editor/src/brushAdvancedEditor.ts
+          # No live editor-to-drawing Worker view, bitmap or overlay-presentation ports.
+          ! grep -Eq "send\('view'|send\('seamless'|send\('hide'|send\('show'|this\.proxy=" packages/brush-rt/src/drawing-host.mjs
+          ! grep -Eq "new WorkerStrokeSink|case 'view':|case 'seamless':|case 'clearSeamless':|case 'hide':|case 'show':|case 'overlayEnabled':|case 'overlayInvalidate':" packages/brush-rt/src/drawing.worker.mjs
+          ! grep -Eq "renderer\??\.hideStrokePreview\(|renderer\??\.restoreStrokePreview\(|renderer\??\.setSeamlessPreview\(" apps/editor/src/brushSurface.ts
+          test -f packages/brush-rt/src/stroke-overlay.mjs
+          test -f packages/brush-rt/src/renderer.mjs
       - name: Install dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Brush runtime build and source-lock check

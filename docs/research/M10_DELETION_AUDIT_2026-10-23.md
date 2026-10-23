@@ -1,6 +1,6 @@
 # M10 legacy display deletion — independent audit (2026-10-23)
 
-**Judgment: PARTIAL ONLY / NOT COMPLETE / NOT READY TO BUILD THE NEW CANVAS DIRECTLY ON THIS CLAIM.**
+**Judgment: ORIGINAL FILE-LEVEL DELETION PARTIAL, BUT EDITOR-OWNED LEGACY PORTS NOW DISCONNECTED. THE NEW CANVAS ITSELF IS NOT IMPLEMENTED.**
 
 Baseline: PR #42 commit `73f9465b022cb29b1e3f9462b3d51aca3756ba6d`.
 Audited implementation: PR #46 commit `768aa431933a3a6caef01064fbd26cf0101218b6`.
@@ -42,3 +42,7 @@ The successful CI at https://github.com/totoro0419/illustro/actions/runs/3997389
 - User's zero-added-wait requirement: **NOT VERIFIED**.
 
 Keep PR #46 **Draft, unmerged, and un-deployed**. Additional removal must be done without replacing systems or changing canonical brush, formal pixels, history, save, or canvas geometry. Once removal scope is truly clean, separately prototype and measure a new display route under genuine GPU/CPU load before integration.
+
+## Follow-up isolation (2026-10-24)
+
+Commit `a26ce50f` removes Editor→DrawingWorker view/overlay/preview commands, no longer instantiates `WorkerStrokeSink` / `StrokeOverlay` inside the live DrawingWorker, and removes old preview disposal calls from the editor. The shared renderer continues to contain old display code for other callers; this is explicitly **not full file-level removal**. Source lock and real software-Chrome WebGL2/WebGPU single-stroke + exact Undo/Redo checks were successful in [Actions #39975786295](https://github.com/totoro0419/illustro/actions/runs/39975786295). The new presentation path, loaded-GPU visual zero-wait comparison, save/reopen, 4000px and physical Android remain unverified. Refer to [rebuild entry contract](M10_REBUILD_ENTRY_CONTRACT_2026-10-24.md).
