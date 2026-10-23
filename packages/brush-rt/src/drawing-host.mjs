@@ -47,6 +47,12 @@ export class DrawingHost {
   this.worker=new Worker(url,{type:'module'});this.requests=new Map;this.requestId=0;this.sequence=0;this.epoch=0;this.hiddenStrokeIds=new Set;this.layers=new Map;this.localFaults=[];this.errors=[];this.info={};this.completions=[];this.document={jobs:{length:0},count:0};this.backend={canvas,tiles:new Map,viewTransform:null,read:key=>this.read(key),readViewport:()=>this.call('readViewport'),readTiles:requests=>this.call('readTiles',requests)};
   this.proxy={prepare:p=>this.send('prepare',p),setEnabled:value=>this.send('overlayEnabled',value),invalidate:()=>this.send('overlayInvalidate'),pending:{size:0},finalizations:{size:0},footprints:{size:0}};this.session=new DrawingSessionPort(this);this.worker.onmessage=({data:m})=>{
    if(this.disposed){closePicture(m);return;}if(m.state)this.update(m.state);
+   if(m.type==='overlay'){
+    if(m.epoch!==this.epoch){closePicture(m);return;}
+    this.installInkLayers(m.layers);
+    this.onPresentation?.({kind:'picture-overlay',at:performance.now(),waitingForDocument:true,independent:true});
+    return;
+   }
    if(m.type==='picture'){this.picture(m).catch(e=>this.fault(e.message));return;}if(m.type==='fault'){this.fault(m.message);return;}
    const request=this.requests.get(m.request);if(!request)return;this.requests.delete(m.request);if(m.error)request.reject(Error(m.error));else request.resolve(m.result);
   };this.worker.onerror=e=>this.fault(e.message||'Drawing worker failed');this.worker.onmessageerror=()=>this.fault('Drawing worker message could not be decoded');
@@ -61,21 +67,9 @@ export class DrawingHost {
   this.proxy.error=s.proxy.error;const sessionId=this.session.id;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
   if(s.recordIds)for(const [token,id]of s.recordIds){const r=this.session.recordsByToken.get(token);if(r&&id!==undefined)this.session.recordIds.set(r,id);}
  }
- async picture(m){
-  if(m.sequence<=this.sequence||m.epoch!==this.epoch){
-   closePicture(m);this.send('pictureAck',{sequence:m.sequence,accepted:false});return;
-  }
-  this.sequence=m.sequence;
-  const hasPages=!!m.pages?.length;
-  // The display worker is allowed to take arbitrarily long to finish.
-  // It cannot withhold the latest temporary ink or a future input gesture.
-  // Retire the old ink ONLY when the replacement document pixels are visible.
-  if(hasPages)for(const id of m.retired)this.pendingRetirements.set(id,m.sequence);
-  else for(const id of m.retired){
-   const layer=this.layers.get(id);layer?.element.remove();this.layers.delete(id);
-  }
+ installInkLayers(layers){
   const originX=this.canvas.offsetLeft,originY=this.canvas.offsetTop;
-  for(const data of m.layers){
+  for(const data of layers){
    let layer=this.layers.get(data.id);
    if(!layer){
     const element=document.createElement('canvas');
@@ -103,6 +97,21 @@ export class DrawingHost {
     clipPath:'polygon('+data.polygon.map(p=>(p.x-x)+'px '+(p.y-y)+'px').join(',')+')'});
    this.viewPlane.placeInk(layer);
   }
+ }
+ async picture(m){
+  if(m.sequence<=this.sequence||m.epoch!==this.epoch){
+   closePicture(m);this.send('pictureAck',{sequence:m.sequence,accepted:false});return;
+  }
+  this.sequence=m.sequence;
+  const hasPages=!!m.pages?.length;
+  // The display worker is allowed to take arbitrarily long to finish.
+  // It cannot withhold the latest temporary ink or a future input gesture.
+  // Retire the old ink ONLY when the replacement document pixels are visible.
+  if(hasPages)for(const id of m.retired)this.pendingRetirements.set(id,m.sequence);
+  else for(const id of m.retired){
+   const layer=this.layers.get(id);layer?.element.remove();this.layers.delete(id);
+  }
+  this.installInkLayers(m.layers);
   this.onPresentation?.({kind:'picture-overlay',at:performance.now(),sequence:m.sequence,waitingForDocument:hasPages});
   if(hasPages){
    const request=++this.presentationRequestId;
