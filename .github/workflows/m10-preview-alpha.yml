@@ -36,6 +36,8 @@ jobs:
           /tmp/m10-preview-test/node_modules/.bin/playwright install --with-deps chromium
       - name: Test black rectangles before formal stroke completion on both GPUs
         run: PREVIEW_ALPHA_EVIDENCE=/tmp/m10-preview-evidence/report.json node scripts/m10-preview-alpha-regression.mjs
+      - name: Test fixed behind-canvas color during navigation on both GPUs
+        run: SURROUND_EVIDENCE=/tmp/m10-preview-evidence/surround/report.json node scripts/m10-fixed-surround-regression.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
