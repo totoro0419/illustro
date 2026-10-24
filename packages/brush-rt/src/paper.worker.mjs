@@ -2,7 +2,7 @@ import {queueFuturePaperPacket} from '@rt/paper-packets';
 import {makeReferencePattern} from '@rt/reference-pattern';
 import {PaperRaster} from '@rt/paper-raster';
 const PAGE=512,TILE=128,GUTTER=16,JOURNAL_LIMIT=16*1024*1024;
-let width,height,raster,port,epoch=0,serial=0,version=0,scheduled=false,running=false,waiting=false,baseSerial=0;
+let width,height,raster,port,epoch=0,serial=0,version=0,scheduled=false,running=false,waiting=false,baseSerial=0,publicationPending=false;
 let reference=false,referenceCanvas;
 let styles=[],dirty=new Set,base=new Map,overlays=new Map,covered=new Map,journal=new Map,journalBytes=0;
 const pendingFrames=new Map,acceptedPages=new Map,future=[];let acceptedSerial=0,acceptedMinDensity=null,acceptedCanonicalPending=0,acceptedFormalEpoch=0,acceptedFormalSerial=0;
@@ -11,12 +11,12 @@ const pause=()=>new Promise(ok=>setTimeout(ok,0));
 function markRect(rect){if(!rect)return;for(let y=Math.max(0,Math.floor((rect[1]-GUTTER)/PAGE));y<Math.min(Math.ceil(height/PAGE),Math.ceil((rect[3]+GUTTER)/PAGE));y++)for(let x=Math.max(0,Math.floor((rect[0]-GUTTER)/PAGE));x<Math.min(Math.ceil(width/PAGE),Math.ceil((rect[2]+GUTTER)/PAGE));x++)dirty.add(x+','+y);}
 function markStroke(id,partial=false){const s=raster.sink.layers.get(id);let old=overlays.get(id);if(!old&&s?.rect){const owner=[...overlays].findLast(([key,o])=>o.seamless&&key<id&&id<key+9);if(owner){old={...owner[1],seamless:false};overlays.set(id,old);}}if(s?.rect){if(partial){for(const key of s.changedPages){const [x,y]=key.split(',').map(Number);if(x>=0&&y>=0&&x<Math.ceil(width/PAGE)&&y<Math.ceil(height/PAGE))markRect([x*PAGE,y*PAGE,(x+1)*PAGE,(y+1)*PAGE]);}s.changedPages.clear();}else markRect(s.rect);if(old)old.rect=s.rect.slice();}else markRect(old?.rect);schedule();}
 function markAll(){for(const key of acceptedPages.keys())dirty.add(key);for(const key of base.keys()){const tile=key.slice(key.indexOf('\u0000')+1).split(',').map(Number);markRect([tile[0]*TILE,tile[1]*TILE,(tile[0]+1)*TILE,(tile[1]+1)*TILE]);}for(const o of overlays.values())markRect(o.rect);schedule();}
-function schedule(){if(scheduled||running||waiting||(!dirty.size&&!covered.size))return;scheduled=true;setTimeout(()=>{scheduled=false;void compose();},0);}
+function schedule(){if(scheduled||running||waiting||(!dirty.size&&!covered.size&&!publicationPending))return;scheduled=true;setTimeout(()=>{scheduled=false;void compose();},0);}
 function canvas(w,h){const c=new OffscreenCanvas(w,h);return {canvas:c,context:c.getContext('2d',{alpha:true,willReadFrequently:true})};}
 function put(tile){const c=canvas(TILE,TILE);c.context.putImageData(new ImageData(new Uint8ClampedArray(tile.pixels.buffer,tile.pixels.byteOffset,tile.pixels.byteLength),TILE,TILE),0,0);return c.canvas;}
 function install(m){
  if(m.epoch!==epoch){if(m.epoch>epoch){queueFuturePaperPacket(future,m);}return;}
- version++;baseSerial=m.serial;
+ version++;baseSerial=m.serial;publicationPending=true;
  if(m.replace){markAll();base.clear();journal.clear();journalBytes=0;}
  const before=[],after=[];
  for(const t of m.tiles){const key=t.surfaceId+'\u0000'+t.key;before.push([key,base.get(key)??null]);let ink=false;for(let i=3;i<t.pixels.length;i+=4)if(t.pixels[i]){ink=true;break;}const image=ink?put(t):null;if(image)base.set(key,image);else base.delete(key);after.push([key,image]);const [x,y]=t.key.split(',').map(Number);markRect([x*TILE,y*TILE,(x+1)*TILE,(y+1)*TILE]);}
@@ -29,7 +29,7 @@ function install(m){
  metrics.baseBytes=base.size*TILE*TILE*4;schedule();
 }
 async function compose(){
- if(running||waiting||(!dirty.size&&!covered.size))return;running=true;const at=performance.now(),current=version,keys=[...dirty];dirty.clear();const pages=[],images=[],snapshot=raster.sink.snapshot(),strokeStates=[...overlays].map(([id,o])=>[id,{...o}]);const densities=strokeStates.filter(([id,o])=>o.visible&&!covered.has(id)).map(([id])=>snapshot.layers.get(id)?.scale).filter(Number.isFinite),minDensity=densities.length?Math.min(...densities):null;const canonicalPending=strokeStates.filter(([id,o])=>o.visible&&!covered.has(id)&&snapshot.layers.has(id)&&!raster.states.get(id)?.last?.canonical).length;
+ if(running||waiting||(!dirty.size&&!covered.size&&!publicationPending))return;running=true;const at=performance.now(),current=version,keys=[...dirty];dirty.clear();const pages=[],images=[],snapshot=raster.sink.snapshot(),strokeStates=[...overlays].map(([id,o])=>[id,{...o}]);const densities=strokeStates.filter(([id,o])=>o.visible&&!covered.has(id)).map(([id])=>snapshot.layers.get(id)?.scale).filter(Number.isFinite),minDensity=densities.length?Math.min(...densities):null;const canonicalPending=strokeStates.filter(([id,o])=>o.visible&&!covered.has(id)&&snapshot.layers.has(id)&&!raster.states.get(id)?.last?.canonical).length;
  try{
   for(const key of keys){
    if(current!==version){pages.forEach(p=>p.bitmap?.close());keys.forEach(k=>dirty.add(k));metrics.dropped++;return;}
@@ -50,7 +50,7 @@ async function compose(){
    pages.push({key,x,y,width:w,height:h,gutter:GUTTER,bitmap:used?await createImageBitmap(out.canvas):null});images.push([key,used?out.canvas:null]);await pause();
   }
   if(current!==version){pages.forEach(p=>p.bitmap?.close());keys.forEach(k=>dirty.add(k));metrics.dropped++;return;}
-  const id=++serial;pendingFrames.set(id,{covered:[...covered],images,minDensity,canonicalPending,formalEpoch:epoch,formalSerial:baseSerial});waiting=true;metrics.frames++;metrics.pages+=pages.length;metrics.maxComposeMs=Math.max(metrics.maxComposeMs,performance.now()-at);
+  publicationPending=false;const id=++serial;pendingFrames.set(id,{covered:[...covered],images,minDensity,canonicalPending,formalEpoch:epoch,formalSerial:baseSerial});waiting=true;metrics.frames++;metrics.pages+=pages.length;metrics.maxComposeMs=Math.max(metrics.maxComposeMs,performance.now()-at);
   postMessage({type:'frame',epoch,serial:id,pages,metrics:{...metrics,formalEpoch:epoch,formalSerial:baseSerial,minPreviewDensity:minDensity,canonicalPreviewPending:canonicalPending,densityUpgrades:raster.densityUpgrades,rasterBytes:raster.residentBytes,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}},pages.map(p=>p.bitmap).filter(Boolean));
  }catch(error){postMessage({type:'fault',message:String(error)});}finally{snapshot.release();running=false;schedule();}
 }
