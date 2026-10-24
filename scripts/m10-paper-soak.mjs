@@ -79,14 +79,14 @@ async function pen(page,cdp,offset) {
   for(let i=1;i<=28;i++)await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:b.x+b.width*(.28+.42*i/28),y:b.y+b.height*(offset+.045*Math.sin(i/28*Math.PI*2)),button:'left',buttons:1,pointerType:'pen',force:.4+.5*i/28});
   await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:b.x+b.width*.7,y:b.y+b.height*offset,button:'left',buttons:0,pointerType:'pen',force:0});
 }
-async function gesture(page,cdp) {
+async function gesture(page,cdp,trackHistory=false) {
   const b=await page.locator('.surface').boundingBox(),x=b.x+b.width*.5,y=b.y+b.height*.57;
   const points=i=>{const a=.22*Math.sin(i/12*Math.PI),r=90+30*Math.sin(i/12*Math.PI),dx=24*i/12,dy=12*i/12;return [{id:11,x:x+dx-r*Math.cos(a),y:y+dy-r*Math.sin(a)},{id:12,x:x+dx+r*Math.cos(a),y:y+dy+r*Math.sin(a)}];};
-  const before=await state(page);
+  const before=await state(page),updates=[];
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points(0)});
-  for(let i=1;i<=12;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:points(i)});
+  for(let i=1;i<=12;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:points(i)});if(trackHistory)updates.push(await page.evaluate(()=>{const p=window.__illustroPerformance.probe(),d=window.__illustroPerformance.read();return {pending:d.historyNavigation.pending,matrix:p.paper.world.style.transform};}));}
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-  const after=await state(page);return {before:before.formalSubmissions,after:after.formalSubmissions};
+  const after=await state(page);return {before:before.formalSubmissions,after:after.formalSubmissions,updates,updatesWhileHistoryPending:updates.filter(x=>x.pending).length,distinctTransforms:new Set(updates.map(x=>x.matrix)).size};
 }
 async function memory(page,cdp,bcdp,label) {
   const natural=Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
@@ -140,6 +140,19 @@ try {
       await settled(page);const drained=await state(page);check(drained,4000,true);assert.equal(drained.handoff.accepted-before.handoff.accepted,3,'all consecutive native pen strokes must be accepted');
       if(round%8===0){
         const beforeUndo=await pixels(page);assert.equal(beforeUndo.alphaDifferent,0);assert.equal(beforeUndo.premultipliedDifferent,0);
+        // Queue real history work; do not hold the GPU or add artificial load gates.
+        const admitted=await page.evaluate(()=>{
+          const d=window.__illustroPerformance.read(),before=d.historyNavigation.accepted;
+          for(let i=0;i<16;i++)document.getElementById(i%2?'redo':'undo').click();
+          const after=window.__illustroPerformance.read();return {before,after:after.historyNavigation.accepted,pending:after.historyNavigation.pending};
+        });
+        assert.equal(admitted.after-admitted.before,16,'every queued history command must be admitted');
+        assert.equal(admitted.pending,true);
+        const liveHistory=await gesture(page,cdp,true);
+        assert.ok(liveHistory.distinctTransforms>=8,'native navigation must continue changing the visible world during history work');
+        record.historyInputUpdates=(record.historyInputUpdates??0)+liveHistory.updatesWhileHistoryPending;
+        await settled(page);assert.deepEqual(await pixels(page),beforeUndo,'queued Undo/Redo must preserve the final image during navigation');
+        record.historyGestures??=[];record.historyGestures.push({round,admitted,...liveHistory});
         await page.locator('#undo').evaluate(e=>e.click());await settled(page);
         await page.locator('#redo').evaluate(e=>e.click());await settled(page);
         const afterRedo=await pixels(page);assert.deepEqual(afterRedo,beforeUndo,'history after long repeated drawing must remain exact');
@@ -150,7 +163,7 @@ try {
       }
       round++;
     }
-    record.elapsedMs=Date.now()-start;record.rounds=round;assert.ok(record.strokes>=24);assert.ok(record.gestureFormalSubmissions>0,'real formal drawing must advance during native gestures');
+    record.elapsedMs=Date.now()-start;record.rounds=round;assert.ok(record.strokes>=24);assert.ok(record.historyInputUpdates>0,'at least one native transform must be observed while real application history is still pending');assert.ok(record.gestureFormalSubmissions>0,'real formal drawing must advance during native gestures');
     await settled(page);record.finalPixels=await pixels(page);assert.equal(record.finalPixels.alphaDifferent,0);assert.equal(record.finalPixels.premultipliedDifferent,0);
     const downloadPromise=page.waitForEvent('download');await page.locator('#save').evaluate(e=>e.click());const download=await downloadPromise;
     const bytes=await fs.readFile(await download.path());record.savedBytes=bytes.length;
