@@ -166,9 +166,9 @@ try {
     record.elapsedMs=Date.now()-start;record.rounds=round;assert.ok(record.strokes>=24);assert.ok(record.historyInputUpdates>0,'at least one native transform must be observed while real application history is still pending');assert.ok(record.gestureFormalSubmissions>0,'real formal drawing must advance during native gestures');
     await settled(page);record.finalPixels=await pixels(page);assert.equal(record.finalPixels.alphaDifferent,0);assert.equal(record.finalPixels.premultipliedDifferent,0);
     const downloadPromise=page.waitForEvent('download');await page.locator('#save').evaluate(e=>e.click());const download=await downloadPromise;
-    const bytes=await fs.readFile(await download.path());record.savedBytes=bytes.length;
+    const savedPath=path.join(out,backend+'-roundtrip.illustro');await fs.copyFile(await download.path(),savedPath);record.savedBytes=(await fs.stat(savedPath)).size;
     await newDocument(page,512);
-    await page.locator('#openFile').setInputFiles({name:'soak-roundtrip.illustro',mimeType:'application/octet-stream',buffer:bytes});
+    await page.locator('#openFile').setInputFiles(savedPath);
     await page.waitForFunction(()=>document.getElementById('status')?.textContent?.includes('開きました'),null,{timeout:120000});await settled(page);
     record.reloadedPixels=await pixels(page);assert.deepEqual(record.reloadedPixels,record.finalPixels,'large saved formal bytes and displayed pixels must survive reload');
     for(let i=0;i<12;i++){
