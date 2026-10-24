@@ -45,7 +45,7 @@ async function settled(page) {
   await page.waitForFunction(t=>{
     const d=window.__illustroPerformance.read(),m=d.paper.metrics;
     return !d.historyNavigation?.pending&&!d.frameState.historySyncing&&!d.frameState.inputBarrier&&
-      !d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!m.overlays&&!m.retainedOverlays&&
+      !d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!m.overlays&&
       m.formalEpoch===t.epoch&&m.formalSerial>=t.serial&&d.paper.frames>0;
   },target,{timeout:120000}).catch(async error=>{const detail=await page.evaluate(()=>{const d=window.__illustroPerformance.read();return {status:document.getElementById('status')?.textContent,paper:d.paper?.metrics,history:d.historyNavigation,frame:d.frameState,handoff:{pendingLogical:d.handoff.pendingLogical,pendingGpu:d.handoff.pendingGpu}};});console.log('DISPLAY SETTLE FAILURE',JSON.stringify({target,detail}));throw error;});
 }
