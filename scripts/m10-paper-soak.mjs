@@ -1,6 +1,7 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 
@@ -166,11 +167,11 @@ try {
     record.elapsedMs=Date.now()-start;record.rounds=round;assert.ok(record.strokes>=24);assert.ok(record.historyInputUpdates>0,'at least one native transform must be observed while real application history is still pending');assert.ok(record.gestureFormalSubmissions>0,'real formal drawing must advance during native gestures');
     await settled(page);record.finalPixels=await pixels(page);assert.equal(record.finalPixels.alphaDifferent,0);assert.equal(record.finalPixels.premultipliedDifferent,0);
     const downloadPromise=page.waitForEvent('download');await page.locator('#save').evaluate(e=>e.click());const download=await downloadPromise;
-    const savedPath=path.join(out,backend+'-roundtrip.illustro');await fs.copyFile(await download.path(),savedPath);record.savedBytes=(await fs.stat(savedPath)).size;
+    const savedPath=path.join(os.tmpdir(),'illustro-m10-soak-'+backend+'.illustro');await fs.copyFile(await download.path(),savedPath);record.savedBytes=(await fs.stat(savedPath)).size;
     await newDocument(page,512);
     await page.locator('#openFile').setInputFiles(savedPath);
     await page.waitForFunction(()=>document.getElementById('status')?.textContent?.includes('開きました'),null,{timeout:120000});await settled(page);
-    record.reloadedPixels=await pixels(page);assert.deepEqual(record.reloadedPixels,record.finalPixels,'large saved formal bytes and displayed pixels must survive reload');
+    record.reloadedPixels=await pixels(page);assert.deepEqual(record.reloadedPixels,record.finalPixels,'large saved formal bytes and displayed pixels must survive reload');await fs.rm(savedPath);
     for(let i=0;i<12;i++){
       const size=[512,1024,2048][i%3];await newDocument(page,size);await brush(page,'foundation-g-pen',48);await pen(page,cdp,.45);await settled(page);
       const s=await state(page);check(s,size,true);const m=await memory(page,cdp,bcdp,'new-document-'+i);
