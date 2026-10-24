@@ -22,6 +22,8 @@ export class DrawingHost {
    if(m.type==='ready'){this.presentationResolve();return;}
    if(m.type==='fault'){this.presentationReject(Error(m.error));this.fault(m.error);return;}
    if(m.type==='document'){
+    // Defer large bitmap installations while user input moves the scene.
+    if(this.viewportScene.active){this.deferredDocument=m;return;}
     const accepted=m.epoch===this.epoch&&m.version>=this.documentVersion;
     if(accepted){
      this.documentPresentation.apply(m.tiles);this.documentVersion=m.version;
@@ -65,7 +67,9 @@ export class DrawingHost {
   this.proxy.error=s.proxy.error;const sessionId=this.session.id;Object.assign(this.session,s.session);this.session.id=Math.max(sessionId,s.session.id);if(s.tiles)this.backend.tiles=new Map(s.tiles.map(t=>[t.surfaceKey+'\u0000'+t.key,t]));
   if(s.recordIds)for(const [token,id]of s.recordIds){const r=this.session.recordsByToken.get(token);if(r&&id!==undefined)this.session.recordIds.set(r,id);}
  }
- async picture(m){if(m.sequence<=this.sequence||m.epoch!==this.epoch){closePicture(m);this.send('pictureAck',{sequence:m.sequence,accepted:false});return;}this.sequence=m.sequence;
+ async picture(m){
+  if(this.viewportScene.active){this.deferredPicture=m;return;}
+  if(m.sequence<=this.sequence||m.epoch!==this.epoch){closePicture(m);this.send('pictureAck',{sequence:m.sequence,accepted:false});return;}this.sequence=m.sequence;
   // The browser paints after this task, so the exact base swap and retirement
   // of its corresponding CPU pictures are one visible change.
   if(m.pages?.length){
@@ -143,7 +147,9 @@ export class DrawingHost {
   this.onPresentation?.({kind:'view-transform',at:performance.now()});
  }
  beginViewportNavigation(){
-  if(!this.viewportScene.active)this.viewportScene.begin(this.backend.viewTransform);
+  if(this.viewportScene.active)return;
+  this.viewportScene.begin(this.backend.viewTransform);
+  this.send('navigationHold',true);
  }
  endViewportNavigation(){
   if(!this.viewportScene.active)return;
@@ -152,6 +158,10 @@ export class DrawingHost {
   try{this.reproject();}finally{this.viewportScene.baseView=base;}
   this.viewportScene.complete();this.syncVisibility();
   if(view){this.presentation.postMessage({method:'view',view});this.send('view',view);}
+  this.send('navigationHold',false);
+  // The touch path has ended. Install any held bitmap now, preserving packet order.
+  if(this.deferredDocument){const m=this.deferredDocument;this.deferredDocument=null;this.presentation.onmessage?.({data:m});}
+  if(this.deferredPicture){const m=this.deferredPicture;this.deferredPicture=null;this.picture(m).catch(e=>this.fault(e.message));}
  }
  setSurfaceStack(keys){this.send('stack',keys);}
  setSurfaceStyles(styles){this.send('styles',styles);}
@@ -169,7 +179,7 @@ export class DrawingHost {
  performanceSummary(){const samples=this.viewSamples??[],sorted=[...samples].sort((a,b)=>a-b);return {...(this.summary??{}),viewTransforms:samples.length,viewComputeP95Ms:sorted.length?sorted[Math.ceil(sorted.length*.95)-1]:null,displayWorker:this.presentationMetrics??null,retainedDocumentTiles:this.documentPresentation?.tiles.size??0,retainedDocumentGroups:this.documentPresentation?.tiles.size??0,deferredStrokePictures:this.pendingRetirements.size,retainedDocumentBytes:this.documentPresentation?.bytes??0};}
  frame(){return false;}
  async inspect(){const state=await this.call('inspect');this.update(state);return state;}
- destroy(){if(this.disposed)return;this.disposed=true;for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();this.viewportScene.destroy(this.canvas);for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
+ destroy(){if(this.disposed)return;this.disposed=true;for(const t of this.deferredDocument?.tiles??[])t.bitmap.close();this.deferredDocument=null;if(this.deferredPicture){closePicture(this.deferredPicture);this.deferredPicture=null;}for(const waiter of this.preciseWaiters)waiter.resolve(false);this.preciseWaiters=[];this.pendingCoverage.clear();this.pendingRetirements.clear();this.worker.terminate();for(const request of this.requests.values())request.reject(Error('Drawing host disposed'));this.requests.clear();for(const l of this.layers.values())l.element.remove();this.layers.clear();this.documentPresentation?.destroy();this.presentation.terminate();this.viewportScene.destroy(this.canvas);for(const request of this.presentationRequests.values())request.reject(Error('Display host disposed'));this.presentationRequests.clear();}
 }
 function closePicture(m){for(const p of m.pages??[])p.bitmap?.close();for(const l of m.layers??[])l.bitmap?.close();}
 

@@ -17,7 +17,7 @@ function stats(includeTiles=false){if(!renderer)return null;const r=renderer,b=r
  if(p.instantPreview)p.instantPreview.samples=p.instantPreview.samples?.slice(-16);
  return {info:{...r.info,alpha:false,presentationOpaque:true},errors:r.errors,completions:r.completions.slice(-4),performance:{...p,execution:'document-tile-worker',publication:{...metrics,pendingTiles:pendingTiles.size,publishing,publishRequested,lastSent,acknowledged,changed:sink.changed.size,retired:sink.retired.size,formal:includeTiles?metrics.formal:[]}},
   document:{width:r.document.width,height:r.document.height,count:r.document.count,jobs:r.document.jobs.length},inflight:r.inflight,needsFrame:r.needsFrame,viewPending:r.viewPending,historyPreparing:r.historyPreparing,guardPreparing:r.guardPreparing,
-  gates:{formal:!!formalGate,held:formalGate?.held??null,record:recordGate,heldRecords:heldRecords.length},proxy:{pending:r.proxy?.pending.size??0,finalizations:r.proxy?.finalizations.size??0,footprints:r.proxy?.footprints.size??0,error:r.proxy?.error},
+  gates:{formal:!!formalGate,held:formalGate?.held??null,record:recordGate,heldRecords:heldRecords.length,navigationHold:!!r.suspendFormalForNavigation,formalSubmissions:metrics.formal.length},proxy:{pending:r.proxy?.pending.size??0,finalizations:r.proxy?.finalizations.size??0,footprints:r.proxy?.footprints.size??0,error:r.proxy?.error},
   session:{id:session?.id??0,errors:session?.errors??[],pendingRawCount:session?.pendingRawCount??0,rawAccepted:session?.rawAccepted??0,browserPredictions:session?.browserPredictions??0,historyPatchHits:session?.historyPatchHits??0,historyReplayFallbacks:session?.historyReplayFallbacks??0,fullDocumentRebuilds:session?.fullDocumentRebuilds??0,fullReplayStrokes:session?.fullReplayStrokes??0,cancelledStrokeCount:session?.cancelledStrokeCount??0},
   ...(includeTiles?{tiles:[...b.tiles.values()].map(({surfaceKey,key,x,y})=>({surfaceKey,key,x,y})),recordIds:[...records].map(([token,value])=>[token,session.recordIds.get(value)])}:{}),presentationHeld:b.presentationHeld};
 }
@@ -33,8 +33,9 @@ function scheduleFrame(){
    session.frame(performance.now());
    if(renderer.errors.length||session.errors.length)throw Error([...renderer.errors,...session.errors].join(';'));
   }catch(error){fail(error);return;}
-  if(session.active||renderer.inflight||renderer.needsFrame||renderer.viewPending||renderer.guardPreparing||
-    renderer.document.jobs.length||renderer.mailbox.value||renderer.strokeFrames.size||renderer.backend.previewGpuPending) scheduleFrame();
+  if(session.active||renderer.inflight||(!renderer.suspendFormalForNavigation&&(
+    renderer.needsFrame||renderer.viewPending||renderer.guardPreparing||renderer.document.jobs.length||
+    renderer.mailbox.value||renderer.strokeFrames.size||renderer.backend.previewGpuPending))) scheduleFrame();
  },16);
 }
 function requestPublish(){publishRequested=true;queueMicrotask(()=>publish().catch(fail));}
@@ -45,7 +46,7 @@ function coherent(){const r=renderer;if(!r||r.backend.presentationHeld||r.histor
  return true;
 }
 async function publish(){
- if(publishing||!publishRequested||lastSent>acknowledged||!renderer||renderer.backend.presentationHeld)return;
+ if(publishing||!publishRequested||lastSent>acknowledged||!renderer||renderer.backend.presentationHeld||renderer.suspendFormalForNavigation)return;
  publishing=true;publishRequested=false;const epoch=visibilityEpoch,ready=coherent(),keys=ready?[...pendingTiles]:[];if(ready)pendingTiles.clear();
  let pages=[];
  try{pages=captureTilePages(renderer.backend,keys);const images=sink.snapshot();const result=await images,layers=result.layers,retired=ready?result.retired:[];if(!ready)for(const id of result.retired)sink.retired.add(id);
@@ -119,6 +120,13 @@ async function command(method,a){const r=renderer,s=session;
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
  case 'view':latestView=a;if(!initialView){initialView=true;r.setViewTransform(a);r.syncOverlayView();}else r.proxy?.setView(a);return;
+ case 'navigationHold':{
+  // Input-side scene transform executes immediately without this acknowledgement.
+  // Background drawing stops submitting new GPU work while the scene moves.
+  const hold=!!a;r.suspendFormalForNavigation=hold;r.setNavigationActive(hold);
+  if(!hold){r.needsFrame=true;r.requestWork();requestPublish();scheduleFrame();}
+  return;
+ }
  case 'stack':r.setSurfaceStack(a);return;
  case 'styles':r.setSurfaceStyles(a);return;
  case 'seamless':r.setSeamlessPreview(a);return;

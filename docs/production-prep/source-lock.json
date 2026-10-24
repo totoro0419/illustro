@@ -58,7 +58,7 @@
     {
       "path": "packages/brush-rt/src/renderer.mjs",
       "sourceCommit": "M08 QA reference-only shader/test pattern",
-      "sha256": "c6c00be10935a2df9c11f94909e1c9a2cc89386b282a7598472b9e2d3b07e932",
+      "sha256": "7f5372f8bc63742462a81129ff90bfb77bb490df1dd42aa1c961f440ef68e13c",
       "m08Exception": "M08 GPU compositor paper geometry, seamless preview and in-flight view invalidation retention. Requires exact 93 brush tests and WebGL2/WebGPU visual verification.",
       "performanceException": "Performance: bounded live/display scheduling and clears; reuse existing WebGPU analytic plain-sweep and direct single-preview composition on eligible tiles/layers; cache GL uniform locations. Canonical geometry/deposit shaders unchanged. Independent GPU pixels and full regression required. Gesture cancellation: discard only unfinished queued/preview/coverage work after submitted GPU work is acknowledged; preserve completed layer textures and formal history. No brush geometry, canonical input or shader change. Full regression and trusted-touch plus GPU pixel validation required.",
       "strokeHandoffException": "Ordered local commit reservations, sparse full-precision feedback, bounded formal GPU scheduling and verified per-stroke completion. Canonical reconstruction/deposition unchanged. Requires both-backend record/pixel/history/regression and sustained queue tests; physical Android remains unverified. WebGPU history-cache eviction defers textures referenced by the current encoder until GPU acknowledgement; broad-area cache-overflow regression required.",
@@ -85,7 +85,8 @@
       "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history.",
       "pendingStrokeFramesException": "Critical deadlock fix: waiting for a previously submitted CPU-stroke presentation must never block subsequent formal tile jobs. Coherent publication still waits for strokeFrames to clear, but GPU work progresses independently. Verify 12-stroke queue drains and exact pixels/history.",
       "activeStrokeBatchException": "Prioritize live pointer stroke samples with at most one background formal job. Large idle backlog batches only when no live stroke/navigation; precise pixels, stroke history and saving unchanged.",
-      "fixedSurroundException": "User-authorized M10 display-only fix: use the same constant outside-paper color RGB(.945,.955,.977) on WebGL2, WebGPU, stylesheet and idle/gesture screens; remove distance-to-paper edge shadow to stop background flashes. Inside-paper color sampling, canonical painting/deposition, GPU brush, history and saved files unchanged. Requires both backend browser color/gesture and original regressions; physical mobile verification pending."
+      "fixedSurroundException": "User-authorized M10 display-only fix: use the same constant outside-paper color RGB(.945,.955,.977) on WebGL2, WebGPU, stylesheet and idle/gesture screens; remove distance-to-paper edge shadow to stop background flashes. Inside-paper color sampling, canonical painting/deposition, GPU brush, history and saved files unchanged. Requires both backend browser color/gesture and original regressions; physical mobile verification pending.",
+      "gestureGpuYieldException": "User-directed M10 responsiveness repair: freeze new formal GPU submits and defer main-thread bitmap installation while user is moving the canvas; resume exact pending work after gesture. Formal stroke batches stay small while unfinished ink is visible. Stroke geometry, GPU deposit pixels, accepted samples, undo and portable saving format unchanged. Verify GPU backends, pending publication, accurate full pixels, touch gestures, background and transparency regressions. Physical tablet/phone verification required."
     },
     {
       "path": "packages/brush-rt/src/session.mjs",
@@ -457,7 +458,7 @@
     },
     {
       "path": "packages/brush-rt/src/drawing-host.mjs",
-      "sha256": "a18a3fed65ff7c1441253ddf93e3ef1e44ed8cebf6755edf3909815db7b2d5a3",
+      "sha256": "848e249cc63498e8ffbfd6d1bb4ca7662bb46cf3819e02626d6bbccd83737e06",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
@@ -468,17 +469,19 @@
       "preciseSpecialModeException": "Seamless wrapping/reference presentation cannot rely on retained ordinary document tiles. Force precise output and acknowledge required image before declaring formal stroke ready, preserving M08 visual correctness.",
       "regressionRepair": "M10 previous run #39597604396: hide stale reference framebuffer on ordinary view; immediately redraw view changes; preserve responsive 1-job foreground but allow grouped draining of >512 queued idle formal jobs, without changing stroke record/pixels/history.",
       "navigationSceneRebuild": "Replaced navigation-time bitmap/view worker requests and per-layer reproject with one DOM compositor scene transform. Commit is not proof of device responsiveness; gesture blocking experiment required.",
-      "previewAlphaException": "PR49 temporary stroke preview compositor uses alpha-enabled Canvas2D drawImage instead of mobile BitmapRenderer; formal GPU pipeline, stroke geometry, 128px history, persistence unchanged. Requires WebGL2/WebGPU temporary overlay alpha, pending formal confirmation screenshot, original regressions and physical mobile verification."
+      "previewAlphaException": "PR49 temporary stroke preview compositor uses alpha-enabled Canvas2D drawImage instead of mobile BitmapRenderer; formal GPU pipeline, stroke geometry, 128px history, persistence unchanged. Requires WebGL2/WebGPU temporary overlay alpha, pending formal confirmation screenshot, original regressions and physical mobile verification.",
+      "gestureGpuYieldException": "User-directed M10 responsiveness repair: freeze new formal GPU submits and defer main-thread bitmap installation while user is moving the canvas; resume exact pending work after gesture. Formal stroke batches stay small while unfinished ink is visible. Stroke geometry, GPU deposit pixels, accepted samples, undo and portable saving format unchanged. Verify GPU backends, pending publication, accurate full pixels, touch gestures, background and transparency regressions. Physical tablet/phone verification required."
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
-      "sha256": "91f3be55ccf5af115b72fe1bd61c41c519f1c02e353d03b87d5bc149151abddb",
+      "sha256": "eaa8f4d5ac23c185212cdcd8316829af8cf033a2c629195db263fa617db83e0c",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
       "autonomousNavigationException": "Self-driven drawing worker, isolation of input from view updates, and atomic display ownership. Must verify WebGL2/WebGPU, Undo and saved image parity; physical device pending.",
       "gestureBatchException": "Work-limited formal GPU tile batches during user gestures (4 instead of 16), still progressing while navigation remains independent. No geometry, deposition or stroke record changes. Verify both backends, formal pixel parity, gesture latency and real phone.",
-      "penupBatchException": "Start the formal GPU budget immediately at pen-up even while canonical stroke records finish. This is a batch-size limit, not a 280ms delay. Requires exact pixel/history and native gesture comparison."
+      "penupBatchException": "Start the formal GPU budget immediately at pen-up even while canonical stroke records finish. This is a batch-size limit, not a 280ms delay. Requires exact pixel/history and native gesture comparison.",
+      "gestureGpuYieldException": "User-directed M10 responsiveness repair: freeze new formal GPU submits and defer main-thread bitmap installation while user is moving the canvas; resume exact pending work after gesture. Formal stroke batches stay small while unfinished ink is visible. Stroke geometry, GPU deposit pixels, accepted samples, undo and portable saving format unchanged. Verify GPU backends, pending publication, accurate full pixels, touch gestures, background and transparency regressions. Physical tablet/phone verification required."
     },
     {
       "path": "packages/brush-rt/src/worker-stroke-sink.mjs",

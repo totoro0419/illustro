@@ -77,6 +77,8 @@ try{
    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[first,second]});
    const start=await state();
    assert.equal(start.active,true,'second finger activates navigation immediately');
+   const startGate=await page.evaluate(async()=> (await window.__illustroPerformance.probe().renderer.call('inspect')).gates);
+   assert.equal(startGate.navigationHold,true,'drawing worker must be notified that a gesture owns the GPU presentation priority');
    // Pan, pinch and rotation from physical multi-point touch input; no worker
    // reply or deferred GPU completion is allowed in this step.
    for(let i=1;i<=7;i++){
@@ -87,7 +89,9 @@ try{
     ]});
    }
    moving=await state();
-   held=await page.evaluate(async()=> (await window.__illustroPerformance.probe().renderer.call('inspect')).gates.held);
+   const activeGate=await page.evaluate(async()=> (await window.__illustroPerformance.probe().renderer.call('inspect')).gates);
+   held=activeGate.held;
+   assert.equal(activeGate.navigationHold,true,'formal GPU work must remain suspended while camera is moving');
    assert.equal(held,'formal',backend+' formal work must still be blocked');
    assert.ok(moving.active,backend+' navigation remains active while formal is blocked');
    assert.ok(moving.transform.startsWith('matrix(')&&moving.transform!=='matrix(1,0,0,1,0,0)',backend+' scene transformed synchronously');
@@ -102,6 +106,8 @@ try{
   }
   await page.evaluate(()=>window.__illustroPerformance.probe().renderer.drain());
   endState=await state();
+  const endGate=await page.evaluate(async()=> (await window.__illustroPerformance.probe().renderer.call('inspect')).gates);
+  assert.equal(endGate.navigationHold,false,'drawing worker resumes exact formal publication after fingers release');
   assert.equal(endState.active,false,'navigation ended after fingers released');
   assert.equal(endState.strokes,before.strokes,'gesture added no stroke after completion');
   assert.deepEqual(errors,[],backend+' no uncaught browser exceptions');
