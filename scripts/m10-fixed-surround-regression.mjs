@@ -40,6 +40,8 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/?m08=1&perf=1&backend='+backend);
   await page.locator('#new').click();
   await page.waitForFunction(()=>!document.querySelector('#brush')?.disabled,null,{timeout:90000});
+  // Diagnostic controls are fixed above the viewport; exclude them from pixels.
+  await page.evaluate(()=>{for(const id of ['qaPanel','canvasPerformance']){const el=document.getElementById(id);if(el)el.style.display='none';}});
   const test=await page.evaluate(()=>{
     const m=window.__illustroPerformance;
     m.view(.10,0);
