@@ -47,6 +47,8 @@ jobs:
           HOME_EVIDENCE_DIRECTORY=/tmp/independent-paper-evidence/works-safety node scripts/editor-works-safety-smoke.mjs
       - name: Independent compositor trace while real formal drawing advances
         run: node scripts/m10-paper-motion-trace.mjs
+      - name: Extended repeated drawing, memory and document lifetimes (10 minutes per backend)
+        run: node scripts/m10-paper-soak.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: independent-paper-evidence, path: /tmp/independent-paper-evidence/}
