@@ -8,6 +8,7 @@
 :root{
  --a-background:#F7F9FC;
  --a-surround:#E9EEF5;
+ --a-canvas-surround:#F1F4F9; /* Matches GPU viewport outside the document. */
  --a-surface:#FFFFFF;
  --a-surface-soft:#F9FBFF;
  --a-border:#E2E7F0;
@@ -50,10 +51,8 @@ html[data-ui-input="hover"] .rail .tool-button:hover:not(:disabled),html[data-ui
 .rail .tool-caption{color:#66758D}
 .rail .all{border-top:1px solid var(--a-border)!important;color:#536BA5}
 .rail .tool-button:disabled{opacity:.78}
-main#canvasArea{background:
- radial-gradient(ellipse at 28% 19%,#D8EBFC75,transparent 43%),
- radial-gradient(ellipse at 76% 80%,#E3D9FC55,transparent 40%),
- var(--a-surround)}
+/* Stationary surroundings must not change when a frame is missing or moving. */
+main#canvasArea{background:var(--a-canvas-surround)}
 .canvas-top{background:#FFFFFFDF;border-color:var(--a-border)}
 #status{color:var(--a-subtle)}
 .document-actions button{border-color:#DCE3EF;color:#485A75;background:#FFFFFF}
@@ -256,11 +255,16 @@ body.canvas-viewport main#canvasArea>.canvas-view-strip{flex:0 0 auto}
 body.canvas-viewport main#canvasArea>.surface{
  display:block;flex:1 1 0;align-self:stretch;min-width:0;min-height:0;
  width:100%;max-width:none;height:auto;margin:0;padding:0;
- background:transparent;border:0;border-radius:0;box-shadow:none;overflow:hidden;
+ background:var(--a-canvas-surround);border:0;border-radius:0;box-shadow:none;overflow:hidden;
+}
+/* Drawing frames, the retained artwork and exposed scene use the same
+   stationary fallback; only the artwork itself moves. */
+body.canvas-viewport main#canvasArea>.surface>.illustro-viewport-scene{
+ background:var(--a-canvas-surround);
 }
 body.canvas-viewport main#canvasArea>.surface>.illustro-viewport-scene>#canvas{
  display:block;width:100%;height:100%;max-width:none;aspect-ratio:auto;
- background:transparent;touch-action:none;
+ background:var(--a-canvas-surround);touch-action:none;
 }
 /* Header flex buttons must still honor the saved/error visibility state. */
 #retryWorkSave[hidden]{display:none!important}
