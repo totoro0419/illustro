@@ -90,7 +90,8 @@ export class BrushSurface{
     if(e.code==='Space')this.spacePressed=e.type==='keydown'&&!(e.target instanceof HTMLInputElement)&&!(e.target instanceof HTMLTextAreaElement);
   };
   private wheelNavigation=(e:WheelEvent)=>{
-    if(!this.navigation||this.pointer!==null)return;
+    // Camera input is independent of active or unfinished strokes.
+    if(!this.navigation)return;
     e.preventDefault();this.navigation.wheelZoom(e.deltaY,this.pointerLocation(e));
   };
   private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(immediate)this.onStateChanged('view-command');}}
@@ -115,11 +116,17 @@ export class BrushSurface{
     if(e.pointerType==='touch'){
       e.preventDefault();
       const penActive=this.pointer!==null&&this.strokePointerType==='pen';
-      if(this.navigation?.touchCount||penActive){
-       if(this.pointer!==null){if(!this.strokeMoved&&e.timeStamp===this.strokeDownAt)void this.cancelStroke();else this.finishStroke();}
-      }
+      const joiningGesture=(this.navigation?.touchCount??0)>0;
+      // Admit the camera gesture BEFORE doing anything with the brush.
+      // A finger on the screen must not end an active stylus stroke.
       this.navigation?.touchDown(e.pointerId,this.pointerLocation(e),!this.fingerDrawing||penActive);
       this.inputViewport.setPointerCapture(e.pointerId);
+      if(joiningGesture&&this.pointer!==null&&this.strokePointerType==='touch'){
+       // A stationary first finger was the start of a gesture, not artwork.
+       // Keep strokes that actually moved; they finish asynchronously after
+       // navigation has started and must never delay the scene transform.
+       if(this.strokeMoved)this.finishStroke();else void this.cancelStroke();
+      }
       if(this.navigation?.active||!this.fingerDrawing||penActive)return;
     }else if(e.button===1||(e.button===0&&this.spacePressed)){
       e.preventDefault();this.navigation?.mouseDown(e.pointerId,this.pointerLocation(e));
