@@ -118,9 +118,8 @@ vec4 takePixel(ivec2 p){
 void main(){
  vec2 doc=documentPosition;
  if(viewOptions.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=viewDocument.x||doc.y>=viewDocument.y)){
-  vec2 outside=max(max(-doc,doc-viewDocument.xy),vec2(0.));
-  float shadow=.075*exp(-length(outside)*viewDocument.z/13.);
-  outColor=vec4(vec3(.945,.955,.977)-vec3(shadow),1.);return;
+  // The space around the paper never changes color as the document moves.
+  outColor=vec4(.945,.955,.977,1.);return;
  }
  float scale=max(1.,viewOptions.w);vec2 pixel=vec2(doc.x,viewOptions.z>.5?doc.y:viewDocument.y-doc.y)/scale-.5;
  ivec2 at=ivec2(floor(pixel));vec2 w=fract(pixel);
@@ -157,9 +156,8 @@ fn takePixel(p:vec2i)->vec4f{
 @fragment fn fragment(in:VertexOut)->@location(0) vec4f{
  let doc=in.doc;
  if(view.options.x<.5&&(doc.x<0.||doc.y<0.||doc.x>=view.document.x||doc.y>=view.document.y)){
-  let outside=max(max(-doc,doc-view.document.xy),vec2f(0.));
-  let shadow=.075*exp(-length(outside)*view.document.z/13.);
-  return vec4f(vec3f(.945,.955,.977)-vec3f(shadow),1.);
+  // Same fixed surround as CSS and the WebGL2 shader.
+  return vec4f(.945,.955,.977,1.);
  }
  let scale=max(1.,view.options.w);let pixel=doc/scale-vec2f(.5);let at=vec2i(floor(pixel));let w=fract(pixel);
  var color:vec4f;
