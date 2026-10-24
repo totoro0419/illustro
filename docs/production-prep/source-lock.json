@@ -479,7 +479,7 @@
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
-      "sha256": "7ab12ca09d19234e78cb46212c36f32e04e59a8396ed111737b04d328e0d499c",
+      "sha256": "19fc43c644160b821149236a00a513403d3bfd8f1c533328359215134aa0de31",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-remove-presentation-only-2026-10-23",
@@ -488,7 +488,8 @@
       "penupBatchException": "Start the formal GPU budget immediately at pen-up even while canonical stroke records finish. This is a batch-size limit, not a 280ms delay. Requires exact pixel/history and native gesture comparison.",
       "deletionOnlyException": "Remove live connections to legacy view and preview from the editor-owned drawing Worker. Preserve canonical brush/strict GPU formal raster/history. The deleted screen output is not restored. Pending actual-browser regression required.",
       "rebuildBase": "6e02c1dd24757b44734601f7f1d91b8443f4af5e",
-      "changeReason": "User-authorized independent canvas presentation rebuild; canonical brush math and shaders preserved."
+      "changeReason": "User-authorized independent canvas presentation rebuild; canonical brush math and shaders preserved.",
+      "displayAcceptanceDiagnostics": "Expose the published formal epoch/serial and a monotonic bounded-log submission count for validation. Does not gate input or change brush, history, or saved pixels."
     },
     {
       "path": "packages/brush-rt/src/worker-stroke-sink.mjs",

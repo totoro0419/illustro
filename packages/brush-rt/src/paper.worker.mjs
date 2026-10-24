@@ -2,10 +2,10 @@ import {queueFuturePaperPacket} from '@rt/paper-packets';
 import {makeReferencePattern} from '@rt/reference-pattern';
 import {PaperRaster} from '@rt/paper-raster';
 const PAGE=512,TILE=128,GUTTER=16,JOURNAL_LIMIT=16*1024*1024;
-let width,height,raster,port,epoch=0,serial=0,version=0,scheduled=false,running=false,waiting=false;
+let width,height,raster,port,epoch=0,serial=0,version=0,scheduled=false,running=false,waiting=false,baseSerial=0;
 let reference=false,referenceCanvas;
 let styles=[],dirty=new Set,base=new Map,overlays=new Map,covered=new Map,journal=new Map,journalBytes=0;
-const pendingFrames=new Map,acceptedPages=new Map,future=[];let acceptedSerial=0,acceptedMinDensity=null,acceptedCanonicalPending=0;
+const pendingFrames=new Map,acceptedPages=new Map,future=[];let acceptedSerial=0,acceptedMinDensity=null,acceptedCanonicalPending=0,acceptedFormalEpoch=0,acceptedFormalSerial=0;
 const metrics={frames:0,accepted:0,dropped:0,pages:0,maxComposeMs:0,baseBytes:0};
 const pause=()=>new Promise(ok=>setTimeout(ok,0));
 function markRect(rect){if(!rect)return;for(let y=Math.max(0,Math.floor((rect[1]-GUTTER)/PAGE));y<Math.min(Math.ceil(height/PAGE),Math.ceil((rect[3]+GUTTER)/PAGE));y++)for(let x=Math.max(0,Math.floor((rect[0]-GUTTER)/PAGE));x<Math.min(Math.ceil(width/PAGE),Math.ceil((rect[2]+GUTTER)/PAGE));x++)dirty.add(x+','+y);}
@@ -16,7 +16,7 @@ function canvas(w,h){const c=new OffscreenCanvas(w,h);return {canvas:c,context:c
 function put(tile){const c=canvas(TILE,TILE);c.context.putImageData(new ImageData(new Uint8ClampedArray(tile.pixels.buffer,tile.pixels.byteOffset,tile.pixels.byteLength),TILE,TILE),0,0);return c.canvas;}
 function install(m){
  if(m.epoch!==epoch){if(m.epoch>epoch){queueFuturePaperPacket(future,m);}return;}
- version++;
+ version++;baseSerial=m.serial;
  if(m.replace){markAll();base.clear();journal.clear();journalBytes=0;}
  const before=[],after=[];
  for(const t of m.tiles){const key=t.surfaceId+'\u0000'+t.key;before.push([key,base.get(key)??null]);let ink=false;for(let i=3;i<t.pixels.length;i+=4)if(t.pixels[i]){ink=true;break;}const image=ink?put(t):null;if(image)base.set(key,image);else base.delete(key);after.push([key,image]);const [x,y]=t.key.split(',').map(Number);markRect([x*TILE,y*TILE,(x+1)*TILE,(y+1)*TILE]);}
@@ -50,8 +50,8 @@ async function compose(){
    pages.push({key,x,y,width:w,height:h,gutter:GUTTER,bitmap:used?await createImageBitmap(out.canvas):null});images.push([key,used?out.canvas:null]);await pause();
   }
   if(current!==version){pages.forEach(p=>p.bitmap?.close());keys.forEach(k=>dirty.add(k));metrics.dropped++;return;}
-  const id=++serial;pendingFrames.set(id,{covered:[...covered],images,minDensity,canonicalPending});waiting=true;metrics.frames++;metrics.pages+=pages.length;metrics.maxComposeMs=Math.max(metrics.maxComposeMs,performance.now()-at);
-  postMessage({type:'frame',epoch,serial:id,pages,metrics:{...metrics,minPreviewDensity:minDensity,canonicalPreviewPending:canonicalPending,densityUpgrades:raster.densityUpgrades,rasterBytes:raster.residentBytes,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}},pages.map(p=>p.bitmap).filter(Boolean));
+  const id=++serial;pendingFrames.set(id,{covered:[...covered],images,minDensity,canonicalPending,formalEpoch:epoch,formalSerial:baseSerial});waiting=true;metrics.frames++;metrics.pages+=pages.length;metrics.maxComposeMs=Math.max(metrics.maxComposeMs,performance.now()-at);
+  postMessage({type:'frame',epoch,serial:id,pages,metrics:{...metrics,formalEpoch:epoch,formalSerial:baseSerial,minPreviewDensity:minDensity,canonicalPreviewPending:canonicalPending,densityUpgrades:raster.densityUpgrades,rasterBytes:raster.residentBytes,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}},pages.map(p=>p.bitmap).filter(Boolean));
  }catch(error){postMessage({type:'fault',message:String(error)});}finally{snapshot.release();running=false;schedule();}
 }
 function history(m){
@@ -88,9 +88,9 @@ onmessage=({data:m})=>{
  case 'history':history(m);break;
  case 'accepted':{
   const frame=pendingFrames.get(m.serial),ids=frame?.covered??[];pendingFrames.delete(m.serial);if(m.serial===serial)waiting=false;
-  if(frame&&m.serial>acceptedSerial){acceptedSerial=m.serial;acceptedMinDensity=frame.minDensity;acceptedCanonicalPending=frame.canonicalPending;for(const [key,image]of frame.images){if(image)acceptedPages.set(key,image);else acceptedPages.delete(key);}metrics.accepted++;}
+  if(frame&&m.serial>acceptedSerial){acceptedSerial=m.serial;acceptedMinDensity=frame.minDensity;acceptedCanonicalPending=frame.canonicalPending;acceptedFormalEpoch=frame.formalEpoch;acceptedFormalSerial=frame.formalSerial;for(const [key,image]of frame.images){if(image)acceptedPages.set(key,image);else acceptedPages.delete(key);}metrics.accepted++;}
   if(m.epoch===epoch){for(const [id,publication]of ids)if(covered.get(id)===publication){const original=overlays.get(id);raster.adopted(id);if(original?.seamless)for(let i=1;i<9;i++)if(!overlays.has(id+i)&&!raster.sink.layers.has(id+i))raster.adopted(id+i);overlays.delete(id);covered.delete(id);}}
-  postMessage({type:'metrics',metrics:{...metrics,minPreviewDensity:acceptedMinDensity,canonicalPreviewPending:acceptedCanonicalPending,densityUpgrades:raster.densityUpgrades,rasterBytes:raster.residentBytes,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}});schedule();break;
+  postMessage({type:'metrics',metrics:{...metrics,formalEpoch:acceptedFormalEpoch,formalSerial:acceptedFormalSerial,minPreviewDensity:acceptedMinDensity,canonicalPreviewPending:acceptedCanonicalPending,densityUpgrades:raster.densityUpgrades,rasterBytes:raster.residentBytes,journalBytes,acceptedBytes:[...acceptedPages.values()].reduce((n,c)=>n+c.width*c.height*4,0),overlays:[...overlays.values()].filter(o=>o.visible).length,retainedOverlays:overlays.size}});schedule();break;
  }
  case 'rejected':pendingFrames.delete(m.serial);if(m.serial===serial)waiting=false;markAll();break;
  }}catch(error){postMessage({type:'fault',message:String(error)});}

@@ -5,7 +5,25 @@ const require=createRequire(import.meta.url),{chromium}=require(process.env.RT_P
 const base=process.env.PAPER_PUBLIC_URL??'https://totoro0419.github.io/illustro/qa/m10-independent-canvas/app/',expected=process.env.EXPECTED_COMMIT_SHA,out=process.env.PUBLIC_PAPER_EVIDENCE??'/tmp/public-paper-evidence';
 if(!expected)throw Error('An exact source commit is required');
 await fs.mkdir(out,{recursive:true});const report={url:base,expected,physicalDevices:'UNVERIFIED',errors:[]};let browser;
-async function settled(page){await page.evaluate(async()=>{await window.__illustroPerformance.probe().renderer.drain();});await page.waitForFunction(()=>{const d=window.__illustroPerformance.read();return !d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!d.paper.metrics.overlays&&d.paper.frames>0;},null,{timeout:45000});}
+async function settled(page) {
+  // Drain the admitted application history first. A renderer-only drain can run
+  // before HistoryNavigation.prepare() has submitted the requested Undo/Redo.
+  await page.waitForFunction(()=>{
+    const d=window.__illustroPerformance.read();
+    if(d.historyNavigation?.fault)throw Error(d.historyNavigation.fault);
+    return !d.historyNavigation?.pending&&!d.frameState.historySyncing&&!d.frameState.inputBarrier;
+  },null,{timeout:120000});
+  const target=await page.evaluate(async()=>{
+    const p=window.__illustroPerformance.probe();await p.renderer.drain();
+    return (await p.renderer.inspect()).display;
+  });
+  await page.waitForFunction(t=>{
+    const d=window.__illustroPerformance.read(),m=d.paper.metrics;
+    return !d.historyNavigation?.pending&&!d.frameState.historySyncing&&!d.frameState.inputBarrier&&
+      !d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!m.overlays&&!m.retainedOverlays&&
+      m.formalEpoch===t.epoch&&m.formalSerial>=t.serial&&d.paper.frames>0;
+  },target,{timeout:120000});
+}
 async function pixels(page){return page.evaluate(async()=>{const p=window.__illustroPerformance.probe(),formal=await p.renderer.read(p.controller.selectedLayer.surface.descriptor.surfaceId),c=new OffscreenCanvas(512,512),ctx=c.getContext('2d',{willReadFrequently:true});for(const page of p.paper.world.querySelectorAll(':scope > canvas')){const g=Number(page.dataset.paperGutter??0),w=page.width-g*2,h=page.height-g*2;ctx.drawImage(page,g,g,w,h,parseFloat(page.style.left)+g,parseFloat(page.style.top)+g,w,h);}const visible=ctx.getImageData(0,0,512,512).data;let alphaDifferent=0,premultipliedDifferent=0;for(let i=0;i<formal.length;i+=4){if(Math.abs(visible[i+3]-formal[i+3])>1)alphaDifferent++;for(let j=0;j<3;j++)if(Math.abs(visible[i+j]*visible[i+3]/255-formal[i+j]*formal[i+3]/255)>1.01)premultipliedDifferent++;}const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',formal))).map(n=>n.toString(16).padStart(2,'0')).join('');return {hash,alphaDifferent,premultipliedDifferent,pages:p.paper.world.querySelectorAll(':scope > canvas').length};});}
 try{
  browser=await chromium.launch({executablePath:process.env.PAPER_CHROME??'/usr/bin/google-chrome',headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});

@@ -31,13 +31,28 @@ async function newDocument(page,size) {
   await page.waitForFunction(()=>document.querySelectorAll('.illustro-paper-world').length===1);
 }
 async function settled(page) {
-  await page.evaluate(async()=>{await window.__illustroPerformance.probe().renderer.drain();});
-  await page.waitForFunction(()=>{const d=window.__illustroPerformance.read();return !d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!d.paper.metrics.overlays&&!d.paper.metrics.retainedOverlays&&d.paper.frames>0;},null,{timeout:120000});
+  // Drain the admitted application history first. A renderer-only drain can run
+  // before HistoryNavigation.prepare() has submitted the requested Undo/Redo.
+  await page.waitForFunction(()=>{
+    const d=window.__illustroPerformance.read();
+    if(d.historyNavigation?.fault)throw Error(d.historyNavigation.fault);
+    return !d.historyNavigation?.pending&&!d.frameState.historySyncing&&!d.frameState.inputBarrier;
+  },null,{timeout:120000});
+  const target=await page.evaluate(async()=>{
+    const p=window.__illustroPerformance.probe();await p.renderer.drain();
+    return (await p.renderer.inspect()).display;
+  });
+  await page.waitForFunction(t=>{
+    const d=window.__illustroPerformance.read(),m=d.paper.metrics;
+    return !d.historyNavigation?.pending&&!d.frameState.historySyncing&&!d.frameState.inputBarrier&&
+      !d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!m.overlays&&!m.retainedOverlays&&
+      m.formalEpoch===t.epoch&&m.formalSerial>=t.serial&&d.paper.frames>0;
+  },target,{timeout:120000});
 }
 async function state(page) {
   return page.evaluate(async()=>{
     const p=window.__illustroPerformance.probe(),d=window.__illustroPerformance.read(),r=await p.renderer.inspect();
-    return {at:Date.now(),frames:d.paper.frames,metrics:d.paper.metrics,handoff:{accepted:d.handoff.accepted,rejected:d.handoff.rejected,pendingLogical:d.handoff.pendingLogical,pendingGpu:d.handoff.pendingGpu},
+    return {at:Date.now(),historyNavigation:d.historyNavigation,frameState:d.frameState,displayTarget:r.display,frames:d.paper.frames,metrics:d.paper.metrics,handoff:{accepted:d.handoff.accepted,rejected:d.handoff.rejected,pendingLogical:d.handoff.pendingLogical,pendingGpu:d.handoff.pendingGpu},
       formalSubmissions:r.performance.formalRender.count,formalJobs:r.document.jobs,formalInflight:r.inflight,
       worlds:document.querySelectorAll('.illustro-paper-world').length,pages:p.paper.world.querySelectorAll(':scope > canvas').length,
       oldOverlays:document.querySelectorAll('.illustro-stroke-overlay').length,fault:d.paper.fault};
@@ -157,6 +172,6 @@ try {
   report.status='PASS';
 } catch(error) {
   report.status='FAIL';report.failure=String(error.stack??error);
-  if(activePage){report.failureState=await state(activePage).catch(e=>String(e));await activePage.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});}
+  if(activePage){report.failureState=await state(activePage).catch(e=>String(e));console.log('SOAK FAILURE STATE',JSON.stringify(report.failureState));await activePage.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});}
   throw error;
 } finally {await save();await browser?.close();await new Promise(ok=>server.close(ok));}

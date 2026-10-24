@@ -10,7 +10,25 @@ async function preset(page,id,size){await page.evaluate(({id,size})=>{const el=d
 async function draw(page,points=36,y=.4){const b=await page.locator('#canvas').boundingBox();await page.mouse.move(b.x+b.width*.32,b.y+b.height*y);await page.mouse.down();for(let i=1;i<=points;i++)await page.mouse.move(b.x+b.width*(.32+.36*i/points),b.y+b.height*(y+.06*Math.sin(i/points*Math.PI*2)));await page.mouse.up();}
 async function drawPen(page,points=95,y=.35){const b=await page.locator('#canvas').boundingBox(),cdp=await page.context().newCDPSession(page),a={x:b.x+b.width*.32,y:b.y+b.height*y};await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',...a,button:'left',buttons:1,clickCount:1,pointerType:'pen',force:1});for(let i=1;i<=points;i++)await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:b.x+b.width*(.32+.36*i/points),y:b.y+b.height*(y+.06*Math.sin(i/points*Math.PI*2)),button:'left',buttons:1,pointerType:'pen',force:1});await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:b.x+b.width*.68,y:b.y+b.height*y,button:'left',buttons:0,clickCount:1,pointerType:'pen',force:0});await cdp.detach();}
 async function busy(page){await page.waitForFunction(async()=>{const s=await window.__illustroPerformance.probe().renderer.inspect();return s.inflight||s.document.jobs>0;},null,{timeout:30000});}
-async function settled(page){console.log('settling');await page.evaluate(async()=>{const p=window.__illustroPerformance.probe();await p.renderer.drain();});await page.waitForFunction(()=>{const d=window.__illustroPerformance.read();return !d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!d.paper.metrics.overlays;},null,{timeout:45000});}
+async function settled(page) {
+  // Drain the admitted application history first. A renderer-only drain can run
+  // before HistoryNavigation.prepare() has submitted the requested Undo/Redo.
+  await page.waitForFunction(()=>{
+    const d=window.__illustroPerformance.read();
+    if(d.historyNavigation?.fault)throw Error(d.historyNavigation.fault);
+    return !d.historyNavigation?.pending&&!d.frameState.historySyncing&&!d.frameState.inputBarrier;
+  },null,{timeout:120000});
+  const target=await page.evaluate(async()=>{
+    const p=window.__illustroPerformance.probe();await p.renderer.drain();
+    return (await p.renderer.inspect()).display;
+  });
+  await page.waitForFunction(t=>{
+    const d=window.__illustroPerformance.read(),m=d.paper.metrics;
+    return !d.historyNavigation?.pending&&!d.frameState.historySyncing&&!d.frameState.inputBarrier&&
+      !d.handoff.pendingLogical&&!d.handoff.pendingGpu&&!m.overlays&&!m.retainedOverlays&&
+      m.formalEpoch===t.epoch&&m.formalSerial>=t.serial&&d.paper.frames>0;
+  },target,{timeout:120000});
+}
 async function pixels(page){return page.evaluate(async()=>{const {renderer,controller}=window.__illustroPerformance.probe(),layers=[];for(const layer of controller.layers){const bytes=new Uint8Array(await renderer.read(layer.surface.descriptor.surfaceId));layers.push({id:layer.surface.descriptor.surfaceId,hash:Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('')});}return layers;});}
 async function visibleMatches(page){return page.evaluate(async()=>{const {renderer,controller,paper}=window.__illustroPerformance.probe(),w=controller.document.root.width,h=controller.document.root.height;if(controller.layers.length!==1)throw Error('Single-layer comparator');const expected=await renderer.read(controller.selectedLayer.surface.descriptor.surfaceId),c=new OffscreenCanvas(w,h),ctx=c.getContext('2d');for(const p of paper.world.querySelectorAll('canvas')){const g=Number(p.dataset.paperGutter??0),pw=p.width-g*2,ph=p.height-g*2;ctx.drawImage(p,g,g,pw,ph,parseFloat(p.style.left)+g,parseFloat(p.style.top)+g,pw,ph);}const actual=ctx.getImageData(0,0,w,h).data;let different=0,max=0,alphaDifferent=0,premultipliedDifferent=0,premultipliedMax=0;for(let i=0;i<actual.length;i++){if(i%4!==3&&!expected[i-i%4+3]&&!actual[i-i%4+3])continue;const d=Math.abs(actual[i]-expected[i]);max=Math.max(max,d);if(d>2)different++;if(i%4!==3){const k=i-i%4,pm=Math.abs(actual[i]*actual[k+3]/255-expected[i]*expected[k+3]/255);premultipliedMax=Math.max(premultipliedMax,pm);if(pm>1.01)premultipliedDifferent++;}if(i%4===3&&d>1)alphaDifferent++;}return {different,max,alphaDifferent,premultipliedDifferent,premultipliedMax,total:actual.length};});}
 async function screenSeams(page,label){
