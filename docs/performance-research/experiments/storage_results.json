@@ -1,0 +1,48 @@
+{
+  "kind": "local_filesystem_functional_failure_injection",
+  "cases": [
+    {
+      "fault": "before_data",
+      "recovered_generation": 0,
+      "old_data_unchanged": true
+    },
+    {
+      "fault": "truncated_data",
+      "recovered_generation": 0,
+      "old_data_unchanged": true
+    },
+    {
+      "fault": "after_data",
+      "recovered_generation": 0,
+      "old_data_unchanged": true
+    },
+    {
+      "fault": "truncated_manifest",
+      "recovered_generation": 0,
+      "old_data_unchanged": true
+    },
+    {
+      "fault": "after_manifest_temp",
+      "recovered_generation": 0,
+      "old_data_unchanged": true
+    },
+    {
+      "fault": "after_publish",
+      "recovered_generation": 1,
+      "old_data_unchanged": true
+    },
+    {
+      "fault": "corrupt_published_data",
+      "recovered_generation": 0,
+      "old_data_unchanged": true
+    }
+  ],
+  "assertions_passed": true,
+  "source_sha256": "6a1711eaeba912ce0dc7590e5e58e964547bd58da0dc5eebc4b3bd4a93916a6e",
+  "limits": [
+    "No real power failure, process kill, directory fsync or disk-controller ordering tested",
+    "No multi-process external conflict, quota or browser storage tested",
+    "A hash detects corruption, not whether the document graph is semantically complete",
+    "Recovery result in this scratch filesystem is not a product protection guarantee"
+  ]
+}

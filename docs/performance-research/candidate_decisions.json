@@ -1,0 +1,1262 @@
+[
+  {
+    "id": "R01-A",
+    "research": "R01",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r01",
+    "tests": [
+      "T01"
+    ],
+    "comparison_recommendation": "A+CとBを比較",
+    "reason": "表示姿勢だけでpixel更新を待たない経路と、小分け厳密評価の実機比較。接地継続/休止はユーザー発案と比較待ち。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R01-B",
+    "research": "R01",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r01",
+    "tests": [
+      "T01"
+    ],
+    "comparison_recommendation": "A+CとBを比較",
+    "reason": "表示姿勢だけでpixel更新を待たない経路と、小分け厳密評価の実機比較。接地継続/休止はユーザー発案と比較待ち。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R01-C",
+    "research": "R01",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r01",
+    "tests": [
+      "T01"
+    ],
+    "comparison_recommendation": "A+CとBを比較",
+    "reason": "表示姿勢だけでpixel更新を待たない経路と、小分け厳密評価の実機比較。接地継続/休止はユーザー発案と比較待ち。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R02-A",
+    "research": "R02",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r02",
+    "tests": [
+      "T02"
+    ],
+    "comparison_recommendation": "B+Cを優先試作、Aをoracle",
+    "reason": "依存順の受理済編集と、隔離した未適用sessionを分ける。E01は限定成立で実依存の宣言は未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R02-B",
+    "research": "R02",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r02",
+    "tests": [
+      "T02"
+    ],
+    "comparison_recommendation": "B+Cを優先試作、Aをoracle",
+    "reason": "依存順の受理済編集と、隔離した未適用sessionを分ける。E01は限定成立で実依存の宣言は未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R02-C",
+    "research": "R02",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r02",
+    "tests": [
+      "T02"
+    ],
+    "comparison_recommendation": "B+Cを優先試作、Aをoracle",
+    "reason": "依存順の受理済編集と、隔離した未適用sessionを分ける。E01は限定成立で実依存の宣言は未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R03-A",
+    "research": "R03",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r03",
+    "tests": [
+      "T03"
+    ],
+    "comparison_recommendation": "Aを基準にB/Cを筆別比較",
+    "reason": "被覆集約や有限再評価が同値な筆だけ仕事を省く。全筆へ一般化しない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R03-B",
+    "research": "R03",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r03",
+    "tests": [
+      "T03"
+    ],
+    "comparison_recommendation": "Aを基準にB/Cを筆別比較",
+    "reason": "被覆集約や有限再評価が同値な筆だけ仕事を省く。全筆へ一般化しない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R03-C",
+    "research": "R03",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r03",
+    "tests": [
+      "T03"
+    ],
+    "comparison_recommendation": "Aを基準にB/Cを筆別比較",
+    "reason": "被覆集約や有限再評価が同値な筆だけ仕事を省く。全筆へ一般化しない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R04-A",
+    "research": "R04",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r04",
+    "tests": [
+      "T04"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "位相構造と人の制約を別に保持。局所性と手修正対応は未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R04-B",
+    "research": "R04",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r04",
+    "tests": [
+      "T04"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "位相構造と人の制約を別に保持。局所性と手修正対応は未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R04-C",
+    "research": "R04",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r04",
+    "tests": [
+      "T04"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "位相構造と人の制約を別に保持。局所性と手修正対応は未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R05-A",
+    "research": "R05",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r05",
+    "tests": [
+      "T05"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "必要入力域と恒等/共有で不要passを減らす。E04は有限1Dのみ。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R05-B",
+    "research": "R05",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r05",
+    "tests": [
+      "T05"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "必要入力域と恒等/共有で不要passを減らす。E04は有限1Dのみ。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R05-C",
+    "research": "R05",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r05",
+    "tests": [
+      "T05"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "必要入力域と恒等/共有で不要passを減らす。E04は有限1Dのみ。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R06-A",
+    "research": "R06",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r06",
+    "tests": [
+      "T06"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "予算と疎保持、容量予約で全体制御。E02/E05は実端末性能ではない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R06-B",
+    "research": "R06",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r06",
+    "tests": [
+      "T06"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "予算と疎保持、容量予約で全体制御。E02/E05は実端末性能ではない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R06-C",
+    "research": "R06",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r06",
+    "tests": [
+      "T06"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "予算と疎保持、容量予約で全体制御。E02/E05は実端末性能ではない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R07-A",
+    "research": "R07",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r07",
+    "tests": [
+      "T07"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "保存境界と世代公開。E07はローカル機能検査で耐電断未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R07-B",
+    "research": "R07",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r07",
+    "tests": [
+      "T07"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "保存境界と世代公開。E07はローカル機能検査で耐電断未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R07-C",
+    "research": "R07",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r07",
+    "tests": [
+      "T07"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "保存境界と世代公開。E07はローカル機能検査で耐電断未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R08-A",
+    "research": "R08",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r08",
+    "tests": [
+      "T08"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "共有正本と復元checkpointの交換条件を測る。再演だけで同像は保証しない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R08-B",
+    "research": "R08",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r08",
+    "tests": [
+      "T08"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "共有正本と復元checkpointの交換条件を測る。再演だけで同像は保証しない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R08-C",
+    "research": "R08",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r08",
+    "tests": [
+      "T08"
+    ],
+    "comparison_recommendation": "B+CとAを比較",
+    "reason": "共有正本と復元checkpointの交換条件を測る。再演だけで同像は保証しない。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R09-A",
+    "research": "R09",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r09",
+    "tests": [
+      "T09"
+    ],
+    "comparison_recommendation": "A/B/Cを操作課題で比較",
+    "reason": "対象探索/再指定削減の仮説。実利用者の直感性評価が必要。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R09-B",
+    "research": "R09",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r09",
+    "tests": [
+      "T09"
+    ],
+    "comparison_recommendation": "A/B/Cを操作課題で比較",
+    "reason": "対象探索/再指定削減の仮説。実利用者の直感性評価が必要。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R09-C",
+    "research": "R09",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r09",
+    "tests": [
+      "T09"
+    ],
+    "comparison_recommendation": "A/B/Cを操作課題で比較",
+    "reason": "対象探索/再指定削減の仮説。実利用者の直感性評価が必要。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R10-A",
+    "research": "R10",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r10",
+    "tests": [
+      "T10"
+    ],
+    "comparison_recommendation": "Bを軸、A基準、Cを追加比較",
+    "reason": "精度と色契約を閉じる。Cの表示近似は許容誤差未確定。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R10-B",
+    "research": "R10",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r10",
+    "tests": [
+      "T10"
+    ],
+    "comparison_recommendation": "Bを軸、A基準、Cを追加比較",
+    "reason": "精度と色契約を閉じる。Cの表示近似は許容誤差未確定。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R10-C",
+    "research": "R10",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r10",
+    "tests": [
+      "T10"
+    ],
+    "comparison_recommendation": "Bを軸、A基準、Cを追加比較",
+    "reason": "精度と色契約を閉じる。Cの表示近似は許容誤差未確定。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R11-A",
+    "research": "R11",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r11",
+    "tests": [
+      "T11"
+    ],
+    "comparison_recommendation": "A+C、Bは作業体験と比較",
+    "reason": "逆写像不能や層増加を作者へ押付けない。基本文字と高度組版は原承認範囲維持。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R11-B",
+    "research": "R11",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r11",
+    "tests": [
+      "T11"
+    ],
+    "comparison_recommendation": "A+C、Bは作業体験と比較",
+    "reason": "逆写像不能や層増加を作者へ押付けない。基本文字と高度組版は原承認範囲維持。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R11-C",
+    "research": "R11",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r11",
+    "tests": [
+      "T11"
+    ],
+    "comparison_recommendation": "A+C、Bは作業体験と比較",
+    "reason": "逆写像不能や層増加を作者へ押付けない。基本文字と高度組版は原承認範囲維持。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R12-A",
+    "research": "R12",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r12",
+    "tests": [
+      "T12"
+    ],
+    "comparison_recommendation": "A+BとCを表現比較",
+    "reason": "進行と停止の正本。Cが必要表現を満たすか未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R12-B",
+    "research": "R12",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r12",
+    "tests": [
+      "T12"
+    ],
+    "comparison_recommendation": "A+BとCを表現比較",
+    "reason": "進行と停止の正本。Cが必要表現を満たすか未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R12-C",
+    "research": "R12",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r12",
+    "tests": [
+      "T12"
+    ],
+    "comparison_recommendation": "A+BとCを表現比較",
+    "reason": "進行と停止の正本。Cが必要表現を満たすか未検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R13-A",
+    "research": "R13",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r13",
+    "tests": [
+      "T13"
+    ],
+    "comparison_recommendation": "B+CとAを形式別比較",
+    "reason": "能力graphの過剰共通化を避け、形式別保持検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R13-B",
+    "research": "R13",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r13",
+    "tests": [
+      "T13"
+    ],
+    "comparison_recommendation": "B+CとAを形式別比較",
+    "reason": "能力graphの過剰共通化を避け、形式別保持検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R13-C",
+    "research": "R13",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r13",
+    "tests": [
+      "T13"
+    ],
+    "comparison_recommendation": "B+CとAを形式別比較",
+    "reason": "能力graphの過剰共通化を避け、形式別保持検証。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R14-A",
+    "research": "R14",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r14",
+    "tests": [
+      "T14"
+    ],
+    "comparison_recommendation": "A+C、必要時B",
+    "reason": "未使用負荷とcold待ちの交換を実測。将来候補の採用は別判断。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R14-B",
+    "research": "R14",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r14",
+    "tests": [
+      "T14"
+    ],
+    "comparison_recommendation": "A+C、必要時B",
+    "reason": "未使用負荷とcold待ちの交換を実測。将来候補の採用は別判断。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  },
+  {
+    "id": "R14-C",
+    "research": "R14",
+    "state": "verification_pending",
+    "formal_adoption": false,
+    "user_ideation": "open_unanswered",
+    "principle_conditions_and_limits": "AI_INDEPENDENT_PROPOSALS.md#r14",
+    "tests": [
+      "T14"
+    ],
+    "comparison_recommendation": "A+C、必要時B",
+    "reason": "未使用負荷とcold待ちの交換を実測。将来候補の採用は別判断。",
+    "technical_feasibility": "条件付き設計評価。個別の原理/成立条件を独立案表に記載。実装検証は未完了。",
+    "measurements": {
+      "input_response": "not_executed_on_product_or_device",
+      "tracking": "not_executed_on_product_or_device",
+      "completion_time": "not_executed_on_product_or_device",
+      "cpu_load": "not_executed_on_product_or_device",
+      "gpu_load": "not_executed_on_product_or_device",
+      "peak_memory": "not_executed_on_product_or_device",
+      "battery": "not_executed_on_product_or_device",
+      "temperature": "not_executed_on_product_or_device",
+      "large_artwork": "not_executed_on_product_or_device",
+      "pixel_color_pressure_correctness": "not_executed_on_product_or_device",
+      "undo_save_non_destructive": "not_executed_on_product_or_device",
+      "simultaneous_interference": "not_executed_on_product_or_device",
+      "interaction_steps_intuitiveness": "not_executed_on_product_or_device",
+      "implementation_maintenance": "not_executed_on_product_or_device"
+    }
+  }
+]
