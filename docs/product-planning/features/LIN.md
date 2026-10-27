@@ -1,8 +1,10 @@
 # LIN — 個別能力・操作仕様
 
-改訂：2026-10-27。標準動作は推奨案であり、承認/性能達成を示さない。
+改訂：2026-10-27。**DEC-01の製品方針は2026-10-27にユーザー承認済み。** 各カードの固有設定・数値・性能・実現性まで承認/検証した意味ではない。
 
 [マスター](../FEATURE_MASTER_CATALOG.md) · [共通契約](../PRODUCT_INTERACTION_SPEC.md) · [品質](../QUALITY_REQUIREMENTS.md) · [非待機契約](../NONBLOCKING_OPERATION_CONTRACTS.md)
+
+[承認されたDEC-01の範囲・残る検証](../DECISION_REGISTER.md) は判断台帳が正本。個別能力全件が正式採用されたことを意味しない。
 
 ## 分野共通の対象と端末操作
 
