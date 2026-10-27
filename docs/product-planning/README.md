@@ -1,0 +1,37 @@
+# Illustro 製品構想案の案内
+
+調査・策定日：2026-10-27（JST）。状態：**製品仕様案・未承認**。ユーザー指定の要求を除き正式採用ではない。実装・性能達成を示さない。
+
+[文書案内](README.md) · [判断台帳](DECISION_REGISTER.md) · [品質要件](QUALITY_REQUIREMENTS.md)
+
+
+既存の上位文書は変更していない。本フォルダーは2026-10-27の7工程をまとめた新しい提案セット。まず要約を読み、重要判断を確認し、機能と操作へ進む。
+
+| 文書 | 内容 |
+|---|---|
+| [PRODUCT_PLANNING_SUMMARY.md](PRODUCT_PLANNING_SUMMARY.md) | 要約・重要改善・承認事項 |
+| [PRODUCT_VISION.md](PRODUCT_VISION.md) | 完成時の体験・優先順位・対象用途 |
+| [LEGACY_REQUIREMENTS.md](LEGACY_REQUIREMENTS.md) | 旧知見・ユーザー要求・矛盾 |
+| [COMPETITOR_RESEARCH.md](COMPETITOR_RESEARCH.md) | 公式調査・機能/操作比較・導入判断 |
+| [FEATURE_MASTER_CATALOG.md](FEATURE_MASTER_CATALOG.md) | 30分野247機能候補 |
+| [EXPERIENCE_INNOVATION.md](EXPERIENCE_INNOVATION.md) | 制作フロー分析と20改善案 |
+| [PRODUCT_INTERACTION_SPEC.md](PRODUCT_INTERACTION_SPEC.md) | 共通契約・30分野の操作・端末・失敗時 |
+| [DECISION_REGISTER.md](DECISION_REGISTER.md) | 推奨案・比較案・16件の重要判断 |
+| [PRODUCT_AUDIT.md](PRODUCT_AUDIT.md) | 修正した矛盾・12項目審査・未検証 |
+| [QUALITY_REQUIREMENTS.md](QUALITY_REQUIREMENTS.md) | 22品質要求と20受入シナリオ |
+| [RESEARCH_SOURCES.md](RESEARCH_SOURCES.md) | 41公式出典の確認箇所と制限 |
+| [LEGACY_SOURCE_LEDGER.md](LEGACY_SOURCE_LEDGER.md) | 34旧資料の読了範囲・固定HEAD/ハッシュ |
+| [LEGACY_CATALOG_CROSSWALK.md](LEGACY_CATALOG_CROSSWALK.md) | 旧324項目全件の状態と新検討先 |
+| [LEGACY_REQUIREMENT_CROSSWALK.md](LEGACY_REQUIREMENT_CROSSWALK.md) | 現旧要求218ID全件の再検討先 |
+| [REQUIREMENT_TRACEABILITY.md](REQUIREMENT_TRACEABILITY.md) | 新247項目→操作/品質/判断 |
+| [validation_results.json](validation_results.json) | 実ファイルによる構造検査の記録 |
+
+データ版：[features.json](features.json)、[legacy_catalog.json](legacy_catalog.json)、[legacy_requirements.json](legacy_requirements.json)。これらは資料の検査・検索用であり、内部実装スキーマの確定ではない。
+
+## 証拠と状態
+
+旧参照HEAD `bdc7135b51033982d90ea5dad104bb04fc107df2`、新開始点`1f0ad19663198c3259165230ac96cba867951d41`。調査日はJSTで統一。上位要求以外はすべて提案・未承認。性能/実機/利用者テストの合格表示をしていない。
+
+## 7工程の対応
+
+旧調査→LEGACY群、競合→COMPETITOR/SOURCES、候補統合→CATALOG、改善→EXPERIENCE、詳細→INTERACTION/DECISION、再審査→AUDIT/validation、最終文書→本フォルダーとSUMMARY。実装順序・アルゴリズム・システム構成の採用は本案の対象外。

@@ -1,0 +1,1528 @@
+[
+  {
+    "id": "FR-CANVAS-001",
+    "title": "基本描画面",
+    "line": 23,
+    "category": "CAN",
+    "body": "IllustroはRaster描画可能なCanvasを持たなければならない。"
+  },
+  {
+    "id": "FR-CANVAS-002",
+    "title": "View Transform",
+    "line": 27,
+    "category": "CAN",
+    "body": "Canvas Viewは少なくとも以下を即時操作できなければならない。\n\n- Pan\n- Zoom\n- Rotate\n- Horizontal Flip\n- Fit to Screen\n- 100% / actual-pixel相当表示"
+  },
+  {
+    "id": "FR-CANVAS-003",
+    "title": "High Zoom",
+    "line": 38,
+    "category": "CAN",
+    "body": "最大Zoomは **64000%を目標値**とし、高倍率でも座標の飛び・線のズレ・選択境界の破綻を起こさない設計にしなければならない。"
+  },
+  {
+    "id": "FR-CANVAS-004",
+    "title": "Canvas Resize / Image Resize",
+    "line": 42,
+    "category": "CAN",
+    "body": "Canvas ResizeとImage Resizeは別操作として提供しなければならない。\n\nImage Resizeでは補間方式を選択可能にする。最終アルゴリズム一覧は個別仕様で決定する。"
+  },
+  {
+    "id": "FR-CANVAS-005",
+    "title": "Crop",
+    "line": 48,
+    "category": "CAN",
+    "body": "CropはCanvas上の直接操作を基本とし、必要に応じて数値指定も可能にする。"
+  },
+  {
+    "id": "FR-CANVAS-006",
+    "title": "Multiple Documents",
+    "line": 52,
+    "category": "CAN",
+    "body": "複数Documentを同時に開ける構造を持たなければならない。"
+  },
+  {
+    "id": "FR-CANVAS-007",
+    "title": "Seamless Tile",
+    "line": 56,
+    "category": "CAN",
+    "body": "Seamless Tile Drawingでは上下左右に反復表示し、境界を越える描画を反対側へリアルタイム反映しなければならない。"
+  },
+  {
+    "id": "QR-CANVAS-001",
+    "title": "Large Canvas Scaling",
+    "line": 60,
+    "category": "CAN",
+    "body": "Canvas Size増加に対して、毎操作で全画像を処理する設計を避けなければならない。\n\nTile-based方式を第一候補として検証する。\n\n---\n\n## 3. Input"
+  },
+  {
+    "id": "FR-INPUT-001",
+    "title": "対応入力",
+    "line": 70,
+    "category": "INP",
+    "body": "以下をサポートする。\n\n- Mouse\n- Keyboard\n- Touch\n- Stylus"
+  },
+  {
+    "id": "FR-INPUT-002",
+    "title": "Stylus Data",
+    "line": 79,
+    "category": "INP",
+    "body": "Platform/Deviceが提供する場合、以下を利用できなければならない。\n\n- Pressure\n- Tilt\n- Azimuth\n- Barrel rotation where available\n- Eraser\n- Barrel button"
+  },
+  {
+    "id": "FR-INPUT-003",
+    "title": "Input Normalization",
+    "line": 90,
+    "category": "INP",
+    "body": "Device固有入力をBrush Engineが直接依存する形にせず、内部で正規化された入力イベントへ変換する。"
+  },
+  {
+    "id": "FR-INPUT-004",
+    "title": "Global Input Assistance",
+    "line": 94,
+    "category": "INP",
+    "body": "Stroke StabilizationはBrushごとの設定に加え、必要な利用者向けにGlobal設定も提供する。"
+  },
+  {
+    "id": "QR-INPUT-001",
+    "title": "Latency",
+    "line": 98,
+    "category": "INP",
+    "body": "Pointer入力から可視Stroke更新までの遅延を最重要性能指標として扱う。\n\n平均FPSのみを性能評価基準にしてはならない。\n\n---\n\n## 4. Brush Engine"
+  },
+  {
+    "id": "FR-BRUSH-001",
+    "title": "Procedural Brush",
+    "line": 108,
+    "category": "BRU",
+    "body": "BrushはRaster Stampのみでなく、複数Parameterを動的に組み合わせて定義可能でなければならない。"
+  },
+  {
+    "id": "FR-BRUSH-002",
+    "title": "Modulation Sources",
+    "line": 112,
+    "category": "BRU",
+    "body": "Brush Parameterは少なくとも以下を変調入力として利用できる構造にする。\n\n- Pressure\n- Tilt\n- Azimuth / barrel rotation\n- Speed\n- Direction\n- Stroke distance\n- Time\n- Stroke start/end phase\n- Random\n- Custom curve"
+  },
+  {
+    "id": "FR-BRUSH-003",
+    "title": "Modulatable Properties",
+    "line": 127,
+    "category": "BRU",
+    "body": "少なくとも以下を共通変調対象として設計する。\n\n- Size\n- Opacity\n- Flow\n- Spacing\n- Rotation\n- Scatter\n- Shape deformation\n- Texture scale/strength/rotation\n- Hue/Saturation/Value\n- Edge hardness\n- Mix/Pull\n- Wetness\n- Pigment-related values\n- Noise/particle values"
+  },
+  {
+    "id": "FR-BRUSH-004",
+    "title": "Mapping UI",
+    "line": 146,
+    "category": "BRU",
+    "body": "入力値→ParameterのMappingはCurve、Range、Invert等を共通方式で設定可能にする。"
+  },
+  {
+    "id": "FR-BRUSH-005",
+    "title": "Texture",
+    "line": 150,
+    "category": "BRU",
+    "body": "Procedural方式はRaster Textureを排除しない。\n\nBrush Tip、Grain、Paper Texture等を組み合わせられる。"
+  },
+  {
+    "id": "FR-BRUSH-006",
+    "title": "Stabilization",
+    "line": 156,
+    "category": "BRU",
+    "body": "以下を実現できる設計とする。\n\n- simple smoothing\n- moving-average系Stabilization\n- advanced motion filtering系処理\n- pressure smoothing\n- response curve\n\n正確なアルゴリズムはPrototypeで比較する。"
+  },
+  {
+    "id": "FR-BRUSH-007",
+    "title": "Smudge / Mix",
+    "line": 168,
+    "category": "BRU",
+    "body": "既存Pixelを引きずるSmudgeと、Pigmentを追加しながら混色するPaint Mixingを区別して扱える構造にする。"
+  },
+  {
+    "id": "FR-BRUSH-008",
+    "title": "Eraser",
+    "line": 172,
+    "category": "BRU",
+    "body": "EraserはBrush Engineの能力を可能な限り再利用し、専用機能不足を避ける。"
+  },
+  {
+    "id": "QR-BRUSH-001",
+    "title": "Brush Switch",
+    "line": 176,
+    "category": "BRU",
+    "body": "Brush切替によって制作の流れを阻害する待ち時間を発生させないことを目標とする。\n\n---\n\n## 5. Dynamic Wet Media"
+  },
+  {
+    "id": "FR-WET-001",
+    "title": "Stateful Media",
+    "line": 184,
+    "category": "WET",
+    "body": "Wet Mediaは単なるStamp表現ではなく、必要に応じてCanvas側の内部状態を参照・更新できる。"
+  },
+  {
+    "id": "DR-WET-001",
+    "title": "Candidate State",
+    "line": 188,
+    "category": "WET",
+    "body": "少なくとも以下を表現可能なモデルを検証する。\n\n- Wetness\n- Pigment\n- Flow\n- Absorption\n- Dryness"
+  },
+  {
+    "id": "FR-WET-002",
+    "title": "Simulation Goal",
+    "line": 198,
+    "category": "WET",
+    "body": "完全物理再現ではなく、以下の優先順位で最適化する。\n\n1. イラストとして望ましい見た目\n2. 操作の予測可能性\n3. 速度\n4. 物理的妥当性"
+  },
+  {
+    "id": "FR-WET-003",
+    "title": "Determinism",
+    "line": 207,
+    "category": "WET",
+    "body": "Undo/Redo、Timelapse、保存/再開のため、同一State/Commandから再現可能な挙動を可能な限り維持する。\n\n---\n\n## 6. Lineart Layer — 線画レイヤー\n\n> **Design reset:** 旧 Lineart Region / Persistent Region ID / Stable Identity / 自動色再マッピングの設計は破棄し、現在の要件として扱わない。ここではユーザーが確定した完成目標だけを定義する。"
+  },
+  {
+    "id": "DR-LINEART-001",
+    "title": "Dedicated structural layer",
+    "line": 217,
+    "category": "LIN",
+    "body": "線画レイヤーは通常のRaster Layerとは別種の専用レイヤーとして扱う。\n\n通常のストローク中心Raster線画から、ユーザーが「複製する」感覚で線画レイヤーを生成できることを基本操作とする。"
+  },
+  {
+    "id": "DR-LINEART-002",
+    "title": "Region partition is the canonical purpose",
+    "line": 223,
+    "category": "LIN",
+    "body": "線画レイヤーの主データは描画線そのものではなく、**領域分けの構造データ**である。\n\n内部の境界は描画上の太さを持つ線として定義しない。表示上の見せ方とは分離し、「ここを越えると別の領域になる」という境界・接続・分割情報を表す。"
+  },
+  {
+    "id": "FR-LINEART-001",
+    "title": "Generate from raster lineart",
+    "line": 229,
+    "category": "LIN",
+    "body": "ストローク中心のRaster線画を入力として線画レイヤーを生成できる。\n\n生成処理は元Rasterを破壊してはならない。"
+  },
+  {
+    "id": "FR-LINEART-002",
+    "title": "Editable correction",
+    "line": 235,
+    "category": "LIN",
+    "body": "自動抽出した接続や領域分けに誤りがある場合、線画レイヤーを選択中にユーザーが修正できなければならない。\n\n必要な最終操作体系はUI設計とアルゴリズム設計で確定する。"
+  },
+  {
+    "id": "FR-LINEART-003",
+    "title": "Area-based consumers",
+    "line": 241,
+    "category": "LIN",
+    "body": "線画レイヤーで定義した領域分けを、少なくともFillとSelectionの基準として利用可能にする。\n\n色差や現在のピクセル色だけに依存せず、線画レイヤー上の領域を直接対象にできることを要求する。"
+  },
+  {
+    "id": "FR-LINEART-004",
+    "title": "Separation from rendered stroke width",
+    "line": 247,
+    "category": "LIN",
+    "body": "元線画のブラシ太さ・アンチエイリアス・表示上の線幅と、線画レイヤー上の領域境界の意味を分離する。\n\n線画レイヤーの境界を「太さ付きRaster線」として正本化してはならない。"
+  },
+  {
+    "id": "FR-LINEART-005",
+    "title": "Algorithm status",
+    "line": 253,
+    "category": "LIN",
+    "body": "以下は**未設計**であり、旧成果物を根拠に確定扱いしてはならない。\n\n- Raster線画から境界・接続を抽出する具体アルゴリズム\n- 端点同士、端点と線途中、交差、近接、隙間の判定規則\n- 内部データ構造\n- 領域IDの有無と寿命\n- 隣接情報の保持方式\n- 元Raster編集後の自動追従・再生成・独立保持の方針\n- gap補完の方針\n- exact thresholds / weights / confidence model\n\n接続判定は最終目的ではなく、**編集可能な正しい領域分けデータを生成するための一工程**として設計する。\n\n## 7. Lineart Layer area-based coloring"
+  },
+  {
+    "id": "FR-LINEARTCOLOR-001",
+    "title": "Area reference",
+    "line": 270,
+    "category": "LIN",
+    "body": "Fillは参照基準として線画レイヤーを選択でき、クリック位置が属する線画レイヤー上の領域を対象にできる。"
+  },
+  {
+    "id": "FR-LINEARTCOLOR-002",
+    "title": "Manual structure takes precedence",
+    "line": 274,
+    "category": "LIN",
+    "body": "ユーザーが線画レイヤー上で修正した接続・領域分けは、自動判定結果より優先されなければならない。\n\n自動再解析がユーザー修正を無断で上書きする設計は禁止する。"
+  },
+  {
+    "id": "FR-LINEARTCOLOR-003",
+    "title": "Source-edit behavior is open",
+    "line": 280,
+    "category": "LIN",
+    "body": "元Raster線画を生成後に編集した場合の挙動は未決定とする。\n\n自動追従、明示再生成、差分更新、独立保持のいずれも現時点では確定しない。\n\n\n## 8. Fill / Coloring"
+  },
+  {
+    "id": "FR-FILL-001",
+    "title": "Flood Fill",
+    "line": 289,
+    "category": "FIL",
+    "body": "通常のColor Tolerance型Flood Fillを提供する。"
+  },
+  {
+    "id": "FR-FILL-002",
+    "title": "Reference Source",
+    "line": 293,
+    "category": "FIL",
+    "body": "Fillは以下を参照元として選択できる設計にする。\n\n- current layer\n- selected layers\n- reference-designated layers\n- visible composite\n- Lineart Layer area model"
+  },
+  {
+    "id": "FR-FILL-003",
+    "title": "Gap Closing",
+    "line": 303,
+    "category": "FIL",
+    "body": "Gap ClosingとToleranceを提供する。"
+  },
+  {
+    "id": "FR-FILL-004",
+    "title": "Boundary Expansion",
+    "line": 307,
+    "category": "FIL",
+    "body": "Fill結果のExpand/Contractを設定可能にする。"
+  },
+  {
+    "id": "FR-FILL-005",
+    "title": "Unified Smart Fill",
+    "line": 311,
+    "category": "FIL",
+    "body": "以下をバラバラな独立アプリ機能として散在させず、一貫したFill Familyとして設計する。\n\n- Lineart Layer Area Fill\n- Enclose and Fill\n- Trace and Fill\n- Drag Fill\n- Continuous Fill"
+  },
+  {
+    "id": "FR-COLORASSIST-001",
+    "title": "Smart Color Assist",
+    "line": 321,
+    "category": "AI",
+    "body": "Smart Color Assistはユーザーの既存Artwork/Lineart Layer area/Paletteを入力とする補助機能として動作する。"
+  },
+  {
+    "id": "FR-COLORASSIST-002",
+    "title": "Deterministic-first",
+    "line": 325,
+    "category": "AI",
+    "body": "可能な処理は、AI推論を必須にせず決定的アルゴリズムで成立させる。\n\n---\n\n## 9. Color System / Color Management"
+  },
+  {
+    "id": "FR-COLOR-001",
+    "title": "Picker",
+    "line": 333,
+    "category": "COL",
+    "body": "Color Picker / Eyedropper / History / Paletteを提供する。"
+  },
+  {
+    "id": "FR-COLOR-002",
+    "title": "Multiple Models",
+    "line": 337,
+    "category": "COL",
+    "body": "少なくともRGB系とHSV/HSL系の実用的なColor Controlを提供する。"
+  },
+  {
+    "id": "DR-COLOR-001",
+    "title": "ICC",
+    "line": 341,
+    "category": "COL",
+    "body": "Native DocumentはICC Profileまたは同等のColor Space識別情報を保持できなければならない。"
+  },
+  {
+    "id": "FR-COLOR-003",
+    "title": "Color Conversion",
+    "line": 345,
+    "category": "COL",
+    "body": "Profile ConversionとDisplay Transformを行える構造にする。"
+  },
+  {
+    "id": "DR-COLOR-002",
+    "title": "Precision",
+    "line": 349,
+    "category": "COL",
+    "body": "内部Document/Tile表現は、8-bit sRGBのみへ固定して将来の高精度化を不可能にしてはならない。\n\n少なくとも以下を設計対象とする。\n\n- 8-bit integer\n- 16-bit integer\n- 16-bit float\n- 32-bit float（検証対象）"
+  },
+  {
+    "id": "FR-COLOR-004",
+    "title": "Wide Gamut",
+    "line": 360,
+    "category": "COL",
+    "body": "Display P3等のWide Gamutを扱えるColor Pipelineを目標とする。"
+  },
+  {
+    "id": "FR-COLOR-005",
+    "title": "Linear Processing",
+    "line": 364,
+    "category": "COL",
+    "body": "Filter/Blend等で必要な場合、Linear-light計算を選択・内部利用できる設計にする。"
+  },
+  {
+    "id": "FR-COLOR-006",
+    "title": "HDR-ready",
+    "line": 368,
+    "category": "COL",
+    "body": "初期ReleaseでHDR Authoring UIを完備しない場合でも、Document/Render architectureで将来実装を不必要に塞がない。"
+  },
+  {
+    "id": "FR-COLOR-007",
+    "title": "Soft Proof",
+    "line": 372,
+    "category": "COL",
+    "body": "指定した出力ICC Profile等を用いて、最終出力の色域・色変化をCanvas上でPreviewできるSoft Proofを提供する。"
+  },
+  {
+    "id": "FR-COLOR-008",
+    "title": "Gamut Warning",
+    "line": 376,
+    "category": "COL",
+    "body": "Soft Proof時に、出力先で再現できない色をOut-of-Gamut Warningとして可視化できる。\n\nSoft ProofはDocument View単位でON/OFFできる設計を優先し、元Pixelを変更してはならない。\n\n---\n\n## 10. Layers"
+  },
+  {
+    "id": "FR-LAYER-001",
+    "title": "Layer Types",
+    "line": 386,
+    "category": "LAY",
+    "body": "最終製品では少なくとも次を扱う。\n\n- Raster\n- Vector\n- Group\n- Mask\n- Adjustment\n- Filter\n- Text\n\nReferenceはArtwork Layerとは意味を分離して管理できる。"
+  },
+  {
+    "id": "FR-LAYER-002",
+    "title": "Multi-select",
+    "line": 400,
+    "category": "LAY",
+    "body": "複数Layerを選択し、Move/Transform/Visibility等の適切なCommandをまとめて適用できる。"
+  },
+  {
+    "id": "FR-LAYER-003",
+    "title": "Organization",
+    "line": 404,
+    "category": "LAY",
+    "body": "以下を持つ。\n\n- Reorder\n- Search\n- Filter\n- Color Tag\n- Lock types\n- Solo/Isolate\n- Collapse\n- Duplicate\n- Merge\n- Merge Visible\n- Flatten Copy"
+  },
+  {
+    "id": "FR-LAYER-004",
+    "title": "Alpha Lock / Clipping",
+    "line": 420,
+    "category": "LAY",
+    "body": "Alpha Lock / Lock Transparencyを高頻度彩色機能として提供する。\n\nClipping / Alpha Inheritance相当の機能も提供し、状態はLayer UIで即時認識・切替可能にする。"
+  },
+  {
+    "id": "FR-LAYER-005",
+    "title": "Layer Style",
+    "line": 426,
+    "category": "LAY",
+    "body": "Layerへ非破壊Effectを適用できるLayer Styleを提供する。\n\n対象候補:\n\n- Stroke\n- Drop Shadow\n- Inner Shadow\n- Outer Glow\n- Inner Glow\n- Color Overlay\n- Gradient Overlay\n- Pattern Overlay\n- Bevel / Emboss\n\nEffectは展開・非表示・再編集可能にする。"
+  },
+  {
+    "id": "FR-LAYER-006",
+    "title": "Direct Canvas Selection",
+    "line": 444,
+    "category": "LAY",
+    "body": "Canvas上の描画内容から対応Layerを高速に選択する方法を提供する。"
+  },
+  {
+    "id": "QR-LAYER-001",
+    "title": "Large Layer Count",
+    "line": 448,
+    "category": "LAY",
+    "body": "Layer Panelは大量Layerで全Itemを常時重くRenderする実装を避ける。\n\nVirtualization等を使用してUI応答性を維持する。\n\n---\n\n## 11. Vector"
+  },
+  {
+    "id": "FR-VECTOR-001",
+    "title": "Path Model",
+    "line": 458,
+    "category": "VEC",
+    "body": "Vector Layerは少なくとも以下を持つ。\n\n- Path\n- Anchor Point\n- Bezier Handle\n- Open/Closed Path\n- Fill\n- Stroke"
+  },
+  {
+    "id": "FR-VECTOR-002",
+    "title": "Edit",
+    "line": 469,
+    "category": "VEC",
+    "body": "NodeのAdd/Delete/Convert、Path Transform、Smooth/Simplifyを提供する。"
+  },
+  {
+    "id": "FR-VECTOR-003",
+    "title": "Boolean",
+    "line": 473,
+    "category": "VEC",
+    "body": "実用的なPath Boolean Operationを提供する。"
+  },
+  {
+    "id": "FR-VECTOR-004",
+    "title": "Illustration-oriented Stroke",
+    "line": 477,
+    "category": "VEC",
+    "body": "一枚絵のLineart用途に適したStroke Width編集、可変幅、Vector Eraser等を提供する。"
+  },
+  {
+    "id": "FR-VECTOR-005",
+    "title": "Rasterize",
+    "line": 481,
+    "category": "VEC",
+    "body": "Vectorを明示的にRasterizeできる。"
+  },
+  {
+    "id": "FR-VECTOR-006",
+    "title": "Region Integration",
+    "line": 485,
+    "category": "VEC",
+    "body": "Vector Lineartを線画レイヤー生成元として利用する方式は未設計であり、別途検討する。\n\n---\n\n## 12. Text"
+  },
+  {
+    "id": "FR-TEXT-001",
+    "title": "Editable Text",
+    "line": 493,
+    "category": "VEC",
+    "body": "TextはRaster化するまで編集可能なText Entityとして保持する。"
+  },
+  {
+    "id": "FR-TEXT-002",
+    "title": "Japanese Support",
+    "line": 497,
+    "category": "VEC",
+    "body": "Horizontal/Vertical TextをRequiredとする。"
+  },
+  {
+    "id": "FR-TEXT-003",
+    "title": "Typography Basics",
+    "line": 501,
+    "category": "VEC",
+    "body": "少なくとも以下を提供する。\n\n- Font family\n- style/weight\n- size\n- alignment\n- tracking/letter spacing\n- line height\n- baseline\n- color"
+  },
+  {
+    "id": "FR-TEXT-004",
+    "title": "Font Import",
+    "line": 514,
+    "category": "VEC",
+    "body": "Platformが許す場合、local font importを提供する。"
+  },
+  {
+    "id": "FR-TEXT-005",
+    "title": "Missing Font",
+    "line": 518,
+    "category": "VEC",
+    "body": "Fontが存在しない場合、無言で別Fontへ置換せず、missing/substitution状態を認識可能にする。"
+  },
+  {
+    "id": "FR-TEXT-006",
+    "title": "Convert",
+    "line": 522,
+    "category": "VEC",
+    "body": "TextをVector Pathへ変換する機能を提供する。\n\n---\n\n## 13. Selection"
+  },
+  {
+    "id": "FR-SELECT-001",
+    "title": "Basic Modes",
+    "line": 530,
+    "category": "SEL",
+    "body": "以下を提供する。\n\n- Rectangle\n- Ellipse\n- Freehand\n- Polygon\n- Color/Similarity\n- Luminance/Color Range\n- Lineart Layer area-based\n- Layer-content"
+  },
+  {
+    "id": "FR-SELECT-002",
+    "title": "Boolean Operations",
+    "line": 543,
+    "category": "SEL",
+    "body": "Add/Subtract/Intersect/Invertを提供する。"
+  },
+  {
+    "id": "FR-SELECT-003",
+    "title": "Edge",
+    "line": 547,
+    "category": "SEL",
+    "body": "Feather、Expand、Contractを提供する。"
+  },
+  {
+    "id": "FR-SELECT-004",
+    "title": "Saved Selection",
+    "line": 551,
+    "category": "SEL",
+    "body": "Selectionを一時表示だけでなく、Selection Mask等として保存・再利用可能にする。"
+  },
+  {
+    "id": "FR-SELECT-005",
+    "title": "Select All / Deselect / Reselect",
+    "line": 555,
+    "category": "SEL",
+    "body": "Select All、Deselect、直前SelectionのReselectをCommandとして提供する。\n\nDeselectはSelection削除ではなくActive Selection解除として扱い、Undo/Reselect可能な履歴を保持できる。"
+  },
+  {
+    "id": "DR-SELECT-001",
+    "title": "Grayscale",
+    "line": 561,
+    "category": "SEL",
+    "body": "Selectionはbinaryだけでなく濃度を持つMaskとして表現可能にする。\n\n---\n\n## 14. Transform / Liquify / Warp"
+  },
+  {
+    "id": "FR-TRANSFORM-001",
+    "title": "Basic",
+    "line": 569,
+    "category": "TRN",
+    "body": "Move/Scale/Rotate/Flipを提供する。"
+  },
+  {
+    "id": "FR-TRANSFORM-002",
+    "title": "Advanced",
+    "line": 573,
+    "category": "TRN",
+    "body": "Perspective、Distort、Warpを提供する。"
+  },
+  {
+    "id": "FR-TRANSFORM-003",
+    "title": "Liquify",
+    "line": 577,
+    "category": "TRN",
+    "body": "Liquifyを提供する。"
+  },
+  {
+    "id": "FR-TRANSFORM-004",
+    "title": "Interpolation",
+    "line": 581,
+    "category": "TRN",
+    "body": "Raster Transformでは補間方式を選択可能にする。"
+  },
+  {
+    "id": "IR-TRANSFORM-001",
+    "title": "Direct Manipulation",
+    "line": 585,
+    "category": "TRN",
+    "body": "Canvas上Handle/Dragを主要操作とし、数値入力は補助手段とする。"
+  },
+  {
+    "id": "FR-TRANSFORM-005",
+    "title": "Non-destructive",
+    "line": 589,
+    "category": "TRN",
+    "body": "可能なTransformは非破壊状態として保持できる方式を検討・優先する。\n\n---\n\n## 15. Guides / Rulers / Shapes / Gradients"
+  },
+  {
+    "id": "FR-GUIDE-001",
+    "title": "Guide Types",
+    "line": 597,
+    "category": "GUI",
+    "body": "少なくとも次を提供する。\n\n- Straight / Parallel\n- 2D Grid\n- Isometric\n- Perspective 1/2/3 point\n- Symmetry / Mirror\n- Radial Symmetry"
+  },
+  {
+    "id": "FR-GUIDE-002",
+    "title": "Canvas Editing",
+    "line": 608,
+    "category": "GUI",
+    "body": "GuideはCanvas上Handleで直接編集可能にする。"
+  },
+  {
+    "id": "FR-GUIDE-003",
+    "title": "Snapping",
+    "line": 612,
+    "category": "GUI",
+    "body": "対応Drawing ToolはGuideへSnapできる。"
+  },
+  {
+    "id": "FR-SHAPE-001",
+    "title": "Shapes",
+    "line": 616,
+    "category": "GUI",
+    "body": "Line、Rectangle、Ellipse、Polygonを提供する。"
+  },
+  {
+    "id": "FR-SHAPE-002",
+    "title": "Post-stroke Correction",
+    "line": 620,
+    "category": "GUI",
+    "body": "Freehandで描いたShapeを保持操作等で幾何形状へ補正する高速操作を提供する方向で設計する。"
+  },
+  {
+    "id": "FR-GRADIENT-001",
+    "title": "Gradient Types",
+    "line": 624,
+    "category": "GRA",
+    "body": "少なくとも以下を提供する。\n\n- Linear\n- Radial\n- Reflected/Bilinear\n\nShape-aware方式は追加検討。"
+  },
+  {
+    "id": "FR-GRADIENT-002",
+    "title": "Editable",
+    "line": 634,
+    "category": "GRA",
+    "body": "Gradient Stop、位置、向き等を作成後に変更できる非破壊表現を提供する。\n\n---\n\n## 16. Blend / Non-destructive Editing"
+  },
+  {
+    "id": "FR-BLEND-001",
+    "title": "Core Blend Modes",
+    "line": 642,
+    "category": "NDE",
+    "body": "少なくとも次の系統を提供する。\n\n- Normal / Dissolve\n- Darken / Multiply / Burn系\n- Lighten / Screen / Dodge系\n- Overlay / Soft Light / Hard Light系\n- Vivid/Linear/Pin/Hard Mix系\n- Difference / Exclusion\n- Subtract / Divide\n- Hue / Saturation / Color / Luminosity"
+  },
+  {
+    "id": "FR-BLEND-002",
+    "title": "Painting Modes",
+    "line": 655,
+    "category": "NDE",
+    "body": "Erase/Behind/Alpha関連等、Paintingに有用なModeをBrush側でも利用できる設計にする。"
+  },
+  {
+    "id": "FR-BLEND-003",
+    "title": "Preview",
+    "line": 659,
+    "category": "NDE",
+    "body": "Blend Modeを選択するときCanvas上Live Previewを提供する。"
+  },
+  {
+    "id": "FR-BLENDIF-001",
+    "title": "Blend If Equivalent",
+    "line": 663,
+    "category": "NDE",
+    "body": "Layer自身または下地のTone/Channel Rangeに応じて合成を制御できる。\n\nUIはTone Rangeと結果の関係を視覚的に理解できる方式を優先する。\n\n---\n\n## 17. Adjustments / Filters"
+  },
+  {
+    "id": "FR-ADJ-001",
+    "title": "Adjustment Layer",
+    "line": 673,
+    "category": "FX",
+    "body": "AdjustmentをLayerとして非破壊保持できる。"
+  },
+  {
+    "id": "FR-ADJ-002",
+    "title": "Core Adjustments",
+    "line": 677,
+    "category": "FX",
+    "body": "少なくとも以下を対象とする。\n\n- Brightness/Contrast\n- Levels\n- Curves\n- Exposure\n- Hue/Saturation/Lightness\n- Vibrance\n- Color Balance\n- Temperature/Tint\n- Black & White\n- Channel Mixer\n- Selective Color\n- Invert\n- Posterize\n- Threshold\n- Gradient Map\n- LUT/Color Lookup"
+  },
+  {
+    "id": "FR-FILTER-001",
+    "title": "Live Filter",
+    "line": 698,
+    "category": "FX",
+    "body": "Filterを再編集可能な非破壊状態として保持できる。"
+  },
+  {
+    "id": "FR-FILTER-002",
+    "title": "Core Filters",
+    "line": 702,
+    "category": "FX",
+    "body": "少なくとも以下を対象とする。\n\n- Gaussian Blur\n- Motion Blur\n- Radial Blur\n- Sharpen\n- Unsharp Mask\n- High Pass\n- Noise\n- Median系cleanup\n- Pixelate/Mosaic\n- Offset\n- Displacement\n- Halftone/Screentone-oriented effect"
+  },
+  {
+    "id": "FR-FILTER-003",
+    "title": "Composition",
+    "line": 719,
+    "category": "FX",
+    "body": "Live Filterは必要に応じてMask、Opacity、Blend Mode、Reorderを利用できる。"
+  },
+  {
+    "id": "FR-FILTER-004",
+    "title": "Destructive Apply",
+    "line": 723,
+    "category": "FX",
+    "body": "高速・単純な用途向けに、明示的な破壊適用Commandも提供できる。\n\n---\n\n## 18. Healing / Patch / Clone"
+  },
+  {
+    "id": "FR-REPAIR-001",
+    "title": "Healing",
+    "line": 731,
+    "category": "FX",
+    "body": "周囲のTexture/Colorを利用した修復Brushを提供する。"
+  },
+  {
+    "id": "FR-REPAIR-002",
+    "title": "Patch",
+    "line": 735,
+    "category": "FX",
+    "body": "選択領域を別領域から修復するPatch Workflowを提供する。"
+  },
+  {
+    "id": "FR-REPAIR-003",
+    "title": "Clone",
+    "line": 739,
+    "category": "FX",
+    "body": "Source Pointを指定して描画するCloneを提供する。"
+  },
+  {
+    "id": "IR-REPAIR-001",
+    "title": "Illustration-oriented",
+    "line": 743,
+    "category": "FX",
+    "body": "写真編集Dialog中心ではなく、Canvas上でSource/Targetを確認できる直接操作を優先する。\n\n---\n\n## 19. Reference Workspace"
+  },
+  {
+    "id": "FR-REF-001",
+    "title": "Independent References",
+    "line": 751,
+    "category": "REF",
+    "body": "ReferenceはArtwork Layerとは独立して管理可能にする。"
+  },
+  {
+    "id": "FR-REF-002",
+    "title": "Multiple",
+    "line": 755,
+    "category": "REF",
+    "body": "複数Referenceを同時表示可能にする。"
+  },
+  {
+    "id": "FR-REF-003",
+    "title": "Manipulation",
+    "line": 759,
+    "category": "REF",
+    "body": "Referenceごとに以下を提供する。\n\n- Move\n- Scale\n- Rotate\n- Flip\n- Grayscale\n- Pin\n- Hide\n- Always-on-top相当"
+  },
+  {
+    "id": "FR-REF-004",
+    "title": "Groups",
+    "line": 772,
+    "category": "REF",
+    "body": "Reference Groupを作成可能にする。"
+  },
+  {
+    "id": "FR-REF-005",
+    "title": "Eyedropper",
+    "line": 776,
+    "category": "REF",
+    "body": "Reference上から直接Color Pickできる。"
+  },
+  {
+    "id": "DR-REF-001",
+    "title": "Persistence",
+    "line": 780,
+    "category": "REF",
+    "body": "DocumentまたはWorkspaceにReference状態を保存できる。\n\n---\n\n## 20. History / Snapshot / Layer Comp / Timelapse"
+  },
+  {
+    "id": "DR-HISTORY-001",
+    "title": "Command History",
+    "line": 788,
+    "category": "HIS",
+    "body": "Undo/Redoは可能な範囲で意味のあるCommand単位で管理する。"
+  },
+  {
+    "id": "FR-HISTORY-001",
+    "title": "Deep Undo",
+    "line": 792,
+    "category": "HIS",
+    "body": "長い作業でも実用的なUndo Depthを維持する。"
+  },
+  {
+    "id": "FR-SNAPSHOT-001",
+    "title": "Snapshot",
+    "line": 796,
+    "category": "HIS",
+    "body": "ユーザーが名前付きCheckpointを保存できる。"
+  },
+  {
+    "id": "FR-SNAPSHOT-002",
+    "title": "Compare",
+    "line": 800,
+    "category": "HIS",
+    "body": "Snapshot間またはCurrentとの比較を容易にする。"
+  },
+  {
+    "id": "FR-SNAPSHOT-003",
+    "title": "Branch",
+    "line": 804,
+    "category": "HIS",
+    "body": "Snapshotから分岐制作できる構造を検討する。"
+  },
+  {
+    "id": "FR-LAYERCOMP-001",
+    "title": "Layer Comp",
+    "line": 808,
+    "category": "LAY",
+    "body": "LayerのVisibility/Opacity/Blend Mode等の状態セットを保存・復元できる。"
+  },
+  {
+    "id": "FR-TIMELAPSE-001",
+    "title": "History-based",
+    "line": 812,
+    "category": "REC",
+    "body": "Timelapseは可能な限りDocument変更履歴を利用し、UIを映さない。"
+  },
+  {
+    "id": "FR-TIMELAPSE-002",
+    "title": "Export",
+    "line": 816,
+    "category": "REC",
+    "body": "高解像度出力とFrame pacing調整を提供する。"
+  },
+  {
+    "id": "CONCEPT-HISTORY-001",
+    "title": "Separation",
+    "line": 820,
+    "category": "HIS",
+    "body": "以下はユーザー向け概念として区別する。\n\n- Undo History\n- Snapshot\n- Layer Comp\n- Macro\n- Timelapse\n\n内部Primitiveの共有は許容する。\n\n---\n\n## 21. Work Time"
+  },
+  {
+    "id": "FR-WORKTIME-001",
+    "title": "Active Time",
+    "line": 836,
+    "category": "REC",
+    "body": "Documentを開いている時間ではなく、実際の編集活動を基準に時間を計測する。"
+  },
+  {
+    "id": "FR-WORKTIME-002",
+    "title": "Idle",
+    "line": 840,
+    "category": "REC",
+    "body": "長時間入力・編集がない期間は自動除外する。"
+  },
+  {
+    "id": "FR-WORKTIME-003",
+    "title": "Views",
+    "line": 844,
+    "category": "REC",
+    "body": "少なくとも次を表示可能にする。\n\n- Session\n- Today\n- Total\n- Average"
+  },
+  {
+    "id": "FR-WORKTIME-004",
+    "title": "Privacy",
+    "line": 853,
+    "category": "REC",
+    "body": "Work TimeはOfflineで成立し、外部Server送信を必須にしない。\n\n---\n\n## 22. Macro / Automation"
+  },
+  {
+    "id": "FR-MACRO-001",
+    "title": "Record",
+    "line": 861,
+    "category": "AUT",
+    "body": "複数Commandを記録し再生できる。"
+  },
+  {
+    "id": "FR-MACRO-002",
+    "title": "Edit",
+    "line": 865,
+    "category": "AUT",
+    "body": "記録済みMacroからCommandの有効/無効、順序変更等を可能にする。"
+  },
+  {
+    "id": "FR-MACRO-003",
+    "title": "Parameterization",
+    "line": 869,
+    "category": "AUT",
+    "body": "適切なCommand Parameterを実行時入力・Preset化できる方式を検討する。"
+  },
+  {
+    "id": "FR-MACRO-004",
+    "title": "Access",
+    "line": 873,
+    "category": "AUT",
+    "body": "Macroは以下から起動できる。\n\n- Macro Panel\n- Shortcut\n- Quick Menu\n- Command Search\n\n---\n\n## 23. Quick Menu / Search"
+  },
+  {
+    "id": "FR-QUICK-001",
+    "title": "Customization",
+    "line": 886,
+    "category": "UI",
+    "body": "Quick Menuへ少なくとも以下を登録可能にする。\n\n- Tool\n- Command\n- Brush\n- Color\n- Macro\n- Layer Action\n- Canvas Action"
+  },
+  {
+    "id": "FR-QUICK-002",
+    "title": "Item Metadata",
+    "line": 898,
+    "category": "UI",
+    "body": "ItemはIcon、Label、Shortcut、Group等を持てる。"
+  },
+  {
+    "id": "FR-QUICK-003",
+    "title": "Context",
+    "line": 902,
+    "category": "UI",
+    "body": "ユーザーの固定Customizationを尊重しながら、Contextに応じた候補表示・Profile切替を検討する。"
+  },
+  {
+    "id": "FR-SEARCH-001",
+    "title": "Command Search",
+    "line": 906,
+    "category": "UI",
+    "body": "Tool/Command/Panel/Brush/Macro/Setting等を横断検索できる。"
+  },
+  {
+    "id": "FR-SEARCH-002",
+    "title": "Add from Search",
+    "line": 910,
+    "category": "UI",
+    "body": "検索結果からQuick Menu/Toolbar等へ追加できる操作を検討する。"
+  },
+  {
+    "id": "FR-SHORTCUT-001",
+    "title": "Press-to-bind",
+    "line": 914,
+    "category": "GST",
+    "body": "Keyboard Shortcutの追加は、キー名を文字列入力・リスト選択する方式をPrimaryにしない。\n\n対象Commandの「ショートカットを追加」を実行するとCapture Modeへ入り、**ユーザーが実際に押したキー組み合わせをShortcutとして登録する方式**を標準とする。\n\n例:\n\nCommandを選択 → ショートカットを追加 → Capture Mode → 実際に `Ctrl + Shift + K` を押す → 候補表示 → 確定。"
+  },
+  {
+    "id": "FR-SHORTCUT-002",
+    "title": "Live capture display",
+    "line": 924,
+    "category": "GST",
+    "body": "Capture Mode中は、現在認識しているキー・Modifierをリアルタイム表示する。\n\n少なくとも次を区別する。\n\n- Ctrl\n- Shift\n- Alt / Option\n- Meta / Command\n- main key"
+  },
+  {
+    "id": "FR-SHORTCUT-003",
+    "title": "Conflict detection",
+    "line": 936,
+    "category": "GST",
+    "body": "入力されたShortcutが既存Bindingと衝突する場合、確定前に衝突先を表示する。\n\nユーザーは少なくとも次を選択できる。\n\n- 既存Bindingを置換\n- 新規登録をキャンセル\n- 別のShortcutを入力\n\nSilent overrideは禁止する。"
+  },
+  {
+    "id": "FR-SHORTCUT-004",
+    "title": "Multiple bindings",
+    "line": 948,
+    "category": "GST",
+    "body": "一つのCommandへ複数Shortcutを登録可能にする。\n\nDefault ShortcutとUser Shortcutを区別して保持できる構造にする。"
+  },
+  {
+    "id": "FR-SHORTCUT-005",
+    "title": "Remove / cancel",
+    "line": 954,
+    "category": "GST",
+    "body": "- Capture Modeは `Esc` 等でキャンセル可能にする。\n- 既存Shortcutは明示操作で解除可能にする。\n- Shortcut解除とCommand削除を混同しない。"
+  },
+  {
+    "id": "FR-SHORTCUT-006",
+    "title": "Reserved shortcut warning",
+    "line": 960,
+    "category": "GST",
+    "body": "OS / Browser / Runtimeが優先して取得する可能性のあるShortcutは、登録時に警告する。\n\nRuntime上確実に受け取れない組み合わせを「使用可能」と誤表示しない。"
+  },
+  {
+    "id": "FR-SHORTCUT-007",
+    "title": "Event-derived binding",
+    "line": 966,
+    "category": "GST",
+    "body": "Shortcut Captureでは実Keyboard EventからBinding情報を取得する。\n\n単なる表示文字列だけを保存せず、少なくとも以下を区別して保持できる設計とする。\n\n- normalized modifiers\n- logical key\n- physical key code\n- display label\n\nKeyboard Layout差を考慮し、保存データをUI表示文字列そのものへ依存させない。"
+  },
+  {
+    "id": "FR-SHORTCUT-008",
+    "title": "Modifier-only policy",
+    "line": 979,
+    "category": "GST",
+    "body": "Modifier単体のShortcutは誤操作・OS競合が大きいためDefaultでは割当対象外とする。\n\n高度設定として許可するかは、Input/UI Prototypeで再評価する。"
+  },
+  {
+    "id": "FR-SHORTCUT-009",
+    "title": "Immediate discoverability",
+    "line": 985,
+    "category": "GST",
+    "body": "Shortcut編集画面だけでなく、Command Search、Quick Menu、Menu/Tooltip等から現在のShortcutを確認できる設計にする。"
+  },
+  {
+    "id": "FR-SHORTCUT-010",
+    "title": "Touch-device equivalence",
+    "line": 989,
+    "category": "GST",
+    "body": "Physical KeyboardがないTablet/Smartphoneでも同じCommandへ到達可能でなければならない。\n\nKeyboard Shortcutは高速アクセス手段であり、Command唯一の入口にしてはならない。\n\n---\n\n## 24. Workspace / Device Adaptation"
+  },
+  {
+    "id": "FR-WORKSPACE-001",
+    "title": "Desktop Panels",
+    "line": 999,
+    "category": "UI",
+    "body": "PCではDock/Undock/Floating/Resize/Reorder/Hideを提供する。"
+  },
+  {
+    "id": "FR-WORKSPACE-002",
+    "title": "Save / Load",
+    "line": 1003,
+    "category": "UI",
+    "body": "Workspaceを保存・復元できる。"
+  },
+  {
+    "id": "FR-WORKSPACE-003",
+    "title": "Presets",
+    "line": 1007,
+    "category": "UI",
+    "body": "Drawing/Painting/Coloring/Photo Editing/Pixel Art/Minimal等のPresetを提供する方向で設計する。"
+  },
+  {
+    "id": "FR-WORKSPACE-004",
+    "title": "Canvas Focus Mode",
+    "line": 1011,
+    "category": "UI",
+    "body": "Panel/Toolbar等の非必須UIを一操作で一時的に隠し、Canvas面積を最大化するFocus/Canvas-only Modeを提供する。\n\n- selected Toolを維持する\n- Artwork stateを変更しない\n- Undo Historyへ入れない\n- keyboardなし端末でも解除可能\n- storage/recovery/error等の重大状態を完全に不可視化しない"
+  },
+  {
+    "id": "FR-DEVICE-001",
+    "title": "Adaptive UI",
+    "line": 1021,
+    "category": "DEV",
+    "body": "Desktop/Tablet/Smartphoneで、同一UIを単純Scaleして使い回してはならない。"
+  },
+  {
+    "id": "FR-DEVICE-002",
+    "title": "Capability Preservation",
+    "line": 1025,
+    "category": "DEV",
+    "body": "画面サイズを理由として高度機能そのものを削除することを原則としない。\n\nアクセス方法を再設計する。"
+  },
+  {
+    "id": "FR-DEVICE-003",
+    "title": "Left/Right",
+    "line": 1031,
+    "category": "DEV",
+    "body": "Left/Right LayoutをToolbarだけでなくPanel/Popup/Quick Menu/主要操作位置まで考慮する。"
+  },
+  {
+    "id": "FR-DEVICE-004",
+    "title": "Capability-driven Adaptation",
+    "line": 1035,
+    "category": "DEV",
+    "body": "PC / Tablet / Smartphoneという端末分類だけでRenderer、入力方式、Worker数、機能可否を決めてはならない。\n\nViewport、Pointer、Hover、Keyboard、GPU、Storage等をRuntime Capabilityとして検出し、実際の環境へ適応する。\n\nUser-Agent文字列を主要な機能分岐根拠にしない。"
+  },
+  {
+    "id": "FR-DEVICE-005",
+    "title": "Core Fallback Independence",
+    "line": 1043,
+    "category": "DEV",
+    "body": "以下はCore paintingの必須条件にしない。\n\n- WebGPU\n- SharedArrayBuffer\n- Stylus\n- Pressure / Tilt\n- Hover\n- Physical Keyboard\n- Direct File System Picker\n- PWA install\n\n利用できない場合もCore Normal Operationが成立しなければならない。"
+  },
+  {
+    "id": "FR-DEVICE-006",
+    "title": "Core Normal Operation",
+    "line": 1058,
+    "category": "DEV",
+    "body": "PC / Tablet / Smartphoneで少なくとも以下が同じDocument semanticsで成立することを必須とする。\n\n- Document create/open\n- Raster Brush / Eraser\n- Color Pick / Change\n- Layer / Group / Clipping\n- Undo / Redo\n- Pan / Zoom / Rotate\n- Basic Selection / Transform\n- Reference viewing\n- Autosave / Recovery\n- portable .illustro export/import\n- PNG / JPEG / WebP export"
+  },
+  {
+    "id": "FR-DEVICE-007",
+    "title": "Input Arbitration",
+    "line": 1074,
+    "category": "DEV",
+    "body": "Pen / Touch / Mouseが同時に存在する環境を前提とする。\n\nDefaultではPenをDrawing、TouchをCanvas Gestureへ割り当て、Finger Drawingは設定可能にする。\n\nSensor値がHardware/Browserから提供されない場合に、default値を実測Sensor値として扱ってはならない。"
+  },
+  {
+    "id": "FR-DEVICE-008",
+    "title": "Mobile Viewport Adaptation",
+    "line": 1082,
+    "category": "DEV",
+    "body": "Smartphone / Tabletでは以下を動的に扱う。\n\n- safe area\n- Visual Viewport\n- software keyboard\n- orientation\n- split view / window resize\n- browser chromeによるviewport変化\n\n重要UIがnotch、home indicator、software keyboard等の背後に隠れないようにする。"
+  },
+  {
+    "id": "FR-DEVICE-009",
+    "title": "Mobile Lifecycle Recovery",
+    "line": 1095,
+    "category": "DEV",
+    "body": "MobileではBackground化後のprocess termination / tab discardを通常のFailure Modeとして扱う。\n\nbeforeunload / unload完了をData Safety条件にしてはならない。\n\n通常編集時からRecovery Journalを進め、visibility hiddenを追加flushの契機として利用する。"
+  },
+  {
+    "id": "FR-DEVICE-010",
+    "title": "Dynamic Resource Budget",
+    "line": 1103,
+    "category": "DEV",
+    "body": "Memory、GPU Cache、Worker数、Background Job量をPC/Tablet/Smartphoneごとの固定値だけで決めない。\n\nRuntime capabilityと実測負荷から調整可能にする。\n\nnavigator.deviceMemory等のoptional/coarsened情報はhintとしてのみ利用する。\n\n---\n\n## 25. Accessibility"
+  },
+  {
+    "id": "FR-A11Y-001",
+    "title": "Scalable UI",
+    "line": 1115,
+    "category": "A11",
+    "body": "UI/Text Sizeを拡大可能にする。"
+  },
+  {
+    "id": "FR-A11Y-002",
+    "title": "Single-pointer Alternative",
+    "line": 1119,
+    "category": "A11",
+    "body": "Multi-touchでしか実行できない主要操作を作らず、代替UIを持たせる。"
+  },
+  {
+    "id": "FR-A11Y-003",
+    "title": "Non-color-only State",
+    "line": 1123,
+    "category": "A11",
+    "body": "状態・警告・選択を色だけで伝えない。"
+  },
+  {
+    "id": "FR-A11Y-004",
+    "title": "Color Assistance",
+    "line": 1127,
+    "category": "A11",
+    "body": "Color Name/Description等、色覚を補助する機能を提供する方向で設計する。"
+  },
+  {
+    "id": "FR-A11Y-005",
+    "title": "Reduced Motion",
+    "line": 1131,
+    "category": "A11",
+    "body": "不要なAnimationを減らす設定を持つ。"
+  },
+  {
+    "id": "FR-A11Y-006",
+    "title": "Stabilization",
+    "line": 1135,
+    "category": "A11",
+    "body": "Global Motion Filtering/Stabilizationを利用可能にする。"
+  },
+  {
+    "id": "FR-A11Y-007",
+    "title": "Targets",
+    "line": 1139,
+    "category": "A11",
+    "body": "Touch Deviceでは十分なHit Targetを保証するDesign Tokenを定義する。"
+  },
+  {
+    "id": "FR-A11Y-008",
+    "title": "Keyboard",
+    "line": 1143,
+    "category": "A11",
+    "body": "描画そのものを除く主要Commandは、PCでKeyboardから到達可能にすることを目標とする。\n\n---\n\n## 26. Asset Library"
+  },
+  {
+    "id": "FR-ASSET-001",
+    "title": "Asset Types",
+    "line": 1151,
+    "category": "AST",
+    "body": "少なくとも次を管理できる。\n\n- Brush\n- Brush tip\n- Texture\n- Paper\n- Pattern\n- Gradient\n- Palette\n- Macro\n- Workspace\n- Reference Set\n- Shape"
+  },
+  {
+    "id": "FR-ASSET-002",
+    "title": "Organization",
+    "line": 1167,
+    "category": "AST",
+    "body": "Folder/Collection/Tag/Search/Favorite/Recentを提供する。"
+  },
+  {
+    "id": "FR-ASSET-003",
+    "title": "Import / Export",
+    "line": 1171,
+    "category": "AST",
+    "body": "AssetをImport/Exportできる。"
+  },
+  {
+    "id": "FR-ASSET-004",
+    "title": "Local-first",
+    "line": 1175,
+    "category": "AST",
+    "body": "Cloud接続なしでAsset Libraryが成立する。\n\n---\n\n## 27. Navigator / Multi-view"
+  },
+  {
+    "id": "FR-NAV-001",
+    "title": "Navigator",
+    "line": 1183,
+    "category": "REF",
+    "body": "Artwork ThumbnailとCurrent Viewportを表示するNavigatorを提供する。"
+  },
+  {
+    "id": "FR-NAV-002",
+    "title": "Direct Navigation",
+    "line": 1187,
+    "category": "REF",
+    "body": "NavigatorからPan/Zoomできる。"
+  },
+  {
+    "id": "FR-NAV-003",
+    "title": "Workspace",
+    "line": 1191,
+    "category": "REF",
+    "body": "NavigatorはDock/Float/Hide可能にする。"
+  },
+  {
+    "id": "FR-NAV-004",
+    "title": "Multi-view",
+    "line": 1195,
+    "category": "REF",
+    "body": "同一Documentを複数Viewで表示する機能をInvestigateする。\n\n---\n\n## 27.1 Clipboard / Cross-document Transfer"
+  },
+  {
+    "id": "FR-CLIP-001",
+    "title": "Internal Clipboard",
+    "line": 1203,
+    "category": "CLP",
+    "body": "Illustro内部Clipboardを持ち、System Clipboardの可否に依存せずCopy/Cut/Pasteを成立させる。"
+  },
+  {
+    "id": "FR-CLIP-002",
+    "title": "Copy / Cut / Paste",
+    "line": 1207,
+    "category": "CLP",
+    "body": "少なくとも以下を提供する。\n\n- Copy\n- Cut\n- Paste\n- Copy Merged\n- Paste in Place\n\nSelectionがある場合はSelection範囲を尊重する。"
+  },
+  {
+    "id": "FR-CLIP-003",
+    "title": "Native Payload",
+    "line": 1219,
+    "category": "CLP",
+    "body": "Illustro内Document間では、可能な対象についてRaster化せずNative Layer/Object情報を保持できるClipboard payloadを優先する。\n\nCopy Merged等は明示的にRaster結果を作る。"
+  },
+  {
+    "id": "FR-CLIP-004",
+    "title": "System Clipboard Bridge",
+    "line": 1225,
+    "category": "CLP",
+    "body": "Browser/OSが許す場合、画像等をSystem Clipboardと交換可能にする。\n\nSystem Clipboard API/permissionをCore Copy/Pasteの必須条件にしない。"
+  },
+  {
+    "id": "FR-CLIP-005",
+    "title": "Paste Destination",
+    "line": 1231,
+    "category": "CLP",
+    "body": "PasteはDefaultでactive layer/group contextの直上へ新しいLayer/Objectとして追加する。\n\nPaste in PlaceはIllustro内部Clipboardでsource document coordinatesが分かる場合、その位置関係を保持する。"
+  },
+  {
+    "id": "FR-CLIP-006",
+    "title": "Cross-device Access",
+    "line": 1237,
+    "category": "CLP",
+    "body": "KeyboardのないTablet/SmartphoneでもCopy/Cut/PasteへUIから到達可能にする。\n\n## 27.2 Localization / Internationalization"
+  },
+  {
+    "id": "FR-I18N-001",
+    "title": "Localizable UI",
+    "line": 1243,
+    "category": "A11",
+    "body": "UI文字列を実装コードへ散在させず、localization可能なresourceとして管理する。"
+  },
+  {
+    "id": "FR-I18N-002",
+    "title": "Japanese Layout Support",
+    "line": 1247,
+    "category": "A11",
+    "body": "日本語UI文字列、CJK font fallback、IME入力、長い翻訳文字列でも主要UIが破綻しないLayoutを前提にする。"
+  },
+  {
+    "id": "FR-I18N-003",
+    "title": "Locale-independent Identity",
+    "line": 1251,
+    "category": "A11",
+    "body": "Command ID、Shortcut binding、File schema、Macro等の内部Identityへlocalized display stringを使用してはならない。"
+  },
+  {
+    "id": "FR-I18N-004",
+    "title": "Formatting",
+    "line": 1255,
+    "category": "A11",
+    "body": "数値、単位、日時等はLocaleに応じた表示を可能にするが、Document canonical numeric valuesとは分離する。\n\n初期出荷Locale一覧はUI/Product phaseで確定する。\n\n## 28. File Format / Persistence"
+  },
+  {
+    "id": "DR-FILE-001",
+    "title": "Native Format",
+    "line": 1263,
+    "category": "SAV",
+    "body": "Native Formatは **.illustro** とする。"
+  },
+  {
+    "id": "DR-FILE-002",
+    "title": "Native Data",
+    "line": 1267,
+    "category": "SAV",
+    "body": ".illustroは少なくとも以下を保存可能にする。\n\n- Canvas\n- Layer tree\n- Masks\n- Vector\n- Text\n- Brush/document-specific brush data\n- Lineart Layer area data\n- References\n- Snapshot\n- Layer Comp\n- Timelapse/history-related data\n- Workspace/document metadata\n- Color profile\n- Recovery/version metadata"
+  },
+  {
+    "id": "FR-FILE-001",
+    "title": "Standard Export",
+    "line": 1286,
+    "category": "SAV",
+    "body": "PNG/JPEG/WebPをRequiredとする。"
+  },
+  {
+    "id": "FR-FILE-002",
+    "title": "OpenRaster",
+    "line": 1290,
+    "category": "SAV",
+    "body": "OpenRaster (.ora)をLayer交換形式としてRequiredとする。"
+  },
+  {
+    "id": "FR-FILE-003",
+    "title": "TIFF",
+    "line": 1294,
+    "category": "SAV",
+    "body": "TIFFを高品質Raster交換形式としてRequiredとする。"
+  },
+  {
+    "id": "FR-FILE-004",
+    "title": "PSD",
+    "line": 1298,
+    "category": "SAV",
+    "body": "PSD Import/ExportはHigh-priority Investigate。\n\n「完全互換」を前提にせず、Feature-by-feature互換性を管理する。"
+  },
+  {
+    "id": "CR-PSD-001",
+    "title": "Loss Reporting",
+    "line": 1304,
+    "category": "IO",
+    "body": "PSD Import/Exportで情報損失が発生する場合、可能な限りユーザーへ明示する。"
+  },
+  {
+    "id": "CR-PSD-002",
+    "title": "Round Trip",
+    "line": 1308,
+    "category": "IO",
+    "body": "PSD対応を実装する場合はRound-trip Test Suiteを持つ。"
+  },
+  {
+    "id": "FR-FILE-005",
+    "title": "SVG / EXR",
+    "line": 1312,
+    "category": "SAV",
+    "body": "SVGとOpenEXRをそれぞれVector/HDR Interchange候補として検証する。\n\n---\n\n## 29. Autosave / Recovery / Offline"
+  },
+  {
+    "id": "FR-SAVE-001",
+    "title": "Autosave",
+    "line": 1320,
+    "category": "SAV",
+    "body": "制作中の定期・イベント駆動保存を提供する。"
+  },
+  {
+    "id": "FR-SAVE-002",
+    "title": "Incremental Save",
+    "line": 1324,
+    "category": "SAV",
+    "body": "Document全体を書き直さず変更分を安全に永続化できる方式を優先する。"
+  },
+  {
+    "id": "FR-SAVE-003",
+    "title": "Crash Recovery",
+    "line": 1328,
+    "category": "SAV",
+    "body": "Crash後に最後の安全な状態へ復旧できる。"
+  },
+  {
+    "id": "FR-SAVE-004",
+    "title": "Recovery Snapshot",
+    "line": 1332,
+    "category": "SAV",
+    "body": "通常Saveと独立したRecovery Stateを保持する。"
+  },
+  {
+    "id": "QR-SAVE-001",
+    "title": "Non-blocking",
+    "line": 1336,
+    "category": "SAV",
+    "body": "保存処理でStroke/Inputを長時間Blockしてはならない。"
+  },
+  {
+    "id": "FR-OFFLINE-001",
+    "title": "Offline Core",
+    "line": 1340,
+    "category": "SAV",
+    "body": "以下はInternetなしで成立しなければならない。\n\n- Draw\n- Edit\n- Save\n- Layer\n- Brush\n- Undo/Redo\n- Reference\n- Filter\n- Macro\n- Asset Library"
+  },
+  {
+    "id": "FR-OFFLINE-002",
+    "title": "Login",
+    "line": 1355,
+    "category": "SAV",
+    "body": "通常のLocal制作でLoginを必須にしない。\n\n---\n\n## 30. Performance"
+  },
+  {
+    "id": "QR-PERF-001",
+    "title": "Perceived Zero Lag",
+    "line": 1363,
+    "category": "QR",
+    "body": "「体感0ラグ」を目標とする。"
+  },
+  {
+    "id": "QR-PERF-002",
+    "title": "Metrics",
+    "line": 1367,
+    "category": "QR",
+    "body": "少なくとも以下を継続計測対象とする。\n\n- Input latency\n- frame time\n- worst frame\n- memory usage\n- canvas-size scaling\n- layer-count scaling\n- Undo latency\n- brush-switch latency\n- save interruption"
+  },
+  {
+    "id": "QR-PERF-003",
+    "title": "Partial Update",
+    "line": 1381,
+    "category": "QR",
+    "body": "変更範囲のみを更新できるArchitectureを優先する。"
+  },
+  {
+    "id": "QR-PERF-004",
+    "title": "GPU",
+    "line": 1385,
+    "category": "QR",
+    "body": "GPUが有効な環境ではBrush/Filter/Transform/Blend/Preview等へ積極利用する。"
+  },
+  {
+    "id": "QR-PERF-005",
+    "title": "Fallback",
+    "line": 1389,
+    "category": "QR",
+    "body": "GPU Feature差によって基本編集不能にならないFallback戦略を持つ。"
+  },
+  {
+    "id": "QR-PERF-006",
+    "title": "Zero-cost inactive features",
+    "line": 1393,
+    "category": "QR",
+    "body": "使用していない高度機能が、通常描画の恒常的なCPU/GPU処理を発生させてはならない。\n\n例:\n\n- 線画レイヤー解析は線画レイヤー機能を使用しないDocumentでは常時実行しない\n- Soft Proof OFF時はProof変換を実行しない\n- Wet Media未使用時はWet stateを確保しない\n- PSD/EXR等のCodecは必要になるまでロードしない\n- Timelapse用の高コストな動画生成処理は制作Hot Pathで行わない"
+  },
+  {
+    "id": "QR-PERF-007",
+    "title": "Startup / First Draw",
+    "line": 1405,
+    "category": "QR",
+    "body": "アプリ起動から最初のStrokeまでに、通常描画へ不要な高度Moduleの初期化完了を待たせてはならない。\n\nModule/Shader/Codec/Assetは可能な限り遅延ロード・遅延Compileする。"
+  },
+  {
+    "id": "QR-PERF-008",
+    "title": "Copy / Allocation Budget",
+    "line": 1411,
+    "category": "QR",
+    "body": "Hot Pathでは大きなBufferの不要なCopy、短命Objectの大量生成、全Tile/全Layerの複製を避ける。\n\nJS↔WASM↔Worker↔GPU間の境界は、抽象化の統一性より**実測されたCopy/Serialization cost**を優先して配置する。"
+  },
+  {
+    "id": "QR-PERF-009",
+    "title": "Background Work Budget",
+    "line": 1417,
+    "category": "QR",
+    "body": "Background解析・Materialization・Cache生成はForegroundのInput/Present予算を侵食しない。\n\nIdleであることだけを理由に無制限のBackground処理を開始せず、CPU/GPU/Memory/Thermal budgetを持つ。"
+  },
+  {
+    "id": "QR-PERF-010",
+    "title": "Adaptive architecture",
+    "line": 1423,
+    "category": "QR",
+    "body": "Thread/Worker/WASM/GPUの配置は一つの理想構造へ固定せず、Target deviceで最も軽い構成を選択できるようにする。\n\n同じSemantic contractを保つ限り、DesktopとMobileで物理実行構成が異なることを許容する。\n\n---\n\n## 31. AI Policy"
+  },
+  {
+    "id": "FR-AI-001",
+    "title": "Author-first",
+    "line": 1433,
+    "category": "AI",
+    "body": "AIがArtwork完成を主体的に代行することをIllustroの中心価値にしない。"
+  },
+  {
+    "id": "FR-AI-002",
+    "title": "Assistive Only",
+    "line": 1437,
+    "category": "AI",
+    "body": "AI利用候補はColor/Region/Selection/Organization/Repair等の補助を中心とする。"
+  },
+  {
+    "id": "FR-AI-003",
+    "title": "Deterministic Alternative",
+    "line": 1441,
+    "category": "AI",
+    "body": "可能な機能はAIなしでも成立するAlgorithmを優先する。"
+  },
+  {
+    "id": "FR-AI-004",
+    "title": "Offline / Privacy",
+    "line": 1445,
+    "category": "AI",
+    "body": "AI FeatureがなくてもCore Painting Workflowは完全に成立しなければならない。\n\n---\n\n## 32. Extension Policy"
+  },
+  {
+    "id": "FUT-EXT-001",
+    "title": "Plugin API",
+    "line": 1453,
+    "category": "EXT",
+    "body": "Plugin/Extension APIは本体完成前の必須機能にしない。"
+  },
+  {
+    "id": "DR-EXT-001",
+    "title": "Internal Boundaries",
+    "line": 1457,
+    "category": "EXT",
+    "body": "将来のExtensionを不必要に妨げないよう、Command/Document/Render/Import-Export等の内部Module Boundaryを明確にする。"
+  },
+  {
+    "id": "FUT-EXT-002",
+    "title": "Potential Extension Points",
+    "line": 1461,
+    "category": "EXT",
+    "body": "将来候補:\n\n- Commands\n- import/export codec\n- filters\n- brush modules\n- panels\n- automation functions\n\n任意コードの無制限実行を前提としない。\n\n---\n\n## 33. Future Collaboration / 絵チャ"
+  },
+  {
+    "id": "FUT-COLLAB-001",
+    "title": "旧将来要件",
+    "line": 1478,
+    "category": "EXT",
+    "body": "絵チャ・Realtime共同描画は、Core Illustro完成後のFuture Scopeとする。"
+  },
+  {
+    "id": "DR-COLLAB-001",
+    "title": "旧将来要件",
+    "line": 1482,
+    "category": "EXT",
+    "body": "現段階でRealtime Collaboration向けの複雑性をCore設計へ持ち込まない。\n\nただし、Document ID、Command、Entity identity等について、将来の共同編集を不必要に不可能にする制約は避ける。\n\n---\n\n## 34. 仕様上の未確定事項\n\n以下は「機能を入れるかどうか」ではなく、主に**どう実装するか**が未確定。\n\n- Tile size / cache / eviction\n- internal pixel format\n- working color space\n- ICC implementation\n- HDR output/display mapping\n- Blend Mode exact formula\n- brush graph data model\n- wet-media simulation\n- Lineart Layer extraction / connection algorithm\n- Vector stroke representation\n- text shaping engine\n- selection antialiasing\n- transform interpolation\n- live-filter render graph\n- Undo delta/checkpoint strategy\n- Snapshot branch storage\n- .illustro container/versioning\n- PSD parser/writer\n- Web/PWA/Desktop runtime composition\n- default keyboard/gesture mapping\n\nこれらはアーキテクチャ設計・Prototype・Benchmarkの結果を根拠として確定する。\n\n---\n\n## 35. 次段階へのGate"
+  }
+]

@@ -1,0 +1,2918 @@
+[
+  {
+    "id": "LC-001",
+    "section": "A",
+    "line": 19,
+    "name": "Raster Canvas",
+    "status": "Core",
+    "note": "主描画面",
+    "target": "CAN-001"
+  },
+  {
+    "id": "LC-002",
+    "section": "A",
+    "line": 20,
+    "name": "Tile-based 大規模Canvas",
+    "status": "Core / Investigate",
+    "note": "大規模キャンバス要件を満たす有力方式",
+    "target": "QR-08"
+  },
+  {
+    "id": "LC-003",
+    "section": "A",
+    "line": 21,
+    "name": "Pan / Zoom / Rotate",
+    "status": "Core",
+    "note": "即応性最重要",
+    "target": "CAN-002"
+  },
+  {
+    "id": "LC-004",
+    "section": "A",
+    "line": 22,
+    "name": "最大 64000% Zoom",
+    "status": "Required",
+    "note": "高倍率でも座標精度を維持",
+    "target": "CAN-004"
+  },
+  {
+    "id": "LC-005",
+    "section": "A",
+    "line": 23,
+    "name": "Canvas Flip",
+    "status": "Required",
+    "note": "水平/垂直",
+    "target": "CAN-003"
+  },
+  {
+    "id": "LC-006",
+    "section": "A",
+    "line": 24,
+    "name": "Crop",
+    "status": "Required",
+    "note": "詳細操作は未確定",
+    "target": "CAN-005"
+  },
+  {
+    "id": "LC-007",
+    "section": "A",
+    "line": 25,
+    "name": "Canvas Resize",
+    "status": "Required",
+    "note": "",
+    "target": "CAN-005"
+  },
+  {
+    "id": "LC-008",
+    "section": "A",
+    "line": 26,
+    "name": "Image Resize",
+    "status": "Required",
+    "note": "補間方式は別途仕様化",
+    "target": "CAN-006"
+  },
+  {
+    "id": "LC-009",
+    "section": "A",
+    "line": 27,
+    "name": "Seamless Tile Drawing",
+    "status": "Required",
+    "note": "上下左右反復をリアルタイム確認",
+    "target": "CAN-008"
+  },
+  {
+    "id": "LC-010",
+    "section": "A",
+    "line": 28,
+    "name": "複数Document",
+    "status": "Required",
+    "note": "UX未確定",
+    "target": "CAN-007"
+  },
+  {
+    "id": "LC-011",
+    "section": "A",
+    "line": 29,
+    "name": "Document Metadata",
+    "status": "Required",
+    "note": ".illustroで保持",
+    "target": "CAN-009"
+  },
+  {
+    "id": "LC-012",
+    "section": "B",
+    "line": 35,
+    "name": "Brush Tool",
+    "status": "Core",
+    "note": "低遅延",
+    "target": "BRU-001"
+  },
+  {
+    "id": "LC-013",
+    "section": "B",
+    "line": 36,
+    "name": "Eraser",
+    "status": "Core",
+    "note": "Brush Engineと統一的に扱える設計を優先",
+    "target": "BRU-012"
+  },
+  {
+    "id": "LC-014",
+    "section": "B",
+    "line": 37,
+    "name": "Smudge / Blend Tool",
+    "status": "Required",
+    "note": "詳細方式未確定",
+    "target": "WET-001"
+  },
+  {
+    "id": "LC-015",
+    "section": "B",
+    "line": 38,
+    "name": "Brush Size / Opacity",
+    "status": "Core",
+    "note": "高速アクセス必須",
+    "target": "BRU-002"
+  },
+  {
+    "id": "LC-016",
+    "section": "B",
+    "line": 39,
+    "name": "Pressure",
+    "status": "Core",
+    "note": "対応端末",
+    "target": "INP-002"
+  },
+  {
+    "id": "LC-017",
+    "section": "B",
+    "line": 40,
+    "name": "Tilt",
+    "status": "Required",
+    "note": "対応端末",
+    "target": "INP-002"
+  },
+  {
+    "id": "LC-018",
+    "section": "B",
+    "line": 41,
+    "name": "Azimuth",
+    "status": "Required",
+    "note": "対応端末",
+    "target": "INP-002"
+  },
+  {
+    "id": "LC-019",
+    "section": "B",
+    "line": 42,
+    "name": "Stylus Eraser",
+    "status": "Required",
+    "note": "対応端末",
+    "target": "INP-003"
+  },
+  {
+    "id": "LC-020",
+    "section": "B",
+    "line": 43,
+    "name": "Barrel Button",
+    "status": "Required",
+    "note": "対応端末",
+    "target": "INP-003"
+  },
+  {
+    "id": "LC-021",
+    "section": "B",
+    "line": 44,
+    "name": "Stabilization / Smoothing",
+    "status": "Core",
+    "note": "Global / per-brush の両方を想定。アクセシビリティにも利用",
+    "target": "BRU-003"
+  },
+  {
+    "id": "LC-022",
+    "section": "B",
+    "line": 45,
+    "name": "Brush Dynamics 共通変調モデル",
+    "status": "Core",
+    "note": "Pressure/Tilt/Azimuth/Speed/Direction/Distance/Time/Random等を共通入力として扱う",
+    "target": "BRU-006"
+  },
+  {
+    "id": "LC-023",
+    "section": "B",
+    "line": 46,
+    "name": "Dynamics Curve / Range / Invert",
+    "status": "Required",
+    "note": "入力→Brush Parameterの対応を共通UIで設定",
+    "target": "BRU-006"
+  },
+  {
+    "id": "LC-024",
+    "section": "B",
+    "line": 47,
+    "name": "Procedural Brush System",
+    "status": "Core",
+    "note": "Illustroの主要独自機能",
+    "target": "BRU-005"
+  },
+  {
+    "id": "LC-025",
+    "section": "B",
+    "line": 48,
+    "name": "Texture-based Brush Input",
+    "status": "Required",
+    "note": "Proceduralと併用",
+    "target": "BRU-007"
+  },
+  {
+    "id": "LC-026",
+    "section": "B",
+    "line": 49,
+    "name": "Brush Preset",
+    "status": "Required",
+    "note": "",
+    "target": "BRU-004"
+  },
+  {
+    "id": "LC-027",
+    "section": "B",
+    "line": 50,
+    "name": "Brush検索・整理",
+    "status": "Required",
+    "note": "",
+    "target": "BRU-004"
+  },
+  {
+    "id": "LC-028",
+    "section": "B",
+    "line": 51,
+    "name": "ユーザー作成Brush",
+    "status": "Required",
+    "note": "",
+    "target": "BRU-005"
+  },
+  {
+    "id": "LC-029",
+    "section": "B",
+    "line": 52,
+    "name": "Dynamic Wet Media",
+    "status": "Core / Investigate",
+    "note": "イラスト向け湿式表現",
+    "target": "WET-002"
+  },
+  {
+    "id": "LC-030",
+    "section": "B",
+    "line": 53,
+    "name": "Wetness / Pigment等の内部状態",
+    "status": "Investigate",
+    "note": "Wet Media基盤",
+    "target": "WET-002"
+  },
+  {
+    "id": "LC-031",
+    "section": "B",
+    "line": 54,
+    "name": "紙質・粒子・質感",
+    "status": "Required / Investigate",
+    "note": "Brush/Wet Media連携",
+    "target": "WET-005"
+  },
+  {
+    "id": "LC-032",
+    "section": "C",
+    "line": 62,
+    "name": "線画レイヤー",
+    "status": "Core / Design reset",
+    "note": "ラスター線画から生成する専用レイヤー。現時点では完成目標の概念のみ確定",
+    "target": "LIN-001"
+  },
+  {
+    "id": "LC-033",
+    "section": "C",
+    "line": 63,
+    "name": "Raster線画からの生成",
+    "status": "Core",
+    "note": "通常のストローク中心Raster Layerを「複製する」感覚で作成",
+    "target": "LIN-001"
+  },
+  {
+    "id": "LC-034",
+    "section": "C",
+    "line": 64,
+    "name": "太さを持たない境界",
+    "status": "Core",
+    "note": "描画線の太さではなく、領域を分ける境界として保持",
+    "target": "LIN-002"
+  },
+  {
+    "id": "LC-035",
+    "section": "C",
+    "line": 65,
+    "name": "領域分けデータ",
+    "status": "Core",
+    "note": "線そのものではなく、どの場所がどの領域かを表す構造が主データ",
+    "target": "LIN-002"
+  },
+  {
+    "id": "LC-036",
+    "section": "C",
+    "line": 66,
+    "name": "接続・領域分けの手動修正",
+    "status": "Core",
+    "note": "線画レイヤー選択中に自動判定の誤りを直接修正できる",
+    "target": "LIN-003"
+  },
+  {
+    "id": "LC-037",
+    "section": "C",
+    "line": 67,
+    "name": "線画からの自動抽出",
+    "status": "Investigate",
+    "note": "接続判定を含む抽出アルゴリズムは旧成果を破棄し、ゼロから再設計",
+    "target": "LIN-006"
+  },
+  {
+    "id": "LC-038",
+    "section": "C",
+    "line": 68,
+    "name": "線画レイヤー基準のFill",
+    "status": "Required",
+    "note": "色差ではなく線画レイヤー上の領域分けをFill基準として利用",
+    "target": "LIN-004"
+  },
+  {
+    "id": "LC-039",
+    "section": "C",
+    "line": 69,
+    "name": "線画レイヤー基準のSelection",
+    "status": "Required",
+    "note": "領域分けを選択範囲生成へ利用可能にする",
+    "target": "LIN-004"
+  },
+  {
+    "id": "LC-040",
+    "section": "C",
+    "line": 70,
+    "name": "元Raster編集後の追従",
+    "status": "Investigate",
+    "note": "自動追従・再生成・独立保持の扱いは未決定",
+    "target": "LIN-005"
+  },
+  {
+    "id": "LC-041",
+    "section": "D",
+    "line": 76,
+    "name": "Flood Fill",
+    "status": "Core",
+    "note": "",
+    "target": "FIL-001"
+  },
+  {
+    "id": "LC-042",
+    "section": "D",
+    "line": 77,
+    "name": "Gap Closing",
+    "status": "Required",
+    "note": "",
+    "target": "FIL-002"
+  },
+  {
+    "id": "LC-043",
+    "section": "D",
+    "line": 78,
+    "name": "Gap Tolerance",
+    "status": "Required",
+    "note": "",
+    "target": "FIL-002"
+  },
+  {
+    "id": "LC-044",
+    "section": "D",
+    "line": 79,
+    "name": "Boundary Expand / Contract",
+    "status": "Required",
+    "note": "",
+    "target": "FIL-002"
+  },
+  {
+    "id": "LC-045",
+    "section": "D",
+    "line": 80,
+    "name": "Multi-layer Reference Fill",
+    "status": "Required",
+    "note": "",
+    "target": "FIL-003"
+  },
+  {
+    "id": "LC-046",
+    "section": "D",
+    "line": 81,
+    "name": "Lineart Layer Reference Fill",
+    "status": "Required",
+    "note": "線画レイヤーの領域分けを参照",
+    "target": "FIL-007"
+  },
+  {
+    "id": "LC-047",
+    "section": "D",
+    "line": 82,
+    "name": "Color Difference Tolerance",
+    "status": "Required",
+    "note": "",
+    "target": "FIL-001"
+  },
+  {
+    "id": "LC-048",
+    "section": "D",
+    "line": 83,
+    "name": "Enclose and Fill",
+    "status": "Required",
+    "note": "囲って塗る",
+    "target": "FIL-005"
+  },
+  {
+    "id": "LC-049",
+    "section": "D",
+    "line": 84,
+    "name": "Trace and Fill",
+    "status": "Required",
+    "note": "なぞって塗る",
+    "target": "FIL-006"
+  },
+  {
+    "id": "LC-050",
+    "section": "D",
+    "line": 85,
+    "name": "Drag Fill",
+    "status": "Required",
+    "note": "",
+    "target": "FIL-004"
+  },
+  {
+    "id": "LC-051",
+    "section": "D",
+    "line": 86,
+    "name": "Continuous Area Fill",
+    "status": "Required",
+    "note": "線画レイヤー領域にも対応",
+    "target": "FIL-004"
+  },
+  {
+    "id": "LC-052",
+    "section": "D",
+    "line": 87,
+    "name": "Smart Fill 統合UI",
+    "status": "Core",
+    "note": "モード分散を避ける",
+    "target": "FIL-009"
+  },
+  {
+    "id": "LC-053",
+    "section": "D",
+    "line": 88,
+    "name": "Smart Color Assist",
+    "status": "Core",
+    "note": "ユーザー補助。生成AI主体にしない",
+    "target": "AI-002"
+  },
+  {
+    "id": "LC-054",
+    "section": "D",
+    "line": 89,
+    "name": "Base Color候補",
+    "status": "Required / Investigate",
+    "note": "決定的アルゴリズム優先",
+    "target": "AI-002"
+  },
+  {
+    "id": "LC-055",
+    "section": "D",
+    "line": 90,
+    "name": "Palette候補",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "COL-005"
+  },
+  {
+    "id": "LC-056",
+    "section": "D",
+    "line": 91,
+    "name": "隣接色調和支援",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "COL-005"
+  },
+  {
+    "id": "LC-057",
+    "section": "D",
+    "line": 92,
+    "name": "Lineart Layer Area Recolor",
+    "status": "Required",
+    "note": "線画レイヤー領域単位",
+    "target": "FIL-007"
+  },
+  {
+    "id": "LC-058",
+    "section": "D",
+    "line": 93,
+    "name": "Shadow / Highlight候補",
+    "status": "Investigate",
+    "note": "",
+    "target": "AI-002"
+  },
+  {
+    "id": "LC-059",
+    "section": "D",
+    "line": 94,
+    "name": "Color Temperature調整",
+    "status": "Required",
+    "note": "",
+    "target": "COL-009"
+  },
+  {
+    "id": "LC-060",
+    "section": "D",
+    "line": 95,
+    "name": "全体色調整",
+    "status": "Required",
+    "note": "",
+    "target": "COL-009"
+  },
+  {
+    "id": "LC-061",
+    "section": "E",
+    "line": 101,
+    "name": "Color Picker",
+    "status": "Core",
+    "note": "",
+    "target": "COL-001"
+  },
+  {
+    "id": "LC-062",
+    "section": "E",
+    "line": 102,
+    "name": "Canvas Eyedropper",
+    "status": "Core",
+    "note": "",
+    "target": "COL-003"
+  },
+  {
+    "id": "LC-063",
+    "section": "E",
+    "line": 103,
+    "name": "Reference Eyedropper",
+    "status": "Core",
+    "note": "Illustro独自の高速資料採色",
+    "target": "REF-004"
+  },
+  {
+    "id": "LC-064",
+    "section": "E",
+    "line": 104,
+    "name": "Color History",
+    "status": "Required",
+    "note": "",
+    "target": "COL-002"
+  },
+  {
+    "id": "LC-065",
+    "section": "E",
+    "line": 105,
+    "name": "Palette",
+    "status": "Required",
+    "note": "",
+    "target": "COL-004"
+  },
+  {
+    "id": "LC-066",
+    "section": "E",
+    "line": 106,
+    "name": "Palette Import / Export",
+    "status": "Required",
+    "note": "形式未確定",
+    "target": "COL-004"
+  },
+  {
+    "id": "LC-067",
+    "section": "E",
+    "line": 107,
+    "name": "HSV/HSL/RGB等のカラーコントロール",
+    "status": "Required",
+    "note": "最終対応モデル未確定",
+    "target": "COL-001"
+  },
+  {
+    "id": "LC-068",
+    "section": "E",
+    "line": 108,
+    "name": "Color Harmony支援",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "COL-005"
+  },
+  {
+    "id": "LC-069",
+    "section": "E",
+    "line": 109,
+    "name": "Grayscale Preview",
+    "status": "Required",
+    "note": "Referenceにも利用",
+    "target": "COL-005"
+  },
+  {
+    "id": "LC-070",
+    "section": "E",
+    "line": 110,
+    "name": "Color Management / ICC",
+    "status": "Core / Investigate",
+    "note": "ドキュメント・合成モデル確定前に仕様化必須",
+    "target": "COL-006"
+  },
+  {
+    "id": "LC-071",
+    "section": "E",
+    "line": 111,
+    "name": "Wide Gamut",
+    "status": "Core / Investigate",
+    "note": "Display P3等を扱えるColor Pipelineを前提にする",
+    "target": "COL-007"
+  },
+  {
+    "id": "LC-072",
+    "section": "E",
+    "line": 112,
+    "name": "8-bit integer",
+    "status": "Required",
+    "note": "",
+    "target": "COL-007"
+  },
+  {
+    "id": "LC-073",
+    "section": "E",
+    "line": 113,
+    "name": "16-bit integer",
+    "status": "Required",
+    "note": "高精度編集用途",
+    "target": "COL-007"
+  },
+  {
+    "id": "LC-074",
+    "section": "E",
+    "line": 114,
+    "name": "16-bit float",
+    "status": "Required / Investigate",
+    "note": "HDR/高精度Filter基盤として検討",
+    "target": "COL-007"
+  },
+  {
+    "id": "LC-075",
+    "section": "E",
+    "line": 115,
+    "name": "32-bit float",
+    "status": "Investigate",
+    "note": "メモリ・性能コストを含め評価",
+    "target": "COL-007"
+  },
+  {
+    "id": "LC-076",
+    "section": "E",
+    "line": 116,
+    "name": "Embedded ICC Profile",
+    "status": "Required",
+    "note": "Native documentで保持",
+    "target": "COL-006"
+  },
+  {
+    "id": "LC-077",
+    "section": "E",
+    "line": 117,
+    "name": "Profile Conversion / Display Transform",
+    "status": "Required",
+    "note": "",
+    "target": "COL-006"
+  },
+  {
+    "id": "LC-078",
+    "section": "E",
+    "line": 118,
+    "name": "Linear-light Processing Path",
+    "status": "Core / Investigate",
+    "note": "Blend/Filterの一部で利用可能な構造",
+    "target": "COL-007"
+  },
+  {
+    "id": "LC-079",
+    "section": "E",
+    "line": 119,
+    "name": "HDR-capable Architecture",
+    "status": "Core / Investigate",
+    "note": "初期UI実装とは分離しても将来を塞がない",
+    "target": "COL-007"
+  },
+  {
+    "id": "LC-080",
+    "section": "E",
+    "line": 120,
+    "name": "CMYK Native Editing",
+    "status": "Investigate",
+    "note": "一枚絵制作での必要性とコストを評価",
+    "target": "COL-010"
+  },
+  {
+    "id": "LC-081",
+    "section": "E",
+    "line": 121,
+    "name": "Soft Proof",
+    "status": "Required",
+    "note": "出力ProfileをCanvas上Preview",
+    "target": "COL-008"
+  },
+  {
+    "id": "LC-082",
+    "section": "E",
+    "line": 122,
+    "name": "Out-of-Gamut Warning",
+    "status": "Required",
+    "note": "色域外を可視化",
+    "target": "COL-008"
+  },
+  {
+    "id": "LC-083",
+    "section": "E",
+    "line": 123,
+    "name": "Rendering Intent / Black Point Compensation",
+    "status": "Required / Investigate",
+    "note": "Color Management詳細仕様で確定",
+    "target": "COL-008"
+  },
+  {
+    "id": "LC-084",
+    "section": "F",
+    "line": 129,
+    "name": "Raster Layer",
+    "status": "Core",
+    "note": "",
+    "target": "LAY-001"
+  },
+  {
+    "id": "LC-085",
+    "section": "F",
+    "line": 130,
+    "name": "Vector Layer",
+    "status": "Required",
+    "note": "一枚絵の線画・図形・Mask用途に最適化",
+    "target": "VEC-001"
+  },
+  {
+    "id": "LC-086",
+    "section": "F",
+    "line": 131,
+    "name": "Vector Path / Anchor / Bezier Handle",
+    "status": "Required",
+    "note": "Open/Closed Pathを編集可能",
+    "target": "VEC-002"
+  },
+  {
+    "id": "LC-087",
+    "section": "F",
+    "line": 132,
+    "name": "Vector Stroke Width / Fill / Stroke",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-003"
+  },
+  {
+    "id": "LC-088",
+    "section": "F",
+    "line": 133,
+    "name": "Vector Node Add/Delete/Convert",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-002"
+  },
+  {
+    "id": "LC-089",
+    "section": "F",
+    "line": 134,
+    "name": "Vector Simplify / Smooth",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-004"
+  },
+  {
+    "id": "LC-090",
+    "section": "F",
+    "line": 135,
+    "name": "Vector Boolean Operation",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-004"
+  },
+  {
+    "id": "LC-091",
+    "section": "F",
+    "line": 136,
+    "name": "Vector Eraser / Line Erase",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-003"
+  },
+  {
+    "id": "LC-092",
+    "section": "F",
+    "line": 137,
+    "name": "Rasterize Vector",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-007"
+  },
+  {
+    "id": "LC-093",
+    "section": "F",
+    "line": 138,
+    "name": "Variable-width Vector Stroke",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "VEC-003"
+  },
+  {
+    "id": "LC-094",
+    "section": "F",
+    "line": 139,
+    "name": "Brush-like Rendering on Vector Path",
+    "status": "Investigate",
+    "note": "Procedural Brushとの統合を検討",
+    "target": "VEC-003"
+  },
+  {
+    "id": "LC-095",
+    "section": "F",
+    "line": 140,
+    "name": "Group",
+    "status": "Core",
+    "note": "",
+    "target": "LAY-003"
+  },
+  {
+    "id": "LC-096",
+    "section": "F",
+    "line": 141,
+    "name": "Mask",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-005"
+  },
+  {
+    "id": "LC-097",
+    "section": "F",
+    "line": 142,
+    "name": "Clipping",
+    "status": "Core",
+    "note": "高頻度操作",
+    "target": "LAY-004"
+  },
+  {
+    "id": "LC-098",
+    "section": "F",
+    "line": 143,
+    "name": "Alpha Lock / Lock Transparency",
+    "status": "Core",
+    "note": "彩色で高頻度",
+    "target": "LAY-004"
+  },
+  {
+    "id": "LC-099",
+    "section": "F",
+    "line": 144,
+    "name": "Alpha Inheritance / Clipping-equivalent",
+    "status": "Required",
+    "note": "Group/Clipping設計と整合させる",
+    "target": "LAY-004"
+  },
+  {
+    "id": "LC-100",
+    "section": "F",
+    "line": 145,
+    "name": "Persistent Clipping Control",
+    "status": "Core",
+    "note": "レイヤーUI上で即時確認・切替",
+    "target": "LAY-004"
+  },
+  {
+    "id": "LC-101",
+    "section": "F",
+    "line": 146,
+    "name": "Adjustment Layer",
+    "status": "Required",
+    "note": "",
+    "target": "FX-001"
+  },
+  {
+    "id": "LC-102",
+    "section": "F",
+    "line": 147,
+    "name": "Filter Layer",
+    "status": "Required",
+    "note": "",
+    "target": "FX-008"
+  },
+  {
+    "id": "LC-103",
+    "section": "F",
+    "line": 148,
+    "name": "Layer Style / Layer Effect",
+    "status": "Required",
+    "note": "非破壊。Stroke/Shadow/Glow/Overlay等",
+    "target": "FX-006"
+  },
+  {
+    "id": "LC-104",
+    "section": "F",
+    "line": 149,
+    "name": "Text Layer / Entity",
+    "status": "Required",
+    "note": "編集可能なTextを保持",
+    "target": "VEC-005"
+  },
+  {
+    "id": "LC-105",
+    "section": "F",
+    "line": 150,
+    "name": "Horizontal / Vertical Text",
+    "status": "Required",
+    "note": "日本語用途を考慮",
+    "target": "VEC-005"
+  },
+  {
+    "id": "LC-106",
+    "section": "F",
+    "line": 151,
+    "name": "Font Family / Style / Size",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-005"
+  },
+  {
+    "id": "LC-107",
+    "section": "F",
+    "line": 152,
+    "name": "Tracking / Line Height / Baseline",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-005"
+  },
+  {
+    "id": "LC-108",
+    "section": "F",
+    "line": 153,
+    "name": "Font Import",
+    "status": "Required",
+    "note": "Platformが許す範囲",
+    "target": "VEC-006"
+  },
+  {
+    "id": "LC-109",
+    "section": "F",
+    "line": 154,
+    "name": "Missing Font Handling",
+    "status": "Required",
+    "note": "警告・代替を明示",
+    "target": "VEC-006"
+  },
+  {
+    "id": "LC-110",
+    "section": "F",
+    "line": 155,
+    "name": "Text → Vector/Path",
+    "status": "Required",
+    "note": "",
+    "target": "VEC-007"
+  },
+  {
+    "id": "LC-111",
+    "section": "F",
+    "line": 156,
+    "name": "Text on Path / Area Text",
+    "status": "Investigate",
+    "note": "DTP化しすぎない範囲で評価",
+    "target": "VEC-008"
+  },
+  {
+    "id": "LC-112",
+    "section": "F",
+    "line": 157,
+    "name": "Multi-select",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-003"
+  },
+  {
+    "id": "LC-113",
+    "section": "F",
+    "line": 158,
+    "name": "Drag Reorder",
+    "status": "Core",
+    "note": "",
+    "target": "LAY-003"
+  },
+  {
+    "id": "LC-114",
+    "section": "F",
+    "line": 159,
+    "name": "Search",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-007"
+  },
+  {
+    "id": "LC-115",
+    "section": "F",
+    "line": 160,
+    "name": "Filter",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-007"
+  },
+  {
+    "id": "LC-116",
+    "section": "F",
+    "line": 161,
+    "name": "Color Tag",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-007"
+  },
+  {
+    "id": "LC-117",
+    "section": "F",
+    "line": 162,
+    "name": "Lock種別",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-008"
+  },
+  {
+    "id": "LC-118",
+    "section": "F",
+    "line": 163,
+    "name": "Solo / Isolate",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-009"
+  },
+  {
+    "id": "LC-119",
+    "section": "F",
+    "line": 164,
+    "name": "Collapse",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-003"
+  },
+  {
+    "id": "LC-120",
+    "section": "F",
+    "line": 165,
+    "name": "Duplicate",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-006"
+  },
+  {
+    "id": "LC-121",
+    "section": "F",
+    "line": 166,
+    "name": "Merge",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-006"
+  },
+  {
+    "id": "LC-122",
+    "section": "F",
+    "line": 167,
+    "name": "Merge Visible",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-006"
+  },
+  {
+    "id": "LC-123",
+    "section": "F",
+    "line": 168,
+    "name": "Flatten Copy",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-006"
+  },
+  {
+    "id": "LC-124",
+    "section": "F",
+    "line": 169,
+    "name": "Layer Comps",
+    "status": "Core",
+    "note": "",
+    "target": "LAY-011"
+  },
+  {
+    "id": "LC-125",
+    "section": "F",
+    "line": 170,
+    "name": "Canvasから直接Layer選択",
+    "status": "Required",
+    "note": "大量レイヤー時の高速操作",
+    "target": "LAY-010"
+  },
+  {
+    "id": "LC-126",
+    "section": "F",
+    "line": 171,
+    "name": "大量レイヤーUI性能",
+    "status": "Core",
+    "note": "Virtualization等を検討",
+    "target": "QR-09"
+  },
+  {
+    "id": "LC-127",
+    "section": "G",
+    "line": 177,
+    "name": "Rectangle / Ellipse Selection",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-001"
+  },
+  {
+    "id": "LC-128",
+    "section": "G",
+    "line": 178,
+    "name": "Freehand Selection",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-001"
+  },
+  {
+    "id": "LC-129",
+    "section": "G",
+    "line": 179,
+    "name": "Polygonal Selection",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-001"
+  },
+  {
+    "id": "LC-130",
+    "section": "G",
+    "line": 180,
+    "name": "Color / Similarity Selection",
+    "status": "Required",
+    "note": "アルゴリズム未確定",
+    "target": "SEL-002"
+  },
+  {
+    "id": "LC-131",
+    "section": "G",
+    "line": 181,
+    "name": "Lineart Layer Area Selection",
+    "status": "Required",
+    "note": "線画レイヤーの領域分けを利用",
+    "target": "SEL-005"
+  },
+  {
+    "id": "LC-132",
+    "section": "G",
+    "line": 182,
+    "name": "Add / Subtract / Intersect",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-001"
+  },
+  {
+    "id": "LC-133",
+    "section": "G",
+    "line": 183,
+    "name": "Invert Selection",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-004"
+  },
+  {
+    "id": "LC-134",
+    "section": "G",
+    "line": 184,
+    "name": "Feather",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-003"
+  },
+  {
+    "id": "LC-135",
+    "section": "G",
+    "line": 185,
+    "name": "Expand / Contract",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-003"
+  },
+  {
+    "id": "LC-136",
+    "section": "G",
+    "line": 186,
+    "name": "Saved Selection / Selection Mask",
+    "status": "Required",
+    "note": "再利用可能なグレースケール選択",
+    "target": "SEL-006"
+  },
+  {
+    "id": "LC-137",
+    "section": "G",
+    "line": 187,
+    "name": "Select from Layer Content",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-005"
+  },
+  {
+    "id": "LC-138",
+    "section": "G",
+    "line": 188,
+    "name": "Luminance / Color-range Selection",
+    "status": "Required",
+    "note": "",
+    "target": "SEL-002"
+  },
+  {
+    "id": "LC-139",
+    "section": "G",
+    "line": 189,
+    "name": "Move / Scale / Rotate",
+    "status": "Core",
+    "note": "",
+    "target": "TRN-001"
+  },
+  {
+    "id": "LC-140",
+    "section": "G",
+    "line": 190,
+    "name": "Flip",
+    "status": "Required",
+    "note": "",
+    "target": "TRN-001"
+  },
+  {
+    "id": "LC-141",
+    "section": "G",
+    "line": 191,
+    "name": "Free Transform",
+    "status": "Required",
+    "note": "",
+    "target": "TRN-002"
+  },
+  {
+    "id": "LC-142",
+    "section": "G",
+    "line": 192,
+    "name": "Perspective / Distort",
+    "status": "Required",
+    "note": "",
+    "target": "TRN-002"
+  },
+  {
+    "id": "LC-143",
+    "section": "G",
+    "line": 193,
+    "name": "Warp",
+    "status": "Required",
+    "note": "可能な限り非破壊",
+    "target": "TRN-003"
+  },
+  {
+    "id": "LC-144",
+    "section": "G",
+    "line": 194,
+    "name": "Liquify",
+    "status": "Required",
+    "note": "可能な限り非破壊",
+    "target": "TRN-004"
+  },
+  {
+    "id": "LC-145",
+    "section": "G",
+    "line": 195,
+    "name": "Transform Interpolation",
+    "status": "Required",
+    "note": "方式未確定",
+    "target": "TRN-006"
+  },
+  {
+    "id": "LC-146",
+    "section": "H",
+    "line": 201,
+    "name": "Adjustment Layer",
+    "status": "Required",
+    "note": "",
+    "target": "FX-001"
+  },
+  {
+    "id": "LC-147",
+    "section": "H",
+    "line": 202,
+    "name": "Filter Layer",
+    "status": "Required",
+    "note": "",
+    "target": "FX-008"
+  },
+  {
+    "id": "LC-148",
+    "section": "H",
+    "line": 203,
+    "name": "Live Blur",
+    "status": "Required",
+    "note": "",
+    "target": "FX-003"
+  },
+  {
+    "id": "LC-149",
+    "section": "H",
+    "line": 204,
+    "name": "Live Color Adjustment",
+    "status": "Required",
+    "note": "",
+    "target": "COL-009"
+  },
+  {
+    "id": "LC-150",
+    "section": "H",
+    "line": 205,
+    "name": "Mask",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-005"
+  },
+  {
+    "id": "LC-151",
+    "section": "H",
+    "line": 206,
+    "name": "Vector Mask",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "LAY-005"
+  },
+  {
+    "id": "LC-152",
+    "section": "H",
+    "line": 207,
+    "name": "Clipping Mask",
+    "status": "Required",
+    "note": "",
+    "target": "LAY-004"
+  },
+  {
+    "id": "LC-153",
+    "section": "H",
+    "line": 208,
+    "name": "Blend Mode",
+    "status": "Core",
+    "note": "Normal/Multiply/Screen/Overlay/Soft Light/Hard Light/Color Dodge/Burn/Linear Dodge/Burn/Darken/Lighten/Difference/Exclusion/Hue/Saturation/Color/Luminosity等をCore Setとする",
+    "target": "NDE-001"
+  },
+  {
+    "id": "LC-154",
+    "section": "H",
+    "line": 209,
+    "name": "Painting Blend Modes",
+    "status": "Required",
+    "note": "Erase/Behind/Alpha関連等を描画Engineと統合",
+    "target": "BRU-009"
+  },
+  {
+    "id": "LC-155",
+    "section": "H",
+    "line": 210,
+    "name": "Blend Mode Live Preview",
+    "status": "Required",
+    "note": "Canvas上で即時比較",
+    "target": "NDE-001"
+  },
+  {
+    "id": "LC-156",
+    "section": "H",
+    "line": 211,
+    "name": "Blend If 相当",
+    "status": "Core",
+    "note": "より視覚的なUIへ再設計",
+    "target": "NDE-002"
+  },
+  {
+    "id": "LC-157",
+    "section": "H",
+    "line": 212,
+    "name": "Displacement",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "FX-128"
+  },
+  {
+    "id": "LC-158",
+    "section": "H",
+    "line": 213,
+    "name": "Healing",
+    "status": "Required",
+    "note": "イラスト向けに最適化",
+    "target": "FX-007"
+  },
+  {
+    "id": "LC-159",
+    "section": "H",
+    "line": 214,
+    "name": "Patch",
+    "status": "Required",
+    "note": "イラスト向けに最適化",
+    "target": "FX-007"
+  },
+  {
+    "id": "LC-160",
+    "section": "H",
+    "line": 215,
+    "name": "Clone",
+    "status": "Required",
+    "note": "直接操作を重視",
+    "target": "FX-007"
+  },
+  {
+    "id": "LC-161",
+    "section": "H",
+    "line": 216,
+    "name": "Core Adjustment Set",
+    "status": "Required",
+    "note": "Brightness/Contrast, Levels, Curves, Exposure, Hue/Saturation, Vibrance, Color Balance, Temperature/Tint, B&W, Channel Mixer, Selective Color, Invert, Posterize, Threshold, Gradient Map, LUT等",
+    "target": "FX-001"
+  },
+  {
+    "id": "LC-162",
+    "section": "H",
+    "line": 217,
+    "name": "Core Live Filter Set",
+    "status": "Required",
+    "note": "Gaussian/Motion/Radial Blur, Sharpen, Unsharp Mask, High Pass, Noise, Median系, Pixelate/Mosaic, Offset, Displacement, Halftone等",
+    "target": "FX-003"
+  },
+  {
+    "id": "LC-163",
+    "section": "H",
+    "line": 218,
+    "name": "Filter Masking / Reorder / Opacity / Blend",
+    "status": "Required",
+    "note": "非破壊Filterを組み合わせ可能にする",
+    "target": "FX-008"
+  },
+  {
+    "id": "LC-164",
+    "section": "H",
+    "line": 219,
+    "name": "Destructive Apply Command",
+    "status": "Required",
+    "note": "明示操作として残す",
+    "target": "FX-009"
+  },
+  {
+    "id": "LC-165",
+    "section": "H",
+    "line": 220,
+    "name": "Layer Style: Stroke",
+    "status": "Required",
+    "note": "非破壊",
+    "target": "FX-132"
+  },
+  {
+    "id": "LC-166",
+    "section": "H",
+    "line": 221,
+    "name": "Layer Style: Drop/Inner Shadow",
+    "status": "Required",
+    "note": "非破壊",
+    "target": "FX-133"
+  },
+  {
+    "id": "LC-167",
+    "section": "H",
+    "line": 222,
+    "name": "Layer Style: Outer/Inner Glow",
+    "status": "Required",
+    "note": "非破壊",
+    "target": "FX-134"
+  },
+  {
+    "id": "LC-168",
+    "section": "H",
+    "line": 223,
+    "name": "Layer Style: Color/Gradient/Pattern Overlay",
+    "status": "Required",
+    "note": "非破壊",
+    "target": "FX-135"
+  },
+  {
+    "id": "LC-169",
+    "section": "H",
+    "line": 224,
+    "name": "Layer Style: Bevel/Emboss",
+    "status": "Required",
+    "note": "非破壊。優先度は他のIllustration機能より低くてもよい",
+    "target": "FX-136"
+  },
+  {
+    "id": "LC-170",
+    "section": "I",
+    "line": 230,
+    "name": "Reference Workspace",
+    "status": "Core",
+    "note": "",
+    "target": "REF-001"
+  },
+  {
+    "id": "LC-171",
+    "section": "I",
+    "line": 231,
+    "name": "複数Reference",
+    "status": "Required",
+    "note": "",
+    "target": "REF-001"
+  },
+  {
+    "id": "LC-172",
+    "section": "I",
+    "line": 232,
+    "name": "自由配置",
+    "status": "Required",
+    "note": "",
+    "target": "REF-002"
+  },
+  {
+    "id": "LC-173",
+    "section": "I",
+    "line": 233,
+    "name": "Pin",
+    "status": "Required",
+    "note": "",
+    "target": "REF-002"
+  },
+  {
+    "id": "LC-174",
+    "section": "I",
+    "line": 234,
+    "name": "Scale / Rotate",
+    "status": "Required",
+    "note": "",
+    "target": "REF-002"
+  },
+  {
+    "id": "LC-175",
+    "section": "I",
+    "line": 235,
+    "name": "Horizontal Flip",
+    "status": "Required",
+    "note": "",
+    "target": "REF-003"
+  },
+  {
+    "id": "LC-176",
+    "section": "I",
+    "line": 236,
+    "name": "Grayscale",
+    "status": "Required",
+    "note": "",
+    "target": "REF-003"
+  },
+  {
+    "id": "LC-177",
+    "section": "I",
+    "line": 237,
+    "name": "Always on Top",
+    "status": "Required",
+    "note": "",
+    "target": "REF-001"
+  },
+  {
+    "id": "LC-178",
+    "section": "I",
+    "line": 238,
+    "name": "Temporary Hide",
+    "status": "Required",
+    "note": "",
+    "target": "REF-003"
+  },
+  {
+    "id": "LC-179",
+    "section": "I",
+    "line": 239,
+    "name": "Reference Group",
+    "status": "Required",
+    "note": "",
+    "target": "REF-001"
+  },
+  {
+    "id": "LC-180",
+    "section": "I",
+    "line": 240,
+    "name": "Reference Persistence",
+    "status": "Required",
+    "note": "",
+    "target": "REF-006"
+  },
+  {
+    "id": "LC-181",
+    "section": "I",
+    "line": 241,
+    "name": "Reference Eyedropper",
+    "status": "Core",
+    "note": "",
+    "target": "REF-004"
+  },
+  {
+    "id": "LC-182",
+    "section": "J",
+    "line": 247,
+    "name": "Undo",
+    "status": "Core",
+    "note": "深く・高速・安定",
+    "target": "HIS-001"
+  },
+  {
+    "id": "LC-183",
+    "section": "J",
+    "line": 248,
+    "name": "Redo",
+    "status": "Core",
+    "note": "",
+    "target": "HIS-001"
+  },
+  {
+    "id": "LC-184",
+    "section": "J",
+    "line": 249,
+    "name": "Command単位履歴",
+    "status": "Core",
+    "note": "可能な範囲で意味のある履歴",
+    "target": "HIS-001"
+  },
+  {
+    "id": "LC-185",
+    "section": "J",
+    "line": 250,
+    "name": "Snapshot System",
+    "status": "Core",
+    "note": "明示的Checkpoint",
+    "target": "HIS-003"
+  },
+  {
+    "id": "LC-186",
+    "section": "J",
+    "line": 251,
+    "name": "Snapshot比較",
+    "status": "Required",
+    "note": "",
+    "target": "HIS-003"
+  },
+  {
+    "id": "LC-187",
+    "section": "J",
+    "line": 252,
+    "name": "Snapshot分岐",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "HIS-004"
+  },
+  {
+    "id": "LC-188",
+    "section": "J",
+    "line": 253,
+    "name": "History Panel",
+    "status": "Required",
+    "note": "UX未確定",
+    "target": "HIS-002"
+  },
+  {
+    "id": "LC-189",
+    "section": "K",
+    "line": 259,
+    "name": "制作履歴ベースTimelapse",
+    "status": "Core",
+    "note": "画面録画より履歴利用を優先",
+    "target": "REC-001"
+  },
+  {
+    "id": "LC-190",
+    "section": "K",
+    "line": 260,
+    "name": "UIを含めない出力",
+    "status": "Required",
+    "note": "",
+    "target": "REC-001"
+  },
+  {
+    "id": "LC-191",
+    "section": "K",
+    "line": 261,
+    "name": "High-resolution Export",
+    "status": "Required",
+    "note": "",
+    "target": "REC-002"
+  },
+  {
+    "id": "LC-192",
+    "section": "K",
+    "line": 262,
+    "name": "Frame Pace調整",
+    "status": "Required",
+    "note": "",
+    "target": "REC-002"
+  },
+  {
+    "id": "LC-193",
+    "section": "K",
+    "line": 263,
+    "name": "Work Time",
+    "status": "Core",
+    "note": "実作業時間を測る",
+    "target": "REC-004"
+  },
+  {
+    "id": "LC-194",
+    "section": "K",
+    "line": 264,
+    "name": "Session",
+    "status": "Required",
+    "note": "",
+    "target": "REC-004"
+  },
+  {
+    "id": "LC-195",
+    "section": "K",
+    "line": 265,
+    "name": "Today",
+    "status": "Required",
+    "note": "",
+    "target": "REC-004"
+  },
+  {
+    "id": "LC-196",
+    "section": "K",
+    "line": 266,
+    "name": "Total",
+    "status": "Required",
+    "note": "",
+    "target": "REC-004"
+  },
+  {
+    "id": "LC-197",
+    "section": "K",
+    "line": 267,
+    "name": "Average",
+    "status": "Required",
+    "note": "",
+    "target": "REC-004"
+  },
+  {
+    "id": "LC-198",
+    "section": "K",
+    "line": 268,
+    "name": "Inactivity除外",
+    "status": "Required",
+    "note": "",
+    "target": "REC-004"
+  },
+  {
+    "id": "LC-199",
+    "section": "L",
+    "line": 274,
+    "name": "Auto Actions / Macros",
+    "status": "Core",
+    "note": "",
+    "target": "AUT-001"
+  },
+  {
+    "id": "LC-200",
+    "section": "L",
+    "line": 275,
+    "name": "Action Recording",
+    "status": "Required",
+    "note": "",
+    "target": "AUT-001"
+  },
+  {
+    "id": "LC-201",
+    "section": "L",
+    "line": 276,
+    "name": "Parameterized Action",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "AUT-002"
+  },
+  {
+    "id": "LC-202",
+    "section": "L",
+    "line": 277,
+    "name": "Macro Preset",
+    "status": "Required",
+    "note": "",
+    "target": "AUT-005"
+  },
+  {
+    "id": "LC-203",
+    "section": "L",
+    "line": 278,
+    "name": "Shortcut Assignment",
+    "status": "Required",
+    "note": "",
+    "target": "AUT-005"
+  },
+  {
+    "id": "LC-204",
+    "section": "L",
+    "line": 279,
+    "name": "Quick Menu登録",
+    "status": "Required",
+    "note": "",
+    "target": "AUT-005"
+  },
+  {
+    "id": "LC-205",
+    "section": "M",
+    "line": 285,
+    "name": "Canvas First",
+    "status": "Core",
+    "note": "上位設計原則",
+    "target": "UI-001"
+  },
+  {
+    "id": "LC-206",
+    "section": "M",
+    "line": 286,
+    "name": "Direct Manipulation",
+    "status": "Core",
+    "note": "上位設計原則",
+    "target": "UI-003"
+  },
+  {
+    "id": "LC-207",
+    "section": "M",
+    "line": 287,
+    "name": "Context UI",
+    "status": "Core",
+    "note": "",
+    "target": "UI-003"
+  },
+  {
+    "id": "LC-208",
+    "section": "M",
+    "line": 288,
+    "name": "Quick Menu",
+    "status": "Core",
+    "note": "ユーザーカスタマイズ可能",
+    "target": "UI-004"
+  },
+  {
+    "id": "LC-209",
+    "section": "M",
+    "line": 289,
+    "name": "Command / Tool Search",
+    "status": "Required",
+    "note": "機能発見性",
+    "target": "UI-005"
+  },
+  {
+    "id": "LC-210",
+    "section": "M",
+    "line": 290,
+    "name": "Dock Panel",
+    "status": "Required",
+    "note": "PC系",
+    "target": "UI-002"
+  },
+  {
+    "id": "LC-211",
+    "section": "M",
+    "line": 291,
+    "name": "Undock / Floating",
+    "status": "Required",
+    "note": "PC系",
+    "target": "UI-002"
+  },
+  {
+    "id": "LC-212",
+    "section": "M",
+    "line": 292,
+    "name": "Panel Resize / Reorder / Hide",
+    "status": "Required",
+    "note": "",
+    "target": "UI-002"
+  },
+  {
+    "id": "LC-213",
+    "section": "M",
+    "line": 293,
+    "name": "Workspace Save / Load",
+    "status": "Required",
+    "note": "",
+    "target": "UI-006"
+  },
+  {
+    "id": "LC-214",
+    "section": "M",
+    "line": 294,
+    "name": "Canvas Focus Mode",
+    "status": "Core",
+    "note": "一操作で非必須UIを隠しCanvas面積最大化",
+    "target": "UI-007"
+  },
+  {
+    "id": "LC-215",
+    "section": "M",
+    "line": 295,
+    "name": "Workspace Preset",
+    "status": "Required",
+    "note": "Drawing/Painting/Coloring等",
+    "target": "UI-006"
+  },
+  {
+    "id": "LC-216",
+    "section": "M",
+    "line": 296,
+    "name": "左右UI反転",
+    "status": "Required",
+    "note": "Toolbarだけに限定しない",
+    "target": "UI-006"
+  },
+  {
+    "id": "LC-217",
+    "section": "M",
+    "line": 297,
+    "name": "Keyboard Shortcut",
+    "status": "Core",
+    "note": "PC",
+    "target": "GST-002"
+  },
+  {
+    "id": "LC-218",
+    "section": "M",
+    "line": 298,
+    "name": "Gesture",
+    "status": "Core",
+    "note": "Touch Device",
+    "target": "GST-001"
+  },
+  {
+    "id": "LC-219",
+    "section": "M",
+    "line": 299,
+    "name": "Hover",
+    "status": "Required",
+    "note": "対応環境",
+    "target": "INP-006"
+  },
+  {
+    "id": "LC-220",
+    "section": "M",
+    "line": 300,
+    "name": "右クリック / Context Click",
+    "status": "Required",
+    "note": "重要機能をここだけに隠さない",
+    "target": "UI-005"
+  },
+  {
+    "id": "LC-221",
+    "section": "M",
+    "line": 301,
+    "name": "Custom Toolbar",
+    "status": "Required",
+    "note": "",
+    "target": "UI-006"
+  },
+  {
+    "id": "LC-222",
+    "section": "M",
+    "line": 302,
+    "name": "Custom Shortcut",
+    "status": "Required",
+    "note": "Press-to-bind方式。実際にキーを押して登録し、衝突検出・複数割当・解除・予約キー警告を行う",
+    "target": "GST-002"
+  },
+  {
+    "id": "LC-223",
+    "section": "M",
+    "line": 303,
+    "name": "Keyboard Shortcut Capture",
+    "status": "Required",
+    "note": "実Keyboard Eventからmodifier/key/codeを取得。表示文字列だけを保存しない",
+    "target": "GST-002"
+  },
+  {
+    "id": "LC-224",
+    "section": "M",
+    "line": 304,
+    "name": "Custom Gesture",
+    "status": "Required",
+    "note": "",
+    "target": "GST-003"
+  },
+  {
+    "id": "LC-225",
+    "section": "M",
+    "line": 305,
+    "name": "Scalable UI / Text",
+    "status": "Required",
+    "note": "Accessibility",
+    "target": "A11-001"
+  },
+  {
+    "id": "LC-226",
+    "section": "M",
+    "line": 306,
+    "name": "Single-pointer Alternative",
+    "status": "Required",
+    "note": "Multi-touch必須操作に代替手段を用意",
+    "target": "A11-002"
+  },
+  {
+    "id": "LC-227",
+    "section": "M",
+    "line": 307,
+    "name": "Color-independent State Indication",
+    "status": "Required",
+    "note": "色だけで状態を伝えない",
+    "target": "A11-001"
+  },
+  {
+    "id": "LC-228",
+    "section": "M",
+    "line": 308,
+    "name": "Color Description Assistance",
+    "status": "Required",
+    "note": "色覚支援",
+    "target": "A11-004"
+  },
+  {
+    "id": "LC-229",
+    "section": "M",
+    "line": 309,
+    "name": "Reduced Motion",
+    "status": "Required",
+    "note": "Motionを減らす設定",
+    "target": "A11-005"
+  },
+  {
+    "id": "LC-230",
+    "section": "M",
+    "line": 310,
+    "name": "Touch Target Policy",
+    "status": "Required",
+    "note": "Touch環境で十分なHit Areaを確保",
+    "target": "A11-002"
+  },
+  {
+    "id": "LC-231",
+    "section": "M",
+    "line": 311,
+    "name": "Feedback Sound / Haptic",
+    "status": "Required / Investigate",
+    "note": "Platform対応時",
+    "target": "A11-005"
+  },
+  {
+    "id": "LC-232",
+    "section": "M",
+    "line": 312,
+    "name": "Keyboard Navigation for Commands",
+    "status": "Required",
+    "note": "描画以外の主要操作を中心に",
+    "target": "A11-003"
+  },
+  {
+    "id": "LC-233",
+    "section": "N",
+    "line": 318,
+    "name": "Desktop専用最適化UI",
+    "status": "Core",
+    "note": "Keyboard/Mouse/Pen/Panel/Hover",
+    "target": "DEV-001"
+  },
+  {
+    "id": "LC-234",
+    "section": "N",
+    "line": 319,
+    "name": "Tablet専用最適化UI",
+    "status": "Core",
+    "note": "Pen/Touch/片手/Canvas面積",
+    "target": "DEV-002"
+  },
+  {
+    "id": "LC-235",
+    "section": "N",
+    "line": 320,
+    "name": "Smartphone専用最適化UI",
+    "status": "Core",
+    "note": "親指/Quick Menu/小画面",
+    "target": "DEV-003"
+  },
+  {
+    "id": "LC-236",
+    "section": "N",
+    "line": 321,
+    "name": "機能そのものは可能な限り共通",
+    "status": "Core",
+    "note": "端末を理由に高度機能を削らない",
+    "target": "DEV-005"
+  },
+  {
+    "id": "LC-237",
+    "section": "O",
+    "line": 329,
+    "name": "Straight / Parallel Ruler",
+    "status": "Required",
+    "note": "詳細な定規一覧は継続調査",
+    "target": "GUI-001"
+  },
+  {
+    "id": "LC-238",
+    "section": "O",
+    "line": 330,
+    "name": "2D Grid",
+    "status": "Required",
+    "note": "Canvas上で直接編集",
+    "target": "GUI-002"
+  },
+  {
+    "id": "LC-239",
+    "section": "O",
+    "line": 331,
+    "name": "Isometric Grid",
+    "status": "Required",
+    "note": "",
+    "target": "GUI-002"
+  },
+  {
+    "id": "LC-240",
+    "section": "O",
+    "line": 332,
+    "name": "Perspective Guide",
+    "status": "Required",
+    "note": "1/2/3点透視",
+    "target": "GUI-002"
+  },
+  {
+    "id": "LC-241",
+    "section": "O",
+    "line": 333,
+    "name": "Symmetry / Mirror",
+    "status": "Required",
+    "note": "",
+    "target": "GUI-003"
+  },
+  {
+    "id": "LC-242",
+    "section": "O",
+    "line": 334,
+    "name": "Radial Symmetry",
+    "status": "Required",
+    "note": "",
+    "target": "GUI-003"
+  },
+  {
+    "id": "LC-243",
+    "section": "O",
+    "line": 335,
+    "name": "Guide Snapping",
+    "status": "Required",
+    "note": "対応ツールで予測可能に動作",
+    "target": "GUI-006"
+  },
+  {
+    "id": "LC-244",
+    "section": "O",
+    "line": 336,
+    "name": "Guide Visibility / Lock",
+    "status": "Required",
+    "note": "",
+    "target": "GUI-006"
+  },
+  {
+    "id": "LC-245",
+    "section": "O",
+    "line": 337,
+    "name": "Guide Preset / Save",
+    "status": "Required",
+    "note": "",
+    "target": "GUI-007"
+  },
+  {
+    "id": "LC-246",
+    "section": "O",
+    "line": 338,
+    "name": "Line / Rectangle / Ellipse / Polygon",
+    "status": "Required",
+    "note": "",
+    "target": "GUI-004"
+  },
+  {
+    "id": "LC-247",
+    "section": "O",
+    "line": 339,
+    "name": "Post-stroke Shape Correction",
+    "status": "Required / Investigate",
+    "note": "描画後に自然に整形",
+    "target": "GUI-005"
+  },
+  {
+    "id": "LC-248",
+    "section": "O",
+    "line": 340,
+    "name": "Vector-backed Shape",
+    "status": "Required / Investigate",
+    "note": "Vector Layerと統合",
+    "target": "VEC-001"
+  },
+  {
+    "id": "LC-249",
+    "section": "O",
+    "line": 341,
+    "name": "Linear Gradient",
+    "status": "Required",
+    "note": "",
+    "target": "GRA-001"
+  },
+  {
+    "id": "LC-250",
+    "section": "O",
+    "line": 342,
+    "name": "Radial Gradient",
+    "status": "Required",
+    "note": "",
+    "target": "GRA-001"
+  },
+  {
+    "id": "LC-251",
+    "section": "O",
+    "line": 343,
+    "name": "Reflected / Bilinear Gradient",
+    "status": "Required",
+    "note": "",
+    "target": "GRA-001"
+  },
+  {
+    "id": "LC-252",
+    "section": "O",
+    "line": 344,
+    "name": "Shape-aware Gradient",
+    "status": "Required / Investigate",
+    "note": "",
+    "target": "GRA-003"
+  },
+  {
+    "id": "LC-253",
+    "section": "O",
+    "line": 345,
+    "name": "Editable Gradient Stops",
+    "status": "Required",
+    "note": "",
+    "target": "GRA-002"
+  },
+  {
+    "id": "LC-254",
+    "section": "O",
+    "line": 346,
+    "name": "Non-destructive Gradient",
+    "status": "Required",
+    "note": "",
+    "target": "GRA-003"
+  },
+  {
+    "id": "LC-255",
+    "section": "O",
+    "line": 347,
+    "name": "Gradient Map",
+    "status": "Required",
+    "note": "Adjustmentとしても利用",
+    "target": "GRA-004"
+  },
+  {
+    "id": "LC-256",
+    "section": "O",
+    "line": 348,
+    "name": "Gradient Dithering",
+    "status": "Required / Investigate",
+    "note": "低bit出力でBanding低減",
+    "target": "GRA-004"
+  },
+  {
+    "id": "LC-257",
+    "section": "O.1",
+    "line": 356,
+    "name": "Internal Clipboard",
+    "status": "Core",
+    "note": "System Clipboard非依存",
+    "target": "CLP-001"
+  },
+  {
+    "id": "LC-258",
+    "section": "O.1",
+    "line": 357,
+    "name": "Copy / Cut / Paste",
+    "status": "Core",
+    "note": "Selection/Layer/Object対応",
+    "target": "CLP-001"
+  },
+  {
+    "id": "LC-259",
+    "section": "O.1",
+    "line": 358,
+    "name": "Copy Merged",
+    "status": "Required",
+    "note": "Visible compositeをRaster copy",
+    "target": "CLP-002"
+  },
+  {
+    "id": "LC-260",
+    "section": "O.1",
+    "line": 359,
+    "name": "Paste in Place",
+    "status": "Required",
+    "note": "Illustro内部座標を保持",
+    "target": "CLP-002"
+  },
+  {
+    "id": "LC-261",
+    "section": "O.1",
+    "line": 360,
+    "name": "Native cross-document payload",
+    "status": "Required",
+    "note": "可能な対象はRasterizeしない",
+    "target": "CLP-003"
+  },
+  {
+    "id": "LC-262",
+    "section": "O.1",
+    "line": 361,
+    "name": "System Clipboard Bridge",
+    "status": "Required / Investigate",
+    "note": "Platform permission/capability依存",
+    "target": "CLP-004"
+  },
+  {
+    "id": "LC-263",
+    "section": "O.1",
+    "line": 362,
+    "name": "Desktop Drag & Drop",
+    "status": "Required",
+    "note": "Open/Place/Reference等Context別",
+    "target": "CLP-004"
+  },
+  {
+    "id": "LC-264",
+    "section": "O.2",
+    "line": 368,
+    "name": "Localizable UI resources",
+    "status": "Core",
+    "note": "Display文字列と内部IDを分離",
+    "target": "A11-006"
+  },
+  {
+    "id": "LC-265",
+    "section": "O.2",
+    "line": 369,
+    "name": "Japanese/CJK layout support",
+    "status": "Core",
+    "note": "IME/font fallbackを含む",
+    "target": "A11-006"
+  },
+  {
+    "id": "LC-266",
+    "section": "O.2",
+    "line": 370,
+    "name": "Locale-aware units/date/number",
+    "status": "Required",
+    "note": "Canonical値とは分離",
+    "target": "A11-006"
+  },
+  {
+    "id": "LC-267",
+    "section": "O.2",
+    "line": 371,
+    "name": "Shipping locale set",
+    "status": "Investigate",
+    "note": "Product/UI phaseで決定",
+    "target": "A11-006"
+  },
+  {
+    "id": "LC-268",
+    "section": "P",
+    "line": 377,
+    "name": ".illustro",
+    "status": "Core",
+    "note": "Native Document",
+    "target": "SAV-003"
+  },
+  {
+    "id": "LC-269",
+    "section": "P",
+    "line": 378,
+    "name": "PNG Export",
+    "status": "Required",
+    "note": "",
+    "target": "IO-002"
+  },
+  {
+    "id": "LC-270",
+    "section": "P",
+    "line": 379,
+    "name": "JPEG Export",
+    "status": "Required",
+    "note": "",
+    "target": "IO-002"
+  },
+  {
+    "id": "LC-271",
+    "section": "P",
+    "line": 380,
+    "name": "WebP Export",
+    "status": "Required",
+    "note": "",
+    "target": "IO-002"
+  },
+  {
+    "id": "LC-272",
+    "section": "P",
+    "line": 381,
+    "name": "PSD Import / Export",
+    "status": "Investigate / High Priority",
+    "note": "完全互換を謳わずFeature-by-feature互換表とLoss Reportを持つ",
+    "target": "IO-003"
+  },
+  {
+    "id": "LC-273",
+    "section": "P",
+    "line": 382,
+    "name": "OpenRaster (.ora)",
+    "status": "Required",
+    "note": "OpenなLayer交換形式",
+    "target": "IO-004"
+  },
+  {
+    "id": "LC-274",
+    "section": "P",
+    "line": 383,
+    "name": "TIFF",
+    "status": "Required",
+    "note": "高品質Raster交換",
+    "target": "IO-004"
+  },
+  {
+    "id": "LC-275",
+    "section": "P",
+    "line": 384,
+    "name": "SVG Import / Export",
+    "status": "Required / Investigate",
+    "note": "Vector交換用途",
+    "target": "IO-005"
+  },
+  {
+    "id": "LC-276",
+    "section": "P",
+    "line": 385,
+    "name": "OpenEXR",
+    "status": "Required / Investigate",
+    "note": "HDR交換用途",
+    "target": "IO-006"
+  },
+  {
+    "id": "LC-277",
+    "section": "P",
+    "line": 386,
+    "name": "AVIF / HEIF",
+    "status": "Investigate",
+    "note": "画質・HDR・互換性を評価",
+    "target": "IO-006"
+  },
+  {
+    "id": "LC-278",
+    "section": "P",
+    "line": 387,
+    "name": "Auto Save",
+    "status": "Core",
+    "note": "",
+    "target": "SAV-004"
+  },
+  {
+    "id": "LC-279",
+    "section": "P",
+    "line": 388,
+    "name": "Crash Recovery",
+    "status": "Core",
+    "note": "",
+    "target": "SAV-005"
+  },
+  {
+    "id": "LC-280",
+    "section": "P",
+    "line": 389,
+    "name": "Recovery Snapshot",
+    "status": "Core",
+    "note": "",
+    "target": "SAV-005"
+  },
+  {
+    "id": "LC-281",
+    "section": "P",
+    "line": 390,
+    "name": "Incremental Save",
+    "status": "Core",
+    "note": "",
+    "target": "SAV-004"
+  },
+  {
+    "id": "LC-282",
+    "section": "P",
+    "line": 391,
+    "name": "描画を止めない保存",
+    "status": "Core",
+    "note": "",
+    "target": "SAV-004"
+  },
+  {
+    "id": "LC-283",
+    "section": "P",
+    "line": 392,
+    "name": "Offline First",
+    "status": "Core",
+    "note": "",
+    "target": "SAV-007"
+  },
+  {
+    "id": "LC-284",
+    "section": "P",
+    "line": 393,
+    "name": "通常編集でログイン不要",
+    "status": "Core",
+    "note": "",
+    "target": "SAV-007"
+  },
+  {
+    "id": "LC-285",
+    "section": "P",
+    "line": 394,
+    "name": "PWA Install",
+    "status": "Investigate",
+    "note": "最終Runtime次第",
+    "target": "DEV-005"
+  },
+  {
+    "id": "LC-286",
+    "section": "Q",
+    "line": 400,
+    "name": "体感0ラグ",
+    "status": "Core",
+    "note": "品質目標",
+    "target": "QR-01"
+  },
+  {
+    "id": "LC-287",
+    "section": "Q",
+    "line": 401,
+    "name": "Low Input Latency",
+    "status": "Core",
+    "note": "",
+    "target": "QR-02"
+  },
+  {
+    "id": "LC-288",
+    "section": "Q",
+    "line": 402,
+    "name": "Stable Frame Time",
+    "status": "Core",
+    "note": "",
+    "target": "QR-03"
+  },
+  {
+    "id": "LC-289",
+    "section": "Q",
+    "line": 403,
+    "name": "Worst Frame計測",
+    "status": "Core",
+    "note": "",
+    "target": "QR-03"
+  },
+  {
+    "id": "LC-290",
+    "section": "Q",
+    "line": 404,
+    "name": "Memory Scaling",
+    "status": "Core",
+    "note": "",
+    "target": "QR-08"
+  },
+  {
+    "id": "LC-291",
+    "section": "Q",
+    "line": 405,
+    "name": "Canvas Size Scaling",
+    "status": "Core",
+    "note": "",
+    "target": "QR-08"
+  },
+  {
+    "id": "LC-292",
+    "section": "Q",
+    "line": 406,
+    "name": "GPU Brush Compositing",
+    "status": "Investigate / likely required",
+    "note": "",
+    "target": "QR-20"
+  },
+  {
+    "id": "LC-293",
+    "section": "Q",
+    "line": 407,
+    "name": "GPU Filter",
+    "status": "Investigate / likely required",
+    "note": "",
+    "target": "QR-20"
+  },
+  {
+    "id": "LC-294",
+    "section": "Q",
+    "line": 408,
+    "name": "GPU Transform",
+    "status": "Investigate / likely required",
+    "note": "",
+    "target": "QR-20"
+  },
+  {
+    "id": "LC-295",
+    "section": "Q",
+    "line": 409,
+    "name": "WebGPU",
+    "status": "Investigate",
+    "note": "技術候補。未固定",
+    "target": "QR-20"
+  },
+  {
+    "id": "LC-296",
+    "section": "Q",
+    "line": 410,
+    "name": "GPU Fallback",
+    "status": "Required",
+    "note": "互換性上必要な場合",
+    "target": "DEV-005"
+  },
+  {
+    "id": "LC-297",
+    "section": "R",
+    "line": 416,
+    "name": "生成AIを中心価値にする",
+    "status": "Out of scope",
+    "note": "明示的方針",
+    "target": "AI-004"
+  },
+  {
+    "id": "LC-298",
+    "section": "R",
+    "line": 417,
+    "name": "色提案",
+    "status": "Investigate",
+    "note": "決定的アルゴリズム優先",
+    "target": "AI-002"
+  },
+  {
+    "id": "LC-299",
+    "section": "R",
+    "line": 418,
+    "name": "線画レイヤー領域補助",
+    "status": "Investigate",
+    "note": "",
+    "target": "AI-001"
+  },
+  {
+    "id": "LC-300",
+    "section": "R",
+    "line": 419,
+    "name": "Selection補助",
+    "status": "Investigate",
+    "note": "",
+    "target": "AI-001"
+  },
+  {
+    "id": "LC-301",
+    "section": "R",
+    "line": 420,
+    "name": "整理補助",
+    "status": "Investigate",
+    "note": "",
+    "target": "AI-003"
+  },
+  {
+    "id": "LC-302",
+    "section": "R",
+    "line": 421,
+    "name": "修正補助",
+    "status": "Investigate",
+    "note": "ユーザー制御必須",
+    "target": "AI-003"
+  },
+  {
+    "id": "LC-303",
+    "section": "R",
+    "line": 422,
+    "name": "AIなしでも成立する基本機能",
+    "status": "Core",
+    "note": "Offline/再現性/Privacy",
+    "target": "AI-004"
+  },
+  {
+    "id": "LC-304",
+    "section": "S",
+    "line": 428,
+    "name": "絵チャ / Collaborative Drawing",
+    "status": "Future",
+    "note": "本体完成後",
+    "target": "EXT-002"
+  },
+  {
+    "id": "LC-305",
+    "section": "S",
+    "line": 429,
+    "name": "Realtime Multi-user Editing",
+    "status": "Future / Investigate",
+    "note": "今は設計中心にしない",
+    "target": "EXT-002"
+  },
+  {
+    "id": "LC-306",
+    "section": "T",
+    "line": 435,
+    "name": "2D Asset Library",
+    "status": "Required",
+    "note": "Local-first",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-307",
+    "section": "T",
+    "line": 436,
+    "name": "Brush Asset",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-308",
+    "section": "T",
+    "line": 437,
+    "name": "Brush Tip / Texture Asset",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-309",
+    "section": "T",
+    "line": 438,
+    "name": "Paper Texture",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-310",
+    "section": "T",
+    "line": 439,
+    "name": "Pattern",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-311",
+    "section": "T",
+    "line": 440,
+    "name": "Gradient Preset",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-312",
+    "section": "T",
+    "line": 441,
+    "name": "Color Palette Asset",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-313",
+    "section": "T",
+    "line": 442,
+    "name": "Macro Asset",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-314",
+    "section": "T",
+    "line": 443,
+    "name": "Workspace Asset",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-315",
+    "section": "T",
+    "line": 444,
+    "name": "Reference Set",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-316",
+    "section": "T",
+    "line": 445,
+    "name": "Shape Preset",
+    "status": "Required",
+    "note": "",
+    "target": "AST-001"
+  },
+  {
+    "id": "LC-317",
+    "section": "T",
+    "line": 446,
+    "name": "Folder / Collection / Tag",
+    "status": "Required",
+    "note": "",
+    "target": "AST-002"
+  },
+  {
+    "id": "LC-318",
+    "section": "T",
+    "line": 447,
+    "name": "Search / Favorite / Recent",
+    "status": "Required",
+    "note": "",
+    "target": "AST-002"
+  },
+  {
+    "id": "LC-319",
+    "section": "T",
+    "line": 448,
+    "name": "Asset Import / Export",
+    "status": "Required",
+    "note": "",
+    "target": "AST-003"
+  },
+  {
+    "id": "LC-320",
+    "section": "T",
+    "line": 449,
+    "name": "Navigator",
+    "status": "Required",
+    "note": "Thumbnail + Viewport + Zoom/Pan",
+    "target": "REF-005"
+  },
+  {
+    "id": "LC-321",
+    "section": "T",
+    "line": 450,
+    "name": "Dock / Float Navigator",
+    "status": "Required",
+    "note": "",
+    "target": "REF-005"
+  },
+  {
+    "id": "LC-322",
+    "section": "T",
+    "line": 451,
+    "name": "Multi-view of same Document",
+    "status": "Investigate",
+    "note": "全体/細部、Mirror、Value確認等",
+    "target": "REF-005"
+  },
+  {
+    "id": "LC-323",
+    "section": "T",
+    "line": 452,
+    "name": "Plugin / Extension API",
+    "status": "Future / Investigate",
+    "note": "Core完成前に公開APIを固定しない",
+    "target": "EXT-001"
+  },
+  {
+    "id": "LC-324",
+    "section": "T",
+    "line": 453,
+    "name": "Internal Module Boundaries",
+    "status": "Core",
+    "note": "将来拡張を不必要に阻害しない",
+    "target": "QR-20"
+  }
+]
