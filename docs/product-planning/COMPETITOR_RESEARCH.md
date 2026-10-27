@@ -95,3 +95,63 @@
 3. Photoshop/Affinityの再編集可能な効果へ、対象帯と局所確定/取消を加える。非破壊のため描けない対象ができた場合の入口を明示する（NDE、EXP-04）。
 4. Kritaの入力指示/出力の区別とRebelleの進行制御を参考に、領域修正・水彩で「何がまだ変わるか」を見せる。仮線表示の一方式へ固定しない（LIN/WET）。
 5. 速度・手数・誤操作・初見理解で比較する。今回の文書上の優位候補だけで「主要アプリより上」と判定しない。
+
+## 今回の操作比較の深化（2026-10-27）
+
+前回41出典の一覧を土台に、以下を再読/追加調査した。**事実**は出典IDとその版の公式記載、**判断**はIllustroへの適性、**仮説**は実機での効果。実際のアプリを操作した比較ではない。手数はマニュアルから読める入口の比較で、操作速度/誤操作率の実測ではない。取得できない初期値・Undo単位・端末別差は未確認とする。
+
+### 同じ課題：震えを抑え、短い線の入り抜きを描く
+
+| 競合と版 | 確認できた入口・制御・途中動作 | 不明/注意 | Illustroへ反映する判断 |
+|---|---|---|---|
+| ibisPaint 現行Web IB-05 | ToolbarのStabilizerから開く。全筆共通/現在筆、Real Time/After、一定/速筆依存。Force Fadeは始終長と形を別設定 | 数値初期値と補正中Undoは未確認。Afterは離筆後に形が変わる | BRU-003/008：補正と入り抜きを別ON/OFF、全体上書き表示と試筆を共通化 |
+| Procreate 5.4 PR-08 | Brush Studioで間隔/形/散布、StreamLine、Stabilization、Motion Filtering、圧/Touch Taper | 筆ごとの既定値は別。Touchに筆圧取得があるとはしない | BRU-005/006/008：詳細は筆編集へ、基本径/不透明度は主画面。筆圧と強制Taperを分離 |
+| Krita 5.3 KR-10 | Bで筆、Ctrl一時採色、Shift径調整。OFF/Basic/Weighted/Stabilizer、圧平滑、終端、速度別強度 | Weightedの終端は直線化注意。5.3以前と同じ設定としない | BRU-002/003/010：強度だけでなく遅れ/終端を比較、ガイドと消しの吸着を分離 |
+| MyPaint 2.0 MY-04 | 変調Curve点数拡張、傾き/方向/軸回転/Zoom等。顔料混色と互換モードを説明 | 2020変更資料。現行UI全体の初期値は未確認 | BRU-006/011：入出力対応と資源版を保持。表示依存が筆に及ぶ場合は明示 |
+| Rebelle 8 RB-02 | Propertiesの基本径/Opacity/Water、Brush Creator詳細。非筆圧入力向けPressure、Lengthは既定非表示 | 全筆で同じ設定露出ではない | WET-001/BRU-005：Paint/Mix/Blendの意味を分け、基本と詳細を段階表示 |
+| CSP / Photoshop / Affinity | 前回出典で筆/編集能力の範囲は確認。今回この課題の全詳細を同じ深さでは比較できていない | 全補正設定・既定値・筆中取消は未確認 | 他5方式の速度優越を断定しない。旧筆の能力を削除する理由に使わない |
+
+推奨は「少数の筆プリセット＋基本3値＋任意の補正＋拡大できる詳細Curve」。全項目を常時表示する案は視線/設定探索を増やす。設定をプリセット内へ完全に隠す案は補正原因を理解しにくい。BRU-003の比較表示で両者をつなぐ。これが最速かは実機検証待ち。
+
+### 同じ課題：空の彩色層へ線画の細部を漏れなく塗る
+
+| 方式 | 公式で確認した手順/固有パラメータ | 制約/未知 | 採用する長所と改善 |
+|---|---|---|---|
+| ibisPaint Bucket IB-01/06 | 色差・隙間認識と拡張、囲み塗り/囲み消しの紹介 | IB-06は検索記載までで全文操作/Undo未確認 | FIL-002/005：GapとExpandを分離。囲い全体と閉領域だけをラベルで区別 |
+| CSP Advanced Fill CS-02、Reference CS-01 | Edit→Advanced Fill、色/Opacity/Blend/AA/Tolerance/Area scaling/Close gap/参照群/除外/画像枠/Vector path。閉領域のみ、色条件も選択 | Advanced FillはDEBUT非対応。値は単位設定に依存 | FIL-003：参照元/塗り先の同時表示。FIL-005：透明だけ等の対象条件を詳細へ |
+| Krita Colorize Mask KR-01 | 線画層へMask→色指示→Update→出力比較。透明指定、層範囲制限、隙間ヒント | 大きなGapは誤り、通過GroupではColorize Mask無効と説明 | FIL-008：指示と結果を分離、更新状態を示す。LINの構造データとは同一視しない |
+| MyPaint 2.0 MY-04 | Offset/Feather/Gap detection/Cancel | Gap過大は遅く誤認しやすい | FIL-002/009：強い自動補完だけに依存せず局所修正と直近調整 |
+
+同課題で、現在層だけを参照する案は空層で漏れ、常に表示合成案は影や下塗りまで境界にする。**指定参照があればそれ、なければ現在層**を既定推奨。空参照時は線画指定を提案し自動で意味を切替えない。候補確認を全タップへ強制せず、通常一塗りと曖昧時の確認を分ける（FIL-001〜010）。
+
+### 同じ課題：腕を選択し変形し、一部だけ戻す
+
+CSP Selection area（CS-07）は形/投げ縄/多角形に加え選択筆と消し、Magnetic lasso、加減算/交差を説明する。Deleteで前頂点、始点タップ等で閉じる明示操作をIllustroにも採用推奨。選択筆/消しと磁気投げ縄は前回247の見出しだけでは不足していたため、SEL-001/002へ追加する。
+
+Procreate（PR-09/10）は直前選択の保持再読込、変形の枠/数値/4方式、Reset、内部Undoと終了後の統合Undoを説明する。枠内Pinchは内容変形、外は表示操作。Illustroは内部/全体Undoの区別を参考にし、**指ナビの意味を枠内外で変えない**案を推奨。初期Freeform/NearestというProcreateの説明をIllustro既定値へそのまま移さず、用途別補間と比率Lockを表示する。
+
+Krita（KR-05）はCorner/Side/Pivot、Perspective/Warp/Cage/Liquifyと制御点、CageのPreview/Realの精度差を説明する。Illustroは制御点配置と変形を分け、途中/確定の差を明示し、同セッションでの繰返し劣化を防ぐ製品要求にする。方式/精度閾値は未選定。
+
+### 同じ課題：非破壊の色調とぼかしを重ねる
+
+| 比較項目 | Photoshop Desktop AD-07〜10 | Affinity Photo 2 iPad AF-06/07 | Illustro推奨 |
+|---|---|---|---|
+| 作成/再編集 | 調整はLayersから追加しPropertiesへ。Smart FilterはSmart Object前提、効果欄から再編集 | FiltersでLiveのみ表示→現在層へ追加、LayersでDouble tap再編集 | FX-001/008：層下の効果一覧＋種類固有の直接制御。元内容編集も明示 |
+| 対象/Mask | Smart Filter Mask、順序と個別合成を保持 | 選択があると自動Mask、Maskを筆/消し/Gradientで編集 | 作成時の選択をMaskへコピー。以後の選択変更に追従しない |
+| Curves | 入出力点/成分、画像上で対象階調を指す | 今回Curves詳細は未確認 | FX-103：画像上の階調指定＋数値と点操作を採用推奨 |
+| Blur | Gaussian/Box/Motion/Radial/Lensを区別。LensはSmart非対応、16/32bit非対応との記載 | Live一覧に複数Blur、DisplaceにはSplit/Protect alpha等 | FX-116〜120：方向/中心/焦点を別設計。対応深度と再編集性を効果別表示 |
+| 切替/焼込 | Smart Objectは直接Paint/Clone不可、Raster化で非破壊リンク消失 | 他層/Tool選択で設定Toolbarを閉じる、Mergeは別 | 無言確定/無言Raster化を避け、矛盾する同対象編集のみ局所解決 |
+
+ここで確認できたのは各方式の能力と手順。フィルター計算速度/色精度の優越は未検証。36効果のIllustro固有パラメータは [FX個別仕様](features/FX.md#fx-101) にあり、競合が全て同じ能力を持つという表ではない。
+
+### Workspace・資料・湿式・最新性
+
+CSP Quick Access（CS-04）はツール/Command/Auto Action/色、セット、表示密度、検索結果から登録を説明。Illustroは検索→常用入口への固定をUI-004/005へ反映し、固定位置をContextで勝手に入替えない。Procreate QuickMenu（PR-02）の近接入口を参考にしつつ、半径や方向数は実機で比較する。
+
+Rebelle 8（RB-01/02）は水量と湿潤表示、層全体の加水/乾燥、Fast DryとPause Diffusionを区別。IllustroはWET-003/004へ「停止≠乾燥」「保存再開の外観保持」を反映する。資料については前回のPR-04/MY-02を再利用し、複数資料/位置固定/採色/不足処理をREF-001〜006で補強。資料の自動移動は推薦しない。
+
+Affinity現行の2026-09-15公式記事（AF-02）本文を再確認し、Blend Tool、Scripting、ライブBoolean等の更新を確認した。ただしPhoto 2 iPadの詳細手順を2026現行版の操作と断定しない。MyPaintの2.0記事も2020年の版指定の知見で、今日の最新版全仕様ではない。ibisPaint/CSPは現行Web説明、Procreateは5.4 Handbook、Kritaは5.3 Manual、PhotoshopはDesktop 2026更新、Rebelleは8 Manualとして記録。
+
+### 残る調査の限界
+
+全8アプリ×全247能力×全端末を実操作した評価ではない。Undoの既定深度、保存中の入力可否、ペン接地中ナビの正確な結果、全効果の高精度対応は未確認箇所が残る。これらを競合の欠如とはしない。文書で判明した能力を設計へ反映したうえで、QA-01〜20/NB-01〜12の同課題測定を次段階の検証事項とする。

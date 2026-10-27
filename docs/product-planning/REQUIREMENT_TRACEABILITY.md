@@ -1,257 +1,263 @@
-# 新機能から操作・品質・判断への対応
+# 新機能から個別仕様・品質への対応
 
-調査・策定日：2026-10-27（JST）。状態：**製品仕様案・未承認**。ユーザー指定の要求を除き正式採用ではない。実装・性能達成を示さない。
+改訂：2026-10-27。全247 IDを維持。旧324/218の対照は各crosswalkとJSONのsemanticへ。IDを分割/削除していないので変更前ID→変更後IDは同一（詳細能力の追加のみ）。FX-001〜006は入口、36効果はFX-101〜136。
 
-[文書案内](README.md) · [判断台帳](DECISION_REGISTER.md) · [品質要件](QUALITY_REQUIREMENTS.md)
+| ID | 個別仕様 | 推奨方針 | 品質 |
+|---|---|---|---|
+| CAN-001 | [新規作品](features/CAN.md#can-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-002 | [表示移動・拡縮・回転](features/CAN.md#can-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-003 | [Fit・100%・表示反転](features/CAN.md#can-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-004 | [高倍率・ピクセル確認](features/CAN.md#can-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-005 | [トリミング・キャンバス拡張](features/CAN.md#can-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-006 | [画像サイズ変更](features/CAN.md#can-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-007 | [複数作品・文書切替](features/CAN.md#can-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-008 | [シームレス反復描画](features/CAN.md#can-008) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-009 | [文書属性・テンプレート](features/CAN.md#can-009) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CAN-010 | [キャンバス外の内容保持](features/CAN.md#can-010) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| INP-001 | [入力役割の切替](features/INP.md#inp-001) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| INP-002 | [筆圧・傾き・方位・回転](features/INP.md#inp-002) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| INP-003 | [ペンボタン・後端消しゴム](features/INP.md#inp-003) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| INP-004 | [手のひら・誤接触対策](features/INP.md#inp-004) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| INP-005 | [割込み・接続喪失](features/INP.md#inp-005) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| INP-006 | [カーソル・接地点表示](features/INP.md#inp-006) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| INP-007 | [高頻度入力の忠実性](features/INP.md#inp-007) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| INP-008 | [キーボードとIMEの調停](features/INP.md#inp-008) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-001 | [基本ブラシと消しゴム](features/BRU.md#bru-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-002 | [サイズ・不透明度・流量](features/BRU.md#bru-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-003 | [筆圧・速度・位置補正](features/BRU.md#bru-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-004 | [プリセット検索・履歴・お気に入り](features/BRU.md#bru-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-005 | [ブラシ編集・試し描き](features/BRU.md#bru-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-006 | [入力からの変調](features/BRU.md#bru-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-007 | [テクスチャ・紙質ブラシ](features/BRU.md#bru-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-008 | [強制入り抜き](features/BRU.md#bru-008) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-009 | [連続描画・重ね塗り・合成](features/BRU.md#bru-009) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-010 | [定規・選択との併用](features/BRU.md#bru-010) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-011 | [ブラシ版と結果の再現](features/BRU.md#bru-011) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| BRU-012 | [一時消しゴム・前ツール復帰](features/BRU.md#bru-012) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| WET-001 | [ぼかし・引きずり・混色](features/WET.md#wet-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| WET-002 | [水彩・顔料・にじみ](features/WET.md#wet-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| WET-003 | [濡れの可視化・加水・乾燥](features/WET.md#wet-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| WET-004 | [拡散の停止・再開](features/WET.md#wet-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| WET-005 | [紙・吸収・質感編集](features/WET.md#wet-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| WET-006 | [混色・試し描きパッド](features/WET.md#wet-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| WET-007 | [厚塗り・油彩・乾式媒体](features/WET.md#wet-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-001 | [色相環・HSV・RGB・HSL](features/COL.md#col-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-002 | [色履歴・前色・背景色](features/COL.md#col-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-003 | [作品・資料スポイト](features/COL.md#col-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-004 | [パレット編集・交換](features/COL.md#col-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-005 | [調和・明度・色覚支援](features/COL.md#col-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-006 | [ICC保持・色変換](features/COL.md#col-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-007 | [広色域・高精度・HDR](features/COL.md#col-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-008 | [Soft Proof・色域警告](features/COL.md#col-008) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-009 | [色温度・全体色調](features/COL.md#col-009) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-010 | [CMYK編集と出力](features/COL.md#col-010) | 保留推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| COL-011 | [知覚的な色選択・色域マスク](features/COL.md#col-011) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-001 | [通常塗りつぶし](features/FIL.md#fil-001) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-002 | [隙間補完・塗り残し修正](features/FIL.md#fil-002) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-003 | [参照元・塗り先の明示](features/FIL.md#fil-003) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-004 | [連続・ドラッグ塗り](features/FIL.md#fil-004) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-005 | [囲って塗る・消す](features/FIL.md#fil-005) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-006 | [なぞって領域指定](features/FIL.md#fil-006) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-007 | [線画領域基準の塗り・再配色](features/FIL.md#fil-007) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-008 | [色指示による面の補助](features/FIL.md#fil-008) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-009 | [塗り結果のその場修正](features/FIL.md#fil-009) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FIL-010 | [透明塗り・下地・自動彩色レイヤー](features/FIL.md#fil-010) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LIN-001 | [ラスター線画から領域用レイヤー生成](features/LIN.md#lin-001) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LIN-002 | [境界・接続・閉領域・穴の表示](features/LIN.md#lin-002) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LIN-003 | [手動の接続・分割・統合](features/LIN.md#lin-003) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LIN-004 | [塗り・選択の共通参照](features/LIN.md#lin-004) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LIN-005 | [元線画変更後の比較更新](features/LIN.md#lin-005) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LIN-006 | [隙間候補・毛先・顎の補助](features/LIN.md#lin-006) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LIN-007 | [未解決・低信頼・無効の扱い](features/LIN.md#lin-007) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LIN-008 | [ベクター線画の領域利用](features/LIN.md#lin-008) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-001 | [追加・選択・描画対象固定](features/LAY.md#lay-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-002 | [表示・不透明度・合成](features/LAY.md#lay-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-003 | [グループ・並替・複数選択](features/LAY.md#lay-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-004 | [クリッピング・不透明度ロック](features/LAY.md#lay-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-005 | [ピクセル・ベクターマスク](features/LAY.md#lay-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-006 | [複製・結合・統合コピー](features/LAY.md#lay-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-007 | [名前・タグ・検索・フィルター](features/LAY.md#lay-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-008 | [位置・内容・全体ロック](features/LAY.md#lay-008) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-009 | [Solo・一時表示検査](features/LAY.md#lay-009) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-010 | [キャンバスから層選択](features/LAY.md#lay-010) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-011 | [レイヤーカンプ](features/LAY.md#lay-011) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| LAY-012 | [空・非描画対象での開始](features/LAY.md#lay-012) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SEL-001 | [矩形・楕円・投げ縄・多角形](features/SEL.md#sel-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SEL-002 | [色域・明度・自動選択](features/SEL.md#sel-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SEL-003 | [拡張・縮小・ぼかし・境界](features/SEL.md#sel-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SEL-004 | [全選択・解除・再選択・反転](features/SEL.md#sel-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SEL-005 | [線画領域・層内容から選択](features/SEL.md#sel-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SEL-006 | [保存選択・選択マスク](features/SEL.md#sel-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SEL-007 | [境界移動と内容移動](features/SEL.md#sel-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SEL-008 | [選択の表示・抑制](features/SEL.md#sel-008) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| TRN-001 | [移動・拡縮・回転・反転](features/TRN.md#trn-001) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| TRN-002 | [自由・パース・傾斜](features/TRN.md#trn-002) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| TRN-003 | [メッシュ・ケージ・ワープ](features/TRN.md#trn-003) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| TRN-004 | [ゆがみ・液状化](features/TRN.md#trn-004) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| TRN-005 | [スナップ・整列・分布](features/TRN.md#trn-005) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| TRN-006 | [補間・連続調整](features/TRN.md#trn-006) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| TRN-007 | [セッション内Undoと全体Undo](features/TRN.md#trn-007) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| TRN-008 | [非破壊変形と描画](features/TRN.md#trn-008) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| VEC-001 | [自由描線・パス・図形](features/VEC.md#vec-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| VEC-002 | [オブジェクト・点・ハンドル編集](features/VEC.md#vec-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| VEC-003 | [線幅・筆風・ベクター消去](features/VEC.md#vec-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| VEC-004 | [簡略化・平滑化・ブーリアン](features/VEC.md#vec-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| VEC-005 | [文字・縦横書き・IME](features/VEC.md#vec-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| VEC-006 | [フォント取込・不足解決](features/VEC.md#vec-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| VEC-007 | [文字のパス化・Raster化](features/VEC.md#vec-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| VEC-008 | [パス上文字・高度組版](features/VEC.md#vec-008) | 保留推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GUI-001 | [直線・平行・円・楕円定規](features/GUI.md#gui-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GUI-002 | [2D・等角・透視ガイド](features/GUI.md#gui-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GUI-003 | [対称・放射・万華鏡](features/GUI.md#gui-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GUI-004 | [図形・ベジェ・折線](features/GUI.md#gui-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GUI-005 | [描いた後の形状補正](features/GUI.md#gui-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GUI-006 | [吸着表示・一時解除・範囲](features/GUI.md#gui-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GUI-007 | [ガイド・図形プリセット](features/GUI.md#gui-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GRA-001 | [線形・放射・反射・角度](features/GRA.md#gra-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GRA-002 | [停止点・透明度・中間点](features/GRA.md#gra-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GRA-003 | [再編集・マスク・形状追従](features/GRA.md#gra-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GRA-004 | [グラデーションマップ・階調](features/GRA.md#gra-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-001 | [色調整レイヤー](features/FX.md#fx-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-002 | [高度色調整](features/FX.md#fx-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-003 | [ぼかし](features/FX.md#fx-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-004 | [鮮鋭化・ノイズ・掃除](features/FX.md#fx-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-005 | [変位・オフセット・モザイク](features/FX.md#fx-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-006 | [網点・線画抽出・縁・発光](features/FX.md#fx-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-007 | [修復・パッチ・クローン](features/FX.md#fx-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-008 | [フィルター順序・マスク・強度](features/FX.md#fx-008) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-009 | [明示的な焼込み](features/FX.md#fx-009) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| NDE-001 | [合成モードと比較](features/NDE.md#nde-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| NDE-002 | [階調依存合成](features/NDE.md#nde-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| NDE-003 | [編集可能な効果・変形](features/NDE.md#nde-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| NDE-004 | [リンク・埋込・インスタンス](features/NDE.md#nde-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| NDE-005 | [安全な構造変換](features/NDE.md#nde-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REF-001 | [複数資料・グループ](features/REF.md#ref-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REF-002 | [移動・拡縮・回転・ピン](features/REF.md#ref-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REF-003 | [反転・グレー・一時非表示](features/REF.md#ref-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REF-004 | [資料採色と色の出典](features/REF.md#ref-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REF-005 | [Navigator・全体/細部別ビュー](features/REF.md#ref-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REF-006 | [資料保存・不足・権利メモ](features/REF.md#ref-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| HIS-001 | [Undo・Redo](features/HIS.md#his-001) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| HIS-002 | [履歴一覧・比較](features/HIS.md#his-002) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| HIS-003 | [名前付きSnapshot](features/HIS.md#his-003) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| HIS-004 | [分岐・比較・復帰](features/HIS.md#his-004) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| HIS-005 | [部分復元・履歴ブラシ](features/HIS.md#his-005) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| HIS-006 | [履歴の容量・保持範囲](features/HIS.md#his-006) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SAV-001 | [作品一覧・検索・整理](features/SAV.md#sav-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SAV-002 | [複製・削除・ゴミ箱](features/SAV.md#sav-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SAV-003 | [ネイティブ保存・Save As](features/SAV.md#sav-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SAV-004 | [自動保護・保存状態](features/SAV.md#sav-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SAV-005 | [クラッシュ・背景終了復元](features/SAV.md#sav-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SAV-006 | [容量不足・外部変更・複数起動](features/SAV.md#sav-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SAV-007 | [Offline・ログイン不要制作](features/SAV.md#sav-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| SAV-008 | [バックアップ・版移行・旧形式](features/SAV.md#sav-008) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-001 | [画像を開く・配置する](features/IO.md#io-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-002 | [PNG・JPEG・WebP](features/IO.md#io-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-003 | [PSD・PSB互換](features/IO.md#io-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-004 | [ORA・TIFF](features/IO.md#io-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-005 | [SVG](features/IO.md#io-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-006 | [EXR・AVIF・HEIF](features/IO.md#io-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-007 | [出力色・メタデータ](features/IO.md#io-007) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-008 | [レイヤー・選択範囲・一括出力](features/IO.md#io-008) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| IO-009 | [印刷向け確認](features/IO.md#io-009) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AST-001 | [素材種別の管理](features/AST.md#ast-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AST-002 | [検索・タグ・お気に入り](features/AST.md#ast-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AST-003 | [取込・書出・束ね](features/AST.md#ast-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AST-004 | [同名・上書き・削除・版](features/AST.md#ast-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AST-005 | [ローカル素材と任意の配布](features/AST.md#ast-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AUT-001 | [記録・編集・再生](features/AUT.md#aut-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AUT-002 | [実行時パラメータ・対象指定](features/AUT.md#aut-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AUT-003 | [実行比較・失敗・取消](features/AUT.md#aut-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AUT-004 | [バッチ出力](features/AUT.md#aut-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AUT-005 | [高速入口・共有](features/AUT.md#aut-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AUT-006 | [スクリプトと外部アクセス](features/AUT.md#aut-006) | 保留推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| UI-001 | [明色Auroraの制作画面](features/UI.md#ui-001) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| UI-002 | [パネルの折畳・並替・持出](features/UI.md#ui-002) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| UI-003 | [コンテキスト操作・対象帯](features/UI.md#ui-003) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| UI-004 | [Quick Controller](features/UI.md#ui-004) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| UI-005 | [横断コマンド検索](features/UI.md#ui-005) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| UI-006 | [Workspace保存・復元・左右反転](features/UI.md#ui-006) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| UI-007 | [Focus・全画面・一時UI](features/UI.md#ui-007) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| UI-008 | [ホーム・情報・ヘルプ](features/UI.md#ui-008) | 改良推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GST-001 | [既定ジェスチャーと代替](features/GST.md#gst-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GST-002 | [実キー登録・衝突検知](features/GST.md#gst-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GST-003 | [指・ペン・マウス割当](features/GST.md#gst-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GST-004 | [一時ツールと戻り先](features/GST.md#gst-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| GST-005 | [登録設定の移行](features/GST.md#gst-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| DEV-001 | [PC操作](features/DEV.md#dev-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| DEV-002 | [タブレット操作](features/DEV.md#dev-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| DEV-003 | [スマートフォン操作](features/DEV.md#dev-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| DEV-004 | [回転・リサイズ・キーボード](features/DEV.md#dev-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| DEV-005 | [能力差・低負荷・端末間移送](features/DEV.md#dev-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REC-001 | [Timelapse記録と再生](features/REC.md#rec-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REC-002 | [動画の範囲・速度・解像度](features/REC.md#rec-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REC-003 | [記録の除外・機密資料](features/REC.md#rec-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| REC-004 | [実作業時間](features/REC.md#rec-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| A11-001 | [文字・UI・コントラスト拡大](features/A11.md#a11-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| A11-002 | [単指・非ドラッグ代替](features/A11.md#a11-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| A11-003 | [キーボード・支援技術](features/A11.md#a11-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| A11-004 | [色説明・グレー・補正](features/A11.md#a11-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| A11-005 | [動き・音・振動](features/A11.md#a11-005) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| A11-006 | [日本語・翻訳・単位](features/A11.md#a11-006) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AI-001 | [選択・領域の補助](features/AI.md#ai-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AI-002 | [色・陰影の候補](features/AI.md#ai-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AI-003 | [整理・修復の候補](features/AI.md#ai-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| AI-004 | [送信・費用・生成の境界](features/AI.md#ai-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| EXT-001 | [拡張機能](features/EXT.md#ext-001) | 保留推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| EXT-002 | [共同描画・絵チャ](features/EXT.md#ext-002) | 保留推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| EXT-003 | [3D資料・ポーズ・照明](features/EXT.md#ext-003) | 保留推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| EXT-004 | [アニメ・漫画・DTP一式](features/EXT.md#ext-004) | 不要推奨（用途全体のみ） | QR-01〜22、当該失敗/品質欄、NB契約 |
+| EXT-005 | [自由キャンバスと遠隔操作](features/EXT.md#ext-005) | 保留推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CLP-001 | [コピー・切取・貼付](features/CLP.md#clp-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CLP-002 | [統合コピー・同位置貼付](features/CLP.md#clp-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CLP-003 | [文書間の編集データ移送](features/CLP.md#clp-003) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| CLP-004 | [システム共有・ドロップ](features/CLP.md#clp-004) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| PIX-001 | [1px・整数・アンチエイリアスOFF](features/PIX.md#pix-001) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| PIX-002 | [画素を守る変形と出力](features/PIX.md#pix-002) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| PIX-003 | [固定パレット・Indexed候補](features/PIX.md#pix-003) | 保留推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-101 | [明るさ・コントラスト](features/FX.md#fx-101) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-102 | [レベル](features/FX.md#fx-102) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-103 | [トーンカーブ](features/FX.md#fx-103) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-104 | [露出](features/FX.md#fx-104) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-105 | [色相・彩度・明度](features/FX.md#fx-105) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-106 | [自然な彩度](features/FX.md#fx-106) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-107 | [カラーバランス](features/FX.md#fx-107) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-108 | [色温度・Tint](features/FX.md#fx-108) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-109 | [白黒](features/FX.md#fx-109) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-110 | [チャンネルミキサー](features/FX.md#fx-110) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-111 | [選択色補正](features/FX.md#fx-111) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-112 | [反転](features/FX.md#fx-112) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-113 | [階調化](features/FX.md#fx-113) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-114 | [二値化](features/FX.md#fx-114) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-115 | [LUT](features/FX.md#fx-115) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-116 | [ガウスぼかし](features/FX.md#fx-116) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-117 | [ボックスぼかし](features/FX.md#fx-117) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-118 | [移動ぼかし](features/FX.md#fx-118) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-119 | [放射ぼかし](features/FX.md#fx-119) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-120 | [レンズ・深度ぼかし](features/FX.md#fx-120) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-121 | [シャープ](features/FX.md#fx-121) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-122 | [アンシャープマスク](features/FX.md#fx-122) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-123 | [High Pass](features/FX.md#fx-123) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-124 | [ノイズ](features/FX.md#fx-124) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-125 | [Median・ごみ取り](features/FX.md#fx-125) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-126 | [モザイク](features/FX.md#fx-126) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-127 | [オフセット](features/FX.md#fx-127) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-128 | [変位](features/FX.md#fx-128) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-129 | [網点・スクリーントーン](features/FX.md#fx-129) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-130 | [輪郭検出・線画抽出](features/FX.md#fx-130) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-131 | [線画色変更](features/FX.md#fx-131) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-132 | [内外の縁取](features/FX.md#fx-132) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-133 | [内外の影](features/FX.md#fx-133) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-134 | [内外光彩](features/FX.md#fx-134) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-135 | [色・グラデ・模様Overlay](features/FX.md#fx-135) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
+| FX-136 | [ベベル・エンボス](features/FX.md#fx-136) | 採用推奨 | QR-01〜22、当該失敗/品質欄、NB契約 |
 
-この表は要求の所在確認用。参照があることだけで実現性/使いやすさが検証済みとはしない。
+## 補完条項
 
-| 新ID | 分野操作仕様 | 必須品質 | 具体受入シナリオ | 未決判断 |
-|---|---|---|---|---|
-| CAN-001 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-002 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-003 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-004 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-005 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-006 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-007 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-008 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-009 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| CAN-010 | [CAN](PRODUCT_INTERACTION_SPEC.md#can) | QR-01〜22（適用範囲は分野契約） | QA-01/02/12/17 | DEC-09: 上限・キャンバス外保持 |
-| INP-001 | [INP](PRODUCT_INTERACTION_SPEC.md#inp) | QR-01〜22（適用範囲は分野契約） | QA-01/02/17/18 | DEC-02: ペン接地中の表示操作 |
-| INP-002 | [INP](PRODUCT_INTERACTION_SPEC.md#inp) | QR-01〜22（適用範囲は分野契約） | QA-01/02/17/18 | DEC-02: ペン接地中の表示操作 |
-| INP-003 | [INP](PRODUCT_INTERACTION_SPEC.md#inp) | QR-01〜22（適用範囲は分野契約） | QA-01/02/17/18 | DEC-02: ペン接地中の表示操作 |
-| INP-004 | [INP](PRODUCT_INTERACTION_SPEC.md#inp) | QR-01〜22（適用範囲は分野契約） | QA-01/02/17/18 | DEC-02: ペン接地中の表示操作 |
-| INP-005 | [INP](PRODUCT_INTERACTION_SPEC.md#inp) | QR-01〜22（適用範囲は分野契約） | QA-01/02/17/18 | DEC-02: ペン接地中の表示操作 |
-| INP-006 | [INP](PRODUCT_INTERACTION_SPEC.md#inp) | QR-01〜22（適用範囲は分野契約） | QA-01/02/17/18 | DEC-02: ペン接地中の表示操作 |
-| INP-007 | [INP](PRODUCT_INTERACTION_SPEC.md#inp) | QR-01〜22（適用範囲は分野契約） | QA-01/02/17/18 | DEC-02: ペン接地中の表示操作 |
-| INP-008 | [INP](PRODUCT_INTERACTION_SPEC.md#inp) | QR-01〜22（適用範囲は分野契約） | QA-01/02/17/18 | DEC-02: ペン接地中の表示操作 |
-| BRU-001 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-002 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-003 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-004 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-005 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-006 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-007 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-008 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-009 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-010 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-011 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| BRU-012 | [BRU](PRODUCT_INTERACTION_SPEC.md#bru) | QR-01〜22（適用範囲は分野契約） | QA-01/02/04/08/12 | DEC-03: 補正・強制入り抜きの標準挙動 |
-| WET-001 | [WET](PRODUCT_INTERACTION_SPEC.md#wet) | QR-01〜22（適用範囲は分野契約） | QA-08/09/12 | DEC-06: 拡散停止と時間の扱い |
-| WET-002 | [WET](PRODUCT_INTERACTION_SPEC.md#wet) | QR-01〜22（適用範囲は分野契約） | QA-08/09/12 | DEC-06: 拡散停止と時間の扱い |
-| WET-003 | [WET](PRODUCT_INTERACTION_SPEC.md#wet) | QR-01〜22（適用範囲は分野契約） | QA-08/09/12 | DEC-06: 拡散停止と時間の扱い |
-| WET-004 | [WET](PRODUCT_INTERACTION_SPEC.md#wet) | QR-01〜22（適用範囲は分野契約） | QA-08/09/12 | DEC-06: 拡散停止と時間の扱い |
-| WET-005 | [WET](PRODUCT_INTERACTION_SPEC.md#wet) | QR-01〜22（適用範囲は分野契約） | QA-08/09/12 | DEC-06: 拡散停止と時間の扱い |
-| WET-006 | [WET](PRODUCT_INTERACTION_SPEC.md#wet) | QR-01〜22（適用範囲は分野契約） | QA-08/09/12 | DEC-06: 拡散停止と時間の扱い |
-| WET-007 | [WET](PRODUCT_INTERACTION_SPEC.md#wet) | QR-01〜22（適用範囲は分野契約） | QA-08/09/12 | DEC-06: 拡散停止と時間の扱い |
-| COL-001 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-002 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-003 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-004 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-005 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-006 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-007 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-008 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-009 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-010 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| COL-011 | [COL](PRODUCT_INTERACTION_SPEC.md#col) | QR-01〜22（適用範囲は分野契約） | QA-07/13/18 | DEC-07: 高精度色・印刷範囲 |
-| FIL-001 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-002 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-003 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-004 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-005 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-006 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-007 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-008 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-009 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| FIL-010 | [FIL](PRODUCT_INTERACTION_SPEC.md#fil) | QR-01〜22（適用範囲は分野契約） | QA-03/06/07 | DEC-04: 参照元と塗り先の初期値 |
-| LIN-001 | [LIN](PRODUCT_INTERACTION_SPEC.md#lin) | QR-01〜22（適用範囲は分野契約） | QA-03/06/15 | DEC-01: 元線画変更後の挙動 |
-| LIN-002 | [LIN](PRODUCT_INTERACTION_SPEC.md#lin) | QR-01〜22（適用範囲は分野契約） | QA-03/06/15 | DEC-01: 元線画変更後の挙動 |
-| LIN-003 | [LIN](PRODUCT_INTERACTION_SPEC.md#lin) | QR-01〜22（適用範囲は分野契約） | QA-03/06/15 | DEC-01: 元線画変更後の挙動 |
-| LIN-004 | [LIN](PRODUCT_INTERACTION_SPEC.md#lin) | QR-01〜22（適用範囲は分野契約） | QA-03/06/15 | DEC-01: 元線画変更後の挙動 |
-| LIN-005 | [LIN](PRODUCT_INTERACTION_SPEC.md#lin) | QR-01〜22（適用範囲は分野契約） | QA-03/06/15 | DEC-01: 元線画変更後の挙動 |
-| LIN-006 | [LIN](PRODUCT_INTERACTION_SPEC.md#lin) | QR-01〜22（適用範囲は分野契約） | QA-03/06/15 | DEC-01: 元線画変更後の挙動 |
-| LIN-007 | [LIN](PRODUCT_INTERACTION_SPEC.md#lin) | QR-01〜22（適用範囲は分野契約） | QA-03/06/15 | DEC-01: 元線画変更後の挙動 |
-| LIN-008 | [LIN](PRODUCT_INTERACTION_SPEC.md#lin) | QR-01〜22（適用範囲は分野契約） | QA-03/06/15 | DEC-01: 元線画変更後の挙動 |
-| LAY-001 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-002 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-003 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-004 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-005 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-006 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-007 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-008 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-009 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-010 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-011 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| LAY-012 | [LAY](PRODUCT_INTERACTION_SPEC.md#lay) | QR-01〜22（適用範囲は分野契約） | QA-04/12/15 | DEC-05: 自動レイヤー作成の条件 |
-| SEL-001 | [SEL](PRODUCT_INTERACTION_SPEC.md#sel) | QR-01〜22（適用範囲は分野契約） | QA-05/07/14 | 選択と対象オブジェクトの併用表示 |
-| SEL-002 | [SEL](PRODUCT_INTERACTION_SPEC.md#sel) | QR-01〜22（適用範囲は分野契約） | QA-05/07/14 | 選択と対象オブジェクトの併用表示 |
-| SEL-003 | [SEL](PRODUCT_INTERACTION_SPEC.md#sel) | QR-01〜22（適用範囲は分野契約） | QA-05/07/14 | 選択と対象オブジェクトの併用表示 |
-| SEL-004 | [SEL](PRODUCT_INTERACTION_SPEC.md#sel) | QR-01〜22（適用範囲は分野契約） | QA-05/07/14 | 選択と対象オブジェクトの併用表示 |
-| SEL-005 | [SEL](PRODUCT_INTERACTION_SPEC.md#sel) | QR-01〜22（適用範囲は分野契約） | QA-05/07/14 | 選択と対象オブジェクトの併用表示 |
-| SEL-006 | [SEL](PRODUCT_INTERACTION_SPEC.md#sel) | QR-01〜22（適用範囲は分野契約） | QA-05/07/14 | 選択と対象オブジェクトの併用表示 |
-| SEL-007 | [SEL](PRODUCT_INTERACTION_SPEC.md#sel) | QR-01〜22（適用範囲は分野契約） | QA-05/07/14 | 選択と対象オブジェクトの併用表示 |
-| SEL-008 | [SEL](PRODUCT_INTERACTION_SPEC.md#sel) | QR-01〜22（適用範囲は分野契約） | QA-05/07/14 | 選択と対象オブジェクトの併用表示 |
-| TRN-001 | [TRN](PRODUCT_INTERACTION_SPEC.md#trn) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08 | DEC-08: 描画との共存・確定境界 |
-| TRN-002 | [TRN](PRODUCT_INTERACTION_SPEC.md#trn) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08 | DEC-08: 描画との共存・確定境界 |
-| TRN-003 | [TRN](PRODUCT_INTERACTION_SPEC.md#trn) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08 | DEC-08: 描画との共存・確定境界 |
-| TRN-004 | [TRN](PRODUCT_INTERACTION_SPEC.md#trn) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08 | DEC-08: 描画との共存・確定境界 |
-| TRN-005 | [TRN](PRODUCT_INTERACTION_SPEC.md#trn) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08 | DEC-08: 描画との共存・確定境界 |
-| TRN-006 | [TRN](PRODUCT_INTERACTION_SPEC.md#trn) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08 | DEC-08: 描画との共存・確定境界 |
-| TRN-007 | [TRN](PRODUCT_INTERACTION_SPEC.md#trn) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08 | DEC-08: 描画との共存・確定境界 |
-| TRN-008 | [TRN](PRODUCT_INTERACTION_SPEC.md#trn) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08 | DEC-08: 描画との共存・確定境界 |
-| VEC-001 | [VEC](PRODUCT_INTERACTION_SPEC.md#vec) | QR-01〜22（適用範囲は分野契約） | QA-08/13/15/17 | DEC-10: 縦書き・フォントの製品範囲 |
-| VEC-002 | [VEC](PRODUCT_INTERACTION_SPEC.md#vec) | QR-01〜22（適用範囲は分野契約） | QA-08/13/15/17 | DEC-10: 縦書き・フォントの製品範囲 |
-| VEC-003 | [VEC](PRODUCT_INTERACTION_SPEC.md#vec) | QR-01〜22（適用範囲は分野契約） | QA-08/13/15/17 | DEC-10: 縦書き・フォントの製品範囲 |
-| VEC-004 | [VEC](PRODUCT_INTERACTION_SPEC.md#vec) | QR-01〜22（適用範囲は分野契約） | QA-08/13/15/17 | DEC-10: 縦書き・フォントの製品範囲 |
-| VEC-005 | [VEC](PRODUCT_INTERACTION_SPEC.md#vec) | QR-01〜22（適用範囲は分野契約） | QA-08/13/15/17 | DEC-10: 縦書き・フォントの製品範囲 |
-| VEC-006 | [VEC](PRODUCT_INTERACTION_SPEC.md#vec) | QR-01〜22（適用範囲は分野契約） | QA-08/13/15/17 | DEC-10: 縦書き・フォントの製品範囲 |
-| VEC-007 | [VEC](PRODUCT_INTERACTION_SPEC.md#vec) | QR-01〜22（適用範囲は分野契約） | QA-08/13/15/17 | DEC-10: 縦書き・フォントの製品範囲 |
-| VEC-008 | [VEC](PRODUCT_INTERACTION_SPEC.md#vec) | QR-01〜22（適用範囲は分野契約） | QA-08/13/15/17 | DEC-10: 縦書き・フォントの製品範囲 |
-| GUI-001 | [GUI](PRODUCT_INTERACTION_SPEC.md#gui) | QR-01〜22（適用範囲は分野契約） | QA-01/05/17 | 保持ジェスチャーとスポイト競合 |
-| GUI-002 | [GUI](PRODUCT_INTERACTION_SPEC.md#gui) | QR-01〜22（適用範囲は分野契約） | QA-01/05/17 | 保持ジェスチャーとスポイト競合 |
-| GUI-003 | [GUI](PRODUCT_INTERACTION_SPEC.md#gui) | QR-01〜22（適用範囲は分野契約） | QA-01/05/17 | 保持ジェスチャーとスポイト競合 |
-| GUI-004 | [GUI](PRODUCT_INTERACTION_SPEC.md#gui) | QR-01〜22（適用範囲は分野契約） | QA-01/05/17 | 保持ジェスチャーとスポイト競合 |
-| GUI-005 | [GUI](PRODUCT_INTERACTION_SPEC.md#gui) | QR-01〜22（適用範囲は分野契約） | QA-01/05/17 | 保持ジェスチャーとスポイト競合 |
-| GUI-006 | [GUI](PRODUCT_INTERACTION_SPEC.md#gui) | QR-01〜22（適用範囲は分野契約） | QA-01/05/17 | 保持ジェスチャーとスポイト競合 |
-| GUI-007 | [GUI](PRODUCT_INTERACTION_SPEC.md#gui) | QR-01〜22（適用範囲は分野契約） | QA-01/05/17 | 保持ジェスチャーとスポイト競合 |
-| GRA-001 | [GRA](PRODUCT_INTERACTION_SPEC.md#gra) | QR-01〜22（適用範囲は分野契約） | QA-05/08/13 | 形状追従の対象・透明停止点 |
-| GRA-002 | [GRA](PRODUCT_INTERACTION_SPEC.md#gra) | QR-01〜22（適用範囲は分野契約） | QA-05/08/13 | 形状追従の対象・透明停止点 |
-| GRA-003 | [GRA](PRODUCT_INTERACTION_SPEC.md#gra) | QR-01〜22（適用範囲は分野契約） | QA-05/08/13 | 形状追従の対象・透明停止点 |
-| GRA-004 | [GRA](PRODUCT_INTERACTION_SPEC.md#gra) | QR-01〜22（適用範囲は分野契約） | QA-05/08/13 | 形状追従の対象・透明停止点 |
-| FX-001 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-002 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-003 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-004 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-005 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-006 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-007 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-008 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-009 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| NDE-001 | [NDE](PRODUCT_INTERACTION_SPEC.md#nde) | QR-01〜22（適用範囲は分野契約） | QA-04/08/13 | DEC-08: 編集対象の明示・焼込み範囲 |
-| NDE-002 | [NDE](PRODUCT_INTERACTION_SPEC.md#nde) | QR-01〜22（適用範囲は分野契約） | QA-04/08/13 | DEC-08: 編集対象の明示・焼込み範囲 |
-| NDE-003 | [NDE](PRODUCT_INTERACTION_SPEC.md#nde) | QR-01〜22（適用範囲は分野契約） | QA-04/08/13 | DEC-08: 編集対象の明示・焼込み範囲 |
-| NDE-004 | [NDE](PRODUCT_INTERACTION_SPEC.md#nde) | QR-01〜22（適用範囲は分野契約） | QA-04/08/13 | DEC-08: 編集対象の明示・焼込み範囲 |
-| NDE-005 | [NDE](PRODUCT_INTERACTION_SPEC.md#nde) | QR-01〜22（適用範囲は分野契約） | QA-04/08/13 | DEC-08: 編集対象の明示・焼込み範囲 |
-| REF-001 | [REF](PRODUCT_INTERACTION_SPEC.md#ref) | QR-01〜22（適用範囲は分野契約） | QA-01/13/17/19 | 資料の埋込/リンクの標準 |
-| REF-002 | [REF](PRODUCT_INTERACTION_SPEC.md#ref) | QR-01〜22（適用範囲は分野契約） | QA-01/13/17/19 | 資料の埋込/リンクの標準 |
-| REF-003 | [REF](PRODUCT_INTERACTION_SPEC.md#ref) | QR-01〜22（適用範囲は分野契約） | QA-01/13/17/19 | 資料の埋込/リンクの標準 |
-| REF-004 | [REF](PRODUCT_INTERACTION_SPEC.md#ref) | QR-01〜22（適用範囲は分野契約） | QA-01/13/17/19 | 資料の埋込/リンクの標準 |
-| REF-005 | [REF](PRODUCT_INTERACTION_SPEC.md#ref) | QR-01〜22（適用範囲は分野契約） | QA-01/13/17/19 | 資料の埋込/リンクの標準 |
-| REF-006 | [REF](PRODUCT_INTERACTION_SPEC.md#ref) | QR-01〜22（適用範囲は分野契約） | QA-01/13/17/19 | 資料の埋込/リンクの標準 |
-| HIS-001 | [HIS](PRODUCT_INTERACTION_SPEC.md#his) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08/12 | DEC-11: 分岐履歴の保存と整理 |
-| HIS-002 | [HIS](PRODUCT_INTERACTION_SPEC.md#his) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08/12 | DEC-11: 分岐履歴の保存と整理 |
-| HIS-003 | [HIS](PRODUCT_INTERACTION_SPEC.md#his) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08/12 | DEC-11: 分岐履歴の保存と整理 |
-| HIS-004 | [HIS](PRODUCT_INTERACTION_SPEC.md#his) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08/12 | DEC-11: 分岐履歴の保存と整理 |
-| HIS-005 | [HIS](PRODUCT_INTERACTION_SPEC.md#his) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08/12 | DEC-11: 分岐履歴の保存と整理 |
-| HIS-006 | [HIS](PRODUCT_INTERACTION_SPEC.md#his) | QR-01〜22（適用範囲は分野契約） | QA-03/05/08/12 | DEC-11: 分岐履歴の保存と整理 |
-| SAV-001 | [SAV](PRODUCT_INTERACTION_SPEC.md#sav) | QR-01〜22（適用範囲は分野契約） | QA-09/10/11/14/19 | DEC-11: 保護期間・容量と復元保証 |
-| SAV-002 | [SAV](PRODUCT_INTERACTION_SPEC.md#sav) | QR-01〜22（適用範囲は分野契約） | QA-09/10/11/14/19 | DEC-11: 保護期間・容量と復元保証 |
-| SAV-003 | [SAV](PRODUCT_INTERACTION_SPEC.md#sav) | QR-01〜22（適用範囲は分野契約） | QA-09/10/11/14/19 | DEC-11: 保護期間・容量と復元保証 |
-| SAV-004 | [SAV](PRODUCT_INTERACTION_SPEC.md#sav) | QR-01〜22（適用範囲は分野契約） | QA-09/10/11/14/19 | DEC-11: 保護期間・容量と復元保証 |
-| SAV-005 | [SAV](PRODUCT_INTERACTION_SPEC.md#sav) | QR-01〜22（適用範囲は分野契約） | QA-09/10/11/14/19 | DEC-11: 保護期間・容量と復元保証 |
-| SAV-006 | [SAV](PRODUCT_INTERACTION_SPEC.md#sav) | QR-01〜22（適用範囲は分野契約） | QA-09/10/11/14/19 | DEC-11: 保護期間・容量と復元保証 |
-| SAV-007 | [SAV](PRODUCT_INTERACTION_SPEC.md#sav) | QR-01〜22（適用範囲は分野契約） | QA-09/10/11/14/19 | DEC-11: 保護期間・容量と復元保証 |
-| SAV-008 | [SAV](PRODUCT_INTERACTION_SPEC.md#sav) | QR-01〜22（適用範囲は分野契約） | QA-09/10/11/14/19 | DEC-11: 保護期間・容量と復元保証 |
-| IO-001 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| IO-002 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| IO-003 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| IO-004 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| IO-005 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| IO-006 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| IO-007 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| IO-008 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| IO-009 | [IO](PRODUCT_INTERACTION_SPEC.md#io) | QR-01〜22（適用範囲は分野契約） | QA-09/13/14/20 | DEC-12: 互換目標と損失許容 |
-| AST-001 | [AST](PRODUCT_INTERACTION_SPEC.md#ast) | QR-01〜22（適用範囲は分野契約） | QA-08/12/19 | 素材の版固定・削除と履歴依存 |
-| AST-002 | [AST](PRODUCT_INTERACTION_SPEC.md#ast) | QR-01〜22（適用範囲は分野契約） | QA-08/12/19 | 素材の版固定・削除と履歴依存 |
-| AST-003 | [AST](PRODUCT_INTERACTION_SPEC.md#ast) | QR-01〜22（適用範囲は分野契約） | QA-08/12/19 | 素材の版固定・削除と履歴依存 |
-| AST-004 | [AST](PRODUCT_INTERACTION_SPEC.md#ast) | QR-01〜22（適用範囲は分野契約） | QA-08/12/19 | 素材の版固定・削除と履歴依存 |
-| AST-005 | [AST](PRODUCT_INTERACTION_SPEC.md#ast) | QR-01〜22（適用範囲は分野契約） | QA-08/12/19 | 素材の版固定・削除と履歴依存 |
-| AUT-001 | [AUT](PRODUCT_INTERACTION_SPEC.md#aut) | QR-01〜22（適用範囲は分野契約） | QA-03/08/20 | 外部アクセス・記録不可コマンド |
-| AUT-002 | [AUT](PRODUCT_INTERACTION_SPEC.md#aut) | QR-01〜22（適用範囲は分野契約） | QA-03/08/20 | 外部アクセス・記録不可コマンド |
-| AUT-003 | [AUT](PRODUCT_INTERACTION_SPEC.md#aut) | QR-01〜22（適用範囲は分野契約） | QA-03/08/20 | 外部アクセス・記録不可コマンド |
-| AUT-004 | [AUT](PRODUCT_INTERACTION_SPEC.md#aut) | QR-01〜22（適用範囲は分野契約） | QA-03/08/20 | 外部アクセス・記録不可コマンド |
-| AUT-005 | [AUT](PRODUCT_INTERACTION_SPEC.md#aut) | QR-01〜22（適用範囲は分野契約） | QA-03/08/20 | 外部アクセス・記録不可コマンド |
-| AUT-006 | [AUT](PRODUCT_INTERACTION_SPEC.md#aut) | QR-01〜22（適用範囲は分野契約） | QA-03/08/20 | 外部アクセス・記録不可コマンド |
-| UI-001 | [UI](PRODUCT_INTERACTION_SPEC.md#ui) | QR-01〜22（適用範囲は分野契約） | QA-12/16/17/18 | DEC-13: コントローラー・持出パネル形状 |
-| UI-002 | [UI](PRODUCT_INTERACTION_SPEC.md#ui) | QR-01〜22（適用範囲は分野契約） | QA-12/16/17/18 | DEC-13: コントローラー・持出パネル形状 |
-| UI-003 | [UI](PRODUCT_INTERACTION_SPEC.md#ui) | QR-01〜22（適用範囲は分野契約） | QA-12/16/17/18 | DEC-13: コントローラー・持出パネル形状 |
-| UI-004 | [UI](PRODUCT_INTERACTION_SPEC.md#ui) | QR-01〜22（適用範囲は分野契約） | QA-12/16/17/18 | DEC-13: コントローラー・持出パネル形状 |
-| UI-005 | [UI](PRODUCT_INTERACTION_SPEC.md#ui) | QR-01〜22（適用範囲は分野契約） | QA-12/16/17/18 | DEC-13: コントローラー・持出パネル形状 |
-| UI-006 | [UI](PRODUCT_INTERACTION_SPEC.md#ui) | QR-01〜22（適用範囲は分野契約） | QA-12/16/17/18 | DEC-13: コントローラー・持出パネル形状 |
-| UI-007 | [UI](PRODUCT_INTERACTION_SPEC.md#ui) | QR-01〜22（適用範囲は分野契約） | QA-12/16/17/18 | DEC-13: コントローラー・持出パネル形状 |
-| UI-008 | [UI](PRODUCT_INTERACTION_SPEC.md#ui) | QR-01〜22（適用範囲は分野契約） | QA-12/16/17/18 | DEC-13: コントローラー・持出パネル形状 |
-| GST-001 | [GST](PRODUCT_INTERACTION_SPEC.md#gst) | QR-01〜22（適用範囲は分野契約） | QA-01/17/18 | DEC-02: 初期割当の競合 |
-| GST-002 | [GST](PRODUCT_INTERACTION_SPEC.md#gst) | QR-01〜22（適用範囲は分野契約） | QA-01/17/18 | DEC-02: 初期割当の競合 |
-| GST-003 | [GST](PRODUCT_INTERACTION_SPEC.md#gst) | QR-01〜22（適用範囲は分野契約） | QA-01/17/18 | DEC-02: 初期割当の競合 |
-| GST-004 | [GST](PRODUCT_INTERACTION_SPEC.md#gst) | QR-01〜22（適用範囲は分野契約） | QA-01/17/18 | DEC-02: 初期割当の競合 |
-| GST-005 | [GST](PRODUCT_INTERACTION_SPEC.md#gst) | QR-01〜22（適用範囲は分野契約） | QA-01/17/18 | DEC-02: 初期割当の競合 |
-| DEV-001 | [DEV](PRODUCT_INTERACTION_SPEC.md#dev) | QR-01〜22（適用範囲は分野契約） | QA-12/14/17/18 | 対応OS・実行形態は次段階で検証 |
-| DEV-002 | [DEV](PRODUCT_INTERACTION_SPEC.md#dev) | QR-01〜22（適用範囲は分野契約） | QA-12/14/17/18 | 対応OS・実行形態は次段階で検証 |
-| DEV-003 | [DEV](PRODUCT_INTERACTION_SPEC.md#dev) | QR-01〜22（適用範囲は分野契約） | QA-12/14/17/18 | 対応OS・実行形態は次段階で検証 |
-| DEV-004 | [DEV](PRODUCT_INTERACTION_SPEC.md#dev) | QR-01〜22（適用範囲は分野契約） | QA-12/14/17/18 | 対応OS・実行形態は次段階で検証 |
-| DEV-005 | [DEV](PRODUCT_INTERACTION_SPEC.md#dev) | QR-01〜22（適用範囲は分野契約） | QA-12/14/17/18 | 対応OS・実行形態は次段階で検証 |
-| REC-001 | [REC](PRODUCT_INTERACTION_SPEC.md#rec) | QR-01〜22（適用範囲は分野契約） | QA-08/12/20 | DEC-14: 記録の既定値・公開範囲 |
-| REC-002 | [REC](PRODUCT_INTERACTION_SPEC.md#rec) | QR-01〜22（適用範囲は分野契約） | QA-08/12/20 | DEC-14: 記録の既定値・公開範囲 |
-| REC-003 | [REC](PRODUCT_INTERACTION_SPEC.md#rec) | QR-01〜22（適用範囲は分野契約） | QA-08/12/20 | DEC-14: 記録の既定値・公開範囲 |
-| REC-004 | [REC](PRODUCT_INTERACTION_SPEC.md#rec) | QR-01〜22（適用範囲は分野契約） | QA-08/12/20 | DEC-14: 記録の既定値・公開範囲 |
-| A11-001 | [A11](PRODUCT_INTERACTION_SPEC.md#a11) | QR-01〜22（適用範囲は分野契約） | QA-16/17/18 | 数値指針は採用実行環境で定義 |
-| A11-002 | [A11](PRODUCT_INTERACTION_SPEC.md#a11) | QR-01〜22（適用範囲は分野契約） | QA-16/17/18 | 数値指針は採用実行環境で定義 |
-| A11-003 | [A11](PRODUCT_INTERACTION_SPEC.md#a11) | QR-01〜22（適用範囲は分野契約） | QA-16/17/18 | 数値指針は採用実行環境で定義 |
-| A11-004 | [A11](PRODUCT_INTERACTION_SPEC.md#a11) | QR-01〜22（適用範囲は分野契約） | QA-16/17/18 | 数値指針は採用実行環境で定義 |
-| A11-005 | [A11](PRODUCT_INTERACTION_SPEC.md#a11) | QR-01〜22（適用範囲は分野契約） | QA-16/17/18 | 数値指針は採用実行環境で定義 |
-| A11-006 | [A11](PRODUCT_INTERACTION_SPEC.md#a11) | QR-01〜22（適用範囲は分野契約） | QA-16/17/18 | 数値指針は採用実行環境で定義 |
-| AI-001 | [AI](PRODUCT_INTERACTION_SPEC.md#ai) | QR-01〜22（適用範囲は分野契約） | QA-03/15/19/20 | DEC-15: 外部送信と生成機能の境界 |
-| AI-002 | [AI](PRODUCT_INTERACTION_SPEC.md#ai) | QR-01〜22（適用範囲は分野契約） | QA-03/15/19/20 | DEC-15: 外部送信と生成機能の境界 |
-| AI-003 | [AI](PRODUCT_INTERACTION_SPEC.md#ai) | QR-01〜22（適用範囲は分野契約） | QA-03/15/19/20 | DEC-15: 外部送信と生成機能の境界 |
-| AI-004 | [AI](PRODUCT_INTERACTION_SPEC.md#ai) | QR-01〜22（適用範囲は分野契約） | QA-03/15/19/20 | DEC-15: 外部送信と生成機能の境界 |
-| EXT-001 | [EXT](PRODUCT_INTERACTION_SPEC.md#ext) | QR-01〜22（適用範囲は分野契約） | QA-19/20（採用後に具体化） | DEC-16: 一枚絵用途の外縁 |
-| EXT-002 | [EXT](PRODUCT_INTERACTION_SPEC.md#ext) | QR-01〜22（適用範囲は分野契約） | QA-19/20（採用後に具体化） | DEC-16: 一枚絵用途の外縁 |
-| EXT-003 | [EXT](PRODUCT_INTERACTION_SPEC.md#ext) | QR-01〜22（適用範囲は分野契約） | QA-19/20（採用後に具体化） | DEC-16: 一枚絵用途の外縁 |
-| EXT-004 | [EXT](PRODUCT_INTERACTION_SPEC.md#ext) | QR-01〜22（適用範囲は分野契約） | QA-19/20（採用後に具体化） | DEC-16: 一枚絵用途の外縁 |
-| EXT-005 | [EXT](PRODUCT_INTERACTION_SPEC.md#ext) | QR-01〜22（適用範囲は分野契約） | QA-19/20（採用後に具体化） | DEC-16: 一枚絵用途の外縁 |
-| CLP-001 | [CLP](PRODUCT_INTERACTION_SPEC.md#clp) | QR-01〜22（適用範囲は分野契約） | QA-13/14/19 | 異色空間・参照依存の移送 |
-| CLP-002 | [CLP](PRODUCT_INTERACTION_SPEC.md#clp) | QR-01〜22（適用範囲は分野契約） | QA-13/14/19 | 異色空間・参照依存の移送 |
-| CLP-003 | [CLP](PRODUCT_INTERACTION_SPEC.md#clp) | QR-01〜22（適用範囲は分野契約） | QA-13/14/19 | 異色空間・参照依存の移送 |
-| CLP-004 | [CLP](PRODUCT_INTERACTION_SPEC.md#clp) | QR-01〜22（適用範囲は分野契約） | QA-13/14/19 | 異色空間・参照依存の移送 |
-| PIX-001 | [PIX](PRODUCT_INTERACTION_SPEC.md#pix) | QR-01〜22（適用範囲は分野契約） | QA-05/13/18 | 整数座標・Indexed色の採否 |
-| PIX-002 | [PIX](PRODUCT_INTERACTION_SPEC.md#pix) | QR-01〜22（適用範囲は分野契約） | QA-05/13/18 | 整数座標・Indexed色の採否 |
-| PIX-003 | [PIX](PRODUCT_INTERACTION_SPEC.md#pix) | QR-01〜22（適用範囲は分野契約） | QA-05/13/18 | 整数座標・Indexed色の採否 |
-| FX-101 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-102 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-103 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-104 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-105 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-106 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-107 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-108 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-109 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-110 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-111 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-112 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-113 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-114 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-115 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-116 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-117 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-118 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-119 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-120 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-121 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-122 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-123 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-124 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-125 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-126 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-127 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-128 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-129 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-130 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-131 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-132 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-133 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-134 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-135 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
-| FX-136 | [FX](PRODUCT_INTERACTION_SPEC.md#fx) | QR-01〜22（適用範囲は分野契約） | QA-03/08/13/15 | 個別処理の再編集性・色深度対応 |
+- **SC-01 Native完全状態**：Canvas/層ツリー/Mask/Vector/Text/作品依存Brush/領域分け/資料/Snapshot/Layer Comp/Timelapseと履歴関連/Workspaceと文書メタデータ/ICC/Recoveryと版情報を保持。選択Mask、外側保持、湿式停止状態、効果入力版も含む。確定作品と保留セッションを別記録し、Native保存と画像出力を混同しない。
+- **SC-02 表示と筆の基準**：通常筆のサイズと境界は文書座標。方向/速度に表示座標を利用する筆を許す場合はプリセットに明示し、既存線の表示回転で再描画結果を変えない。実センサー値と代替一定値を区別。
+- **SC-03 旧内部要件の扱い**：Tile/GPU/Worker/Journal/イベント正規化/内部ID/Codec遅延読込等は旧の方式候補として記録する。大作品応答/データ復元/未使用機能の軽さ/将来互換という能力をQR-01/08/19/20へ保持する。ここで内部選定を行わない。
+- **SC-04 初期UI言語**：日本語/英語を採用推奨。他言語の能力は拡張可能な要求として残し、初期翻訳範囲は未承認。言語に依存しない文書/キー/マクロの意味を保持。
+- **SC-05 選択の不足補完**：SEL-001の選択筆/消し選択、SEL-002の磁気投げ縄を候補一覧だけでなく径/濃度/吸着/固定点/閉じる/取消として追加した。元247の能力を削減せず同ID内の下位操作として扱う。
+
+SCは個別仕様への補足であり旧内部方式を復活させるものではない。旧要件の「Required/Accepted」は当時の記録。改善して引継いだという判定も新仕様のユーザー承認を意味しない。

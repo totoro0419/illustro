@@ -14,9 +14,9 @@
 | [LEGACY_REQUIREMENTS.md](LEGACY_REQUIREMENTS.md) | 旧知見・ユーザー要求・矛盾 |
 | [COMPETITOR_RESEARCH.md](COMPETITOR_RESEARCH.md) | 公式調査・機能/操作比較・導入判断 |
 | [FEATURE_MASTER_CATALOG.md](FEATURE_MASTER_CATALOG.md) | 30分野247機能候補 |
-| [EXPERIENCE_INNOVATION.md](EXPERIENCE_INNOVATION.md) | 制作フロー分析と20改善案 |
+| [EXPERIENCE_INNOVATION.md](EXPERIENCE_INNOVATION.md) | 制作フロー分析と25改善案、全20旧案の再評価 |
 | [PRODUCT_INTERACTION_SPEC.md](PRODUCT_INTERACTION_SPEC.md) | 共通契約・30分野の操作・端末・失敗時 |
-| [DECISION_REGISTER.md](DECISION_REGISTER.md) | 推奨案・比較案・16件の重要判断 |
+| [DECISION_REGISTER.md](DECISION_REGISTER.md) | 16判断の再評価、最後の重要承認6テーマ |
 | [PRODUCT_AUDIT.md](PRODUCT_AUDIT.md) | 修正した矛盾・12項目審査・未検証 |
 | [QUALITY_REQUIREMENTS.md](QUALITY_REQUIREMENTS.md) | 22品質要求と20受入シナリオ |
 | [RESEARCH_SOURCES.md](RESEARCH_SOURCES.md) | 41公式出典の確認箇所と制限 |
@@ -35,3 +35,7 @@
 ## 7工程の対応
 
 旧調査→LEGACY群、競合→COMPETITOR/SOURCES、候補統合→CATALOG、改善→EXPERIENCE、詳細→INTERACTION/DECISION、再審査→AUDIT/validation、最終文書→本フォルダーとSUMMARY。実装順序・アルゴリズム・システム構成の採用は本案の対象外。
+
+## 今回の個別仕様補強
+
+[全247機能の個別仕様索引](REQUIREMENT_TRACEABILITY.md) · [12処理の非待機契約](NONBLOCKING_OPERATION_CONTRACTS.md) · [修正審査](PRODUCT_AUDIT.md)。本文とfeatures.jsonのdetailを同期する。最新の構造検査はvalidation_results.jsonで日時とファイルhashを確認する。

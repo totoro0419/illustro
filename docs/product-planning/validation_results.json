@@ -1,137 +1,197 @@
 {
-  "verified_at": "2026-10-27T22:09:40.975149+09:00",
-  "scope": "Documentation structure and source crosswalk only; not runtime, usability, performance, correctness of all external claims, or product approval",
+  "verified_at": "2026-10-27T14:06:08.848887+00:00",
+  "baseline_head": "f7a9640702a05a84249a9926dd647ed5e3c2c9d8",
+  "scope": "Fresh post-edit documentation structure and exact-data checks. Not runtime, semantic proof, complete external-fact validation, independent reviewer approval, or product approval.",
   "checks": [
     {
-      "check": "unique_feature_ids",
+      "check": "feature_id_continuity",
       "result": "verified",
       "evidence": {
-        "actual": 247,
-        "unique": 247,
-        "data": 247
+        "before": 247,
+        "after": 247,
+        "split_or_deleted_ids": []
       }
     },
     {
-      "check": "feature_data_ids_match_document",
+      "check": "master_card_ids",
       "result": "verified",
-      "evidence": "Heading set vs features.json ID set"
+      "evidence": "247 card headings matched to data"
     },
     {
-      "check": "feature_required_fields",
+      "check": "individual_specs_and_json_exact_values",
       "result": "verified",
       "evidence": {
         "features": 247,
-        "fields_per_feature": 9,
-        "missing": []
+        "compared_fields_per_feature": 10,
+        "mismatches": []
       }
     },
     {
-      "check": "all_30_domains_have_interactions",
-      "result": "verified",
-      "evidence": [
-        "A11",
-        "AI",
-        "AST",
-        "AUT",
-        "BRU",
-        "CAN",
-        "CLP",
-        "COL",
-        "DEV",
-        "EXT",
-        "FIL",
-        "FX",
-        "GRA",
-        "GST",
-        "GUI",
-        "HIS",
-        "INP",
-        "IO",
-        "LAY",
-        "LIN",
-        "NDE",
-        "PIX",
-        "REC",
-        "REF",
-        "SAV",
-        "SEL",
-        "TRN",
-        "UI",
-        "VEC",
-        "WET"
-      ]
-    },
-    {
-      "check": "domain_contract_fields",
+      "check": "detail_ids_unique_complete",
       "result": "verified",
       "evidence": {
-        "入口と目的": 30,
-        "標準・初期挙動": 30,
-        "操作中の表示と直接操作": 30,
-        "確定・取消・Undo単位": 30,
-        "失敗・曖昧・他機能との共存": 30,
-        "端末別操作・高速操作": 30,
-        "保存・カスタマイズの範囲": 30,
-        "受入検査": 30
+        "detail_ids": 247,
+        "domains": 30
       }
     },
     {
-      "check": "all_legacy_catalog_rows_preserved",
+      "check": "36_effects_unique_parameters_and_direct_controls",
+      "result": "verified",
+      "evidence": {
+        "effects": 36,
+        "unique_parameters": 36,
+        "unique_direct_preview": 36,
+        "limit": "Uniqueness does not prove usability or correct computation"
+      }
+    },
+    {
+      "check": "all_features_distinct_authored_specific_fields",
+      "result": "verified",
+      "evidence": {
+        "scene": 247,
+        "parameters": 247,
+        "direct_preview": 247,
+        "persistence_undo": 247,
+        "failure_quality": 247
+      }
+    },
+    {
+      "check": "legacy_324_source_preserved",
       "result": "verified",
       "evidence": {
         "source_rows": 324,
-        "mapped_rows": 324
+        "data_rows": 324
       }
     },
     {
-      "check": "all_legacy_requirement_ids_preserved",
+      "check": "legacy_218_source_ids_preserved",
       "result": "verified",
       "evidence": {
         "source_ids": 218,
-        "unique": 218,
-        "mapped": 218,
-        "historical_audit_claims": [
-          210,
-          222
-        ]
+        "data_ids": 218
       }
     },
     {
-      "check": "legacy_destinations_exist",
+      "check": "legacy_full_bodies_preserved",
       "result": "verified",
       "evidence": {
-        "quality_ids": 22,
-        "missing": []
+        "compared_bodies": 218
       }
     },
     {
-      "check": "all_new_features_traceable",
-      "result": "verified",
-      "evidence": "247 IDs checked against traceability table"
-    },
-    {
-      "check": "source_ids_resolve",
+      "check": "542_semantic_records_with_specific_witnesses",
       "result": "verified",
       "evidence": {
-        "source_count": 41,
-        "unresolved": []
+        "catalog": 324,
+        "requirements": 218,
+        "bad_records": [],
+        "limit": "The parser checks records/evidence presence, not semantic truth. Manual adversarial review is PRODUCT_AUDIT.md."
       }
     },
     {
-      "check": "relative_links_and_anchors",
+      "check": "LEGACY_CATALOG_CROSSWALK.md_full_rows",
+      "result": "verified",
+      "evidence": 324
+    },
+    {
+      "check": "LEGACY_REQUIREMENT_CROSSWALK.md_full_rows",
+      "result": "verified",
+      "evidence": 218
+    },
+    {
+      "check": "all_source_ids_resolve",
       "result": "verified",
       "evidence": {
-        "checked": 804,
+        "registered_competitor_sources": 58,
+        "unresolved": [],
+        "standards_sources": 1
+      }
+    },
+    {
+      "check": "sources_facts_and_access_limits_separated",
+      "result": "verified",
+      "evidence": {
+        "limit": "External URLs not all re-fetched; no blanket live-link or factual-correctness claim"
+      }
+    },
+    {
+      "check": "all_recursive_relative_links_anchors",
+      "result": "verified",
+      "evidence": {
+        "links": 2139,
         "broken": []
       }
     },
     {
-      "check": "mandatory_9_source_snapshot_hashes",
+      "check": "feature_references_resolve_recursively",
       "result": "verified",
-      "evidence": "All nine hashes recomputed from the pinned source checkout; comprehension requires analysis evidence, not just hashes"
+      "evidence": {
+        "referenced": 247,
+        "unresolved": []
+      }
     },
     {
-      "check": "existing_new_repository_files_unchanged",
+      "check": "12_distinct_nonblocking_contracts",
+      "result": "verified",
+      "evidence": [
+        "NB-01",
+        "NB-02",
+        "NB-03",
+        "NB-04",
+        "NB-05",
+        "NB-06",
+        "NB-07",
+        "NB-08",
+        "NB-09",
+        "NB-10",
+        "NB-11",
+        "NB-12"
+      ]
+    },
+    {
+      "check": "25_innovations_and_20_reassessments",
+      "result": "verified",
+      "evidence": {
+        "innovation_ids": 25,
+        "reevaluation_rows": 20
+      }
+    },
+    {
+      "check": "16_decisions_and_6_important_approvals",
+      "result": "verified",
+      "evidence": {
+        "reassessed_decisions": 16,
+        "approval_topics": 6,
+        "new_user_approvals": 0
+      }
+    },
+    {
+      "check": "quality_runtime_unexecuted_explicit",
+      "result": "verified",
+      "evidence": {
+        "quality": 22,
+        "future_QA": 20,
+        "future_NB": 12,
+        "runtime_executed": false
+      }
+    },
+    {
+      "check": "mandatory_9_legacy_source_hashes",
+      "result": "verified",
+      "evidence": [
+        "docs/PRODUCT_SPEC.md",
+        "docs/FEATURE_CATALOG.md",
+        "docs/FEATURE_SPEC.md",
+        "docs/research/COMPETITOR_MATRIX.md",
+        "docs/research/COMPETITOR_PASS2.md",
+        "docs/CREATION_PROXIMITY_PRINCIPLES.md",
+        "docs/REDESIGN_PRINCIPLES.md",
+        "docs/interaction/INTERACTION_MODEL.md",
+        "docs/interaction/REMAINING_INTERACTION_BACKLOG.md"
+      ]
+    },
+    {
+      "check": "upper_existing_files_unchanged",
       "result": "verified",
       "evidence": [
         "README.md",
@@ -140,117 +200,72 @@
       ]
     },
     {
-      "check": "legacy_checkout_unmodified",
+      "check": "old_repository_unmodified",
+      "result": "verified",
+      "evidence": "bdc7135b51033982d90ea5dad104bb04fc107df2"
+    },
+    {
+      "check": "documentation_only_diff",
       "result": "verified",
       "evidence": {
-        "git_status": "",
-        "source_head": "bdc7135b51033982d90ea5dad104bb04fc107df2"
+        "changed_paths": 49,
+        "outside_paths": []
       }
     },
     {
-      "check": "nine_required_deliverables",
+      "check": "git_diff_whitespace",
+      "result": "verified",
+      "evidence": ""
+    },
+    {
+      "check": "known_contradictions_repaired",
       "result": "verified",
       "evidence": [
-        "PRODUCT_VISION.md",
-        "LEGACY_REQUIREMENTS.md",
-        "COMPETITOR_RESEARCH.md",
-        "FEATURE_MASTER_CATALOG.md",
-        "EXPERIENCE_INNOVATION.md",
-        "PRODUCT_INTERACTION_SPEC.md",
-        "DECISION_REGISTER.md",
-        "PRODUCT_AUDIT.md",
-        "PRODUCT_PLANNING_SUMMARY.md"
+        "cancel vs accident",
+        "integer vs float",
+        "recording default",
+        "important approval boundary"
       ]
-    },
-    {
-      "check": "important_decisions_unapproved",
-      "result": "verified",
-      "evidence": {
-        "decisions": 16,
-        "explicit_absence_of_approval": 16
-      }
-    },
-    {
-      "check": "20_innovations_documented",
-      "result": "verified",
-      "evidence": {
-        "actual": 20,
-        "dimensions": [
-          "解決対象",
-          "既存方式の問題・分析",
-          "提案する体験",
-          "想定利点",
-          "想定欠点",
-          "他機能・参考元",
-          "操作性への影響・副作用対策",
-          "今後の検証"
-        ]
-      }
-    },
-    {
-      "check": "quality_and_future_tests",
-      "result": "verified",
-      "evidence": {
-        "quality_requirements": 22,
-        "future_scenarios": 20,
-        "runtime_executed": false
-      }
-    },
-    {
-      "check": "cross_document_feature_ids_resolve",
-      "result": "verified",
-      "evidence": {
-        "unique_references": 247,
-        "unresolved": []
-      }
-    },
-    {
-      "check": "feature_data_text_matches_cards",
-      "result": "verified",
-      "evidence": {
-        "compared_fields": 988,
-        "mismatches": []
-      }
     }
   ],
   "failed_checks": [],
-  "runtime_tests": "not executed: implementation and experiments excluded by user",
-  "semantic_review": "PRODUCT_AUDIT.md; same author adversarial review, not independent agent approval",
+  "semantic_review": "Same author, separate adversarial procedure in PRODUCT_AUDIT.md. Individual legacy bodies/notes read and mapped to concrete contracts.",
+  "runtime_tests": "not executed; no application implementation authorized",
   "file_inventory": [
     {
       "path": "docs/product-planning/COMPETITOR_RESEARCH.md",
-      "bytes": 13481,
-      "sha256": "51ac236f45f1766b2cbda6d07b33274633602a9a0e291440f42ef7a32b63fed4"
+      "bytes": 22709,
+      "sha256": "b56868dc1e9cad152ec692e25361d06f20fce5558b3bbd1a40bce875835ab0f5"
     },
     {
       "path": "docs/product-planning/DECISION_REGISTER.md",
-      "bytes": 13419,
-      "sha256": "b8dd2b6444fb44d90d8e4ab61584bb704cdc1875e31531af07de6951d31e4235"
+      "bytes": 23249,
+      "sha256": "f24bbac228281e859db18060b358a1e98856337c7fcd936207884ddd2d2592e8"
     },
     {
       "path": "docs/product-planning/EXPERIENCE_INNOVATION.md",
-      "bytes": 28123,
-      "sha256": "0e96c97d6f5d6ff14905d2a22095c41f109c7e2493a22dbdcbc72f998eb2bf59"
+      "bytes": 38502,
+      "sha256": "fc01a68fe1c28c797a0a7cd39a86ee5816071606a024fc133984e9a497d90dfb"
     },
     {
       "path": "docs/product-planning/FEATURE_MASTER_CATALOG.md",
-      "bytes": 280811,
-      "sha256": "e73ce9ddce4b91b02c4447f996c11af1fd8a36df679eaab05270cca7e0fc3be8"
+      "bytes": 305897,
+      "sha256": "69a3954e62c322f015eab7b64220c7d82f6225a09a28a1552e63b723bb63daf4"
     },
     {
       "path": "docs/product-planning/LEGACY_CATALOG_CROSSWALK.md",
-      "bytes": 82559,
-      "sha256": "264099d7de36a008f2617ef884812ff57f4a11b7bb431542fc0325ef3eccb373"
+      "bytes": 256223,
+      "sha256": "925ea255cf84d61effeffab73296fb621319eec98045496c2144140452b314d0"
     },
     {
       "path": "docs/product-planning/LEGACY_REQUIREMENTS.md",
-      "bytes": 17845,
-      "sha256": "087f064a34d7e1d9b45c5066af7043206b8363ccb869a672632abfdbdb83bed8"
+      "bytes": 17873,
+      "sha256": "67d1e87c260661473e032af2bf74ab111c6ed1bf01d66ec093f547fbc321fc87"
     },
     {
       "path": "docs/product-planning/LEGACY_REQUIREMENT_CROSSWALK.md",
-      "bytes": 54858,
-      "sha256": "daf082a8b36a07802b6fcf09e208c18618a186a711fa33f826b23b48a27959d7"
+      "bytes": 207632,
+      "sha256": "304968a696544e6af76b49a9c3530370c37fbd735c3f9b67f4e2fe8d07949e6c"
     },
     {
       "path": "docs/product-planning/LEGACY_SOURCE_LEDGER.md",
@@ -258,19 +273,24 @@
       "sha256": "3167ee0559a312164c303cf02d222ab1c3d30d958aea9c4dd0d047efb3c7d186"
     },
     {
+      "path": "docs/product-planning/NONBLOCKING_OPERATION_CONTRACTS.md",
+      "bytes": 8000,
+      "sha256": "2ad93728baaba95c9484d8bb908d320bc8f9c4ff92ad32f7405cbe216bf11d86"
+    },
+    {
       "path": "docs/product-planning/PRODUCT_AUDIT.md",
-      "bytes": 8995,
-      "sha256": "cb5b8e340b9756ad1a7ce2f05be78f5cd8866311ba6276f8b064e8a3b7d909db"
+      "bytes": 10340,
+      "sha256": "4852bf11a36e82cac8ee0e24783b3cd8066dff2c3b6ec8132e215c306109e4e5"
     },
     {
       "path": "docs/product-planning/PRODUCT_INTERACTION_SPEC.md",
-      "bytes": 49106,
-      "sha256": "09bf8ca791c7e23276b7e388748f63358299d176e7c89d31500d0b3f1075cab2"
+      "bytes": 50131,
+      "sha256": "063ac1694f24b47d4c1de4fea1b252d6ab2df9fce9cb2b0828e75227f725e2b8"
     },
     {
       "path": "docs/product-planning/PRODUCT_PLANNING_SUMMARY.md",
-      "bytes": 4962,
-      "sha256": "bb7b5b676a9408aefffdfefd791806d1ece0cb3da25181765aaaf3bce4a954a0"
+      "bytes": 4563,
+      "sha256": "448a07c24a5d5889d013195f55ead9a34e1c57d3257f04a2f2c63490d4b45599"
     },
     {
       "path": "docs/product-planning/PRODUCT_VISION.md",
@@ -279,38 +299,188 @@
     },
     {
       "path": "docs/product-planning/QUALITY_REQUIREMENTS.md",
-      "bytes": 11757,
-      "sha256": "a24b0e1de182fa0098a2d342f6f4581dbfe5b94acd6f018196208d7e62e5eaf9"
+      "bytes": 13535,
+      "sha256": "d3b07f9288702e076dd0a1817f213cc1e24991310c70f6ab0517512977b3346e"
     },
     {
       "path": "docs/product-planning/README.md",
-      "bytes": 3031,
-      "sha256": "ab19b5cb336b47c3bff4bc16ee3e4b81898e289c1da961111081d147f64e5ad7"
+      "bytes": 3414,
+      "sha256": "4ef756babee3e4dd5e57a01030284b9fc437da4a1b3b746bbb5dffd3ab8db925"
     },
     {
       "path": "docs/product-planning/REQUIREMENT_TRACEABILITY.md",
-      "bytes": 39947,
-      "sha256": "85a900fc5fc48ab10ddac1545a38d931ca385496fb99b6a66c891388a1f19215"
+      "bytes": 34965,
+      "sha256": "26afe93500c980a90fb85c29466b7c5a86b024d5fb7a7d1f55789314b1cc47b6"
     },
     {
       "path": "docs/product-planning/RESEARCH_SOURCES.md",
-      "bytes": 15388,
-      "sha256": "ac3996b2255ef9febf1c1076dae8a6668a23fb7a82e51df0839d01d680578f87"
+      "bytes": 23994,
+      "sha256": "407b4a0f7210a6f43fb2a286fdaee03b1a9c42e43876a087b3f8e6eb627f1dc5"
+    },
+    {
+      "path": "docs/product-planning/features/A11.md",
+      "bytes": 13250,
+      "sha256": "4d87c0a72ff4f9804ef6240bbe7dc1680300bd357e6704ec318f27e1a2a92700"
+    },
+    {
+      "path": "docs/product-planning/features/AI.md",
+      "bytes": 9346,
+      "sha256": "e5570dbdad3f91405b98fc7bd8cee806cb5be8fb82be2c955a2696aed01e9ac6"
+    },
+    {
+      "path": "docs/product-planning/features/AST.md",
+      "bytes": 11189,
+      "sha256": "d36b1d86232e5c0650ccdcb7c63b70c4a27bb58cff0ec293c982afb9ba9a0f2c"
+    },
+    {
+      "path": "docs/product-planning/features/AUT.md",
+      "bytes": 13459,
+      "sha256": "9be4571c9b7f4089c52d3bb9d6bc7d193dd17886d909af7f4f9fb63ececfad7e"
+    },
+    {
+      "path": "docs/product-planning/features/BRU.md",
+      "bytes": 27446,
+      "sha256": "6c0c0ab69e91050f7ae4c9d2001926c767ab1bee42d3e8171601ab8bdb667f96"
+    },
+    {
+      "path": "docs/product-planning/features/CAN.md",
+      "bytes": 22677,
+      "sha256": "dbd14b7212f4d6962f7c57be582350c792087a392c1e5acf45356eac9bee37b7"
+    },
+    {
+      "path": "docs/product-planning/features/CLP.md",
+      "bytes": 9194,
+      "sha256": "d1c3bb63ca7dd15b33a3bf98c7e096dd776b1838c5e623c0234ddac017bd88fb"
+    },
+    {
+      "path": "docs/product-planning/features/COL.md",
+      "bytes": 23799,
+      "sha256": "896b7fecb32d81df8117fc28b0f38859dd300105997f242f6522b2893127140b"
+    },
+    {
+      "path": "docs/product-planning/features/DEV.md",
+      "bytes": 11330,
+      "sha256": "ef70a82ceef9119acebebac05faf1efabc6362e950ceaa44b3f8696f03629ac2"
+    },
+    {
+      "path": "docs/product-planning/features/EXT.md",
+      "bytes": 11230,
+      "sha256": "1eee3f5e8f9bc6f4c7d78b5baca8c0524fb7562c0cc1ef2c39f343d0ba5307f3"
+    },
+    {
+      "path": "docs/product-planning/features/FIL.md",
+      "bytes": 22460,
+      "sha256": "8c20b34bb81fa1d0848746e7e4b1887d8e9aad57744c4aa1d610782aed112f07"
+    },
+    {
+      "path": "docs/product-planning/features/FX.md",
+      "bytes": 107642,
+      "sha256": "b374f138ce62325c0c1831caa44c760e218b8e689491bda1ab7fe8e55a837c93"
+    },
+    {
+      "path": "docs/product-planning/features/GRA.md",
+      "bytes": 9417,
+      "sha256": "314d4256d44d828f0799327d73d11cf2c9bbc40a545088255ca87041faddc689"
+    },
+    {
+      "path": "docs/product-planning/features/GST.md",
+      "bytes": 11435,
+      "sha256": "677fe087edce3e0d2990a6357bc07b6a410df00517fc6311cd93910c9a1e88a3"
+    },
+    {
+      "path": "docs/product-planning/features/GUI.md",
+      "bytes": 15363,
+      "sha256": "2dee08f3fc53e8b6d22e1769af6bc9bf1f1ec2a656be7b4d440853b2f46df8d8"
+    },
+    {
+      "path": "docs/product-planning/features/HIS.md",
+      "bytes": 13468,
+      "sha256": "c05b2569fb85380a09ee0049cae11f3e5055c91b8025ae922590d21bf956ecf6"
+    },
+    {
+      "path": "docs/product-planning/features/INP.md",
+      "bytes": 18414,
+      "sha256": "37a8e4897e701e42a96ce55afde04a05111354e166427fa26781ec7974e3b0d9"
+    },
+    {
+      "path": "docs/product-planning/features/IO.md",
+      "bytes": 19641,
+      "sha256": "d9f783cacd71130754039abc5ecbd8c6a07aa3b48822f2f383c65eeaaa6dc2f9"
+    },
+    {
+      "path": "docs/product-planning/features/LAY.md",
+      "bytes": 26177,
+      "sha256": "adec426d27a05fe3b4022b81624b3e0af2e39b0c5fa11c98dfb2cfc924e3851d"
+    },
+    {
+      "path": "docs/product-planning/features/LIN.md",
+      "bytes": 18327,
+      "sha256": "149310d37b0a73fc17a1087d99512089cf895c408f033ba5466a7caa78deff3b"
+    },
+    {
+      "path": "docs/product-planning/features/NDE.md",
+      "bytes": 11593,
+      "sha256": "02e3f82583fde86339a59711e739d6537c2c94f2f2f249623d690482a40ea4f3"
+    },
+    {
+      "path": "docs/product-planning/features/PIX.md",
+      "bytes": 7102,
+      "sha256": "0d35b47abf69d0af7760bbf3bd7545fd052b82556dbc96d750b2f90c0390a042"
+    },
+    {
+      "path": "docs/product-planning/features/REC.md",
+      "bytes": 9424,
+      "sha256": "bc3172b09b9440e83aa6f96d56e8689d086b891bdabe7bf398f1b57f87101cb3"
+    },
+    {
+      "path": "docs/product-planning/features/REF.md",
+      "bytes": 13439,
+      "sha256": "600b067c578e82afa66af5baa0ae0d2147ab42cb47fa1f6dc11bd6162c62444d"
+    },
+    {
+      "path": "docs/product-planning/features/SAV.md",
+      "bytes": 18000,
+      "sha256": "24292b2da42e0a9f5ec62d3f629e63896274f0f6936c3a6be896a85e2a4a89f1"
+    },
+    {
+      "path": "docs/product-planning/features/SEL.md",
+      "bytes": 17688,
+      "sha256": "2dbd883365c50a14049af91b877de718010124366e3312a74eed03f969479942"
+    },
+    {
+      "path": "docs/product-planning/features/TRN.md",
+      "bytes": 17621,
+      "sha256": "26b27e431c5e4841be0bc6e9b761139fdba103be019f78d6a1498635654e32f8"
+    },
+    {
+      "path": "docs/product-planning/features/UI.md",
+      "bytes": 18085,
+      "sha256": "190cdf6d7cfb0eb49d9422cca61c30ca02f597ad871adeac0fa4fa0c9a83bdbc"
+    },
+    {
+      "path": "docs/product-planning/features/VEC.md",
+      "bytes": 18205,
+      "sha256": "1eabcaf4e68b15d89f829f3165b7e8c304c3c56bf2e61544e07a58cc5e11d2d3"
+    },
+    {
+      "path": "docs/product-planning/features/WET.md",
+      "bytes": 15904,
+      "sha256": "5d483b12cf06b50e7359de221e2e6755fbcd9790a97e1b6d5434aa0ef8090afa"
     },
     {
       "path": "docs/product-planning/features.json",
-      "bytes": 118480,
-      "sha256": "76b7b6877b80994a61bd41c1d5c3d845d83d8426e97c1467a06393c854b289b0"
+      "bytes": 496111,
+      "sha256": "3648fcc8fb4f3f8745ec4c9e2c20908b4cb3579eb1fc8d7c9e527a095793724e"
     },
     {
       "path": "docs/product-planning/legacy_catalog.json",
-      "bytes": 59992,
-      "sha256": "b5777ee955f2763199758bf31889b507be8440a5eefabf62511137b8ba6a12a5"
+      "bytes": 291460,
+      "sha256": "460fe33d6c058af8693e4923470c57f899519743d6014a558d36470ff5b0f65d"
     },
     {
       "path": "docs/product-planning/legacy_requirements.json",
-      "bytes": 58177,
-      "sha256": "cc63bbfa503006b9c312f9ed658b1ac08c2a1fc8e2adf8473804f2f17f46cf2b"
+      "bytes": 335442,
+      "sha256": "4c709454e533df920009b9bb2a5864ef21db7e44c651b8f1b6493ad366d06b01"
     }
   ]
 }

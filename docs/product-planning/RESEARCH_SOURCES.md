@@ -65,3 +65,167 @@
 - 競合全OS・全グレードの動作、実際の操作遅延、メモリ、誤操作率、最大作品条件は未検証。現行Affinityの端末別機能同一性、MyPaint旧版マニュアルの現行操作同一性も未確認。
 - 価格・契約・他社コードの利用可否は本案の採用根拠にしない。コードや素材は転用していない。OSSを使う判断は次段階で各対象ファイルのライセンスを確認する。
 - 論文由来の特定アルゴリズムは採用していない。今回の改善提案は製品体験の仮説であり、独自性や世界初を主張しない。
+
+## 今回追加・精査した出典
+
+確認日：2026-10-27（JST）。本文確認と公式検索掲載だけの確認を区別。旧41出典は前回の調査記録として維持し、今回再読したCS-02/04、KR-01/05、AF-02、RB-01も比較に使用。全URLの現時点疎通試験を行ったという意味ではない。
+
+### IB-05 — ibisPaint / Stabilizer
+
+- URL：https://ibispaint.com/lecture/index.jsp?lang=en&no=50
+- 該当箇所：§Opening / Stabilizer / Fade / Setting each brush
+- 版/日付：現行Web説明。14.0.11以前の方式との区別を本文が明記
+- 確認範囲：本文確認
+- 確認内容：ツールバーから開く。Real Time/After、一定/速度依存、全筆/現在筆、始終端長と形を区別
+- 反映先：BRU-003/008
+
+### IB-06 — ibisPaint / Surrounding Fill
+
+- URL：https://ibispaint.com/lecture/index.jsp?no=196
+- 該当箇所：Bucket Tool: Surrounding Fill / Surrounding Eraser
+- 版/日付：現行検索掲載、版番号未確認
+- 確認範囲：公式検索記載のみ。英語指定本文取得不可
+- 確認内容：囲み塗り/消しとGap Recognitionの紹介まで。確定/Undoの実手順は未確認
+- 反映先：FIL-002/005
+
+### PR-08 — Procreate / Brush Studio 5.4
+
+- URL：https://help.procreate.com/procreate/handbook/5.4/brushes/brush-studio-settings
+- 該当箇所：§Stroke Path / Stabilization / Taper
+- 版/日付：5.4 Handbook。配信アプリbuildとは同一と断定しない
+- 確認範囲：本文確認
+- 確認内容：StreamLineとStabilization/Motion Filtering、Pressure TaperとTouch Taperを区別。形/間隔/散布にも設定
+- 反映先：BRU-003/005/006/008
+
+### PR-09 — Procreate / Advanced Selection
+
+- URL：https://help.procreate.com/procreate/handbook/selections/selections-advanced
+- 該当箇所：§Reload Previous Selection
+- 版/日付：現行Web Handbook
+- 確認範囲：本文確認
+- 確認内容：Selectionボタン保持で直前選択を再読込。保持専用入口をIllustroでは通常Commandでも提供
+- 反映先：SEL-004/006
+
+### PR-10 — Procreate / Transform Interface
+
+- URL：https://help.procreate.com/procreate/handbook/transform/transform-interface-gestures
+- 該当箇所：§Transformation Methods / Interpolation / Reset / Gestures / Commit
+- 版/日付：現行Web Handbook
+- 確認範囲：本文確認
+- 確認内容：初回Freeform、補間初期Nearestの説明。枠内Pinchは内容、外は表示。内部Undoと終了後統合Undoを説明
+- 反映先：TRN-001/006/007, GST-001
+
+### KR-10 — Krita / Freehand Brush
+
+- URL：https://docs.krita.org/en/reference_manual/tools/freehand_brush.html
+- 該当箇所：§Hotkeys / Smoothing / Assistants
+- 版/日付：Manual 5.3.0、5.3で補正設定変更の記載
+- 確認範囲：本文確認
+- 確認内容：Ctrl一時採色、Shift径調整。補正OFF/Basic/Weighted/Stabilizer、筆圧平滑、終端、速度別強度を説明
+- 反映先：BRU-002/003/010
+
+### KR-11 — Krita / Tablet Settings
+
+- URL：https://docs.krita.org/en/reference_manual/preferences/tablet_settings.html
+- 該当箇所：Tablet tester
+- 版/日付：現行Manual
+- 確認範囲：公式検索記載確認
+- 確認内容：Tablet testerでマウスイベントとTabletセンサーを区別。全機器の実測結果ではない
+- 反映先：INP-002/007
+
+### CS-07 — CSP / Selection area
+
+- URL：https://help.clip-studio.com/en-us/manual_en/330_selection/Selection_area.htm
+- 該当箇所：§Polyline / Selection Pen / Magnetic lasso / Selection modes
+- 版/日付：現行Web Manual、版番号未記載
+- 確認範囲：本文確認
+- 確認内容：多角形は点打ち/Double tap又は始点で閉じる、Delete一頂点取消。選択筆と消し、加減交差、参照に吸着する投げ縄
+- 反映先：SEL-001/002/003
+
+### AD-07 — Photoshop / Smart Filters
+
+- URL：https://helpx.adobe.com/photoshop/desktop/effects-filters/smart-filters/apply-and-manage-smart-filters.html
+- 該当箇所：§Smart Filters / Function / Persistence
+- 版/日付：2026-10-04更新、Desktop
+- 確認範囲：本文確認
+- 確認内容：Smart Objectが前提、効果ごとの再編集/合成/並替、Mask。Lens Blur等はSmart非対応と記載
+- 反映先：FX-008/009/120, NDE-003
+
+### AD-08 — Photoshop / Curves
+
+- URL：https://helpx.adobe.com/photoshop/desktop/adjust-color/color-corrections/adjust-color-and-tone-with-curves.html
+- 該当箇所：§Graph / Control points / Channel-specific adjustments
+- 版/日付：2026-09-30更新、Desktop
+- 確認範囲：本文確認
+- 確認内容：入出力グラフの点とRGB各成分、画像上の対象階調操作。点数等の制約はその版の説明
+- 反映先：FX-103
+
+### AD-09 — Photoshop / Filter effects reference
+
+- URL：https://helpx.adobe.com/photoshop/desktop/effects-filters/blur-sharpen-filters/filter-effects-reference.html
+- 該当箇所：§Blur / Distort / Noise / compatibility
+- 版/日付：現行Desktop Web help
+- 確認範囲：本文確認
+- 確認内容：Box/Gaussian/Motion/Radial/Lensを区別、Lensの16/32bit非対応等を説明。全効果全深度対応と推測しない
+- 反映先：FX-116〜128
+
+### AD-10 — Photoshop / Adjustment layers
+
+- URL：https://helpx.adobe.com/photoshop/desktop/create-manage-layers/color-adjustment-fill-layers/work-with-adjustment-and-fill-layers.html
+- 該当箇所：§Create an adjustment layer
+- 版/日付：2026-02-23更新、Desktop
+- 確認範囲：本文確認
+- 確認内容：Layersの追加から調整を選びPropertiesで設定。元画素を変更しない調整種別一覧
+- 反映先：FX-101〜115
+
+### AF-06 — Affinity Photo 2 iPad / Displace
+
+- URL：https://affinity.help/photo2ipad/en-US.lproj/pages/Filters/filter_displace.html
+- 該当箇所：§About / Settings
+- 版/日付：Photo 2 iPad、現行Affinityへ自動一般化しない
+- 確認範囲：本文確認
+- 確認内容：ファイル/下層Map、Fit/原寸、Strength、Split、Protect alpha、Merge/Reset/Delete
+- 反映先：FX-128
+
+### AF-07 — Affinity Photo 2 iPad / Live Filters
+
+- URL：https://affinity.help/photo2ipad/en-US.lproj/pages/Layers/livefilters.html
+- 該当箇所：§Create / modify / move / mask
+- 版/日付：Photo 2 iPad、現行Affinityへ自動一般化しない
+- 確認範囲：本文確認
+- 確認内容：Live版だけの表示切替→選択層へ追加、Double tap再編集。選択からMask、効果Maskを筆/消し/Gradientで編集
+- 反映先：FX-008, LAY-005
+
+### MY-04 — MyPaint / v2.0 changes
+
+- URL：https://www.mypaint.app/en/blog/2020/02/16/mypaint-v2.0.0-released/
+- 該当箇所：§Linear compositing / View / inputs / Floodfill
+- 版/日付：2.0.0の変更説明、2020-02-16。最新版の全仕様ではない
+- 確認範囲：本文確認
+- 確認内容：線形合成/顔料混色は互換外観/層結合の注意あり。変調入力、隙間/Offset/Feather/取消の塗り。過大隙間設定の誤検出注意
+- 反映先：BRU-006, WET-001, FIL-002
+
+### RB-02 — Rebelle / Watercolor Properties
+
+- URL：https://escapemotions.com/products/rebelle/manual/latest/interface/panel-properties/watercolor/index.html
+- 該当箇所：§Watercolor Tool Properties / Modes
+- 版/日付：Rebelle 8 Web Manual、latestは更新可能
+- 確認範囲：本文確認
+- 確認内容：基本径/Opacity/Waterと詳細Brush Creatorを分離。Pressure/Lengthは既定非表示、Paint/Mix/Blendと保持/切替
+- 反映先：WET-001/002, BRU-005
+
+
+### W3-01 — 操作標的の設計根拠（競合出典数とは別）
+
+- 確認日：2026-10-27。W3C公式Understanding SC2.5.5/2.5.8の検索本文を確認。
+- https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+- https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+- 該当箇所：Success Criterion / Equivalent / Spacing。Enhancedの44とMinimumの24を混同しない。
+- 反映：A11-002、QR-15。Illustroの全規格準拠や検証済みを意味しない。
+
+### AD-11 — Photoshop web/Desktopの機能差とStyle種別
+
+- URL：https://helpx.adobe.com/photoshop/web/get-set-up/learn-the-basics/compare-photoshop-web-and-desktop-features.html
+- 確認日：2026-10-27。公式検索本文を確認、§Layers / Filters and effects。現行Web/desktop比較。
+- 確認内容：Stroke/Inner・Drop shadow/Glow/Overlay/Bevel等のStyle種別、Smart FilterのWeb/Desktop差。各Styleの全パラメータはこの一覧では未確認。
+- 反映先：FX-132〜136。具体パラメータ/直接操作はIllustro推奨案。
