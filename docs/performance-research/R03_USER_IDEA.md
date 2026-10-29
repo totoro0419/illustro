@@ -53,4 +53,4 @@ ID：**R03-U01**
 
 **未決定**：輪郭抽出の表現、タイル間の境界処理、軌跡の精密再現、重ね塗りの集約可能条件、複数描画経路の数と分岐コスト、数値合格線、正式な方式採否。
 
-[研究全体](README.md) · [R01方針](R01_USER_DIRECTION.md) · [R02方針](R02_USER_DIRECTION.md) · [R03の既存AI比較](AI_INDEPENDENT_PROPOSALS.md#r03) · [検証計画](VALIDATION_PLAN.md)
+[主要アプリの一次資料比較](R03_MAJOR_APPS_REVIEW.md) · [研究全体](README.md) · [R01方針](R01_USER_DIRECTION.md) · [R02方針](R02_USER_DIRECTION.md) · [R03の既存AI比較](AI_INDEPENDENT_PROPOSALS.md#r03) · [検証計画](VALIDATION_PLAN.md)
