@@ -1,3 +1,11 @@
+> **2026-10-30：14方針と247機能の統合基本設計**
+>
+> [統合監査](INTEGRATION_AUDIT.md) · [247機能への設計反映](FEATURE_INTEGRATION_MAP.md) · [統合基本設計](UNIFIED_SYSTEM_DESIGN.md) · [承認/比較待ち](OPEN_DECISIONS.md) · [最終レビュー](INTEGRATION_FINAL_REVIEW.md)
+>
+> 基本設計の統合と静的監査を実施。R10/R11の最終承認、WET詳細差分、方式/性能の検証は別の関門。元の個別方針/製品仕様/42案/過去実験は保持し、実装・試作・実測は行っていない。機械可読な現行状態は [feature_integration.json](feature_integration.json) と [91組の照合](integration_pairs.json)。初期の `candidate_decisions.json` / `validation_results.json` は当時の記録で、新しい承認や今回の監査を代替しない。
+>
+> 今回の検査：`python docs/performance-research/validate_integration.py`（資料の静的検査のみ）。旧生成器・実験の再実行は今回の手順ではない。上位README/開発段階の「第1段階」は2026-10-27時点の記録で、今回の指示は第3段階の基本設計統合に該当する。実装開始は含まない。
+
 # Illustro — 全247機能の性能・操作体験研究
 
 基準：PR #1 HEAD `92daaf5ac23a015a834141f7d08275d903711404`（2026-10-27 JST）。**研究一巡の成果。方式正式採用・製品実装・実機性能達成ではない。** 原仕様は変更していない。承認済み6方針の範囲を保ち、将来/保留/範囲外を含む247 ID全てを点検した。
