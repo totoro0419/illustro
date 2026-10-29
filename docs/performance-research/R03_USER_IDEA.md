@@ -29,6 +29,20 @@ ID：**R03-U01**
 - Skia の `SkPaint::getFillPath` は一定のstroke設定から塗り領域パスを生成する例。筆圧変調/高度な筆/全条件の高速化を保証するものではない。一次資料：https://chromium.googlesource.com/skia/+/ab2621d3e2d2055096b9fbebf16ee443e4ea90fb/site/user/api/SkPaint_Reference.md
 - MyPaint/Kritaの筆エンジン資料では、複数dabの合成による不透明度の非線形性、Smudgeの下地参照が明示される。単純な輪郭+一回合成だけでは全筆を同値にできない可能性。一次資料：https://github.com/mypaint/libmypaint/blob/master/brushsettings.json ／ https://docs.krita.org/en/reference_manual/brushes/brush_engines/mypaint_engine.html
 
+## R03-U02 — 中心線と太さを基準にした描画（共同発案・未採否）
+
+ユーザーの問い：「テクスチャや半透明は中心線と太さみたいな基準は？」
+
+**追加する研究候補**：画素ごとに中心線からの位置と局所的な太さ、軌跡方向・沿線位置を求め、被覆率、透明度、紙目・粒子・模様、筆圧変調を評価する。毎回輪郭ポリゴンを確定させる方式と、従来dab逐次合成の両方を比較する。
+
+- 基本となる筆跡表現は中心曲線 `C(s)` と半径/幅 `r(s)`、圧力や角度などの変調列。各タイルに影響する曲線区間だけを探索する候補。
+- 単色/非蓄積の半透明/軟らかいエッジ/テクスチャについて、`coverage × opacity × texture` 等の画素毎の作用を考える。紙・筆跡の模様座標は区別する。
+- **限界**：同一画素への反復dabで蓄積するflow、Smudge/湿式、散布・非円形先端、複雑な自己交差や幅急変は中心線＋太さだけでは結果を一意に定められない。作用履歴・局所テクスチャ座標・先端形状など追加情報または既存厳密処理が必要。近い中心点一本を選ぶだけの距離判定は、幅急変時の掃引領域を厳密に表せるとは限らない。
+- **高速化は未実証**：輪郭の再構成／タイル内の曲線区間探索／各画素の最近点計算／重なり処理の費用が、dab逐次処理を上回り得る。
+- 比較：A 従来逐次dab、B 輪郭・塗り、C 中心線・幅・シェーダー。ブラシ別に厳密出力差、CPU/GPU時間、仮線表示と本線確定の干渉、入力～画面応答を評価する。
+
+既存資料：[Skia SkPaint Reference](https://skia.googlesource.com/skia/+/bbe8ff9a1772b1d740528bc02e48f266c5dab309/site/user/api/SkPaint_Reference.md)（strokeとshaderの独立指定）、[Krita Opacity and Flow](https://docs.krita.org/en/reference_manual/brushes/brush_settings/opacity_and_flow.html)（stroke opacityとdab flowの区別）。これらはIllustroでの効果測定を代替しない。
+
 ## 設計上の判断と未決事項
 
 **判断済み**：不透明ブラシに範囲を制限せず、軽くて品質が維持できるなら採用する比較候補として扱う。
