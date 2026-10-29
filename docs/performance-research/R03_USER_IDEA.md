@@ -43,6 +43,10 @@ ID：**R03-U01**
 
 既存資料：[Skia SkPaint Reference](https://skia.googlesource.com/skia/+/bbe8ff9a1772b1d740528bc02e48f266c5dab309/site/user/api/SkPaint_Reference.md)（strokeとshaderの独立指定）、[Krita Opacity and Flow](https://docs.krita.org/en/reference_manual/brushes/brush_settings/opacity_and_flow.html)（stroke opacityとdab flowの区別）。これらはIllustroでの効果測定を代替しない。
 
+## 2026-10-29 初回試作の報告
+
+[R03_EXPERIMENT_PILOT.md](R03_EXPERIMENT_PILOT.md) で独立ブラウザのA（円dab反復）、B（Canvas2Dパスstroke）、C（タイル化された線分距離）を計測。Cは一部の条件で最速だが太線ではBが速く、Cの全面採用は不適切。AA・flow/色変調・GPU・実機条件は未検証。引き続きCを重点研究しつつBも比較対象として残す。
+
 ## 設計上の判断と未決事項
 
 **判断済み**：不透明ブラシに範囲を制限せず、軽くて品質が維持できるなら採用する比較候補として扱う。
