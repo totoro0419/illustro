@@ -1,0 +1,166 @@
+{
+  "schema": 1,
+  "kind": "independent_semantic_models_not_product_performance",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "seed_policy": "fixed per test",
+  "experiments": {
+    "E01": {
+      "seeds": 250,
+      "safe_schedules": 1000,
+      "cancel_closures": 250,
+      "save_fences": 250,
+      "naive_completion_order_failures": 250,
+      "selective_cancel_keeps_independent_edit": true,
+      "limit": "Pure integer commands with exact read/write sets; no pixels, I/O, crash or asynchronous runtime."
+    },
+    "E02": [
+      {
+        "chunk_work_units": 256,
+        "p50": 124.5,
+        "p95": 240.75,
+        "p99": 248.5,
+        "max": 248.5,
+        "total_work_units": 256,
+        "end_time_units": 264.0,
+        "input_count": 32
+      },
+      {
+        "chunk_work_units": 32,
+        "p50": 16.0,
+        "p95": 30.5,
+        "p99": 31.5,
+        "max": 31.5,
+        "total_work_units": 256,
+        "end_time_units": 264.0,
+        "input_count": 32
+      },
+      {
+        "chunk_work_units": 8,
+        "p50": 4.0,
+        "p95": 7.75,
+        "p99": 8.0,
+        "max": 8.0,
+        "total_work_units": 256,
+        "end_time_units": 264.0,
+        "input_count": 32
+      },
+      {
+        "chunk_work_units": 2,
+        "p50": 1.0,
+        "p95": 2.0,
+        "p99": 2.0,
+        "max": 2.0,
+        "total_work_units": 256,
+        "end_time_units": 264.0,
+        "input_count": 32
+      }
+    ],
+    "E03": {
+      "grid": [
+        65,
+        65
+      ],
+      "edited_cells": 1,
+      "changed_reachable_cells": 2081,
+      "changed_outside_radius4": 2044,
+      "far_point_now_reachable": [
+        64,
+        32
+      ],
+      "limit": "Binary grid connectivity only, not thick-line extraction or artistic intent."
+    },
+    "E04": {
+      "filter": "1D finite truncated Gaussian, radius=5, clamp global boundary",
+      "output_range": [
+        40,
+        60
+      ],
+      "safe_max_abs_error": 0.0,
+      "cropped_without_halo_max_abs_error": 0.1636000239308827,
+      "opaque_white_transparent_black_correct_straight": 1.0,
+      "naive_straight_average": 0.5,
+      "limit": "No 2D, ICC, GPU, infinite-support Gaussian, lens blur or deep stack tested."
+    },
+    "E05": {
+      "dimensions": [
+        4096,
+        4096
+      ],
+      "layers": 1000,
+      "bpp": 8,
+      "dense_all_layers_payload_bytes": 134217728000,
+      "one_touched_layer": [
+        {
+          "scene": "compact",
+          "block_side": 64,
+          "blocks": 1,
+          "payload_bytes": 32768
+        },
+        {
+          "scene": "compact",
+          "block_side": 128,
+          "blocks": 1,
+          "payload_bytes": 131072
+        },
+        {
+          "scene": "compact",
+          "block_side": 256,
+          "blocks": 1,
+          "payload_bytes": 524288
+        },
+        {
+          "scene": "compact",
+          "block_side": 512,
+          "blocks": 1,
+          "payload_bytes": 2097152
+        },
+        {
+          "scene": "scattered",
+          "block_side": 64,
+          "blocks": 2605,
+          "payload_bytes": 85360640
+        },
+        {
+          "scene": "scattered",
+          "block_side": 128,
+          "blocks": 1008,
+          "payload_bytes": 132120576
+        },
+        {
+          "scene": "scattered",
+          "block_side": 256,
+          "blocks": 256,
+          "payload_bytes": 134217728
+        },
+        {
+          "scene": "scattered",
+          "block_side": 512,
+          "blocks": 64,
+          "payload_bytes": 134217728
+        }
+      ],
+      "limit": "Payload arithmetic only. Excludes metadata, GPU padding, copies, mips, compression and allocator overhead. No block size selected."
+    },
+    "E06": {
+      "samples": 1024,
+      "matches": true,
+      "digest": "5aaa0129247f6dcf7c7e38d46f401071dd40b7c68f3d1a83b3e1f519e479e49b",
+      "limit": "Integer toy hash, not chosen as brush RNG; distribution and GPU portability not assessed."
+    }
+  },
+  "source_sha256": "16d6af0660efce232f2528281c6afe3f15341844354a15e04c83c52eb612dc67",
+  "assertions_passed": true,
+  "not_measured": [
+    "OS input",
+    "display latency",
+    "GPU",
+    "CPU usage",
+    "actual RAM",
+    "energy",
+    "temperature",
+    "usability",
+    "competitor performance",
+    "durability"
+  ]
+}
