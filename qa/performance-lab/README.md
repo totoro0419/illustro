@@ -1,5 +1,9 @@
 # Illustro Performance Lab — 実働検証ページ
 
+## Undo・Redo・保存の整合性検証（2026-10-30）
+
+[単体HTML](history.html)・[テスト手順と限界](HISTORY_TEST.md)。**公開先**： https://totoro0419.github.io/illustro/qa/performance-lab/history.html （GitHub Pagesの成功が前提）。Revisionを固定したUndo/Redo、正式計算の古い結果破棄、要求時点の保存スナップショット、読込を独立モデルで検証。Chromiumの8自動シナリオは合格したが、テスト環境のIndexedDBは代替ストレージでありAndroid実機でのブラウザ永続保存は未検証。正式IllustroのGPU/OPFS実装ではない。
+
 ## 仮線→正式線の切替実験（2026-10-30）
 
 [切替専用の単体HTML](handoff.html)を追加した。[検証手順・独立Chromium検査](HANDOFF_TEST.md)も参照。**公開ページ**： https://totoro0419.github.io/illustro/qa/performance-lab/handoff.html （Pages成功時）。これまでの5方式比較とは別に、ストローク表示の画素差、確定キュー、移動・拡大・回転、処理中のイベント記録を検査する。人工的な遅延を含む試験なので、製品の実機品質保証ではない。
