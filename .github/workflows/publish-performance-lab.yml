@@ -27,6 +27,10 @@ jobs:
         with:
           ref: research/interactive-performance-lab-2026-10-30
           persist-credentials: false
+      - name: Check lab JavaScript syntax
+        run: |
+          node --check qa/performance-lab/core.js
+          node --check qa/performance-lab/app.js
       - name: Prepare standalone page
         shell: bash
         run: |
