@@ -1,5 +1,9 @@
 # Illustro Performance Lab — 実働検証ページ
 
+## Androidカクつき調査と修正版（2026-10-30）
+
+[History Lab の原因・修正・実測報告](HISTORY_PERF_FIX.md)。修正前は状態更新のたびに作品を2回再生成しており、ユーザー提供Androidログではpointerイベント最大390.8ms遅延／rAF最大12.28秒の間隔が記録された。表示状態をキャッシュし、線追加を増分描画に変更。Linux Chromiumでは10本時のstatus呼出し52–57.6ms→計測分解能未満、Undo/Redo/Saveの8検査PASS。**Android実機の修正版の改善度は未確認**。
+
 ## Undo・Redo・保存の整合性検証（2026-10-30）
 
 [単体HTML](history.html)・[テスト手順と限界](HISTORY_TEST.md)。**公開先**： https://totoro0419.github.io/illustro/qa/performance-lab/history.html （GitHub Pagesの成功が前提）。Revisionを固定したUndo/Redo、正式計算の古い結果破棄、要求時点の保存スナップショット、読込を独立モデルで検証。Chromiumの8自動シナリオは合格したが、テスト環境のIndexedDBは代替ストレージでありAndroid実機でのブラウザ永続保存は未検証。正式IllustroのGPU/OPFS実装ではない。
