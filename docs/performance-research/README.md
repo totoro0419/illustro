@@ -1,4 +1,7 @@
 > **2026-10-30：14方針と247機能の統合基本設計**
+
+> **製品仕様の後続決定（2026-10-30）**：[製品仕様確定版](../product-planning/FINAL_PRODUCT_SPEC.md)でD01/02/03/05の製品上の意味と水彩詳細範囲を決定した。R10/R11は当初「推奨」として記録された歴史資料であり、今の製品判断と実際の方式・性能の合格は別。全247機能の[現行採否](../product-planning/FINAL_PRODUCT_SCOPE.json)も参照。
+
 >
 > [統合監査](INTEGRATION_AUDIT.md) · [247機能への設計反映](FEATURE_INTEGRATION_MAP.md) · [統合基本設計](UNIFIED_SYSTEM_DESIGN.md) · [承認/比較待ち](OPEN_DECISIONS.md) · [最終レビュー](INTEGRATION_FINAL_REVIEW.md)
 >
