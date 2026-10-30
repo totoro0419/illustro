@@ -1,0 +1,48 @@
+name: Publish Illustro Performance Lab
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-performance-lab.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-performance-lab
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out verified performance lab branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/interactive-performance-lab-2026-10-30
+          persist-credentials: false
+      - name: Prepare standalone page
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s qa/performance-lab/index.html
+          grep -q 'IllustroBenchCore' qa/performance-lab/index.html
+          mkdir -p _site/qa/performance-lab
+          cp qa/performance-lab/index.html _site/qa/performance-lab/index.html
+          printf '%s\n' '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./qa/performance-lab/"><title>Illustro Performance Lab</title><a href="./qa/performance-lab/">Open Performance Lab</a>' > _site/index.html
+          touch _site/.nojekyll
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
