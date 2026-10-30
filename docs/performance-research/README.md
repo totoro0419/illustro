@@ -1,3 +1,5 @@
+> **2026-10-30 製品仕様決定の追記：** [製品確定版](../product-planning/FINAL_PRODUCT_SPEC.md)でD01/D02/D03/D05を製品上の判断として採用。247機能の最新スコープは[確定台帳](../product-planning/FEATURE_SCOPE_FINAL_247.json)。[統合監査](INTEGRATION_AUDIT.md)と以下の過去研究本文は当時の状態を保存しており、「承認待ち」は後続の製品意味の未決定を示さない。アルゴリズムと性能は今後検証。
+
 > **2026-10-30：14方針と247機能の統合基本設計**
 >
 > [統合監査](INTEGRATION_AUDIT.md) · [247機能への設計反映](FEATURE_INTEGRATION_MAP.md) · [統合基本設計](UNIFIED_SYSTEM_DESIGN.md) · [承認/比較待ち](OPEN_DECISIONS.md) · [最終レビュー](INTEGRATION_FINAL_REVIEW.md)
