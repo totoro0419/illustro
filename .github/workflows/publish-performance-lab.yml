@@ -31,17 +31,21 @@ jobs:
         run: |
           node --check qa/performance-lab/core.js
           node --check qa/performance-lab/app.js
+          node qa/performance-lab/check-inline.cjs
       - name: Prepare standalone page
         shell: bash
         run: |
           set -euo pipefail
           test -s qa/performance-lab/index.html
           test -s qa/performance-lab/handoff.html
+          test -s qa/performance-lab/history.html
+          grep -q 'window.__historyLab=' qa/performance-lab/history.html
           grep -q 'window.__handoffTest' qa/performance-lab/handoff.html
           grep -q 'IllustroBenchCore' qa/performance-lab/index.html
           mkdir -p _site/qa/performance-lab
           cp qa/performance-lab/index.html _site/qa/performance-lab/index.html
           cp qa/performance-lab/handoff.html _site/qa/performance-lab/handoff.html
+          cp qa/performance-lab/history.html _site/qa/performance-lab/history.html
           printf '%s\n' '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./qa/performance-lab/"><title>Illustro Performance Lab</title><a href="./qa/performance-lab/">Open Performance Lab</a>' > _site/index.html
           touch _site/.nojekyll
       - name: Setup GitHub Pages
