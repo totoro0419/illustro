@@ -1,4 +1,5 @@
 name: Publish Illustro Performance Lab
+# Default-branch trigger: publish verified lab content including history.html.
 on:
   push:
     branches: [main]
