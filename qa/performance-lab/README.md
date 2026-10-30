@@ -1,0 +1,61 @@
+# Illustro Performance Lab — 実働検証ページ
+
+## Androidカクつき調査と修正版（2026-10-30）
+
+[History Lab の原因・修正・実測報告](HISTORY_PERF_FIX.md)。修正前は状態更新のたびに作品を2回再生成しており、ユーザー提供Androidログではpointerイベント最大390.8ms遅延／rAF最大12.28秒の間隔が記録された。表示状態をキャッシュし、線追加を増分描画に変更。Linux Chromiumでは10本時のstatus呼出し52–57.6ms→計測分解能未満、Undo/Redo/Saveの8検査PASS。**Android実機の修正版の改善度は未確認**。
+
+## Undo・Redo・保存の整合性検証（2026-10-30）
+
+[単体HTML](history.html)・[テスト手順と限界](HISTORY_TEST.md)。**公開先**： https://totoro0419.github.io/illustro/qa/performance-lab/history.html （GitHub Pagesの成功が前提）。Revisionを固定したUndo/Redo、正式計算の古い結果破棄、要求時点の保存スナップショット、読込を独立モデルで検証。Chromiumの8自動シナリオは合格したが、テスト環境のIndexedDBは代替ストレージでありAndroid実機でのブラウザ永続保存は未検証。正式IllustroのGPU/OPFS実装ではない。
+
+## 仮線→正式線の切替実験（2026-10-30）
+
+[切替専用の単体HTML](handoff.html)を追加した。[検証手順・独立Chromium検査](HANDOFF_TEST.md)も参照。**公開ページ**： https://totoro0419.github.io/illustro/qa/performance-lab/handoff.html （Pages成功時）。これまでの5方式比較とは別に、ストローク表示の画素差、確定キュー、移動・拡大・回転、処理中のイベント記録を検査する。人工的な遅延を含む試験なので、製品の実機品質保証ではない。
+
+**2026-10-30 / 独立プロトタイプ / Illustro本体の実装ではありません。**
+
+
+## 公開URLと単体HTML
+
+GitHub Pages配信用ワークフロー： [.github/workflows/publish-performance-lab.yml](../../.github/workflows/publish-performance-lab.yml)。配信先として指定したパス：
+
+`https://totoro0419.github.io/illustro/qa/performance-lab/`
+
+Pagesの有効化・公開完了はブラウザからの応答で別途確認する必要がある。404の場合はGitHubリポジトリの **Settings → Pages** および **Actions → Publish Illustro Performance Lab** の状態を確認すること。
+
+現在の `index.html` は `core.js` と `app.js` をHTML内部に組み込んだ**単体実行版**であり、ファイル単体をChromeなどのブラウザで開ける。GitHubのファイルプレビューや一部アプリ内プレビューはJavaScript実行を許可しない場合があるので、外部ブラウザで開く。計測コードとNodeテストの分離ファイルも継続して維持。
+
+## 実行方法
+
+このディレクトリの `index.html` をブラウザで開いてください。相対読み込みする `core.js` と `app.js` が必要です。外部ライブラリ・通信・ログイン不要の静的ページです。ローカルファイルを許可しないブラウザではHTTPサーバーで同じディレクトリを配信してください。**GitHubのコード閲覧ページは実行ページではなく、Pages公開には別途公開設定が必要**です。
+
+「全方式を測定」でブラウザ上で5方式を実測。負荷は軽/標準/大を選択できます。「計測JSONを保存」で端末内に結果を保存します。 2026-10-30の改訂で、JSONには `interaction`（pointerの種類・イベント発生時刻・本線処理中に受信した指イベント数・描画計算の時間窓）を追加しました。**ベンチマークを終えた後でも、JSONを保存する時点のpointer記録を含めます**。接触位置の座標は保存しません。User-Agent等が含まれ得るため、共有前に確認してください。
+
+上段ではペン/マウスで線を描き、指1本で移動、指2本で拡大・回転できます。PCならShift+ドラッグでPan。「太い線を大量に追加」を押したら直ちに指1本でドラッグ、可能なら2本でピンチ。 **画面の「本線処理中に届いた指イベント」を確認**し、比較ベンチマークの後にJSONを保存して解析してください。重い処理中のpointerイベントが記録されたか（JS受付とOS検出は別）を検査します。「太い線を大量に追加」を実行している最中に指入力を試し、pointerイベント・pointercancel・rAF間隔・本線の処理待ちを観測できます。「仮画像→正式」で歪み変形の先行プレビューと正式結果の分割計算を確認できます。
+
+## 方式A/Bと正確性
+
+| 対象 | 参照方式 | 比較方式 | 正確性 |
+|---|---|---|---|
+| ブラシ | 同期的なCPU円形スタンプ | 同じ計算を行ごとに分割しyield | 完成RGBAが画素単位で一致 |
+| 塗りつぶし | 4連結BFS | 走査線型の探索 | 出力Maskが完全一致 |
+| 投げ縄 | 各画素の多角形判定 | 行の交点を利用した走査線 | 出力Maskが完全一致 |
+| ぼかし | 2次元の箱型平均 | 横・縦の分離箱型平均 | 出力RGBAが完全一致。**Gaussianではない** |
+| 歪み | 原寸の全画素評価 | 1/4解像度仮画像、別途正式分割評価 | 仮画像は近似。正式分割結果は参照と完全一致 |
+
+正確性は**この試験の8bit処理とfixtureに限定**されます。高精度色、画素合成、Masks、Undo/Redo、Save、Worker、GPU、非破壊変形後の本格描画は未実装です。ブラシ本線を分割することは、完了までの総時間を減らすことを保証しません。塗りつぶしの走査線案は今回むしろ遅い条件がありました。
+
+## 実施済みの検証
+
+- `node tests.cjs`：Node.js 22+標準機能だけで、矩形・透明RGBA・多角形・ランダムFill・入力原本保持・非同期ブラシ・歪みの参照一致とキャンセルを検査。計測ログを出す場合は環境変数`LAB_OUTPUT`を設定。
+- Linuxコンテナで同等のローカル独立スイート**12グループ**を実行、失敗0。
+- Playwright + Chromiumヘッドレスで、5方式のブラウザ比較、JSON保存、太筆分割、歪み仮画像切替、390px画面、CDP合成2指操作等**9項目**を検査、失敗0。測定は実機ペンではなくLinuxコンテナ、ホスト制約のため同じHTML/JSをページへ直接読み込む方法で実行。
+- 測定要約： [RESULTS.md](RESULTS.md)。
+
+**Androidタブレットの実機試験・入力消失の原因解明・Pen-to-Photon・GPU/CPU/メモリ/電池・他アプリ比較は未実施。** JSでpointerイベントが見えないことと、OS側で触覚を検出しなかったことは同義ではありません。実機試験では高速度撮影やOS側の別計測と分けて解析します。
+
+## 製品仕様との位置関係
+
+[確定製品仕様](../../docs/product-planning/FINAL_PRODUCT_SPEC.md)・[統合研究の検証計画](../../docs/performance-research/VALIDATION_PLAN.md)・[品質要件](../../docs/product-planning/QUALITY_REQUIREMENTS.md)。
+
+これは方式比較を開始した最小の独立プロトタイプです。**比較候補をIllustroの採用方式に昇格させたり、正式な品質要件に合格したと認定するものではありません。**
