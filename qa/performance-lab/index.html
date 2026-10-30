@@ -14,13 +14,14 @@
 <header><div class="mark"><span class="logo" aria-hidden="true">I</span><div><div class="eyebrow">Illustro / Research</div><h1>Performance Lab</h1></div></div><span class="pill">独立検証 • 正式アプリではありません</span></header>
 <main>
 <p class="lead">ブラシ・変形・塗りつぶし・投げ縄・箱型ぼかしの方式を、同じ入力と正解画像で比較します。Androidではタッチ操作しながら計測できます。</p>
+<p class="small">このHTMLはJavaScriptを内蔵しており、単体で開けます。プレビュー画面で動かない場合は通常のChromeなどのブラウザで開いてください。</p>
 <div class="grid">
 <section class="card" aria-labelledby="canvas-title"><div class="card-header"><h2 id="canvas-title">描画・指ナビの追従実験</h2><div class="controls"><button id="reset">初期化</button><button id="heavy">太い線を大量に追加</button></div></div>
 <div class="canvas-wrap" id="viewport" aria-label="試験キャンバス。ペンやマウスで描画し、指で移動・拡大・回転できます"><div class="world" id="world"><canvas id="drawing"></canvas><canvas class="preview" id="warp-overlay"></canvas><canvas class="preview" id="stroke-overlay"></canvas></div></div>
 <div class="status"><span id="touch-count">指入力 0</span><span id="pen-count">ペン入力 0</span><span id="queue-count">本線処理待ち 0</span><span id="frame-gap">最大フレーム間隔 —</span></div>
 <p class="hint">ペン/マウス：線を描く。指：移動（1本）・拡縮と回転（2本）。PCではShift+ドラッグで移動できます。入力イベントの回数はOSの接触検出とは異なります。</p>
 <div class="range"><label for="warp-strength">歪みの強さ</label><input type="range" id="warp-strength" min="0" max="48" value="24" step="1"/><output id="warp-strength-value">24</output><button id="run-warp">仮画像→正式</button></div>
-<div class="warning" id="live-status" role="status" aria-live="polite">画素はCPU上で計算します。正式なIllustroのGPUレンダラーとは別物です。</div>
+<div class="warning" id="live-status" role="status" aria-live="polite">起動処理中です。操作が無反応の場合はJavaScriptの実行が禁止されているビューを使っている可能性があります。</div>
 </section>
 <section class="card" aria-labelledby="metric-title"><div class="card-header"><h2 id="metric-title">入力・描画の観測</h2></div><div class="kv"><span>受信したpointerイベント</span><strong id="pointer-events">0</strong></div><div class="kv"><span>pointercancel</span><strong id="pointer-cancel">0</strong></div><div class="kv"><span>イベント配送→JS受付の最大差</span><strong id="input-lag">—</strong></div><div class="kv"><span>最大rAF間隔（開始後）</span><strong id="max-gap">—</strong></div><div class="kv"><span>正式描画完了数</span><strong id="commit-count">0</strong></div><div class="kv"><span>正式筆の完了待ち合計</span><strong id="commit-wall">—</strong></div><div class="kv"><span>直近の分割yield数</span><strong id="yield-count">—</strong></div><div class="kv"><span>表示ズーム / 回転</span><strong id="zoom-value">100% / 0°</strong></div><p class="hint">イベントの <code>timeStamp</code> とJS受付時刻との差は参考値です。画面が実際に光った時刻、OSが配送できなかった接触、GPU時間は測れません。高速度撮影やAndroid側の計測が別途必要です。</p></section>
 </div>
@@ -29,5 +30,323 @@
 <section class="card"><h2>比較上の制約</h2><p class="small">このラボの比較は、同一のCPU JavaScript実装におけるアルゴリズムとタスク分割の試験です。主な処理は基準との完全一致をチェックします。変形仮画像だけは意図的に近似であり、精細な正式結果と同値ではありません。実際の高精度筆・ICC/色管理・特殊合成・GPU/Worker・保存復元・1000層は未実装・未実証です。良い数値だけを製品へ転記しないでください。</p><p class="small">記録JSONにはブラウザ、DPR、デバイスメモリ（取得可能な場合）、測定値、観測イベント、検査結果を含みます。個人情報を含み得るUser-Agentを外部に自動送信しません。作成した記録は端末内で保存します。</p></section>
 <footer>Illustro Performance Lab • 実験コード。既存アプリのソースや制作データを変更しません。</footer>
 </main>
-<script src="./core.js"></script><script src="./app.js"></script>
+<script>
+/* Illustro independent performance lab. No app-code dependencies. */
+(function (root, make) {
+  const core = make();
+  if (typeof module !== 'undefined' && module.exports) module.exports = core;
+  if (root) root.IllustroBenchCore = core;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  function now() { return performance.now(); }
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  function image(w, h, data) { return {w, h, data: data || new Uint8ClampedArray(w*h*4)}; }
+  function clone(a) { return image(a.w, a.h, new Uint8ClampedArray(a.data)); }
+  function fixture(w, h, seed=2037) {
+    const out=image(w,h), p=out.data;
+    let v=seed >>> 0;
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++) {
+      const i=4*(y*w+x);
+      v=(Math.imul(1664525,v)+1013904223)>>>0;
+      const cx=Math.floor(x/(Math.max(8,Math.floor(w/7))));
+      const cy=Math.floor(y/(Math.max(8,Math.floor(h/7))));
+      const band=(((cx*11+cy*17)%7)+7)%7;
+      p[i]=clamp(18+band*33+((v>>>24)&7),0,255);
+      p[i+1]=clamp(34+(band*19)%179+((v>>>21)&3),0,255);
+      p[i+2]=clamp(50+(band*23)%155+((v>>>19)&3),0,255);
+      p[i+3]=255;
+    }
+    return out;
+  }
+  function strokePoints(w,h,count=800) {
+    const pts=[];
+    for(let i=0;i<count;i++) {
+      const t=i/Math.max(1,count-1);
+      pts.push({x:Math.round(w*(.08+.84*t)),y:Math.round(h*(.52+.34*Math.sin(t*24))) });
+    }
+    return pts;
+  }
+  function paintStampRows(dst, point, radius, fromY, toY, rgb, alpha) {
+    const w=dst.w,h=dst.h,d=dst.data,r2=radius*radius;
+    const left=clamp(Math.floor(point.x-radius),0,w-1),right=clamp(Math.ceil(point.x+radius),0,w-1);
+    const a=clamp(alpha|0,0,255),ina=255-a;
+    for(let y=fromY;y<toY;y++) for(let x=left;x<=right;x++) {
+      const dx=x+.5-point.x,dy=y+.5-point.y;
+      if(dx*dx+dy*dy>r2)continue;
+      const i=4*(y*w+x);
+      d[i]=Math.floor((d[i]*ina+rgb[0]*a+127)/255);
+      d[i+1]=Math.floor((d[i+1]*ina+rgb[1]*a+127)/255);
+      d[i+2]=Math.floor((d[i+2]*ina+rgb[2]*a+127)/255);
+      d[i+3]=255;
+    }
+  }
+  function strokeSync(dst,pts,radius=16,rgb=[240,72,44],alpha=170) {
+    for(const p of pts) {
+      const low=clamp(Math.floor(p.y-radius),0,dst.h);
+      const high=clamp(Math.ceil(p.y+radius)+1,0,dst.h);
+      if(low<high)paintStampRows(dst,p,radius,low,high,rgb,alpha);
+    }
+    return dst;
+  }
+  function yieldTask() {return new Promise(r=>setTimeout(r,0));}
+  async function strokeChunked(dst,pts,radius=16,rgb=[240,72,44],alpha=170,budgetMs=5,stop) {
+    let ticks=0,deadline=now()+Math.max(.1,budgetMs);
+    for(let n=0;n<pts.length;n++) {
+      const p=pts[n],low=clamp(Math.floor(p.y-radius),0,dst.h);
+      const high=clamp(Math.ceil(p.y+radius)+1,0,dst.h);
+      for(let y=low;y<high;y++) {
+        if(stop && stop())return {dst,cancelled:true,yields:ticks};
+        paintStampRows(dst,p,radius,y,y+1,rgb,alpha);
+        if(now()>=deadline) {ticks++;await yieldTask();deadline=now()+Math.max(.1,budgetMs);}
+      }
+    }
+    return {dst,cancelled:false,yields:ticks};
+  }
+  function match(d,index,base,threshold) {
+    return Math.abs(d[index]-base[0])<=threshold&&Math.abs(d[index+1]-base[1])<=threshold&&Math.abs(d[index+2]-base[2])<=threshold&&Math.abs(d[index+3]-base[3])<=threshold;
+  }
+  function fillBfs(src,sx,sy,threshold=10) {
+    const {w,h,data:d}=src,mask=new Uint8Array(w*h);
+    sx=Math.floor(sx);sy=Math.floor(sy);if(sx<0||sy<0||sx>=w||sy>=h)return mask;
+    const base=Array.from(d.subarray(4*(sy*w+sx),4*(sy*w+sx)+4));
+    const queue=new Int32Array(w*h),seen=new Uint8Array(w*h);
+    let head=0,tail=0;const start=sy*w+sx;queue[tail++]=start;seen[start]=1;
+    while(head<tail){const i=queue[head++];if(!match(d,4*i,base,threshold))continue;
+      mask[i]=255;const x=i%w,y=(i-x)/w;
+      if(x>0&&!seen[i-1]){seen[i-1]=1;queue[tail++]=i-1;}
+      if(x+1<w&&!seen[i+1]){seen[i+1]=1;queue[tail++]=i+1;}
+      if(y>0&&!seen[i-w]){seen[i-w]=1;queue[tail++]=i-w;}
+      if(y+1<h&&!seen[i+w]){seen[i+w]=1;queue[tail++]=i+w;}
+    }
+    return mask;
+  }
+  function fillScanline(src,sx,sy,threshold=10) {
+    const {w,h,data:d}=src,mask=new Uint8Array(w*h);
+    sx=Math.floor(sx);sy=Math.floor(sy);if(sx<0||sy<0||sx>=w||sy>=h)return mask;
+    const base=Array.from(d.subarray(4*(sy*w+sx),4*(sy*w+sx)+4));
+    const seen=new Uint8Array(w*h),queue=[];let head=0;
+    const first=sy*w+sx;queue.push(first);seen[first]=1;
+    while(head<queue.length){const index=queue[head++],y=Math.floor(index/w),x=index%w;
+      if(mask[index]||!match(d,index*4,base,threshold))continue;
+      let lo=x,hi=x;
+      while(lo>0&&!mask[y*w+lo-1]&&match(d,4*(y*w+lo-1),base,threshold))lo--;
+      while(hi+1<w&&!mask[y*w+hi+1]&&match(d,4*(y*w+hi+1),base,threshold))hi++;
+      for(let a=lo;a<=hi;a++)mask[y*w+a]=255;
+      for(const ny of [y-1,y+1]){
+        if(ny<0||ny>=h)continue;
+        for(let a=lo;a<=hi;a++){
+          const i=ny*w+a;
+          if(mask[i]||seen[i]||!match(d,4*i,base,threshold))continue;
+          seen[i]=1;queue.push(i);
+        }
+      }
+    }
+    return mask;
+  }
+  function blurDirect(src,radius=8) {
+    const {w,h,data:s}=src,d=new Uint8ClampedArray(s.length),r=Math.max(0,radius|0),diam=2*r+1,den=diam*diam;
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++) {
+      const sums=[0,0,0,0];
+      for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+        const j=4*(clamp(y+dy,0,h-1)*w+clamp(x+dx,0,w-1));
+        for(let c=0;c<4;c++)sums[c]+=s[j+c];
+      }
+      const i=4*(y*w+x);for(let c=0;c<4;c++)d[i+c]=Math.round(sums[c]/den);
+    }
+    return image(w,h,d);
+  }
+  function blurSeparable(src,radius=8) {
+    const {w,h,data:s}=src,d=new Uint8ClampedArray(s.length),r=Math.max(0,radius|0),diam=2*r+1;
+    const rows=new Float64Array(s.length);
+    for(let y=0;y<h;y++)for(let c=0;c<4;c++){
+      let sum=0;
+      for(let k=-r;k<=r;k++)sum+=s[4*(y*w+clamp(k,0,w-1))+c];
+      for(let x=0;x<w;x++){
+        rows[4*(y*w+x)+c]=sum;
+        if(x+1<w)sum+=s[4*(y*w+clamp(x+r+1,0,w-1))+c]-s[4*(y*w+clamp(x-r,0,w-1))+c];
+      }
+    }
+    for(let x=0;x<w;x++)for(let c=0;c<4;c++){
+      let sum=0;
+      for(let k=-r;k<=r;k++)sum+=rows[4*(clamp(k,0,h-1)*w+x)+c];
+      for(let y=0;y<h;y++){
+        d[4*(y*w+x)+c]=Math.round(sum/(diam*diam));
+        if(y+1<h)sum+=rows[4*(clamp(y+r+1,0,h-1)*w+x)+c]-rows[4*(clamp(y-r,0,h-1)*w+x)+c];
+      }
+    }
+    return image(w,h,d);
+  }
+  function polygonPath(w,h,count=320){
+    const points=[];for(let i=0;i<count;i++){
+      const a=i/count*Math.PI*2;
+      const r=.32+.1*Math.cos(7*a)+.045*Math.sin(13*a);
+      points.push({x:w*(.5+r*Math.cos(a)),y:h*(.5+r*Math.sin(a))});
+    }return points;
+  }
+  function lassoPoint(srcW,srcH,poly){
+    const mask=new Uint8Array(srcW*srcH);
+    for(let y=0;y<srcH;y++)for(let x=0;x<srcW;x++){
+      const cx=x+.5,cy=y+.5;let inside=false;
+      for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+        const a=poly[i],b=poly[j];
+        if((a.y>cy)!==(b.y>cy) && cx<(b.x-a.x)*(cy-a.y)/(b.y-a.y)+a.x)inside=!inside;
+      }
+      if(inside)mask[y*srcW+x]=255;
+    }return mask;
+  }
+  function lassoScanline(w,h,poly){
+    const mask=new Uint8Array(w*h);
+    for(let y=0;y<h;y++){
+      const cy=y+.5,ints=[];
+      for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+        const a=poly[i],b=poly[j];
+        if((a.y>cy)!==(b.y>cy))ints.push((b.x-a.x)*(cy-a.y)/(b.y-a.y)+a.x);
+      }
+      ints.sort((a,b)=>a-b);
+      for(let n=0;n+1<ints.length;n+=2){
+        const lo=clamp(Math.ceil(ints[n]-.5),0,w),hi=clamp(Math.ceil(ints[n+1]-.5),0,w);
+        for(let x=lo;x<hi;x++)mask[y*w+x]=255;
+      }
+    }return mask;
+  }
+  function sample(src,x,y,c){
+    const {w,h,data}=src;
+    const x0=Math.floor(x),y0=Math.floor(y),fx=x-x0,fy=y-y0;
+    const xA=clamp(x0,0,w-1),xB=clamp(x0+1,0,w-1),yA=clamp(y0,0,h-1),yB=clamp(y0+1,0,h-1);
+    const a=data[4*(yA*w+xA)+c],b=data[4*(yA*w+xB)+c];
+    const cc=data[4*(yB*w+xA)+c],dd=data[4*(yB*w+xB)+c];
+    return Math.round((a*(1-fx)+b*fx)*(1-fy)+(cc*(1-fx)+dd*fx)*fy);
+  }
+  function warpAt(src,out,outY0,outY1,strength=24,scale=1){
+    const {w,h}=src;
+    for(let y=outY0;y<outY1;y++)for(let x=0;x<out.w;x++){
+      const fx=(x+.5)*scale-.5,fy=(y+.5)*scale-.5;
+      const dx=strength*Math.sin((fy/h)*Math.PI*4)*Math.sin((fx/w)*Math.PI*2);
+      const dy=strength*.65*Math.sin((fx/w)*Math.PI*3)*Math.sin((fy/h)*Math.PI*2);
+      const idx=4*(y*out.w+x);
+      for(let c=0;c<4;c++)out.data[idx+c]=sample(src,fx+dx,fy+dy,c);
+    }
+  }
+  function warpFull(src,strength=24){const out=image(src.w,src.h);warpAt(src,out,0,out.h,strength,1);return out;}
+  function warpPreview(src,strength=24,factor=4){
+    const f=Math.max(1,Math.floor(factor)),out=image(Math.ceil(src.w/f),Math.ceil(src.h/f));warpAt(src,out,0,out.h,strength,f);return out;
+  }
+  async function warpChunked(src,strength=24,budgetMs=5,stop){
+    const out=image(src.w,src.h);let cursor=0,yields=0,deadline=now()+Math.max(.1,budgetMs);
+    while(cursor<out.h){if(stop&&stop())return {dst:out,cancelled:true,yields};
+      warpAt(src,out,cursor,cursor+1,strength,1);cursor++;
+      if(now()>=deadline){yields++;await yieldTask();deadline=now()+Math.max(.1,budgetMs);}
+    }return {dst:out,cancelled:false,yields};
+  }
+  function compare(a,b){const da=a.data||a,db=b.data||b;if(da.length!==db.length)return {equal:false,different:Math.max(da.length,db.length),maxDifference:255};
+    let diff=0,max=0,sum=0;for(let i=0;i<da.length;i++){const d=Math.abs(da[i]-db[i]);if(d){diff++;if(d>max)max=d;sum+=d;}}
+    return {equal:diff===0,different:diff,maxDifference:max,meanAbsoluteDifference:sum/da.length};
+  }
+  return {image,clone,fixture,strokePoints,strokeSync,strokeChunked,fillBfs,fillScanline,blurDirect,blurSeparable,polygonPath,lassoPoint,lassoScanline,warpFull,warpPreview,warpChunked,compare,now};
+});
+
+</script><script>
+(function(){'use strict';
+const C=window.IllustroBenchCore;
+const $=id=>document.getElementById(id);
+const vw=$('viewport'),world=$('world'),base=$('drawing'),over=$('stroke-overlay'),warpOver=$('warp-overlay');
+const bx=base.getContext('2d',{alpha:false,willReadFrequently:false}),px=over.getContext('2d'),wx=warpOver.getContext('2d');
+const W=512,H=384;for(const el of [base,over,warpOver]){el.width=W;el.height=H;el.style.width=W+'px';el.style.height=H+'px';}
+world.style.width=W+'px';world.style.height=H+'px';
+let src=C.fixture(W,H,213),current=C.clone(src),active=null,pending=[],rendering=false,transformId=0,warpDisplay=false;
+let view={tx:0,ty:0,s:1,theta:0};const touches=new Map();let penTouches=0,gesture=null,mousePan=null,ptrCount=0,cancelCount=0,eventLagMax=0,maxGap=0,commits=0,commitTotal=0,lastYield=0,rafLast=0;
+let report=null;
+function text(id,s){$(id).textContent=s;}
+function initialView(){const r=vw.getBoundingClientRect();view={tx:(r.width-W*Math.min((r.width-32)/W,(r.height-32)/H))/2,ty:(r.height-H*Math.min((r.width-32)/W,(r.height-32)/H))/2,s:Math.min((r.width-32)/W,(r.height-32)/H),theta:0};applyView();}
+function applyView(){const {tx,ty,s,theta}=view;world.style.transform='translate('+tx+'px,'+ty+'px) rotate('+theta+'rad) scale('+s+')';text('zoom-value',Math.round(s*100)+'% / '+Math.round(theta*180/Math.PI)+'°');}
+function local(e){const r=vw.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+function docXY(pos,st=view){const x=(pos.x-st.tx)/st.s,y=(pos.y-st.ty)/st.s,c=Math.cos(st.theta),s=Math.sin(st.theta);return{x:c*x+s*y,y:-s*x+c*y};}
+function drawBitmap(a){bx.putImageData(new ImageData(a.data,a.w,a.h),0,0);}
+function drawPreview(){px.clearRect(0,0,W,H);const all=active?[...pending,active]:pending;for(const line of all){px.strokeStyle='rgba(236,70,43,.78)';px.fillStyle='rgba(236,70,43,.78)';px.lineWidth=line.radius*2;px.lineJoin='round';px.lineCap='round';px.beginPath();for(let i=0;i<line.points.length;i++){const p=line.points[i];if(!i)px.moveTo(p.x,p.y);else px.lineTo(p.x,p.y);}if(line.points.length===1){px.arc(line.points[0].x,line.points[0].y,line.radius,0,Math.PI*2);px.fill();}else px.stroke();}}
+function stats(){text('touch-count','指入力 '+touches.size);text('pen-count','ペン入力 '+penTouches);text('queue-count','本線処理待ち '+pending.length);text('pointer-events',ptrCount.toLocaleString());text('pointer-cancel',cancelCount);text('input-lag',eventLagMax>0?eventLagMax.toFixed(1)+' ms':'—');text('max-gap',maxGap>0?maxGap.toFixed(1)+' ms':'—');text('frame-gap',maxGap>0?'最大フレーム間隔 '+maxGap.toFixed(1)+'ms':'最大フレーム間隔 —');text('commit-count',commits);text('commit-wall',commits?commitTotal.toFixed(1)+' ms':'—');text('yield-count',commits?String(lastYield):'—');}
+function frame(now){if(rafLast && !document.hidden){const d=now-rafLast;if(d>maxGap)maxGap=d;}rafLast=document.hidden?0:now;stats();requestAnimationFrame(frame);}requestAnimationFrame(frame);
+function record(e){ptrCount++;const delta=performance.now()-e.timeStamp;if(delta>=0&&delta<60000)eventLagMax=Math.max(eventLagMax,delta);}
+function canDraw(e){return e.pointerType==='pen'||(e.pointerType!=='touch'&&e.button===0&&!e.shiftKey);}
+function resetWarpPreview(){transformId++;wx.clearRect(0,0,W,H);warpDisplay=false;}
+function beginGesture(){const p=[...touches.values()];if(p.length===2){const center={x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2};gesture={start:view,center,anchor:docXY(center),len:Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y),ang:Math.atan2(p[1].y-p[0].y,p[1].x-p[0].x)};}else{gesture=null;}}
+function touchUpdate(){const p=[...touches.values()];if(p.length!==2||!gesture)return;const m={x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2};const dist=Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y),ang=Math.atan2(p[1].y-p[0].y,p[1].x-p[0].x);
+const s=Math.max(.15,Math.min(6,gesture.start.s*(dist/Math.max(1,gesture.len)))),theta=gesture.start.theta+ang-gesture.ang;const a=gesture.anchor,c=Math.cos(theta),sin=Math.sin(theta);
+view={tx:m.x-s*(c*a.x-sin*a.y),ty:m.y-s*(sin*a.x+c*a.y),s,theta};applyView();}
+vw.addEventListener('pointerdown',e=>{record(e);vw.setPointerCapture(e.pointerId);const pos=local(e);if(e.pointerType==='touch'){touches.set(e.pointerId,pos);beginGesture();stats();return;}
+ if(canDraw(e)){if(warpDisplay){resetWarpPreview();drawBitmap(current);}penTouches++;active={id:e.pointerId,points:[docXY(pos)],radius:13};drawPreview();}
+ else if(e.shiftKey||e.button===1)mousePan={id:e.pointerId,pos};stats();});
+vw.addEventListener('pointermove',e=>{record(e);const pos=local(e);
+ if(e.pointerType==='touch'&&touches.has(e.pointerId)){
+   const old=touches.get(e.pointerId);touches.set(e.pointerId,pos);
+   if(touches.size===1){view={...view,tx:view.tx+pos.x-old.x,ty:view.ty+pos.y-old.y};applyView();}
+   else if(touches.size===2)touchUpdate();stats();return;
+ }
+ if(mousePan&&mousePan.id===e.pointerId){view={...view,tx:view.tx+pos.x-mousePan.pos.x,ty:view.ty+pos.y-mousePan.pos.y};mousePan.pos=pos;applyView();}
+ if(active&&active.id===e.pointerId){const evt=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[];const samples=evt.length?evt:[e];for(const s of samples){const v=docXY(local(s));const old=active.points.at(-1);if(!old||Math.hypot(old.x-v.x,old.y-v.y)>.55)active.points.push(v);}drawPreview();}stats();});
+function endPointer(e,isCancel){record(e);if(e.pointerType==='touch'){touches.delete(e.pointerId);beginGesture();}
+if(mousePan?.id===e.pointerId)mousePan=null;
+if(active?.id===e.pointerId){const line=active;active=null;penTouches=Math.max(0,penTouches-1);if(!isCancel){pending.push(line);drain();}drawPreview();}
+if(isCancel)cancelCount++;stats();}
+vw.addEventListener('pointerup',e=>endPointer(e,false));vw.addEventListener('pointercancel',e=>endPointer(e,true));vw.addEventListener('lostpointercapture',e=>{if(active?.id===e.pointerId)endPointer(e,true);});
+async function drain(){if(rendering)return;rendering=true;while(pending.length){const line=pending[0],start=performance.now();const t=await C.strokeChunked(current,line.points,line.radius,[241,74,54],180,4);lastYield=t.yields;commitTotal+=performance.now()-start;commits++;pending.shift();drawBitmap(current);drawPreview();stats();}
+rendering=false;}
+function reset(){resetWarpPreview();if(rendering){text('live-status','描画中は初期化できません。正式線が完成してから実行してください。');return;}current=C.fixture(W,H,213);src=C.clone(current);active=null;pending=[];drawBitmap(current);drawPreview();initialView();text('live-status','初期化完了。タブレットのペンと指で同時操作を試せます。');}
+$('reset').addEventListener('click',reset);
+$('heavy').addEventListener('click',()=>{if(warpDisplay){resetWarpPreview();drawBitmap(current);}const points=C.strokePoints(W,H,1700);pending.push({points,radius:45});drawPreview();drain();text('live-status','太い線1700点の正式計算を分割中。指でキャンバスを動かしてください。');});
+$('warp-strength').addEventListener('input',e=>text('warp-strength-value',e.target.value));
+$('run-warp').addEventListener('click',async()=>{if(rendering){text('live-status','ブラシ確定後に変形を試してください。');return;}const token=++transformId,source=C.clone(current),strength=Number($('warp-strength').value);
+ const t=performance.now();const approx=C.warpPreview(source,strength,4);const previewMs=performance.now()-t;
+ const tiny=document.createElement('canvas');tiny.width=approx.w;tiny.height=approx.h;tiny.getContext('2d').putImageData(new ImageData(approx.data,approx.w,approx.h),0,0);
+ wx.clearRect(0,0,W,H);wx.imageSmoothingEnabled=true;wx.drawImage(tiny,0,0,W,H);warpDisplay=true;
+ text('live-status','変形の仮画像 '+previewMs.toFixed(1)+'ms。精細な正式画像を別途計算中（原本は保持）。');
+ const start=performance.now();const exact=await C.warpChunked(source,strength,4,()=>token!==transformId);
+ if(token!==transformId||exact.cancelled)return;
+ drawBitmap(exact.dst);wx.clearRect(0,0,W,H); // exact display, source remains original for future work
+ text('live-status','正式な変形表示 '+(performance.now()-start).toFixed(1)+'ms、分割yield '+exact.yields+'回。元画像は変更せず、次の描画でこの試行表示を解除します。');
+});
+function ms(x){return Number(x).toFixed(2)+' ms';}
+function compareOrFail(a,b){const d=C.compare(a,b);return d.equal?{pass:true,label:'一致'}:{pass:false,label:'差 '+d.different+'要素 / 最大'+d.maxDifference,diff:d};}
+function tableRow(name,ref,other,ok,info){const tr=document.createElement('tr');for(const [i,v] of [name,ref,other,ok.label,info].entries()){const td=document.createElement('td');td.textContent=v;if(i===3)td.className=ok.pass?'pass':'fail';tr.append(td);}return tr;}
+function sleep(){return new Promise(r=>setTimeout(r,30));}
+async function runAll(){const button=$('run-all');if(button.disabled)return;button.disabled=true;$('export').disabled=true;const workload=Number($('workload').value),items=[];const tbody=$('results');tbody.replaceChildren();text('result-notes','測定中です。同期計算方式では一時的に画面が停止する場合があります。');
+ const statsAtStart={maxGap,events:ptrCount,cancels:cancelCount};
+ const record=(kind,method,baselineMs,alternativeMs,correctness,conditions,extra)=>{items.push({kind,method,baselineMs,alternativeMs,correctness,conditions,...extra});tbody.append(tableRow(kind,ms(baselineMs),ms(alternativeMs),correctness,conditions));};
+ const measure=fn=>{const t=performance.now(),v=fn();return {ms:performance.now()-t,value:v};};
+ try{
+ await sleep();{
+  const src=C.fixture(workload,workload,1),pts=C.strokePoints(workload,workload,Math.round(workload*2.8)),a=C.clone(src),b=C.clone(src);
+  const t1=measure(()=>C.strokeSync(a,pts,19));const start=performance.now(),step=await C.strokeChunked(b,pts,19,undefined,170,4);
+  record('ブラシ','同期→分割',t1.ms,performance.now()-start,compareOrFail(a,b),workload+'² / '+pts.length+'点; 分割 '+step.yields+'回',{yields:step.yields,comparison:'synchronous time vs chunked wall time; responsiveness measured separately'});
+ }
+ await sleep();{
+  const src=C.fixture(workload,workload,3),x=Math.floor(workload/2),y=Math.floor(workload/2),t=180;
+  const a=measure(()=>C.fillBfs(src,x,y,t)),b=measure(()=>C.fillScanline(src,x,y,t));record('塗りつぶし','BFS→走査線',a.ms,b.ms,compareOrFail(a.value,b.value),workload+'² / 色差 '+t,{reference_pixels:a.value.length});
+ }
+ await sleep();{
+  const n=Math.min(workload,265),p=C.polygonPath(n,n,420),a=measure(()=>C.lassoPoint(n,n,p)),b=measure(()=>C.lassoScanline(n,n,p));
+  record('投げ縄','点内判定→走査線',a.ms,b.ms,compareOrFail(a.value,b.value),n+'² / 輪郭420点');
+ }
+ await sleep();{
+  const n=Math.min(workload,180),src=C.fixture(n,n,17),r=10,a=measure(()=>C.blurDirect(src,r)),b=measure(()=>C.blurSeparable(src,r));
+  record('箱型ぼかし','2D直接→分離型',a.ms,b.ms,compareOrFail(a.value,b.value),n+'² / 半径 '+r+'; Gaussianではない');
+ }
+ await sleep();{
+  const src=C.fixture(workload,workload,26),strength=26,aa=measure(()=>C.warpFull(src,strength)),bb=measure(()=>C.warpPreview(src,strength,4));const start=performance.now();const final=await C.warpChunked(src,strength,4),exact=compareOrFail(aa.value,final.dst);
+  record('歪み変形','全画素→1/4仮画像',aa.ms,bb.ms,exact,workload+'²; 正式分割 '+ms(performance.now()-start)+' / yield '+final.yields,{previewApproximation:true,formalMatch:exact.pass,formalElapsedMs:performance.now()-start,previewWidth:bb.value.w,previewHeight:bb.value.h});
+ }
+ const finishStats={maxGap,events:ptrCount,cancels:cancelCount};
+ report={schema:1,source:'illustro-independent-performance-lab',date:new Date().toISOString(),environment:{userAgent:navigator.userAgent,deviceMemory:navigator.deviceMemory??null,hardwareConcurrency:navigator.hardwareConcurrency??null,devicePixelRatio:window.devicePixelRatio??null,viewport:{width:innerWidth,height:innerHeight},visibility:document.visibilityState},workload,metrics:{start:statsAtStart,end:finishStats,pointerEventDeliveryToHandlerMaxMs:eventLagMax,overallRafGapMaxMs:maxGap,note:'JS measurements are NOT pen-to-photon or OS touch capture'},results:items,limits:['CPU JS-only; not production renderer','Only box blur not Gaussian','Warp preview intentionally lower fidelity; quality equality is verified for full image vs chunked final','Device memory usage not instrumented','No real app Save/Undo, ICC, multilayer compositing','Benchmark done sequentially; actual multitasking requires manual pointer interaction']};
+ const fail=items.filter(x=>!x.correctness.pass);text('result-notes','完了：'+items.length+'件。正式結果の差分検査 '+(items.length-fail.length)+'/'+items.length+'件一致。'+(fail.length?'不一致を確認：最適化採用不可。':'この試験条件では一致。')+' 仮画像は低解像度のため正式結果と同画質ではありません。');
+ $('export').disabled=false;
+ }catch(e){console.error(e);text('result-notes','検査失敗：'+String(e));}finally{button.disabled=false;}
+}
+$('run-all').addEventListener('click',runAll);
+$('export').addEventListener('click',()=>{if(!report)return;const blob=new Blob([JSON.stringify(report,null,2)+'\n'],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='illustro-bench-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);});
+window.addEventListener('resize',()=>{if(!active&&touches.size===0)initialView();});
+window.addEventListener('error',e=>{text('live-status','エラー: '+e.message)});
+drawBitmap(current);initialView();
+})();
+
+</script>
+<script>document.getElementById("live-status").textContent="準備完了。上のキャンバスにペン／マウスで描き、下の「全方式を測定」を押して確認できます。";</script>
 </body></html>
