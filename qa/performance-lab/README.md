@@ -1,5 +1,9 @@
 # Illustro Performance Lab — 実働検証ページ
 
+## 仮線→正式線の切替実験（2026-10-30）
+
+[切替専用の単体HTML](handoff.html)を追加した。[検証手順・独立Chromium検査](HANDOFF_TEST.md)も参照。**公開ページ**： https://totoro0419.github.io/illustro/qa/performance-lab/handoff.html （Pages成功時）。これまでの5方式比較とは別に、ストローク表示の画素差、確定キュー、移動・拡大・回転、処理中のイベント記録を検査する。人工的な遅延を含む試験なので、製品の実機品質保証ではない。
+
 **2026-10-30 / 独立プロトタイプ / Illustro本体の実装ではありません。**
 
 
