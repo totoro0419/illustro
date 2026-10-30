@@ -1,0 +1,48 @@
+[
+  {
+    "distancesFromPaperCenter": {
+      "brush": 669,
+      "colorPanel": 520,
+      "currentColor": 470,
+      "quick": 572
+    },
+    "frame": [
+      1363,
+      936
+    ],
+    "overflow": false,
+    "profile": "desktop",
+    "surface": [
+      955,
+      833
+    ],
+    "surfaceRatio": 62.4
+  },
+  {
+    "frame": [
+      1178,
+      818
+    ],
+    "overflow": false,
+    "profile": "tablet",
+    "surface": [
+      770,
+      715
+    ],
+    "surfaceRatio": 57.1
+  },
+  {
+    "contextVisible": true,
+    "frame": [
+      388,
+      842
+    ],
+    "overflow": false,
+    "profile": "phone",
+    "surface": [
+      336,
+      686
+    ],
+    "surfaceRatio": 70.6
+  }
+]

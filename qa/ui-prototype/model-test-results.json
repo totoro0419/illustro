@@ -1,0 +1,24 @@
+{
+  "kind": "ui-route-and-state-model",
+  "checks": 12,
+  "passed": [
+    "全247 ID・名称・通常/限定/保留/対象外の件数",
+    "247機能×4入口のモデル到達・現在作品を変更しない",
+    "全247 IDの検索・全30カテゴリ・全12Panelからの到達",
+    "保留/対象外11件に実行Sessionを作らない",
+    "限定水彩とCMYK/基本文字の既決能力の接続",
+    "候補内Undo/Redoと取消は独立した別層編集を残す",
+    "Session適用は開始時対象へ一操作・設定は作品Undo外",
+    "未完A→B→Undoは最後に受理したBを戻す",
+    "Save(A)→Undo(A)→新筆C→旧完了でも固定保存対象はA",
+    "Save(A)とSave(A+B)の要求別固定・新しい編集を混ぜない",
+    "view設定・検索・Panel移動は作品Undoへ入らない",
+    "未知IDを黙って別機能へ補わない"
+  ],
+  "failed": [],
+  "limits": [
+    "No browser/device assertion",
+    "No pixels/GPU/Worker/ICC",
+    "Mock in-memory save is not durable persistence"
+  ]
+}
