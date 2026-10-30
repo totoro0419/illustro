@@ -38,3 +38,21 @@
 Android実機ペン+指入力、OS配送とJS受付の切り分け、Brush/Fill/Warp/Blur同時負荷、FPSに加えてp95/p99と最長停止、メモリ/転送/熱/電池、Layer/Mask/Undo/Save、sRGB/P3/8・16bitの正式合成一致。これらは**未実施**。成果物は単体プロトタイプであり、製品への実装や性能優越の証明ではない。
 
 参照：[試験コード](README.md) · [研究計画](../../docs/performance-research/VALIDATION_PLAN.md) · [製品品質条件](../../docs/product-planning/QUALITY_REQUIREMENTS.md)
+
+## Android実機：ユーザーによる操作確認（2026-10-30 JST）
+
+2026-10-30T12:42:19.821Zの試験ログ（`illustro-bench-2026-10-30T12-42-25-447Z.json`、ユーザーからチャットに提供）と、**実機操作者本人からの「本線処理が終わる前にキャンバスの移動・拡大・回転ができた」という報告**を記録。ログ本体は当該チャットで保持され、リポジトリへコピーしていない。
+
+| 項目 | 結果 | 根拠・境界 |
+|---|---|---|
+| 環境 | Android Chrome 156、DPR 2.75、viewport 1163×688、memory API値8、hardwareConcurrency 8 | ログのenvironment。実機の製品型番や物理OS版を確定するものではない |
+| 重いCPU描画計算 | 2区間：2264.9–2617.8ms（352.9ms）、9139.5–9513.9ms（374.4ms） | workWindows（ページ開始からの相対時刻） |
+| 計算中にJS受付した指イベント | 52件（うちpointermove 48件） | interaction.touchEventsDuringWork / touchMovesDuringWork |
+| pointercancel | 記録0件 | interaction.pointerCancelTotal |
+| JSイベント配送→受付の最大差 | 54.1ms | interaction.pointerEventDeliveryToHandlerMaxMs、OS入力→表示遅延ではない |
+| 最大rAF間隔 | 111.2ms | interaction.overallRafGapMaxMs。原因未特定 |
+| 計算中の表示操作ができたか | **できた（ユーザーの自己報告）** | 観測者はユーザー。JSログには変換座標や動画は含まれておらず独立証明ではない |
+
+**到達した結論**：この独立CPUプロトタイプの条件では、重い描画計算とJavaScript指入力の受付が時間的に重なり、操作者本人はその間のキャンバス操作の成功を確認した。旧Illustro製品本体の不具合が解消されたこと、GPU/Worker併用、最終タイルとの表示切替、Undo/Save、タブレット全機種、ペンアップ直後のフル品質筆による性能達成を意味しない。
+
+**次の検証ゲート**：仮線→正式線の同じ作品座標での切替・二重表示/消失の検査、非同期Undo/RedoとSave時点の整合、複数レイヤー・マスク・変形の交錯、ブラウザのGPU描画を含む競合、p95/p99の操作遅延。検証対象の範囲が広がるまで正式なIllustro描画方式の採用決定とはしない。
