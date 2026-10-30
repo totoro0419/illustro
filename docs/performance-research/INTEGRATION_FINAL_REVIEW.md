@@ -1,5 +1,8 @@
 # 統合基本設計の最終レビュー
 
+> **後続の現行製品仕様**：この最終レビューはPR #3の統合監査当時の到達状況である。D01/02/03/05の製品上の判断は2026-10-30後続の[FINAL_PRODUCT_SPEC](../product-planning/FINAL_PRODUCT_SPEC.md)で確定版を作成した。ここに記した未承認事項は当時の監査記録であり、技術性能・実装成功が後から実証されたわけではない。
+
+
 2026-10-30 JST。対象：R01〜R14、30分野247機能。**完了した範囲は、基本設計の統合・全件反映・静的監査。方式の全面採用確定/実装完成/実機性能達成は未完了。**
 
 [監査](INTEGRATION_AUDIT.md) · [全機能](FEATURE_INTEGRATION_MAP.md) · [基本設計](UNIFIED_SYSTEM_DESIGN.md) · [未決定](OPEN_DECISIONS.md) · [検査原本](integration_validation.json)
