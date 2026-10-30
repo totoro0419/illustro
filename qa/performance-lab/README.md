@@ -2,6 +2,17 @@
 
 **2026-10-30 / 独立プロトタイプ / Illustro本体の実装ではありません。**
 
+
+## 公開URLと単体HTML
+
+GitHub Pages配信用ワークフロー： [.github/workflows/publish-performance-lab.yml](../../.github/workflows/publish-performance-lab.yml)。配信先として指定したパス：
+
+`https://totoro0419.github.io/illustro/qa/performance-lab/`
+
+Pagesの有効化・公開完了はブラウザからの応答で別途確認する必要がある。404の場合はGitHubリポジトリの **Settings → Pages** および **Actions → Publish Illustro Performance Lab** の状態を確認すること。
+
+現在の `index.html` は `core.js` と `app.js` をHTML内部に組み込んだ**単体実行版**であり、ファイル単体をChromeなどのブラウザで開ける。GitHubのファイルプレビューや一部アプリ内プレビューはJavaScript実行を許可しない場合があるので、外部ブラウザで開く。計測コードとNodeテストの分離ファイルも継続して維持。
+
 ## 実行方法
 
 このディレクトリの `index.html` をブラウザで開いてください。相対読み込みする `core.js` と `app.js` が必要です。外部ライブラリ・通信・ログイン不要の静的ページです。ローカルファイルを許可しないブラウザではHTTPサーバーで同じディレクトリを配信してください。**GitHubのコード閲覧ページは実行ページではなく、Pages公開には別途公開設定が必要**です。
