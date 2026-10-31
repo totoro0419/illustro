@@ -1,12 +1,12 @@
 # 変形後の描画・消去・混色 — 参照意味と採否
 
-**第③段階の限定CPU参照検証済。最終承認・実GPU検証ではない。** D02の「Document上の後段筆跡が旧変形へ自動追従しない」を維持する。原本を焼き込まない。実装者は下記の数式と保存根を変えてはいけない。
+**第③段階の限定CPU参照検証済（固定fragmentに加え実三角形mesh・2種補間・複数live Effect）。最終UI承認・実GPU検証ではない。** D02の「Document上の後段筆跡が旧変形へ自動追従しない」を維持する。原本を焼き込まない。実装者は下記の数式と保存根を変えてはいけない。
 
 ## 評価順序
 
 原本 → 明示順序のTransform → 順序付き後段編集 → liveなLayer Mask → Clip → Layer Blend → 下流Effect。後段を含む全体を移動するときは、この単位の後に新Transformを置く。以前のTransformノードだけを再編集すれば後段のDocument座標は固定。
 
-自己重複Warpは前向きラスタライズでfragment順序とcoverageを定義する。逆写像が一意だと仮定しない。参照実験は出力画素ごとのfragment列を入力し、その合成を検証する。**幾何Warpのラスタライザーや実筆形状を実装・検証したものではない。**
+自己重複Warpは前向きラスタライズでfragment順序とcoverageを定義する。逆写像が一意だと仮定しない。参照実験は出力画素ごとのfragment列を入力し、その合成を検証する。**旧test_raster.pyは幾何Warpラスタライザーを検証していない。** 追加のwarp_reference.pyは三角形の幾何逆計算・折返し・補間の**独立した限定CPU参照**を実行する。製品の全Warp/Liquify実装・筆形状・高速化を証明しない。
 
 ## 後段演算
 
@@ -43,6 +43,8 @@ Alpha Lockの旧「操作時のαmaskを固定」という案は取り下げる�
 
 ## 証拠と未閉鎖条件
 
+`experiments/stage3-reference/test_warp_reference.py`：折返し・境界・bilinear/cubic B-spline・Erase/固定Smudge・下流2 live Effect・保存根・haloの12試験（GPU/全Warpは非対象）。実装とレビュー範囲は[AUD006参照契約](AUD006_WARP_REFERENCE_REVIEW.md)。
+
 `experiments/stage3-reference/test_raster.py`：不透明消去、半透明＋Mask＋Clip、変形再編集→Undo/Redo→Save/Reload、固定Smudge、Alpha Lock、折返しfragment、加算差分反例。期待値はFractionによる手計算定数。`test_cross_feature.py`はNormal/Multiplyの半透明画素とαを追加。
 
-AUD-006は引き続き開く。残るのは実Warp/高品質補間と複数後段・live Effectの広い参照画像、使用者が理解できる再編集表示の比較確認。全GPU画素試験を第③段階の閉鎖に要求する旧記述は、今回のユーザー指示に従い第④段階へ分離する。ただしCPUの少数例だけで全方式の成立性を証明したことにもしない。
+AUD-006は引き続き開く。幾何三角形Warpと二つの補間方式、後段演算＋2 live Effect＋固定保存rootの限定参照を追加した。一方、**任意Warpの網羅ではなく、ユーザー本人による再編集意味の比較確認は未完了**。全GPU画素試験を第③段階の閉鎖に要求する旧記述は、今回のユーザー指示に従い第④段階へ分離する。ただしCPUの少数例だけで全方式の成立性を証明したことにもしない。
