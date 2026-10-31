@@ -4,7 +4,7 @@
 
 PR9の開始HEAD `17a5ff778e4643d71d2d72798f0966baff40755a`を取得し、その上で継続。依存は#1→#2→#3→#5→#6→#7→#8→#9。#4は別分岐。mainの更新・merge・第④段階の製品実装は行っていない。READMEを読み、当該checkoutにAGENTS.mdがないことも確認した。
 
-未解決P1と機能固有の受入・ユーザー確認が残るため、設計完成は宣言しない。実機性能の未測定だけを理由にした判定ではない。
+未解決P1（AUD006は技術参照拡張済だがUI本人確認未完了）と機能固有の受入・ユーザー確認が残るため、設計完成は宣言しない。実機性能の未測定だけを理由にした判定ではない。
 
 ## 1. 4工程の実績
 
@@ -30,7 +30,7 @@ PR9の開始HEAD `17a5ff778e4643d71d2d72798f0966baff40755a`を取得し、その
 
 未閉鎖：
 
-- **AUD006/P1**：固定後段の演算意味と小規模参照は成立。実Warp/補間、複数後段とlive Effectを含む十分な画像参照、再編集UXの確認が不足。
+- **AUD006/P1**：固定後段の演算意味と小規模参照は成立。実三角形Warpの折返し・補間2種、複数後段・2 live Effectの有理数CPU参照を後続commitで追加。任意Warp/製品品質には一般化できず、再編集UXの本人確認が不足。
 - AUD008/P2：名称を教えない課題と同義語集合の発見性。
 - AUD010/P2：全247機能の主入口・スクロール・候補開始までの実測。既知ID検索988件と名目手数を区別。
 - AUD016/P2：Pad/資料/Session/作品を含む実UIとUndo作用先の利用者理解。
@@ -53,7 +53,7 @@ PR9の開始HEAD `17a5ff778e4643d71d2d72798f0966baff40755a`を取得し、その
 
 [対応表](FEATURE_CONTRACT_CROSSWALK_247.json)の15観点を原典へ接続し、個別のfailure/quality条件を追加。LAY add/select、CLP copy/cut/paste、ICC assign/convert、紙選択/reapply、資料/試筆/作品管理の別scopeを具体化。表の空欄解消や既知IDの到達を、全機能の意味検証と同一視しない。
 
-Brush×Transform、Fill×Selection×Layer、Mask×Clip×Blend、Effect×Cache、Save×Undo×Recovery、ICC×Export等の版・作用順・障害境界は`SYSTEM_CONTRACTS.md`§10へ統合。ただし全Effectの演算参照、任意ICC/Proof、Pad/資料の操作試作、全247固有の受入には草案が残る。これを実装者が決める前提で完成扱いしない。
+Brush×Transform、Fill×Selection×Layer、Mask×Clip×Blend、Effect×Cache、Save×Undo×Recovery、ICC×Export等の版・作用順・障害境界は`SYSTEM_CONTRACTS.md`§10へ統合。ただし全Effectの演算参照、任意ICC/Proof、Pad/資料の操作試作、全247固有の受入には草案が残る。後続AUD006の三角形Warp CPU参照は全Effect kernelの数値契約完了ではない。これを実装者が決める前提で完成扱いしない。
 
 ## 5. UI/UX・公開
 
@@ -81,3 +81,9 @@ Pages失敗は[元run](https://github.com/totoro0419/illustro/actions/runs/41192
 無条件の第④段階移行は**不可**。確定した境界契約と参照資産は[引渡し仕様](STAGE4_HANDOFF.md)に整理したが、AUD006・機能固有の数値/受入・ユーザー確認を終えてP1=0となるまで、設計完成を宣言しない。
 
 同じAIによる反例・再監査であり、完全に独立した第三者監査ではない。
+
+## 8. AUD006追補（初回監査より後のコミット）
+
+初回監査のCI集計30件はその時点の記録として維持する。後続変更で追加された三角形メッシュWarp、折返し、bilinear/cubic B-spline、固定Smudge、二つのlive Effect、Save根の12件は [AUD006専用契約](AUD006_WARP_REFERENCE_REVIEW.md) に詳細を記載。CIの後続結果はその実行commitと共に評価する。いずれも製品GPUの動作保証ではない。
+
+本人の再編集意味理解は未評価なので監査台帳のAUD006を未閉鎖に維持し、全体の NOT COMPLETE を変更しない。
