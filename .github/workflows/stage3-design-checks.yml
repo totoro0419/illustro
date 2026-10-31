@@ -7,6 +7,9 @@ on:
     paths:
       - 'qa/ui-prototype/**'
       - 'docs/product-architecture/**'
+      - 'docs/detailed-design/**'
+      - 'experiments/stage3-reference/**'
+      - 'tools/**'
       - '.github/workflows/stage3-design-checks.yml'
 jobs:
   contracts:
@@ -30,4 +33,17 @@ jobs:
       - run: npx tsc --noEmit --strict --target ES2022 --lib es2022,dom docs/detailed-design/contracts-type-tests.ts
       - run: npx playwright install --with-deps chromium
       - run: node qa/ui-prototype/stage3-browser-tests.cjs
+      - run: python -m unittest discover -s experiments/stage3-reference -v
+      - run: node qa/ui-prototype/final-browser-tests.cjs
+      - name: Execute unchanged expectations against PR7 to expose original defects
+        run: |
+          git fetch origin fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04 --depth=1
+          git show fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04:qa/ui-prototype/index.html > /tmp/pr7-prototype.html
+          BASELINE=1 PROTOTYPE_HTML=/tmp/pr7-prototype.html node qa/ui-prototype/final-browser-tests.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-browser-evidence
+          path: test-results/
+
       - run: git diff --exit-code -- qa/ui-prototype/index.html

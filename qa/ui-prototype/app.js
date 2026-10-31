@@ -23,11 +23,11 @@
    else $('libraryContent').innerHTML='<div class="groups">'+R.groups.map(g=>`<h3>${esc(g.label)}</h3>${g.categories.map(c=>`<button class="category" data-category="${c}"><span>${esc(R.categories[c].label)}</span><small>${M.search('',c).length} ›</small></button>`).join('')}`).join('')+'</div>';
  }
  function featureRow(f){return `<button class="feature-row" data-feature="${f.id}"><span>${esc(f.name)}${!f.availability.executable?` <em>${f.final_scope==='deferred'?'保留':'対象外'}</em>`:f.final_scope==='included_limited'?' <em>限定</em>':''}</span><small>${f.id}</small></button>`;}
- function showPanel(p){S.panel=p;if(frame.classList.contains('focused'))frame.classList.add('focus-panel-open');$('layerPage').hidden=true;$('panels').hidden=false;frame.classList.remove('closed');$('dock').classList.add('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','true');const box=$('box-'+p);box.open=true;box.scrollIntoView({block:'start'});}
+ function showPanel(p){S.panel=p;if($('focusMode')?.value==='exit'&&frame.classList.contains('focused'))toggleFocus();if(frame.classList.contains('focused'))frame.classList.add('focus-panel-open');$('layerPage').hidden=true;$('panels').hidden=false;frame.classList.remove('closed');$('dock').classList.add('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','true');const box=$('box-'+p);box.open=true;box.scrollIntoView({block:'start'});}
  function panelRoute(p){const cats=Object.entries(R.categories).filter(([c])=>R.features.some(f=>f.category===c&&f.panel==='right.'+p));return `<div class="cat-list">${cats.map(([c,v])=>`<button data-panel-category="${c}" data-panel="${p}">${esc(v.label)} <span style="float:right">›</span></button>`).join('')}</div>`;}
  function basePanel(p){
    if(p==='layers')return `<div class="row" style="font-size:11px;margin:0 0 5px"><select id="blendMode" aria-label="レイヤーの合成方法" style="width:55%"><option>通常</option><option>乗算</option><option>スクリーン</option></select><span>100%</span><button class="quiet" data-feature="LAY-002">設定</button></div><div id="layerRows"></div><div class="row"><button class="quiet grow" id="addLayer">＋ レイヤー</button><button class="quiet" data-feature="LAY-004">Clip</button><button class="quiet" data-feature="LAY-005">Mask</button></div>`;
-   if(p==='color')return `<div class="color-plane" role="group" aria-label="彩度と明度の選択。左右キーで彩度、上下キーで明度" tabindex="0"></div><div class="row spread"><label class="row"><input type="color" id="colorPicker" value="#637b78" aria-label="描画色"><span id="colorCode" style="font-size:11px">#637B78</span></label><button class="quiet" data-feature="COL-001">HSV / RGB</button></div><div class="chips" id="swatches">${['#637b78','#3d5d54','#afbfad','#f3d3a0','#f8f3e7','#7473a4','#b68178','#2e3a49'].map(c=>`<button aria-label="色 ${c}" data-color="${c}" style="background:${c}"></button>`).join('')}</div>`;
+   if(p==='color')return `<div class="color-plane" role="group" aria-label="彩度と明度の選択。左右キーで彩度、上下キーで明度" tabindex="0"></div><label class="field">色相<input id="hue" aria-label="色相" type="range" min="0" max="359" value="170"></label><div class="row spread"><label class="row"><input type="color" id="colorPicker" value="#637b78" aria-label="描画色"><span id="colorCode" style="font-size:11px">#637B78</span></label><button class="quiet" data-feature="COL-001">HSV / RGB</button></div><div class="chips" id="swatches">${['#637b78','#3d5d54','#afbfad','#f3d3a0','#f8f3e7','#7473a4','#b68178','#2e3a49'].map(c=>`<button aria-label="色 ${c}" data-color="${c}" style="background:${c}"></button>`).join('')}</div>`;
    if(p==='brush')return `<label style="font-size:11px">プリセット<select id="preset" style="width:100%;margin:5px 0"><option>Gペン</option><option>鉛筆</option><option>水彩風（簡易）</option><option>パステル</option></select></label><label class="field">不透明度<input id="opacity" type="range" min="1" max="100" value="100"><output id="opacityValue">100%</output></label><button class="panel-link" data-feature="BRU-008">強制入り抜き <span class="arrow">›</span></button>`;
    if(p==='reference')return `<div class="callout">資料は作品のレイヤーとは別に表示します。</div><button class="panel-link" data-feature="REF-001">＋ 資料を追加</button><button class="panel-link" data-feature="REF-004">資料から色を採る</button>`;
    if(p==='history')return '<div id="historyList" class="stack"></div><button class="panel-link" data-feature="HIS-003">別案を保存</button>';
@@ -65,13 +65,15 @@
  function closeDetail(p){$('route-'+p).innerHTML='';activePanelFeature[p]=null;if(detailReturn?.isConnected){if($('library').contains(detailReturn))toggleRegion('library',true);detailReturn.focus({preventScroll:true});}else $('search').focus();}
  function showCategory(c,p){panelCategories[p]=c;activePanelFeature[p]=null;$('route-'+p).innerHTML=`<button class="quiet back" data-panel-back="${p}">‹ ${esc(R.panels[p])}へ</button><h3>${esc(R.categories[c].label)}</h3>${M.search('',c).filter(f=>f.panel==='right.'+p).map(featureRow).join('')}`;showPanel(p);}
  function conflict(next){pendingTool=next;$('contextTitle').textContent='未適用の操作があります';$('contextActions').innerHTML=`<p style="font-size:12px;margin-bottom:8px">${esc(M.feature(S.session.feature).name)} · ${esc(S.session.layer)}</p><button data-conflict="apply">適用して続ける</button><button data-conflict="cancel">取消して続ける</button><button data-conflict="back">元の操作へ戻る</button>`;toggleRegion('context',true);}
- function setTool(t,force=false){if(S.session&&S.session.layer===S.layer&&!force){conflict(t);return;}if(t!==S.tool){previousTool=S.tool;S.tool=t;}selectionNav=false;
+ function setTool(t,force=false){if(S.session&&S.session.layerId===S.layerId&&!force){conflict(t);return;}if(t!==S.tool){previousTool=S.tool;S.tool=t;}selectionNav=false;
   document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t));$('currentTool').textContent=names[t];
   if(['selection','transform'].includes(t)){selected=true;$('selectionOverlay').removeAttribute('hidden');openFeature(toolIds[t],'primary');beginFeature(toolIds[t]);}
   if(t==='fill')openFeature('FIL-001','primary');
   sync();
  }
  function beginFeature(id){const f=M.feature(id);if(!f.availability.executable)return;
+  if(id==='CAN-001'){const el=$('fields-'+id);if(el)el.innerHTML='<p class="callout">新規作成の状態遷移試作。寸法・ICC処理本体は未実装です。</p><button data-new-mock class="primary">新しい模擬作品を作成</button>';return;}
+  if(id==='IO-002'){const el=$('fields-'+id);if(el)el.innerHTML='<label>形式<select aria-label="出力形式"><option>PNG</option><option>JPEG</option><option>WebP</option></select></label><p class="callout">出力画像生成は未実装。操作状態だけを検査します。</p><button data-export-mock>書き出し要求を確認（模擬）</button>';return;}
   if(id==='HIS-001'){const el=$('fields-'+id);if(el)el.innerHTML='<div class="route-actions"><button data-undo>作品のUndo</button><button data-redo>作品のRedo</button></div>';sync();return;}
   if(id==='LAY-001'||id==='LAY-002'){showPanel('layers');toast('レイヤー行の選択・目・＋・合成を直接操作できます。');return;}
   if(id==='CLP-001'){const el=$('fields-'+id);if(el)el.innerHTML='<p class="callout">コピー・切取・貼付の本体はこの試作では実行しません。架空の履歴も追加しません。</p>';return;}
@@ -82,7 +84,7 @@
   const fields=$('fields-'+id);if(fields)fields.innerHTML='<p class="callout" style="margin-top:10px">設定欄の操作例です。数値の製品既定や画像処理結果を示すものではありません。</p>'+parameters(f).map((p,n)=>`<label>${esc(p)}<input data-value="${n}" aria-label="${esc(p)}の候補" placeholder="候補を入力（試作）" value="${esc(S.session.values[n]||'')}"></label>`).join('')+`<div class="route-actions"><button data-cancel>取消</button><button data-apply class="primary">${['session','command','stroke'].includes(f.apply_cancel.kind)?'候補を適用（模擬）':'設定・要求を反映（模擬）'}</button></div>`;
   sync();
  }
- function finishSession(apply){if(!S.session)return;const id=S.session.feature;const committed=apply?M.apply():(M.cancel(),false);if($('fields-'+id))$('fields-'+id).innerHTML='';sync();toast(apply?(committed?'候補を反映しました（処理本体は未実装）。':'本体未実装の操作は作品へ確定しません。'):'今回の候補だけ取り消しました。');}
+ function finishSession(apply){if(!S.session)return;const id=S.session.feature;const committed=apply?M.apply():(M.cancel(),false);if(committed?.status==='session-conflict'){toast('対象レイヤーがありません。候補は保持しています。対象を復元するか取消してください。');sync();return;}if($('fields-'+id))$('fields-'+id).innerHTML='';sync();toast(apply?(committed?'候補を反映しました（処理本体は未実装）。':'本体未実装の操作は作品へ確定しません。'):'今回の候補だけ取り消しました。');}
  function sync(){
   $('sessionbar').hidden=!S.session;if(S.session){$('sessionName').textContent=M.feature(S.session.feature).name;$('sessionTarget').textContent=' · '+S.session.layer+' · 未適用';}
   frame.style.setProperty('--session-height',S.session?Math.ceil($('sessionbar').getBoundingClientRect().height)+'px':'0px');
@@ -91,9 +93,10 @@
   $('modelStatus').textContent=`模擬状態：受理済${S.past.length}操作 ／ 計算中${S.pending.length} ／ ${S.session?'未適用候補あり':'未適用候補なし'}。画像の正確性・性能の合格証明ではありません。`;
   const last=S.saves.at(-1);$('saveStatus').textContent=saveError?'模擬保存失敗・再試行':last?.status==='pending'?'模擬保存中…':last?.status==='mock-complete'?(last.operationIds.join()===S.past.map(x=>x.id).join()?'模擬保存済み':'保存後の変更あり'):'模擬作品・未保存';
   $('saveStatus').title=`保存対象と現作品を区別。現在：${S.past.length}操作、計算中：${S.pending.length}。`;
-  const sessionUndo=S.session?S.session.past.length>0:S.past.length>0,sessionRedo=S.session?S.session.future.length>0:S.future.length>0;
-  document.querySelectorAll('[data-undo]').forEach(b=>{b.disabled=!sessionUndo;b.title=S.session?'候補内の直前の変更を戻す':'最後に受理した作品操作を戻す';});document.querySelectorAll('[data-redo]').forEach(b=>b.disabled=!sessionRedo);
-   const strokes=S.past.filter(o=>o.payload.path),key=strokes.map(o=>o.id).join(',');
+  const sessionUndo=S.past.length>0,sessionRedo=S.future.length>0;
+  $('sessionUndo').disabled=!S.session?.past.length;
+  document.querySelectorAll('[data-undo]').forEach(b=>{b.disabled=!sessionUndo;b.title='最後に受理した作品操作を戻す';});document.querySelectorAll('[data-redo]').forEach(b=>b.disabled=!sessionRedo);
+   const strokes=S.past.filter(o=>o.payload.path&&S.layers.find(l=>l.id===o.payload.layerId)?.visible!==false),key=strokes.map(o=>o.id).join(',');
    if(strokeStamp!==key){$('demoStrokes').innerHTML=strokes.map(o=>`<path d="${o.payload.path}" fill="none" stroke="${esc(o.payload.color)}" stroke-width="${o.payload.width}" stroke-linecap="round" stroke-linejoin="round" opacity="${o.payload.opacity}"/>`).join('');strokeStamp=key;}
    const nextLayers=JSON.stringify(S.layers)+S.layerId;if(layerStamp!==nextLayers){renderLayers();layerStamp=nextLayers;}
   renderHistory();
@@ -105,6 +108,8 @@
  renderPanels();sync();
  document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
+  if(b.hasAttribute('data-new-mock')){M.newDocument();document.querySelectorAll('.route-details').forEach(el=>el.remove());$('art').classList.add('blank-document');sync();return;}
+  if(b.hasAttribute('data-export-mock')){toast('書き出し要求の確認（模擬）。画像ファイルは生成していません。');return;}
   if(b.dataset.feature){openFeature(b.dataset.feature,$('query').value?'search':'catalog');return;}
   if(b.dataset.category){category=b.dataset.category;$('query').value='';renderLibrary();return;}
   if(b.hasAttribute('data-back')||b.hasAttribute('data-clear')){category=null;$('query').value='';renderLibrary();return;}
@@ -115,7 +120,7 @@
   if(b.hasAttribute('data-apply')){finishSession(true);return;}if(b.hasAttribute('data-cancel')){finishSession(false);return;}
   if(b.dataset.tool){setTool(b.dataset.tool);toggleRegion('quick',false);return;}
   if(b.dataset.openPanel){showPanel(b.dataset.openPanel);if(b.dataset.openPanel==='layers'&&(b.closest('#fixed')||b.closest('#mobileTabs'))){$('panels').hidden=true;$('layerPage').hidden=false;renderLayers();}toggleRegion('quick',false);return;}
-  if(b.hasAttribute('data-undo')){M.undo();sync();return;}if(b.hasAttribute('data-redo')){M.redo();sync();return;}
+  if(b.hasAttribute('data-undo')){M.dispatch('history.undo');sync();return;}if(b.hasAttribute('data-redo')){M.dispatch('history.redo');sync();return;}
   if(b.dataset.flip){S.view['flip'+b.dataset.flip]*=-1;updateView();return;}
   if(b.dataset.layer){M.dispatch('layer.select',{id:b.dataset.layer});sync();return;}
   if(b.dataset.eye){M.dispatch('layer.visibility',{id:b.dataset.eye});sync();return;}
@@ -129,13 +134,19 @@
  bind('allFeatures',()=>openLibrary(false));bind('search',()=>openLibrary(true));bind('libraryClose',closeLibrary);
  bind('quickTrigger',()=>{toggleRegion('quick');sync();});bind('quickClose',()=>toggleRegion('quick',false));
  bind('reviewToggle',()=>{toggleRegion('review');sync();});bind('reviewClose',()=>toggleRegion('review',false));
- bind('contextButton',()=>{ $('contextTitle').textContent=S.layer+'の操作';$('contextActions').innerHTML=['LAY-004','LAY-005','LAY-006','SEL-004','TRN-001','CLP-001'].map(id=>`<button data-feature="${id}">${esc(M.feature(id).name)}</button>`).join('');toggleRegion('context',true);});bind('contextClose',()=>toggleRegion('context',false));
- bind('workspaceToggle',()=>{if(frame.clientWidth<=760){$('dock').classList.toggle('sheet-open');$('workspaceToggle').setAttribute('aria-expanded',$('dock').classList.contains('sheet-open'));}else{frame.classList.toggle('closed');$('workspaceToggle').setAttribute('aria-expanded',!frame.classList.contains('closed'));}});
+ bind('contextButton',()=>{ $('contextTitle').textContent=S.layer+'の操作';$('contextActions').innerHTML=['LAY-004','LAY-005','LAY-006','SEL-004','TRN-001','CLP-001','HIS-001'].map(id=>`<button data-feature="${id}">${esc(M.feature(id).name)}</button>`).join('');toggleRegion('context',true);});bind('contextClose',()=>toggleRegion('context',false));
+ bind('workspaceToggle',()=>{if(frame.classList.contains('focus-panel-open')){frame.classList.remove('focus-panel-open');$('dock').classList.remove('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','false');return;}if(frame.clientWidth<=760){$('dock').classList.toggle('sheet-open');$('workspaceToggle').setAttribute('aria-expanded',$('dock').classList.contains('sheet-open'));}else{frame.classList.toggle('closed');$('workspaceToggle').setAttribute('aria-expanded',!frame.classList.contains('closed'));}});
  bind('sheetClose',()=>{$('dock').classList.remove('sheet-open');frame.classList.remove('focus-panel-open');$('workspaceToggle').setAttribute('aria-expanded','false');$('workspaceToggle').focus();});
  bind('layerPageClose',()=>{$('layerPage').hidden=true;$('panels').hidden=false;});bind('target',()=>showPanel('layers'));bind('currentColor',()=>showPanel('color'));bind('currentTool',()=>openFeature(toolIds[S.tool],'primary'));
- function changeColor(c){$('colorPicker').value=c;$('colorCode').textContent=c.toUpperCase();$('currentColor').querySelector('span').style.background=c;}
+ function changeColor(c){
+  const [r,g,b]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255),hi=Math.max(r,g,b),lo=Math.min(r,g,b),d=hi-lo;
+  if(d)svHue=((hi===r?(g-b)/d:hi===g?(b-r)/d+2:(r-g)/d+4)*60+360)%360;
+  svX=hi?d/hi:0;svY=1-hi;
+  const plane=document.querySelector('.color-plane');plane.style.background=`linear-gradient(0deg,#000,transparent),linear-gradient(90deg,#fff,hsl(${svHue} 100% 50%))`;plane.style.setProperty('--pick-x',svX*100+'%');plane.style.setProperty('--pick-y',svY*100+'%');if($('hue'))$('hue').value=Math.round(svHue);
+  $('colorPicker').value=c;$('colorCode').textContent=c.toUpperCase();$('currentColor').querySelector('span').style.background=c;}
  // Interactive SV affordance is a UI test only, not the final ICC selector.
  let svX=.61,svY=.29,svHue=170;
+ $('hue').addEventListener('input',e=>{svHue=+e.target.value;pickSV(svX,svY);});
  function hsvColor(h,s,v){
   const k=n=>(n+h/60)%6, f=n=>v-v*s*Math.max(Math.min(k(n),4-k(n),1),0);
   return '#'+[f(5),f(3),f(1)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');
@@ -162,9 +173,10 @@
  bind('save',mockSave);bind('saveStatus',()=>{if(saveError){mockSave();return;}openFeature('SAV-004','primary');});bind('export',()=>openFeature('IO-002','primary'));
  bind('sessionApply',()=>finishSession(true));bind('sessionCancel',()=>finishSession(false));bind('sessionDocumentUndo',()=>{M.undo(true);sync();});bind('sessionDocumentRedo',()=>{M.redo(true);sync();});bind('sessionUndo',()=>{M.undo();if(S.session){const id=S.session.feature;const f=$('fields-'+id);if(f)f.querySelectorAll('[data-value]').forEach(i=>i.value=S.session.values[i.dataset.value]||'');}sync();});
  function mockPending(){const op=M.acceptPending();sync();toast('模擬計算中です。ナビ／Undo／保存／別層操作を試せます（人工待機3秒）。');setTimeout(()=>{M.finish(op.id);sync();},3000);}
+ bind('reloadMock',()=>{const id=S.saves.filter(s=>s.status==='mock-complete').at(-1)?.id;if(!id){toast('完了した模擬保存がありません。');return;}M.loadSave(id);sync();toast('同一ページ内の模擬保存状態を再読込しました。永続保存ではありません。');});
  bind('simulatePending',mockPending);bind('simulateSaveError',()=>{saveError=true;sync();toast('保存失敗の模擬状態です。元の編集は保持。「保存失敗・再試行」から再試行できます。');});
  bind('toggleSelection',()=>{selected=!selected;$('selectionOverlay').toggleAttribute('hidden',!selected);});
- const flows={rough:['BRU-001','BRU-008','LAY-001','FIL-003','FIL-001','LAY-004','WET-001'],transform:['SEL-001','TRN-003','TRN-007','TRN-008','BRU-001'],finish:['REF-001','REF-004','FX-103','SAV-003','IO-002','IO-007']};$('flow').addEventListener('change',()=>{$('flowSteps').innerHTML=(flows[$('flow').value]||[]).map((id,n)=>`<button data-feature="${id}" style="text-align:left">${n+1}. ${esc(M.feature(id).name)}</button>`).join('');});
+ const flows={first:['CAN-001','BRU-001'],layers:['LAY-001','LAY-002','FIL-003'],brush:['BRU-001','COL-001','BRU-002'],fill:['FIL-003','FIL-001'],effect:['FX-001','FX-008'],save:['SAV-003','SAV-005'],export:['IO-002'],rough:['BRU-001','BRU-008','LAY-001','FIL-003','FIL-001','LAY-004','WET-001'],transform:['SEL-001','TRN-003','TRN-007','TRN-008','BRU-001'],finish:['REF-001','REF-004','FX-103','SAV-003','IO-002','IO-007']};$('flow').addEventListener('change',()=>{$('flowSteps').innerHTML=(flows[$('flow').value]||[]).map((id,n)=>`<button data-feature="${id}" style="text-align:left">${n+1}. ${esc(M.feature(id).name)}</button>`).join('');});
  function updateView(){const v=S.view;$('art').style.transform=`translate(calc(-50% + ${v.x}px),calc(-50% + ${v.y}px)) rotate(${v.angle}deg) scale(${v.zoom*v.flipH},${v.zoom*v.flipV})`;$('zoomLabel').textContent=Math.round(v.zoom*100)+'%';$('rotateView').textContent=Math.round(v.angle)+'°';}
  bind('fit',()=>{Object.assign(S.view,{x:0,y:0,zoom:1,angle:0});updateView();});bind('zoomLabel',()=>{S.view.zoom=1;updateView();});bind('zoomIn',()=>{S.view.zoom=Math.min(8,S.view.zoom*1.2);updateView();});bind('zoomOut',()=>{S.view.zoom=Math.max(.2,S.view.zoom/1.2);updateView();});bind('rotateView',()=>{S.view.angle+=15;updateView();});bind('panTool',()=>{selectionNav=!selectionNav;$('panTool').setAttribute('aria-pressed',selectionNav);});
  const pointers=new Map();let navStart=null,drawing=null;
@@ -185,9 +197,9 @@
   if(e.target.closest('button,input'))return;e.preventDefault();$('surface').setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,type:e.pointerType});
   if(e.pointerType==='touch'){restartNav();return;}
   if(e.shiftKey||selectionNav){drawing={type:'pan',id:e.pointerId,x:e.clientX,y:e.clientY,view:{...S.view}};return;}
-  if(S.session&&S.session.layer===S.layer){conflict(S.tool);return;}
+  if(S.session&&S.session.layerId===S.layerId){conflict(S.tool);return;}
   if(['selection','transform','move','fill','eyedropper'].includes(S.tool)){if(S.tool==='eyedropper'){showPanel('color');toast('採色位置から現在色へ戻る導線の確認です。サンプル画像の採色処理は未実装。');}else openFeature(toolIds[S.tool],'primary');return;}
-  const p=local(e);drawing={type:'stroke',id:e.pointerId,path:`M${p.x},${p.y}`,layer:S.layer,color:S.tool==='eraser'?'#faf6ed':$('colorPicker').value,width:+$('brushSize').value,opacity:+$('opacity').value/100};
+  const p=local(e);drawing={type:'stroke',id:e.pointerId,path:`M${p.x},${p.y}`,layer:S.layer,layerId:S.layerId,color:S.tool==='eraser'?'#faf6ed':$('colorPicker').value,width:+$('brushSize').value,opacity:+$('opacity').value/100};
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');for(const [k,v] of Object.entries({d:drawing.path,fill:'none',stroke:drawing.color,'stroke-width':drawing.width,'stroke-linecap':'round','stroke-linejoin':'round',opacity:drawing.opacity}))path.setAttribute(k,v);path.id='liveStroke';$('art').querySelector('svg').append(path);
  });
  $('surface').addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,type:e.pointerType});if(e.pointerType==='touch'){const t=touchState();if(t&&navStart){anchoredNav(navStart,t);updateView();}return;}
@@ -196,9 +208,10 @@
  function pointerEnd(e){pointers.delete(e.pointerId);if(e.pointerType==='touch'){restartNav();return;}if(drawing?.id===e.pointerId){if(drawing.type==='stroke'&&e.type!=='pointercancel'){const old=S.layer;S.layer=drawing.layer;const op=M.commit('試筆（模擬）',{...drawing});S.layer=old;S.pending.push(op.id);setTimeout(()=>{M.finish(op.id);sync();},1200);}drawing=null;$('liveStroke')?.remove();sync();}}
  $('surface').addEventListener('pointerup',pointerEnd);$('surface').addEventListener('pointercancel',pointerEnd);
  document.addEventListener('keydown',e=>{const editing=e.target.matches('input,textarea,select,[contenteditable=true]');if(e.isComposing)return;if(e.key==='Escape'){if(resize){setWidth(resize.width);resize=null;return;}for(const id of ['library','quick','context','review']){if(!$(id).hidden){toggleRegion(id,false);if(id==='library')focusReturn?.focus();return;}}if(S.session){finishSession(false);return;}const active=Object.keys(activePanelFeature).find(p=>activePanelFeature[p]&&$('route-'+p)?.querySelector('.route-details'));if(active){closeDetail(active);return;}if(frame.classList.contains('focus-panel-open')){frame.classList.remove('focus-panel-open');$('dock').classList.remove('sheet-open');return;}if(frame.classList.contains('focused'))toggleFocus();else $('dock').classList.remove('sheet-open');}
-  if(editing)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openLibrary(true);}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?M.redo():M.undo();sync();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();mockSave();}
+  if(editing)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openLibrary(true);}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?M.dispatch('history.redo'):M.dispatch('history.undo');sync();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();mockSave();}
  });
- updateView();
+ updateView();changeColor($('colorPicker').value);
+ new ResizeObserver(()=>{frame.style.setProperty('--session-height',S.session?Math.ceil($('sessionbar').getBoundingClientRect().height)+'px':'0px');}).observe($('sessionbar'));
  const initial=decodeURIComponent(location.hash.slice(1));if(R.features.some(f=>f.id===initial))openFeature(initial,'related');
  window.addEventListener('hashchange',()=>{const id=decodeURIComponent(location.hash.slice(1));if(R.features.some(f=>f.id===id))openFeature(id,'related');});
 })();

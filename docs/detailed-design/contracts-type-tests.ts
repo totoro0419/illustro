@@ -24,3 +24,13 @@ void results;
 // @ts-expect-error New/open/view action cannot claim document revision when not in document scope.
 const impossible:ViewIntent={...withoutDocument,basis:doc.basis};
 void impossible;
+
+// Lifecycle requests that read an artwork must have its actual identity.
+import type {LifecycleIntent,FormalResult} from '../product-architecture/contracts';
+const start:LifecycleIntent={...base,scope:'lifecycle',request:'new'};
+const save:LifecycleIntent={...base,scope:'lifecycle',request:'save',context:{id:'d',lifetime:1}};
+// @ts-expect-error No dummy/missing artwork on Save.
+const missingSave:LifecycleIntent={...base,scope:'lifecycle',request:'save'};
+// @ts-expect-error Trash targets an asset, not an optional artwork.
+const missingAsset:LifecycleIntent={...base,scope:'lifecycle',request:'trash'};
+void [start,save,missingSave,missingAsset];

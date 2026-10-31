@@ -75,4 +75,14 @@ check('explicit purpose queries return safe candidates, never auto-commit',()=>{
  }
  assert.equal(m.state.past.length,0);
 });
+
+check('removed Session target cannot be silently committed',()=>{
+ const m=createModel(R);m.begin('TRN-001');const id=m.state.layerId;m.dispatch('layer.remove',{id});const before=m.state.past.length;
+ assert.equal(m.apply().status,'session-conflict');assert.equal(m.state.past.length,before);assert(m.state.session);
+ m.undo(true);assert.equal(m.apply(),true);
+});
+check('reopening a Session cannot erase its candidate values',()=>{
+ const m=createModel(R);m.begin('TRN-001');m.edit('x','20');assert.equal(m.begin('TRN-001'),false);assert.equal(m.state.session.values.x,'20');
+});
+
 console.log(JSON.stringify({passed:count,kind:'review-model',browser:false,gpu:false,devices:false}));

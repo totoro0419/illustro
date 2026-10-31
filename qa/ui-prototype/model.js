@@ -73,7 +73,7 @@
    mutate('レイヤー合成変更（模擬）',()=>{layer.blend=blend;});return true;
   }
   function begin(id){
-   const f=feature(id);if(!f.availability.executable)return false;
+   const f=feature(id);if(!f.availability.executable||state.session)return false;
    state.session={feature:id,layer:state.layer,layerId:state.layerId,values:{},past:[],future:[]};return true;
   }
   function edit(key,value){
@@ -84,7 +84,9 @@
   }
   function apply(){
    if(!state.session)return false;
-   const s=state.session,f=feature(s.feature);state.session=null;
+   const s=state.session,f=feature(s.feature);
+   if(!state.layers.some(l=>l.id===s.layerId))return {status:'session-conflict',reason:'target-removed'};
+   state.session=null;
    if(f.apply_cancel.kind==='session'||f.apply_cancel.kind==='stroke'){
     const previousId=state.layerId,previousName=state.layer;
     state.layerId=s.layerId;state.layer=s.layer;commit(f.name,{feature:f.id,values:s.values});
@@ -124,6 +126,10 @@
     case 'history.redo':return redo(true);
     case 'layer.add':return addLayer(args.name);
     case 'layer.select':return selectLayer(args.id);
+    case 'layer.remove':{
+     if(state.layers.length===1||!state.layers.some(l=>l.id===args.id))return false;
+     mutate('レイヤー削除（模擬）',()=>{state.layers=state.layers.filter(l=>l.id!==args.id);if(state.layerId===args.id)selectLayer(state.layers[0].id);});return true;
+    }
     case 'layer.visibility':return toggleVisibility(args.id);
     case 'layer.blend':return setLayerBlend(args.id,args.blend);
     case 'view.flipH':state.view.flipH*=-1;return true;
@@ -135,12 +141,14 @@
   function finish(id){state.pending=state.pending.filter(x=>x!==id);return state.past.some(x=>x.id===id);}
   function save(){
    const s={id:state.saves.length+1,operationIds:state.past.map(x=>x.id),
-    revision:state.revision,document:documentSnapshot(),pendingIds:[...state.pending],status:'pending'};
+    operations:clone(state.past),revision:state.revision,document:documentSnapshot(),pendingIds:[...state.pending],status:'pending'};
    state.saves.push(s);return s;
   }
+  function loadSave(id){const save=state.saves.find(s=>s.id===id);if(!save||save.status!=='mock-complete')return false;restoreDocument(save.document);state.past=clone(save.operations);state.future=[];state.session=null;state.pending=[];state.revision++;return true;}
+  function newDocument(){state.layers=[{id:'layer-'+state.nextLayerId++,name:'レイヤー 1',visible:true,blend:'通常'}];selectLayer(state.layers[0].id);state.past=[];state.future=[];state.pending=[];state.session=null;state.revision++;return true;}
   function completeSave(id){const s=state.saves.find(x=>x.id===id);if(!s)throw Error('save absent');s.status='mock-complete';return s;}
   return {state,feature,search,navigate,commit,begin,edit,apply,cancel,undo,redo,dispatch,
-   selectLayer,addLayer,toggleVisibility,setLayerBlend,documentSnapshot,acceptPending,finish,save,completeSave};
+   selectLayer,addLayer,toggleVisibility,setLayerBlend,documentSnapshot,acceptPending,finish,save,completeSave,loadSave,newDocument};
  }
  root.createIllustroModel=createModel;
  if(typeof module!=='undefined')module.exports={createModel};

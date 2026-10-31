@@ -27,9 +27,11 @@ export interface SettingsIntent extends IntentBase {
 export interface AssetsIntent extends IntentBase {
  scope:'assets'; assetCollection:Identity; actionRef:Key;
 }
-export interface LifecycleIntent extends IntentBase {
- scope:'lifecycle'; request:'new'|'open'|'close'|'recover'|'list'|'save'|'export'|'trash'|'restore'; context?:Identity;
-}
+export type LifecycleIntent = IntentBase & {scope:'lifecycle'} & (
+ {request:'new'|'open'|'recover'|'list'; context?:Identity} |
+ {request:'close'|'save'|'export'; context:Identity} |
+ {request:'trash'|'restore'; asset:Identity}
+);
 export type IntentEnvelope=DocumentIntent|ViewIntent|SettingsIntent|AssetsIntent|LifecycleIntent;
 /** Local editing, document edits, test pad and reference layout have separate named cursors. */
 export type HistoryScope='document'|'session'|'reference'|'test-pad'|'document-manager';
@@ -61,7 +63,7 @@ export interface EvaluationJob {
 }
 export interface FormalResult {
   job:Key; output:RevisionRef; target:TargetRef; dependencies:readonly Dependency[];
-  settingsVersion:Key; color:ColorContract; blocks:readonly Key[];
+  settingsVersion:Key; color:ColorContract; blocks:readonly Key[]; deviceGeneration:number; outputKey:Key;
   quality:'formal'; exactRecoveryRoot:Key;
 }
 export interface PresentationSnapshot {
@@ -81,3 +83,14 @@ export interface StatusSnapshot {
   visibleRevision:Key; formalRevision?:Key; protectedRevision?:Key; saves:readonly SaveStatus[];
   // Precomputed metadata only; constructing/reading this object must not evaluate pixels.
 }
+
+/** Values and target identity survive panel changes. Same name is never an identity. */
+export interface EditSession {id:Key; target:TargetRef; basis:RevisionRef; readVersions:readonly Dependency[]; candidateVersion:Key; localCursor:Key; status:'editing'|'conflict'|'applying';}
+export interface InputChunk {writer:Key; sequence:bigint; firstSample:bigint; lastSample:bigint; hash:Key; reservation:Key; protected:boolean;}
+export type WriterState = {kind:'writing';writer:Key;acceptedThrough:bigint} | {kind:'paused'|'recoverable';writer:Key;acceptedThrough:bigint;firstRejected:bigint;reason:Key} | {kind:'sealed';transaction:Key;chunks:readonly InputChunk[]};
+export interface CacheIdentity {node:Identity; inputRoot:Key; dependencies:readonly Dependency[]; transform:Key; mask:Key; clip:Key; blend:Key; profileHash:Key; precision:Key; quality:Quality; kernelVersion:Key; deviceGeneration:number;}
+export type PostEdit = {id:Key;coordinates:'document';coverage:Key;selectionSnapshot:Key;brushVersion:Key;color:ColorContract} & (
+ {kind:'paint';source:Key;alphaLock:'off'|'current-destination-alpha'} |
+ {kind:'erase';strength:number} |
+ {kind:'replace';sampleBasis:RevisionRef;sampledPremultipliedPixels:Key}
+);
