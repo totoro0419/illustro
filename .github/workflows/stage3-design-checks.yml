@@ -25,4 +25,7 @@ jobs:
       - run: node qa/ui-prototype/tests.cjs
       - run: node qa/ui-prototype/stage3-tests.cjs
       - run: python tools/build_ui_prototype.py
+      - run: npm install --no-save playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: node qa/ui-prototype/stage3-browser-tests.cjs
       - run: git diff --exit-code -- qa/ui-prototype/index.html
