@@ -46,3 +46,7 @@
 - [全面再制作の4段階](docs/DEVELOPMENT_PROCESS.md) — 作るものの決定から実装までの進め方。
 
 **最終原則：技術や内部処理の都合にユーザーを合わせるのではなく、ユーザーの理想の制作体験を実現するために技術を選択する。**
+
+## 第③段階の詳細設計レビュー（2026-10-31）
+
+PR #8の19指摘を引き継いだStage③設計補強と動くUI試作の入口：[docs/detailed-design/README.md](docs/detailed-design/README.md)。[最終監査](docs/detailed-design/FINAL_DESIGN_AUDIT.md)の現在判定は **NOT COMPLETE**。本格実装は開始せず、247機能のスコープも変更していません。Node/Chromium/TypeScript/資料整合の実行済検査はGitHub Actionsで確認できます。実機の入力・GPU・色精度・Native保存は未実証です。
