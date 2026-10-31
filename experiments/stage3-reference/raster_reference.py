@@ -72,3 +72,11 @@ class History:
     def undo(self): self.cursor=max(0,self.cursor-1)
     def redo(self): self.cursor=min(len(self.roots)-1,self.cursor+1)
     def save(self): self.saves.append(reload(self.doc));return self.saves[-1]
+
+def blend(src,dst,mode='normal'):
+    sa,da=src[3],dst[3]
+    s=tuple(c/sa for c in src[:3]) if sa else (F(0),)*3
+    d=tuple(c/da for c in dst[:3]) if da else (F(0),)*3
+    b=s if mode=='normal' else tuple(x*y for x,y in zip(s,d)) if mode=='multiply' else None
+    if b is None:raise ValueError('unsupported blend')
+    return tuple((1-sa)*dst[i]+(1-da)*src[i]+sa*da*b[i] for i in range(3))+(sa+da*(1-sa),)

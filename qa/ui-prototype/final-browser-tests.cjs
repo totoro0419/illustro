@@ -86,6 +86,15 @@ async function main(){
   const projected=await p.evaluate(point=>{const p=new DOMPoint(point.x,point.y).matrixTransform(document.querySelector('#art svg').getScreenCTM());return {x:p.x,y:p.y};},point);
   assert(Math.hypot(projected.x-x,projected.y-y)<1);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  },[1180,820],true);
+
+ for(const [w,h,scale] of [[320,568,2],[390,420,1],[740,280,1]])await run('AUD-007/019 text or keyboard geometry '+[w,h,scale],async p=>{
+  if(scale===2)await p.addStyleTag({content:'html{font-size:175%!important}'});
+  await p.locator('#tools [data-tool="transform"]').click();assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
+  await p.locator('#sessionCancel').click();
+ },[w,h],true);
+ await run('AUD-007 740x360 Session band hit without preceding Focus',async p=>{
+  await p.locator('#tools [data-tool="transform"]').click();assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
+ },[740,360],true);
  const fail=results.filter(r=>r.status==='fail');fs.mkdirSync('test-results',{recursive:true});fs.writeFileSync('test-results/browser-'+mode+'.json',JSON.stringify({mode,results,metrics,real_device:false,physical_pen:false,gpu:false},null,2));
  if(!process.env.BASELINE&&fail.length)process.exitCode=1;
  if(process.env.BASELINE&&!fail.length)throw Error('Baseline did not expose any failures');

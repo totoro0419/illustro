@@ -39,7 +39,7 @@ class AsyncTests(unittest.TestCase):
         for reserve in [1,2,3]:
             w=Writer(4,reserve)
             for i in range(4-reserve):self.assertTrue(w.sample(i))
-            self.assertFalse(w.sample('overflow'));self.assertIsNone(w.end());self.assertEqual(w.samples,list(range(4-reserve)));self.assertEqual(w.status,'recoverable')
+            self.assertFalse(w.sample('overflow'));self.assertIsNone(w.end());self.assertEqual(w.samples,list(range(4-reserve)));self.assertEqual(w.status,'recoverable');self.assertEqual(w.first_rejected,4-reserve);self.assertEqual(w.rescue_prefix(True),tuple(range(4-reserve)))
         w=Writer(4);w.sample(1);self.assertIsNone(w.end(cancel=True));self.assertEqual(w.samples,[1])
         w=Writer(4);w.sample(1);w.sample(2);self.assertEqual(w.end(),(1,2))
     def test_graph_reject_unknown_dependency(self):

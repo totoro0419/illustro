@@ -5,7 +5,7 @@
 | ID | 名称 | 現行範囲 | 主入口 | 補助入口 | 操作所有者 | 入口まで |
 |---|---|---|---|---|---|---|
 | CAN-001 | 新規作品 | included | ホーム「新規」 | 全機能 / 検索 | lifecycle | 1 |
-| CAN-002 | 表示移動・拡縮・回転 | included | Workspace「表示」→キャンバス・文書→表示移動・拡縮・回転 | 全機能 / 検索 | view | 3 |
+| CAN-002 | 表示移動・拡縮・回転 | included | Canvas表示帯／指ナビ | 全機能 / 検索 | view | 1 |
 | CAN-003 | Fit・100%・表示反転 | included | 表示帯／右下固定「表示反転」 | 全機能 / 検索 | view | 1 |
 | CAN-004 | 高倍率・ピクセル確認 | included | Workspace「表示」→キャンバス・文書→高倍率・ピクセル確認 | 全機能 / 検索 | view | 3 |
 | CAN-005 | トリミング・キャンバス拡張 | included | Workspace「作品」→キャンバス・文書→トリミング・キャンバス拡張 | 全機能 / 検索 | session | 3 |
@@ -29,7 +29,7 @@
 | BRU-005 | ブラシ編集・試し描き | included | Workspace「ブラシ」→ブラシ・消しゴム→ブラシ編集・試し描き | 全機能 / 検索 | preference | 3 |
 | BRU-006 | 入力からの変調 | included | Workspace「ブラシ」→ブラシ・消しゴム→入力からの変調 | 全機能 / 検索 | preference | 3 |
 | BRU-007 | テクスチャ・紙質ブラシ | included | Workspace「ブラシ」→ブラシ・消しゴム→テクスチャ・紙質ブラシ | 全機能 / 検索 | preference | 3 |
-| BRU-008 | 強制入り抜き | included | Workspace「ブラシ」→ブラシ・消しゴム→強制入り抜き | 全機能 / 検索 | preference | 3 |
+| BRU-008 | 強制入り抜き | included | ブラシ欄「強制入り抜き」 | 全機能 / 検索 | preference | 1 |
 | BRU-009 | 連続描画・重ね塗り・合成 | included | Workspace「ブラシ」→ブラシ・消しゴム→連続描画・重ね塗り・合成 | 全機能 / 検索 | preference | 3 |
 | BRU-010 | 定規・選択との併用 | included | Workspace「ブラシ」→ブラシ・消しゴム→定規・選択との併用 | 全機能 / 検索 | preference | 3 |
 | BRU-011 | ブラシ版と結果の再現 | included | Workspace「ブラシ」→ブラシ・消しゴム→ブラシ版と結果の再現 | 全機能 / 検索 | system | 3 |
@@ -71,10 +71,10 @@
 | LIN-007 | 未解決・低信頼・無効の扱い | included | Workspace「プロパティ」→線画・領域→未解決・低信頼・無効の扱い | 全機能 / 検索 | command | 3 |
 | LIN-008 | ベクター線画の領域利用 | included | Workspace「プロパティ」→線画・領域→ベクター線画の領域利用 | 全機能 / 検索 | session | 3 |
 | LAY-001 | 追加・選択・描画対象固定 | included | レイヤー欄「＋」／行選択 | 全機能 / 検索 | command | 1 |
-| LAY-002 | 表示・不透明度・合成 | included | Workspace「レイヤー」→レイヤー・合成→表示・不透明度・合成 | 全機能 / 検索 | command | 3 |
+| LAY-002 | 表示・不透明度・合成 | included | レイヤー欄の合成・目・設定 | 全機能 / 検索 | command | 1 |
 | LAY-003 | グループ・並替・複数選択 | included | Workspace「レイヤー」→レイヤー・合成→グループ・並替・複数選択 | 全機能 / 検索 | command | 3 |
-| LAY-004 | クリッピング・不透明度ロック | included | Workspace「レイヤー」→レイヤー・合成→クリッピング・不透明度ロック | 全機能 / 検索 | command | 3 |
-| LAY-005 | ピクセル・ベクターマスク | included | Workspace「レイヤー」→レイヤー・合成→ピクセル・ベクターマスク | 全機能 / 検索 | command | 3 |
+| LAY-004 | クリッピング・不透明度ロック | included | レイヤー欄「Clip」 | 全機能 / 検索 | command | 1 |
+| LAY-005 | ピクセル・ベクターマスク | included | レイヤー欄「Mask」 | 全機能 / 検索 | command | 1 |
 | LAY-006 | 複製・結合・統合コピー | included | Workspace「レイヤー」→レイヤー・合成→複製・結合・統合コピー | 全機能 / 検索 | command | 3 |
 | LAY-007 | 名前・タグ・検索・フィルター | included | Workspace「レイヤー」→レイヤー・合成→名前・タグ・検索・フィルター | 全機能 / 検索 | command | 3 |
 | LAY-008 | 位置・内容・全体ロック | included | Workspace「レイヤー」→レイヤー・合成→位置・内容・全体ロック | 全機能 / 検索 | command | 3 |

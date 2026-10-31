@@ -79,3 +79,66 @@ GPU Device lossで古いdeviceGenerationの結果公開を拒否し、CPU/Native
 T01 no-document New/Settings/Assets、T02 入口ごとのaction結果同値、T03 レイヤー/選択/Undo/保存、T04 Session内Undoと独立作品Undo、T05 後段消去・混色、T06 Preview/Formal atomic handoff、T07 A/B/Undo/Save/Redo、T08 接地中入力容量不足、T09 恒久Job failureと独立C救出、T10 Quota/電源断/Recovery、T11 Device loss、T12 sRGB/P3と8U/16U/16F再読込、T13長時間操作と高多層Cache、T14 pen+二指同時入力。
 
 T02〜04とT07の一部だけはreviewモデルの状態検査を実行。T05〜14の正式画像・GPU・耐久検査は未実行であり、PASSと記録してはいけない。
+
+## 8. 今回の検証で厳密化した契約
+
+この節と現行`contracts.d.ts`を、上の旧候補説明より優先する。製品仕様PR #5の能力は変えない。
+
+- **Undo入口**：固定/Quick/検索/Context/キーの作品Undoは常に`history.undo(document)`。候補はSession帯の「候補Undo」。作品以外のreference/test-pad/document-managerにも名前と明示対象を付け、キー焦点だけで作品Undoの表示名を変えない。IMEやtext input内のローカルUndoは先にその編集系へ渡す。
+- **Session確定**：対象ID+lifetime、basis、read versionsを検査。削除・同名再作成・同対象の競合変更を検出し、候補を保持したconflictへ遷移。別層Cの編集は維持。UI試作では対象消滅の適用拒否とUndoによる対象復元をモデル検査した。製品ではread/write競合版の完全検査を必須とする。
+- **no-document**：new/open/list/recover、View、Settings、Assetsは文書0件でも表現可能。save/export/closeは実Document identity必須。trash/restoreは作品管理asset identity必須。TypeScriptと限定runtime oracleで0件/1件/切替中を検査。
+- **入力OOM**：接地時にwriterと終了処理用容量を予約。各sampleの採用境界を増分記録。容量不足時は追加を未受理と表示しwriterをpaused→recoverableへ。既保護sampleを捨てない。未受理sampleを無制限に蓄積しない。取消／保持範囲だけの救出を明示選択し、無断部分確定しない。
+- **恒久失敗**：依存閉包だけをblockedにする。独立CとViewを停止しない。旧SaveFenceはfailedのまま。作者の同意でA/Bを除く新枝を作り、新FenceでCを保存。旧版入力は回復用途がある限りpin。再試行成功は別経路。
+- **複数保存**：保存先単位の単調sequenceを持ち、S2公開後のS1完了がカタログを逆転させない。ブロック→manifest→依存閉包検証→現正常世代pointerを原子的に公開。真のfsync/rename/OPFS原子性はバックエンド別契約で第④段階に試験する。限定Storeモデルはその実証ではない。
+- **FormalResult**：deviceGenerationとoutputKeyを型へ追加。Document/target lifetime・read versions・brush/settings・ICC/precision・quality・kernel・deviceを照合。古い用途結果は現表示へ採用せず、元SaveFenceへ用途を限定して保持可能。Device喪失後はCPU正本から再評価。
+- **Handoff**：一筆単位の整合根を基準。各(operation,coverage cell)の表示責任は一世代で1つ。formal追加とpreview除去を一つのsnapshotで公開する。半透明を同時表示するcrossfadeは禁止。部分tile公開はhaloと依存prefix整合を別途満たした場合だけ。
+- **Clip/Groupの循環**：構造変更のadmissionで有向依存グラフを検査し、循環は作品を変更せず拒否。名前による自動的な代替参照は行わない。Clip base削除は参照解除／削除取消を対象表示で解決し、別層へ無言接続しない。
+
+実験：`experiments/stage3-reference/`。CPU Fraction、順序列挙、失敗注入、JSON論理保存で成立を検査。画素の合成順序の根拠と正式数値契約は次節。
+
+## 9. 数値・ICC・資源の正式受入契約
+
+**数値契約（本試験前に固定、実GPU未判定）**：
+
+| 対象 | 正本と丸め | 合否条件 |
+|---|---|---|
+| 8U/16U | straightコードとαを保持。演算では選択した転送特性でpremulへ。最終操作根の量子化はnearest ties-even。原本のα0隠れRGBも保持 | codecなしNative往復は全コード一致。参照primitiveは期待整数一致。GPU候補は最大1 code/primitiveかつ複合golden最大2 codes。超えれば正式計算に不採用 |
+| 16F | binary16、CPU中間binary64。明示操作境界でties-evenへ丸め、原本bitsを保持 | 有限値のNative往復はbits一致（±0含む）。primitiveは参照binary16の1 ULP以下、subnormal絶対誤差≤2^-24。NaN/Infは入力拒否/原本隔離。無言flush-to-zero不可 |
+| Alpha | source-over：a=s+d(1−s)。premul c=S+D(1−s)。α0の評価RGBは0 | Mask/Clipは指定位置で各一回。Alpha Lockは現在の対象αを保持。8bit白塗りを消去代用しない |
+| Normal既定 | 互換性のため文書のencoded RGBで計算する案。linear-lightは明示別契約 | 50%白を黒へ：encoded=.5、linear→encoded≈.735356983。2つを同一としない。既定の最終製品判断はUI/互換性比較待ち |
+| Multiply | straight B=Cs·Cd、premul出力=(1−as)D+(1−ad)S+as·ad·B | αをsource-overと同じ式で導出。Group/Clip境界を越えてキャッシュを勝手に再結合しない |
+| sRGB/P3 | source profile/hash、D65、transfer、destination、intent、CMM版を固定 | 同一色空間のassignはraw不変。convertは数値が変わる。predefined行列計算binary64の同色往復目標≤1e−10（transfer境界除外）。任意ICC LUTは未検証 |
+| ICC/Proof | Assign/Convert/Proof別action。Proofは表示派生、原本を不変に保つ | 検証用CMM・ICC fixture・intent・BPCを固定して比較。未知/破損ICCを推測でsRGB成功扱いしない。高精度任意ICCの受入未達 |
+
+8U/16U全コードと全有限binary16パターンの数値往復、P3原色行列、転送特性境界をCPUで実行。これは16U/16Fの正式ICC変換やGPU数値合格ではない。GPU許容誤差は暫定受入上限で、達成値ではない。CPU参照の手計算Fraction結果は誤差0。
+
+**資源・停止境界**：`protected originals + accepted chunks + evaluation intermediates + presentation + save pins + recovery reserve + overhead`を同時peakで予約する。tile t、halo h、4channel×b bytesなら一面は`(t+2h)^2*4*b`、同時面数とresident層を乗じる。8192² RGBA16一面は512 MiB（計算値で実測値ではない）。dense全面×履歴長を常駐前提にしない。原本/入力/Save pinは一般LRU対象外。cacheだけを先にevict。
+
+haloは各kernelの支援幅から導出し、tile境界の同値性を参照比較する。Fill連結更新は遠方まで伝播し得るため固定haloを全演算共通に使わない。限界が未知な解析Jobは全域の依存として登録する。
+
+**GPU方式比較**：単一大dispatchはView用queueを塞ぐ危険がある。任意preemptを前提にせず、投入前に分割＋in-flight上限＋View予約を採用候補とする。同じGPU上の別deviceだけではハードウェアの独立性を保証できない。CPU/別Workerの入力受付と既存画像のCSS/compositor Viewは受付を分離できるが、OS/GPU過負荷下で画面が絶対に止まらない保証にはならない。dispatch上限は実機p99/最大占有の試験で決める。
+
+一次資料（2026-10-31確認）：[WebGPU](https://www.w3.org/TR/webgpu/) §Promise Ordering/Queue timeline、[CSS Color 4](https://www.w3.org/TR/2026/CRD-css-color-4-20261009/) predefined spacesと変換例、[ICC profile概説](https://www.color.org/getting-started/)。これらは採用したIllustro契約の性能達成を保証する資料ではない。
+
+## 10. 入力時刻・View座標・横断責務の接続
+
+各受理sampleに`pointerId, pointerGeneration, sequence, monotonicTimestamp, viewPoseVersion, documentXY, pressure, tilt`を保持する。座標はsample時刻に有効だったView行列の逆行列で文書座標へ変換する。coalesced samplesを遅れて受けても一律「配送時の最新行列」で変換しない。View時刻が不明なsampleは未確定として扱い、現在のposeだったと推測しない。予測sampleは別IDのpreviewだけ。
+
+二指の前重心が指す文書点qを保存し、新重心C′と新回転R′・倍率s′に対してtranslationを`C′−R′s′q`とする。反転行列も同じ積へ入れる。接触本数の変更・pointercancelでは生存pointerのみから新基準を取り、古いpairを使わない。ペンwriterはtouchの追加で終了しない。OSによるキャンセルをアプリが禁止できるとは仮定せず、受理境界まで保護し復帰を提示する。
+
+| 組合せ | 固定する版・境界 | 今回の根拠 / 残余 |
+|---|---|---|
+| Brush×Transform×Undo | 後段座標・筆版・作用列・不変root | Fraction参照。実Warpと高品質筆の画像拡張は残る |
+| Fill×Selection×Layer | 参照線画/選択/対象IDを受理時固定、漏れ波及域は全連結 | 連結の遠方反例。2Dの隙間補完を含む製品Fillは未実装 |
+| Mask×Clip×Blend | live依存、順序、一回だけα作用、循環拒否 | 半透明Multiply/clipの数式・循環検査 |
+| Effect×Cache×GPU | 入力根・順序・kernel・Mask/ICC/quality/device | halo箱ぼかしのtile同値。全Effectのkernel参照は残る |
+| Save×Undo×Recovery | 要求root・seq・用途pin・旧正常世代 | 操作列列挙/失敗注入。物理保存耐久は第④段階 |
+| Color×ICC×Export | 制作と表示/Proofと出力の別profile | predefined CPU数値。任意ICC高精度は未閉鎖 |
+| Reference×Layer×History | 資料rootと作品rootを別所有、外部変更時の元版保持 | 名前付き履歴モデル。利用者の理解は未検証 |
+| Session×Independent Editing | target lifetime＋read/write集合、候補取消はローカル | モデル/DOM試験。同対象conflict解決の全枝は残る |
+| AI×元画像保持×Undo | sourceRootをpin、候補出力assetを別保存、applyだけ文書Tx | 原本保持のモデル。AI本体は実装しない |
+| 長Job×次操作×View | input/Viewを非依存queue、GPU投入前分割 | 世代/論理モデルと二指DOM。実GPU最大遅延は第④段階 |
+| 大規模Layer×Memory×Save | resident予算、正本/pinの非LRU、退避完了後だけ解放 | 資源式/入力OOMモデル。実peakは未実測 |
+| Device loss×Presentation×Recovery | device epoch、old-result拒否、原本から再評価 | 失敗注入モデル。実GPU復旧は第④段階 |
+
+この表は全組合せを実装済みと示すものではない。未閉鎖の根幹条件を将来の実装試験だけで解消済みにしない。

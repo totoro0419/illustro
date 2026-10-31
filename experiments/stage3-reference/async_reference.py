@@ -80,10 +80,16 @@ class Store:
 class Writer:
     def __init__(self,capacity,output_reserve=1):
         if capacity<output_reserve:raise MemoryError('no admission')
-        self.capacity=capacity-output_reserve;self.samples=[];self.rejected=[];self.status='writing';self.transaction=None
+        self.capacity=capacity-output_reserve;self.samples=[];self.first_rejected=None;self.rejected_count=0;self.status='writing';self.transaction=None
     def sample(self,v):
-        if len(self.samples)==self.capacity or self.status!='writing':self.rejected.append(v);self.status='paused';return False
+        if len(self.samples)==self.capacity or self.status!='writing':
+            if self.first_rejected is None:self.first_rejected=len(self.samples)
+            self.rejected_count+=1;self.status='paused';return False
         self.samples.append(v);return True
     def end(self,cancel=False):
         if cancel or self.status=='paused':self.status='recoverable';return None
         self.transaction=tuple(self.samples);self.status='accepted';return self.transaction
+
+    def rescue_prefix(self,consent=False):
+        if not consent or self.status!='recoverable':raise ValueError('explicit rescue required')
+        self.transaction=tuple(self.samples);self.status='rescued-prefix';return self.transaction
