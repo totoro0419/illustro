@@ -32,7 +32,7 @@ CIは .github/workflows/stage3-design-checks.yml。ブラウザーのviewport模
 
 ## 今回の限定実験と再現
 
-- `python experiments/stage3-reference/run_reference.py`：既存30件に加えAUD006幾何Warp参照12件をdiscover対象に追加。手計算画素/α、幾何逆写像・折返し・補間・live Effect、順序・失敗・保存モデル。正式CI run成功判定は実行版で確認。
+- `python experiments/stage3-reference/run_reference.py`：既存30件に加えAUD006幾何Warp参照13件をdiscover対象に追加。手計算画素/α、幾何逆写像・折返し・補間・live Effect、順序・失敗・保存モデル。正式CI run成功判定は実行版で確認。
 - `python experiments/stage3-reference/icc_probe.py`：実Little CMSによる限定ICC比較（liblcms2が必要）。
 - `node qa/ui-prototype/final-browser-tests.cjs`：入口/8フロー/端末幅/文字/重心/焦点の追加回帰。
 - `node qa/ui-prototype/catalog-browser-tests.cjs`：全247×4開始状態の既知ID実DOM詳細導線。製品機能の実装証明ではない。
