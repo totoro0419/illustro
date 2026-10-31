@@ -1,0 +1,37 @@
+name: Publish Illustro Stage III UI prototype
+# Manual only: Pages environment denied deployment before runner start on this branch.
+# Re-enable push publishing only after the Pages environment and branch access are verified.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: illustro-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Include the original performance lab and Stage III UI design
+        run: |
+          mkdir -p _site/qa/ui-prototype _site/qa/performance-lab
+          cp qa/ui-prototype/index.html _site/qa/ui-prototype/index.html
+          cp qa/performance-lab/index.html _site/qa/performance-lab/index.html
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

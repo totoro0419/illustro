@@ -1,0 +1,63 @@
+name: Stage III design model checks
+on:
+  push:
+    branches:
+      - design/stage3-detailed-remediation-2026-10-31
+  pull_request:
+    paths:
+      - 'qa/ui-prototype/**'
+      - 'docs/product-architecture/**'
+      - 'docs/detailed-design/**'
+      - 'experiments/stage3-reference/**'
+      - 'tools/**'
+      - '.github/workflows/stage3-design-checks.yml'
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node --check qa/ui-prototype/model.js && node --check qa/ui-prototype/app.js
+      - run: node qa/ui-prototype/tests.cjs
+      - run: node qa/ui-prototype/stage3-tests.cjs
+      - run: node tools/verify_stage3_design.cjs
+      - run: python tools/build_ui_prototype.py
+      - run: npm install --no-save playwright@1.56.1 typescript@5.9.3
+      - run: npx tsc --noEmit --strict --target ES2022 --lib es2022,dom docs/detailed-design/contracts-type-tests.ts
+      - run: npx playwright install --with-deps chromium
+      - run: node qa/ui-prototype/stage3-browser-tests.cjs
+      - run: python experiments/stage3-reference/run_reference.py
+      - run: git diff --exit-code -- experiments/stage3-reference/evidence/reference-results.json
+      - run: node qa/ui-prototype/final-browser-tests.cjs
+      - run: node qa/ui-prototype/catalog-browser-tests.cjs
+      - run: node experiments/stage3-reference/intent_reference.cjs
+      - run: sudo apt-get install -y liblcms2-2
+      - run: python experiments/stage3-reference/icc_probe.py
+      - name: Execute unchanged expectations against PR7 to expose original defects
+        run: |
+          git fetch origin fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04 --depth=1
+          git show fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04:qa/ui-prototype/index.html > /tmp/pr7-prototype.html
+          BASELINE=1 PROTOTYPE_HTML=/tmp/pr7-prototype.html node qa/ui-prototype/final-browser-tests.cjs
+      - name: Original no-document type must reject the current boundary examples
+        run: |
+          mkdir -p /tmp/illustro-types/{detailed-design,product-architecture}
+          cp docs/detailed-design/contracts-type-tests.ts /tmp/illustro-types/detailed-design/
+          git show fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04:docs/product-architecture/contracts.d.ts > /tmp/illustro-types/product-architecture/contracts.d.ts
+          if npx tsc --noEmit --strict --target ES2022 --lib es2022,dom /tmp/illustro-types/detailed-design/contracts-type-tests.ts > test-results/types-before.txt 2>&1; then
+            echo 'Original type unexpectedly satisfied the new boundary'
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-browser-evidence
+          path: test-results/
+
+      - run: git diff --exit-code -- qa/ui-prototype/index.html

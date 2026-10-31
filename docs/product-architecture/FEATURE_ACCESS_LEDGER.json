@@ -358,6 +358,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "上限外や単位変換の端数を作成前に説明。DPIだけで画素数を変えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -375,8 +377,8 @@
       "scope_note": "原仕様の機能・操作範囲を完成形の製品対象として維持。初期リリースの搭載保証ではない。",
       "source_policy": "採用推奨",
       "primary_entry": {
-        "id": "panel.navigator.CAN-002",
-        "label": "Workspace「表示」→キャンバス・文書→表示移動・拡縮・回転"
+        "id": "canvas.view",
+        "label": "Canvas表示帯／指ナビ"
       },
       "auxiliary_entries": [
         {
@@ -391,18 +393,16 @@
       "surface": {
         "screen": "editor",
         "panel": "right.navigator",
-        "tool": null,
+        "tool": "move",
         "context": "文書全体が対象。表示のみの変更は選択/Maskを変えず、画像編集は対象属性を明示。"
       },
       "steps": [
-        "Workspace「表示」を開く",
-        "「キャンバス・文書」を選ぶ",
-        "「表示移動・拡縮・回転」を選ぶ"
+        "Canvas表示帯／指ナビ"
       ],
-      "step_count_to_entry": 3,
+      "step_count_to_entry": 1,
       "operation": "指ドラッグ・ピンチ・回転、PC一時移動キー、単指代替UI",
       "parameters": "倍率・角度・移動量、回転吸着ON/OFF。ペンと指の役割を表示",
-      "while_operating": "作品・途中線・選択・ハンドルが同じ表示に追従。ペン接地時の描線解釈はDEC-02比較待ち",
+      "while_operating": "作品・途中線・選択・ハンドルが同じ表示へ追従。sample時刻のViewPoseで座標固定。実ペンと指は未検証。",
       "settings_change": "倍率・角度・移動量、回転吸着ON/OFF。ペンと指の役割を表示。値編集は対象名を保持し、候補と確定値を区別",
       "apply_cancel": {
         "kind": "view",
@@ -415,24 +415,19 @@
       "devices": {
         "pc": {
           "steps": [
-            "Workspace「表示」を開く",
-            "「キャンバス・文書」を選ぶ",
-            "「表示移動・拡縮・回転」を選ぶ"
+            "Canvas表示帯／指ナビ"
           ],
           "projection": "左Rail＋右Workspace。キーは補助入口。"
         },
         "tablet": {
           "steps": [
-            "Workspace「表示」を開く",
-            "「キャンバス・文書」を選ぶ",
-            "「表示移動・拡縮・回転」を選ぶ"
+            "Canvas表示帯／指ナビ"
           ],
           "projection": "同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。"
         },
         "phone": {
           "steps": [
-            "左の全機能／対応常用ボタンを開く",
-            "「キャンバス・文書」→「表示移動・拡縮・回転」"
+            "Canvas表示帯／指ナビ"
           ],
           "projection": "同じ意味ID。詳細は下部シート。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。"
         }
@@ -477,7 +472,9 @@
         "feature_sha256": "ed651a9e3b03e0b9567cc2c3b8bd6f15d5ca07b066004ae0982d40f5573844d4"
       },
       "evaluation": {
-        "clicks_to_entry": 3,
+        "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "処理中も入力受付。誤線・座標飛び・後続筆欠落は不合格。非待機契約NB参照",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -593,6 +590,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "書出しに表示反転を混入しない。高DPI端末では表示基準を表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -714,6 +713,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "極端な倍率で選択境界と描画座標がずれない。表示限界は事前提示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -837,6 +838,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "外側のマスク・ガイド・資料の扱いを一覧で確認。切除の損失を無言実行しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -960,6 +963,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "文字・効果半径・線画区分の寸法追従を確認。補間方式一覧は次段階検証",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -1084,6 +1089,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "旧文書の処理結果を新文書へ適用しない。メモリ不足時は保護後に再開可能状態を説明",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -1207,6 +1214,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "境界で二重加算・欠け・Undo片側残りを起こさない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -1330,6 +1339,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "他人の資料や作者名を意図せず配布しない。欠落フォント等は作成時に通知",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -1454,6 +1465,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "外側込み保存量を表示。標準画像には指定出力枠のみ含める",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -1575,6 +1588,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "指描きへ切替時もナビの単指代替を残す",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -1696,6 +1711,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "0圧・最大圧・傾き反転・回転折返しで跳ねを検査",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -1817,6 +1834,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "未対応ボタンを割当済として表示しない。接続喪失時は一時状態解除",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -1937,6 +1956,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "意図した二指ナビを過度に拒否しない。誤接触と意図操作の実機比較が必要",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -2061,6 +2082,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "末端推測で入り抜きを捏造しない。既存C契約の全取消は明示取消の場合へ限定",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -2182,6 +2205,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "表示円と実際の最大作用域を区別、傾き形状も説明",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -2305,6 +2330,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "入力の欠落・順序逆転・性能のための無断間引きによる形状損失を不合格",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -2428,6 +2455,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "変換中にUndoや描画ツールが発火しない。フォーカス位置を保持",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -2546,6 +2575,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "低速点描/高速曲線/半透明重ねを基準画像と比較",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -2662,6 +2693,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "不透明度と流量の違いを重ね見本で説明。0値で描けない理由を表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -2783,6 +2816,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "角/短筆/速筆で終端の跳びがない。予測表示を確定線と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -2907,6 +2942,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "素材未読込でも旧筆を使える。名前一致だけで同一筆と断定しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -3031,6 +3068,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "大きな散布の作用域と低速性能を表示、素材欠落時は元筆を保持",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -3153,6 +3192,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "未取得センサーは未取得と表示。範囲外・曲線端・入力併用を試筆検査",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -3277,6 +3318,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "倍率変更で紙の継ぎ目や透明縁が出ない。ライセンス情報維持",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -3294,8 +3337,8 @@
       "scope_note": "原仕様の機能・操作範囲を完成形の製品対象として維持。初期リリースの搭載保証ではない。",
       "source_policy": "採用推奨",
       "primary_entry": {
-        "id": "panel.brush.BRU-008",
-        "label": "Workspace「ブラシ」→ブラシ・消しゴム→強制入り抜き"
+        "id": "panel.brush.taper",
+        "label": "ブラシ欄「強制入り抜き」"
       },
       "auxiliary_entries": [
         {
@@ -3314,11 +3357,9 @@
         "context": "描画先の画素/Maskと選択濃度へ作用。筆中の設定/対象は固定、色/筆の変更は次筆から。"
       },
       "steps": [
-        "Workspace「ブラシ」を開く",
-        "「ブラシ・消しゴム」を選ぶ",
-        "「強制入り抜き」を選ぶ"
+        "ブラシ欄「強制入り抜き」"
       ],
-      "step_count_to_entry": 3,
+      "step_count_to_entry": 1,
       "operation": "ブラシ近接の入り抜き→始/終設定",
       "parameters": "ON/OFF・開始/終了長・長さの単位・幅/不透明度・形・先端最小幅",
       "while_operating": "始終端ハンドルと短線/長線試筆、筆圧による自然な入り抜きと分離",
@@ -3334,24 +3375,19 @@
       "devices": {
         "pc": {
           "steps": [
-            "Workspace「ブラシ」を開く",
-            "「ブラシ・消しゴム」を選ぶ",
-            "「強制入り抜き」を選ぶ"
+            "ブラシ欄「強制入り抜き」"
           ],
           "projection": "左Rail＋右Workspace。キーは補助入口。"
         },
         "tablet": {
           "steps": [
-            "Workspace「ブラシ」を開く",
-            "「ブラシ・消しゴム」を選ぶ",
-            "「強制入り抜き」を選ぶ"
+            "ブラシ欄「強制入り抜き」"
           ],
           "projection": "同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。"
         },
         "phone": {
           "steps": [
-            "左の全機能／対応常用ボタンを開く",
-            "「ブラシ・消しゴム」→「強制入り抜き」"
+            "ブラシ欄「強制入り抜き」"
           ],
           "projection": "同じ意味ID。詳細は下部シート。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。"
         }
@@ -3396,7 +3432,9 @@
         "feature_sha256": "a88867ac33829bf9fea891d6431df0030bb314d4bc791707dc50e1c2559fd2c9"
       },
       "evaluation": {
-        "clicks_to_entry": 3,
+        "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "終端確定前後の位置/圧情報を保持し比較。離筆後の変化は途中表示と区別",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -3521,6 +3559,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "境界やタイルで濃度が段差にならない。透明色描画と消去を混同しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -3645,6 +3685,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "表示倍率変更だけで筆幅や選択フェザーを変えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -3770,6 +3812,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "同名の新版へ無言置換しない。再現不能なら保存済外観を保持し説明",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -3885,6 +3929,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "連続押下/ボタン解放漏れでも誤って描き続けない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4003,6 +4049,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "透明境界で黒い縁や不意な不透明化を作らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4127,6 +4175,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "物理精度より望む表現/予測可能性を評価。端末差や時間経過で勝手に変わらない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4249,6 +4299,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "乾燥で元色の濃度を無断変更しない。対象層を表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4370,6 +4422,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "現実時間の経過で保存絵が変わらない。停止と完全乾燥を区別",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4495,6 +4549,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "紙変更が既存絵へ及ぶ範囲を曖昧にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4621,6 +4677,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "パッド上のUndoで作品が戻らない。色空間を作品と一致表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4744,6 +4802,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "厚みの照明表示と実ピクセル色を区別し書出し外観を事前比較",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4860,6 +4920,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "範囲外数値を黙って切り捨てず表示。モデル切替で不要な色変化を起こさない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -4983,6 +5045,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "採色中の通過色で履歴を埋めず、採用色を記録",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -5101,6 +5165,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "UI/境界線/Proof色を元画素として拾わない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -5224,6 +5290,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "重複名/壊れた形式で既存パレットを壊さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -5347,6 +5415,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "色名は近似、色覚プレビューは診断を意味しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -5469,6 +5539,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "不明プロファイルを実測として表示しない。未対応ICCは原データ保持",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -5593,6 +5665,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "16bit整数/floatを一括表記しない。効果未対応時に8bitへ無言変換しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -5715,6 +5789,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "警告が画像に焼き込まれない。未校正画面で色一致保証をしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -5839,6 +5915,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "全体と現在層を無言で切替えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -5953,6 +6031,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "Native保留をCMYK入出力不存在と読み替えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -6076,6 +6156,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "色空間名と色名を区別。モデル選定は精度比較後",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -6194,6 +6276,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "空参照は線画指定を提案し、勝手に表示合成へ切替えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -6317,6 +6401,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "過大な補完で穴/外側を閉じる時は候補修正。ズームで補完幅を変えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -6442,6 +6528,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "削除された参照は無効と表示し別参照へ無言移行しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -6567,6 +6655,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "高速軌跡で小領域を欠落しない。既存色への重複加算をしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -6691,6 +6781,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "囲い外の線が未閉鎖なら漏れを候補表示、広い外側を黙って塗らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -6816,6 +6908,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "細線を跨ぐ接触判定は実機検証、曖昧時に全外側を採用しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -6939,6 +7033,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "区分無効は理由と修正口を提示、通常塗りに勝手に代替しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -7064,6 +7160,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "大きな隙間で誤面を作る場合は局所取消/手動修正。AI必須にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -7189,6 +7287,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "後から調整して後続の筆を巻き戻さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -7313,6 +7413,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ロック層の代わりに無断増殖しない。グループ/クリップ位置を確認",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -7438,6 +7540,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "失敗しても元線/塗りを不変。内部Region IDや境界表現の方式は決めない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -7563,6 +7667,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "太い線の輪郭を領域境界の正本と誤認させない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -7687,6 +7793,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "穴を外側に統合する等の影響領域を表示、曖昧な操作を自動採用しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -7811,6 +7919,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "同一版/同位置で両ツールの対象が違えば不合格",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -7936,6 +8046,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "自動色再マッピング禁止。元線の変更中は旧版と候補を取り違えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -8059,6 +8171,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "スコアを正確性の保証としない。穴/外側を含むテスト絵で評価",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -8184,6 +8298,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "全キャンバスをロックしない。低信頼と処理失敗を区別",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -8308,6 +8424,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "対応外の筆風外観は範囲を明示、抽出方式は次段階検証",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -8424,6 +8542,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "非表示/マスク選択を明示、途中筆の出力が別層へ飛ばない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -8441,8 +8561,8 @@
       "scope_note": "原仕様の機能・操作範囲を完成形の製品対象として維持。初期リリースの搭載保証ではない。",
       "source_policy": "採用推奨",
       "primary_entry": {
-        "id": "panel.layers.LAY-002",
-        "label": "Workspace「レイヤー」→レイヤー・合成→表示・不透明度・合成"
+        "id": "panel.layers.blend",
+        "label": "レイヤー欄の合成・目・設定"
       },
       "auxiliary_entries": [
         {
@@ -8461,11 +8581,9 @@
         "context": "層ツリー/関連が対象。選択範囲は保持し、構造操作で画素を勝手に切り取らない。"
       },
       "steps": [
-        "Workspace「レイヤー」を開く",
-        "「レイヤー・合成」を選ぶ",
-        "「表示・不透明度・合成」を選ぶ"
+        "レイヤー欄の合成・目・設定"
       ],
-      "step_count_to_entry": 3,
+      "step_count_to_entry": 1,
       "operation": "レイヤー行/ヘッダー",
       "parameters": "目・不透明度・合成モード",
       "while_operating": "目は一押し、濃度ドラッグ、モードは前後比較し選択確定",
@@ -8481,24 +8599,19 @@
       "devices": {
         "pc": {
           "steps": [
-            "Workspace「レイヤー」を開く",
-            "「レイヤー・合成」を選ぶ",
-            "「表示・不透明度・合成」を選ぶ"
+            "レイヤー欄の合成・目・設定"
           ],
           "projection": "左Rail＋右Workspace。キーは補助入口。"
         },
         "tablet": {
           "steps": [
-            "Workspace「レイヤー」を開く",
-            "「レイヤー・合成」を選ぶ",
-            "「表示・不透明度・合成」を選ぶ"
+            "レイヤー欄の合成・目・設定"
           ],
           "projection": "同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。"
         },
         "phone": {
           "steps": [
-            "左の全機能／対応常用ボタンを開く",
-            "「レイヤー・合成」→「表示・不透明度・合成」"
+            "レイヤー欄の合成・目・設定"
           ],
           "projection": "同じ意味ID。詳細は下部シート。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。"
         }
@@ -8548,7 +8661,9 @@
         "feature_sha256": "fd519ca5af31be3e4ed1d422cabcd3aa3026e48a7828286654897f00d1681964"
       },
       "evaluation": {
-        "clicks_to_entry": 3,
+        "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "Soloと区別。親グループ非表示で見えない理由を表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -8672,6 +8787,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "自分の子への移動不可、検索絞込中の位置を原一覧で確認",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -8689,8 +8806,8 @@
       "scope_note": "原仕様の機能・操作範囲を完成形の製品対象として維持。初期リリースの搭載保証ではない。",
       "source_policy": "採用推奨",
       "primary_entry": {
-        "id": "panel.layers.LAY-004",
-        "label": "Workspace「レイヤー」→レイヤー・合成→クリッピング・不透明度ロック"
+        "id": "panel.layers.clip",
+        "label": "レイヤー欄「Clip」"
       },
       "auxiliary_entries": [
         {
@@ -8709,11 +8826,9 @@
         "context": "層ツリー/関連が対象。選択範囲は保持し、構造操作で画素を勝手に切り取らない。"
       },
       "steps": [
-        "Workspace「レイヤー」を開く",
-        "「レイヤー・合成」を選ぶ",
-        "「クリッピング・不透明度ロック」を選ぶ"
+        "レイヤー欄「Clip」"
       ],
-      "step_count_to_entry": 3,
+      "step_count_to_entry": 1,
       "operation": "レイヤー行の専用切替",
       "parameters": "クリップ元・クリップON/OFF・透明度ロック",
       "while_operating": "行の常時アイコンで対象確認、両者の図解をツールチップ",
@@ -8729,24 +8844,19 @@
       "devices": {
         "pc": {
           "steps": [
-            "Workspace「レイヤー」を開く",
-            "「レイヤー・合成」を選ぶ",
-            "「クリッピング・不透明度ロック」を選ぶ"
+            "レイヤー欄「Clip」"
           ],
           "projection": "左Rail＋右Workspace。キーは補助入口。"
         },
         "tablet": {
           "steps": [
-            "Workspace「レイヤー」を開く",
-            "「レイヤー・合成」を選ぶ",
-            "「クリッピング・不透明度ロック」を選ぶ"
+            "レイヤー欄「Clip」"
           ],
           "projection": "同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。"
         },
         "phone": {
           "steps": [
-            "左の全機能／対応常用ボタンを開く",
-            "「レイヤー・合成」→「クリッピング・不透明度ロック」"
+            "レイヤー欄「Clip」"
           ],
           "projection": "同じ意味ID。詳細は下部シート。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。"
         }
@@ -8795,7 +8905,9 @@
         "feature_sha256": "f54e92137234aacaf9d64fed3a9ecc980941acc4139c1699dfa076682512f49a"
       },
       "evaluation": {
-        "clicks_to_entry": 3,
+        "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "マスクを含めた合成範囲を定義、クリップ元削除時は関係変化を通知",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -8813,8 +8925,8 @@
       "scope_note": "原仕様の機能・操作範囲を完成形の製品対象として維持。初期リリースの搭載保証ではない。",
       "source_policy": "採用推奨",
       "primary_entry": {
-        "id": "panel.layers.LAY-005",
-        "label": "Workspace「レイヤー」→レイヤー・合成→ピクセル・ベクターマスク"
+        "id": "panel.layers.mask",
+        "label": "レイヤー欄「Mask」"
       },
       "auxiliary_entries": [
         {
@@ -8833,11 +8945,9 @@
         "context": "層ツリー/関連が対象。選択範囲は保持し、構造操作で画素を勝手に切り取らない。"
       },
       "steps": [
-        "Workspace「レイヤー」を開く",
-        "「レイヤー・合成」を選ぶ",
-        "「ピクセル・ベクターマスク」を選ぶ"
+        "レイヤー欄「Mask」"
       ],
-      "step_count_to_entry": 3,
+      "step_count_to_entry": 1,
       "operation": "マスク追加→編集対象ラベル",
       "parameters": "画素/ベクターマスク・白黒/濃度・リンク・反転/無効/適用",
       "while_operating": "マスクサムネイル選択を枠で示し、単独表示/赤重ねで確認",
@@ -8853,24 +8963,19 @@
       "devices": {
         "pc": {
           "steps": [
-            "Workspace「レイヤー」を開く",
-            "「レイヤー・合成」を選ぶ",
-            "「ピクセル・ベクターマスク」を選ぶ"
+            "レイヤー欄「Mask」"
           ],
           "projection": "左Rail＋右Workspace。キーは補助入口。"
         },
         "tablet": {
           "steps": [
-            "Workspace「レイヤー」を開く",
-            "「レイヤー・合成」を選ぶ",
-            "「ピクセル・ベクターマスク」を選ぶ"
+            "レイヤー欄「Mask」"
           ],
           "projection": "同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。"
         },
         "phone": {
           "steps": [
-            "左の全機能／対応常用ボタンを開く",
-            "「レイヤー・合成」→「ピクセル・ベクターマスク」"
+            "レイヤー欄「Mask」"
           ],
           "projection": "同じ意味ID。詳細は下部シート。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。"
         }
@@ -8921,7 +9026,9 @@
         "feature_sha256": "a38a891009845f1fc137ecbd9b26f910ce66c511d2aacc47ca8159f31776ccc9"
       },
       "evaluation": {
-        "clicks_to_entry": 3,
+        "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "絵サムネイルとの選択誤認を防ぐ。選択範囲とマスク濃度を乗じて作用",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -9047,6 +9154,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "通過グループ/クリップで外観が変わる結合を無言実行しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -9170,6 +9279,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "検索中に層の実順序が変わらない。選択層が隠れた場合は位置案内",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -9292,6 +9403,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "不能時に他層へ描かず解除/別対象/新層を提案",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -9417,6 +9530,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "検査中の書出しは保存された作品表示/検査表示の選択を要求",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -9532,6 +9647,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "透明層や隠れ層を無言選択しない。選択と描画ジェスチャーを分離",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -9655,6 +9772,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "削除層や新設層を欠落表示。カンプ再生で画素を戻さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -9777,6 +9896,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "無断Raster化や層増殖禁止。ベクターツールなら適合層へ明示作成",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -9894,6 +10015,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "中断時は今回の輪郭だけ取消、既存選択を失わない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10018,6 +10141,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "透明部を白色と扱わない。選択ゼロはゼロ件と表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10141,6 +10266,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "半透明濃度を二値化しない。縮小消滅時に事前表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10264,6 +10391,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "文書サイズ変更後の再選択は対応座標と外側を説明",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10388,6 +10517,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "無効区分は処理せず修正口、αの薄い境界も濃度保持",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10512,6 +10643,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "同名上書き確認、サイズ違いは座標/拡縮を選択",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10635,6 +10768,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "途中で対象を無言切替えしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10758,6 +10893,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "表示を隠しても範囲が消えたと誤認させない。書出しに混入しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10875,6 +11012,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "表示ナビと内容変形の入力を分離。ゼロ倍率を無言適用しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -10998,6 +11137,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "自己交差や退化候補は警告し元へ戻せる",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -11123,6 +11264,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "粗プレビューを最終精度と誤表示しない。破綻した候補を適用しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -11247,6 +11390,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "保護域を越える影響や透明縁を検査。元画素から再評価",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -11370,6 +11515,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "複数候補の突然切替を抑え、画面外基準を説明",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -11492,6 +11639,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ドット用途にぼかしを無断適用しない。端数位置を表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -11616,6 +11765,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "同じUndoボタンの現在作用範囲を表示、過去層編集へ突然遡らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -11741,6 +11892,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "変形後の上描きがどの空間へ保存されるか曖昧にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -11864,6 +12017,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "重ね形状の塗り規則を表示、Rasterへ無断変換しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -11987,6 +12142,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "点密集時は拡大/候補巡回。接続先を予告して誤結合を防ぐ",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -12110,6 +12267,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "交点なし時の全消しを無言実行しない。筆風外観の再現範囲を明示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -12234,6 +12393,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "細い穴/尖りの消失をプレビュー。空結果は空と表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -12358,6 +12519,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "句読点・CJK混在・改行・枠溢れを検査、未対応組版を無言省略しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -12482,6 +12645,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "プラットフォーム制約を表示し、他端末でも文字内容を失わない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -12606,6 +12771,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "解像度を無言選択しない。画像化後の再編集不能を明示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -12719,6 +12886,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "高度組版はDEC-10比較検証。枠文字はVEC-005に既に含む",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -12843,6 +13012,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ガイド線自体は書出し外、消しの吸着は任意",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -12965,6 +13136,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "極端な消失点でUIが消えない。基準変更が絵を変形しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -13089,6 +13262,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "混色時の反映順による差は表示して検証、単純コピーと混同しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -13212,6 +13387,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ゼロ寸法・重複点は理由提示、選択範囲とガイドを尊重",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -13335,6 +13512,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "長筆で誤発火しないか比較、筆圧表現との両立検証",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -13459,6 +13638,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "競合時に線が不意に飛ばない。非表示でも有効なら対象帯に表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -13583,6 +13764,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "他作品の外側消失点も保持し、欠落値を黙って0にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -13706,6 +13889,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "選択/マスク範囲と外側色を予告、透明端で暗い縁を出さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -13828,6 +14013,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "同位置点の順序を保持。透明色を黒として混ぜない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -13952,6 +14139,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "細い穴や分裂形状で破綻を検査、形状追従方式は比較検証",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -14075,6 +14264,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "8bit出力で帯を検査。ディザ再生成でRedoが変わらない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -14198,6 +14389,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "選択を作成時マスクへ固定、以降の選択変更へ追従しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -14320,6 +14513,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "同じ色効果でも対象精度の未対応を表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -14444,6 +14639,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "作用域外の入力を読むか/出力を切るかをマスク設定で区別",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -14566,6 +14763,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "強調で縁が壊れないか100%比較を必須入口にする",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -14690,6 +14889,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "外側/反復/透明端の扱いを効果ごと明示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -14813,6 +15014,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "効果がキャンバス外へ伸びる部分も保存・書出し範囲を確認",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -14937,6 +15140,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "未指定源点/参照消失は描かず案内。自己参照の循環を許さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -15059,6 +15264,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "循環依存や未対応合成は適用せず理由提示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -15183,6 +15390,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "マスク/クリップ/親合成を含む外観が変わる場合は中止/別案",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -15305,6 +15514,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ブレンドの色空間とαの基準を表示、未対応モードを通常と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -15429,6 +15640,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "境界を一つ動かしただけで不連続な穴が出ない。合成順とクリップを説明",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -15554,6 +15767,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "非対応処理は明示焼込、Undo可能だから非破壊とは呼ばない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -15677,6 +15892,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "外部変更を勝手に反映しない。循環リンクを拒否",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -15800,6 +16017,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "外観を維持できない変換は理由を出し取消可能",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -15917,6 +16136,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "画像読込中も作品編集継続。資料は通常画像書出しに含めない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -16039,6 +16260,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "中央の描画ジェスチャーを資料が横取りしない。小画面は資料シート",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -16162,6 +16385,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "通常採色は元色、表示色採取は明示。絵の反転と混同しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -16285,6 +16510,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "グレーやProofの表示を元色として取らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -16409,6 +16636,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "別ビューで古い確定結果を最新と表示しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -16533,6 +16762,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "出典入力は利用許諾を保証しない。権利不明素材を配布パックへ無言混入しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -16648,6 +16879,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "処理中Undoは対象操作を指定して受理し、後続入力を取り違えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -16771,6 +17004,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "比較中の描画は分岐作成を明示し元案を失わない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -16893,6 +17128,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "作成失敗を成功サムネイルにしない。未確定編集は別保留として示す",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17016,6 +17253,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "古い状態から編集でRedoを失う場合は元案の保護口",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17139,6 +17378,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "層削除/変形で対応しない場合は候補を表示し勝手に当てない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17261,6 +17502,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "削除でRedo/Timelapseが壊れる依存を隠さない。無制限永久保存は約束しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17385,6 +17628,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "古いサムネイルに更新日時を併記、読込失敗は空作品に置換しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17509,6 +17754,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "容量不足時のゴミ箱自動破棄はしない。元案の参照依存を確認",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17627,6 +17874,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "後続編集を保存済にしない。失敗時は既存正常ファイルと保護状態を維持",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17742,6 +17991,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "保護未完を保存済と表示しない。間隔/許容喪失量は測定条件とセットで別途確定",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17865,6 +18116,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "終了イベントの完了を安全条件にしない。壊れた部分を正常な空白で埋めない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -17989,6 +18242,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "保護も不可なら未保護編集量を明示し救出先を提示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -18113,6 +18368,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "外部資料やAI不可を基本制作不能へ波及させない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -18237,6 +18494,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "再読込の検査が済むまで移行成功にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -18362,6 +18621,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "破損/巨大/未対応を明示、部分読込を正常成功にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -18429,7 +18690,8 @@
         },
         "phone": {
           "steps": [
-            "上部「書き出し」"
+            "左の全機能／対応常用ボタンを開く",
+            "「読み込み・書き出し」→「PNG・JPEG・WebP」"
           ],
           "projection": "同じ意味ID。詳細は下部シート。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。"
         }
@@ -18478,6 +18740,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "JPEG透明を無言で黒にしない。WebP未対応先は説明",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -18601,6 +18865,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "完全互換と呼ばない。往復テストでα/ICC/マスク/合成を検証。往復試験は同じ作品で読込→再出力→対象アプリ再読込し外観/再編集を別記録",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -18723,6 +18989,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ORA/TIFFだから全編集状態が残ると説明しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -18847,6 +19115,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "未対応外観の無言省略禁止、外部リソース不足を一覧",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -18970,6 +19240,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "コーデック対応やライセンスは比較検証。未対応端末で正常出力と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -19092,6 +19364,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "色変換とICC削除を混同しない。未知メタデータも残すか表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -19216,6 +19490,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "同名上書きは選択、部分失敗を全成功にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -19339,6 +19615,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "確認は色一致の保証ではない。直接印刷と変換出力を別能力",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -19463,6 +19741,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "異なる種別を名前だけで自動置換しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -19587,6 +19867,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "絞込ゼロと素材未取得を区別、隠した素材の解除口",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -19710,6 +19992,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "任意コードは通常素材として自動実行しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -19831,6 +20115,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "表示名だけで同一性を決めない。依存が失われる操作を説明",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -19954,6 +20240,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ログイン切れで所持筆を使えなくしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -20077,6 +20365,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "非記録操作を黙って省略しない。再生の対象を先に表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -20199,6 +20489,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "対象欠落は停止/指定し直す、別層へ無言適用しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -20322,6 +20614,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "後続の独立編集を巻き戻さない。外部副作用は自動Undoと約束しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -20446,6 +20740,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "一件失敗を隠さず残りを選択継続。上書きは別明示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -20570,6 +20866,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "共有先の未対応コマンドを実行可能と見せない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -20693,6 +20991,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "外部副作用の取消不能性と権限拒否時の原状保持を要求",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -20814,6 +21114,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "全機能専用ボタンを並べず検索から到達、要求済外観を再承認対象にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -20936,6 +21238,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "画面外にパネルを閉じ込めない。重なりで確定/取消を隠さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -21058,6 +21362,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "色だけで状態を伝えず、省略時も名前全文へ到達",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -21172,6 +21478,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "6方向ドーナツは比較候補。自動で位置や機能が変わるメニューを標準にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -21287,6 +21595,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "無効理由を表示、右クリック専用機能を作らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -21410,6 +21720,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "窓を縮めても主要入口を失わず、一時レイアウトから復帰",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -21525,6 +21837,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "キーボードなしでも解除可能。OS全画面とFocusを区別",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -21641,6 +21955,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 1,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "復元問題を通常最近一覧に埋めない。ヘルプから実機能へ移動",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -21762,6 +22078,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "二指接触を筆や選択の取消へ誤認しない。DEC-02で接地中を比較",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -21883,6 +22201,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "IME/OSで取得不能なら使用可と偽らない。検索/Tooltipに現キー表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22004,6 +22324,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "未対応動作を登録成功としない。基本機能への通常入口を残す",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22125,6 +22447,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "文字/数値入力中の保持キーはツールを発火しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22247,6 +22571,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "キー名翻訳や配列違いで別Commandへ化けない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22371,6 +22697,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "複数入力同時/外部画面/高DPIの座標整合を検査",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22495,6 +22823,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ペン無しでも指描き、ソフトKeyboardで確定UIが隠れない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22618,6 +22948,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "小さく縮めたPC画面を使わない。精密ハンドルへ拡大/数値代替",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22742,6 +23074,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "ブラウザ上部変化/Notchでも操作ボタンを隠さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22866,6 +23200,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "GPU/Pen/Pressure/Hover/物理Keyboard/直接FilePicker/PWAを基本制作必須にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -22990,6 +23326,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "履歴整理/素材削除で再生を無言破損させない。記録既定はDEC-14",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -23114,6 +23452,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "高解像度で筆順/色が変わらない。未検証最大値を保証しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -23238,6 +23578,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "資料は既定除外。記録削除が作品本体を消さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -23362,6 +23704,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "開いているだけの時間は含めない。Idle閾値は表示し後で補正可能",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -23485,6 +23829,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "拡大時のラベル切れ・確定/取消欠落を不合格",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -23607,6 +23953,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "Touch標的は原則44×44論理px以上を提案、例外は同等代替と実測で審査",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -23729,6 +24077,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "描線経路そのもの以外の主要操作へ到達、実支援技術で検証待ち",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -23852,6 +24202,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "色名は近似と明記し、作者の色を無断補正しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -23975,6 +24327,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "音だけ/振動だけを成功条件にしない。進捗アニメOFFでも状態は読める",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -24099,6 +24453,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "初期言語は日本語+英語を推奨、他言語追加は能力を保留。長文/単位誤換算を検査",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -24223,6 +24579,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "モデル無効でも手動制作可能、誤境界を確定事実として表示しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -24347,6 +24705,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "勝手な完成代行を中心にしない。提案の根拠と不確実性を示す",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -24471,6 +24831,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "層の合成順を無断変更しない、誤検出は局所拒否",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -24595,6 +24957,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "送信後の取消は送信撤回を意味しない。モデル/APIは未選定",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -24719,6 +25083,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "公開API/実行方式は未決定、無制限コード前提にしない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -24842,6 +25208,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "将来候補を完成仕様と呼ばない。現在の能力不足を隠さない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -24966,6 +25334,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "モデル権利/容量/不足時保持を検証、保留推奨",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -25089,6 +25459,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "不要判断は製品領域一式のみ、ユーザー承認前に禁止仕様としない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -25213,6 +25585,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "有用性/遅延/接続喪失時の制御は未検証、比較待ち",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -25338,6 +25712,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "OS権限拒否でも内部Copy/Paste成立、元削除を先行しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -25462,6 +25838,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "元座標不明なら同位置と偽らず配置枠を表示",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -25586,6 +25964,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "書式やマスク未対応を無言削除しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -25709,6 +26089,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "権限拒否は内部編集へ波及しない。失敗時は再取込口",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -25833,6 +26215,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "意図しない半透明/二重角/ズーム依存の太さを検査",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -25955,6 +26339,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "滑らか補間や非整数拡大を無言適用しない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -26079,6 +26465,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "パレット並替で絵の色を意図せず変えない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -26202,6 +26590,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "極端値で階調欠落を表示、初期値は恒等。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -26326,6 +26716,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "黒点と白点の逆転を拒否、16bitの階調を8bitに丸めない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -26450,6 +26842,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "点の順序/重複を明示、急曲線のバンディングを100%確認。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -26573,6 +26967,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "単なる明るさと区別、負値/範囲外の扱いを明示。HDR値を無言切捨てしない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -26696,6 +27092,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "色相の360度折返し連続、無彩色への影響と肌の変化を確認。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -26821,6 +27219,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "肌保護等を未実装の保証にしない。保護能力は比較検証。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -26944,6 +27344,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "域境界に帯を作らず、輝度維持ON/OFFの外観を比較。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -27067,6 +27469,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "画像補正の値を実撮影Kelvinと偽らない。強補正の色域外警告。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -27190,6 +27594,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "色相境界で明度断裂を作らない、Tint OFFの中立性。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -27313,6 +27719,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "合計100%超の警告は可能でも強制正規化しない。負係数とクリップを確認。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -27437,6 +27845,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "成分名が同じでも色モードを偽らない、域間の不連続を検査。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -27560,6 +27970,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "透明度は初期不変、8/16bitの両端と2回反転を検査。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -27684,6 +28096,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "段数の意味を成分別か全色数か明示。Indexed変換と混同しない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -27807,6 +28221,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "境界一致値の規則を説明、ディザなしは純二値色を保つ。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -27932,6 +28348,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "未対応形式/範囲を検出、色空間不明を無言適用しない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -28056,6 +28474,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "透明色の暗縁/タイル境界禁止、表示ズームで半径が変わらない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -28179,6 +28599,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "平均範囲の非対称や1pxずれを検査、α保護を選択。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -28303,6 +28725,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "角度90/180の対称性、片方向の起点を明示。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -28427,6 +28851,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "拡縮/回転表示でも中心不変、端部の欠落/低精度段差を検査。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -28551,6 +28977,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "輪郭の色漏れ/ハローを100%確認。単純ぼかしと深度の能力差を明示。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -28674,6 +29102,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "強度上限でも縁の白黒ハローを確認、画素を増やす超解像とは呼ばない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -28797,6 +29227,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "平坦部のノイズ増幅と縁のovershootを検査。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -28920,6 +29352,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "中立値は色空間/精度に依存し明示。勝手に合成モードを置換しない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -29044,6 +29478,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "表示拡大や再描画で粒を引き直さない、保存/Redoで一致。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -29167,6 +29603,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "細い線やハイライトを誤消去したら局所取消、全体適用を無断実行しない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -29291,6 +29729,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "Mask端の切れ方と端数ブロックを規定、縮小再拡大と混同しない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -29414,6 +29854,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "負値/幅超/半端な幅で意図通り、透明モードの切捨てを説明。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -29538,6 +29980,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "Map更新は候補比較、未取得Mapで別絵へ勝手に代替しない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -29663,6 +30107,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "拡縮/回転でモアレを確認、lpiとpxを混同せず出力DPI反映。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -29787,6 +30233,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "線画領域解析とは別能力。抽出線が正解と断定しない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -29910,6 +30358,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "半透明縁や細線の濃度を壊さない。白背景除去は別操作。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -30034,6 +30484,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "細い穴/鋭角/半透明の扱いとCanvas外を確認。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -30159,6 +30611,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "同じ光源を選んだ他層だけ連動、透明部分の影や切れを検査。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -30282,6 +30736,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "HDR候補とSDR白飛びを区別、元αを光で無断変更しない。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -30406,6 +30862,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "模様の継目とグラデ透明端を確認、形変更の座標追従を明示。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
@@ -30531,6 +30989,8 @@
       },
       "evaluation": {
         "clicks_to_entry": 3,
+        "count_kind": "nominal-design-path-not-measured",
+        "start_state": "corresponding Panel already accessible; device paths may need reveal/scroll",
         "movement": "常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可",
         "risk": "3D形状編集と呼ばない。小さい文字/鋭角で潰れを確認。計算失敗は元像を保持し効果をエラー表示、低品質プレビューを確定結果と偽らない",
         "canvas": "常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上",
