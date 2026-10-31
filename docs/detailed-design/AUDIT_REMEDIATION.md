@@ -11,7 +11,7 @@
 | AUD-003 | P1 | 閉鎖（Stage③） | 作品Undoと候補Undoを異なる明示actionへ分離。候補取消で別層Cを維持。 |
 | AUD-004 | P1 | 閉鎖（Stage③） | Focusの一時Panelを実表示し、閉じる/WorkspaceボタンでFocusへ復帰。 |
 | AUD-005 | P1 | 閉鎖（Stage③） | scope判別union、save/export実文書必須、manager asset、実行可否境界を修正。 |
-| AUD-006 | P1 | 未閉鎖（技術参照拡張済） | 実三角形Warp・折返し・bilinear/cubic B-spline・複数後段・Mask/Clip・2 live Effect・不変Save rootをFraction CPU参照12件で追加。全製品Warpと、本人による再編集意味のUI確認は未実施。詳細は [AUD006参照契約](AUD006_WARP_REFERENCE_REVIEW.md)。 |
+| AUD-006 | P1 | 未閉鎖（技術参照拡張済） | 実三角形Warp・折返し・bilinear/cubic B-spline・複数後段・Mask/Clip・2 live Effect・不変Save rootをFraction CPU参照13件で追加。全製品Warpと、本人による再編集意味のUI確認は未実施。詳細は [AUD006参照契約](AUD006_WARP_REFERENCE_REVIEW.md)。 |
 | AUD-007 | P1 | 閉鎖（Stage③） | Session実測高さをResizeObserverで予約。狭幅で重複作品Undoボタンを省き、文字をrem化。 |
 | AUD-008 | P2 | 未閉鎖 | 主要同義語は修正済だが、名称を教えない制作課題と十分な同義語コーパスは未実行。 |
 | AUD-009 | P2 | 閉鎖（Stage③） | 詳細の入口保持、Escape/閉じるの焦点復帰と入口消滅時の安全代替。 |
