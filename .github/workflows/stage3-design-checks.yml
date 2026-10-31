@@ -34,6 +34,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node qa/ui-prototype/stage3-browser-tests.cjs
       - run: python experiments/stage3-reference/run_reference.py
+      - run: git diff --exit-code -- experiments/stage3-reference/evidence/reference-results.json
       - run: node qa/ui-prototype/final-browser-tests.cjs
       - run: node qa/ui-prototype/catalog-browser-tests.cjs
       - run: node experiments/stage3-reference/intent_reference.cjs
