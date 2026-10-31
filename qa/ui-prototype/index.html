@@ -269,10 +269,14 @@
  }
  function renderLayers(){
  if(!$('layerRows'))return;
+ const active=document.activeElement;
+ const host=active?.closest('#layerPageRows')?'layerPageRows':active?.closest('#layerRows')?'layerRows':null;
+ const focusKey=active?.dataset?.layer?['layer',active.dataset.layer]:active?.dataset?.eye?['eye',active.dataset.eye]:null;
  const rows=S.layers.map((l,i)=>'<div class="layerrow"><button class="eye" data-eye="'+esc(l.id)+'" aria-label="'+esc(l.name)+'の表示切替" aria-pressed="'+l.visible+'">'+(l.visible?'◉':'○')+'</button><button class="select-layer" data-layer="'+esc(l.id)+'" aria-pressed="'+(S.layerId===l.id)+'"><span class="thumb">'+(i===0?'〰':i===1?'◒':'◻')+'</span><span class="layername">'+esc(l.name)+'</span><small>'+esc(l.blend)+'</small></button></div>').join('');
  $('layerRows').innerHTML=rows;if($('layerPageRows'))$('layerPageRows').innerHTML=rows;
  $('box-layers').querySelector('.summary').textContent=S.layers.length+'層';
  if($('blendMode'))$('blendMode').value=S.layers.find(l=>l.id===S.layerId)?.blend||'通常';
+ if(host&&focusKey){const next=[...$(host).querySelectorAll('button')].find(b=>b.dataset[focusKey[0]]===focusKey[1]);if(next)next.focus({preventScroll:true});}
  }
  function renderHistory(){if($('historyList'))$('historyList').innerHTML=S.past.slice(-6).reverse().map(o=>`<small>${esc(o.label)} · ${esc(o.layer)}</small>`).join('')||'<small>この試作での操作履歴はまだありません。</small>';}
  function parameters(f){return f.parameters.split(/[、・。]/).map(x=>x.trim()).filter(x=>x.length>0).slice(0,8);}
