@@ -16,7 +16,7 @@
 ## 参照検査と独立性
 
 - experiments/stage3-reference/warp_reference.py：Fraction幾何triangle rasterizer、fold、bilinear/cubic B-spline、premul合成、後段編集、mask/clip、二つのlive Effect。
-- experiments/stage3-reference/test_warp_reference.py：12件。サブケースは12より多い。
+- experiments/stage3-reference/test_warp_reference.py：13件。サブケースは13より多い。
 - 既存のtest_raster.pyの固定fragment・手計算検査とは別に追加。
 - 実行コマンド：python experiments/stage3-reference/run_reference.py。
 
