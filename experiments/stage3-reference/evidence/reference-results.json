@@ -162,6 +162,10 @@
       "status": "pass"
     },
     {
+      "case": "test_warp_reference.WarpReferenceTests.test_original_close_sequence_fold_erase_smudge_reedit_undo_save_reload",
+      "status": "pass"
+    },
+    {
       "case": "test_warp_reference.WarpReferenceTests.test_paint_erase_alpha_lock_and_fixed_smudge_after_real_warp_reedit",
       "status": "pass"
     },
@@ -170,7 +174,7 @@
       "status": "pass"
     }
   ],
-  "testsRun": 42,
+  "testsRun": 43,
   "success": true,
   "source_sha256": {
     "async_reference.py": "f7758b90b82fe58d744c313f6099d3522b0222ea258bd7a247e8b2abf5d6e307",
@@ -183,7 +187,7 @@
     "test_cross_feature.py": "9923187987e4ff300b7fab5a9886a0051623f7049d0e24d61a641a12f13a1a0d",
     "test_handoff.py": "2fb393ee2a81d675108aa73c1839dd14244f45e1b3d4fa729616144821ba6025",
     "test_raster.py": "56e81639ed92fce8fb700b475c3bc973727a90963addd567aba98f9bc61d9f2a",
-    "test_warp_reference.py": "3837c119f2bedf310d72d706f80af7803c2ba2829a1bd82f5d53a364d21e960c",
+    "test_warp_reference.py": "7d126f3687375a2754fb58d8023ed121cd077dcfaa55fc43cf6527bd8c1b68f3",
     "warp_reference.py": "b598dd400a6b0b998230ce84b85646d12fac477f692095b0b10298869ceb4c4e"
   },
   "unverified": [
