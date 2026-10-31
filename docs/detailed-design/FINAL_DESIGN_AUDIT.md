@@ -84,6 +84,6 @@ Pages失敗は[元run](https://github.com/totoro0419/illustro/actions/runs/41192
 
 ## 8. AUD006追補（初回監査より後のコミット）
 
-初回監査のCI集計30件はその時点の記録として維持する。後続変更で追加された三角形メッシュWarp、折返し、bilinear/cubic B-spline、固定Smudge、二つのlive Effect、Save根の12件は [AUD006専用契約](AUD006_WARP_REFERENCE_REVIEW.md) に詳細を記載。CIの後続結果はその実行commitと共に評価する。いずれも製品GPUの動作保証ではない。
+初回監査のCI集計30件はその時点の記録として維持する。後続変更で追加された三角形メッシュWarp、折返し、bilinear/cubic B-spline、固定Smudge、二つのlive Effect、Save根の13件は [AUD006専用契約](AUD006_WARP_REFERENCE_REVIEW.md) に詳細を記載。CIの後続結果はその実行commitと共に評価する。いずれも製品GPUの動作保証ではない。
 
 本人の再編集意味理解は未評価なので監査台帳のAUD006を未閉鎖に維持し、全体の NOT COMPLETE を変更しない。
