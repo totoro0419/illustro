@@ -1,0 +1,121 @@
+{
+  "target": "fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04",
+  "kind": "actual-model-search-not-human-usability",
+  "results": [
+    {
+      "query": "左右反転",
+      "results": [
+        {
+          "id": "UI-006",
+          "name": "Workspace保存・復元・左右反転"
+        }
+      ]
+    },
+    {
+      "query": "乗算",
+      "results": []
+    },
+    {
+      "query": "クリップ",
+      "results": []
+    },
+    {
+      "query": "透明PNG",
+      "results": []
+    },
+    {
+      "query": "線を守って塗る",
+      "results": []
+    },
+    {
+      "query": "スポイト",
+      "results": [
+        {
+          "id": "COL-003",
+          "name": "作品・資料スポイト"
+        },
+        {
+          "id": "REF-004",
+          "name": "資料採色と色の出典"
+        },
+        {
+          "id": "FX-102",
+          "name": "レベル"
+        },
+        {
+          "id": "FX-108",
+          "name": "色温度・Tint"
+        }
+      ]
+    },
+    {
+      "query": "保存",
+      "results": [
+        {
+          "id": "CAN-009",
+          "name": "文書属性・テンプレート"
+        },
+        {
+          "id": "BRU-005",
+          "name": "ブラシ編集・試し描き"
+        },
+        {
+          "id": "BRU-011",
+          "name": "ブラシ版と結果の再現"
+        },
+        {
+          "id": "LAY-011",
+          "name": "レイヤーカンプ"
+        },
+        {
+          "id": "SEL-006",
+          "name": "保存選択・選択マスク"
+        },
+        {
+          "id": "REF-006",
+          "name": "資料保存・不足・権利メモ"
+        },
+        {
+          "id": "HIS-003",
+          "name": "名前付きSnapshot"
+        },
+        {
+          "id": "SAV-001",
+          "name": "作品一覧・検索・整理"
+        },
+        {
+          "id": "SAV-002",
+          "name": "複製・削除・ゴミ箱"
+        },
+        {
+          "id": "SAV-003",
+          "name": "ネイティブ保存・Save As"
+        },
+        {
+          "id": "SAV-004",
+          "name": "自動保護・保存状態"
+        },
+        {
+          "id": "SAV-005",
+          "name": "クラッシュ・背景終了復元"
+        },
+        {
+          "id": "SAV-006",
+          "name": "容量不足・外部変更・複数起動"
+        },
+        {
+          "id": "SAV-007",
+          "name": "Offline・ログイン不要制作"
+        },
+        {
+          "id": "SAV-008",
+          "name": "バックアップ・版移行・旧形式"
+        },
+        {
+          "id": "UI-006",
+          "name": "Workspace保存・復元・左右反転"
+        }
+      ]
+    }
+  ]
+}

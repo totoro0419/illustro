@@ -1,0 +1,79 @@
+[
+  {
+    "number": 1,
+    "url": "https://github.com/totoro0419/illustro/pull/1",
+    "title": "docs: Illustro製品構想・247機能の個別操作仕様と品質要求",
+    "state": "open",
+    "merged_at": null,
+    "head": "92daaf5ac23a015a834141f7d08275d903711404",
+    "head_ref": "docs/product-planning-2026-10-27",
+    "base_ref": "main",
+    "observed_date_utc": "2026-10-31"
+  },
+  {
+    "number": 2,
+    "url": "https://github.com/totoro0419/illustro/pull/2",
+    "title": "docs: 全247機能の問題分析・42方式比較・独立検証研究",
+    "state": "open",
+    "merged_at": null,
+    "head": "26423662192ed05b1d1c535cd15091f17d52d0bd",
+    "head_ref": "research/experience-performance-247-2026-10-27",
+    "base_ref": "docs/product-planning-2026-10-27",
+    "observed_date_utc": "2026-10-31"
+  },
+  {
+    "number": 3,
+    "url": "https://github.com/totoro0419/illustro/pull/3",
+    "title": "docs: 14研究方針・247機能を統合したシステム基本設計と監査",
+    "state": "open",
+    "merged_at": null,
+    "head": "7864be87360f94f6ce45e4c8aecd685a2325aa72",
+    "head_ref": "design/unified-system-247-2026-10-30",
+    "base_ref": "research/experience-performance-247-2026-10-27",
+    "observed_date_utc": "2026-10-31"
+  },
+  {
+    "number": 4,
+    "url": "https://github.com/totoro0419/illustro/pull/4",
+    "title": "docs: 製品仕様を確定 — 247機能スコープとD01/D02/D03/D05の解消",
+    "state": "open",
+    "merged_at": null,
+    "head": "20f1d1e09a99a0d409f906dcbf379203a464fc59",
+    "head_ref": "spec/product-baseline-final-2026-10-30",
+    "base_ref": "design/unified-system-247-2026-10-30",
+    "observed_date_utc": "2026-10-31"
+  },
+  {
+    "number": 5,
+    "url": "https://github.com/totoro0419/illustro/pull/5",
+    "title": "docs(product): 確定版製品仕様と247機能スコープ — D01/D02/D03/D05",
+    "state": "open",
+    "merged_at": null,
+    "head": "5baae5f0680f2a1a16247cbceef2fc0ccd4e5468",
+    "head_ref": "design/product-spec-final-2026-10-30",
+    "base_ref": "design/unified-system-247-2026-10-30",
+    "observed_date_utc": "2026-10-31"
+  },
+  {
+    "number": 6,
+    "url": "https://github.com/totoro0419/illustro/pull/6",
+    "title": "test: independent paint algorithm benchmarks and interaction lab",
+    "state": "open",
+    "merged_at": null,
+    "head": "a89d4642e2c763563ad3a70790d7e0f9ce9516d3",
+    "head_ref": "research/interactive-performance-lab-2026-10-30",
+    "base_ref": "design/product-spec-final-2026-10-30",
+    "observed_date_utc": "2026-10-31"
+  },
+  {
+    "number": 7,
+    "url": "https://github.com/totoro0419/illustro/pull/7",
+    "title": "design: 製品アーキテクチャ・全247機能導線・旧UI継承プロトタイプ",
+    "state": "open",
+    "merged_at": null,
+    "head": "fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04",
+    "head_ref": "design/product-architecture-access-247-2026-10-31",
+    "base_ref": "research/interactive-performance-lab-2026-10-30",
+    "observed_date_utc": "2026-10-31"
+  }
+]
