@@ -5,7 +5,7 @@ from copy import deepcopy
 from fractions import Fraction as F
 from warp_reference import (
     Z, rgba, over, barycentric, barycentric_independent, render_mesh,
-    sample_bilinear, pipeline, post_edit, blur3, gain, live_fx, premul_valid,
+    sample_bilinear, cubic_bspline, pipeline, post_edit, blur3, gain, live_fx, premul_valid,
 )
 
 def tri(src, dst):
@@ -169,6 +169,17 @@ class WarpReferenceTests(unittest.TestCase):
         lower=blur3(base[1:])[1:]
         self.assertEqual(global_blur,upper+lower)
         self.assertNotEqual(global_blur,blur3(base[:2])+blur3(base[2:]))
+
+    def test_cubic_reference_golden_and_premul_bounds(self):
+        grid=[[Z]*3 for _ in range(3)]
+        grid[1]=[Z,rgba(1,0,0,1),Z]
+        self.assertEqual(cubic_bspline(grid,F(3,2),F(3,2)),(F(4,9),F(0),F(0),F(4,9)))
+        self.assertEqual(cubic_bspline([[rgba(1,0,1)]*3 for _ in range(3)],F(7,5),F(9,5)),rgba(1,0,1))
+        result=render_mesh(src3(),folded_mesh(),4,4,3,interpolation='cubic-bspline')
+        self.assertTrue(premul_valid(result))
+        self.assertNotEqual(result,render_mesh(src3(),folded_mesh(),4,4,3,interpolation='bilinear'))
+        with self.assertRaises(ValueError):
+            render_mesh(src3(),square(),3,3,interpolation='unknown')
 
     def test_invalid_mesh_rejected(self):
         with self.assertRaises(ValueError):render_mesh(src3(),[tri([(0,0)]*3,[(0,0),(1,1),(2,2)])],2,2)
