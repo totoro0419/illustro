@@ -28,11 +28,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "final-browser-tests: AUD-001/003 x5",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -60,11 +60,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "stage3-tests: layer/save; stage3-browser-tests: layer Undo/visibility/focus; final-browser-tests: save/reload",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -92,11 +92,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "stage3-tests: session-local; final-browser-tests: Scenario 5 and five Undo entries",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -124,11 +124,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "final-browser-tests: responsive 8 sizes; Chromium手動操作",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -159,11 +159,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "contracts-type-tests.ts current compiles / original rejects; intent_reference.cjs",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -219,11 +219,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "stage3-browser-tests: 3 sizes; final-browser-tests: 8 responsive + text/keyboard geometry",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -276,11 +276,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "stage3-browser-tests: detail close; final-browser-tests: Escape",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -334,11 +334,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
-        "checks": "final-browser-tests: two-touch centroid; latest test adds center/four corners",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
+        "checks": "final-browser-tests: center/four corners two-touch centroid after flip/rotation (<1 CSS px reprojection error)",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -366,11 +366,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "final-browser-tests: stroke DOM identity / MutationObserver",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -398,11 +398,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "stage3-browser-tests + final-browser-tests before/after + catalog-browser-tests",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -431,11 +431,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "test_async.Writer exhaustion/cancel/rescue; contracts WriterState/InputChunk",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -464,11 +464,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "test_async.failure_dependent_only_rescue / retry_success",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },
@@ -547,11 +547,11 @@
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
       "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
-        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+        "source_sha": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
         "checks": "stage3-browser-tests: SV; final-browser-tests: continuous color / keyboard hue",
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
-        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
       }
     },

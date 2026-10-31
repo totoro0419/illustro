@@ -67,12 +67,12 @@ Pages失敗は[元run](https://github.com/totoro0419/illustro/actions/runs/41192
 
 ## 6. 再現とCI
 
-確認済の中間HEAD `4d3db9b7a802be7c7b703d0f2570d1453820638e`：[Actions 41205478675](https://github.com/totoro0419/illustro/actions/runs/41205478675)成功。
+確認済のコードHEAD `ce98f6c5bd805b5055cdfcaec98e3e5adba6111d`：[Actions 41206428072](https://github.com/totoro0419/illustro/actions/runs/41206428072)全工程成功。後続の証拠更新commitは文書/台帳のみ。
 
-- Node既存12＋追加12、既存Chromium11、追加Chromium28（当該版）、実DOM247×4=988、TypeScript型検査、runtime no-document oracle、資料照合7、単体HTML生成一致。
-- 同じ追加DOM期待をPR7に適用し26失敗/2成功。新要素不在も含むので「26個の不具合」とは数えない。共通DOMを使ったLayer反例とSVキー/focus、重心四隅をさらに回帰へ追加した。
+- Node既存12＋追加12、既存Chromium11、追加Chromium32、実DOM247×4=988、TypeScript型検査、runtime no-document oracle、資料照合7、単体HTML生成一致。
+- 同じ追加DOM期待をPR7に適用し30失敗/2成功。新要素不在も含むので「26個の不具合」とは数えない。共通DOMを使ったLayer反例とSVキー/focus、重心四隅も回帰に含め、現版で成功した。
 - 原Intent型では現在のno-document例がコンパイル失敗、現型では成功。
-- 最新ソースの追加回帰と実CMMは現HEAD CIで再確認する。最終報告はその実際の結果を参照する。未実行をPASS扱いしない。
+- CPU参照30件、実CMM 6色×DBL/8U/16U/16F/保存ICC再読込、runtime/型境界も同じコードHEADのCIで成功。実CMM版は2.14。結果と実行版は[evidence/ci-2026-10-31.json](evidence/ci-2026-10-31.json)へ保存。未実行の実機/GPU/Native耐久へ一般化しない。
 
 ローカルはブラウザーbinary取得が失敗したため、ブラウザー自動検査はGitHub runnerで実行。管理ブラウザー手動確認と混同しない。実端末/実GPU負荷/Native・OPFS物理耐久/読上げ/初見利用者は未実施。
 

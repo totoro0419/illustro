@@ -27,7 +27,7 @@
 
 ## 証拠と端末の区別
 
-`stage3-browser-tests.cjs` 11件、`final-browser-tests.cjs`（最終版32件予定、結果はCIを正とする）、`catalog-browser-tests.cjs` 247×4開始状態=988既知ID詳細導線。通常/閉Workspace/Focus/390pxから実DOMを操作。保留/対象外には実行開始ボタンがないことも照合する。IDを知っている試験なので初見発見率ではない。
+`stage3-browser-tests.cjs` 11件、`final-browser-tests.cjs`（最終版32件をCIで実行・成功）、`catalog-browser-tests.cjs` 247×4開始状態=988既知ID詳細導線。通常/閉Workspace/Focus/390pxから実DOMを操作。保留/対象外には実行開始ボタンがないことも照合する。IDを知っている試験なので初見発見率ではない。
 
 幅/高さ：320×568、390×844、740×360、760×600、800×600、960×700、1180×820、820×1180。追加で320px文字200%、390×420/740×280のキーボード相当geometry。実OSキーボードやAndroid/iPad/Windows実機の試験ではない。DOM中心hit、focus、Canvas寸法、合成touchを検査。読上げ実機、OSgesture、筆圧/傾き、実指誤タップ、初見探索時間は未確認。
 
