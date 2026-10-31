@@ -181,6 +181,34 @@ class WarpReferenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             render_mesh(src3(),square(),3,3,interpolation='unknown')
 
+    def test_original_close_sequence_fold_erase_smudge_reedit_undo_save_reload(self):
+        source=src3(); mesh=folded_mesh(); m=ones(4,4); c=ones(4,4)
+        m[0][1]=F(1,2);c[1][1]=F(1,2)
+        sample=render_mesh(source,mesh,4,4,3)[1][1]
+        paintcov=[[F(1,2) if x==1 else F(0) for x in range(4)] for _ in range(4)]
+        erasecov=[[F(3,4) if (x,y)==(1,1) else F(0) for x in range(4)] for y in range(4)]
+        replcov=[[F(1,2) if (x,y)==(2,1) else F(0) for x in range(4)] for y in range(4)]
+        edits=[{'kind':'paint','source':rgba(0,1,0,F(1,2)),'coverage':paintcov},
+               {'kind':'erase','strength':F(2,3),'coverage':erasecov},
+               {'kind':'replace','samples':[[sample]*4 for _ in range(4)],'sample_basis':'old-rev', 'coverage':replcov}]
+        root={'source':source,'mesh':mesh,'ops':edits,'mask':m,'clip':c,
+              'effects':[{'kind':'blur3'},{'kind':'gain','factor':F(3,2)}]}
+        def evaluate(r):return pipeline(r['source'],r['mesh'],4,4,r['ops'],r['mask'],r['clip'],r['effects'],3)
+        old=evaluate(root)
+        moved=deepcopy(root)
+        for t in moved['mesh']:t['dst']=[[x+F(1,2),y+F(1,4)] for x,y in t['dst']]
+        edited=evaluate(moved)
+        self.assertNotEqual(old,edited)
+        self.assertTrue(premul_valid(old) and premul_valid(edited))
+        self.assertEqual(evaluate(root),old) # undo (old immutable root)
+        old_save=json.loads(json.dumps(fjson(root)))
+        self.assertEqual(evaluate(moved),edited) # redo
+        new_save=json.loads(json.dumps(fjson(moved)))
+        self.assertEqual(evaluate(fromjson(old_save)),old)
+        self.assertEqual(evaluate(fromjson(new_save)),edited)
+        self.assertEqual(root['ops'][2]['samples'][1][1],sample)
+        self.assertEqual(moved['ops'][2]['samples'][1][1],sample)
+
     def test_invalid_mesh_rejected(self):
         with self.assertRaises(ValueError):render_mesh(src3(),[tri([(0,0)]*3,[(0,0),(1,1),(2,2)])],2,2)
         with self.assertRaises(ValueError):render_mesh(src3(),[tri([(0,0)]*3,[(0,0),(0,2),(2,0)])],2,2)
