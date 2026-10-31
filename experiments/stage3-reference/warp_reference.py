@@ -77,14 +77,34 @@ def sample_bilinear_independent(src, x, y):
     return tuple(sum(src[iy][ix][k]*wy*wx for iy, wy in weights_y for ix, wx in weights_x)
                  for k in range(4))
 
-def render_mesh(src, triangles, width, height, samples=2, independent=False):
+
+def cubic_bspline(src, x, y):
+    """Nonnegative separable cubic B-spline on premul RGBA with clamped edge.
+
+    This is a correctness/quality reference candidate, not a product default.
+    """
+    h, w = len(src), len(src[0])
+    fx, fy = x-F(1, 2), y-F(1, 2)
+    ix, iy = floor(fx), floor(fy)
+    tx, ty = fx-ix, fy-iy
+    def weights(t):
+        return ((1-t)**3/F(6), (3*t**3-6*t**2+4)/6,
+                (-3*t**3+3*t**2+3*t+1)/6, t**3/6)
+    wx, wy = weights(tx), weights(ty)
+    return tuple(sum(wx[a]*wy[b]*src[min(max(iy+b-1, 0), h-1)][min(max(ix+a-1, 0), w-1)][k]
+                     for a in range(4) for b in range(4)) for k in range(4))
+
+def render_mesh(src, triangles, width, height, samples=2, independent=False, interpolation='bilinear'):
     """Draw source triangles in explicit order; sample over each fold before averaging."""
     if not src or not src[0] or width <= 0 or height <= 0 or samples < 1:
         raise ValueError('invalid dimensions')
     if any(len(row) != len(src[0]) for row in src):
         raise ValueError('ragged image')
     bfunc = barycentric_independent if independent else barycentric
-    interp = sample_bilinear_independent if independent else sample_bilinear
+    if interpolation not in ('bilinear','cubic-bspline'):
+        raise ValueError('unknown interpolation')
+    interp = cubic_bspline if interpolation == 'cubic-bspline' else (
+        sample_bilinear_independent if independent else sample_bilinear)
     out = []
     for row in range(height):
         pixels = []
