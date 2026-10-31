@@ -7,7 +7,7 @@
 1. [製品理念](../PRODUCT_VISION.md) と [確定製品仕様](../product-planning/FINAL_PRODUCT_SPEC.md) および [現行採否JSON](../product-planning/FINAL_PRODUCT_SCOPE.json) — **機能と製品意味の最上位**。PR #4の代替分岐を現行#5より優先させない。
 2. [第②段階の14方針と統合基本設計](../performance-research/UNIFIED_SYSTEM_DESIGN.md) — 設計原理、方式比較は [候補](../performance-research/CANDIDATE_DESIGN.md)。
 3. [第③段階の既存アーキテクチャ](../product-architecture/PRODUCT_ARCHITECTURE.md)・[型案](../product-architecture/contracts.d.ts)・[操作フロー](../product-architecture/FLOWS_AND_STATES.md)。
-4. [Stage③の補強したシステム契約](SYSTEM_CONTRACTS.md) と [変形後の描画・消去・混色](TRANSFORM_POSTPAINT_SEMANTICS.md)、[技術方式の比較・採否](TECHNICAL_DECISIONS.md)。
+4. [Stage③の補強したシステム契約](SYSTEM_CONTRACTS.md) と [変形後の描画・消去・混色](TRANSFORM_POSTPAINT_SEMANTICS.md)、[AUD006幾何Warpの参照契約](AUD006_WARP_REFERENCE_REVIEW.md)、[技術方式の比較・採否](TECHNICAL_DECISIONS.md)。
 5. [247機能の詳細設計対応表](FEATURE_CONTRACT_CROSSWALK_247.json)（既存ソースからの機械集成。各機能の受入テストは**草案**であり、実行済の認定ではない）。
 6. [UI/UXレビュー](UI_UX_REVIEW.md) と [操作できる単体HTML](../../qa/ui-prototype/index.html)（保存、画像処理は試作/模擬）。
 7. [元の19指摘](../audits/findings.md) → [修正・検証台帳](AUDIT_REMEDIATION.md)／[JSON](AUDIT_REMEDIATION.json)。
@@ -32,7 +32,7 @@ CIは .github/workflows/stage3-design-checks.yml。ブラウザーのviewport模
 
 ## 今回の限定実験と再現
 
-- `python experiments/stage3-reference/run_reference.py`：30のCPU参照。手計算画素/α、順序・失敗・保存モデル。
+- `python experiments/stage3-reference/run_reference.py`：既存30件に加えAUD006幾何Warp参照12件をdiscover対象に追加。手計算画素/α、幾何逆写像・折返し・補間・live Effect、順序・失敗・保存モデル。正式CI run成功判定は実行版で確認。
 - `python experiments/stage3-reference/icc_probe.py`：実Little CMSによる限定ICC比較（liblcms2が必要）。
 - `node qa/ui-prototype/final-browser-tests.cjs`：入口/8フロー/端末幅/文字/重心/焦点の追加回帰。
 - `node qa/ui-prototype/catalog-browser-tests.cjs`：全247×4開始状態の既知ID実DOM詳細導線。製品機能の実装証明ではない。
