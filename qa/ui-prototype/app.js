@@ -27,7 +27,7 @@
  function panelRoute(p){const cats=Object.entries(R.categories).filter(([c])=>R.features.some(f=>f.category===c&&f.panel==='right.'+p));return `<div class="cat-list">${cats.map(([c,v])=>`<button data-panel-category="${c}" data-panel="${p}">${esc(v.label)} <span style="float:right">›</span></button>`).join('')}</div>`;}
  function basePanel(p){
    if(p==='layers')return `<div class="row" style="font-size:11px;margin:0 0 5px"><select id="blendMode" aria-label="レイヤーの合成方法" style="width:55%"><option>通常</option><option>乗算</option><option>スクリーン</option></select><span>100%</span><button class="quiet" data-feature="LAY-002">設定</button></div><div id="layerRows"></div><div class="row"><button class="quiet grow" id="addLayer">＋ レイヤー</button><button class="quiet" data-feature="LAY-004">Clip</button><button class="quiet" data-feature="LAY-005">Mask</button></div>`;
-   if(p==='color')return `<div class="color-plane" aria-hidden="true"></div><div class="row spread"><label class="row"><input type="color" id="colorPicker" value="#637b78" aria-label="描画色"><span id="colorCode" style="font-size:11px">#637B78</span></label><button class="quiet" data-feature="COL-001">HSV / RGB</button></div><div class="chips" id="swatches">${['#637b78','#3d5d54','#afbfad','#f3d3a0','#f8f3e7','#7473a4','#b68178','#2e3a49'].map(c=>`<button aria-label="色 ${c}" data-color="${c}" style="background:${c}"></button>`).join('')}</div>`;
+   if(p==='color')return `<div class="color-plane" role="group" aria-label="彩度と明度の選択。左右キーで彩度、上下キーで明度" tabindex="0"></div><div class="row spread"><label class="row"><input type="color" id="colorPicker" value="#637b78" aria-label="描画色"><span id="colorCode" style="font-size:11px">#637B78</span></label><button class="quiet" data-feature="COL-001">HSV / RGB</button></div><div class="chips" id="swatches">${['#637b78','#3d5d54','#afbfad','#f3d3a0','#f8f3e7','#7473a4','#b68178','#2e3a49'].map(c=>`<button aria-label="色 ${c}" data-color="${c}" style="background:${c}"></button>`).join('')}</div>`;
    if(p==='brush')return `<label style="font-size:11px">プリセット<select id="preset" style="width:100%;margin:5px 0"><option>Gペン</option><option>鉛筆</option><option>水彩風（簡易）</option><option>パステル</option></select></label><label class="field">不透明度<input id="opacity" type="range" min="1" max="100" value="100"><output id="opacityValue">100%</output></label><button class="panel-link" data-feature="BRU-008">強制入り抜き <span class="arrow">›</span></button>`;
    if(p==='reference')return `<div class="callout">資料は作品のレイヤーとは別に表示します。</div><button class="panel-link" data-feature="REF-001">＋ 資料を追加</button><button class="panel-link" data-feature="REF-004">資料から色を採る</button>`;
    if(p==='history')return '<div id="historyList" class="stack"></div><button class="panel-link" data-feature="HIS-003">別案を保存</button>';
@@ -130,6 +130,21 @@
  bind('sheetClose',()=>{$('dock').classList.remove('sheet-open');frame.classList.remove('focus-panel-open');$('workspaceToggle').setAttribute('aria-expanded','false');$('workspaceToggle').focus();});
  bind('layerPageClose',()=>{$('layerPage').hidden=true;$('panels').hidden=false;});bind('target',()=>showPanel('layers'));bind('currentColor',()=>showPanel('color'));bind('currentTool',()=>openFeature(toolIds[S.tool],'primary'));
  function changeColor(c){$('colorPicker').value=c;$('colorCode').textContent=c.toUpperCase();$('currentColor').querySelector('span').style.background=c;}
+ // Interactive SV affordance is a UI test only, not the final ICC selector.
+ let svX=.61,svY=.29,svHue=170;
+ function hsvColor(h,s,v){
+  const k=n=>(n+h/60)%6, f=n=>v-v*s*Math.max(Math.min(k(n),4-k(n),1),0);
+  return '#'+[f(5),f(3),f(1)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');
+ }
+ function pickSV(x,y){
+  svX=Math.max(0,Math.min(1,x));svY=Math.max(0,Math.min(1,y));
+  const plane=document.querySelector('.color-plane');plane.style.setProperty('--pick-x',Math.round(svX*100)+'%');plane.style.setProperty('--pick-y',Math.round(svY*100)+'%');
+  changeColor(hsvColor(svHue,svX,1-svY));
+ }
+ document.addEventListener('pointerdown',e=>{const p=e.target.closest('.color-plane');if(!p)return;const r=p.getBoundingClientRect();p.setPointerCapture(e.pointerId);pickSV((e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height);});
+ document.addEventListener('pointermove',e=>{const p=e.target.closest('.color-plane');if(!p||!p.hasPointerCapture(e.pointerId))return;const r=p.getBoundingClientRect();pickSV((e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height);});
+ document.addEventListener('keydown',e=>{if(!e.target.matches('.color-plane'))return;const dx=e.key==='ArrowRight'?.02:e.key==='ArrowLeft'?-.02:0,dy=e.key==='ArrowDown'?.02:e.key==='ArrowUp'?-.02:0;if(dx||dy){e.preventDefault();pickSV(svX+dx,svY+dy);}});
+
  for(const id of ['brushSize','sizeNumber'])$(id).addEventListener('input',()=>{const v=Math.max(1,Math.min(100,+$(id).value||1));$('brushSize').value=v;$('sizeNumber').value=v;});
  function setWidth(w){width=Math.max(288,Math.min(440,w));frame.style.setProperty('--right',width+'px');$('splitter').setAttribute('aria-valuenow',width);}
  bind('widthLess',()=>setWidth(width-16));bind('widthMore',()=>setWidth(width+16));
