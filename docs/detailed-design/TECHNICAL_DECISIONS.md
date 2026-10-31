@@ -38,7 +38,7 @@
 
 ## 実行証拠
 
-- `experiments/stage3-reference/run_reference.py`：旧証拠30件に追加の12件（AUD006幾何Warp）を接続する限定CPU参照検査。ゴールデン画素は手計算Fraction、`evidence/golden-pixels.json`と`golden.svg`で表現。
+- `experiments/stage3-reference/run_reference.py`：旧証拠30件に追加の13件（AUD006幾何Warp）を接続する限定CPU参照検査。ゴールデン画素は手計算Fraction、`evidence/golden-pixels.json`と`golden.svg`で表現。
 - `icc_probe.py`：Little CMS実CMMと独立CSS行列。6色×DBL/8U/16U/16F/保存ICC再読込の限定比較。ローカル2.14、CI側版は実行ログで確認。任意ICC LUT/Proof/CMYK/全色域へ一般化しない。
 - UI/型/988導線は最終監査のCIログへ。実機/GPU/Native耐久を代用しない。
 
