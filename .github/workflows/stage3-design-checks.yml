@@ -1,0 +1,28 @@
+name: Stage III design model checks
+on:
+  push:
+    branches:
+      - design/stage3-detailed-remediation-2026-10-31
+  pull_request:
+    paths:
+      - 'qa/ui-prototype/**'
+      - 'docs/product-architecture/**'
+      - '.github/workflows/stage3-design-checks.yml'
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node --check qa/ui-prototype/model.js && node --check qa/ui-prototype/app.js
+      - run: node qa/ui-prototype/tests.cjs
+      - run: node qa/ui-prototype/stage3-tests.cjs
+      - run: python tools/build_ui_prototype.py
+      - run: git diff --exit-code -- qa/ui-prototype/index.html
