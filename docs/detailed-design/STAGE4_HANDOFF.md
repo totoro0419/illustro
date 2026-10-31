@@ -34,6 +34,14 @@
 
 Androidペンタブレット（ペン圧/ホバー/二指）、Androidスマホ、Windows（マウス/ペン可否を明示）、WebGL2/CPUフォールバックを交差。仕様にないGPUデバイス実測の値を推論しない。小/中/大キャンバス、文字/ICC/16F、多層/Mask/Clip/FX、最大密度のStroke、OPFS低容量、失敗したSave、再起動を分ける。
 
-## 引渡し阻害要因
+## 第③段階で残す阻害要因
 
-AUD-006の消去/混色ゴールデン未成立、P1のFocus/phone挙動の端末実証不足、no-documentの型/APIの整合テスト不足、Preview→Formalの実エンジン不可視、Save+Undo+Recoveryの正本試験不足。**「資料を書いたので通過」と判定しない**。具体的な阻害要因が残るため現時点の無条件引渡しは不可。
+- AUD006：CPU参照は増えたが、実Warp/補間と複数live Effectを含む十分な参照画像・再編集UX確認は不足。
+- 全247機能の台帳は原典・障害条件・action例外まで補強したが、個別受入は草案が残る。全Effect kernelの数値契約や任意ICC/Proofを含む根幹条件を、実装者へ未定義のまま渡さない。
+- AUD008/010/016/017/019とユーザーUI判断が未閉鎖。実機性能未実測だけを理由にStage③を否定しているのではない。
+
+## 第④段階へ渡せる確定部分
+
+scope判別Intent、document/target lifetime、admission順、名前付きUndo、SaveFence/保存先sequence、用途pin、atomic Handoff、writer不足、依存失敗の契約は`SYSTEM_CONTRACTS.md`を使用。限定CPU referenceは30件、ICC実CMM限定比較、実DOMと型検査を回帰資産として渡す。性能や物理耐久の合格ではない。
+
+**現時点の無条件引渡しは不可。製品の正式実装は開始していない。** 第③段階に必要な参照拡張・仕様の一意化・ユーザー確認を済ませ、未解決P1=0と最終再監査を確認してから移行する。

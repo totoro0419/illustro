@@ -1,60 +1,83 @@
-# Illustro 第③段階 — 再監査と到達状態
+# 第③段階 最終統合監査
 
-## 判定：**NOT COMPLETE**
+## 判定：NOT COMPLETE
 
-2026-10-31 JST現在。これは「第③段階の一部を修正・検証した」記録であり、設計完成の宣言ではない。本格的な製品実装は未着手。今回のブランチはPR #8のHEAD 050574f6436d9116775ccee2e069c439e1631182を元に作成し、未マージの積み上げPRを破壊していない。PR #8で検出した問題を既に閉鎖されたものとして扱わない。
+PR9の開始HEAD `17a5ff778e4643d71d2d72798f0966baff40755a`を取得し、その上で継続。依存は#1→#2→#3→#5→#6→#7→#8→#9。#4は別分岐。mainの更新・merge・第④段階の製品実装は行っていない。READMEを読み、当該checkoutにAGENTS.mdがないことも確認した。
 
-## 1. 監査19件と修正結果
+未解決P1と機能固有の受入・ユーザー確認が残るため、設計完成は宣言しない。実機性能の未測定だけを理由にした判定ではない。
 
-元件数 P0=0、P1=7、P2=11、P3=1。今回は19件の修正・残余条件を一件ずつ [台帳](AUDIT_REMEDIATION.md)／[機械可読版](AUDIT_REMEDIATION.json)へ整理。
+## 1. 4工程の実績
 
-- **モデル検証に到達**：AUD-001 Undo実行の入口、AUD-002 Layer正本のUndo、AUD-003 Sessionと作品Undo、AUD-008検索別名。Node試験に加えChromiumで主要導線を部分確認。
-- **コード改訂だが端末/アクセシビリティが未検証**：AUD-004 Focus一時Panel、AUD-007 Session/Sheet遮蔽、AUD-009 focus復帰、AUD-011指重心、AUD-012 SVG再生成、AUD-017中間幅、AUD-018色面、AUD-019小画面タッチ。
-- **設計契約を補強したが実際の正確性が未検証**：AUD-005 no-document Intent、AUD-006非破壊Transform後のErase/Smudge/Mask、AUD-014接地中の容量不足、AUD-015恒久Job失敗、AUD-016名前付き履歴。
-- **依然不足**：AUD-010実画面入口ごとの手数/開始状態、AUD-013全入口のactionとDOM等価性（現在は代表サンプルのみ）。
-
-**監査閉鎖件数は0（厳格判定）。残存はP0=0、P1=7、P2=11、P3=1。** 修正コードがあること、モデルで合格したこと、対象端末での再現消失を確認したことを混同しない。
-
-潜在的な追加問題として、モデル正本導入後のLayer DOM再構成によるキーボード焦点消失リスクをコードレビューで検出。focus restorationを追加し、Chromiumのキー操作による回帰試験を増設した。修正前の実操作失敗は未採録なので、新規確定不具合数としては計上しない。
-
-## 2. 247機能の整合性と限界
-
-PR #5の現行スコープを変更しない：30分野247件、通常234・限定2・保留10・対象外1。既存台帳から作った [247件の設計対応表](FEATURE_CONTRACT_CROSSWALK_247.json) に、個別の目的、主入口、parameters、実行前提、責務、正本/派生、他機能、Undo、保存、取消、端末、受入試験**案**、監査指摘IDを全件連結。
-
-ID・名称・分類・スコープのデータ照合が成功しても、**機能の実画像・仕様・横断相互作用が全件正しいと証明したことにはならない**。重要な欠落は Brush×Transform×Undo、Fill×Selection×Layer、Mask×Clip×Blend、Effect×Cache×GPU、Save×Undo×Recovery、ICC×Export、Reference×Layer×History、AI×NonDestructive×Undoの統合golden試験。
-
-## 3. システム設計の到達点
-
-[システム契約](SYSTEM_CONTRACTS.md) は12領域を責務・型・ライフサイクル・取消・障害復旧で結合。 no-documentの判別Intent unionを型案へ追加。 A→B→Undo→Save→A完了→Redo→Reload の保存時点Aと表示A+Bを分離した参照結果を定義。GPU投入仕事の中断不能性、同世代表示swap、SaveFence、入力writer途中OOM、恒久失敗時の依存枝切断、色/ICC/precisionの採用条件を追加。
-
-[後段編集の意味案](TRANSFORM_POSTPAINT_SEMANTICS.md) はEraseを単純な透明overlayとは区別する。Smudge/AlphaLock/Maskも動作を固定したが、正式画素と保存後のgolden結果がないので**AUD-006の設計確定ではない**。
-
-[比較・採否](TECHNICAL_DECISIONS.md) のCondition付き候補を、実性能の測定値と偽っていない。tile寸法、GPU仕事の分割量、cache予算、数値誤差・tail latency許容値は未確定。
-
-## 4. UI/UXプロトタイプ
-
-単体HTML： [qa/ui-prototype/index.html](../../qa/ui-prototype/index.html)。RendererはSVG/モデルによる試作であり正式の描画/保存ではない。Focus色・層、対象帯、Layer状態、検索、色面SV、Sessionと作品Undo、二指アンカー補正、スマホLayoutを改訂。代表8制作シナリオの充足/未実装を [UI_UX_REVIEW.md](UI_UX_REVIEW.md) に区別。
-
-Chromium画面試験で元の監査反例の代表例は動作確認できたが、端末実機、画面読上げ、ペン+指、仮想キーボード/OSのバックジェスチャー、初見ユーザー評価は未実行。
-
-## 5. 再現と検証の独立証拠
-
-- GitHub Actions（PR作成時HEAD `e319184e5f5ca5726362cbe3c8f44661b055c228`）：[41192642277](https://github.com/totoro0419/illustro/actions/runs/41192642277) が成功。既存Node 12件＋追加10件、Chromium DOM 11件、資料・スコープ一対一照合7件、TypeScript判別union型検査、Node syntax、Python生成と単体HTML一致が成功。
-- 追加のNode構造検査は247 ID/30分野/234+2+10+1件、19件auditのreverse graph・閉鎖偽装がないことを検査。
-- TypeScriptはno-document/view/settings/documentのunionと不可能なフィールド混入をコンパイル検証。
-- 新たなLayer focusのChromium回帰を1件追加し、該当HEADで成功を確認。これは実キーボード/支援技術端末の完全検証ではない。
-- GitHub Pages公開ワークフローは [41192229090](https://github.com/totoro0419/illustro/actions/runs/41192229090) および以降の同類ランで、runner開始前に失敗。原因は**未確定**。新たな外部公開URLの動作確認はできていない。既存のPR #7公開サイトを更新後版の証拠として流用しない。
-
-## 6. 判定ゲート
-
-| 判定基準 | 結果 | 根拠 |
+| 工程 | 実施したこと | 到達状態 |
 |---|---|---|
-| A 247機能/正式スコープ保持 | 資料構造上は一致 | JSON間の1対1照合。全機能振舞いは未証明 |
-| B システムの責務/型/不変条件 | 重要境界の案を改善 | GPU/Save/Failure/transformの完全モデル/画像結果未実証 |
-| C 操作プロトタイプ | 代表導線で改善 | Chrome E2E、端末実機・初見UX未実施 |
-| D 技術的成立性 | 未完了 | atomic handoff/非破壊消去/ICC/Saveの正式検証がない |
-| E P0/P1閉鎖と再監査 | **未達** | P1=7件が閉鎖基準未達 |
+| 監査19件 | 原指摘/PR9修正を再評価、Undo/Layer/Session/Focus/Intent/Sheet/色/焦点を修正、before/after・回帰を追加 | Stage③閉鎖13、未閉鎖6 |
+| 重要技術 | CPU Fraction期待画素、atomic Handoff、順序/分岐/保存/失敗注入、実CMM精度、採否比較と数値/資源契約 | 限定参照成立。全Warp/Effect/ICC条件は未閉鎖 |
+| UI/UX | 8フロー、端末幅/文字拡大、hit/focus、模擬新規/保存再読込/出力、比較可能なFocus案、別プレビュー配置 | 自動DOM/手動Chromium確認。実端末/初見評価/正式承認は未実施 |
+| 247機能統合 | 原典scopeと15観点の対応、固有failure条件・複数action例外を補強、988の実DOM詳細導線 | scope保持。全機能の意味/全交差受入は未完了 |
 
-第④段階への**無条件引渡し不可**。今回の成果を土台として残すが、最も重要なAUD-006の期待画素/Alphaモデル、CPU referenceの正式評価、正式/preview同世代表示、資源枯渇/保存保護、実端末でのナビ・編集を証拠付きで成立させる必要がある。
+## 2. 19指摘と新規問題
 
-同じAIによる反例検査は第三者の完全独立監査ではない。この限界を明示し、完成を宣言しない。
+| 重要度 | 元件数 | Stage③閉鎖 | 未閉鎖 |
+|---|---:|---:|---:|
+| P0 | 0 | 0 | 0 |
+| P1 | 7 | 6 | 1 |
+| P2 | 11 | 7 | 4 |
+| P3 | 1 | 0 | 1 |
+
+[台帳](AUDIT_REMEDIATION.md)／[JSON](AUDIT_REMEDIATION.json)が原因、修正、original scenario、before/after、回帰、残余を保持。閉鎖は設計原因とレビュー試作の範囲であり、製品実装済みを意味しない。旧実装が存在しない仕様欠落を「製品before試験でFAIL」と捏造しない。
+
+新規3件：対象削除後のSession確定（P1）、旧α固定Alpha Lockの透明部への描画（P2）、SV表示色相と実採用色相の不一致（P2）。原因を修正しモデル/画素/DOM試験へ接続した。再監査でQuick等の閉鎖後に焦点が消える経路も修正し追加検査する。全組合せについて新規問題0を証明したとは主張しない。
+
+未閉鎖：
+
+- **AUD006/P1**：固定後段の演算意味と小規模参照は成立。実Warp/補間、複数後段とlive Effectを含む十分な画像参照、再編集UXの確認が不足。
+- AUD008/P2：名称を教えない課題と同義語集合の発見性。
+- AUD010/P2：全247機能の主入口・スクロール・候補開始までの実測。既知ID検索988件と名目手数を区別。
+- AUD016/P2：Pad/資料/Session/作品を含む実UIとUndo作用先の利用者理解。
+- AUD017/P2：中間幅で同じ制作課題の遮蔽/開閉/探索時間比較。
+- AUD019/P3：全標的の例外評価と実指誤タップ。
+
+## 3. 重要技術の実験と限界
+
+- **30 CPU参照試験**：期待画素は手計算Fraction。Paint/Erase/半透明/Smudge/Alpha Lock/Selection/Mask/Clip/Blend/変形再編集/Undo/Save/Reloadを小規模条件で比較。全体連成のfold fragment＋後段全演算＋Multiply＋保存往復も含む。
+- Handoffは24通りのtile完了順で同一画素/αと排他責任を比較。split公開の二重/欠落を反例化。実GPUへの転送と大規模Effect依存の実証ではない。
+- A→B→Undo→Save→A完了→Redo→Reloadの期待は保存A、現表示A+B。旧枝pin、逆順複数Save、Quota/途中終了のモデル、依存失敗Bと独立C、device epoch、writer枯渇を検査。
+- **実CMM限定比較**：Little CMSと独立CSS行列、6色×DBL/8U/16U/16F/ICC保存再読込。ローカル2.14で事前上限内。任意ICC LUT/Proof/CMYK/GPU/全色域は未検証。
+- `SYSTEM_CONTRACTS.md`に数値丸め/誤差上限、sample時刻とViewPose、資源式、Cache依存、Clip循環拒否、保存先sequenceを追加。`TECHNICAL_DECISIONS.md`に10軸比較と採否。
+
+選択した数値上限は達成した製品性能ではない。tile寸法、GPU dispatch上限、peak RAM、thermal、各Effect kernel・任意ICC参照は確定済みとしない。正確性に反例のあるoverlay/加算差分/無言Bakeは採用しない。
+
+## 4. 247機能と横断監査
+
+**30分野247件、通常234・限定2・保留10・対象外1を維持。** 原仕様のID/名称/分類/現行scopeを1対1照合。保留/対象外を実行機能へ昇格していない。
+
+[対応表](FEATURE_CONTRACT_CROSSWALK_247.json)の15観点を原典へ接続し、個別のfailure/quality条件を追加。LAY add/select、CLP copy/cut/paste、ICC assign/convert、紙選択/reapply、資料/試筆/作品管理の別scopeを具体化。表の空欄解消や既知IDの到達を、全機能の意味検証と同一視しない。
+
+Brush×Transform、Fill×Selection×Layer、Mask×Clip×Blend、Effect×Cache、Save×Undo×Recovery、ICC×Export等の版・作用順・障害境界は`SYSTEM_CONTRACTS.md`§10へ統合。ただし全Effectの演算参照、任意ICC/Proof、Pad/資料の操作試作、全247固有の受入には草案が残る。これを実装者が決める前提で完成扱いしない。
+
+## 5. UI/UX・公開
+
+[UI検証台帳](UI_UX_REVIEW.md)に8制作フロー、実装済み試作状態と未実装画像処理を分離。主要な文字/色/焦点/Sheet干渉を修正。320/390/740/760/800/960/1180px、Tablet縦820×1180、文字200%、キーボード相当geometry、合成二指の検査。これはAndroid/iPad/Windows実機ではない。
+
+Pages失敗は[元run](https://github.com/totoro0419/illustro/actions/runs/41192510066)のAnnotationsで、設計ブランチに対する`github-pages` Environment保護による拒否と確認。保護規則は変更せず、Performance Labも維持。
+
+[代替プレビュー](https://illustro-stage3-review-c2c1.ibukioike2009.chatgpt.site/)をSitesにowner-privateで配置。デプロイ成功はネイティブ結果で確認。クラウドブラウザーはログイン要求のためデプロイ版の操作は未確認。管理ローカルプレビューで表示・Undo・Focus色Panelを操作確認した。
+
+ユーザー判断待ち：Focus一時Panel/標準復帰、候補Undoと作品Undoの提示、横持ちスマホ帯、非破壊変形後の消去/混色。承認済みとして記録しない。
+
+## 6. 再現とCI
+
+確認済の中間HEAD `4d3db9b7a802be7c7b703d0f2570d1453820638e`：[Actions 41205478675](https://github.com/totoro0419/illustro/actions/runs/41205478675)成功。
+
+- Node既存12＋追加12、既存Chromium11、追加Chromium28（当該版）、実DOM247×4=988、TypeScript型検査、runtime no-document oracle、資料照合7、単体HTML生成一致。
+- 同じ追加DOM期待をPR7に適用し26失敗/2成功。新要素不在も含むので「26個の不具合」とは数えない。共通DOMを使ったLayer反例とSVキー/focus、重心四隅をさらに回帰へ追加した。
+- 原Intent型では現在のno-document例がコンパイル失敗、現型では成功。
+- 最新ソースの追加回帰と実CMMは現HEAD CIで再確認する。最終報告はその実際の結果を参照する。未実行をPASS扱いしない。
+
+ローカルはブラウザーbinary取得が失敗したため、ブラウザー自動検査はGitHub runnerで実行。管理ブラウザー手動確認と混同しない。実端末/実GPU負荷/Native・OPFS物理耐久/読上げ/初見利用者は未実施。
+
+## 7. 引渡し判定
+
+無条件の第④段階移行は**不可**。確定した境界契約と参照資産は[引渡し仕様](STAGE4_HANDOFF.md)に整理したが、AUD006・機能固有の数値/受入・ユーザー確認を終えてP1=0となるまで、設計完成を宣言しない。
+
+同じAIによる反例・再監査であり、完全に独立した第三者監査ではない。

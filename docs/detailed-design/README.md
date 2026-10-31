@@ -1,6 +1,6 @@
 # Illustro — 第③段階 詳細設計の入口（2026-10-31）
 
-**現時点の判定：NOT COMPLETE。** このブランチではPR #8の監査を引き継いで設計修正・操作試作・根拠付き検査を追加した。第④段階の本格実装は開始しない。元の正式スコープを変更しない（30分野247機能、通常234・限定2・保留10・対象外1）。
+**現時点の判定：NOT COMPLETE。監査19件中13件をStage③範囲で閉鎖、6件（P1=1/P2=4/P3=1）が残る。** このブランチではPR #8の監査を引き継いで設計修正・操作試作・根拠付き検査を追加した。第④段階の本格実装は開始しない。元の正式スコープを変更しない（30分野247機能、通常234・限定2・保留10・対象外1）。
 
 ## 必読順序・設計資料の優先順位
 
@@ -22,10 +22,19 @@
 ## 実施できる検査
 
 - Node: node qa/ui-prototype/tests.cjs （既存12のモデル試験）
-- Node: node qa/ui-prototype/stage3-tests.cjs （追加10のモデル反例）
+- Node: node qa/ui-prototype/stage3-tests.cjs （追加12のモデル反例）
 - Node: node tools/verify_stage3_design.cjs （元スコープ/247行/19指摘の一対一検査）
 - TS: npx tsc --noEmit --strict --target ES2022 --lib es2022,dom docs/detailed-design/contracts-type-tests.ts
 - Chromium: npm install --no-save playwright@1.56.1 && npx playwright install chromium && node qa/ui-prototype/stage3-browser-tests.cjs
 - Python: python tools/build_ui_prototype.py && git diff --exit-code -- qa/ui-prototype/index.html
 
 CIは .github/workflows/stage3-design-checks.yml。ブラウザーのviewport模擬は実機確認の代替ではない。GPU/Native/OPFS/ICCの形式的な実証はこの試作に存在しない。CIの結論と完成判定は [FINAL_DESIGN_AUDIT.md](FINAL_DESIGN_AUDIT.md) で必ず分離する。
+
+## 今回の限定実験と再現
+
+- `python experiments/stage3-reference/run_reference.py`：30のCPU参照。手計算画素/α、順序・失敗・保存モデル。
+- `python experiments/stage3-reference/icc_probe.py`：実Little CMSによる限定ICC比較（liblcms2が必要）。
+- `node qa/ui-prototype/final-browser-tests.cjs`：入口/8フロー/端末幅/文字/重心/焦点の追加回帰。
+- `node qa/ui-prototype/catalog-browser-tests.cjs`：全247×4開始状態の既知ID実DOM詳細導線。製品機能の実装証明ではない。
+
+[golden画素](../../experiments/stage3-reference/evidence/golden-pixels.json)・[参照図](../../experiments/stage3-reference/evidence/golden.svg)・[実行結果](../../experiments/stage3-reference/evidence/reference-results.json)。最終の採否と未閉鎖条件は[最終統合監査](FINAL_DESIGN_AUDIT.md)を読む。旧文書の「全件未閉鎖」「GPU必須でStage③閉鎖不可」は今回のユーザー指示と本台帳の範囲区分で更新した。

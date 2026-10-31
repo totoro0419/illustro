@@ -1,25 +1,45 @@
-# 技術方式の比較・採否・残余リスク台帳
+# 技術方式の最終採否と残余条件
 
-区分：**Contract**＝製品の意味契約、**Candidate**＝技術方式の候補、**Blocked**＝正確性や性能が不足/未検証。第②段階の42方式比較とPR #6 CPU Labを保持し、未測定の端末性能を推論で保証しない。
+**採用は第③段階の意味契約、条件付き採用は実装候補。製品性能合格とは異なる。** 第②段階の42方式比較とPR6のLabは保持。以下は今回得た追加証拠を反映した現行判断。
 
-| 争点 | 第一候補 | 比較した代替・欠点 | 判定 |
-|---|---|---|---|
-| 入力とView | 即時受付+独立View+後追い正式計算 | 正式終了まで操作待ち：理念違反 | Contract。GPU実機下の最大遅延はBlocked |
-| formal順序 | 受理orderと筆FIFO、依存Job DAG | 完了順commit：過去結果による上書き | Contract |
-| Preview handoff | coverage排他所有のatomic published snapshot | previewとformalを別フレーム更新：欠落/二重 | Contract。正式エンジンの検証Blocked |
-| GPU workload | 小分けdispatch、View予算留保 | GPU仕事をいつでも割込：保証なし | Candidate。実機Job durationとtail latency待ち |
-| Brush | 入力版固定、dirty/halo、品質参照画像 | 全再描画：多層負荷、単純近似：品質不足 | Candidate。tile size未決 |
-| Fill/Selection | 領域連結と影響の伝播を正確に追跡 | 固定半径halo：離れた連結へ波及しない | Contract for correctness, Candidate for scheduler |
-| Cache | input revision/Mask/Group/ICC/qualityをkey化 | stale outputの再利用：不正画素 | Contract for invalidation |
-| Undo | 不変正本rootと論理branch、用途pin | 全履歴再演：長作品で操作遅延 | Candidate for storage; semantics Contract |
-| Large documents | 正本・入力・保存予算の事前予約 | キャッシュと正本を同列LRU：内容喪失 | Candidate。peak RAMは未計測 |
-| Post-transform edits | 座標固定の作用ログ | overlayのみ：erase不可、毎回Bake：非破壊を失う | Candidate / AUD-006 未閉鎖 |
-| ICC/Precision | 明示色契約+参照CPU演算 | 默って8U化：情報喪失 | Contract。16U/16F GPU数値実証Blocked |
-| Save/Recovery | SaveFenceと検証可能な世代manifest | 上書き1世代：途中終了で喪失 | Candidate、Quota/電断未検証 |
-| Device loss | device世代切替、CPU/正本から再評価 | 古いTextureを採用：不正表示 | Candidate、実機未検証 |
+| 争点 | 採否 | 根拠・比較・残条件 |
+|---|---|---|
+| 入力/View | 独立受付とsample時刻のViewPoseを採用 | 正式計算待ちの入力列は不採用。実GPU占有下の画面更新最大遅延は第④段階 |
+| 正式Job | 受理順/FIFO＋明示DAGを採用 | 完了順commitは旧版上書き。失敗注入で依存Bのみblocked/独立C保護を確認 |
+| Handoff | 排他coverageを含むatomic snapshotを採用 | 24通りtile完了順×半透明の参照画素。split更新の二重/欠落反例。実GPU転送とEffect依存prefixは今後 |
+| GPU投入 | 分割＋in-flight上限＋View予算を条件付き採用 | 任意preemptは使わない。別deviceも物理独立保証なし。dispatch時間と上限は実機比較で決定 |
+| 非破壊後段 | Paint/Erase演算＋範囲付き固定Replaceの混合を条件付き採用 | Fractionの画素/α/履歴/保存参照は成立。単純overlay/加算差分/無言Bakeは不採用。AUD006の実Warpと再編集UXが残る |
+| Alpha Lock | 評価時の対象αを維持する修正案を採用 | 固定旧α案は取り下げ。透明部分への色発生を反例で検査。brush座標/Selectionは固定 |
+| 履歴 | 不変root・名前付きscope・用途pinを採用 | 作品Undoは入口間で同じaction。候補は専用Undo。Pad/資料を含むUX評価はAUD016 |
+| Save/Recovery | Fence＋検証済manifest＋保存先sequenceを採用 | A/B/Undo/Save/Redo、逆順保存、失敗点別モデル。物理ストレージ耐久は未実証 |
+| Cache/halo | 全依存版のkey、kernel別halo、循環拒否を採用 | 箱ぼかしtile同値、Fill遠方伝播の反例。全Effectの数値・halo定義は未完了 |
+| 正本精度 | 8U/16U/16Fを別表現、明示丸めを採用 | 全コード/有限half往復。限定実CMMは8U/16U/16Fも誤差内。任意ICC/Proof/GPUは未検証 |
+| 合成の既定 | encoded互換案、linear明示選択を比較中 | 製品仕様の無言全linear化を避ける。50%白の差を数値で固定。既定の見た目最終決定は未承認 |
+| 大規模作品 | sparse residency・非LRU正本・予算予約を条件付き採用 | 資源式とwriter枯渇モデル。tile寸法、peak RAM、保存容量、熱は未計測 |
 
-## 採用前に分離して測るもの
+## 後段方式の10評価軸
 
-正確性：全画素+alphaの差分、順序・取消・分岐・Native往復の不変性。形式変換で不可逆ならユーザーへの説明と原本保持を確認。性能は入力→表示（p50/p95/p99/最大）、frame gap、GPU submit/wait、peak RAM、battery/thermalを各端末×作品サイズ×多層数で測定。人工待機時間は実GPU負荷の代替ではない。GPU最適化で参照結果と異なるなら性能が良くても不採用。
+下記の負荷・容量は構造からの設計判断で、実測ランキングではない。
 
-比較対象として実装候補の成立条件を記録するが、採用率や競合優越は未測定。WebGPU Promiseは一般順序保証がないため、独自logical orderで検証する。一次情報： https://www.w3.org/TR/webgpu/ 、https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice/lost 、https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system 。
+| 軸 | 演算再演 | 完成画素固定 | 加算差分 | 採用候補：演算＋範囲付きReplace |
+|---|---|---|---|---|
+| 正確性 | 再採色で確定Smudgeが変化 | 下地再編集を反映不能 | 透明下地で負α | 参照意味を満たす小規模証拠 |
+| 画質 | 筆版/ICC依存が必要 | 保存品質を維持可 | 合成自体に反例 | 固定Rの精度維持が必要 |
+| 操作応答 | 長い再演が重い可能性 | 表示は単純 | 局所更新可 | checkpoint＋dirty評価候補 |
+| CPU/GPU | 履歴長依存 | 再評価少 | 差分演算少 | 作用域と依存prefix次第 |
+| メモリ | 入力/演算とcache | 全画像分 | 局所差分分 | 演算＋Rの作用域分 |
+| 保存容量 | 演算/筆版/素材版 | 全画像と原本 | 差分次第 | 可逆演算と固定Rの混合 |
+| 拡張性 | 新筆再演の互換負担 | 下地編集と衝突 | 非線形演算に弱い | 新演算は明示version/参照が必要 |
+| 実装複雑性 | evaluator互換が重い | 格納は単純 | 単純だが不正 | descriptor/coverage/順序管理 |
+| 保守性 | 旧kernel永続保守 | 元データとの整合難 | 不正を回避不可 | 固定Rにより旧Smudge再演を減らす |
+| 障害復旧 | 元入力から再演可能 | 完成画像を保護 | 原本依存 | 元入力/原本/Rを用途pinし再構成 |
+
+正確性に反例のある案は、速度比較を理由に採用しない。固定Rも作用mask二重掛け・α処理・採色版を誤ると不正になるため、`TRANSFORM_POSTPAINT_SEMANTICS.md`の数式を受入条件とする。
+
+## 実行証拠
+
+- `experiments/stage3-reference/run_reference.py`：30の限定CPU参照検査。ゴールデン画素は手計算Fraction、`evidence/golden-pixels.json`と`golden.svg`で表現。
+- `icc_probe.py`：Little CMS実CMMと独立CSS行列。6色×DBL/8U/16U/16F/保存ICC再読込の限定比較。ローカル2.14、CI側版は実行ログで確認。任意ICC LUT/Proof/CMYK/全色域へ一般化しない。
+- UI/型/988導線は最終監査のCIログへ。実機/GPU/Native耐久を代用しない。
+
+一次資料：[WebGPU](https://www.w3.org/TR/webgpu/)、[CSS Color 4](https://www.w3.org/TR/2026/CRD-css-color-4-20261009/)、[ICC](https://www.color.org/getting-started/)、[Little CMS公式API](https://github.com/mm2/Little-CMS/blob/master/include/lcms2.h)。Illustroの受入上限は`SYSTEM_CONTRACTS.md`§9で試験前に定義。

@@ -25,7 +25,7 @@ check('one-to-one IDs, labels and scope against PR5',()=>{
 });
 check('all rows contain essential distinct design contracts',()=>{
  for(let r of rows){
-  for(const key of ['purpose','intended_action','initial_entry','parameters','prerequisites','command_namespace','canonical_data','native_persistence','apply_cancel','undo_contract','device_entries','acceptance_test_draft','verification']){
+  for(const key of ['purpose','intended_action','initial_entry','parameters','prerequisites','command_namespace','canonical_data','native_persistence','apply_cancel','undo_contract','device_entries','acceptance_test_draft','verification','failure_recovery_contract','responsibility_contract']){
    assert(r[key]!==null&&r[key]!==undefined,r.id+' '+key);
   }
   assert.equal(r.verification.formal_engine,'not-implemented');
@@ -37,7 +37,7 @@ check('review-finding crosswalk exists and is 19 unique findings',()=>{
  assert.equal(original.length,19);
  const byId=new Map(original.map(f=>[f.id,f]));
  for(let f of audit.findings){
-  assert.equal(f.closed,false,f.id+' cannot be closed without source closure evidence');
+  if(f.closed){assert(f.closure_evidence&&f.closure_evidence.checks&&/^https:\/\/github.com\/totoro0419\/illustro\/actions\/runs\/\d+$/.test(f.closure_evidence.ci),f.id+' missing scoped closure evidence');assert.equal(f.remediation_status,'closed-for-stage3');}else assert(f.remaining_work,f.id+' missing remaining work');
   assert.equal(f.severity,byId.get(f.id).severity);assert.equal(f.title,byId.get(f.id).title);
   for(const id of f.affected_feature_ids)assert(rows.some(r=>r.id===id),f.id+' unknown '+id);
  }

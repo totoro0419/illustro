@@ -1,36 +1,34 @@
-# 第③段階 監査19件の修正・検証台帳
+# 監査19件の解決台帳
 
-**完了扱い禁止：19件とも元監査の閉鎖条件を満たす証跡が揃っていない。** 未解決 P0 0 / P1 7 / P2 11 / P3 1。P1のモデル修正を実行したことと、P1問題の全面閉鎖は別。
+**第③段階の閉鎖13件、未閉鎖6件。製品実装の完了判定ではない。**
 
-元監査：[findings.md](../audits/findings.md)。詳細の指摘/原因/影響/変更/残作業/閉鎖基準は [AUDIT_REMEDIATION.json](AUDIT_REMEDIATION.json)。
+元指摘は[PR8台帳](../audits/findings.md)。各原因・変更・before/after・閉鎖根拠は[JSON](AUDIT_REMEDIATION.json)。元の閉鎖要求を実機未実施だけで全て先送りせず、今回のユーザー指示に従い設計と第④段階の実装試験を分離する。
 
-| ID | 重要度 | 技術・UI上の対応段階 | 残る検証 |
+| ID | 重要度 | 判定 | 修正・残余 |
 |---|---|---|---|
-| AUD-001 | P1 | model/action-level verified | 実DOM上の全入口・キー・Quickの等価性未実行 |
-| AUD-002 | P1 | model-level verified | DOM実操作・Native永続・各層交錯は未検証 |
-| AUD-003 | P1 | model-level verified | 焦点/対象と複数領域のUX実機未検証 |
-| AUD-004 | P1 | code-only | PC/Tablet/Phoneでの目視・クリック・遮蔽検査未実行 |
-| AUD-005 | P1 | contract-only | TypeScript型コンパイルと実command adapterの検証未実行 |
-| AUD-006 | P1 | candidate-only | 正式ゴールデン画像・色精度・実機比較がなく意味契約未確定 |
-| AUD-007 | P1 | code-only | 320/390/740px実browser hit-test・仮想キーボード未検証 |
-| AUD-008 | P2 | model-level verified | 初見発見率や一般同義語コーパスは未測定 |
-| AUD-009 | P2 | code-only | 実DOM focus順・閉じた入口での復帰未検証 |
-| AUD-010 | P2 | not-addressed | 実UI経路・可視性・起点ごとの手数計測は未実施 |
-| AUD-011 | P2 | code-only | browser/touchで中心・端・反転を再投影検証していない |
-| AUD-012 | P2 | code-only | 実DOM置換計数/長履歴の経過時間を測定していない |
-| AUD-013 | P2 | partial-test | 修正前失敗のCI実証とDOM操作・全entry比較が未実施 |
-| AUD-014 | P2 | contract-only | 容量枯渇/入力救出のテスト・閾値未検証 |
-| AUD-015 | P2 | contract-only | Job DAG・回復・永続保存のモデル/実機検証未実施 |
-| AUD-016 | P2 | contract-only | 試筆/資料/Sessionを交互編集する操作実証なし |
-| AUD-017 | P2 | code-only | 760/800/960/1180pxのCanvas測定・操作時間未検証 |
-| AUD-018 | P2 | code-only | 実タッチ/ペン・HSV全色・アクセシビリティ操作の検証なし |
-| AUD-019 | P3 | code-only | 44px推奨の適用例外と実指誤タップ、文字拡大検査未実施 |
+| AUD-001 | P1 | 閉鎖（Stage③） | 固定/検索/Quick/Context/キーをdocument dispatchへ統一。Sessionの有無で作品Undoの意味を変えない。 |
+| AUD-002 | P1 | 閉鎖（Stage③） | Layer構造/visibility/blendを正本・Undo・Save snapshotへ統合。描線の可視性も対象Layer属性から評価。 |
+| AUD-003 | P1 | 閉鎖（Stage③） | 作品Undoと候補Undoを異なる明示actionへ分離。候補取消で別層Cを維持。 |
+| AUD-004 | P1 | 閉鎖（Stage③） | Focusの一時Panelを実表示し、閉じる/WorkspaceボタンでFocusへ復帰。 |
+| AUD-005 | P1 | 閉鎖（Stage③） | scope判別union、save/export実文書必須、manager asset、実行可否境界を修正。 |
+| AUD-006 | P1 | 未閉鎖 | 限定Fraction参照と保存往復は成立。実Warp/補間と複数後段live Effectを含む画像参照、再編集時の利用者意味確認が不足。 |
+| AUD-007 | P1 | 閉鎖（Stage③） | Session実測高さをResizeObserverで予約。狭幅で重複作品Undoボタンを省き、文字をrem化。 |
+| AUD-008 | P2 | 未閉鎖 | 主要同義語は修正済だが、名称を教えない制作課題と十分な同義語コーパスは未実行。 |
+| AUD-009 | P2 | 閉鎖（Stage③） | 詳細の入口保持、Escape/閉じるの焦点復帰と入口消滅時の安全代替。 |
+| AUD-010 | P2 | 未閉鎖 | Clip/Mask/入り抜き/表示帯の主入口を修正し、名目手数と実測を区別。全247件の主入口・スクロール・候補開始までの最短/通常経路の実測は不足。 |
+| AUD-011 | P2 | 閉鎖（Stage③） | View逆行列で前重心の文書点を固定し新重心へ再投影。反転/回転を含む。 |
+| AUD-012 | P2 | 閉鎖（Stage③） | 描線stampを状態更新と分離し、無関係syncでpath DOMを置換しない。 |
+| AUD-013 | P2 | 閉鎖（Stage③） | 実DOMで入口action/結果/副作用を検査し、修正前PR7にも同じ期待を適用。988件の既知ID詳細導線は別集計。 |
+| AUD-014 | P2 | 閉鎖（Stage③） | writer増分予算・acceptedThrough・firstRejected・保護範囲救出を具体化し、部分筆を黙って確定しない。 |
+| AUD-015 | P2 | 閉鎖（Stage③） | 恒久失敗の依存閉包、旧Save失敗、独立C保護、同意後の新枝Saveをモデル化。 |
+| AUD-016 | P2 | 未閉鎖 | scopeを5領域に定義。作品/候補の試作は動くが、Pad/資料を含む実UIと利用者の作用対象理解の試験は不足。 |
+| AUD-017 | P2 | 未閉鎖 | 8幅のCanvasとhit測定は実施。残余幅を改善したが、同じ制作課題の探索時間/開閉回数/遮蔽比較の利用者評価は未実施。 |
+| AUD-018 | P2 | 閉鎖（Stage③） | SV面のpointer/arrow、色相range、描画色と見た目の同期。初期の紫面/緑色採用の不一致も修正。 |
+| AUD-019 | P3 | 未閉鎖 | coarse入力の主要標的44pxと文字200%/320pxのgeometry検査を追加。実指の誤タップと全標的の例外評価が不足。 |
 
-## 証拠の区別
+## 証拠の扱い
 
-- **実行済**：GitHub Actionsの既存12＋追加10モデル検査、Node構文、単体HTML再生成一致（実行時SHAはActionsに記録）。
-- **コード修正のみ**：UIクリック/焦点/遮蔽、色面、gesture。Node構文検査はブラウザーでの機能正常を証明しない。
-- **設計契約のみ**：no-document Intent、入力容量/障害復旧、後段操作の意味。型/参照演算/実装連携検証は未完了。
-- **未実行**：本格的なペン+指、WebGPU device loss、Native/OPFS耐久、ICC精度、長時間、高多層・画素一致、初見ユーザー試験。
-
-閉鎖条件の緩和は行わない。修正後の新たな問題発生も未監査であり、「新規指摘0」は確定していない。
+- PR7に同じDOM期待を適用：旧版に失敗が出る。ただし旧版にない要素の不在も含むため、失敗数を不具合件数とは数えない。レイヤー/遮蔽は共通DOMの追加試験でも検査する。
+- 型/モデル/CPU画素と物理保存・GPU・実機の合格を区別する。AUD014/015は旧参照実装が存在しない設計欠落のため、元の反例から受理境界・依存失敗を具体化し、失敗注入モデルで閉鎖する。
+- 新規3件を修正・検証。独立した第三者監査ではなく、同一AIによる再監査。
+- 現HEADでCIが失敗した場合は該当閉鎖を取り消す。CIリンクの版と現在の版の差は最終監査で明示。

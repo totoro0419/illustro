@@ -45,6 +45,18 @@ class RasterTests(unittest.TestCase):
     def test_rejected_baked_delta_does_not_survive_upstream_reedit(self):
         # Delta after erasing opaque red = -red; applied after red moved away goes negative.
         delta=tuple(-x for x in RED);self.assertLess((Z[3]+delta[3]),0)
+    def test_fold_all_post_edits_mask_clip_blend_history_save(self):
+        d=doc();d['mapping']=[[(0,F(1)),(1,F(1,2))],[(1,F(1))],[],[]]
+        d['ops']=[paint([F(1,2),0,0,0]),dict(kind='erase',strength=F(1,2),coverage=[F(1),F(0),F(0),F(0)])]
+        d['ops'].append(capture_smudge(d,[F(1,2),F(0),F(0),F(0)],[1,1,1,1]));d['mask'][0]=F(1,2);d['clip'][0]=F(1,2)
+        h=History(d);background=pixel(1,1,1,F(1,2))
+        self.assertEqual(evaluate(h.doc)[0],(F(3,128),F(1,64),F(19,128),F(3,16)))
+        self.assertEqual(blend(evaluate(h.doc)[0],background,'multiply'),(F(55,128),F(54,128),F(71,128),F(19,32)))
+        h.edit(lambda x:x.update(mapping=[[],[(0,F(1))],[],[]]))
+        self.assertEqual(evaluate(h.doc)[0],(F(0),F(1,64),F(1,8),F(9,64)))
+        self.assertEqual(blend(evaluate(h.doc)[0],background,'multiply'),(F(55,128),F(57,128),F(71,128),F(73,128)))
+        saved=h.save();h.undo();self.assertEqual(evaluate(h.doc)[0],(F(3,128),F(1,64),F(19,128),F(3,16)))
+        h.redo();self.assertEqual(evaluate(h.doc),evaluate(reload(saved)));self.assertEqual(h.doc['original'],[RED,BLUE])
     def test_replace_dependency_stays_immutable(self):
         d=doc();op=capture_smudge(d,[F(0),F(1),F(0),F(0)],[0,0,0,0]);d['ops']=[op]
         d['original'][0]=BLUE;self.assertEqual(evaluate(d)[1],RED)

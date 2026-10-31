@@ -79,14 +79,16 @@ async function main(){
   assert(m.canvasWidth>0&&m.canvasHeight>0);
   if(size[0]===800)assert(m.canvasWidth>=470);
  },size,true);
- await run('AUD-011 two-touch centroid reprojection after flip and rotation',async(p,c)=>{
-  await p.locator('#fixed [data-flip="H"]').click();await p.locator('#rotateView').click();const r=await p.locator('#surface').boundingBox(),x=r.x+r.width*.6,y=r.y+r.height*.5;
-  const point=await p.evaluate(({x,y})=>{const p=new DOMPoint(x,y).matrixTransform(document.querySelector('#art svg').getScreenCTM().inverse());return {x:p.x,y:p.y};},{x,y});
-  const cdp=await c.newCDPSession(p);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x-15,y},{x:x+15,y}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x-30,y},{x:x+30,y}]});
-  const projected=await p.evaluate(point=>{const p=new DOMPoint(point.x,point.y).matrixTransform(document.querySelector('#art svg').getScreenCTM());return {x:p.x,y:p.y};},point);
-  assert(Math.hypot(projected.x-x,projected.y-y)<1);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await run('AUD-011 two-touch centroid center/corners with flip and rotation',async(p,c)=>{
+  await p.locator('#fixed [data-flip="H"]').click();const cdp=await c.newCDPSession(p);
+  for(const [fx,fy] of [[.5,.5],[.15,.15],[.85,.15],[.15,.8],[.85,.8]]){
+   await p.locator('#fit').click();await p.locator('#rotateView').click();const r=await p.locator('#surface').boundingBox(),x=r.x+r.width*fx,y=r.y+r.height*fy;
+   const point=await p.evaluate(({x,y})=>{const p=new DOMPoint(x,y).matrixTransform(document.querySelector('#art svg').getScreenCTM().inverse());return {x:p.x,y:p.y};},{x,y});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x-15,y},{x:x+15,y}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x-30,y},{x:x+30,y}]});
+   const projected=await p.evaluate(point=>{const p=new DOMPoint(point.x,point.y).matrixTransform(document.querySelector('#art svg').getScreenCTM());return {x:p.x,y:p.y};},point);
+   assert(Math.hypot(projected.x-x,projected.y-y)<1);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  }
  },[1180,820],true);
-
  for(const [w,h,scale] of [[320,568,2],[390,420,1],[740,280,1]])await run('AUD-007/019 text or keyboard geometry '+[w,h,scale],async p=>{
   if(scale===2)await p.addStyleTag({content:'html{font-size:175%!important}'});
   await p.locator('#tools [data-tool="transform"]').click();assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
@@ -95,6 +97,21 @@ async function main(){
  await run('AUD-007 740x360 Session band hit without preceding Focus',async p=>{
   await p.locator('#tools [data-tool="transform"]').click();assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
  },[740,360],true);
+
+ await run('AUD-002 original common DOM layer Undo regression',async p=>{
+  await p.locator('#addLayer').click();await p.locator('#fixed [data-undo]').click();assert.equal(await p.locator('#layerRows .layerrow').count(),3);
+ });
+ await run('AUD-002 original common DOM visibility selection regression',async p=>{
+  await p.locator('#layerRows .eye').first().click();await p.locator('#layerRows .select-layer').nth(1).click();assert.equal(await p.locator('#layerRows .eye').first().getAttribute('aria-pressed'),'false');
+ });
+ await run('AUD-018 SV keyboard and hue keep displayed color synchronized',async p=>{
+  await p.locator('#currentColor').click();const before=await p.locator('#colorPicker').inputValue();await p.locator('.color-plane').press('ArrowLeft');assert.notEqual(await p.locator('#colorPicker').inputValue(),before);
+  for(const hue of ['0','60','120','180','240','300']){await p.locator('#hue').fill(hue);assert((await p.locator('.color-plane').getAttribute('style')).includes('linear-gradient'));}
+ });
+
+ await run('AUD-009 Quick Escape returns logical focus',async p=>{
+  await p.locator('#quickTrigger').click();await p.locator('#quickClose').focus();await p.keyboard.press('Escape');assert.equal(await p.evaluate(()=>document.activeElement.id),'quickTrigger');
+ });
  const fail=results.filter(r=>r.status==='fail');fs.mkdirSync('test-results',{recursive:true});fs.writeFileSync('test-results/browser-'+mode+'.json',JSON.stringify({mode,results,metrics,real_device:false,physical_pen:false,gpu:false},null,2));
  if(!process.env.BASELINE&&fail.length)process.exitCode=1;
  if(process.env.BASELINE&&!fail.length)throw Error('Baseline did not expose any failures');

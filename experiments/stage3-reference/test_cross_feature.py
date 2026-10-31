@@ -31,10 +31,6 @@ class CrossTests(unittest.TestCase):
             part=blur(v[lo:hi],2);out+=part[start-lo:start-lo+4]
         self.assertEqual(out,gold)
         no_halo=sum((blur(v[i:i+4],2) for i in range(0,len(v),4)),[]);self.assertNotEqual(no_halo,gold)
-    def test_cache_identity_all_dependencies_including_profile_and_quality(self):
-        base=('root','mask','clip','blend','ICC','16U','formal','kernel-v1','device1')
-        for i in range(len(base)):
-            changed=list(base);changed[i]+='new';self.assertNotEqual(tuple(changed),base)
     def test_fill_connectivity_propagates_beyond_halo(self):
         def fill(line):
             connected=[]

@@ -37,6 +37,8 @@ jobs:
       - run: node qa/ui-prototype/final-browser-tests.cjs
       - run: node qa/ui-prototype/catalog-browser-tests.cjs
       - run: node experiments/stage3-reference/intent_reference.cjs
+      - run: sudo apt-get install -y liblcms2-2
+      - run: python experiments/stage3-reference/icc_probe.py
       - name: Execute unchanged expectations against PR7 to expose original defects
         run: |
           git fetch origin fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04 --depth=1

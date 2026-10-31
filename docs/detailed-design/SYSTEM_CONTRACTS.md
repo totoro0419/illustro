@@ -110,7 +110,7 @@ T02〜04とT07の一部だけはreviewモデルの状態検査を実行。T05〜
 | sRGB/P3 | source profile/hash、D65、transfer、destination、intent、CMM版を固定 | 同一色空間のassignはraw不変。convertは数値が変わる。predefined行列計算binary64の同色往復目標≤1e−10（transfer境界除外）。任意ICC LUTは未検証 |
 | ICC/Proof | Assign/Convert/Proof別action。Proofは表示派生、原本を不変に保つ | 検証用CMM・ICC fixture・intent・BPCを固定して比較。未知/破損ICCを推測でsRGB成功扱いしない。高精度任意ICCの受入未達 |
 
-8U/16U全コードと全有限binary16パターンの数値往復、P3原色行列、転送特性境界をCPUで実行。これは16U/16Fの正式ICC変換やGPU数値合格ではない。GPU許容誤差は暫定受入上限で、達成値ではない。CPU参照の手計算Fraction結果は誤差0。
+8U/16U全コードと全有限binary16パターンの数値往復、P3原色行列、転送特性境界をCPUで実行。加えて`icc_probe.py`はLittle CMS 2.14の実CMMで、限定6色×DBL/8U/16U/16F/保存再読込profileを独立CSS行列と比較し、既定誤差内であることを確認した。任意LUT/Proof/全色域は未確認。これは16U/16Fの正式ICC変換やGPU数値合格ではない。GPU許容誤差は暫定受入上限で、達成値ではない。CPU参照の手計算Fraction結果は誤差0。
 
 **資源・停止境界**：`protected originals + accepted chunks + evaluation intermediates + presentation + save pins + recovery reserve + overhead`を同時peakで予約する。tile t、halo h、4channel×b bytesなら一面は`(t+2h)^2*4*b`、同時面数とresident層を乗じる。8192² RGBA16一面は512 MiB（計算値で実測値ではない）。dense全面×履歴長を常駐前提にしない。原本/入力/Save pinは一般LRU対象外。cacheだけを先にevict。
 

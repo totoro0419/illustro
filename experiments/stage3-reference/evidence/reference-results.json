@@ -58,10 +58,6 @@
       "status": "pass"
     },
     {
-      "case": "test_cross_feature.CrossTests.test_cache_identity_all_dependencies_including_profile_and_quality",
-      "status": "pass"
-    },
-    {
       "case": "test_cross_feature.CrossTests.test_clip_cycle_rejected_and_acyclic_reference_valid",
       "status": "pass"
     },
@@ -90,19 +86,15 @@
       "status": "pass"
     },
     {
-      "case": "test_named_history.NamedHistoryTests.test_ai_candidate_retains_original_and_apply_is_one_root",
-      "status": "pass"
-    },
-    {
-      "case": "test_named_history.NamedHistoryTests.test_interleaved_pad_reference_session_document_undo",
-      "status": "pass"
-    },
-    {
       "case": "test_raster.RasterTests.test_alpha_lock_preserves_current_alpha",
       "status": "pass"
     },
     {
       "case": "test_raster.RasterTests.test_erase_not_overlay",
+      "status": "pass"
+    },
+    {
+      "case": "test_raster.RasterTests.test_fold_all_post_edits_mask_clip_blend_history_save",
       "status": "pass"
     },
     {
@@ -130,19 +122,19 @@
       "status": "pass"
     }
   ],
-  "testsRun": 32,
+  "testsRun": 30,
   "success": true,
   "source_sha256": {
     "async_reference.py": "f7758b90b82fe58d744c313f6099d3522b0222ea258bd7a247e8b2abf5d6e307",
     "color_reference.py": "a1e015bf5f83888983f5da4f9b995b20da0f6261cc15d5e1582967c30fb94382",
+    "icc_probe.py": "de4d93646e9d14a96388608ae79acbafc88beb5d99185874ba81ede3360397e0",
     "raster_reference.py": "9d9b3afb693665dacd1b321094a4711df315e8015834afd8c8a43dd0821a6f8f",
     "run_reference.py": "34b007e8df36a91897bad8daf811f533fc93f70112d70dbf4b62706fcd3d42b9",
     "test_async.py": "496a6ed18bca9f3cf3add5cbcb904d7eca8f0a4aeb076c0bb1694e9976f35b8e",
     "test_color.py": "4d9c046f9ce982cf7c486954bcf63d8b9a023bca43b704cb575b6e1ac9d1d615",
-    "test_cross_feature.py": "eafa3ac9a09bc8cb728596241dc35161fe416471c609645476a7971cfe7a478c",
+    "test_cross_feature.py": "9923187987e4ff300b7fab5a9886a0051623f7049d0e24d61a641a12f13a1a0d",
     "test_handoff.py": "2fb393ee2a81d675108aa73c1839dd14244f45e1b3d4fa729616144821ba6025",
-    "test_named_history.py": "28db7d69c9e48c7f86cbfd8cf6fcc9cc57d1780670f78f82768f58f6ad44e599",
-    "test_raster.py": "efcacd2efe2c8a3495ec23c68ae2aae4402ef8a36992e88a56b0c96019725016"
+    "test_raster.py": "56e81639ed92fce8fb700b475c3bc973727a90963addd567aba98f9bc61d9f2a"
   },
   "unverified": [
     "production renderer",

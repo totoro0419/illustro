@@ -19,13 +19,22 @@
         "UI-005"
       ],
       "root_cause_area": "action-by-entry",
-      "remediation_status": "model/action-level verified",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "model.js / app.js / stage3-tests.cjs",
-      "remediation": "固定・検索Undoの単一dispatch、汎用適用による架空履歴を回避",
-      "remaining_work": "実DOM上の全入口・キー・Quickの等価性未実行",
+      "remediation": "固定/検索/Quick/Context/キーをdocument dispatchへ統一。Sessionの有無で作品Undoの意味を変えない。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "固定/検索/Quick/Context/キーから同じactionと引数を実行し、最終状態と履歴を差分比較する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "final-browser-tests: AUD-001/003 x5",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-002",
@@ -42,13 +51,22 @@
         "SAV-003"
       ],
       "root_cause_area": "document-layer",
-      "remediation_status": "model-level verified",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "model.js / app.js / stage3-tests.cjs",
-      "remediation": "Layer treeとvisibility/blendを正本モデルに移しUndo/Redo/Snapshot化",
-      "remaining_work": "DOM実操作・Native永続・各層交錯は未検証",
+      "remediation": "Layer構造/visibility/blendを正本・Undo・Save snapshotへ統合。描線の可視性も対象Layer属性から評価。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "追加/表示切替/選択/Undo/Redoの順列と、保存対象の構造Snapshotを照合する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "stage3-tests: layer/save; stage3-browser-tests: layer Undo/visibility/focus; final-browser-tests: save/reload",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-003",
@@ -65,13 +83,22 @@
         "UI-003"
       ],
       "root_cause_area": "named-history",
-      "remediation_status": "model-level verified",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "model.js / app.js / shell.html / stage3-tests.cjs",
-      "remediation": "Sessionとは別の作品Undo/Redo入口を設け、独立C保護をモデル検査",
-      "remaining_work": "焦点/対象と複数領域のUX実機未検証",
+      "remediation": "作品Undoと候補Undoを異なる明示actionへ分離。候補取消で別層Cを維持。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "変形候補A→別層C→作品Undo/候補Undo/候補取消の全順序でCとAの履歴を別照合する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "stage3-tests: session-local; final-browser-tests: Scenario 5 and five Undo entries",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-004",
@@ -88,13 +115,22 @@
         "LAY-001"
       ],
       "root_cause_area": "focus-panel",
-      "remediation_status": "code-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "app.js / style.css",
-      "remediation": "Focus中は一時Workspaceを表示し、閉じてもFocus保持",
-      "remaining_work": "PC/Tablet/Phoneでの目視・クリック・遮蔽検査未実行",
+      "remediation": "Focusの一時Panelを実表示し、閉じる/WorkspaceボタンでFocusへ復帰。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "PC/Tablet/PhoneでFocus→色/層/検索→取消→描画再開を、キーボードなしで完遂する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "final-browser-tests: responsive 8 sizes; Chromium手動操作",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-005",
@@ -114,13 +150,22 @@
         "GST-002"
       ],
       "root_cause_area": "scope-type",
-      "remediation_status": "contract-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "docs/product-architecture/contracts.d.ts",
-      "remediation": "document/view/settings/assets/lifecycleの判別unionとno-document操作",
-      "remaining_work": "TypeScript型コンパイルと実command adapterの検証未実行",
+      "remediation": "scope判別union、save/export実文書必須、manager asset、実行可否境界を修正。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "文書0件/1件/切替中のnew/open/settings/asset/paint/saveを型と可否の契約テストで照合する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "contracts-type-tests.ts current compiles / original rejects; intent_reference.cjs",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-006",
@@ -138,13 +183,15 @@
         "NDE-003"
       ],
       "root_cause_area": "post-transform-ops",
-      "remediation_status": "candidate-only",
+      "remediation_status": "partially-verified-open",
       "changed_files": "docs/detailed-design/TRANSFORM_POSTPAINT_SEMANTICS.md",
       "remediation": "変形結果Document座標に固定した後段演算、erase/Smudgeの期待像案",
-      "remaining_work": "正式ゴールデン画像・色精度・実機比較がなく意味契約未確定",
+      "remaining_work": "限定Fraction参照と保存往復は成立。実Warp/補間と複数後段live Effectを含む画像参照、再編集時の利用者意味確認が不足。",
       "original_close_test": "折返しWarp/半透明/Clip/Maskの各条件で描く→消す/混ぜる→旧変形変更→Undo→Save/再開の期待画像を固定する。",
       "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": null
     },
     {
       "id": "AUD-007",
@@ -163,13 +210,22 @@
         "UI-003"
       ],
       "root_cause_area": "mobile-session",
-      "remediation_status": "code-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "qa/ui-prototype/style.css / shell.html",
-      "remediation": "スマホWorkspaceとSession帯の占有領域を分離するCSS",
-      "remaining_work": "320/390/740px実browser hit-test・仮想キーボード未検証",
+      "remediation": "Session実測高さをResizeObserverで予約。狭幅で重複作品Undoボタンを省き、文字をrem化。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "390×844/320×568/740×360、仮想キーボード、文字拡大で対象・候補・適用・取消の可視性とhitを検査する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "stage3-browser-tests: 3 sizes; final-browser-tests: 8 responsive + text/keyboard geometry",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-008",
@@ -187,13 +243,15 @@
         "IO-002"
       ],
       "root_cause_area": "search-synonyms",
-      "remediation_status": "model-level verified",
+      "remediation_status": "partially-verified-open",
       "changed_files": "model.js / stage3-tests.cjs",
       "remediation": "乗算/Clip/透明PNG/左右反転の安全な検索候補を追加",
-      "remaining_work": "初見発見率や一般同義語コーパスは未測定",
+      "remaining_work": "主要同義語は修正済だが、名称を教えない制作課題と十分な同義語コーパスは未実行。",
       "original_close_test": "名称を教えない制作課題と、反転/Clip/Multiply/透明出力の同義語セットで到達先を照合する。",
       "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": null
     },
     {
       "id": "AUD-009",
@@ -209,13 +267,22 @@
         "UI-008"
       ],
       "root_cause_area": "focus-return",
-      "remediation_status": "code-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "app.js",
-      "remediation": "機能詳細を閉じる時の入口focus保持とEscape優先順位を変更",
-      "remaining_work": "実DOM focus順・閉じた入口での復帰未検証",
+      "remediation": "詳細の入口保持、Escape/閉じるの焦点復帰と入口消滅時の安全代替。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "検索/カテゴリ/関連/直接入口→詳細→閉じる/EscapeをTab順とactiveElementで確認する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "stage3-browser-tests: detail close; final-browser-tests: Escape",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-010",
@@ -233,13 +300,15 @@
         "UI-005"
       ],
       "root_cause_area": "actual-steps",
-      "remediation_status": "not-addressed",
+      "remediation_status": "partially-verified-open",
       "changed_files": "docs/product-architecture/FEATURE_ACCESS_LEDGER.json",
       "remediation": "既存3手の数値は原典として保持",
-      "remaining_work": "実UI経路・可視性・起点ごとの手数計測は未実施",
+      "remaining_work": "Clip/Mask/入り抜き/表示帯の主入口を修正し、名目手数と実測を区別。全247件の主入口・スクロール・候補開始までの最短/通常経路の実測は不足。",
       "original_close_test": "初期/閉Workspace/Focus/小画面から同じ目標へ到達し、記録と実DOM操作を差分比較する。",
       "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": null
     },
     {
       "id": "AUD-011",
@@ -256,13 +325,22 @@
         "DEV-002"
       ],
       "root_cause_area": "gesture-anchor",
-      "remediation_status": "code-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "app.js",
-      "remediation": "二指重心の文書点を保持する座標変換補償を試作に反映",
-      "remaining_work": "browser/touchで中心・端・反転を再投影検証していない",
+      "remediation": "View逆行列で前重心の文書点を固定し新重心へ再投影。反転/回転を含む。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "中心/四隅で固定重心Zoom/Rotateし、アンカー文書点の再投影誤差を数値検査。実ペン+指で操作感を別評価する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "final-browser-tests: two-touch centroid; latest test adds center/four corners",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-012",
@@ -279,13 +357,22 @@
         "BRU-009"
       ],
       "root_cause_area": "svg-differential",
-      "remediation_status": "code-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "app.js",
-      "remediation": "受理済ストロークID変化時だけSVG DOM再構築する設計",
-      "remaining_work": "実DOM置換計数/長履歴の経過時間を測定していない",
+      "remediation": "描線stampを状態更新と分離し、無関係syncでpath DOMを置換しない。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "同じ入力系列を短/長履歴、監視ON/OFFで比較し、DOM置換/処理時間を別計測する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "final-browser-tests: stroke DOM identity / MutationObserver",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-013",
@@ -302,13 +389,22 @@
         "LAY-002"
       ],
       "root_cause_area": "action-regression",
-      "remediation_status": "partial-test",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "stage3-tests.cjs / .github/workflows/stage3-design-checks.yml",
-      "remediation": "元12テストに追加10状態回帰とCIを導入",
-      "remaining_work": "修正前失敗のCI実証とDOM操作・全entry比較が未実施",
+      "remediation": "実DOMで入口action/結果/副作用を検査し、修正前PR7にも同じ期待を適用。988件の既知ID詳細導線は別集計。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "AUD-001/002/003/004/007の回帰が既存試験に追加され、修正前に失敗することを確認する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "stage3-browser-tests + final-browser-tests before/after + catalog-browser-tests",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-014",
@@ -326,13 +422,22 @@
         "SAV-006"
       ],
       "root_cause_area": "input-capacity",
-      "remediation_status": "contract-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "docs/detailed-design/SYSTEM_CONTRACTS.md",
-      "remediation": "入力writerの増分予約と受理済/未受理境界を定義",
-      "remaining_work": "容量枯渇/入力救出のテスト・閾値未検証",
+      "remediation": "writer増分予算・acceptedThrough・firstRejected・保護範囲救出を具体化し、部分筆を黙って確定しない。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "長筆の途中で入力/退避/完了先の各予算を枯渇させ、受理範囲と救出可能データを照合する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "test_async.Writer exhaustion/cancel/rescue; contracts WriterState/InputChunk",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-015",
@@ -350,13 +455,22 @@
         "AUT-003"
       ],
       "root_cause_area": "permanent-failure",
-      "remediation_status": "contract-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "docs/detailed-design/SYSTEM_CONTRACTS.md",
-      "remediation": "失敗依存A/Bと独立Cを分離、旧SaveFence失敗/新枝救出の手順案",
-      "remaining_work": "Job DAG・回復・永続保存のモデル/実機検証未実施",
+      "remediation": "恒久失敗の依存閉包、旧Save失敗、独立C保護、同意後の新枝Saveをモデル化。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "一時エラー→再試行成功と恒久失敗→依存Bのみ取消→C保持→旧Save失敗/新Save成功を別試験にする。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "test_async.failure_dependent_only_rescue / retry_success",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-016",
@@ -375,13 +489,15 @@
         "HIS-001"
       ],
       "root_cause_area": "history-scopes",
-      "remediation_status": "contract-only",
+      "remediation_status": "partially-verified-open",
       "changed_files": "contracts.d.ts / SYSTEM_CONTRACTS.md / shell.html",
       "remediation": "document/session/reference/test-pad/document-managerの名前付きUndoを導入",
-      "remaining_work": "試筆/資料/Sessionを交互編集する操作実証なし",
+      "remaining_work": "scopeを5領域に定義。作品/候補の試作は動くが、Pad/資料を含む実UIと利用者の作用対象理解の試験は不足。",
       "original_close_test": "パッド/資料/作品/Sessionを交互に編集し、各Undo後に対象と残存編集を利用者が説明できるか評価する。",
       "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": null
     },
     {
       "id": "AUD-017",
@@ -398,13 +514,15 @@
         "UI-006"
       ],
       "root_cause_area": "mid-width-layout",
-      "remediation_status": "code-only",
+      "remediation_status": "partially-verified-open",
       "changed_files": "style.css",
       "remediation": "761〜1000pxでWorkspaceの幅を上限32%へ制限",
-      "remaining_work": "760/800/960/1180pxのCanvas測定・操作時間未検証",
+      "remaining_work": "8幅のCanvasとhit測定は実施。残余幅を改善したが、同じ制作課題の探索時間/開閉回数/遮蔽比較の利用者評価は未実施。",
       "original_close_test": "760px境界前後と800/960/1180pxで、同じ制作課題の遮蔽率/開閉回数/探索時間を比較する。",
       "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": null
     },
     {
       "id": "AUD-018",
@@ -420,13 +538,22 @@
         "DEV-002"
       ],
       "root_cause_area": "color-plane",
-      "remediation_status": "code-only",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "app.js / style.css",
-      "remediation": "見かけだけの色面を試作上の操作可能なSVコントロールに変更",
-      "remaining_work": "実タッチ/ペン・HSV全色・アクセシビリティ操作の検証なし",
+      "remediation": "SV面のpointer/arrow、色相range、描画色と見た目の同期。初期の紫面/緑色採用の不一致も修正。",
+      "remaining_work": "第③段階で指摘された原因に対する閉鎖。製品GPU/Native/実端末の全検査は第④段階の別義務。",
       "original_close_test": "説明なしで色を変える課題を与え、最初に触る場所と成功/無反応を記録する。",
-      "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closed": true,
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41205478675",
+        "source_sha": "4d3db9b7a802be7c7b703d0f2570d1453820638e",
+        "checks": "stage3-browser-tests: SV; final-browser-tests: continuous color / keyboard hue",
+        "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
+        "after": "executed scoped checks; later added regression extensions require current-HEAD CI",
+        "regression": "scope identity / baseline model / relevant DOM checks"
+      }
     },
     {
       "id": "AUD-019",
@@ -443,21 +570,55 @@
         "DEV-004"
       ],
       "root_cause_area": "touch-and-edge",
-      "remediation_status": "code-only",
+      "remediation_status": "partially-verified-open",
       "changed_files": "style.css",
       "remediation": "320px付近のヘッダー密度、Touch時の対象幅を調整",
-      "remaining_work": "44px推奨の適用例外と実指誤タップ、文字拡大検査未実施",
+      "remaining_work": "coarse入力の主要標的44pxと文字200%/320pxのgeometry検査を追加。実指の誤タップと全標的の例外評価が不足。",
       "original_close_test": "実指で誤押下率と移動距離を測り、320px/200%文字/左右利きで主要入口の可視性を検査する。",
       "closed": false,
-      "closure_rule": "実行前に失敗した回帰テスト+修正後実行結果+副作用検証を揃えるまでfalse"
+      "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
+      "resolution_scope": "stage3 design / review prototype, not production implementation",
+      "closure_evidence": null
     }
   ],
   "count_total": 19,
   "open_by_severity": {
     "P0": 0,
-    "P1": 7,
-    "P2": 11,
+    "P1": 1,
+    "P2": 4,
     "P3": 1
   },
-  "verification_policy": "CI model proof is not DOM/device/formal-engine proof. All remain unclosed until original closure conditions satisfied."
+  "verification_policy": "CI model proof is not DOM/device/formal-engine proof. All remain unclosed until original closure conditions satisfied.",
+  "closed_by_severity": {
+    "P0": 0,
+    "P1": 6,
+    "P2": 7,
+    "P3": 0
+  },
+  "new_findings": [
+    {
+      "id": "NEW-001",
+      "severity": "P1",
+      "title": "Session target deleted then Apply could commit to removed layer",
+      "closed": true,
+      "evidence": "stage3-tests: removed Session target",
+      "fix": "lifetime/target validation; prototype rejects absent target and retains candidate"
+    },
+    {
+      "id": "NEW-002",
+      "severity": "P2",
+      "title": "Alpha Lock frozen old alpha can paint into newly transparent area after transform reedit",
+      "closed": true,
+      "evidence": "test_raster.alpha_lock_preserves_current_alpha",
+      "fix": "retain destination alpha at evaluation; fixed brush coordinates; user review still pending"
+    },
+    {
+      "id": "NEW-003",
+      "severity": "P2",
+      "title": "SV displayed hue and actual HSV hue disagree",
+      "closed": true,
+      "evidence": "final-browser-tests: continuous color/keyboard hue",
+      "fix": "native hue slider plus synchronized gradient, pointer and current color"
+    }
+  ]
 }
