@@ -43,7 +43,7 @@ Alpha Lockの旧「操作時のαmaskを固定」という案は取り下げる�
 
 ## 証拠と未閉鎖条件
 
-`experiments/stage3-reference/test_warp_reference.py`：折返し・境界・bilinear/cubic B-spline・Erase/固定Smudge・下流2 live Effect・保存根・haloの12試験（GPU/全Warpは非対象）。実装とレビュー範囲は[AUD006参照契約](AUD006_WARP_REFERENCE_REVIEW.md)。
+`experiments/stage3-reference/test_warp_reference.py`：折返し・境界・bilinear/cubic B-spline・Erase/固定Smudge・下流2 live Effect・保存根・haloの13試験（GPU/全Warpは非対象）。実装とレビュー範囲は[AUD006参照契約](AUD006_WARP_REFERENCE_REVIEW.md)。
 
 `experiments/stage3-reference/test_raster.py`：不透明消去、半透明＋Mask＋Clip、変形再編集→Undo/Redo→Save/Reload、固定Smudge、Alpha Lock、折返しfragment、加算差分反例。期待値はFractionによる手計算定数。`test_cross_feature.py`はNormal/Multiplyの半透明画素とαを追加。
 
