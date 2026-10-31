@@ -1,11 +1,7 @@
 name: Publish Illustro Stage III UI prototype
+# Manual only: Pages environment denied deployment before runner start on this branch.
+# Re-enable push publishing only after the Pages environment and branch access are verified.
 on:
-  push:
-    branches:
-      - design/stage3-detailed-remediation-2026-10-31
-    paths:
-      - qa/ui-prototype/index.html
-      - .github/workflows/publish-stage3-prototype.yml
   workflow_dispatch:
 
 permissions:
