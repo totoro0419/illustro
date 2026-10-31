@@ -40,6 +40,14 @@ async function main(){
   await p.locator('#fixed [data-undo]').click();assert.equal(await p.locator('#layerRows .layerrow').count(),3);
   await p.locator('#fixed [data-redo]').click();assert.equal(await p.locator('#layerRows .layerrow').count(),4);
  });
+ await run('Layer keyboard focus survives rerender',async p=>{
+  await p.locator('#layerRows [data-layer="layer-2"]').focus();
+  await p.keyboard.press('Enter');
+  assert.equal(await p.evaluate(()=>document.activeElement?.dataset.layer),'layer-2');
+  await p.locator('#layerRows [data-eye="layer-1"]').focus();
+  await p.keyboard.press('Enter');
+  assert.equal(await p.evaluate(()=>document.activeElement?.dataset.eye),'layer-1');
+ });
  await run('Visibility survives layer selection and is reversible',async p=>{
   const first=p.locator('#layerRows .eye').first();
   await first.click();assert.equal(await p.locator('#layerRows .eye').first().getAttribute('aria-pressed'),'false');
