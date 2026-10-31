@@ -39,10 +39,10 @@ Chromium画面試験で元の監査反例の代表例は動作確認できたが
 
 ## 5. 再現と検証の独立証拠
 
-- GitHub Actions（旧成功ラン）：[41192206865](https://github.com/totoro0419/illustro/actions/runs/41192206865)。Node既存12件+新規10件、Chromium DOM10件、Node syntax、Python生成と単体HTML一致が成功。
+- GitHub Actions（PR作成時HEAD `e319184e5f5ca5726362cbe3c8f44661b055c228`）：[41192642277](https://github.com/totoro0419/illustro/actions/runs/41192642277) が成功。既存Node 12件＋追加10件、Chromium DOM 11件、資料・スコープ一対一照合7件、TypeScript判別union型検査、Node syntax、Python生成と単体HTML一致が成功。
 - 追加のNode構造検査は247 ID/30分野/234+2+10+1件、19件auditのreverse graph・閉鎖偽装がないことを検査。
 - TypeScriptはno-document/view/settings/documentのunionと不可能なフィールド混入をコンパイル検証。
-- 新たなLayer focusのChromium回帰を1件追加。**最新実行の成功/失敗はGitHub Actionsの該当HEADで確認すること**。
+- 新たなLayer focusのChromium回帰を1件追加し、該当HEADで成功を確認。これは実キーボード/支援技術端末の完全検証ではない。
 - GitHub Pages公開ワークフローは [41192229090](https://github.com/totoro0419/illustro/actions/runs/41192229090) および以降の同類ランで、runner開始前に失敗。原因は**未確定**。新たな外部公開URLの動作確認はできていない。既存のPR #7公開サイトを更新後版の証拠として流用しない。
 
 ## 6. 判定ゲート
