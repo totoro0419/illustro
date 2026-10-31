@@ -7,7 +7,7 @@ JSON evidence records executed cases; GPU/real-device/ICC-LUT/OPFS claims are ex
 AUD006 reference additions: geometry-driven triangle mesh including folds; exact
 rational bilinear and cubic B-spline interpolation; post-transform paint/erase/
 frozen smudge/alpha lock; live mask, clip, blur3 and gain; immutable old root,
-Undo/Redo and JSON roundtrip. Tests: test_warp_reference.py (12 cases).
+Undo/Redo and JSON roundtrip. Tests: test_warp_reference.py (13 cases).
 See docs/detailed-design/AUD006_WARP_REFERENCE_REVIEW.md for the declared
 numerical semantics and explicit unverified production, UX and device cases.
 
