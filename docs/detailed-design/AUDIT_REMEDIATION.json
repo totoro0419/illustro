@@ -186,7 +186,7 @@
       "remediation_status": "geometry-reference-added-user-acceptance-open",
       "changed_files": "TRANSFORM_POSTPAINT_SEMANTICS.md / AUD006_WARP_REFERENCE_REVIEW.md / warp_reference.py / test_warp_reference.py",
       "remediation": "設計意味の解像度向上。実三角形fold、半開境界、bilinearとcubic B-spline、premul/Mask/Clip、Paint/Erase/固定Smudge/Alpha Lock、二つのlive Effect、Undo/保存rootの小規模有理数参照を追加。旧固定fragmentの欠落を補完。",
-      "remaining_work": "幾何Warpの限定CPU参照は検証したが、任意Warp/Liquify、製品実装、GPU/ICC、画質の一般化は不可。再編集UIの本人による作用意味の理解・承認が未完了。AUD006は閉鎖しない。",
+      "remaining_work": "幾何Warpの限定CPU参照（13試験）は検証したが、任意Warp/Liquify、製品実装、GPU/ICC、画質の一般化は不可。再編集UIの本人による作用意味の理解・承認が未完了。AUD006は閉鎖しない。",
       "original_close_test": "折返しWarp/半透明/Clip/Maskの各条件で描く→消す/混ぜる→旧変形変更→Undo→Save/再開の期待画像を固定する。",
       "closed": false,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
@@ -194,7 +194,7 @@
       "closure_evidence": null,
       "technical_evidence": {
         "type": "limited-CPU-rational-geometry-reference",
-        "tests": "12 added warp_reference tests, plus 30 historical reference checks",
+        "tests": "13 added warp_reference tests, plus 30 historical reference checks",
         "coverage": "triangle barycentric inverse / bilinear and cubic-B-spline / translucent folds / sequential post-edit / two live effects / halo / undo-redo-save root",
         "independence_limit": "two forms of inverse and bilinear, shared downstream pipeline",
         "document": "docs/detailed-design/AUD006_WARP_REFERENCE_REVIEW.md",
