@@ -16,3 +16,35 @@
 @container frame (max-width:760px){.contextbar #sizeNumber{display:none}.contextbar #brushSize{width:60px}.contextbar label.row{gap:5px}}
 @media(any-pointer:coarse){button{min-height:44px}.box>summary{min-height:44px}.contextbar button{min-height:36px}.chips button{min-height:30px;width:30px}.feature-row{min-height:44px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* Stage III review-only layout corrections; responsive simulation is not device validation. */
+#frame.focused.focus-panel-open .dock{display:flex}
+#frame.focused.focus-panel-open .stage{right:var(--right)}
+.color-plane{touch-action:none;cursor:crosshair}
+.color-plane:after{left:var(--pick-x,61%);top:var(--pick-y,29%);transform:translate(-50%,-50%)}
+.color-plane:focus-visible{outline:3px solid #5c66bd;outline-offset:2px}
+@container frame (min-width:761px) and (max-width:1000px){
+ .dock{width:min(var(--right),32%)}
+ .stage{right:min(var(--right),32%)}
+ .splitter{right:min(var(--right),32%)}
+}
+@container frame (max-width:760px){
+ .dock.sheet-open{bottom:calc(var(--bottom) + var(--session-height,0px));height:min(56%,calc(100% - var(--top) - var(--bottom) - var(--session-height,0px) - 12px))}
+ .sessionbar{position:relative;z-index:9}
+ .sessionbar .actions{flex-wrap:wrap;justify-content:flex-end}
+ #frame.focused.focus-panel-open .stage{right:0}
+ #frame.focused.focus-panel-open .dock{display:flex}
+ .topbar{min-width:0}
+ .topbar .brand{flex:0 0 auto}
+ .topbar button{padding:5px;min-width:30px}
+ .topbar #reviewToggle{flex-shrink:1}
+}
+@container frame (max-width:350px){
+ .topbar #saveStatus{display:none}
+ .topbar{gap:2px;padding:0 3px}
+ .brand .mark{width:20px;height:20px}
+}
+@media(any-pointer:coarse){
+ .layerrow .eye,.color-plane{min-height:44px}
+ .sessionbar button{min-height:38px}
+}
