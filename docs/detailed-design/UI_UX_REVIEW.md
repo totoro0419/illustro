@@ -43,7 +43,7 @@
 - [別のレビュー用プレビュー](https://illustro-stage3-review-c2c1.ibukioike2009.chatgpt.site/)をSitesへowner-privateで配置。既存Performance Labを変更しない。デプロイの成功と操作確認は別：クラウドブラウザーではログイン要求を確認し、デプロイ版の操作は未確認。ローカル管理プレビューでは実表示・操作を確認済み。
 - GitHub上の単体HTMLも保持。HTMLは画像処理・永続保存を実装済みと表示しない。
 
-比較案・判定条件は [Focus・Undoの正式決定と未承認の横画面](UI_DECISION_PROPOSALS.md) を参照。**FocusとUndoのAは本人承認済み、横持ちスマホだけが未承認**として扱う。
+判断状況は [Focus・Undoの正式決定とibisPaint参照C案](UI_DECISION_PROPOSALS.md)、調査根拠は [ibisPaintスマホ横画面比較](IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md) を参照。**FocusとUndoのAは本人承認済み、横持ちスマホだけが未承認**として扱う。
 
 ## UI判断の状態（Focus・Undo A採用、横持ちスマホ1件未承認）
 
@@ -51,7 +51,7 @@
 |---|---|---|
 | FocusのPanel【A採用済】 | Focusを維持し一時Panelを開く。閉じたらFocusへ復帰。標準配置への暗黙復帰は不採用 | Focus→Quickの色/層→閉じる/Escape→Focus継続の回帰検査（実機は未評価） |
 | Undoの提示【A採用済】 | 作品Undo/Redoを固定し、候補Undo/RedoはSession帯、試筆/資料/作品管理も専用Undo/Redo。作用先の自動変更は不採用 | 変形候補→別層へ筆→作品Undo→候補Undo/Redo→取消（実ユーザーの作用先理解は未検証） |
-| 横持ちスマホ帯 | 下部の作品操作＋上の候補帯でCanvasが十分残るか | 740×360相当、候補とWorkspaceを開閉 |
+| 横持ちスマホ帯【ibisPaint参照C案を試作】 | 下部コンパクト操作バー、ツール選択Popup、右側一時Panel、候補Undo/Redoの別帯。左Railは横画面だけ非表示 | 740×360のPopup/Layer/設定/候補帯と390×844縦画面のDOM回帰。寸法案の本人承認・実指評価は未実施 |
 
 ## 確定した製品意味（実操作UX試験とは区別）
 
