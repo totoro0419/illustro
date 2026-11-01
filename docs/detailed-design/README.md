@@ -8,8 +8,8 @@
 2. [第②段階の14方針と統合基本設計](../performance-research/UNIFIED_SYSTEM_DESIGN.md) — 設計原理、方式比較は [候補](../performance-research/CANDIDATE_DESIGN.md)。
 3. [第③段階の既存アーキテクチャ](../product-architecture/PRODUCT_ARCHITECTURE.md)・[型案](../product-architecture/contracts.d.ts)・[操作フロー](../product-architecture/FLOWS_AND_STATES.md)。
 4. [Stage③の補強したシステム契約](SYSTEM_CONTRACTS.md) と [変形後の描画・消去・混色](TRANSFORM_POSTPAINT_SEMANTICS.md)、[AUD006幾何Warpの参照契約](AUD006_WARP_REFERENCE_REVIEW.md)、[技術方式の比較・採否](TECHNICAL_DECISIONS.md)。
-5. [247機能の詳細設計対応表](FEATURE_CONTRACT_CROSSWALK_247.json)（既存ソースからの機械集成。各機能の受入テストは**草案**であり、実行済の認定ではない）。
-6. [UI/UXレビュー](UI_UX_REVIEW.md) と [残存5件の実修正・不足の検査](STAGE3_UI_REMEDIATION_5.md)、[操作できる単体HTML](../../qa/ui-prototype/index.html)（保存、画像処理は試作/模擬）。
+5. [247機能の詳細設計対応表](FEATURE_CONTRACT_CROSSWALK_247.json) と [247件の受入条件・13複合作用IDの検証ゲート](FEATURE_ACCEPTANCE_GATES_247.md)（各機能の受入テストは**草案**。構造と意味を混同しない）。
+6. [UI/UXレビュー](UI_UX_REVIEW.md)・[UI未承認3件の比較提案](UI_DECISION_PROPOSALS.md) と [残存5件の実修正・不足の検査](STAGE3_UI_REMEDIATION_5.md)、[操作できる単体HTML](../../qa/ui-prototype/index.html)（保存、画像処理は試作/模擬）。
 7. [元の19指摘](../audits/findings.md) → [修正・検証台帳](AUDIT_REMEDIATION.md)／[JSON](AUDIT_REMEDIATION.json)。
 8. [第④段階の試験とゲート](STAGE4_HANDOFF.md) → [今回の最終監査と根拠](FINAL_DESIGN_AUDIT.md)。
 
@@ -24,6 +24,7 @@
 - Node: node qa/ui-prototype/tests.cjs （既存12のモデル試験）
 - Node: node qa/ui-prototype/stage3-tests.cjs （追加12のモデル反例）
 - Node: node tools/verify_stage3_design.cjs （元スコープ/247行/19指摘の一対一検査）
+- Node: node tools/audit_stage3_acceptance.cjs （247件×6受入草案・13機能のaction変種と未検証箇所を別出力）
 - TS: npx tsc --noEmit --strict --target ES2022 --lib es2022,dom docs/detailed-design/contracts-type-tests.ts
 - Chromium: npm install --no-save playwright@1.56.1 && npx playwright install chromium && node qa/ui-prototype/stage3-browser-tests.cjs
 - Python: python tools/build_ui_prototype.py && git diff --exit-code -- qa/ui-prototype/index.html
