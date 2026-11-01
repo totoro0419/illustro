@@ -97,3 +97,5 @@ Pages失敗は[元run](https://github.com/totoro0419/illustro/actions/runs/41192
 - screenshotsとDOM矩形はCIのtest-resultsに保存する。ブラウザ試験の成功は実ペン・実指・初見利用者の誤押下率や探索時間の合格証明にならない。
 
 **判定：上記5件は設計試作を改善したが、元の閉鎖条件にある利用者試験・全入口/全標的の例外計測が残るため、監査上は未閉鎖のまま。** Stage③全体は14/19閉鎖、P1=0・P2=4・P3=1、NOT COMPLETE。ユーザーのFocus・Undo提示・スマホ横画面の判断も未承認。今後の品質判断は「実施した試験」と「要求されているが未実施の試験」を混同せず更新する。
+
+**実行済みの回帰根拠**：コードHEAD `f958f3eedab5abb1a819852f0d55d527ff33a3b0` の [GitHub Actions 41259682637](https://github.com/totoro0419/illustro/actions/runs/41259682637) で全工程SUCCESSを確認。16目的語のNode索引テスト、Pad/資料/作品管理Undo、14件の追加Chromium操作/寸法、既知ID988＋既知カテゴリ247（合計1,235）の実DOM詳細経路、既存型/CPU/ICC/旧版回帰、単一HTMLの生成一致を含む。各経路のスクロール・機能本体・初見到達の合格は意味しない。
