@@ -86,4 +86,11 @@ check('invalid named scope fails closed',()=>{
  assert.throws(()=>m.dispatch('scope.undo',{scope:'document'}),/unknown undo scope/);
  assert.throws(()=>m.dispatch('scope.edit',{scope:'random'}),/unknown undo scope/);
 });
+check('new work resets per-document pad/reference only; manager retains its own history',()=>{
+ assert(m.state.scopedHistory.reference.entries.length>0);
+ m.newDocument();
+ assert.equal(m.state.scopedHistory.reference.entries.length,0);
+ assert.equal(m.state.scopedHistory['test-pad'].entries.length,0);
+ assert.equal(m.state.scopedHistory['document-manager'].entries.length,2);
+});
 console.log(JSON.stringify({scope:'Stage III UI prototype model only',passed,taskPhrases:tasks.length,unverified:['actual users','real pen/touch','Native storage','production feature implementations']}));
