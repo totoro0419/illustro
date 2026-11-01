@@ -4,6 +4,12 @@ const results=[],metrics=[];let browser;
 const html=fs.readFileSync(process.env.PROTOTYPE_HTML||path.join(__dirname,'index.html'));
 const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html;charset=utf-8'});res.end(html);});
 const mode=process.env.BASELINE?'before':'after';
+async function chooseTool(p,tool){
+ if(await p.locator('#landscapeTabs').isVisible()){
+  await p.locator('#landscapeTabs [data-landscape-tools]').click();
+  await p.locator('#landscapeToolPicker [data-tool="'+tool+'"]').click();
+ }else await p.locator('#tools [data-tool="'+tool+'"]').click();
+}
 async function run(name,fn,size=[1180,820],touch=false){
  const context=await browser.newContext({viewport:{width:size[0],height:size[1]},hasTouch:touch});const p=await context.newPage();p.setDefaultTimeout(process.env.BASELINE?2500:6000);const errors=[];p.on('pageerror',e=>errors.push(e.message));
  try{await p.goto('http://127.0.0.1:43880/');await fn(p,context);assert.deepEqual(errors,[]);results.push({name,status:'pass'});}
@@ -17,7 +23,7 @@ async function draw(p){const r=await p.locator('#art').boundingBox();await p.mou
 async function main(){
  await new Promise(r=>server.listen(43880,'127.0.0.1',r));browser=await chromium.launch({headless:true});
  for(const origin of ['fixed','quick','search','context','key'])await run('AUD-001/003 '+origin+' Undo is document action with Session',async p=>{
-  await p.locator('#addLayer').click();await p.locator('#tools [data-tool="transform"]').click();
+  await p.locator('#addLayer').click();await chooseTool(p,'transform');
   if(origin==='fixed')await p.locator('#fixed [data-undo]').click();
   if(origin==='quick'){await p.locator('#quickTrigger').click();await p.locator('#quickGrid [data-undo]').click();}
   if(origin==='search'||origin==='context'){
@@ -52,7 +58,7 @@ async function main(){
   await p.locator('#sessionApply').click();await p.locator('#tools [data-tool="fill"]').click();assert(await p.locator('[data-reached="FIL-001"]').isVisible());
  });
  await run('Scenario 5 transform local Undo and reedit preserves independent layer',async p=>{
-  await p.locator('#tools [data-tool="transform"]').click();await p.locator('[data-value]').first().fill('20');
+  await chooseTool(p,'transform');await p.locator('[data-value]').first().fill('20');
   await p.locator('#target').click();await p.locator('#layerRows [data-layer="layer-2"]').click();await p.locator('#tools [data-tool="brush"]').click();await draw(p);
   await p.locator('#sessionUndo').click();assert.equal(await p.locator('#demoStrokes path').count(),1);await p.locator('#sessionCancel').click();assert.equal(await p.locator('#demoStrokes path').count(),1);
  });
@@ -74,7 +80,7 @@ async function main(){
  for(const size of [[320,568],[390,844],[740,360],[760,600],[800,600],[960,700],[1180,820],[820,1180]])await run('AUD-004/007/017 responsive '+size.join('x'),async p=>{
   await p.locator('#focus').click();await p.locator('#quickTrigger').click();await p.locator('#quickGrid [data-open-panel="color"]').click();assert(await p.locator('#dock').isVisible());
   await p.locator('#workspaceToggle').click();assert.equal(await p.locator('#dock').isVisible(),false);
-  await p.locator('#focus').click();await p.locator('#tools [data-tool="transform"]').click();assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
+  await p.locator('#focus').click();await chooseTool(p,'transform');assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
   const m=await p.evaluate(()=>{const f=document.querySelector('#frame').getBoundingClientRect(),s=document.querySelector('#surface').getBoundingClientRect(),d=document.querySelector('#dock').getBoundingClientRect();return {width:f.width,height:f.height,canvasWidth:s.width,canvasHeight:s.height,dockWidth:d.width};});metrics.push(m);
   assert(m.canvasWidth>0&&m.canvasHeight>0);
   if(size[0]===800)assert(m.canvasWidth>=470);
@@ -91,11 +97,11 @@ async function main(){
  },[1180,820],true);
  for(const [w,h,scale] of [[320,568,2],[390,420,1],[740,280,1]])await run('AUD-007/019 text or keyboard geometry '+[w,h,scale],async p=>{
   if(scale===2)await p.addStyleTag({content:'html{font-size:175%!important}'});
-  await p.locator('#tools [data-tool="transform"]').click();assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
+  await chooseTool(p,'transform');assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
   await p.locator('#sessionCancel').click();
  },[w,h],true);
  await run('AUD-007 740x360 Session band hit without preceding Focus',async p=>{
-  await p.locator('#tools [data-tool="transform"]').click();assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
+  await chooseTool(p,'transform');assert(await hit(p,'#sessionApply'));assert(await hit(p,'#sessionCancel'));
  },[740,360],true);
 
  await run('AUD-002 original common DOM layer Undo regression',async p=>{
