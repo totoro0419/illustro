@@ -9,7 +9,7 @@
 3. [第③段階の既存アーキテクチャ](../product-architecture/PRODUCT_ARCHITECTURE.md)・[型案](../product-architecture/contracts.d.ts)・[操作フロー](../product-architecture/FLOWS_AND_STATES.md)。
 4. [Stage③の補強したシステム契約](SYSTEM_CONTRACTS.md) と [変形後の描画・消去・混色](TRANSFORM_POSTPAINT_SEMANTICS.md)、[AUD006幾何Warpの参照契約](AUD006_WARP_REFERENCE_REVIEW.md)、[技術方式の比較・採否](TECHNICAL_DECISIONS.md)。
 5. [247機能の詳細設計対応表](FEATURE_CONTRACT_CROSSWALK_247.json) と [247件の受入条件・13複合作用IDの検証ゲート](FEATURE_ACCEPTANCE_GATES_247.md)（各機能の受入テストは**草案**。構造と意味を混同しない）。
-6. [UI/UXレビュー](UI_UX_REVIEW.md)・[Focus・Undo A確定／横持ちUI案](UI_DECISION_PROPOSALS.md) と [残存5件の実修正・不足の検査](STAGE3_UI_REMEDIATION_5.md)、[操作できる単体HTML](../../qa/ui-prototype/index.html)（保存、画像処理は試作/模擬）。
+6. [UI/UXレビュー](UI_UX_REVIEW.md)・[Focus・Undo A確定／横持ちC案](UI_DECISION_PROPOSALS.md)・[ibisPaintを強く参考にした横画面研究](IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md) と [残存5件の実修正・不足の検査](STAGE3_UI_REMEDIATION_5.md)、[操作できる単体HTML](../../qa/ui-prototype/index.html)（保存、画像処理は試作/模擬）。
 7. [元の19指摘](../audits/findings.md) → [修正・検証台帳](AUDIT_REMEDIATION.md)／[JSON](AUDIT_REMEDIATION.json)。
 8. [第④段階の試験とゲート](STAGE4_HANDOFF.md) → [今回の最終監査と根拠](FINAL_DESIGN_AUDIT.md)。
 
