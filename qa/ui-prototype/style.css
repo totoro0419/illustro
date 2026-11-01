@@ -69,3 +69,39 @@
  .sessionbar .actions{justify-content:space-between}
  .contextbar{max-height:30%;overflow:auto}
 }
+
+/* Stage III AUD008/016: discover intents without replacing primary workspace. */
+.task-examples{border-bottom:1px solid var(--line);padding:4px 0 12px;display:flex;flex-wrap:wrap;gap:5px}
+.task-examples p{flex-basis:100%;font-size:.78571rem}
+.task-examples button{max-width:100%;text-align:left;font-size:.78571rem;border-radius:16px;background:#f5f7fd}
+.scope-controls{border:1px solid #d9dff0;border-radius:9px;padding:9px;margin:10px 0;background:#fbfcff}
+.scope-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;font-size:.85714rem}
+.scope-controls>small{display:block;margin:7px 0}
+.scope-actions{display:flex;flex-wrap:wrap;gap:5px}
+.scope-actions button{font-size:.78571rem;flex:1 1 75px;min-width:0;overflow-wrap:anywhere}
+.scope-actions [data-scope-action=edit]{flex:1 1 100%}
+/* Stage III AUD017/019: keep drawing width at medium sizes and touch targets reachable. */
+@container frame (min-width:761px) and (max-width:1000px){
+ .dock{width:min(var(--right),32%,calc(100% - var(--rail) - 420px))}
+ .stage{right:min(var(--right),32%,calc(100% - var(--rail) - 420px))}
+ .splitter{right:min(var(--right),32%,calc(100% - var(--rail) - 420px))}
+}
+@media(any-pointer:coarse){
+ .topbar button,.dockhead button,.floathead button,.viewbar button,.contextbar button,
+ .contextbar input,.scope-controls button,.scope-controls summary,.task-examples button,
+ .layerrow button,.sessionbar button,.fixed button,.mobile-tabs button,.quick-grid button{
+  min-width:44px;min-height:44px
+ }
+ .box>summary,.category,.feature-row,.panel-link{min-height:44px}
+ .viewbar{max-width:calc(100% - 60px);overflow-x:auto;overscroll-behavior-x:contain}
+ .viewbar button{flex-shrink:0}
+}
+@container frame (max-width:350px){
+ .topbar{gap:2px;padding-inline:3px}
+ .topbar .brand{min-width:20px}
+ .topbar .grow{flex:1 1 0}
+ .topbar .icon,.topbar #save{flex:0 0 44px;max-width:44px}
+ .topbar #save svg{flex-shrink:0}
+ .contextbar{overflow:auto}
+ .scope-actions button{flex-basis:100%}
+}
