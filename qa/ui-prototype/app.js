@@ -115,8 +115,8 @@
   renderHistory();
  }
  function fixedButton(key,label,attrs){return `<button ${attrs} aria-label="${label}" title="${label}">${icon(key)}<span>${label}</span></button>`;}
- $('fixed').innerHTML=fixedButton('layers','Layers','data-open-panel="layers"')+fixedButton('undo','Undo','data-undo')+fixedButton('redo','Redo','data-redo')+fixedButton('flipH','左右反転','data-flip="H"')+fixedButton('flipV','上下反転','data-flip="V"');
- $('mobileTabs').innerHTML=fixedButton('undo','Undo','data-undo')+fixedButton('redo','Redo','data-redo')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('workspace','設定','data-open-panel="workspace"');
+ $('fixed').innerHTML=fixedButton('layers','Layers','data-open-panel="layers"')+fixedButton('undo','作品Undo','data-undo')+fixedButton('redo','作品Redo','data-redo')+fixedButton('flipH','左右反転','data-flip="H"')+fixedButton('flipV','上下反転','data-flip="V"');
+ $('mobileTabs').innerHTML=fixedButton('undo','作品Undo','data-undo')+fixedButton('redo','作品Redo','data-redo')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('workspace','設定','data-open-panel="workspace"');
  // ibisPaint-informed smartphone landscape controls: compact toolbar + on-demand chooser.
  $('landscapeTabs').innerHTML=fixedButton('brush','ブラシ／消し','data-landscape-brush-toggle')+
   fixedButton('move','ツール','data-landscape-tools aria-expanded="false" aria-controls="landscapeToolPicker"')+
@@ -140,7 +140,7 @@
   frame.classList.remove('focus-panel-open');
   $('workspaceToggle').setAttribute('aria-expanded','false');
  }
- $('quickGrid').innerHTML=fixedButton('undo','Undo','data-undo')+fixedButton('brush','ブラシ','data-tool="brush"')+fixedButton('redo','Redo','data-redo')+fixedButton('eraser','消しゴム','data-tool="eraser"')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"');
+ $('quickGrid').innerHTML=fixedButton('undo','作品Undo','data-undo')+fixedButton('brush','ブラシ','data-tool="brush"')+fixedButton('redo','作品Redo','data-redo')+fixedButton('eraser','消しゴム','data-tool="eraser"')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('flipH','表示を左右反転','data-flip="H"')+fixedButton('flipV','表示を上下反転','data-flip="V"');
  renderPanels();sync();
  document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
