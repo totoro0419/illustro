@@ -70,6 +70,42 @@
  .sessionbar .actions{justify-content:space-between}
  .contextbar{max-height:30%;overflow:auto}
 }
+
+/* Stage III AUD008/016: discover intents without replacing primary workspace. */
+.task-examples{border-bottom:1px solid var(--line);padding:4px 0 12px;display:flex;flex-wrap:wrap;gap:5px}
+.task-examples p{flex-basis:100%;font-size:.78571rem}
+.task-examples button{max-width:100%;text-align:left;font-size:.78571rem;border-radius:16px;background:#f5f7fd}
+.scope-controls{border:1px solid #d9dff0;border-radius:9px;padding:9px;margin:10px 0;background:#fbfcff}
+.scope-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;font-size:.85714rem}
+.scope-controls>small{display:block;margin:7px 0}
+.scope-actions{display:flex;flex-wrap:wrap;gap:5px}
+.scope-actions button{font-size:.78571rem;flex:1 1 75px;min-width:0;overflow-wrap:anywhere}
+.scope-actions [data-scope-action=edit]{flex:1 1 100%}
+/* Stage III AUD017/019: keep drawing width at medium sizes and touch targets reachable. */
+@container frame (min-width:761px) and (max-width:1000px){
+ .dock{width:min(var(--right),32%,calc(100% - var(--rail) - 420px))}
+ .stage{right:min(var(--right),32%,calc(100% - var(--rail) - 420px))}
+ .splitter{right:min(var(--right),32%,calc(100% - var(--rail) - 420px))}
+}
+@media(any-pointer:coarse){
+ .topbar button,.dockhead button,.floathead button,.viewbar button,.contextbar button,
+ .contextbar input,.scope-controls button,.scope-controls summary,.task-examples button,
+ .layerrow button,.sessionbar button,.fixed button,.mobile-tabs button,.quick-grid button{
+  min-width:44px;min-height:44px
+ }
+ .box>summary,.category,.feature-row,.panel-link{min-height:44px}
+ .viewbar{max-width:calc(100% - 60px);overflow-x:auto;overscroll-behavior-x:contain}
+ .viewbar button{flex-shrink:0}
+}
+@container frame (max-width:350px){
+ .topbar{gap:2px;padding-inline:3px}
+ .topbar .brand{min-width:20px}
+ .topbar .grow{flex:1 1 0}
+ .topbar .icon,.topbar #save{flex:0 0 44px;max-width:44px}
+ .topbar #save svg{flex-shrink:0}
+ .contextbar{overflow:auto}
+ .scope-actions button{flex-basis:100%}
+}
 </style></head>
 <body><div id="frame" data-device="auto">
 <header class="topbar"><div class="brand"><span class="mark">I</span><strong>Illustro</strong></div><button class="icon" id="home" aria-label="ホーム" title="ホーム"></button><span class="docname">余白のある風景</span><span class="grow"></span><span class="inline-review">UI設計試作</span><button id="save" class="quiet" title="模擬保存"><span class="toplabel">保存</span></button><button id="saveStatus" class="quiet status" title="保存状態の詳細">模擬作品・未保存</button><button id="export" class="quiet top-export">書き出し</button><button id="search" class="icon" aria-label="機能検索" title="機能検索"></button><button id="focus" class="icon" aria-label="Focus切替" title="Focus切替"></button><button id="workspaceToggle" class="icon" aria-label="Workspaceを開閉" aria-expanded="true" title="Workspaceを開閉"></button><button id="reviewToggle" class="icon" aria-label="端末切替・操作確認" title="端末切替・操作確認"></button></header>
@@ -105,15 +141,27 @@
  'use strict';
  function createModel(registry) {
   const byId=new Map(registry.features.map(f=>[f.id,f]));
+  // Curated production-task language is a deterministic index, not a fuzzy guess.
   const aliases={
-   '乗算':['LAY-002'], 'multiply':['LAY-002'], 'クリップ':['LAY-004'],
-   'クリッピング':['LAY-004'], '透明PNG':['IO-002'], 'png':['IO-002'],
-   '左右反転':['CAN-003','TRN-001','UI-006'], '表示反転':['CAN-003'],
-   '作品反転':['TRN-001'], 'レイヤー追加':['LAY-001']
+   '乗算':['LAY-002'],'multiply':['LAY-002'],'暗く重ねる':['LAY-002'],
+   '下の色を残して暗く重ねる':['LAY-002'],
+   'クリップ':['LAY-004'],'クリッピング':['LAY-004'],
+   'はみ出さないように塗る':['LAY-004'],'下のレイヤーからはみ出さない':['LAY-004'],
+   'マスク':['LAY-005'],'隠した部分を後から戻す':['LAY-005'],
+   '透明PNG':['IO-002'],'png':['IO-002'],
+   '背景を透明にして保存':['IO-002'],'背景透過で書き出す':['IO-002'],
+   '左右反転':['CAN-003','TRN-001','UI-006'],'表示反転':['CAN-003'],
+   '絵を裏返して確認':['CAN-003'],'作品反転':['TRN-001'],
+   '選択した絵を左右反転':['TRN-001'],
+   'レイヤー追加':['LAY-001'],'新しいレイヤーに描く':['LAY-001'],
+   '一つ前の操作に戻す':['HIS-001'],'描いた線を取り消す':['HIS-001'],
+   '色を拾う':['COL-003'],'画像の色を使う':['COL-003'],
+   '線をきれいに細く終える':['BRU-008']
   };
   const state={
    tool:'brush',layer:'線画',layerId:'layer-1',panel:'layers',feature:null,
    screen:'editor',session:null,settings:{},past:[],future:[],pending:[],saves:[],
+   scopedHistory:Object.fromEntries(['reference','test-pad','document-manager'].map(scope=>[scope,{entries:[],future:[],serial:0}])),
    revision:0,nextId:1,nextLayerId:4,view:{x:0,y:0,zoom:1,angle:0,flipH:1,flipV:1},
    layers:[
     {id:'layer-1',name:'線画',visible:true,blend:'通常'},
@@ -123,11 +171,41 @@
   };
   function clone(v){return JSON.parse(JSON.stringify(v));}
   function feature(id){if(!byId.has(id))throw Error('unknown feature '+id);return byId.get(id);}
+  const normalize=v=>String(v).trim().toLocaleLowerCase('ja').normalize('NFKC');
+  const aliasTerms=Object.entries(aliases).map(([term,ids])=>[normalize(term),ids]);
   function search(query='',category=null){
-   const q=query.trim().toLocaleLowerCase('ja').normalize('NFKC');
-   const extra=new Set(Object.entries(aliases).filter(([term])=>term.toLocaleLowerCase('ja').normalize('NFKC').includes(q)&&q).flatMap(([,ids])=>ids));
-   return registry.features.filter(f=>(!category||f.category===category)&&(!q||[f.id,f.name,f.category_label,...f.discovery].join(' ').toLocaleLowerCase('ja').normalize('NFKC').includes(q)||extra.has(f.id)))
-    .sort((a,b)=>Number(b.id.toLowerCase()===q)-Number(a.id.toLowerCase()===q));
+   const q=normalize(query), scores=new Map();
+   for(const f of registry.features){
+    if(category&&f.category!==category)continue;
+    let score=0;
+    if(!q)score=1;
+    else if(normalize(f.id)===q)score=200;
+    else if(normalize(f.name)===q)score=160;
+    else if(normalize(f.name).includes(q))score=85;
+    else if([f.category_label,...f.discovery].some(t=>normalize(t).includes(q)))score=25;
+    for(const [term,ids] of aliasTerms){
+     if(q&&ids.includes(f.id)&&(term===q||q.includes(term)||(q.length>=2&&term.includes(q))))
+      score=Math.max(score,term===q?150:q.includes(term)?110:35);
+    }
+    if(score)scores.set(f.id,score);
+   }
+   return registry.features.filter(f=>scores.has(f.id)).sort((a,b)=>
+    scores.get(b.id)-scores.get(a.id)||a.id.localeCompare(b.id));
+  }
+  function scopeEdit(scope,label){
+   const h=state.scopedHistory[scope];if(!h)throw Error('unknown undo scope '+scope);
+   const edit={id:++h.serial,label:String(label||scope+'操作（模擬）')};
+   h.entries.push(edit);h.future=[];return edit;
+  }
+  function scopeUndo(scope){
+   const h=state.scopedHistory[scope];if(!h)throw Error('unknown undo scope '+scope);
+   if(!h.entries.length)return false;
+   h.future.push(h.entries.pop());return true;
+  }
+  function scopeRedo(scope){
+   const h=state.scopedHistory[scope];if(!h)throw Error('unknown undo scope '+scope);
+   if(!h.future.length)return false;
+   h.entries.push(h.future.pop());return true;
   }
   function navigate(id,entry='catalog'){
    const f=feature(id);
@@ -226,6 +304,9 @@
    switch(action){
     case 'history.undo':return undo(true);
     case 'history.redo':return redo(true);
+     case 'scope.edit':return scopeEdit(args.scope,args.label);
+     case 'scope.undo':return scopeUndo(args.scope);
+     case 'scope.redo':return scopeRedo(args.scope);
     case 'layer.add':return addLayer(args.name);
     case 'layer.select':return selectLayer(args.id);
     case 'layer.remove':{
@@ -247,10 +328,13 @@
    state.saves.push(s);return s;
   }
   function loadSave(id){const save=state.saves.find(s=>s.id===id);if(!save||save.status!=='mock-complete')return false;restoreDocument(save.document);state.past=clone(save.operations);state.future=[];state.session=null;state.pending=[];state.revision++;return true;}
-  function newDocument(){state.layers=[{id:'layer-'+state.nextLayerId++,name:'レイヤー 1',visible:true,blend:'通常'}];selectLayer(state.layers[0].id);state.past=[];state.future=[];state.pending=[];state.session=null;state.revision++;return true;}
+  function newDocument(){state.layers=[{id:'layer-'+state.nextLayerId++,name:'レイヤー 1',visible:true,blend:'通常'}];selectLayer(state.layers[0].id);state.past=[];state.future=[];state.pending=[];state.session=null;
+    // Per-document mock pad/reference drafts must not leak into a different work.
+    for(const scope of ['reference','test-pad'])state.scopedHistory[scope]={entries:[],future:[],serial:0};
+    state.revision++;return true;}
   function completeSave(id){const s=state.saves.find(x=>x.id===id);if(!s)throw Error('save absent');s.status='mock-complete';return s;}
   return {state,feature,search,navigate,commit,begin,edit,apply,cancel,undo,redo,dispatch,
-   selectLayer,addLayer,toggleVisibility,setLayerBlend,documentSnapshot,acceptPending,finish,save,completeSave,loadSave,newDocument};
+   selectLayer,addLayer,toggleVisibility,setLayerBlend,documentSnapshot,acceptPending,finish,save,completeSave,loadSave,newDocument,scopeEdit,scopeUndo,scopeRedo};
  }
  root.createIllustroModel=createModel;
  if(typeof module!=='undefined')module.exports={createModel};
@@ -278,19 +362,22 @@
  function renderLibrary(){
    const q=$('query').value;
    if(q||category){const results=M.search(q,category);$('libraryContent').innerHTML=`${category?`<button class="back quiet" data-back>‹ カテゴリ一覧</button><div class="crumb">${esc(R.categories[category].label)}</div>`:''}<p class="muted" style="font-size:0.78571rem;margin-bottom:6px">${results.length}件 · 保留／対象外は範囲説明のみ</p><div class="results">${results.map(featureRow).join('')||'<p>見つかりません。別の目的やカテゴリで探せます。</p><button data-clear>すべてのカテゴリを見る</button>'}</div>`;}
-   else $('libraryContent').innerHTML='<div class="groups">'+R.groups.map(g=>`<h3>${esc(g.label)}</h3>${g.categories.map(c=>`<button class="category" data-category="${c}"><span>${esc(R.categories[c].label)}</span><small>${M.search('',c).length} ›</small></button>`).join('')}`).join('')+'</div>';
+   else $('libraryContent').innerHTML='<div class="task-examples" aria-label="やりたいことから探す"><p class="muted">やりたい操作から探す（例）</p>'+['はみ出さないように塗る','背景を透明にして保存','絵を裏返して確認','下の色を残して暗く重ねる'].map(q=>'<button data-task-query="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div><div class="groups">'+R.groups.map(g=>`<h3>${esc(g.label)}</h3>${g.categories.map(c=>`<button class="category" data-category="${c}"><span>${esc(R.categories[c].label)}</span><small>${M.search('',c).length} ›</small></button>`).join('')}`).join('')+'</div>';
  }
  function featureRow(f){return `<button class="feature-row" data-feature="${f.id}"><span>${esc(f.name)}${!f.availability.executable?` <em>${f.final_scope==='deferred'?'保留':'対象外'}</em>`:f.final_scope==='included_limited'?' <em>限定</em>':''}</span><small>${f.id}</small></button>`;}
  function showPanel(p){S.panel=p;if($('focusMode')?.value==='exit'&&frame.classList.contains('focused'))toggleFocus();if(frame.classList.contains('focused'))frame.classList.add('focus-panel-open');$('layerPage').hidden=true;$('panels').hidden=false;frame.classList.remove('closed');$('dock').classList.add('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','true');const box=$('box-'+p);box.open=true;box.scrollIntoView({block:'start'});}
  function panelRoute(p){const cats=Object.entries(R.categories).filter(([c])=>R.features.some(f=>f.category===c&&f.panel==='right.'+p));return `<div class="cat-list">${cats.map(([c,v])=>`<button data-panel-category="${c}" data-panel="${p}">${esc(v.label)} <span style="float:right">›</span></button>`).join('')}</div>`;}
+ function scopedControls(scope,title,action){
+  return '<section class="scope-controls" data-scope-panel="'+scope+'" aria-label="'+title+'の独立履歴"><div class="scope-head"><strong>'+title+'</strong><span class="pill">作品Undoとは別</span></div><small data-scope-summary="'+scope+'" aria-live="polite">0件 · 独立した履歴</small><div class="scope-actions"><button data-scope-action="edit" data-scope="'+scope+'">'+action+'（模擬）</button><button data-scope-action="undo" data-scope="'+scope+'" aria-label="'+title+'だけ取り消す">専用Undo</button><button data-scope-action="redo" data-scope="'+scope+'" aria-label="'+title+'だけやり直す">専用Redo</button></div></section>';
+ }
  function basePanel(p){
    if(p==='layers')return `<div class="row" style="font-size:0.78571rem;margin:0 0 5px"><select id="blendMode" aria-label="レイヤーの合成方法" style="width:55%"><option>通常</option><option>乗算</option><option>スクリーン</option></select><span>100%</span><button class="quiet" data-feature="LAY-002">設定</button></div><div id="layerRows"></div><div class="row"><button class="quiet grow" id="addLayer">＋ レイヤー</button><button class="quiet" data-feature="LAY-004">Clip</button><button class="quiet" data-feature="LAY-005">Mask</button></div>`;
    if(p==='color')return `<div class="color-plane" role="group" aria-label="彩度と明度の選択。左右キーで彩度、上下キーで明度" tabindex="0"></div><label class="field">色相<input id="hue" aria-label="色相" type="range" min="0" max="359" value="170"></label><div class="row spread"><label class="row"><input type="color" id="colorPicker" value="#637b78" aria-label="描画色"><span id="colorCode" style="font-size:0.78571rem">#637B78</span></label><button class="quiet" data-feature="COL-001">HSV / RGB</button></div><div class="chips" id="swatches">${['#637b78','#3d5d54','#afbfad','#f3d3a0','#f8f3e7','#7473a4','#b68178','#2e3a49'].map(c=>`<button aria-label="色 ${c}" data-color="${c}" style="background:${c}"></button>`).join('')}</div>`;
-   if(p==='brush')return `<label style="font-size:0.78571rem">プリセット<select id="preset" style="width:100%;margin:5px 0"><option>Gペン</option><option>鉛筆</option><option>水彩風（簡易）</option><option>パステル</option></select></label><label class="field">不透明度<input id="opacity" type="range" min="1" max="100" value="100"><output id="opacityValue">100%</output></label><button class="panel-link" data-feature="BRU-008">強制入り抜き <span class="arrow">›</span></button>`;
-   if(p==='reference')return `<div class="callout">資料は作品のレイヤーとは別に表示します。</div><button class="panel-link" data-feature="REF-001">＋ 資料を追加</button><button class="panel-link" data-feature="REF-004">資料から色を採る</button>`;
+   if(p==='brush')return `<label style="font-size:0.78571rem">プリセット<select id="preset" style="width:100%;margin:5px 0"><option>Gペン</option><option>鉛筆</option><option>水彩風（簡易）</option><option>パステル</option></select></label><label class="field">不透明度<input id="opacity" type="range" min="1" max="100" value="100"><output id="opacityValue">100%</output></label><button class="panel-link" data-feature="BRU-008">強制入り抜き <span class="arrow">›</span></button>`+scopedControls('test-pad','試筆パッド','パッドに試し描き');
+   if(p==='reference')return `<div class="callout">資料は作品のレイヤーとは別に表示します。</div><button class="panel-link" data-feature="REF-001">＋ 資料を追加</button><button class="panel-link" data-feature="REF-004">資料から色を採る</button>`+scopedControls('reference','資料','資料の位置を変える');
    if(p==='history')return '<div id="historyList" class="stack"></div><button class="panel-link" data-feature="HIS-003">別案を保存</button>';
    if(p==='workspace')return '<div class="row"><button id="layoutDefault">標準配置</button><button id="layoutFocus">Focus</button></div><p class="muted" style="font-size:0.78571rem;margin:6px 0">幅は境界ドラッグ・＋/−・左右キーで変更できます。</p>';
-   if(p==='document')return '<div class="row"><button data-feature="CAN-001">新規</button><button data-feature="CAN-009">作品情報</button><button data-feature="IO-002">書き出し</button></div>';
+   if(p==='document')return '<div class="row"><button data-feature="CAN-001">新規</button><button data-feature="CAN-009">作品情報</button><button data-feature="IO-002">書き出し</button></div>'+scopedControls('document-manager','作品管理','模擬一覧を並べ替える');
    return '';
  }
  function renderPanels(){
@@ -357,6 +444,11 @@
    const strokes=S.past.filter(o=>o.payload.path&&S.layers.find(l=>l.id===o.payload.layerId)?.visible!==false),key=strokes.map(o=>o.id).join(',');
    if(strokeStamp!==key){$('demoStrokes').innerHTML=strokes.map(o=>`<path d="${o.payload.path}" fill="none" stroke="${esc(o.payload.color)}" stroke-width="${o.payload.width}" stroke-linecap="round" stroke-linejoin="round" opacity="${o.payload.opacity}"/>`).join('');strokeStamp=key;}
    const nextLayers=JSON.stringify(S.layers)+S.layerId;if(layerStamp!==nextLayers){renderLayers();layerStamp=nextLayers;}
+  for(const [scope,h] of Object.entries(S.scopedHistory)){
+   document.querySelectorAll('[data-scope-summary="'+scope+'"]').forEach(el=>el.textContent=h.entries.length+'件 · '+(h.entries.at(-1)?.label||'独立した履歴'));
+   document.querySelectorAll('[data-scope-action="undo"][data-scope="'+scope+'"]').forEach(b=>b.disabled=h.entries.length===0);
+   document.querySelectorAll('[data-scope-action="redo"][data-scope="'+scope+'"]').forEach(b=>b.disabled=h.future.length===0);
+  }
   renderHistory();
  }
  function fixedButton(key,label,attrs){return `<button ${attrs} aria-label="${label}" title="${label}">${icon(key)}<span>${label}</span></button>`;}
@@ -368,6 +460,8 @@
   const b=e.target.closest('button');if(!b)return;
   if(b.hasAttribute('data-new-mock')){M.newDocument();document.querySelectorAll('.route-details').forEach(el=>el.remove());$('art').classList.add('blank-document');sync();$('surface').focus();return;}
   if(b.hasAttribute('data-export-mock')){toast('書き出し要求の確認（模擬）。画像ファイルは生成していません。');return;}
+  if(b.dataset.taskQuery){$('query').value=b.dataset.taskQuery;category=null;renderLibrary();$('query').focus();return;}
+  if(b.dataset.scopeAction){const scope=b.dataset.scope,action=b.dataset.scopeAction;M.dispatch('scope.'+action,{scope,label:scope==='test-pad'?'試筆（模擬）':scope==='reference'?'資料移動（模擬）':'作品一覧変更（模擬）'});sync();return;}
   if(b.dataset.feature){openFeature(b.dataset.feature,$('query').value?'search':'catalog');return;}
   if(b.dataset.category){category=b.dataset.category;$('query').value='';renderLibrary();return;}
   if(b.hasAttribute('data-back')||b.hasAttribute('data-clear')){category=null;$('query').value='';renderLibrary();return;}
