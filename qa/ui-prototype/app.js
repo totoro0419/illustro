@@ -26,6 +26,9 @@
  function featureRow(f){return `<button class="feature-row" data-feature="${f.id}"><span>${esc(f.name)}${!f.availability.executable?` <em>${f.final_scope==='deferred'?'保留':'対象外'}</em>`:f.final_scope==='included_limited'?' <em>限定</em>':''}</span><small>${f.id}</small></button>`;}
  function showPanel(p){S.panel=p;if($('focusMode')?.value==='exit'&&frame.classList.contains('focused'))toggleFocus();if(frame.classList.contains('focused'))frame.classList.add('focus-panel-open');$('layerPage').hidden=true;$('panels').hidden=false;frame.classList.remove('closed');$('dock').classList.add('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','true');const box=$('box-'+p);box.open=true;box.scrollIntoView({block:'start'});}
  function panelRoute(p){const cats=Object.entries(R.categories).filter(([c])=>R.features.some(f=>f.category===c&&f.panel==='right.'+p));return `<div class="cat-list">${cats.map(([c,v])=>`<button data-panel-category="${c}" data-panel="${p}">${esc(v.label)} <span style="float:right">›</span></button>`).join('')}</div>`;}
+ function scopedControls(scope,title,action){
+  return '<section class="scope-controls" data-scope-panel="'+scope+'" aria-label="'+title+'の独立履歴"><div class="scope-head"><strong>'+title+'</strong><span class="pill">作品Undoとは別</span></div><small data-scope-summary="'+scope+'" aria-live="polite">0件 · 独立した履歴</small><div class="scope-actions"><button data-scope-action="edit" data-scope="'+scope+'">'+action+'（模擬）</button><button data-scope-action="undo" data-scope="'+scope+'" aria-label="'+title+'だけ取り消す">専用Undo</button><button data-scope-action="redo" data-scope="'+scope+'" aria-label="'+title+'だけやり直す">専用Redo</button></div></section>';
+ }
  function basePanel(p){
    if(p==='layers')return `<div class="row" style="font-size:0.78571rem;margin:0 0 5px"><select id="blendMode" aria-label="レイヤーの合成方法" style="width:55%"><option>通常</option><option>乗算</option><option>スクリーン</option></select><span>100%</span><button class="quiet" data-feature="LAY-002">設定</button></div><div id="layerRows"></div><div class="row"><button class="quiet grow" id="addLayer">＋ レイヤー</button><button class="quiet" data-feature="LAY-004">Clip</button><button class="quiet" data-feature="LAY-005">Mask</button></div>`;
    if(p==='color')return `<div class="color-plane" role="group" aria-label="彩度と明度の選択。左右キーで彩度、上下キーで明度" tabindex="0"></div><label class="field">色相<input id="hue" aria-label="色相" type="range" min="0" max="359" value="170"></label><div class="row spread"><label class="row"><input type="color" id="colorPicker" value="#637b78" aria-label="描画色"><span id="colorCode" style="font-size:0.78571rem">#637B78</span></label><button class="quiet" data-feature="COL-001">HSV / RGB</button></div><div class="chips" id="swatches">${['#637b78','#3d5d54','#afbfad','#f3d3a0','#f8f3e7','#7473a4','#b68178','#2e3a49'].map(c=>`<button aria-label="色 ${c}" data-color="${c}" style="background:${c}"></button>`).join('')}</div>`;
@@ -100,6 +103,11 @@
    const strokes=S.past.filter(o=>o.payload.path&&S.layers.find(l=>l.id===o.payload.layerId)?.visible!==false),key=strokes.map(o=>o.id).join(',');
    if(strokeStamp!==key){$('demoStrokes').innerHTML=strokes.map(o=>`<path d="${o.payload.path}" fill="none" stroke="${esc(o.payload.color)}" stroke-width="${o.payload.width}" stroke-linecap="round" stroke-linejoin="round" opacity="${o.payload.opacity}"/>`).join('');strokeStamp=key;}
    const nextLayers=JSON.stringify(S.layers)+S.layerId;if(layerStamp!==nextLayers){renderLayers();layerStamp=nextLayers;}
+  for(const [scope,h] of Object.entries(S.scopedHistory)){
+   document.querySelectorAll('[data-scope-summary="'+scope+'"]').forEach(el=>el.textContent=h.entries.length+'件 · '+(h.entries.at(-1)?.label||'独立した履歴'));
+   document.querySelectorAll('[data-scope-action="undo"][data-scope="'+scope+'"]').forEach(b=>b.disabled=h.entries.length===0);
+   document.querySelectorAll('[data-scope-action="redo"][data-scope="'+scope+'"]').forEach(b=>b.disabled=h.future.length===0);
+  }
   renderHistory();
  }
  function fixedButton(key,label,attrs){return `<button ${attrs} aria-label="${label}" title="${label}">${icon(key)}<span>${label}</span></button>`;}
@@ -111,6 +119,8 @@
   const b=e.target.closest('button');if(!b)return;
   if(b.hasAttribute('data-new-mock')){M.newDocument();document.querySelectorAll('.route-details').forEach(el=>el.remove());$('art').classList.add('blank-document');sync();$('surface').focus();return;}
   if(b.hasAttribute('data-export-mock')){toast('書き出し要求の確認（模擬）。画像ファイルは生成していません。');return;}
+  if(b.dataset.taskQuery){$('query').value=b.dataset.taskQuery;category=null;renderLibrary();$('query').focus();return;}
+  if(b.dataset.scopeAction){const scope=b.dataset.scope,action=b.dataset.scopeAction;M.dispatch('scope.'+action,{scope,label:scope==='test-pad'?'試筆（模擬）':scope==='reference'?'資料移動（模擬）':'作品一覧変更（模擬）'});sync();return;}
   if(b.dataset.feature){openFeature(b.dataset.feature,$('query').value?'search':'catalog');return;}
   if(b.dataset.category){category=b.dataset.category;$('query').value='';renderLibrary();return;}
   if(b.hasAttribute('data-back')||b.hasAttribute('data-clear')){category=null;$('query').value='';renderLibrary();return;}
