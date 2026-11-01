@@ -55,6 +55,10 @@ async function main(){
    assert((await p.locator(selector+' [data-scope-summary]').innerText()).includes('1件'));
   }
   await editScope('test-pad','brush');await editScope('reference','reference');await editScope('document-manager','document');
+  for(const [scope,label] of [['test-pad','試筆パッド'],['reference','資料'],['document-manager','作品管理']]){
+   assert.equal(await p.locator('[data-scope-panel="'+scope+'"] [data-scope-action="undo"]').innerText(),label+'Undo');
+   assert.equal(await p.locator('[data-scope-panel="'+scope+'"] [data-scope-action="redo"]').innerText(),label+'Redo');
+  }
   await p.locator('#box-reference [data-scope-action="undo"]').click();
   assert((await p.locator('[data-scope-summary="reference"]').innerText()).includes('0件'));
   assert((await p.locator('[data-scope-summary="test-pad"]').innerText()).includes('1件'));
