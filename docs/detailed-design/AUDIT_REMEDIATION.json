@@ -264,15 +264,23 @@
         "IO-002"
       ],
       "root_cause_area": "search-synonyms",
-      "remediation_status": "partially-verified-open",
-      "changed_files": "model.js / stage3-tests.cjs",
-      "remediation": "乗算/Clip/透明PNG/左右反転の安全な検索候補を追加",
-      "remaining_work": "主要同義語は修正済だが、名称を教えない制作課題と十分な同義語コーパスは未実行。",
+      "remediation_status": "prototype-improved-first-use-evaluation-open",
+      "changed_files": "model.js / app.js / style.css / stage3-ux-model-tests.cjs / stage3-ux-browser-tests.cjs",
+      "remediation": "制作目的の別名・検索順位・検索開始画面のタスク例4つ。16件の目的語→正しい主要機能のモデル試験と実DOMタスク導線を追加。",
+      "remaining_work": "同義語コーパスのカバレッジと初見利用者による説明無し探索・誤到達の評価が未実施。",
       "original_close_test": "名称を教えない制作課題と、反転/Clip/Multiply/透明出力の同義語セットで到達先を照合する。",
       "closed": false,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
-      "closure_evidence": null
+      "closure_evidence": null,
+      "scoped_evidence": {
+        "scope": "Stage III review prototype; not physical first-use usability",
+        "checks": "stage3-ux-model-tests:16 task phrases; stage3-ux-browser-tests: visible task chips and selected target details",
+        "document": "docs/detailed-design/STAGE3_UI_REMEDIATION_5.md",
+        "ci_provisional": "https://github.com/totoro0419/illustro/actions/runs/41259070556",
+        "ci_note": "New model/DOM/catalog steps succeeded; overall run failed on out-of-date generated index.html. Rebuilt in 98fb593; final CI must be checked before marking PASS.",
+        "unverified": "同義語コーパスのカバレッジと初見利用者による説明無し探索・誤到達の評価が未実施。"
+      }
     },
     {
       "id": "AUD-009",
@@ -321,15 +329,23 @@
         "UI-005"
       ],
       "root_cause_area": "actual-steps",
-      "remediation_status": "partially-verified-open",
-      "changed_files": "docs/product-architecture/FEATURE_ACCESS_LEDGER.json",
-      "remediation": "既存3手の数値は原典として保持",
-      "remaining_work": "Clip/Mask/入り抜き/表示帯の主入口を修正し、名目手数と実測を区別。全247件の主入口・スクロール・候補開始までの最短/通常経路の実測は不足。",
+      "remediation_status": "category-dom-and-shortcut-evidence-partial",
+      "changed_files": "catalog-browser-tests.cjs / stage3-ux-browser-tests.cjs",
+      "remediation": "全247件のID指定988経路とは別に、カテゴリ既知の247経路を実DOMで巡回。Clip/Mask/入り抜きは直接Panelボタン→詳細を1アクションで検証。",
+      "remaining_work": "全247件の主入口、端末別最短/通常経路のスクロール・候補開始までの実測と、初見探索は未完了。",
       "original_close_test": "初期/閉Workspace/Focus/小画面から同じ目標へ到達し、記録と実DOM操作を差分比較する。",
       "closed": false,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
-      "closure_evidence": null
+      "closure_evidence": null,
+      "scoped_evidence": {
+        "scope": "Stage III review prototype; not physical first-use usability",
+        "checks": "catalog-browser-tests: 247 category routes + original 988 ID routes; stage3-ux-browser-tests: three direct Panel entries",
+        "document": "docs/detailed-design/STAGE3_UI_REMEDIATION_5.md",
+        "ci_provisional": "https://github.com/totoro0419/illustro/actions/runs/41259070556",
+        "ci_note": "New model/DOM/catalog steps succeeded; overall run failed on out-of-date generated index.html. Rebuilt in 98fb593; final CI must be checked before marking PASS.",
+        "unverified": "全247件の主入口、端末別最短/通常経路のスクロール・候補開始までの実測と、初見探索は未完了。"
+      }
     },
     {
       "id": "AUD-011",
@@ -510,15 +526,23 @@
         "HIS-001"
       ],
       "root_cause_area": "history-scopes",
-      "remediation_status": "partially-verified-open",
-      "changed_files": "contracts.d.ts / SYSTEM_CONTRACTS.md / shell.html",
-      "remediation": "document/session/reference/test-pad/document-managerの名前付きUndoを導入",
-      "remaining_work": "scopeを5領域に定義。作品/候補の試作は動くが、Pad/資料を含む実UIと利用者の作用対象理解の試験は不足。",
+      "remediation_status": "named-history-ui-implemented-user-comprehension-open",
+      "changed_files": "model.js / app.js / style.css / stage3-ux-model-tests.cjs / stage3-ux-browser-tests.cjs",
+      "remediation": "参考資料・試筆パッド・作品管理の明示履歴とRedo枝を分離。専用Undoボタンと作用先名を表示し、作品/Session Undo交錯・新作品時の寿命を検査。",
+      "remaining_work": "実ユーザーによる作用先理解・操作説明と、資料/試筆の製品永続化は未検証。",
       "original_close_test": "パッド/資料/作品/Sessionを交互に編集し、各Undo後に対象と残存編集を利用者が説明できるか評価する。",
       "closed": false,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
-      "closure_evidence": null
+      "closure_evidence": null,
+      "scoped_evidence": {
+        "scope": "Stage III review prototype; not physical first-use usability",
+        "checks": "stage3-ux-model-tests: independent histories/revision/save/new work; stage3-ux-browser-tests: three visible Undo scopes",
+        "document": "docs/detailed-design/STAGE3_UI_REMEDIATION_5.md",
+        "ci_provisional": "https://github.com/totoro0419/illustro/actions/runs/41259070556",
+        "ci_note": "New model/DOM/catalog steps succeeded; overall run failed on out-of-date generated index.html. Rebuilt in 98fb593; final CI must be checked before marking PASS.",
+        "unverified": "実ユーザーによる作用先理解・操作説明と、資料/試筆の製品永続化は未検証。"
+      }
     },
     {
       "id": "AUD-017",
@@ -535,15 +559,23 @@
         "UI-006"
       ],
       "root_cause_area": "mid-width-layout",
-      "remediation_status": "partially-verified-open",
-      "changed_files": "style.css",
-      "remediation": "761〜1000pxでWorkspaceの幅を上限32%へ制限",
-      "remaining_work": "8幅のCanvasとhit測定は実施。残余幅を改善したが、同じ制作課題の探索時間/開閉回数/遮蔽比較の利用者評価は未実施。",
+      "remediation_status": "geometry-corrected-comparative-user-trial-open",
+      "changed_files": "style.css / stage3-ux-browser-tests.cjs",
+      "remediation": "761〜1000pxでWorkspace 32%以下とCanvas列420px以上を制約、760以下は非表示シートへ。740/760/761/800/960/1180幅で実DOM stage矩形とシート開閉を検証。",
+      "remaining_work": "同じ制作課題における探索時間・Workspace開閉回数・遮蔽比較のユーザー試験が未完了。",
       "original_close_test": "760px境界前後と800/960/1180pxで、同じ制作課題の遮蔽率/開閉回数/探索時間を比較する。",
       "closed": false,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
-      "closure_evidence": null
+      "closure_evidence": null,
+      "scoped_evidence": {
+        "scope": "Stage III review prototype; not physical first-use usability",
+        "checks": "stage3-ux-browser-tests: six widths, measured canvas geometry and open/close transitions",
+        "document": "docs/detailed-design/STAGE3_UI_REMEDIATION_5.md",
+        "ci_provisional": "https://github.com/totoro0419/illustro/actions/runs/41259070556",
+        "ci_note": "New model/DOM/catalog steps succeeded; overall run failed on out-of-date generated index.html. Rebuilt in 98fb593; final CI must be checked before marking PASS.",
+        "unverified": "同じ制作課題における探索時間・Workspace開閉回数・遮蔽比較のユーザー試験が未完了。"
+      }
     },
     {
       "id": "AUD-018",
@@ -591,15 +623,23 @@
         "DEV-004"
       ],
       "root_cause_area": "touch-and-edge",
-      "remediation_status": "partially-verified-open",
-      "changed_files": "style.css",
-      "remediation": "320px付近のヘッダー密度、Touch時の対象幅を調整",
-      "remaining_work": "coarse入力の主要標的44pxと文字200%/320pxのgeometry検査を追加。実指の誤タップと全標的の例外評価が不足。",
+      "remediation_status": "touch-geometry-corrected-physical-finger-open",
+      "changed_files": "style.css / stage3-ux-browser-tests.cjs",
+      "remediation": "coarse入力で主要ヘッダー・表示操作・Dock・Context・Scope制御の標的寸法を補強し、320px文字200%/390/740横/800幅の可視ヘッダー標的の矩形・端/中心hitを検査。",
+      "remaining_work": "全標的の例外一覧と実指誤タップ率、利き手/OS実機評価が未実施。",
       "original_close_test": "実指で誤押下率と移動距離を測り、320px/200%文字/左右利きで主要入口の可視性を検査する。",
       "closed": false,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
-      "closure_evidence": null
+      "closure_evidence": null,
+      "scoped_evidence": {
+        "scope": "Stage III review prototype; not physical first-use usability",
+        "checks": "stage3-ux-browser-tests: 320 at text 200%, 390/740/800 touch viewport hit checks",
+        "document": "docs/detailed-design/STAGE3_UI_REMEDIATION_5.md",
+        "ci_provisional": "https://github.com/totoro0419/illustro/actions/runs/41259070556",
+        "ci_note": "New model/DOM/catalog steps succeeded; overall run failed on out-of-date generated index.html. Rebuilt in 98fb593; final CI must be checked before marking PASS.",
+        "unverified": "全標的の例外一覧と実指誤タップ率、利き手/OS実機評価が未実施。"
+      }
     }
   ],
   "count_total": 19,
