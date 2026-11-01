@@ -162,7 +162,7 @@ async function main(){
     assert(valid,'no detail and no action');
     const start=page.locator('[data-start="'+f.id+'"]'),button=detail?await start.count():0;
     if(detail)assert.equal(button,f.availability.executable?1:0,'scope mismatch');
-    const row={id:f.id,device,startState:state,scope:f.final_scope,primary:keyType(f.primary_entry.id),kind,path,actions:metrics.clicks,measured:{...metrics},pathClassification:'observed-normal-declared-entry; not global shortest',detail,hasStart:!!button,production_action_verified:false,real_user:false};
+    const row={id:f.id,device,startState:state,scope:f.final_scope,primary:keyType(f.primary_entry.id),kind,path,actions:metrics.clicks,measured:{...metrics,controls:metrics.controls.map(x=>({...x}))},pathClassification:'observed-normal-declared-entry; not global shortest',detail,hasStart:!!button,production_action_verified:false,real_user:false};
     if(detail&&button){
      await click(page,'[data-start="'+f.id+'"]','start');if(await page.locator('[data-conflict="cancel"]').isVisible()){await click(page,'[data-conflict="cancel"]','explicit candidate cancellation');row.conflictResolved=true;}row.startInvoked=true;row.toCandidate={...metrics}; // candidate UI only, not pixel algorithm
     }
