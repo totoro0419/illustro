@@ -93,12 +93,15 @@ async function main(){
   await p.locator('#sessionCancel').click();
   await p.locator('#landscapeTabs [data-open-panel="layers"]').click();
   assert(await p.locator('#dock').isVisible());
+  assert.equal(await p.locator('#viewbar').count(),0);
+  assert.equal(await p.locator('.viewbar').isVisible(),false,'covered viewbar must be hidden while layer panel is open');
   assert(await p.locator('#layerRows .layerrow').count()>0);
   const panel=await box(p,'#dock');
   assert(panel.width<400&&panel.x>0,'layer panel is not transient to the right');
   await p.screenshot({path:'test-results/stage3-ibis-reference-740-layers.png'});
   await p.locator('#landscapeTabs [data-open-panel="layers"]').click();
   assert.equal(await p.locator('#dock').isVisible(),false);
+  assert(await p.locator('.viewbar').isVisible(),'viewbar must return after closing Workspace');
   await p.locator('#landscapeTabs [data-landscape-properties]').click();
   assert(await p.locator('.contextbar').isVisible());
   await p.locator('#landscapeTabs [data-landscape-properties]').click();
@@ -110,6 +113,9 @@ async function main(){
   assert(await p.locator('.rail').isVisible());
   await p.locator('#mobileTabs [data-open-panel="layers"]').click();
   assert(await p.locator('#dock').isVisible());
+  assert.equal(await p.locator('.viewbar').isVisible(),false);
+  await p.locator('#sheetClose').click();
+  assert(await p.locator('.viewbar').isVisible());
  });
  for(const width of [740,760,761,800,960,1180]){
   await run('AUD017 stage geometry & workspace entry '+width,width,600,width<=760,async p=>{
