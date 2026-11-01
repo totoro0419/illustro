@@ -64,6 +64,49 @@ async function main(){
   await p.locator('#box-reference [data-scope-action="redo"]').click();await p.screenshot({path:'test-results/stage3-ux-named-undo.png'});
   assert((await p.locator('[data-scope-summary="reference"]').innerText()).includes('1件'));
  });
+ await run('ibisPaint-informed 740x360: compact bar and transient tools/layers',740,360,true,async p=>{
+  assert(await p.locator('#landscapeTabs').isVisible(),'compact landscape bar missing');
+  assert.equal(await p.locator('#mobileTabs').isVisible(),false);
+  assert.equal(await p.locator('.rail').isVisible(),false);
+  assert.equal(await p.locator('#dock').isVisible(),false);
+  assert((await box(p,'.stage')).width>=739,'rail still occupies landscape drawing width');
+  for(const attr of ['data-landscape-brush-toggle','data-landscape-tools','data-landscape-properties','data-undo','data-redo']){
+   assert(await assertHit(p,'#landscapeTabs ['+attr+']'),attr+' missed compact toolbar');
+  }
+  const before=await p.locator('#currentTool').innerText();
+  await p.locator('#landscapeTabs [data-landscape-brush-toggle]').click();
+  assert.notEqual(await p.locator('#currentTool').innerText(),before);
+  await p.locator('#landscapeTabs [data-landscape-tools]').click();
+  assert(await p.locator('#landscapeToolPicker').isVisible());
+  await p.screenshot({path:'test-results/stage3-ibis-reference-740-tools.png'});
+  await p.locator('#landscapeToolPicker [data-tool="transform"]').click();
+  assert.equal(await p.locator('#landscapeToolPicker').isVisible(),false);
+  assert(await p.locator('#sessionbar').isVisible());
+  assert(await assertHit(p,'#sessionApply'));
+  assert(await assertHit(p,'#sessionCancel'));
+  measurements.push({audit:'ibis-reference-landscape',viewport:'740x360',stageWidth:(await box(p,'.stage')).width,
+   sessionHeight:(await box(p,'#sessionbar')).height,toolbarHeight:(await box(p,'#landscapeTabs')).height});
+  await p.locator('#sessionCancel').click();
+  await p.locator('#landscapeTabs [data-open-panel="layers"]').click();
+  assert(await p.locator('#dock').isVisible());
+  assert(await p.locator('#layerRows .layerrow').count()>0);
+  const panel=await box(p,'#dock');
+  assert(panel.width<400&&panel.x>0,'layer panel is not transient to the right');
+  await p.screenshot({path:'test-results/stage3-ibis-reference-740-layers.png'});
+  await p.locator('#landscapeTabs [data-open-panel="layers"]').click();
+  assert.equal(await p.locator('#dock').isVisible(),false);
+  await p.locator('#landscapeTabs [data-landscape-properties]').click();
+  assert(await p.locator('.contextbar').isVisible());
+  await p.locator('#landscapeTabs [data-landscape-properties]').click();
+  assert.equal(await p.locator('.contextbar').isVisible(),false);
+ });
+ await run('ibisPaint-informed 390x844: preserve portrait UI',390,844,true,async p=>{
+  assert.equal(await p.locator('#landscapeTabs').isVisible(),false);
+  assert(await p.locator('#mobileTabs').isVisible());
+  assert(await p.locator('.rail').isVisible());
+  await p.locator('#mobileTabs [data-open-panel="layers"]').click();
+  assert(await p.locator('#dock').isVisible());
+ });
  for(const width of [740,760,761,800,960,1180]){
   await run('AUD017 stage geometry & workspace entry '+width,width,600,width<=760,async p=>{
    const stage=await box(p,'.stage');if(width===800)await p.screenshot({path:'test-results/stage3-ux-800-workspace.png'});
