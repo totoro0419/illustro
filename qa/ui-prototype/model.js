@@ -190,7 +190,10 @@
    state.saves.push(s);return s;
   }
   function loadSave(id){const save=state.saves.find(s=>s.id===id);if(!save||save.status!=='mock-complete')return false;restoreDocument(save.document);state.past=clone(save.operations);state.future=[];state.session=null;state.pending=[];state.revision++;return true;}
-  function newDocument(){state.layers=[{id:'layer-'+state.nextLayerId++,name:'レイヤー 1',visible:true,blend:'通常'}];selectLayer(state.layers[0].id);state.past=[];state.future=[];state.pending=[];state.session=null;state.revision++;return true;}
+  function newDocument(){state.layers=[{id:'layer-'+state.nextLayerId++,name:'レイヤー 1',visible:true,blend:'通常'}];selectLayer(state.layers[0].id);state.past=[];state.future=[];state.pending=[];state.session=null;
+    // Per-document mock pad/reference drafts must not leak into a different work.
+    for(const scope of ['reference','test-pad'])state.scopedHistory[scope]={entries:[],future:[],serial:0};
+    state.revision++;return true;}
   function completeSave(id){const s=state.saves.find(x=>x.id===id);if(!s)throw Error('save absent');s.status='mock-complete';return s;}
   return {state,feature,search,navigate,commit,begin,edit,apply,cancel,undo,redo,dispatch,
    selectLayer,addLayer,toggleVisibility,setLayerBlend,documentSnapshot,acceptPending,finish,save,completeSave,loadSave,newDocument,scopeEdit,scopeUndo,scopeRedo};
