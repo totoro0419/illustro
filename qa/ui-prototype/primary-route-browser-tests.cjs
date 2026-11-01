@@ -62,13 +62,20 @@ async function actualEntry(p,f,path,device){
  };
  const sel=controls[key];
  if(!sel)return viaCategory(p,f,path);
- if(device==='portrait'&&(key==='fixed.flip'||key==='fixed.undo')){
+ if(device==='portrait'&&(key==='fixed.flip'||key==='fixed.undo'||key==='top.export')){
   if(key==='fixed.flip'){
    await p.locator('#quickTrigger').click();path.push('Quick');
    await p.locator('#quickGrid [data-flip="H"]').click();path.push('view flip H');
    return 'phone-quick-alternative';
   }
-  await p.locator('#addLayer').click();
+  if(key==='top.export'){
+   await p.locator('#quickTrigger').click();path.push('Quick');
+   await p.locator('#quickGrid [data-export-quick]').click();path.push('Export');
+   return 'phone-quick-alternative';
+  }
+  // Create an undoable document edit via the available Layer Page, not the hidden desktop control.
+  await p.locator('#mobileTabs [data-open-panel="layers"]').click();
+  await p.locator('#layerPage [data-add-layer]').click();
   await p.locator('#mobileTabs [data-undo]').click();path.push('mobile fixed Undo');
   return 'direct-control';
  }
