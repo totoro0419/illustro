@@ -9,7 +9,7 @@ let browser;
 const rows=[];
 async function panelRoute(p,f,path){
  const group=f.panel.slice(6);
- await p.locator('#workspaceToggle').click().catch(()=>{}); // on portrait show the sheet
+ if(!(await p.locator('#dock').isVisible()))await p.locator('#workspaceToggle').click(); // open only when hidden
  if(!(await p.locator('#panels').isVisible())){
    await p.locator('#layerPageClose').click().catch(()=>{});
  }
