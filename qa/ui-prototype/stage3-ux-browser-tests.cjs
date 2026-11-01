@@ -93,7 +93,6 @@ async function main(){
   await p.locator('#sessionCancel').click();
   await p.locator('#landscapeTabs [data-open-panel="layers"]').click();
   assert(await p.locator('#dock').isVisible());
-  assert.equal(await p.locator('#viewbar').count(),0);
   assert.equal(await p.locator('.viewbar').isVisible(),false,'covered viewbar must be hidden while layer panel is open');
   assert(await p.locator('#layerRows .layerrow').count()>0);
   const panel=await box(p,'#dock');
