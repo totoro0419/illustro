@@ -9,18 +9,18 @@ let browser;
 const rows=[];
 async function panelRoute(p,f,path){
  const group=f.panel.slice(6);
- if(!(await p.locator('#dock').isVisible()))await p.locator('#workspaceToggle').click(); // open only when hidden
+ if(!(await p.locator('#dock').isVisible())){await p.locator('#workspaceToggle').click();path.push('open Workspace');} // open only when hidden
  if(!(await p.locator('#panels').isVisible())){
    await p.locator('#layerPageClose').click().catch(()=>{});
  }
  const box=p.locator('#box-'+group);
- if(!(await box.evaluate(e=>e.open)))await box.locator('summary').click();
+ if(!(await box.evaluate(e=>e.open))){await box.locator('summary').click();path.push('open '+group+' section');}
  const direct=box.locator('[data-feature="'+f.id+'"]').first();
  if(await direct.count()&&await direct.isVisible()){
    await direct.click();path.push('Workspace direct control');return 'direct-panel';
  }
  await box.locator('[data-panel-category="'+f.category+'"]').click();
- path.push('Workspace '+group,'category '+f.category);
+ path.push('category '+f.category);
  const item=p.locator('#route-'+group+' [data-feature="'+f.id+'"]');
  await item.click();path.push('feature '+f.id);
  return 'category-panel';
@@ -35,9 +35,9 @@ async function actualEntry(p,f,path,device){
  const key=f.primary_entry.id;
  if(key.startsWith('panel.')){
   if(key==='panel.layers.add'){
-   if(device!=='desktop')await p.locator('#workspaceToggle').click();
+   if(device!=='desktop'){await p.locator('#workspaceToggle').click();path.push('open Workspace');}
    const box=p.locator('#box-layers');
-   if(!(await box.evaluate(e=>e.open)))await box.locator('summary').click();
+   if(!(await box.evaluate(e=>e.open))){await box.locator('summary').click();path.push('open Layers section');}
    const before=await p.locator('#layerRows .layerrow').count();
    await p.locator('#addLayer').click();path.push('Workspace Layer +');
    assert.equal(await p.locator('#layerRows .layerrow').count(),before+1);
