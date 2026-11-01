@@ -6,7 +6,7 @@
 
 - 固定/Quick/検索/Context/キーは常に作品Undo。候補UndoはSession帯に限定。Session中の別層筆と候補取消を検査。
 - Layer構造/目/合成/Undo/模擬保存は同じ正本を参照。選択だけでvisibilityが戻らず、隠したLayerの試筆も非表示。
-- Focus中でも色/層の一時Panelを表示し、閉じるとFocusへ。操作確認メニューの「Focusの比較」で、一時Panelと標準配置へ戻る案を切替可能。
+- Focus中でも色/層の一時Panelを表示し、閉じるとFocusへ。2026-11-01にFocus維持のAを本人が採用。標準配置へ強制復帰するBは製品方針として不採用。
 - SheetとSessionの占有高さをResizeObserverで共有。スマホは重複する作品Undo/Redoを下部固定帯へ集約し、候補Undo/取消/適用を優先。rem文字、coarse主要標的44pxを導入。
 - SV面はpointer/arrow操作、native色相range、現在色と背景gradientを同期。色管理本体ではない。
 - 二指は重心アンカーを補正。反転/回転を含む再投影誤差をDOMで検査。実物ペン/指は未実施。
@@ -43,13 +43,13 @@
 - [別のレビュー用プレビュー](https://illustro-stage3-review-c2c1.ibukioike2009.chatgpt.site/)をSitesへowner-privateで配置。既存Performance Labを変更しない。デプロイの成功と操作確認は別：クラウドブラウザーではログイン要求を確認し、デプロイ版の操作は未確認。ローカル管理プレビューでは実表示・操作を確認済み。
 - GitHub上の単体HTMLも保持。HTMLは画像処理・永続保存を実装済みと表示しない。
 
-追加の比較案・判定条件は [UI最終判断3件の提案](UI_DECISION_PROPOSALS.md) を参照。ここでは**まだ全3件とも未承認**として扱う。
+比較案・判定条件は [UIの正式決定と未承認2件](UI_DECISION_PROPOSALS.md) を参照。**Focus Aは本人承認済み、Undoの提示・横持ちスマホは未承認**として扱う。
 
-## ユーザー判断待ち（未承認）
+## UI判断の状態（Focus A採用、残り2件未承認）
 
 | 判断 | 比較するもの | 確認方法 |
 |---|---|---|
-| FocusのPanel | Focus維持の一時Panel／標準配置へ復帰 | 操作確認→「Focusの比較」→Quickの色/層→閉じる |
+| FocusのPanel【A採用済】 | Focusを維持し一時Panelを開く。閉じたらFocusへ復帰。標準配置への暗黙復帰は不採用 | Focus→Quickの色/層→閉じる/Escape→Focus継続の回帰検査（実機は未評価） |
 | Undoの提示 | 作品Undoを固定＋候補Undoを対象帯へ分離した案の理解 | 変形候補→別層へ筆→作品Undo→候補Undo→取消 |
 | 横持ちスマホ帯 | 下部の作品操作＋上の候補帯でCanvasが十分残るか | 740×360相当、候補とWorkspaceを開閉 |
 
