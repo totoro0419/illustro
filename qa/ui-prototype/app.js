@@ -98,7 +98,7 @@
   const last=S.saves.at(-1);$('saveStatus').textContent=saveError?'模擬保存失敗・再試行':last?.status==='pending'?'模擬保存中…':last?.status==='mock-complete'?(last.operationIds.join()===S.past.map(x=>x.id).join()?'模擬保存済み':'保存後の変更あり'):'模擬作品・未保存';
   $('saveStatus').title=`保存対象と現作品を区別。現在：${S.past.length}操作、計算中：${S.pending.length}。`;
   const sessionUndo=S.past.length>0,sessionRedo=S.future.length>0;
-  $('sessionUndo').disabled=!S.session?.past.length;
+  $('sessionUndo').disabled=!S.session?.past.length;$('sessionRedo').disabled=!S.session?.future.length;
   document.querySelectorAll('[data-undo]').forEach(b=>{b.disabled=!sessionUndo;b.title='最後に受理した作品操作を戻す';});document.querySelectorAll('[data-redo]').forEach(b=>b.disabled=!sessionRedo);
    const strokes=S.past.filter(o=>o.payload.path&&S.layers.find(l=>l.id===o.payload.layerId)?.visible!==false),key=strokes.map(o=>o.id).join(',');
    if(strokeStamp!==key){$('demoStrokes').innerHTML=strokes.map(o=>`<path d="${o.payload.path}" fill="none" stroke="${esc(o.payload.color)}" stroke-width="${o.payload.width}" stroke-linecap="round" stroke-linejoin="round" opacity="${o.payload.opacity}"/>`).join('');strokeStamp=key;}
@@ -182,7 +182,7 @@
  bind('newDocument',()=>{$('homePage').hidden=true;openFeature('CAN-001','primary');});bind('openDocument',()=>{$('homePage').hidden=true;openFeature('IO-001','primary');});bind('recoverDocument',()=>{$('homePage').hidden=true;openFeature('SAV-005','primary');});
  function mockSave(){saveError=false;const s=M.save();sync();toast('要求時点の模擬版を固定しました。後のUndo／描画は保存対象を変えません。');setTimeout(()=>{M.completeSave(s.id);sync();},1800);}
  bind('save',mockSave);bind('saveStatus',()=>{if(saveError){mockSave();return;}openFeature('SAV-004','primary');});bind('export',()=>openFeature('IO-002','primary'));
- bind('sessionApply',()=>finishSession(true));bind('sessionCancel',()=>finishSession(false));bind('sessionDocumentUndo',()=>{M.undo(true);sync();});bind('sessionDocumentRedo',()=>{M.redo(true);sync();});bind('sessionUndo',()=>{M.undo();if(S.session){const id=S.session.feature;const f=$('fields-'+id);if(f)f.querySelectorAll('[data-value]').forEach(i=>i.value=S.session.values[i.dataset.value]||'');}sync();});
+ bind('sessionApply',()=>finishSession(true));bind('sessionCancel',()=>finishSession(false));bind('sessionDocumentUndo',()=>{M.undo(true);sync();});bind('sessionDocumentRedo',()=>{M.redo(true);sync();});bind('sessionUndo',()=>{M.undo();if(S.session){const id=S.session.feature;const f=$('fields-'+id);if(f)f.querySelectorAll('[data-value]').forEach(i=>i.value=S.session.values[i.dataset.value]||'');}sync();});bind('sessionRedo',()=>{M.redo();if(S.session){const id=S.session.feature;const f=$('fields-'+id);if(f)f.querySelectorAll('[data-value]').forEach(i=>i.value=S.session.values[i.dataset.value]||'');}sync();});
  function mockPending(){const op=M.acceptPending();sync();toast('模擬計算中です。ナビ／Undo／保存／別層操作を試せます（人工待機3秒）。');setTimeout(()=>{M.finish(op.id);sync();},3000);}
  bind('reloadMock',()=>{const id=S.saves.filter(s=>s.status==='mock-complete').at(-1)?.id;if(!id){toast('完了した模擬保存がありません。');return;}M.loadSave(id);sync();toast('同一ページ内の模擬保存状態を再読込しました。永続保存ではありません。');});
  bind('simulatePending',mockPending);bind('simulateSaveError',()=>{saveError=true;sync();toast('保存失敗の模擬状態です。元の編集は保持。「保存失敗・再試行」から再試行できます。');});
