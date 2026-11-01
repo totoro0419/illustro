@@ -8,6 +8,12 @@ const assert=require('node:assert/strict');
 const html=fs.readFileSync(path.join(__dirname,'index.html'));
 const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html;charset=utf-8'});res.end(html);});
 let browser,passed=0;
+async function chooseTool(p,tool){
+ if(await p.locator('#landscapeTabs').isVisible()){
+  await p.locator('#landscapeTabs [data-landscape-tools]').click();
+  await p.locator('#landscapeToolPicker [data-tool="'+tool+'"]').click();
+ }else await p.locator('#tools [data-tool="'+tool+'"]').click();
+}
 async function run(label,fn){
  const page=await browser.newPage({viewport:{width:1180,height:820}});
  try{
@@ -67,7 +73,7 @@ async function main(){
  });
  await run('Document Undo remains available while editing transform Session',async p=>{
   await p.locator('#addLayer').click();
-  await p.locator('#tools [data-tool="transform"]').click();
+  await chooseTool(p,'transform');
   assert.equal(await p.locator('#sessionbar').isVisible(),true);
   await p.locator('#sessionDocumentUndo').click();
   assert.equal(await p.locator('#layerRows .layerrow').count(),3);
@@ -143,7 +149,7 @@ async function main(){
  for(const [w,h] of [[390,844],[740,360],[320,568]]){
   await run('Session apply/cancel hit target at '+w+'x'+h,async p=>{
    await p.setViewportSize({width:w,height:h});
-   await p.locator('#tools [data-tool="transform"]').click();
+   await chooseTool(p,'transform');
    await assertHit(p,'#sessionApply');await assertHit(p,'#sessionCancel');
   });
  }
