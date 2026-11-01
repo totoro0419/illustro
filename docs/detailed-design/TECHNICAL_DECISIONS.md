@@ -8,7 +8,7 @@
 | 正式Job | 受理順/FIFO＋明示DAGを採用 | 完了順commitは旧版上書き。失敗注入で依存Bのみblocked/独立C保護を確認 |
 | Handoff | 排他coverageを含むatomic snapshotを採用 | 24通りtile完了順×半透明の参照画素。split更新の二重/欠落反例。実GPU転送とEffect依存prefixは今後 |
 | GPU投入 | 分割＋in-flight上限＋View予算を条件付き採用 | 任意preemptは使わない。別deviceも物理独立保証なし。dispatch時間と上限は実機比較で決定 |
-| 非破壊後段 | Paint/Erase演算＋範囲付き固定Replaceの混合を条件付き採用 | Fractionの画素/α/履歴/保存参照は成立。単純overlay/加算差分/無言Bakeは不採用。幾何三角形Warp+bilinear/cubic B-spline+2 live Effectの限定参照追加。AUD006のユーザー再編集UXと全Warp品質は残る |
+| 非破壊後段 | Paint/Erase演算＋範囲付き固定Replaceの混合を条件付き採用 | Fractionの画素/α/履歴/保存参照は成立。単純overlay/加算差分/無言Bakeは不採用。幾何三角形Warp+bilinear/cubic B-spline+2 live Effectの限定参照追加。Document座標固定の再編集意味は2026-11-01に本人決定（AUD006のStage③閉鎖）。実画面の初見UXと全Warp品質は④の対象 |
 | Alpha Lock | 評価時の対象αを維持する修正案を採用 | 固定旧α案は取り下げ。透明部分への色発生を反例で検査。brush座標/Selectionは固定 |
 | 履歴 | 不変root・名前付きscope・用途pinを採用 | 作品Undoは入口間で同じaction。候補は専用Undo。Pad/資料を含むUX評価はAUD016 |
 | Save/Recovery | Fence＋検証済manifest＋保存先sequenceを採用 | A/B/Undo/Save/Redo、逆順保存、失敗点別モデル。物理ストレージ耐久は未実証 |
