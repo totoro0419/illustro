@@ -45,3 +45,10 @@ Androidペンタブレット（ペン圧/ホバー/二指）、Androidスマホ�
 scope判別Intent、document/target lifetime、admission順、名前付きUndo、SaveFence/保存先sequence、用途pin、atomic Handoff、writer不足、依存失敗の契約は`SYSTEM_CONTRACTS.md`を使用。限定CPU referenceは43件、ICC実CMM限定比較、実DOMと型検査を回帰資産として渡す。性能や物理耐久の合格ではない。
 
 **現時点の無条件引渡しは不可。製品の正式実装は開始していない。** 第③段階で残るP2/P3の原因、全247機能の固有受入・技術契約、Focus/Undo/横持ちスマホのユーザー判断を整理し、最終再監査に合格してから移行する。P1は現在0件。
+
+
+## UI/UX未完了に対する検査の引継ぎ（2026-11-01）
+
+[Stage③ UI修正・5件の残条件](STAGE3_UI_REMEDIATION_5.md)では、機械的な発見性・scope・viewport検査は増えた。一方で、実利用者に機能名を教えない制作課題、作品/Session/Pad/資料/作品管理のUndo作用先の説明、同じ課題のCanvas遮蔽/開閉/探索時間比較、320px・拡大文字・利き手の実指誤操作率が未検証。
+
+④への引渡し時は、**実装が存在しないため④でしか測れない性能・永続化**と、**③でUIを正式承認するために必要な判断**を分ける。Focus一時Panel/標準復帰、作品Undo/候補Undoの提示、スマホ横持ち帯は本人が正式承認した事実がない。これをCIが成功したという理由で承認済みにしない。
