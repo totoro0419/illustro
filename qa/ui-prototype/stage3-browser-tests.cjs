@@ -82,6 +82,25 @@ async function main(){
   assert.equal(await p.locator('#dock').isVisible(),true);
   assert.equal(await p.locator('#box-color').isVisible(),true);
  });
+ await run('Approved Focus A keeps Focus for color/layer, Escape and close restore Focus',async p=>{
+  assert.equal(await p.locator('#focusMode').count(),0,'Rejected automatic Focus exit must not be selectable');
+  await p.locator('#focus').click();
+  assert.equal(await p.locator('#frame').evaluate(e=>e.classList.contains('focused')),true);
+  await p.locator('#quickTrigger').click();
+  await p.locator('#quickGrid [data-open-panel="color"]').click();
+  assert.equal(await p.locator('#frame').evaluate(e=>e.classList.contains('focused')&&e.classList.contains('focus-panel-open')),true);
+  assert.equal(await p.locator('#box-color').isVisible(),true);
+  await p.keyboard.press('Escape');
+  assert.equal(await p.locator('#frame').evaluate(e=>e.classList.contains('focused')&&!e.classList.contains('focus-panel-open')),true);
+  assert.equal(await p.locator('#dock').isVisible(),false);
+  assert.equal(await p.locator('#workspaceToggle').getAttribute('aria-expanded'),'false');
+  await p.locator('#quickTrigger').click();
+  await p.locator('#quickGrid [data-open-panel="layers"]').click();
+  assert.equal(await p.locator('#box-layers').isVisible(),true);
+  await p.locator('#workspaceToggle').click();
+  assert.equal(await p.locator('#frame').evaluate(e=>e.classList.contains('focused')&&!e.classList.contains('focus-panel-open')),true);
+  assert.equal(await p.locator('#dock').isVisible(),false);
+ });
  await run('SV color surface changes color',async p=>{
   const before=await p.locator('#colorPicker').inputValue();
   await p.locator('.color-plane').click({position:{x:25,y:25}});
