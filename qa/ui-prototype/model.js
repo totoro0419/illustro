@@ -3,15 +3,27 @@
  'use strict';
  function createModel(registry) {
   const byId=new Map(registry.features.map(f=>[f.id,f]));
+  // Curated production-task language is a deterministic index, not a fuzzy guess.
   const aliases={
-   '乗算':['LAY-002'], 'multiply':['LAY-002'], 'クリップ':['LAY-004'],
-   'クリッピング':['LAY-004'], '透明PNG':['IO-002'], 'png':['IO-002'],
-   '左右反転':['CAN-003','TRN-001','UI-006'], '表示反転':['CAN-003'],
-   '作品反転':['TRN-001'], 'レイヤー追加':['LAY-001']
+   '乗算':['LAY-002'],'multiply':['LAY-002'],'暗く重ねる':['LAY-002'],
+   '下の色を残して暗く重ねる':['LAY-002'],
+   'クリップ':['LAY-004'],'クリッピング':['LAY-004'],
+   'はみ出さないように塗る':['LAY-004'],'下のレイヤーからはみ出さない':['LAY-004'],
+   'マスク':['LAY-005'],'隠した部分を後から戻す':['LAY-005'],
+   '透明PNG':['IO-002'],'png':['IO-002'],
+   '背景を透明にして保存':['IO-002'],'背景透過で書き出す':['IO-002'],
+   '左右反転':['CAN-003','TRN-001','UI-006'],'表示反転':['CAN-003'],
+   '絵を裏返して確認':['CAN-003'],'作品反転':['TRN-001'],
+   '選択した絵を左右反転':['TRN-001'],
+   'レイヤー追加':['LAY-001'],'新しいレイヤーに描く':['LAY-001'],
+   '一つ前の操作に戻す':['HIS-001'],'描いた線を取り消す':['HIS-001'],
+   '色を拾う':['COL-003'],'画像の色を使う':['COL-003'],
+   '線をきれいに細く終える':['BRU-008']
   };
   const state={
    tool:'brush',layer:'線画',layerId:'layer-1',panel:'layers',feature:null,
    screen:'editor',session:null,settings:{},past:[],future:[],pending:[],saves:[],
+   scopedHistory:Object.fromEntries(['reference','test-pad','document-manager'].map(scope=>[scope,{entries:[],future:[],serial:0}])),
    revision:0,nextId:1,nextLayerId:4,view:{x:0,y:0,zoom:1,angle:0,flipH:1,flipV:1},
    layers:[
     {id:'layer-1',name:'線画',visible:true,blend:'通常'},
@@ -21,11 +33,41 @@
   };
   function clone(v){return JSON.parse(JSON.stringify(v));}
   function feature(id){if(!byId.has(id))throw Error('unknown feature '+id);return byId.get(id);}
+  const normalize=v=>String(v).trim().toLocaleLowerCase('ja').normalize('NFKC');
+  const aliasTerms=Object.entries(aliases).map(([term,ids])=>[normalize(term),ids]);
   function search(query='',category=null){
-   const q=query.trim().toLocaleLowerCase('ja').normalize('NFKC');
-   const extra=new Set(Object.entries(aliases).filter(([term])=>term.toLocaleLowerCase('ja').normalize('NFKC').includes(q)&&q).flatMap(([,ids])=>ids));
-   return registry.features.filter(f=>(!category||f.category===category)&&(!q||[f.id,f.name,f.category_label,...f.discovery].join(' ').toLocaleLowerCase('ja').normalize('NFKC').includes(q)||extra.has(f.id)))
-    .sort((a,b)=>Number(b.id.toLowerCase()===q)-Number(a.id.toLowerCase()===q));
+   const q=normalize(query), scores=new Map();
+   for(const f of registry.features){
+    if(category&&f.category!==category)continue;
+    let score=0;
+    if(!q)score=1;
+    else if(normalize(f.id)===q)score=200;
+    else if(normalize(f.name)===q)score=160;
+    else if(normalize(f.name).includes(q))score=85;
+    else if([f.category_label,...f.discovery].some(t=>normalize(t).includes(q)))score=25;
+    for(const [term,ids] of aliasTerms){
+     if(q&&ids.includes(f.id)&&(term===q||q.includes(term)||(q.length>=2&&term.includes(q))))
+      score=Math.max(score,term===q?150:q.includes(term)?110:35);
+    }
+    if(score)scores.set(f.id,score);
+   }
+   return registry.features.filter(f=>scores.has(f.id)).sort((a,b)=>
+    scores.get(b.id)-scores.get(a.id)||a.id.localeCompare(b.id));
+  }
+  function scopeEdit(scope,label){
+   const h=state.scopedHistory[scope];if(!h)throw Error('unknown undo scope '+scope);
+   const edit={id:++h.serial,label:String(label||scope+'操作（模擬）')};
+   h.entries.push(edit);h.future=[];return edit;
+  }
+  function scopeUndo(scope){
+   const h=state.scopedHistory[scope];if(!h)throw Error('unknown undo scope '+scope);
+   if(!h.entries.length)return false;
+   h.future.push(h.entries.pop());return true;
+  }
+  function scopeRedo(scope){
+   const h=state.scopedHistory[scope];if(!h)throw Error('unknown undo scope '+scope);
+   if(!h.future.length)return false;
+   h.entries.push(h.future.pop());return true;
   }
   function navigate(id,entry='catalog'){
    const f=feature(id);
@@ -124,6 +166,9 @@
    switch(action){
     case 'history.undo':return undo(true);
     case 'history.redo':return redo(true);
+     case 'scope.edit':return scopeEdit(args.scope,args.label);
+     case 'scope.undo':return scopeUndo(args.scope);
+     case 'scope.redo':return scopeRedo(args.scope);
     case 'layer.add':return addLayer(args.name);
     case 'layer.select':return selectLayer(args.id);
     case 'layer.remove':{
@@ -148,7 +193,7 @@
   function newDocument(){state.layers=[{id:'layer-'+state.nextLayerId++,name:'レイヤー 1',visible:true,blend:'通常'}];selectLayer(state.layers[0].id);state.past=[];state.future=[];state.pending=[];state.session=null;state.revision++;return true;}
   function completeSave(id){const s=state.saves.find(x=>x.id===id);if(!s)throw Error('save absent');s.status='mock-complete';return s;}
   return {state,feature,search,navigate,commit,begin,edit,apply,cancel,undo,redo,dispatch,
-   selectLayer,addLayer,toggleVisibility,setLayerBlend,documentSnapshot,acceptPending,finish,save,completeSave,loadSave,newDocument};
+   selectLayer,addLayer,toggleVisibility,setLayerBlend,documentSnapshot,acceptPending,finish,save,completeSave,loadSave,newDocument,scopeEdit,scopeUndo,scopeRedo};
  }
  root.createIllustroModel=createModel;
  if(typeof module!=='undefined')module.exports={createModel};
