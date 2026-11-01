@@ -105,3 +105,10 @@
  .contextbar{overflow:auto}
  .scope-actions button{flex-basis:100%}
 }
+
+/* Focus temporary panel uses the same medium-width canvas budget. */
+@container frame (min-width:761px) and (max-width:1000px){
+ #frame.focused.focus-panel-open .stage{
+  right:min(var(--right),32%,calc(100% - var(--rail) - 420px))
+ }
+}
