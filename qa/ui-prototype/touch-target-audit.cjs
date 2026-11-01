@@ -23,8 +23,8 @@ async function inspect(p,label){
    }
    if(area(clipped)/area(r)<.75)return null; // scrolled-out controls are not tappable until scrolled
    const hit=document.elementFromPoint(x,y),blocked=!(hit===el||el.contains(hit));
-   const owner=el.closest('.float,.dock,.landscape-tool-picker,.sessionbar');
-   const cover=hit?.closest('.float,.dock,.landscape-tool-picker,.sessionbar');
+   const owner=el.closest('.float,.dock,.landscape-tool-picker,.sessionbar,.mobile-tabs,.landscape-tabs');
+   const cover=hit?.closest('.float,.dock,.landscape-tool-picker,.sessionbar,.mobile-tabs,.landscape-tabs');
    const intentionalCover=blocked&&!!cover&&cover!==owner;
    return {selector:el.id?'#'+el.id:el.outerHTML.slice(0,90),index:i,width:Math.round(r.width*10)/10,height:Math.round(r.height*10)/10,
     centerHit:!blocked,intentionalCover,blockedUnexpected:blocked&&!intentionalCover,
@@ -40,7 +40,7 @@ async function inspect(p,label){
   under44ByRegion:Object.fromEntries([...new Set(small.map(x=>x.ancestor))].map(k=>[k,small.filter(x=>x.ancestor===k).length])),
   samplesSmall:small.slice(0,40),samplesBlocked:blocked.slice(0,25)};
 
- data.push(out);console.log(JSON.stringify({label,coarse:out.coarse,targets:out.targets,under44:out.under44,blockedUnexpected:out.blockedUnexpected,intentionallyCovered:out.intentionallyCovered,regions:out.under44ByRegion,small:out.samplesSmall.map(x=>({name:x.selector.slice(0,55),w:x.width,h:x.height}))}));
+ data.push(out);console.log(JSON.stringify({label,coarse:out.coarse,targets:out.targets,under44:out.under44,blockedUnexpected:out.blockedUnexpected,intentionallyCovered:out.intentionallyCovered,regions:out.under44ByRegion,small:out.samplesSmall.map(x=>({name:x.selector.slice(0,55),w:x.width,h:x.height})),unexpected:out.samplesBlocked.map(x=>({name:x.selector.slice(0,55),owner:x.ancestor}))}));
 }
 async function main(){
  await new Promise(resolve=>server.listen(43898,'127.0.0.1',resolve));browser=await chromium.launch();
