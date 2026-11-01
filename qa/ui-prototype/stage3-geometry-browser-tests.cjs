@@ -34,7 +34,8 @@ async function scan(p,label){
   return {rows,overlaps,closePairs};
  });
  const failures=result.rows.filter(r=>r.status==='blocked-unexpected'||(r.status==='active'&&r.under44&&!r.exception));
- cases.push({label,...result,failures});return failures;
+ fs.appendFileSync('test-results/stage3-geometry-details.jsonl',JSON.stringify({label,...result,failures})+'\n');
+ cases.push({label,targets:result.rows.length,failures,exceptions:result.rows.filter(r=>r.exception),overlaps:result.overlaps.length,closePairs:result.closePairs.length,clipped:result.rows.filter(r=>r.status==='scroll-clipped').length,outsideUnscrollable:result.rows.filter(r=>r.status==='outside-unscrollable')});return failures;
 }
 async function sweep(p,label){
  await scan(p,label+'-current');
@@ -47,10 +48,10 @@ async function sweep(p,label){
  }
 }
 async function main(){
- await new Promise(r=>server.listen(43902,'127.0.0.1',r));browser=await chromium.launch();fs.mkdirSync('test-results',{recursive:true});
+ await new Promise(r=>server.listen(43902,'127.0.0.1',r));browser=await chromium.launch();fs.mkdirSync('test-results',{recursive:true});fs.writeFileSync('test-results/stage3-geometry-details.jsonl','');
  const sizes=[[320,568,2],[390,844,1],[740,360,1],[760,360,1],[761,480,1],[800,360,1],[800,600,1],[960,400,1],[960,600,1],[1180,820,1]];
  for(const [w,h,scale] of sizes.filter(s=>!process.env.GEOMETRY_WIDTH||s[0]===+process.env.GEOMETRY_WIDTH)){
-  const p=await browser.newPage({viewport:{width:w,height:h},hasTouch:true});p.setDefaultTimeout(2500);
+  const p=await browser.newPage({viewport:{width:w,height:h},hasTouch:true});p.setDefaultTimeout(2500);p.setDefaultNavigationTimeout(30000);
   await p.goto('http://127.0.0.1:43902/');if(scale===2)await p.evaluate(()=>document.documentElement.style.fontSize='175%');
   await sweep(p,w+'-initial');await p.locator('#search').click();await sweep(p,w+'-library');await p.locator('#libraryClose').click();
   if(!await p.locator('#panels').isVisible())await p.locator('#workspaceToggle').click();
@@ -77,7 +78,7 @@ async function main(){
   }
   await p.close();
  }
- const failures=cases.flatMap(c=>c.failures.map(r=>({label:c.label,...r}))),result={kind:'DOM geometry, not real finger or normative conformance',goalCSSPx:44,scenarioSnapshots:cases.length,featureLayouts:sequence,targets:cases.reduce((n,c)=>n+c.rows.length,0),failures,exceptions:cases.flatMap(c=>c.rows.filter(r=>r.exception).map(r=>({label:c.label,...r}))),cases};
+ const failures=cases.flatMap(c=>c.failures.map(r=>({label:c.label,...r}))),result={kind:'DOM geometry, not real finger or normative conformance',goalCSSPx:44,scenarioSnapshots:cases.length,featureLayouts:sequence,targets:cases.reduce((n,c)=>n+c.targets,0),failures,detailsFile:'stage3-geometry-details.jsonl',exceptions:cases.flatMap(c=>c.exceptions.map(r=>({label:c.label,...r}))),cases};
  fs.writeFileSync('test-results/stage3-geometry.json',JSON.stringify(result,null,2));console.log(JSON.stringify({snapshots:cases.length,featureLayouts:sequence,failures:failures.length,examples:failures.slice(0,12)}));assert.equal(failures.length,0,'touch geometry defects remain');
 }
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{await browser?.close();server.close()});

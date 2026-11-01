@@ -46,6 +46,18 @@ async function main(){
    await p.locator('[data-detail-close]').last().click();
   }
  });
+ await run('failed Apply-and-continue keeps candidate, tool and pending transition until explicit cancel',1180,820,false,async p=>{
+  await p.locator('#addLayer').click();await p.locator('#tools [data-tool="transform"]').click();
+  await p.locator('#tools [data-tool="brush"]').click(); // queue a tool transition while the target exists
+  await p.locator('#fixed [data-undo]').click(); // remove that target while the conflict UI is open
+  await p.locator('[data-conflict="apply"]').click();
+  assert(await p.locator('#sessionbar').isVisible());
+  assert(await p.locator('#context').isVisible(),'failed Apply hid the resolution UI');
+  assert.equal(await p.locator('#tools [data-tool="transform"]').getAttribute('aria-pressed'),'true','failed Apply continued into a new tool');
+  await p.locator('[data-conflict="cancel"]').click();
+  assert.equal(await p.locator('#sessionbar').isVisible(),false);
+  assert.equal(await p.locator('#tools [data-tool="brush"]').getAttribute('aria-pressed'),'true');
+ });
  await run('AUD016 Pad Ref Manager Undo never occupies document Undo and vice versa',1180,820,false,async p=>{
   await p.locator('#addLayer').click();
   async function editScope(scope,panel){

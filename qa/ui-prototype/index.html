@@ -739,7 +739,7 @@
   if(b.dataset.layer){M.dispatch('layer.select',{id:b.dataset.layer});sync();return;}
   if(b.dataset.eye){M.dispatch('layer.visibility',{id:b.dataset.eye});sync();return;}
   if(b.dataset.color){changeColor(b.dataset.color);return;}
-  if(b.dataset.conflict){const c=b.dataset.conflict;if(c==='back'){pendingFeature=null;pendingTool=null;openFeature(S.session.feature);return;}const nextFeature=pendingFeature,nextTool=pendingTool;finishSession(c==='apply');toggleRegion('context',false);if(nextFeature){openFeature(nextFeature,'primary');beginFeature(nextFeature);}else if(nextTool){setTool(nextTool,true);}return;}
+  if(b.dataset.conflict){const c=b.dataset.conflict;if(c==='back'){pendingFeature=null;pendingTool=null;openFeature(S.session.feature);return;}const nextFeature=pendingFeature,nextTool=pendingTool;finishSession(c==='apply');if(S.session){pendingFeature=nextFeature;pendingTool=nextTool;return;}toggleRegion('context',false);if(nextFeature){openFeature(nextFeature,'primary');beginFeature(nextFeature);}else if(nextTool){setTool(nextTool,true);}return;}
   if(b.id==='addLayer'||b.hasAttribute('data-add-layer')){M.dispatch('layer.add',{name:'レイヤー '+(S.layers.length+1)});sync();return;}
   if(b.id==='layoutDefault')resetLayout();if(b.id==='layoutFocus')toggleFocus();
  });

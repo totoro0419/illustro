@@ -13,11 +13,10 @@ async function click(p,selector,label){
  const el=p.locator(selector).first();
  const probe=await el.evaluate(e=>{
   if(e.disabled)throw Error('disabled control: '+e.outerHTML.slice(0,90));
-  const total=()=>[...document.querySelectorAll('*')].reduce((n,e)=>n+e.scrollTop+e.scrollLeft,0);
-  const before=total();e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+  const positions=new Map([...document.querySelectorAll('*')].map(e=>[e,[e.scrollTop,e.scrollLeft]]));e.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
   const r=e.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2,hit=document.elementFromPoint(x,y);
   if(r.width<=0||r.height<=0||!(hit===e||e.contains(hit)))throw Error('control center not hittable: '+e.outerHTML.slice(0,90)+' hit '+hit?.outerHTML.slice(0,90));
-  return {x,y,scroll:Math.abs(total()-before)};
+  return {x,y,scroll:[...positions].reduce((n,[e,[top,left]])=>n+Math.abs(e.scrollTop-top)+Math.abs(e.scrollLeft-left),0)};
  });
  metrics.scrollPixels+=probe.scroll;if(probe.scroll)metrics.scrollEvents++;
  // A real pointer dispatch after our explicit visibility/center-hit/enabled checks.
@@ -95,7 +94,14 @@ async function actualEntry(p,f,path,device){
  if(key==='home.new'){await click(p,'#home','home');await click(p,'#newDocument','new work');path.push('Home → New');return 'home-new-detail';}
  if(key==='fixed.undo'){
   // Setup a reversible document edit separately: reaching a disabled Undo is not a route failure.
-  if(!(await p.locator(sel).isEnabled())){path.push('disabled: no document history');return 'disabled-correct';}
+  if(!(await p.locator(sel).isEnabled())){
+   let visibleUndo=null;
+   for(const selector of ['#fixed [data-undo]','#landscapeTabs [data-undo]','#mobileTabs [data-undo]'])if(await p.locator(selector).isVisible()){visibleUndo=selector;break;}
+   if(!visibleUndo){await click(p,'#quickTrigger','Quick: expose disabled artwork Undo');visibleUndo='#quickGrid [data-undo]';}
+   assert(await p.locator(visibleUndo).isVisible(),'disabled Undo has no reachable visible control');
+   assert.equal(await p.locator(visibleUndo).isEnabled(),false);
+   path.push('visible disabled artwork Undo: no document history');return 'disabled-correct';
+  }
  }
  if(!visible){
   if(key==='context.size'){
