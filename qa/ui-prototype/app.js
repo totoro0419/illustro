@@ -140,12 +140,13 @@
   frame.classList.remove('focus-panel-open');
   $('workspaceToggle').setAttribute('aria-expanded','false');
  }
- $('quickGrid').innerHTML=fixedButton('undo','作品Undo','data-undo')+fixedButton('brush','ブラシ','data-tool="brush"')+fixedButton('redo','作品Redo','data-redo')+fixedButton('eraser','消しゴム','data-tool="eraser"')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('flipH','表示を左右反転','data-flip="H"')+fixedButton('flipV','表示を上下反転','data-flip="V"');
+ $('quickGrid').innerHTML=fixedButton('undo','作品Undo','data-undo')+fixedButton('brush','ブラシ','data-tool="brush"')+fixedButton('redo','作品Redo','data-redo')+fixedButton('eraser','消しゴム','data-tool="eraser"')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('flipH','表示を左右反転','data-flip="H"')+fixedButton('flipV','表示を上下反転','data-flip="V"')+fixedButton('save','画像を書き出す','data-export-quick');
  renderPanels();sync();
  document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.hasAttribute('data-new-mock')){M.newDocument();document.querySelectorAll('.route-details').forEach(el=>el.remove());$('art').classList.add('blank-document');sync();$('surface').focus();return;}
   if(b.hasAttribute('data-export-mock')){toast('書き出し要求の確認（模擬）。画像ファイルは生成していません。');return;}
+  if(b.hasAttribute('data-export-quick')){openFeature('IO-002','primary');return;}
   if(b.dataset.taskQuery){$('query').value=b.dataset.taskQuery;category=null;renderLibrary();$('query').focus();return;}
   if(b.dataset.scopeAction){const scope=b.dataset.scope,action=b.dataset.scopeAction;M.dispatch('scope.'+action,{scope,label:scope==='test-pad'?'試筆（模擬）':scope==='reference'?'資料移動（模擬）':'作品一覧変更（模擬）'});sync();return;}
   if(b.dataset.feature){openFeature(b.dataset.feature,$('query').value?'search':'catalog');return;}
