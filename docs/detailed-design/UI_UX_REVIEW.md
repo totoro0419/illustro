@@ -43,6 +43,8 @@
 - [別のレビュー用プレビュー](https://illustro-stage3-review-c2c1.ibukioike2009.chatgpt.site/)をSitesへowner-privateで配置。既存Performance Labを変更しない。デプロイの成功と操作確認は別：クラウドブラウザーではログイン要求を確認し、デプロイ版の操作は未確認。ローカル管理プレビューでは実表示・操作を確認済み。
 - GitHub上の単体HTMLも保持。HTMLは画像処理・永続保存を実装済みと表示しない。
 
+追加の比較案・判定条件は [UI最終判断3件の提案](UI_DECISION_PROPOSALS.md) を参照。ここでは**まだ全3件とも未承認**として扱う。
+
 ## ユーザー判断待ち（未承認）
 
 | 判断 | 比較するもの | 確認方法 |
