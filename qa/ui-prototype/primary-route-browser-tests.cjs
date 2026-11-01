@@ -86,7 +86,7 @@ async function main(){
  fs.mkdirSync('test-results',{recursive:true});
  for(const device of ['desktop','portrait']){
   const page=await browser.newPage({viewport:device==='desktop'?{width:1180,height:820}:{width:390,height:844},hasTouch:device!=='desktop'});
-  page.setDefaultTimeout(5500);
+  page.setDefaultTimeout(1800);
   for(const f of R.features){
    await page.goto('http://127.0.0.1:43896/',{waitUntil:'load'});
    const path=[];
