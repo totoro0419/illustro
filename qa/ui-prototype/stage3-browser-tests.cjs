@@ -75,6 +75,32 @@ async function main(){
   await p.locator('#sessionCancel').click();
   assert.equal(await p.locator('#sessionbar').isVisible(),false);
  });
+ await run('Approved Undo A: candidate Undo/Redo remains separate from document Undo',async p=>{
+  await p.locator('#search').click();
+  await p.locator('#query').fill('TRN-003');
+  await p.locator('#libraryContent [data-feature="TRN-003"]').click();
+  await p.locator('[data-start="TRN-003"]').click();
+  const candidate=p.locator('#fields-TRN-003 [data-value]').first();
+  assert.equal(await p.locator('#sessionbar').isVisible(),true);
+  assert.equal(await p.locator('#sessionUndo').isEnabled(),false);
+  assert.equal(await p.locator('#sessionRedo').isEnabled(),false);
+  await candidate.fill('A');await candidate.fill('B');
+  assert.equal(await p.locator('#sessionRedo').isEnabled(),false);
+  await p.locator('#sessionUndo').click();
+  assert.equal(await candidate.inputValue(),'A');
+  assert.equal(await p.locator('#sessionRedo').isEnabled(),true);
+  await p.locator('#sessionRedo').click();
+  assert.equal(await candidate.inputValue(),'B');
+  await p.locator('#addLayer').click();
+  assert.equal(await p.locator('#layerRows .layerrow').count(),4);
+  await p.locator('#fixed [data-undo]').click();
+  assert.equal(await p.locator('#layerRows .layerrow').count(),3);
+  assert.equal(await candidate.inputValue(),'B');
+  await p.locator('#sessionUndo').click();
+  assert.equal(await candidate.inputValue(),'A');
+  await p.locator('#sessionCancel').click();
+  assert.equal(await p.locator('#sessionbar').isVisible(),false);
+ });
  await run('Focus quick color panel is visible',async p=>{
   await p.locator('#focus').click();
   await p.locator('#quickTrigger').click();
