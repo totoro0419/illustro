@@ -245,7 +245,40 @@
    'レイヤー追加':['LAY-001'],'新しいレイヤーに描く':['LAY-001'],
    '一つ前の操作に戻す':['HIS-001'],'描いた線を取り消す':['HIS-001'],
    '色を拾う':['COL-003'],'画像の色を使う':['COL-003'],
-   '線をきれいに細く終える':['BRU-008']
+   '線をきれいに細く終える':['BRU-008'],
+   // Review corpus: plain-language production goals, no claims of automatic natural-language understanding.
+   '線を滑らかにしたい':['BRU-003'],'手ぶれを抑えたい':['BRU-003'],
+   'ブラシの太さを変えたい':['BRU-002'],'筆を細くしたい':['BRU-002'],
+   '塗りつぶしで隙間が残る':['FIL-002'],'線画の隙間を埋めたい':['FIL-002'],
+   '別のレイヤーを見て色を塗る':['FIL-003'],'線画を参照して塗る':['FIL-003'],
+   '囲った場所に色をつけたい':['FIL-005'],'指定したところだけ塗る':['FIL-005'],
+   '間違えて描いた部分を消したい':['BRU-012'],
+   '色の履歴を見たい':['COL-002'],'さっき使った色に戻したい':['COL-002'],
+   'よく使う色をまとめたい':['COL-004'],'自分の色セットを作る':['COL-004'],
+   '絵から色を吸い取る':['COL-003'],'写真から色を拾いたい':['COL-003'],
+   'レイヤーを増やしたい':['LAY-001'],'上のレイヤーを隠したい':['LAY-002'],
+   '線画の形だけを残して色を塗る':['LAY-004'],
+   'レイヤーの一部だけ隠したい':['LAY-005'],'隠す範囲を後で修正したい':['LAY-005'],
+   '複数のレイヤーをまとめたい':['LAY-003'],'レイヤーの順番を変えたい':['LAY-003'],
+   '描く場所を選んで囲いたい':['SEL-001'],'長方形で選択したい':['SEL-001'],
+   '選択範囲をぼかしたい':['SEL-003'],'選択範囲を広げたい':['SEL-003'],
+   '一部分だけ回転させたい':['TRN-001'],'選択した絵を移動したい':['TRN-001'],
+   '絵を斜めから見た形にしたい':['TRN-002'],'パースを変形したい':['TRN-002'],
+   '絵の一部をゆがませたい':['TRN-004'],'液状化で調整したい':['TRN-004'],
+   '変形の途中で一段戻りたい':['TRN-007'],
+   '参照画像を横に置きたい':['REF-001'],'資料画像を見ながら描く':['REF-001'],
+   '参考資料を動かしたい':['REF-002'],'資料を固定したい':['REF-002'],
+   '消した操作をやり直したい':['HIS-001'],'取り消した線を復活させる':['HIS-001'],
+   '作業の途中を記録したい':['HIS-003'],
+   '作品を別の名前で保存したい':['SAV-003'],'編集中の作品を保存したい':['SAV-003'],
+   '保存されたか確認したい':['SAV-004'],
+   'PNGで保存したい':['IO-002'],'絵をJPEGにしたい':['IO-002'],
+   '画像ファイルを読み込みたい':['IO-001'],
+   '絵を拡大してドットを見たい':['CAN-004'],
+   'キャンバスを切り詰めたい':['CAN-005'],'絵の大きさを変更したい':['CAN-006'],
+   '新しいキャンバスを作りたい':['CAN-001'],
+   '別の絵に切り替えたい':['CAN-007'],
+   '線の中に色を広げたい':['FIL-001']
   };
   const state={
    tool:'brush',layer:'線画',layerId:'layer-1',panel:'layers',feature:null,
@@ -545,8 +578,8 @@
   renderHistory();
  }
  function fixedButton(key,label,attrs){return `<button ${attrs} aria-label="${label}" title="${label}">${icon(key)}<span>${label}</span></button>`;}
- $('fixed').innerHTML=fixedButton('layers','Layers','data-open-panel="layers"')+fixedButton('undo','Undo','data-undo')+fixedButton('redo','Redo','data-redo')+fixedButton('flipH','左右反転','data-flip="H"')+fixedButton('flipV','上下反転','data-flip="V"');
- $('mobileTabs').innerHTML=fixedButton('undo','Undo','data-undo')+fixedButton('redo','Redo','data-redo')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('workspace','設定','data-open-panel="workspace"');
+ $('fixed').innerHTML=fixedButton('layers','Layers','data-open-panel="layers"')+fixedButton('undo','作品Undo','data-undo')+fixedButton('redo','作品Redo','data-redo')+fixedButton('flipH','左右反転','data-flip="H"')+fixedButton('flipV','上下反転','data-flip="V"');
+ $('mobileTabs').innerHTML=fixedButton('undo','作品Undo','data-undo')+fixedButton('redo','作品Redo','data-redo')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('workspace','設定','data-open-panel="workspace"');
  // ibisPaint-informed smartphone landscape controls: compact toolbar + on-demand chooser.
  $('landscapeTabs').innerHTML=fixedButton('brush','ブラシ／消し','data-landscape-brush-toggle')+
   fixedButton('move','ツール','data-landscape-tools aria-expanded="false" aria-controls="landscapeToolPicker"')+
@@ -570,7 +603,7 @@
   frame.classList.remove('focus-panel-open');
   $('workspaceToggle').setAttribute('aria-expanded','false');
  }
- $('quickGrid').innerHTML=fixedButton('undo','Undo','data-undo')+fixedButton('brush','ブラシ','data-tool="brush"')+fixedButton('redo','Redo','data-redo')+fixedButton('eraser','消しゴム','data-tool="eraser"')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"');
+ $('quickGrid').innerHTML=fixedButton('undo','作品Undo','data-undo')+fixedButton('brush','ブラシ','data-tool="brush"')+fixedButton('redo','作品Redo','data-redo')+fixedButton('eraser','消しゴム','data-tool="eraser"')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('flipH','表示を左右反転','data-flip="H"')+fixedButton('flipV','表示を上下反転','data-flip="V"');
  renderPanels();sync();
  document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
