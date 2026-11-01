@@ -14,7 +14,7 @@ async function panelRoute(p,f,path){
    await p.locator('#layerPageClose').click().catch(()=>{});
  }
  const box=p.locator('#box-'+group);
- if(!(await box.getAttribute('open')))await box.locator('summary').click();
+ if(!(await box.evaluate(e=>e.open)))await box.locator('summary').click();
  const direct=box.locator('[data-feature="'+f.id+'"]').first();
  if(await direct.count()&&await direct.isVisible()){
    await direct.click();path.push('Workspace direct control');return 'direct-panel';
@@ -37,7 +37,7 @@ async function actualEntry(p,f,path,device){
   if(key==='panel.layers.add'){
    if(device!=='desktop')await p.locator('#workspaceToggle').click();
    const box=p.locator('#box-layers');
-   if(!(await box.getAttribute('open')))await box.locator('summary').click();
+   if(!(await box.evaluate(e=>e.open)))await box.locator('summary').click();
    const before=await p.locator('#layerRows .layerrow').count();
    await p.locator('#addLayer').click();path.push('Workspace Layer +');
    assert.equal(await p.locator('#layerRows .layerrow').count(),before+1);
