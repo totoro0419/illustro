@@ -68,7 +68,17 @@ async function main(){
   await run('AUD017 stage geometry & workspace entry '+width,width,600,width<=760,async p=>{
    const stage=await box(p,'.stage');if(width===800)await p.screenshot({path:'test-results/stage3-ux-800-workspace.png'});
    const closed=width<=760;
-   if(!closed)assert(stage.width>=420,'Canvas drawing column under 420px: '+stage.width);
+   if(!closed){
+    assert(stage.width>=420,'Canvas drawing column under 420px: '+stage.width);
+    if(width<=1000){
+     await p.locator('#focus').click();
+     await p.locator('#quickTrigger').click();
+     await p.locator('#quickGrid [data-open-panel="color"]').click();
+     const focusedStage=await box(p,'.stage');
+     assert(focusedStage.width>=420,'Focus + panel makes canvas too narrow: '+focusedStage.width);
+     measurements.push({audit:'AUD017-focus',viewport:width,stageWidth:focusedStage.width});
+    }
+   }
    else{
     assert(!(await p.locator('#dock').isVisible()),'phone overlay initially blocks canvas');
     await p.locator('#workspaceToggle').click();
