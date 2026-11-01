@@ -193,3 +193,14 @@
   #frame.focused .landscape-tabs{display:none}
  }
 }
+
+/* Stage③ AUD019: all actionable coarse targets, including inspector disclosures,
+ * category rows, hue/color controls and detail close. Preserve desktop density. */
+@media (any-pointer:coarse){
+ .groups .category{min-height:44px}
+ .route-details details>summary{display:flex;align-items:center;min-height:44px;padding:8px 3px}
+ .route-details [data-detail-close]{min-width:44px;min-height:44px;flex:0 0 44px}
+ #blendMode{min-height:44px}
+ #hue{min-height:44px}
+ #colorPicker{width:44px;height:44px;min-width:44px;min-height:44px}
+}
