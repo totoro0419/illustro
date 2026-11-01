@@ -71,6 +71,10 @@
  function conflict(next){pendingTool=next;$('contextTitle').textContent='未適用の操作があります';$('contextActions').innerHTML=`<p style="font-size:0.85714rem;margin-bottom:8px">${esc(M.feature(S.session.feature).name)} · ${esc(S.session.layer)}</p><button data-conflict="apply">適用して続ける</button><button data-conflict="cancel">取消して続ける</button><button data-conflict="back">元の操作へ戻る</button>`;toggleRegion('context',true);}
  function setTool(t,force=false){if(S.session&&S.session.layerId===S.layerId&&!force){conflict(t);return;}if(t!==S.tool){previousTool=S.tool;S.tool=t;}selectionNav=false;
   document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t));$('currentTool').textContent=names[t];
+  const toggle=$('landscapeTabs').querySelector('[data-landscape-brush-toggle]');
+  const label=t==='eraser'?'消しゴム':t==='brush'?'ブラシ':'ブラシ／消し';
+  toggle.setAttribute('aria-label',label+'に切替');toggle.title=label;
+  toggle.querySelector('span').textContent=label;
   if(['selection','transform'].includes(t)){selected=true;$('selectionOverlay').removeAttribute('hidden');openFeature(toolIds[t],'primary');beginFeature(toolIds[t]);}
   if(t==='fill')openFeature('FIL-001','primary');
   sync();
@@ -113,6 +117,29 @@
  function fixedButton(key,label,attrs){return `<button ${attrs} aria-label="${label}" title="${label}">${icon(key)}<span>${label}</span></button>`;}
  $('fixed').innerHTML=fixedButton('layers','Layers','data-open-panel="layers"')+fixedButton('undo','Undo','data-undo')+fixedButton('redo','Redo','data-redo')+fixedButton('flipH','左右反転','data-flip="H"')+fixedButton('flipV','上下反転','data-flip="V"');
  $('mobileTabs').innerHTML=fixedButton('undo','Undo','data-undo')+fixedButton('redo','Redo','data-redo')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"')+fixedButton('workspace','設定','data-open-panel="workspace"');
+ // ibisPaint-informed smartphone landscape controls: compact toolbar + on-demand chooser.
+ $('landscapeTabs').innerHTML=fixedButton('brush','ブラシ／消し','data-landscape-brush-toggle')+
+  fixedButton('move','ツール','data-landscape-tools aria-expanded="false" aria-controls="landscapeToolPicker"')+
+  fixedButton('brush','太さ・設定','data-landscape-properties aria-expanded="false"')+
+  fixedButton('color','色','data-open-panel="color"')+
+  fixedButton('undo','作品Undo','data-undo')+
+  fixedButton('redo','作品Redo','data-redo')+
+  fixedButton('layers','レイヤー','data-open-panel="layers"')+
+  fixedButton('workspace','詳細','data-open-panel="workspace"')+
+  fixedButton('home','戻る','data-landscape-home');
+ $('landscapeToolPicker').innerHTML=Object.keys(names).map(t=>
+  '<button data-tool="'+t+'" aria-label="'+esc(names[t])+'">'+icon(t)+'<span>'+esc(names[t])+'</span></button>').join('');
+ function closeLandscapeFloat(){
+  $('landscapeToolPicker').hidden=true;
+  $('landscapeTabs').querySelector('[data-landscape-tools]').setAttribute('aria-expanded','false');
+  frame.classList.remove('landscape-properties-open');
+  $('landscapeTabs').querySelector('[data-landscape-properties]').setAttribute('aria-expanded','false');
+ }
+ function closeLandscapeDock(){
+  $('dock').classList.remove('sheet-open');
+  frame.classList.remove('focus-panel-open');
+  $('workspaceToggle').setAttribute('aria-expanded','false');
+ }
  $('quickGrid').innerHTML=fixedButton('undo','Undo','data-undo')+fixedButton('brush','ブラシ','data-tool="brush"')+fixedButton('redo','Redo','data-redo')+fixedButton('eraser','消しゴム','data-tool="eraser"')+fixedButton('color','色','data-open-panel="color"')+fixedButton('layers','層','data-open-panel="layers"');
  renderPanels();sync();
  document.addEventListener('click',e=>{
@@ -129,8 +156,33 @@
   if(b.dataset.detailClose){closeDetail(b.dataset.detailClose);return;}
   if(b.dataset.start){beginFeature(b.dataset.start);return;}
   if(b.hasAttribute('data-apply')){finishSession(true);return;}if(b.hasAttribute('data-cancel')){finishSession(false);return;}
-  if(b.dataset.tool){setTool(b.dataset.tool);toggleRegion('quick',false);return;}
-  if(b.dataset.openPanel){showPanel(b.dataset.openPanel);if(b.dataset.openPanel==='layers'&&(b.closest('#fixed')||b.closest('#mobileTabs'))){$('panels').hidden=true;$('layerPage').hidden=false;renderLayers();}toggleRegion('quick',false);return;}
+  if(b.hasAttribute('data-landscape-brush-toggle')){closeLandscapeFloat();setTool(S.tool==='brush'?'eraser':'brush');return;}
+  if(b.hasAttribute('data-landscape-tools')){
+   const picker=$('landscapeToolPicker'),willOpen=picker.hidden;
+   closeLandscapeFloat();closeLandscapeDock();
+   picker.hidden=!willOpen;b.setAttribute('aria-expanded',String(willOpen));return;
+  }
+  if(b.hasAttribute('data-landscape-properties')){
+   const willOpen=!frame.classList.contains('landscape-properties-open');
+   closeLandscapeFloat();closeLandscapeDock();
+   frame.classList.toggle('landscape-properties-open',willOpen);
+   b.setAttribute('aria-expanded',String(willOpen));return;
+  }
+  if(b.hasAttribute('data-landscape-home')){closeLandscapeFloat();closeLandscapeDock();$('home').click();return;}
+  if(b.dataset.tool){setTool(b.dataset.tool);closeLandscapeFloat();toggleRegion('quick',false);return;}
+  if(b.dataset.openPanel){
+   const landscape=!!b.closest('#landscapeTabs');
+   if(landscape){
+    const wasOpen=$('dock').classList.contains('sheet-open')&&S.panel===b.dataset.openPanel;
+    closeLandscapeFloat();
+    if(wasOpen){closeLandscapeDock();return;}
+   }
+   showPanel(b.dataset.openPanel);
+   if(b.dataset.openPanel==='layers'&&(b.closest('#fixed')||b.closest('#mobileTabs')||landscape)){
+    $('panels').hidden=true;$('layerPage').hidden=false;renderLayers();
+   }
+   toggleRegion('quick',false);return;
+  }
   if(b.hasAttribute('data-undo')){M.dispatch('history.undo');sync();return;}if(b.hasAttribute('data-redo')){M.dispatch('history.redo');sync();return;}
   if(b.dataset.flip){S.view['flip'+b.dataset.flip]*=-1;updateView();return;}
   if(b.dataset.layer){M.dispatch('layer.select',{id:b.dataset.layer});sync();return;}
@@ -147,7 +199,7 @@
  bind('reviewToggle',()=>{toggleRegion('review');sync();});bind('reviewClose',()=>toggleRegion('review',false));
  bind('contextButton',()=>{ $('contextTitle').textContent=S.layer+'の操作';$('contextActions').innerHTML=['LAY-004','LAY-005','LAY-006','SEL-004','TRN-001','CLP-001','HIS-001'].map(id=>`<button data-feature="${id}">${esc(M.feature(id).name)}</button>`).join('');toggleRegion('context',true);});bind('contextClose',()=>toggleRegion('context',false));
  bind('workspaceToggle',()=>{if(frame.classList.contains('focus-panel-open')){frame.classList.remove('focus-panel-open');$('dock').classList.remove('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','false');return;}if(frame.clientWidth<=760){$('dock').classList.toggle('sheet-open');$('workspaceToggle').setAttribute('aria-expanded',$('dock').classList.contains('sheet-open'));}else{frame.classList.toggle('closed');$('workspaceToggle').setAttribute('aria-expanded',!frame.classList.contains('closed'));}});
- bind('sheetClose',()=>{$('dock').classList.remove('sheet-open');frame.classList.remove('focus-panel-open');$('workspaceToggle').setAttribute('aria-expanded','false');$('workspaceToggle').focus();});
+ bind('sheetClose',()=>{closeLandscapeDock();$('workspaceToggle').focus();});
  bind('layerPageClose',()=>{$('layerPage').hidden=true;$('panels').hidden=false;});bind('target',()=>showPanel('layers'));bind('currentColor',()=>showPanel('color'));bind('currentTool',()=>openFeature(toolIds[S.tool],'primary'));
  function changeColor(c){
   const [r,g,b]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255),hi=Math.max(r,g,b),lo=Math.min(r,g,b),d=hi-lo;
@@ -218,7 +270,7 @@
  });
  function pointerEnd(e){pointers.delete(e.pointerId);if(e.pointerType==='touch'){restartNav();return;}if(drawing?.id===e.pointerId){if(drawing.type==='stroke'&&e.type!=='pointercancel'){const old=S.layer;S.layer=drawing.layer;const op=M.commit('試筆（模擬）',{...drawing});S.layer=old;S.pending.push(op.id);setTimeout(()=>{M.finish(op.id);sync();},1200);}drawing=null;$('liveStroke')?.remove();sync();}}
  $('surface').addEventListener('pointerup',pointerEnd);$('surface').addEventListener('pointercancel',pointerEnd);
- document.addEventListener('keydown',e=>{const editing=e.target.matches('input,textarea,select,[contenteditable=true]');if(e.isComposing)return;if(e.key==='Escape'){if(resize){setWidth(resize.width);resize=null;return;}for(const id of ['library','quick','context','review']){if(!$(id).hidden){toggleRegion(id,false);if(id==='library')(focusable(focusReturn)?focusReturn:$('search')).focus();return;}}if(S.session){finishSession(false);return;}const active=Object.keys(activePanelFeature).find(p=>activePanelFeature[p]&&$('route-'+p)?.querySelector('.route-details'));if(active){closeDetail(active);return;}if(frame.classList.contains('focus-panel-open')){frame.classList.remove('focus-panel-open');$('dock').classList.remove('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','false');return;}if(frame.classList.contains('focused'))toggleFocus();else $('dock').classList.remove('sheet-open');}
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('landscapeToolPicker').hidden){closeLandscapeFloat();$('landscapeTabs').querySelector('[data-landscape-tools]').focus();return;}if(e.key==='Escape'&&frame.classList.contains('landscape-properties-open')){closeLandscapeFloat();$('landscapeTabs').querySelector('[data-landscape-properties]').focus();return;}const editing=e.target.matches('input,textarea,select,[contenteditable=true]');if(e.isComposing)return;if(e.key==='Escape'){if(resize){setWidth(resize.width);resize=null;return;}for(const id of ['library','quick','context','review']){if(!$(id).hidden){toggleRegion(id,false);if(id==='library')(focusable(focusReturn)?focusReturn:$('search')).focus();return;}}if(S.session){finishSession(false);return;}const active=Object.keys(activePanelFeature).find(p=>activePanelFeature[p]&&$('route-'+p)?.querySelector('.route-details'));if(active){closeDetail(active);return;}if(frame.classList.contains('focus-panel-open')){frame.classList.remove('focus-panel-open');$('dock').classList.remove('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','false');return;}if(frame.classList.contains('focused'))toggleFocus();else $('dock').classList.remove('sheet-open');}
   if(editing)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openLibrary(true);}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?M.dispatch('history.redo'):M.dispatch('history.undo');sync();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();mockSave();}
  });
  updateView();changeColor($('colorPicker').value);
