@@ -73,7 +73,7 @@
   document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t));$('currentTool').textContent=names[t];
   const toggle=$('landscapeTabs').querySelector('[data-landscape-brush-toggle]');
   const label=t==='eraser'?'消しゴム':t==='brush'?'ブラシ':'ブラシ／消し';
-  toggle.setAttribute('aria-label',label+'に切替');toggle.title=label;
+  toggle.setAttribute('aria-label','現在：'+label+'。'+(t==='eraser'?'ブラシ':'消しゴム')+'に切替');toggle.title=label;
   toggle.querySelector('span').textContent=label;
   if(['selection','transform'].includes(t)){selected=true;$('selectionOverlay').removeAttribute('hidden');openFeature(toolIds[t],'primary');beginFeature(toolIds[t]);}
   if(t==='fill')openFeature('FIL-001','primary');
