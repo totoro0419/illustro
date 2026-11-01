@@ -579,9 +579,9 @@
       ],
       "root_cause_area": "mid-width-layout",
       "remediation_status": "geometry-corrected-comparative-user-trial-open",
-      "changed_files": "style.css / stage3-ux-browser-tests.cjs",
+      "changed_files": "style.css / stage3-ux-browser-tests.cjs / IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md / shell.html / app.js / final-browser-tests.cjs",
       "remediation": "761〜1000pxでWorkspace 32%以下とCanvas列420px以上を制約、760以下は非表示シートへ。740/760/761/800/960/1180幅で実DOM stage矩形とシート開閉を検証。",
-      "remaining_work": "同じ制作課題における探索時間・Workspace開閉回数・遮蔽比較のユーザー試験が未完了。",
+      "remaining_work": "同じ制作課題における探索時間・Workspace開閉回数・遮蔽比較のユーザー試験が未完了。 ibisPaint参考C案の各操作/描画面積は画面模擬に限定。本人の具体配置承認と実指の探索・誤押下/遮蔽評価は未実施。",
       "original_close_test": "760px境界前後と800/960/1180pxで、同じ制作課題の遮蔽率/開閉回数/探索時間を比較する。",
       "closed": false,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
@@ -595,6 +595,17 @@
         "ci_verified": "https://github.com/totoro0419/illustro/actions/runs/41259682637",
         "verified_code_sha": "f958f3eedab5abb1a819852f0d55d527ff33a3b0",
         "limit_note": "Entire CI completed successfully at the verified code SHA, but unknown-feature first-use/human-comprehension/physical-finger tests were not executed."
+      },
+      "ibispaint_phone_landscape_direction": {
+        "source": "User instructed 2026-11-01 to strongly reference ibisPaint for phone landscape UI",
+        "official_references": [
+          "https://ibispaint.com/lecture/index.jsp?lang=ja&no=04",
+          "https://ibispaint.com/lecture/index.jsp?no=156"
+        ],
+        "design": "compact bottom bar with brush/eraser, tool picker, properties, color, document Undo/Redo, layer and detail; left rail hidden only in landscape; transient right dock",
+        "comparison": "C variant is designed/prototyped. Exact layout is not yet user-signed-off nor physically tested.",
+        "reference": "docs/detailed-design/IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md",
+        "prototype": "qa/ui-prototype/ and stage3-ux-browser-tests.cjs"
       }
     },
     {
@@ -644,9 +655,9 @@
       ],
       "root_cause_area": "touch-and-edge",
       "remediation_status": "touch-geometry-corrected-physical-finger-open",
-      "changed_files": "style.css / stage3-ux-browser-tests.cjs",
+      "changed_files": "style.css / stage3-ux-browser-tests.cjs / IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md / shell.html / app.js / final-browser-tests.cjs",
       "remediation": "coarse入力で主要ヘッダー・表示操作・Dock・Context・Scope制御の標的寸法を補強し、320px文字200%/390/740横/800幅の可視ヘッダー標的の矩形・端/中心hitを検査。",
-      "remaining_work": "全標的の例外一覧と実指誤タップ率、利き手/OS実機評価が未実施。",
+      "remaining_work": "全標的の例外一覧と実指誤タップ率、利き手/OS実機評価が未実施。 ibisPaint参考C案の各操作/描画面積は画面模擬に限定。本人の具体配置承認と実指の探索・誤押下/遮蔽評価は未実施。",
       "original_close_test": "実指で誤押下率と移動距離を測り、320px/200%文字/左右利きで主要入口の可視性を検査する。",
       "closed": false,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
@@ -660,6 +671,17 @@
         "ci_verified": "https://github.com/totoro0419/illustro/actions/runs/41259682637",
         "verified_code_sha": "f958f3eedab5abb1a819852f0d55d527ff33a3b0",
         "limit_note": "Entire CI completed successfully at the verified code SHA, but unknown-feature first-use/human-comprehension/physical-finger tests were not executed."
+      },
+      "ibispaint_phone_landscape_direction": {
+        "source": "User instructed 2026-11-01 to strongly reference ibisPaint for phone landscape UI",
+        "official_references": [
+          "https://ibispaint.com/lecture/index.jsp?lang=ja&no=04",
+          "https://ibispaint.com/lecture/index.jsp?no=156"
+        ],
+        "design": "compact bottom bar with brush/eraser, tool picker, properties, color, document Undo/Redo, layer and detail; left rail hidden only in landscape; transient right dock",
+        "comparison": "C variant is designed/prototyped. Exact layout is not yet user-signed-off nor physically tested.",
+        "reference": "docs/detailed-design/IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md",
+        "prototype": "qa/ui-prototype/ and stage3-ux-browser-tests.cjs"
       }
     }
   ],
