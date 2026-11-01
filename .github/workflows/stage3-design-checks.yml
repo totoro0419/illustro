@@ -27,6 +27,7 @@ jobs:
       - run: node --check qa/ui-prototype/model.js && node --check qa/ui-prototype/app.js
       - run: node qa/ui-prototype/tests.cjs
       - run: node qa/ui-prototype/stage3-tests.cjs
+      - run: node qa/ui-prototype/stage3-ux-model-tests.cjs
       - run: node tools/verify_stage3_design.cjs
       - run: python tools/build_ui_prototype.py
       - run: npm install --no-save playwright@1.56.1 typescript@5.9.3
@@ -36,6 +37,7 @@ jobs:
       - run: python experiments/stage3-reference/run_reference.py
       - run: git diff --exit-code -- experiments/stage3-reference/evidence/reference-results.json
       - run: node qa/ui-prototype/final-browser-tests.cjs
+      - run: node qa/ui-prototype/stage3-ux-browser-tests.cjs
       - run: node qa/ui-prototype/catalog-browser-tests.cjs
       - run: node experiments/stage3-reference/intent_reference.cjs
       - run: sudo apt-get install -y liblcms2-2
