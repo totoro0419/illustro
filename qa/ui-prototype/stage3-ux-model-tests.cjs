@@ -34,6 +34,17 @@ check('16 task phrases map to intended primary feature without exposing an inven
   assert.equal(f[0].id,id,task+' top result');
  }
 });
+const additionalTasks=require('./task-language-corpus.json');
+check('50 curated feature-name-free goals yield the expected first choice, not mere existence',()=>{
+ assert.equal(additionalTasks.cases.length,50);
+ const verified=new Set();
+ for(const row of additionalTasks.cases){
+  assert(R.features.some(f=>f.id===row.expected),row.expected+' unknown');
+  assert.equal(m.search(row.goal)[0]?.id,row.expected,row.goal+' wrong top ranked result');
+  verified.add(row.expected);
+ }
+ assert(verified.size>=20,'too few independent feature goals');
+});
 check('ambiguous left/right flip surfaces canvas/view, transform and workspace distinctly',()=>{
  const ids=m.search('左右反転').map(x=>x.id);
  for(const id of ['CAN-003','TRN-001','UI-006'])assert(ids.includes(id),id);
