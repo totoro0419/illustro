@@ -1,6 +1,6 @@
 # Illustro — 第③段階 詳細設計の入口（2026-10-31）
 
-**現時点の判定：NOT COMPLETE。監査19件中14件をStage③範囲で閉鎖、5件（P1=0/P2=4/P3=1）が残る。** AUD006の後段編集固定意味は2026-11-01のユーザー判断と限定CPU参照43件で閉鎖。 このブランチではPR #8の監査を引き継いで設計修正・操作試作・根拠付き検査を追加した。第④段階の本格実装は開始しない。元の正式スコープを変更しない（30分野247機能、通常234・限定2・保留10・対象外1）。
+**現時点の判定：NOT COMPLETE。監査19件中14件をStage③範囲で閉鎖、5件（元19件内：P1=0/P2=4/P3=1）が残る。追加P1 `DESIGN-NUMERIC-001` が未解決のため、全体はP1=1。** AUD006の後段編集固定意味は2026-11-01のユーザー判断と限定CPU参照43件で閉鎖。今回Effect11参照を追加し合計54件。 このブランチではPR #8の監査を引き継いで設計修正・操作試作・根拠付き検査を追加した。第④段階の本格実装は開始しない。元の正式スコープを変更しない（30分野247機能、通常234・限定2・保留10・対象外1）。
 
 ## 必読順序・設計資料の優先順位
 
@@ -8,7 +8,7 @@
 2. [第②段階の14方針と統合基本設計](../performance-research/UNIFIED_SYSTEM_DESIGN.md) — 設計原理、方式比較は [候補](../performance-research/CANDIDATE_DESIGN.md)。
 3. [第③段階の既存アーキテクチャ](../product-architecture/PRODUCT_ARCHITECTURE.md)・[型案](../product-architecture/contracts.d.ts)・[操作フロー](../product-architecture/FLOWS_AND_STATES.md)。
 4. [Stage③の補強したシステム契約](SYSTEM_CONTRACTS.md) と [変形後の描画・消去・混色](TRANSFORM_POSTPAINT_SEMANTICS.md)、[AUD006幾何Warpの参照契約](AUD006_WARP_REFERENCE_REVIEW.md)、[技術方式の比較・採否](TECHNICAL_DECISIONS.md)。
-5. [247機能の詳細設計対応表](FEATURE_CONTRACT_CROSSWALK_247.json) と [247件の受入条件・13複合作用IDの検証ゲート](FEATURE_ACCEPTANCE_GATES_247.md)（各機能の受入テストは**草案**。構造と意味を混同しない）。
+5. [247機能の詳細設計対応表](FEATURE_CONTRACT_CROSSWALK_247.json) と [247件の受入条件・13複合作用IDの検証ゲート](FEATURE_ACCEPTANCE_GATES_247.md)（247個の固有例を追加したが、全変種の受入は**草案を含む**。21機能の算法定義を別途未解決として明示）。
 6. [UI/UXレビュー](UI_UX_REVIEW.md)・[Focus・Undo A確定／横持ちC案](UI_DECISION_PROPOSALS.md)・[ibisPaintを強く参考にした横画面研究](IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md) と [残存5件の実修正・不足の検査](STAGE3_UI_REMEDIATION_5.md)、[操作できる単体HTML](../../qa/ui-prototype/index.html)（保存、画像処理は試作/模擬）。
 7. [元の19指摘](../audits/findings.md) → [修正・検証台帳](AUDIT_REMEDIATION.md)／[JSON](AUDIT_REMEDIATION.json)。
 8. [第④段階の試験とゲート](STAGE4_HANDOFF.md) → [今回の最終監査と根拠](FINAL_DESIGN_AUDIT.md)。

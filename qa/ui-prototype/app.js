@@ -8,22 +8,23 @@
  const names={brush:'ブラシ',eraser:'消しゴム',smudge:'混色',eyedropper:'スポイト',fill:'塗り',selection:'選択',transform:'変形',move:'移動'};
  const toolIds={brush:'BRU-001',eraser:'BRU-012',smudge:'WET-001',eyedropper:'COL-003',fill:'FIL-001',selection:'SEL-001',transform:'TRN-001',move:'LAY-010'};
  let category=null, panelCategories={},activePanelFeature={}, focusReturn=null,detailReturn=null,previousTool='brush',selected=false,toastTimer,selectionNav=false,saveError=false,layerStamp='',strokeStamp='';
- let pendingTool=null, width=344;
+ let pendingTool=null,pendingFeature=null, width=344;
  function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500);}
  function bind(id,fn){$(id).addEventListener('click',fn);}
  for(const [id,key] of Object.entries({home:'home',search:'search',focus:'focus',workspaceToggle:'workspace',reviewToggle:'more',allIcon:'all'})) $(id).innerHTML=icon(key);
  $('save').insertAdjacentHTML('afterbegin',icon('save'));
  $('tools').innerHTML=Object.keys(names).map(t=>`<button class="tool" data-tool="${t}" aria-label="${names[t]}" title="${names[t]}" aria-pressed="${t===S.tool}">${icon(t)}<small>${names[t]}</small></button>`).join('');
+ function compactLandscape(){return frame.clientWidth<=1000&&matchMedia('(max-height:480px) and (orientation:landscape) and (any-pointer:coarse)').matches;}
  function focusable(el){return !!(el?.isConnected&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden');}
  function toggleRegion(id,open){const el=$(id),hadFocus=el.contains(document.activeElement);el.hidden=open===undefined?!el.hidden:!open;const trigger={library:'allFeatures',quick:'quickTrigger',context:'contextButton',review:'reviewToggle'}[id];if(trigger)$(trigger).setAttribute('aria-expanded',!el.hidden);if(el.hidden&&hadFocus){const back=$(trigger||'search');(focusable(back)?back:$('search')).focus({preventScroll:true});}}
  function closeLibrary(){toggleRegion('library',false);(focusable(focusReturn)?focusReturn:$('search')).focus();}
  function openLibrary(search=false){focusReturn=document.activeElement;category=null;$('query').value='';toggleRegion('library',true);$('libraryTitle').textContent=search?'機能検索':'全機能';renderLibrary();$('query').focus();}
  function renderLibrary(){
    const q=$('query').value;
-   if(q||category){const results=M.search(q,category);$('libraryContent').innerHTML=`${category?`<button class="back quiet" data-back>‹ カテゴリ一覧</button><div class="crumb">${esc(R.categories[category].label)}</div>`:''}<p class="muted" style="font-size:0.78571rem;margin-bottom:6px">${results.length}件 · 保留／対象外は範囲説明のみ</p><div class="results">${results.map(featureRow).join('')||'<p>見つかりません。別の目的やカテゴリで探せます。</p><button data-clear>すべてのカテゴリを見る</button>'}</div>`;}
+   if(q||category){const results=M.search(q,category);$('libraryContent').innerHTML=`${category?`<button class="back quiet" data-back>‹ カテゴリ一覧</button><div class="crumb">${esc(R.categories[category].label)}</div>`:''}<p class="muted" style="font-size:0.78571rem;margin-bottom:6px">${results.length}件 · 候補の作用先を確認して選択 · 保留／対象外は範囲説明のみ</p><div class="results">${results.map(featureRow).join('')||'<p>見つかりません。別の目的やカテゴリで探せます。</p><button data-clear>すべてのカテゴリを見る</button>'}</div>`;}
    else $('libraryContent').innerHTML='<div class="task-examples" aria-label="やりたいことから探す"><p class="muted">やりたい操作から探す（例）</p>'+['はみ出さないように塗る','背景を透明にして保存','絵を裏返して確認','下の色を残して暗く重ねる'].map(q=>'<button data-task-query="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div><div class="groups">'+R.groups.map(g=>`<h3>${esc(g.label)}</h3>${g.categories.map(c=>`<button class="category" data-category="${c}"><span>${esc(R.categories[c].label)}</span><small>${M.search('',c).length} ›</small></button>`).join('')}`).join('')+'</div>';
  }
- function featureRow(f){return `<button class="feature-row" data-feature="${f.id}"><span>${esc(f.name)}${!f.availability.executable?` <em>${f.final_scope==='deferred'?'保留':'対象外'}</em>`:f.final_scope==='included_limited'?' <em>限定</em>':''}</span><small>${f.id}</small></button>`;}
+ function featureRow(f){return `<button class="feature-row" data-feature="${f.id}"><span>${esc(f.name)}${!f.availability.executable?` <em>${f.final_scope==='deferred'?'保留':'対象外'}</em>`:f.final_scope==='included_limited'?' <em>限定</em>':''}</span><small>${esc(f.category_label)} · ${f.id}</small></button>`;}
  function showPanel(p){S.panel=p;if(frame.classList.contains('focused'))frame.classList.add('focus-panel-open');$('layerPage').hidden=true;$('panels').hidden=false;frame.classList.remove('closed');$('dock').classList.add('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','true');const box=$('box-'+p);box.open=true;box.scrollIntoView({block:'start'});}
  function panelRoute(p){const cats=Object.entries(R.categories).filter(([c])=>R.features.some(f=>f.category===c&&f.panel==='right.'+p));return `<div class="cat-list">${cats.map(([c,v])=>`<button data-panel-category="${c}" data-panel="${p}">${esc(v.label)} <span style="float:right">›</span></button>`).join('')}</div>`;}
  function scopedControls(scope,title,action){
@@ -32,7 +33,7 @@
  function basePanel(p){
    if(p==='layers')return `<div class="row" style="font-size:0.78571rem;margin:0 0 5px"><select id="blendMode" aria-label="レイヤーの合成方法" style="width:55%"><option>通常</option><option>乗算</option><option>スクリーン</option></select><span>100%</span><button class="quiet" data-feature="LAY-002">設定</button></div><div id="layerRows"></div><div class="row"><button class="quiet grow" id="addLayer">＋ レイヤー</button><button class="quiet" data-feature="LAY-004">Clip</button><button class="quiet" data-feature="LAY-005">Mask</button></div>`;
    if(p==='color')return `<div class="color-plane" role="group" aria-label="彩度と明度の選択。左右キーで彩度、上下キーで明度" tabindex="0"></div><label class="field">色相<input id="hue" aria-label="色相" type="range" min="0" max="359" value="170"></label><div class="row spread"><label class="row"><input type="color" id="colorPicker" value="#637b78" aria-label="描画色"><span id="colorCode" style="font-size:0.78571rem">#637B78</span></label><button class="quiet" data-feature="COL-001">HSV / RGB</button></div><div class="chips" id="swatches">${['#637b78','#3d5d54','#afbfad','#f3d3a0','#f8f3e7','#7473a4','#b68178','#2e3a49'].map(c=>`<button aria-label="色 ${c}" data-color="${c}" style="background:${c}"></button>`).join('')}</div>`;
-   if(p==='brush')return `<label style="font-size:0.78571rem">プリセット<select id="preset" style="width:100%;margin:5px 0"><option>Gペン</option><option>鉛筆</option><option>水彩風（簡易）</option><option>パステル</option></select></label><label class="field">不透明度<input id="opacity" type="range" min="1" max="100" value="100"><output id="opacityValue">100%</output></label><button class="panel-link" data-feature="BRU-008">強制入り抜き <span class="arrow">›</span></button>`+scopedControls('test-pad','試筆パッド','パッドに試し描き');
+   if(p==='brush')return `<label class="field">太さ px<input id="dockBrushSize" aria-label="ブラシの太さ px" type="number" min="1" max="100" value="18"></label><label style="font-size:0.78571rem">プリセット<select id="preset" style="width:100%;margin:5px 0"><option>Gペン</option><option>鉛筆</option><option>水彩風（簡易）</option><option>パステル</option></select></label><label class="field">不透明度<input id="opacity" type="range" min="1" max="100" value="100"><output id="opacityValue">100%</output></label><button class="panel-link" data-feature="BRU-008">強制入り抜き <span class="arrow">›</span></button>`+scopedControls('test-pad','試筆パッド','パッドに試し描き');
    if(p==='reference')return `<div class="callout">資料は作品のレイヤーとは別に表示します。</div><button class="panel-link" data-feature="REF-001">＋ 資料を追加</button><button class="panel-link" data-feature="REF-004">資料から色を採る</button>`+scopedControls('reference','資料','資料の位置を変える');
    if(p==='history')return '<div id="historyList" class="stack"></div><button class="panel-link" data-feature="HIS-003">別案を保存</button>';
    if(p==='workspace')return '<div class="row"><button id="layoutDefault">標準配置</button><button id="layoutFocus">Focus</button></div><p class="muted" style="font-size:0.78571rem;margin:6px 0">幅は境界ドラッグ・＋/−・左右キーで変更できます。</p>';
@@ -68,7 +69,7 @@
  }
  function closeDetail(p){$('route-'+p).innerHTML='';activePanelFeature[p]=null;if(detailReturn?.isConnected&&$('library').contains(detailReturn))toggleRegion('library',true);(focusable(detailReturn)?detailReturn:$('search')).focus({preventScroll:true});}
  function showCategory(c,p){panelCategories[p]=c;activePanelFeature[p]=null;$('route-'+p).innerHTML=`<button class="quiet back" data-panel-back="${p}">‹ ${esc(R.panels[p])}へ</button><h3>${esc(R.categories[c].label)}</h3>${M.search('',c).filter(f=>f.panel==='right.'+p).map(featureRow).join('')}`;showPanel(p);}
- function conflict(next){pendingTool=next;$('contextTitle').textContent='未適用の操作があります';$('contextActions').innerHTML=`<p style="font-size:0.85714rem;margin-bottom:8px">${esc(M.feature(S.session.feature).name)} · ${esc(S.session.layer)}</p><button data-conflict="apply">適用して続ける</button><button data-conflict="cancel">取消して続ける</button><button data-conflict="back">元の操作へ戻る</button>`;toggleRegion('context',true);}
+ function conflict(next){pendingTool=next;if(next)pendingFeature=null;$('contextTitle').textContent='未適用の操作があります';$('contextActions').innerHTML=`<p style="font-size:0.85714rem;margin-bottom:8px">${esc(M.feature(S.session.feature).name)} · ${esc(S.session.layer)}</p><button data-conflict="apply">適用して続ける</button><button data-conflict="cancel">取消して続ける</button><button data-conflict="back">元の操作へ戻る</button>`;toggleRegion('context',true);}
  function setTool(t,force=false){if(S.session&&S.session.layerId===S.layerId&&!force){conflict(t);return;}if(t!==S.tool){previousTool=S.tool;S.tool=t;}selectionNav=false;
   document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t));$('currentTool').textContent=names[t];
   const toggle=$('landscapeTabs').querySelector('[data-landscape-brush-toggle]');
@@ -85,14 +86,18 @@
   if(id==='HIS-001'){const el=$('fields-'+id);if(el)el.innerHTML='<div class="route-actions"><button data-undo>作品のUndo</button><button data-redo>作品のRedo</button></div>';sync();return;}
   if(id==='LAY-001'||id==='LAY-002'){showPanel('layers');toast('レイヤー行の選択・目・＋・合成を直接操作できます。');return;}
   if(id==='CLP-001'){const el=$('fields-'+id);if(el)el.innerHTML='<p class="callout">コピー・切取・貼付の本体はこの試作では実行しません。架空の履歴も追加しません。</p>';return;}
-  if(f.apply_cancel.kind==='command'){const el=$('fields-'+id);if(el)el.innerHTML='<p class="callout">このコマンド本体は試作対象外です。閲覧で作品の履歴は変化しません。</p>';return;}if(S.session&&S.session.feature!==id){toast('先の候補が残っています。対象帯の適用／取消で閉じてから開始してください。');return;}
+
+  if(S.session&&S.session.feature!==id){pendingFeature=id;conflict(null);return;}
+  if(f.surface.tool&&S.tool!==f.surface.tool){setTool(f.surface.tool);return;}
+  if(f.surface.tool&&!['selection','transform'].includes(f.surface.tool)){toast(names[f.surface.tool]+'に切り替えました。');return;}
+  if(f.apply_cancel.kind==='command'){const el=$('fields-'+id);if(el)el.innerHTML='<p class="callout">このコマンド本体は試作対象外です。閲覧で作品の履歴は変化しません。</p>';return;}if(S.session&&S.session.feature!==id){pendingFeature=id;conflict(null);return;}
   if(f.surface.tool&&!['selection','transform'].includes(f.surface.tool)){setTool(f.surface.tool);toast(names[f.surface.tool]+'に切り替えました。');return;}
   if(f.apply_cancel.kind==='system'){toast('状態確認の導線です。復旧処理の実行は実装工程で検証します。');return;}
   if(!S.session)M.begin(id);
   const fields=$('fields-'+id);if(fields)fields.innerHTML='<p class="callout" style="margin-top:10px">設定欄の操作例です。数値の製品既定や画像処理結果を示すものではありません。</p>'+parameters(f).map((p,n)=>`<label>${esc(p)}<input data-value="${n}" aria-label="${esc(p)}の候補" placeholder="候補を入力（試作）" value="${esc(S.session.values[n]||'')}"></label>`).join('')+`<div class="route-actions"><button data-cancel>取消</button><button data-apply class="primary">${['session','command','stroke'].includes(f.apply_cancel.kind)?'候補を適用（模擬）':'設定・要求を反映（模擬）'}</button></div>`;
   sync();
  }
- function finishSession(apply){if(!S.session)return;const id=S.session.feature;const committed=apply?M.apply():(M.cancel(),false);if(committed?.status==='session-conflict'){toast('対象レイヤーがありません。候補は保持しています。対象を復元するか取消してください。');sync();return;}if($('fields-'+id))$('fields-'+id).innerHTML='';sync();toast(apply?(committed?'候補を反映しました（処理本体は未実装）。':'本体未実装の操作は作品へ確定しません。'):'今回の候補だけ取り消しました。');}
+ function finishSession(apply){if(!S.session)return;pendingFeature=null;pendingTool=null;const id=S.session.feature;const committed=apply?M.apply():(M.cancel(),false);if(committed?.status==='session-conflict'){toast('対象レイヤーがありません。候補は保持しています。対象を復元するか取消してください。');sync();return;}if($('fields-'+id))$('fields-'+id).innerHTML='';sync();toast(apply?(committed?'候補を反映しました（処理本体は未実装）。':'本体未実装の操作は作品へ確定しません。'):'今回の候補だけ取り消しました。');}
  function sync(){
   $('sessionbar').hidden=!S.session;if(S.session){$('sessionName').textContent=M.feature(S.session.feature).name;$('sessionTarget').textContent=' · '+S.session.layer+' · 未適用';}
   frame.style.setProperty('--session-height',S.session?Math.ceil($('sessionbar').getBoundingClientRect().height)+'px':'0px');
@@ -103,7 +108,7 @@
   $('saveStatus').title=`保存対象と現作品を区別。現在：${S.past.length}操作、計算中：${S.pending.length}。`;
   const sessionUndo=S.past.length>0,sessionRedo=S.future.length>0;
   $('sessionUndo').disabled=!S.session?.past.length;$('sessionRedo').disabled=!S.session?.future.length;
-  document.querySelectorAll('[data-undo]').forEach(b=>{b.disabled=!sessionUndo;b.title='最後に受理した作品操作を戻す';});document.querySelectorAll('[data-redo]').forEach(b=>b.disabled=!sessionRedo);
+  document.querySelectorAll('[data-undo]').forEach(b=>{b.disabled=!sessionUndo;b.title='作品Undo：'+(S.past.at(-1)?.label||'戻せる操作なし');});document.querySelectorAll('[data-redo]').forEach(b=>b.disabled=!sessionRedo);
    const strokes=S.past.filter(o=>o.payload.path&&S.layers.find(l=>l.id===o.payload.layerId)?.visible!==false),key=strokes.map(o=>o.id).join(',');
    if(strokeStamp!==key){$('demoStrokes').innerHTML=strokes.map(o=>`<path d="${o.payload.path}" fill="none" stroke="${esc(o.payload.color)}" stroke-width="${o.payload.width}" stroke-linecap="round" stroke-linejoin="round" opacity="${o.payload.opacity}"/>`).join('');strokeStamp=key;}
    const nextLayers=JSON.stringify(S.layers)+S.layerId;if(layerStamp!==nextLayers){renderLayers();layerStamp=nextLayers;}
@@ -189,7 +194,7 @@
   if(b.dataset.layer){M.dispatch('layer.select',{id:b.dataset.layer});sync();return;}
   if(b.dataset.eye){M.dispatch('layer.visibility',{id:b.dataset.eye});sync();return;}
   if(b.dataset.color){changeColor(b.dataset.color);return;}
-  if(b.dataset.conflict){const c=b.dataset.conflict;if(c==='back'){openFeature(S.session.feature);return;}finishSession(c==='apply');toggleRegion('context',false);if(pendingTool){const t=pendingTool;pendingTool=null;setTool(t,true);}return;}
+  if(b.dataset.conflict){const c=b.dataset.conflict;if(c==='back'){pendingFeature=null;pendingTool=null;openFeature(S.session.feature);return;}const nextFeature=pendingFeature,nextTool=pendingTool;finishSession(c==='apply');toggleRegion('context',false);if(nextFeature){openFeature(nextFeature,'primary');beginFeature(nextFeature);}else if(nextTool){setTool(nextTool,true);}return;}
   if(b.id==='addLayer'||b.hasAttribute('data-add-layer')){M.dispatch('layer.add',{name:'レイヤー '+(S.layers.length+1)});sync();return;}
   if(b.id==='layoutDefault')resetLayout();if(b.id==='layoutFocus')toggleFocus();
  });
@@ -199,7 +204,7 @@
  bind('quickTrigger',()=>{toggleRegion('quick');sync();});bind('quickClose',()=>toggleRegion('quick',false));
  bind('reviewToggle',()=>{toggleRegion('review');sync();});bind('reviewClose',()=>toggleRegion('review',false));
  bind('contextButton',()=>{ $('contextTitle').textContent=S.layer+'の操作';$('contextActions').innerHTML=['LAY-004','LAY-005','LAY-006','SEL-004','TRN-001','CLP-001','HIS-001'].map(id=>`<button data-feature="${id}">${esc(M.feature(id).name)}</button>`).join('');toggleRegion('context',true);});bind('contextClose',()=>toggleRegion('context',false));
- bind('workspaceToggle',()=>{if(frame.classList.contains('focus-panel-open')){frame.classList.remove('focus-panel-open');$('dock').classList.remove('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','false');return;}if(frame.clientWidth<=760){$('dock').classList.toggle('sheet-open');$('workspaceToggle').setAttribute('aria-expanded',$('dock').classList.contains('sheet-open'));}else{frame.classList.toggle('closed');$('workspaceToggle').setAttribute('aria-expanded',!frame.classList.contains('closed'));}});
+ bind('workspaceToggle',()=>{if(frame.classList.contains('focus-panel-open')){frame.classList.remove('focus-panel-open');$('dock').classList.remove('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','false');return;}if(frame.classList.contains('focused')){frame.classList.add('focus-panel-open');frame.classList.remove('closed');$('dock').classList.add('sheet-open');$('workspaceToggle').setAttribute('aria-expanded','true');return;}if(frame.clientWidth<=760||compactLandscape()){$('dock').classList.toggle('sheet-open');$('workspaceToggle').setAttribute('aria-expanded',$('dock').classList.contains('sheet-open'));}else{frame.classList.toggle('closed');$('workspaceToggle').setAttribute('aria-expanded',!frame.classList.contains('closed'));}});
  bind('sheetClose',()=>{closeLandscapeDock();$('workspaceToggle').focus();});
  bind('layerPageClose',()=>{$('layerPage').hidden=true;$('panels').hidden=false;});bind('target',()=>showPanel('layers'));bind('currentColor',()=>showPanel('color'));bind('currentTool',()=>openFeature(toolIds[S.tool],'primary'));
  function changeColor(c){
@@ -224,13 +229,13 @@
  document.addEventListener('pointermove',e=>{const p=e.target.closest('.color-plane');if(!p||!p.hasPointerCapture(e.pointerId))return;const r=p.getBoundingClientRect();pickSV((e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height);});
  document.addEventListener('keydown',e=>{if(!e.target.matches('.color-plane'))return;const dx=e.key==='ArrowRight'?.02:e.key==='ArrowLeft'?-.02:0,dy=e.key==='ArrowDown'?.02:e.key==='ArrowUp'?-.02:0;if(dx||dy){e.preventDefault();pickSV(svX+dx,svY+dy);}});
 
- for(const id of ['brushSize','sizeNumber'])$(id).addEventListener('input',()=>{const v=Math.max(1,Math.min(100,+$(id).value||1));$('brushSize').value=v;$('sizeNumber').value=v;});
+ for(const id of ['brushSize','sizeNumber','dockBrushSize'])$(id).addEventListener('input',()=>{const v=Math.max(1,Math.min(100,+$(id).value||1));$('brushSize').value=v;$('sizeNumber').value=v;$('dockBrushSize').value=v;});
  function setWidth(w){width=Math.max(288,Math.min(440,w));frame.style.setProperty('--right',width+'px');$('splitter').setAttribute('aria-valuenow',width);}
  bind('widthLess',()=>setWidth(width-16));bind('widthMore',()=>setWidth(width+16));
  let resize=null;$('splitter').addEventListener('pointerdown',e=>{resize={x:e.clientX,width};$('splitter').setPointerCapture(e.pointerId);});$('splitter').addEventListener('pointermove',e=>{if(resize)setWidth(resize.width+resize.x-e.clientX);});$('splitter').addEventListener('pointerup',()=>resize=null);$('splitter').addEventListener('pointercancel',()=>{if(resize)setWidth(resize.width);resize=null;});$('splitter').addEventListener('keydown',e=>{if(e.key==='ArrowLeft'){setWidth(width+16);e.preventDefault();}if(e.key==='ArrowRight'){setWidth(width-16);e.preventDefault();}if(e.key==='Escape'&&resize){setWidth(resize.width);resize=null;}});
  $('device').addEventListener('change',()=>{frame.dataset.device=$('device').value;toggleRegion('review',false);updateView();});
  function resetLayout(){frame.classList.remove('closed','focused');setWidth(344);$('dock').classList.remove('sheet-open');for(const p of Object.keys(R.panels))$('box-'+p).open=['layers','color','brush'].includes(p);updateView();}
- bind('resetLayout',resetLayout);function toggleFocus(){frame.classList.toggle('focused');frame.classList.remove('focus-panel-open');$('focus').setAttribute('aria-pressed',frame.classList.contains('focused'));}bind('focus',toggleFocus);
+ bind('resetLayout',resetLayout);function toggleFocus(){frame.classList.toggle('focused');frame.classList.remove('focus-panel-open');$('dock').classList.remove('sheet-open');$('focus').setAttribute('aria-pressed',frame.classList.contains('focused'));}bind('focus',toggleFocus);
  bind('home',()=>{$('homePage').hidden=false;});for(const id of ['resume','resumeWork'])bind(id,()=>{$('homePage').hidden=true;});
  bind('newDocument',()=>{$('homePage').hidden=true;openFeature('CAN-001','primary');});bind('openDocument',()=>{$('homePage').hidden=true;openFeature('IO-001','primary');});bind('recoverDocument',()=>{$('homePage').hidden=true;openFeature('SAV-005','primary');});
  function mockSave(){saveError=false;const s=M.save();sync();toast('要求時点の模擬版を固定しました。後のUndo／描画は保存対象を変えません。');setTimeout(()=>{M.completeSave(s.id);sync();},1800);}

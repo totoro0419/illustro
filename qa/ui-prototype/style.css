@@ -117,10 +117,11 @@
  * Bottom actions stay visible; detailed tools/layers are transient surfaces.
  * A persistent floating layer window is NOT claimed to be ibisPaint's phone UI. */
 .landscape-tabs,.landscape-tool-picker{display:none}
-@media (max-height:480px) and (orientation:landscape){
- @container frame (max-width:760px){
+@media (max-height:480px) and (orientation:landscape) and (any-pointer:coarse){
+ @container frame (max-width:1000px){
   #frame{--top:46px;--bottom:54px}
   #frame:not(.focused) .rail{display:none}
+  #frame .splitter,#frame .dock .fixed{display:none}
   #frame:not(.focused) .stage{left:0;right:0;bottom:var(--bottom)}
   #frame:not(.focused) .contextbar{display:none}
   #frame.landscape-properties-open:not(.focused) .contextbar{
@@ -172,6 +173,7 @@
   #frame:not(.focused) .float.library{left:6px;width:calc(100% - 12px)}
   #frame:not(.focused) .context-pop{left:8px}
   #frame:not(.focused) .quick-trigger{right:8px;bottom:10px}
+  #frame:has(.dock.sheet-open) .viewbar,#frame:has(.dock.sheet-open) .quick-trigger{visibility:hidden;pointer-events:none}
   #frame:not(.focused) .viewbar{bottom:8px}
   #frame:not(.focused) .sessionbar{
    padding:3px 7px;gap:4px;flex-wrap:nowrap;
@@ -211,5 +213,37 @@
  #frame:has(.dock.sheet-open) .viewbar,
  #frame:has(.dock.sheet-open) .quick-trigger{
   visibility:hidden;pointer-events:none;
+ }
+}
+
+/* AUD019: flex must not shrink effective touch rectangles; transient status is
+ * informational and must never intercept a drawing or Layer action. */
+.toast{pointer-events:none}
+.feature-row{flex-wrap:wrap}
+.feature-row small{max-width:100%;overflow-wrap:anywhere}
+@media(any-pointer:coarse){
+ .box-body button,.route-actions button{min-width:44px;min-height:44px;flex-shrink:0}
+ .box-body>.row{flex-wrap:wrap}
+ .box-body .row select{flex:1 1 90px;min-width:0}
+ .contextbar input[type=number]{flex-shrink:0}
+}
+/* Full target sweep also includes text/number inputs and native selects. */
+@media(any-pointer:coarse){
+ input,select,textarea,.contextbar input[type=number],.route-details input{
+  min-height:44px;min-width:44px
+ }
+}
+/* Search/category browser has one scrolling content region. Sticky headers must
+ * not cover the first partially scrolled actionable row. */
+.library:not([hidden]){display:flex;flex-direction:column;overflow:hidden}
+.library>.floathead{position:static;flex:none}
+.library>.floatbody{overflow-y:auto;min-height:0}
+.library .results{max-height:none;overflow:visible}
+
+/* Closing a desktop Workspace retains the fixed bottom actions. Quick must sit
+ * above those controls when the drawing column expands behind the closed dock. */
+@media(min-height:481px),(any-pointer:fine){
+ @container frame (min-width:761px){
+  #frame.closed .quick-trigger{bottom:calc(var(--bottom) + 10px)}
  }
 }

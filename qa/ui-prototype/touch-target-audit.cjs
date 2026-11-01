@@ -69,6 +69,7 @@ async function main(){
  }
  fs.mkdirSync('test-results',{recursive:true});
  fs.writeFileSync('test-results/stage3-touch-target-audit.json',JSON.stringify({kind:'DOM target size + center hit survey, not real finger misuse',goalPx:44,cases:data},null,2));
+ const defectCount=data.reduce((n,x)=>n+x.under44+x.blockedUnexpected,0);if(defectCount)process.exitCode=1;
  console.log(JSON.stringify({scenarios:data.length,totalChecked:data.reduce((n,x)=>n+x.targets,0),
   under44:data.reduce((n,x)=>n+x.under44,0),blockedUnexpected:data.reduce((n,x)=>n+x.blockedUnexpected,0),intentionallyCovered:data.reduce((n,x)=>n+x.intentionallyCovered,0),
   claim:'diagnostic exceptions, not human touch conformance'}));

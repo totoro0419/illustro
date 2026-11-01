@@ -79,3 +79,22 @@ const report={
 fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
 fs.writeFileSync(path.join(root,'test-results/stage3-feature-audit.json'),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({status:'SCHEMA_PASS_ONLY',features:rows.length,categories:Object.keys(byGroup).length,draft_acceptance:drafts,unverified_devices:unverifiedDevice,variant_features:actionVariantRows,variant_actions:variantCount,open_audits:open}));
+// Missing representative semantics must fail CI, without treating schema as proof of completeness.
+const fixtures=new Set();
+for(const f of rows){
+ const c=f.acceptance_case;assert(c,f.id+' missing specific acceptance case');
+ assert.equal(c.case_id,f.id+'.specific.1');
+ for(const key of ['given','when','then','boundary_precision'])assert(typeof c[key]==='string'&&c[key].trim().length>0,f.id+' missing '+key);
+ const signature=[c.given,c.when,c.then,c.boundary_precision].join('|');
+ assert(!fixtures.has(signature),f.id+' duplicated acceptance case');fixtures.add(signature);
+ assert.equal(c.scope_executable,['included','included_limited'].includes(f.scope),f.id+' scope case mismatch');
+ if(!c.scope_executable){assert(c.then.includes('No executable'),f.id+' deferred case implies execution');assert.equal(c.open_algorithm_definition,null,f.id+' deferred algorithm made a completion blocker');}
+ assert(j.acceptance_inheritance.interaction,'missing shared interaction contract');
+ assert(c.status.includes('under-review'),'representative case falsely promoted to full acceptance');
+}
+const openAlgorithms=rows.filter(f=>f.acceptance_case.open_algorithm_definition).map(f=>f.id);
+assert.deepEqual(new Set(openAlgorithms),new Set(j.specific_case_coverage.open_algorithm_feature_ids));
+report.additional_design_blockers=read('docs/detailed-design/AUDIT_REMEDIATION.json').additional_design_blockers;
+report.specific_cases={count:fixtures.size,full_feature_acceptance_confirmed:false,open_algorithm_feature_ids:openAlgorithms};
+fs.writeFileSync(path.join(root,'test-results/stage3-feature-audit.json'),JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify({specific_cases:fixtures.size,full_acceptance:'NOT_CONFIRMED',open_algorithm_definitions:openAlgorithms}));

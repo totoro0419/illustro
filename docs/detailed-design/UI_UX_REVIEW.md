@@ -1,3 +1,5 @@
+> 2026-11-01現行：今回の通常経路/全標的/同課題3配置比較は [残5件の対応表](STAGE3_UI_REMEDIATION_5.md) と最新HEADのCI artifactを参照。Cの細部は今回の自律選択権限で設計採用し、実利用者/実指の受入未実施を別管理する。以前の個別承認待ち表現を作業停止の理由にしない。
+
 # 第③段階 UI/UXと操作検証
 
 **製品完成/正式UI承認ではない。** Aurora明色・黄橙accent・左Rail・右可変Workspace・中央Canvas・Layer Page・Quickを維持。

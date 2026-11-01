@@ -51,4 +51,6 @@ check('finding references per feature match audit reverse graph',()=>{
 check('open severity counts computed rather than asserted',()=>{
  for(const level of ['P0','P1','P2','P3'])assert.equal(audit.open_by_severity[level],audit.findings.filter(f=>f.severity===level&&!f.closed).length);
 });
-console.log(JSON.stringify({kind:'structure-only',passed:checks.length,checks,feature_count:rows.length,open:audit.open_by_severity,claim:'not a device/product pass'},null,2));
+const allFindings=[...audit.findings,...(audit.additional_design_blockers||[])];
+for(const level of ['P0','P1','P2','P3'])assert.equal(audit.aggregate_open_by_severity[level],allFindings.filter(f=>f.severity===level&&!f.closed).length);
+console.log(JSON.stringify({aggregate_open:audit.aggregate_open_by_severity,kind:'structure-only',passed:checks.length,checks,feature_count:rows.length,open:audit.open_by_severity,claim:'not a device/product pass'},null,2));

@@ -11,3 +11,5 @@ Undo/Redo and JSON roundtrip. Tests: test_warp_reference.py (13 cases).
 See docs/detailed-design/AUD006_WARP_REFERENCE_REVIEW.md for the declared
 numerical semantics and explicit unverified production, UX and device cases.
 
+
+2026-11-01 追補：`effect_reference.py`と`test_effect_reference.py`の11件を加え、合計54 CPU参照。解析的なramp/impulse、量子化境界、透明外側box/Gaussian、offset/median、Effect→Mask→Clip、順序/ICC/精度を含むcache keyと不変保存根を検査する。全45 Effectや実GPUへの一般化は不可。各演算のdomain/halo/boundaryは247対応表の固有例と一致させる。古い端再正規化boxの実験を、新しいzero-exterior kernelの証明として流用しない。

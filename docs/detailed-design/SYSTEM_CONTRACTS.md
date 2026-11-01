@@ -142,3 +142,10 @@ haloは各kernelの支援幅から導出し、tile境界の同値性を参照比
 | Device loss×Presentation×Recovery | device epoch、old-result拒否、原本から再評価 | 失敗注入モデル。実GPU復旧は第④段階 |
 
 この表は全組合せを実装済みと示すものではない。未閉鎖の根幹条件を将来の実装試験だけで解消済みにしない。
+
+## 11. 独立編集履歴と保存復帰（今回の明確化）
+
+- 作品Undo、候補Undo、試筆、資料、作品管理は5つの所有者。作品を再選択するだけで別作品のPad/資料を流用しない。各Document identityにsidecarを結び、作品管理はアプリ寿命の独立履歴とする。
+- 試筆は自身の保存/読込を持つ。参考資料の「個人セット」と「作品内に埋め込む資料」を区別する。作品Nativeへ含める資料はNative manifestで専用のimmutable workspace/reference rootも固定し、通常の画像出力には含めない。作品画素のUndoだけで資料rootを巻き戻さない。
+- **製品のNative全再読込**はmanifestが持つ作品内資料rootを復元する。対して試作`loadSave`はメモリ内の**作品編集根だけの再読込**で、現在の独立sidecarをDocument identityにより選ぶ。このモデルをNative全再読込・再起動耐久の証明に使わない。Pad/資料の独立ファイル保存失敗は作品編集履歴を消さず、失敗した所有者を名前付きで示す。
+- Session中に別候補を開始する場合、旧候補の適用/取消/戻るを局所的に明示する。戻る/直接取消で保留された次操作を破棄し、後の別操作へ古い遷移先を持ち越さない。作品Undoはその間もDocument action。

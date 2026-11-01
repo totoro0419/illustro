@@ -12,7 +12,7 @@
    'マスク':['LAY-005'],'隠した部分を後から戻す':['LAY-005'],
    '透明PNG':['IO-002'],'png':['IO-002'],
    '背景を透明にして保存':['IO-002'],'背景透過で書き出す':['IO-002'],
-   '左右反転':['CAN-003','TRN-001','UI-006'],'表示反転':['CAN-003'],
+   '反転':['CAN-003','TRN-001','UI-006','FX-112','SEL-004'],'左右反転':['CAN-003','TRN-001','UI-006'],'表示反転':['CAN-003'],
    '絵を裏返して確認':['CAN-003'],'作品反転':['TRN-001'],
    '選択した絵を左右反転':['TRN-001'],
    'レイヤー追加':['LAY-001'],'新しいレイヤーに描く':['LAY-001'],
@@ -57,16 +57,37 @@
    tool:'brush',layer:'線画',layerId:'layer-1',panel:'layers',feature:null,
    screen:'editor',session:null,settings:{},past:[],future:[],pending:[],saves:[],
    scopedHistory:Object.fromEntries(['reference','test-pad','document-manager'].map(scope=>[scope,{entries:[],future:[],serial:0}])),
-   revision:0,nextId:1,nextLayerId:4,view:{x:0,y:0,zoom:1,angle:0,flipH:1,flipV:1},
+   documentId:1,nextDocumentId:2,revision:0,nextId:1,nextLayerId:4,view:{x:0,y:0,zoom:1,angle:0,flipH:1,flipV:1},
    layers:[
     {id:'layer-1',name:'線画',visible:true,blend:'通常'},
     {id:'layer-2',name:'色',visible:true,blend:'通常'},
     {id:'layer-3',name:'背景',visible:true,blend:'通常'}
    ]
   };
+  // Sidecars have their own history: loading an artwork revision must not rewind them.
+  const sidecars=new Map();
   function clone(v){return JSON.parse(JSON.stringify(v));}
   function feature(id){if(!byId.has(id))throw Error('unknown feature '+id);return byId.get(id);}
   const normalize=v=>String(v).trim().toLocaleLowerCase('ja').normalize('NFKC');
+  // Compositional intent rules cover unlisted paraphrases. Ambiguous intent returns
+  // multiple named destinations; no action is automatically executed by search.
+  const intentRules=[
+   {all:[/線|ストローク|手/,/ガタガタ|ぶれ|ブレ|震え|ふるえ|滑らか/],ids:['BRU-003']},
+   {all:[/線|筆|ブラシ/,/細く|太く|太さ|サイズ/],ids:['BRU-002']},
+   {all:[/はみ出|はみだ|外に出/,/塗|色/],ids:['LAY-004','SEL-001']},
+   {all:[/レイヤー|層/,/一部|部分/,/隠|非表示/],ids:['LAY-005']},
+   {all:[/線画|塗りつぶ|バケツ/,/すきま|隙間|漏れ|穴/],ids:['FIL-002','LIN-006']},
+   {all:[/背景|バック/,/透明|透過/,/保存|出力|書き出/],ids:['IO-002']},
+   {all:[/反転|裏返|ひっくり返/],ids:['CAN-003','TRN-001','UI-006']},
+   {all:[/表示|確認|見たい/,/反転|裏返|ひっくり返/],ids:['CAN-003']},
+   {all:[/選択|部分|レイヤー/,/反転|裏返|ひっくり返/],ids:['TRN-001']},
+   {all:[/ツール|配置|workspace/,/反転|左|右/],ids:['UI-006']},
+   {all:[/画像|写真|絵|資料/,/色/,/拾|採|吸|取りたい/],ids:['COL-003']},
+   {all:[/資料|参考|見本/,/横|並べ|置|見ながら/],ids:['REF-001']},
+   {all:[/保存/,/別名|別の名前|名前を変/],ids:['SAV-003']},
+   {all:[/保存/,/できた|済|確認|状態/],ids:['SAV-004']},
+   {all:[/取り消|取消|戻|元に/,/操作|描|線/],ids:['HIS-001']}
+  ];
   const aliasTerms=Object.entries(aliases).map(([term,ids])=>[normalize(term),ids]);
   function search(query='',category=null){
    const q=normalize(query), scores=new Map();
@@ -80,8 +101,11 @@
     else if([f.category_label,...f.discovery].some(t=>normalize(t).includes(q)))score=25;
     for(const [term,ids] of aliasTerms){
      if(q&&ids.includes(f.id)&&(term===q||q.includes(term)||(q.length>=2&&term.includes(q))))
-      score=Math.max(score,term===q?150:q.includes(term)?110:35);
+      score=Math.max(score,term===q?150:q.includes(term)?(term.length>=3?110:70):35);
     }
+    const rules=intentRules.filter(r=>r.all.every(re=>re.test(q)));
+    // More contextual constraints outrank a broad ambiguous rule, exact aliases remain strongest.
+    for(const rule of rules)if(rule.ids.includes(f.id))score=Math.max(score,90+rule.all.length*4-(rule.ids.indexOf(f.id)*.1));
     if(score)scores.set(f.id,score);
    }
    return registry.features.filter(f=>scores.has(f.id)).sort((a,b)=>
@@ -218,14 +242,18 @@
   function acceptPending(label='模擬ストローク'){const op=commit(label);state.pending.push(op.id);return op;}
   function finish(id){state.pending=state.pending.filter(x=>x!==id);return state.past.some(x=>x.id===id);}
   function save(){
-   const s={id:state.saves.length+1,operationIds:state.past.map(x=>x.id),
+   const s={id:state.saves.length+1,documentId:state.documentId,operationIds:state.past.map(x=>x.id),
     operations:clone(state.past),revision:state.revision,document:documentSnapshot(),pendingIds:[...state.pending],status:'pending'};
    state.saves.push(s);return s;
   }
-  function loadSave(id){const save=state.saves.find(s=>s.id===id);if(!save||save.status!=='mock-complete')return false;restoreDocument(save.document);state.past=clone(save.operations);state.future=[];state.session=null;state.pending=[];state.revision++;return true;}
-  function newDocument(){state.layers=[{id:'layer-'+state.nextLayerId++,name:'レイヤー 1',visible:true,blend:'通常'}];selectLayer(state.layers[0].id);state.past=[];state.future=[];state.pending=[];state.session=null;
-    // Per-document mock pad/reference drafts must not leak into a different work.
-    for(const scope of ['reference','test-pad'])state.scopedHistory[scope]={entries:[],future:[],serial:0};
+  function loadSave(id){const save=state.saves.find(s=>s.id===id);if(!save||save.status!=='mock-complete')return false;switchSidecar(save.documentId);restoreDocument(save.document);state.past=clone(save.operations);state.future=[];state.session=null;state.pending=[];state.revision++;return true;}
+  function switchSidecar(documentId){
+   sidecars.set(state.documentId,Object.fromEntries(['reference','test-pad'].map(k=>[k,clone(state.scopedHistory[k])])));
+   state.documentId=documentId;
+   const saved=sidecars.get(documentId);
+   for(const k of ['reference','test-pad'])state.scopedHistory[k]=saved?clone(saved[k]):{entries:[],future:[],serial:0};
+  }
+  function newDocument(){switchSidecar(state.nextDocumentId++);state.layers=[{id:'layer-'+state.nextLayerId++,name:'レイヤー 1',visible:true,blend:'通常'}];selectLayer(state.layers[0].id);state.past=[];state.future=[];state.pending=[];state.session=null;
     state.revision++;return true;}
   function completeSave(id){const s=state.saves.find(x=>x.id===id);if(!s)throw Error('save absent');s.status='mock-complete';return s;}
   return {state,feature,search,navigate,commit,begin,edit,apply,cancel,undo,redo,dispatch,

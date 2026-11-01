@@ -38,3 +38,5 @@
 - `qa/ui-prototype/final-browser-tests.cjs`、`stage3-browser-tests.cjs`：従来の横画面Session検査を、表示されないRailではなく新ツール入口で継続。
 
 **採否：『ibisPaintを強く参考にする』という設計方向は本人指示として確定。C案の細かなレイアウトと実機操作感は未承認・未試験。** 監査AUD017/019などの閉鎖条件は満たしていない。実機利用者の課題測定/比較の結果がなければ最終完成とは言えない。
+
+2026-11-01再照合：公式 https://ibispaint.com/lecture/index.jsp?lang=ja&no=04 と https://ibispaint.com/lecture/index.jsp?no=156 の操作/端末範囲を確認。Cの適用は短いcoarse横画面（高さ480px以下・幅1000px以下）へ拡張。具体比較は `layout-comparison-browser-tests.cjs` とCIの `stage3-layout-comparison.json`。Cは全体Canvas幅と候補中の残り領域を重視して設計採用し、操作数増の欠点も記録する。実人の優位性は未判定。

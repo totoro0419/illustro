@@ -50,3 +50,13 @@
 `node tools/audit_stage3_acceptance.cjs` は247件の元仕様との一致、6草案の存在、関連ID、端末別入口表、13複合作用機能の33個のaction ownerを確認し、`test-results/stage3-feature-audit.json`へ出力する。**構造がPASSでも機能の受入や画質がPASSした意味ではない。**
 
 最後に `docs/detailed-design/UI_DECISION_PROPOSALS.md` の3件が本人に承認されたか区別し、AUD008/010/016/017/019の初見課題・実操作の残義務と併せて最終監査する。**第③段階の完了はまだ宣言しない。**
+
+## 5. 2026-11-01 個別受入例の実補強と未確定箇所
+
+既存247行を維持し、各行の`acceptance_case`へ異なる`given / when / then / boundary_precision`を追加した。原仕様の操作、Apply/Cancel、History、保存復帰、failure、関連機能をコピーで増やさず、ルートの`acceptance_inheritance`から既存の各行フィールドとシステム契約を参照する。保留10件・対象外1件の例は**実行しないこと**を期待結果とする。Normal/Multiply、ICC Assign/Convert/Proof、画素中心、選択の空と解除、Mask/Clip一回適用、Effect順序/halo/色空間を区別。
+
+**247個の具体例が存在することと、247機能の全操作・全数値算法を確定したことは別である。** 代表例が全パラメータ変種を定義したとは判断せず、`verification.design_review`を一括で承認済みへ変更していない。
+
+`acceptance_case.open_algorithm_definition`に残る21機能の定義不足は、[台帳](AUDIT_REMEDIATION.json)の**追加P1 `DESIGN-NUMERIC-001`**で追跡する。補正筆/変調/混色/乾式媒体、知覚色、2D領域の抽出・対応・隙間スコア、Liquify/縮小補間、全合成モード、高度効果の一部が該当する。これは第④段階の速度測定ではなく、**第③段階に残る設計仕事**である。具体的な未決事項は各行に記載し、実装者へ暗黙に選ばせない。
+
+追加CPU参照`effect_reference.py`/`test_effect_reference.py`は、明るさ・レベル・露出・階調化・二値化、box/Gaussian、offset/median、Mask→ClipとEffectの順序・cache identity・保存根の不変性を11試験で確認する。既存43件と合わせ54件。小規模scalar/1Dモデルで、全45 FX・2D画質・GPUの合格証拠ではない。既存の端で再正規化する古いbox参照と、新しい「透明外側・再正規化なし」のEffect例は異なる境界契約として扱い、同じkernel versionで混同しない。
