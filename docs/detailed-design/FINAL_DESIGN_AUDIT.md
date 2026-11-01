@@ -86,3 +86,14 @@ Pages失敗は[元run](https://github.com/totoro0419/illustro/actions/runs/41192
 初回監査のCI集計30件はその時点の記録として維持する。後続変更で追加された三角形メッシュWarp、折返し、bilinear/cubic B-spline、固定Smudge、二つのlive Effect、Save根の13件は [AUD006専用契約](AUD006_WARP_REFERENCE_REVIEW.md) に詳細を記載。CIの後続結果はその実行commitと共に評価する。いずれも製品GPUの動作保証ではない。
 
 2026-11-01の対話で、後段の線・消去・確定混色を旧Transformの再編集に自動追従させずDocument座標固定とする意味に本人が同意。既存30件＋追加13件のCPU参照、折返し/半透明/Mask/Clip/再編集/Undo/保存再開の複合試験を含むCI全工程の成功（[run 41214784305](https://github.com/totoro0419/illustro/actions/runs/41214784305)、HEAD 7d74e92）と合わせAUD006を**Stage③の設計指摘として閉鎖**。本人の判断は実画面の初見UI試験や製品GPU実装検証とは異なる。それらは④段階の試験へ引き継ぐ。未閉鎖P2=4/P3=1のため全体判定NOT COMPLETEは維持する。
+
+## 9. 残存UI/UX 5件への第③段階追加修正（2026-11-01）
+
+[追加の修正・受入境界](STAGE3_UI_REMEDIATION_5.md)を参照。AUD008は目的語検索と表示候補、AUD010は直接入口とカテゴリ既知247 DOM経路、AUD016は3つの独立履歴の明示Undo、AUD017は中間幅のCanvas列420px下限、AUD019はcoarse標的と320px/200%文字の可視hitを試作に追加した。
+
+- 追加のNodeテストは16種類の「機能名を教えない制作目的」と3 scopeの履歴/Redo枝、作品・Session・Save不干渉、新規作品時の寿命を検証する。
+- 追加のChromium DOMテストは制作目的の候補選択、Clip/Mask/入り抜きの直接入口、scope別Undo、740/760/761/800/960/1180pxのCanvas/Sheet、320/390/740/800pxのcoarse可視ヘッダー標的を測定する。
+- 全247件のカテゴリ既知経路は既存988件のID既知経路と**別の試験**。初見利用者が自力でカテゴリを選べることを示すものではなく、真の最短経路を測った意味でもない。
+- screenshotsとDOM矩形はCIのtest-resultsに保存する。ブラウザ試験の成功は実ペン・実指・初見利用者の誤押下率や探索時間の合格証明にならない。
+
+**判定：上記5件は設計試作を改善したが、元の閉鎖条件にある利用者試験・全入口/全標的の例外計測が残るため、監査上は未閉鎖のまま。** Stage③全体は14/19閉鎖、P1=0・P2=4・P3=1、NOT COMPLETE。ユーザーのFocus・Undo提示・スマホ横画面の判断も未承認。今後の品質判断は「実施した試験」と「要求されているが未実施の試験」を混同せず更新する。
