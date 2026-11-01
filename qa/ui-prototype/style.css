@@ -204,3 +204,12 @@
  #hue{min-height:44px}
  #colorPicker{width:44px;height:44px;min-width:44px;min-height:44px}
 }
+
+/* On phone, a temporary Workspace sheet owns the covered area.
+ * Do not leave partly obscured view/Quick controls visually tappable behind it. */
+@container frame (max-width:760px){
+ #frame:has(.dock.sheet-open) .viewbar,
+ #frame:has(.dock.sheet-open) .quick-trigger{
+  visibility:hidden;pointer-events:none;
+ }
+}
