@@ -130,6 +130,14 @@
         "before": "PR8原指摘とPR7反例。設計欠落型AUD014/015には旧実装がないため、存在しない実装のbefore FAILを捏造せず、元の未定義反例と新参照結果を対比。",
         "after": "All scoped tests executed at verified code HEAD. Model 12+12, Chromium 11+32, known-ID routes 988, CPU reference 30, TypeScript/runtime and CMM checks succeeded.",
         "regression": "scope identity / baseline model / relevant DOM checks"
+      },
+      "user_design_signoff": {
+        "date": "2026-11-01",
+        "approved_option": "A",
+        "meaning": "Focus中の色・レイヤー操作は必要時だけ一時Panelを開き、閉じる/EscapeでFocus状態に戻る。標準配置への自動復帰は採用しない。",
+        "evidence": "ユーザーがUI設計比較の選択肢Aに対し本対話で「A」と明示回答",
+        "limitations": "これはUIの操作方針への本人承認。初見利用者の定量評価、実機の指/ペンの検証ではない。",
+        "prototype_regression": "qa/ui-prototype/stage3-browser-tests.cjs: Approved Focus A keeps Focus for color/layer, Escape and close restore Focus"
       }
     },
     {
