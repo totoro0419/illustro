@@ -36,12 +36,12 @@ Androidペンタブレット（ペン圧/ホバー/二指）、Androidスマホ�
 
 ## 第③段階で残す阻害要因
 
-- AUD006：三角形fold/2種補間/複数後段/2 live Effectの限定CPU参照を追加したが、任意Warp kernelの完全性と本人による再編集UX理解確認は未達。
+- AUD006はStage③設計意味として閉鎖済み（2026-11-01本人同意、43件限定CPU参照）。**製品品質のH05**は別で、任意Warp kernel・実GPU・初見UI・実画面の挙動は未試験。合格を宣言しない。
 - 全247機能の台帳は原典・障害条件・action例外まで補強したが、個別受入は草案が残る。全Effect kernelの数値契約や任意ICC/Proofを含む根幹条件を、実装者へ未定義のまま渡さない。AUD006の参考幾何計算は [AUD006契約](AUD006_WARP_REFERENCE_REVIEW.md) に限定。
-- AUD008/010/016/017/019とユーザーUI判断が未閉鎖。実機性能未実測だけを理由にStage③を否定しているのではない。
+- AUD008/010/016/017/019と、Focus/Undo/横持ちスマホのUI判断が未閉鎖。実機性能未実測だけを理由にStage③を否定しているのではない。
 
 ## 第④段階へ渡せる確定部分
 
-scope判別Intent、document/target lifetime、admission順、名前付きUndo、SaveFence/保存先sequence、用途pin、atomic Handoff、writer不足、依存失敗の契約は`SYSTEM_CONTRACTS.md`を使用。限定CPU referenceは30件、ICC実CMM限定比較、実DOMと型検査を回帰資産として渡す。性能や物理耐久の合格ではない。
+scope判別Intent、document/target lifetime、admission順、名前付きUndo、SaveFence/保存先sequence、用途pin、atomic Handoff、writer不足、依存失敗の契約は`SYSTEM_CONTRACTS.md`を使用。限定CPU referenceは43件、ICC実CMM限定比較、実DOMと型検査を回帰資産として渡す。性能や物理耐久の合格ではない。
 
-**現時点の無条件引渡しは不可。製品の正式実装は開始していない。** 第③段階に必要な参照拡張・仕様の一意化・ユーザー確認を済ませ、未解決P1=0と最終再監査を確認してから移行する。
+**現時点の無条件引渡しは不可。製品の正式実装は開始していない。** 第③段階で残るP2/P3の原因、全247機能の固有受入・技術契約、Focus/Undo/横持ちスマホのユーザー判断を整理し、最終再監査に合格してから移行する。P1は現在0件。
