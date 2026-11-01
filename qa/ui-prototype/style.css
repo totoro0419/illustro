@@ -112,3 +112,84 @@
   right:min(var(--right),32%,calc(100% - var(--rail) - 420px))
  }
 }
+
+/* ibisPaint-informed smartphone landscape prototype, not a reproduction.
+ * Bottom actions stay visible; detailed tools/layers are transient surfaces.
+ * A persistent floating layer window is NOT claimed to be ibisPaint's phone UI. */
+.landscape-tabs,.landscape-tool-picker{display:none}
+@media (max-height:480px) and (orientation:landscape){
+ @container frame (max-width:760px){
+  #frame{--top:46px;--bottom:54px}
+  #frame:not(.focused) .rail{display:none}
+  #frame:not(.focused) .stage{left:0;right:0;bottom:var(--bottom)}
+  #frame:not(.focused) .contextbar{display:none}
+  #frame.landscape-properties-open:not(.focused) .contextbar{
+   display:flex;position:absolute;top:0;left:0;right:0;z-index:17;
+   max-height:min(170px,calc(100% - 40px));overflow:auto;
+   box-shadow:0 7px 24px #24335230;border-bottom:1px solid var(--line)
+  }
+  #frame:not(.focused) .mobile-tabs{display:none}
+  #frame:not(.focused) .landscape-tabs{
+   display:flex;position:absolute;bottom:0;left:0;right:0;
+   height:var(--bottom);background:#fff;z-index:20;
+   border-top:1px solid #cdd6e6;padding:3px 4px;gap:2px;
+   overflow-x:auto;scrollbar-width:thin;overscroll-behavior-x:contain;
+   align-items:stretch
+  }
+  .landscape-tabs button{
+   flex:1 0 44px;min-width:44px;min-height:44px;border:0;border-radius:6px;
+   padding:2px 3px;display:flex;align-items:center;justify-content:center;
+   flex-direction:column;gap:0;font-size:.71429rem;white-space:nowrap;
+   background:transparent
+  }
+  .landscape-tabs button svg{width:19px;height:19px}
+  .landscape-tabs button[aria-expanded=true]{background:var(--pale);color:var(--blue)}
+  #frame:not(.focused) .dock,#frame:not(.focused).closed .dock{
+   top:calc(var(--top) + 4px);right:6px;left:auto;
+   bottom:calc(var(--bottom) + var(--session-height,0px) + 4px);
+   height:auto;width:min(324px,47%);max-width:calc(100% - 12px);
+   border:1px solid #bdc8dc;border-radius:10px;overflow:hidden;
+   box-shadow:0 8px 28px #2b365535
+  }
+  #frame:not(.focused) .dock:not(.sheet-open){display:none}
+  #frame:not(.focused) .dock.sheet-open{display:flex}
+  .landscape-tool-picker:not([hidden]){
+   display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+   position:absolute;left:8px;bottom:calc(var(--bottom) + 5px);
+   width:min(330px,calc(100% - 16px));
+   max-height:calc(100% - var(--top) - var(--bottom) - 10px);
+   overflow:auto;overscroll-behavior:contain;z-index:22;
+   gap:3px;padding:7px;background:#fff;border:1px solid #c2cde3;
+   border-radius:10px;box-shadow:0 8px 24px #27334b3d
+  }
+  .landscape-tool-picker button{
+   min-height:44px;display:flex;align-items:center;justify-content:center;
+   gap:4px;font-size:.78571rem;padding:5px 3px;min-width:0;
+  }
+  .landscape-tool-picker button svg{width:20px;height:20px}
+  .landscape-tool-picker button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .landscape-tool-picker button[aria-pressed=true]{background:var(--pale);border-color:#94a5e4}
+  #frame:not(.focused) .float.library{left:6px;width:calc(100% - 12px)}
+  #frame:not(.focused) .context-pop{left:8px}
+  #frame:not(.focused) .quick-trigger{right:8px;bottom:10px}
+  #frame:not(.focused) .viewbar{bottom:8px}
+  #frame:not(.focused) .sessionbar{
+   padding:3px 7px;gap:4px;flex-wrap:nowrap;
+   max-height:110px;overflow:auto;align-items:center
+  }
+  #frame:not(.focused) .sessionbar>div:first-child{
+   min-width:74px;max-width:160px;flex:0 1 160px;line-height:1.2
+  }
+  #frame:not(.focused) .sessionbar .actions{
+   width:auto;margin-left:auto;flex:0 0 auto;flex-wrap:nowrap;
+   gap:3px;justify-content:flex-end
+  }
+  #frame:not(.focused) .sessionbar button{min-height:44px;min-width:44px;padding:4px 6px}
+  #frame.focused.focus-panel-open .dock{
+   display:flex;top:calc(var(--top) + 4px);left:auto;right:6px;
+   bottom:calc(var(--bottom) + var(--session-height,0px) + 4px);
+   width:min(324px,47%);height:auto;border-radius:10px
+  }
+  #frame.focused .landscape-tabs{display:none}
+ }
+}
