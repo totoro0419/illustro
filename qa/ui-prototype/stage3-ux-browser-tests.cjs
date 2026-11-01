@@ -19,9 +19,9 @@ async function assertHit(p,selector){
  return r.width>0&&r.height>0&&(hit===e||e.contains(hit));});
 }
 async function main(){
- await new Promise(r=>server.listen(43889,'127.0.0.1',r));browser=await chromium.launch({headless:true});
+ await new Promise(r=>server.listen(43889,'127.0.0.1',r));browser=await chromium.launch({headless:true});fs.mkdirSync('test-results',{recursive:true});
  await run('AUD008 no-name task chips and Search result',1180,820,false,async p=>{
-  await p.locator('#search').click();await p.locator('#libraryContent [data-task-query="はみ出さないように塗る"]').click();
+  await p.locator('#search').click();await p.screenshot({path:'test-results/stage3-ux-task-search.png'});await p.locator('#libraryContent [data-task-query="はみ出さないように塗る"]').click();
   assert.equal(await p.locator('#query').inputValue(),'はみ出さないように塗る');
   assert(await p.locator('#libraryContent [data-feature="LAY-004"]').count()>0);
   await p.locator('#libraryContent [data-feature="LAY-004"]').click();
@@ -61,12 +61,12 @@ async function main(){
   await p.locator('#fixed [data-undo]').click();
   assert.equal(await p.locator('#layerRows .layerrow').count(),3);
   assert((await p.locator('[data-scope-summary="document-manager"]').innerText()).includes('1件'));
-  await p.locator('#box-reference [data-scope-action="redo"]').click();
+  await p.locator('#box-reference [data-scope-action="redo"]').click();await p.screenshot({path:'test-results/stage3-ux-named-undo.png'});
   assert((await p.locator('[data-scope-summary="reference"]').innerText()).includes('1件'));
  });
  for(const width of [740,760,761,800,960,1180]){
   await run('AUD017 stage geometry & workspace entry '+width,width,600,width<=760,async p=>{
-   const stage=await box(p,'.stage');
+   const stage=await box(p,'.stage');if(width===800)await p.screenshot({path:'test-results/stage3-ux-800-workspace.png'});
    const closed=width<=760;
    if(!closed)assert(stage.width>=420,'Canvas drawing column under 420px: '+stage.width);
    else{
@@ -81,7 +81,7 @@ async function main(){
  }
  for(const width of [320,390,740,800]){
   await run('AUD019 coarse topbar hit and bounds '+width,width,width===740?360:640,true,async p=>{
-   if(width===320)await p.evaluate(()=>document.documentElement.style.fontSize='200%');
+   if(width===320){await p.evaluate(()=>document.documentElement.style.fontSize='200%');await p.screenshot({path:'test-results/stage3-ux-320-text200.png'});}
    const metrics=await p.locator('.topbar').evaluate(top=>{
     const frame=document.querySelector('#frame').getBoundingClientRect();
     return [...top.querySelectorAll('button')].filter(el=>el.getClientRects().length)
