@@ -6,8 +6,8 @@ const eq=(a,b,tolerance=1e-7)=>assert.ok(Math.abs(a-b)<tolerance,JSON.stringify(
 test('Old Orbit ring painted geometry: back, front and hole',()=>{
  const r=ORBIT;
  assert.equal(orbitRegion(r.cx,r.cy),null);
- assert.equal(orbitRegion(r.cx,r.cy-r.outerY+r.innerY), 'rotate');
- assert.equal(orbitRegion(r.cx,r.cy+r.outerY-r.innerY), 'slide');
+ assert.equal(orbitRegion(r.cx,r.cy-(r.outerY+r.innerY)/2), 'rotate');
+ assert.equal(orbitRegion(r.cx,r.cy+(r.outerY+r.innerY)/2), 'slide');
  const color=orbitHueAtPoint(45,r.cx+r.outerX,r.cy);
  eq(color,315,.02);
 });
