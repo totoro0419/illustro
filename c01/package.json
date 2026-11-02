@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "typecheck": "tsc --allowJs --checkJs false --noEmit --target ES2022 --module ES2022 app/*.mjs",
+    "typecheck": "tsc --allowJs --checkJs --noEmit --target ES2022 --module ES2022 --lib ES2022,DOM,DOM.Iterable app/model.mjs",
     "lint": "node --check app/model.mjs && node --check app/main.mjs",
     "build": "node scripts/build.mjs",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
