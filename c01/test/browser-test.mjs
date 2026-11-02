@@ -26,6 +26,22 @@ try{
  await page.locator('[data-action=redo]').first().click();
  await page.waitForFunction(()=>document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
  assert.ok(await pixels()>0,'Redo restores stroke');
+ // Regression: eraser must never paint a black transient stroke before pen-up.
+ for(const eraser of ['hardEraser','softEraser']){
+  await page.locator('[data-tool='+eraser+']').click();
+  await page.mouse.move(x+30,y+14);await page.mouse.down();
+  await page.mouse.move(x+48,y+24,{steps:2});
+  const indicator=await page.locator('.stroke-preview.eraser-preview').last().evaluate(c=>{
+   const a=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+   for(let i=0;i<a.length;i+=4){if(a[i+3]>0)return [a[i],a[i+1],a[i+2],a[i+3]];}
+   return null;
+  });
+  assert.ok(indicator,'Eraser should show a transient path');
+  assert.deepEqual(indicator.slice(0,3),[255,255,255],'Eraser overlay must not show black');
+  await page.mouse.up();
+  await page.waitForFunction(()=>document.querySelectorAll('.stroke-preview').length===0);
+ }
+ await page.locator('[data-tool=gpen]').click();
  page.on('dialog',dialog=>dialog.accept());
  await page.locator('[data-action=new]').first().click();await page.locator('#new-width').fill('320');await page.locator('#new-height').fill('240');await page.locator('#new-dialog [type=submit]').click();
  assert.equal(await page.locator('#art').evaluate(el=>el.width),320);
