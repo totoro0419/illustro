@@ -44,3 +44,25 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  verify:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify deployed HTTP files
+        run: |
+          curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 https://totoro0419.github.io/illustro/c01/ -o /tmp/illustro-preview.html
+          grep -q 'Illustro' /tmp/illustro-preview.html
+          curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 https://totoro0419.github.io/illustro/c01/app/main.mjs -o /tmp/illustro-main.mjs
+          grep -q 'function beginStroke' /tmp/illustro-main.mjs
+      - name: Install browser test runtime
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+        working-directory: c01
+      - name: Verify deployed interactive painting
+        run: node test/live-test.mjs
+        working-directory: c01
