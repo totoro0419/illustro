@@ -1,0 +1,374 @@
+{
+  "kind": "real CPU CMM limited matrix-profile comparison",
+  "cmm_encoded_version": 2140,
+  "p3_profile_hash": "5644811754565d77b0d922236dc2fbe8f332000b3cc02ed85cd40b9b9d6b167a",
+  "intent": 1,
+  "BPC": false,
+  "threshold": 1.5259021896696422e-05,
+  "rows": [
+    {
+      "input": [
+        0.2,
+        0.3,
+        0.4
+      ],
+      "lcms": [
+        0.1683160364627838,
+        0.3033863604068756,
+        0.4093509912490845
+      ],
+      "matrix": [
+        0.1683160444629732,
+        0.30338636164347005,
+        0.40935099998504176
+      ],
+      "max_error": 8.735957290895158e-09,
+      "within_16u_one_code": true
+    },
+    {
+      "input": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "lcms": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "matrix": [
+        0.5000000000000001,
+        0.5,
+        0.5000000000000001
+      ],
+      "max_error": 1.1102230246251565e-16,
+      "within_16u_one_code": true
+    },
+    {
+      "input": [
+        0.7,
+        0.4,
+        0.3
+      ],
+      "lcms": [
+        0.7476521730422974,
+        0.3805088400840759,
+        0.27438586950302124
+      ],
+      "matrix": [
+        0.7476522208458491,
+        0.38050884292177195,
+        0.27438585241839336
+      ],
+      "max_error": 4.7803551783687226e-08,
+      "within_16u_one_code": true
+    },
+    {
+      "input": [
+        0.1,
+        0.2,
+        0.15
+      ],
+      "lcms": [
+        0.05935608223080635,
+        0.2030894011259079,
+        0.14614512026309967
+      ],
+      "matrix": [
+        0.0593560814318019,
+        0.20308940658327412,
+        0.14614512065167828
+      ],
+      "max_error": 5.4573662255918975e-09,
+      "within_16u_one_code": true
+    },
+    {
+      "input": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "lcms": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "matrix": [
+        1.0000000000000002,
+        0.9999999999999999,
+        1.0000000000000002
+      ],
+      "max_error": 2.220446049250313e-16,
+      "within_16u_one_code": true
+    },
+    {
+      "input": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "lcms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "matrix": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_error": 0.0,
+      "within_16u_one_code": true
+    }
+  ],
+  "format_rows": [
+    {
+      "format": "8U",
+      "input": [
+        0.2,
+        0.3,
+        0.4
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "8U",
+      "input": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "8U",
+      "input": [
+        0.7,
+        0.4,
+        0.3
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "8U",
+      "input": [
+        0.1,
+        0.2,
+        0.15
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "8U",
+      "input": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "8U",
+      "input": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "16U",
+      "input": [
+        0.2,
+        0.3,
+        0.4
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "16U",
+      "input": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "16U",
+      "input": [
+        0.7,
+        0.4,
+        0.3
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "16U",
+      "input": [
+        0.1,
+        0.2,
+        0.15
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "16U",
+      "input": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "16U",
+      "input": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0,
+      "pass": true
+    },
+    {
+      "format": "16F",
+      "input": [
+        0.2,
+        0.3,
+        0.4
+      ],
+      "max_error_codes_or_ulps_or_absolute": 1.0,
+      "pass": true
+    },
+    {
+      "format": "16F",
+      "input": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0.0,
+      "pass": true
+    },
+    {
+      "format": "16F",
+      "input": [
+        0.7,
+        0.4,
+        0.3
+      ],
+      "max_error_codes_or_ulps_or_absolute": 1.0,
+      "pass": true
+    },
+    {
+      "format": "16F",
+      "input": [
+        0.1,
+        0.2,
+        0.15
+      ],
+      "max_error_codes_or_ulps_or_absolute": 1.0,
+      "pass": true
+    },
+    {
+      "format": "16F",
+      "input": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0.0,
+      "pass": true
+    },
+    {
+      "format": "16F",
+      "input": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0.0,
+      "pass": true
+    },
+    {
+      "format": "reloaded-profile-DBL",
+      "input": [
+        0.2,
+        0.3,
+        0.4
+      ],
+      "max_error_codes_or_ulps_or_absolute": 1.0518983208418486e-05,
+      "pass": true
+    },
+    {
+      "format": "reloaded-profile-DBL",
+      "input": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "max_error_codes_or_ulps_or_absolute": 1.055002212524414e-05,
+      "pass": true
+    },
+    {
+      "format": "reloaded-profile-DBL",
+      "input": [
+        0.7,
+        0.4,
+        0.3
+      ],
+      "max_error_codes_or_ulps_or_absolute": 1.4272474727683448e-05,
+      "pass": true
+    },
+    {
+      "format": "reloaded-profile-DBL",
+      "input": [
+        0.1,
+        0.2,
+        0.15
+      ],
+      "max_error_codes_or_ulps_or_absolute": 8.011367356064447e-06,
+      "pass": true
+    },
+    {
+      "format": "reloaded-profile-DBL",
+      "input": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_error_codes_or_ulps_or_absolute": 1.1682510376087585e-05,
+      "pass": true
+    },
+    {
+      "format": "reloaded-profile-DBL",
+      "input": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_error_codes_or_ulps_or_absolute": 0.0,
+      "pass": true
+    }
+  ],
+  "pass": true,
+  "unverified": [
+    "arbitrary ICC LUT",
+    "Proof",
+    "CMYK",
+    "GPU",
+    "full gamut"
+  ]
+}

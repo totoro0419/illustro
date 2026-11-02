@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "rule": "Curated purpose phrases with intended destination IDs; not a usability sample and not measured search recall.",
+  "cases": [
+    {
+      "goal": "線を滑らかにしたい",
+      "expected": "BRU-003"
+    },
+    {
+      "goal": "手ぶれを抑えたい",
+      "expected": "BRU-003"
+    },
+    {
+      "goal": "筆を細くしたい",
+      "expected": "BRU-002"
+    },
+    {
+      "goal": "塗りつぶしで隙間が残る",
+      "expected": "FIL-002"
+    },
+    {
+      "goal": "線画の隙間を埋めたい",
+      "expected": "FIL-002"
+    },
+    {
+      "goal": "別のレイヤーを見て色を塗る",
+      "expected": "FIL-003"
+    },
+    {
+      "goal": "線画を参照して塗る",
+      "expected": "FIL-003"
+    },
+    {
+      "goal": "囲った場所に色をつけたい",
+      "expected": "FIL-005"
+    },
+    {
+      "goal": "指定したところだけ塗る",
+      "expected": "FIL-005"
+    },
+    {
+      "goal": "色の履歴を見たい",
+      "expected": "COL-002"
+    },
+    {
+      "goal": "さっき使った色に戻したい",
+      "expected": "COL-002"
+    },
+    {
+      "goal": "よく使う色をまとめたい",
+      "expected": "COL-004"
+    },
+    {
+      "goal": "自分の色セットを作る",
+      "expected": "COL-004"
+    },
+    {
+      "goal": "絵から色を吸い取る",
+      "expected": "COL-003"
+    },
+    {
+      "goal": "写真から色を拾いたい",
+      "expected": "COL-003"
+    },
+    {
+      "goal": "レイヤーを増やしたい",
+      "expected": "LAY-001"
+    },
+    {
+      "goal": "上のレイヤーを隠したい",
+      "expected": "LAY-002"
+    },
+    {
+      "goal": "線画の形だけを残して色を塗る",
+      "expected": "LAY-004"
+    },
+    {
+      "goal": "レイヤーの一部だけ隠したい",
+      "expected": "LAY-005"
+    },
+    {
+      "goal": "隠す範囲を後で修正したい",
+      "expected": "LAY-005"
+    },
+    {
+      "goal": "複数のレイヤーをまとめたい",
+      "expected": "LAY-003"
+    },
+    {
+      "goal": "レイヤーの順番を変えたい",
+      "expected": "LAY-003"
+    },
+    {
+      "goal": "描く場所を選んで囲いたい",
+      "expected": "SEL-001"
+    },
+    {
+      "goal": "長方形で選択したい",
+      "expected": "SEL-001"
+    },
+    {
+      "goal": "選択範囲をぼかしたい",
+      "expected": "SEL-003"
+    },
+    {
+      "goal": "選択範囲を広げたい",
+      "expected": "SEL-003"
+    },
+    {
+      "goal": "一部分だけ回転させたい",
+      "expected": "TRN-001"
+    },
+    {
+      "goal": "選択した絵を移動したい",
+      "expected": "TRN-001"
+    },
+    {
+      "goal": "絵を斜めから見た形にしたい",
+      "expected": "TRN-002"
+    },
+    {
+      "goal": "絵の一部をゆがませたい",
+      "expected": "TRN-004"
+    },
+    {
+      "goal": "変形の途中で一段戻りたい",
+      "expected": "TRN-007"
+    },
+    {
+      "goal": "参照画像を横に置きたい",
+      "expected": "REF-001"
+    },
+    {
+      "goal": "資料画像を見ながら描く",
+      "expected": "REF-001"
+    },
+    {
+      "goal": "参考資料を動かしたい",
+      "expected": "REF-002"
+    },
+    {
+      "goal": "資料を固定したい",
+      "expected": "REF-002"
+    },
+    {
+      "goal": "消した操作をやり直したい",
+      "expected": "HIS-001"
+    },
+    {
+      "goal": "取り消した線を復活させる",
+      "expected": "HIS-001"
+    },
+    {
+      "goal": "作業の途中を記録したい",
+      "expected": "HIS-003"
+    },
+    {
+      "goal": "作品を別の名前で保存したい",
+      "expected": "SAV-003"
+    },
+    {
+      "goal": "編集中の作品を保存したい",
+      "expected": "SAV-003"
+    },
+    {
+      "goal": "保存されたか確認したい",
+      "expected": "SAV-004"
+    },
+    {
+      "goal": "PNGで保存したい",
+      "expected": "IO-002"
+    },
+    {
+      "goal": "絵をJPEGにしたい",
+      "expected": "IO-002"
+    },
+    {
+      "goal": "画像ファイルを読み込みたい",
+      "expected": "IO-001"
+    },
+    {
+      "goal": "絵を拡大してドットを見たい",
+      "expected": "CAN-004"
+    },
+    {
+      "goal": "キャンバスを切り詰めたい",
+      "expected": "CAN-005"
+    },
+    {
+      "goal": "絵の大きさを変更したい",
+      "expected": "CAN-006"
+    },
+    {
+      "goal": "新しいキャンバスを作りたい",
+      "expected": "CAN-001"
+    },
+    {
+      "goal": "別の絵に切り替えたい",
+      "expected": "CAN-007"
+    },
+    {
+      "goal": "線の中に色を広げたい",
+      "expected": "FIL-001"
+    }
+  ]
+}

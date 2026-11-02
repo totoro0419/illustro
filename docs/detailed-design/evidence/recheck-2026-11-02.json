@@ -1,0 +1,452 @@
+{
+  "kind": "Stage III local design-reference recheck, not final CI/human/product pass",
+  "starting_remote_head": "4a3ca469885583e1ef65ecc0a29f3d9ab607340d",
+  "source_sha256": {
+    "docs/detailed-design/NUMERIC_CONTRACTS_V1.json": "dbebeaeb102901c0f3b498f255aecf43dc4ddf964460b25bbfcc175812f4f875",
+    "docs/detailed-design/FEATURE_CONTRACT_CROSSWALK_247.json": "47cc518ddf55a5f742f08f64e07595b05425ed75593385fc0bad17590b74690c",
+    "qa/ui-prototype/primary-route-browser-tests.cjs": "a27b0ac4d9485b6827813f89fd3cf8d93b8a7070bf31e4b871f7f9cdb67fff51",
+    "qa/ui-prototype/layout-comparison-browser-tests.cjs": "6a1c0b6ef6ddeed321677dbfca0357ee330c192f4e9c32e3bdb8027e48f77895"
+  },
+  "cpu": {
+    "tests": 113,
+    "success": true,
+    "manifest": "experiments/stage3-reference/evidence/reference-results.json"
+  },
+  "independent_canvas": {
+    "cases": 64,
+    "tolerance_codes": 2,
+    "max_error": 2,
+    "browser": "141.0.7390.0"
+  },
+  "normal_routes": {
+    "attempts": 5928,
+    "gaps": 0,
+    "same_goal_category_alternatives": 5574,
+    "normal_more_clicks_than_catalog": 3420,
+    "max_extra_clicks": 2,
+    "max_normal_clicks": 5,
+    "interpretation": "Main Workspace hierarchy sometimes adds up to2 actions over global category finder. Both are ordinary no-ID routes; no global-shortest proof. Pointer/scroll/panel/candidate counts stored in CI artifact."
+  },
+  "layout_comparison": {
+    "conditions": 24,
+    "C_completed": 8,
+    "A_candidate_collisions": 6,
+    "rows": [
+      {
+        "variant": "A",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 740,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 10,
+        "panelCommands": 5,
+        "minimumAvailableArea": 0,
+        "meanAvailableArea": 46473.6,
+        "realUser": false
+      },
+      {
+        "variant": "B",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 740,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 7,
+        "panelCommands": 2,
+        "minimumAvailableArea": 39064,
+        "meanAvailableArea": 55057.6,
+        "realUser": false
+      },
+      {
+        "variant": "C",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 740,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 12,
+        "panelCommands": 5,
+        "minimumAvailableArea": 70712,
+        "meanAvailableArea": 118273.6,
+        "realUser": false
+      },
+      {
+        "variant": "A",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 760,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 10,
+        "panelCommands": 5,
+        "minimumAvailableArea": 0,
+        "meanAvailableArea": 48017.6,
+        "realUser": false
+      },
+      {
+        "variant": "B",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 760,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 7,
+        "panelCommands": 2,
+        "minimumAvailableArea": 40768,
+        "meanAvailableArea": 57251.2,
+        "realUser": false
+      },
+      {
+        "variant": "C",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 760,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 12,
+        "panelCommands": 5,
+        "minimumAvailableArea": 74692,
+        "meanAvailableArea": 123069.6,
+        "realUser": false
+      },
+      {
+        "variant": "A",
+        "taskCompleted": false,
+        "candidateControlCollision": true,
+        "clickCountKind": "partial-until-occluded-cancel",
+        "viewport": {
+          "width": 761,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 8,
+        "panelCommands": 4,
+        "minimumAvailableArea": 0,
+        "meanAvailableArea": 46056.75,
+        "realUser": false
+      },
+      {
+        "variant": "B",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 761,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 7,
+        "panelCommands": 2,
+        "minimumAvailableArea": 12272.3759765625,
+        "meanAvailableArea": 33170.4501953125,
+        "realUser": false
+      },
+      {
+        "variant": "C",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 761,
+          "height": 360
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 12,
+        "panelCommands": 5,
+        "minimumAvailableArea": 74817.875,
+        "meanAvailableArea": 122929.075,
+        "realUser": false
+      },
+      {
+        "variant": "A",
+        "taskCompleted": false,
+        "candidateControlCollision": true,
+        "clickCountKind": "partial-until-occluded-cancel",
+        "viewport": {
+          "width": 800,
+          "height": 400
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 8,
+        "panelCommands": 4,
+        "minimumAvailableArea": 2244,
+        "meanAvailableArea": 62288.35,
+        "realUser": false
+      },
+      {
+        "variant": "B",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 800,
+          "height": 400
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 7,
+        "panelCommands": 2,
+        "minimumAvailableArea": 31110.125,
+        "meanAvailableArea": 53216.325,
+        "realUser": false
+      },
+      {
+        "variant": "C",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 800,
+          "height": 400
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 12,
+        "panelCommands": 5,
+        "minimumAvailableArea": 101618.875,
+        "meanAvailableArea": 156505.275,
+        "realUser": false
+      },
+      {
+        "variant": "A",
+        "taskCompleted": false,
+        "candidateControlCollision": true,
+        "clickCountKind": "partial-until-occluded-cancel",
+        "viewport": {
+          "width": 960,
+          "height": 400
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 8,
+        "panelCommands": 4,
+        "minimumAvailableArea": 2724,
+        "meanAvailableArea": 77104.35,
+        "realUser": false
+      },
+      {
+        "variant": "B",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 960,
+          "height": 400
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 7,
+        "panelCommands": 2,
+        "minimumAvailableArea": 74782.875,
+        "meanAvailableArea": 96162.075,
+        "realUser": false
+      },
+      {
+        "variant": "C",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 960,
+          "height": 400
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 12,
+        "panelCommands": 5,
+        "minimumAvailableArea": 139858.875,
+        "meanAvailableArea": 201273.275,
+        "realUser": false
+      },
+      {
+        "variant": "A",
+        "taskCompleted": false,
+        "candidateControlCollision": true,
+        "clickCountKind": "partial-until-occluded-cancel",
+        "viewport": {
+          "width": 800,
+          "height": 600
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 8,
+        "panelCommands": 4,
+        "minimumAvailableArea": 68068,
+        "meanAvailableArea": 68068,
+        "realUser": false
+      },
+      {
+        "variant": "B",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 800,
+          "height": 600
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 7,
+        "panelCommands": 2,
+        "minimumAvailableArea": 106250.875,
+        "meanAvailableArea": 136724.475,
+        "realUser": false
+      },
+      {
+        "variant": "C",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 800,
+          "height": 600
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 12,
+        "panelCommands": 5,
+        "minimumAvailableArea": 172638.875,
+        "meanAvailableArea": 223205.275,
+        "realUser": false
+      },
+      {
+        "variant": "A",
+        "taskCompleted": false,
+        "candidateControlCollision": true,
+        "clickCountKind": "partial-until-occluded-cancel",
+        "viewport": {
+          "width": 960,
+          "height": 600
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 8,
+        "panelCommands": 4,
+        "minimumAvailableArea": 82628,
+        "meanAvailableArea": 82628,
+        "realUser": false
+      },
+      {
+        "variant": "B",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 960,
+          "height": 600
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 7,
+        "panelCommands": 2,
+        "minimumAvailableArea": 160718.875,
+        "meanAvailableArea": 197189.275,
+        "realUser": false
+      },
+      {
+        "variant": "C",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 960,
+          "height": 600
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 12,
+        "panelCommands": 5,
+        "minimumAvailableArea": 215728.625,
+        "meanAvailableArea": 282943.7875,
+        "realUser": false
+      },
+      {
+        "variant": "A",
+        "taskCompleted": false,
+        "candidateControlCollision": true,
+        "clickCountKind": "partial-until-occluded-cancel",
+        "viewport": {
+          "width": 1180,
+          "height": 800
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 8,
+        "panelCommands": 4,
+        "minimumAvailableArea": 201912,
+        "meanAvailableArea": 201912,
+        "realUser": false
+      },
+      {
+        "variant": "B",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 1180,
+          "height": 800
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 7,
+        "panelCommands": 2,
+        "minimumAvailableArea": 336798.875,
+        "meanAvailableArea": 382456.475,
+        "realUser": false
+      },
+      {
+        "variant": "C",
+        "taskCompleted": true,
+        "candidateControlCollision": false,
+        "clickCountKind": "complete-task",
+        "viewport": {
+          "width": 1180,
+          "height": 800
+        },
+        "task": "brush → color adoption → new layer → smudge → transform → cancel",
+        "clicks": 12,
+        "panelCommands": 5,
+        "minimumAvailableArea": 462742.875,
+        "meanAvailableArea": 543554.075,
+        "realUser": false
+      }
+    ]
+  },
+  "geometry": {
+    "observations": 4281,
+    "feature_layouts": 494,
+    "failures": 0,
+    "details": "CI artifact stage3-geometry-details.jsonl"
+  },
+  "local_UI_run_limit": "Normal-route and geometry runs loaded the snapshot before the final REC/Contrast descriptive text refinement; final CI must rerun exact final generated HTML. Geometry report and human performance are separate.",
+  "human_trials": {
+    "AUD-008": "NOT_RUN",
+    "AUD-016": "NOT_RUN",
+    "AUD-017": "NOT_RUN",
+    "AUD-019": "NOT_RUN"
+  },
+  "final_ci": "Verify final commit SHA via GitHub Actions; prior SHA success is not final verification.",
+  "header_regression": {
+    "before_sha": "43b2b6dafb509039fc6371011a5c96c308734021",
+    "before_line_counts": {
+      "save": 2,
+      "export": 2
+    },
+    "after_text_scales": [
+      1,
+      2
+    ],
+    "after_line_counts": {
+      "save": 1,
+      "export": 1
+    },
+    "ux_browser_checks": 18,
+    "scope": "Chromium800x600 coarse UI; no physical finger trial"
+  }
+}

@@ -33,6 +33,11 @@ EXTERNAL = 'SAV-001 SAV-002 SAV-003 CAN-001 CAN-007 CAN-009 IO-001 IO-002 IO-003
 STROKE = 'BRU-001 WET-001 WET-002 WET-007 FX-007 HIS-005'.split()
 SESSION = 'CAN-005 CAN-006 COL-006 COL-007 COL-009 FIL-002 FIL-005 FIL-006 FIL-008 FIL-009 LIN-001 LIN-003 LIN-005 LIN-006 LIN-008 SEL-001 SEL-002 SEL-003 SEL-005 SEL-007 TRN-001 TRN-002 TRN-003 TRN-004 TRN-007 TRN-008 VEC-001 VEC-002 VEC-003 VEC-004 VEC-005 VEC-007 GUI-001 GUI-002 GUI-003 GUI-004 GUI-005 GRA-001 GRA-002 GRA-003 GRA-004 NDE-002 NDE-003 NDE-004 NDE-005 AUT-001 AUT-002 AUT-003 AI-001 AI-002 AI-003'.split()
 DIRECT = {
+ 'CAN-002':('canvas.view','Canvas表示帯／指ナビ','move'),
+ 'LAY-002':('panel.layers.blend','レイヤー欄の合成・目・設定',None),
+ 'LAY-004':('panel.layers.clip','レイヤー欄「Clip」',None),
+ 'LAY-005':('panel.layers.mask','レイヤー欄「Mask」',None),
+ 'BRU-008':('panel.brush.taper','ブラシ欄「強制入り抜き」',None),
  'BRU-001':('rail.brush','左ツール「ブラシ」／「消しゴム」','brush'),
  'BRU-012':('rail.eraser','左ツール「消しゴム」','eraser'),
  'WET-001':('rail.smudge','左ツール「混色」','smudge'),
@@ -57,6 +62,9 @@ DIRECT = {
  'IO-002':('top.export','上部「書き出し」',None),
 }
 OVERRIDE = {
+ 'REC-001':dict(parameters='記録ON/OFF・区間・UI除外・再生。設計既定OFF。開始を明示するまで記録しない'),
+ 'REC-004':dict(parameters='Session/Today/Total/Average・Idle除外・停止/手動補正。設計既定は端末内ON、Idle閾値60秒。手動停止/削除可'),
+ 'FX-101':dict(parameters='明るさ/コントラスト・輝度のみ/色成分、初期は明るさ0/UI Contrast0（内部係数1）'),
  'WET-002':dict(parameters='水彩風プリセット・混色量・エッジ・粒状感・筆触。水分場や時間拡散なし', operation='ブラシ欄→水彩風プリセット→試筆→描画',direct_preview='筆触と粒状感を試筆。時間進行する濡れ状態は表示しない',persistence_undo='一筆一Undo。確定画素とブラシ版を保持。濡れ場・再開状態の保存は必須にしない'),
  'WET-005':dict(parameters='紙目・テクスチャ・粒状感・適用先（筆／素材）。時間吸収モデルなし', operation='ブラシの質感→紙素材→適用先を確認',direct_preview='紙目サンプルと作用範囲を比較。筆設定だけの変更と既存作品への適用を別に選択',persistence_undo='筆設定変更は作品Undo外。既存作品への明示再適用は一Transactionで元絵保持。紙版と適用範囲を保存'),
  'TRN-008':dict(parameters='変形後の見た目へ描く（既定）／元内容を編集／独立レイヤー／明示焼込', operation='対象帯の描画先→見た目／元内容を選ぶ。以前の変形だけを再編集しても後段筆跡は自動追従しない'),
@@ -87,6 +95,7 @@ def build():
   i,c=src['id'],src['category']; label,panel=CATS[c]; panel=PANEL_BY_ID.get(i,panel); kind=semantics(src)
   d=src['detail']; override=OVERRIDE.get(i,{})
   current_preview=override.get('direct_preview',d['direct_preview'])
+  if i=='CAN-002':current_preview='作品・途中線・選択・ハンドルが同じ表示へ追従。sample時刻のViewPoseで座標固定。実ペンと指は未検証。'
   persistence=override.get('persistence_undo',d['persistence_undo'])
   active=s['final_scope'] in ('included','included_limited')
   context=d['context']
@@ -120,13 +129,13 @@ def build():
     while_operating=current_preview,settings_change=f'{params}。値編集は対象名を保持し、候補と確定値を区別',
     apply_cancel=dict(kind=kind,apply='現行対象外のため実行しない' if not active else ('適用して一操作確定' if kind in ('session','command','stroke') else '設定／表示／要求の所有者へ反映。作品への架空の適用はしない'),cancel='今回の候補だけ破棄。前のツール／Focusへ戻す。既受理の別操作を消さない'),
     undo_unit=undo,current_persistence=persistence,source_persistence=d['persistence_undo'],
-    devices=dict(pc=dict(steps=steps,projection='左Rail＋右Workspace。キーは補助入口。'),tablet=dict(steps=steps,projection='同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。'),phone=dict(steps=['左の全機能／対応常用ボタンを開く',f'「{label}」→「{src["name"]}」'] if i not in DIRECT else steps,projection='同じ意味ID。詳細は下部シート。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。')),
+    devices=dict(pc=dict(steps=steps,projection='左Rail＋右Workspace。キーは補助入口。'),tablet=dict(steps=steps,projection='同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。'),phone=dict(steps=['左の全機能／対応常用ボタンを開く',f'「{label}」→「{src["name"]}」'] if i not in DIRECT or i=='IO-002' else steps,projection='同じ意味ID。縦画面の詳細は下部シート。coarse横画面（幅1000px以下かつ高さ480px以下）は下部常用バー＋右の一時Panel。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。')),
     discovery=[label,src['purpose'],op,'カテゴリ一覧／現在の対象帯／検索結果の通常位置表示'],
     related_features=related,research=[x['id'] for x in integration[i]['research']],
     availability=dict(executable=active,prerequisites=context,unavailable_reason=None if active else s['final_scope_note']),
     architecture=dict(command_id='feature.'+i,ownership=kind,source_contract=state_contract,canonical=integration[i]['data']['canonical'],regenerable=integration[i]['data']['regenerable'],save_policy=persistence),
     source=dict(spec='docs/product-planning/'+src['spec'],final='docs/product-planning/FINAL_PRODUCT_SPEC.md',feature_sha256=hashlib.sha256(json.dumps(src,ensure_ascii=False,sort_keys=True).encode()).hexdigest()),
-    evaluation=dict(clicks_to_entry=len(steps),movement='常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可',risk=d['failure_quality'],canvas='常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上',discovery_test='名前を伝えず目的だけでカテゴリ→機能へ到達できるか。初見ユーザー未検証',interruption='ナビ／資料／別対象操作を維持。同対象の矛盾する未適用Sessionだけ局所解決')))
+    evaluation=dict(clicks_to_entry=len(steps),count_kind='nominal-design-path-not-measured',start_state='corresponding Panel already accessible; device paths may need reveal/scroll',movement='常用は固定Rail／対象帯／右下。詳細は右Workspace；Quick登録でCanvas近接可',risk=d['failure_quality'],canvas='常設はRail＋Workspace＋上部。選択／変形／効果の候補だけCanvas上',discovery_test='名前を伝えず目的だけでカテゴリ→機能へ到達できるか。初見ユーザー未検証',interruption='ナビ／資料／別対象操作を維持。同対象の矛盾する未適用Sessionだけ局所解決')))
  data=dict(schema_version=1,date_jst='2026-10-31',status='design-proposal-awaiting-user-ui-review',scope_counts=SCOPE['counts'],panels=PANELS,categories={k:dict(label=v[0],panel='right.'+v[1]) for k,v in CATS.items()},groups=[dict(label=l,categories=c) for l,c in GROUPS],features=rows)
  OUT.mkdir(exist_ok=True)
  (OUT/'FEATURE_ACCESS_LEDGER.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
