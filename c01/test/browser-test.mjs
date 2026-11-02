@@ -72,10 +72,10 @@ try{
  // A view-only flip must keep the canvas centre at the same screen point.
  await page.locator('[data-action=fit]').first().click();
  await page.waitForTimeout(80);
- const transformBefore=await page.locator('#paper').evaluate(el=>new DOMMatrix(getComputedStyle(el).transform));
+ const transformBefore=await page.locator('#paper').evaluate(el=>{const m=new DOMMatrix(getComputedStyle(el).transform);return {a:m.a,b:m.b,c:m.c,d:m.d,e:m.e,f:m.f}});
  const centreBefore={x:transformBefore.a*160+transformBefore.c*120+transformBefore.e,y:transformBefore.b*160+transformBefore.d*120+transformBefore.f};
  await page.locator('[data-action=flipx]').click();await page.waitForTimeout(80);
- const transformAfter=await page.locator('#paper').evaluate(el=>new DOMMatrix(getComputedStyle(el).transform));
+ const transformAfter=await page.locator('#paper').evaluate(el=>{const m=new DOMMatrix(getComputedStyle(el).transform);return {a:m.a,b:m.b,c:m.c,d:m.d,e:m.e,f:m.f}});
  const centreAfter={x:transformAfter.a*160+transformAfter.c*120+transformAfter.e,y:transformAfter.b*160+transformAfter.d*120+transformAfter.f};
  assert.ok(Math.hypot(centreBefore.x-centreAfter.x,centreBefore.y-centreAfter.y)<.05,'Flip must keep visible artwork centre fixed');
  console.log('PASS: basic painting, legacy dual color modes, scroll ownership, centre-anchored flip');
