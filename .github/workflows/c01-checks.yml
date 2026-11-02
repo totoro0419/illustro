@@ -1,0 +1,28 @@
+name: Illustro C01 checks
+on:
+  push:
+    branches: [implementation/stage4-c01-basic-paint]
+  pull_request:
+    paths: ["c01/**", ".github/workflows/c01-checks.yml"]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Dependencies
+        run: npm install --no-audit --no-fund
+        working-directory: c01
+      - name: Static and unit
+        run: npm run check
+        working-directory: c01
+      - name: Browser runtime
+        run: npx playwright install --with-deps chromium
+        working-directory: c01
+      - name: Browser integration
+        run: npm run browser:test
+        working-directory: c01
