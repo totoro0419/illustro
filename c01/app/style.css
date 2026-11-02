@@ -2,3 +2,37 @@
 @media(max-width:980px){.topbar{gap:8px;padding:0 8px}.topbar .top-actions button{padding:6px}.workspace{width:262px}.rail{flex-basis:60px}.rail button{width:49px}}@media(max-width:720px){.topbar{height:46px}.topbar .top-actions button:not([data-action=save]):not([data-action=new]):not([data-action=open]):not(#panel-toggle){display:none}.topbar #doc-title{max-width:90px}.rail{display:none}.workspace{position:absolute;right:0;top:46px;bottom:49px;width:min(326px,90vw);max-width:90vw;z-index:10;box-shadow:-9px 0 32px #18213233}.workspace.collapsed{display:none}.quick{bottom:66px;gap:4px;padding:5px;max-width:98%}.quick button{min-height:34px;padding:5px 8px}.quick label{font-size:0;gap:3px}.quick input{width:70px}.quick output{font-size:11px}.mobilebar{height:49px;flex:0 0 auto;display:flex;gap:2px;align-items:center;justify-content:space-evenly;background:#fff;border-top:1px solid #e3e8ed;z-index:11}.mobilebar button{border:none;padding:5px 7px;font-size:12px;min-height:35px}.canvas-hud{top:6px;left:5px;gap:3px}.canvas-hud span{padding:5px;font-size:10px}#toast{bottom:115px}}@media(max-width:720px) and (orientation:landscape){.topbar{height:37px}.topbar .brand{font-size:15px}.workspace{top:37px;bottom:40px}.mobilebar{height:40px}.quick{bottom:44px;right:4px;left:auto;transform:none}.quick label{display:none}.canvas-hud{top:3px}.topbar #doc-title{max-width:140px}}@media(min-width:721px){.workspace.collapsed{display:none}}
 
 #input-diagnostics{position:fixed;right:12px;bottom:78px;z-index:60;width:min(355px,90vw);max-height:55dvh;overflow:auto;background:#fffdf5f5;border:1px solid #d7b45e;border-radius:12px;padding:12px;box-shadow:0 6px 28px #2224;font-size:11px}#input-diagnostics strong{font-size:12px}#input-diagnostics pre{white-space:pre-wrap;overflow-wrap:anywhere;font:10px/1.5 monospace;max-height:190px;overflow:auto}#input-diagnostics p{margin:5px 0}
+
+
+/* M09/M10 old-Illustro Classic & Orbit: hue-drag controls must never trigger Workspace scroll. */
+#color-section .legacy-mode-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:650;font-size:12px;margin:0}
+#color-picker-mode{width:auto;min-width:135px;padding:8px;border-radius:8px;border:1px solid #ccd4df;background:#fff}
+#classic-picker[hidden],#orbit-picker[hidden]{display:none!important}
+.legacy-classic,.legacy-orbit{position:relative;margin:8px auto 11px;user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:contain}
+.legacy-classic{width:min(252px,100%);aspect-ratio:1;isolation:isolate}
+#classic-ring{position:absolute;inset:0;border-radius:50%;cursor:crosshair;
+ background:conic-gradient(from 90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);
+ -webkit-mask:radial-gradient(circle closest-side,transparent calc(100% - 23px),#000 calc(100% - 22px));
+ mask:radial-gradient(circle closest-side,transparent calc(100% - 23px),#000 calc(100% - 22px));touch-action:none}
+#classic-hue-marker{position:absolute;left:calc(100% - 10px);top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 1.5px #263144,0 1px 5px #26314488;pointer-events:none;z-index:3}
+#classic-plane,#orbit-plane{position:absolute;transform:rotate(45deg);transform-origin:center;touch-action:none;cursor:crosshair;border-radius:3px;--pure:#f00;background:var(--pure);overflow:visible}
+#classic-plane{z-index:2;left:26.5%;top:26.5%;width:47%;height:47%;box-shadow:0 1px 4px #16294d3b,0 0 0 1px #cad3df}
+#classic-plane .legacy-white,#orbit-plane .legacy-white,
+#classic-plane .legacy-black,#orbit-plane .legacy-black{position:absolute;inset:0;pointer-events:none;border-radius:inherit}
+.legacy-white{background:linear-gradient(to right,#fff,transparent)}
+.legacy-black{background:linear-gradient(to top,#000,transparent)}
+.legacy-sv-marker{position:absolute;z-index:5;width:18px;height:18px;transform:translate(-50%,-50%);border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 1.5px #263344,0 1px 5px #26334488;pointer-events:none}
+.legacy-orbit{width:min(306px,100%);aspect-ratio:1;isolation:isolate}
+#orbit-plane{z-index:2;top:23%;left:27.75%;width:44.5%;aspect-ratio:1;border:1px solid #34455e80;box-shadow:0 1px 5px #1e30492e,0 0 0 2px #ffffffdd}
+#orbit-wheel,#orbit-wheel-front,.legacy-orbit-hit{position:absolute;left:0;top:48%;width:100%;height:auto;aspect-ratio:2/1;display:block;touch-action:none}
+#orbit-wheel{z-index:0;pointer-events:none;outline:none}
+#orbit-wheel-front{z-index:3;pointer-events:none}
+.legacy-orbit-hit{pointer-events:none;overflow:visible}
+.legacy-orbit-back{z-index:1}.legacy-orbit-front{z-index:4}
+.legacy-orbit-hit path{pointer-events:fill;touch-action:none;cursor:grab}
+.legacy-orbit-hit path:active{cursor:grabbing}
+.legacy-orbit-help{position:absolute;bottom:0;left:0;right:0;font-size:10px!important;text-align:center;color:#647285}
+#classic-ring:focus-visible,#orbit-wheel:focus-visible{outline:2px solid #d99d25;outline-offset:3px}
+/* A white erase-indicator on white paper approximates the hole before the Worker publishes real alpha.
+   The preview remains a separate transient canvas; it never modifies canonical pixels. */
+.stroke-preview.eraser-preview{pointer-events:none}

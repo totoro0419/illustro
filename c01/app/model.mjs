@@ -96,3 +96,11 @@ export function brushBounds(points,size,width,height){
   const r=size*1.5+4; let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity; for(const p of points){minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x);maxY=Math.max(maxY,p.y)} const x=Math.max(0,Math.floor(minX-r)),y=Math.max(0,Math.floor(minY-r));
   return {x,y,w:Math.max(0,Math.min(width,Math.ceil(maxX+r))-x),h:Math.max(0,Math.min(height,Math.ceil(maxY+r))-y)};
 }
+/** Flip the view in place about the *document centre*, not the document origin. */
+export function flipAtDocumentCenter(v,width,height,{flipX=v.flipX,flipY=v.flipY}={}){
+ const centre={x:width/2,y:height/2};
+ const anchor=docToScreen(centre,v);
+ const result={...v,flipX,flipY},projected=docToScreen(centre,{...result,x:0,y:0});
+ result.x=anchor.x-projected.x;result.y=anchor.y-projected.y;
+ return result;
+}

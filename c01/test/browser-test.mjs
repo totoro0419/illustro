@@ -51,5 +51,32 @@ try{
  });
  assert.deepEqual(count,[1,1,1,1],'Isolated pen/touch diagnostic must count events');
  assert.deepEqual(probeErrors,[],'Standalone diagnostic must not throw');
- console.log('PASS: browser draw/undo/redo/new/phone entry and independent pen/touch diagnostics');
+
+ // Old-Illustro color controls must own touch gestures rather than Workspace scroll.
+ const colorMode=page.locator('#color-picker-mode');
+ await colorMode.selectOption('classic');
+ await page.locator('#classic-picker').waitFor({state:'visible'});
+ const plane=await page.locator('#classic-plane').boundingBox();
+ await page.mouse.move(plane.x+plane.width*.5,plane.y+plane.height*.5);
+ await page.mouse.down();await page.mouse.move(plane.x+plane.width*.68,plane.y+plane.height*.46,{steps:5});await page.mouse.up();
+ const hexClassic=await page.locator('#hex').inputValue();
+ await colorMode.selectOption('orbit');
+ await page.locator('#orbit-picker').waitFor({state:'visible'});
+ await page.waitForFunction(()=>document.querySelector('#orbit-wheel').width>0);
+ const orbitPlane=await page.locator('#orbit-plane').boundingBox();
+ const scrollBefore=await page.locator('.workspace-scroll').evaluate(el=>el.scrollTop);
+ await page.mouse.move(orbitPlane.x+orbitPlane.width*.5,orbitPlane.y+orbitPlane.height*.5);
+ await page.mouse.down();await page.mouse.move(orbitPlane.x+orbitPlane.width*.67,orbitPlane.y+orbitPlane.height*.58,{steps:7});await page.mouse.up();
+ assert.notEqual(await page.locator('#hex').inputValue(),hexClassic,'Classic/Orbit SV should update shared foreground color');
+ assert.equal(await page.locator('.workspace-scroll').evaluate(el=>el.scrollTop),scrollBefore,'Color drag must not scroll Workspace');
+ // A view-only flip must keep the canvas centre at the same screen point.
+ await page.locator('[data-action=fit]').first().click();
+ await page.waitForTimeout(80);
+ const transformBefore=await page.locator('#paper').evaluate(el=>new DOMMatrix(getComputedStyle(el).transform));
+ const centreBefore={x:transformBefore.a*160+transformBefore.c*120+transformBefore.e,y:transformBefore.b*160+transformBefore.d*120+transformBefore.f};
+ await page.locator('[data-action=flipx]').click();await page.waitForTimeout(80);
+ const transformAfter=await page.locator('#paper').evaluate(el=>new DOMMatrix(getComputedStyle(el).transform));
+ const centreAfter={x:transformAfter.a*160+transformAfter.c*120+transformAfter.e,y:transformAfter.b*160+transformAfter.d*120+transformAfter.f};
+ assert.ok(Math.hypot(centreBefore.x-centreAfter.x,centreBefore.y-centreAfter.y)<.05,'Flip must keep visible artwork centre fixed');
+ console.log('PASS: basic painting, legacy dual color modes, scroll ownership, centre-anchored flip');
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
