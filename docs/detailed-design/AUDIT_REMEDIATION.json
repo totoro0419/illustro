@@ -272,21 +272,15 @@
         "IO-002"
       ],
       "root_cause_area": "search-synonyms",
-      "remediation_status": "closed-for-stage3",
+      "remediation_status": "owner-approved-for-stage4-validation-pending",
       "changed_files": "model.js / app.js / style.css / stage3-ux-model-tests.cjs / stage3-ux-browser-tests.cjs",
       "remediation": "66既存＋33の未登録言い換え/複数候補/未知語の検査。短い反転語の誤順位を修正。結果にカテゴリを表示。",
       "remaining_work": "Stage IV carried validation (NOT RUN, not a PASS): 初見利用者の目的探索・作用先選択を未実施。",
       "original_close_test": "名称を教えない制作課題と、反転/Clip/Multiply/透明出力の同義語セットで到達先を照合する。",
-      "closed": true,
-      "closure_rule": "User-accepted Stage III gate exception; original close test wording retained, not run/passed. Owner approval closes the Stage III management item only. Required real-user/device validation stays as a Stage IV obligation.",
-      "resolution_scope": "Stage III closed by explicit owner approval, unverified human/physical aspects transferred to Stage IV",
-      "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41425252290",
-        "checks": "stage3-ux-model-tests:16 task phrases; stage3-ux-browser-tests: visible task chips and selected target details",
-        "scope": "The CI documents only automated prototype/model checks. Stage III administrative closure was authorized by the product owner; outstanding human and device tests were NOT RUN.",
-        "owner_approval": "2026-11-02, explicit user decision",
-        "source_sha": "b90a879ac91cb93675a9701ae4b0b2ea880c888e"
-      },
+      "closed": false,
+      "closure_rule": "Original technical close test remains unexecuted; the product owner explicitly approved an exception to the Stage III gate on 2026-11-02, not a test PASS. Preserve the original close test and transfer validation to Stage IV.",
+      "resolution_scope": "Stage III owner approval / gate waived; original technical audit verification remains open and explicitly transfers to Stage IV",
+      "closure_evidence": null,
       "scoped_evidence": {
         "scope": "Stage III review prototype; not physical first-use usability",
         "checks": "stage3-ux-model-tests:16 task phrases; stage3-ux-browser-tests: visible task chips and selected target details",
@@ -305,7 +299,9 @@
         "acceptance_type": "stage3 gate waiver and transfer of validation, NOT successful execution of the original close test",
         "original_close_test_executed": false,
         "original_close_test_passed": null,
-        "transfer_to": "Stage IV implementation and validation"
+        "transfer_to": "Stage IV implementation and validation",
+        "administrative_stage3_status": "approved",
+        "technical_close_test_status": "NOT_RUN"
       }
     },
     {
@@ -562,21 +558,15 @@
         "HIS-001"
       ],
       "root_cause_area": "history-scopes",
-      "remediation_status": "closed-for-stage3",
+      "remediation_status": "owner-approved-for-stage4-validation-pending",
       "changed_files": "model.js / app.js / style.css / stage3-ux-model-tests.cjs / stage3-ux-browser-tests.cjs",
       "remediation": "5scope交錯5000操作を独立した配列oracleで照合。保存作品再選択で別作品の試筆/資料sidecarが混入する原因を修正。",
       "remaining_work": "Stage IV carried validation (NOT RUN, not a PASS): 初見利用者の作用先説明試験は未実施。モデルの作品根再読込は製品Native/sidecar永続化試験ではない。",
       "original_close_test": "パッド/資料/作品/Sessionを交互に編集し、各Undo後に対象と残存編集を利用者が説明できるか評価する。",
-      "closed": true,
-      "closure_rule": "User-accepted Stage III gate exception; original close test wording retained, not run/passed. Owner approval closes the Stage III management item only. Required real-user/device validation stays as a Stage IV obligation.",
-      "resolution_scope": "Stage III closed by explicit owner approval, unverified human/physical aspects transferred to Stage IV",
-      "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41425252290",
-        "checks": "stage3-ux-model-tests: independent histories/revision/save/new work; stage3-ux-browser-tests: three visible Undo scopes",
-        "scope": "The CI documents only automated prototype/model checks. Stage III administrative closure was authorized by the product owner; outstanding human and device tests were NOT RUN.",
-        "owner_approval": "2026-11-02, explicit user decision",
-        "source_sha": "b90a879ac91cb93675a9701ae4b0b2ea880c888e"
-      },
+      "closed": false,
+      "closure_rule": "Original technical close test remains unexecuted; the product owner explicitly approved an exception to the Stage III gate on 2026-11-02, not a test PASS. Preserve the original close test and transfer validation to Stage IV.",
+      "resolution_scope": "Stage III owner approval / gate waived; original technical audit verification remains open and explicitly transfers to Stage IV",
+      "closure_evidence": null,
       "scoped_evidence": {
         "scope": "Stage III review prototype; not physical first-use usability",
         "checks": "stage3-ux-model-tests: independent histories/revision/save/new work; stage3-ux-browser-tests: three visible Undo scopes",
@@ -603,7 +593,9 @@
         "acceptance_type": "stage3 gate waiver and transfer of validation, NOT successful execution of the original close test",
         "original_close_test_executed": false,
         "original_close_test_passed": null,
-        "transfer_to": "Stage IV implementation and validation"
+        "transfer_to": "Stage IV implementation and validation",
+        "administrative_stage3_status": "approved",
+        "technical_close_test_status": "NOT_RUN"
       }
     },
     {
@@ -621,21 +613,15 @@
         "UI-006"
       ],
       "root_cause_area": "mid-width-layout",
-      "remediation_status": "closed-for-stage3",
+      "remediation_status": "owner-approved-for-stage4-validation-pending",
       "changed_files": "style.css / stage3-ux-browser-tests.cjs / IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md / shell.html / app.js / final-browser-tests.cjs",
       "remediation": "短いcoarse横画面は1000pxまでC案。3配置の同じ課題を操作/領域/遮蔽率で比較する実DOM検査を追加。",
       "remaining_work": "Stage IV carried validation (NOT RUN, not a PASS): 自動操作の時間は人の探索時間でない。初見利用者・実端末比較は未実施。",
       "original_close_test": "760px境界前後と800/960/1180pxで、同じ制作課題の遮蔽率/開閉回数/探索時間を比較する。",
-      "closed": true,
-      "closure_rule": "User-accepted Stage III gate exception; original close test wording retained, not run/passed. Owner approval closes the Stage III management item only. Required real-user/device validation stays as a Stage IV obligation.",
-      "resolution_scope": "Stage III closed by explicit owner approval, unverified human/physical aspects transferred to Stage IV",
-      "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41425252290",
-        "checks": "stage3-ux-browser-tests: six widths, measured canvas geometry and open/close transitions",
-        "scope": "The CI documents only automated prototype/model checks. Stage III administrative closure was authorized by the product owner; outstanding human and device tests were NOT RUN.",
-        "owner_approval": "2026-11-02, explicit user decision",
-        "source_sha": "b90a879ac91cb93675a9701ae4b0b2ea880c888e"
-      },
+      "closed": false,
+      "closure_rule": "Original technical close test remains unexecuted; the product owner explicitly approved an exception to the Stage III gate on 2026-11-02, not a test PASS. Preserve the original close test and transfer validation to Stage IV.",
+      "resolution_scope": "Stage III owner approval / gate waived; original technical audit verification remains open and explicitly transfers to Stage IV",
+      "closure_evidence": null,
       "scoped_evidence": {
         "scope": "Stage III review prototype; not physical first-use usability",
         "checks": "stage3-ux-browser-tests: six widths, measured canvas geometry and open/close transitions",
@@ -665,7 +651,9 @@
         "acceptance_type": "stage3 gate waiver and transfer of validation, NOT successful execution of the original close test",
         "original_close_test_executed": false,
         "original_close_test_passed": null,
-        "transfer_to": "Stage IV implementation and validation"
+        "transfer_to": "Stage IV implementation and validation",
+        "administrative_stage3_status": "approved",
+        "technical_close_test_status": "NOT_RUN"
       }
     },
     {
@@ -714,21 +702,15 @@
         "DEV-004"
       ],
       "root_cause_area": "touch-and-edge",
-      "remediation_status": "closed-for-stage3",
+      "remediation_status": "owner-approved-for-stage4-validation-pending",
       "changed_files": "style.css / stage3-ux-browser-tests.cjs / IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md / shell.html / app.js / final-browser-tests.cjs",
       "remediation": "数値/検索入力・select/range・全Workspace・全247詳細の標的へ検査拡張。縮小ボタン、通知遮蔽、検索見出し遮蔽を修正。小標的/中央遮蔽をCI不合格へ。",
       "remaining_work": "Stage IV carried validation (NOT RUN, not a PASS): 最終CIのgeometry例外を参照。実指誤タップ/OS倍率/実支援技術は未実施。",
       "original_close_test": "実指で誤押下率と移動距離を測り、320px/200%文字/左右利きで主要入口の可視性を検査する。",
-      "closed": true,
-      "closure_rule": "User-accepted Stage III gate exception; original close test wording retained, not run/passed. Owner approval closes the Stage III management item only. Required real-user/device validation stays as a Stage IV obligation.",
-      "resolution_scope": "Stage III closed by explicit owner approval, unverified human/physical aspects transferred to Stage IV",
-      "closure_evidence": {
-        "ci": "https://github.com/totoro0419/illustro/actions/runs/41425252290",
-        "checks": "stage3-ux-browser-tests: 320 at text 200%, 390/740/800 touch viewport hit checks",
-        "scope": "The CI documents only automated prototype/model checks. Stage III administrative closure was authorized by the product owner; outstanding human and device tests were NOT RUN.",
-        "owner_approval": "2026-11-02, explicit user decision",
-        "source_sha": "b90a879ac91cb93675a9701ae4b0b2ea880c888e"
-      },
+      "closed": false,
+      "closure_rule": "Original technical close test remains unexecuted; the product owner explicitly approved an exception to the Stage III gate on 2026-11-02, not a test PASS. Preserve the original close test and transfer validation to Stage IV.",
+      "resolution_scope": "Stage III owner approval / gate waived; original technical audit verification remains open and explicitly transfers to Stage IV",
+      "closure_evidence": null,
       "scoped_evidence": {
         "scope": "Stage III review prototype; not physical first-use usability",
         "checks": "stage3-ux-browser-tests: 320 at text 200%, 390/740/800 touch viewport hit checks",
@@ -758,7 +740,9 @@
         "acceptance_type": "stage3 gate waiver and transfer of validation, NOT successful execution of the original close test",
         "original_close_test_executed": false,
         "original_close_test_passed": null,
-        "transfer_to": "Stage IV implementation and validation"
+        "transfer_to": "Stage IV implementation and validation",
+        "administrative_stage3_status": "approved",
+        "technical_close_test_status": "NOT_RUN"
       }
     }
   ],
@@ -766,15 +750,15 @@
   "open_by_severity": {
     "P0": 0,
     "P1": 0,
-    "P2": 0,
-    "P3": 0
+    "P2": 3,
+    "P3": 1
   },
-  "verification_policy": "Stage③ closure requires resolved design cause, scoped executable reference/DOM/type evidence where applicable, and user signoff for disputed product behavior. Physical device/production-only checks remain explicit Stage④ obligations, never counted as passed. Exception on 2026-11-02: owner explicitly approved the four remaining UI/UX findings as a Stage III gate waiver, not as executed/passed human or physical tests. Those validation duties transfer to Stage IV.",
+  "verification_policy": "Technical closure requires original test evidence; the product owner explicitly approved a separate Stage III gate exception for four findings on 2026-11-02. These four remain technically unverified (NOT RUN), but stage transition is APPROVED. Stage IV must perform real-user/device validation, not represent owner approval as a test PASS.",
   "closed_by_severity": {
     "P0": 0,
     "P1": 7,
-    "P2": 11,
-    "P3": 1
+    "P2": 8,
+    "P3": 0
   },
   "new_findings": [
     {
@@ -848,8 +832,8 @@
   "aggregate_open_by_severity": {
     "P0": 0,
     "P1": 0,
-    "P2": 0,
-    "P3": 0
+    "P2": 3,
+    "P3": 1
   },
   "stage3_gate": {
     "status": "APPROVED_FOR_STAGE4",
@@ -857,8 +841,8 @@
     "decision_source": "Explicit product owner approval in conversation",
     "original_19_findings": {
       "closed_by_prior_design_evidence": 15,
-      "closed_by_owner_approved_exception": 4,
-      "remaining_stage3_blockers": 0
+      "owner_approved_for_stage4_with_original_tests_pending": 4,
+      "remaining_stage3_approval_blockers": 0
     },
     "owner_accepted_ids": [
       "AUD-008",
@@ -868,6 +852,13 @@
     ],
     "remaining_real_user_or_device_validation": "NOT RUN; must not be labelled as PASS",
     "pull_request_merge": "NOT IMPLIED",
-    "stage4_product_implementation": "NOT IMPLIED"
+    "stage4_product_implementation": "NOT IMPLIED",
+    "technical_audit_open": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 3,
+      "P3": 1
+    },
+    "management_decision": "Approved for Stage IV despite four original tests not run"
   }
 }
