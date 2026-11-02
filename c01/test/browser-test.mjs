@@ -2,7 +2,7 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
-const files={'/':'index.html','/index.html':'index.html','/input-test.html':'input-test.html','/app/main.mjs':'app/main.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/raster-worker.mjs':'app/raster-worker.mjs'};
+const files={'/':'index.html','/index.html':'index.html','/input-test.html':'input-test.html','/app/main.mjs':'app/main.mjs','/app/color-pickers.mjs':'app/color-pickers.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/raster-worker.mjs':'app/raster-worker.mjs'};
 const server=createServer(async(req,res)=>{
   try {const path=files[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}const content=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(content)}
   catch(err){res.writeHead(500).end(String(err))}
@@ -56,6 +56,7 @@ try{
  const colorMode=page.locator('#color-picker-mode');
  await colorMode.selectOption('classic');
  await page.locator('#classic-picker').waitFor({state:'visible'});
+ await page.locator('#classic-plane').scrollIntoViewIfNeeded();
  const plane=await page.locator('#classic-plane').boundingBox();
  await page.mouse.move(plane.x+plane.width*.5,plane.y+plane.height*.5);
  await page.mouse.down();await page.mouse.move(plane.x+plane.width*.68,plane.y+plane.height*.46,{steps:5});await page.mouse.up();
@@ -63,6 +64,7 @@ try{
  await colorMode.selectOption('orbit');
  await page.locator('#orbit-picker').waitFor({state:'visible'});
  await page.waitForFunction(()=>document.querySelector('#orbit-wheel').width>0);
+ await page.locator('#orbit-plane').scrollIntoViewIfNeeded();
  const orbitPlane=await page.locator('#orbit-plane').boundingBox();
  const scrollBefore=await page.locator('.workspace-scroll').evaluate(el=>el.scrollTop);
  await page.mouse.move(orbitPlane.x+orbitPlane.width*.5,orbitPlane.y+orbitPlane.height*.5);
