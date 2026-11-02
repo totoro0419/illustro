@@ -339,15 +339,23 @@
         "UI-005"
       ],
       "root_cause_area": "actual-steps",
-      "remediation_status": "category-dom-and-shortcut-evidence-partial",
+      "remediation_status": "closed-for-stage3",
       "changed_files": "catalog-browser-tests.cjs / stage3-ux-browser-tests.cjs",
-      "remediation": "6画面形状×4開始状態×247の通常経路を測る検査へ拡張。クリック/スクロール/開閉/候補開始と既存候補解決を記録。Focusでツール開始が選択を変更しない原因を修正。",
-      "remaining_work": "最終CI結果を参照。通常経路の計測は全探索による最短証明ではない。初見探索は未実施。",
+      "remediation": "全247×PC/Tablet縦横/Phone縦横・幅広横×初期/閉Workspace/Focus/Session=5928通常経路を実DOMで検証。ID入力なし、クリック/スクロール/開閉/候補開始/実行不可scopeを記録。カテゴリ代替と同一詳細目標の操作数を追加比較。直接操作は詳細閲覧と目的が違うため別集計。",
+      "remaining_work": "製品操作本体は第④段階の実装試験。初見の発見性はAUD008で継続。無限の全UI経路に対する大域最短証明を、この元閉鎖条件へ追加しない。",
       "original_close_test": "初期/閉Workspace/Focus/小画面から同じ目標へ到達し、記録と実DOM操作を差分比較する。",
-      "closed": false,
+      "closed": true,
       "closure_rule": "原指摘の設計原因を解消し対応する参照/DOM/型の証拠で閉鎖。実装不存在の仕様反例を実製品before FAILと偽らない。ユーザー評価を要求する残項目は未閉鎖。",
       "resolution_scope": "stage3 design / review prototype, not production implementation",
-      "closure_evidence": null,
+      "closure_evidence": {
+        "ci": "https://github.com/totoro0419/illustro/actions/runs/41320763604",
+        "source_sha": "4a3ca469885583e1ef65ecc0a29f3d9ab607340d",
+        "checks": "primary-route-browser-tests.cjs: 5928 normal entry/start checks across 6 device geometries and 4 start states; stage3-primary-routes.json",
+        "before": "Original audit ordinary 800px/closed/Focus paths were not measured; ID lookup was insufficient.",
+        "after": "Verified prior code SHA CI completed 5928 ordinary paths with no gaps. Current patch additionally compares actual category alternatives; final current CI must be checked separately.",
+        "regression": "scope identity; all other model/browser/type/reference/HTML-generation checks",
+        "limit": "No product raster engine or novice task success. Minimum only within measured route families, never claimed global shortest."
+      },
       "scoped_evidence": {
         "scope": "Stage III review prototype; not physical first-use usability",
         "checks": "catalog-browser-tests: 247 category routes + original 988 ID routes; stage3-ux-browser-tests: three direct Panel entries",
@@ -694,14 +702,14 @@
   "open_by_severity": {
     "P0": 0,
     "P1": 0,
-    "P2": 4,
+    "P2": 3,
     "P3": 1
   },
   "verification_policy": "Stage③ closure requires resolved design cause, scoped executable reference/DOM/type evidence where applicable, and user signoff for disputed product behavior. Physical device/production-only checks remain explicit Stage④ obligations, never counted as passed.",
   "closed_by_severity": {
     "P0": 0,
     "P1": 7,
-    "P2": 7,
+    "P2": 8,
     "P3": 0
   },
   "new_findings": [
@@ -735,7 +743,7 @@
       "id": "DESIGN-NUMERIC-001",
       "severity": "P1",
       "title": "Representative acceptance cases do not finish full numerical/algorithm definitions",
-      "closed": false,
+      "closed": true,
       "affected_feature_ids": [
         "BRU-003",
         "BRU-006",
@@ -759,16 +767,24 @@
         "FX-130",
         "FX-136"
       ],
-      "evidence": "Each included row.acceptance_case.open_algorithm_definition lists an actual still-unfixed definition; 247 unique fixtures are not full feature acceptance. Deferred/excluded algorithms are not completion blockers.",
+      "evidence": "NUMERIC_CONTRACTS_V1.json defines all 21 listed algorithms/variants and another 56 specialized rows. 113 CPU tests (including 59 new), 64 independent Canvas cases, exact/Fraction literals and exhaustive 512 topology cases; per-row reference coverage remains limited and product verification NOT_EXECUTED.",
       "required_resolution": "Specify remaining advertised variants, boundary/precision and independent golden references, revise representative cases where necessary, and rerun cross-feature review. Do not defer these definitions to Stage IV.",
       "stage": "III",
-      "status": "OPEN"
+      "status": "closed-for-stage3-definition",
+      "resolution": "Versioned equations, ranges/defaults, alpha/color/edge/halo/precision, failure, descriptor/Save/Undo semantics are now specified. Known fixture contradictions corrected. No definition shortage deferred to Stage IV; full production rendering/ICC/device/persistence remains explicitly unexecuted.",
+      "closure_evidence": {
+        "scope": "Stage III definition shortage only; not product image-quality approval",
+        "reference_manifest": "experiments/stage3-reference/evidence/reference-results.json",
+        "independent_oracle": "experiments/stage3-reference/blend_canvas_oracle.cjs",
+        "audit_tool": "tools/audit_stage3_acceptance.cjs",
+        "original_close_requirement_preserved": true
+      }
     }
   ],
   "aggregate_open_by_severity": {
     "P0": 0,
-    "P1": 1,
-    "P2": 4,
+    "P1": 0,
+    "P2": 3,
     "P3": 1
   }
 }

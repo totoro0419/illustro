@@ -39,6 +39,7 @@ check('review-finding crosswalk exists and is 19 unique findings',()=>{
  for(let f of audit.findings){
   if(f.closed){assert(f.closure_evidence&&f.closure_evidence.checks&&/^https:\/\/github.com\/totoro0419\/illustro\/actions\/runs\/\d+$/.test(f.closure_evidence.ci),f.id+' missing scoped closure evidence');assert.equal(f.remediation_status,'closed-for-stage3');}else assert(f.remaining_work,f.id+' missing remaining work');
   assert.equal(f.severity,byId.get(f.id).severity);assert.equal(f.title,byId.get(f.id).title);
+  assert.equal(f.original_close_test,byId.get(f.id).test,f.id+' original closure condition changed');
   for(const id of f.affected_feature_ids)assert(rows.some(r=>r.id===id),f.id+' unknown '+id);
  }
 });

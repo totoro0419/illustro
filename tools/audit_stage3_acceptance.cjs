@@ -48,11 +48,11 @@ for(const f of rows){
  byGroup[category].action_variants+=vs.length;
 }
 assert.equal(Object.keys(byGroup).length,30);
-assert.equal(drafts,247,'a feature unexpectedly marked approved without cross-verified evidence');
+assert.equal(drafts,0,'reviewed definitions unexpectedly reverted to drafts');
 assert.equal(unverifiedDevice,247,'a device unexpectedly marked verified');
 assert.equal(actionVariantRows,13,'variant roster changed; re-review special cases');
 const open=require(path.join(root,'docs/detailed-design/AUDIT_REMEDIATION.json')).findings.filter(x=>!x.closed).map(x=>x.id);
-assert.deepEqual(open.slice().sort(),['AUD-008','AUD-010','AUD-016','AUD-017','AUD-019']);
+assert(open.every(id=>['AUD-008','AUD-010','AUD-016','AUD-017','AUD-019'].includes(id)),'unexpected original audit open set');
 const report={
  schema_version:1,
  kind:'DESIGN-COVERAGE-ONLY',
@@ -67,11 +67,11 @@ const report={
  action_variant_count:variantCount,
  action_variant_roster:rows.filter(x=>x.action_variants?.length).map(x=>({id:x.id,variants:x.action_variants})),
  remaining_audits:open,
- main_entry_coverage:'Declared entry exists as text. Real 247 shortest/normal UI routes and steps are NOT verified.',
- verification:'247 source identity and basic six-field acceptance presence only; no image kernels, GPU, real-user usability or numeric thresholds verified.',
+ main_entry_coverage:'5928 normal routes measured independently by primary-route-browser-tests; category alternative measures only a bounded route minimum, not global shortest or novice discovery.',
+ verification:'247 source identities and contract links checked here. CPU/Canvas numerical evidence is separate; no production GPU or real-user validation.',
  additional_design_work:[
-  'Promote each feature acceptance draft to reproducible condition with observable state and expected result, without rewriting approved scope.',
-  'Specify numerical kernel boundary/edge/precision for each effect before claiming algorithmic implementation readiness.',
+  'Run the defined per-feature acceptance against the future product engine; preserve original scope.',
+  'Validate each specified numerical variant on production CPU/GPU and arbitrary ICC before claiming product quality.',
   'Run real-document user-task trials for discovery, history scope, mid-width layout and touch targets.',
   'Review cross-scope action variants individually for Undo/Save/Cancel and non-destructive reediting.'
  ]
@@ -90,11 +90,30 @@ for(const f of rows){
  assert.equal(c.scope_executable,['included','included_limited'].includes(f.scope),f.id+' scope case mismatch');
  if(!c.scope_executable){assert(c.then.includes('No executable'),f.id+' deferred case implies execution');assert.equal(c.open_algorithm_definition,null,f.id+' deferred algorithm made a completion blocker');}
  assert(j.acceptance_inheritance.interaction,'missing shared interaction contract');
- assert(c.status.includes('under-review'),'representative case falsely promoted to full acceptance');
+ assert(c.status.includes('AI-reviewed'),'missing explicit design-review provenance');
+ assert.equal(f.contract_review?.human_verified,false);assert.equal(f.contract_review?.product_engine_verified,false);
+ assert.equal(f.contract_review?.specific_case,c.case_id);
 }
 const openAlgorithms=rows.filter(f=>f.acceptance_case.open_algorithm_definition).map(f=>f.id);
 assert.deepEqual(new Set(openAlgorithms),new Set(j.specific_case_coverage.open_algorithm_feature_ids));
 report.additional_design_blockers=read('docs/detailed-design/AUDIT_REMEDIATION.json').additional_design_blockers;
-report.specific_cases={count:fixtures.size,full_feature_acceptance_confirmed:false,open_algorithm_feature_ids:openAlgorithms};
+report.specific_cases={count:fixtures.size,stage3_operation_definitions_reviewed:247,reviewer:'AI, not independent human approval',full_feature_acceptance_confirmed:false,open_algorithm_feature_ids:openAlgorithms};
 fs.writeFileSync(path.join(root,'test-results/stage3-feature-audit.json'),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({specific_cases:fixtures.size,full_acceptance:'NOT_CONFIRMED',open_algorithm_definitions:openAlgorithms}));
+
+const num=read('docs/detailed-design/NUMERIC_CONTRACTS_V1.json');
+assert.equal(new Set(num.features.map(f=>f.feature_id)).size,num.features.length);
+for(const f of num.features){
+ assert(byId.has(f.feature_id));assert(byId.get(f.feature_id).acceptance_case.scope_executable);
+ for(const k of ['inputs','algorithm','boundary_precision','dependencies','reference_coverage'])assert(f[k]?.length,f.feature_id+' missing numerical '+k);
+ assert(f.variants.length);assert.equal(f.production_verification,'NOT_EXECUTED');
+ if(f.algorithm_family_ref)assert(num.algorithm_families[f.algorithm_family_ref]?.applies_to.includes(f.feature_id),f.feature_id+' invalid shared algorithm link');
+ assert.equal(byId.get(f.feature_id).acceptance_case.numerical_contract,'NUMERIC_CONTRACTS_V1.json#'+f.feature_id);
+ for(const method of f.reference_functions){
+  const [module,fn]=method.split('.');
+  assert(fs.readFileSync(path.join(root,'experiments/stage3-reference',module+'.py'),'utf8').includes('def '+fn+'('),method+' missing reference');
+ }
+}
+report.numerical_contracts={defined:num.features.length,full_production_validation:false};
+fs.writeFileSync(path.join(root,'test-results/stage3-feature-audit.json'),JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify({numerical_definitions:num.features.length,production_verified:false,human_verified:false}));

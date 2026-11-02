@@ -62,6 +62,9 @@ DIRECT = {
  'IO-002':('top.export','上部「書き出し」',None),
 }
 OVERRIDE = {
+ 'REC-001':dict(parameters='記録ON/OFF・区間・UI除外・再生。設計既定OFF。開始を明示するまで記録しない'),
+ 'REC-004':dict(parameters='Session/Today/Total/Average・Idle除外・停止/手動補正。設計既定は端末内ON、Idle閾値60秒。手動停止/削除可'),
+ 'FX-101':dict(parameters='明るさ/コントラスト・輝度のみ/色成分、初期は明るさ0/UI Contrast0（内部係数1）'),
  'WET-002':dict(parameters='水彩風プリセット・混色量・エッジ・粒状感・筆触。水分場や時間拡散なし', operation='ブラシ欄→水彩風プリセット→試筆→描画',direct_preview='筆触と粒状感を試筆。時間進行する濡れ状態は表示しない',persistence_undo='一筆一Undo。確定画素とブラシ版を保持。濡れ場・再開状態の保存は必須にしない'),
  'WET-005':dict(parameters='紙目・テクスチャ・粒状感・適用先（筆／素材）。時間吸収モデルなし', operation='ブラシの質感→紙素材→適用先を確認',direct_preview='紙目サンプルと作用範囲を比較。筆設定だけの変更と既存作品への適用を別に選択',persistence_undo='筆設定変更は作品Undo外。既存作品への明示再適用は一Transactionで元絵保持。紙版と適用範囲を保存'),
  'TRN-008':dict(parameters='変形後の見た目へ描く（既定）／元内容を編集／独立レイヤー／明示焼込', operation='対象帯の描画先→見た目／元内容を選ぶ。以前の変形だけを再編集しても後段筆跡は自動追従しない'),
@@ -126,7 +129,7 @@ def build():
     while_operating=current_preview,settings_change=f'{params}。値編集は対象名を保持し、候補と確定値を区別',
     apply_cancel=dict(kind=kind,apply='現行対象外のため実行しない' if not active else ('適用して一操作確定' if kind in ('session','command','stroke') else '設定／表示／要求の所有者へ反映。作品への架空の適用はしない'),cancel='今回の候補だけ破棄。前のツール／Focusへ戻す。既受理の別操作を消さない'),
     undo_unit=undo,current_persistence=persistence,source_persistence=d['persistence_undo'],
-    devices=dict(pc=dict(steps=steps,projection='左Rail＋右Workspace。キーは補助入口。'),tablet=dict(steps=steps,projection='同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。'),phone=dict(steps=['左の全機能／対応常用ボタンを開く',f'「{label}」→「{src["name"]}」'] if i not in DIRECT or i=='IO-002' else steps,projection='同じ意味ID。詳細は下部シート。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。')),
+    devices=dict(pc=dict(steps=steps,projection='左Rail＋右Workspace。キーは補助入口。'),tablet=dict(steps=steps,projection='同じRailとWorkspace。指ナビ／ペンを共存。閉じたWorkspaceは明示ボタンで開く。'),phone=dict(steps=['左の全機能／対応常用ボタンを開く',f'「{label}」→「{src["name"]}」'] if i not in DIRECT or i=='IO-002' else steps,projection='同じ意味ID。縦画面の詳細は下部シート。coarse横画面（幅1000px以下かつ高さ480px以下）は下部常用バー＋右の一時Panel。対象名と閉じる／適用／取消を固定し、縦にスクロール。長押し必須なし。')),
     discovery=[label,src['purpose'],op,'カテゴリ一覧／現在の対象帯／検索結果の通常位置表示'],
     related_features=related,research=[x['id'] for x in integration[i]['research']],
     availability=dict(executable=active,prerequisites=context,unavailable_reason=None if active else s['final_scope_note']),

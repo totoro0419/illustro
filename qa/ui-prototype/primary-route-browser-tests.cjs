@@ -131,6 +131,14 @@ async function actualEntry(p,f,path,device){
  await click(p,sel,'primary control');path.push(sel);
  return 'direct-control';
 }
+async function prepareState(page,state){
+ if(state==='workspace-hidden'&&await page.locator('#panels').isVisible())await page.locator('#workspaceToggle').click();
+ if(state==='focus')await page.locator('#focus').click();
+ if(state==='session'){
+  await chooseTool(page,'transform',[]);
+  if(await page.locator('#dock').isVisible())await page.locator('#workspaceToggle').click();
+ }
+}
 async function main(){
  await new Promise(resolve=>server.listen(43896,'127.0.0.1',resolve));
  browser=await chromium.launch({headless:true});
@@ -147,12 +155,7 @@ async function main(){
    await page.goto('http://127.0.0.1:43896/',{waitUntil:'load'});
    const path=[];let metrics={clicks:0,scrollPixels:0,scrollEvents:0,panelToggles:0,controls:[]};pageMetrics.set(page,metrics);
    try{
-    if(state==='workspace-hidden'&&await page.locator('#panels').isVisible())await page.locator('#workspaceToggle').click();
-    if(state==='focus')await page.locator('#focus').click();
-    if(state==='session'){
-     await chooseTool(page,'transform',[]);
-     if(await page.locator('#dock').isVisible())await page.locator('#workspaceToggle').click();
-    }
+    await prepareState(page,state);
     metrics={clicks:0,scrollPixels:0,scrollEvents:0,panelToggles:0,controls:[]};pageMetrics.set(page,metrics);
 
     const kind=await actualEntry(page,f,path,device);
@@ -166,6 +169,19 @@ async function main(){
     if(detail&&button){
      await click(page,'[data-start="'+f.id+'"]','start');if(await page.locator('[data-conflict="cancel"]').isVisible()){await click(page,'[data-conflict="cancel"]','explicit candidate cancellation');row.conflictResolved=true;}row.startInvoked=true;row.toCandidate={...metrics}; // candidate UI only, not pixel algorithm
     }
+    // Compare identical detail goals using two actual no-query route families.
+    // This is a measured minimum of these families, NOT an exhaustive UI proof.
+    if(detail){
+     await page.goto('http://127.0.0.1:43896/',{waitUntil:'load'});
+     pageMetrics.set(page,{clicks:0,scrollPixels:0,scrollEvents:0,panelToggles:0,controls:[]});
+     await prepareState(page,state);
+     const alternate={clicks:0,scrollPixels:0,scrollEvents:0,panelToggles:0,controls:[]};pageMetrics.set(page,alternate);
+     const alternatePath=[];await viaCategory(page,f,alternatePath);
+     assert(await page.locator('[data-reached="'+f.id+'"]').isVisible(),'alternate detail goal mismatch');
+     row.routeComparison={goal:'same feature detail/scope information',normal:row.measured,catalog:alternate,catalogPath:alternatePath,
+      observedMinimumClicks:Math.min(row.measured.clicks,alternate.clicks),normalExcessClicks:Math.max(0,row.measured.clicks-alternate.clicks),
+      classification:'minimum of measured normal and category routes; not global shortest; no ID/name query'};
+    }else row.routeComparison={goal:kind,normal:row.measured,classification:'direct action/control goal; catalog detail is a different goal and not compared'};
     rows.push(row);
    }catch(e){
     console.log(JSON.stringify({gap:f.id,device,state,error:String(e).slice(0,500),path}));
@@ -181,7 +197,7 @@ async function main(){
  const result={kind:'prototype-primary-entry-DOM-observation',features:247,attempts:rows.length,
   successful:rows.length-gaps.length,gaps:gaps.length,byKind:Object.fromEntries([...new Set(rows.filter(x=>x.kind).map(x=>x.kind))].map(k=>[k,rows.filter(x=>x.kind===k).length])),
   rows,
-  limits:['A primary control is not necessarily its complete real editor workflow','no physical device','no novice task trial','not a shortest-path proof; direct controls are measured separately','some entries are catalog-only by approved scope','no formal raster operations']};
+  limits:['A primary control is not necessarily its complete real editor workflow','no physical device','no novice task trial','minimum only within measured normal/category same-detail routes; direct actions are different goals; no exhaustive shortest-path proof','some entries are catalog-only by approved scope','no formal raster operations']};
  fs.writeFileSync('test-results/stage3-primary-routes.json',JSON.stringify(result,null,2));
  console.log(JSON.stringify({attempts:result.attempts,successful:result.successful,gaps:result.gaps,byKind:result.byKind,gapExamples:gaps.slice(0,18)}));
  // The run is diagnostic rather than reclassifying known-but-unimplemented routes as passed.

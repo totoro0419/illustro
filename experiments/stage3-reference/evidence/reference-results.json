@@ -130,6 +130,242 @@
       "status": "pass"
     },
     {
+      "case": "test_numeric_additional_v1.AdditionalNumericTests.test_euclidean_disk_and_zero_exterior",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_additional_v1.AdditionalNumericTests.test_gradient_hard_stop_stable_ids_and_midpoint",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_additional_v1.AdditionalNumericTests.test_poisson_boundary_literal_fraction_and_fullmask",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_additional_v1.AdditionalNumericTests.test_poisson_impulse_literal_preserved_gradient",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_additional_v1.AdditionalNumericTests.test_soft_selection_set_algebra_not_double_alpha",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_additional_v1.AdditionalNumericTests.test_taper_overlap_never_exceeds_diameter",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_BRU003_analytic_ema_and_invalid_time",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_BRU003_off_identity_and_endpoint",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_BRU006_curve_order_endpoints_missing_sensor",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_BRU006_dab_shape_hardness_and_frozen_random",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_WET001_blur_reference_zero_exterior",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_WET001_premul_mix_literal_no_black_fringe",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_WET001_reservoir_paint_and_alpha_lock",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_WET007_dry_paper_and_height_no_time_drift",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.BrushNumericTests.test_WET007_height_overflow_does_not_mutate_input",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_COL011_author_roundtrip_and_primary",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_COL011_published_yellow_boundary_and_both_gamuts",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_FX107_three_weights_partition_and_isolate",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_FX107_weights_neutral_and_luminance",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_FX108_neutral_and_relative_controls",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_FX108_white_mapping_and_inverse",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_FX109_six_hues_and_grey_independence",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_FX109_tint_endpoints",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_FX111_absolute_relative_targets_and_no_cmky_claim",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_FX124_seed_distribution_particle_and_domain",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_NDE001_all_modes_finite_domain_and_zero_edges",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_NDE001_all_separable_literal_goldens",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_NDE001_alpha_mask_clip_exact_fraction",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_NDE001_dissolve_mask_seed_reload",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.ColorNumericTests.test_NDE001_nonseparable_luminance_and_grey",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX120_far_background_does_not_bleed_over_focused_front",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX120_focus_identity_and_constant_all_apertures",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX120_premul_transparency_aperture_and_invalid_map",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX129_all_shapes_area_and_periodic_origin",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX129_analytic_round_dot_density_without_inverted_hole_jump",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX130_sobel_flat_step_and_salt_cleanup",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX130_thinning_topology_and_idempotence",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX136_inner_outer_emboss_softness_and_empty",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.EffectsNumericTests.test_FX136_zero_depth_identity_and_shared_light",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_FIL002_barrier_collision_and_zero_gap_rejected",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_FIL002_confirmed_bridge_seals_gap_without_line_mutation",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_LIN001_hole_exterior_connectivity_and_scan_order",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_LIN001_opaque_white_is_not_ink",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_LIN005_split_merge_and_no_name_rebinding",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_LIN005_unchanged_and_shift_keep_only_unambiguous_ids",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_LIN006_T_junction_and_estimated_tangent",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_LIN006_rank_direction_curvature_and_tie_determinism",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_TRN004_line_search_prevents_fold_and_inverse_matches",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_TRN004_protection_push_twirl_restore_boundary",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_TRN006_checker_area_is_not_aliasing_nearest",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.GeometryNumericTests.test_TRN006_fractional_scale_area_conservation_and_identity",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.NumericInteractionTests.test_arbitrary_profile_discrete_mask_does_not_bridge_island",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.NumericInteractionTests.test_effect_mask_clip_committed_mix_save_branch_and_root_isolation",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.NumericInteractionTests.test_liquify_restore_exact_and_tiny_global_overlap_rejected",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.NumericInteractionTests.test_projective_destination_area_literal_and_mesh_split_equivalence",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.NumericInteractionTests.test_thinning_exhaustive_3x3_preserves_components_and_holes",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.NumericVariantTests.test_bevel_color_source_immutable_alpha_and_modes",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.NumericVariantTests.test_lens_all_blades_constant_and_invalid",
+      "status": "pass"
+    },
+    {
+      "case": "test_numeric_v1.NumericVariantTests.test_line_width_inversion_background_alpha",
+      "status": "pass"
+    },
+    {
       "case": "test_raster.RasterTests.test_alpha_lock_preserves_current_alpha",
       "status": "pass"
     },
@@ -218,20 +454,27 @@
       "status": "pass"
     }
   ],
-  "testsRun": 54,
+  "testsRun": 113,
   "success": true,
   "source_sha256": {
     "async_reference.py": "f7758b90b82fe58d744c313f6099d3522b0222ea258bd7a247e8b2abf5d6e307",
     "color_reference.py": "a1e015bf5f83888983f5da4f9b995b20da0f6261cc15d5e1582967c30fb94382",
     "effect_reference.py": "01ee9abe293d1c2d47a5c1a4c02244a8f19dae6a9597542e742d59c4d7ee91ce",
     "icc_probe.py": "de4d93646e9d14a96388608ae79acbafc88beb5d99185874ba81ede3360397e0",
+    "numeric_additional_v1.py": "1aa31b7a632a8cac9d18cf19c2fb4df507a857df3d1837a7a22681fa494f50bd",
+    "numeric_brush_v1.py": "3f1dd69960841078b115be4d408140d505b44e3e0a19c4bf988d4c47497a62bd",
+    "numeric_color_v1.py": "ced903c62eef7e507272bc4896753801c0c42c64c34c6dfebcbe91879444b3c4",
+    "numeric_effects_v1.py": "ab4ff13afe106b0c31f61b921afa853a5b08670a10d792e22179e19db439d7fb",
+    "numeric_geometry_v1.py": "b0798cecd38e7f93112deb2f2d35f9b2b4d26293567f4262839763e40129187b",
     "raster_reference.py": "9d9b3afb693665dacd1b321094a4711df315e8015834afd8c8a43dd0821a6f8f",
-    "run_reference.py": "634ca153aa93c60f9dcee0236964ad2e6aeb2db57935659b3064debe068dbe8e",
+    "run_reference.py": "90cba71995993947fbf6eb79432ef05863859634776bab8573573ec544a2ffee",
     "test_async.py": "496a6ed18bca9f3cf3add5cbcb904d7eca8f0a4aeb076c0bb1694e9976f35b8e",
     "test_color.py": "4d9c046f9ce982cf7c486954bcf63d8b9a023bca43b704cb575b6e1ac9d1d615",
     "test_cross_feature.py": "9923187987e4ff300b7fab5a9886a0051623f7049d0e24d61a641a12f13a1a0d",
     "test_effect_reference.py": "b0582b90d737e1d30466622dcf2b403a7acc1693c99eb7abff4de9c126e214b5",
     "test_handoff.py": "2fb393ee2a81d675108aa73c1839dd14244f45e1b3d4fa729616144821ba6025",
+    "test_numeric_additional_v1.py": "93d3815a6e7108a6385cc3ffc42ddc199e822e57e2688bffda58bec532703c22",
+    "test_numeric_v1.py": "326bf02979f21912efac29b8ddddc298201ff4e2a6790aa34b646dbe38fb19ea",
     "test_raster.py": "56e81639ed92fce8fb700b475c3bc973727a90963addd567aba98f9bc61d9f2a",
     "test_warp_reference.py": "7d126f3687375a2754fb58d8023ed121cd077dcfaa55fc43cf6527bd8c1b68f3",
     "warp_reference.py": "b598dd400a6b0b998230ce84b85646d12fac477f692095b0b10298869ceb4c4e"
@@ -244,5 +487,5 @@
     "physical stylus/touch",
     "full production Warp/Liquify/ICC and GPU rasterization"
   ],
-  "assertion": "Rational literal pixels, limited triangle geometry, scalar/1D effect acceptance oracles and finite state transitions only"
+  "assertion": "Rational literal pixels, limited triangle/2D topology and area oracles, defined 1D/2D numerical kernels and finite-state contracts; no product renderer/device claim"
 }

@@ -12,9 +12,9 @@
 | Alpha Lock | 評価時の対象αを維持する修正案を採用 | 固定旧α案は取り下げ。透明部分への色発生を反例で検査。brush座標/Selectionは固定 |
 | 履歴 | 不変root・名前付きscope・用途pinを採用 | 作品Undoは入口間で同じaction。候補は専用Undo。Pad/資料を含むUX評価はAUD016 |
 | Save/Recovery | Fence＋検証済manifest＋保存先sequenceを採用 | A/B/Undo/Save/Redo、逆順保存、失敗点別モデル。物理ストレージ耐久は未実証 |
-| Cache/halo | 全依存版のkey、kernel別halo、循環拒否を採用 | 箱ぼかしtile同値、Fill遠方伝播の反例。全Effectの数値・halo定義は未完了 |
+| Cache/halo | 全依存版のkey、kernel別halo、循環拒否を採用 | 箱ぼかしtile同値、Fill遠方伝播の反例。各行の既存式＋NUMERIC_CONTRACTS_V1の77機能で定義。全パラメーターの正式GPU比較は未実施 |
 | 正本精度 | 8U/16U/16Fを別表現、明示丸めを採用 | 全コード/有限half往復。限定実CMMは8U/16U/16Fも誤差内。任意ICC/Proof/GPUは未検証 |
-| 合成の既定 | encoded互換案、linear明示選択を比較中 | 製品仕様の無言全linear化を避ける。50%白の差を数値で固定。既定の見た目最終決定は未承認 |
+| 合成の既定 | encoded互換を設計既定、linearを明示選択として採用 | 製品仕様の無言全linear化を避ける。50%白の差を数値で固定。W3C式・独立Canvas 64条件と既存互換方針による設計選択。実人の見た目評価ではない |
 | 大規模作品 | sparse residency・非LRU正本・予算予約を条件付き採用 | 資源式とwriter枯渇モデル。tile寸法、peak RAM、保存容量、熱は未計測 |
 
 ## 後段方式の10評価軸
@@ -43,3 +43,18 @@
 - UI/型/988導線は最終監査のCIログへ。実機/GPU/Native耐久を代用しない。
 
 一次資料：[WebGPU](https://www.w3.org/TR/webgpu/)、[CSS Color 4](https://www.w3.org/TR/2026/CRD-css-color-4-20261009/)、[ICC](https://www.color.org/getting-started/)、[Little CMS公式API](https://github.com/mm2/Little-CMS/blob/master/include/lcms2.h)。Illustroの受入上限は`SYSTEM_CONTRACTS.md`§9で試験前に定義。
+
+
+## 2026-11-02 数値契約と再監査
+
+[NUMERIC_CONTRACTS_V1.json](NUMERIC_CONTRACTS_V1.json)を、既存の各機能操作契約を特殊化する数値正本とする。旧追加P1の21機能に加え、再監査したブラシ先端/紙/入り抜き、水彩風、選択の集合演算/磁気投げ縄、ベクター幾何、グラデーション、修復、影/光彩など合計77行を接続。共通算法は分野間で参照し、247個の汎用受入文へ複写しない。各行は入力・式・変種・境界・精度・依存・参照の適用範囲を持つ。製品実装はまだ存在しない。
+
+- 補正は時刻ベースEMAと終点規則、変調は順序付き曲線と固定乱数。混色はpremulと採色版、厚みは別正本を定義。
+- 領域は4自由/8線、相互一意対応とsplit/merge衝突を定義。隙間のcostは順位付けであり、意図の確率ではない。仮想壁は原線画を変更しない。
+- Liquifyは面積・全体交差・共有しない接触まで検査。微小図形の重なりを絶対epsilonで見逃さない。縮小は**出力座標での面積積分**、メッシュ/射影のsource-area一定近似を不採用。
+- 25合成モードと半透明、色バランス/白色適応/6色白黒/選択色、深度gather、乱数、網点、細線化、距離場ベベルを固定。網点は固定16×16面積サンプル。Zhang–Suenが2×2領域を消す反例4件を検出しGuo–Hallを採用、3×3の全512パターンで成分・穴・冪等を照合。
+- 論理保存にseed/version/ICC/height/graphを含める。64bit seedをJS Numberで丸めず16桁hexで保持。GPU/物理Native耐久/任意ICC LUTの合格を参照試験から推定しない。
+
+CPU参照は旧54＋新59＝**113試験**。新しい59件は一つの巨大画像エンジンではなく、各式のliteral/invariant/限定2Dおよび交錯参照。`blend_canvas_oracle.cjs`は別実装Chromium sRGB Canvasの16モード×4条件＝64件と照合し、試験前に固定した複合8U上限2codes以内（ローカル最大2）。全77行・全変種の実装試験と偽らず、JSONの`reference_coverage`と`production_verification`で未実行範囲を残す。
+
+一次資料： [W3C Compositing 2024-03-21 §10](https://www.w3.org/TR/2024/CRD-compositing-1-20240321/)、[Oklab作者の式・2021-01-25係数](https://bottosson.github.io/posts/oklab/)、[CSS Color 4 2026-10-29](https://www.w3.org/TR/2026/CRD-css-color-4-20261029/)、[OpenCV 4.11 Guo–Hall](https://docs.opencv.org/4.11.0/df/d2d/group__ximgproc.html)、[ibisPaint公式手ぶれ補正](https://ibispaint.com/lecture/index.jsp?lang=ja&no=50)。他製品の内部補正式や独自合成との完全互換は主張しない。ibisPaintからは設定の独立性と操作資料を参照し、Illustroの式自体は上記の設計選択である。

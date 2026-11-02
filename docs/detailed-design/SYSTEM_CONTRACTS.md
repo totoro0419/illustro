@@ -105,7 +105,7 @@ T02〜04とT07の一部だけはreviewモデルの状態検査を実行。T05〜
 | 8U/16U | straightコードとαを保持。演算では選択した転送特性でpremulへ。最終操作根の量子化はnearest ties-even。原本のα0隠れRGBも保持 | codecなしNative往復は全コード一致。参照primitiveは期待整数一致。GPU候補は最大1 code/primitiveかつ複合golden最大2 codes。超えれば正式計算に不採用 |
 | 16F | binary16、CPU中間binary64。明示操作境界でties-evenへ丸め、原本bitsを保持 | 有限値のNative往復はbits一致（±0含む）。primitiveは参照binary16の1 ULP以下、subnormal絶対誤差≤2^-24。NaN/Infは入力拒否/原本隔離。無言flush-to-zero不可 |
 | Alpha | source-over：a=s+d(1−s)。premul c=S+D(1−s)。α0の評価RGBは0 | Mask/Clipは指定位置で各一回。Alpha Lockは現在の対象αを保持。8bit白塗りを消去代用しない |
-| Normal既定 | 互換性のため文書のencoded RGBで計算する案。linear-lightは明示別契約 | 50%白を黒へ：encoded=.5、linear→encoded≈.735356983。2つを同一としない。既定の最終製品判断はUI/互換性比較待ち |
+| Normal既定 | 互換性のため文書のencoded RGBを設計既定とし、linear-lightは明示別契約 | 50%白を黒へ：encoded=.5、linear→encoded≈.735356983。2つを同一としない。NUMERIC_CONTRACTS_V1の式・独立Canvas比較を採用根拠とし、実人の画質評価とは区別 |
 | Multiply | straight B=Cs·Cd、premul出力=(1−as)D+(1−ad)S+as·ad·B | αをsource-overと同じ式で導出。Group/Clip境界を越えてキャッシュを勝手に再結合しない |
 | sRGB/P3 | source profile/hash、D65、transfer、destination、intent、CMM版を固定 | 同一色空間のassignはraw不変。convertは数値が変わる。predefined行列計算binary64の同色往復目標≤1e−10（transfer境界除外）。任意ICC LUTは未検証 |
 | ICC/Proof | Assign/Convert/Proof別action。Proofは表示派生、原本を不変に保つ | 検証用CMM・ICC fixture・intent・BPCを固定して比較。未知/破損ICCを推測でsRGB成功扱いしない。高精度任意ICCの受入未達 |
@@ -149,3 +149,10 @@ haloは各kernelの支援幅から導出し、tile境界の同値性を参照比
 - 試筆は自身の保存/読込を持つ。参考資料の「個人セット」と「作品内に埋め込む資料」を区別する。作品Nativeへ含める資料はNative manifestで専用のimmutable workspace/reference rootも固定し、通常の画像出力には含めない。作品画素のUndoだけで資料rootを巻き戻さない。
 - **製品のNative全再読込**はmanifestが持つ作品内資料rootを復元する。対して試作`loadSave`はメモリ内の**作品編集根だけの再読込**で、現在の独立sidecarをDocument identityにより選ぶ。このモデルをNative全再読込・再起動耐久の証明に使わない。Pad/資料の独立ファイル保存失敗は作品編集履歴を消さず、失敗した所有者を名前付きで示す。
 - Session中に別候補を開始する場合、旧候補の適用/取消/戻るを局所的に明示する。戻る/直接取消で保留された次操作を破棄し、後の別操作へ古い遷移先を持ち越さない。作品Undoはその間もDocument action。
+
+
+## 11. 数値契約v1と機能ごとの受入定義
+
+`NUMERIC_CONTRACTS_V1.json`は77機能の具体式・既定・範囲・端処理・全域依存・精度・保存descriptorを特殊化する。247行の`acceptance_inheritance`は対象Identity/Apply/Cancel/履歴/保存復帰/失敗を本書へ接続する。原本α0の隠れRGB保存と、評価premulのα0 RGB=0は別契約。Mask/Clipは一回ずつ、Effect Maskは元と結果の差のcoverageへ一回、Selectionは操作受理時に固定する。
+
+数値参照が通っても正式エンジンや永続化は未実装。グラフ・height・stroke seedを含む全descriptorと依存根を一緒にSaveFenceへpinし、途中書込み・古いGPUepoch・別Document lifetimeの結果を公開しない。古い算法版がない時は正本/完成画像を保持し再計算不能を表示する。最新算法で無言置換しない。

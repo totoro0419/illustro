@@ -1,19 +1,14 @@
-# Stage③ — 247機能の受入草案と13個の複合作用ID
+# Stage③ — 247機能の受入定義と検証の境界
 
-**状態：設計上の検査候補。製品のPASSや全247件受入確定ではない。** 原典PR #5の247件とスコープ（通常234・限定2・保留10・対象外1）はそのまま。構造検証と製品実装試験を混同しない。
+**247件の操作契約をAIが再監査。実製品の受入合格・実人の承認ではない。** 元30分野247件、通常234/限定2/保留10/対象外1を維持。原仕様・固有入力/操作/結果・作用先・端末入口・失敗・履歴・保存を[対応表](FEATURE_CONTRACT_CROSSWALK_247.json)で参照する。
 
-## 1. 247機能の共通「6契約」マトリックス
+## 1. 定義と実行結果を分離する
 
-`FEATURE_CONTRACT_CROSSWALK_247.json`の247行すべてに、`entry`、`behavior`、`history`、`persistence`、`cross_feature`、`failure`の6項目が存在し、ID・名称・scope・30分野と関連feature参照は原典と一致する。機械的な形式の整合は[専用監査スクリプト](../../tools/audit_stage3_acceptance.cjs)で確認する。
+各行の固有`acceptance_case`、`parameters / prerequisites / during_operation / apply_cancel / undo_contract / native_persistence / failure_recovery_contract / action_variants`を一組の受入定義とする。共通のIdentity・版・取消・SaveFence・再読込・クラッシュ保護はルート`acceptance_inheritance`からシステム契約へ接続する。77行の式は[数値契約v1](NUMERIC_CONTRACTS_V1.json)で特殊化し、残るフィルターの既存式は各固有例に保持。ランチャーは選んだ子機能の式を用い、汎用の架空処理にしない。
 
-ただし現在、**247行すべての `verification.design_review` は草案を含む状態**、`device`は未検証、`formal_engine`は未実装。六つの文章が存在するだけで個別の合格条件が**測れる精度で完成した**とは言えない。正式実装へ渡す際は、機能ごとに以下を追加する。
+`contract_review`は2026-11-02のAIによる原典/状態/算法整合レビューの記録で、人の承認を意味しない。元の6項目`acceptance_test_draft`は履歴互換のため残すが、同じ文型の存在を完成根拠にしない。`formal_engine=not-implemented`、`device=unverified`、`human_verified=false`を維持する。
 
-- 入力・初期状態・対象のDocument/Layer/Selection/Mask/ICC/Session版
-- 一連の具体的なユーザー操作と、完了/取消/Undo/Redo/中断/保存復帰時の比較対象
-- 期待する正本・表示・残る候補/独立編集・cacheキー
-- 数値Kernelを持つ機能の誤差限界・境界条件・golden・色計算空間/alpha/精度
-- 制約外の入力や失敗時の回復/表示/保護要件
-- ③の契約試験と④の正式エンジン/実端末試験の証拠を**別欄**に記録
+再監査でCanvas外保持の例をリンク素材から本来の範囲保持へ修正。FX107の重みと期待画素、FX109の係数/Tint、LIN001の「空」と「非空透明面の外側領域」、TRN004の半径0の扱いも数値正本と一致させた。まだ人が説明なしで理解できたという結果はない。
 
 ## 2. 13機能・33変種の特に重要な契約
 
@@ -37,26 +32,13 @@
 
 上記は設計の責務と期待動作を明文化するもの。**個別UI試作や正式描画エンジンに33変種すべてが実装済みとは主張しない。** 数値精度・物理保存・実指の試験は④と分離する。
 
-## 3. 優先して詳細な数値契約が必要な領域
 
-- **FX 45件**：Effectごとに数式/Kernel・範囲・端処理・Halo・色空間・premul alpha・順序・精度を数値契約へ固定。現時点でAUD006の3×3 blur/gainだけを全FX共通の実証と見なさない。
-- **Warp/Liquify/Transform**：高解像度・fold・補間縮小・境界/移動/ペンとの同時操作について、③では意味・参照期待を設計し④では正式GPU/CPUで比較する。
-- **Color/ICC・Print/Export**：任意LUT ICC/Proof/CMYKのAssign/Convert/Export条件と計算/出力/保存を分離。
-- **Clip/Mask/Layer Blend/Selection/Fill**：依存順・循環禁止・版の固定・半透明境界の正本評価。
-- **History/SaveFence/Recovery**：未完了筆・独立Session・分岐、失敗した書込みと古い正常版の扱い。
+## 3. 数値定義とCPU参照
 
-## 4. 検証の読み方
+旧追加P1が列挙した21件の未定義欄を式・変種・境界へ接続した。さらに、レビューで曖昧だった選択集合・磁気経路・修復境界・ベクター幾何・グラデーション・細線/影/光彩などを補強。すべての数値式に製品コードがあるという意味ではない。113 CPU試験と独立Canvas64条件の適用範囲は`TECHNICAL_DECISIONS.md`と参照manifestで特定する。式を固定してから必要な正式エンジン/実機の受入試験を行う。
 
-`node tools/audit_stage3_acceptance.cjs` は247件の元仕様との一致、6草案の存在、関連ID、端末別入口表、13複合作用機能の33個のaction ownerを確認し、`test-results/stage3-feature-audit.json`へ出力する。**構造がPASSでも機能の受入や画質がPASSした意味ではない。**
+`tools/audit_stage3_acceptance.cjs`は構造と参照リンクを検査する。文章の長さ、同じ実装から生成した値、CI成功だけを全画質の証明にしない。全変種のGPU誤差・物理保存・コードック互換・任意ICCは第④段階で初めて実行できる試験として未実施。初見の発見性/Undo説明/レイアウト探索/実指誤タップは**第③段階の未閉鎖条件のまま**残す。
 
-最後に `docs/detailed-design/UI_DECISION_PROPOSALS.md` の3件が本人に承認されたか区別し、AUD008/010/016/017/019の初見課題・実操作の残義務と併せて最終監査する。**第③段階の完了はまだ宣言しない。**
+## 4. 完成ゲート
 
-## 5. 2026-11-01 個別受入例の実補強と未確定箇所
-
-既存247行を維持し、各行の`acceptance_case`へ異なる`given / when / then / boundary_precision`を追加した。原仕様の操作、Apply/Cancel、History、保存復帰、failure、関連機能をコピーで増やさず、ルートの`acceptance_inheritance`から既存の各行フィールドとシステム契約を参照する。保留10件・対象外1件の例は**実行しないこと**を期待結果とする。Normal/Multiply、ICC Assign/Convert/Proof、画素中心、選択の空と解除、Mask/Clip一回適用、Effect順序/halo/色空間を区別。
-
-**247個の具体例が存在することと、247機能の全操作・全数値算法を確定したことは別である。** 代表例が全パラメータ変種を定義したとは判断せず、`verification.design_review`を一括で承認済みへ変更していない。
-
-`acceptance_case.open_algorithm_definition`に残る21機能の定義不足は、[台帳](AUDIT_REMEDIATION.json)の**追加P1 `DESIGN-NUMERIC-001`**で追跡する。補正筆/変調/混色/乾式媒体、知覚色、2D領域の抽出・対応・隙間スコア、Liquify/縮小補間、全合成モード、高度効果の一部が該当する。これは第④段階の速度測定ではなく、**第③段階に残る設計仕事**である。具体的な未決事項は各行に記載し、実装者へ暗黙に選ばせない。
-
-追加CPU参照`effect_reference.py`/`test_effect_reference.py`は、明るさ・レベル・露出・階調化・二値化、box/Gaussian、offset/median、Mask→ClipとEffectの順序・cache identity・保存根の不変性を11試験で確認する。既存43件と合わせ54件。小規模scalar/1Dモデルで、全45 FX・2D画質・GPUの合格証拠ではない。既存の端で再正規化する古いbox参照と、新しい「透明外側・再正規化なし」のEffect例は異なる境界契約として扱い、同じkernel versionで混同しない。
+定義済み、限定CPUで参照成立、試作DOMで操作可能、製品エンジンで検証済み、初見実人で検証済みを別々に記録する。247件の定義整合だけで第③段階全体を完成としない。最終HEAD CIと元監査の閉鎖条件、未実施の人による評価を[最終監査](FINAL_DESIGN_AUDIT.md)で判定する。

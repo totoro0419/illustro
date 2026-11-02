@@ -13,6 +13,6 @@ r=unittest.TextTestRunner(verbosity=2,resultclass=Results).run(suite)
 report={'kind':'CPU-limited-reference','cases':r.cases,'testsRun':r.testsRun,'success':r.wasSuccessful(),
         'source_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(ROOT.glob('*.py'))},
         'unverified':['production renderer','GPU performance','arbitrary ICC','Native/OPFS durability','physical stylus/touch','full production Warp/Liquify/ICC and GPU rasterization'],
-        'assertion':'Rational literal pixels, limited triangle geometry, scalar/1D effect acceptance oracles and finite state transitions only'}
+        'assertion':'Rational literal pixels, limited triangle/2D topology and area oracles, defined 1D/2D numerical kernels and finite-state contracts; no product renderer/device claim'}
 (ROOT/'evidence'/'reference-results.json').write_text(json.dumps(report,indent=2)+'\n')
 raise SystemExit(0 if r.wasSuccessful() else 1)
