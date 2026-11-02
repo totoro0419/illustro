@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f7fa">
+<title>Illustro — ペンから指への入力診断</title>
+<style>
+:root{font:14px/1.5 system-ui,"Noto Sans JP",sans-serif;color:#263243;background:#f5f7fa}*{box-sizing:border-box}
+body{margin:0;padding:18px;max-width:900px;margin-inline:auto}h1{font-size:21px;margin:0 0 5px}p{margin:7px 0 13px}small,.hint{color:#536478}
+.instructions{background:white;padding:12px 15px;border:1px solid #dfe4ed;border-radius:13px;margin:14px 0}
+.instructions ol{margin:6px 0;padding-left:23px}
+#zone{touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:contain;position:relative;height:min(48dvh,340px);min-height:200px;border:2px solid #9ba9bd;border-radius:16px;background:repeating-linear-gradient(0deg,#edf3fb,#edf3fb 24px,#e5edf7 25px);overflow:hidden;display:grid;place-items:center;text-align:center;padding:12px;font-size:16px;font-weight:600}
+#cursor{position:absolute;top:-20px;left:-20px;width:34px;height:34px;border-radius:50%;background:#f5b73b8c;border:3px solid #bc7b0c;pointer-events:none;transform:translate(-50%,-50%);display:none}#zone .instruction-text{pointer-events:none;max-width:270px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.stat{background:white;border:1px solid #dfe4ed;border-radius:11px;padding:9px 12px}.stat strong{display:block;font:700 24px/1.3 system-ui}.stat span{font-size:11px;color:#526072}#status{min-height:22px;font-weight:650}
+footer{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}button{border:1px solid #bbc6d3;border-radius:9px;padding:10px 13px;background:#fff;font:inherit;font-weight:600}button:focus-visible{outline:3px solid #c78920}#events{margin:12px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.65 ui-monospace,monospace;background:#1b2636;color:#d8e8f7;border-radius:12px;padding:12px;min-height:108px;max-height:165px;overflow:auto}
+</style>
+</head>
+<body>
+<h1>ペン → 指 入力診断</h1>
+<p class="hint">描画エンジンを読み込まない、独立した入力テストです。結果は自動送信されません。</p>
+<section class="instructions"><strong>検査方法</strong><ol><li>まず<strong>指だけ</strong>で青い領域を動かし、黄色い円が追従することを確認。</li><li>同じ領域を<strong>ペンで短くなぞって離し、直後に指で動かす</strong>。</li><li>反応しない場合、その間の指イベント数と「ペン終了からの経過」を確認。ペンを画面から離した場合とも比較する。</li></ol></section>
+<div id="status" role="status" aria-live="polite">入力待機中</div>
+<div id="zone" aria-label="ペンと指のイベント受信検査エリア"><span class="instruction-text">ここをペンでなぞり、離した直後に指でなぞる</span><span id="cursor"></span></div>
+<div class="stats">
+ <div class="stat"><strong id="pen-up">0</strong><span>ペン終了（pointerup / cancel）</span></div>
+ <div class="stat"><strong id="touch-start">0</strong><span>指のTouchEvent開始（画面全体）</span></div>
+ <div class="stat"><strong id="pointer-touch">0</strong><span>指のPointerEvent開始（画面全体）</span></div>
+ <div class="stat"><strong id="finger-move">0</strong><span>指移動が実際に届いた回数</span></div>
+</div>
+<p id="last" class="hint">最初の指入力は未検出です</p>
+<footer><button id="reset" type="button">カウンターをリセット</button><button id="export" type="button">診断記録を保存</button><a href="./" style="align-self:center;color:#48627c">アプリに戻る</a></footer>
+<pre id="events" aria-label="直近の入力イベント"></pre>
+<p class="hint">⚠︎ 指イベントがゼロのままなら、JavaScriptが反応しなかったのではなく、少なくともこのページには指イベントが到着していません。原因をOSとブラウザーのどちらか一方に特定することはできません。</p>
+<script>
+(()=>{
+ 'use strict';
+ const $=id=>document.getElementById(id),zone=$('zone'),dot=$('cursor');
+ let counts={penUp:0,touchStart:0,pointerTouch:0,fingerMove:0},lastPenEnd=null,firstTouchAfterPen=null;
+ let records=[];
+ const render=()=>{$('pen-up').textContent=counts.penUp;$('touch-start').textContent=counts.touchStart;$('pointer-touch').textContent=counts.pointerTouch;$('finger-move').textContent=counts.fingerMove;$('events').textContent=records.slice(-10).map(r=>r.time+'ms '+r.kind+' '+r.type+' '+(r.sincePen===null?'':('+'+r.sincePen+'ms'))).join('\n')};
+ function log(kind,e,brief=false){
+  const t=performance.now();const d=lastPenEnd===null?null:Math.round(t-lastPenEnd);
+  const item={time:Math.round(t),kind,type:e?.pointerType||e?.type||'-',sincePen:d,stage:e?zone.contains(e.target):null};records.push(item);if(records.length>400)records.shift();
+  if(!brief||records.length%12===0)render();
+ }
+ function touchStart(e){counts.touchStart++;if(lastPenEnd!==null&&firstTouchAfterPen===null)firstTouchAfterPen=Math.round(performance.now()-lastPenEnd);log('touchstart',e);if(lastPenEnd!==null){$('last').textContent='ペン終了後に最初のTouchEventが届いた時刻: +'+firstTouchAfterPen+' ms（実際に指が接触した時刻は検出できません）'}}
+ window.addEventListener('touchstart',touchStart,{capture:true,passive:true});
+ window.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){counts.pointerTouch++;log('pointerdown',e)}else if(e.pointerType==='pen')log('pen-down',e)},{capture:true,passive:true});
+ window.addEventListener('pointerup',e=>{if(e.pointerType==='pen'){counts.penUp++;lastPenEnd=performance.now();firstTouchAfterPen=null;log('pen-up',e);$('status').textContent='ペン離筆済み。すぐ指で操作してください'}},{capture:true,passive:true});
+ window.addEventListener('pointercancel',e=>{if(e.pointerType==='pen'){counts.penUp++;lastPenEnd=performance.now();firstTouchAfterPen=null;log('pen-cancel',e)}else if(e.pointerType==='touch')log('touch-cancel',e)},{capture:true,passive:true});
+ zone.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')return;counts.fingerMove++;const rect=zone.getBoundingClientRect();dot.style.display='block';dot.style.left=(e.clientX-rect.left)+'px';dot.style.top=(e.clientY-rect.top)+'px';if(counts.fingerMove%16===0)log('finger-move',e,true);render()},{passive:true});
+ zone.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){$('status').textContent='指のPointerEventを受信しました';log('zone-touch-down',e)}},{passive:true});
+ $('reset').addEventListener('click',()=>{counts={penUp:0,touchStart:0,pointerTouch:0,fingerMove:0};lastPenEnd=null;firstTouchAfterPen=null;records=[];dot.style.display='none';$('status').textContent='リセット済み。まず指だけで操作してください';$('last').textContent='最初の指入力は未検出です';render()});
+ $('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({format:'Illustro.input-test.v1',userAgent:navigator.userAgent,createdAt:new Date().toISOString(),counts,firstTouchAfterPen,records},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='illustro-input-test.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),2000)});
+ render();
+})();
+</script>
+</body></html>

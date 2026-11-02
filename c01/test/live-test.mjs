@@ -32,5 +32,12 @@ try{
   const resp=await phone.goto(url,{waitUntil:'networkidle',timeout:45000});assert.equal(resp.status(),200);
   assert.equal(await phone.locator('.mobilebar').isVisible(),true);
   await phone.locator('#mobile-tools').click();assert.equal(await phone.locator('.workspace').isVisible(),true);
-  console.log('LIVE_PASS: URL HTTP 200, JS bootstrap, drawing pixels, Undo, Redo, new document, phone panel');
+
+  const diag=await browser.newPage({viewport:{width:393,height:852},hasTouch:true,isMobile:true});
+  const diagErrors=[];diag.on('pageerror',e=>diagErrors.push(String(e)));
+  const diagResponse=await diag.goto(url+'input-test.html',{waitUntil:'load',timeout:45000});
+  assert.equal(diagResponse.status(),200,'Public standalone diagnostic must respond 200');
+  assert.ok(await diag.locator('#zone').isVisible(),'Public independent touch surface must be visible');
+  assert.deepEqual(diagErrors,[]);
+  console.log('LIVE_PASS: URL HTTP 200, JS bootstrap, draw/undo/redo/new/phone panel and independent input diagnostic');
 } finally {if(browser)await browser.close()}

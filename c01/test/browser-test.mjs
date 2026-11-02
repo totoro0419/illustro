@@ -2,7 +2,7 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
-const files={'/':'index.html','/index.html':'index.html','/app/main.mjs':'app/main.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/raster-worker.mjs':'app/raster-worker.mjs'};
+const files={'/':'index.html','/index.html':'index.html','/input-test.html':'input-test.html','/app/main.mjs':'app/main.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/raster-worker.mjs':'app/raster-worker.mjs'};
 const server=createServer(async(req,res)=>{
   try {const path=files[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}const content=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(content)}
   catch(err){res.writeHead(500).end(String(err))}
@@ -35,5 +35,21 @@ try{
  assert.ok(await mobile.locator('.mobilebar').isVisible(),'Mobile main bar must be visible');
  await mobile.locator('#mobile-tools').click();assert.ok(await mobile.locator('.workspace').isVisible(),'Mobile workspace must open');
  assert.deepEqual(mobileErrors,[]);
- console.log('PASS: browser draw/undo/redo/new/phone entry');
+
+ // Independent diagnostic deliberately imports no production painting/gesture modules.
+ const probe=await browser.newPage({viewport:{width:393,height:851},isMobile:true,hasTouch:true});
+ const probeErrors=[];probe.on('pageerror',e=>probeErrors.push(String(e)));
+ const probeResponse=await probe.goto('http://127.0.0.1:'+port+'/input-test.html');
+ assert.equal(probeResponse.status(),200);
+ const count=await probe.evaluate(()=>{
+  const z=document.getElementById('zone');
+  const event=(name,kind,id)=>z.dispatchEvent(new PointerEvent(name,{bubbles:true,pointerType:kind,pointerId:id,clientX:140,clientY:200}));
+  event('pointerdown','pen',10);event('pointerup','pen',10);
+  event('pointerdown','touch',11);event('pointermove','touch',11);
+  z.dispatchEvent(new Event('touchstart',{bubbles:true}));
+  return ['pen-up','touch-start','pointer-touch','finger-move'].map(id=>Number(document.getElementById(id).textContent));
+ });
+ assert.deepEqual(count,[1,1,1,1],'Isolated pen/touch diagnostic must count events');
+ assert.deepEqual(probeErrors,[],'Standalone diagnostic must not throw');
+ console.log('PASS: browser draw/undo/redo/new/phone entry and independent pen/touch diagnostics');
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
