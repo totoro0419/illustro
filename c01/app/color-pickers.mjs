@@ -216,5 +216,5 @@ export function installColorPickers({getColor,preview,begin,commit,cancel}){
  return {reflect,request};
 }
 function diamondHit(e,plane){
- const p=diamondPoint(e,plane);return p.s>=0&&p.s<=1&&p.v>=0&&p.v<=1;
+ const rect=plane.getBoundingClientRect(),side=plane.offsetWidth,dx=e.clientX-(rect.left+rect.width/2),dy=e.clientY-(rect.top+rect.height/2);return Math.abs((dx+dy)/Math.SQRT2)<=side/2&&Math.abs((dy-dx)/Math.SQRT2)<=side/2;
 }
