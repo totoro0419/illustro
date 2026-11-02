@@ -431,5 +431,22 @@
     "AUD-017": "NOT_RUN",
     "AUD-019": "NOT_RUN"
   },
-  "final_ci": "Verify final commit SHA via GitHub Actions; prior SHA success is not final verification."
+  "final_ci": "Verify final commit SHA via GitHub Actions; prior SHA success is not final verification.",
+  "header_regression": {
+    "before_sha": "43b2b6dafb509039fc6371011a5c96c308734021",
+    "before_line_counts": {
+      "save": 2,
+      "export": 2
+    },
+    "after_text_scales": [
+      1,
+      2
+    ],
+    "after_line_counts": {
+      "save": 1,
+      "export": 1
+    },
+    "ux_browser_checks": 18,
+    "scope": "Chromium800x600 coarse UI; no physical finger trial"
+  }
 }

@@ -20,6 +20,17 @@ async function assertHit(p,selector){
 }
 async function main(){
  await new Promise(r=>server.listen(43889,'127.0.0.1',r));browser=await chromium.launch({headless:true});fs.mkdirSync('test-results',{recursive:true});
+ await run('AUD019 intermediate header keeps Save/Export labels in one line',800,600,true,async p=>{
+  for(const scale of [1,2]){
+   await p.evaluate(async scale=>{document.documentElement.style.fontSize=(87.5*scale)+'%';await document.fonts.ready},scale);
+   for(const selector of ['#save .toplabel','#export']){
+    const lines=await p.locator(selector).evaluate(e=>{const range=document.createRange();range.selectNodeContents(e);return [...range.getClientRects()].filter(r=>r.width>0&&r.height>0).length});
+    assert.equal(lines,1,selector+' wrapped at text scale '+scale);
+   }
+   for(const selector of ['#save','#export','#search','#focus','#workspaceToggle','#reviewToggle']){assert(await assertHit(p,selector),selector+' occluded at scale '+scale);const r=await box(p,selector);assert(r.x>=0&&r.x+r.width<=800,selector+' outside viewport');}
+   await p.screenshot({path:'test-results/stage3-header-800-text-'+scale+'.png'});
+  }
+ });
  await run('AUD008 no-name task chips and Search result',1180,820,false,async p=>{
   await p.locator('#search').click();await p.screenshot({path:'test-results/stage3-ux-task-search.png'});await p.locator('#libraryContent [data-task-query="はみ出さないように塗る"]').click();
   assert.equal(await p.locator('#query').inputValue(),'はみ出さないように塗る');

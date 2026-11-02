@@ -247,3 +247,11 @@
   #frame.closed .quick-trigger{bottom:calc(var(--bottom) + 10px)}
  }
 }
+
+/* Keep short primary labels on one line at intermediate widths. Optional
+ * identity/review text yields space before saving/export controls wrap. */
+.topbar #save{display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.topbar .top-export,.topbar .toplabel{white-space:nowrap}
+@container frame (min-width:761px) and (max-width:1000px){
+ .topbar .brand strong,.topbar .docname,.topbar .inline-review{display:none}
+}
