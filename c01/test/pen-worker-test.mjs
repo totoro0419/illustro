@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
 // Explicit allow-list keeps the local test server independent of file system paths.
-const allow={'/':'index.html','/index.html':'index.html','/app/main.mjs':'app/main.mjs','/app/model.mjs':'app/model.mjs','/app/raster-worker.mjs':'app/raster-worker.mjs','/app/style.css':'app/style.css'};
+const allow={'/':'index.html','/index.html':'index.html','/app/main.mjs':'app/main.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/raster-worker.mjs':'app/raster-worker.mjs','/app/style.css':'app/style.css'};
 const server=createServer(async(req,res)=>{try{
  const path=allow[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}
  const data=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(data);
@@ -16,7 +16,7 @@ try{
  const page=await browser.newPage({viewport:{width:1100,height:820}}),errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
  page.on('console',msg=>{if(msg.type()==='error')errors.push('console: '+msg.text())});
- await page.goto('http://127.0.0.1:'+server.address().port);
+ await page.goto('http://127.0.0.1:'+server.address().port+'/?inputDebug=1');
  await page.waitForFunction(()=>document.querySelector('#art')?.width===1600);
  const report=await page.evaluate(async()=>{
   const stage=document.getElementById('stage'),r=stage.getBoundingClientRect(),paper=document.getElementById('paper');
@@ -56,9 +56,31 @@ try{
   const copy=document.createElement('canvas');copy.width=image.width;copy.height=image.height;
   const context=copy.getContext('2d');context.drawImage(image,0,0);
   const d=context.getImageData(0,0,copy.width,copy.height).data;let savedPixels=0;for(let i=3;i<d.length;i+=4)if(d[i])savedPixels++;
-  return {maxMove,up,navigated,aPixels,afterRedo,savedPixels,savedRevision:native.savedRevision,notice:document.getElementById('toast').textContent};
+  // Immediately after pen-up, the app must accept the first delivered touch.
+  const pose0=paper.style.transform;
+  dispatch('pointerdown','pen',70,190,190);
+  dispatch('pointermove','pen',70,200,200);
+  dispatch('pointerup','pen',70,200,200);
+  dispatch('pointerdown','touch',71,390,350);
+  dispatch('pointermove','touch',71,430,385);
+  await until(()=>paper.style.transform!==pose0);
+  const immediateTouch=paper.style.transform!==pose0;
+  dispatch('pointerup','touch',71,430,385);
+  // An OS cancellation/lost capture must not leave stale stroke/navigation state.
+  const pose1=paper.style.transform;
+  dispatch('pointerdown','pen',72,210,220);
+  dispatch('lostpointercapture','pen',72,210,220);
+  dispatch('pointerdown','touch',73,360,310);
+  dispatch('pointermove','touch',73,400,345);
+  await until(()=>paper.style.transform!==pose1);
+  const touchAfterLost=paper.style.transform!==pose1;
+  dispatch('pointerup','touch',73,400,345);
+  const diagnostic=document.getElementById('input-diagnostic-summary')?.textContent||'';
+  return {maxMove,up,navigated,aPixels,afterRedo,savedPixels,savedRevision:native.savedRevision,notice:document.getElementById('toast').textContent,immediateTouch,touchAfterLost,diagnostic};
  });
  assert.ok(report.navigated,'Touch must navigate while pen is down');
+ assert.ok(report.immediateTouch&&report.touchAfterLost,'First delivered touch must navigate after pen up or capture loss');
+ assert.ok(report.diagnostic.includes('Canvas指開始'),'Input delivery diagnostic must report stage touch events');
  assert.ok(report.maxMove<100&&report.up<100,'Pen processing must not block input synchronously (>100ms)');
  assert.ok(report.aPixels>0&&report.afterRedo>report.aPixels,'Stroke A and Redo B must render');
  assert.equal(report.savedPixels,report.aPixels,'Save must fence A after undo of pending B');
