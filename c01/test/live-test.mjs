@@ -14,9 +14,11 @@ try{
   const s=await page.locator('#stage').boundingBox();
   await page.mouse.move(s.x+s.width*.4,s.y+s.height*.4);
   await page.mouse.down();await page.mouse.move(s.x+s.width*.4+80,s.y+s.height*.4+50,{steps:10});await page.mouse.up();
+  await page.waitForFunction(()=>document.querySelectorAll('.stroke-preview').length===0 && document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
   const painted=await page.locator('#art').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return d.some((v,i)=>i%4===3&&v>0)});
   assert.equal(painted,true,'Public app must paint actual pixels');
   await page.locator('[data-action=undo]').first().click();
+  await page.waitForFunction(()=>!document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
   const undone=await page.locator('#art').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return d.some((v,i)=>i%4===3&&v>0)});
   assert.equal(undone,false,'Undo must remove artwork');
   await page.locator('[data-action=redo]').first().click();

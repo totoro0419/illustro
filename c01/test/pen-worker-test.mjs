@@ -1,0 +1,69 @@
+/** Synthetic pen/touch regression for C01. Not a substitute for Android physical stylus testing. */
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {chromium} from 'playwright';
+import {strict as assert} from 'node:assert';
+// Explicit allow-list keeps the local test server independent of file system paths.
+const allow={'/':'index.html','/index.html':'index.html','/app/main.mjs':'app/main.mjs','/app/model.mjs':'app/model.mjs','/app/raster-worker.mjs':'app/raster-worker.mjs','/app/style.css':'app/style.css'};
+const server=createServer(async(req,res)=>{try{
+ const path=allow[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}
+ const data=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(data);
+}catch(e){res.writeHead(500).end(String(e))}});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+let browser;
+try{
+ browser=await chromium.launch({headless:true});
+ const page=await browser.newPage({viewport:{width:1100,height:820}}),errors=[];
+ page.on('pageerror',e=>errors.push(String(e)));
+ page.on('console',msg=>{if(msg.type()==='error')errors.push('console: '+msg.text())});
+ await page.goto('http://127.0.0.1:'+server.address().port);
+ await page.waitForFunction(()=>document.querySelector('#art')?.width===1600);
+ const report=await page.evaluate(async()=>{
+  const stage=document.getElementById('stage'),r=stage.getBoundingClientRect(),paper=document.getElementById('paper');
+  const pause=()=>new Promise(resolve=>setTimeout(resolve,35));
+  const pixelCount=()=>{const c=document.getElementById('art'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let count=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)count++;return count};
+  const until=async test=>{const start=performance.now();while(!test()){if(performance.now()-start>20000)throw Error('Raster worker timeout');await pause()}};
+  const dispatch=(type,kind,id,x,y,n=1)=>{const options={pointerId:id,pointerType:kind,clientX:r.left+x,clientY:r.top+y,pressure:.65,buttons:type==='pointerup'?0:1,bubbles:true};
+   const event=new PointerEvent(type,options);
+   if(n>1)event.getCoalescedEvents=()=>Array.from({length:n},(_,j)=>new PointerEvent('pointermove',{...options,clientX:options.clientX+j*.14,clientY:options.clientY+j*.15}));
+   const start=performance.now();stage.dispatchEvent(event);return performance.now()-start;
+  };
+  // A: pen with high-density coalesced events, finger navigation before pen-up.
+  dispatch('pointerdown','pen',40,160,200);
+  let maxMove=0;for(let i=0;i<180;i++)maxMove=Math.max(maxMove,dispatch('pointermove','pen',40,160+i*.9,200+Math.sin(i/12)*25,8));
+  const firstPose=paper.style.transform;
+  dispatch('pointerdown','touch',41,340,300);
+  dispatch('pointermove','touch',41,380,315);
+  await until(()=>paper.style.transform!==firstPose);
+  const navigated=paper.style.transform!==firstPose;
+  const up=dispatch('pointerup','pen',40,325,200);
+  dispatch('pointerup','touch',41,380,315);
+  await until(()=>document.querySelectorAll('.stroke-preview').length===0 && pixelCount()>0);
+  const aPixels=pixelCount();
+  // B is accepted then immediately undone. Save fences on A even if B job remains pending.
+  dispatch('pointerdown','pen',42,160,300);
+  dispatch('pointermove','pen',42,360,320,8);
+  dispatch('pointerup','pen',42,360,320);
+  document.querySelector('[data-action=undo]').click();
+  const writes=[];window.showSaveFilePicker=async()=>({createWritable:async()=>({write:async text=>writes.push(text),close:async()=>{},abort:async()=>{}})});
+  document.querySelector('[data-action=save]').click();
+  document.querySelector('[data-action=redo]').click();
+  await until(()=>writes.length>0);
+  await until(()=>document.querySelectorAll('.stroke-preview').length===0 && pixelCount()>aPixels);
+  const afterRedo=pixelCount();
+  const native=JSON.parse(writes[0]);
+  const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=native.layers[0].png});
+  const copy=document.createElement('canvas');copy.width=image.width;copy.height=image.height;
+  const context=copy.getContext('2d');context.drawImage(image,0,0);
+  const d=context.getImageData(0,0,copy.width,copy.height).data;let savedPixels=0;for(let i=3;i<d.length;i+=4)if(d[i])savedPixels++;
+  return {maxMove,up,navigated,aPixels,afterRedo,savedPixels,savedRevision:native.savedRevision,notice:document.getElementById('toast').textContent};
+ });
+ assert.ok(report.navigated,'Touch must navigate while pen is down');
+ assert.ok(report.maxMove<100&&report.up<100,'Pen processing must not block input synchronously (>100ms)');
+ assert.ok(report.aPixels>0&&report.afterRedo>report.aPixels,'Stroke A and Redo B must render');
+ assert.equal(report.savedPixels,report.aPixels,'Save must fence A after undo of pending B');
+ assert.equal(report.savedRevision,3,'Save must retain the revision accepted before Redo');
+ assert.deepEqual(errors,[],'Browser and Worker must not throw');
+ assert.ok(!report.notice.includes('失敗'),'UI must not report a raster failure');
+ console.log('PASS synthetic pen + concurrent touch; bounded input handling; worker stroke, pending Undo, Save fence, Redo',report);
+}finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}

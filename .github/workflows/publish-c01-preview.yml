@@ -58,10 +58,15 @@ jobs:
           grep -q 'Illustro' /tmp/illustro-preview.html
           curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 https://totoro0419.github.io/illustro/c01/app/main.mjs -o /tmp/illustro-main.mjs
           grep -q 'function beginStroke' /tmp/illustro-main.mjs
+          curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 https://totoro0419.github.io/illustro/c01/app/raster-worker.mjs -o /tmp/illustro-raster-worker.mjs
+          grep -q 'latestRequestedSeq' /tmp/illustro-raster-worker.mjs
       - name: Install browser test runtime
         run: |
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
+        working-directory: c01
+      - name: Verify synthetic stylus, touch navigation, async Undo and Save fence
+        run: node test/pen-worker-test.mjs
         working-directory: c01
       - name: Verify deployed interactive painting
         run: node test/live-test.mjs
