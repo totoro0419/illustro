@@ -106,7 +106,7 @@ export function installColorPickers({getColor,preview,begin,commit,cancel}){
   }
   wheel.setAttribute('aria-valuenow',String(Math.round(hue)));
   ring.setAttribute('aria-valuenow',String(Math.round(hue)));
-  if(Math.abs(orbitLastHue-hue)>.05){orbitLastHue=hue;request();}
+  if(!Number.isFinite(orbitLastHue)||Math.abs(orbitLastHue-hue)>.05){orbitLastHue=hue;request();}
  };
  function release(e,stopped=false){
   if(!drag||e.pointerId!==drag.id)return;
