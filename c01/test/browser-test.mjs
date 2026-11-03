@@ -80,6 +80,26 @@ try{
  await colorMode.selectOption('orbit');
  await page.locator('#orbit-picker').waitFor({state:'visible'});
  await page.waitForFunction(()=>document.querySelector('#orbit-wheel').width>0);
+ const orbitPixels=()=>page.locator('#orbit-wheel').evaluate(c=>{
+  const ctx=c.getContext('2d'),angles=[-90,-45,0,45,60,135,180],samples=[];
+  for(const deg of angles){
+   const a=deg*Math.PI/180,px=Math.round((160+121.5*Math.cos(a))*c.width/320),py=Math.round((73+41*Math.sin(a))*c.height/160);
+   samples.push({deg,rgba:[...ctx.getImageData(px,py,1,1).data]});
+  }
+  const src=ctx.getImageData(0,0,c.width,c.height).data;
+  let colored=0;for(let k=0;k<src.length;k+=4)if(src[k+3]>230&&Math.max(src[k],src[k+1],src[k+2])-Math.min(src[k],src[k+1],src[k+2])>75)colored++;
+  return {width:c.width,height:c.height,samples,colored};
+ });
+ await page.locator('#hex').fill('#FF0000');await page.locator('#hex').press('Tab');
+ await page.waitForTimeout(125);
+ const renderedRed=await orbitPixels();
+ await page.locator('#hex').fill('#00FF00');await page.locator('#hex').press('Tab');
+ await page.waitForTimeout(125);
+ const renderedGreen=await orbitPixels();
+ console.log('ORBIT VISUAL DIAGNOSTIC '+JSON.stringify({renderedRed,renderedGreen}));
+ assert.ok(renderedRed.colored>500&&renderedGreen.colored>500,'Orbit hue ring must render colored opaque pixels');
+ assert.notDeepEqual(renderedRed.samples,renderedGreen.samples,'Orbit hue paint must follow current HSV hue');
+ 
  await page.locator('#orbit-plane').scrollIntoViewIfNeeded();
  const orbitPlane=await page.locator('#orbit-plane').boundingBox();
  const scrollBefore=await page.locator('.workspace-scroll').evaluate(el=>el.scrollTop);
