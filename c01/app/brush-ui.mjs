@@ -32,7 +32,7 @@ const groups=[
  ]],
  ['テクスチャと紙質',[
   ['texture','紙目',[['none','なし'],['graphite','グラファイト'],['paper','紙']]],
-  ['textureAnchor','座標',[['document','文書固定'],['stroke','筆の始点基準']]],
+  ['textureAnchor','座標',[['document','文書固定'],['stroke','先端に追従']]],
   ['textureScale','倍率',[.1,16,.1]],['textureAngle','回転 °',[-360,360,1]],['depth','強さ',[0,1,.01]]
  ]],
  ['入り抜き',[
@@ -44,7 +44,7 @@ const groups=[
   ['correction','補正',[['global','全体設定に従う'],...correctionChoices]],['positionTau','位置補正 秒',[0,.2,.0005]],
   ['speedTau','速度補正 秒',[0,.2,.0005]],['pressureTau','筆圧補正 秒',[0,.2,.0005]],
   ['blend','合成',[['over','通常'],['erase','消去'],['behind','背面'],['alpha-lock','アルファ保持']]],
-  ['accumulate','一筆内で不透明度を累積','checkbox'],['pigment','画材の流量係数',[0,1,.01]]
+  ['accumulate','一筆内で不透明度を累積','checkbox'],['opacityFactor','画材の不透明度上限',[0,1,.01]],['pigment','画材の流量係数',[0,1,.01]]
  ]]
 ];
 const number=(min,max,step)=>({type:'number',min,max,step});
@@ -155,8 +155,13 @@ export function brushUI({notify,onSelect,onPad,clearPad,sensors}){
       const canvas=Object.assign(document.createElement('canvas'),{width:image.width,height:image.height});
       const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
       const pixels=ctx.getImageData(0,0,image.width,image.height).data;
-      const alpha=[];for(let i=3;i<pixels.length;i+=4)alpha.push(pixels[i].toString(16).padStart(2,'0'));
-      set('asset',{width:image.width,height:image.height,alpha:alpha.join('')});set('tip','bitmap');renderEditor();
+      const alpha=new Uint8Array(image.width*image.height);
+      for(let i=0;i<alpha.length;i++)alpha[i]=pixels[i*4+3];
+      const bytes=new Uint8Array(2+alpha.length);bytes.set([image.width,image.height]);bytes.set(alpha,2);
+      const hash=await crypto.subtle.digest('SHA-256',bytes);
+      if(!dialog.open||session!==editSession)return;
+      const hex=data=>Array.from(data,v=>v.toString(16).padStart(2,'0')).join('');
+      set('asset',{width:image.width,height:image.height,alpha:hex(alpha),sha256:hex(new Uint8Array(hash))});set('tip','bitmap');renderEditor();
      }catch(e){if(session===editSession)error.textContent=e.message}
      finally{image?.close()}
     });

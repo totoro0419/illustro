@@ -40,6 +40,31 @@ try{
  await page.locator('[data-action=redo]').first().click();
  await page.waitForFunction(()=>document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
  assert.ok(await pixels()>0,'Redo restores stroke');
+ const pixelChecks=await page.evaluate(async()=>{
+  const [{preset},{composite,rasterize,tileBox}]=await Promise.all([
+   import('/app/brush-engine.mjs'),import('/app/brush-raster.mjs')
+  ]);
+  const pixels=new OffscreenCanvas(24,24),context=pixels.getContext('2d');
+  const point=(x,y,t)=>({x,y,t,p:1,tiltX:null,tiltY:null,azimuth:null,twist:null});
+  const marker=preset('marker');
+  const stroke={brush:marker,points:[point(-4,11,0),point(30,11,40)],seed:'0011223344556677',size:12,
+   opacity:marker.opacityFactor,flow:1,colorAlpha:1,color:[40,60,100],pen:false,curve:1,correction:{mode:'off'},wrap:true};
+  const draw=s=>{
+   const {ink}=rasterize(s,24,24);
+   for(const [key,image] of ink.tiles){const b=tileBox(key,24,24);composite(context,s,image,b.x,b.y)}
+  };
+  const alpha=(x,y)=>context.getImageData(x,y,1,1).data[3];
+  draw(stroke);
+  const seam=[alpha(0,11),alpha(23,11)];
+  draw(stroke);
+  const twice=alpha(0,11);
+  context.clearRect(0,0,24,24);
+  draw({...stroke,size:62,points:[point(-1,-1,0)]});
+  return {seam,twice,large:[alpha(0,0),alpha(12,12),alpha(23,23)]};
+ });
+ assert.deepEqual(pixelChecks.seam,[128,128],'Wrapped marker must have equal stroke cap across the seam');
+ assert.ok(Math.abs(pixelChecks.twice-192)<=1,'Another stroke composites independently');
+ assert.deepEqual(pixelChecks.large,[128,128,128],'Overlapping copies of one large dab must not double the cap');
  // Regression: eraser must never paint a black transient stroke before pen-up.
  for(const eraser of ['hardEraser','softEraser']){
   await page.locator('[data-tool='+eraser+']').click();

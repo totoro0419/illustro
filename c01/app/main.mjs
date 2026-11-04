@@ -103,16 +103,17 @@ const poseTimeline=new PoseTimeline();
 const sensors={tilt:false,barrel:false,side:false,eraser:false};
 const held=new Map(), pendingInk=new Map(), repaint=new Set();
 let armed=null,toggled=null,interrupted=null,workerFault=null,inkFrame=0;
-let repeat=false, hover=null, padBrushes=null, padStroke=null, priorStrokes=[], recoveryStrokes=[], lastFormal={strokes:[],revision:0};
+let repeat=false, hover=null, hoverFrame=0, padBrushes=null, padStroke=null, priorStrokes=[], recoveryStrokes=[], lastFormal={strokes:[],revision:0};
 const cursor=$('brush-cursor'), repeatView=$('repeat-view');
 
 function presentation(){
  if(!repaint.size)return;
+ const candidates=[...pendingInk.values(),active,interrupted];
  for(const key of repaint){
   const box=tileBox(key,doc.width,doc.height);
   pctx.clearRect(box.x,box.y,box.w,box.h);
   pctx.drawImage(canvas,box.x,box.y,box.w,box.h,box.x,box.y,box.w,box.h);
-  for(const candidate of [...pendingInk.values(),active,interrupted]){
+  for(const candidate of candidates){
    const tile=candidate?.visible&&candidate.ink.tiles.get(key);
    if(!tile)continue;
    pctx.save();
@@ -172,11 +173,11 @@ function updateSensorStatus(){
  $('button-capability').textContent='サイドボタン '+(sensors.side?'検出済み':'未検出')+'／後端消しゴム '+(sensors.eraser?'検出済み':'未検出');
 }
 function showCursor(e){
- if(!$('show-cursor').checked||e.pointerType==='touch'||nav.has(e.pointerId)){
+ if(!$('show-cursor').checked||e.pointerType==='touch'&&active?.id!==e.pointerId||nav.has(e.pointerId)){
   cursor.hidden=true;return;
  }
  const rect=stage.getBoundingClientRect(),input=brushes.input;
- const erase=currentAction()==='erase'||Boolean(e.buttons&32);
+ const erase=currentAction()==='erase'||Boolean(e.buttons&32)||isEraser(settings.tool);
  const diameter=active?.stroke.size||(erase&&input.independent?input.eraserSize:settings.size);
  const size=clamp(diameter*view.scale,7,1800);
  Object.assign(cursor.style,{left:e.clientX-rect.left+'px',top:e.clientY-rect.top+'px',width:size+'px',height:size+'px'});
@@ -191,7 +192,7 @@ function strokeSettings(brush,points,pen,erase=false,includeConstraints=true){
   x:Math.floor(doc.width/4),y:Math.floor(doc.height/4),w:Math.ceil(doc.width/2),h:Math.ceil(doc.height/2),alpha:Number($('mask-alpha').value)
  }:null;
  return {algorithm,seed:makeSeed(),points,brush,correction,guide,selection,wrap:includeConstraints&&repeat,
-  size:erase&&input.independent?input.eraserSize:settings.size,opacity:settings.opacity,flow:settings.flow,
+  size:(erase||brush.blend==='erase')&&input.independent?input.eraserSize:settings.size,opacity:settings.opacity*brush.opacityFactor,flow:settings.flow,
   color:[...settings.color],colorAlpha:settings.colorAlpha,curve:settings.curve,pen};
 }
 function previewDabs(candidate,budget){
@@ -237,6 +238,7 @@ function queuePreview(){
    for(const key of candidate.ink.changed)repaint.add(key);
    candidate.ink.changed.clear();
   }
+  if(active?.inputEvent){updateStrokeDiagnostics(active);active.inputEvent=null}
   presentation();
   if([active,...pendingInk.values()].some(s=>s?.visible&&!s.previewFailed&&(s.dabs||s.previewIndex<s.stroke.points.length)))queuePreview();
  });
@@ -264,14 +266,16 @@ function addStroke(e,end=false){
   if(!admit(points,point)&&!point)recordInput('unknown-view-pose',event);
  }
  queuePreview();
- if(e.pointerType==='pen'){
+ if(e.pointerType==='pen')s.inputEvent=e;
+}
+function updateStrokeDiagnostics(candidate){
+ const e=candidate.inputEvent,points=candidate.stroke.points;
   $('sensor-readout').textContent='筆圧 '+round(e.pressure,2)+'／傾き '+(sensors.tilt?e.tiltX+', '+e.tiltY:'未検出')+'／軸回転 '+(sensors.barrel?e.twist:'未検出');
   if(!$('input-wave').hidden){
    const wave=$('input-wave'),wc=wave.getContext('2d'),samples=points.slice(-wave.width);
    wc.clearRect(0,0,wave.width,wave.height);wc.beginPath();wc.strokeStyle='#345acc';
    samples.forEach((p,i)=>{const y=(1-p.p)*(wave.height-2)+1;if(i)wc.lineTo(i,y);else wc.moveTo(i,y)});wc.stroke();
   }
- }
 }
 function commitStroke(candidate=active){
  if(!candidate||workerFault)return;
@@ -389,11 +393,12 @@ function pointerDown(e){
  if(temporary&&armed){armed=null;updateToolStatus()}
  if(action==='pan')addNav(e);
  else if(action==='sample')sampleColor(e);
- else beginStroke(e,action==='erase');
+ else {beginStroke(e,action==='erase');hover=e;showCursor(e)}
 }
 function pointerMove(e){
  updatePenButtons(e);
- hover=e;showCursor(e);
+ hover=e;
+ if(!hoverFrame)hoverFrame=requestAnimationFrame(()=>{hoverFrame=0;if(hover)showCursor(hover)});
  if(nav.has(e.pointerId)){
   if(e.pointerType==='touch')recordInput('nav-move',e);
   const p=nav.get(e.pointerId);p.x=e.clientX;p.y=e.clientY;
@@ -417,6 +422,7 @@ function pointerMove(e){
 }
 function pointerUp(e,forcedCancel=false){
  const cancelled=forcedCancel||e.type==='pointercancel';
+ if(e.pointerType==='touch'){hover=null;cursor.hidden=true}
  if(e.pointerType==='pen')recordInput(cancelled?'pen-cancel':'pen-up',e);
  if(nav.has(e.pointerId)){
   const p=nav.get(e.pointerId),tap=Math.hypot(p.x-p.startX,p.y-p.startY)<12&&performance.now()-p.started<260;
@@ -605,15 +611,16 @@ const resizer=$('resize-handle');resizer.addEventListener('pointerdown',e=>resiz
 $('zoom-n').addEventListener('change',e=>{const z=clamp(Number(e.target.value)/100,.05,64);view=zoomAt(view,z/view.scale,{x:stage.clientWidth/2,y:stage.clientHeight/2});scheduleView()});
 const temporaryKeys={Space:'pan',KeyE:'erase',KeyI:'sample'};
 window.addEventListener('keydown',e=>{
- if(e.target instanceof HTMLElement&&e.target.closest('input,textarea,select,button,dialog,[contenteditable]'))return;
+ if(e.target instanceof HTMLElement&&e.target.closest('input,textarea,select,dialog,[contenteditable]'))return;
  const ctrl=e.ctrlKey||e.metaKey,key=e.key.toLowerCase();
  if(ctrl&&key==='z'){e.preventDefault();e.shiftKey?redo():undo()}
  else if(ctrl&&key==='y'){e.preventDefault();redo()}
  else if(ctrl&&key==='s'){e.preventDefault();save(e.shiftKey)}
- else if(!ctrl&&!e.altKey&&temporaryKeys[e.code]){e.preventDefault();if(!e.repeat)hold(e.code,temporaryKeys[e.code])}
+ else if(!ctrl&&!e.altKey&&temporaryKeys[e.code]&&!(e.code==='Space'&&e.target instanceof HTMLButtonElement)){e.preventDefault();if(!e.repeat)hold(e.code,temporaryKeys[e.code])}
 });
 window.addEventListener('keyup',e=>{if(temporaryKeys[e.code])release(e.code)});
 window.addEventListener('resize',scheduleView);
+if(typeof ResizeObserver==='function')new ResizeObserver(scheduleView).observe(stage);
 setColor(settings.color,false);resetDoc(doc);selectTool('gpen');
 if(matchMedia('(max-width:720px)').matches)$('workspace').classList.add('collapsed');
 if(!rasterWorker)notify('この端末では筆の確定が同期処理になります');

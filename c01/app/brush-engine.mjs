@@ -10,14 +10,14 @@ const base = {
  tip:'round', aspect:1, shear:0, hardness:1, spacing:.1, scatter:0, angle:0, particles:1,
  texture:'none', textureScale:1, textureAngle:0, depth:0, textureAnchor:'document',
  taper:false, start:20, end:20, taperUnit:'px', taperShape:'smooth', minWidth:.25, taperAlpha:0,
- blend:'over', accumulate:false, pigment:1, correction:'global', positionTau:0, speedTau:0, pressureTau:0, maps:[]
+ blend:'over', accumulate:false, opacityFactor:1, pigment:1, correction:'global', positionTau:0, speedTau:0, pressureTau:0, maps:[]
 };
 const map = (source, output, min, max) => ({source,output,min,max,scale:1,operation:'multiply',enabled:true,invert:false,knots:[[0,0],[1,1]]});
 export const presets = Object.freeze({
  round:{name:'丸ブラシ',tags:'均一 塗り'},
  gpen:{name:'Gペン',tags:'線画 インク',maps:[map('pressure','size',0,1)]},
  pencil:{name:'鉛筆',tags:'下描き 紙 グラファイト',texture:'graphite',depth:.85,textureScale:1.5,maps:[map('pressure','flow',.12,.75)]},
- marker:{name:'マーカー',tags:'塗り 半透明',pigment:.5},
+ marker:{name:'マーカー',tags:'塗り 半透明',opacityFactor:.5},
  air:{name:'エアブラシ',tags:'ぼかし ソフト',hardness:0,pigment:.05},
  hardEraser:{name:'硬い消しゴム',tags:'消去',blend:'erase'},
  softEraser:{name:'柔らかい消しゴム',tags:'消去 ぼかし',blend:'erase',hardness:0}
@@ -33,7 +33,7 @@ export const domains = {
 };
 const scalar = {
  aspect:[.05,2], shear:[-1,1], hardness:[0,1], spacing:[.01,2], scatter:[0,400], angle:[-360,360],
- particles:[1,8], textureScale:[.1,16], textureAngle:[-360,360], depth:[0,1], pigment:[0,1],
+ particles:[1,8], textureScale:[.1,16], textureAngle:[-360,360], depth:[0,1], opacityFactor:[0,1], pigment:[0,1],
  start:[0,1000], end:[0,1000], minWidth:[0,300], taperAlpha:[0,1],
  positionTau:[0,.2], speedTau:[0,.2], pressureTau:[0,.2]
 };
@@ -50,9 +50,9 @@ export function validateBrush(brush){
  }
  for (const [key,allowed] of Object.entries(choices)) if (!allowed.includes(brush[key])) throw Error(key + ' が無効です');
  if (brush.tip === 'bitmap') {
-  const {width,height,alpha} = brush.asset || {};
+  const {width,height,alpha,sha256} = brush.asset || {};
   if (!Number.isInteger(width) || !Number.isInteger(height) || width<1 || height<1 || width>128 || height>128 ||
-      typeof alpha !== 'string' || alpha.length !== 2*width*height || !/^[0-9a-f]+$/.test(alpha)) throw Error('先端素材がありません');
+      typeof alpha !== 'string' || alpha.length !== 2*width*height || !/^[0-9a-f]+$/.test(alpha) || !/^[0-9a-f]{64}$/.test(sha256)) throw Error('先端素材がありません');
  }
  if (!Array.isArray(brush.maps) || brush.maps.length > 24) throw Error('変調は24件までです');
  for (const node of brush.maps) {
@@ -180,7 +180,7 @@ export function evaluateDab(s,p,total,index){
   const head=b.start?shape(unit(p.distance/(b.start*multiplier))):1;
   const tail=b.end&&total!==null?shape(unit((total-p.distance)/(b.end*multiplier))):1;
   const taper=head*tail;
-  a.size=Math.min(a.size,Math.max(b.minWidth,a.size*taper));
+  a.size=Math.min(s.size,Math.max(b.minWidth,a.size*taper));
   a.opacity*=lerp(1,taper,b.taperAlpha);
  }
  const x=p.x+(a.scatter?(counterRandom(s.seed,index,0)*2-1)*a.scatter:0);
@@ -190,7 +190,7 @@ export function evaluateDab(s,p,total,index){
   const [h,sat,v]=rgbToHsv(color);
   color=hsvToRgb(h+a.hue,unit(sat+a.saturation),unit(v+a.value));
  }
- return {...a,x,y,spacing,color,index};
+ return {...a,x,y,spacing,color,index,direction:p.direction||0};
 }
 
 const analog=['x','y','p','t','speed','distance','tiltX','tiltY'];

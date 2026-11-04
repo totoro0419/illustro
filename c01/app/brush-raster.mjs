@@ -29,6 +29,18 @@ function bitmap(asset){
  return image;
 }
 
+function repeatTextureTransform(left,top,width,height,degrees,scale){
+ const radians=angle(degrees),cos=Math.cos(radians)/scale,sin=Math.sin(radians)/scale;
+ const period=(value,length)=>Math.round(value*length/32)*32/length;
+ let a=period(cos,width),b=period(-sin,width),c=period(sin,height),d=period(cos,height);
+ if(Math.abs(a*d-b*c)<1e-12){
+  a=Math.max(1,Math.round(width/(32*scale)))*32/width;
+  d=Math.max(1,Math.round(height/(32*scale)))*32/height;
+  b=0;c=0;
+ }
+ return new DOMMatrix().translate(-left,-top).multiply(new DOMMatrix([a,b,c,d,0,0]).inverse());
+}
+
 export function tileBox(key,width,height){
  const columns=Math.ceil(width/tileSize);
  const x=key%columns*tileSize, y=Math.floor(key/columns)*tileSize;
@@ -161,8 +173,12 @@ export class Ink {
   if(dab.depth && b.texture!=='none'){
    ctx.save();
    const pattern=ctx.createPattern(texture(b.texture),'repeat');
-   const origin=b.textureAnchor==='stroke'?this.stroke.points[0]:{x:0,y:0};
-   pattern.setTransform(new DOMMatrix().translate(origin.x-left,origin.y-top).rotate(b.textureAngle).scale(dab.textureScale));
+   const tipAttached=b.textureAnchor==='stroke';
+   const transform=this.stroke.wrap&&!tipAttached
+    ?repeatTextureTransform(left,top,this.width,this.height,b.textureAngle,dab.textureScale)
+    :new DOMMatrix().translate((tipAttached?x:0)-left,(tipAttached?y:0)-top)
+      .rotate(b.textureAngle+(tipAttached?dab.direction:0)).scale(dab.textureScale);
+   pattern.setTransform(transform);
    // Destination-in with a partially transparent pattern uses the original tip once.
    // Build the weighted texture on a tiny cached-pattern surface first.
    if(!this.grain || this.grain.width<width || this.grain.height<height) this.grain=surface(this.scratch.width,this.scratch.height);
