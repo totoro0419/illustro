@@ -150,8 +150,12 @@ try{
  const colorBox=await tablet.locator('#classic-picker').boundingBox();
  const hexBefore=await tablet.locator('#hex').inputValue();
  const scBefore=await workspaceScroll.evaluate(el=>el.scrollTop);
+ const debugStart=await tablet.evaluate(pt=>{const el=document.elementFromPoint(pt.x,pt.y);return {tag:el?.tagName,html:el?.outerHTML.slice(0,280),touchAction:el?getComputedStyle(el).touchAction:null,coords:pt}}, {x:colorBox.x+colorBox.width*.95,y:colorBox.y+colorBox.height*.5});
+ const recorded=[];await tablet.evaluate(()=>{window.__testEvents=[];const root=document.getElementById('classic-picker');for(const type of ['pointerdown','pointermove','pointerup','pointercancel','touchstart','touchmove'])root.addEventListener(type,e=>window.__testEvents.push({type,target:e.target.tagName,button:e.button,id:e.pointerId,action:getComputedStyle(e.target).touchAction}),{capture:true,passive:true})});
  await touchSwipe(colorBox.x+colorBox.width*.95,colorBox.y+colorBox.height*.5,
    colorBox.x+colorBox.width*.82,colorBox.y+colorBox.height*.78);
+ const debugEvents=await tablet.evaluate(()=>window.__testEvents);
+ console.log('CLASSIC TOUCH DIAGNOSTIC '+JSON.stringify({debugStart,debugEvents:debugEvents.slice(0,18),box:colorBox}));
  const hexAfter=await tablet.locator('#hex').inputValue();
  const scAfter=await workspaceScroll.evaluate(el=>el.scrollTop);
  assert.notEqual(hexBefore,hexAfter,'Touching visible Classic hue ring must change the color');
