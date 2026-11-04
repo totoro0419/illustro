@@ -116,5 +116,48 @@ try{
  const transformAfter=await page.locator('#paper').evaluate(el=>{const m=new DOMMatrix(getComputedStyle(el).transform);return {a:m.a,b:m.b,c:m.c,d:m.d,e:m.e,f:m.f}});
  const centreAfter={x:transformAfter.a*160+transformAfter.c*120+transformAfter.e,y:transformAfter.b*160+transformAfter.d*120+transformAfter.f};
  assert.ok(Math.hypot(centreBefore.x-centreAfter.x,centreBefore.y-centreAfter.y)<.05,'Flip must keep visible artwork centre fixed');
+
+ // Real touch scroll routing: inactive portions of both pickers must pan Workspace.
+ // The colored annulus/HSV plane alone may own a color-drag gesture.
+ const tablet=await browser.newPage({viewport:{width:900,height:700},hasTouch:true,isMobile:true});
+ const tabletErrors=[];tablet.on('pageerror',e=>tabletErrors.push(String(e)));
+ await tablet.goto('http://127.0.0.1:'+port,{waitUntil:'load'});
+ const session=await tablet.context().newCDPSession(tablet);
+ const workspaceScroll=tablet.locator('.workspace-scroll');
+ const touchSwipe=async (x0,y0,x1,y1)=>{
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x0,y:y0}]});
+  for(let i=1;i<=9;i++){
+   await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x0+(x1-x0)*i/9,y:y0+(y1-y0)*i/9}]});
+   await tablet.waitForTimeout(8);
+  }
+  await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await tablet.waitForTimeout(130);
+ };
+ for(const pickerMode of ['classic','orbit']){
+  await tablet.locator('#color-picker-mode').selectOption(pickerMode);
+  const picker=tablet.locator(pickerMode==='classic'?'#classic-picker':'#orbit-picker');
+  await workspaceScroll.evaluate(el=>el.scrollTop=0);
+  const rect=await picker.boundingBox();
+  const start={x:rect.x+12,y:rect.y+22};
+  const before=await workspaceScroll.evaluate(el=>el.scrollTop);
+  await touchSwipe(start.x,start.y,start.x,start.y-95);
+  const after=await workspaceScroll.evaluate(el=>el.scrollTop);
+  assert.ok(after-before>20,pickerMode+' blank corner must scroll Workspace by touch: '+before+' -> '+after);
+ }
+ // After a scroll gesture, touching the actual Classic hue band must still choose color.
+ await tablet.locator('#color-picker-mode').selectOption('classic');
+ await tablet.locator('#classic-picker').scrollIntoViewIfNeeded();
+ const colorBox=await tablet.locator('#classic-picker').boundingBox();
+ const hexBefore=await tablet.locator('#hex').inputValue();
+ const scBefore=await workspaceScroll.evaluate(el=>el.scrollTop);
+ await touchSwipe(colorBox.x+colorBox.width*.95,colorBox.y+colorBox.height*.5,
+   colorBox.x+colorBox.width*.82,colorBox.y+colorBox.height*.78);
+ const hexAfter=await tablet.locator('#hex').inputValue();
+ const scAfter=await workspaceScroll.evaluate(el=>el.scrollTop);
+ assert.notEqual(hexBefore,hexAfter,'Touching visible Classic hue ring must change the color');
+ assert.ok(Math.abs(scAfter-scBefore)<2,'Dragging visible Classic hue ring must not scroll Workspace');
+ assert.deepEqual(tabletErrors,[],'Touch scrolling and hue gestures must have no JS exceptions');
+ console.log('PASS: real touch scroll through both picker blank regions, hue drag ownership');
+
  console.log('PASS: basic painting, legacy dual color modes, scroll ownership, centre-anchored flip');
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}

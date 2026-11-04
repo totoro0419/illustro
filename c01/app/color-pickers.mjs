@@ -155,7 +155,7 @@ export function installColorPickers({getColor,preview,begin,commit,cancel}){
  classic.addEventListener('pointerdown',e=>{
   if(drag||e.button!==0)return;
   const element=e.target instanceof Element?e.target:null;
-  const part=element?.closest('#classic-plane')?'sv':element?.closest('#classic-ring')?'ring':null;
+  const part=element?.closest('#classic-plane')?'sv':element?.closest('[data-classic-hue]')?'ring':null;
   if(!part)return;
   if(part==='ring'){
    const r=ring.getBoundingClientRect(),d=Math.hypot(e.clientX-r.left-r.width/2,e.clientY-r.top-r.height/2);
