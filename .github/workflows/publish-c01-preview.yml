@@ -1,0 +1,73 @@
+name: Publish Illustro C01 preview
+on:
+  push:
+    branches: [implementation/stage4-c01-basic-paint]
+    paths: ["c01/**", ".github/workflows/publish-c01-preview.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: illustro-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm install --no-audit --no-fund
+        working-directory: c01
+      - run: npm run check
+        working-directory: c01
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Assemble site without dropping Stage III references
+        run: |
+          mkdir -p _site/c01 _site/qa/ui-prototype _site/qa/performance-lab
+          cp -R c01/dist/. _site/c01/
+          cp qa/ui-prototype/index.html _site/qa/ui-prototype/index.html
+          cp qa/performance-lab/index.html _site/qa/performance-lab/index.html
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: c01-preview
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  verify:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify deployed HTTP files
+        run: |
+          curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 https://totoro0419.github.io/illustro/c01/ -o /tmp/illustro-preview.html
+          grep -q 'Illustro' /tmp/illustro-preview.html
+          curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 https://totoro0419.github.io/illustro/c01/app/main.mjs -o /tmp/illustro-main.mjs
+          grep -q 'function beginStroke' /tmp/illustro-main.mjs
+          curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 https://totoro0419.github.io/illustro/c01/app/raster-worker.mjs -o /tmp/illustro-raster-worker.mjs
+          grep -q 'latestRequestedSeq' /tmp/illustro-raster-worker.mjs
+      - name: Install browser test runtime
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+        working-directory: c01
+      - name: Verify synthetic stylus, touch navigation, async Undo and Save fence
+        run: node test/pen-worker-test.mjs
+        working-directory: c01
+      - name: Verify deployed interactive painting
+        run: node test/live-test.mjs
+        working-directory: c01

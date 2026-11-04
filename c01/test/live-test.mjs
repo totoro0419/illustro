@@ -1,0 +1,43 @@
+import {chromium} from 'playwright';
+import {strict as assert} from 'node:assert';
+const url='https://totoro0419.github.io/illustro/c01/';
+let browser;
+try{
+  browser=await chromium.launch({headless:true});
+  const page=await browser.newPage({viewport:{width:1280,height:800}});
+  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+  const response=await page.goto(url,{waitUntil:'networkidle',timeout:45000});
+  assert.equal(response.status(),200,'Preview must respond 200');
+  await page.waitForFunction(()=>document.querySelector('#art')?.width===1600);
+  const before=await page.locator('#art').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return d.some((v,i)=>i%4===3&&v>0)});
+  assert.equal(before,false,'Initial artwork must be empty');
+  const s=await page.locator('#stage').boundingBox();
+  await page.mouse.move(s.x+s.width*.4,s.y+s.height*.4);
+  await page.mouse.down();await page.mouse.move(s.x+s.width*.4+80,s.y+s.height*.4+50,{steps:10});await page.mouse.up();
+  await page.waitForFunction(()=>document.querySelectorAll('.stroke-preview').length===0 && document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
+  const painted=await page.locator('#art').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return d.some((v,i)=>i%4===3&&v>0)});
+  assert.equal(painted,true,'Public app must paint actual pixels');
+  await page.locator('[data-action=undo]').first().click();
+  await page.waitForFunction(()=>!document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
+  const undone=await page.locator('#art').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return d.some((v,i)=>i%4===3&&v>0)});
+  assert.equal(undone,false,'Undo must remove artwork');
+  await page.locator('[data-action=redo]').first().click();
+  page.on('dialog',d=>d.accept());
+  await page.locator('[data-action=new]').first().click();
+  await page.locator('#new-width').fill('320');await page.locator('#new-height').fill('240');
+  await page.locator('#new-dialog button[type=submit]').click();
+  assert.equal(await page.locator('#art').evaluate(c=>c.width),320);
+  assert.deepEqual(errors,[],'No client exceptions');
+  const phone=await browser.newPage({viewport:{width:393,height:852},isMobile:true,hasTouch:true});
+  const resp=await phone.goto(url,{waitUntil:'networkidle',timeout:45000});assert.equal(resp.status(),200);
+  assert.equal(await phone.locator('.mobilebar').isVisible(),true);
+  await phone.locator('#mobile-tools').click();assert.equal(await phone.locator('.workspace').isVisible(),true);
+
+  const diag=await browser.newPage({viewport:{width:393,height:852},hasTouch:true,isMobile:true});
+  const diagErrors=[];diag.on('pageerror',e=>diagErrors.push(String(e)));
+  const diagResponse=await diag.goto(url+'input-test.html',{waitUntil:'load',timeout:45000});
+  assert.equal(diagResponse.status(),200,'Public standalone diagnostic must respond 200');
+  assert.ok(await diag.locator('#zone').isVisible(),'Public independent touch surface must be visible');
+  assert.deepEqual(diagErrors,[]);
+  console.log('LIVE_PASS: URL HTTP 200, JS bootstrap, draw/undo/redo/new/phone panel and independent input diagnostic');
+} finally {if(browser)await browser.close()}
