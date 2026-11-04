@@ -8,8 +8,10 @@ export function admit(points,sample){
  if(!sample||!Number.isFinite(sample.t)||!Number.isFinite(sample.x)||!Number.isFinite(sample.y)) return false;
  const last=points.at(-1);
  if(last && sample.t<last.t)return false;
- if(last && sample.t===last.t){points[points.length-1]=sample;return true}
- if(last && analog.every(k=>last[k]===sample[k]))return false;
+ if(last && sample.t===last.t){
+  if(analog.every(key=>last[key]===sample[key]))return false;
+  points[points.length-1]=sample;return true;
+ }
  points.push(sample);
  return true;
 }

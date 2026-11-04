@@ -58,7 +58,8 @@ test('INP-007 pressure-only samples, reversed time and coalesced pose selection'
  assert.ok(admit(accepted,raw(0,0,15,.7)));
  assert.ok(admit(accepted,raw(0,0,15,.8)));
  assert.equal(admit(accepted,raw(0,1,14,1)),false);
- assert.deepEqual(accepted.map(p=>p.p),[0,.8]);
+ assert.ok(admit(accepted,raw(0,0,25,.8)),'Elapsed stationary contact affects time modulation and EMA');
+ assert.deepEqual(accepted.map(p=>p.p),[0,.8,.8]);
  const timeline=new PoseTimeline(),rect={left:20,top:0};
  const view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
  timeline.record(5,view,rect);
