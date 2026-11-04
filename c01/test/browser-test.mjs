@@ -2,7 +2,7 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
-const files={'/':'index.html','/index.html':'index.html','/input-test.html':'input-test.html','/app/main.mjs':'app/main.mjs','/app/color-pickers.mjs':'app/color-pickers.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/raster-worker.mjs':'app/raster-worker.mjs'};
+const files={'/':'index.html','/index.html':'index.html','/input-test.html':'input-test.html','/app/main.mjs':'app/main.mjs','/app/color-pickers.mjs':'app/color-pickers.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/aurora-frost.css':'app/aurora-frost.css','/app/ui-icons.mjs':'app/ui-icons.mjs','/app/raster-worker.mjs':'app/raster-worker.mjs'};
 const server=createServer(async(req,res)=>{
   try {const path=files[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}const content=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(content)}
   catch(err){res.writeHead(500).end(String(err))}
@@ -15,6 +15,19 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto('http://127.0.0.1:'+port,{waitUntil:'load'});
  await page.waitForFunction(()=>document.querySelector('#art')?.width===1600);
+ // Aurora Frost: local visual assets must load and buttons retain semantics.
+ const theme=await page.evaluate(()=>({
+  stylesheet:[...document.styleSheets].some(s=>s.href?.endsWith('/app/aurora-frost.css')),
+  railIcons:document.querySelectorAll('.rail button .ui-icon').length,
+  undoIcon:!!document.querySelector('[data-action=undo] .ui-icon'),
+  gradient:getComputedStyle(document.querySelector('.accent')).backgroundImage,
+  classic:!!document.getElementById('classic-picker'),
+  orbit:!!document.getElementById('orbit-picker')
+ }));
+ assert.ok(theme.stylesheet&&theme.railIcons===8&&theme.undoIcon,'Aurora Frost and SVG icons must load');
+ assert.ok(theme.gradient.includes('gradient'),'Primary actions must use a controlled gradient');
+ assert.ok(theme.classic&&theme.orbit,'Both legacy color pickers must survive the design skin');
+
  const pixels=()=>page.evaluate(()=>{const c=document.querySelector('#art');const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let pixels=0;for(let i=3;i<d.length;i+=4)if(d[i])pixels++;return pixels});
  const b=await page.locator('#stage').boundingBox();const x=b.x+b.width*.45,y=b.y+b.height*.4;
  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+100,y+45,{steps:12});await page.mouse.up();
