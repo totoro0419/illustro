@@ -5,6 +5,7 @@ import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
 // Explicit allow-list keeps the local test server independent of file system paths.
 const allow={'/':'index.html','/index.html':'index.html','/app/main.mjs':'app/main.mjs','/app/color-pickers.mjs':'app/color-pickers.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/raster-worker.mjs':'app/raster-worker.mjs','/app/style.css':'app/style.css','/app/aurora-frost.css':'app/aurora-frost.css','/app/ui-icons.mjs':'app/ui-icons.mjs'};
+for(const name of ['brush-engine.mjs','brush-raster.mjs','brush-ui.mjs','stroke-input.mjs','c02.css'])allow['/app/'+name]='app/'+name;
 const server=createServer(async(req,res)=>{try{
  const path=allow[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}
  const data=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(data);
@@ -12,7 +13,7 @@ const server=createServer(async(req,res)=>{try{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 let browser;
 try{
- browser=await chromium.launch({headless:true});
+ browser=await chromium.launch({headless:true,executablePath:process.env.ILLUSTRO_CHROMIUM||undefined,args:process.env.ILLUSTRO_CHROMIUM?['--no-sandbox','--disable-dev-shm-usage']:[]});
  const page=await browser.newPage({viewport:{width:1100,height:820}}),errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
  page.on('console',msg=>{if(msg.type()==='error')errors.push('console: '+msg.text())});
@@ -38,7 +39,7 @@ try{
   const navigated=paper.style.transform!==firstPose;
   const up=dispatch('pointerup','pen',40,325,200);
   dispatch('pointerup','touch',41,380,315);
-  await until(()=>document.querySelectorAll('.stroke-preview').length===0 && pixelCount()>0);
+  await until(()=>document.getElementById('stage').dataset.rasterPending==='0' && pixelCount()>0);
   const aPixels=pixelCount();
   // B is accepted then immediately undone. Save fences on A even if B job remains pending.
   dispatch('pointerdown','pen',42,160,300);
@@ -49,7 +50,7 @@ try{
   document.querySelector('[data-action=save]').click();
   document.querySelector('[data-action=redo]').click();
   await until(()=>writes.length>0);
-  await until(()=>document.querySelectorAll('.stroke-preview').length===0 && pixelCount()>aPixels);
+  await until(()=>document.getElementById('stage').dataset.rasterPending==='0' && pixelCount()>aPixels);
   const afterRedo=pixelCount();
   const native=JSON.parse(writes[0]);
   const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;image.src=native.layers[0].png});

@@ -1,20 +1,27 @@
 import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
-const url='https://totoro0419.github.io/illustro/c01/';
+const url=process.env.ILLUSTRO_PREVIEW_URL||'https://totoro0419.github.io/illustro/c02/';
 let browser;
 try{
-  browser=await chromium.launch({headless:true});
+  browser=await chromium.launch({headless:true,executablePath:process.env.ILLUSTRO_CHROMIUM||undefined,args:process.env.ILLUSTRO_CHROMIUM?['--no-sandbox','--disable-dev-shm-usage']:[]});
   const page=await browser.newPage({viewport:{width:1280,height:800}});
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));
   const response=await page.goto(url,{waitUntil:'networkidle',timeout:45000});
   assert.equal(response.status(),200,'Preview must respond 200');
+  await page.locator('#brush-search').waitFor({state:'visible'});
+  await page.locator('#brush-search').fill('鉛筆');
+  await page.locator('#brush-list').selectOption('pencil');
+  await page.locator('#brush-edit').click();
+  await page.locator('#pad-after').press('Enter');
+  assert.ok(await page.locator('#pad-after').evaluate(c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data.some((v,i)=>i%4===3&&v>0)));
+  await page.locator('#brush-cancel').click();
   await page.waitForFunction(()=>document.querySelector('#art')?.width===1600);
   const before=await page.locator('#art').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return d.some((v,i)=>i%4===3&&v>0)});
   assert.equal(before,false,'Initial artwork must be empty');
   const s=await page.locator('#stage').boundingBox();
   await page.mouse.move(s.x+s.width*.4,s.y+s.height*.4);
   await page.mouse.down();await page.mouse.move(s.x+s.width*.4+80,s.y+s.height*.4+50,{steps:10});await page.mouse.up();
-  await page.waitForFunction(()=>document.querySelectorAll('.stroke-preview').length===0 && document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
+  await page.waitForFunction(()=>document.getElementById('stage').dataset.rasterPending==='0' && document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
   const painted=await page.locator('#art').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return d.some((v,i)=>i%4===3&&v>0)});
   assert.equal(painted,true,'Public app must paint actual pixels');
   await page.locator('[data-action=undo]').first().click();
@@ -22,6 +29,17 @@ try{
   const undone=await page.locator('#art').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return d.some((v,i)=>i%4===3&&v>0)});
   assert.equal(undone,false,'Undo must remove artwork');
   await page.locator('[data-action=redo]').first().click();
+  await page.evaluate(()=>{
+   window.previewWrites=[];
+   window.showSaveFilePicker=async()=>({createWritable:async()=>({write:async data=>window.previewWrites.push(data),close:async()=>{}})});
+  });
+  await page.locator('[data-action=save]').first().click();
+  await page.waitForFunction(()=>window.previewWrites.length>0);
+  const archive=await page.evaluate(()=>JSON.parse(window.previewWrites[0]));
+  assert.equal(archive.formatVersion,2);
+  assert.equal(archive.brushArchive.strokes[0].brush.id,'pencil');
+  await page.locator('#open-file').setInputFiles({name:'preview.illustro',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(archive))});
+  await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('ネイティブ作品を開きました'));
   page.on('dialog',d=>d.accept());
   await page.locator('[data-action=new]').first().click();
   await page.locator('#new-width').fill('320');await page.locator('#new-height').fill('240');

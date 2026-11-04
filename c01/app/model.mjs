@@ -75,19 +75,20 @@ export class History {
   get undoName(){return this.canUndo?this.items[this.index-1].label:''}
   get redoName(){return this.canRedo?this.items[this.index].label:''}
 }
-/** @param {DocumentMeta} metadata @param {string} png @param {number} revision */
-export function createManifest(metadata, png, revision) {
+/** @param {DocumentMeta} metadata @param {string} png @param {number} revision @param {unknown[] | undefined} [strokes] */
+export function createManifest(metadata, png, revision, strokes) {
   const {width,height,dpi}=validateDocument(metadata.width,metadata.height,metadata.dpi);
   if(typeof png!=='string'||!png.startsWith('data:image/png;base64,'))throw new Error('Raster PNGがありません');
-  return {format:FORMAT,formatVersion:VERSION,savedRevision:revision,document:{name:String(metadata.name||'無題'),author:String(metadata.author||''),description:String(metadata.description||''),width,height,dpi,profile:'srgb8',background:metadata.background==='transparent'?'transparent':'white'},layers:[{id:'raster-1',type:'raster',name:'レイヤー1',visible:true,opacity:1,png}]};
+  return {format:FORMAT,formatVersion:strokes===undefined?VERSION:2,...(strokes===undefined?{}:{brushArchive:{version:1,strokes}}),savedRevision:revision,document:{name:String(metadata.name||'無題'),author:String(metadata.author||''),description:String(metadata.description||''),width,height,dpi,profile:'srgb8',background:metadata.background==='transparent'?'transparent':'white'},layers:[{id:'raster-1',type:'raster',name:'レイヤー1',visible:true,opacity:1,png}]};
 }
 /** @param {any} raw */
 export function readManifest(raw) {
   const j=typeof raw==='string'?JSON.parse(raw):raw;
-  if(j?.format!==FORMAT||j?.formatVersion!==VERSION)throw new Error('非対応のIllustro形式/バージョン');
+  if(j?.format!==FORMAT||![VERSION,2].includes(j?.formatVersion))throw new Error('非対応のIllustro形式/バージョン');
   if(!Array.isArray(j.layers)||j.layers.length!==1||j.layers[0]?.type!=='raster'||typeof j.layers[0]?.png!=='string'||!j.layers[0].png.startsWith('data:image/png;base64,'))throw new Error('Rasterレイヤーが破損しています');
   validateDocument(j.document?.width,j.document?.height,j.document?.dpi);
   if(j.document.profile!=='srgb8')throw new Error('未対応の色プロファイル');
+  if(j.formatVersion===2&&(j.brushArchive?.version!==1||(!Array.isArray(j.brushArchive.strokes)||(j.brushArchive.recovery!==undefined&&!Array.isArray(j.brushArchive.recovery)))))throw new Error('ブラシ履歴が破損しています');
   return j;
 }
 /** @param {StrokePoint[]} points @param {number} size @param {number} width @param {number} height */

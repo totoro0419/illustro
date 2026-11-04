@@ -1,98 +1,105 @@
-/** C01 raster authority, isolated from the View/input main thread.
- * Commands are serialized in acceptance order, not completion order.
- * Every response is tagged with the document epoch and raster command sequence.
+/** The Worker owns accepted raster revisions. Publication may skip display frames,
+ * but every command and every save fence is evaluated in acceptance order.
  */
-import {brushBounds,clamp} from './model.mjs';
-let docCanvas, ctx, width=0, height=0, epoch=0;
-let actions=[], index=0;
-let queue=Promise.resolve(),latestRequestedSeq=0;
-const eraser=tool=>tool==='hardEraser'||tool==='softEraser';
-function stamp(context,s,point){
- const size=s.size*(s.pen?(.12+.88*Math.pow(point.p,s.curve)):1);
- const r=Math.max(.25,size/2);let alpha=s.flow*(s.pen?(.25+.75*Math.pow(point.p,s.curve)):1)*s.colorAlpha;
- if(s.tool==='pencil')alpha*=.47;if(s.tool==='marker')alpha*=.34;if(s.tool==='air')alpha*=.35;
- alpha=clamp(alpha,0,1);if(alpha<=0)return;
- context.save();context.globalCompositeOperation='source-over';
- context.fillStyle=eraser(s.tool)?`rgba(0,0,0,${alpha})`:`rgba(${s.color.join(',')},${alpha})`;
- if(s.tool==='air'||s.tool==='softEraser'){
-  const grad=context.createRadialGradient(point.x,point.y,r*.08,point.x,point.y,r);
-  grad.addColorStop(0,eraser(s.tool)?`rgba(0,0,0,${alpha})`:`rgba(${s.color.join(',')},${alpha})`);
-  grad.addColorStop(1,'rgba(0,0,0,0)');context.fillStyle=grad;
-  context.beginPath();context.arc(point.x,point.y,r,0,Math.PI*2);context.fill();
- }else if(s.tool==='marker'){
-  context.translate(point.x,point.y);context.rotate(-.3);context.fillRect(-r,-r*.46,2*r,r*.92);
- }else{
-  context.beginPath();
-  if(s.tool==='pencil')context.ellipse(point.x,point.y,r,r*.77,.1,0,Math.PI*2);
-  else if(s.tool==='gpen')context.ellipse(point.x,point.y,r,r*.8,Math.atan2(point.tiltY||0,(point.tiltX||0)+1)*.35,0,Math.PI*2);
-  else context.arc(point.x,point.y,r,0,Math.PI*2);
-  context.fill();
+import {composite,rasterize,tileBox} from './brush-raster.mjs';
+
+let canvas, ctx, epoch=0, index=0, historyBytes=0;
+let actions=[], queue=Promise.resolve(), latestRequestedSeq=0, latestEpoch=0, failed=false;
+const dirty=new Map();
+const maxHistoryBytes=192*1024*1024;
+
+async function emitFrame(msg,stats){
+ if(msg.epoch!==latestEpoch||msg.seq!==latestRequestedSeq) return;
+ let bitmap=null, box=null;
+ for(const key of dirty.keys()){
+  const part=tileBox(key,canvas.width,canvas.height);
+  if(!box){box=part;continue}
+  const x=Math.min(part.x,box.x),y=Math.min(part.y,box.y);
+  box={x,y,w:Math.max(part.x+part.w,box.x+box.w)-x,h:Math.max(part.y+part.h,box.y+box.h)-y};
  }
- context.restore();
+ if(box)bitmap=await createImageBitmap(canvas,box.x,box.y,box.w,box.h);
+ if(msg.epoch!==latestEpoch||msg.seq!==latestRequestedSeq){bitmap?.close();return}
+ self.postMessage({type:'frame',epoch,seq:msg.seq,box,bitmap,stats},bitmap?[bitmap]:[]);
 }
-function renderStroke(context,s){
- if(!s.points.length)return;
- const spacing=Math.max(.5,s.size*(s.tool==='air'||s.tool==='softEraser'?.14:s.tool==='marker'?.2:.12));
- stamp(context,s,s.points[0]);
- for(let n=1;n<s.points.length;n++){
-  const from=s.points[n-1],to=s.points[n];const distance=Math.hypot(to.x-from.x,to.y-from.y);
-  const count=Math.max(1,Math.ceil(distance/spacing));
-  for(let i=1;i<=count;i++){
-   const t=i/count;stamp(context,s,{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t,p:from.p+(to.p-from.p)*t,tiltX:to.tiltX,tiltY:to.tiltY});
+
+function applyStroke(stroke,seq){
+ const {width,height}=canvas;
+ const {ink,stamps}=rasterize(stroke,width,height);
+ const size=[...ink.tiles.values()].reduce((sum,tile)=>sum+tile.width*tile.height*8,0);
+ const retained=historyBytes-actions.slice(index).reduce((sum,entry)=>sum+entry.bytes,0);
+ if(retained+size>maxHistoryBytes) throw Error('履歴のメモリ上限に達しました。作品を開き直すと履歴をリセットできます');
+ const patches=[];
+ try{
+  for(const [key,tile] of ink.tiles){
+   const box=tileBox(key,width,height);
+   const before=ctx.getImageData(box.x,box.y,box.w,box.h);
+   const patch={key,box,before,after:null};
+   patches.push(patch);
+   composite(ctx,stroke,tile,box.x,box.y);
+   patch.after=ctx.getImageData(box.x,box.y,box.w,box.h);
   }
+ }catch(error){
+  for(const {box,before} of patches)ctx.putImageData(before,box.x,box.y);
+  throw error;
  }
+ actions.length=index;
+ actions.push({patches,bytes:size});
+ historyBytes=retained+size;
+ index++;
+ for(const {key} of patches)dirty.set(key,seq);
+ return {stamps,tiles:patches.length,historyBytes};
 }
-async function emitFrame(msg){
- // No partial frame can be published: the UI accepts only the newest command seq.
- if(msg.seq!==latestRequestedSeq)return;
- const bitmap=await createImageBitmap(docCanvas);
- if(msg.seq!==latestRequestedSeq){bitmap.close();return;}
- self.postMessage({type:'frame',epoch,seq:msg.seq,bitmap},[bitmap]);
-}
+
 async function execute(msg){
  if(msg.type==='reset'){
-  epoch=msg.epoch;width=msg.width;height=msg.height;
-  docCanvas=new OffscreenCanvas(width,height);ctx=docCanvas.getContext('2d',{willReadFrequently:true});
-  actions=[];index=0;return;
+  epoch=msg.epoch;
+  canvas=new OffscreenCanvas(msg.width,msg.height);
+  ctx=canvas.getContext('2d',{willReadFrequently:true});
+  actions=[];index=0;historyBytes=0;dirty.clear();failed=false;
+  return;
  }
- if(msg.epoch!==epoch||!ctx)return;
+ if(msg.epoch!==epoch||!ctx) return;
+ if(msg.type==='presented'){
+  for(const [key,seq] of dirty)if(seq<=msg.seq)dirty.delete(key);
+  return;
+ }
+ if(failed){
+  if(msg.type==='save')throw Error('障害発生後の保存を停止しました');
+  return;
+ }
  if(msg.type==='load'){
-  const response=await fetch(msg.png);const image=await createImageBitmap(await response.blob());
-  if(image.width!==width||image.height!==height)throw Error('ネイティブ画像の寸法不一致');
-  ctx.drawImage(image,0,0);image.close();return;
+  const image=await createImageBitmap(await (await fetch(msg.png)).blob());
+  try{
+   if(image.width!==canvas.width||image.height!==canvas.height) throw Error('ネイティブ画像の寸法不一致');
+   ctx.drawImage(image,0,0);
+  }finally{image.close()}
+  return;
  }
  if(msg.type==='stroke'){
-  const s=msg.stroke;const b=brushBounds(s.points,s.size,width,height);
-  if(b.w&&b.h){
-   const before=ctx.getImageData(b.x,b.y,b.w,b.h);
-   const ink=new OffscreenCanvas(b.w,b.h),ic=ink.getContext('2d');
-   ic.translate(-b.x,-b.y);renderStroke(ic,s);
-   ctx.save();ctx.globalAlpha=s.opacity;ctx.globalCompositeOperation=eraser(s.tool)?'destination-out':'source-over';
-   ctx.drawImage(ink,b.x,b.y);ctx.restore();
-   const after=ctx.getImageData(b.x,b.y,b.w,b.h);
-   actions.length=index;actions.push({bounds:b,before,after});index++;
-  } else {actions.length=index;actions.push(null);index++}
-  await emitFrame(msg);return;
+  const start=performance.now();
+  const stats=applyStroke(msg.stroke,msg.seq);
+  await emitFrame(msg,{...stats,workerMs:performance.now()-start});
+  return;
  }
- if(msg.type==='undo'){
-  if(index>0){const a=actions[--index];if(a)ctx.putImageData(a.before,a.bounds.x,a.bounds.y)}
-  await emitFrame(msg);return;
- }
- if(msg.type==='redo'){
-  if(index<actions.length){const a=actions[index++];if(a)ctx.putImageData(a.after,a.bounds.x,a.bounds.y)}
-  await emitFrame(msg);return;
+ if(msg.type==='undo'||msg.type==='redo'){
+  const entry=msg.type==='undo'?(index?actions[--index]:null):(index<actions.length?actions[index++]:null);
+  for(const {key,box,before,after} of entry?.patches||[]){
+   ctx.putImageData(msg.type==='undo'?before:after,box.x,box.y);dirty.set(key,msg.seq);
+  }
+  await emitFrame(msg);
+  return;
  }
  if(msg.type==='save'){
-  const pngBlob=await docCanvas.convertToBlob({type:'image/png'});
-  const buffer=await pngBlob.arrayBuffer();
-  self.postMessage({type:'saved',epoch,requestId:msg.requestId,png:buffer},[buffer]);
+  const png=await (await canvas.convertToBlob({type:'image/png'})).arrayBuffer();
+  self.postMessage({type:'saved',epoch,requestId:msg.requestId,png},[png]);
  }
 }
-self.onmessage=e=>{
- const msg=e.data;
- if(msg.type==='reset')latestRequestedSeq=0;
- else if(typeof msg.seq==='number')latestRequestedSeq=msg.seq;
- queue=queue.then(()=>execute(msg)).catch(err=>{
-  self.postMessage({type:'error',epoch:msg.epoch,requestId:msg.requestId||null,message:String(err?.message||err)});
+
+self.onmessage=({data:msg})=>{
+ if(msg.type==='reset'){latestEpoch=msg.epoch;latestRequestedSeq=0}
+ else if(msg.type!=='presented'&&msg.epoch===latestEpoch&&typeof msg.seq==='number')latestRequestedSeq=msg.seq;
+ queue=queue.then(()=>execute(msg)).catch(error=>{
+  if(msg.type!=='save')failed=true;
+  self.postMessage({type:'error',epoch:msg.epoch,seq:msg.seq,requestId:msg.requestId,message:String(error?.message||error)});
  });
 };
