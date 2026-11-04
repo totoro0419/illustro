@@ -42,8 +42,8 @@
 .workspace-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 .legacy-classic,.legacy-orbit{touch-action:pan-y;overscroll-behavior:contain}
 #classic-ring{pointer-events:none;touch-action:pan-y}
-#classic-ring-hit{position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;pointer-events:none;touch-action:pan-y}
+#classic-ring-hit{position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;pointer-events:none;touch-action:none}
 #classic-ring-hit path{pointer-events:fill;touch-action:none;cursor:crosshair}
 #classic-plane,#orbit-plane{touch-action:none}
-.legacy-orbit-hit{touch-action:pan-y}
+.legacy-orbit-hit{touch-action:none}
 .legacy-orbit-hit path{touch-action:none}
