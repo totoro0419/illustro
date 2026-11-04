@@ -144,6 +144,17 @@ try{
   const after=await workspaceScroll.evaluate(el=>el.scrollTop);
   assert.ok(after-before>20,pickerMode+' blank corner must scroll Workspace by touch: '+before+' -> '+after);
  }
+ // The unpainted hole between the Classic ring and HSV diamond must also scroll.
+ await tablet.locator('#color-picker-mode').selectOption('classic');
+ await workspaceScroll.evaluate(el=>el.scrollTop=0);
+ const holeBox=await tablet.locator('#classic-picker').boundingBox();
+ const holeX=holeBox.x+holeBox.width*.88,holeY=holeBox.y+holeBox.height*.5;
+ const holeTarget=await tablet.evaluate(({x,y})=>document.elementFromPoint(x,y)?.id||'',{x:holeX,y:holeY});
+ assert.notEqual(holeTarget,'classic-ring-hit','Unpainted hole must not hit the SVG overlay');
+ const holeBefore=await workspaceScroll.evaluate(el=>el.scrollTop);
+ await touchSwipe(holeX,holeY,holeX,holeY-90);
+ assert.ok((await workspaceScroll.evaluate(el=>el.scrollTop))-holeBefore>20,'Classic inner hole should be usable for scrolling');
+
  // After a scroll gesture, touching the actual Classic hue band must still choose color.
  await tablet.locator('#color-picker-mode').selectOption('classic');
  await tablet.locator('#classic-picker').scrollIntoViewIfNeeded();
@@ -155,11 +166,27 @@ try{
  await touchSwipe(colorBox.x+colorBox.width*.95,colorBox.y+colorBox.height*.5,
    colorBox.x+colorBox.width*.82,colorBox.y+colorBox.height*.78);
  const debugEvents=await tablet.evaluate(()=>window.__testEvents);
- console.log('CLASSIC TOUCH DIAGNOSTIC '+JSON.stringify({debugStart,debugEvents:debugEvents.slice(0,18),box:colorBox}));
+
  const hexAfter=await tablet.locator('#hex').inputValue();
  const scAfter=await workspaceScroll.evaluate(el=>el.scrollTop);
  assert.notEqual(hexBefore,hexAfter,'Touching visible Classic hue ring must change the color');
  assert.ok(Math.abs(scAfter-scBefore)<2,'Dragging visible Classic hue ring must not scroll Workspace');
+ // Orbit front hue arc is a thin interactive hit shape: drag changes color but not scroll.
+ await tablet.locator('#color-picker-mode').selectOption('orbit');
+ await tablet.locator('#orbit-picker').scrollIntoViewIfNeeded();
+ const wheelBox=await tablet.locator('#orbit-wheel').boundingBox();
+ const orbitStartX=wheelBox.x+wheelBox.width/2;
+ const orbitStartY=wheelBox.y+wheelBox.height*113/160;
+ const orbitHit=await tablet.evaluate(({x,y})=>document.elementFromPoint(x,y)?.getAttribute('data-orbit-hue')||null,{x:orbitStartX,y:orbitStartY});
+ assert.equal(orbitHit,'slide','Orbit visible front ring must receive the touch start');
+ const orbitScrollBefore=await workspaceScroll.evaluate(el=>el.scrollTop);
+ const orbitHexBefore=await tablet.locator('#hex').inputValue();
+ await touchSwipe(orbitStartX,orbitStartY,orbitStartX+50,orbitStartY);
+ const orbitHexAfter=await tablet.locator('#hex').inputValue();
+ const orbitScrollAfter=await workspaceScroll.evaluate(el=>el.scrollTop);
+ assert.notEqual(orbitHexAfter,orbitHexBefore,'Orbit front ring drag should change shared hue');
+ assert.ok(Math.abs(orbitScrollAfter-orbitScrollBefore)<2,'Orbit ring drag should not scroll Workspace');
+
  assert.deepEqual(tabletErrors,[],'Touch scrolling and hue gestures must have no JS exceptions');
  console.log('PASS: real touch scroll through both picker blank regions, hue drag ownership');
 
