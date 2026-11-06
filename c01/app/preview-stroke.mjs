@@ -11,7 +11,7 @@ export function previewDabs(candidate,budget){
      const end={...candidate.previewPoint},raw=s.points.at(-1);
      end.x=raw.x;end.y=raw.y;
      if(s.guide)end[s.guide.axis]+=(s.guide.coordinate-end[s.guide.axis])*s.guide.strength;
-     if(end.distance>0&&Math.abs((candidate.lastDabDistance??-1)-end.distance)>1e-5){
+     if(end.distance>0&&(candidate.lastDabDistance??-1)<end.distance){
       ink.stamp(evaluateDab(s,end,end.distance,candidate.previewCount++));budget.remaining--;
      }
     }
