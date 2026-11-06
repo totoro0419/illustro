@@ -361,6 +361,10 @@ function beginStroke(e,erase=false){
  if(active||interrupted||workerFault)return;
  const point=poseTimeline.sample(e,sensors);
  if(!point)return;
+ // Some styluses deliver pressure 0 at the contact-down edge, even though
+ // the pen is touching. A zero-size pressure brush leaves an initial gap.
+ // Only the initial physical contact is floored; later pressure is untouched.
+ if(e.pointerType==='pen'&&(e.buttons&1)&&point.p<.07)point.p=.07;
  const brush=brushes.get(erase?brushes.input.eraser:settings.tool);
  const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
  if(e.altKey)stroke.guide=null;

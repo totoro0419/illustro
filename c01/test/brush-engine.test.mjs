@@ -60,6 +60,11 @@ test('INP-007 pressure-only samples, reversed time and coalesced pose selection'
  assert.equal(admit(accepted,raw(0,1,14,1)),false);
  assert.ok(admit(accepted,raw(0,0,25,.8)),'Elapsed stationary contact affects time modulation and EMA');
  assert.deepEqual(accepted.map(p=>p.p),[0,.8,.8]);
+ const contact=[raw(20,30,60,0)];
+ assert.ok(admit(contact,raw(30,30,60,.4)),'Equal-time pen motion must not replace pointerdown');
+ assert.equal(contact.length,2);
+ assert.equal(contact[0].x,20,'First physical pen contact is preserved');
+ assert.equal(contact[1].x,30);
  const timeline=new PoseTimeline(),rect={left:20,top:0};
  const view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
  timeline.record(5,view,rect);

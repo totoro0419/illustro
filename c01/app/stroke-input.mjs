@@ -10,6 +10,11 @@ export function admit(points,sample){
  if(last && sample.t<last.t)return false;
  if(last && sample.t===last.t){
   if(analog.every(key=>last[key]===sample[key]))return false;
+  // Coalesced pen events may share the pointerdown timestamp. Never discard
+  // the sole contact anchor just because the following position has equal t.
+  if(points.length===1&&(last.x!==sample.x||last.y!==sample.y)){
+   points.push(sample);return true;
+  }
   points[points.length-1]=sample;return true;
  }
  points.push(sample);

@@ -3,6 +3,7 @@
  * enter this worker in one message and are composed before a tile is published.
  */
 import {previewDabs} from './preview-stroke.mjs';
+import {correctedPath,evaluateDab} from './brush-engine.mjs';
 import {PreviewInk} from './preview-ink.mjs';
 import {previewComposite} from './preview-composite.mjs';
 import {tileBox,tileSize} from './brush-raster.mjs';
@@ -96,7 +97,7 @@ function displayPixels(group,scale,source=group.data){
 
 let navigation=false,navCanvas=null,navContext=null,navScale=1,lastNavSnapshot=0,navNeedsFinal=false;
 let measure=false,formalSeq=0,formalAcceptedAt=null,lastSubmittedSeq=0;
-const candidates=new Map(),dirty=new Set(),baseTiles=new Map();
+const candidates=new Map(),dirty=new Set(),baseTiles=new Map(),terminalDirty=new Set();
 let formalHandoff=null;
 // Stage each formal replacement without displaying a partial tile-by-tile redraw.
 function mergeHandoff(previous){
@@ -164,11 +165,13 @@ async function tick(){
  }
  const atomicHandoff=Boolean(formalHandoff&&!navigation&&!inflight&&formalHandoff.keys.size===formalHandoff.prepared.size);
  const firstMark=values.some(c=>c.visible&&!c.firstPublished&&c.ink.tiles.size&&!formalHandoff?.retired.has(c.id));
- if(!inflight&&(atomicHandoff||(dirty.size&&(firstMark||performance.now()-lastPublishedAt>=presentationInterval)))){
+ // A fresh pen-up cap is perceptually urgent even when the presentation
+ // cadence has slowed for a congested GPU. Keep the upload bounded.
+ if(!inflight&&(atomicHandoff||(dirty.size&&(firstMark||terminalDirty.size||performance.now()-lastPublishedAt>=presentationInterval)))){
   // The current pen must not queue behind a prior stroke's formal repaint.
   // Keep all older damage, but publish the newest live ink regions first.
   const transaction=atomicHandoff?formalHandoff:null;
-  const keys=transaction?[...transaction.keys]:[...new Set([...liveDirty].reverse().concat([...dirty]))].slice(0,8);
+  const keys=transaction?[...transaction.keys]:[...new Set([...terminalDirty,...liveDirty].reverse().concat([...dirty]))].slice(0,8);
   const pictures=[],atEpoch=epoch,atGeneration=generation;
   if(transaction)formalHandoff=null;
   keys.forEach(key=>dirty.delete(key));
@@ -212,7 +215,7 @@ self.onmessage=({data:m})=>{
    navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:cpuDisplay});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
    }else{navCanvas=null;navContext=null;navNeedsFinal=false;}
    baseTiles.clear();visibleCores.clear();
-   candidates.clear();dirty.clear();inflight=null;formalHandoff=null;
+   candidates.clear();dirty.clear();terminalDirty.clear();inflight=null;formalHandoff=null;
    // Allocate the first real display tile during document initialization, rather
    // than paying the browser's first bitmap/compositor setup during pen-up.
    if(bitmapMode){
@@ -239,7 +242,24 @@ self.onmessage=({data:m})=>{
    candidates.set(m.id,{id:m.id,stroke,ink:new PreviewInk(stroke,width,height),visible:true,active:true,startedAt:m.startedAt,previewIndex:0,previewCount:0});
   }else if(m.type==='points'){
    if(Number.isFinite(m.presentationInterval))presentationInterval=Math.min(250,Math.max(8,m.presentationInterval));
-   const c=candidates.get(m.id);if(c){c.stroke.points.splice(m.offset,Infinity,...m.points);c.active=m.active;if(!m.active)navNeedsFinal=true;}
+   const c=candidates.get(m.id);if(c){
+    c.stroke.points.splice(m.offset,Infinity,...m.points);
+    const releasing=c.active&&!m.active;
+    c.active=m.active;
+    if(releasing){
+     navNeedsFinal=true;
+     // The final packet can REPLACE a point already consumed by previewDabs:
+     // previewIndex does not advance in that case. Stamp the current, corrected
+     // contact endpoint once, ahead of any backlog, before formal handoff.
+     const path=correctedPath(c.stroke.points,c.stroke.correction,c.stroke.guide);
+     const end=path.at(-1);
+     if(end&&end.distance>0&&!c.endStamped){
+      c.ink.stamp(evaluateDab(c.stroke,end,end.distance,c.previewCount));
+      c.endStamped=true;
+      for(const key of c.ink.changed){dirty.add(key);terminalDirty.add(key)}
+     }
+    }
+   }
   }else if(m.type==='visibility'){
    generation=m.generation;
    const c=candidates.get(m.id);if(c){c.visible=m.visible;invalidate(c);if(formalHandoff)for(const key of c.ink.tiles.keys())formalHandoff.prepared.delete(key)}
@@ -254,6 +274,7 @@ self.onmessage=({data:m})=>{
    const accepted=m.accepted&&inflight.generation===generation;
    if(accepted){
     if(inflight.handoff)commitHandoff(inflight.handoff);
+    for(const key of inflight.keys)terminalDirty.delete(key);
     const started=performance.now();lastPublishedAt=started;let submittedPixels=0;
     for(const group of inflight.presentations||[]){
      [group.data,group.stagingData]=[group.stagingData,group.data];
