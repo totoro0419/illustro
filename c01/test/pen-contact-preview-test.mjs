@@ -43,17 +43,24 @@ try{
   document.getElementById('size-n').dispatchEvent(new Event('change'));
   const alpha=(x,y,id='preview')=>{const c=document.getElementById(id);return c.getContext('2d').getImageData(Math.round(x),Math.round(y),1,1).data[3]};
   const rect=stage.getBoundingClientRect(),matrix=new DOMMatrix(paper.style.transform);
-  const emit=(type,x,y,pressure,buttons)=>{
+  const emit=(type,x,y,pressure,buttons,stamp)=>{
    const mapped=new DOMPoint(x,y).matrixTransform(matrix);
-   stage.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:101,pointerType:'pen',button:0,buttons,pressure,clientX:rect.left+mapped.x,clientY:rect.top+mapped.y}));
+   const event=new PointerEvent(type,{bubbles:true,pointerId:101,pointerType:'pen',button:0,buttons,pressure,clientX:rect.left+mapped.x,clientY:rect.top+mapped.y});
+   if(stamp!==undefined)Object.defineProperty(event,'timeStamp',{value:stamp});
+   stage.dispatchEvent(event);return event.timeStamp;
   };
   const start=[350,300],middle=[450,300],end=[610,300];
-  emit('pointerdown',...start,0,1);
-  emit('pointermove',...middle,.85,1);
+  // Android can batch the touchdown and the following coalesced pen point at
+  // equal timestamps: preserve the original physical contact in the document.
+  const downStamp=emit('pointerdown',...start,0,1);
+  const moveStamp=emit('pointermove',...middle,.85,1,downStamp);
   // Observe the earlier point before sending pen-up; the final coordinate
   // must not rely on replay of already-consumed previewIndex.
   await until(()=>alpha(...middle)>0,'intermediate provisional ink');
-  emit('pointerup',...end,0,0);
+  // Pen-up can replace the last previewed sample (same timestamp, new x/y).
+  // No point-count increase is available to force the old previewIndex to
+  // revisit it; the final tip must nevertheless be visible immediately.
+  emit('pointerup',...end,0,0,moveStamp);
   await until(()=>alpha(...end)>0,'end contact provisional ink');
   const before={startAlpha:alpha(...start),middleAlpha:alpha(...middle),endAlpha:alpha(...end),formalEndAlpha:alpha(...end,'art'),held:window.__heldStrokes.length};
   window.__releaseStrokes();
