@@ -33,16 +33,17 @@ jobs:
           ILLUSTRO_BENCH_OUT: /tmp/c02-simultaneous.json
           ILLUSTRO_TRACE: /tmp/c02-simultaneous-trace.json
           ILLUSTRO_TRACE_CATEGORIES: devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,cc,gpu,v8
-      - name: Compare isolated display surfaces and cached shadow cost
+      - name: Compare adaptive accelerated display on the same host
         working-directory: c01
-        run: |
-          ILLUSTRO_BENCH_STYLE='#display-tiles canvas { will-change: transform }' ILLUSTRO_BENCH_OUT=/tmp/c02-simultaneous-promoted.json ILLUSTRO_TRACE=/tmp/c02-simultaneous-promoted-trace.json node test/performance-compare.mjs
-          ILLUSTRO_BENCH_STYLE='#stage [style*="box-shadow"] { box-shadow: none !important }' ILLUSTRO_BENCH_OUT=/tmp/c02-simultaneous-shadow-ablation.json ILLUSTRO_TRACE=/tmp/c02-simultaneous-shadow-ablation-trace.json node test/performance-compare.mjs
+        run: node test/performance-compare.mjs
         env:
           ILLUSTRO_BENCH_ROOTS: >-
             {"after":"${{ github.workspace }}/c01"}
           ILLUSTRO_BENCH_CASES: >-
             [{"name":"simultaneous","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":5,"simultaneous":true}]
+          ILLUSTRO_DISPLAY_CANVAS: accelerated
+          ILLUSTRO_BENCH_OUT: /tmp/c02-simultaneous-accelerated.json
+          ILLUSTRO_TRACE: /tmp/c02-simultaneous-accelerated-trace.json
           ILLUSTRO_TRACE_CATEGORIES: devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,cc,gpu,v8
       - run: gzip /tmp/c02-simultaneous*-trace.json
         if: always()

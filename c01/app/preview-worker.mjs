@@ -7,7 +7,7 @@ import {PreviewInk} from './preview-ink.mjs';
 import {previewComposite} from './preview-composite.mjs';
 import {tileBox,tileSize} from './brush-raster.mjs';
 let epoch=0,generation=0,width=1,height=1,timer=0,inflight=null,serial=0;
-let directMode=false,viewPixelScale=1;
+let directMode=false,viewPixelScale=1,cpuDisplay=true;
 let bitmapMode=false,background='white',presentationInterval=16,lastPublishedAt=-Infinity;
 let presentationWarmed=false;
 function warmPresentation(target){
@@ -19,7 +19,7 @@ function warmPresentation(target){
  target.save();target.translate(16,16);target.rotate(.01);target.drawImage(source,0,0,64,64);target.restore();target.getImageData(32,32,1,1);
 }
 function snapshotGroup(group){
- if(!group.canvas){group.canvas=new OffscreenCanvas(group.w,group.h);group.context=group.canvas.getContext('2d',{alpha:false,willReadFrequently:true});}
+ if(!group.canvas){group.canvas=new OffscreenCanvas(group.w,group.h);group.context=group.canvas.getContext('2d',{alpha:false,willReadFrequently:cpuDisplay});}
  warmPresentation(group.context);group.context.putImageData(new ImageData(group.stagingData||group.data,group.w,group.h),0,0);
  return createImageBitmap(group.canvas);
 }
@@ -163,9 +163,9 @@ self.onmessage=({data:m})=>{
  try{
   if(m.type==='reset'){
    if(m.epoch<epoch)return;
-   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;viewPixelScale=1;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;initialSurfaceReady=false;presentationInterval=16;lastPublishedAt=-Infinity;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
+   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;viewPixelScale=1;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;cpuDisplay=m.cpuDisplay!==false;initialSurfaceReady=false;presentationInterval=16;lastPublishedAt=-Infinity;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
    if(m.navigationPicture){
-   navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:true});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
+   navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:cpuDisplay});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
    }else{navCanvas=null;navContext=null;navNeedsFinal=false;}
    baseTiles.clear();visibleCores.clear();
    candidates.clear();dirty.clear();inflight=null;
@@ -181,7 +181,7 @@ self.onmessage=({data:m})=>{
   if(m.epoch!==epoch){if(m.canvas)m.canvas.width=m.canvas.height=1;for(const p of m.pictures||[])p.bitmap?.close();m.bitmap?.close();return}
   if(m.type==='surface'){
    const group=groups.get(m.key);if(!group||!directMode){m.canvas.width=m.canvas.height=1;return}
-   group.canvas=m.canvas;group.context=m.canvas.getContext('2d',{alpha:false,desynchronized:true,willReadFrequently:true});
+   group.canvas=m.canvas;group.context=m.canvas.getContext('2d',{alpha:false,desynchronized:true,willReadFrequently:cpuDisplay});
    if(!group.context)throw Error('Offscreen display context unavailable');warmPresentation(group.context);
    group.context.putImageData(new ImageData(backgroundPixels(group),group.w,group.h),0,0);if(m.key===0&&!initialSurfaceReady){initialSurfaceReady=true;postMessage({type:'ready',epoch})}return;
   }
