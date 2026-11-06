@@ -101,6 +101,9 @@ let formalHandoff=null;
 // Stage each formal replacement without displaying a partial tile-by-tile redraw.
 function mergeHandoff(previous){
  if(!previous)return;
+ // The packet may already have transferred its staged RGBA buffers. Rebuild
+ // them before retry rather than republishing detached ImageData.
+ previous.prepared.clear();
  if(!formalHandoff){formalHandoff=previous;return}
  for(const [key,image]of previous.base)if(!formalHandoff.base.has(key))formalHandoff.base.set(key,image);
  for(const key of previous.keys)formalHandoff.keys.add(key);
