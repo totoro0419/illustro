@@ -7,7 +7,7 @@ import {PreviewInk} from './preview-ink.mjs';
 import {previewComposite} from './preview-composite.mjs';
 import {tileBox,tileSize} from './brush-raster.mjs';
 let epoch=0,generation=0,width=1,height=1,timer=0,inflight=null,serial=0;
-let directMode=false,groupSize=128;
+let directMode=false;
 let bitmapMode=false,background='white',presentationInterval=16,lastPublishedAt=-Infinity;
 let presentationWarmed=false;
 function warmPresentation(target){
@@ -35,17 +35,15 @@ function backgroundPixels(box){
 }
 function groupFor(key){
  let group=groups.get(key);if(group)return group;
- const columns=Math.ceil(width/groupSize),box={x:key%columns*groupSize,y:Math.floor(key/columns)*groupSize,w:Math.min(groupSize,width-key%columns*groupSize),h:Math.min(groupSize,height-Math.floor(key/columns)*groupSize)},x=Math.max(0,box.x-gutter),y=Math.max(0,box.y-gutter),w=Math.min(width,box.x+box.w+gutter)-x,h=Math.min(height,box.y+box.h+gutter)-y;
+ const box=tileBox(key,width,height),x=Math.max(0,box.x-gutter),y=Math.max(0,box.y-gutter),w=Math.min(width,box.x+box.w+gutter)-x,h=Math.min(height,box.y+box.h+gutter)-y;
  group={key,x,y,w,h,fresh:true};group.data=backgroundPixels(group);groups.set(key,group);return group;
 }
 function intersection(a,b){const x=Math.max(a.x,b.x),y=Math.max(a.y,b.y),w=Math.min(a.x+a.w,b.x+b.w)-x,h=Math.min(a.y+a.h,b.y+b.h)-y;return w>0&&h>0?{x,y,w,h}:null}
 function prepareGroups(pictures){
- const updates=new Map(),affected=new Set(),columns=Math.ceil(width/tileSize),groupColumns=Math.ceil(width/groupSize);
+ const updates=new Map(),affected=new Set(),columns=Math.ceil(width/tileSize),rows=Math.ceil(height/tileSize);
  for(const {key,box,image}of pictures){
-  const data=backgroundPixels(box);for(let i=0;i<data.length;i+=4){const a=image.data[i+3]/255;for(let c=0;c<3;c++)data[i+c]=Math.round(image.data[i+c]*a+data[i+c]*(1-a))}updates.set(key,{box,data});
-  const primary=Math.floor(box.y/groupSize)*groupColumns+Math.floor(box.x/groupSize);affected.add(primary);
-  const left=Math.floor(Math.max(0,box.x-gutter)/groupSize),right=Math.floor(Math.min(width-1,box.x+box.w+gutter-1)/groupSize),top=Math.floor(Math.max(0,box.y-gutter)/groupSize),bottom=Math.floor(Math.min(height-1,box.y+box.h+gutter-1)/groupSize);
-  for(let r=top;r<=bottom;r++)for(let c=left;c<=right;c++){const k=r*groupColumns+c;if(groups.has(k))affected.add(k)}
+  const data=backgroundPixels(box);for(let i=0;i<data.length;i+=4){const a=image.data[i+3]/255;for(let c=0;c<3;c++)data[i+c]=Math.round(image.data[i+c]*a+data[i+c]*(1-a))}updates.set(key,{box,data});affected.add(key);
+  const col=key%columns,row=Math.floor(key/columns);for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const c=col+dx,r=row+dy,k=r*columns+c;if(c>=0&&r>=0&&c<columns&&r<rows&&groups.has(k))affected.add(k)}
  }
  const presentations=[];
  for(const key of affected){
@@ -138,7 +136,7 @@ self.onmessage=({data:m})=>{
  try{
   if(m.type==='reset'){
    if(m.epoch<epoch)return;
-   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;initialSurfaceReady=false;presentationInterval=16;lastPublishedAt=-Infinity;background=m.background;groupSize=[128,256,512].includes(m.groupSize)?m.groupSize:128;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
+   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;initialSurfaceReady=false;presentationInterval=16;lastPublishedAt=-Infinity;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
    if(m.navigationPicture){
    navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:true});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
    }else{navCanvas=null;navContext=null;navNeedsFinal=false;}
