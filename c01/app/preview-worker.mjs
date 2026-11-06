@@ -19,7 +19,7 @@ function warmPresentation(target){
  target.save();target.translate(16,16);target.rotate(.01);target.drawImage(source,0,0,64,64);target.restore();target.getImageData(32,32,1,1);
 }
 function snapshotGroup(group){
- if(!group.canvas){group.canvas=new OffscreenCanvas(group.w,group.h);group.context=group.canvas.getContext('2d',{alpha:false});}
+ if(!group.canvas){group.canvas=new OffscreenCanvas(group.w,group.h);group.context=group.canvas.getContext('2d',{alpha:false,willReadFrequently:true});}
  warmPresentation(group.context);group.context.putImageData(new ImageData(group.stagingData||group.data,group.w,group.h),0,0);
  return createImageBitmap(group.canvas);
 }
@@ -154,7 +154,7 @@ self.onmessage=({data:m})=>{
   if(m.epoch!==epoch){if(m.canvas)m.canvas.width=m.canvas.height=1;for(const p of m.pictures||[])p.bitmap?.close();m.bitmap?.close();return}
   if(m.type==='surface'){
    const group=groups.get(m.key);if(!group||!directMode){m.canvas.width=m.canvas.height=1;return}
-   group.canvas=m.canvas;group.context=m.canvas.getContext('2d',{alpha:false,desynchronized:true});
+   group.canvas=m.canvas;group.context=m.canvas.getContext('2d',{alpha:false,desynchronized:true,willReadFrequently:true});
    if(!group.context)throw Error('Offscreen display context unavailable');warmPresentation(group.context);
    group.context.putImageData(new ImageData(backgroundPixels(group),group.w,group.h),0,0);if(m.key===0&&!initialSurfaceReady){initialSurfaceReady=true;postMessage({type:'ready',epoch})}return;
   }

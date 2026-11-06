@@ -2,7 +2,7 @@ name: C02 simultaneous interaction trace
 on:
   push:
     branches: [implementation/stage4-c02-brush-engine]
-    paths: ['.github/workflows/c02-interaction-trace.yml']
+    paths: ['.github/workflows/c02-interaction-trace.yml', 'c01/app/preview-worker.mjs']
   workflow_dispatch:
 permissions:
   contents: read
