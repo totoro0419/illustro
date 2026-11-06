@@ -20,7 +20,9 @@ function warmPresentation(target){
 }
 function snapshotGroup(group){
  if(!group.canvas){group.canvas=new OffscreenCanvas(group.w,group.h);group.context=group.canvas.getContext('2d',{alpha:false,willReadFrequently:cpuDisplay});}
- warmPresentation(group.context);group.context.putImageData(new ImageData(group.stagingData||group.data,group.w,group.h),0,0);
+ const scale=provisionalScale(group),pixels=displayPixels(group,scale,group.stagingData||group.data);group.nextScale=scale;
+ if(group.canvas.width!==pixels.w||group.canvas.height!==pixels.h){group.canvas.width=pixels.w;group.canvas.height=pixels.h}
+ warmPresentation(group.context);group.context.putImageData(new ImageData(pixels.data,pixels.w,pixels.h),0,0);
  return createImageBitmap(group.canvas);
 }
 let initialSurfaceReady=false;
@@ -69,19 +71,19 @@ function prepareGroups(pictures){
 // in group.data/baseTiles for exact handoff, sampling, persistence and recovery.
 // Dyadic grids share sample centres across padded tile boundaries.
 function provisionalScale(group){
- if(!directMode||group.w%4||group.h%4)return 1;
+ if(group.w%4||group.h%4)return 1;
  const scale=viewPixelScale*2>=1?1:viewPixelScale*2>=.5?.5:.25;
  if(scale===1)return 1;
  const columns=Math.ceil(width/tileSize),left=Math.floor(group.x/tileSize),right=Math.floor((group.x+group.w-1)/tileSize),top=Math.floor(group.y/tileSize),bottom=Math.floor((group.y+group.h-1)/tileSize);
  for(const candidate of candidates.values())if(candidate.visible)for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++)if(candidate.ink.tiles.has(y*columns+x))return scale;
  return 1;
 }
-function displayPixels(group,scale){
- if(scale===1)return {data:group.data,w:group.w,h:group.h};
+function displayPixels(group,scale,source=group.data){
+ if(scale===1)return {data:source,w:group.w,h:group.h};
  const w=group.w*scale,h=group.h*scale;
  group.scaled??=new Map();let pixels=group.scaled.get(scale);
  if(!pixels){pixels={data:new Uint8ClampedArray(w*h*4),w,h};group.scaled.set(scale,pixels)}
- const step=1/scale,src=group.data,out=pixels.data;
+ const step=1/scale,src=source,out=pixels.data;
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
   const sx=(x+.5)*step-.5,sy=(y+.5)*step-.5,left=Math.floor(sx),top=Math.floor(sy),fx=sx-left,fy=sy-top,i=(y*w+x)*4;
   for(let c=0;c<3;c++){
@@ -209,7 +211,7 @@ self.onmessage=({data:m})=>{
     const started=performance.now();lastPublishedAt=started;let submittedPixels=0;
     for(const group of inflight.presentations||[]){
      [group.data,group.stagingData]=[group.stagingData,group.data];
-     if(!directMode){group.fresh=false;continue}
+     if(!directMode){group.displayScale=group.nextScale;group.fresh=false;continue}
      if(!group.context)throw Error('Display surface was not registered before ACK');
      const scale=provisionalScale(group),pixels=displayPixels(group,scale),resized=group.canvas.width!==pixels.w||group.canvas.height!==pixels.h;
      if(resized){group.canvas.width=pixels.w;group.canvas.height=pixels.h}

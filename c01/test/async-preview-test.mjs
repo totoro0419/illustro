@@ -18,7 +18,7 @@ try{
   };
   window.__releaseFormal=()=>{window.__holdFormal=false;for(const [w,m,t]of window.__heldFormal.splice(0))Native.prototype.postMessage.call(w,m,t)};
  });
- await page.goto('http://127.0.0.1:'+server.address().port+'/?inputDebug=1&pixelMirror=1&presentation='+presentation);
+ await page.goto('http://127.0.0.1:'+server.address().port+'/?inputDebug=1&pixelMirror=1&presentation='+presentation+'&displayCanvas='+(process.env.ILLUSTRO_TEST_CANVAS||'auto'));
  await page.waitForFunction(()=>document.getElementById('art')?.width===1600);
  const report=await page.evaluate(async()=>{
   const $=id=>document.getElementById(id),stage=$('stage'),paper=$('paper'),r=stage.getBoundingClientRect(),sleep=ms=>new Promise(ok=>setTimeout(ok,ms));

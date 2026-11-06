@@ -17,12 +17,13 @@ let rasterWorker=null,previewWorker=null,previewGeneration=0,minimumPublicationS
 let heldFormal=null;
 const formalStates=new Map(),displayTiles=new Map(),formalTiles=new Map(),displayImages=new Map();
 const requestedPresentation=new URLSearchParams(location.search).get('presentation');
+const requestedDisplayCanvas=new URLSearchParams(location.search).get('displayCanvas');
 const bitmapSupported=!!document.createElement('canvas').getContext('bitmaprenderer');
 const requestedMode=!requestedPresentation||requestedPresentation==='auto'?'bitmap':requestedPresentation;
 const presentationMode=requestedMode==='bitmap'&&!bitmapSupported?'2d':requestedMode;
-const directPresentation=presentationMode==='bitmap'&&typeof HTMLCanvasElement.prototype.transferControlToOffscreen==='function';
+const directPresentation=requestedDisplayCanvas!=='snapshot'&&presentationMode==='bitmap'&&typeof HTMLCanvasElement.prototype.transferControlToOffscreen==='function';
 const pixelMirror=new URLSearchParams(location.search).has('pixelMirror');
-const cpuDisplay=new URLSearchParams(location.search).get('displayCanvas')==='cpu';
+const cpuDisplay=['cpu','snapshot'].includes(requestedDisplayCanvas);
 const retainedScene=new RetainedScene(stage,paper);
 let gpuDisplay=null,gpuEnabled=false;
 try{if(presentationMode==='webgl')gpuDisplay=new Presentation(stage)}catch(error){document.getElementById('gpu-presentation')?.remove();console.warn('表示をCanvas 2Dへ切り替えます',error)}
