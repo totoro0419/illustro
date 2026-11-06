@@ -13,7 +13,7 @@ const server=createServer(async(req,res)=>{try{
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const browser=await chromium.launch({headless:true,args:[...(process.env.ILLUSTRO_DISABLE_2D?['--disable-accelerated-2d-canvas']:[]),'--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const qualityReferences=new Map();
-const report={recordedAt:new Date().toISOString(),inputPath:'Same normalized document-space centreline; preset algorithms and UI viewport sizes differ. Coalesced subpixel offsets are CSS-space.',runOptions:{presentation:process.env.ILLUSTRO_PRESENTATION||'auto',displayCanvas:process.env.ILLUSTRO_DISPLAY_CANVAS||'auto',styleAblation:process.env.ILLUSTRO_BENCH_STYLE||null,disableAccelerated2D:!!process.env.ILLUSTRO_DISABLE_2D},scope:'Chromium synthetic pen/touch, same host; next rAF and Canvas submission proxies, no physical scanout. Legacy WebGL2 is software SwiftShader; Canvas2D is a different algorithm.',browser:browser.version(),unmeasured:['physical input/scanout','GC pause duration','whole-process memory','GPU execution time'],cases:[]};
+const report={recordedAt:new Date().toISOString(),inputPath:'Same normalized document-space centreline; preset algorithms and UI viewport sizes differ. Coalesced subpixel offsets are CSS-space.',runOptions:{presentation:process.env.ILLUSTRO_PRESENTATION||'auto',displayCanvas:process.env.ILLUSTRO_DISPLAY_CANVAS||'auto',timerPresentation:!!process.env.ILLUSTRO_TIMER_PRESENTATION,styleAblation:process.env.ILLUSTRO_BENCH_STYLE||null,disableAccelerated2D:!!process.env.ILLUSTRO_DISABLE_2D},scope:'Chromium synthetic pen/touch, same host; next rAF and Canvas submission proxies, no physical scanout. Legacy WebGL2 is software SwiftShader; Canvas2D is a different algorithm.',browser:browser.version(),unmeasured:['physical input/scanout','GC pause duration','whole-process memory','GPU execution time'],cases:[]};
 const scenarios=JSON.parse(process.env.ILLUSTRO_BENCH_CASES||JSON.stringify([
  {name:'thin',size:10,brush:'gpen',width:640,height:480,strokes:10},
  {name:'pencil',size:32,brush:'pencil',width:1600,height:1200,strokes:10},
@@ -27,7 +27,7 @@ try{for(const [version] of Object.entries(roots))for(const scenario of scenarios
  const legacy=version==='legacy',page=await browser.newPage({viewport:{width:1100,height:820}}),errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
  await page.exposeFunction('__benchProgress',data=>console.log(JSON.stringify({version,name:scenario.name,progress:data})));
- await page.goto(`http://127.0.0.1:${server.address().port}/${version}/?m09=1&perf=1&backend=webgl2&presentation=${process.env.ILLUSTRO_PRESENTATION||'auto'}&displayCanvas=${process.env.ILLUSTRO_DISPLAY_CANVAS||'auto'}`);
+ await page.goto(`http://127.0.0.1:${server.address().port}/${version}/?m09=1&perf=1&backend=webgl2&presentation=${process.env.ILLUSTRO_PRESENTATION||'auto'}&displayCanvas=${process.env.ILLUSTRO_DISPLAY_CANVAS||'auto'}${process.env.ILLUSTRO_TIMER_PRESENTATION?'&timerPresentation=1':''}`);
  if(legacy){
   await page.waitForFunction(()=>!!window.__illustroPerformance);
   await page.evaluate(s=>{document.getElementById('newCanvasWidth').value=s.width;document.getElementById('newCanvasHeight').value=s.height;document.getElementById('new').click()},scenario);

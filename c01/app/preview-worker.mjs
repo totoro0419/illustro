@@ -7,7 +7,7 @@ import {PreviewInk} from './preview-ink.mjs';
 import {previewComposite} from './preview-composite.mjs';
 import {tileBox,tileSize} from './brush-raster.mjs';
 let epoch=0,generation=0,width=1,height=1,timer=0,inflight=null,serial=0;
-let directMode=false,viewPixelScale=1,cpuDisplay=false;
+let directMode=false,viewPixelScale=1,cpuDisplay=false,framePacing=true,publicationFrame=0,publicationTimer=0,pacingMode='uninitialized';
 let bitmapMode=false,background='white',presentationInterval=16,lastPublishedAt=-Infinity;
 let presentationWarmed=false;
 function warmPresentation(target){
@@ -99,6 +99,16 @@ let measure=false,formalSeq=0,formalAcceptedAt=null,lastSubmittedSeq=0;
 const candidates=new Map(),dirty=new Set(),baseTiles=new Map();
 function invalidate(candidate){for(const key of candidate.ink.tiles.keys())dirty.add(key)}
 
+// Input admission/generation retain their timer. Publication waits for the
+// worker's own browser frame clock; a receipt ACK alone is not GPU backpressure.
+function releasePublication(packet){
+ const release=()=>{if(inflight!==packet)return;publicationFrame=0;publicationTimer=0;inflight=null;schedule()};
+ if(framePacing&&typeof self.requestAnimationFrame==='function'){
+  try{publicationFrame=self.requestAnimationFrame(release);pacingMode='worker-raf';return}catch{}
+ }
+ pacingMode=framePacing?'timer-fallback':'timer-control';
+ if(framePacing)publicationTimer=setTimeout(release,16);else release();
+}
 function schedule(){
  if(timer)return;
  const remaining=lastPublishedAt+presentationInterval-performance.now();
@@ -156,7 +166,7 @@ async function tick(){
    }
    packet.formalSeq=dirty.size?0:formalSeq;packet.formalAcceptedAt=packet.formalSeq?formalAcceptedAt:null;
    if(atEpoch!==epoch||atGeneration!==generation){navBitmap?.close();groupPictures.forEach(g=>g.bitmap?.close());pictures.forEach(p=>p.bitmap?.close());if(atEpoch===epoch)keys.forEach(key=>dirty.add(key));if(inflight===packet)inflight=null;}
-   else postMessage({type:'preview',epoch,generation,serial:packet.serial,pictures,groups:groupPictures,navBitmap,first,formalSeq:dirty.size?null:formalSeq,formalAcceptedAt:dirty.size?null:formalAcceptedAt,stats:measure?{rasterMs,generateMs,uploadMs,direct:directMode,presentationInterval,composeMs:performance.now()-start-rasterMs,totalMs:performance.now()-start,tiles:keys.length,updatedPixels:keys.reduce((n,k)=>{const b=tileBox(k,width,height);return n+b.w*b.h},0),bitmapPixels:groupPictures.reduce((n,g)=>n+g.w*g.h,0),previewBytes:[...candidates.values()].reduce((n,c)=>n+[...c.ink.tiles.values()].reduce((sum,t)=>sum+t.data.byteLength,0),0),baseBytes:[...baseTiles.values()].reduce((n,t)=>n+t.data.byteLength,0),groupBytes:[...groups.values()].reduce((n,g)=>n+g.data.byteLength,0),rgbaBytes:keys.reduce((sum,key)=>{const b=tileBox(key,width,height);return sum+b.w*b.h*(bitmapMode?4:8)},0),candidates:candidates.size}:null}, [...pictures.flatMap(p=>p.gpuImage?[p.image.data.buffer,p.gpuImage.data.buffer]:[p.image.data.buffer]),...groupPictures.flatMap(g=>g.bitmap?[g.bitmap]:[]),...(navBitmap?[navBitmap]:[])]);
+   else postMessage({type:'preview',epoch,generation,serial:packet.serial,pictures,groups:groupPictures,navBitmap,first,formalSeq:dirty.size?null:formalSeq,formalAcceptedAt:dirty.size?null:formalAcceptedAt,stats:measure?{rasterMs,generateMs,uploadMs,direct:directMode,publicationClock:pacingMode,presentationInterval,composeMs:performance.now()-start-rasterMs,totalMs:performance.now()-start,tiles:keys.length,updatedPixels:keys.reduce((n,k)=>{const b=tileBox(k,width,height);return n+b.w*b.h},0),bitmapPixels:groupPictures.reduce((n,g)=>n+g.w*g.h,0),previewBytes:[...candidates.values()].reduce((n,c)=>n+[...c.ink.tiles.values()].reduce((sum,t)=>sum+t.data.byteLength,0),0),baseBytes:[...baseTiles.values()].reduce((n,t)=>n+t.data.byteLength,0),groupBytes:[...groups.values()].reduce((n,g)=>n+g.data.byteLength,0),rgbaBytes:keys.reduce((sum,key)=>{const b=tileBox(key,width,height);return sum+b.w*b.h*(bitmapMode?4:8)},0),candidates:candidates.size}:null}, [...pictures.flatMap(p=>p.gpuImage?[p.image.data.buffer,p.gpuImage.data.buffer]:[p.image.data.buffer]),...groupPictures.flatMap(g=>g.bitmap?[g.bitmap]:[]),...(navBitmap?[navBitmap]:[])]);
   }catch(error){pictures.forEach(p=>p.bitmap?.close());inflight=null;postMessage({type:'error',epoch:atEpoch,message:String(error)})}
  }
  if(dirty.size&&!inflight||[...candidates.values()].some(c=>c.visible&&(c.dabs||c.previewIndex<c.stroke.points.length)))schedule();
@@ -165,6 +175,7 @@ self.onmessage=({data:m})=>{
  try{
   if(m.type==='reset'){
    if(m.epoch<epoch)return;
+   if(publicationFrame&&typeof self.cancelAnimationFrame==='function')self.cancelAnimationFrame(publicationFrame);clearTimeout(publicationTimer);publicationFrame=0;publicationTimer=0;framePacing=m.framePacing!==false;pacingMode='uninitialized';
    epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;viewPixelScale=1;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;cpuDisplay=m.cpuDisplay===true;initialSurfaceReady=false;presentationInterval=16;lastPublishedAt=-Infinity;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
    if(m.navigationPicture){
    navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:cpuDisplay});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
@@ -221,9 +232,9 @@ self.onmessage=({data:m})=>{
     }
     for(const [key,core]of inflight.updates||[])visibleCores.set(key,core);
     for(const item of inflight.first)candidates.get(item.id)&&(candidates.get(item.id).firstPublished=true);
-    if(measure||inflight.formalSeq>lastSubmittedSeq)postMessage({type:'display-submit',epoch,generation,serial:inflight.serial,seq:inflight.formalSeq,acceptedAt:inflight.formalAcceptedAt,stats:{direct:directMode,first:directMode?inflight.first.map(item=>({id:item.id,ms:performance.timeOrigin+performance.now()-item.startedAt})):[],uploadMs:performance.now()-started,queueMs:started-inflight.generatedAt,tiles:inflight.presentations?.length||0,submittedPixels}});lastSubmittedSeq=Math.max(lastSubmittedSeq,inflight.formalSeq);
+    if(measure||inflight.formalSeq>lastSubmittedSeq)postMessage({type:'display-submit',epoch,generation,serial:inflight.serial,seq:inflight.formalSeq,acceptedAt:inflight.formalAcceptedAt,stats:{direct:directMode,publicationClock:pacingMode,first:directMode?inflight.first.map(item=>({id:item.id,ms:performance.timeOrigin+performance.now()-item.startedAt})):[],uploadMs:performance.now()-started,queueMs:started-inflight.generatedAt,tiles:inflight.presentations?.length||0,submittedPixels}});lastSubmittedSeq=Math.max(lastSubmittedSeq,inflight.formalSeq);
    }
-   if(!accepted)inflight.keys.forEach(key=>dirty.add(key));inflight=null;
+   if(!accepted){inflight.keys.forEach(key=>dirty.add(key));inflight=null}else releasePublication(inflight);
   }
   schedule();
  }catch(error){postMessage({type:'error',epoch,message:String(error)})}

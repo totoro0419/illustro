@@ -42,7 +42,7 @@ jobs:
           ILLUSTRO_BENCH_OUT: /tmp/c02-simultaneous.json
           ILLUSTRO_TRACE: /tmp/c02-simultaneous-trace.json
           ILLUSTRO_TRACE_CATEGORIES: devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,cc,gpu,v8
-      - name: Compare adaptive snapshot display on the same host
+      - name: Compare timer-only publication on the same host
         working-directory: c01
         run: node test/performance-compare.mjs
         env:
@@ -50,15 +50,15 @@ jobs:
             {"after":"${{ github.workspace }}/c01"}
           ILLUSTRO_BENCH_CASES: >-
             [{"name":"simultaneous","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":5,"simultaneous":true}]
-          ILLUSTRO_DISPLAY_CANVAS: snapshot
-          ILLUSTRO_BENCH_OUT: /tmp/c02-simultaneous-snapshot.json
-          ILLUSTRO_TRACE: /tmp/c02-simultaneous-snapshot-trace.json
+          ILLUSTRO_TIMER_PRESENTATION: '1'
+          ILLUSTRO_BENCH_OUT: /tmp/c02-simultaneous-timer.json
+          ILLUSTRO_TRACE: /tmp/c02-simultaneous-timer-trace.json
           ILLUSTRO_TRACE_CATEGORIES: devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,cc,gpu,v8
-      - name: Compare backing hints without tracing overhead
+      - name: Compare publication clocks without tracing overhead
         working-directory: c01
         run: |
           ILLUSTRO_BENCH_OUT=/tmp/c02-simultaneous-untraced.json node test/performance-compare.mjs
-          ILLUSTRO_DISPLAY_CANVAS=snapshot ILLUSTRO_BENCH_OUT=/tmp/c02-simultaneous-snapshot-untraced.json node test/performance-compare.mjs
+          ILLUSTRO_TIMER_PRESENTATION=1 ILLUSTRO_BENCH_OUT=/tmp/c02-simultaneous-timer-untraced.json node test/performance-compare.mjs
         env:
           ILLUSTRO_BENCH_ROOTS: >-
             {"after":"${{ github.workspace }}/c01"}

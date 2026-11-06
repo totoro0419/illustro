@@ -184,7 +184,7 @@ function resetDoc(data){
  removePreviews();repaint.clear();clearTemporary();
  for(const request of pendingSnapshots.values())request.reject(Error('作品が切り替わりました'));
  pendingSnapshots.clear();setDimensions();
- if(rasterWorker){rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});previewWorker.postMessage({type:'reset',epoch:documentEpoch,generation:previewGeneration,width:doc.width,height:doc.height,background:doc.background,measure:!!perf,bitmap:presentationMode==='bitmap',direct:directPresentation,cpuDisplay,navigationPicture:gpuEnabled})}
+ if(rasterWorker){rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});previewWorker.postMessage({type:'reset',epoch:documentEpoch,generation:previewGeneration,width:doc.width,height:doc.height,background:doc.background,measure:!!perf,bitmap:presentationMode==='bitmap',direct:directPresentation,cpuDisplay,framePacing:new URLSearchParams(location.search).get('timerPresentation')!=='1',navigationPicture:gpuEnabled})}
  syncMeta();fit();
  poseTimeline.entries.length=0;cancelAnimationFrame(frame);renderView();dirty();
 }
