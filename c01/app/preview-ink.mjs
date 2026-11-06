@@ -15,7 +15,9 @@ export class PreviewInk{
    const bound=value=>node.operation==='replace'?factor:node.operation==='add'?value+factor:value*factor;
    if(node.output==='size')size=bound(size);if(node.output==='aspect')aspect=bound(aspect);if(node.output==='shear')shear=bound(shear);
   }
-  this.scale=Math.min(1,32/Math.max(1,Math.min(900,size)*(Math.min(2,aspect)+Math.min(1,shear))));
+  // Higher provisional sampling for hard erasers and graphite. Formal RGBA is unchanged.
+  const target=stroke.brush.blend==='erase'&&b.hardness>=.9?96:b.id==='pencil'?64:32;
+  this.scale=Math.min(1,target/Math.max(1,Math.min(900,size)*(Math.min(2,aspect)+Math.min(1,shear))));
   this.tiles=new Map();this.pixels=new Map();this.changed=new Set();
  }
  stamp(dab){
