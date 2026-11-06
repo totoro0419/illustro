@@ -13,8 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: '24'}
-      - run: npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
+        with: {node-version: '22'}
+      - name: Install test dependencies
+        run: npm ci --no-audit --no-fund
+        timeout-minutes: 2
+        working-directory: c01
+      - name: Install frozen Chromium (runner already supplies Chrome system libraries)
+        run: npx playwright install chromium
+        timeout-minutes: 3
         working-directory: c01
       - name: Trace live ink plus pinch and rotation
         run: node test/performance-compare.mjs
