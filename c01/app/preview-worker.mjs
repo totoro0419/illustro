@@ -75,7 +75,7 @@ function provisionalScale(group){
  const scale=viewPixelScale*2>=1?1:viewPixelScale*2>=.5?.5:.25;
  if(scale===1)return 1;
  const columns=Math.ceil(width/tileSize),left=Math.floor(group.x/tileSize),right=Math.floor((group.x+group.w-1)/tileSize),top=Math.floor(group.y/tileSize),bottom=Math.floor((group.y+group.h-1)/tileSize);
- for(const candidate of candidates.values())if(candidate.visible)for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++)if(candidate.ink.tiles.has(y*columns+x))return scale;
+ for(const candidate of candidates.values())if(candidate.visible&&!inflight?.handoff?.retired.has(candidate.id))for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++)if(candidate.ink.tiles.has(y*columns+x))return scale;
  return 1;
 }
 function displayPixels(group,scale,source=group.data){
@@ -97,6 +97,21 @@ function displayPixels(group,scale,source=group.data){
 let navigation=false,navCanvas=null,navContext=null,navScale=1,lastNavSnapshot=0,navNeedsFinal=false;
 let measure=false,formalSeq=0,formalAcceptedAt=null,lastSubmittedSeq=0;
 const candidates=new Map(),dirty=new Set(),baseTiles=new Map();
+let formalHandoff=null;
+// Stage each formal replacement without displaying a partial tile-by-tile redraw.
+function mergeHandoff(previous){
+ if(!previous)return;
+ if(!formalHandoff){formalHandoff=previous;return}
+ for(const [key,image]of previous.base)if(!formalHandoff.base.has(key))formalHandoff.base.set(key,image);
+ for(const key of previous.keys)formalHandoff.keys.add(key);
+ for(const id of previous.retired)formalHandoff.retired.add(id);
+ formalHandoff.prepared.clear();
+}
+function commitHandoff(transaction){
+ for(const [key,image]of transaction.base)baseTiles.set(key,image);
+ for(const id of transaction.retired)candidates.delete(id);
+ formalSeq=Math.max(formalSeq,transaction.seq);formalAcceptedAt=transaction.acceptedAt;
+}
 function invalidate(candidate){for(const key of candidate.ink.tiles.keys())dirty.add(key)}
 
 // Input admission/generation retain their timer. Publication waits for the
@@ -122,9 +137,9 @@ async function tick(){
  const budget={remaining:64,until:performance.now()+4};
  const ordered=[...candidates.values()].sort((a,b)=>Number(b.active)-Number(a.active));
  for(const candidate of ordered){
-  if(!candidate.visible)continue;
+  if(!candidate.visible||formalHandoff?.retired.has(candidate.id))continue;
   let at=performance.now();previewDabs(candidate,budget);generateMs+=performance.now()-at;at=performance.now();candidate.ink.flush();uploadMs+=performance.now()-at;
-  for(const key of candidate.ink.changed){dirty.add(key);if(candidate.active)liveDirty.add(key)}
+  for(const key of candidate.ink.changed){dirty.add(key);if(candidate.active)liveDirty.add(key);if(formalHandoff?.keys.has(key))formalHandoff.prepared.delete(key)}
   candidate.ink.changed.clear();
  }
  // A rejected picture must not immediately trigger another GPU snapshot
@@ -135,19 +150,32 @@ async function tick(){
   if(values.some(c=>c.visible&&(c.dabs||c.previewIndex<c.stroke.points.length)))schedule();
   return;
  }
- const firstMark=values.some(c=>c.visible&&!c.firstPublished&&c.ink.tiles.size);
- if(!inflight&&dirty.size&&(firstMark||performance.now()-lastPublishedAt>=presentationInterval)){
+ if(formalHandoff&&!navigation&&!inflight){
+  const deadline=performance.now()+3,visible=[...candidates.values()].filter(c=>c.visible&&!formalHandoff.retired.has(c.id));
+  for(const key of formalHandoff.keys){
+   if(formalHandoff.prepared.has(key))continue;
+   const box=tileBox(key,width,height);
+   formalHandoff.prepared.set(key,previewComposite(formalHandoff.base.get(key)||baseTiles.get(key),visible,key,box));
+   if(performance.now()>=deadline)break;
+  }
+ }
+ const atomicHandoff=Boolean(formalHandoff&&!navigation&&!inflight&&formalHandoff.keys.size===formalHandoff.prepared.size);
+ const firstMark=values.some(c=>c.visible&&!c.firstPublished&&c.ink.tiles.size&&!formalHandoff?.retired.has(c.id));
+ if(!inflight&&(atomicHandoff||(dirty.size&&(firstMark||performance.now()-lastPublishedAt>=presentationInterval)))){
   // The current pen must not queue behind a prior stroke's formal repaint.
   // Keep all older damage, but publish the newest live ink regions first.
-  const keys=[...new Set([...liveDirty].reverse().concat([...dirty]))].slice(0,8),pictures=[],atEpoch=epoch,atGeneration=generation;
+  const transaction=atomicHandoff?formalHandoff:null;
+  const keys=transaction?[...transaction.keys]:[...new Set([...liveDirty].reverse().concat([...dirty]))].slice(0,8);
+  const pictures=[],atEpoch=epoch,atGeneration=generation;
+  if(transaction)formalHandoff=null;
   keys.forEach(key=>dirty.delete(key));
   const rasterMs=performance.now()-start;
-  const packet={serial:++serial,keys,generation,first,formalSeq:0,formalAcceptedAt:null,generatedAt:performance.now()};inflight=packet;
+  const packet={serial:++serial,keys,generation,first,handoff:transaction,formalSeq:0,formalAcceptedAt:null,generatedAt:performance.now()};inflight=packet;
   try{
    for(const key of keys){
     const box=tileBox(key,width,height);
     for(const candidate of candidates.values())if(candidate.visible&&candidate.ink.tiles.has(key)&&!candidate.firstPublished&&!firstIds.has(candidate.id)){first.push({id:candidate.id,startedAt:candidate.startedAt});firstIds.add(candidate.id)}
-    const image=previewComposite(baseTiles.get(key),candidates.values(),key,box),gpuImage=bitmapMode?null:new ImageData(new Uint8ClampedArray(image.data),box.w,box.h);
+    const image=transaction?transaction.prepared.get(key):previewComposite(baseTiles.get(key),candidates.values(),key,box),gpuImage=bitmapMode?null:new ImageData(new Uint8ClampedArray(image.data),box.w,box.h);
     const d=gpuImage?.data;for(let i=0;d&&i<d.length;i+=4){const a=d[i+3]/255;for(let c=0;c<3;c++)d[i+c]=Math.round(d[i+c]*a)}
     pictures.push({key,box,image,gpuImage});
    }
@@ -164,12 +192,12 @@ async function tick(){
      groupPictures.push(...await Promise.all(snapshots.map(async({key,x,y,w,h,promise})=>({key,x,y,w,h,bitmap:await promise}))));
     }
    }
-   packet.formalSeq=dirty.size?0:formalSeq;packet.formalAcceptedAt=packet.formalSeq?formalAcceptedAt:null;
-   if(atEpoch!==epoch||atGeneration!==generation){navBitmap?.close();groupPictures.forEach(g=>g.bitmap?.close());pictures.forEach(p=>p.bitmap?.close());if(atEpoch===epoch)keys.forEach(key=>dirty.add(key));if(inflight===packet)inflight=null;}
-   else postMessage({type:'preview',epoch,generation,serial:packet.serial,pictures,groups:groupPictures,navBitmap,first,formalSeq:dirty.size?null:formalSeq,formalAcceptedAt:dirty.size?null:formalAcceptedAt,stats:measure?{rasterMs,generateMs,uploadMs,direct:directMode,publicationClock:pacingMode,presentationInterval,composeMs:performance.now()-start-rasterMs,totalMs:performance.now()-start,tiles:keys.length,updatedPixels:keys.reduce((n,k)=>{const b=tileBox(k,width,height);return n+b.w*b.h},0),bitmapPixels:groupPictures.reduce((n,g)=>n+g.w*g.h,0),previewBytes:[...candidates.values()].reduce((n,c)=>n+[...c.ink.tiles.values()].reduce((sum,t)=>sum+t.data.byteLength,0),0),baseBytes:[...baseTiles.values()].reduce((n,t)=>n+t.data.byteLength,0),groupBytes:[...groups.values()].reduce((n,g)=>n+g.data.byteLength,0),rgbaBytes:keys.reduce((sum,key)=>{const b=tileBox(key,width,height);return sum+b.w*b.h*(bitmapMode?4:8)},0),candidates:candidates.size}:null}, [...pictures.flatMap(p=>p.gpuImage?[p.image.data.buffer,p.gpuImage.data.buffer]:[p.image.data.buffer]),...groupPictures.flatMap(g=>g.bitmap?[g.bitmap]:[]),...(navBitmap?[navBitmap]:[])]);
-  }catch(error){pictures.forEach(p=>p.bitmap?.close());inflight=null;postMessage({type:'error',epoch:atEpoch,message:String(error)})}
+   packet.formalSeq=transaction?transaction.seq:dirty.size?0:formalSeq;packet.formalAcceptedAt=transaction?transaction.acceptedAt:packet.formalSeq?formalAcceptedAt:null;
+   if(atEpoch!==epoch||atGeneration!==generation){navBitmap?.close();groupPictures.forEach(g=>g.bitmap?.close());pictures.forEach(p=>p.bitmap?.close());if(atEpoch===epoch){keys.forEach(key=>dirty.add(key));mergeHandoff(transaction)}if(inflight===packet)inflight=null;}
+   else postMessage({type:'preview',epoch,generation,serial:packet.serial,pictures,groups:groupPictures,navBitmap,first,formalSeq:transaction?transaction.seq:dirty.size?null:formalSeq,formalAcceptedAt:transaction?transaction.acceptedAt:dirty.size?null:formalAcceptedAt,handoff:transaction?{seq:transaction.seq,tiles:keys.length}:null,stats:measure?{rasterMs,generateMs,uploadMs,direct:directMode,publicationClock:pacingMode,presentationInterval,composeMs:performance.now()-start-rasterMs,totalMs:performance.now()-start,tiles:keys.length,updatedPixels:keys.reduce((n,k)=>{const b=tileBox(k,width,height);return n+b.w*b.h},0),bitmapPixels:groupPictures.reduce((n,g)=>n+g.w*g.h,0),previewBytes:[...candidates.values()].reduce((n,c)=>n+[...c.ink.tiles.values()].reduce((sum,t)=>sum+t.data.byteLength,0),0),baseBytes:[...baseTiles.values()].reduce((n,t)=>n+t.data.byteLength,0),groupBytes:[...groups.values()].reduce((n,g)=>n+g.data.byteLength,0),rgbaBytes:keys.reduce((sum,key)=>{const b=tileBox(key,width,height);return sum+b.w*b.h*(bitmapMode?4:8)},0),candidates:candidates.size}:null}, [...pictures.flatMap(p=>p.gpuImage?[p.image.data.buffer,p.gpuImage.data.buffer]:[p.image.data.buffer]),...groupPictures.flatMap(g=>g.bitmap?[g.bitmap]:[]),...(navBitmap?[navBitmap]:[])]);
+  }catch(error){pictures.forEach(p=>p.bitmap?.close());if(atEpoch===epoch)mergeHandoff(transaction);inflight=null;postMessage({type:'error',epoch:atEpoch,message:String(error)})}
  }
- if(dirty.size&&!inflight||[...candidates.values()].some(c=>c.visible&&(c.dabs||c.previewIndex<c.stroke.points.length)))schedule();
+ if(formalHandoff||dirty.size&&!inflight||[...candidates.values()].some(c=>c.visible&&!formalHandoff?.retired.has(c.id)&&(c.dabs||c.previewIndex<c.stroke.points.length)))schedule();
 }
 self.onmessage=({data:m})=>{
  try{
@@ -181,7 +209,7 @@ self.onmessage=({data:m})=>{
    navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:cpuDisplay});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
    }else{navCanvas=null;navContext=null;navNeedsFinal=false;}
    baseTiles.clear();visibleCores.clear();
-   candidates.clear();dirty.clear();inflight=null;
+   candidates.clear();dirty.clear();inflight=null;formalHandoff=null;
    // Allocate the first real display tile during document initialization, rather
    // than paying the browser's first bitmap/compositor setup during pen-up.
    if(bitmapMode){
@@ -211,16 +239,18 @@ self.onmessage=({data:m})=>{
    const c=candidates.get(m.id);if(c){c.stroke.points.splice(m.offset,Infinity,...m.points);c.active=m.active;if(!m.active)navNeedsFinal=true;}
   }else if(m.type==='visibility'){
    generation=m.generation;
-   const c=candidates.get(m.id);if(c){c.visible=m.visible;invalidate(c)}
+   const c=candidates.get(m.id);if(c){c.visible=m.visible;invalidate(c);if(formalHandoff)for(const key of c.ink.tiles.keys())formalHandoff.prepared.delete(key)}
    if(m.retire)candidates.delete(m.id);
   }else if(m.type==='base'){
-   formalSeq=m.seq||formalSeq;formalAcceptedAt=m.acceptedAt||formalAcceptedAt;
-   for(const p of m.pictures||[]){baseTiles.set(p.key,p.image);dirty.add(p.key)}
-
-   for(const id of m.retired){const c=candidates.get(id);if(c)invalidate(c);candidates.delete(id)}
+   if(!formalHandoff)formalHandoff={base:new Map(),keys:new Set(),retired:new Set(),prepared:new Map(),seq:0,acceptedAt:null};
+   formalHandoff.seq=Math.max(formalHandoff.seq,m.seq||0);formalHandoff.acceptedAt=m.acceptedAt||formalHandoff.acceptedAt;
+   for(const p of m.pictures||[]){formalHandoff.base.set(p.key,p.image);formalHandoff.keys.add(p.key)}
+   for(const id of m.retired||[]){formalHandoff.retired.add(id);const c=candidates.get(id);if(c)for(const key of c.ink.tiles.keys())formalHandoff.keys.add(key)}
+   formalHandoff.prepared.clear();
   }else if(m.type==='ack'&&inflight?.serial===m.serial){
    const accepted=m.accepted&&inflight.generation===generation;
    if(accepted){
+    if(inflight.handoff)commitHandoff(inflight.handoff);
     const started=performance.now();lastPublishedAt=started;let submittedPixels=0;
     for(const group of inflight.presentations||[]){
      [group.data,group.stagingData]=[group.stagingData,group.data];
@@ -236,7 +266,7 @@ self.onmessage=({data:m})=>{
     for(const item of inflight.first)candidates.get(item.id)&&(candidates.get(item.id).firstPublished=true);
     if(measure||inflight.formalSeq>lastSubmittedSeq)postMessage({type:'display-submit',epoch,generation,serial:inflight.serial,seq:inflight.formalSeq,acceptedAt:inflight.formalAcceptedAt,stats:{direct:directMode,publicationClock:pacingMode,first:directMode?inflight.first.map(item=>({id:item.id,ms:performance.timeOrigin+performance.now()-item.startedAt})):[],uploadMs:performance.now()-started,queueMs:started-inflight.generatedAt,tiles:inflight.presentations?.length||0,submittedPixels}});lastSubmittedSeq=Math.max(lastSubmittedSeq,inflight.formalSeq);
    }
-   if(!accepted){inflight.keys.forEach(key=>dirty.add(key));inflight=null}else releasePublication(inflight);
+   if(!accepted){inflight.keys.forEach(key=>dirty.add(key));mergeHandoff(inflight.handoff);inflight=null}else releasePublication(inflight);
   }
   schedule();
  }catch(error){postMessage({type:'error',epoch,message:String(error)})}
