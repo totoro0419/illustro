@@ -11,9 +11,14 @@ try{
  const page=await browser.newPage({viewport:{width:1100,height:820}}),errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
  await page.addInitScript(()=>{
-  const Native=Worker;window.__heldFormal=[];window.__holdFormal=true;
+  const Native=Worker;window.__heldFormal=[];window.__holdFormal=true;window.__handoffPackets=[];
   window.Worker=class extends Native{
-   constructor(url,options){super(url,options);this.formal=String(url).includes('raster-worker')}
+   constructor(url,options){
+    super(url,options);this.formal=String(url).includes('raster-worker');
+    if(!this.formal)this.addEventListener('message',({data:m})=>{
+     if(m.type==='preview'&&m.handoff)window.__handoffPackets.push({seq:m.handoff.seq,tiles:m.handoff.tiles,pictures:m.pictures.length});
+    });
+   }
    postMessage(m,transfer){if(this.formal&&window.__holdFormal&&['stroke','undo','redo','save'].includes(m.type)){window.__heldFormal.push([this,m,transfer]);return}return super.postMessage(m,transfer)}
   };
   window.__releaseFormal=()=>{window.__holdFormal=false;for(const [w,m,t]of window.__heldFormal.splice(0))Native.prototype.postMessage.call(w,m,t)};
@@ -85,10 +90,11 @@ try{
   emit('pointerup','pen',50,360,310);window.__releaseFormal();await until(()=>stage.dataset.rasterPending==='0');
   document.querySelector('[data-action=saveas]').click();await until(()=>writes.length===3);
   const erased=JSON.parse(writes[2]),eraseHash=await digest(await decode(erased.layers[0].png));await until(async()=>await digest(pixels('preview'))===eraseHash);
-  return {previewBackings,nativeBackingsRestored,exactDisplayHash,actualPreviewBeforeFormal,visibleHash,viewportChecks,previewStartProxyMs,previewBeforeFormal,simultaneousPose,pendingViewProxyMs,pendingBeforeRelease,savedAHash,aHash,abHash,referenceHash,beforeErase,previewErase,eraseHash,saveAB};
+  return {previewBackings,nativeBackingsRestored,exactDisplayHash,actualPreviewBeforeFormal,visibleHash,viewportChecks,previewStartProxyMs,previewBeforeFormal,simultaneousPose,pendingViewProxyMs,pendingBeforeRelease,savedAHash,aHash,abHash,referenceHash,beforeErase,previewErase,eraseHash,saveAB,handoffPackets:window.__handoffPackets};
  });
  if(presentation==='bitmap')assert.ok(report.previewBackings.some(c=>c.width<c.cssWidth),'Pending preview uses a bounded backing at fit zoom');
- assert.equal(report.pendingBeforeRelease,'2');assert.equal(report.savedAHash,report.aHash,'Save after pending Undo contains A only');assert.equal(report.referenceHash,report.abHash,'Formal RGBA matches reference');assert.notEqual(report.aHash,report.abHash,'Redo restores B');assert.ok(report.previewErase<report.beforeErase,'Eraser preview removes pixels');
+ assert.ok(report.handoffPackets.some(p=>p.tiles>8&&p.pictures===p.tiles),'Multi-tile formal handoff must publish in one packet, not repaint stroke in visible slices');
+  assert.equal(report.pendingBeforeRelease,'2');assert.equal(report.savedAHash,report.aHash,'Save after pending Undo contains A only');assert.equal(report.referenceHash,report.abHash,'Formal RGBA matches reference');assert.notEqual(report.aHash,report.abHash,'Redo restores B');assert.ok(report.previewErase<report.beforeErase,'Eraser preview removes pixels');
  page.on('dialog',d=>d.accept());
  await page.setInputFiles('#open-file',{name:'fence.illustro',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(report.saveAB))});
  await page.waitForFunction(async expected=>{const c=document.getElementById('preview'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',d)),n=>n.toString(16).padStart(2,'0')).join('')===expected},report.abHash);
