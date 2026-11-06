@@ -6,13 +6,15 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "typecheck": "tsc --allowJs --checkJs --noEmit --target ES2022 --module ES2022 --lib ES2022,DOM,DOM.Iterable app/model.mjs",
-    "lint": "node --check app/model.mjs && node --check app/main.mjs && node --check app/input-diagnostics.mjs && node --check app/raster-worker.mjs && node --check app/ui-icons.mjs",
+    "lint": "for file in app/*.mjs; do node --check \"$file\" || exit; done",
     "build": "node scripts/build.mjs",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "browser:test": "node test/browser-test.mjs && node test/pen-worker-test.mjs"
+    "browser:test": "node test/browser-test.mjs && node test/pen-worker-test.mjs && node test/async-preview-test.mjs && node test/backlog-test.mjs && node test/display-viewport-test.mjs && node test/input-scheduler-test.mjs && node test/pen-contact-preview-test.mjs",
+    "raster:compare": "node test/formal-equivalence.mjs",
+    "performance:compare": "node test/performance-compare.mjs"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "playwright": "^1.56.1"
+    "playwright": "1.56.1",
+    "typescript": "^5.9.3"
   }
 }

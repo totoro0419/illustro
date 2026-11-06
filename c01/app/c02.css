@@ -1,0 +1,38 @@
+#repeat-view { position:absolute; inset:0; width:100%; height:100%; pointer-events:none }
+#brush-cursor { position:absolute; z-index:2; border:1px solid #fff; outline:1px solid #17243b; border-radius:50%; transform:translate(-50%,-50%); pointer-events:none }
+#brush-cursor::after { content:''; position:absolute; left:50%; top:50%; width:3px; height:3px; border:1px solid #fff; border-radius:50%; background:#17243b; transform:translate(-50%,-50%) }
+.brush-browser { display:grid; grid-template-columns:1fr; gap:3px; margin-bottom:10px }
+.brush-choice { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px }
+.brush-browser select,.workspace details select { min-width:0; max-width:100% }
+.workspace input[type=range],.brush-editor input[type=range] { touch-action:pan-y }
+.workspace summary,.brush-editor summary { cursor:pointer; padding:8px 0; font-weight:650 }
+.brush-editor { max-height:calc(100dvh - 24px); width:min(580px,calc(100vw - 20px)); overflow:auto; color:inherit }
+.brush-editor::backdrop { background:#192b4c77 }
+.brush-editor fieldset { border:1px solid #dbe4f0; border-radius:10px; margin:8px 0; min-inline-size:0 }
+.brush-editor input[type=checkbox] { width:auto; margin-inline-start:10px }
+.brush-editor footer { flex-wrap:wrap; justify-content:end }
+.brush-pads { display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.brush-pads figure { margin:0; min-width:0 }
+.brush-pads canvas { display:block; width:100%; height:auto; background:#f5f8fc; border:1px solid #dbe4f0; border-radius:8px }
+#pad-after { touch-action:none; cursor:crosshair }
+#interrupted-stroke { position:fixed; z-index:15; left:50%; top:65px; transform:translateX(-50%); padding:8px; max-width:95vw; width:max-content; background:#fff; border:1px solid #c8d6eb; border-radius:12px; box-shadow:0 8px 24px #2b4d7530 }
+#interrupted-stroke button { margin-inline-start:5px }
+#hold-eraser { display:block; margin-top:6px; touch-action:none }
+#hold-eraser[aria-pressed=true] { color:#2147aa; border-color:#5479dc }
+#input-wave { max-width:100%; background:#f5f8fc }
+#paper { box-shadow:none }
+#paper-shadow { position:absolute; inset:0; width:100%; height:100%; pointer-events:none }
+#paper-shadow-polygon { fill:#e8edf5 }
+#export-recovery { position:fixed; bottom:125px; left:50%; transform:translateX(-50%); z-index:18 }
+
+#display-tiles { position:absolute; inset:0; pointer-events:none }
+#display-tiles canvas { position:absolute; pointer-events:none }
+/* Retain each display group; do not flatten all document pixels into one
+   growing transformed texture during pen + two-finger navigation. */
+#paper { will-change:auto }
+#display-tiles canvas { will-change:auto }
+
+#navigation-preview { position:absolute; inset:0; pointer-events:none }
+
+/* Artwork reprojects within its own scene; the shadow offset stays on screen Y. */
+#paper-shadow { display:none }

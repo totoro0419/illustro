@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
 const files={'/':'index.html','/index.html':'index.html','/input-test.html':'input-test.html','/app/main.mjs':'app/main.mjs','/app/color-pickers.mjs':'app/color-pickers.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/aurora-frost.css':'app/aurora-frost.css','/app/ui-icons.mjs':'app/ui-icons.mjs','/app/raster-worker.mjs':'app/raster-worker.mjs'};
+for(const name of ['brush-engine.mjs','brush-raster.mjs','brush-ui.mjs','stroke-input.mjs','c02.css','preview-worker.mjs','preview-stroke.mjs','preview-ink.mjs','preview-composite.mjs','presentation.mjs','retained-scene.mjs'])files['/app/'+name]='app/'+name;
 const server=createServer(async(req,res)=>{
   try {const path=files[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}const content=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(content)}
   catch(err){res.writeHead(500).end(String(err))}
@@ -10,10 +11,10 @@ const server=createServer(async(req,res)=>{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const port=server.address().port;let browser;
 try{
- browser=await chromium.launch({headless:true});
+ browser=await chromium.launch({headless:true,executablePath:process.env.ILLUSTRO_CHROMIUM||undefined,args:process.env.ILLUSTRO_CHROMIUM?['--no-sandbox','--disable-dev-shm-usage']:[]});
  const page=await browser.newPage({viewport:{width:1280,height:800}});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('http://127.0.0.1:'+port,{waitUntil:'load'});
+ await page.goto('http://127.0.0.1:'+port+'/?pixelMirror=1',{waitUntil:'load'});
  await page.waitForFunction(()=>document.querySelector('#art')?.width===1600);
  // Aurora Frost: local visual assets must load and buttons retain semantics.
  const theme=await page.evaluate(()=>({
@@ -31,7 +32,7 @@ try{
  const pixels=()=>page.evaluate(()=>{const c=document.querySelector('#art');const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let pixels=0;for(let i=3;i<d.length;i+=4)if(d[i])pixels++;return pixels});
  const b=await page.locator('#stage').boundingBox();const x=b.x+b.width*.45,y=b.y+b.height*.4;
  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+100,y+45,{steps:12});await page.mouse.up();
- await page.waitForFunction(()=>document.querySelectorAll('.stroke-preview').length===0 && document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
+ await page.waitForFunction(()=>document.getElementById('stage').dataset.rasterPending==='0' && document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
  assert.ok(await pixels()>0,'Stroke must change alpha');
  await page.locator('[data-action=undo]').first().click();
  await page.waitForFunction(()=>!document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
@@ -39,20 +40,50 @@ try{
  await page.locator('[data-action=redo]').first().click();
  await page.waitForFunction(()=>document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
  assert.ok(await pixels()>0,'Redo restores stroke');
+ const pixelChecks=await page.evaluate(async()=>{
+  const [{preset},{composite,rasterize,tileBox}]=await Promise.all([
+   import('/app/brush-engine.mjs'),import('/app/brush-raster.mjs')
+  ]);
+  const pixels=new OffscreenCanvas(24,24),context=pixels.getContext('2d');
+  const point=(x,y,t)=>({x,y,t,p:1,tiltX:null,tiltY:null,azimuth:null,twist:null});
+  const marker=preset('marker');
+  const stroke={brush:marker,points:[point(-4,11,0),point(30,11,40)],seed:'0011223344556677',size:12,
+   opacity:marker.opacityFactor,flow:1,colorAlpha:1,color:[40,60,100],pen:false,curve:1,correction:{mode:'off'},wrap:true};
+  const draw=s=>{
+   const {ink}=rasterize(s,24,24);
+   for(const [key,image] of ink.tiles){const b=tileBox(key,24,24);composite(context,s,image,b.x,b.y)}
+  };
+  const alpha=(x,y)=>context.getImageData(x,y,1,1).data[3];
+  draw(stroke);
+  const seam=[alpha(0,11),alpha(23,11)];
+  draw(stroke);
+  const twice=alpha(0,11);
+  context.clearRect(0,0,24,24);
+  draw({...stroke,size:62,points:[point(-1,-1,0)]});
+  return {seam,twice,large:[alpha(0,0),alpha(12,12),alpha(23,23)]};
+ });
+ assert.deepEqual(pixelChecks.seam,[128,128],'Wrapped marker must have equal stroke cap across the seam');
+ assert.ok(Math.abs(pixelChecks.twice-192)<=1,'Another stroke composites independently');
+ assert.deepEqual(pixelChecks.large,[128,128,128],'Overlapping copies of one large dab must not double the cap');
  // Regression: eraser must never paint a black transient stroke before pen-up.
  for(const eraser of ['hardEraser','softEraser']){
+  // Each eraser gets fresh ink: a soft brush entirely inside a previous hard
+  // eraser hole has no additional alpha to remove.
+  await page.locator('[data-tool=round]').click();await page.locator('#size-n').fill('48');await page.locator('#size-n').dispatchEvent('change');
+  await page.mouse.move(x+28,y+12);await page.mouse.down();await page.mouse.move(x+60,y+30,{steps:3});await page.mouse.up();
+  await page.waitForFunction(()=>document.getElementById('stage').dataset.rasterPending==='0');
+  await page.locator('#size-n').fill('12');await page.locator('#size-n').dispatchEvent('change');
   await page.locator('[data-tool='+eraser+']').click();
   await page.mouse.move(x+30,y+14);await page.mouse.down();
   await page.mouse.move(x+48,y+24,{steps:2});
-  const indicator=await page.locator('.stroke-preview.eraser-preview').last().evaluate(c=>{
-   const a=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
-   for(let i=0;i<a.length;i+=4){if(a[i+3]>0)return [a[i],a[i+1],a[i+2],a[i+3]];}
-   return null;
-  });
-  assert.ok(indicator,'Eraser should show a transient path');
-  assert.deepEqual(indicator.slice(0,3),[255,255,255],'Eraser overlay must not show black');
+  await page.waitForFunction(()=>{
+   const alpha=id=>{const c=document.getElementById(id);return c.getContext('2d').getImageData(0,0,c.width,c.height).data};
+   const visible=alpha('preview'),formal=alpha('art');
+   for(let i=3;i<visible.length;i+=4)if(visible[i]<formal[i])return true;
+   return false;
+  },{},{timeout:5000});
   await page.mouse.up();
-  await page.waitForFunction(()=>document.querySelectorAll('.stroke-preview').length===0);
+  await page.waitForFunction(()=>document.getElementById('stage').dataset.rasterPending==='0');
  }
  await page.locator('[data-tool=gpen]').click();
  page.on('dialog',dialog=>dialog.accept());
@@ -134,7 +165,7 @@ try{
  // The colored annulus/HSV plane alone may own a color-drag gesture.
  const tablet=await browser.newPage({viewport:{width:900,height:700},hasTouch:true,isMobile:true});
  const tabletErrors=[];tablet.on('pageerror',e=>tabletErrors.push(String(e)));
- await tablet.goto('http://127.0.0.1:'+port,{waitUntil:'load'});
+ await tablet.goto('http://127.0.0.1:'+port+'/?pixelMirror=1',{waitUntil:'load'});
  const session=await tablet.context().newCDPSession(tablet);
  const workspaceScroll=tablet.locator('.workspace-scroll');
  const touchSwipe=async (x0,y0,x1,y1)=>{
@@ -149,7 +180,7 @@ try{
  for(const pickerMode of ['classic','orbit']){
   await tablet.locator('#color-picker-mode').selectOption(pickerMode);
   const picker=tablet.locator(pickerMode==='classic'?'#classic-picker':'#orbit-picker');
-  await workspaceScroll.evaluate(el=>el.scrollTop=0);
+  await picker.evaluate(el=>el.scrollIntoView({block:'center'}));
   const rect=await picker.boundingBox();
   const start={x:rect.x+12,y:rect.y+22};
   const before=await workspaceScroll.evaluate(el=>el.scrollTop);
@@ -159,7 +190,7 @@ try{
  }
  // The unpainted hole between the Classic ring and HSV diamond must also scroll.
  await tablet.locator('#color-picker-mode').selectOption('classic');
- await workspaceScroll.evaluate(el=>el.scrollTop=0);
+ await tablet.locator('#classic-picker').evaluate(el=>el.scrollIntoView({block:'center'}));
  const holeBox=await tablet.locator('#classic-picker').boundingBox();
  const holeX=holeBox.x+holeBox.width*.88,holeY=holeBox.y+holeBox.height*.5;
  const holeTarget=await tablet.evaluate(({x,y})=>document.elementFromPoint(x,y)?.id||'',{x:holeX,y:holeY});

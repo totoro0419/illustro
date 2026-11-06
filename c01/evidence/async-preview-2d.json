@@ -1,0 +1,25 @@
+{
+  "visibleHash": null,
+  "viewportChecks": 0,
+  "previewStartProxyMs": 145,
+  "previewBeforeFormal": 150109,
+  "simultaneousPose": "matrix(0.4059, 0, 0, 0.4059, 44.28, 137.96)|matrix(1.3, -0.45, 0.45, 1.3, -287.5, 106)",
+  "pendingViewProxyMs": 2.0999999998603016,
+  "pendingBeforeRelease": "2",
+  "savedAHash": "9a9dae97111d26a05073679d41a145e94c5e073648d7ce883f52237c612895f2",
+  "aHash": "9a9dae97111d26a05073679d41a145e94c5e073648d7ce883f52237c612895f2",
+  "abHash": "b7265c45c4ec75cafc98fb314798bd289e78f14da1a50a6681285d9ead8815a8",
+  "referenceHash": "b7265c45c4ec75cafc98fb314798bd289e78f14da1a50a6681285d9ead8815a8",
+  "beforeErase": 284147,
+  "previewErase": 252832,
+  "eraseHash": "4fd1062005c8df64ff3d14e5991458e155de1c868d99004b7e652535e90cfc7a",
+  "recovery": {
+    "newEpochStrokes": 1,
+    "postLossStrokes": 2,
+    "expectedHash": "00853e2be4f14a901fe466b81b8ca8094e5b38a16dc386239a318a1019f4f042",
+    "actualHash": "00853e2be4f14a901fe466b81b8ca8094e5b38a16dc386239a318a1019f4f042"
+  },
+  "presentation": "2d",
+  "errors": [],
+  "scope": "Synthetic PointerEvent and held formal jobs; complete RGBA hashes. Latencies include polling, no scanout."
+}

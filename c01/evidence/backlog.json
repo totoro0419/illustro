@@ -1,0 +1,11 @@
+{
+  "pending": 100,
+  "updateMs": 6.699999999720603,
+  "affineDelta": 0.0000025000000001274003,
+  "savedAtFence": 50,
+  "savedFinal": 100,
+  "expectedHash": "8237d83b72fac5ea7923abca3a47133435b1a9a80cdba1d878f5d489285a0ed7",
+  "actualHash": "8237d83b72fac5ea7923abca3a47133435b1a9a80cdba1d878f5d489285a0ed7",
+  "scope": "Synthetic 32 coalesced samples/event; default bitmap presentation without pixelMirror; updateMs is synchronous CSS submission, no scanout",
+  "errors": []
+}
