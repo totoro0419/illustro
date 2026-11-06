@@ -171,7 +171,7 @@ async function tick(){
   // The current pen must not queue behind a prior stroke's formal repaint.
   // Keep all older damage, but publish the newest live ink regions first.
   const transaction=atomicHandoff?formalHandoff:null;
-  const keys=transaction?[...transaction.keys]:[...new Set([...terminalDirty,...liveDirty].reverse().concat([...dirty]))].slice(0,8);
+  const keys=transaction?[...transaction.keys]:[...new Set([...terminalDirty,...[...liveDirty].reverse(),...dirty])].slice(0,8);
   const pictures=[],atEpoch=epoch,atGeneration=generation;
   if(transaction)formalHandoff=null;
   keys.forEach(key=>dirty.delete(key));
