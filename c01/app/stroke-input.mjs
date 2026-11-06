@@ -21,6 +21,19 @@ export function admit(points,sample){
  return true;
 }
 
+/** Preserve the last physical release point as a new sample when a batched
+ * pointerup shares (or precedes) the previous coalesced timestamp. A preview
+ * worker may already have consumed the old last sample by its index. */
+export function admitTerminal(points,sample){
+ if(!sample)return false;
+ const last=points.at(-1);
+ if(last&&sample.t<=last.t){
+  if(analog.every(key=>last[key]===sample[key]))return false;
+  return admit(points,{...sample,t:last.t+.001});
+ }
+ return admit(points,sample);
+}
+
 export class PoseTimeline {
  entries=[];
  record(time,view,rect){

@@ -3,7 +3,7 @@ import {Ink,composite,rasterize,tileBox,tileSize} from './brush-raster.mjs';
 import {RetainedScene} from './retained-scene.mjs';
 import {Presentation} from './presentation.mjs';
 import {previewDabs} from './preview-stroke.mjs';
-import {admit,PoseTimeline} from './stroke-input.mjs';
+import {admit,admitTerminal,PoseTimeline} from './stroke-input.mjs';
 import {brushUI} from './brush-ui.mjs';
 import {enableInputDiagnostics} from './input-diagnostics.mjs';
 import {installColorPickers} from './color-pickers.mjs';
@@ -364,7 +364,11 @@ function beginStroke(e,erase=false){
  // Some styluses deliver pressure 0 at the contact-down edge, even though
  // the pen is touching. A zero-size pressure brush leaves an initial gap.
  // Only the initial physical contact is floored; later pressure is untouched.
- if(e.pointerType==='pen'&&(e.buttons&1)&&point.p<.07)point.p=.07;
+ if(e.pointerType==='pen'&&(e.buttons&1)){
+  const diameter=(erase||brushes.get(erase?brushes.input.eraser:settings.tool).blend==='erase')&&brushes.input.independent?brushes.input.eraserSize:settings.size;
+  // At least a document-pixel-wide first dab with pressure-size brushes.
+  point.p=Math.max(point.p,Math.min(1,Math.max(.07,1.25/Math.max(1,diameter))));
+ }
  const brush=brushes.get(erase?brushes.input.eraser:settings.tool);
  const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
  if(e.altKey)stroke.guide=null;
@@ -383,7 +387,7 @@ function addStroke(e,end=false){
  const coalesced=!end&&e.getCoalescedEvents?.();
  for(const event of coalesced?.length?coalesced:[e]){
   const point=poseTimeline.sample(event,sensors,end?points.at(-1).p:undefined);
-  if(!admit(points,point)&&!point)recordInput('unknown-view-pose',event);
+  if(!(end?admitTerminal(points,point):admit(points,point))&&!point)recordInput('unknown-view-pose',event);
  }
  queuePreview();
  if(e.pointerType==='pen')s.inputEvent=e;

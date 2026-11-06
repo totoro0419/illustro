@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {correctedPath,counterRandom,curve,evaluateDab,preset,strokeDabs,validateBrush} from '../app/brush-engine.mjs';
-import {admit,PoseTimeline} from '../app/stroke-input.mjs';
+import {admit,admitTerminal,PoseTimeline} from '../app/stroke-input.mjs';
 import {createManifest,readManifest} from '../app/model.mjs';
 
 const raw=(x,y,t,p=1)=>({x,y,t,p,tiltX:null,tiltY:null,azimuth:null,twist:null});
@@ -65,6 +65,10 @@ test('INP-007 pressure-only samples, reversed time and coalesced pose selection'
  assert.equal(contact.length,2);
  assert.equal(contact[0].x,20,'First physical pen contact is preserved');
  assert.equal(contact[1].x,30);
+ const staleTail=[raw(20,30,60,0),raw(30,30,61,.7)];
+ assert.ok(admitTerminal(staleTail,raw(45,30,61,.7)),'Equal-time penup is admitted');
+ assert.equal(staleTail.length,3,'Release must append, never overwrite a previously previewed move');
+ assert.ok(staleTail.at(-1).t>staleTail.at(-2).t,'Terminal timestamps stay monotonic');
  const timeline=new PoseTimeline(),rect={left:20,top:0};
  const view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
  timeline.record(5,view,rect);

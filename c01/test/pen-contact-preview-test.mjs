@@ -62,7 +62,9 @@ try{
   // revisit it; the final tip must nevertheless be visible immediately.
   emit('pointerup',...end,0,0,moveStamp);
   await until(()=>alpha(...end)>0,'end contact provisional ink');
-  const before={startAlpha:alpha(...start),middleAlpha:alpha(...middle),endAlpha:alpha(...end),formalEndAlpha:alpha(...end,'art'),held:window.__heldStrokes.length};
+  const tail=[530,300];
+  await until(()=>alpha(...tail)>0,'continuous provisional segment leading to pen-up');
+  const before={startAlpha:alpha(...start),middleAlpha:alpha(...middle),tailAlpha:alpha(...tail),endAlpha:alpha(...end),formalEndAlpha:alpha(...end,'art'),held:window.__heldStrokes.length};
   window.__releaseStrokes();
   await until(()=>stage.dataset.rasterPending==='0'&&alpha(...end,'art')>0,'formal completion');
   return {before,after:{startAlpha:alpha(...start,'art'),endAlpha:alpha(...end,'art'),previewEndAlpha:alpha(...end)}};
@@ -70,6 +72,7 @@ try{
  assert.ok(result.before.startAlpha>0,'pen-down with zero reported pressure must leave a visible first mark');
  assert.ok(result.before.middleAlpha>0,'live preview must show intermediate pen ink');
  assert.ok(result.before.endAlpha>0,'preview must show final physical pen-up point before raster completes');
+ assert.ok(result.before.tailAlpha>0,'preview must not leave a gap between last move and physical penup');
  assert.equal(result.before.formalEndAlpha,0,'formal raster intentionally held for preview-only check');
  assert.equal(result.before.held,1,'one formal stroke must be gated');
  assert.ok(result.after.startAlpha>0&&result.after.endAlpha>0,'formal raster must include both contacts');

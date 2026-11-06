@@ -21,6 +21,12 @@ export function previewDabs(candidate,budget){
    const filtered=correctSample(current,candidate.raw,candidate.filtered,s.correction);
    candidate.raw=current;candidate.filtered=filtered;
    const guide=s.guide,point={...filtered};
+   // Formal correctedPath anchors the final point at the raw release position.
+   // Preview must interpolate towards that same terminal point, not just draw
+   // an isolated cap there after the smoothed trajectory stops short.
+   if(!candidate.active&&candidate.previewIndex===s.points.length){
+    point.x=current.x;point.y=current.y;
+   }
    if(guide)point[guide.axis]+=(guide.coordinate-point[guide.axis])*guide.strength;
    const from=candidate.previewPoint;
    point.distance=from?from.distance+Math.hypot(point.x-from.x,point.y-from.y):0;
