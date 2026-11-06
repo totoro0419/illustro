@@ -8,8 +8,18 @@ import {previewComposite} from './preview-composite.mjs';
 import {tileBox,tileSize} from './brush-raster.mjs';
 let epoch=0,generation=0,width=1,height=1,timer=0,inflight=null,serial=0;
 let bitmapMode=false,background='white';
+let presentationWarmed=false;
 function snapshotGroup(group){
  if(!group.canvas){group.canvas=new OffscreenCanvas(group.w,group.h);group.context=group.canvas.getContext('2d',{alpha:false});}
+ // Compile the resampling/upload path once during renderer initialization.
+ // The probe pixels are overwritten by the real paper before any publication.
+ // This readback is startup-only; no input, preview dab or View calls it.
+ if(!presentationWarmed){
+  presentationWarmed=true;
+  const source=new OffscreenCanvas(32,32),context=source.getContext('2d',{willReadFrequently:true}),data=new ImageData(32,32);
+  for(let i=0;i<data.data.length;i+=4){data.data[i]=i%251;data.data[i+1]=100;data.data[i+2]=190;data.data[i+3]=255}context.putImageData(data,0,0);
+  group.context.save();group.context.translate(16,16);group.context.rotate(.01);group.context.drawImage(source,0,0,64,64);group.context.restore();group.context.getImageData(32,32,1,1);
+ }
  group.context.putImageData(new ImageData(group.data,group.w,group.h),0,0);
  return createImageBitmap(group.canvas);
 }
@@ -78,7 +88,7 @@ self.onmessage=({data:m})=>{
  try{
   if(m.type==='reset'){
    if(m.epoch<epoch)return;
-   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;navigation=false;measure=m.measure;bitmapMode=m.bitmap;background=m.background;groups.clear();formalSeq=0;formalAcceptedAt=null;
+   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;navigation=false;measure=m.measure;bitmapMode=m.bitmap;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;
    if(m.navigationPicture){
    navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:true});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
    }else{navCanvas=null;navContext=null;navNeedsFinal=false;}

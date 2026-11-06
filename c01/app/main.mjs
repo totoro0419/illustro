@@ -76,7 +76,7 @@ if(rasterWorker){
   if(m.type==='ready'){
    if(m.epoch!==documentEpoch){for(const g of m.groups||[])g.bitmap.close();return}
    const initialGroups=(m.groups||[]).filter(g=>!displayTiles.has(g.key));displayPictures([],initialGroups);for(const g of m.groups||[])g.bitmap.close();
-   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(m.epoch===documentEpoch){stage.dataset.presentationReady='true';stage.dataset.presentationInitMs=String(performance.now()-presentationInitAt);stage.setAttribute('aria-busy','false')}}));return
+   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(m.epoch===documentEpoch){stage.dataset.presentationReady='true';stage.dataset.presentationInitMs=String(performance.now()-presentationInitAt);stage.setAttribute('aria-busy','false');dirty()}}));return
   }
   if(m.type==='error'){if(m.epoch===documentEpoch)rasterFailure('仮線: '+m.message);return}
   const valid=m.epoch===documentEpoch&&m.generation===previewGeneration&&!workerFault;
@@ -137,7 +137,7 @@ let templates=[];try{templates=JSON.parse(localStorage.getItem('illustro.templat
 const isEraser=t=>brushes.get(t)?.blend==='erase';
 let toastTimer, frame=0,viewUIFrame=0,gridPainted=false,colorPickers=null,pickerBefore=null,pickerPrevious=null;
 function notify(msg){$('toast').textContent=msg;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
-function dirty(){ stage.dataset.rasterPending=String(pendingInk.size);$('save-status').textContent=workerFault?'描画確定停止':pendingInk.size?'正式描画処理中…':savedRev===history.revision?'保存済み':'未保存';$('doc-title').textContent=doc.name+(savedRev===history.revision?'':' •');$('doc-dimensions').textContent=`${doc.width} × ${doc.height} px`;updateHistory() }
+function dirty(){ stage.dataset.rasterPending=String(pendingInk.size);$('save-status').textContent=workerFault?'描画確定停止':rasterWorker&&stage.dataset.presentationReady!=='true'?'表示を準備中…':pendingInk.size?'正式描画処理中…':savedRev===history.revision?'保存済み':'未保存';$('doc-title').textContent=doc.name+(savedRev===history.revision?'':' •');$('doc-dimensions').textContent=`${doc.width} × ${doc.height} px`;updateHistory() }
 function updateHistory(){for(const b of all('[data-action=undo]')){b.disabled=!history.canUndo;b.title=history.canUndo?'Undo: '+history.undoName:'戻せません'}for(const b of all('[data-action=redo]')){b.disabled=!history.canRedo;b.title=history.canRedo?'Redo: '+history.redoName:'進めません'}}
 function drawGrid(){if(gridPainted)return;gctx.clearRect(0,0,grid.width,grid.height);const show=grid.dataset.show==='1'&&view.scale>=6;if(!show)return;gridPainted=true;gctx.strokeStyle='#8994a560';gctx.lineWidth=1/Math.max(1,view.scale);gctx.beginPath();for(let x=0;x<=doc.width;x++){gctx.moveTo(x+.5,0);gctx.lineTo(x+.5,doc.height)}for(let y=0;y<=doc.height;y++){gctx.moveTo(0,y+.5);gctx.lineTo(doc.width,y+.5)}gctx.stroke()}
 function updateViewUI(){ $('zoom-readout').textContent=`${Math.round(view.scale*100)}% / ${Math.round(view.rotation)}°`;$('zoom-n').value=Math.round(view.scale*100)}

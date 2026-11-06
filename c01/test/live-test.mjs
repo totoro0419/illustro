@@ -38,6 +38,21 @@ try{
   const archive=await page.evaluate(()=>JSON.parse(window.previewWrites[0]));
   assert.equal(archive.formatVersion,2);
   assert.equal(archive.brushArchive.strokes[0].brush.id,'pencil');
+  const visible=await page.evaluate(async png=>{
+   const stage=document.getElementById('stage'),paper=document.getElementById('paper'),scene=document.getElementById('retained-scene'),r=stage.getBoundingClientRect();
+   const before=paper.style.transform+'|'+scene.style.transform;
+   const emit=(type,id,x,y)=>stage.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'touch',pointerId:id,button:0,buttons:type==='pointerup'?0:1,clientX:r.x+x,clientY:r.y+y}));
+   emit('pointerdown',81,350,300);emit('pointerdown',82,450,300);emit('pointermove',81,380,330);emit('pointermove',82,515,275);
+   const moved=before!==paper.style.transform+'|'+scene.style.transform;emit('pointerup',81,380,330);emit('pointerup',82,515,275);
+   const digest=async d=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',d)),n=>n.toString(16).padStart(2,'0')).join('');
+   const image=await createImageBitmap(await(await fetch(png)).blob()),w=image.width,h=image.height,expected=new OffscreenCanvas(w,h),ec=expected.getContext('2d',{willReadFrequently:true});ec.drawImage(image,0,0);image.close();const data=ec.getImageData(0,0,w,h).data;
+   for(let i=0;i<data.length;i+=4){const a=data[i+3]/255;for(let c=0;c<3;c++)data[i+c]=Math.round(data[i+c]*a+255*(1-a));data[i+3]=255}
+   const expectedHash=await digest(data);let actualHash;
+   for(let attempt=0;attempt<200;attempt++){const canvas=new OffscreenCanvas(w,h),ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.fillStyle='white';ctx.fillRect(0,0,w,h);for(const tile of document.querySelectorAll('#display-tiles canvas'))ctx.drawImage(tile,parseFloat(tile.style.left),parseFloat(tile.style.top));actualHash=await digest(ctx.getImageData(0,0,w,h).data);if(actualHash===expectedHash)break;await new Promise(ok=>setTimeout(ok,20))}
+   return {moved,expectedHash,actualHash};
+  },archive.layers[0].png);
+  assert.ok(visible.moved,'Public pen result must pan/zoom/rotate');assert.equal(visible.actualHash,visible.expectedHash,'Actual public bitmap groups must match native PNG');
+
   await page.locator('#open-file').setInputFiles({name:'preview.illustro',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(archive))});
   await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('ネイティブ作品を開きました'));
   page.on('dialog',d=>d.accept());
@@ -57,5 +72,5 @@ try{
   assert.equal(diagResponse.status(),200,'Public standalone diagnostic must respond 200');
   assert.ok(await diag.locator('#zone').isVisible(),'Public independent touch surface must be visible');
   assert.deepEqual(diagErrors,[]);
-  console.log('LIVE_PASS: URL HTTP 200, JS bootstrap, draw/undo/redo/new/phone panel and independent input diagnostic');
+  console.log('LIVE_PASS: URL HTTP 200, actual draw/display pixels, pan/zoom/rotate, save/reload, undo/redo/new/phone panel and independent input diagnostic');
 } finally {if(browser)await browser.close()}
