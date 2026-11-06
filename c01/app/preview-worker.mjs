@@ -69,7 +69,7 @@ async function tick(){
     if(performance.now()-lastNavSnapshot>=32||navNeedsFinal){navNeedsFinal=false;navBitmap=await createImageBitmap(navCanvas);lastNavSnapshot=performance.now();}
    }
    if(bitmapMode){
-    const changed=new Set(),groupSize=512,columns=Math.ceil(width/groupSize);
+    const changed=new Set(),groupSize=128,columns=Math.ceil(width/groupSize);
     for(const {box,image}of pictures){const x=Math.floor(box.x/groupSize)*groupSize,y=Math.floor(box.y/groupSize)*groupSize,key=Math.floor(y/groupSize)*columns+Math.floor(x/groupSize);let group=groups.get(key);
      if(!group){const w=Math.min(groupSize,width-x),h=Math.min(groupSize,height-y),data=new Uint8ClampedArray(w*h*4);for(let row=0;row<h;row++)for(let col=0;col<w;col++){const i=(row*w+col)*4,tone=background==='white'||((Math.floor((x+col)/10)+Math.floor((y+row)/10))%2===0)?white:checker;data[i]=tone[0];data[i+1]=tone[1];data[i+2]=tone[2];data[i+3]=255}group={key,x,y,w,h,data};groups.set(key,group)}
      for(let row=0;row<box.h;row++)for(let col=0;col<box.w;col++){const i=(row*box.w+col)*4,j=((box.y-y+row)*group.w+box.x-x+col)*4,a=image.data[i+3]/255,tone=background==='white'||((Math.floor((box.x+col)/10)+Math.floor((box.y+row)/10))%2===0)?white:checker;for(let c=0;c<3;c++)group.data[j+c]=Math.round(image.data[i+c]*a+tone[c]*(1-a));group.data[j+3]=255}
@@ -94,10 +94,10 @@ self.onmessage=({data:m})=>{
    }else{navCanvas=null;navContext=null;navNeedsFinal=false;}
    baseTiles.clear();
    candidates.clear();dirty.clear();inflight=null;
-   // Allocate the first real paper group during document initialization, rather
+   // Allocate the first real display tile during document initialization, rather
    // than paying the browser's first bitmap/compositor setup during pen-up.
    if(bitmapMode){
-    const atEpoch=epoch,w=Math.min(512,width),h=Math.min(512,height),data=new Uint8ClampedArray(w*h*4);
+    const atEpoch=epoch,w=Math.min(128,width),h=Math.min(128,height),data=new Uint8ClampedArray(w*h*4);
     for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,tone=background==='white'||((Math.floor(x/10)+Math.floor(y/10))%2===0)?white:checker;data[i]=tone[0];data[i+1]=tone[1];data[i+2]=tone[2];data[i+3]=255}
     const group={key:0,x:0,y:0,w,h,data};groups.set(0,group);
     snapshotGroup(group).then(bitmap=>{if(atEpoch!==epoch){bitmap.close();return}postMessage({type:'ready',epoch:atEpoch,groups:[{key:0,x:0,y:0,w,h,bitmap}]},[bitmap])}).catch(error=>postMessage({type:'error',epoch:atEpoch,message:String(error)}));
