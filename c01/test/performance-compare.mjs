@@ -126,7 +126,7 @@ try{for(const [version] of Object.entries(roots))for(const scenario of scenarios
     if(legacy){document.getElementById('exportImage').click();document.getElementById('exportFormat').value='png';document.getElementById('exportRun').click()}
     else document.querySelector('[data-action=save]').click();
     for(let i=0;i<3000&&!blob&&!native;i++)await sleep(10);
-    if(!blob&&!native)throw Error('Quality export timed out');
+    if(!blob&&!native)throw Error('Quality export timed out: '+JSON.stringify({legacy,status:document.getElementById('status')?.textContent,exportStatus:document.getElementById('exportStatus')?.textContent,exportDisabled:document.getElementById('exportRun')?.disabled,diagnostics:legacy?window.__illustroPerformance.read():document.getElementById('stage')?.dataset}));
     const image=legacy?await createImageBitmap(blob):await createImageBitmap(await(await fetch(JSON.parse(native).layers[0].png)).blob()),w=image.width,h=image.height;
     const c=new OffscreenCanvas(w,h),ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);image.close();const data=ctx.getImageData(0,0,w,h).data,bits=new Uint8Array(Math.ceil(w*h/8));
     let occupied=0,alphaSum=0,left=w,top=h,right=-1,bottom=-1;const colors=new Map();

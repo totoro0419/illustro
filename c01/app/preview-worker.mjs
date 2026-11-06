@@ -20,7 +20,7 @@ function warmPresentation(target){
 }
 function snapshotGroup(group){
  if(!group.canvas){group.canvas=new OffscreenCanvas(group.w,group.h);group.context=group.canvas.getContext('2d',{alpha:false});}
- warmPresentation(group.context);group.context.putImageData(new ImageData(group.data,group.w,group.h),0,0);
+ warmPresentation(group.context);group.context.putImageData(new ImageData(group.stagingData||group.data,group.w,group.h),0,0);
  return createImageBitmap(group.canvas);
 }
 let initialSurfaceReady=false;
@@ -47,15 +47,20 @@ function prepareGroups(pictures){
  }
  const presentations=[];
  for(const key of affected){
-  const group=groupFor(key),data=backgroundPixels(group);let damage=null;
+  const group=groupFor(key);
+  // Keep the last ACKed opaque pixels. Reuse a second buffer, patch only new
+  // core intersections, and swap after acceptance. Rejected/obsolete packets
+  // never become the source of a later gutter (including translucent erasing).
+  group.stagingData??=new Uint8ClampedArray(group.data.length);
+  const data=group.stagingData;data.set(group.data);let damage=null;
   const left=Math.floor(group.x/tileSize),right=Math.floor((group.x+group.w-1)/tileSize),top=Math.floor(group.y/tileSize),bottom=Math.floor((group.y+group.h-1)/tileSize);
   for(let row=top;row<=bottom;row++)for(let col=left;col<=right;col++){
-   const k=row*columns+col,core=updates.get(k)||visibleCores.get(k);if(!core)continue;
+   const k=row*columns+col,core=updates.get(k)||(group.fresh?visibleCores.get(k):null);if(!core)continue;
    const part=intersection(group,core.box);if(!part)continue;
    for(let y=0;y<part.h;y++){const src=((part.y-core.box.y+y)*core.box.w+part.x-core.box.x)*4,dst=((part.y-group.y+y)*group.w+part.x-group.x)*4;data.set(core.data.subarray(src,src+part.w*4),dst)}
    if(updates.has(k)){if(!damage)damage={...part};else{const x=Math.min(damage.x,part.x),y=Math.min(damage.y,part.y);damage={x,y,w:Math.max(damage.x+damage.w,part.x+part.w)-x,h:Math.max(damage.y+damage.h,part.y+part.h)-y}}}
   }
-  group.data=data;group.damage=damage;presentations.push(group);
+  group.damage=damage;presentations.push(group);
  }
  return {updates,presentations};
 }
@@ -171,7 +176,9 @@ self.onmessage=({data:m})=>{
    const accepted=m.accepted&&inflight.generation===generation;
    if(accepted){
     const started=performance.now();lastPublishedAt=started;let submittedPixels=0;
-    if(directMode)for(const group of inflight.presentations||[]){
+    for(const group of inflight.presentations||[]){
+     [group.data,group.stagingData]=[group.stagingData,group.data];
+     if(!directMode){group.fresh=false;continue}
      if(!group.context)throw Error('Display surface was not registered before ACK');
      const d=group.fresh?{x:group.x,y:group.y,w:group.w,h:group.h}:group.damage;if(d){group.context.putImageData(new ImageData(group.data,group.w,group.h),0,0,d.x-group.x,d.y-group.y,d.w,d.h);submittedPixels+=d.w*d.h}group.fresh=false;
     }

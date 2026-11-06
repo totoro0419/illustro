@@ -12,10 +12,24 @@ const dirty=new Map();
 let navigation=false,releaseNavigation=[];
 const maxHistoryBytes=192*1024*1024;
 
+// All formal stages yield, including tile finalization/composite/readback. A
+// navigation message cannot interrupt a Canvas call, so check between calls.
+function workSlice(msg){
+ let deadline=performance.now()+3;
+ return async(force=false)=>{
+  if(force||navigation||performance.now()>=deadline){
+   await new Promise(resolve=>setTimeout(resolve,0));
+   while(navigation&&msg.epoch===latestEpoch)await new Promise(resolve=>releaseNavigation.push(resolve));
+   deadline=performance.now()+3;
+  }
+  return msg.epoch===latestEpoch;
+ };
+}
 async function emitFrame(msg,stats){
  if(msg.epoch!==latestEpoch)return;
- const pictures=[];
+ const pictures=[],cooperate=workSlice(msg);
  for(const key of dirty.keys()){
+  if(!await cooperate())return;
   const box=tileBox(key,canvas.width,canvas.height);
   pictures.push({key,box,image:ctx.getImageData(box.x,box.y,box.w,box.h)});
  }
@@ -36,7 +50,11 @@ async function rasterInk(stroke,msg){
    }
   }
  }
- for(const key of ink.tiles.keys())ink.finishTile(key);
+ const finish=workSlice(msg);
+ for(const key of ink.tiles.keys()){
+  if(!await finish())return null;
+  ink.finishTile(key);
+ }
  return {ink,stamps,maxSliceMs:Math.max(maxSliceMs,performance.now()-started),pausedMs};
 }
 async function applyStroke(stroke,seq,msg){
@@ -46,9 +64,10 @@ async function applyStroke(stroke,seq,msg){
  const size=[...ink.tiles.values()].reduce((sum,tile)=>sum+tile.width*tile.height*8,0);
  const retained=historyBytes-actions.slice(index).reduce((sum,entry)=>sum+entry.bytes,0);
  if(retained+size>maxHistoryBytes) throw Error('履歴のメモリ上限に達しました。作品を開き直すと履歴をリセットできます');
- const patches=[];
+ const patches=[],cooperate=workSlice(msg);
  try{
   for(const [key,tile] of ink.tiles){
+   if(!await cooperate())return null;
    const box=tileBox(key,width,height);
    const before=ctx.getImageData(box.x,box.y,box.w,box.h);
    const patch={key,box,before,after:null};
@@ -102,8 +121,10 @@ async function execute(msg){
   return;
  }
  if(msg.type==='undo'||msg.type==='redo'){
+  const cooperate=workSlice(msg);
   const entry=msg.type==='undo'?(index?actions[--index]:null):(index<actions.length?actions[index++]:null);
   for(const {key,box,before,after} of entry?.patches||[]){
+   if(!await cooperate())return;
    ctx.putImageData(msg.type==='undo'?before:after,box.x,box.y);dirty.set(key,msg.seq);
   }
   await emitFrame(msg);
