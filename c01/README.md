@@ -4,9 +4,11 @@ C01の製品アプリと同じソースディレクトリを更新する積み�
 
 製品オーナーはC01の終了とC02への進行を承認済みです。PR #10は積み上げ先です。Android実機のペン直後タッチ停止、AUD-008/016/017/019の人による試験は引き継ぎです。
 
+**性能P0の修正評価中。C02の正式完了・C03への進行は保留です。** 仮線を別Workerへ移し、Viewを保持画像のCSS変換へ分離しました。[原因・実装・比較値・未達条件・実機手順](PERFORMANCE_REPAIR.md)を参照してください。
+
 ## 検査
 
-`npm install && npm run check` で構文、モデルの型、単体試験、静的ビルドを実行します。
+`npm ci && npm run check` で構文、モデルの型、単体試験、静的ビルドを実行します。
 `npx playwright install chromium && npm run browser:test` はC01回帰と合成ペン入力試験です。
 
 ## 初期実装の範囲と残件
@@ -34,7 +36,7 @@ C01の製品アプリと同じソースディレクトリを更新する積み�
 
 設計のEMA、区分線形カーブ、SHA-256カウンター、弧長間隔は共通モジュールで実装しました。正式ラスタは独自版 `illustro.canvas-dabs.1` としてCanvas 2Dの被覆・合成を用います。Stage IIIの8×8 AAとlinear premultipliedの受入を満たすことは確認できていません。終端依存・粒子・一部の変調はライブプレビューと確定で差が出ます。正式結果を置くときは、同じ表示更新で対応するプレビューを除去します。
 
-C01のWorkerとCanvas 2Dを維持し、128pxタイルでUndo差分を保持します。Workerの表示転送は未反映タイルの外接矩形です。表示側の受領通知まで変更範囲を保持します。テクスチャ・先端素材を再利用します。Undo差分の上限は192 MiB、正式スタンプは一筆25万件です。GPU置換、CPU/GPUハイブリッドの実測比較は未実施です。非常に大きな反復先端、散布、長時間ストロークではWorkerの処理や転送が増加します。
+正式画像は元のCanvas 2D演算を維持し、独立した仮線Workerが低負荷なCPU被覆と合成を担当します。128px差分と512px保持表示を分け、Viewは親シーンだけを変換します。Undo差分の上限192 MiB、正式スタンプ一筆25万件は維持しています。方式比較と残存条件は[性能修正記録](PERFORMANCE_REPAIR.md)にまとめました。
 
 参考資料は ibisPaint の[補正と入り抜き](https://ibispaint.com/lecture/index.jsp?no=50)、Krita の[Pixel Brush Engine](https://docs.krita.org/en/reference_manual/brushes/brush_engines/pixel_brush_engine.html)、libmypaint の[ブラシ入力定義](https://github.com/mypaint/libmypaint/blob/master/brushsettings.json)です。プリセットと入力変調の構成を比較し、コード・外部テクスチャ素材の取り込みは行っていません。
 

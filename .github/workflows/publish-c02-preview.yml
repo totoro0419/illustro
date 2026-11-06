@@ -67,6 +67,11 @@ jobs:
           test "$current" = "$GITHUB_SHA"
           curl -fsSL "$url/c01/" -o /tmp/illustro-c01.html
           grep -q 'Illustro · C01' /tmp/illustro-c01.html
+          for file in c01/app/*.mjs c01/app/*.css; do
+            name=${file##*/}
+            curl -fsSL "$url/c02/app/$name?rev=$GITHUB_SHA" -o "/tmp/live-$name"
+            cmp "$file" "/tmp/live-$name"
+          done
       - run: npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
         working-directory: c01
       - run: node test/live-test.mjs

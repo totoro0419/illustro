@@ -1,0 +1,2227 @@
+{
+  "recordedAt": "2026-11-06T00:16:05.832Z",
+  "inputPath": "Same normalized document-space centreline; preset algorithms and UI viewport sizes differ. Coalesced subpixel offsets are CSS-space.",
+  "runOptions": {
+    "presentation": "auto",
+    "styleAblation": null,
+    "disableAccelerated2D": false
+  },
+  "scope": "Chromium synthetic pen/touch, same host; next rAF and Canvas submission proxies, no physical scanout. Legacy WebGL2 is software SwiftShader; Canvas2D is a different algorithm.",
+  "browser": "141.0.7390.37",
+  "unmeasured": [
+    "physical input/scanout",
+    "GC pause duration",
+    "whole-process memory",
+    "GPU execution time"
+  ],
+  "executionPassed": false,
+  "performanceGate": "FAIL / P0 OPEN",
+  "sourceCommits": {
+    "legacy": "884285a3364184bde3f0893f260e966a310fb67f",
+    "before": "4a002dd4dde701579ce0cc0c9bb7bb9da96807f0",
+    "after": "85175fb4e5c01ae6be6a804ebc5db45e21db23cb"
+  },
+  "measurementNote": "Same host / Chromium / SwiftShader / document centreline. Legacy and before came from the first browser process; final after was rerun in a fresh process. Presets, AA and UI viewport differ; no equal-quality claim. Legacy 100 attempted / 86 committed is not equal-work throughput.",
+  "nonInferiority": {
+    "passed": false,
+    "reason": "Final thin View max 191.9 ms vs legacy 93.6; texture max 42.1 vs 21.3. Do not approve C02 from p95 alone. Physical devices remain untested."
+  },
+  "afterExecutionPassed": true,
+  "rawSHA256": "a016cb58f0ae6c050f27dfbb073565a4d82bf254e5f01bbe16af4e76193dc689",
+  "rawFile": "performance-final.json.gz",
+  "cases": [
+    {
+      "version": "legacy",
+      "scenario": {
+        "name": "thin",
+        "size": 10,
+        "brush": "gpen",
+        "width": 640,
+        "height": 480,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 2311.399999999907,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 68,
+        "y": 182,
+        "width": 1032,
+        "height": 638
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.10000000009313226,
+        "p95": 0.5,
+        "p99": 1.0999999998603016,
+        "max": 10.5
+      },
+      "frameMs": {
+        "n": 427,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.800000000000182,
+        "max": 66.70000000000027
+      },
+      "frameDeliveryMs": {
+        "n": 427,
+        "p50": 16.699999999953434,
+        "p95": 20,
+        "p99": 22.800000000046566,
+        "max": 93.70000000018626
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.600000000093132,
+        "p95": 18.9000000001397,
+        "p99": 23.800000000046566,
+        "max": 93.60000000009313
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 300.80000000004657,
+        "p95": 522.9000000001397,
+        "p99": 522.9000000001397,
+        "max": 522.9000000001397
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "Gペン",
+      "errors": [],
+      "workerLastJob": {
+        "revision": "a5c56bfb-6370-45f1-8ea6-277e862ead31",
+        "strokes": 10,
+        "viewTransforms": 240,
+        "viewTransformP95Ms": null,
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": 115.80000000004657,
+        "inputToPreviewCompletionP95Ms": 175.5,
+        "presentations": 96,
+        "viewPresentations": 1,
+        "renders": 97,
+        "compositedTiles": 98,
+        "compositedLayerPasses": 94,
+        "supersededViews": 0,
+        "submissionFps": 13.080895008605852,
+        "frameIntervalP95Ms": 227.29999999981374,
+        "inputToSubmissionP95Ms": 1.1999999999534339,
+        "cpuSubmitP95Ms": 10.099999999860302,
+        "queueCompletionProxyMs": 4.600000000093132,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 2752512,
+        "historyGpuBudgetBytes": 67108864,
+        "historyBaseReuses": 0,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 10,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 6,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewBudgetBytes": 268435456,
+        "previewPressure": false,
+        "previewDeferredFrames": 0,
+        "previewPoolBytes": 3604480,
+        "peakPreviewBytes": 3604480,
+        "viewportCacheBytes": 0,
+        "viewportCacheBudgetBytes": 33554432,
+        "screenShadedPixels": 0,
+        "screenCopiedPixels": 0,
+        "screenCacheHits": 0,
+        "formalJobs": 0,
+        "formalBatchLimit": 8,
+        "formalSubmitCpuMs": 4,
+        "formalCommands": 0,
+        "formalCommandsPruned": 0,
+        "execution": "document-tile-worker",
+        "viewComputeP95Ms": 0,
+        "retainedDocumentTiles": 1,
+        "retainedDocumentGroups": 1,
+        "deferredStrokePictures": 0,
+        "retainedDocumentBytes": 983040,
+        "strokeReplayFallbacks": 0,
+        "fullDocumentRebuilds": 0,
+        "fullReplayStrokes": 0,
+        "cancelledStrokeCount": 0,
+        "projectionRestoreMode": "replay-fallback"
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "legacy",
+      "scenario": {
+        "name": "pencil",
+        "size": 32,
+        "brush": "pencil",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 954.3999999999069,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 68,
+        "y": 182,
+        "width": 1032,
+        "height": 638
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.10000000009313226,
+        "p95": 0.5999999998603016,
+        "p99": 1.1999999999534339,
+        "max": 8.5
+      },
+      "frameMs": {
+        "n": 375,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999272,
+        "p99": 16.800000000000182,
+        "max": 16.800000000000182
+      },
+      "frameDeliveryMs": {
+        "n": 375,
+        "p50": 16.699999999953434,
+        "p95": 19.199999999953434,
+        "p99": 20.200000000186265,
+        "max": 20.600000000093132
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.600000000093132,
+        "p95": 18.699999999953434,
+        "p99": 19.600000000093132,
+        "max": 20.199999999953434
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 224.80000000004657,
+        "p95": 282.0999999998603,
+        "p99": 282.0999999998603,
+        "max": 282.0999999998603
+      },
+      "finalDrainMs": 0.10000000009313226,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "鉛筆",
+      "errors": [],
+      "workerLastJob": {
+        "revision": "c4b3ad8f-14ac-4a98-8e7f-e12f5352c87a",
+        "strokes": 10,
+        "viewTransforms": 240,
+        "viewTransformP95Ms": null,
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": 107.19999999995343,
+        "inputToPreviewCompletionP95Ms": 140.19999999995343,
+        "presentations": 113,
+        "viewPresentations": 1,
+        "renders": 114,
+        "compositedTiles": 132,
+        "compositedLayerPasses": 132,
+        "supersededViews": 0,
+        "submissionFps": 17.63196423230087,
+        "frameIntervalP95Ms": 133.30000000004657,
+        "inputToSubmissionP95Ms": 1.1999999999534339,
+        "cpuSubmitP95Ms": 9.199999999953434,
+        "queueCompletionProxyMs": 7.899999999906868,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 5636096,
+        "historyGpuBudgetBytes": 67108864,
+        "historyBaseReuses": 0,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 10,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 11,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewBudgetBytes": 268435456,
+        "previewPressure": false,
+        "previewDeferredFrames": 0,
+        "previewPoolBytes": 2883584,
+        "peakPreviewBytes": 2883584,
+        "viewportCacheBytes": 0,
+        "viewportCacheBudgetBytes": 33554432,
+        "screenShadedPixels": 0,
+        "screenCopiedPixels": 0,
+        "screenCacheHits": 0,
+        "formalJobs": 0,
+        "formalBatchLimit": 10,
+        "formalSubmitCpuMs": 1.8000000000465661,
+        "formalCommands": 0,
+        "formalCommandsPruned": 0,
+        "execution": "document-tile-worker",
+        "viewComputeP95Ms": 0,
+        "retainedDocumentTiles": 3,
+        "retainedDocumentGroups": 3,
+        "deferredStrokePictures": 1,
+        "retainedDocumentBytes": 3145728,
+        "strokeReplayFallbacks": 0,
+        "fullDocumentRebuilds": 0,
+        "fullReplayStrokes": 0,
+        "cancelledStrokeCount": 0,
+        "projectionRestoreMode": "replay-fallback"
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "legacy",
+      "scenario": {
+        "name": "broad",
+        "size": 300,
+        "brush": "gpen",
+        "width": 2560,
+        "height": 1920,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 921.4000000001397,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 68,
+        "y": 182,
+        "width": 1032,
+        "height": 638
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.10000000009313226,
+        "p95": 0.6000000000931323,
+        "p99": 1.8000000000465661,
+        "max": 11.300000000046566
+      },
+      "frameMs": {
+        "n": 764,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.80000000000109,
+        "max": 66.79999999999973
+      },
+      "frameDeliveryMs": {
+        "n": 764,
+        "p50": 16.699999999953434,
+        "p95": 20,
+        "p99": 28.199999999953434,
+        "max": 81.79999999981374
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.699999999953434,
+        "p95": 21.100000000093132,
+        "p99": 29.4000000001397,
+        "max": 32
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 878.6000000000931,
+        "p95": 1057.3000000000466,
+        "p99": 1057.3000000000466,
+        "max": 1057.3000000000466
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "Gペン",
+      "errors": [],
+      "workerLastJob": {
+        "revision": "1c7953ca-b99d-4711-9985-7e05783965a4",
+        "strokes": 10,
+        "viewTransforms": 240,
+        "viewTransformP95Ms": null,
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": 71,
+        "inputToPreviewCompletionP95Ms": 163.5,
+        "presentations": 243,
+        "viewPresentations": 1,
+        "renders": 244,
+        "compositedTiles": 1830,
+        "compositedLayerPasses": 1730,
+        "supersededViews": 0,
+        "submissionFps": 19.341107541413656,
+        "frameIntervalP95Ms": 296.80000000004657,
+        "inputToSubmissionP95Ms": null,
+        "cpuSubmitP95Ms": 14.699999999953434,
+        "queueCompletionProxyMs": 33.89999999990687,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 24444928,
+        "historyGpuBudgetBytes": 67108864,
+        "historyBaseReuses": 0,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 10,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 39,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewBudgetBytes": 268435456,
+        "previewPressure": false,
+        "previewDeferredFrames": 0,
+        "previewPoolBytes": 16711680,
+        "peakPreviewBytes": 25886720,
+        "viewportCacheBytes": 0,
+        "viewportCacheBudgetBytes": 33554432,
+        "screenShadedPixels": 0,
+        "screenCopiedPixels": 0,
+        "screenCacheHits": 0,
+        "formalJobs": 0,
+        "formalBatchLimit": 16,
+        "formalSubmitCpuMs": 1.6999999999534339,
+        "formalCommands": 0,
+        "formalCommandsPruned": 0,
+        "execution": "document-tile-worker",
+        "viewComputeP95Ms": 0,
+        "retainedDocumentTiles": 8,
+        "retainedDocumentGroups": 8,
+        "deferredStrokePictures": 0,
+        "retainedDocumentBytes": 8388608,
+        "strokeReplayFallbacks": 0,
+        "fullDocumentRebuilds": 0,
+        "fullReplayStrokes": 0,
+        "cancelledStrokeCount": 0,
+        "projectionRestoreMode": "replay-fallback"
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "legacy",
+      "scenario": {
+        "name": "marker",
+        "size": 200,
+        "brush": "marker",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 889,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 68,
+        "y": 182,
+        "width": 1032,
+        "height": 638
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.10000000009313226,
+        "p95": 0.5999999998603016,
+        "p99": 1.1999999999534339,
+        "max": 7.7000000001862645
+      },
+      "frameMs": {
+        "n": 539,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.800000000000182,
+        "max": 16.80000000000109
+      },
+      "frameDeliveryMs": {
+        "n": 539,
+        "p50": 16.699999999953434,
+        "p95": 19.5,
+        "p99": 22.100000000093132,
+        "max": 40.10000000009313
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.699999999953434,
+        "p95": 19.5,
+        "p99": 21.800000000046566,
+        "max": 23.699999999953434
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 477.5,
+        "p95": 653.8999999999069,
+        "p99": 653.8999999999069,
+        "max": 653.8999999999069
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "マーカー",
+      "errors": [],
+      "workerLastJob": {
+        "revision": "668b4820-66f9-407b-961f-dca00eda99d8",
+        "strokes": 10,
+        "viewTransforms": 240,
+        "viewTransformP95Ms": null,
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": 53.300000000046566,
+        "inputToPreviewCompletionP95Ms": 127.60000000009313,
+        "presentations": 157,
+        "viewPresentations": 1,
+        "renders": 158,
+        "compositedTiles": 697,
+        "compositedLayerPasses": 697,
+        "supersededViews": 0,
+        "submissionFps": 17.150395778364118,
+        "frameIntervalP95Ms": 220.89999999990687,
+        "inputToSubmissionP95Ms": 1.2000000001862645,
+        "cpuSubmitP95Ms": 11.100000000093132,
+        "queueCompletionProxyMs": 32.89999999990687,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 15990784,
+        "historyGpuBudgetBytes": 67108864,
+        "historyBaseReuses": 0,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 10,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 25,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewBudgetBytes": 268435456,
+        "previewPressure": false,
+        "previewDeferredFrames": 0,
+        "previewPoolBytes": 8192000,
+        "peakPreviewBytes": 8192000,
+        "viewportCacheBytes": 0,
+        "viewportCacheBudgetBytes": 33554432,
+        "screenShadedPixels": 0,
+        "screenCopiedPixels": 0,
+        "screenCacheHits": 0,
+        "formalJobs": 0,
+        "formalBatchLimit": 16,
+        "formalSubmitCpuMs": 12.699999999953434,
+        "formalCommands": 0,
+        "formalCommandsPruned": 0,
+        "execution": "document-tile-worker",
+        "viewComputeP95Ms": 0,
+        "retainedDocumentTiles": 6,
+        "retainedDocumentGroups": 6,
+        "deferredStrokePictures": 0,
+        "retainedDocumentBytes": 6291456,
+        "strokeReplayFallbacks": 0,
+        "fullDocumentRebuilds": 0,
+        "fullReplayStrokes": 0,
+        "cancelledStrokeCount": 0,
+        "projectionRestoreMode": "replay-fallback"
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "legacy",
+      "scenario": {
+        "name": "texture",
+        "size": 300,
+        "brush": "pencil",
+        "width": 2560,
+        "height": 1920,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 946.7000000001863,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 68,
+        "y": 182,
+        "width": 1032,
+        "height": 638
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.10000000009313226,
+        "p95": 0.5,
+        "p99": 1.2999999998137355,
+        "max": 4.600000000093132
+      },
+      "frameMs": {
+        "n": 828,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999272,
+        "p99": 16.80000000000109,
+        "max": 33.30000000000018
+      },
+      "frameDeliveryMs": {
+        "n": 828,
+        "p50": 16.699999999953434,
+        "p95": 20.199999999953434,
+        "p99": 22.200000000186265,
+        "max": 41.5
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.600000000093132,
+        "p95": 19.9000000001397,
+        "p99": 21.0999999998603,
+        "max": 21.300000000046566
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 1012.2999999998137,
+        "p95": 1122.4000000001397,
+        "p99": 1122.4000000001397,
+        "max": 1122.4000000001397
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "鉛筆",
+      "errors": [],
+      "workerLastJob": {
+        "revision": "54bb3e02-ff65-41e4-b2e9-1a054ac76328",
+        "strokes": 10,
+        "viewTransforms": 240,
+        "viewTransformP95Ms": null,
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": 105.29999999981374,
+        "inputToPreviewCompletionP95Ms": 165.29999999981374,
+        "presentations": 234,
+        "viewPresentations": 1,
+        "renders": 235,
+        "compositedTiles": 1168,
+        "compositedLayerPasses": 1168,
+        "supersededViews": 0,
+        "submissionFps": 16.727330160165923,
+        "frameIntervalP95Ms": 219.9000000001397,
+        "inputToSubmissionP95Ms": 1,
+        "cpuSubmitP95Ms": 14.5,
+        "queueCompletionProxyMs": 28.5999999998603,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 26345472,
+        "historyGpuBudgetBytes": 67108864,
+        "historyBaseReuses": 0,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 10,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 42,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewBudgetBytes": 268435456,
+        "previewPressure": false,
+        "previewDeferredFrames": 0,
+        "previewPoolBytes": 11010048,
+        "peakPreviewBytes": 11010048,
+        "viewportCacheBytes": 0,
+        "viewportCacheBudgetBytes": 33554432,
+        "screenShadedPixels": 0,
+        "screenCopiedPixels": 0,
+        "screenCacheHits": 0,
+        "formalJobs": 0,
+        "formalBatchLimit": 38,
+        "formalSubmitCpuMs": 5.7000000001862645,
+        "formalCommands": 0,
+        "formalCommandsPruned": 0,
+        "execution": "document-tile-worker",
+        "viewComputeP95Ms": 0,
+        "retainedDocumentTiles": 6,
+        "retainedDocumentGroups": 6,
+        "deferredStrokePictures": 0,
+        "retainedDocumentBytes": 6291456,
+        "strokeReplayFallbacks": 0,
+        "fullDocumentRebuilds": 0,
+        "fullReplayStrokes": 0,
+        "cancelledStrokeCount": 0,
+        "projectionRestoreMode": "replay-fallback"
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "legacy",
+      "scenario": {
+        "name": "fifty",
+        "size": 78,
+        "brush": "gpen",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 50
+      },
+      "measurementStartedAtMs": 938.8999999999069,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 68,
+        "y": 182,
+        "width": 1032,
+        "height": 638
+      },
+      "handlerMs": {
+        "n": 3100,
+        "p50": 0.10000000009313226,
+        "p95": 0.5,
+        "p99": 1.1000000000931323,
+        "max": 14.899999999906868
+      },
+      "frameMs": {
+        "n": 1696,
+        "p50": 16.699999999999818,
+        "p95": 33.400000000001455,
+        "p99": 116.69999999999709,
+        "max": 216.70000000000073
+      },
+      "frameDeliveryMs": {
+        "n": 1696,
+        "p50": 16.700000000186265,
+        "p95": 40.9000000001397,
+        "p99": 117,
+        "max": 229.10000000009313
+      },
+      "viewNextRafMs": {
+        "n": 800,
+        "p50": 16.9000000001397,
+        "p95": 57.4000000001397,
+        "p99": 152.19999999995343,
+        "max": 229.10000000009313
+      },
+      "postNavigationDrainMs": {
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "finalDrainMs": 9852.399999999907,
+      "maxPending": 50,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "Gペン",
+      "errors": [],
+      "workerLastJob": {
+        "revision": "3f08c70c-8229-4a40-969a-2161c41bf46e",
+        "strokes": 50,
+        "viewTransforms": 240,
+        "viewTransformP95Ms": null,
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": 516,
+        "inputToPreviewCompletionP95Ms": 1593.6999999999534,
+        "presentations": 153,
+        "viewPresentations": 1,
+        "renders": 154,
+        "compositedTiles": 838,
+        "compositedLayerPasses": 828,
+        "supersededViews": 0,
+        "submissionFps": 4.199057422110236,
+        "frameIntervalP95Ms": 972.2000000001863,
+        "inputToSubmissionP95Ms": 1,
+        "cpuSubmitP95Ms": 507.60000000009313,
+        "queueCompletionProxyMs": 15.399999999906868,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 32768000,
+        "historyGpuBudgetBytes": 67108864,
+        "historyBaseReuses": 0,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 50,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 10,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewBudgetBytes": 268435456,
+        "previewPressure": false,
+        "previewDeferredFrames": 0,
+        "previewPoolBytes": 16711680,
+        "peakPreviewBytes": 134348800,
+        "viewportCacheBytes": 0,
+        "viewportCacheBudgetBytes": 33554432,
+        "screenShadedPixels": 0,
+        "screenCopiedPixels": 0,
+        "screenCacheHits": 0,
+        "formalJobs": 0,
+        "formalBatchLimit": 4,
+        "formalSubmitCpuMs": 4.699999999953434,
+        "formalCommands": 0,
+        "formalCommandsPruned": 0,
+        "execution": "document-tile-worker",
+        "viewComputeP95Ms": 0,
+        "retainedDocumentTiles": 4,
+        "retainedDocumentGroups": 4,
+        "deferredStrokePictures": 0,
+        "retainedDocumentBytes": 4194304,
+        "strokeReplayFallbacks": 0,
+        "fullDocumentRebuilds": 0,
+        "fullReplayStrokes": 0,
+        "cancelledStrokeCount": 0,
+        "projectionRestoreMode": "replay-fallback"
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "legacy",
+      "scenario": {
+        "name": "hundred",
+        "size": 12,
+        "brush": "gpen",
+        "width": 640,
+        "height": 480,
+        "strokes": 100
+      },
+      "measurementStartedAtMs": 909.0999999998603,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 68,
+        "y": 182,
+        "width": 1032,
+        "height": 638
+      },
+      "handlerMs": {
+        "n": 6200,
+        "p50": 0.10000000009313226,
+        "p95": 0.5,
+        "p99": 1.5,
+        "max": 20.5999999998603
+      },
+      "frameMs": {
+        "n": 2425,
+        "p50": 16.70000000001164,
+        "p95": 233.3000000000029,
+        "p99": 300,
+        "max": 583.3999999999942
+      },
+      "frameDeliveryMs": {
+        "n": 2425,
+        "p50": 21,
+        "p95": 230.9000000001397,
+        "p99": 296.19999999995343,
+        "max": 590.1999999999534
+      },
+      "viewNextRafMs": {
+        "n": 1600,
+        "p50": 32.39999999990687,
+        "p95": 238.19999999995343,
+        "p99": 305.30000000004657,
+        "max": 496.4000000001397
+      },
+      "postNavigationDrainMs": {
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "finalDrainMs": 7103.800000000047,
+      "maxPending": 64,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "Gペン",
+      "errors": [
+        "Legacy did not commit every requested stroke: 86"
+      ],
+      "workerLastJob": {
+        "revision": "eed26588-3fea-4ce9-a6a7-3f627ca8eafd",
+        "strokes": 86,
+        "viewTransforms": 240,
+        "viewTransformP95Ms": null,
+        "scope": "submission-proxy; physical scanout and GPU execution time unmeasured",
+        "inputToPreviewSubmitP95Ms": 2079.7999999998137,
+        "inputToPreviewCompletionP95Ms": 6959.59999999986,
+        "presentations": 218,
+        "viewPresentations": 1,
+        "renders": 219,
+        "compositedTiles": 548,
+        "compositedLayerPasses": 548,
+        "supersededViews": 0,
+        "submissionFps": 1.4597577743873722,
+        "frameIntervalP95Ms": 1773.3999999999069,
+        "inputToSubmissionP95Ms": 1,
+        "cpuSubmitP95Ms": 645.1999999999534,
+        "queueCompletionProxyMs": 9.900000000139698,
+        "gpuExecutionMs": null,
+        "historyGpuReservedBytes": 26214400,
+        "historyGpuBudgetBytes": 67108864,
+        "historyBaseReuses": 0,
+        "historySupersededGpuJobs": 0,
+        "historySupersededGpuCommands": 0,
+        "historyCachedStrokes": 86,
+        "historyRetirementPeakBytes": 0,
+        "historyRetiredPendingBytes": 0,
+        "occupiedGpuTiles": 6,
+        "minificationBytes": 0,
+        "minificationUpdates": 0,
+        "previewBytes": 0,
+        "previewBudgetBytes": 268435456,
+        "previewPressure": false,
+        "previewDeferredFrames": 0,
+        "previewPoolBytes": 16711680,
+        "peakPreviewBytes": 91095040,
+        "viewportCacheBytes": 0,
+        "viewportCacheBudgetBytes": 33554432,
+        "screenShadedPixels": 0,
+        "screenCopiedPixels": 0,
+        "screenCacheHits": 0,
+        "formalJobs": 0,
+        "formalBatchLimit": 4,
+        "formalSubmitCpuMs": 4.5,
+        "formalCommands": 0,
+        "formalCommandsPruned": 0,
+        "execution": "document-tile-worker",
+        "viewComputeP95Ms": 0,
+        "retainedDocumentTiles": 1,
+        "retainedDocumentGroups": 1,
+        "deferredStrokePictures": 0,
+        "retainedDocumentBytes": 983040,
+        "strokeReplayFallbacks": 0,
+        "fullDocumentRebuilds": 0,
+        "fullReplayStrokes": 0,
+        "cancelledStrokeCount": 0,
+        "projectionRestoreMode": "replay-fallback"
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "before",
+      "scenario": {
+        "name": "thin",
+        "size": 10,
+        "brush": "gpen",
+        "width": 640,
+        "height": 480,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 253.0999999998603,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.09999999986030161,
+        "p95": 0.5,
+        "p99": 0.6999999999534339,
+        "max": 1.5
+      },
+      "frameMs": {
+        "n": 185,
+        "p50": 50,
+        "p95": 133.30000000000018,
+        "p99": 233.39999999999998,
+        "max": 316.7
+      },
+      "frameDeliveryMs": {
+        "n": 185,
+        "p50": 52.4000000001397,
+        "p95": 129.5,
+        "p99": 240.70000000018626,
+        "max": 320.89999999990687
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 50.5,
+        "p95": 128.39999999990687,
+        "p99": 152.80000000004657,
+        "max": 238.80000000004657
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 0,
+        "p95": 0.10000000009313226,
+        "p99": 0.10000000009313226,
+        "max": 0.10000000009313226
+      },
+      "finalDrainMs": 0.09999999986030161,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 1,
+        "total": 115,
+        "max": 115
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(1.01475, 0, 0, 1.01475, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "gpen",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 400,
+        "tiles": 3,
+        "historyBytes": 5373952,
+        "workerMs": 218,
+        "formalMs": 218.69999999995343
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "before",
+      "scenario": {
+        "name": "pencil",
+        "size": 32,
+        "brush": "pencil",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 236.5,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.09999999986030161,
+        "p95": 0.5,
+        "p99": 0.6999999999534339,
+        "max": 11.899999999906868
+      },
+      "frameMs": {
+        "n": 187,
+        "p50": 50.09999999999991,
+        "p95": 200,
+        "p99": 300,
+        "max": 316.7000000000003
+      },
+      "frameDeliveryMs": {
+        "n": 187,
+        "p50": 56.300000000046566,
+        "p95": 204.69999999995343,
+        "p99": 299.39999999990687,
+        "max": 305.10000000009313
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 55.699999999953434,
+        "p95": 197.19999999995343,
+        "p99": 296,
+        "max": 304
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 0,
+        "p95": 0.09999999986030161,
+        "p99": 0.09999999986030161,
+        "max": 0.09999999986030161
+      },
+      "finalDrainMs": 0.10000000009313226,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 1,
+        "total": 55,
+        "max": 55
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.4059, 0, 0, 0.4059, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "pencil",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 219,
+        "tiles": 9,
+        "historyBytes": 12976128,
+        "workerMs": 829.1000000000931,
+        "formalMs": 830.7999999998137
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "before",
+      "scenario": {
+        "name": "broad",
+        "size": 300,
+        "brush": "gpen",
+        "width": 2560,
+        "height": 1920,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 238.69999999995343,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.09999999986030161,
+        "p95": 0.5,
+        "p99": 0.8999999999068677,
+        "max": 2.7999999998137355
+      },
+      "frameMs": {
+        "n": 336,
+        "p50": 16.700000000000728,
+        "p95": 83.20000000000027,
+        "p99": 116.69999999999982,
+        "max": 250.00000000000006
+      },
+      "frameDeliveryMs": {
+        "n": 336,
+        "p50": 19.300000000046566,
+        "p95": 76.70000000018626,
+        "p99": 130.20000000018626,
+        "max": 251.5
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 51.699999999953434,
+        "p95": 105.10000000009313,
+        "p99": 203.19999999995343,
+        "max": 251.4000000001397
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 215,
+        "p95": 270,
+        "p99": 270,
+        "max": 270
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.253688, 0, 0, 0.253688, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "gpen",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 55,
+        "tiles": 36,
+        "historyBytes": 46399488,
+        "workerMs": 1042.5,
+        "formalMs": 1044.8000000000466
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "before",
+      "scenario": {
+        "name": "marker",
+        "size": 200,
+        "brush": "marker",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 232.0999999998603,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0,
+        "p95": 0.5,
+        "p99": 0.6999999999534339,
+        "max": 2.300000000046566
+      },
+      "frameMs": {
+        "n": 324,
+        "p50": 16.700000000000728,
+        "p95": 66.70000000000073,
+        "p99": 100.00000000000003,
+        "max": 133.3
+      },
+      "frameDeliveryMs": {
+        "n": 324,
+        "p50": 20.800000000046566,
+        "p95": 65.10000000009313,
+        "p99": 97.4000000001397,
+        "max": 140.69999999995343
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 52.10000000009313,
+        "p95": 68.19999999995343,
+        "p99": 109,
+        "max": 140.60000000009313
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 232.4000000001397,
+        "p95": 257.19999999995343,
+        "p99": 257.19999999995343,
+        "max": 257.19999999995343
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 1,
+        "total": 69,
+        "max": 69
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.4059, 0, 0, 0.4059, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "marker",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 36,
+        "tiles": 24,
+        "historyBytes": 30539776,
+        "workerMs": 930.1999999999534,
+        "formalMs": 934.1999999999534
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "before",
+      "scenario": {
+        "name": "texture",
+        "size": 300,
+        "brush": "pencil",
+        "width": 2560,
+        "height": 1920,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 234.80000000004657,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0.09999999986030161,
+        "p95": 0.5,
+        "p99": 0.8000000000465661,
+        "max": 4.300000000046566
+      },
+      "frameMs": {
+        "n": 317,
+        "p50": 49.899999999999636,
+        "p95": 133.29999999999973,
+        "p99": 366.60000000000036,
+        "max": 449.89999999999964
+      },
+      "frameDeliveryMs": {
+        "n": 317,
+        "p50": 45.699999999953434,
+        "p95": 131.30000000004657,
+        "p99": 373.5,
+        "max": 447.30000000004657
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 53.89999999990687,
+        "p95": 278.89999999990687,
+        "p99": 392.60000000009313,
+        "max": 446.20000000018626
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 236.60000000009313,
+        "p95": 277.0999999998603,
+        "p99": 277.0999999998603,
+        "max": 277.0999999998603
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 1,
+        "total": 66,
+        "max": 66
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.253688, 0, 0, 0.253688, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "pencil",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 39,
+        "tiles": 48,
+        "historyBytes": 62521344,
+        "workerMs": 1322.3000000000466,
+        "formalMs": 1325.6999999999534
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "before",
+      "scenario": {
+        "name": "fifty",
+        "size": 78,
+        "brush": "gpen",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 50
+      },
+      "measurementStartedAtMs": 291,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 3100,
+        "p50": 0,
+        "p95": 0.5,
+        "p99": 0.6000000000931323,
+        "max": 12
+      },
+      "frameMs": {
+        "n": 928,
+        "p50": 50,
+        "p95": 133.29999999999927,
+        "p99": 166.59999999999945,
+        "max": 316.70000000000437
+      },
+      "frameDeliveryMs": {
+        "n": 928,
+        "p50": 55.9000000001397,
+        "p95": 129.39999999990687,
+        "p99": 158.29999999981374,
+        "max": 313.60000000009313
+      },
+      "viewNextRafMs": {
+        "n": 800,
+        "p50": 53.800000000046566,
+        "p95": 133.29999999981374,
+        "p99": 157.69999999995343,
+        "max": 313.5
+      },
+      "postNavigationDrainMs": {
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "finalDrainMs": 0.10000000009313226,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.4059, 0, 0, 0.4059, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "gpen",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 129,
+        "tiles": 11,
+        "historyBytes": 79429632,
+        "workerMs": 750.5,
+        "formalMs": 754.0999999998603
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "before",
+      "scenario": {
+        "name": "hundred",
+        "size": 12,
+        "brush": "gpen",
+        "width": 640,
+        "height": 480,
+        "strokes": 100
+      },
+      "measurementStartedAtMs": 258.30000000004657,
+      "presentationInitializationMs": null,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 6200,
+        "p50": 0,
+        "p95": 0.5,
+        "p99": 0.6000000000931323,
+        "max": 8.599999999860302
+      },
+      "frameMs": {
+        "n": 1861,
+        "p50": 50,
+        "p95": 116.59999999999854,
+        "p99": 150,
+        "max": 483.2999999999993
+      },
+      "frameDeliveryMs": {
+        "n": 1861,
+        "p50": 52.10000000009313,
+        "p95": 112.9000000001397,
+        "p99": 144,
+        "max": 471.19999999995343
+      },
+      "viewNextRafMs": {
+        "n": 1600,
+        "p50": 49.800000000046566,
+        "p95": 116.20000000018626,
+        "p99": 144.30000000004657,
+        "max": 471.19999999995343
+      },
+      "postNavigationDrainMs": {
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "finalDrainMs": 0.10000000009313226,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(1.01475, 0, 0, 1.01475, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "gpen",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 334,
+        "tiles": 3,
+        "historyBytes": 59506688,
+        "workerMs": 219.5,
+        "formalMs": 220.4000000001397
+      },
+      "firstPreviewSubmissionMs": null,
+      "formalPublicationSubmissionMs": null,
+      "workerMs": null,
+      "previewComposeMs": null
+    },
+    {
+      "version": "after",
+      "scenario": {
+        "name": "thin",
+        "size": 10,
+        "brush": "gpen",
+        "width": 640,
+        "height": 480,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 1347.2000000001863,
+      "presentationInitializationMs": 1080.7000000001863,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0,
+        "p95": 0.20000000018626451,
+        "p99": 0.7999999998137355,
+        "max": 1.2000000001862645
+      },
+      "frameMs": {
+        "n": 263,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "max": 183.30000000000018
+      },
+      "frameDeliveryMs": {
+        "n": 263,
+        "p50": 16.699999999720603,
+        "p95": 18.200000000186265,
+        "p99": 29.40000000037253,
+        "max": 191.89999999990687
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.600000000093132,
+        "p95": 18.100000000093132,
+        "p99": 20.5,
+        "max": 191.90000000037253
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 32,
+        "p95": 52.1999999997206,
+        "p99": 52.1999999997206,
+        "max": 52.1999999997206
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(1.01475, 0, 0, 1.01475, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "gpen",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 400,
+        "tiles": 3,
+        "historyBytes": 5373952,
+        "maxSliceMs": 3,
+        "pausedMs": 0,
+        "workerMs": 8.199999999720603
+      },
+      "firstPreviewSubmissionMs": {
+        "n": 10,
+        "p50": 6.5,
+        "p95": 38.300048828125,
+        "p99": 38.300048828125,
+        "max": 38.300048828125
+      },
+      "formalPublicationSubmissionMs": {
+        "n": 10,
+        "p50": 301.099853515625,
+        "p95": 457.5,
+        "p99": 457.5,
+        "max": 457.5
+      },
+      "workerMs": {
+        "n": 10,
+        "p50": 11.5,
+        "p95": 20.100000000093132,
+        "p99": 20.100000000093132,
+        "max": 20.100000000093132
+      },
+      "previewComposeMs": {
+        "n": 83,
+        "p50": 2.6000000000931323,
+        "p95": 7.300000000279397,
+        "p99": 28.5,
+        "max": 28.5
+      }
+    },
+    {
+      "version": "after",
+      "scenario": {
+        "name": "pencil",
+        "size": 32,
+        "brush": "pencil",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 458.79999999981374,
+      "presentationInitializationMs": 211.39999999990687,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0,
+        "p95": 0.20000000018626451,
+        "p99": 0.6999999997206032,
+        "max": 2
+      },
+      "frameMs": {
+        "n": 280,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.800000000000182,
+        "max": 16.800000000000182
+      },
+      "frameDeliveryMs": {
+        "n": 280,
+        "p50": 16.699999999720603,
+        "p95": 18,
+        "p99": 21.100000000093132,
+        "max": 27.399999999906868
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.600000000093132,
+        "p95": 16.899999999906868,
+        "p99": 18.600000000093132,
+        "max": 20.200000000186265
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 50.89999999990687,
+        "p95": 92.39999999990687,
+        "p99": 92.39999999990687,
+        "max": 92.39999999990687
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.4059, 0, 0, 0.4059, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "pencil",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 219,
+        "tiles": 9,
+        "historyBytes": 12845056,
+        "maxSliceMs": 4.7999999998137355,
+        "pausedMs": 0,
+        "workerMs": 25
+      },
+      "firstPreviewSubmissionMs": {
+        "n": 10,
+        "p50": 13.2998046875,
+        "p95": 58.599853515625,
+        "p99": 58.599853515625,
+        "max": 58.599853515625
+      },
+      "formalPublicationSubmissionMs": {
+        "n": 10,
+        "p50": 335.599853515625,
+        "p95": 421.300048828125,
+        "p99": 421.300048828125,
+        "max": 421.300048828125
+      },
+      "workerMs": {
+        "n": 10,
+        "p50": 25,
+        "p95": 72.40000000037253,
+        "p99": 72.40000000037253,
+        "max": 72.40000000037253
+      },
+      "previewComposeMs": {
+        "n": 87,
+        "p50": 5.300000000279397,
+        "p95": 18.200000000186265,
+        "p99": 38.90000000037253,
+        "max": 38.90000000037253
+      }
+    },
+    {
+      "version": "after",
+      "scenario": {
+        "name": "broad",
+        "size": 300,
+        "brush": "gpen",
+        "width": 2560,
+        "height": 1920,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 725.3999999999069,
+      "presentationInitializationMs": 409.20000000018626,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0,
+        "p95": 0.2999999998137355,
+        "p99": 0.7999999998137355,
+        "max": 3.7999999998137355
+      },
+      "frameMs": {
+        "n": 269,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999955,
+        "p99": 16.800000000000182,
+        "max": 16.800000000000182
+      },
+      "frameDeliveryMs": {
+        "n": 269,
+        "p50": 16.699999999720603,
+        "p95": 17.799999999813735,
+        "p99": 21.100000000093132,
+        "max": 21.399999999906868
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.600000000093132,
+        "p95": 16.800000000279397,
+        "p99": 17.100000000093132,
+        "max": 17.40000000037253
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 45.10000000009313,
+        "p95": 60,
+        "p99": 60,
+        "max": 60
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.253688, 0, 0, 0.253688, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "gpen",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 55,
+        "tiles": 36,
+        "historyBytes": 46399488,
+        "maxSliceMs": 3,
+        "pausedMs": 0,
+        "workerMs": 17.100000000093132
+      },
+      "firstPreviewSubmissionMs": {
+        "n": 10,
+        "p50": 20,
+        "p95": 69.89990234375,
+        "p99": 69.89990234375,
+        "max": 69.89990234375
+      },
+      "formalPublicationSubmissionMs": {
+        "n": 6,
+        "p50": 715.699951171875,
+        "p95": 744.5,
+        "p99": 744.5,
+        "max": 744.5
+      },
+      "workerMs": {
+        "n": 10,
+        "p50": 19,
+        "p95": 29.600000000093132,
+        "p99": 29.600000000093132,
+        "max": 29.600000000093132
+      },
+      "previewComposeMs": {
+        "n": 89,
+        "p50": 8.099999999627471,
+        "p95": 18.199999999720603,
+        "p99": 47.89999999990687,
+        "max": 47.89999999990687
+      }
+    },
+    {
+      "version": "after",
+      "scenario": {
+        "name": "marker",
+        "size": 200,
+        "brush": "marker",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 371.8000000002794,
+      "presentationInitializationMs": 119.10000000009313,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0,
+        "p95": 0.20000000018626451,
+        "p99": 0.5,
+        "max": 2.7000000001862645
+      },
+      "frameMs": {
+        "n": 265,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999727,
+        "p99": 16.800000000000182,
+        "max": 16.800000000000182
+      },
+      "frameDeliveryMs": {
+        "n": 265,
+        "p50": 16.699999999720603,
+        "p95": 17.600000000093132,
+        "p99": 20.799999999813735,
+        "max": 21.899999999906868
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.600000000093132,
+        "p95": 16.800000000279397,
+        "p99": 16.90000000037253,
+        "max": 22
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 35,
+        "p95": 42.60000000009313,
+        "p99": 42.60000000009313,
+        "max": 42.60000000009313
+      },
+      "finalDrainMs": 0,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.4059, 0, 0, 0.4059, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "marker",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 36,
+        "tiles": 24,
+        "historyBytes": 30539776,
+        "maxSliceMs": 2.2999999998137355,
+        "pausedMs": 0,
+        "workerMs": 7.2000000001862645
+      },
+      "firstPreviewSubmissionMs": {
+        "n": 10,
+        "p50": 34.599853515625,
+        "p95": 99.300048828125,
+        "p99": 99.300048828125,
+        "max": 99.300048828125
+      },
+      "formalPublicationSubmissionMs": {
+        "n": 7,
+        "p50": 689.699951171875,
+        "p95": 720.7998046875,
+        "p99": 720.7998046875,
+        "max": 720.7998046875
+      },
+      "workerMs": {
+        "n": 10,
+        "p50": 9.700000000186265,
+        "p95": 19.899999999906868,
+        "p99": 19.899999999906868,
+        "max": 19.899999999906868
+      },
+      "previewComposeMs": {
+        "n": 75,
+        "p50": 8.700000000186265,
+        "p95": 21.199999999720603,
+        "p99": 88.10000000009313,
+        "max": 88.10000000009313
+      }
+    },
+    {
+      "version": "after",
+      "scenario": {
+        "name": "texture",
+        "size": 300,
+        "brush": "pencil",
+        "width": 2560,
+        "height": 1920,
+        "strokes": 10
+      },
+      "measurementStartedAtMs": 441.89999999990687,
+      "presentationInitializationMs": 122.5,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 620,
+        "p50": 0,
+        "p95": 0.20000000018626451,
+        "p99": 0.5,
+        "max": 0.8000000002793968
+      },
+      "frameMs": {
+        "n": 349,
+        "p50": 16.699999999999818,
+        "p95": 16.799999999999955,
+        "p99": 16.800000000000182,
+        "max": 33.40000000000009
+      },
+      "frameDeliveryMs": {
+        "n": 349,
+        "p50": 16.699999999720603,
+        "p95": 17.59999999962747,
+        "p99": 20.5,
+        "max": 42.200000000186265
+      },
+      "viewNextRafMs": {
+        "n": 160,
+        "p50": 16.600000000093132,
+        "p95": 16.899999999906868,
+        "p99": 19.100000000093132,
+        "max": 42.10000000009313
+      },
+      "postNavigationDrainMs": {
+        "n": 10,
+        "p50": 173.8000000002794,
+        "p95": 207.29999999981374,
+        "p99": 207.29999999981374,
+        "max": 207.29999999981374
+      },
+      "finalDrainMs": 0.10000000009313226,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.253688, 0, 0, 0.253688, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "pencil",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 39,
+        "tiles": 48,
+        "historyBytes": 62521344,
+        "maxSliceMs": 6.2000000001862645,
+        "pausedMs": 0.10000000009313226,
+        "workerMs": 143.70000000018626
+      },
+      "firstPreviewSubmissionMs": {
+        "n": 10,
+        "p50": 23.60009765625,
+        "p95": 102.89990234375,
+        "p99": 102.89990234375,
+        "max": 102.89990234375
+      },
+      "formalPublicationSubmissionMs": {
+        "n": 10,
+        "p50": 924.400146484375,
+        "p95": 966.800048828125,
+        "p99": 966.800048828125,
+        "max": 966.800048828125
+      },
+      "workerMs": {
+        "n": 10,
+        "p50": 145.8000000002794,
+        "p95": 178.6999999997206,
+        "p99": 178.6999999997206,
+        "max": 178.6999999997206
+      },
+      "previewComposeMs": {
+        "n": 118,
+        "p50": 9.699999999720603,
+        "p95": 16.299999999813735,
+        "p99": 29.5,
+        "max": 85.70000000018626
+      }
+    },
+    {
+      "version": "after",
+      "scenario": {
+        "name": "fifty",
+        "size": 78,
+        "brush": "gpen",
+        "width": 1600,
+        "height": 1200,
+        "strokes": 50
+      },
+      "measurementStartedAtMs": 374.39999999990687,
+      "presentationInitializationMs": 109,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 3100,
+        "p50": 0,
+        "p95": 0.20000000018626451,
+        "p99": 0.5,
+        "max": 2.5
+      },
+      "frameMs": {
+        "n": 1219,
+        "p50": 16.699999999999818,
+        "p95": 16.700000000000728,
+        "p99": 16.80000000000109,
+        "max": 33.400000000001455
+      },
+      "frameDeliveryMs": {
+        "n": 1219,
+        "p50": 16.699999999720603,
+        "p95": 18,
+        "p99": 21,
+        "max": 63.200000000186265
+      },
+      "viewNextRafMs": {
+        "n": 800,
+        "p50": 16.600000000093132,
+        "p95": 16.90000000037253,
+        "p99": 19.299999999813735,
+        "max": 63.299999999813735
+      },
+      "postNavigationDrainMs": {
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "finalDrainMs": 21.09999999962747,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 0,
+        "total": 0,
+        "max": 0
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(0.4059, 0, 0, 0.4059, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "gpen",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 129,
+        "tiles": 11,
+        "historyBytes": 79429632,
+        "maxSliceMs": 3,
+        "pausedMs": 0,
+        "workerMs": 11.099999999627471
+      },
+      "firstPreviewSubmissionMs": {
+        "n": 50,
+        "p50": 10.800048828125,
+        "p95": 23.2998046875,
+        "p99": 51,
+        "max": 51
+      },
+      "formalPublicationSubmissionMs": {
+        "n": 50,
+        "p50": 333.10009765625,
+        "p95": 355.60009765625,
+        "p99": 371.699951171875,
+        "max": 371.699951171875
+      },
+      "workerMs": {
+        "n": 50,
+        "p50": 10.300000000279397,
+        "p95": 18.59999999962747,
+        "p99": 20.299999999813735,
+        "max": 20.299999999813735
+      },
+      "previewComposeMs": {
+        "n": 419,
+        "p50": 5.399999999906868,
+        "p95": 11.399999999906868,
+        "p99": 14,
+        "max": 42.39999999990687
+      }
+    },
+    {
+      "version": "after",
+      "scenario": {
+        "name": "hundred",
+        "size": 12,
+        "brush": "gpen",
+        "width": 640,
+        "height": 480,
+        "strokes": 100
+      },
+      "measurementStartedAtMs": 416.29999999981374,
+      "presentationInitializationMs": 123.59999999962747,
+      "viewport": {
+        "x": 66,
+        "y": 57,
+        "width": 738,
+        "height": 763
+      },
+      "handlerMs": {
+        "n": 6200,
+        "p50": 0,
+        "p95": 0.20000000018626451,
+        "p99": 0.40000000037252903,
+        "max": 15.399999999906868
+      },
+      "frameMs": {
+        "n": 2364,
+        "p50": 16.69999999999891,
+        "p95": 16.700000000004366,
+        "p99": 16.80000000000291,
+        "max": 349.90000000000055
+      },
+      "frameDeliveryMs": {
+        "n": 2364,
+        "p50": 16.699999999720603,
+        "p95": 18.399999999906868,
+        "p99": 24.399999999906868,
+        "max": 352.8000000002794
+      },
+      "viewNextRafMs": {
+        "n": 1600,
+        "p50": 16.600000000093132,
+        "p95": 17.799999999813735,
+        "p99": 23.299999999813735,
+        "max": 198
+      },
+      "postNavigationDrainMs": {
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "finalDrainMs": 11,
+      "maxPending": 1,
+      "longTasks": {
+        "count": 1,
+        "total": 50,
+        "max": 50
+      },
+      "heapBefore": 10000000,
+      "heapAfter": 10000000,
+      "viewMatrix": "matrix(1.01475, 0, 0, 1.01475, 44.28, 137.96)",
+      "previewStartMs": null,
+      "endPending": 0,
+      "selectedBrush": "gpen",
+      "errors": [],
+      "workerLastJob": {
+        "stamps": 334,
+        "tiles": 3,
+        "historyBytes": 59506688,
+        "maxSliceMs": 2.7999999998137355,
+        "pausedMs": 0,
+        "workerMs": 8.600000000093132
+      },
+      "firstPreviewSubmissionMs": {
+        "n": 100,
+        "p50": 8.300048828125,
+        "p95": 19.10009765625,
+        "p99": 25.199951171875,
+        "max": 69.599853515625
+      },
+      "formalPublicationSubmissionMs": {
+        "n": 100,
+        "p50": 297.2998046875,
+        "p95": 326.300048828125,
+        "p99": 417.099853515625,
+        "max": 524.89990234375
+      },
+      "workerMs": {
+        "n": 100,
+        "p50": 8.5,
+        "p95": 15.5,
+        "p99": 17.100000000093132,
+        "max": 53.59999999962747
+      },
+      "previewComposeMs": {
+        "n": 832,
+        "p50": 2.3999999999068677,
+        "p95": 6.100000000093132,
+        "p99": 12.399999999906868,
+        "max": 33.1999999997206
+      }
+    }
+  ]
+}
