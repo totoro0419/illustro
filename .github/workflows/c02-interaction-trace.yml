@@ -1,0 +1,36 @@
+name: C02 simultaneous interaction trace
+on:
+  push:
+    branches: [implementation/stage4-c02-brush-engine]
+    paths: ['.github/workflows/c02-interaction-trace.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
+        working-directory: c01
+      - name: Trace live ink plus pinch and rotation
+        run: node test/performance-compare.mjs
+        working-directory: c01
+        env:
+          ILLUSTRO_BENCH_ROOTS: >-
+            {"after":"${{ github.workspace }}/c01"}
+          ILLUSTRO_BENCH_CASES: >-
+            [{"name":"simultaneous","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":5,"simultaneous":true}]
+          ILLUSTRO_BENCH_OUT: /tmp/c02-simultaneous.json
+          ILLUSTRO_TRACE: /tmp/c02-simultaneous-trace.json
+          ILLUSTRO_TRACE_CATEGORIES: devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,cc,gpu,v8
+      - run: gzip /tmp/c02-simultaneous-trace.json
+        if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c02-simultaneous-trace
+          path: /tmp/c02-simultaneous*

@@ -39,7 +39,7 @@ try{for(const [version] of Object.entries(roots))for(const scenario of scenarios
  if(version==='after'&&!process.env.ILLUSTRO_COLD_INPUT)await page.waitForFunction(()=>document.getElementById('stage').dataset.presentationReady==='true',null,{timeout:30000});
  if(process.env.ILLUSTRO_BENCH_STYLE)await page.addStyleTag({content:process.env.ILLUSTRO_BENCH_STYLE});
  let traceClient;
- if(process.env.ILLUSTRO_TRACE){traceClient=await page.context().newCDPSession(page);await traceClient.send('Tracing.start',{categories:'devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,v8',transferMode:'ReturnAsStream'})}
+ if(process.env.ILLUSTRO_TRACE){traceClient=await page.context().newCDPSession(page);await traceClient.send('Tracing.start',{categories:process.env.ILLUSTRO_TRACE_CATEGORIES||'devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,v8',transferMode:'ReturnAsStream'})}
  let result;try{const evaluation=page.evaluate(async({scenario:s,legacy})=>{
   const sleep=ms=>new Promise(ok=>setTimeout(ok,ms)),stats=a=>{const b=[...a].sort((a,b)=>a-b);return {n:b.length,p50:b[Math.ceil(b.length*.5)-1]??null,p95:b[Math.ceil(b.length*.95)-1]??null,p99:b[Math.ceil(b.length*.99)-1]??null,max:b.at(-1)??null}};
   const viewSamples=[],handlers=[],frames=[],frameDelivery=[],viewLatency=[],formalLatency=[],firstPreview=[],longTasks=[];let running=true,last=0,lastDelivery=0,maxPending=0;
