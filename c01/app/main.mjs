@@ -47,7 +47,12 @@ function displayPictures(pictures,groups=[]){
     previewWorker.postMessage({type:'surface',epoch:documentEpoch,key:data.key,canvas:surface},[surface]);
    }else{tile={element,context:element.getContext('bitmaprenderer')};if(!tile.context)throw Error('Bitmap presentation unavailable')}
    displayTiles.set(data.key,tile);displayLayer.append(element);
-  }if(!data.direct)tile.context.transferFromImageBitmap(data.bitmap)}
+  }if(!data.direct){
+   // Keep width/height attributes aligned with the bitmap's backing while
+   // CSS retains document-space geometry across adaptive resolution changes.
+   if(tile.element.width!==data.bitmap.width||tile.element.height!==data.bitmap.height){tile.element.width=data.bitmap.width;tile.element.height=data.bitmap.height}
+   tile.context.transferFromImageBitmap(data.bitmap)
+  }}
   return;
  }
  const start=performance.now();let mirrorMs=0,tileMs=0;

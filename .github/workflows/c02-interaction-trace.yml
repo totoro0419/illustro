@@ -25,6 +25,12 @@ jobs:
         run: npx playwright install chromium
         timeout-minutes: 3
         working-directory: c01
+      - name: Verify snapshot preview and exact native handoff
+        run: node test/async-preview-test.mjs
+        working-directory: c01
+        env:
+          ILLUSTRO_TEST_CANVAS: snapshot
+          ILLUSTRO_ASYNC_OUT: /tmp/c02-simultaneous-snapshot-accuracy.json
       - name: Trace live ink plus pinch and rotation
         run: node test/performance-compare.mjs
         working-directory: c01
@@ -58,12 +64,6 @@ jobs:
             {"after":"${{ github.workspace }}/c01"}
           ILLUSTRO_BENCH_CASES: >-
             [{"name":"thin","size":10,"brush":"gpen","width":640,"height":480,"strokes":10},{"name":"simultaneous","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":10,"simultaneous":true},{"name":"hundred","size":12,"brush":"gpen","width":640,"height":480,"strokes":100}]
-      - name: Verify snapshot preview and exact native handoff
-        run: node test/async-preview-test.mjs
-        working-directory: c01
-        env:
-          ILLUSTRO_TEST_CANVAS: snapshot
-          ILLUSTRO_ASYNC_OUT: /tmp/c02-simultaneous-snapshot-accuracy.json
       - run: gzip /tmp/c02-simultaneous*-trace.json
         if: always()
       - uses: actions/upload-artifact@v4

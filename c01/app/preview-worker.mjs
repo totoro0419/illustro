@@ -211,7 +211,7 @@ self.onmessage=({data:m})=>{
     const started=performance.now();lastPublishedAt=started;let submittedPixels=0;
     for(const group of inflight.presentations||[]){
      [group.data,group.stagingData]=[group.stagingData,group.data];
-     if(!directMode){group.displayScale=group.nextScale;group.fresh=false;continue}
+     if(!directMode){group.displayScale=group.nextScale;group.fresh=false;if(group.displayScale!==provisionalScale(group))dirty.add(group.key);continue}
      if(!group.context)throw Error('Display surface was not registered before ACK');
      const scale=provisionalScale(group),pixels=displayPixels(group,scale),resized=group.canvas.width!==pixels.w||group.canvas.height!==pixels.h;
      if(resized){group.canvas.width=pixels.w;group.canvas.height=pixels.h}
