@@ -13,9 +13,15 @@ export function previewComposite(base,candidates,key,box){
    if(selection&&(box.x+x<selection.x||box.y+y<selection.y||box.x+x>=selection.x+selection.w||box.y+y>=selection.y+selection.h))continue;
    const u=(x+.5)*scale-.5,v=(y+.5)*scale-.5,ix=Math.floor(u),iy=Math.floor(v),fx=u-ix,fy=v-iy;
    let a=0,r=0,g=0,b=0;
+   if(scale===1){
+    // Native-size preview pixels land on integer centres: bilinear weights
+    // are exactly (1,0,0,0), so avoid four taps and their clamp arithmetic.
+    const p=(y*w+x)*4;a=src[p+3]/255;r=src[p]*a;g=src[p+1]*a;b=src[p+2]*a;
+   }else{
    for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){
     const p=(Math.min(h-1,Math.max(0,iy+dy))*w+Math.min(w-1,Math.max(0,ix+dx)))*4,weight=(dx?fx:1-fx)*(dy?fy:1-fy),wa=src[p+3]/255*weight;
     a+=wa;r+=src[p]*wa;g+=src[p+1]*wa;b+=src[p+2]*wa;
+   }
    }
    if(!a)continue;
    const i=(y*box.w+x)*4,da=out[i+3]/255,sa=a*opacity;

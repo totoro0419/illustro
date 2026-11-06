@@ -79,13 +79,13 @@ function schedule(){
 async function tick(){
  timer=0;
  if(navigation&&!navNeedsFinal&&![...candidates.values()].some(c=>c.visible&&(c.active||c.dabs||c.previewIndex<c.stroke.points.length)))return;
- const start=performance.now(),first=[],firstIds=new Set();let generateMs=0,uploadMs=0;
+ const start=performance.now(),first=[],firstIds=new Set(),liveDirty=new Set();let generateMs=0,uploadMs=0;
  const budget={remaining:64,until:performance.now()+4};
  const ordered=[...candidates.values()].sort((a,b)=>Number(b.active)-Number(a.active));
  for(const candidate of ordered){
   if(!candidate.visible)continue;
   let at=performance.now();previewDabs(candidate,budget);generateMs+=performance.now()-at;at=performance.now();candidate.ink.flush();uploadMs+=performance.now()-at;
-  for(const key of candidate.ink.changed)dirty.add(key);
+  for(const key of candidate.ink.changed){dirty.add(key);if(candidate.active)liveDirty.add(key)}
   candidate.ink.changed.clear();
  }
  // A rejected picture must not immediately trigger another GPU snapshot
@@ -98,7 +98,9 @@ async function tick(){
  }
  const firstMark=values.some(c=>c.visible&&!c.firstPublished&&c.ink.tiles.size);
  if(!inflight&&dirty.size&&(firstMark||performance.now()-lastPublishedAt>=presentationInterval)){
-  const keys=[...dirty].slice(0,8),pictures=[],atEpoch=epoch,atGeneration=generation;
+  // The current pen must not queue behind a prior stroke's formal repaint.
+  // Keep all older damage, but publish the newest live ink regions first.
+  const keys=[...new Set([...liveDirty].reverse().concat([...dirty]))].slice(0,8),pictures=[],atEpoch=epoch,atGeneration=generation;
   keys.forEach(key=>dirty.delete(key));
   const rasterMs=performance.now()-start;
   const packet={serial:++serial,keys,generation,first,formalSeq:0,formalAcceptedAt:null,generatedAt:performance.now()};inflight=packet;
