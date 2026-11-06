@@ -45,6 +45,16 @@ jobs:
           ILLUSTRO_BENCH_OUT: /tmp/c02-simultaneous-accelerated.json
           ILLUSTRO_TRACE: /tmp/c02-simultaneous-accelerated-trace.json
           ILLUSTRO_TRACE_CATEGORIES: devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame,cc,gpu,v8
+      - name: Compare cursor paint cost without tracing overhead
+        working-directory: c01
+        run: |
+          ILLUSTRO_BENCH_OUT=/tmp/c02-simultaneous-untraced.json node test/performance-compare.mjs
+          ILLUSTRO_BENCH_STYLE='#brush-cursor { display: none !important }' ILLUSTRO_BENCH_OUT=/tmp/c02-simultaneous-no-cursor.json node test/performance-compare.mjs
+        env:
+          ILLUSTRO_BENCH_ROOTS: >-
+            {"after":"${{ github.workspace }}/c01"}
+          ILLUSTRO_BENCH_CASES: >-
+            [{"name":"simultaneous","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":10,"simultaneous":true}]
       - run: gzip /tmp/c02-simultaneous*-trace.json
         if: always()
       - uses: actions/upload-artifact@v4
