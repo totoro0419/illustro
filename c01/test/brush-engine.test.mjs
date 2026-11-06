@@ -65,6 +65,11 @@ test('INP-007 pressure-only samples, reversed time and coalesced pose selection'
  assert.equal(contact.length,2);
  assert.equal(contact[0].x,20,'First physical pen contact is preserved');
  assert.equal(contact[1].x,30);
+ assert.ok(admit(contact,raw(40,33,60,.8)),'Later equal-time spatial motion is retained');
+ assert.deepEqual(contact.map(p=>[p.x,p.y]),[[20,30],[30,30],[40,33]]);
+ assert.ok(admit(contact,raw(40,33,60,.9)),'Equal-time pressure-only changes replace the latest coordinate');
+ assert.equal(contact.length,3);
+ assert.equal(contact[2].p,.9);
  const staleTail=[raw(20,30,60,0),raw(30,30,61,.7)];
  assert.ok(admitTerminal(staleTail,raw(45,30,61,.7)),'Equal-time penup is admitted');
  assert.equal(staleTail.length,3,'Release must append, never overwrite a previously previewed move');
