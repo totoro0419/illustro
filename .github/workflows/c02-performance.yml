@@ -69,7 +69,7 @@ jobs:
           ILLUSTRO_BENCH_ROOTS: >-
             {"after":"${{ github.workspace }}/c01"}
           ILLUSTRO_BENCH_CASES: >-
-            [{"name":"thin","size":10,"brush":"gpen","width":640,"height":480,"strokes":10},{"name":"broad","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":10},{"name":"texture","size":300,"brush":"pencil","width":2560,"height":1920,"strokes":10}]
+            [{"name":"thin","size":10,"brush":"gpen","width":640,"height":480,"strokes":10},{"name":"broad","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":10},{"name":"texture","size":300,"brush":"pencil","width":2560,"height":1920,"strokes":10},{"name":"simultaneous","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":10,"simultaneous":true}]
       - name: Preserve quality comparison failure after collecting other evidence
         if: always() && steps.quality.outcome == 'failure'
         run: exit 1
