@@ -8,7 +8,7 @@ import {previewComposite} from './preview-composite.mjs';
 import {tileBox,tileSize} from './brush-raster.mjs';
 let epoch=0,generation=0,width=1,height=1,timer=0,inflight=null,serial=0;
 let directMode=false;
-let bitmapMode=false,background='white';
+let bitmapMode=false,background='white',presentationInterval=16,lastPublishedAt=-Infinity;
 let presentationWarmed=false;
 function warmPresentation(target){
  if(presentationWarmed)return;presentationWarmed=true;
@@ -65,7 +65,12 @@ let measure=false,formalSeq=0,formalAcceptedAt=null,lastSubmittedSeq=0;
 const candidates=new Map(),dirty=new Set(),baseTiles=new Map();
 function invalidate(candidate){for(const key of candidate.ink.tiles.keys())dirty.add(key)}
 
-function schedule(){if(!timer)timer=setTimeout(()=>tick().catch(error=>postMessage({type:'error',epoch,message:String(error)})),8)}
+function schedule(){
+ if(timer)return;
+ const remaining=lastPublishedAt+presentationInterval-performance.now();
+ const delay=!inflight&&dirty.size&&remaining>0?Math.min(8,Math.max(1,remaining)):8;
+ timer=setTimeout(()=>tick().catch(error=>postMessage({type:'error',epoch,message:String(error)})),delay);
+}
 async function tick(){
  timer=0;
  if(navigation&&!navNeedsFinal&&![...candidates.values()].some(c=>c.visible&&(c.active||c.dabs||c.previewIndex<c.stroke.points.length)))return;
@@ -86,7 +91,8 @@ async function tick(){
   if(values.some(c=>c.visible&&(c.dabs||c.previewIndex<c.stroke.points.length)))schedule();
   return;
  }
- if(!inflight&&dirty.size){
+ const firstMark=values.some(c=>c.visible&&!c.firstPublished&&c.ink.tiles.size);
+ if(!inflight&&dirty.size&&(firstMark||performance.now()-lastPublishedAt>=presentationInterval)){
   const keys=[...dirty].slice(0,8),pictures=[],atEpoch=epoch,atGeneration=generation;
   keys.forEach(key=>dirty.delete(key));
   const rasterMs=performance.now()-start;
@@ -114,7 +120,7 @@ async function tick(){
    }
    packet.formalSeq=dirty.size?0:formalSeq;packet.formalAcceptedAt=packet.formalSeq?formalAcceptedAt:null;
    if(atEpoch!==epoch||atGeneration!==generation){navBitmap?.close();groupPictures.forEach(g=>g.bitmap?.close());pictures.forEach(p=>p.bitmap?.close());if(atEpoch===epoch)keys.forEach(key=>dirty.add(key));if(inflight===packet)inflight=null;}
-   else postMessage({type:'preview',epoch,generation,serial:packet.serial,pictures,groups:groupPictures,navBitmap,first,formalSeq:dirty.size?null:formalSeq,formalAcceptedAt:dirty.size?null:formalAcceptedAt,stats:measure?{rasterMs,generateMs,uploadMs,direct:directMode,composeMs:performance.now()-start-rasterMs,totalMs:performance.now()-start,tiles:keys.length,updatedPixels:keys.reduce((n,k)=>{const b=tileBox(k,width,height);return n+b.w*b.h},0),bitmapPixels:groupPictures.reduce((n,g)=>n+g.w*g.h,0),previewBytes:[...candidates.values()].reduce((n,c)=>n+[...c.ink.tiles.values()].reduce((sum,t)=>sum+t.data.byteLength,0),0),baseBytes:[...baseTiles.values()].reduce((n,t)=>n+t.data.byteLength,0),groupBytes:[...groups.values()].reduce((n,g)=>n+g.data.byteLength,0),rgbaBytes:keys.reduce((sum,key)=>{const b=tileBox(key,width,height);return sum+b.w*b.h*(bitmapMode?4:8)},0),candidates:candidates.size}:null}, [...pictures.flatMap(p=>p.gpuImage?[p.image.data.buffer,p.gpuImage.data.buffer]:[p.image.data.buffer]),...groupPictures.flatMap(g=>g.bitmap?[g.bitmap]:[]),...(navBitmap?[navBitmap]:[])]);
+   else postMessage({type:'preview',epoch,generation,serial:packet.serial,pictures,groups:groupPictures,navBitmap,first,formalSeq:dirty.size?null:formalSeq,formalAcceptedAt:dirty.size?null:formalAcceptedAt,stats:measure?{rasterMs,generateMs,uploadMs,direct:directMode,presentationInterval,composeMs:performance.now()-start-rasterMs,totalMs:performance.now()-start,tiles:keys.length,updatedPixels:keys.reduce((n,k)=>{const b=tileBox(k,width,height);return n+b.w*b.h},0),bitmapPixels:groupPictures.reduce((n,g)=>n+g.w*g.h,0),previewBytes:[...candidates.values()].reduce((n,c)=>n+[...c.ink.tiles.values()].reduce((sum,t)=>sum+t.data.byteLength,0),0),baseBytes:[...baseTiles.values()].reduce((n,t)=>n+t.data.byteLength,0),groupBytes:[...groups.values()].reduce((n,g)=>n+g.data.byteLength,0),rgbaBytes:keys.reduce((sum,key)=>{const b=tileBox(key,width,height);return sum+b.w*b.h*(bitmapMode?4:8)},0),candidates:candidates.size}:null}, [...pictures.flatMap(p=>p.gpuImage?[p.image.data.buffer,p.gpuImage.data.buffer]:[p.image.data.buffer]),...groupPictures.flatMap(g=>g.bitmap?[g.bitmap]:[]),...(navBitmap?[navBitmap]:[])]);
   }catch(error){pictures.forEach(p=>p.bitmap?.close());inflight=null;postMessage({type:'error',epoch:atEpoch,message:String(error)})}
  }
  if(dirty.size&&!inflight||[...candidates.values()].some(c=>c.visible&&(c.dabs||c.previewIndex<c.stroke.points.length)))schedule();
@@ -123,7 +129,7 @@ self.onmessage=({data:m})=>{
  try{
   if(m.type==='reset'){
    if(m.epoch<epoch)return;
-   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;initialSurfaceReady=false;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
+   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;initialSurfaceReady=false;presentationInterval=16;lastPublishedAt=-Infinity;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
    if(m.navigationPicture){
    navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:true});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
    }else{navCanvas=null;navContext=null;navNeedsFinal=false;}
@@ -146,9 +152,11 @@ self.onmessage=({data:m})=>{
    group.context.putImageData(new ImageData(backgroundPixels(group),group.w,group.h),0,0);if(m.key===0&&!initialSurfaceReady){initialSurfaceReady=true;postMessage({type:'ready',epoch})}return;
   }
   if(m.type==='navigation'){navigation=m.active;if(navigation)navNeedsFinal=true;}else if(m.type==='start'){
+   if(Number.isFinite(m.presentationInterval))presentationInterval=Math.min(32,Math.max(8,m.presentationInterval));
    const stroke=m.stroke;
    candidates.set(m.id,{id:m.id,stroke,ink:new PreviewInk(stroke,width,height),visible:true,active:true,startedAt:m.startedAt,previewIndex:0,previewCount:0});
   }else if(m.type==='points'){
+   if(Number.isFinite(m.presentationInterval))presentationInterval=Math.min(32,Math.max(8,m.presentationInterval));
    const c=candidates.get(m.id);if(c){c.stroke.points.splice(m.offset,Infinity,...m.points);c.active=m.active;if(!m.active)navNeedsFinal=true;}
   }else if(m.type==='visibility'){
    generation=m.generation;
@@ -162,7 +170,7 @@ self.onmessage=({data:m})=>{
   }else if(m.type==='ack'&&inflight?.serial===m.serial){
    const accepted=m.accepted&&inflight.generation===generation;
    if(accepted){
-    const started=performance.now();let submittedPixels=0;
+    const started=performance.now();lastPublishedAt=started;let submittedPixels=0;
     if(directMode)for(const group of inflight.presentations||[]){
      if(!group.context)throw Error('Display surface was not registered before ACK');
      const d=group.fresh?{x:group.x,y:group.y,w:group.w,h:group.h}:group.damage;if(d){group.context.putImageData(new ImageData(group.data,group.w,group.h),0,0,d.x-group.x,d.y-group.y,d.w,d.h);submittedPixels+=d.w*d.h}group.fresh=false;

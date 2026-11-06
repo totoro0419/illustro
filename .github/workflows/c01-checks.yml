@@ -45,4 +45,5 @@ jobs:
             /tmp/illustro-async-preview-*.json
             /tmp/illustro-backlog.json
             /tmp/illustro-display-viewport.json
+            /tmp/illustro-input-scheduler.json
             /tmp/illustro-view-*.png

@@ -169,6 +169,7 @@ function fit(){const w=stage.clientWidth,h=stage.clientHeight;view={x:(w-Math.mi
 function setDimensions(){gridPainted=false;gpuEnabled=false;try{gpuEnabled=Boolean(rasterWorker&&previewWorker&&gpuDisplay?.configure(doc.width,doc.height,doc.background))}catch(error){console.warn('表示をCanvas 2Dへ切り替えます',error)}if(gpuDisplay)gpuDisplay.element.hidden=!gpuEnabled;displayLayer.hidden=gpuEnabled;paper.style.visibility=gpuEnabled?'hidden':'visible';$('paper-shadow').style.visibility=gpuEnabled?'hidden':'visible';for(const c of [canvas,preview,grid]){c.width=doc.width;c.height=doc.height;c.style.width=doc.width+'px';c.style.height=doc.height+'px'}navPreview.style.width=doc.width+'px';navPreview.style.height=doc.height+'px';paper.style.width=doc.width+'px';paper.style.height=doc.height+'px';paper.style.background=doc.background==='white'?'white':'transparent';$('checker').style.display=doc.background==='white'?'none':'block';ctx=canvas.getContext('2d',{willReadFrequently:true});pctx=preview.getContext('2d',{willReadFrequently:true});gctx=grid.getContext('2d');$('meta-summary').textContent=`${doc.width} × ${doc.height}px / ${doc.dpi} DPI / sRGB 8bit`;dirty()}
 function syncMeta(){for(const [id,key] of [['meta-name','name'],['meta-author','author'],['meta-description','description']])$(id).value=doc[key]}
 function resetDoc(data){
+ clearTimeout(previewSendTimer);previewSendTimer=0;if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;
  for(const {element,direct}of displayTiles.values()){if(!direct)element.width=element.height=1;element.remove()}displayTiles.clear();formalTiles.clear();displayImages.clear();
  rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
  $('export-recovery').hidden=true;
@@ -194,7 +195,7 @@ function setColor(rgb,old=true){if(old)settings.previous=[...settings.color];set
 const poseTimeline=new PoseTimeline();
 const sensors={tilt:false,barrel:false,side:false,eraser:false};
 const held=new Map(), pendingInk=new Map(), repaint=new Set();
-let armed=null,toggled=null,interrupted=null,workerFault=null,inkFrame=0;
+let armed=null,toggled=null,interrupted=null,workerFault=null,inkFrame=0,previewSendTimer=0,sensorFrame=0,presentationInterval=16,lastPreviewFrame=0;
 let repeat=false, hover=null, hoverFrame=0, padBrushes=null, padStroke=null, priorStrokes=[], recoveryStrokes=[], lastFormal={strokes:[],revision:0};
 const cursor=$('brush-cursor'), repeatView=$('repeat-view');
 
@@ -298,12 +299,26 @@ function syncPreview(candidate){
  const offset=candidate.sentPoints||0,points=candidate.stroke.points;
  // Re-send the last point too: equal timestamp samples replace the old tail.
  const from=Math.max(0,offset-1);
- previewWorker.postMessage({type:'points',epoch:documentEpoch,id:candidate.strokeId,offset:from,points:points.slice(from),active:candidate===active});
- candidate.sentPoints=points.length;
+ previewWorker.postMessage({type:'points',epoch:documentEpoch,id:candidate.strokeId,offset:from,points:points.slice(from),active:candidate===active,presentationInterval});
+ candidate.sentPoints=points.length;candidate.sentActive=candidate===active;
+}
+function previewCadenceFrame(){
+ sensorFrame=0;if(!active){lastPreviewFrame=0;return}
+ const now=performance.now();if(lastPreviewFrame)presentationInterval=Math.min(32,Math.max(8,now-lastPreviewFrame));lastPreviewFrame=now;
+ if(active.inputEvent){updateStrokeDiagnostics(active);active.inputEvent=null}
+ sensorFrame=requestAnimationFrame(previewCadenceFrame);
 }
 function queuePreview(){
  if(previewWorker){
-  if(!inkFrame)inkFrame=requestAnimationFrame(()=>{inkFrame=0;for(const candidate of [active,...pendingInk.values(),interrupted])if(candidate){if(candidate.sentPoints!==candidate.stroke.points.length||candidate===active)syncPreview(candidate)}if(active?.inputEvent){updateStrokeDiagnostics(active);active.inputEvent=null}});
+  // Input delivery must continue even when compositor rAF callbacks are late.
+  // Keep only the small sensor/UI update on the display clock.
+  if(!previewSendTimer)previewSendTimer=setTimeout(()=>{
+   previewSendTimer=0;
+   for(const candidate of [active,...pendingInk.values(),interrupted])if(candidate){
+    if(candidate.sentPoints!==candidate.stroke.points.length||candidate===active||candidate.sentActive!==(candidate===active))syncPreview(candidate);
+   }
+  },4);
+  if(active&&!sensorFrame){lastPreviewFrame=0;sensorFrame=requestAnimationFrame(previewCadenceFrame)}
   return;
  }
  if(!inkFrame)inkFrame=requestAnimationFrame(()=>{
@@ -330,9 +345,10 @@ function beginStroke(e,erase=false){
  const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
  if(e.altKey)stroke.guide=null;
  const ink=previewWorker?{tiles:new Map()}:new Ink(stroke,doc.width,doc.height,true);
+ if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;
  active={id:e.pointerId,strokeId:++strokeSerial,stroke,ink,visible:true,previewIndex:0,previewCount:0,
   lastClient:{x:e.clientX,y:e.clientY},started:performance.now(),type:e.pointerType};
- if(previewWorker){previewWorker.postMessage({type:'start',epoch:documentEpoch,id:active.strokeId,stroke:structuredClone(stroke),startedAt:performance.timeOrigin+active.started});active.sentPoints=1}
+ if(previewWorker){previewWorker.postMessage({type:'start',epoch:documentEpoch,id:active.strokeId,stroke:structuredClone(stroke),startedAt:performance.timeOrigin+active.started,presentationInterval});active.sentPoints=1;active.sentActive=true}
  queuePreview();
 }
 function addStroke(e,end=false){
