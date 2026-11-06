@@ -117,25 +117,66 @@ try{for(const [version] of Object.entries(roots))for(const scenario of scenarios
  if(traceClient){const complete=new Promise(ok=>traceClient.once('Tracing.tracingComplete',ok));await traceClient.send('Tracing.end');const {stream}=await complete;let trace='';for(;;){const data=await traceClient.send('IO.read',{handle:stream});trace+=data.data;if(data.eof)break}await traceClient.send('IO.close',{handle:stream});await writeFile(process.env.ILLUSTRO_TRACE,trace)}
 
  if(scenario.quality&&!result.error){
-  result.quality=await page.evaluate(async legacy=>{
+  result.quality=await page.evaluate(async ({legacy,validateReplay})=>{
    const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));let blob=null,native=null;
    const original=URL.createObjectURL;
    URL.createObjectURL=function(value){if(value instanceof Blob)blob=value;return original.call(URL,value)};
    window.showSaveFilePicker=async()=>({createWritable:async()=>({write:async data=>{native=typeof data==='string'?data:new TextDecoder().decode(data)},close:async()=>{}})});
    try{
-    if(legacy){document.getElementById('exportImage').click();document.getElementById('exportFormat').value='png';document.getElementById('exportRun').click()}
-    else document.querySelector('[data-action=save]').click();
-    for(let i=0;i<3000&&!blob&&!native;i++)await sleep(10);
-    if(!blob&&!native)throw Error('Quality export timed out: '+JSON.stringify({legacy,status:document.getElementById('status')?.textContent,exportStatus:document.getElementById('exportStatus')?.textContent,exportDisabled:document.getElementById('exportRun')?.disabled,diagnostics:legacy?window.__illustroPerformance.read():document.getElementById('stage')?.dataset}));
-    const image=legacy?await createImageBitmap(blob):await createImageBitmap(await(await fetch(JSON.parse(native).layers[0].png)).blob()),w=image.width,h=image.height;
+    let image,captureSource='C02 native PNG',replayValidation=null;
+    if(legacy){
+     // Read the frozen legacy app's own full projection checkpoint. Its image
+     // exporter otherwise replays all ten strokes in a second GPU renderer,
+     // unrelated to the input/presentation comparison and able to time out.
+     // Intercept a COPY before transfer; forward the original message intact.
+     let checkpoint=null;const send=Worker.prototype.postMessage,revision=window.__illustroPerformance.read().revision;
+     Worker.prototype.postMessage=function(message,...args){
+      if(message.type==='store-projection-delta'&&message.replace===true&&message.revisionId===revision)checkpoint=structuredClone(message);
+      return send.call(this,message,...args);
+     };
+     try{
+      const deadline=performance.now()+30000;
+      while(!checkpoint&&performance.now()<deadline){await window.__illustroPerformance.checkpoint(true);if(!checkpoint)await sleep(20)}
+      if(!checkpoint)throw Error('Legacy committed checkpoint timed out');
+     }finally{Worker.prototype.postMessage=send}
+     if(checkpoint.surfaceIds.length!==1||checkpoint.tileSize!==128||!checkpoint.tiles.length)throw Error('Unexpected legacy projection checkpoint');
+     const frozen=new OffscreenCanvas(checkpoint.width,checkpoint.height),context=frozen.getContext('2d',{willReadFrequently:true}),rgba=new Uint8ClampedArray(checkpoint.width*checkpoint.height*4),seen=new Set();
+     for(const tile of checkpoint.tiles){
+      if(tile.surfaceId!==checkpoint.surfaceIds[0]||seen.has(tile.key)||tile.pixels.length!==128*128*4)throw Error('Invalid checkpoint tile');seen.add(tile.key);
+      const [col,row]=tile.key.split(',').map(Number),x=col*128,y=row*128,w=Math.min(128,checkpoint.width-x),h=Math.min(128,checkpoint.height-y);
+      if(!Number.isInteger(col)||!Number.isInteger(row)||w<=0||h<=0)throw Error('Invalid checkpoint coordinates');
+      for(let j=0;j<h;j++)rgba.set(tile.pixels.subarray(j*128*4,(j*128+w)*4),((y+j)*checkpoint.width+x)*4);
+     }
+     context.putImageData(new ImageData(rgba,checkpoint.width,checkpoint.height),0,0);
+     image=await createImageBitmap(await frozen.convertToBlob({type:'image/png'}));
+     captureSource='Frozen legacy committed GPU checkpoint -> PNG; no brush replay or input changes';
+     // Independently check the adapter against the original exporter on the
+     // small case, where that replay was observed to finish reliably.
+     if(validateReplay){
+      document.getElementById('exportImage').click();document.getElementById('exportFormat').value='png';document.getElementById('exportRun').click();
+      for(let i=0;i<3000&&!blob;i++)await sleep(10);
+      if(!blob)throw Error('Legacy reference PNG validation timed out');
+      const replay=await createImageBitmap(blob),rc=new OffscreenCanvas(replay.width,replay.height),rx=rc.getContext('2d',{willReadFrequently:true});rx.drawImage(replay,0,0);replay.close();const pixels=rx.getImageData(0,0,rc.width,rc.height).data;
+      let alphaDifferences=0,opaqueColorDifferences=0;
+      for(let i=0;i<rgba.length;i+=4){if(rgba[i+3]!==pixels[i+3])alphaDifferences++;if(rgba[i+3]===255&&pixels[i+3]===255)for(let c=0;c<3;c++)if(rgba[i+c]!==pixels[i+c])opaqueColorDifferences++}
+      replayValidation={alphaDifferences,opaqueColorDifferences,tiles:seen.size};
+      if(alphaDifferences||opaqueColorDifferences)throw Error('Legacy checkpoint does not match original PNG: '+JSON.stringify(replayValidation));
+     }
+    }else{
+     document.querySelector('[data-action=save]').click();
+     for(let i=0;i<3000&&!native;i++)await sleep(10);
+     if(!native)throw Error('C02 quality native PNG timed out: '+document.getElementById('save-status')?.textContent);
+     image=await createImageBitmap(await(await fetch(JSON.parse(native).layers[0].png)).blob());
+    }
+    const w=image.width,h=image.height;
     const c=new OffscreenCanvas(w,h),ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);image.close();const data=ctx.getImageData(0,0,w,h).data,bits=new Uint8Array(Math.ceil(w*h/8));
     let occupied=0,alphaSum=0,left=w,top=h,right=-1,bottom=-1;const colors=new Map();
     for(let p=0;p<w*h;p++){const i=p*4,a=data[i+3];alphaSum+=a;if(a>=128){bits[p>>3]|=1<<(p&7);occupied++;const x=p%w,y=Math.floor(p/w);left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y)}if(a===255){const rgb=data.slice(i,i+3).join(',');colors.set(rgb,(colors.get(rgb)||0)+1)}}
     let encoded='';for(let i=0;i<bits.length;i+=8192)encoded+=String.fromCharCode(...bits.subarray(i,i+8192));
     const dominant=[...colors].sort((a,b)=>b[1]-a[1])[0]?.[0]?.split(',').map(Number)||null;
-    return {width:w,height:h,occupied,alphaSum,bounds:{left,top,right,bottom},dominant,mask:btoa(encoded),scope:'Final exported PNG alpha>=128 silhouette; same nominal diameter, normal opaque constant-width round ink; antialias and stamp algorithms differ'};
+    return {width:w,height:h,occupied,alphaSum,bounds:{left,top,right,bottom},dominant,mask:btoa(encoded),captureSource,replayValidation,scope:'Final exported PNG alpha>=128 silhouette; same nominal diameter, normal opaque constant-width round ink; antialias and stamp algorithms differ'};
    }finally{URL.createObjectURL=original}
-  },legacy);
+  },{legacy,validateReplay:scenario.name==='quality-thin'});
   const {mask,...summary}=result.quality;
   if(legacy)qualityReferences.set(scenario.name,{mask,...summary});
   else if(qualityReferences.has(scenario.name)){
