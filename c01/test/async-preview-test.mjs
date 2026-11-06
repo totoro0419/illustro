@@ -33,6 +33,7 @@ try{
   for(let i=1;i<30;i++){emit('pointermove','pen',10,180+i*8,250+Math.sin(i/4)*30);await sleep(2)}
   await until(()=>count('preview')>100);const previewStartProxyMs=performance.now()-start,previewBeforeFormal=count('preview');
   let actualPreviewBeforeFormal=null;if(!window.__c02Verify.presentation){const visible=()=>{let n=0;for(const tile of document.querySelectorAll('#display-tiles canvas')){const c=new OffscreenCanvas(tile.width,tile.height),ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(tile,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data;for(let i=0;i<d.length;i+=4)if(d[i+3]&&Math.min(d[i],d[i+1],d[i+2])<250)n++}return n};await until(()=>visible()>100);actualPreviewBeforeFormal=visible();}
+  const previewBackings=[...document.querySelectorAll('#display-tiles canvas')].map(c=>({width:c.width,height:c.height,cssWidth:parseFloat(c.style.width),cssHeight:parseFloat(c.style.height)}));
   if(count('art')!==0)throw Error('formal gate failed');
   const pose=()=>paper.style.transform+'|'+$('retained-scene').style.transform;const firstPose=pose();
   emit('pointerdown','touch',21,440,390);emit('pointerdown','touch',22,540,390);emit('pointermove','touch',21,460,415);emit('pointermove','touch',22,590,370);
@@ -67,6 +68,15 @@ try{
   }
   if(viewportChecks<10)throw Error('Insufficient GPU viewport color/pose checks');
   }
+  let exactDisplayHash=null,nativeBackingsRestored=null;
+  if(!verify.presentation){
+   const expected=new Uint8ClampedArray(premult);for(let i=0;i<expected.length;i+=4){for(let c=0;c<3;c++)expected[i+c]+=255-expected[i+3];expected[i+3]=255}
+   const expectedHash=await digest(expected);
+   await until(async()=>{
+    const tiles=[...document.querySelectorAll('#display-tiles canvas')];nativeBackingsRestored=tiles.every(c=>c.width===parseFloat(c.style.width)&&c.height===parseFloat(c.style.height));if(!nativeBackingsRestored)return false;
+    const c=new OffscreenCanvas(1600,1200),context=c.getContext('2d',{willReadFrequently:true});context.fillStyle='white';context.fillRect(0,0,1600,1200);for(const tile of tiles)context.drawImage(tile,parseFloat(tile.style.left),parseFloat(tile.style.top));exactDisplayHash=await digest(context.getImageData(0,0,1600,1200).data);return exactDisplayHash===expectedHash;
+   });
+  }
   const {rasterize,composite,tileBox}=await import('/app/brush-raster.mjs'),ref=new OffscreenCanvas(1600,1200),rc=ref.getContext('2d',{willReadFrequently:true});
   for(const stroke of saveAB.brushArchive.strokes){const {ink}=rasterize(stroke,1600,1200);for(const [key,tile]of ink.tiles){const b=tileBox(key,1600,1200);composite(rc,stroke,tile,b.x,b.y)}}
   const referenceHash=await digest(rc.getImageData(0,0,1600,1200).data);
@@ -75,8 +85,9 @@ try{
   emit('pointerup','pen',50,360,310);window.__releaseFormal();await until(()=>stage.dataset.rasterPending==='0');
   document.querySelector('[data-action=saveas]').click();await until(()=>writes.length===3);
   const erased=JSON.parse(writes[2]),eraseHash=await digest(await decode(erased.layers[0].png));await until(async()=>await digest(pixels('preview'))===eraseHash);
-  return {actualPreviewBeforeFormal,visibleHash,viewportChecks,previewStartProxyMs,previewBeforeFormal,simultaneousPose,pendingViewProxyMs,pendingBeforeRelease,savedAHash,aHash,abHash,referenceHash,beforeErase,previewErase,eraseHash,saveAB};
+  return {previewBackings,nativeBackingsRestored,exactDisplayHash,actualPreviewBeforeFormal,visibleHash,viewportChecks,previewStartProxyMs,previewBeforeFormal,simultaneousPose,pendingViewProxyMs,pendingBeforeRelease,savedAHash,aHash,abHash,referenceHash,beforeErase,previewErase,eraseHash,saveAB};
  });
+ if(presentation==='bitmap')assert.ok(report.previewBackings.some(c=>c.width<c.cssWidth),'Pending preview uses a bounded backing at fit zoom');
  assert.equal(report.pendingBeforeRelease,'2');assert.equal(report.savedAHash,report.aHash,'Save after pending Undo contains A only');assert.equal(report.referenceHash,report.abHash,'Formal RGBA matches reference');assert.notEqual(report.aHash,report.abHash,'Redo restores B');assert.ok(report.previewErase<report.beforeErase,'Eraser preview removes pixels');
  page.on('dialog',d=>d.accept());
  await page.setInputFiles('#open-file',{name:'fence.illustro',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(report.saveAB))});

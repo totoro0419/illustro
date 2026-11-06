@@ -7,7 +7,7 @@ import {PreviewInk} from './preview-ink.mjs';
 import {previewComposite} from './preview-composite.mjs';
 import {tileBox,tileSize} from './brush-raster.mjs';
 let epoch=0,generation=0,width=1,height=1,timer=0,inflight=null,serial=0;
-let directMode=false;
+let directMode=false,viewPixelScale=1;
 let bitmapMode=false,background='white',presentationInterval=16,lastPublishedAt=-Infinity;
 let presentationWarmed=false;
 function warmPresentation(target){
@@ -63,6 +63,33 @@ function prepareGroups(pictures){
   group.damage=damage;presentations.push(group);
  }
  return {updates,presentations};
+}
+
+// Only provisional display backings shrink. Full document-space RGBA remains
+// in group.data/baseTiles for exact handoff, sampling, persistence and recovery.
+// Dyadic grids share sample centres across padded tile boundaries.
+function provisionalScale(group){
+ if(!directMode||group.w%4||group.h%4)return 1;
+ const scale=viewPixelScale*2>=1?1:viewPixelScale*2>=.5?.5:.25;
+ if(scale===1)return 1;
+ const columns=Math.ceil(width/tileSize),left=Math.floor(group.x/tileSize),right=Math.floor((group.x+group.w-1)/tileSize),top=Math.floor(group.y/tileSize),bottom=Math.floor((group.y+group.h-1)/tileSize);
+ for(const candidate of candidates.values())if(candidate.visible)for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++)if(candidate.ink.tiles.has(y*columns+x))return scale;
+ return 1;
+}
+function displayPixels(group,scale){
+ if(scale===1)return {data:group.data,w:group.w,h:group.h};
+ const w=group.w*scale,h=group.h*scale;
+ group.scaled??=new Map();let pixels=group.scaled.get(scale);
+ if(!pixels){pixels={data:new Uint8ClampedArray(w*h*4),w,h};group.scaled.set(scale,pixels)}
+ const step=1/scale,src=group.data,out=pixels.data;
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  const sx=(x+.5)*step-.5,sy=(y+.5)*step-.5,left=Math.floor(sx),top=Math.floor(sy),fx=sx-left,fy=sy-top,i=(y*w+x)*4;
+  for(let c=0;c<3;c++){
+   const a=src[(top*group.w+left)*4+c]*(1-fx)+src[(top*group.w+left+1)*4+c]*fx,b=src[((top+1)*group.w+left)*4+c]*(1-fx)+src[((top+1)*group.w+left+1)*4+c]*fx;
+   out[i+c]=Math.round(a*(1-fy)+b*fy);
+  }out[i+3]=255;
+ }
+ return pixels;
 }
 
 let navigation=false,navCanvas=null,navContext=null,navScale=1,lastNavSnapshot=0,navNeedsFinal=false;
@@ -136,7 +163,7 @@ self.onmessage=({data:m})=>{
  try{
   if(m.type==='reset'){
    if(m.epoch<epoch)return;
-   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;initialSurfaceReady=false;presentationInterval=16;lastPublishedAt=-Infinity;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
+   epoch=m.epoch;generation=m.generation;width=m.width;height=m.height;viewPixelScale=1;navigation=false;measure=m.measure;bitmapMode=m.bitmap;directMode=m.direct;initialSurfaceReady=false;presentationInterval=16;lastPublishedAt=-Infinity;background=m.background;for(const g of groups.values())if(g.canvas)g.canvas.width=g.canvas.height=1;groups.clear();formalSeq=0;formalAcceptedAt=null;lastSubmittedSeq=0;
    if(m.navigationPicture){
    navScale=Math.min(1,768/Math.max(width,height));navCanvas=new OffscreenCanvas(Math.max(1,Math.ceil(width*navScale)),Math.max(1,Math.ceil(height*navScale)));navContext=navCanvas.getContext('2d',{alpha:false,willReadFrequently:true});navContext.fillStyle='#fff';navContext.fillRect(0,0,navCanvas.width,navCanvas.height);lastNavSnapshot=0;navNeedsFinal=false;
    }else{navCanvas=null;navContext=null;navNeedsFinal=false;}
@@ -158,7 +185,9 @@ self.onmessage=({data:m})=>{
    if(!group.context)throw Error('Offscreen display context unavailable');warmPresentation(group.context);
    group.context.putImageData(new ImageData(backgroundPixels(group),group.w,group.h),0,0);if(m.key===0&&!initialSurfaceReady){initialSurfaceReady=true;postMessage({type:'ready',epoch})}return;
   }
-  if(m.type==='navigation'){navigation=m.active;if(navigation)navNeedsFinal=true;}else if(m.type==='start'){
+  if(m.type==='view-scale'){
+   if(Number.isFinite(m.scale)&&m.scale>0){viewPixelScale=m.scale;for(const group of groups.values())if(group.displayScale&&group.displayScale!==1)dirty.add(group.key)}
+  }else if(m.type==='navigation'){navigation=m.active;if(navigation)navNeedsFinal=true;}else if(m.type==='start'){
    if(Number.isFinite(m.presentationInterval))presentationInterval=Math.min(32,Math.max(8,m.presentationInterval));
    const stroke=m.stroke;
    candidates.set(m.id,{id:m.id,stroke,ink:new PreviewInk(stroke,width,height),visible:true,active:true,startedAt:m.startedAt,previewIndex:0,previewCount:0});
@@ -182,7 +211,11 @@ self.onmessage=({data:m})=>{
      [group.data,group.stagingData]=[group.stagingData,group.data];
      if(!directMode){group.fresh=false;continue}
      if(!group.context)throw Error('Display surface was not registered before ACK');
-     const d=group.fresh?{x:group.x,y:group.y,w:group.w,h:group.h}:group.damage;if(d){group.context.putImageData(new ImageData(group.data,group.w,group.h),0,0,d.x-group.x,d.y-group.y,d.w,d.h);submittedPixels+=d.w*d.h}group.fresh=false;
+     const scale=provisionalScale(group),pixels=displayPixels(group,scale),resized=group.canvas.width!==pixels.w||group.canvas.height!==pixels.h;
+     if(resized){group.canvas.width=pixels.w;group.canvas.height=pixels.h}
+     const d=group.fresh||resized||scale!==1?{x:group.x,y:group.y,w:group.w,h:group.h}:group.damage;
+     if(d){if(scale===1)group.context.putImageData(new ImageData(pixels.data,pixels.w,pixels.h),0,0,d.x-group.x,d.y-group.y,d.w,d.h);else group.context.putImageData(new ImageData(pixels.data,pixels.w,pixels.h),0,0);submittedPixels+=scale===1?d.w*d.h:pixels.w*pixels.h}
+     group.displayScale=scale;group.fresh=false;
     }
     for(const [key,core]of inflight.updates||[])visibleCores.set(key,core);
     for(const item of inflight.first)candidates.get(item.id)&&(candidates.get(item.id).firstPublished=true);
