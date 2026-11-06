@@ -44,3 +44,5 @@ jobs:
             /tmp/illustro-formal-equivalence.json
             /tmp/illustro-async-preview-*.json
             /tmp/illustro-backlog.json
+            /tmp/illustro-display-viewport.json
+            /tmp/illustro-view-*.png

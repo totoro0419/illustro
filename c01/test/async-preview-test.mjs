@@ -32,6 +32,7 @@ try{
   const start=performance.now();emit('pointerdown','pen',10,180,250);
   for(let i=1;i<30;i++){emit('pointermove','pen',10,180+i*8,250+Math.sin(i/4)*30);await sleep(2)}
   await until(()=>count('preview')>100);const previewStartProxyMs=performance.now()-start,previewBeforeFormal=count('preview');
+  let actualPreviewBeforeFormal=null;if(!window.__c02Verify.presentation){const visible=()=>{let n=0;for(const tile of document.querySelectorAll('#display-tiles canvas')){const c=new OffscreenCanvas(tile.width,tile.height),ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(tile,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data;for(let i=0;i<d.length;i+=4)if(d[i+3]&&Math.min(d[i],d[i+1],d[i+2])<250)n++}return n};await until(()=>visible()>100);actualPreviewBeforeFormal=visible();}
   if(count('art')!==0)throw Error('formal gate failed');
   const pose=()=>paper.style.transform+'|'+$('retained-scene').style.transform;const firstPose=pose();
   emit('pointerdown','touch',21,440,390);emit('pointerdown','touch',22,540,390);emit('pointermove','touch',21,460,415);emit('pointermove','touch',22,590,370);
@@ -74,7 +75,7 @@ try{
   emit('pointerup','pen',50,360,310);window.__releaseFormal();await until(()=>stage.dataset.rasterPending==='0');
   document.querySelector('[data-action=saveas]').click();await until(()=>writes.length===3);
   const erased=JSON.parse(writes[2]),eraseHash=await digest(await decode(erased.layers[0].png));await until(async()=>await digest(pixels('preview'))===eraseHash);
-  return {visibleHash,viewportChecks,previewStartProxyMs,previewBeforeFormal,simultaneousPose,pendingViewProxyMs,pendingBeforeRelease,savedAHash,aHash,abHash,referenceHash,beforeErase,previewErase,eraseHash,saveAB};
+  return {actualPreviewBeforeFormal,visibleHash,viewportChecks,previewStartProxyMs,previewBeforeFormal,simultaneousPose,pendingViewProxyMs,pendingBeforeRelease,savedAHash,aHash,abHash,referenceHash,beforeErase,previewErase,eraseHash,saveAB};
  });
  assert.equal(report.pendingBeforeRelease,'2');assert.equal(report.savedAHash,report.aHash,'Save after pending Undo contains A only');assert.equal(report.referenceHash,report.abHash,'Formal RGBA matches reference');assert.notEqual(report.aHash,report.abHash,'Redo restores B');assert.ok(report.previewErase<report.beforeErase,'Eraser preview removes pixels');
  page.on('dialog',d=>d.accept());
