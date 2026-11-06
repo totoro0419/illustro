@@ -22,7 +22,7 @@ const requestedMode=!requestedPresentation||requestedPresentation==='auto'?'bitm
 const presentationMode=requestedMode==='bitmap'&&!bitmapSupported?'2d':requestedMode;
 const directPresentation=presentationMode==='bitmap'&&typeof HTMLCanvasElement.prototype.transferControlToOffscreen==='function';
 const pixelMirror=new URLSearchParams(location.search).has('pixelMirror');
-const cpuDisplay=new URLSearchParams(location.search).get('displayCanvas')!=='accelerated';
+const cpuDisplay=new URLSearchParams(location.search).get('displayCanvas')==='cpu';
 const retainedScene=new RetainedScene(stage,paper);
 let gpuDisplay=null,gpuEnabled=false;
 try{if(presentationMode==='webgl')gpuDisplay=new Presentation(stage)}catch(error){document.getElementById('gpu-presentation')?.remove();console.warn('表示をCanvas 2Dへ切り替えます',error)}
