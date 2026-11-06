@@ -12,6 +12,7 @@ const server=createServer(async(req,res)=>{try{
  }catch{res.writeHead(404).end()}});
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const browser=await chromium.launch({headless:true,args:[...(process.env.ILLUSTRO_DISABLE_2D?['--disable-accelerated-2d-canvas']:[]),'--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const qualityReferences=new Map();
 const report={recordedAt:new Date().toISOString(),inputPath:'Same normalized document-space centreline; preset algorithms and UI viewport sizes differ. Coalesced subpixel offsets are CSS-space.',runOptions:{presentation:process.env.ILLUSTRO_PRESENTATION||'auto',styleAblation:process.env.ILLUSTRO_BENCH_STYLE||null,disableAccelerated2D:!!process.env.ILLUSTRO_DISABLE_2D},scope:'Chromium synthetic pen/touch, same host; next rAF and Canvas submission proxies, no physical scanout. Legacy WebGL2 is software SwiftShader; Canvas2D is a different algorithm.',browser:browser.version(),unmeasured:['physical input/scanout','GC pause duration','whole-process memory','GPU execution time'],cases:[]};
 const scenarios=JSON.parse(process.env.ILLUSTRO_BENCH_CASES||JSON.stringify([
  {name:'thin',size:10,brush:'gpen',width:640,height:480,strokes:10},
@@ -51,9 +52,21 @@ try{for(const [version] of Object.entries(roots))for(const scenario of scenarios
   else {
    const probe=window.__illustroPerformance.probe();
    // Set legacy preset through its actual UI where available, record selected label.
-   const select=document.querySelector('#brush');if(select){const match=[...select.options].find(o=>s.brush==='pencil'?/鉛筆/.test(o.text):s.brush==='marker'?/マーカー/.test(o.text):/Gペン/.test(o.text));if(match){select.value=match.value;select.dispatchEvent(new Event('change',{bubbles:true}))}}
+   const select=document.querySelector('#brush');if(select){const match=[...select.options].find(o=>s.quality?o.value==='foundation-technical':s.brush==='pencil'?/鉛筆/.test(o.text):s.brush==='marker'?/マーカー/.test(o.text):/Gペン/.test(o.text));if(match){select.value=match.value;select.dispatchEvent(new Event('change',{bubbles:true}))}}
   }
   size.value=s.size;size.dispatchEvent(new Event(legacy?'input':'change',{bubbles:true}));
+  if(s.quality){
+   // Auxiliary constant-width opaque round ink, through normal product controls.
+   // Nominal G-pen / texture / pressure comparisons remain separate.
+   if(legacy){
+    for(const [id,value]of [['brushOpacity',100],['brushFlow',100],['brushSpacing',10],['brushPressure',0],['brushStabilization',0],['brushTexture',0]]){const e=document.getElementById(id);e.value=value;e.dispatchEvent(new Event('input'))}
+    const fade=document.getElementById('force');fade.checked=false;fade.dispatchEvent(new Event('change'));
+    const color=document.getElementById('colorHex');color.focus();color.value='#223344';color.dispatchEvent(new Event('input'));color.blur();
+   }else{
+    const c=document.querySelector('#brush-correction select');c.value='off';c.dispatchEvent(new Event('change'));
+    const color=document.getElementById('hex');color.value='#223344';color.dispatchEvent(new Event('change'));
+   }
+  }
   if(!legacy&&s.correction){const c=document.querySelector('#brush-correction select');c.value=s.correction;c.dispatchEvent(new Event('change'))}
   const emit=(type,kind,id,x,y,n=1)=>{
    const opt={bubbles:true,pointerId:id,pointerType:kind,button:0,buttons:type==='pointerup'?0:1,pressure:type==='pointerup'?0:.7,clientX:r.x+x,clientY:r.y+y,width:1,height:1};
@@ -95,13 +108,47 @@ try{for(const [version] of Object.entries(roots))for(const scenario of scenarios
    // Continuous cases deliberately do not drain between strokes.
    if(s.strokes<=10){const at=performance.now();await wait();formalLatency.push(performance.now()-at)}
    else await sleep(4);
-   document.querySelector(legacy?'#fit':'[data-action=fit]')?.click();await new Promise(ok=>requestAnimationFrame(ok));
+   document.querySelector(legacy?'#fitView':'[data-action=fit]')?.click();await new Promise(ok=>requestAnimationFrame(ok));
   }
   const at=performance.now();await wait();const finalDrainMs=performance.now()-at;await sleep(100);running=false;
   return {measurementStartedAtMs:readyAtMs,presentationInitializationMs:Number(target.dataset.presentationInitMs)||null,viewport:{x:r.x,y:r.y,width:r.width,height:r.height},viewSamples,diagnostics:window.__c02Perf,handlerMs:stats(handlers),frameMs:stats(frames),frameDeliveryMs:stats(frameDelivery),viewNextRafMs:stats(viewLatency),postNavigationDrainMs:stats(formalLatency),finalDrainMs,maxPending,longTasks:{count:longTasks.length,total:longTasks.reduce((a,b)=>a+b,0),max:Math.max(0,...longTasks)},heapBefore,heapAfter:performance.memory?.usedJSHeapSize??null,viewMatrix:document.getElementById('paper')?.style.transform,worker:legacy?window.__illustroPerformance.read():JSON.parse(target.dataset.rasterStats||'null'),previewStartMs:null,endPending:pending(),selectedBrush:document.querySelector('#brush')?.selectedOptions?.[0]?.textContent||s.brush};
  },{scenario,legacy});
  const timeoutMs=Number(process.env.ILLUSTRO_CASE_TIMEOUT||150000);let caseTimer;try{result=await Promise.race([evaluation,new Promise((_,reject)=>{caseTimer=setTimeout(()=>reject(Error('Case exceeded '+timeoutMs+' ms')),timeoutMs)})])}finally{clearTimeout(caseTimer)}}catch(error){report.cases.push({version,scenario,error:String(error),errors});console.log(JSON.stringify({version,name:scenario.name,error:String(error),errors}));await page.close();continue}
  if(traceClient){const complete=new Promise(ok=>traceClient.once('Tracing.tracingComplete',ok));await traceClient.send('Tracing.end');const {stream}=await complete;let trace='';for(;;){const data=await traceClient.send('IO.read',{handle:stream});trace+=data.data;if(data.eof)break}await traceClient.send('IO.close',{handle:stream});await writeFile(process.env.ILLUSTRO_TRACE,trace)}
+
+ if(scenario.quality&&!result.error){
+  result.quality=await page.evaluate(async legacy=>{
+   const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));let blob=null,native=null;
+   const original=URL.createObjectURL;
+   URL.createObjectURL=function(value){if(value instanceof Blob)blob=value;return original.call(URL,value)};
+   window.showSaveFilePicker=async()=>({createWritable:async()=>({write:async data=>{native=typeof data==='string'?data:new TextDecoder().decode(data)},close:async()=>{}})});
+   try{
+    if(legacy){document.getElementById('exportImage').click();document.getElementById('exportFormat').value='png';document.getElementById('exportRun').click()}
+    else document.querySelector('[data-action=save]').click();
+    for(let i=0;i<3000&&!blob&&!native;i++)await sleep(10);
+    if(!blob&&!native)throw Error('Quality export timed out');
+    const image=legacy?await createImageBitmap(blob):await createImageBitmap(await(await fetch(JSON.parse(native).layers[0].png)).blob()),w=image.width,h=image.height;
+    const c=new OffscreenCanvas(w,h),ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);image.close();const data=ctx.getImageData(0,0,w,h).data,bits=new Uint8Array(Math.ceil(w*h/8));
+    let occupied=0,alphaSum=0,left=w,top=h,right=-1,bottom=-1;const colors=new Map();
+    for(let p=0;p<w*h;p++){const i=p*4,a=data[i+3];alphaSum+=a;if(a>=128){bits[p>>3]|=1<<(p&7);occupied++;const x=p%w,y=Math.floor(p/w);left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y)}if(a===255){const rgb=data.slice(i,i+3).join(',');colors.set(rgb,(colors.get(rgb)||0)+1)}}
+    let encoded='';for(let i=0;i<bits.length;i+=8192)encoded+=String.fromCharCode(...bits.subarray(i,i+8192));
+    const dominant=[...colors].sort((a,b)=>b[1]-a[1])[0]?.[0]?.split(',').map(Number)||null;
+    return {width:w,height:h,occupied,alphaSum,bounds:{left,top,right,bottom},dominant,mask:btoa(encoded),scope:'Final exported PNG alpha>=128 silhouette; same nominal diameter, normal opaque constant-width round ink; antialias and stamp algorithms differ'};
+   }finally{URL.createObjectURL=original}
+  },legacy);
+  const {mask,...summary}=result.quality;
+  if(legacy)qualityReferences.set(scenario.name,{mask,...summary});
+  else if(qualityReferences.has(scenario.name)){
+   const reference=qualityReferences.get(scenario.name),a=Buffer.from(reference.mask,'base64'),b=Buffer.from(mask,'base64');
+   let intersection=0,union=0;const count=v=>{v-=(v>>1)&85;v=(v&51)+((v>>2)&51);return (v+(v>>4))&15};
+   for(let i=0;i<a.length;i++){intersection+=count(a[i]&b[i]);union+=count(a[i]|b[i])}
+   const iou=union?intersection/union:1,colorDelta=Math.max(...summary.dominant.map((v,i)=>Math.abs(v-reference.dominant[i])));
+   result.quality={...summary,legacyIoU:iou,dominantColorDelta:colorDelta,tolerance:{silhouetteIoUMin:.95,dominantColorDeltaMax:1}};
+   if(iou<.95||colorDelta>1)errors.push('Auxiliary round-ink visual envelope mismatch: '+JSON.stringify(result.quality));
+  }
+  delete result.quality.mask;console.log(JSON.stringify({version,name:scenario.name,quality:result.quality}));
+ }
+
  if(legacy&&result.worker.strokes!==scenario.strokes)errors.push('Legacy did not commit every requested stroke: '+result.worker.strokes);
  report.cases.push({version,scenario,...result,errors});console.log(JSON.stringify({version,name:scenario.name,handler:result.handlerMs,frame:result.frameMs,view:result.viewNextRafMs,longTasks:result.longTasks,errors}));await page.close();
 }}finally{await browser.close();server.close();const out=process.env.ILLUSTRO_BENCH_OUT||'test/performance-results.json';await mkdir(resolve(out,'..'),{recursive:true});report.executionPassed=report.cases.every(c=>!c.error&&!c.errors.length);report.performanceGate='UNDECIDED: execution success is not legacy non-inferiority; compare p95/p99/max and verify real devices';await writeFile(out,JSON.stringify(report,null,2));if(!report.executionPassed)process.exitCode=1}

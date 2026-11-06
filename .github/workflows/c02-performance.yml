@@ -47,8 +47,17 @@ jobs:
           ILLUSTRO_BENCH_ROOTS: >-
             {"after":"${{ github.workspace }}/c01"}
           ILLUSTRO_BENCH_CASES: >-
-            [{"name":"hundred","size":12,"brush":"gpen","width":640,"height":480,"strokes":100},{"name":"dense","size":200,"brush":"pencil","width":1600,"height":1200,"strokes":10,"samples":32},{"name":"simultaneous","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":10,"simultaneous":true}]
+            [{"name":"hundred","size":12,"brush":"gpen","width":640,"height":480,"strokes":100},{"name":"dense","size":200,"brush":"pencil","width":1600,"height":1200,"strokes":10,"samples":32},{"name":"correction-zoom","size":78,"brush":"gpen","width":1600,"height":1200,"strokes":10,"correction":"strong","zoom":2},{"name":"simultaneous","size":300,"brush":"gpen","width":2560,"height":1920,"strokes":10,"simultaneous":true}]
           ILLUSTRO_BENCH_OUT: /tmp/c02-after-stress.json
+      - name: Equal visual envelope auxiliary round-ink comparison
+        run: node test/performance-compare.mjs
+        working-directory: c01
+        env:
+          ILLUSTRO_BENCH_ROOTS: >-
+            {"legacy":"${{ github.workspace }}/legacy/apps/editor/dist","before":"${{ github.workspace }}/before/c01","after":"${{ github.workspace }}/c01"}
+          ILLUSTRO_BENCH_CASES: >-
+            [{"name":"quality-thin","quality":true,"size":10,"brush":"round","width":640,"height":480,"strokes":10,"samples":1},{"name":"quality-broad","quality":true,"size":300,"brush":"round","width":2560,"height":1920,"strokes":10,"samples":1}]
+          ILLUSTRO_BENCH_OUT: /tmp/c02-quality-performance.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -56,3 +65,4 @@ jobs:
           path: |
             /tmp/c02-performance.json
             /tmp/c02-after-stress.json
+            /tmp/c02-quality-performance.json
