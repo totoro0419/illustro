@@ -22,6 +22,7 @@ const requestedMode=!requestedPresentation||requestedPresentation==='auto'?'bitm
 const presentationMode=requestedMode==='bitmap'&&!bitmapSupported?'2d':requestedMode;
 const directPresentation=presentationMode==='bitmap'&&typeof HTMLCanvasElement.prototype.transferControlToOffscreen==='function';
 const pixelMirror=new URLSearchParams(location.search).has('pixelMirror');
+const displayGroupSize=Number(new URLSearchParams(location.search).get('displayGroup'))||128;
 const retainedScene=new RetainedScene(stage,paper);
 let gpuDisplay=null,gpuEnabled=false;
 try{if(presentationMode==='webgl')gpuDisplay=new Presentation(stage)}catch(error){document.getElementById('gpu-presentation')?.remove();console.warn('表示をCanvas 2Dへ切り替えます',error)}
@@ -177,7 +178,7 @@ function resetDoc(data){
  removePreviews();repaint.clear();clearTemporary();
  for(const request of pendingSnapshots.values())request.reject(Error('作品が切り替わりました'));
  pendingSnapshots.clear();setDimensions();
- if(rasterWorker){rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});previewWorker.postMessage({type:'reset',epoch:documentEpoch,generation:previewGeneration,width:doc.width,height:doc.height,background:doc.background,measure:!!perf,bitmap:presentationMode==='bitmap',direct:directPresentation,navigationPicture:gpuEnabled})}
+ if(rasterWorker){rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});previewWorker.postMessage({type:'reset',epoch:documentEpoch,generation:previewGeneration,width:doc.width,height:doc.height,background:doc.background,measure:!!perf,bitmap:presentationMode==='bitmap',direct:directPresentation,groupSize:displayGroupSize,navigationPicture:gpuEnabled})}
  syncMeta();fit();
  poseTimeline.entries.length=0;cancelAnimationFrame(frame);renderView();dirty();
 }
