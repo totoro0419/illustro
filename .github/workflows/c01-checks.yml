@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: '22'
       - name: Dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
         working-directory: c01
       - name: Static and unit
         run: npm run check
@@ -26,3 +26,21 @@ jobs:
       - name: Browser integration
         run: npm run browser:test
         working-directory: c01
+      - uses: actions/checkout@v4
+        with:
+          ref: 4a002dd4dde701579ce0cc0c9bb7bb9da96807f0
+          path: c02-raster-reference
+      - name: Frozen pre-fix final RGBA comparison
+        run: node test/formal-equivalence.mjs
+        working-directory: c01
+        env:
+          ILLUSTRO_REFERENCE: ${{ github.workspace }}/c02-raster-reference/c01
+          ILLUSTRO_EQUIVALENCE_OUT: /tmp/illustro-formal-equivalence.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c02-raster-and-async-evidence
+          path: |
+            /tmp/illustro-formal-equivalence.json
+            /tmp/illustro-async-preview-*.json
+            /tmp/illustro-backlog.json

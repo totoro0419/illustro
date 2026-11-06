@@ -3,9 +3,10 @@ import {mod, strokeDabs} from './brush-engine.mjs';
 export const tileSize = 128;
 const angle = degrees => degrees * Math.PI / 180;
 export function surface(width,height){
- if(typeof OffscreenCanvas==='function') return new OffscreenCanvas(width,height);
- return Object.assign(document.createElement('canvas'),{width,height});
+ const canvas=typeof OffscreenCanvas==='function'?new OffscreenCanvas(width,height):Object.assign(document.createElement('canvas'),{width,height});
+ canvas.getContext('2d',{willReadFrequently:true});return canvas;
 }
+
 const textureCache = new Map();
 const bitmaps = new WeakMap();
 function texture(name) {
@@ -93,7 +94,8 @@ export class Ink {
   this.tiles=new Map();
   this.changed=new Set();
  }
- stamp(dab){
+ stamp(dab){for(const _ of this.stampSteps(dab)){} }
+ *stampSteps(dab){
   const s=this.stroke,b=s.brush;
   const opacity=dab.opacity*dab.flow*s.colorAlpha*(b.accumulate?s.opacity:1);
   if(!opacity || !dab.size) return;
@@ -147,6 +149,7 @@ export class Ink {
       merged.data[i-1]=layer.data[i-1];merged.data[i]=layer.data[i];
      }
     }else this.changed.add(key);
+    yield key;
    }
   }
   for(const [key,image] of wrapped||[]){
@@ -155,7 +158,7 @@ export class Ink {
    this.wrapScratch.getContext('2d',{willReadFrequently:true}).putImageData(image,0,0);
    const ctx=this.getTile(key,box).getContext('2d');
    ctx.globalAlpha=opacity;ctx.drawImage(this.wrapScratch,0,0);ctx.globalAlpha=1;
-   this.changed.add(key);
+   this.changed.add(key);yield key;
   }
  }
  getTile(key,box){

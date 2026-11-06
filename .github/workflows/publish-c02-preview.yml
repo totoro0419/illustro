@@ -22,7 +22,7 @@ jobs:
           path: c01-release
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: npm install --no-audit --no-fund && npm run check
+      - run: npm ci --no-audit --no-fund && npm run check
         working-directory: c01
       - run: node scripts/build.mjs
         working-directory: c01-release/c01
@@ -67,7 +67,7 @@ jobs:
           test "$current" = "$GITHUB_SHA"
           curl -fsSL "$url/c01/" -o /tmp/illustro-c01.html
           grep -q 'Illustro · C01' /tmp/illustro-c01.html
-      - run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - run: npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
         working-directory: c01
       - run: node test/live-test.mjs
         working-directory: c01

@@ -6,7 +6,7 @@ try{
   browser=await chromium.launch({headless:true,executablePath:process.env.ILLUSTRO_CHROMIUM||undefined,args:process.env.ILLUSTRO_CHROMIUM?['--no-sandbox','--disable-dev-shm-usage']:[]});
   const page=await browser.newPage({viewport:{width:1280,height:800}});
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-  const response=await page.goto(url,{waitUntil:'networkidle',timeout:45000});
+  const response=await page.goto(url+(url.includes('?')?'&':'?')+'pixelMirror=1',{waitUntil:'networkidle',timeout:45000});
   assert.equal(response.status(),200,'Preview must respond 200');
   await page.locator('#brush-search').waitFor({state:'visible'});
   await page.locator('#brush-search').fill('鉛筆');
@@ -31,7 +31,7 @@ try{
   await page.locator('[data-action=redo]').first().click();
   await page.evaluate(()=>{
    window.previewWrites=[];
-   window.showSaveFilePicker=async()=>({createWritable:async()=>({write:async data=>window.previewWrites.push(data),close:async()=>{}})});
+   window.showSaveFilePicker=async()=>({createWritable:async()=>({write:async data=>window.previewWrites.push(typeof data==='string'?data:new TextDecoder().decode(data)),close:async()=>{}})});
   });
   await page.locator('[data-action=save]').first().click();
   await page.waitForFunction(()=>window.previewWrites.length>0);

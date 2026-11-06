@@ -9,10 +9,12 @@
     "lint": "for file in app/*.mjs; do node --check \"$file\" || exit; done",
     "build": "node scripts/build.mjs",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "browser:test": "node test/browser-test.mjs && node test/pen-worker-test.mjs"
+    "browser:test": "node test/browser-test.mjs && node test/pen-worker-test.mjs && node test/async-preview-test.mjs && node test/backlog-test.mjs",
+    "raster:compare": "node test/formal-equivalence.mjs",
+    "performance:compare": "node test/performance-compare.mjs"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "playwright": "^1.56.1"
+    "playwright": "1.56.1",
+    "typescript": "^5.9.3"
   }
 }

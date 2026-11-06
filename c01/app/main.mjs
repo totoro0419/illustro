@@ -1,5 +1,8 @@
-import {algorithm,correctSample,evaluateDab,makeSeed,mod,validateBrush} from './brush-engine.mjs';
+import {algorithm,makeSeed,mod,validateBrush} from './brush-engine.mjs';
 import {Ink,composite,rasterize,tileBox,tileSize} from './brush-raster.mjs';
+import {RetainedScene} from './retained-scene.mjs';
+import {Presentation} from './presentation.mjs';
+import {previewDabs} from './preview-stroke.mjs';
 import {admit,PoseTimeline} from './stroke-input.mjs';
 import {brushUI} from './brush-ui.mjs';
 import {enableInputDiagnostics} from './input-diagnostics.mjs';
@@ -8,9 +11,50 @@ import {clamp,round,validateDocument,toPixels,hexToRgb,rgbToHex,hsvToRgb,rgbToHs
 const $ = id => document.getElementById(id);
 const all = q => [...document.querySelectorAll(q)];
 const canvas = $('art'), preview=$('preview'), grid=$('grid'), paper=$('paper'), stage=$('stage');
-let ctx=canvas.getContext('2d',{willReadFrequently:true}),pctx=preview.getContext('2d'),gctx=grid.getContext('2d');
+let ctx=canvas.getContext('2d',{willReadFrequently:true}),pctx=preview.getContext('2d',{willReadFrequently:true}),gctx=grid.getContext('2d');
 canvas.style.visibility='hidden';
-let rasterWorker=null,rasterSeq=0,strokeSerial=0,saveSerial=0;
+let rasterWorker=null,previewWorker=null,previewGeneration=0,minimumPublicationSeq=0,publishedSeq=0,rasterSeq=0,strokeSerial=0,saveSerial=0;
+let heldFormal=null;
+const formalStates=new Map(),displayTiles=new Map(),formalTiles=new Map(),displayImages=new Map();
+const requestedPresentation=new URLSearchParams(location.search).get('presentation');
+const bitmapSupported=!!document.createElement('canvas').getContext('bitmaprenderer');
+const requestedMode=!requestedPresentation||requestedPresentation==='auto'?'bitmap':requestedPresentation;
+const presentationMode=requestedMode==='bitmap'&&!bitmapSupported?'2d':requestedMode;
+const pixelMirror=new URLSearchParams(location.search).has('pixelMirror');
+const retainedScene=new RetainedScene(stage,paper);
+let gpuDisplay=null,gpuEnabled=false;
+try{if(presentationMode==='webgl')gpuDisplay=new Presentation(stage)}catch(error){document.getElementById('gpu-presentation')?.remove();console.warn('表示をCanvas 2Dへ切り替えます',error)}
+if(pixelMirror)window.__c02Verify={presentation:gpuDisplay,getView:()=>({...view})};
+if(gpuDisplay){stage.append(grid);grid.style.transformOrigin='0 0';grid.style.pointerEvents='none';gpuDisplay.onLost=()=>{gpuEnabled=false;gpuDisplay.element.hidden=true;displayLayer.hidden=false;paper.style.visibility='visible';$('paper-shadow').style.visibility='visible';displayPictures([...displayImages.values()])}}
+const perf=new URLSearchParams(location.search).has('perf')?{display:[],formal:[],preview:[],firstPreview:[],formalPublication:[]}:null;
+if(perf)window.__c02Perf=perf;
+const navPreview=document.createElement('canvas');navPreview.id='navigation-preview';navPreview.hidden=true;navPreview.setAttribute('aria-hidden','true');paper.append(navPreview);
+const navContext=presentationMode==='webgl'?navPreview.getContext('bitmaprenderer'):null;let navReady=false;
+const useNavigationPicture=()=>gpuEnabled&&nav.size>0&&!repeat&&navReady;
+const displayLayer=document.createElement('div');displayLayer.id='display-tiles';displayLayer.setAttribute('aria-hidden','true');paper.insertBefore(displayLayer,grid.parentElement===paper?grid:null);
+function displayPictures(pictures,groups=[]){
+ for(const p of pictures)displayImages.set(p.key,p);
+ if(gpuEnabled){const start=performance.now();if(pixelMirror)for(const {box,image}of pictures)pctx.putImageData(image,box.x,box.y);gpuDisplay.update(pictures);gpuDisplay.request(view);if(perf)perf.display.push({totalMs:performance.now()-start,tiles:pictures.length});return}
+ if(presentationMode==='bitmap'){
+  if(pixelMirror)for(const {box,image}of pictures)pctx.putImageData(image,box.x,box.y);
+  for(const data of groups){let tile=displayTiles.get(data.key);if(!tile){const element=document.createElement('canvas');element.width=data.w;element.height=data.h;Object.assign(element.style,{left:data.x+'px',top:data.y+'px',width:data.w+'px',height:data.h+'px'});tile={element,context:element.getContext('bitmaprenderer')};if(!tile.context)throw Error('Bitmap presentation unavailable');displayTiles.set(data.key,tile);displayLayer.append(element)}tile.context.transferFromImageBitmap(data.bitmap)}
+  return;
+ }
+ const start=performance.now();let mirrorMs=0,tileMs=0;
+ const groupSize=512,columns=Math.ceil(doc.width/groupSize);
+ for(const {box,image} of pictures){
+  let at=performance.now();if(pixelMirror)pctx.putImageData(image,box.x,box.y);mirrorMs+=performance.now()-at;
+  const col=Math.floor(box.x/groupSize),row=Math.floor(box.y/groupSize),key=row*columns+col,x=col*groupSize,y=row*groupSize;
+  let tile=displayTiles.get(key);
+  if(!tile){const element=document.createElement('canvas');element.width=Math.min(groupSize,doc.width-x);element.height=Math.min(groupSize,doc.height-y);Object.assign(element.style,{left:x+'px',top:y+'px',width:element.width+'px',height:element.height+'px'});const context=element.getContext('2d',{willReadFrequently:true});if(!context)throw Error('表示Canvasが利用できません');tile={element,context};displayTiles.set(key,tile);displayLayer.append(element)}
+  at=performance.now();tile.context.putImageData(image,box.x-x,box.y-y);tileMs+=performance.now()-at;
+ }
+ if(perf){perf.display.push({totalMs:performance.now()-start,mirrorMs,tileMs,tiles:pictures.length});if(perf.display.length>2048)perf.display.shift()}
+}
+
+const rasterCommands=[];let rasterSendFrame=0,presentationInitAt=performance.now();
+function queueRaster(message){rasterCommands.push(message);scheduleRasterSend()}
+function scheduleRasterSend(){if(!rasterSendFrame)rasterSendFrame=requestAnimationFrame(()=>{rasterSendFrame=0;if(!rasterWorker||workerFault){rasterCommands.length=0;return}if(nav.size)return;for(const message of rasterCommands.splice(0))rasterWorker.postMessage(message)})}
 const pendingSnapshots=new Map();
 const useWorker=typeof Worker==='function'&&typeof OffscreenCanvas==='function';
 if(useWorker){
@@ -26,28 +70,46 @@ function rasterFailure(message){
  notify('描画の確定を停止しました: '+message);
 }
 if(rasterWorker){
+ preview.style.visibility='hidden';
+ previewWorker=new Worker(new URL('./preview-worker.mjs',import.meta.url),{type:'module'});
+ previewWorker.onmessage=({data:m})=>{
+  if(m.type==='ready'){
+   if(m.epoch!==documentEpoch){for(const g of m.groups||[])g.bitmap.close();return}
+   const initialGroups=(m.groups||[]).filter(g=>!displayTiles.has(g.key));displayPictures([],initialGroups);for(const g of m.groups||[])g.bitmap.close();
+   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(m.epoch===documentEpoch){stage.dataset.presentationReady='true';stage.dataset.presentationInitMs=String(performance.now()-presentationInitAt);stage.setAttribute('aria-busy','false')}}));return
+  }
+  if(m.type==='error'){if(m.epoch===documentEpoch)rasterFailure('仮線: '+m.message);return}
+  const valid=m.epoch===documentEpoch&&m.generation===previewGeneration&&!workerFault;
+  if(m.navBitmap){if(valid&&gpuEnabled&&navContext){navContext.transferFromImageBitmap(m.navBitmap);navReady=true;if(nav.size)scheduleView()}m.navBitmap.close()}
+  const accepted=m.epoch===documentEpoch&&m.generation===previewGeneration&&!workerFault&&!(nav.size&&!active&&!m.first?.length);
+  if(accepted){
+   if(perf&&m.stats){perf.preview.push(m.stats);for(const item of m.first||[])perf.firstPreview.push(performance.timeOrigin+performance.now()-item.startedAt);if(m.formalAcceptedAt&&m.formalSeq>(perf.lastFormalSeq||0)){perf.formalPublication.push(performance.timeOrigin+performance.now()-m.formalAcceptedAt);perf.lastFormalSeq=m.formalSeq}}
+   displayPictures(m.pictures,m.groups);
+   renderRepeat();
+  }
+  for(const p of m.pictures||[])p.bitmap?.close();for(const group of m.groups||[])group.bitmap.close();
+  previewWorker.postMessage({type:'ack',epoch:m.epoch,serial:m.serial,accepted});
+ };
+ previewWorker.onerror=()=>rasterFailure('仮線Workerが応答しなくなりました');
  rasterWorker.onmessage=({data:msg})=>{
-  if(msg.epoch!==documentEpoch){msg.bitmap?.close();return}
+  if(msg.epoch!==documentEpoch){for(const p of msg.pictures||[])p.bitmap?.close();return}
   if(msg.type==='frame'){
-   if(msg.seq===rasterSeq&&!workerFault){
-    if(msg.box){
-     const {x,y,w,h}=msg.box,columns=Math.ceil(doc.width/tileSize);
-     ctx.clearRect(x,y,w,h);ctx.drawImage(msg.bitmap,x,y);
-     for(let row=Math.floor(y/tileSize);row<Math.ceil((y+h)/tileSize);row++){
-      for(let col=Math.floor(x/tileSize);col<Math.ceil((x+w)/tileSize);col++)repaint.add(row*columns+col);
-     }
-    }
-    if(msg.stats){
-     const latest=[...pendingInk.values()].at(-1);
-     stage.dataset.rasterStats=JSON.stringify({...msg.stats,formalMs:latest?performance.now()-latest.acceptedAt:null});
-    }
-    lastFormal={strokes:archiveStrokes(),revision:history.revision};removePreviews();presentation();dirty();
-    rasterWorker.postMessage({type:'presented',epoch:msg.epoch,seq:msg.seq});
-   }
-   msg.bitmap?.close();
+   if(msg.seq>=minimumPublicationSeq&&msg.seq>publishedSeq&&msg.seq<=rasterSeq&&!workerFault){
+    const receiveStart=performance.now();publishedSeq=msg.seq;
+    for(const {key,box,image} of msg.pictures){formalTiles.set(key,{box,image:new ImageData(new Uint8ClampedArray(image.data),box.w,box.h)});if(pixelMirror)ctx.putImageData(image,box.x,box.y)}
+    const state=formalStates.get(msg.seq);
+    if(state)lastFormal={strokes:archiveStrokes(state.index),revision:state.revision};
+    for(const seq of formalStates.keys())if(seq<=msg.seq)formalStates.delete(seq);
+    if(msg.stats)stage.dataset.rasterStats=JSON.stringify(msg.stats);
+    if(!heldFormal)heldFormal={pictures:new Map()};
+    for(const p of msg.pictures)heldFormal.pictures.set(p.key,p);
+    Object.assign(heldFormal,{epoch:msg.epoch,seq:msg.seq,acceptedAt:state?.acceptedAt});
+    flushFormal();
+    rasterWorker.postMessage({type:'presented',epoch:msg.epoch,seq:msg.seq});dirty();if(perf){perf.formal.push({totalMs:performance.now()-receiveStart,tiles:msg.pictures.length,...msg.stats});if(perf.formal.length>2048)perf.formal.shift()}
+   }else for(const p of msg.pictures)p.bitmap?.close();
   }else if(msg.type==='saved'){
    const request=pendingSnapshots.get(msg.requestId);
-   if(request){pendingSnapshots.delete(msg.requestId);request.resolve(new Blob([msg.png],{type:'image/png'}))}
+   if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg.native);if(perf){(perf.save||=[]).push(msg.stats)}}
   }else if(msg.type==='error'){
    const request=pendingSnapshots.get(msg.requestId);
    if(request){pendingSnapshots.delete(msg.requestId);request.reject(Error(msg.message))}
@@ -56,36 +118,49 @@ if(rasterWorker){
  };
  rasterWorker.onerror=()=>{rasterWorker.terminate();rasterWorker=null;rasterFailure('Workerが応答しなくなりました')};
 }
-function workerPNG(epoch){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});rasterWorker.postMessage({type:'save',epoch,requestId})})}
+/** Navigation keeps the retained preview picture while precise tiles wait in
+ * CPU memory. No view event waits for these uploads or for the raster queue. */
+function flushFormal(){
+ if(!heldFormal||nav.size||heldFormal.seq<minimumPublicationSeq||workerFault)return;
+ const packet=heldFormal;heldFormal=null;const retired=[];
+ for(const [id,candidate]of pendingInk)if(candidate.seq<=packet.seq){retired.push(id);pendingInk.delete(id)}
+ const pictures=[...packet.pictures.values()];
+ previewWorker.postMessage({type:'base',epoch:packet.epoch,seq:packet.seq,acceptedAt:packet.acceptedAt,pictures,retired},pictures.map(p=>p.image.data.buffer));
+ dirty();
+}
+function workerNative(epoch,metadata,revision){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'save',epoch,requestId,metadata,revision})})}
 
 let doc={name:'無題',author:'',description:'',width:1600,height:1200,dpi:300,profile:'srgb8',background:'white'};
 let history=new History(),savedRev=-1,handle=null,documentEpoch=0,saveQueue=Promise.resolve(),active=null,nav=new Map(),gesture=null,view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
 let settings={tool:'gpen',size:12,opacity:1,flow:1,curve:1,fingerDraw:false,gestureUndo:true,color:[34,39,51],colorAlpha:1,previous:[0,0,0],lastBrush:'gpen'};
 let templates=[];try{templates=JSON.parse(localStorage.getItem('illustro.templates.v1')||'[]')}catch{}
 const isEraser=t=>brushes.get(t)?.blend==='erase';
-let toastTimer, frame=0,gridPainted=false,colorPickers=null,pickerBefore=null,pickerPrevious=null;
+let toastTimer, frame=0,viewUIFrame=0,gridPainted=false,colorPickers=null,pickerBefore=null,pickerPrevious=null;
 function notify(msg){$('toast').textContent=msg;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
 function dirty(){ stage.dataset.rasterPending=String(pendingInk.size);$('save-status').textContent=workerFault?'描画確定停止':pendingInk.size?'正式描画処理中…':savedRev===history.revision?'保存済み':'未保存';$('doc-title').textContent=doc.name+(savedRev===history.revision?'':' •');$('doc-dimensions').textContent=`${doc.width} × ${doc.height} px`;updateHistory() }
 function updateHistory(){for(const b of all('[data-action=undo]')){b.disabled=!history.canUndo;b.title=history.canUndo?'Undo: '+history.undoName:'戻せません'}for(const b of all('[data-action=redo]')){b.disabled=!history.canRedo;b.title=history.canRedo?'Redo: '+history.redoName:'進めません'}}
 function drawGrid(){if(gridPainted)return;gctx.clearRect(0,0,grid.width,grid.height);const show=grid.dataset.show==='1'&&view.scale>=6;if(!show)return;gridPainted=true;gctx.strokeStyle='#8994a560';gctx.lineWidth=1/Math.max(1,view.scale);gctx.beginPath();for(let x=0;x<=doc.width;x++){gctx.moveTo(x+.5,0);gctx.lineTo(x+.5,doc.height)}for(let y=0;y<=doc.height;y++){gctx.moveTo(0,y+.5);gctx.lineTo(doc.width,y+.5)}gctx.stroke()}
-function renderView(){frame=0;poseTimeline.record(performance.now(),view,stage.getBoundingClientRect());const a=view.rotation*Math.PI/180, sx=view.scale*(view.flipX?-1:1),sy=view.scale*(view.flipY?-1:1);const co=Math.cos(a),si=Math.sin(a);paper.style.transform=`matrix(${co*sx},${si*sx},${-si*sy},${co*sy},${view.x},${view.y})`;$('zoom-readout').textContent=`${Math.round(view.scale*100)}% / ${Math.round(view.rotation)}°`;$('zoom-n').value=Math.round(view.scale*100);grid.style.display=grid.dataset.show==='1'&&view.scale>=6?'block':'none';if(grid.dataset.show==='1'&&view.scale>=6)drawGrid();
+function updateViewUI(){ $('zoom-readout').textContent=`${Math.round(view.scale*100)}% / ${Math.round(view.rotation)}°`;$('zoom-n').value=Math.round(view.scale*100)}
+function renderView(){frame=0;if(retainedScene.base){if(!viewUIFrame)viewUIFrame=requestAnimationFrame(()=>{viewUIFrame=0;updateViewUI()});poseTimeline.record(performance.now(),view,gesture?.rect||stage.getBoundingClientRect());retainedScene.move(view);return}poseTimeline.record(performance.now(),view,stage.getBoundingClientRect());const a=view.rotation*Math.PI/180, sx=view.scale*(view.flipX?-1:1),sy=view.scale*(view.flipY?-1:1);const co=Math.cos(a),si=Math.sin(a);paper.style.transform=`matrix(${co*sx},${si*sx},${-si*sy},${co*sy},${view.x},${view.y})`;retainedScene.updateShadow(paper.style.transform,doc.width,doc.height);if(gpuDisplay){grid.style.transform=paper.style.transform;if(!useNavigationPicture())gpuDisplay.render(view)}updateViewUI();grid.style.display=!gpuEnabled&&grid.dataset.show==='1'&&view.scale>=6?'block':'none';if(!gpuEnabled&&grid.dataset.show==='1'&&view.scale>=6)drawGrid();
  if(!repeat){
   const corners=[[0,0],[doc.width,0],[doc.width,doc.height],[0,doc.height]];
-  $('paper-shadow-polygon').setAttribute('points',corners.map(([x,y])=>{const p=docToScreen({x,y},view);return p.x+','+p.y}).join(' '));
+  const points=corners.map(([x,y])=>{const p=docToScreen({x,y},view);return p.x+','+p.y}).join(' ');
+  for(const polygon of all('#paper-shadow polygon'))polygon.setAttribute('points',points);
  }
  renderRepeat();if(hover)showCursor(hover)}
-function scheduleView(){if(!frame)frame=requestAnimationFrame(renderView)}
+function scheduleView(){if(useNavigationPicture()||!gpuEnabled&&!repeat){if(frame)cancelAnimationFrame(frame);renderView();return}if(!frame)frame=requestAnimationFrame(renderView)}
 function fit(){const w=stage.clientWidth,h=stage.clientHeight;view={x:(w-Math.min(w/doc.width,h/doc.height)*doc.width*.88)/2,y:(h-Math.min(w/doc.width,h/doc.height)*doc.height*.88)/2,scale:clamp(Math.min(w/doc.width,h/doc.height)*.88,.05,4),rotation:0,flipX:false,flipY:false};scheduleView()}
-function setDimensions(){gridPainted=false;for(const c of [canvas,preview,grid]){c.width=doc.width;c.height=doc.height;c.style.width=doc.width+'px';c.style.height=doc.height+'px'}paper.style.width=doc.width+'px';paper.style.height=doc.height+'px';paper.style.background=doc.background==='white'?'white':'transparent';$('checker').style.display=doc.background==='white'?'none':'block';ctx=canvas.getContext('2d',{willReadFrequently:true});pctx=preview.getContext('2d');gctx=grid.getContext('2d');$('meta-summary').textContent=`${doc.width} × ${doc.height}px / ${doc.dpi} DPI / sRGB 8bit`;dirty()}
+function setDimensions(){gridPainted=false;gpuEnabled=false;try{gpuEnabled=Boolean(rasterWorker&&previewWorker&&gpuDisplay?.configure(doc.width,doc.height,doc.background))}catch(error){console.warn('表示をCanvas 2Dへ切り替えます',error)}if(gpuDisplay)gpuDisplay.element.hidden=!gpuEnabled;displayLayer.hidden=gpuEnabled;paper.style.visibility=gpuEnabled?'hidden':'visible';$('paper-shadow').style.visibility=gpuEnabled?'hidden':'visible';for(const c of [canvas,preview,grid]){c.width=doc.width;c.height=doc.height;c.style.width=doc.width+'px';c.style.height=doc.height+'px'}navPreview.style.width=doc.width+'px';navPreview.style.height=doc.height+'px';paper.style.width=doc.width+'px';paper.style.height=doc.height+'px';paper.style.background=doc.background==='white'?'white':'transparent';$('checker').style.display=doc.background==='white'?'none':'block';ctx=canvas.getContext('2d',{willReadFrequently:true});pctx=preview.getContext('2d',{willReadFrequently:true});gctx=grid.getContext('2d');$('meta-summary').textContent=`${doc.width} × ${doc.height}px / ${doc.dpi} DPI / sRGB 8bit`;dirty()}
 function syncMeta(){for(const [id,key] of [['meta-name','name'],['meta-author','author'],['meta-description','description']])$(id).value=doc[key]}
 function resetDoc(data){
- documentEpoch++;doc={...data};history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
+ for(const {element}of displayTiles.values()){element.width=element.height=1;element.remove()}displayTiles.clear();formalTiles.clear();displayImages.clear();
+ rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
  $('export-recovery').hidden=true;
  stage.removeAttribute('data-raster-error');stage.removeAttribute('data-raster-stats');$('interrupted-stroke').hidden=true;
  removePreviews();repaint.clear();clearTemporary();
  for(const request of pendingSnapshots.values())request.reject(Error('作品が切り替わりました'));
  pendingSnapshots.clear();setDimensions();
- if(rasterWorker)rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});
+ if(rasterWorker){rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});previewWorker.postMessage({type:'reset',epoch:documentEpoch,generation:previewGeneration,width:doc.width,height:doc.height,background:doc.background,measure:!!perf,bitmap:presentationMode==='bitmap',navigationPicture:gpuEnabled})}
  syncMeta();fit();
  poseTimeline.entries.length=0;cancelAnimationFrame(frame);renderView();dirty();
 }
@@ -108,6 +183,7 @@ let repeat=false, hover=null, hoverFrame=0, padBrushes=null, padStroke=null, pri
 const cursor=$('brush-cursor'), repeatView=$('repeat-view');
 
 function presentation(){
+ if(previewWorker)return;
  if(!repaint.size)return;
  const candidates=[...pendingInk.values(),active,interrupted];
  for(const key of repaint){
@@ -130,6 +206,7 @@ function presentation(){
  renderRepeat();
 }
 function invalidate(candidate){
+ if(previewWorker){if(!candidate.visible)previewGeneration++;previewWorker.postMessage({type:'visibility',epoch:documentEpoch,generation:previewGeneration,id:candidate.strokeId,visible:candidate.visible,retire:!candidate.visible&&candidate!==active&&candidate!==interrupted&&!pendingInk.has(candidate.strokeId)});return}
  for(const key of candidate.ink.tiles.keys())repaint.add(key);
 }
 function removePreviews(){
@@ -139,7 +216,12 @@ function removePreviews(){
  pendingInk.clear();
 }
 function renderRepeat(){
+ retainedScene.setShadowVisible(!repeat);
+ if(useNavigationPicture()){navPreview.hidden=false;gpuDisplay.element.hidden=true;paper.style.visibility='visible';$('paper-shadow').style.visibility='visible';return}
+ navPreview.hidden=true;if(gpuEnabled){paper.style.visibility='hidden';$('paper-shadow').style.visibility='hidden';gpuDisplay.repeat=repeat;gpuDisplay.element.hidden=false;repeatView.hidden=true;gpuDisplay.request(view);return}
+ if(gpuDisplay)gpuDisplay.element.hidden=true;
  if(!repeat)return;
+ if(previewWorker){pctx.clearRect(0,0,doc.width,doc.height);for(const {box,image}of displayImages.values())pctx.putImageData(image,box.x,box.y);}
  const ratio=Math.min(window.devicePixelRatio||1,2);
  const width=Math.max(1,Math.round(stage.clientWidth*ratio)), height=Math.max(1,Math.round(stage.clientHeight*ratio));
  if(repeatView.width!==width||repeatView.height!==height){repeatView.width=width;repeatView.height=height}
@@ -196,38 +278,18 @@ function strokeSettings(brush,points,pen,erase=false,includeConstraints=true){
   size:(erase||brush.blend==='erase')&&input.independent?input.eraserSize:settings.size,opacity:settings.opacity*brush.opacityFactor,flow:settings.flow,
   color:[...settings.color],colorAlpha:settings.colorAlpha,curve:settings.curve,pen};
 }
-function previewDabs(candidate,budget){
- const {stroke:s,ink}=candidate;
- while(budget.remaining>0&&performance.now()<budget.until){
-  if(!candidate.dabs){
-   if(candidate.previewIndex>=s.points.length)return;
-   const current=s.points[candidate.previewIndex++];
-   const filtered=correctSample(current,candidate.raw,candidate.filtered,s.correction);
-   candidate.raw=current;candidate.filtered=filtered;
-   const guide=s.guide,point={...filtered};
-   if(guide)point[guide.axis]+=(guide.coordinate-point[guide.axis])*guide.strength;
-   const from=candidate.previewPoint;
-   point.distance=from?from.distance+Math.hypot(point.x-from.x,point.y-from.y):0;
-   candidate.previewPoint=point;
-   candidate.dabs=(function*(){
-    if(!from){
-     const dab=evaluateDab(s,point,null,candidate.previewCount++);
-     candidate.nextDab=dab.spacing;yield dab;return;
-    }
-    while(candidate.nextDab<=point.distance&&point.distance>from.distance){
-     const f=(candidate.nextDab-from.distance)/(point.distance-from.distance);
-     const sample={...point,distance:candidate.nextDab,x:from.x+(point.x-from.x)*f,y:from.y+(point.y-from.y)*f,p:from.p+(point.p-from.p)*f};
-     const dab=evaluateDab(s,sample,null,candidate.previewCount++);
-     candidate.nextDab+=Math.max(.5,dab.spacing);yield dab;
-    }
-   })();
-  }
-  const next=candidate.dabs.next();
-  if(next.done)candidate.dabs=null;
-  else{ink.stamp(next.value);budget.remaining--}
- }
+function syncPreview(candidate){
+ const offset=candidate.sentPoints||0,points=candidate.stroke.points;
+ // Re-send the last point too: equal timestamp samples replace the old tail.
+ const from=Math.max(0,offset-1);
+ previewWorker.postMessage({type:'points',epoch:documentEpoch,id:candidate.strokeId,offset:from,points:points.slice(from),active:candidate===active});
+ candidate.sentPoints=points.length;
 }
 function queuePreview(){
+ if(previewWorker){
+  if(!inkFrame)inkFrame=requestAnimationFrame(()=>{inkFrame=0;for(const candidate of [active,...pendingInk.values(),interrupted])if(candidate){if(candidate.sentPoints!==candidate.stroke.points.length||candidate===active)syncPreview(candidate)}if(active?.inputEvent){updateStrokeDiagnostics(active);active.inputEvent=null}});
+  return;
+ }
  if(!inkFrame)inkFrame=requestAnimationFrame(()=>{
   inkFrame=0;
   const budget={remaining:120,until:performance.now()+5};
@@ -251,9 +313,10 @@ function beginStroke(e,erase=false){
  const brush=brushes.get(erase?brushes.input.eraser:settings.tool);
  const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
  if(e.altKey)stroke.guide=null;
- const ink=new Ink(stroke,doc.width,doc.height,true);
+ const ink=previewWorker?{tiles:new Map()}:new Ink(stroke,doc.width,doc.height,true);
  active={id:e.pointerId,strokeId:++strokeSerial,stroke,ink,visible:true,previewIndex:0,previewCount:0,
   lastClient:{x:e.clientX,y:e.clientY},started:performance.now(),type:e.pointerType};
+ if(previewWorker){previewWorker.postMessage({type:'start',epoch:documentEpoch,id:active.strokeId,stroke:structuredClone(stroke),startedAt:performance.timeOrigin+active.started});active.sentPoints=1}
  queuePreview();
 }
 function addStroke(e,end=false){
@@ -286,7 +349,9 @@ function commitStroke(candidate=active){
  if(rasterWorker){
   history.accept(action);pendingInk.set(strokeId,candidate);
   candidate.acceptedAt=performance.now();
-  rasterWorker.postMessage({type:'stroke',seq:++rasterSeq,epoch:documentEpoch,stroke});
+  syncPreview(candidate);candidate.seq=++rasterSeq;
+  formalStates.set(rasterSeq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+  queueRaster({type:'stroke',seq:rasterSeq,epoch:documentEpoch,stroke,acceptedAt:candidate.acceptedAt});
  }else{
   try{
    const {ink}=rasterize(stroke,doc.width,doc.height);
@@ -323,9 +388,12 @@ function applyAction(action,isUndo){
  if(!action)return;
  if(action.kind==='pixels'){
   if(rasterWorker){
+   minimumPublicationSeq=++rasterSeq;previewGeneration++;
    const candidate=pendingInk.get(action.strokeId);
    if(candidate){candidate.visible=!isUndo;invalidate(candidate);presentation()}
-   rasterWorker.postMessage({type:isUndo?'undo':'redo',seq:++rasterSeq,epoch:documentEpoch});
+   if(!candidate)previewWorker.postMessage({type:'visibility',epoch:documentEpoch,generation:previewGeneration});
+   formalStates.set(rasterSeq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+   queueRaster({type:isUndo?'undo':'redo',seq:rasterSeq,epoch:documentEpoch});
   }else{
    for(const {key,box,before,after} of action.patches){
     ctx.putImageData(isUndo?before:after,box.x,box.y);repaint.add(key);
@@ -337,8 +405,8 @@ function applyAction(action,isUndo){
 }
 function undo(){if(workerFault||interrupted)return;if(active){interruptStroke();return}applyAction(history.undo(),true)}
 function redo(){if(workerFault||interrupted)return;if(active){interruptStroke();return}applyAction(history.redo(),false)}
-function pinchReset(){const ps=[...nav.values()];if(!ps.length){gesture=null;return}const mid=ps.reduce((a,p)=>({x:a.x+p.x,y:a.y+p.y}),{x:0,y:0});mid.x/=ps.length;mid.y/=ps.length;const rect=stage.getBoundingClientRect(),local={x:mid.x-rect.left,y:mid.y-rect.top};let dist=1,ang=0;if(ps.length>1){dist=Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y)||1;ang=Math.atan2(ps[1].y-ps[0].y,ps[1].x-ps[0].x)}gesture={start:local,origin:{...view},docPoint:screenToDoc(local,view),dist,ang}}
-const recordInput=enableInputDiagnostics(stage,()=>({nav:nav.size,active:active?.id??null}));
+function pinchReset(){const ps=[...nav.values()];previewWorker?.postMessage({type:'navigation',epoch:documentEpoch,active:ps.length>0});rasterWorker?.postMessage({type:'navigation',epoch:documentEpoch,active:ps.length>0});if(!ps.length){retainedScene.complete();gesture=null;scheduleRasterSend();scheduleView();return}if(!gpuEnabled&&!repeat)retainedScene.begin(view);const mid=ps.reduce((a,p)=>({x:a.x+p.x,y:a.y+p.y}),{x:0,y:0});mid.x/=ps.length;mid.y/=ps.length;const rect=stage.getBoundingClientRect(),local={x:mid.x-rect.left,y:mid.y-rect.top};let dist=1,ang=0;if(ps.length>1){dist=Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y)||1;ang=Math.atan2(ps[1].y-ps[0].y,ps[1].x-ps[0].x)}gesture={start:local,origin:{...view},docPoint:screenToDoc(local,view),dist,ang,rect}}
+const recordInput=enableInputDiagnostics(stage,()=>({nav:nav.size,active:active?.id??null,rasterPending:pendingInk.size}));
 function addNav(e,action='pan'){
  if(nav.size)for(const contact of nav.values())contact.action='pan';
  nav.set(e.pointerId,{action,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,started:performance.now(),type:e.pointerType});
@@ -349,7 +417,8 @@ function sampleColor(e){
  if(!point)return;
  const x=Math.floor(repeat?mod(point.x,doc.width):point.x),y=Math.floor(repeat?mod(point.y,doc.height):point.y);
  if(x<0||y<0||x>=doc.width||y>=doc.height)return;
- const [r,g,b,a]=pctx.getImageData(x,y,1,1).data;
+ const key=Math.floor(y/tileSize)*Math.ceil(doc.width/tileSize)+Math.floor(x/tileSize),tile=displayImages.get(key),offset=((y%tileSize)*(tile?.box.w||0)+x%tileSize)*4;
+ const [r,g,b,a]=previewWorker?(tile?tile.image.data.slice(offset,offset+4):[0,0,0,0]):pctx.getImageData(x,y,1,1).data;
  if(a)setColor([r,g,b]);
  else if(doc.background==='white')setColor([255,255,255]);
 }
@@ -406,7 +475,7 @@ function pointerMove(e){
   const p=nav.get(e.pointerId);p.x=e.clientX;p.y=e.clientY;
   if(p.action==='sample')return;
   if(!gesture)pinchReset();
-  const ps=[...nav.values()],rect=stage.getBoundingClientRect();
+  const ps=[...nav.values()],rect=gesture.rect;
   const mid=ps.reduce((a,p)=>({x:a.x+p.x,y:a.y+p.y}),{x:0,y:0});
   mid.x=mid.x/ps.length-rect.left;mid.y=mid.y/ps.length-rect.top;
   let factor=1,rotate=0;
@@ -432,7 +501,7 @@ function pointerUp(e,forcedCancel=false){
   const count=nav.size;nav.delete(e.pointerId);
   if(!cancelled&&tap&&p.action==='sample')sampleColor(e);
   if(!cancelled&&tap&&count>=2&&settings.gestureUndo&&!active){if(count>=3)redo();else undo()}
-  pinchReset();
+  pinchReset();flushFormal();
  }else if(active?.id===e.pointerId){
   if(cancelled)interruptStroke();
   else if(e.button!==2){addStroke(e,true);commitStroke()}
@@ -442,7 +511,7 @@ function pointerUp(e,forcedCancel=false){
  try{if(stage.hasPointerCapture(e.pointerId)&&e.button!==2)stage.releasePointerCapture(e.pointerId)}catch{}
 }
 function interruptInput(){
- interruptStroke();nav.clear();gesture=null;hover=null;cursor.hidden=true;
+ interruptStroke();nav.clear();pinchReset();flushFormal();hover=null;cursor.hidden=true;
 }
 stage.addEventListener('pointerdown',pointerDown);
 stage.addEventListener('pointermove',pointerMove);
@@ -511,7 +580,7 @@ pad.addEventListener('keydown',e=>{
  drawPad();padStroke=null;
 });
 $('repeat-draw').onchange=e=>{
- repeat=e.target.checked;repeatView.hidden=!repeat;paper.style.visibility=repeat?'hidden':'visible';$('paper-shadow').style.visibility=repeat?'hidden':'visible';scheduleView();
+ repeat=e.target.checked;repeatView.hidden=!repeat;paper.style.visibility=repeat||gpuEnabled?'hidden':'visible';$('paper-shadow').style.visibility=repeat||gpuEnabled?'hidden':'visible';renderRepeat();scheduleView();
 };
 $('wave-enable').onchange=e=>{$('input-wave').hidden=!e.target.checked};
 $('show-cursor').onchange=()=>{if(hover)showCursor(hover)};
@@ -547,8 +616,8 @@ $('new-template').addEventListener('change',e=>{const t=templates[Number(e.targe
 $('new-dialog').addEventListener('submit',e=>{e.preventDefault();try{const dpi=Number($('new-dpi').value),unit=$('new-unit').value,width=toPixels(Number($('new-width').value),unit,dpi),height=toPixels(Number($('new-height').value),unit,dpi);validateDocument(width,height,dpi);if(history.revision!==savedRev&&history.canUndo&&!confirm('未保存の変更があります。新規作品を作りますか？'))return;resetDoc({name:$('new-name').value||'無題',author:'',description:'',width,height,dpi,profile:'srgb8',background:$('new-bg').value});closeDialog();notify('新しい作品を作成しました')}catch(err){$('new-error').textContent=err.message}});$('dialog-close').onclick=$('new-cancel').onclick=closeDialog;
 function applyMeta(){const next={...doc,name:$('meta-name').value||'無題',author:$('meta-author').value,description:$('meta-description').value};if(JSON.stringify(doc)===JSON.stringify(next))return;history.accept({kind:'meta',label:'作品情報',before:structuredClone(doc),after:structuredClone(next)});doc=next;dirty()}
 function addTemplate(){const t={name:doc.name,width:doc.width,height:doc.height,dpi:doc.dpi,background:doc.background,profile:'srgb8'};templates.push(t);try{localStorage.setItem('illustro.templates.v1',JSON.stringify(templates))}catch{notify('テンプレートの保存に失敗しました');return}notify('寸法・DPI・背景のみテンプレートに保存しました')}
-function archiveStrokes(){
- return [...priorStrokes,...history.items.slice(0,history.index).filter(a=>a.kind==='pixels').map(a=>a.stroke)];
+function archiveStrokes(index=history.index){
+ return [...priorStrokes,...history.items.slice(0,index).filter(a=>a.kind==='pixels').map(a=>a.stroke)];
 }
 function blobDataURL(blob){
  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||Error('PNG読込失敗'));reader.readAsDataURL(blob)});
@@ -560,7 +629,7 @@ function downloadNative(contents,filename){
 $('export-recovery').onclick=async()=>{
  try{
   const frozen=document.createElement('canvas');frozen.width=doc.width;frozen.height=doc.height;
-  frozen.getContext('2d').drawImage(canvas,0,0);
+  const context=frozen.getContext('2d');if(previewWorker){for(const {box,image}of formalTiles.values())context.putImageData(image,box.x,box.y)}else context.drawImage(canvas,0,0);
   const {strokes,revision}=lastFormal,meta={...doc};
   const pending=[...recoveryStrokes,...[...pendingInk.values()].filter(item=>item.visible).map(item=>item.stroke)];
   if(interrupted)pending.push(interrupted.stroke);
@@ -573,23 +642,26 @@ $('export-recovery').onclick=async()=>{
 };
 async function save(as=false){
  if(interrupted||workerFault){notify('描画の中断を解消してから保存してください');return}
- const strokeArchive=archiveStrokes(),recoveryAtFence=[...recoveryStrokes];
+ const strokeArchive=rasterWorker?null:archiveStrokes(),recoveryAtFence=[...recoveryStrokes];
  const revision=history.revision,epoch=documentEpoch,meta=structuredClone(doc);
  // Capture the exact accepted raster at request time before any await; encode asynchronously.
  let frozen,picker=null;
  try{
-  const pngPromise=rasterWorker?workerPNG(epoch):null;
+  const nativePromise=rasterWorker?workerNative(epoch,meta,revision):null;
   if(!rasterWorker){frozen=document.createElement('canvas');frozen.width=meta.width;frozen.height=meta.height;frozen.getContext('2d').drawImage(canvas,0,0);}
   const filename=meta.name.replace(/[\\/:*?"<>|]/g,'_')+'.illustro';
   const hasPicker=typeof window.showSaveFilePicker==='function';
   // File picker must start synchronously inside the user's click activation.
   if(hasPicker){picker=(!as&&handle)?Promise.resolve(handle):window.showSaveFilePicker({suggestedName:filename,types:[{description:'Illustro Native',accept:{'application/json':['.illustro']}}]});picker.catch(()=>{});}
   $('save-status').textContent='保存データを準備中…';
-  const blob=pngPromise?await pngPromise:await new Promise((resolve,reject)=>frozen.toBlob(b=>b?resolve(b):reject(new Error('PNG生成に失敗')),'image/png'));
-  const png=await blobDataURL(blob);
-  const manifest=createManifest(meta,png,revision,strokeArchive);
-  if(recoveryAtFence.length)manifest.brushArchive.recovery=recoveryAtFence;
-  const contents=JSON.stringify(manifest);
+  let contents;
+  if(nativePromise)contents=await nativePromise;
+  else{
+   const blob=await new Promise((resolve,reject)=>frozen.toBlob(b=>b?resolve(b):reject(new Error('PNG生成に失敗')),'image/png'));
+   const manifest=createManifest(meta,await blobDataURL(blob),revision,strokeArchive);
+   if(recoveryAtFence.length)manifest.brushArchive.recovery=recoveryAtFence;
+   contents=JSON.stringify(manifest);
+  }
   if(hasPicker){
    const dest=await picker;
    // Serialize writes: older Save requests cannot finish after newer ones on the same target.
@@ -604,7 +676,7 @@ async function save(as=false){
  }catch(err){if(epoch===documentEpoch)dirty();if(err.name==='AbortError'){notify('保存をキャンセルしました');return}notify('保存に失敗: '+err.message)}
 }
 async function open(file){if(!file||!allowDocumentChange())return;const epoch=documentEpoch,revision=history.revision;if(history.revision!==savedRev&&history.canUndo&&!confirm('未保存の作品を破棄して開きますか？'))return;try{const json=readManifest(await file.text());const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('レイヤー画像を解読できません'));img.src=json.layers[0].png});if(img.width!==json.document.width||img.height!==json.document.height)throw new Error('レイヤー寸法が一致しません');if(epoch!==documentEpoch||revision!==history.revision||!allowDocumentChange())throw Error('読み込み中に作品が変わりました');resetDoc(json.document);if(json.formatVersion===2){priorStrokes=json.brushArchive.strokes;recoveryStrokes=json.brushArchive.recovery||[]}
- lastFormal={strokes:[...priorStrokes],revision:0};ctx.drawImage(img,0,0);pctx.drawImage(img,0,0);renderRepeat();if(rasterWorker)rasterWorker.postMessage({type:'load',epoch:documentEpoch,png:json.layers[0].png});savedRev=history.revision;dirty();const unavailable=priorStrokes.some(s=>{if(s?.algorithm!==algorithm)return true;try{validateBrush(s.brush);return false}catch{return true}});
+ lastFormal={strokes:[...priorStrokes],revision:0};ctx.drawImage(img,0,0);pctx.drawImage(img,0,0);for(let y=0;y<doc.height;y+=tileSize)for(let x=0;x<doc.width;x+=tileSize){const key=Math.floor(y/tileSize)*Math.ceil(doc.width/tileSize)+Math.floor(x/tileSize),box=tileBox(key,doc.width,doc.height);formalTiles.set(key,{box,image:ctx.getImageData(x,y,box.w,box.h)})}if(previewWorker){const pictures=[...formalTiles].map(([key,{box,image}])=>({key,box,image:new ImageData(new Uint8ClampedArray(image.data),box.w,box.h)}));previewWorker.postMessage({type:'base',epoch:documentEpoch,pictures,retired:[]},pictures.map(p=>p.image.data.buffer))}renderRepeat();if(rasterWorker)queueRaster({type:'load',epoch:documentEpoch,png:json.layers[0].png,archive:priorStrokes,recovery:recoveryStrokes});savedRev=history.revision;dirty();const unavailable=priorStrokes.some(s=>{if(s?.algorithm!==algorithm)return true;try{validateBrush(s.brush);return false}catch{return true}});
  notify(recoveryStrokes.length?'完成画像を開きました。未確定の筆は復旧情報として保持しました':unavailable?'完成画像を開きました。一部ブラシの素材または版が利用できません':'ネイティブ作品を開きました')}catch(err){notify('読込に失敗: '+err.message)}}
 $('open-file').addEventListener('change',e=>{open(e.target.files[0]);e.target.value=''})
 const commands={new:showDialog,open:()=>$('open-file').click(),save:()=>save(),saveas:()=>save(true),undo,redo,fit,actual:()=>{view=zoomAt(view,1/view.scale,{x:stage.clientWidth/2,y:stage.clientHeight/2});scheduleView()},resetrotation:()=>{view=zoomAt(view,1,{x:stage.clientWidth/2,y:stage.clientHeight/2},-view.rotation);scheduleView()},resetflip:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipX:false,flipY:false});scheduleView()},flipx:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipX:!view.flipX});scheduleView()},flipy:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipY:!view.flipY});scheduleView()},grid:()=>{grid.dataset.show=grid.dataset.show==='1'?'0':'1';gridPainted=false;scheduleView()},applymeta:applyMeta,template:addTemplate};all('[data-action]').forEach(b=>b.addEventListener('click',()=>commands[b.dataset.action]?.()));all('[data-tool]').forEach(b=>b.addEventListener('click',()=>selectTool(b.dataset.tool)));

@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
 const files={'/':'index.html','/index.html':'index.html','/input-test.html':'input-test.html','/app/main.mjs':'app/main.mjs','/app/color-pickers.mjs':'app/color-pickers.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/aurora-frost.css':'app/aurora-frost.css','/app/ui-icons.mjs':'app/ui-icons.mjs','/app/raster-worker.mjs':'app/raster-worker.mjs'};
-for(const name of ['brush-engine.mjs','brush-raster.mjs','brush-ui.mjs','stroke-input.mjs','c02.css'])files['/app/'+name]='app/'+name;
+for(const name of ['brush-engine.mjs','brush-raster.mjs','brush-ui.mjs','stroke-input.mjs','c02.css','preview-worker.mjs','preview-stroke.mjs','preview-ink.mjs','preview-composite.mjs','presentation.mjs','retained-scene.mjs'])files['/app/'+name]='app/'+name;
 const server=createServer(async(req,res)=>{
   try {const path=files[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}const content=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(content)}
   catch(err){res.writeHead(500).end(String(err))}
@@ -14,7 +14,7 @@ try{
  browser=await chromium.launch({headless:true,executablePath:process.env.ILLUSTRO_CHROMIUM||undefined,args:process.env.ILLUSTRO_CHROMIUM?['--no-sandbox','--disable-dev-shm-usage']:[]});
  const page=await browser.newPage({viewport:{width:1280,height:800}});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
- await page.goto('http://127.0.0.1:'+port,{waitUntil:'load'});
+ await page.goto('http://127.0.0.1:'+port+'/?pixelMirror=1',{waitUntil:'load'});
  await page.waitForFunction(()=>document.querySelector('#art')?.width===1600);
  // Aurora Frost: local visual assets must load and buttons retain semantics.
  const theme=await page.evaluate(()=>({
@@ -67,6 +67,12 @@ try{
  assert.deepEqual(pixelChecks.large,[128,128,128],'Overlapping copies of one large dab must not double the cap');
  // Regression: eraser must never paint a black transient stroke before pen-up.
  for(const eraser of ['hardEraser','softEraser']){
+  // Each eraser gets fresh ink: a soft brush entirely inside a previous hard
+  // eraser hole has no additional alpha to remove.
+  await page.locator('[data-tool=round]').click();await page.locator('#size-n').fill('48');await page.locator('#size-n').dispatchEvent('change');
+  await page.mouse.move(x+28,y+12);await page.mouse.down();await page.mouse.move(x+60,y+30,{steps:3});await page.mouse.up();
+  await page.waitForFunction(()=>document.getElementById('stage').dataset.rasterPending==='0');
+  await page.locator('#size-n').fill('12');await page.locator('#size-n').dispatchEvent('change');
   await page.locator('[data-tool='+eraser+']').click();
   await page.mouse.move(x+30,y+14);await page.mouse.down();
   await page.mouse.move(x+48,y+24,{steps:2});
@@ -159,7 +165,7 @@ try{
  // The colored annulus/HSV plane alone may own a color-drag gesture.
  const tablet=await browser.newPage({viewport:{width:900,height:700},hasTouch:true,isMobile:true});
  const tabletErrors=[];tablet.on('pageerror',e=>tabletErrors.push(String(e)));
- await tablet.goto('http://127.0.0.1:'+port,{waitUntil:'load'});
+ await tablet.goto('http://127.0.0.1:'+port+'/?pixelMirror=1',{waitUntil:'load'});
  const session=await tablet.context().newCDPSession(tablet);
  const workspaceScroll=tablet.locator('.workspace-scroll');
  const touchSwipe=async (x0,y0,x1,y1)=>{

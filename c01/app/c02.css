@@ -22,5 +22,17 @@
 #input-wave { max-width:100%; background:#f5f8fc }
 #paper { box-shadow:none }
 #paper-shadow { position:absolute; inset:0; width:100%; height:100%; pointer-events:none }
-#paper-shadow-polygon { fill:#e8edf5; filter:drop-shadow(0 7px 10px #23365a47) }
+#paper-shadow-polygon { fill:#e8edf5 }
 #export-recovery { position:fixed; bottom:125px; left:50%; transform:translateX(-50%); z-index:18 }
+
+#display-tiles { position:absolute; inset:0; pointer-events:none }
+#display-tiles canvas { position:absolute; pointer-events:none }
+/* Retain each display group; do not flatten all document pixels into one
+   growing transformed texture during pen + two-finger navigation. */
+#paper { will-change:auto }
+#display-tiles canvas { will-change:auto }
+
+#navigation-preview { position:absolute; inset:0; pointer-events:none }
+
+/* Artwork reprojects within its own scene; the shadow offset stays on screen Y. */
+#paper-shadow { display:none }
