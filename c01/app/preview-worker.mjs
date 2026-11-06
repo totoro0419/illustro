@@ -198,14 +198,16 @@ self.onmessage=({data:m})=>{
    if(!group.context)throw Error('Offscreen display context unavailable');warmPresentation(group.context);
    group.context.putImageData(new ImageData(backgroundPixels(group),group.w,group.h),0,0);if(m.key===0&&!initialSurfaceReady){initialSurfaceReady=true;postMessage({type:'ready',epoch})}return;
   }
-  if(m.type==='view-scale'){
+  if(m.type==='cadence'){
+   if(Number.isFinite(m.interval))presentationInterval=Math.min(250,Math.max(8,m.interval));
+  }else if(m.type==='view-scale'){
    if(Number.isFinite(m.scale)&&m.scale>0){viewPixelScale=m.scale;for(const group of groups.values())if(group.displayScale&&group.displayScale!==1)dirty.add(group.key)}
   }else if(m.type==='navigation'){navigation=m.active;if(navigation)navNeedsFinal=true;}else if(m.type==='start'){
-   if(Number.isFinite(m.presentationInterval))presentationInterval=Math.min(32,Math.max(8,m.presentationInterval));
+   if(Number.isFinite(m.presentationInterval))presentationInterval=Math.min(250,Math.max(8,m.presentationInterval));
    const stroke=m.stroke;
    candidates.set(m.id,{id:m.id,stroke,ink:new PreviewInk(stroke,width,height),visible:true,active:true,startedAt:m.startedAt,previewIndex:0,previewCount:0});
   }else if(m.type==='points'){
-   if(Number.isFinite(m.presentationInterval))presentationInterval=Math.min(32,Math.max(8,m.presentationInterval));
+   if(Number.isFinite(m.presentationInterval))presentationInterval=Math.min(250,Math.max(8,m.presentationInterval));
    const c=candidates.get(m.id);if(c){c.stroke.points.splice(m.offset,Infinity,...m.points);c.active=m.active;if(!m.active)navNeedsFinal=true;}
   }else if(m.type==='visibility'){
    generation=m.generation;
