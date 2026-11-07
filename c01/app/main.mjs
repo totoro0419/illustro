@@ -956,6 +956,80 @@ document.addEventListener('visibilitychange',()=>{
  if(document.visibilityState==='hidden'&&history.revision>protectedRevision&&!protecting)protectCurrent().catch(()=>{});
 });
 
+
+function readSnapshotTree(native){
+ const tree=createLayerTree();
+ tree.layers=native.layers.map(({png,...meta})=>{const l=structuredClone(meta);if(l.mask)delete l.mask.png;return l});
+ const byId=new Map(tree.layers.map(l=>[l.id,l]));
+ if(byId.size!==tree.layers.length)throw Error('Snapshot内に重複した層IDがあります');
+ for(const layer of tree.layers){
+  let cursor=layer,parentDepth=0;
+  while(cursor.parentId!=null){
+   const parent=byId.get(cursor.parentId);
+   if(parent?.type!=='group'||++parentDepth>tree.layers.length)throw Error('Snapshot内のグループ構造が不正です');
+   cursor=parent;
+  }
+ }
+ tree.selectedId=tree.layers.findLast(l=>l.type==='raster')?.id||tree.layers.at(-1)?.id||null;
+ tree.nextId=1+Math.max(0,...tree.layers.map(l=>Number(/^layer-([0-9]+)$/.exec(l.id)?.[1]||0)));
+ return tree;
+}
+async function protectedManifest(){
+ const key=$('c03-protected-list').value;
+ if(!key)throw Error('復元対象がありません');
+ const record=await readProtected(key),native=readLayeredManifest(record.content);
+ if(native.document.width!==doc.width||native.document.height!==doc.height)
+  throw Error('異なるキャンバス寸法です。復元コピーを使ってください');
+ if(native.formatVersion!==3)throw Error('履歴復元にはC03 Native v3が必要です');
+ const tree=readSnapshotTree(native);
+ return {record,native,tree};
+}
+$('c03-snapshot-restore').onclick=async()=>{
+ if(workerFault||active||interrupted)return notify('描画確定後に復元してください');
+ const epoch=documentEpoch,revision=history.revision;
+ try{
+  const {record,native,tree}=await protectedManifest();
+  if(!confirm('現在の作品を保護した上で、選択した版を新しい履歴操作として復元しますか？'))return;
+  const guarded=await protectCurrent({kind:'snapshot',snapshotName:'復元前 '+new Date().toLocaleString('ja-JP')});
+  if(!guarded)throw Error('復元前の保護を検証できなかったため中止しました');
+  if(epoch!==documentEpoch||revision!==history.revision||active)throw Error('復元処理中に作品が変更されました');
+  const before={tree:structuredClone(layerTree),doc:structuredClone(doc),comps:structuredClone(layerComps)};
+  const after={tree:structuredClone(tree),doc:structuredClone(native.document),comps:structuredClone(native.history?.layerComps||[])};
+  layerTree=tree;doc=structuredClone(native.document);layerComps=structuredClone(after.comps);
+  history.accept({kind:'restore',label:'Snapshotから復元: '+(record.snapshotName||record.name),
+   before,after,archiveAfter:structuredClone(native.brushArchive?.strokes||[])});
+  protectedRevision=-1;
+  const seq=++rasterSeq;minimumPublicationSeq=seq;
+  formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+  queueRaster({type:'restore-snapshot',epoch:documentEpoch,seq,layers:structuredClone(native.layers),
+   archive:native.brushArchive?.strokes||[],recovery:native.brushArchive?.recovery||[]});
+  syncMeta();paper.style.background=doc.background==='white'?'white':'transparent';
+  $('checker').style.display=doc.background==='white'?'none':'block';renderLayerPanel();dirty();
+  notify('Snapshotを新しい履歴操作として復元しました（描画確定待ち）');
+ }catch(error){notify('履歴復元を中止: '+error.message)}
+};
+$('c03-snapshot-partial').onclick=async()=>{
+ if(workerFault||active||interrupted)return notify('描画確定後に部分復元してください');
+ const epoch=documentEpoch,revision=history.revision;
+ try{
+  const {native}=await protectedManifest();
+  const choices=native.layers.filter(l=>l.type==='raster'),names=choices.map((l,i)=>i+': '+l.name).join('\n');
+  const selected=prompt('復元するRaster層の番号を指定してください:\n'+names,'0');
+  if(selected==null)return;
+  const index=Number(selected);if(!Number.isInteger(index)||index<0||index>=choices.length)throw Error('層の番号が無効です');
+  const source=choices[index];
+  const raw=prompt('復元する領域を x,y,幅,高さ で指定。空欄なら層全体。','');
+  if(raw==null)return;
+  const rect=raw.trim()?raw.split(/[,，\s]+/).map(Number):null;
+  if(rect&&(rect.length!==4||rect.some(n=>!Number.isInteger(n))||rect[0]<0||rect[1]<0||rect[2]<=0||rect[3]<=0||rect[0]+rect[2]>doc.width||rect[1]+rect[3]>doc.height))throw Error('範囲指定が不正です');
+  if(epoch!==documentEpoch||revision!==history.revision||active)throw Error('復元中に作品が変更されました');
+  if((layerTree.layers.filter(l=>l.type==='raster').length+1)*doc.width*doc.height*4>256*1024*1024)throw Error('メモリ上限です');
+  const before=structuredClone(layerTree),target=addRasterLayer(layerTree,'復元: '+source.name);
+  layerOperation(before,{kind:'copy-snapshot-layer',targetId:target.id,png:source.png,rect},'Snapshot層の部分復元');
+  notify('元Snapshotを保ったまま新しい層へ画素を復元します');
+ }catch(error){notify('部分復元できません: '+error.message)}
+};
+
 function layerOperation(before,operation,label){
  if(!rasterWorker||workerFault){notify('この操作にはRaster Workerが必要です');layerTree=before;renderLayerPanel();return}
  const seq=++rasterSeq;minimumPublicationSeq=seq;
