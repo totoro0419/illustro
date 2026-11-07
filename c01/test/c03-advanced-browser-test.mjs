@@ -39,7 +39,7 @@ try{
  await page.locator('#c03-filter-type').selectOption('');
  await page.locator('#c03-add-group').click();
  assert.equal(await page.locator('#c03-layer-list .c03-row').count(),3);
- await page.locator('#c03-layer-list .c03-row').first().locator('button').last().click();
+ await page.locator('#c03-layer-list .c03-row').nth(1).locator('button').last().click();
  await page.locator('#c03-duplicate').click();
  assert.equal(await page.locator('#c03-layer-list .c03-row').count(),4);
  await page.locator('#c03-comp-name').fill('Before');
