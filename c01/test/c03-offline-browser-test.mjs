@@ -23,10 +23,22 @@ try{
  const page=await context.newPage();const errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
  await page.goto(url,{waitUntil:'load'});
- await page.evaluate(async()=>{
-  await navigator.serviceWorker.ready;
-  if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));
- });
+ console.log('C03_OFFLINE_PHASE: online navigation completed');
+ try{
+  await page.waitForFunction(async()=>{
+   const registration=await navigator.serviceWorker.getRegistration();
+   return Boolean(registration?.active&&navigator.serviceWorker.controller);
+  },{},{timeout:20000});
+ }catch(error){
+  const diagnosis=await page.evaluate(async()=>{
+   const registration=await navigator.serviceWorker.getRegistration();
+   return {hasRegistration:!!registration,active:registration?.active?.state,installing:registration?.installing?.state,
+    waiting:registration?.waiting?.state,controlled:!!navigator.serviceWorker.controller,
+    caches:await caches.keys()};
+  });
+  throw Error('Service Worker failed to control the page: '+JSON.stringify(diagnosis));
+ }
+ console.log('C03_OFFLINE_PHASE: SW activated and controls page');
  const details=await page.evaluate(async()=>{
   const cacheNames=(await caches.keys()).filter(x=>x.startsWith('illustro-c03-'));
   const cache=await caches.open(cacheNames.at(-1));
@@ -35,7 +47,9 @@ try{
  assert.equal(details.cacheNames.length,1);
  assert.ok(details.count>=10,'Offline shell must cache all required assets');
  await context.setOffline(true);
- const response=await page.reload({waitUntil:'load'});
+ console.log('C03_OFFLINE_PHASE: offline reload starting');
+ const response=await page.reload({waitUntil:'load',timeout:20000});
+ console.log('C03_OFFLINE_PHASE: offline reload complete');
  assert.equal(response.status(),200,'Offline root reload must use precached index');
  await page.waitForFunction(()=>document.querySelector('#art')?.width===1600,{},{timeout:15000});
  await page.waitForFunction(()=>document.querySelector('#stage')?.dataset.presentationReady==='true',{},{timeout:15000});
