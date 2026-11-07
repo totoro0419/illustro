@@ -136,6 +136,8 @@ if(rasterWorker){
    }else for(const p of msg.pictures)p.bitmap?.close();
   }else if(msg.type==='hit-result'){
    const found=msg.candidates?.[0];if(found){selectLayer(layerTree,found.id);maskPaintMode=false;renderLayerPanel();notify('選択: '+found.name)}else notify('この位置に描画内容のある層は見つかりません');
+  }else if(msg.type==='snapshot-comparison'){
+   const request=pendingSnapshots.get(msg.requestId);if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg)}
   }else if(msg.type==='exported-png'){
    const request=pendingSnapshots.get(msg.requestId);if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg)}
   }else if(msg.type==='saved'){
@@ -161,6 +163,7 @@ function flushFormal(){
 }
 function workerNative(epoch,metadata,revision,extra={}){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'save',epoch,requestId,metadata,revision,extra})})}
 function workerPng(epoch,cropFrame,background){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'export-png',epoch,requestId,cropFrame,background})})}
+function workerCompare(epoch,layers){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'compare-snapshot',epoch,requestId,layers})})}
 
 let doc={name:'無題',author:'',description:'',width:1600,height:1200,dpi:300,profile:'srgb8',background:'white'};
 let layerTree=createLayerTree();
@@ -782,7 +785,7 @@ $('c03-export-png').onclick=async()=>{
 const recoveryPanel=document.createElement('section');recoveryPanel.id='c03-recovery';
 recoveryPanel.innerHTML=`<h4>自動保護・履歴</h4><small id="c03-protect-status">保護状況を確認中</small><div class="c03-actions"><button id="c03-protect-now">今すぐ保護</button><button id="c03-snapshot-save">名前付きSnapshot</button></div><select id="c03-protected-list" aria-label="復元候補"></select><div class="c03-actions"><button id="c03-protected-restore">復元コピー</button><button id="c03-protected-delete">候補削除</button></div><div class="c03-actions"><button id="c03-history-show">Undo履歴</button><button id="c03-history-capacity">保持容量</button></div><output id="c03-history-output"></output>`;
 layerPanel.prepend(recoveryPanel);
-recoveryPanel.insertAdjacentHTML('beforeend','<div class="c03-actions"><button id="c03-snapshot-restore">履歴として復元</button><button id="c03-snapshot-partial">層・領域を部分復元</button></div>');
+recoveryPanel.insertAdjacentHTML('beforeend','<div class="c03-actions"><button id="c03-snapshot-compare">現在と比較</button><button id="c03-snapshot-restore">履歴として復元</button><button id="c03-snapshot-partial">層・領域を部分復元</button></div><div id="c03-snapshot-comparison" hidden><div class="c03-compare-pair"><figure><img id="c03-compare-before" alt="保存版"><figcaption>保存版</figcaption></figure><figure><img id="c03-compare-after" alt="現在"><figcaption>現在</figcaption></figure></div><small id="c03-compare-label"></small><button id="c03-snapshot-dismiss">比較を閉じる</button></div>');
 for(const mode of ['dissolve',...BLEND_MODES.filter(m=>!['normal','multiply','screen'].includes(m))])$('c03-layer-blend').append(new Option(mode,mode));
 function groupDescendant(id,parent){
  let l=layerTree.layers.find(item=>item.id===id);
@@ -999,6 +1002,27 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 
+let compareUrls=[];
+function disposeComparison(){
+ for(const url of compareUrls)URL.revokeObjectURL(url);compareUrls=[];
+ $('c03-snapshot-comparison').hidden=true;
+}
+$('c03-snapshot-dismiss').onclick=disposeComparison;
+$('c03-snapshot-compare').onclick=async()=>{
+ if(workerFault||active||interrupted)return notify('描画確定後に比較してください');
+ const epoch=documentEpoch,revision=history.revision;
+ try{
+  const {record,native}=await protectedManifest();
+  $('c03-compare-label').textContent='画像を比較中…';
+  const packet=await workerCompare(epoch,structuredClone(native.layers));
+  if(epoch!==documentEpoch||revision!==history.revision)throw Error('比較中に作品が更新されたため再選択してください');
+  disposeComparison();
+  compareUrls=[packet.saved,packet.current].map(data=>URL.createObjectURL(new Blob([data],{type:'image/png'})));
+  $('c03-compare-before').src=compareUrls[0];$('c03-compare-after').src=compareUrls[1];
+  $('c03-compare-label').textContent='保護版 Rev '+record.revision+' → 現在 Rev '+revision+' / 比較は作品を変更しません';
+  $('c03-snapshot-comparison').hidden=false;
+ }catch(error){notify('比較できません: '+error.message)}
+};
 function readSnapshotTree(native){
  const tree=createLayerTree();
  tree.layers=native.layers.map(({png,...meta})=>{const l=structuredClone(meta);if(l.mask)delete l.mask.png;return l});
