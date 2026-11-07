@@ -136,6 +136,8 @@ if(rasterWorker){
    }else for(const p of msg.pictures)p.bitmap?.close();
   }else if(msg.type==='hit-result'){
    const found=msg.candidates?.[0];if(found){selectLayer(layerTree,found.id);maskPaintMode=false;renderLayerPanel();notify('選択: '+found.name)}else notify('この位置に描画内容のある層は見つかりません');
+  }else if(msg.type==='exported-png'){
+   const request=pendingSnapshots.get(msg.requestId);if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg)}
   }else if(msg.type==='saved'){
    const request=pendingSnapshots.get(msg.requestId);
    if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg.native);if(perf){(perf.save||=[]).push(msg.stats)}}
@@ -158,6 +160,7 @@ function flushFormal(){
  dirty();
 }
 function workerNative(epoch,metadata,revision,extra={}){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'save',epoch,requestId,metadata,revision,extra})})}
+function workerPng(epoch,cropFrame,background){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'export-png',epoch,requestId,cropFrame,background})})}
 
 let doc={name:'無題',author:'',description:'',width:1600,height:1200,dpi:300,profile:'srgb8',background:'white'};
 let layerTree=createLayerTree();
@@ -191,7 +194,7 @@ function resetDoc(data){
  stage.removeAttribute('data-raster-error');stage.removeAttribute('data-raster-stats');$('interrupted-stroke').hidden=true;
  removePreviews();repaint.clear();clearTemporary();
  for(const request of pendingSnapshots.values())request.reject(Error('作品が切り替わりました'));
- pendingSnapshots.clear();setDimensions();
+ pendingSnapshots.clear();setDimensions();renderCropFrame();
  if(rasterWorker){rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});previewWorker.postMessage({type:'reset',epoch:documentEpoch,generation:previewGeneration,width:doc.width,height:doc.height,background:doc.background,measure:!!perf,bitmap:presentationMode==='bitmap',direct:directPresentation,cpuDisplay,framePacing:!timerPresentation,navigationPicture:gpuEnabled})}
  syncMeta();fit();renderLayerPanel();
  poseTimeline.entries.length=0;cancelAnimationFrame(frame);renderView();dirty();
@@ -471,7 +474,7 @@ function applyAction(action,isUndo){
    presentation();
   }
  }else if(action.kind==='layers'||action.kind==='layer-operation'){layerTree=structuredClone(isUndo?action.before:action.after);publishLayerState();renderLayerPanel();if(action.kind==='layer-operation'){const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:isUndo?'undo':'redo',seq,epoch:documentEpoch})}}else if(action.kind==='comps'){layerComps=structuredClone(isUndo?action.before:action.after);renderLayerPanel()}else if(action.kind==='restore'){const state=isUndo?action.before:action.after;layerTree=structuredClone(state.tree);doc=structuredClone(state.doc);layerComps=structuredClone(state.comps);maskPaintMode=false;syncMeta();paper.style.background=doc.background==='white'?'white':'transparent';$('checker').style.display=doc.background==='white'?'none':'block';renderLayerPanel();const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:isUndo?'undo':'redo',seq,epoch:documentEpoch})}
-  else if(action.kind==='meta'){doc=structuredClone(isUndo?action.before:action.after);syncMeta()}
+  else if(action.kind==='meta'){doc=structuredClone(isUndo?action.before:action.after);syncMeta();renderCropFrame()}
  dirty();
 }
 function undo(){if(workerFault||interrupted)return;if(active){interruptStroke();return}applyAction(history.undo(),true)}
@@ -737,6 +740,45 @@ advancedPanel.innerHTML=`<div class="c03-actions"><button id="c03-add-group">＋
 <label>下地下限<input id="c03-blendif-back-low" type="number" min="0" max="255" value="0"></label><label>下地上限<input id="c03-blendif-back-high" type="number" min="0" max="255" value="255"></label><div class="c03-actions"><button id="c03-blendif-apply">適用</button><button id="c03-blendif-clear">解除</button></div></details>
 <details><summary>レイヤーカンプ</summary><input id="c03-comp-name" type="text" placeholder="案名"><select id="c03-comp-list"></select><div class="c03-actions"><button id="c03-comp-create">記録</button><button id="c03-comp-apply">適用</button><button id="c03-comp-delete">削除</button></div></details>`;
 layerPanel.append(advancedPanel);
+const cropSection=document.createElement('section');cropSection.id='c03-crop-panel';
+cropSection.innerHTML=`<details><summary>キャンバス範囲・PNG書出し</summary>
+<small>保持Cropは外側の画素を消しません。Native保存は作品全体を保持します。</small>
+<div class="c03-crop-fields"><label>X<input id="c03-crop-x" type="number" min="0" value="0"></label><label>Y<input id="c03-crop-y" type="number" min="0" value="0"></label><label>幅<input id="c03-crop-w" type="number" min="1" value="1600"></label><label>高さ<input id="c03-crop-h" type="number" min="1" value="1200"></label></div>
+<div class="c03-actions"><button id="c03-crop-set">保持Cropを設定</button><button id="c03-crop-clear">全体に戻す</button><button id="c03-export-png">範囲をPNG書出し</button></div>
+<small id="c03-crop-outside"></small></details>`;
+layerPanel.append(cropSection);
+const cropBorder=document.createElement('div');cropBorder.id='c03-crop-border';cropBorder.hidden=true;paper.append(cropBorder);
+function renderCropFrame(){
+ const r=doc.cropFrame;cropBorder.hidden=!r;
+ if(r)Object.assign(cropBorder.style,{left:r[0]+'px',top:r[1]+'px',width:r[2]+'px',height:r[3]+'px'});
+ const frame=r||[0,0,doc.width,doc.height];
+ for(let i=0;i<4;i++)$('c03-crop-'+['x','y','w','h'][i]).value=frame[i];
+ $('c03-crop-outside').textContent=r?'Cropの外側の画素はNativeに保持され、外側へも描画できます。':'キャンバス全体を出力';
+}
+$('c03-crop-set').onclick=()=>{
+ const frame=['x','y','w','h'].map(k=>Number($('c03-crop-'+k).value));
+ const [x,y,w,h]=frame;
+ if(!frame.every(Number.isSafeInteger)||x<0||y<0||w<1||h<1||x+w>doc.width||y+h>doc.height){notify('Crop範囲は元キャンバスの内側にしてください');return}
+ const before=structuredClone(doc);doc={...doc,cropFrame:frame};
+ history.accept({kind:'meta',label:'保持Crop',before,after:structuredClone(doc)});renderCropFrame();dirty();
+};
+$('c03-crop-clear').onclick=()=>{
+ if(!doc.cropFrame)return;
+ const before=structuredClone(doc);delete doc.cropFrame;
+ history.accept({kind:'meta',label:'Crop解除',before,after:structuredClone(doc)});renderCropFrame();dirty();
+};
+$('c03-export-png').onclick=async()=>{
+ if(!rasterWorker||workerFault||interrupted){notify('Raster Workerが利用可能な状態で書き出してください');return}
+ const epoch=documentEpoch,filename=doc.name.replace(/[\\/:*?"<>|]/g,'_')+'.png';
+ try{
+  const {data}=await workerPng(epoch,doc.cropFrame||[0,0,doc.width,doc.height],doc.background);
+  if(epoch!==documentEpoch)return;
+  const blob=new Blob([data],{type:'image/png'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  notify('PNGのダウンロードを開始しました（完了は未確認）');
+ }catch(e){notify('PNG書出し失敗: '+e.message)}
+};
+
 const recoveryPanel=document.createElement('section');recoveryPanel.id='c03-recovery';
 recoveryPanel.innerHTML=`<h4>自動保護・履歴</h4><small id="c03-protect-status">保護状況を確認中</small><div class="c03-actions"><button id="c03-protect-now">今すぐ保護</button><button id="c03-snapshot-save">名前付きSnapshot</button></div><select id="c03-protected-list" aria-label="復元候補"></select><div class="c03-actions"><button id="c03-protected-restore">復元コピー</button><button id="c03-protected-delete">候補削除</button></div><div class="c03-actions"><button id="c03-history-show">Undo履歴</button><button id="c03-history-capacity">保持容量</button></div><output id="c03-history-output"></output>`;
 layerPanel.prepend(recoveryPanel);
