@@ -133,6 +133,8 @@ if(rasterWorker){
     flushFormal();
     rasterWorker.postMessage({type:'presented',epoch:msg.epoch,seq:msg.seq});dirty();if(perf){perf.formal.push({totalMs:performance.now()-receiveStart,tiles:msg.pictures.length,...msg.stats});if(perf.formal.length>2048)perf.formal.shift()}
    }else for(const p of msg.pictures)p.bitmap?.close();
+  }else if(msg.type==='hit-result'){
+   const found=msg.candidates?.[0];if(found){selectLayer(layerTree,found.id);maskPaintMode=false;renderLayerPanel();notify('選択: '+found.name)}else notify('この位置に描画内容のある層は見つかりません');
   }else if(msg.type==='saved'){
    const request=pendingSnapshots.get(msg.requestId);
    if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg.native);if(perf){(perf.save||=[]).push(msg.stats)}}
@@ -183,7 +185,7 @@ function syncMeta(){for(const [id,key] of [['meta-name','name'],['meta-author','
 function resetDoc(data){
  clearTimeout(previewSendTimer);previewSendTimer=0;if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;presentationInterval=16;
  for(const {element,direct}of displayTiles.values()){if(!direct)element.width=element.height=1;element.remove()}displayTiles.clear();formalTiles.clear();displayImages.clear();
- rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';soloLayerId=null;history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
+ rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';soloLayerId=null;selectedMulti.clear();layerComps=[];maskPaintMode=false;hitSelectMode=false;history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
  $('export-recovery').hidden=true;
  stage.removeAttribute('data-raster-error');stage.removeAttribute('data-raster-stats');$('interrupted-stroke').hidden=true;
  removePreviews();repaint.clear();clearTemporary();
@@ -467,7 +469,7 @@ function applyAction(action,isUndo){
    }
    presentation();
   }
- }else if(action.kind==='layers'){layerTree=structuredClone(isUndo?action.before:action.after);publishLayerState();renderLayerPanel()}
+ }else if(action.kind==='layers'||action.kind==='layer-operation'){layerTree=structuredClone(isUndo?action.before:action.after);publishLayerState();renderLayerPanel();if(action.kind==='layer-operation'){const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:isUndo?'undo':'redo',seq,epoch:documentEpoch})}}else if(action.kind==='comps'){layerComps=structuredClone(isUndo?action.before:action.after);renderLayerPanel()}
   else if(action.kind==='meta'){doc=structuredClone(isUndo?action.before:action.after);syncMeta()}
  dirty();
 }
@@ -511,6 +513,7 @@ function updatePenButtons(e){
  }
 }
 function pointerDown(e){
+ if(hitSelectMode){const rect=stage.getBoundingClientRect(),point=screenToDoc({x:e.clientX-rect.left,y:e.clientY-rect.top},view);if(point.x>=0&&point.y>=0&&point.x<doc.width&&point.y<doc.height)queueRaster({type:'hit-test',epoch:documentEpoch,requestId:++saveSerial,x:Math.floor(point.x),y:Math.floor(point.y),threshold:16});return}
  if(e.pointerType==='touch')recordInput('stage-touch-down',e);
  updatePenButtons(e);
  // A barrel-only press changes the temporary tool without drawing a tap.
@@ -836,7 +839,7 @@ $('c03-layer-name').addEventListener('change',e=>editSelectedLayer('レイヤー
 }));
 $('c03-layer-tag').addEventListener('change',e=>editSelectedLayer('色タグ',(layer)=>layer.tag=e.target.value));
 $('c03-layer-blend').addEventListener('change',e=>editSelectedLayer('合成モード',(layer)=>{
- if(!['normal','multiply','screen'].includes(e.target.value))throw Error('未対応の合成モード');
+ if(!BLEND_MODES.includes(e.target.value)&&e.target.value!=='dissolve')throw Error('未対応の合成モード');
  layer.blendMode=e.target.value;
 }));
 for(const [id,field] of [['c03-lock-position','position'],['c03-lock-pixels','pixels'],['c03-lock-all','all']]){
