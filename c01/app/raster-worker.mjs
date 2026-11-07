@@ -235,6 +235,28 @@ async function execute(msg){
   }
   await emitFrame(msg);return;
  }
+ if(msg.type==='export-png'){
+  const frame=msg.cropFrame||[0,0,canvas.width,canvas.height];
+  const [sx,sy,w,h]=frame;
+  if(!frame.every(Number.isSafeInteger)||sx<0||sy<0||w<1||h<1||sx+w>canvas.width||sy+h>canvas.height)throw Error('Invalid export frame');
+  const exportCanvas=new OffscreenCanvas(w,h),exportCtx=exportCanvas.getContext('2d',{willReadFrequently:true});
+  if(!exportCtx)throw Error('Export surface unavailable');
+  if(msg.background==='white'){exportCtx.fillStyle='#fff';exportCtx.fillRect(0,0,w,h);}
+  const full=new OffscreenCanvas(canvas.width,canvas.height),fullCtx=full.getContext('2d',{willReadFrequently:true});
+  const prevSolo=layers.soloId;layers.soloId=null;
+  try{
+   const cooperate=workSlice(msg);
+   for(let y=sy;y<sy+h;y+=tileSize)for(let x=sx;x<sx+w;x+=tileSize){
+    if(!await cooperate())return;
+    const box={x,y,w:Math.min(tileSize,sx+w-x),h:Math.min(tileSize,sy+h-y)};
+    layers.renderTile(fullCtx,box);
+    exportCtx.drawImage(full,box.x,box.y,box.w,box.h,box.x-sx,box.y-sy,box.w,box.h);
+   }
+  }finally{layers.soloId=prevSolo;}
+  const blob=await exportCanvas.convertToBlob({type:'image/png'});
+  const bytes=new Uint8Array(await blob.arrayBuffer());
+  self.postMessage({type:'exported-png',epoch,requestId:msg.requestId,width:w,height:h,data:bytes},[bytes.buffer]);return;
+ }
  if(msg.type==='save'){
   const start=performance.now();
   const nativeLayers=await layers.nativeLayers();
