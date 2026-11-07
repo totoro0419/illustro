@@ -470,7 +470,7 @@ function applyAction(action,isUndo){
    }
    presentation();
   }
- }else if(action.kind==='layers'||action.kind==='layer-operation'){layerTree=structuredClone(isUndo?action.before:action.after);publishLayerState();renderLayerPanel();if(action.kind==='layer-operation'){const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:isUndo?'undo':'redo',seq,epoch:documentEpoch})}}else if(action.kind==='comps'){layerComps=structuredClone(isUndo?action.before:action.after);renderLayerPanel()}
+ }else if(action.kind==='layers'||action.kind==='layer-operation'){layerTree=structuredClone(isUndo?action.before:action.after);publishLayerState();renderLayerPanel();if(action.kind==='layer-operation'){const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:isUndo?'undo':'redo',seq,epoch:documentEpoch})}}else if(action.kind==='comps'){layerComps=structuredClone(isUndo?action.before:action.after);renderLayerPanel()}else if(action.kind==='restore'){const state=isUndo?action.before:action.after;layerTree=structuredClone(state.tree);doc=structuredClone(state.doc);layerComps=structuredClone(state.comps);maskPaintMode=false;syncMeta();paper.style.background=doc.background==='white'?'white':'transparent';$('checker').style.display=doc.background==='white'?'none':'block';renderLayerPanel();const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:isUndo?'undo':'redo',seq,epoch:documentEpoch})}
   else if(action.kind==='meta'){doc=structuredClone(isUndo?action.before:action.after);syncMeta()}
  dirty();
 }
@@ -692,7 +692,7 @@ $('new-dialog').addEventListener('submit',e=>{e.preventDefault();try{const dpi=N
 function applyMeta(){const next={...doc,name:$('meta-name').value||'無題',author:$('meta-author').value,description:$('meta-description').value};if(JSON.stringify(doc)===JSON.stringify(next))return;history.accept({kind:'meta',label:'作品情報',before:structuredClone(doc),after:structuredClone(next)});doc=next;dirty()}
 function addTemplate(){const t={name:doc.name,width:doc.width,height:doc.height,dpi:doc.dpi,background:doc.background,profile:'srgb8'};templates.push(t);try{localStorage.setItem('illustro.templates.v1',JSON.stringify(templates))}catch{notify('テンプレートの保存に失敗しました');return}notify('寸法・DPI・背景のみテンプレートに保存しました')}
 function archiveStrokes(index=history.index){
- return [...priorStrokes,...history.items.slice(0,index).filter(a=>a.kind==='pixels').map(a=>a.stroke)];
+ let base=[...priorStrokes];for(const entry of history.items.slice(0,index)){if(entry.kind==='restore')base=[...entry.archiveAfter];else if(entry.kind==='pixels')base.push(entry.stroke)}return base;
 }
 function blobDataURL(blob){
  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||Error('PNG読込失敗'));reader.readAsDataURL(blob)});
@@ -740,6 +740,7 @@ layerPanel.append(advancedPanel);
 const recoveryPanel=document.createElement('section');recoveryPanel.id='c03-recovery';
 recoveryPanel.innerHTML=`<h4>自動保護・履歴</h4><small id="c03-protect-status">保護状況を確認中</small><div class="c03-actions"><button id="c03-protect-now">今すぐ保護</button><button id="c03-snapshot-save">名前付きSnapshot</button></div><select id="c03-protected-list" aria-label="復元候補"></select><div class="c03-actions"><button id="c03-protected-restore">復元コピー</button><button id="c03-protected-delete">候補削除</button></div><div class="c03-actions"><button id="c03-history-show">Undo履歴</button><button id="c03-history-capacity">保持容量</button></div><output id="c03-history-output"></output>`;
 layerPanel.prepend(recoveryPanel);
+recoveryPanel.insertAdjacentHTML('beforeend','<div class="c03-actions"><button id="c03-snapshot-restore">履歴として復元</button><button id="c03-snapshot-partial">層・領域を部分復元</button></div>');
 for(const mode of ['dissolve',...BLEND_MODES.filter(m=>!['normal','multiply','screen'].includes(m))])$('c03-layer-blend').append(new Option(mode,mode));
 function groupDescendant(id,parent){
  let l=layerTree.layers.find(item=>item.id===id);
@@ -1135,7 +1136,7 @@ async function open(file){
   }
   if(epoch!==documentEpoch||revision!==history.revision||!allowDocumentChange())throw Error('読込中に作品が変更されました');
   resetDoc(native.document);
-  layerTree.layers=layers.map(({png,...other})=>other);
+  layerTree.layers=layers.map(({png,...other})=>{const l=structuredClone(other);if(l.mask)delete l.mask.png;return l});
   layerTree.selectedId=layerTree.layers.at(-1).id;
   layerTree.nextId=1+Math.max(0,...layerTree.layers.map(layer=>Number(/^layer-([0-9]+)$/.exec(layer.id)?.[1]||0)));
   layerComps=Array.isArray(native.history?.layerComps)?structuredClone(native.history.layerComps):[];renderLayerPanel();
