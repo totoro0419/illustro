@@ -1172,12 +1172,12 @@ async function save(as=false){
    const dest=await picker;
    // Serialize writes: older Save requests cannot finish after newer ones on the same target.
    const operation=saveQueue.catch(()=>{}).then(async()=>{
-    if(!as&&handle===dest&&lastSavedFileStamp){
+    if(!as&&handle===dest&&lastSavedFileStamp&&typeof dest.getFile==='function'){
      const current=await dest.getFile();
      if(current.lastModified!==lastSavedFileStamp.lastModified||current.size!==lastSavedFileStamp.size)throw Error('外部変更を検出。原本への上書きを中止しました。別名保存を使用してください');
     }
     const writer=await dest.createWritable();try{await writer.write(contents);await writer.close()}catch(error){await writer.abort().catch(()=>{});throw error}
-    const savedFile=await dest.getFile();lastSavedFileStamp={lastModified:savedFile.lastModified,size:savedFile.size};
+    if(typeof dest.getFile==='function'){const savedFile=await dest.getFile();lastSavedFileStamp={lastModified:savedFile.lastModified,size:savedFile.size};}else lastSavedFileStamp=null;
    });
    saveQueue=operation;await operation;
    if(epoch===documentEpoch){handle=dest;savedRev=revision;dirty()}
@@ -1256,6 +1256,6 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{if(temporaryKeys[e.code])release(e.code)});
 window.addEventListener('resize',scheduleView);
 if(typeof ResizeObserver==='function')new ResizeObserver(scheduleView).observe(stage);
-setColor(settings.color,false);resetDoc(doc);selectTool('gpen');
+setColor(settings.color,false);resetDoc(doc);selectTool('gpen');refreshProtectedList().catch(err=>showProtectionStatus('保護候補取得失敗: '+err.message));
 if(matchMedia('(max-width:720px)').matches)$('workspace').classList.add('collapsed');
 if(!rasterWorker)notify('この端末では筆の確定が同期処理になります');
