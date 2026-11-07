@@ -161,7 +161,7 @@ function workerNative(epoch,metadata,revision,extra={}){return new Promise((reso
 
 let doc={name:'無題',author:'',description:'',width:1600,height:1200,dpi:300,profile:'srgb8',background:'white'};
 let layerTree=createLayerTree();
-let history=new History(),savedRev=-1,handle=null,documentEpoch=0,saveQueue=Promise.resolve(),active=null,nav=new Map(),gesture=null,view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
+let history=new History(),savedRev=-1,handle=null,lastSavedFileStamp=null,documentEpoch=0,saveQueue=Promise.resolve(),active=null,nav=new Map(),gesture=null,view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
 let navigationMoved=false,navigationTapHandled=false,navigationTapAllowed=true,navigationStarted=0;
 let settings={tool:'gpen',size:12,opacity:1,flow:1,curve:1,fingerDraw:false,gestureUndo:true,color:[34,39,51],colorAlpha:1,previous:[0,0,0],lastBrush:'gpen'};
 let templates=[];try{templates=JSON.parse(localStorage.getItem('illustro.templates.v1')||'[]')}catch{}
@@ -186,7 +186,7 @@ function syncMeta(){for(const [id,key] of [['meta-name','name'],['meta-author','
 function resetDoc(data){
  clearTimeout(previewSendTimer);previewSendTimer=0;if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;presentationInterval=16;
  for(const {element,direct}of displayTiles.values()){if(!direct)element.width=element.height=1;element.remove()}displayTiles.clear();formalTiles.clear();displayImages.clear();
- rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';soloLayerId=null;selectedMulti.clear();layerComps=[];maskPaintMode=false;hitSelectMode=false;protectedRevision=-1;scheduledProtectionRevision=-1;history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
+ rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';soloLayerId=null;selectedMulti.clear();layerComps=[];maskPaintMode=false;hitSelectMode=false;protectedRevision=-1;scheduledProtectionRevision=-1;history=new History();savedRev=-1;handle=null;lastSavedFileStamp=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
  $('export-recovery').hidden=true;
  stage.removeAttribute('data-raster-error');stage.removeAttribute('data-raster-stats');$('interrupted-stroke').hidden=true;
  removePreviews();repaint.clear();clearTemporary();
@@ -1096,7 +1096,14 @@ async function save(as=false){
   if(hasPicker){
    const dest=await picker;
    // Serialize writes: older Save requests cannot finish after newer ones on the same target.
-   const operation=saveQueue.catch(()=>{}).then(async()=>{const writer=await dest.createWritable();try{await writer.write(contents);await writer.close()}catch(error){await writer.abort().catch(()=>{});throw error}});
+   const operation=saveQueue.catch(()=>{}).then(async()=>{
+    if(!as&&handle===dest&&lastSavedFileStamp){
+     const current=await dest.getFile();
+     if(current.lastModified!==lastSavedFileStamp.lastModified||current.size!==lastSavedFileStamp.size)throw Error('外部変更を検出。原本への上書きを中止しました。別名保存を使用してください');
+    }
+    const writer=await dest.createWritable();try{await writer.write(contents);await writer.close()}catch(error){await writer.abort().catch(()=>{});throw error}
+    const savedFile=await dest.getFile();lastSavedFileStamp={lastModified:savedFile.lastModified,size:savedFile.size};
+   });
    saveQueue=operation;await operation;
    if(epoch===documentEpoch){handle=dest;savedRev=revision;dirty()}
    notify('保存完了');
