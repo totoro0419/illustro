@@ -38,7 +38,7 @@ try{
   await until(async()=>{
    const registration=await navigator.serviceWorker.getRegistration();
    return Boolean(registration?.active&&navigator.serviceWorker.controller);
-  },{},{timeout:20000});
+  },20000);
  }catch(error){
   const diagnosis=await page.evaluate(async()=>{
    const registration=await navigator.serviceWorker.getRegistration();
@@ -56,7 +56,7 @@ try{
    if(names.length!==1)return false;
    const cache=await caches.open(names[0]);
    return (await cache.keys()).length>=10;
-  },{},{timeout:20000});
+  },20000);
  }catch(error){
   const diagnostics=await page.evaluate(async()=>{
    const names=await caches.keys(),reg=await navigator.serviceWorker.getRegistration();
