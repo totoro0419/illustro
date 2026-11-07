@@ -156,7 +156,7 @@ function flushFormal(){
  previewWorker.postMessage({type:'base',epoch:packet.epoch,seq:packet.seq,acceptedAt:packet.acceptedAt,pictures,retired},pictures.map(p=>p.image.data.buffer));
  dirty();
 }
-function workerNative(epoch,metadata,revision){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'save',epoch,requestId,metadata,revision})})}
+function workerNative(epoch,metadata,revision,extra={}){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'save',epoch,requestId,metadata,revision,extra})})}
 
 let doc={name:'無題',author:'',description:'',width:1600,height:1200,dpi:300,profile:'srgb8',background:'white'};
 let layerTree=createLayerTree();
@@ -979,7 +979,7 @@ async function save(as=false){
  // Capture the exact accepted raster at request time before any await; encode asynchronously.
  let frozen,picker=null;
  try{
-  const nativePromise=rasterWorker?workerNative(epoch,meta,revision):null;
+  const nativePromise=rasterWorker?workerNative(epoch,meta,revision,{layerComps:structuredClone(layerComps)}):null;
   if(!rasterWorker){frozen=document.createElement('canvas');frozen.width=meta.width;frozen.height=meta.height;frozen.getContext('2d').drawImage(canvas,0,0);}
   const filename=meta.name.replace(/[\\/:*?"<>|]/g,'_')+'.illustro';
   const hasPicker=typeof window.showSaveFilePicker==='function';
@@ -1015,12 +1015,13 @@ async function open(file){
   const native=readLayeredManifest(await file.text());
   if(!rasterWorker&&native.layers.length>1)throw Error('複数レイヤーNativeにはRaster Workerが必要です');
   const layers=native.layers.map(layer=>{
-   if(layer.type!=='raster'||layer.children?.length)throw Error('Raster以外のレイヤーは未対応です');
-   if(!['normal','multiply','screen'].includes(layer.blendMode||'normal'))throw Error('この合成モードは未対応です');
+   if(!['raster','group'].includes(layer.type)||layer.children?.length)throw Error('未対応のレイヤー形式です');
+   if(!BLEND_MODES.includes(layer.blendMode||'normal')&&layer.blendMode!=='dissolve')throw Error('この合成モードは未対応です');
    return {...layer,lifetime:layer.lifetime||1,blendMode:layer.blendMode||'normal',locks:layer.locks||{}};
   });
   const images=[];
   for(const layer of layers){
+   if(layer.type==='group'){images.push(null);continue}
    const img=new Image();
    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('PNG decode failed'));img.src=layer.png});
    if(img.width!==native.document.width||img.height!==native.document.height)throw Error('PNGサイズの不一致');
@@ -1031,13 +1032,13 @@ async function open(file){
   layerTree.layers=layers.map(({png,...other})=>other);
   layerTree.selectedId=layerTree.layers.at(-1).id;
   layerTree.nextId=1+Math.max(0,...layerTree.layers.map(layer=>Number(/^layer-([0-9]+)$/.exec(layer.id)?.[1]||0)));
-  renderLayerPanel();
+  layerComps=Array.isArray(native.history?.layerComps)?structuredClone(native.history.layerComps):[];renderLayerPanel();
   priorStrokes=native.brushArchive?.strokes||[];
   recoveryStrokes=native.brushArchive?.recovery||[];
   lastFormal={strokes:[...priorStrokes],revision:0};
   ctx.clearRect(0,0,doc.width,doc.height);
   layers.forEach((layer,i)=>{
-   if(!layer.visible)return;
+   if(layer.type!=='raster'||!layer.visible)return;
    ctx.save();ctx.globalAlpha=layer.opacity;
    ctx.globalCompositeOperation={normal:'source-over',multiply:'multiply',screen:'screen'}[layer.blendMode];
    ctx.drawImage(images[i],0,0);ctx.restore();
@@ -1052,7 +1053,7 @@ async function open(file){
    previewWorker.postMessage({type:'base',epoch:documentEpoch,pictures,retired:[]},pictures.map(p=>p.image.data.buffer));
   }
   renderRepeat();
-  if(rasterWorker)queueRaster({type:'load',epoch:documentEpoch,layers,archive:priorStrokes,recovery:recoveryStrokes});
+  if(rasterWorker){const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:'load',epoch:documentEpoch,seq,layers,archive:priorStrokes,recovery:recoveryStrokes});}
   savedRev=history.revision;dirty();notify('Native作品を開きました');
  }catch(error){notify('読込に失敗: '+error.message)}
 }
