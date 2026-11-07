@@ -42,8 +42,12 @@ try{
  const details=await page.evaluate(async()=>{
   const cacheNames=(await caches.keys()).filter(x=>x.startsWith('illustro-c03-'));
   const cache=await caches.open(cacheNames.at(-1));
-  return {cacheNames,count:(await cache.keys()).length};
+  const registration=await navigator.serviceWorker.getRegistration();
+  return {cacheNames,count:(await cache.keys()).length,host:location.hostname,
+   controller:navigator.serviceWorker.controller?.scriptURL,script:registration?.active?.scriptURL};
  });
+ console.log('C03_OFFLINE_CACHE_DEBUG:',JSON.stringify(details));
+ assert.ok(details.controller?.endsWith('/sw.js'),'Correct built service worker must control the browser');
  assert.equal(details.cacheNames.length,1);
  assert.ok(details.count>=10,'Offline shell must cache all required assets');
  await context.setOffline(true);
