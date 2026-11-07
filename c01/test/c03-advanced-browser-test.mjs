@@ -42,9 +42,11 @@ try{
  await page.locator('#c03-layer-list .c03-row').nth(1).locator('button').last().click();
  await page.locator('#c03-duplicate').click();
  assert.equal(await page.locator('#c03-layer-list .c03-row').count(),4);
+ await page.locator('#c03-comp-name').evaluate(el=>el.closest('details').open=true);
  await page.locator('#c03-comp-name').fill('Before');
  await page.locator('#c03-comp-create').click();
  assert.equal(await page.locator('#c03-comp-list option').count(),1);
+ await page.locator('#c03-crop-x').evaluate(el=>el.closest('details').open=true);
  await page.locator('#c03-crop-x').fill('10');
  await page.locator('#c03-crop-y').fill('15');
  await page.locator('#c03-crop-w').fill('200');
