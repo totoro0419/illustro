@@ -725,7 +725,7 @@ const selectedMulti=new Set();
 
 const advancedPanel=document.createElement('div');advancedPanel.id='c03-advanced';
 advancedPanel.innerHTML=`<div class="c03-actions"><button id="c03-add-group">＋ Group</button><button id="c03-group-selected">まとめる</button><button id="c03-ungroup">解除</button></div>
-<div class="c03-actions"><button id="c03-layer-up">↑</button><button id="c03-layer-down">↓</button><button id="c03-duplicate">複製</button><button id="c03-merge-down">下へ結合</button></div>
+<div class="c03-actions"><button id="c03-layer-up">↑</button><button id="c03-layer-down">↓</button><button id="c03-duplicate">複製</button><button id="c03-merge-down">下へ結合</button><button id="c03-merged-copy">統合コピー</button></div>
 <div class="c03-actions"><select id="c03-filter-type"><option value="">全種別</option><option value="raster">Raster</option><option value="group">Group</option></select><select id="c03-filter-tag"><option value="">全タグ</option><option value="red">赤</option><option value="orange">橙</option><option value="yellow">黄</option><option value="green">緑</option><option value="blue">青</option><option value="violet">紫</option></select></div>
 <label>親グループ<select id="c03-layer-parent"></select></label>
 <div class="c03-lock-row"><label><input id="c03-layer-clipped" type="checkbox">下層でクリップ</label><label><input id="c03-alpha-lock" type="checkbox">透明度ロック</label></div>
@@ -1083,6 +1083,14 @@ $('c03-merge-down').onclick=()=>{
  const before=structuredClone(layerTree);
  layerTree.layers=layerTree.layers.filter(l=>l.id!==upper.id);layerTree.selectedId=lower.id;
  layerOperation(before,{kind:'merge',upperId:upper.id,lowerId:lower.id},'下へ結合');
+};
+$('c03-merged-copy').onclick=()=>{
+ if(!rasterWorker||workerFault)return;
+ if((layerTree.layers.filter(l=>l.type==='raster').length+1)*doc.width*doc.height*4>256*1024*1024)return notify('統合コピー後のメモリ予算を超えます');
+ const before=structuredClone(layerTree),layer=addRasterLayer(layerTree,'統合コピー');
+ layer.parentId=null;
+ const index=layerTree.layers.indexOf(layer);layerTree.layers.splice(index,1);layerTree.layers.push(layer);
+ layerOperation(before,{kind:'merged-copy',targetId:layer.id},'統合コピー');
 };
 $('c03-layer-clipped').onchange=e=>editSelectedLayer('クリッピング',layer=>layer.clipped=e.target.checked);
 $('c03-alpha-lock').onchange=e=>editSelectedLayer('透明度ロック',layer=>layer.alphaLock=e.target.checked);
