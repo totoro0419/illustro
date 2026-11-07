@@ -21,11 +21,21 @@ const browser=await chromium.launch({headless:true});
 try{
  const context=await browser.newContext({serviceWorkers:'allow'});
  const page=await context.newPage();const errors=[];
+ const until=async(predicate,timeoutMs=20000)=>{
+  const started=Date.now();
+  while(Date.now()-started<timeoutMs){
+   // Playwright waitForFunction treats a Promise-valued predicate as truthy.
+   // page.evaluate awaits the predicate's actual Boolean result instead.
+   if(await page.evaluate(predicate))return;
+   await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  throw Error('Condition timed out after '+timeoutMs+'ms');
+ };
  page.on('pageerror',e=>errors.push(String(e)));
  await page.goto(url,{waitUntil:'load'});
  console.log('C03_OFFLINE_PHASE: online navigation completed');
  try{
-  await page.waitForFunction(async()=>{
+  await until(async()=>{
    const registration=await navigator.serviceWorker.getRegistration();
    return Boolean(registration?.active&&navigator.serviceWorker.controller);
   },{},{timeout:20000});
@@ -41,7 +51,7 @@ try{
  console.log('C03_OFFLINE_PHASE: SW activated and controls page');
  let details;
  try{
-  await page.waitForFunction(async()=>{
+  await until(async()=>{
    const names=(await caches.keys()).filter(x=>x.startsWith('illustro-c03-'));
    if(names.length!==1)return false;
    const cache=await caches.open(names[0]);
