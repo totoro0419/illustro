@@ -39,17 +39,31 @@ try{
   throw Error('Service Worker failed to control the page: '+JSON.stringify(diagnosis));
  }
  console.log('C03_OFFLINE_PHASE: SW activated and controls page');
- const details=await page.evaluate(async()=>{
+ let details;
+ try{
+  await page.waitForFunction(async()=>{
+   const names=(await caches.keys()).filter(x=>x.startsWith('illustro-c03-'));
+   if(names.length!==1)return false;
+   const cache=await caches.open(names[0]);
+   return (await cache.keys()).length>=10;
+  },{},{timeout:20000});
+ }catch(error){
+  const diagnostics=await page.evaluate(async()=>{
+   const names=await caches.keys(),reg=await navigator.serviceWorker.getRegistration();
+   const entries=await Promise.all(names.map(async name=>({name,count:(await (await caches.open(name)).keys()).length})));
+   return {host:location.hostname,entries,active:reg?.active?.state,activeScript:reg?.active?.scriptURL,controlling:!!navigator.serviceWorker.controller};
+  });
+  throw Error('C03 offline precache was not populated: '+JSON.stringify(diagnostics));
+ }
+ details=await page.evaluate(async()=>{
   const cacheNames=(await caches.keys()).filter(x=>x.startsWith('illustro-c03-'));
-  const cache=await caches.open(cacheNames.at(-1));
-  const registration=await navigator.serviceWorker.getRegistration();
-  return {cacheNames,count:(await cache.keys()).length,host:location.hostname,
-   controller:navigator.serviceWorker.controller?.scriptURL,script:registration?.active?.scriptURL};
+  const cache=await caches.open(cacheNames[0]),registration=await navigator.serviceWorker.getRegistration();
+  return {cacheNames,count:(await cache.keys()).length,host:location.hostname,controlling:!!navigator.serviceWorker.controller,script:registration?.active?.scriptURL};
  });
  console.log('C03_OFFLINE_CACHE_DEBUG:',JSON.stringify(details));
- assert.ok(details.controller?.endsWith('/sw.js'),'Correct built service worker must control the browser');
+ assert.ok(details.controlling&&details.script?.endsWith('/sw.js'),'Correct SW must control page');
  assert.equal(details.cacheNames.length,1);
- assert.ok(details.count>=10,'Offline shell must cache all required assets');
+ assert.ok(details.count>=10,'Offline shell must cache required assets');
  await context.setOffline(true);
  console.log('C03_OFFLINE_PHASE: offline reload starting');
  const response=await page.reload({waitUntil:'load',timeout:20000});
