@@ -1088,6 +1088,7 @@ $('c03-merged-copy').onclick=()=>{
  if(!rasterWorker||workerFault)return;
  if((layerTree.layers.filter(l=>l.type==='raster').length+1)*doc.width*doc.height*4>256*1024*1024)return notify('統合コピー後のメモリ予算を超えます');
  const before=structuredClone(layerTree),layer=addRasterLayer(layerTree,'統合コピー');
+ layer.visible=false; // Inactive by default: a duplicate composite must not multiply visible alpha.
  layer.parentId=null;
  const index=layerTree.layers.indexOf(layer);layerTree.layers.splice(index,1);layerTree.layers.push(layer);
  layerOperation(before,{kind:'merged-copy',targetId:layer.id},'統合コピー');
