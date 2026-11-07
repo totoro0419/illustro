@@ -860,6 +860,101 @@ $('c03-solo').onclick=()=>{
 };
 
 
+
+const protectionSessionId=typeof crypto.randomUUID==='function'?crypto.randomUUID():'session-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+let protectedRevision=-1,scheduledProtectionRevision=-1,protectionTimer=0,protecting=false,lastProtectionError='';
+function showProtectionStatus(message){
+ if($('c03-protect-status'))$('c03-protect-status').textContent=message;
+}
+function maybeScheduleProtection(){
+ if(!rasterWorker||workerFault||!history||!history.revision)return;
+ if(history.revision===protectedRevision){showProtectionStatus('自動保護済み / Revision '+protectedRevision);return}
+ if(protecting||scheduledProtectionRevision===history.revision)return;
+ scheduledProtectionRevision=history.revision;
+ clearTimeout(protectionTimer);
+ protectionTimer=setTimeout(()=>{protectionTimer=0;protectCurrent().catch(error=>showProtectionStatus('保護失敗: '+error.message))},7000);
+ showProtectionStatus('未保護の変更あり / Revision '+history.revision);
+}
+async function protectCurrent({kind='auto',snapshotName='',note=''}={}){
+ if(protecting){showProtectionStatus('保護処理中です');return false}
+ if(workerFault||!rasterWorker){showProtectionStatus('この環境では自動保護を利用できません');return false}
+ if(active||interrupted||nav.size||pendingInk.size){
+  if(kind==='auto'){
+   clearTimeout(protectionTimer);protectionTimer=setTimeout(()=>{protectionTimer=0;protectCurrent().catch(()=>{})},2500);
+   showProtectionStatus('描画・操作中のため保護待ち');
+  }else notify('描画確定後にSnapshotを保存してください');
+  return false;
+ }
+ protecting=true;scheduledProtectionRevision=-1;
+ const revision=history.revision,epoch=documentEpoch,metadata=structuredClone(doc);
+ showProtectionStatus('保護データを生成中 / Revision '+revision);
+ try{
+  const content=await workerNative(epoch,metadata,revision,{layerComps:structuredClone(layerComps)});
+  const saved=await protectDocument({sessionId:protectionSessionId,revision,content,name:metadata.name,kind,snapshotName,note});
+  if(epoch===documentEpoch){
+   if(kind==='auto')protectedRevision=revision;
+   lastProtectionError='';
+   showProtectionStatus('検証済み保護 '+new Date(saved.writtenAt).toLocaleString('ja-JP')+' / Rev '+revision+(revision===history.revision?'':'（以降の変更は未保護）'));
+  }
+  await refreshProtectedList(saved.key);
+  return true;
+ }catch(error){
+  lastProtectionError=error.message;
+  if(epoch===documentEpoch)showProtectionStatus('自動保護失敗 / 未保護 Rev '+revision+': '+error.message);
+  return false;
+ }finally{
+  protecting=false;
+  if(epoch===documentEpoch&&history.revision!==protectedRevision&&history.revision!==revision){
+   scheduledProtectionRevision=-1;maybeScheduleProtection();
+  }
+ }
+}
+async function refreshProtectedList(preferred=''){
+ try{
+  const entries=await listProtected(),sel=$('c03-protected-list'),before=preferred||sel.value;
+  sel.replaceChildren(...entries.map(entry=>{
+   const label=(entry.kind==='snapshot'?'★ '+entry.snapshotName:'自動 '+entry.name)+' / Rev '+entry.revision+' / '+new Date(entry.writtenAt).toLocaleString('ja-JP');
+   return new Option(label,entry.key);
+  }));
+  if(entries.some(e=>e.key===before))sel.value=before;
+  else if(!entries.length)sel.append(new Option('復元候補なし',''));
+ }catch(error){showProtectionStatus('保護データへアクセスできません: '+error.message)}
+}
+$('c03-protect-now').onclick=()=>{protectCurrent().catch(error=>notify(error.message))};
+$('c03-snapshot-save').onclick=()=>{
+ const name=prompt('保存するSnapshotの名前','案 '+new Date().toLocaleString('ja-JP'));
+ if(!name?.trim())return;
+ protectCurrent({kind:'snapshot',snapshotName:name.trim()}).then(ok=>{if(ok)notify('検証済みSnapshotを保護しました')});
+};
+$('c03-protected-restore').onclick=async()=>{
+ const key=$('c03-protected-list').value;if(!key)return;
+ try{
+  const saved=await readProtected(key);
+  readLayeredManifest(saved.content);
+  const file=new File([saved.content],(saved.name||'復元')+' (復元コピー).illustro',{type:'application/json'});
+  await open(file);
+ }catch(error){notify('復元できません: '+error.message)}
+};
+$('c03-protected-delete').onclick=async()=>{
+ const key=$('c03-protected-list').value;if(!key)return;
+ if(!confirm('この保護候補を削除しますか？ Snapshotの削除は取り消せません。'))return;
+ try{await deleteProtected(key,{allowSnapshot:true});await refreshProtectedList();notify('選択した保護候補を削除しました')}
+ catch(error){notify('削除に失敗: '+error.message)}
+};
+$('c03-history-show').onclick=()=>{
+ const items=history.items,entries=items.map((item,i)=>(i<history.index?'● ':'○ ')+(i+1)+' '+item.label);
+ $('c03-history-output').textContent='Undo '+history.index+' / '+items.length+'\n'+entries.slice(-24).reverse().join('\n');
+};
+$('c03-history-capacity').onclick=async()=>{
+ const stats=JSON.parse(stage.dataset.rasterStats||'{}'),protectedEntries=await listProtected();
+ const estimate=await navigator.storage?.estimate?.().catch(()=>null);
+ const fmt=v=>Number.isFinite(v)?(v/1048576).toFixed(1)+' MiB':'未確認';
+ $('c03-history-output').textContent='Undoメモリ '+fmt(stats.historyBytes)+' / 192 MiB 上限\nローカル保護 '+protectedEntries.length+' 件\nストレージ使用 '+fmt(estimate?.usage)+' / 容量 '+fmt(estimate?.quota);
+};
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='hidden'&&history.revision>protectedRevision&&!protecting)protectCurrent().catch(()=>{});
+});
+
 function layerOperation(before,operation,label){
  if(!rasterWorker||workerFault){notify('この操作にはRaster Workerが必要です');layerTree=before;renderLayerPanel();return}
  const seq=++rasterSeq;minimumPublicationSeq=seq;
