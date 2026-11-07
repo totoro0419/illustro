@@ -29,11 +29,17 @@ function workSlice(msg){
 async function emitFrame(msg,stats){
  if(msg.epoch!==latestEpoch)return;
  const pictures=[],cooperate=workSlice(msg);
+ // C02-equivalent fast path: a single Normal layer is already the exact
+ // authoritative raster. Never roundtrip through a second Canvas composite.
+ const sole=layers.layers.length===1?layers.layers[0]:null;
+ const direct=sole&&sole.opacity===1&&sole.blendMode==='normal'&&(layers.soloId===sole.id||(!layers.soloId&&sole.visible))
+  ?layers.surfaces.get(sole.id)?.ctx:null;
  for(const key of dirty.keys()){
   if(!await cooperate())return;
   const box=tileBox(key,canvas.width,canvas.height);
-  layers.renderTile(ctx,box);
-  pictures.push({key,box,image:ctx.getImageData(box.x,box.y,box.w,box.h)});
+  if(!direct)layers.renderTile(ctx,box);
+  const reader=direct||ctx;
+  pictures.push({key,box,image:reader.getImageData(box.x,box.y,box.w,box.h)});
  }
  if(msg.epoch!==latestEpoch){return}
  self.postMessage({type:'frame',epoch,seq:msg.seq,pictures,stats},pictures.map(p=>p.image.data.buffer));
