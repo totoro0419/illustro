@@ -235,6 +235,31 @@ async function execute(msg){
   }
   await emitFrame(msg);return;
  }
+ if(msg.type==='compare-snapshot'){
+  const alternative=new RasterLayerStore(canvas.width,canvas.height);
+  await alternative.loadLayers(msg.layers);
+  const scale=Math.min(1,256/Math.max(canvas.width,canvas.height));
+  const width=Math.max(1,Math.round(canvas.width*scale)),height=Math.max(1,Math.round(canvas.height*scale));
+  const cooperate=workSlice(msg);
+  const thumbnail=async store=>{
+   const out=new OffscreenCanvas(width,height),outCtx=out.getContext('2d',{willReadFrequently:true});
+   const full=new OffscreenCanvas(canvas.width,canvas.height),fullCtx=full.getContext('2d',{willReadFrequently:true});
+   const solo=store.soloId;store.soloId=null;
+   try{
+    for(let y=0;y<canvas.height;y+=tileSize)for(let x=0;x<canvas.width;x+=tileSize){
+     if(!await cooperate())return null;
+     const box=tileBox(Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize),canvas.width,canvas.height);
+     store.renderTile(fullCtx,box);
+     outCtx.drawImage(full,box.x,box.y,box.w,box.h,Math.round(box.x*scale),Math.round(box.y*scale),Math.ceil(box.w*scale)+1,Math.ceil(box.h*scale)+1);
+    }
+   }finally{store.soloId=solo;}
+   return new Uint8Array(await (await out.convertToBlob({type:'image/png'})).arrayBuffer());
+  };
+  const current=await thumbnail(layers),saved=await thumbnail(alternative);
+  if(!current||!saved)return;
+  self.postMessage({type:'snapshot-comparison',epoch,requestId:msg.requestId,current,saved,width,height},[current.buffer,saved.buffer]);
+  return;
+ }
  if(msg.type==='export-png'){
   const frame=msg.cropFrame||[0,0,canvas.width,canvas.height];
   const [sx,sy,w,h]=frame;
