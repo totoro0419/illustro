@@ -9,3 +9,10 @@ This commit adds:
 - Independent C03 alpha Pages build route, preserving C01 and C02 by assembling each from its own source branch.
 
 **NOT DONE:** 24 feature product integration, C03-layered worker composition, user-facing layer/history/save controls, Native v3 product round-trip, fail-injection, C02 vs C03 input-to-display measurements and user real-device approval. Passing pure-function tests does not satisfy these acceptance gates. This is an in-progress Draft PR, not an approved release.
+
+### 2026-11-07 actual raster-alpha integration
+- `c01/app/raster-layers.mjs`: isolated worker-owned raster surfaces; accepted strokes routed to frozen layer ID/lifetime.
+- UI: Raster add/select, visibility and opacity; changes become artwork Undo transactions.
+- Worker: composite dirty tiles with Canvas2D Normal/Multiply/Screen; Native v3 save/read supports multiple Raster layers.
+- C03 browser E2E added to Pages CI to require drawing on the new layer, hide/show, Undo, v3 separated pixel payload, reload.
+- Current production compositing is Canvas2D and not verified against numeric goldens; other blends remain disabled. Snapshot, branching, mask, offline edits and auto-recovery are not product-integrated.

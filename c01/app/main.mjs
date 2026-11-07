@@ -802,6 +802,7 @@ async function open(file){
  if(history.revision!==savedRev&&history.canUndo&&!confirm('未保存の作品を破棄して開きますか？'))return;
  try{
   const native=readLayeredManifest(await file.text());
+  if(!rasterWorker&&native.layers.length>1)throw Error('複数レイヤーNativeにはRaster Workerが必要です');
   const layers=native.layers.map(layer=>{
    if(layer.type!=='raster'||layer.children?.length)throw Error('Raster以外のレイヤーは未対応です');
    if(!['normal','multiply','screen'].includes(layer.blendMode||'normal'))throw Error('この合成モードは未対応です');
@@ -818,7 +819,7 @@ async function open(file){
   resetDoc(native.document);
   layerTree.layers=layers.map(({png,...other})=>other);
   layerTree.selectedId=layerTree.layers.at(-1).id;
-  layerTree.nextId=layerTree.layers.length+1;
+  layerTree.nextId=1+Math.max(0,...layerTree.layers.map(layer=>Number(/^layer-(\\d+)$/.exec(layer.id)?.[1]||0)));
   renderLayerPanel();
   priorStrokes=native.brushArchive?.strokes||[];
   recoveryStrokes=native.brushArchive?.recovery||[];

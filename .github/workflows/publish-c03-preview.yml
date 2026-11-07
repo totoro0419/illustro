@@ -29,6 +29,8 @@ jobs:
         with: {node-version: '22'}
       - run: npm ci --no-audit --no-fund && npm run check
         working-directory: c01
+      - run: npx playwright install --with-deps chromium && node test/c03-layer-browser-test.mjs
+        working-directory: c01
       - run: node scripts/build.mjs
         working-directory: c01-release/c01
       - run: node scripts/build.mjs
