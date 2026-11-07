@@ -149,7 +149,7 @@ async function execute(msg){
   self.postMessage({type:'hit-result',epoch,requestId:msg.requestId,candidates:found});return;
  }
  if(msg.type==='layer-operation'){
-  const op=msg.operation||{},affected=op.kind==='duplicate'?[op.targetId]:op.kind==='merge'?[op.lowerId]:[];
+  const op=msg.operation||{},affected=['duplicate','copy-snapshot-layer','merged-copy'].includes(op.kind)?[op.targetId]:op.kind==='merge'?[op.lowerId]:[];
   if(!affected.length)throw Error('Unknown layer operation');
   const capture=ids=>ids.flatMap(id=>[id,id+'::mask'].map(key=>({id:key,pixels:layers.surfaces.get(key)?.ctx.getImageData(0,0,canvas.width,canvas.height)||null})));
   const before=capture(affected);
@@ -162,6 +162,26 @@ async function execute(msg){
    target.ctx.drawImage(source.canvas,0,0);
    const sourceMask=layers.surfaces.get(op.sourceId+'::mask'),targetMask=layers.surfaces.get(op.targetId+'::mask');
    if(sourceMask&&targetMask){targetMask.ctx.clearRect(0,0,canvas.width,canvas.height);targetMask.ctx.drawImage(sourceMask.canvas,0,0);}
+  }else if(op.kind==='copy-snapshot-layer'){
+   const bitmap=await createImageBitmap(await(await fetch(op.png)).blob());
+   try{
+    if(bitmap.width!==canvas.width||bitmap.height!==canvas.height)throw Error('Snapshot layer dimensions mismatch');
+    layers.setLayers(msg.layers);
+    const target=layers.surfaces.get(op.targetId),rect=op.rect;
+    target.ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(rect)target.ctx.drawImage(bitmap,...rect,...rect);
+    else target.ctx.drawImage(bitmap,0,0);
+   }finally{bitmap.close()}
+  }else if(op.kind==='merged-copy'){
+   const targetImage=new OffscreenCanvas(canvas.width,canvas.height),targetContext=targetImage.getContext('2d',{willReadFrequently:true});
+   for(let y=0;y<canvas.height;y+=tileSize)for(let x=0;x<canvas.width;x+=tileSize){
+    const key=Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize);
+    layers.renderTile(targetContext,tileBox(key,canvas.width,canvas.height));
+   }
+   layers.setLayers(msg.layers);
+   const target=layers.surfaces.get(op.targetId);
+   target.ctx.clearRect(0,0,canvas.width,canvas.height);
+   target.ctx.drawImage(targetImage,0,0);
   }else if(op.kind==='merge'){
    const source=layers.surfaces.get(op.upperId),target=layers.surfaces.get(op.lowerId);
    if(!source||!target)throw Error('Merge target missing');
@@ -179,10 +199,29 @@ async function execute(msg){
   for(let y=0;y<canvas.height;y+=tileSize)for(let x=0;x<canvas.width;x+=tileSize)dirty.set(Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize),msg.seq);
   await emitFrame(msg);return;
  }
+ if(msg.type==='restore-snapshot'){
+  const next=new RasterLayerStore(canvas.width,canvas.height);
+  await next.loadLayers(msg.layers);
+  const beforeLayers=await layers.nativeLayers();
+  const afterLayers=await next.nativeLayers();
+  const bytes=JSON.stringify(beforeLayers).length+JSON.stringify(afterLayers).length;
+  const retained=historyBytes-actions.slice(index).reduce((sum,a)=>sum+a.bytes,0);
+  if(retained+bytes>maxHistoryBytes)throw Error('Snapshot restore exceeds Undo memory limit');
+  layers=next;
+  actions.length=index;actions.push({kind:'restore',beforeLayers,afterLayers,archiveAfter:msg.archive||[],recoveryAfter:msg.recovery||[],bytes});
+  index++;historyBytes=retained+bytes;
+  for(let y=0;y<canvas.height;y+=tileSize)for(let x=0;x<canvas.width;x+=tileSize)dirty.set(Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize),msg.seq);
+  await emitFrame(msg);return;
+ }
  if(msg.type==='undo'||msg.type==='redo'){
   const cooperate=workSlice(msg);
   const entry=msg.type==='undo'?(index?actions[--index]:null):(index<actions.length?actions[index++]:null);
-  if(entry?.kind==='operation'){
+  if(entry?.kind==='restore'){
+   const next=new RasterLayerStore(canvas.width,canvas.height);
+   await next.loadLayers(msg.type==='undo'?entry.beforeLayers:entry.afterLayers);
+   layers=next;
+   for(let y=0;y<canvas.height;y+=tileSize)for(let x=0;x<canvas.width;x+=tileSize)dirty.set(Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize),msg.seq);
+  }else if(entry?.kind==='operation'){
    for(const snapshot of msg.type==='undo'?entry.before:entry.after){
     if(!await cooperate())return;
     const ctx=layers.surfaces.get(snapshot.id)?.ctx;if(!ctx)continue;
@@ -199,8 +238,11 @@ async function execute(msg){
  if(msg.type==='save'){
   const start=performance.now();
   const nativeLayers=await layers.nativeLayers();
-  const brushArchive={version:1,strokes:[...priorArchive,...actions.slice(0,index).filter(a=>a.kind==='stroke').map(a=>a.stroke)]};
-  if(recoveryArchive.length)brushArchive.recovery=recoveryArchive;
+  const accepted=actions.slice(0,index),restoreAt=accepted.findLastIndex(action=>action.kind==='restore');
+  const base=restoreAt<0?priorArchive:accepted[restoreAt].archiveAfter;
+  const brushArchive={version:1,strokes:[...base,...accepted.slice(restoreAt+1).filter(a=>a.kind==='stroke').map(a=>a.stroke)]};
+  const recovery=restoreAt<0?recoveryArchive:accepted[restoreAt].recoveryAfter;
+  if(recovery?.length)brushArchive.recovery=recovery;
   const manifest=createLayeredManifest(msg.metadata,nativeLayers,msg.revision,{brushArchive,history:msg.extra||{}});
   const native=new TextEncoder().encode(JSON.stringify(manifest));
   self.postMessage({type:'saved',epoch,requestId:msg.requestId,native,
