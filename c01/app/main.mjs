@@ -1,6 +1,7 @@
 import {algorithm,makeSeed,mod,validateBrush} from './brush-engine.mjs';
 import {createLayerTree,addRasterLayer,selectLayer,freezeDrawTarget,setLayerVisibility,setLayerOpacity,addGroupLayer,groupLayers,setLayerParent,moveLayer,duplicateRasterLayer} from './layer-tree.mjs';
 import {BLEND_MODES} from './blend-kernels.mjs';
+import {protectDocument,listProtected,readProtected,deleteProtected} from './recovery-store.mjs';
 import {readLayeredManifest} from './layered-manifest.mjs';
 import {Ink,composite,rasterize,tileBox,tileSize} from './brush-raster.mjs';
 import {RetainedScene} from './retained-scene.mjs';
@@ -167,7 +168,7 @@ let templates=[];try{templates=JSON.parse(localStorage.getItem('illustro.templat
 const isEraser=t=>brushes.get(t)?.blend==='erase';
 let toastTimer, frame=0,viewUIFrame=0,gridPainted=false,colorPickers=null,pickerBefore=null,pickerPrevious=null;
 function notify(msg){$('toast').textContent=msg;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
-function dirty(){ stage.dataset.rasterPending=String(pendingInk.size);stage.dataset.presentationSeq=String(displaySeq);$('save-status').textContent=workerFault?'描画確定停止':rasterWorker&&stage.dataset.presentationReady!=='true'?'表示を準備中…':pendingInk.size?'正式描画処理中…':rasterWorker&&displaySeq<rasterSeq?'表示を確定中…':savedRev===history.revision?'保存済み':'未保存';$('doc-title').textContent=doc.name+(savedRev===history.revision?'':' •');$('doc-dimensions').textContent=`${doc.width} × ${doc.height} px`;updateHistory() }
+function dirty(){ maybeScheduleProtection();stage.dataset.rasterPending=String(pendingInk.size);stage.dataset.presentationSeq=String(displaySeq);$('save-status').textContent=workerFault?'描画確定停止':rasterWorker&&stage.dataset.presentationReady!=='true'?'表示を準備中…':pendingInk.size?'正式描画処理中…':rasterWorker&&displaySeq<rasterSeq?'表示を確定中…':savedRev===history.revision?'保存済み':'未保存';$('doc-title').textContent=doc.name+(savedRev===history.revision?'':' •');$('doc-dimensions').textContent=`${doc.width} × ${doc.height} px`;updateHistory() }
 function updateHistory(){for(const b of all('[data-action=undo]')){b.disabled=!history.canUndo;b.title=history.canUndo?'Undo: '+history.undoName:'戻せません'}for(const b of all('[data-action=redo]')){b.disabled=!history.canRedo;b.title=history.canRedo?'Redo: '+history.redoName:'進めません'}}
 function drawGrid(){if(gridPainted)return;gctx.clearRect(0,0,grid.width,grid.height);const show=grid.dataset.show==='1'&&view.scale>=6;if(!show)return;gridPainted=true;gctx.strokeStyle='#8994a560';gctx.lineWidth=1/Math.max(1,view.scale);gctx.beginPath();for(let x=0;x<=doc.width;x++){gctx.moveTo(x+.5,0);gctx.lineTo(x+.5,doc.height)}for(let y=0;y<=doc.height;y++){gctx.moveTo(0,y+.5);gctx.lineTo(doc.width,y+.5)}gctx.stroke()}
 function updateViewUI(){ $('zoom-readout').textContent=`${Math.round(view.scale*100)}% / ${Math.round(view.rotation)}°`;$('zoom-n').value=Math.round(view.scale*100)}
@@ -185,7 +186,7 @@ function syncMeta(){for(const [id,key] of [['meta-name','name'],['meta-author','
 function resetDoc(data){
  clearTimeout(previewSendTimer);previewSendTimer=0;if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;presentationInterval=16;
  for(const {element,direct}of displayTiles.values()){if(!direct)element.width=element.height=1;element.remove()}displayTiles.clear();formalTiles.clear();displayImages.clear();
- rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';soloLayerId=null;selectedMulti.clear();layerComps=[];maskPaintMode=false;hitSelectMode=false;history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
+ rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';soloLayerId=null;selectedMulti.clear();layerComps=[];maskPaintMode=false;hitSelectMode=false;protectedRevision=-1;scheduledProtectionRevision=-1;history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
  $('export-recovery').hidden=true;
  stage.removeAttribute('data-raster-error');stage.removeAttribute('data-raster-stats');$('interrupted-stroke').hidden=true;
  removePreviews();repaint.clear();clearTemporary();
@@ -736,6 +737,9 @@ advancedPanel.innerHTML=`<div class="c03-actions"><button id="c03-add-group">＋
 <label>下地下限<input id="c03-blendif-back-low" type="number" min="0" max="255" value="0"></label><label>下地上限<input id="c03-blendif-back-high" type="number" min="0" max="255" value="255"></label><div class="c03-actions"><button id="c03-blendif-apply">適用</button><button id="c03-blendif-clear">解除</button></div></details>
 <details><summary>レイヤーカンプ</summary><input id="c03-comp-name" type="text" placeholder="案名"><select id="c03-comp-list"></select><div class="c03-actions"><button id="c03-comp-create">記録</button><button id="c03-comp-apply">適用</button><button id="c03-comp-delete">削除</button></div></details>`;
 layerPanel.append(advancedPanel);
+const recoveryPanel=document.createElement('section');recoveryPanel.id='c03-recovery';
+recoveryPanel.innerHTML=`<h4>自動保護・履歴</h4><small id="c03-protect-status">保護状況を確認中</small><div class="c03-actions"><button id="c03-protect-now">今すぐ保護</button><button id="c03-snapshot-save">名前付きSnapshot</button></div><select id="c03-protected-list" aria-label="復元候補"></select><div class="c03-actions"><button id="c03-protected-restore">復元コピー</button><button id="c03-protected-delete">候補削除</button></div><div class="c03-actions"><button id="c03-history-show">Undo履歴</button><button id="c03-history-capacity">保持容量</button></div><output id="c03-history-output"></output>`;
+layerPanel.prepend(recoveryPanel);
 for(const mode of ['dissolve',...BLEND_MODES.filter(m=>!['normal','multiply','screen'].includes(m))])$('c03-layer-blend').append(new Option(mode,mode));
 function groupDescendant(id,parent){
  let l=layerTree.layers.find(item=>item.id===id);
