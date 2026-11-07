@@ -32,7 +32,17 @@ try{
  const pixels=()=>page.evaluate(()=>{const c=document.querySelector('#art');const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let pixels=0;for(let i=3;i<d.length;i+=4)if(d[i])pixels++;return pixels});
  const b=await page.locator('#stage').boundingBox();const x=b.x+b.width*.45,y=b.y+b.height*.4;
  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+100,y+45,{steps:12});await page.mouse.up();
- await page.waitForFunction(()=>document.getElementById('stage').dataset.rasterPending==='0' && document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
+ try{
+  await page.waitForFunction(()=>document.getElementById('stage').dataset.rasterPending==='0' && document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0),{},{timeout:18000});
+ }catch(error){
+  const diagnosis=await page.evaluate(()=>{
+   const stage=document.getElementById('stage'),art=document.getElementById('art'),pixels=art.getContext('2d').getImageData(0,0,art.width,art.height).data;
+   return {rasterError:stage.dataset.rasterError,ready:stage.dataset.presentationReady,rasterPending:stage.dataset.rasterPending,
+    presentationSeq:stage.dataset.presentationSeq,displaySeq:stage.dataset.presentationSeq,
+    inkPixels:pixels.filter((v,i)=>i%4===3&&v>0).length,toast:document.getElementById('toast').textContent};
+  });
+  throw new Error('C03 legacy first stroke diagnostic: '+JSON.stringify({diagnosis,errors,cause:String(error)}));
+ }
  assert.ok(await pixels()>0,'Stroke must change alpha');
  await page.locator('[data-action=undo]').first().click();
  await page.waitForFunction(()=>!document.querySelector('#art').getContext('2d').getImageData(0,0,1600,1200).data.some((v,i)=>i%4===3&&v>0));
