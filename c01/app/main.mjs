@@ -856,6 +856,122 @@ $('c03-solo').onclick=()=>{
 };
 
 
+function layerOperation(before,operation,label){
+ if(!rasterWorker||workerFault){notify('この操作にはRaster Workerが必要です');layerTree=before;renderLayerPanel();return}
+ const seq=++rasterSeq;minimumPublicationSeq=seq;
+ history.accept({kind:'layer-operation',before,after:structuredClone(layerTree),label});
+ formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+ queueRaster({type:'layer-operation',epoch:documentEpoch,seq,operation,layers:structuredClone(layerTree.layers)});
+ renderLayerPanel();dirty();
+}
+$('c03-add-group').onclick=()=>{
+ if(layerTree.layers.length>=100){notify('レイヤー上限です');return}
+ const before=structuredClone(layerTree);addGroupLayer(layerTree,'グループ');maskPaintMode=false;layerEdit(before,'グループ追加');
+};
+$('c03-group-selected').onclick=()=>{
+ const ids=[...selectedMulti].filter(id=>layerTree.layers.some(l=>l.id===id));
+ if(!ids.length){notify('行のチェックボックスでまとめる層を選択してください');return}
+ const before=structuredClone(layerTree);
+ try{groupLayers(layerTree,ids);selectedMulti.clear();maskPaintMode=false;layerEdit(before,'グループ化')}
+ catch(e){layerTree=before;notify(e.message)}
+};
+$('c03-ungroup').onclick=()=>{
+ const layer=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ if(layer?.type!=='group')return notify('グループを選んでください');
+ const before=structuredClone(layerTree);
+ for(const child of layerTree.layers.filter(l=>l.parentId===layer.id))child.parentId=layer.parentId??null;
+ layerTree.layers=layerTree.layers.filter(l=>l!==layer);
+ layerTree.selectedId=layerTree.layers[0]?.id||null;
+ layerEdit(before,'グループ解除');
+};
+for(const [id,direction] of [['c03-layer-up',1],['c03-layer-down',-1]]){
+ $(id).onclick=()=>{const before=structuredClone(layerTree);if(moveLayer(layerTree,layerTree.selectedId,direction))layerEdit(before,'並べ替え')};
+}
+$('c03-layer-parent').onchange=e=>{
+ const before=structuredClone(layerTree);
+ try{setLayerParent(layerTree,layerTree.selectedId,e.target.value||null);layerEdit(before,'所属グループ')}
+ catch(err){layerTree=before;renderLayerPanel();notify(err.message)}
+};
+for(const id of ['c03-filter-type','c03-filter-tag'])$(id).onchange=renderLayerPanel;
+$('c03-duplicate').onclick=()=>{
+ const source=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ if(source?.type!=='raster')return;
+ if((layerTree.layers.filter(l=>l.type==='raster').length+1)*doc.width*doc.height*4>256*1024*1024){notify('複製後のメモリ予算を超えます');return}
+ const before=structuredClone(layerTree),target=duplicateRasterLayer(layerTree,source.id);
+ layerOperation(before,{kind:'duplicate',sourceId:source.id,targetId:target.id},'レイヤー複製');
+};
+$('c03-merge-down').onclick=()=>{
+ const upper=layerTree.layers.find(l=>l.id===layerTree.selectedId),siblings=layerTree.layers.filter(l=>(l.parentId??null)===(upper?.parentId??null));
+ const lower=siblings[siblings.indexOf(upper)-1];
+ if(!lower||upper?.type!=='raster'||lower.type!=='raster')return notify('直下のRasterレイヤーが必要です');
+ const compatible=l=>l.visible&&l.opacity===1&&l.blendMode==='normal'&&!l.mask&&!l.vectorMask&&!l.blendIf&&!l.clipped&&!l.alphaLock&&!l.locks?.all;
+ if(!compatible(upper)||!compatible(lower))return notify('特殊な合成やマスクがある層は外観保護のため結合できません');
+ const before=structuredClone(layerTree);
+ layerTree.layers=layerTree.layers.filter(l=>l.id!==upper.id);layerTree.selectedId=lower.id;
+ layerOperation(before,{kind:'merge',upperId:upper.id,lowerId:lower.id},'下へ結合');
+};
+$('c03-layer-clipped').onchange=e=>editSelectedLayer('クリッピング',layer=>layer.clipped=e.target.checked);
+$('c03-alpha-lock').onchange=e=>editSelectedLayer('透明度ロック',layer=>layer.alphaLock=e.target.checked);
+$('c03-add-mask').onclick=()=>editSelectedLayer('画素マスク追加',layer=>{
+ if(layer.type!=='raster')return;
+ if(layer.mask){notify('画素マスクは既にあります');return}
+ layer.mask={type:'pixel',enabled:true,inverted:false,linked:true};
+});
+$('c03-mask-enabled').onchange=e=>editSelectedLayer('マスク有効',layer=>{if(layer.mask)layer.mask.enabled=e.target.checked});
+$('c03-mask-inverted').onchange=e=>editSelectedLayer('画素マスク反転',layer=>{if(layer.mask)layer.mask.inverted=e.target.checked});
+$('c03-mask-edit').onclick=()=>{
+ const layer=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ if(!layer?.mask)return notify('先に画素マスクを追加してください');
+ maskPaintMode=!maskPaintMode;renderLayerPanel();
+};
+$('c03-add-vector-mask').onclick=()=>{
+ const value=prompt('矩形マスクを x,y,幅,高さ で指定', '0,0,'+doc.width+','+doc.height);
+ if(value==null)return;
+ const numbers=value.split(/[,，\s]+/).map(Number);
+ if(numbers.length!==4||numbers.some(n=>!Number.isFinite(n))||numbers[2]<=0||numbers[3]<=0)return notify('矩形の指定が無効です');
+ editSelectedLayer('矩形ベクターマスク',layer=>layer.vectorMask={enabled:true,inverted:false,rect:numbers});
+};
+$('c03-vector-inverted').onchange=e=>editSelectedLayer('矩形マスク反転',layer=>{if(layer.vectorMask)layer.vectorMask.inverted=e.target.checked});
+$('c03-hit-select').onclick=()=>{hitSelectMode=!hitSelectMode;renderLayerPanel()};
+function blendIfRange(low,high){
+ if(!Number.isInteger(low)||!Number.isInteger(high)||low<0||high>255||low>=high)throw Error('下限と上限を0〜255で正しく指定してください');
+ const a=low/255,b=high/255;
+ return {low0:a,low1:a===0?0:Math.min(a+.025,b),high0:b===1?1:Math.max(a,b-.025),high1:b};
+}
+$('c03-blendif-apply').onclick=()=>{
+ try{
+  const bi={channel:$('c03-blendif-channel').value,space:$('c03-blendif-space').value,
+   sourceRange:blendIfRange(Number($('c03-blendif-source-low').value),Number($('c03-blendif-source-high').value)),
+   backdropRange:blendIfRange(Number($('c03-blendif-back-low').value),Number($('c03-blendif-back-high').value))};
+  editSelectedLayer('階調依存合成',layer=>layer.blendIf=bi);
+ }catch(e){notify(e.message)}
+};
+$('c03-blendif-clear').onclick=()=>editSelectedLayer('階調依存合成解除',layer=>delete layer.blendIf);
+$('c03-comp-create').onclick=()=>{
+ const name=$('c03-comp-name').value.trim()||'案 '+(layerComps.length+1);
+ if(layerComps.some(c=>c.name===name))return notify('同名の案があります');
+ const before=structuredClone(layerComps);
+ layerComps.push({name,layers:layerTree.layers.map(({id,visible,opacity,blendMode})=>({id,visible,opacity,blendMode}))});
+ history.accept({kind:'comps',label:'カンプ記録',before,after:structuredClone(layerComps)});renderLayerPanel();dirty();
+};
+$('c03-comp-apply').onclick=()=>{
+ const comp=layerComps[Number($('c03-comp-list').value)];if(!comp)return;
+ const before=structuredClone(layerTree);let missing=0;
+ for(const saved of comp.layers){
+  const layer=layerTree.layers.find(l=>l.id===saved.id);
+  if(!layer){missing++;continue}
+  Object.assign(layer,{visible:saved.visible,opacity:saved.opacity,blendMode:saved.blendMode});
+ }
+ layerEdit(before,'カンプ適用');if(missing)notify(missing+'層が削除されているため適用されませんでした');
+};
+$('c03-comp-delete').onclick=()=>{
+ const index=Number($('c03-comp-list').value);
+ if(!Number.isInteger(index)||index<0||index>=layerComps.length)return;
+ const before=structuredClone(layerComps);layerComps.splice(index,1);
+ history.accept({kind:'comps',label:'カンプ削除',before,after:structuredClone(layerComps)});renderLayerPanel();dirty();
+};
+
+
 async function save(as=false){
  if(interrupted||workerFault){notify('描画の中断を解消してから保存してください');return}
  const strokeArchive=rasterWorker?null:archiveStrokes(),recoveryAtFence=[...recoveryStrokes];
