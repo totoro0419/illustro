@@ -862,7 +862,7 @@ async function open(file){
   resetDoc(native.document);
   layerTree.layers=layers.map(({png,...other})=>other);
   layerTree.selectedId=layerTree.layers.at(-1).id;
-  layerTree.nextId=1+Math.max(0,...layerTree.layers.map(layer=>Number(/^layer-(\\d+)$/.exec(layer.id)?.[1]||0)));
+  layerTree.nextId=1+Math.max(0,...layerTree.layers.map(layer=>Number(/^layer-([0-9]+)$/.exec(layer.id)?.[1]||0)));
   renderLayerPanel();
   priorStrokes=native.brushArchive?.strokes||[];
   recoveryStrokes=native.brushArchive?.recovery||[];

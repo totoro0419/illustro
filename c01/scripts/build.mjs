@@ -32,7 +32,8 @@ self.addEventListener('fetch',event=>{
  if(url.origin!==scope.origin||!url.pathname.startsWith(scope.pathname))return;
  event.respondWith((async()=>{
   const cache=await caches.open(CACHE);
-  const saved=await cache.match(event.request,{ignoreSearch:true});
+  const entry=url.pathname===scope.pathname?new URL('./index.html',scope):event.request;
+  const saved=await cache.match(entry,{ignoreSearch:true});
   return saved||fetch(event.request);
  })());
 });

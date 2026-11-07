@@ -8,7 +8,7 @@ This commit adds:
 - SAV-007 service worker installed by the build output, caching the full app shell only after first successful online install, with cache-generation invalidation and offline-fallback GET reads.
 - Independent C03 alpha Pages build route, preserving C01 and C02 by assembling each from its own source branch.
 
-**NOT DONE:** 24 feature product integration, C03-layered worker composition, user-facing layer/history/save controls, Native v3 product round-trip, fail-injection, C02 vs C03 input-to-display measurements and user real-device approval. Passing pure-function tests does not satisfy these acceptance gates. This is an in-progress Draft PR, not an approved release.
+**NOT DONE:** Full 24-feature integration, advanced layer/history UI, masks/groups, auto recovery, fail-injection, comprehensive golden tests, C02-vs-C03 latency measurements and user real-device approval. Passing pure-function tests does not satisfy these acceptance gates. This is an in-progress Draft PR, not an approved release.
 
 ### 2026-11-07 actual raster-alpha integration
 - `c01/app/raster-layers.mjs`: isolated worker-owned raster surfaces; accepted strokes routed to frozen layer ID/lifetime.
@@ -21,3 +21,8 @@ This commit adds:
 - UI metadata actions: rename, color tag, name filter, 3 lock flags, Normal/Multiply/Screen selection; document Undo stores metadata changes; Native v3 preserves properties.
 - Solo uses a separate worker presentation override, not normal visibility, not document history, and never writes the temporary state to Native.
 - Full all-mode blend and grouped/masked compositing, advanced filtering, position edits and visual lock refusal remain incomplete.
+
+### 2026-11-07 offline runtime verification
+- Built C03 service worker cache maps the scoped index route `/c03/` to cached `/c03/index.html`, avoiding offline root-navigation failures.
+- A browser E2E on the built production shell validates first online install, SW activation, offline reload, layer creation, offline drawing and absence of Worker errors.
+- Untested: storage eviction/quota recovery, cache corruption, simultaneous clients, offline persistence across process restarts.
