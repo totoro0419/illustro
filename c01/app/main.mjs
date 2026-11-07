@@ -1,4 +1,8 @@
 import {algorithm,makeSeed,mod,validateBrush} from './brush-engine.mjs';
+import {createLayerTree,addRasterLayer,selectLayer,freezeDrawTarget,setLayerVisibility,setLayerOpacity,addGroupLayer,groupLayers,setLayerParent,moveLayer,duplicateRasterLayer} from './layer-tree.mjs';
+import {BLEND_MODES} from './blend-kernels.mjs';
+import {protectDocument,listProtected,readProtected,deleteProtected} from './recovery-store.mjs';
+import {readLayeredManifest} from './layered-manifest.mjs';
 import {Ink,composite,rasterize,tileBox,tileSize} from './brush-raster.mjs';
 import {RetainedScene} from './retained-scene.mjs';
 import {Presentation} from './presentation.mjs';
@@ -130,6 +134,12 @@ if(rasterWorker){
     flushFormal();
     rasterWorker.postMessage({type:'presented',epoch:msg.epoch,seq:msg.seq});dirty();if(perf){perf.formal.push({totalMs:performance.now()-receiveStart,tiles:msg.pictures.length,...msg.stats});if(perf.formal.length>2048)perf.formal.shift()}
    }else for(const p of msg.pictures)p.bitmap?.close();
+  }else if(msg.type==='hit-result'){
+   const found=msg.candidates?.[0];if(found){selectLayer(layerTree,found.id);maskPaintMode=false;renderLayerPanel();notify('選択: '+found.name)}else notify('この位置に描画内容のある層は見つかりません');
+  }else if(msg.type==='snapshot-comparison'){
+   const request=pendingSnapshots.get(msg.requestId);if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg)}
+  }else if(msg.type==='exported-png'){
+   const request=pendingSnapshots.get(msg.requestId);if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg)}
   }else if(msg.type==='saved'){
    const request=pendingSnapshots.get(msg.requestId);
    if(request){pendingSnapshots.delete(msg.requestId);request.resolve(msg.native);if(perf){(perf.save||=[]).push(msg.stats)}}
@@ -151,17 +161,20 @@ function flushFormal(){
  previewWorker.postMessage({type:'base',epoch:packet.epoch,seq:packet.seq,acceptedAt:packet.acceptedAt,pictures,retired},pictures.map(p=>p.image.data.buffer));
  dirty();
 }
-function workerNative(epoch,metadata,revision){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'save',epoch,requestId,metadata,revision})})}
+function workerNative(epoch,metadata,revision,extra={}){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'save',epoch,requestId,metadata,revision,extra})})}
+function workerPng(epoch,cropFrame,background){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'export-png',epoch,requestId,cropFrame,background})})}
+function workerCompare(epoch,layers){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'compare-snapshot',epoch,requestId,layers})})}
 
 let doc={name:'無題',author:'',description:'',width:1600,height:1200,dpi:300,profile:'srgb8',background:'white'};
-let history=new History(),savedRev=-1,handle=null,documentEpoch=0,saveQueue=Promise.resolve(),active=null,nav=new Map(),gesture=null,view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
+let layerTree=createLayerTree();
+let history=new History(),savedRev=-1,handle=null,lastSavedFileStamp=null,documentEpoch=0,saveQueue=Promise.resolve(),active=null,nav=new Map(),gesture=null,view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
 let navigationMoved=false,navigationTapHandled=false,navigationTapAllowed=true,navigationStarted=0;
 let settings={tool:'gpen',size:12,opacity:1,flow:1,curve:1,fingerDraw:false,gestureUndo:true,color:[34,39,51],colorAlpha:1,previous:[0,0,0],lastBrush:'gpen'};
 let templates=[];try{templates=JSON.parse(localStorage.getItem('illustro.templates.v1')||'[]')}catch{}
 const isEraser=t=>brushes.get(t)?.blend==='erase';
 let toastTimer, frame=0,viewUIFrame=0,gridPainted=false,colorPickers=null,pickerBefore=null,pickerPrevious=null;
 function notify(msg){$('toast').textContent=msg;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
-function dirty(){ stage.dataset.rasterPending=String(pendingInk.size);stage.dataset.presentationSeq=String(displaySeq);$('save-status').textContent=workerFault?'描画確定停止':rasterWorker&&stage.dataset.presentationReady!=='true'?'表示を準備中…':pendingInk.size?'正式描画処理中…':rasterWorker&&displaySeq<rasterSeq?'表示を確定中…':savedRev===history.revision?'保存済み':'未保存';$('doc-title').textContent=doc.name+(savedRev===history.revision?'':' •');$('doc-dimensions').textContent=`${doc.width} × ${doc.height} px`;updateHistory() }
+function dirty(){ maybeScheduleProtection();stage.dataset.rasterPending=String(pendingInk.size);stage.dataset.presentationSeq=String(displaySeq);$('save-status').textContent=workerFault?'描画確定停止':rasterWorker&&stage.dataset.presentationReady!=='true'?'表示を準備中…':pendingInk.size?'正式描画処理中…':rasterWorker&&displaySeq<rasterSeq?'表示を確定中…':savedRev===history.revision?'保存済み':'未保存';$('doc-title').textContent=doc.name+(savedRev===history.revision?'':' •');$('doc-dimensions').textContent=`${doc.width} × ${doc.height} px`;updateHistory() }
 function updateHistory(){for(const b of all('[data-action=undo]')){b.disabled=!history.canUndo;b.title=history.canUndo?'Undo: '+history.undoName:'戻せません'}for(const b of all('[data-action=redo]')){b.disabled=!history.canRedo;b.title=history.canRedo?'Redo: '+history.redoName:'進めません'}}
 function drawGrid(){if(gridPainted)return;gctx.clearRect(0,0,grid.width,grid.height);const show=grid.dataset.show==='1'&&view.scale>=6;if(!show)return;gridPainted=true;gctx.strokeStyle='#8994a560';gctx.lineWidth=1/Math.max(1,view.scale);gctx.beginPath();for(let x=0;x<=doc.width;x++){gctx.moveTo(x+.5,0);gctx.lineTo(x+.5,doc.height)}for(let y=0;y<=doc.height;y++){gctx.moveTo(0,y+.5);gctx.lineTo(doc.width,y+.5)}gctx.stroke()}
 function updateViewUI(){ $('zoom-readout').textContent=`${Math.round(view.scale*100)}% / ${Math.round(view.rotation)}°`;$('zoom-n').value=Math.round(view.scale*100)}
@@ -179,14 +192,14 @@ function syncMeta(){for(const [id,key] of [['meta-name','name'],['meta-author','
 function resetDoc(data){
  clearTimeout(previewSendTimer);previewSendTimer=0;if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;presentationInterval=16;
  for(const {element,direct}of displayTiles.values()){if(!direct)element.width=element.height=1;element.remove()}displayTiles.clear();formalTiles.clear();displayImages.clear();
- rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
+ rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';soloLayerId=null;selectedMulti.clear();layerComps=[];maskPaintMode=false;hitSelectMode=false;protectedRevision=-1;scheduledProtectionRevision=-1;history=new History();savedRev=-1;handle=null;lastSavedFileStamp=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
  $('export-recovery').hidden=true;
  stage.removeAttribute('data-raster-error');stage.removeAttribute('data-raster-stats');$('interrupted-stroke').hidden=true;
  removePreviews();repaint.clear();clearTemporary();
  for(const request of pendingSnapshots.values())request.reject(Error('作品が切り替わりました'));
- pendingSnapshots.clear();setDimensions();
+ pendingSnapshots.clear();setDimensions();renderCropFrame();
  if(rasterWorker){rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});previewWorker.postMessage({type:'reset',epoch:documentEpoch,generation:previewGeneration,width:doc.width,height:doc.height,background:doc.background,measure:!!perf,bitmap:presentationMode==='bitmap',direct:directPresentation,cpuDisplay,framePacing:!timerPresentation,navigationPicture:gpuEnabled})}
- syncMeta();fit();
+ syncMeta();fit();renderLayerPanel();
  poseTimeline.entries.length=0;cancelAnimationFrame(frame);renderView();dirty();
 }
 function selectTool(name,collapse=true){
@@ -370,7 +383,10 @@ function beginStroke(e,erase=false){
   point.p=Math.max(point.p,Math.min(1,Math.max(.07,1.25/Math.max(1,diameter))));
  }
  const brush=brushes.get(erase?brushes.input.eraser:settings.tool);
- const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
+ let frozenTarget;
+  try{frozenTarget=freezeDrawTarget(layerTree);if(maskPaintMode){if(!layerTree.layers.find(l=>l.id===frozenTarget.id)?.mask)throw Error('マスクがありません');frozenTarget={...frozenTarget,mask:true};}}catch(error){notify('描画不可: '+error.message);return}
+  const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
+  stroke.target=frozenTarget;
  if(e.altKey)stroke.guide=null;
  const ink=previewWorker?{tiles:new Map()}:new Ink(stroke,doc.width,doc.height,true);
  if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;
@@ -460,7 +476,8 @@ function applyAction(action,isUndo){
    }
    presentation();
   }
- }else if(action.kind==='meta'){doc=structuredClone(isUndo?action.before:action.after);syncMeta()}
+ }else if(action.kind==='layers'||action.kind==='layer-operation'){layerTree=structuredClone(isUndo?action.before:action.after);publishLayerState();renderLayerPanel();if(action.kind==='layer-operation'){const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:isUndo?'undo':'redo',seq,epoch:documentEpoch})}}else if(action.kind==='comps'){layerComps=structuredClone(isUndo?action.before:action.after);renderLayerPanel()}else if(action.kind==='restore'){const state=isUndo?action.before:action.after;layerTree=structuredClone(state.tree);doc=structuredClone(state.doc);layerComps=structuredClone(state.comps);maskPaintMode=false;syncMeta();paper.style.background=doc.background==='white'?'white':'transparent';$('checker').style.display=doc.background==='white'?'none':'block';renderLayerPanel();const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:isUndo?'undo':'redo',seq,epoch:documentEpoch})}
+  else if(action.kind==='meta'){doc=structuredClone(isUndo?action.before:action.after);syncMeta();renderCropFrame()}
  dirty();
 }
 function undo(){if(workerFault||interrupted)return;if(active){interruptStroke();return}applyAction(history.undo(),true)}
@@ -503,6 +520,7 @@ function updatePenButtons(e){
  }
 }
 function pointerDown(e){
+ if(hitSelectMode){const rect=stage.getBoundingClientRect(),point=screenToDoc({x:e.clientX-rect.left,y:e.clientY-rect.top},view);if(point.x>=0&&point.y>=0&&point.x<doc.width&&point.y<doc.height)queueRaster({type:'hit-test',epoch:documentEpoch,requestId:++saveSerial,x:Math.floor(point.x),y:Math.floor(point.y),threshold:16});return}
  if(e.pointerType==='touch')recordInput('stage-touch-down',e);
  updatePenButtons(e);
  // A barrel-only press changes the temporary tool without drawing a tap.
@@ -680,7 +698,7 @@ $('new-dialog').addEventListener('submit',e=>{e.preventDefault();try{const dpi=N
 function applyMeta(){const next={...doc,name:$('meta-name').value||'無題',author:$('meta-author').value,description:$('meta-description').value};if(JSON.stringify(doc)===JSON.stringify(next))return;history.accept({kind:'meta',label:'作品情報',before:structuredClone(doc),after:structuredClone(next)});doc=next;dirty()}
 function addTemplate(){const t={name:doc.name,width:doc.width,height:doc.height,dpi:doc.dpi,background:doc.background,profile:'srgb8'};templates.push(t);try{localStorage.setItem('illustro.templates.v1',JSON.stringify(templates))}catch{notify('テンプレートの保存に失敗しました');return}notify('寸法・DPI・背景のみテンプレートに保存しました')}
 function archiveStrokes(index=history.index){
- return [...priorStrokes,...history.items.slice(0,index).filter(a=>a.kind==='pixels').map(a=>a.stroke)];
+ let base=[...priorStrokes];for(const entry of history.items.slice(0,index)){if(entry.kind==='restore')base=[...entry.archiveAfter];else if(entry.kind==='pixels')base.push(entry.stroke)}return base;
 }
 function blobDataURL(blob){
  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||Error('PNG読込失敗'));reader.readAsDataURL(blob)});
@@ -703,6 +721,506 @@ $('export-recovery').onclick=async()=>{
   notify('確定画像と未確定の筆を分けてダウンロードします');
  }catch(error){notify('救出に失敗: '+error.message)}
 };
+
+const layerPanel=document.createElement('section');
+layerPanel.id='c03-layer-panel';
+layerPanel.innerHTML='<h3>レイヤー <small>C03 Alpha</small></h3><div class="c03-actions"><button id="c03-add-layer" type="button">＋ Raster</button><button id="c03-solo" type="button" aria-pressed="false" title="一時的なSolo表示">Solo</button></div><label class="c03-search-row">検索 <input id="c03-layer-search" type="search" placeholder="名前"></label><div id="c03-layer-list" role="listbox" aria-label="レイヤー"></div><label>レイヤー名 <input id="c03-layer-name" type="text" maxlength="120"></label><label>色タグ <select id="c03-layer-tag"><option value="">なし</option><option value="red">赤</option><option value="orange">橙</option><option value="yellow">黄</option><option value="green">緑</option><option value="blue">青</option><option value="violet">紫</option></select></label><label>不透明度 <input id="c03-layer-opacity" type="range" min="0" max="100" value="100"><output id="c03-layer-opacity-out">100%</output></label><label>合成 <select id="c03-layer-blend"><option value="normal">通常</option><option value="multiply">乗算</option><option value="screen">スクリーン</option></select></label><div class="c03-lock-row"><label><input type="checkbox" id="c03-lock-position">位置ロック</label><label><input type="checkbox" id="c03-lock-pixels">画素ロック</label><label><input type="checkbox" id="c03-lock-all">全体ロック</label></div><small id="c03-layer-hint">グループ・マスク・特殊合成は未統合です。</small>';
+document.querySelector('.workspace-scroll').prepend(layerPanel);
+let soloLayerId=null,maskPaintMode=false,hitSelectMode=false,layerComps=[];
+const selectedMulti=new Set();
+
+const advancedPanel=document.createElement('div');advancedPanel.id='c03-advanced';
+advancedPanel.innerHTML=`<div class="c03-actions"><button id="c03-add-group">＋ Group</button><button id="c03-group-selected">まとめる</button><button id="c03-ungroup">解除</button></div>
+<div class="c03-actions"><button id="c03-layer-up">↑</button><button id="c03-layer-down">↓</button><button id="c03-duplicate">複製</button><button id="c03-merge-down">下へ結合</button><button id="c03-merged-copy">統合コピー</button></div>
+<div class="c03-actions"><select id="c03-filter-type"><option value="">全種別</option><option value="raster">Raster</option><option value="group">Group</option></select><select id="c03-filter-tag"><option value="">全タグ</option><option value="red">赤</option><option value="orange">橙</option><option value="yellow">黄</option><option value="green">緑</option><option value="blue">青</option><option value="violet">紫</option></select></div>
+<label>親グループ<select id="c03-layer-parent"></select></label>
+<div class="c03-lock-row"><label><input id="c03-layer-clipped" type="checkbox">下層でクリップ</label><label><input id="c03-alpha-lock" type="checkbox">透明度ロック</label></div>
+<div class="c03-actions"><button id="c03-add-mask">画素マスク追加</button><button id="c03-mask-edit" aria-pressed="false">マスク描画</button><button id="c03-add-vector-mask">矩形マスク</button></div>
+<div class="c03-lock-row"><label><input id="c03-mask-enabled" type="checkbox">マスク有効</label><label><input id="c03-mask-inverted" type="checkbox">反転</label><label><input id="c03-vector-inverted" type="checkbox">矩形反転</label></div>
+<div class="c03-actions"><button id="c03-hit-select" aria-pressed="false">作品から層を選択</button></div>
+<details><summary>階調依存合成（Blend If）</summary><label>対象<select id="c03-blendif-channel"><option value="luminance">輝度</option><option value="r">赤</option><option value="g">緑</option><option value="b">青</option></select></label><label>色空間<select id="c03-blendif-space"><option value="encoded">sRGB</option><option value="linear">linear</option></select></label>
+<label>自層下限<input id="c03-blendif-source-low" type="number" min="0" max="255" value="0"></label><label>自層上限<input id="c03-blendif-source-high" type="number" min="0" max="255" value="255"></label>
+<label>下地下限<input id="c03-blendif-back-low" type="number" min="0" max="255" value="0"></label><label>下地上限<input id="c03-blendif-back-high" type="number" min="0" max="255" value="255"></label><div class="c03-actions"><button id="c03-blendif-apply">適用</button><button id="c03-blendif-clear">解除</button></div></details>
+<details><summary>レイヤーカンプ</summary><input id="c03-comp-name" type="text" placeholder="案名"><select id="c03-comp-list"></select><div class="c03-actions"><button id="c03-comp-create">記録</button><button id="c03-comp-apply">適用</button><button id="c03-comp-delete">削除</button></div></details>`;
+layerPanel.append(advancedPanel);
+const cropSection=document.createElement('section');cropSection.id='c03-crop-panel';
+cropSection.innerHTML=`<details><summary>キャンバス範囲・PNG書出し</summary>
+<small>保持Cropは外側の画素を消しません。Native保存は作品全体を保持します。</small>
+<div class="c03-crop-fields"><label>X<input id="c03-crop-x" type="number" min="0" value="0"></label><label>Y<input id="c03-crop-y" type="number" min="0" value="0"></label><label>幅<input id="c03-crop-w" type="number" min="1" value="1600"></label><label>高さ<input id="c03-crop-h" type="number" min="1" value="1200"></label></div>
+<div class="c03-actions"><button id="c03-crop-set">保持Cropを設定</button><button id="c03-crop-clear">全体に戻す</button><button id="c03-export-png">範囲をPNG書出し</button></div>
+<small id="c03-crop-outside"></small></details>`;
+layerPanel.append(cropSection);
+const cropBorder=document.createElement('div');cropBorder.id='c03-crop-border';cropBorder.hidden=true;paper.append(cropBorder);
+function renderCropFrame(){
+ const r=doc.cropFrame;cropBorder.hidden=!r;
+ if(r)Object.assign(cropBorder.style,{left:r[0]+'px',top:r[1]+'px',width:r[2]+'px',height:r[3]+'px'});
+ const frame=r||[0,0,doc.width,doc.height];
+ for(let i=0;i<4;i++)$('c03-crop-'+['x','y','w','h'][i]).value=frame[i];
+ $('c03-crop-outside').textContent=r?'Cropの外側の画素はNativeに保持され、外側へも描画できます。':'キャンバス全体を出力';
+}
+$('c03-crop-set').onclick=()=>{
+ const frame=['x','y','w','h'].map(k=>Number($('c03-crop-'+k).value));
+ const [x,y,w,h]=frame;
+ if(!frame.every(Number.isSafeInteger)||x<0||y<0||w<1||h<1||x+w>doc.width||y+h>doc.height){notify('Crop範囲は元キャンバスの内側にしてください');return}
+ const before=structuredClone(doc);doc={...doc,cropFrame:frame};
+ history.accept({kind:'meta',label:'保持Crop',before,after:structuredClone(doc)});renderCropFrame();dirty();
+};
+$('c03-crop-clear').onclick=()=>{
+ if(!doc.cropFrame)return;
+ const before=structuredClone(doc);delete doc.cropFrame;
+ history.accept({kind:'meta',label:'Crop解除',before,after:structuredClone(doc)});renderCropFrame();dirty();
+};
+$('c03-export-png').onclick=async()=>{
+ if(!rasterWorker||workerFault||interrupted){notify('Raster Workerが利用可能な状態で書き出してください');return}
+ const epoch=documentEpoch,filename=doc.name.replace(/[\\/:*?"<>|]/g,'_')+'.png';
+ try{
+  const {data}=await workerPng(epoch,doc.cropFrame||[0,0,doc.width,doc.height],doc.background);
+  if(epoch!==documentEpoch)return;
+  const blob=new Blob([data],{type:'image/png'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  notify('PNGのダウンロードを開始しました（完了は未確認）');
+ }catch(e){notify('PNG書出し失敗: '+e.message)}
+};
+
+const recoveryPanel=document.createElement('section');recoveryPanel.id='c03-recovery';
+recoveryPanel.innerHTML=`<h4>自動保護・履歴</h4><small id="c03-protect-status">保護状況を確認中</small><div class="c03-actions"><button id="c03-protect-now">今すぐ保護</button><button id="c03-snapshot-save">名前付きSnapshot</button></div><select id="c03-protected-list" aria-label="復元候補"></select><div class="c03-actions"><button id="c03-protected-restore">復元コピー</button><button id="c03-protected-delete">候補削除</button></div><div class="c03-actions"><button id="c03-history-show">Undo履歴</button><button id="c03-history-capacity">保持容量</button></div><output id="c03-history-output"></output>`;
+layerPanel.prepend(recoveryPanel);
+recoveryPanel.insertAdjacentHTML('beforeend','<div class="c03-actions"><button id="c03-snapshot-compare">現在と比較</button><button id="c03-snapshot-restore">履歴として復元</button><button id="c03-snapshot-partial">層・領域を部分復元</button></div><div id="c03-snapshot-comparison" hidden><div class="c03-compare-pair"><figure><img id="c03-compare-before" alt="保存版"><figcaption>保存版</figcaption></figure><figure><img id="c03-compare-after" alt="現在"><figcaption>現在</figcaption></figure></div><small id="c03-compare-label"></small><button id="c03-snapshot-dismiss">比較を閉じる</button></div>');
+for(const mode of ['dissolve',...BLEND_MODES.filter(m=>!['normal','multiply','screen'].includes(m))])$('c03-layer-blend').append(new Option(mode,mode));
+function groupDescendant(id,parent){
+ let l=layerTree.layers.find(item=>item.id===id);
+ for(let i=0;i<100&&l?.parentId;i++){if(l.parentId===parent)return true;l=layerTree.layers.find(item=>item.id===l.parentId)}
+ return false;
+}
+function renderAdvancedLayerPanel(){
+ const selected=layerTree.layers.find(l=>l.id===layerTree.selectedId),raster=selected?.type==='raster';
+ const parent=$('c03-layer-parent');parent.replaceChildren(new Option('最上位',''));
+ for(const group of layerTree.layers.filter(l=>l.type==='group'&&l.id!==selected?.id&&!groupDescendant(l.id,selected?.id)))parent.append(new Option(group.name,group.id));
+ parent.value=selected?.parentId??'';
+ $('c03-layer-clipped').checked=Boolean(selected?.clipped);$('c03-alpha-lock').checked=Boolean(selected?.alphaLock);
+ $('c03-mask-enabled').checked=Boolean(selected?.mask&&selected.mask.enabled!==false);
+ $('c03-mask-inverted').checked=Boolean(selected?.mask?.inverted);
+ $('c03-vector-inverted').checked=Boolean(selected?.vectorMask?.inverted);
+ $('c03-mask-edit').setAttribute('aria-pressed',String(maskPaintMode&&raster));
+ $('c03-hit-select').setAttribute('aria-pressed',String(hitSelectMode));
+ for(const id of ['c03-add-mask','c03-mask-edit','c03-add-vector-mask','c03-mask-enabled','c03-mask-inverted','c03-vector-inverted','c03-alpha-lock','c03-blendif-apply','c03-blendif-clear','c03-duplicate','c03-merge-down'])$(id).disabled=!raster;
+ $('c03-layer-parent').disabled=!selected;
+ const filtered=Boolean($('c03-layer-search').value||$('c03-filter-type').value||$('c03-filter-tag').value);
+ for(const id of ['c03-layer-up','c03-layer-down'])$(id).disabled=!selected||filtered;
+ const opts=selected?.blendIf;
+ $('c03-blendif-channel').value=opts?.channel||'luminance';$('c03-blendif-space').value=opts?.space||'encoded';
+ for(const [id,field,key] of [['source-low','sourceRange','low0'],['source-high','sourceRange','high1'],['back-low','backdropRange','low0'],['back-high','backdropRange','high1']])
+  $('c03-blendif-'+id).value=Math.round(255*(opts?.[field]?.[key]??(key==='low0'?0:1)));
+ const list=$('c03-comp-list'),selectedComp=list.value;list.replaceChildren(...layerComps.map((comp,i)=>new Option(comp.name,String(i))));
+ if(layerComps.some((comp,i)=>String(i)===selectedComp))list.value=selectedComp;
+ $('c03-layer-hint').textContent=filtered?'検索中は並び替えを停止しています。':'層数: '+layerTree.layers.length+(maskPaintMode?' / マスク描画中':'');
+}
+
+function renderLayerPanel(){
+ const list=$('c03-layer-list');list.replaceChildren();
+ const search=$('c03-layer-search').value.trim().toLocaleLowerCase();
+ const filtered=layerTree.layers.filter(layer=>layer.name.toLocaleLowerCase().includes(search)&&(!$('c03-filter-type').value||layer.type===$('c03-filter-type').value)&&(!$('c03-filter-tag').value||layer.tag===$('c03-filter-tag').value));
+ for(const layer of [...filtered].reverse()){
+  const row=document.createElement('div');row.className='c03-row'+(layer.id===layerTree.selectedId?' selected':'');row.style.paddingLeft=(4+Math.min(6,(()=>{let n=0,p=layer.parentId;while(p&&n<6){n++;p=layerTree.layers.find(l=>l.id===p)?.parentId}return n})())*12)+'px';
+  const multi=document.createElement('input');multi.type='checkbox';multi.className='c03-multi';multi.checked=selectedMulti.has(layer.id);multi.title='複数選択';multi.onchange=()=>multi.checked?selectedMulti.add(layer.id):selectedMulti.delete(layer.id);
+  const visible=document.createElement('button');visible.textContent=layer.visible?'◉':'○';visible.title='表示/非表示';
+  visible.onclick=()=>{const before=structuredClone(layerTree);setLayerVisibility(layerTree,layer.id,!layer.visible);layerEdit(before,'表示切替')};
+  const select=document.createElement('button');select.textContent=layer.name;select.title='描画レイヤー選択';
+  select.onclick=()=>{selectLayer(layerTree,layer.id);maskPaintMode=false;renderLayerPanel()};
+  if(layer.tag){const swatch=document.createElement('i');swatch.className='c03-layer-tag';swatch.dataset.tag=layer.tag;swatch.title='色タグ '+layer.tag;row.append(swatch)}
+  row.append(multi,visible,select);list.append(row);
+ }
+ const selected=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ for(const id of ['c03-layer-opacity','c03-layer-name','c03-layer-tag','c03-layer-blend','c03-lock-position','c03-lock-pixels','c03-lock-all'])$(id).disabled=!selected;
+ $('c03-layer-name').value=selected?.name??'';
+ $('c03-layer-tag').value=selected?.tag??'';
+ $('c03-layer-blend').value=selected?.blendMode??'normal';
+ $('c03-lock-position').checked=Boolean(selected?.locks.position);
+ $('c03-lock-pixels').checked=Boolean(selected?.locks.pixels);
+ $('c03-lock-all').checked=Boolean(selected?.locks.all);
+ $('c03-layer-opacity').value=Math.round((selected?.opacity??1)*100);
+ $('c03-layer-opacity-out').textContent=$('c03-layer-opacity').value+'%';
+ $('c03-solo').setAttribute('aria-pressed',String(soloLayerId===selected?.id&&!!selected));
+ $('c03-layer-hint').textContent=search&&!filtered.some(l=>l.id===selected?.id)?'選択中のレイヤーは検索結果外です。検索解除で表示できます。':'グループ・マスク・特殊合成は未統合です。';
+ renderAdvancedLayerPanel();
+}
+function publishLayerState(){
+ if(!rasterWorker||workerFault)return;
+ const seq=++rasterSeq;minimumPublicationSeq=seq;
+ formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+ queueRaster({type:'layers',epoch:documentEpoch,seq,layers:structuredClone(layerTree.layers)});
+ dirty();
+}
+function layerEdit(before,label){
+ history.accept({kind:'layers',label,before,after:structuredClone(layerTree)});
+ publishLayerState();renderLayerPanel();dirty();
+}
+$('c03-add-layer').onclick=()=>{
+ if(!rasterWorker){notify('この環境では複数レイヤー描画を利用できません');return}
+ if((layerTree.layers.length+1)*doc.width*doc.height*4>256*1024*1024){notify('レイヤー用メモリ予算を超えます');return}
+ const before=structuredClone(layerTree);
+ addRasterLayer(layerTree,'レイヤー'+(layerTree.layers.length+1));
+ layerEdit(before,'レイヤー追加');
+};
+let opacityOrigin=null;
+$('c03-layer-opacity').addEventListener('pointerdown',()=>{opacityOrigin=structuredClone(layerTree)});
+$('c03-layer-opacity').addEventListener('input',e=>{
+ const layer=layerTree.layers.find(l=>l.id===layerTree.selectedId);if(!layer)return;
+ if(!opacityOrigin)opacityOrigin=structuredClone(layerTree);
+ setLayerOpacity(layerTree,layer.id,Number(e.target.value)/100);
+ $('c03-layer-opacity-out').textContent=e.target.value+'%';publishLayerState();
+});
+$('c03-layer-opacity').addEventListener('change',()=>{
+ if(!opacityOrigin)return;const before=opacityOrigin;opacityOrigin=null;
+ if(JSON.stringify(before.layers)!==JSON.stringify(layerTree.layers))layerEdit(before,'不透明度');
+});
+$('c03-layer-search').addEventListener('input',renderLayerPanel);
+function editSelectedLayer(label,change){
+ const current=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ if(!current)return;
+ const before=structuredClone(layerTree);
+ change(current);
+ if(JSON.stringify(before.layers)!==JSON.stringify(layerTree.layers))layerEdit(before,label);
+ else renderLayerPanel();
+}
+$('c03-layer-name').addEventListener('change',e=>editSelectedLayer('レイヤー名',(layer)=>{
+ const name=String(e.target.value).trim();
+ if(name)layer.name=name;else notify('空のレイヤー名は使用できません');
+}));
+$('c03-layer-tag').addEventListener('change',e=>editSelectedLayer('色タグ',(layer)=>layer.tag=e.target.value));
+$('c03-layer-blend').addEventListener('change',e=>editSelectedLayer('合成モード',(layer)=>{
+ if(!BLEND_MODES.includes(e.target.value)&&e.target.value!=='dissolve')throw Error('未対応の合成モード');
+ layer.blendMode=e.target.value;
+}));
+for(const [id,field] of [['c03-lock-position','position'],['c03-lock-pixels','pixels'],['c03-lock-all','all']]){
+ $(id).addEventListener('change',e=>editSelectedLayer(field+' lock',(layer)=>layer.locks[field]=e.target.checked));
+}
+$('c03-solo').onclick=()=>{
+ const id=layerTree.selectedId;if(!id)return;
+ soloLayerId=soloLayerId===id?null:id;
+ const seq=++rasterSeq;
+ minimumPublicationSeq=seq;
+ formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+ queueRaster({type:'solo',epoch:documentEpoch,seq,layerId:soloLayerId});
+ renderLayerPanel();dirty();
+};
+
+
+
+const protectionSessionId=typeof crypto.randomUUID==='function'?crypto.randomUUID():'session-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+let protectedRevision=-1,scheduledProtectionRevision=-1,protectionTimer=0,protecting=false,lastProtectionError='';
+function showProtectionStatus(message){
+ if($('c03-protect-status'))$('c03-protect-status').textContent=message;
+}
+function maybeScheduleProtection(){
+ if(!rasterWorker||workerFault||!history||!history.revision)return;
+ if(history.revision===protectedRevision){showProtectionStatus('自動保護済み / Revision '+protectedRevision);return}
+ if(protecting||scheduledProtectionRevision===history.revision)return;
+ scheduledProtectionRevision=history.revision;
+ clearTimeout(protectionTimer);
+ protectionTimer=setTimeout(()=>{protectionTimer=0;protectCurrent().catch(error=>showProtectionStatus('保護失敗: '+error.message))},7000);
+ showProtectionStatus('未保護の変更あり / Revision '+history.revision);
+}
+async function protectCurrent({kind='auto',snapshotName='',note=''}={}){
+ if(protecting){showProtectionStatus('保護処理中です');return false}
+ if(workerFault||!rasterWorker){showProtectionStatus('この環境では自動保護を利用できません');return false}
+ if(active||interrupted||nav.size||pendingInk.size){
+  if(kind==='auto'){
+   clearTimeout(protectionTimer);protectionTimer=setTimeout(()=>{protectionTimer=0;protectCurrent().catch(()=>{})},2500);
+   showProtectionStatus('描画・操作中のため保護待ち');
+  }else notify('描画確定後にSnapshotを保存してください');
+  return false;
+ }
+ protecting=true;scheduledProtectionRevision=-1;
+ const revision=history.revision,epoch=documentEpoch,metadata=structuredClone(doc);
+ showProtectionStatus('保護データを生成中 / Revision '+revision);
+ try{
+  const content=await workerNative(epoch,metadata,revision,{layerComps:structuredClone(layerComps)});
+  const saved=await protectDocument({sessionId:protectionSessionId,revision,content,name:metadata.name,kind,snapshotName,note});
+  if(epoch===documentEpoch){
+   if(kind==='auto')protectedRevision=revision;
+   lastProtectionError='';
+   showProtectionStatus('検証済み保護 '+new Date(saved.writtenAt).toLocaleString('ja-JP')+' / Rev '+revision+(revision===history.revision?'':'（以降の変更は未保護）'));
+  }
+  await refreshProtectedList(saved.key);
+  return true;
+ }catch(error){
+  lastProtectionError=error.message;
+  if(epoch===documentEpoch)showProtectionStatus('自動保護失敗 / 未保護 Rev '+revision+': '+error.message);
+  return false;
+ }finally{
+  protecting=false;
+  if(epoch===documentEpoch&&history.revision!==protectedRevision&&history.revision!==revision){
+   scheduledProtectionRevision=-1;maybeScheduleProtection();
+  }
+ }
+}
+async function refreshProtectedList(preferred=''){
+ try{
+  const entries=await listProtected(),sel=$('c03-protected-list'),before=preferred||sel.value;
+  sel.replaceChildren(...entries.map(entry=>{
+   const label=(entry.kind==='snapshot'?'★ '+entry.snapshotName:'自動 '+entry.name)+' / Rev '+entry.revision+' / '+new Date(entry.writtenAt).toLocaleString('ja-JP');
+   return new Option(label,entry.key);
+  }));
+  if(entries.some(e=>e.key===before))sel.value=before;
+  else if(!entries.length)sel.append(new Option('復元候補なし',''));
+ }catch(error){showProtectionStatus('保護データへアクセスできません: '+error.message)}
+}
+$('c03-protect-now').onclick=()=>{protectCurrent().catch(error=>notify(error.message))};
+$('c03-snapshot-save').onclick=()=>{
+ const name=prompt('保存するSnapshotの名前','案 '+new Date().toLocaleString('ja-JP'));
+ if(!name?.trim())return;
+ protectCurrent({kind:'snapshot',snapshotName:name.trim()}).then(ok=>{if(ok)notify('検証済みSnapshotを保護しました')});
+};
+$('c03-protected-restore').onclick=async()=>{
+ const key=$('c03-protected-list').value;if(!key)return;
+ try{
+  const saved=await readProtected(key);
+  readLayeredManifest(saved.content);
+  const file=new File([saved.content],(saved.name||'復元')+' (復元コピー).illustro',{type:'application/json'});
+  await open(file);
+ }catch(error){notify('復元できません: '+error.message)}
+};
+$('c03-protected-delete').onclick=async()=>{
+ const key=$('c03-protected-list').value;if(!key)return;
+ if(!confirm('この保護候補を削除しますか？ Snapshotの削除は取り消せません。'))return;
+ try{await deleteProtected(key,{allowSnapshot:true});await refreshProtectedList();notify('選択した保護候補を削除しました')}
+ catch(error){notify('削除に失敗: '+error.message)}
+};
+$('c03-history-show').onclick=()=>{
+ const items=history.items,entries=items.map((item,i)=>(i<history.index?'● ':'○ ')+(i+1)+' '+item.label);
+ $('c03-history-output').textContent='Undo '+history.index+' / '+items.length+'\n'+entries.slice(-24).reverse().join('\n');
+};
+$('c03-history-capacity').onclick=async()=>{
+ const stats=JSON.parse(stage.dataset.rasterStats||'{}'),protectedEntries=await listProtected();
+ const estimate=await navigator.storage?.estimate?.().catch(()=>null);
+ const fmt=v=>Number.isFinite(v)?(v/1048576).toFixed(1)+' MiB':'未確認';
+ $('c03-history-output').textContent='Undoメモリ '+fmt(stats.historyBytes)+' / 192 MiB 上限\nローカル保護 '+protectedEntries.length+' 件\nストレージ使用 '+fmt(estimate?.usage)+' / 容量 '+fmt(estimate?.quota);
+};
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='hidden'&&history.revision>protectedRevision&&!protecting)protectCurrent().catch(()=>{});
+});
+
+
+let compareUrls=[];
+function disposeComparison(){
+ for(const url of compareUrls)URL.revokeObjectURL(url);compareUrls=[];
+ $('c03-snapshot-comparison').hidden=true;
+}
+$('c03-snapshot-dismiss').onclick=disposeComparison;
+$('c03-snapshot-compare').onclick=async()=>{
+ if(workerFault||active||interrupted)return notify('描画確定後に比較してください');
+ const epoch=documentEpoch,revision=history.revision;
+ try{
+  const {record,native}=await protectedManifest();
+  $('c03-compare-label').textContent='画像を比較中…';
+  const packet=await workerCompare(epoch,structuredClone(native.layers));
+  if(epoch!==documentEpoch||revision!==history.revision)throw Error('比較中に作品が更新されたため再選択してください');
+  disposeComparison();
+  compareUrls=[packet.saved,packet.current].map(data=>URL.createObjectURL(new Blob([data],{type:'image/png'})));
+  $('c03-compare-before').src=compareUrls[0];$('c03-compare-after').src=compareUrls[1];
+  $('c03-compare-label').textContent='保護版 Rev '+record.revision+' → 現在 Rev '+revision+' / 比較は作品を変更しません';
+  $('c03-snapshot-comparison').hidden=false;
+ }catch(error){notify('比較できません: '+error.message)}
+};
+function readSnapshotTree(native){
+ const tree=createLayerTree();
+ tree.layers=native.layers.map(({png,...meta})=>{const l=structuredClone(meta);if(l.mask)delete l.mask.png;return l});
+ const byId=new Map(tree.layers.map(l=>[l.id,l]));
+ if(byId.size!==tree.layers.length)throw Error('Snapshot内に重複した層IDがあります');
+ for(const layer of tree.layers){
+  let cursor=layer,parentDepth=0;
+  while(cursor.parentId!=null){
+   const parent=byId.get(cursor.parentId);
+   if(parent?.type!=='group'||++parentDepth>tree.layers.length)throw Error('Snapshot内のグループ構造が不正です');
+   cursor=parent;
+  }
+ }
+ tree.selectedId=tree.layers.findLast(l=>l.type==='raster')?.id||tree.layers.at(-1)?.id||null;
+ tree.nextId=1+Math.max(0,...tree.layers.map(l=>Number(/^layer-([0-9]+)$/.exec(l.id)?.[1]||0)));
+ return tree;
+}
+async function protectedManifest(){
+ const key=$('c03-protected-list').value;
+ if(!key)throw Error('復元対象がありません');
+ const record=await readProtected(key),native=readLayeredManifest(record.content);
+ if(native.document.width!==doc.width||native.document.height!==doc.height)
+  throw Error('異なるキャンバス寸法です。復元コピーを使ってください');
+ if(native.formatVersion!==3)throw Error('履歴復元にはC03 Native v3が必要です');
+ const tree=readSnapshotTree(native);
+ return {record,native,tree};
+}
+$('c03-snapshot-restore').onclick=async()=>{
+ if(workerFault||active||interrupted)return notify('描画確定後に復元してください');
+ const epoch=documentEpoch,revision=history.revision;
+ try{
+  const {record,native,tree}=await protectedManifest();
+  if(!confirm('現在の作品を保護した上で、選択した版を新しい履歴操作として復元しますか？'))return;
+  const guarded=await protectCurrent({kind:'snapshot',snapshotName:'復元前 '+new Date().toLocaleString('ja-JP')});
+  if(!guarded)throw Error('復元前の保護を検証できなかったため中止しました');
+  if(epoch!==documentEpoch||revision!==history.revision||active)throw Error('復元処理中に作品が変更されました');
+  const before={tree:structuredClone(layerTree),doc:structuredClone(doc),comps:structuredClone(layerComps)};
+  const after={tree:structuredClone(tree),doc:structuredClone(native.document),comps:structuredClone(native.history?.layerComps||[])};
+  layerTree=tree;doc=structuredClone(native.document);layerComps=structuredClone(after.comps);
+  history.accept({kind:'restore',label:'Snapshotから復元: '+(record.snapshotName||record.name),
+   before,after,archiveAfter:structuredClone(native.brushArchive?.strokes||[])});
+  protectedRevision=-1;
+  const seq=++rasterSeq;minimumPublicationSeq=seq;
+  formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+  queueRaster({type:'restore-snapshot',epoch:documentEpoch,seq,layers:structuredClone(native.layers),
+   archive:native.brushArchive?.strokes||[],recovery:native.brushArchive?.recovery||[]});
+  syncMeta();paper.style.background=doc.background==='white'?'white':'transparent';
+  $('checker').style.display=doc.background==='white'?'none':'block';renderLayerPanel();dirty();
+  notify('Snapshotを新しい履歴操作として復元しました（描画確定待ち）');
+ }catch(error){notify('履歴復元を中止: '+error.message)}
+};
+$('c03-snapshot-partial').onclick=async()=>{
+ if(workerFault||active||interrupted)return notify('描画確定後に部分復元してください');
+ const epoch=documentEpoch,revision=history.revision;
+ try{
+  const {native}=await protectedManifest();
+  const choices=native.layers.filter(l=>l.type==='raster'),names=choices.map((l,i)=>i+': '+l.name).join('\n');
+  const selected=prompt('復元するRaster層の番号を指定してください:\n'+names,'0');
+  if(selected==null)return;
+  const index=Number(selected);if(!Number.isInteger(index)||index<0||index>=choices.length)throw Error('層の番号が無効です');
+  const source=choices[index];
+  const raw=prompt('復元する領域を x,y,幅,高さ で指定。空欄なら層全体。','');
+  if(raw==null)return;
+  const rect=raw.trim()?raw.split(/[,，\s]+/).map(Number):null;
+  if(rect&&(rect.length!==4||rect.some(n=>!Number.isInteger(n))||rect[0]<0||rect[1]<0||rect[2]<=0||rect[3]<=0||rect[0]+rect[2]>doc.width||rect[1]+rect[3]>doc.height))throw Error('範囲指定が不正です');
+  if(epoch!==documentEpoch||revision!==history.revision||active)throw Error('復元中に作品が変更されました');
+  if((layerTree.layers.filter(l=>l.type==='raster').length+1)*doc.width*doc.height*4>256*1024*1024)throw Error('メモリ上限です');
+  const before=structuredClone(layerTree),target=addRasterLayer(layerTree,'復元: '+source.name);
+  layerOperation(before,{kind:'copy-snapshot-layer',targetId:target.id,png:source.png,rect},'Snapshot層の部分復元');
+  notify('元Snapshotを保ったまま新しい層へ画素を復元します');
+ }catch(error){notify('部分復元できません: '+error.message)}
+};
+
+function layerOperation(before,operation,label){
+ if(!rasterWorker||workerFault){notify('この操作にはRaster Workerが必要です');layerTree=before;renderLayerPanel();return}
+ const seq=++rasterSeq;minimumPublicationSeq=seq;
+ history.accept({kind:'layer-operation',before,after:structuredClone(layerTree),label});
+ formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+ queueRaster({type:'layer-operation',epoch:documentEpoch,seq,operation,layers:structuredClone(layerTree.layers)});
+ renderLayerPanel();dirty();
+}
+$('c03-add-group').onclick=()=>{
+ if(layerTree.layers.length>=100){notify('レイヤー上限です');return}
+ const before=structuredClone(layerTree);addGroupLayer(layerTree,'グループ');maskPaintMode=false;layerEdit(before,'グループ追加');
+};
+$('c03-group-selected').onclick=()=>{
+ const ids=[...selectedMulti].filter(id=>layerTree.layers.some(l=>l.id===id));
+ if(!ids.length){notify('行のチェックボックスでまとめる層を選択してください');return}
+ const before=structuredClone(layerTree);
+ try{groupLayers(layerTree,ids);selectedMulti.clear();maskPaintMode=false;layerEdit(before,'グループ化')}
+ catch(e){layerTree=before;notify(e.message)}
+};
+$('c03-ungroup').onclick=()=>{
+ const layer=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ if(layer?.type!=='group')return notify('グループを選んでください');
+ const before=structuredClone(layerTree);
+ for(const child of layerTree.layers.filter(l=>l.parentId===layer.id))child.parentId=layer.parentId??null;
+ layerTree.layers=layerTree.layers.filter(l=>l!==layer);
+ layerTree.selectedId=layerTree.layers[0]?.id||null;
+ layerEdit(before,'グループ解除');
+};
+for(const [id,direction] of [['c03-layer-up',1],['c03-layer-down',-1]]){
+ $(id).onclick=()=>{const before=structuredClone(layerTree);if(moveLayer(layerTree,layerTree.selectedId,direction))layerEdit(before,'並べ替え')};
+}
+$('c03-layer-parent').onchange=e=>{
+ const before=structuredClone(layerTree);
+ try{setLayerParent(layerTree,layerTree.selectedId,e.target.value||null);layerEdit(before,'所属グループ')}
+ catch(err){layerTree=before;renderLayerPanel();notify(err.message)}
+};
+for(const id of ['c03-filter-type','c03-filter-tag'])$(id).onchange=renderLayerPanel;
+$('c03-duplicate').onclick=()=>{
+ const source=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ if(source?.type!=='raster')return;
+ if((layerTree.layers.filter(l=>l.type==='raster').length+1)*doc.width*doc.height*4>256*1024*1024){notify('複製後のメモリ予算を超えます');return}
+ const before=structuredClone(layerTree),target=duplicateRasterLayer(layerTree,source.id);
+ layerOperation(before,{kind:'duplicate',sourceId:source.id,targetId:target.id},'レイヤー複製');
+};
+$('c03-merge-down').onclick=()=>{
+ const upper=layerTree.layers.find(l=>l.id===layerTree.selectedId),siblings=layerTree.layers.filter(l=>(l.parentId??null)===(upper?.parentId??null));
+ const lower=siblings[siblings.indexOf(upper)-1];
+ if(!lower||upper?.type!=='raster'||lower.type!=='raster')return notify('直下のRasterレイヤーが必要です');
+ const compatible=l=>l.visible&&l.opacity===1&&l.blendMode==='normal'&&!l.mask&&!l.vectorMask&&!l.blendIf&&!l.clipped&&!l.alphaLock&&!l.locks?.all;
+ if(!compatible(upper)||!compatible(lower))return notify('特殊な合成やマスクがある層は外観保護のため結合できません');
+ const before=structuredClone(layerTree);
+ layerTree.layers=layerTree.layers.filter(l=>l.id!==upper.id);layerTree.selectedId=lower.id;
+ layerOperation(before,{kind:'merge',upperId:upper.id,lowerId:lower.id},'下へ結合');
+};
+$('c03-merged-copy').onclick=()=>{
+ if(!rasterWorker||workerFault)return;
+ if((layerTree.layers.filter(l=>l.type==='raster').length+1)*doc.width*doc.height*4>256*1024*1024)return notify('統合コピー後のメモリ予算を超えます');
+ const before=structuredClone(layerTree),layer=addRasterLayer(layerTree,'統合コピー');
+ layer.visible=false; // Inactive by default: a duplicate composite must not multiply visible alpha.
+ layer.parentId=null;
+ const index=layerTree.layers.indexOf(layer);layerTree.layers.splice(index,1);layerTree.layers.push(layer);
+ layerOperation(before,{kind:'merged-copy',targetId:layer.id},'統合コピー');
+};
+$('c03-layer-clipped').onchange=e=>editSelectedLayer('クリッピング',layer=>layer.clipped=e.target.checked);
+$('c03-alpha-lock').onchange=e=>editSelectedLayer('透明度ロック',layer=>layer.alphaLock=e.target.checked);
+$('c03-add-mask').onclick=()=>editSelectedLayer('画素マスク追加',layer=>{
+ if(layer.type!=='raster')return;
+ if(layer.mask){notify('画素マスクは既にあります');return}
+ layer.mask={type:'pixel',enabled:true,inverted:false,linked:true};
+});
+$('c03-mask-enabled').onchange=e=>editSelectedLayer('マスク有効',layer=>{if(layer.mask)layer.mask.enabled=e.target.checked});
+$('c03-mask-inverted').onchange=e=>editSelectedLayer('画素マスク反転',layer=>{if(layer.mask)layer.mask.inverted=e.target.checked});
+$('c03-mask-edit').onclick=()=>{
+ const layer=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ if(!layer?.mask)return notify('先に画素マスクを追加してください');
+ maskPaintMode=!maskPaintMode;renderLayerPanel();
+};
+$('c03-add-vector-mask').onclick=()=>{
+ const value=prompt('矩形マスクを x,y,幅,高さ で指定', '0,0,'+doc.width+','+doc.height);
+ if(value==null)return;
+ const numbers=value.split(/[,，\s]+/).map(Number);
+ if(numbers.length!==4||numbers.some(n=>!Number.isFinite(n))||numbers[2]<=0||numbers[3]<=0)return notify('矩形の指定が無効です');
+ editSelectedLayer('矩形ベクターマスク',layer=>layer.vectorMask={enabled:true,inverted:false,rect:numbers});
+};
+$('c03-vector-inverted').onchange=e=>editSelectedLayer('矩形マスク反転',layer=>{if(layer.vectorMask)layer.vectorMask.inverted=e.target.checked});
+$('c03-hit-select').onclick=()=>{hitSelectMode=!hitSelectMode;renderLayerPanel()};
+function blendIfRange(low,high){
+ if(!Number.isInteger(low)||!Number.isInteger(high)||low<0||high>255||low>=high)throw Error('下限と上限を0〜255で正しく指定してください');
+ const a=low/255,b=high/255;
+ return {low0:a,low1:a===0?0:Math.min(a+.025,b),high0:b===1?1:Math.max(a,b-.025),high1:b};
+}
+$('c03-blendif-apply').onclick=()=>{
+ try{
+  const bi={channel:$('c03-blendif-channel').value,space:$('c03-blendif-space').value,
+   sourceRange:blendIfRange(Number($('c03-blendif-source-low').value),Number($('c03-blendif-source-high').value)),
+   backdropRange:blendIfRange(Number($('c03-blendif-back-low').value),Number($('c03-blendif-back-high').value))};
+  editSelectedLayer('階調依存合成',layer=>layer.blendIf=bi);
+ }catch(e){notify(e.message)}
+};
+$('c03-blendif-clear').onclick=()=>editSelectedLayer('階調依存合成解除',layer=>delete layer.blendIf);
+$('c03-comp-create').onclick=()=>{
+ const name=$('c03-comp-name').value.trim()||'案 '+(layerComps.length+1);
+ if(layerComps.some(c=>c.name===name))return notify('同名の案があります');
+ const before=structuredClone(layerComps);
+ layerComps.push({name,layers:layerTree.layers.map(({id,visible,opacity,blendMode})=>({id,visible,opacity,blendMode}))});
+ history.accept({kind:'comps',label:'カンプ記録',before,after:structuredClone(layerComps)});renderLayerPanel();dirty();
+};
+$('c03-comp-apply').onclick=()=>{
+ const comp=layerComps[Number($('c03-comp-list').value)];if(!comp)return;
+ const before=structuredClone(layerTree);let missing=0;
+ for(const saved of comp.layers){
+  const layer=layerTree.layers.find(l=>l.id===saved.id);
+  if(!layer){missing++;continue}
+  Object.assign(layer,{visible:saved.visible,opacity:saved.opacity,blendMode:saved.blendMode});
+ }
+ layerEdit(before,'カンプ適用');if(missing)notify(missing+'層が削除されているため適用されませんでした');
+};
+$('c03-comp-delete').onclick=()=>{
+ const index=Number($('c03-comp-list').value);
+ if(!Number.isInteger(index)||index<0||index>=layerComps.length)return;
+ const before=structuredClone(layerComps);layerComps.splice(index,1);
+ history.accept({kind:'comps',label:'カンプ削除',before,after:structuredClone(layerComps)});renderLayerPanel();dirty();
+};
+
+
 async function save(as=false){
  if(interrupted||workerFault){notify('描画の中断を解消してから保存してください');return}
  const strokeArchive=rasterWorker?null:archiveStrokes(),recoveryAtFence=[...recoveryStrokes];
@@ -710,7 +1228,7 @@ async function save(as=false){
  // Capture the exact accepted raster at request time before any await; encode asynchronously.
  let frozen,picker=null;
  try{
-  const nativePromise=rasterWorker?workerNative(epoch,meta,revision):null;
+  const nativePromise=rasterWorker?workerNative(epoch,meta,revision,{layerComps:structuredClone(layerComps)}):null;
   if(!rasterWorker){frozen=document.createElement('canvas');frozen.width=meta.width;frozen.height=meta.height;frozen.getContext('2d').drawImage(canvas,0,0);}
   const filename=meta.name.replace(/[\\/:*?"<>|]/g,'_')+'.illustro';
   const hasPicker=typeof window.showSaveFilePicker==='function';
@@ -728,7 +1246,14 @@ async function save(as=false){
   if(hasPicker){
    const dest=await picker;
    // Serialize writes: older Save requests cannot finish after newer ones on the same target.
-   const operation=saveQueue.catch(()=>{}).then(async()=>{const writer=await dest.createWritable();try{await writer.write(contents);await writer.close()}catch(error){await writer.abort().catch(()=>{});throw error}});
+   const operation=saveQueue.catch(()=>{}).then(async()=>{
+    if(!as&&handle===dest&&lastSavedFileStamp&&typeof dest.getFile==='function'){
+     const current=await dest.getFile();
+     if(current.lastModified!==lastSavedFileStamp.lastModified||current.size!==lastSavedFileStamp.size)throw Error('外部変更を検出。原本への上書きを中止しました。別名保存を使用してください');
+    }
+    const writer=await dest.createWritable();try{await writer.write(contents);await writer.close()}catch(error){await writer.abort().catch(()=>{});throw error}
+    if(typeof dest.getFile==='function'){const savedFile=await dest.getFile();lastSavedFileStamp={lastModified:savedFile.lastModified,size:savedFile.size};}else lastSavedFileStamp=null;
+   });
    saveQueue=operation;await operation;
    if(epoch===documentEpoch){handle=dest;savedRev=revision;dirty()}
    notify('保存完了');
@@ -738,9 +1263,56 @@ async function save(as=false){
   }
  }catch(err){if(epoch===documentEpoch)dirty();if(err.name==='AbortError'){notify('保存をキャンセルしました');return}notify('保存に失敗: '+err.message)}
 }
-async function open(file){if(!file||!allowDocumentChange())return;const epoch=documentEpoch,revision=history.revision;if(history.revision!==savedRev&&history.canUndo&&!confirm('未保存の作品を破棄して開きますか？'))return;try{const json=readManifest(await file.text());const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('レイヤー画像を解読できません'));img.src=json.layers[0].png});if(img.width!==json.document.width||img.height!==json.document.height)throw new Error('レイヤー寸法が一致しません');if(epoch!==documentEpoch||revision!==history.revision||!allowDocumentChange())throw Error('読み込み中に作品が変わりました');resetDoc(json.document);if(json.formatVersion===2){priorStrokes=json.brushArchive.strokes;recoveryStrokes=json.brushArchive.recovery||[]}
- lastFormal={strokes:[...priorStrokes],revision:0};ctx.drawImage(img,0,0);pctx.drawImage(img,0,0);for(let y=0;y<doc.height;y+=tileSize)for(let x=0;x<doc.width;x+=tileSize){const key=Math.floor(y/tileSize)*Math.ceil(doc.width/tileSize)+Math.floor(x/tileSize),box=tileBox(key,doc.width,doc.height);formalTiles.set(key,{box,image:ctx.getImageData(x,y,box.w,box.h)})}if(previewWorker){const pictures=[...formalTiles].map(([key,{box,image}])=>({key,box,image:new ImageData(new Uint8ClampedArray(image.data),box.w,box.h)}));previewWorker.postMessage({type:'base',epoch:documentEpoch,pictures,retired:[]},pictures.map(p=>p.image.data.buffer))}renderRepeat();if(rasterWorker)queueRaster({type:'load',epoch:documentEpoch,png:json.layers[0].png,archive:priorStrokes,recovery:recoveryStrokes});savedRev=history.revision;dirty();const unavailable=priorStrokes.some(s=>{if(s?.algorithm!==algorithm)return true;try{validateBrush(s.brush);return false}catch{return true}});
- notify(recoveryStrokes.length?'完成画像を開きました。未確定の筆は復旧情報として保持しました':unavailable?'完成画像を開きました。一部ブラシの素材または版が利用できません':'ネイティブ作品を開きました')}catch(err){notify('読込に失敗: '+err.message)}}
+async function open(file){
+ if(!file||!allowDocumentChange())return;
+ const epoch=documentEpoch,revision=history.revision;
+ if(history.revision!==savedRev&&history.canUndo&&!confirm('未保存の作品を破棄して開きますか？'))return;
+ try{
+  const native=readLayeredManifest(await file.text());
+  if(!rasterWorker&&native.layers.length>1)throw Error('複数レイヤーNativeにはRaster Workerが必要です');
+  const layers=native.layers.map(layer=>{
+   if(!['raster','group'].includes(layer.type)||layer.children?.length)throw Error('未対応のレイヤー形式です');
+   if(!BLEND_MODES.includes(layer.blendMode||'normal')&&layer.blendMode!=='dissolve')throw Error('この合成モードは未対応です');
+   return {...layer,lifetime:layer.lifetime||1,blendMode:layer.blendMode||'normal',locks:layer.locks||{}};
+  });
+  const images=[];
+  for(const layer of layers){
+   if(layer.type==='group'){images.push(null);continue}
+   const img=new Image();
+   await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('PNG decode failed'));img.src=layer.png});
+   if(img.width!==native.document.width||img.height!==native.document.height)throw Error('PNGサイズの不一致');
+   images.push(img);
+  }
+  if(epoch!==documentEpoch||revision!==history.revision||!allowDocumentChange())throw Error('読込中に作品が変更されました');
+  resetDoc(native.document);
+  layerTree.layers=layers.map(({png,...other})=>{const l=structuredClone(other);if(l.mask)delete l.mask.png;return l});
+  layerTree.selectedId=layerTree.layers.at(-1).id;
+  layerTree.nextId=1+Math.max(0,...layerTree.layers.map(layer=>Number(/^layer-([0-9]+)$/.exec(layer.id)?.[1]||0)));
+  layerComps=Array.isArray(native.history?.layerComps)?structuredClone(native.history.layerComps):[];renderLayerPanel();
+  priorStrokes=native.brushArchive?.strokes||[];
+  recoveryStrokes=native.brushArchive?.recovery||[];
+  lastFormal={strokes:[...priorStrokes],revision:0};
+  ctx.clearRect(0,0,doc.width,doc.height);
+  layers.forEach((layer,i)=>{
+   if(layer.type!=='raster'||!layer.visible)return;
+   ctx.save();ctx.globalAlpha=layer.opacity;
+   ctx.globalCompositeOperation={normal:'source-over',multiply:'multiply',screen:'screen'}[layer.blendMode];
+   ctx.drawImage(images[i],0,0);ctx.restore();
+  });
+  pctx.clearRect(0,0,doc.width,doc.height);pctx.drawImage(ctx.canvas,0,0);
+  for(let y=0;y<doc.height;y+=tileSize)for(let x=0;x<doc.width;x+=tileSize){
+   const key=Math.floor(y/tileSize)*Math.ceil(doc.width/tileSize)+Math.floor(x/tileSize),box=tileBox(key,doc.width,doc.height);
+   formalTiles.set(key,{box,image:ctx.getImageData(x,y,box.w,box.h)});
+  }
+  if(previewWorker){
+   const pictures=[...formalTiles].map(([key,{box,image}])=>({key,box,image:new ImageData(new Uint8ClampedArray(image.data),box.w,box.h)}));
+   previewWorker.postMessage({type:'base',epoch:documentEpoch,pictures,retired:[]},pictures.map(p=>p.image.data.buffer));
+  }
+  renderRepeat();
+  if(rasterWorker){const seq=++rasterSeq;minimumPublicationSeq=seq;formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});queueRaster({type:'load',epoch:documentEpoch,seq,layers,archive:priorStrokes,recovery:recoveryStrokes});}
+  savedRev=history.revision;dirty();notify('Native作品を開きました');
+ }catch(error){notify('読込に失敗: '+error.message)}
+}
 $('open-file').addEventListener('change',e=>{open(e.target.files[0]);e.target.value=''})
 const commands={new:showDialog,open:()=>$('open-file').click(),save:()=>save(),saveas:()=>save(true),undo,redo,fit,actual:()=>{view=zoomAt(view,1/view.scale,{x:stage.clientWidth/2,y:stage.clientHeight/2});scheduleView()},resetrotation:()=>{view=zoomAt(view,1,{x:stage.clientWidth/2,y:stage.clientHeight/2},-view.rotation);scheduleView()},resetflip:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipX:false,flipY:false});scheduleView()},flipx:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipX:!view.flipX});scheduleView()},flipy:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipY:!view.flipY});scheduleView()},grid:()=>{grid.dataset.show=grid.dataset.show==='1'?'0':'1';gridPainted=false;scheduleView()},applymeta:applyMeta,template:addTemplate};all('[data-action]').forEach(b=>b.addEventListener('click',()=>commands[b.dataset.action]?.()));all('[data-tool]').forEach(b=>b.addEventListener('click',()=>selectTool(b.dataset.tool)));
 $('quick-tool').onclick=() =>selectTool(isEraser(settings.tool)?settings.lastBrush:'hardEraser');$('quick-color').onclick=()=>{showPanel();$('color-section').scrollIntoView({block:'start'})};$('mobile-eraser').onclick=()=>selectTool(isEraser(settings.tool)?settings.lastBrush:'hardEraser');$('mobile-tools').onclick=()=>{showPanel();$('tool-name').scrollIntoView()};$('mobile-color').onclick=()=>$('quick-color').click();$('mobile-size').onclick=()=>{showPanel();$('size').focus()};
@@ -759,6 +1331,6 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{if(temporaryKeys[e.code])release(e.code)});
 window.addEventListener('resize',scheduleView);
 if(typeof ResizeObserver==='function')new ResizeObserver(scheduleView).observe(stage);
-setColor(settings.color,false);resetDoc(doc);selectTool('gpen');
+setColor(settings.color,false);resetDoc(doc);selectTool('gpen');refreshProtectedList().catch(err=>showProtectionStatus('保護候補取得失敗: '+err.message));
 if(matchMedia('(max-width:720px)').matches)$('workspace').classList.add('collapsed');
 if(!rasterWorker)notify('この端末では筆の確定が同期処理になります');

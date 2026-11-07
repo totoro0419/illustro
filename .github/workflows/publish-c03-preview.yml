@@ -1,0 +1,80 @@
+name: Publish Illustro C03 alpha preview
+on:
+  push:
+    branches: [implementation/stage4-c03-layers-history-persistence]
+    paths: ["c01/**", ".github/workflows/publish-c03-preview.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: illustro-pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: implementation/stage4-c01-basic-paint
+          path: c01-release
+      - uses: actions/checkout@v4
+        with:
+          ref: implementation/stage4-c02-brush-engine
+          path: c02-release
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --no-audit --no-fund && npm run check
+        working-directory: c01
+      - run: npx playwright install --with-deps chromium && node test/c03-layer-browser-test.mjs && node test/c03-advanced-browser-test.mjs && node test/c03-offline-browser-test.mjs
+        working-directory: c01
+      - run: node scripts/build.mjs
+        working-directory: c01-release/c01
+      - run: node scripts/build.mjs
+        working-directory: c02-release/c01
+      - uses: actions/configure-pages@v5
+        with: {enablement: true}
+      - name: Preserve C01 and C02 routes; publish isolated C03
+        run: |
+          mkdir -p _site/c01 _site/c02 _site/c03 _site/qa/ui-prototype _site/qa/performance-lab
+          cp -R c01-release/c01/dist/. _site/c01/
+          cp -R c02-release/c01/dist/. _site/c02/
+          cp -R c01/dist/. _site/c03/
+          cp qa/ui-prototype/index.html _site/qa/ui-prototype/
+          cp qa/performance-lab/index.html _site/qa/performance-lab/
+          printf '%s\n' "${GITHUB_SHA}" > _site/c03/revision.txt
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with: {path: _site}
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: build
+    environment:
+      name: c03-preview
+      url: ${{ steps.deployment.outputs.page_url }}c03/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: deploy
+    steps:
+      - name: Verify exact deployed revision and static routes
+        run: |
+          url=https://totoro0419.github.io/illustro
+          current=""
+          for attempt in $(seq 1 15); do
+            current=$(curl -fsSL "$url/c03/revision.txt?rev=$GITHUB_SHA" || true)
+            if [ "$current" = "$GITHUB_SHA" ]; then break; fi
+            sleep 5
+          done
+          test "$current" = "$GITHUB_SHA"
+          curl -fsSL "$url/c01/" | grep -q 'Illustro · C01'
+          curl -fsSL "$url/c02/" | grep -q 'Illustro · C02'
+          curl -fsSL "$url/c03/" | grep -q 'Illustro · C03'
+          curl -fsSL "$url/c03/sw.js" | grep -q 'illustro-c03-'

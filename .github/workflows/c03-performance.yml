@@ -1,0 +1,46 @@
+name: C03 compared-to-C02 interaction performance
+on:
+  push:
+    branches: [implementation/stage4-c03-layers-history-persistence]
+    paths: ["c01/**", ".github/workflows/c03-performance.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: implementation/stage4-c02-brush-engine
+          path: c02-baseline
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --no-audit --no-fund
+        working-directory: c01
+      - run: npx playwright install --with-deps chromium
+        working-directory: c01
+      - name: Matched synthetic C02/C03 samples
+        working-directory: c01
+        timeout-minutes: 15
+        env:
+          ILLUSTRO_BENCH_CASES: '[{"name":"thin","size":10,"brush":"gpen","width":640,"height":480,"strokes":8},{"name":"broad","size":160,"brush":"gpen","width":1280,"height":960,"strokes":5}]'
+          ILLUSTRO_BENCH_OUT: /tmp/illustro-c03-vs-c02.json
+          ILLUSTRO_CASE_TIMEOUT: '150000'
+        run: |
+          export ILLUSTRO_BENCH_ROOTS="$(node -p 'JSON.stringify({before:require("node:path").resolve("../c02-baseline/c01"),after:process.cwd()})')"
+          node test/performance-compare.mjs
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const data=JSON.parse(fs.readFileSync("/tmp/illustro-c03-vs-c02.json","utf8"));
+            for (const entry of data.cases) console.log(JSON.stringify({version:entry.version,scenario:entry.scenario.name,view:entry.viewNextRafMs,handler:entry.handlerMs,frame:entry.frameMs,error:entry.error}));
+            console.log("Performance gate remains UNDECIDED: synthetic browser values are not physical contact-to-photon readings.");
+          '
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c03-vs-c02-interaction-results
+          path: /tmp/illustro-c03-vs-c02.json
+          if-no-files-found: warn
