@@ -4,6 +4,13 @@ import {FORMAT,validateDocument,readManifest} from './model.mjs';
  */
 const PNG_PREFIX='data:image/png;base64,';
 const ids=new Set(['raster','group','vector','mask']);
+function assertCropFrame(rect,width,height){
+ if(rect==null)return;
+ if(!Array.isArray(rect)||rect.length!==4||rect.some(v=>!Number.isSafeInteger(v)))throw Error('Invalid crop frame');
+ const [x,y,w,h]=rect;
+ if(x<0||y<0||w<1||h<1||x+w>width||y+h>height)throw Error('Crop is outside retained canvas');
+}
+
 function assertLayer(layer,seen){
  if(!layer||typeof layer!=='object'||typeof layer.id!=='string'||!layer.id||seen.has(layer.id))throw Error('Invalid or duplicate layer id');
  seen.add(layer.id);
@@ -17,6 +24,7 @@ function assertLayer(layer,seen){
 }
 export function createLayeredManifest(metadata,layers,revision,{brushArchive,history}={}){
  const {width,height,dpi}=validateDocument(metadata.width,metadata.height,metadata.dpi);
+ assertCropFrame(metadata.cropFrame,width,height);
  if(!Array.isArray(layers)||layers.length===0)throw Error('At least one layer is required');
  const seen=new Set();
  for(const layer of layers)assertLayer(layer,seen);
@@ -24,7 +32,8 @@ export function createLayeredManifest(metadata,layers,revision,{brushArchive,his
  return {format:FORMAT,formatVersion:3,savedRevision:revision,document:{
   name:String(metadata.name||'無題'),author:String(metadata.author||''),
   description:String(metadata.description||''),width,height,dpi,
-  profile:'srgb8',background:metadata.background==='transparent'?'transparent':'white'
+  profile:'srgb8',background:metadata.background==='transparent'?'transparent':'white',
+  ...(metadata.cropFrame?{cropFrame:[...metadata.cropFrame]}:{})
  },layers:structuredClone(layers),...(brushArchive?{brushArchive:structuredClone(brushArchive)}:{}),
  ...(history?{history:structuredClone(history)}:{})};
 }
@@ -33,6 +42,7 @@ export function readLayeredManifest(raw){
  if(j?.formatVersion!==3)return readManifest(j);
  if(j.format!==FORMAT)throw Error('Unsupported document format');
  validateDocument(j.document?.width,j.document?.height,j.document?.dpi);
+ assertCropFrame(j.document?.cropFrame,j.document.width,j.document.height);
  if(j.document?.profile!=='srgb8')throw Error('Unsupported color profile');
  if(!Array.isArray(j.layers)||j.layers.length===0)throw Error('Missing layers');
  const seen=new Set();
