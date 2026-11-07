@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test test/*.test.mjs tests/*.test.mjs",
     "typecheck": "tsc --allowJs --checkJs --noEmit --target ES2022 --module ES2022 --lib ES2022,DOM,DOM.Iterable app/model.mjs",
     "lint": "for file in app/*.mjs; do node --check \"$file\" || exit; done",
     "build": "node scripts/build.mjs",
