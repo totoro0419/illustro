@@ -119,7 +119,8 @@ async function execute(msg){
  if(msg.type==='load'){
   await layers.loadLayers(msg.layers||[{id:'raster-1',type:'raster',name:'レイヤー1',lifetime:1,visible:true,opacity:1,blendMode:'normal',locks:{},png:msg.png}]);
   priorArchive=msg.archive||[];recoveryArchive=msg.recovery||[];
-  return;
+  for(let y=0;y<canvas.height;y+=tileSize)for(let x=0;x<canvas.width;x+=tileSize)dirty.set(Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize),msg.seq);
+  await emitFrame(msg);return;
  }
  if(msg.type==='layers'||msg.type==='solo'){
   if(msg.type==='layers')layers.setLayers(msg.layers);
@@ -135,10 +136,20 @@ async function execute(msg){
   await emitFrame(msg,{...stats,workerMs:performance.now()-start});
   return;
  }
+ if(msg.type==='hit-test'){
+  const found=[];
+  for(const layer of [...layers.layers].reverse()){
+   if(layer.type!=='raster'||!layer.visible)continue;
+   const context=layers.getSurface(layer.id,layer.lifetime).ctx;
+   if(context.getImageData(msg.x,msg.y,1,1).data[3]>=msg.threshold)found.push({id:layer.id,name:layer.name});
+  }
+  self.postMessage({type:'hit-result',epoch,requestId:msg.requestId,candidates:found});return;
+ }
  if(msg.type==='layer-operation'){
   const op=msg.operation||{},affected=op.kind==='duplicate'?[op.targetId]:op.kind==='merge'?[op.lowerId]:[];
   if(!affected.length)throw Error('Unknown layer operation');
-  const before=affected.map(id=>({id,pixels:layers.surfaces.get(id)?.ctx.getImageData(0,0,canvas.width,canvas.height)||null}));
+  const capture=ids=>ids.flatMap(id=>[id,id+'::mask'].map(key=>({id:key,pixels:layers.surfaces.get(key)?.ctx.getImageData(0,0,canvas.width,canvas.height)||null})));
+  const before=capture(affected);
   if(op.kind==='duplicate'){
    const source=layers.surfaces.get(op.sourceId);
    if(!source)throw Error('Duplicate source missing');
@@ -146,14 +157,16 @@ async function execute(msg){
    const target=layers.surfaces.get(op.targetId);
    target.ctx.clearRect(0,0,canvas.width,canvas.height);
    target.ctx.drawImage(source.canvas,0,0);
+   const sourceMask=layers.surfaces.get(op.sourceId+'::mask'),targetMask=layers.surfaces.get(op.targetId+'::mask');
+   if(sourceMask&&targetMask){targetMask.ctx.clearRect(0,0,canvas.width,canvas.height);targetMask.ctx.drawImage(sourceMask.canvas,0,0);}
   }else if(op.kind==='merge'){
    const source=layers.surfaces.get(op.upperId),target=layers.surfaces.get(op.lowerId);
    if(!source||!target)throw Error('Merge target missing');
    target.ctx.drawImage(source.canvas,0,0);
    layers.setLayers(msg.layers);
   }
-  const after=affected.map(id=>({id,pixels:layers.surfaces.get(id)?.ctx.getImageData(0,0,canvas.width,canvas.height)||null}));
-  const bytes=affected.length*canvas.width*canvas.height*8;
+  const after=capture(affected);
+  const bytes=affected.length*canvas.width*canvas.height*16;
   const retained=historyBytes-actions.slice(index).reduce((sum,a)=>sum+a.bytes,0);
   if(retained+bytes>maxHistoryBytes){
    for(const saved of before)if(saved.pixels)layers.surfaces.get(saved.id)?.ctx.putImageData(saved.pixels,0,0);
@@ -185,7 +198,7 @@ async function execute(msg){
   const nativeLayers=await layers.nativeLayers();
   const brushArchive={version:1,strokes:[...priorArchive,...actions.slice(0,index).filter(a=>a.kind==='stroke').map(a=>a.stroke)]};
   if(recoveryArchive.length)brushArchive.recovery=recoveryArchive;
-  const manifest=createLayeredManifest(msg.metadata,nativeLayers,msg.revision,{brushArchive});
+  const manifest=createLayeredManifest(msg.metadata,nativeLayers,msg.revision,{brushArchive,history:msg.extra||{}});
   const native=new TextEncoder().encode(JSON.stringify(manifest));
   self.postMessage({type:'saved',epoch,requestId:msg.requestId,native,
    stats:{encodeMs:performance.now()-start,nativeBytes:native.byteLength}},[native.buffer]);
