@@ -1,5 +1,6 @@
 import {algorithm,makeSeed,mod,validateBrush} from './brush-engine.mjs';
-import {createLayerTree,addRasterLayer,selectLayer,freezeDrawTarget,setLayerVisibility,setLayerOpacity} from './layer-tree.mjs';
+import {createLayerTree,addRasterLayer,selectLayer,freezeDrawTarget,setLayerVisibility,setLayerOpacity,addGroupLayer,groupLayers,setLayerParent,moveLayer,duplicateRasterLayer} from './layer-tree.mjs';
+import {BLEND_MODES} from './blend-kernels.mjs';
 import {readLayeredManifest} from './layered-manifest.mjs';
 import {Ink,composite,rasterize,tileBox,tileSize} from './brush-raster.mjs';
 import {RetainedScene} from './retained-scene.mjs';
@@ -374,7 +375,7 @@ function beginStroke(e,erase=false){
  }
  const brush=brushes.get(erase?brushes.input.eraser:settings.tool);
  let frozenTarget;
-  try{frozenTarget=freezeDrawTarget(layerTree)}catch(error){notify('描画不可: '+error.message);return}
+  try{frozenTarget=freezeDrawTarget(layerTree);if(maskPaintMode){if(!layerTree.layers.find(l=>l.id===frozenTarget.id)?.mask)throw Error('マスクがありません');frozenTarget={...frozenTarget,mask:true};}}catch(error){notify('描画不可: '+error.message);return}
   const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
   stroke.target=frozenTarget;
  if(e.altKey)stroke.guide=null;
@@ -715,19 +716,66 @@ const layerPanel=document.createElement('section');
 layerPanel.id='c03-layer-panel';
 layerPanel.innerHTML='<h3>レイヤー <small>C03 Alpha</small></h3><div class="c03-actions"><button id="c03-add-layer" type="button">＋ Raster</button><button id="c03-solo" type="button" aria-pressed="false" title="一時的なSolo表示">Solo</button></div><label class="c03-search-row">検索 <input id="c03-layer-search" type="search" placeholder="名前"></label><div id="c03-layer-list" role="listbox" aria-label="レイヤー"></div><label>レイヤー名 <input id="c03-layer-name" type="text" maxlength="120"></label><label>色タグ <select id="c03-layer-tag"><option value="">なし</option><option value="red">赤</option><option value="orange">橙</option><option value="yellow">黄</option><option value="green">緑</option><option value="blue">青</option><option value="violet">紫</option></select></label><label>不透明度 <input id="c03-layer-opacity" type="range" min="0" max="100" value="100"><output id="c03-layer-opacity-out">100%</output></label><label>合成 <select id="c03-layer-blend"><option value="normal">通常</option><option value="multiply">乗算</option><option value="screen">スクリーン</option></select></label><div class="c03-lock-row"><label><input type="checkbox" id="c03-lock-position">位置ロック</label><label><input type="checkbox" id="c03-lock-pixels">画素ロック</label><label><input type="checkbox" id="c03-lock-all">全体ロック</label></div><small id="c03-layer-hint">グループ・マスク・特殊合成は未統合です。</small>';
 document.querySelector('.workspace-scroll').prepend(layerPanel);
-let soloLayerId=null;
+let soloLayerId=null,maskPaintMode=false,hitSelectMode=false,layerComps=[];
+const selectedMulti=new Set();
+
+const advancedPanel=document.createElement('div');advancedPanel.id='c03-advanced';
+advancedPanel.innerHTML=`<div class="c03-actions"><button id="c03-add-group">＋ Group</button><button id="c03-group-selected">まとめる</button><button id="c03-ungroup">解除</button></div>
+<div class="c03-actions"><button id="c03-layer-up">↑</button><button id="c03-layer-down">↓</button><button id="c03-duplicate">複製</button><button id="c03-merge-down">下へ結合</button></div>
+<div class="c03-actions"><select id="c03-filter-type"><option value="">全種別</option><option value="raster">Raster</option><option value="group">Group</option></select><select id="c03-filter-tag"><option value="">全タグ</option><option value="red">赤</option><option value="orange">橙</option><option value="yellow">黄</option><option value="green">緑</option><option value="blue">青</option><option value="violet">紫</option></select></div>
+<label>親グループ<select id="c03-layer-parent"></select></label>
+<div class="c03-lock-row"><label><input id="c03-layer-clipped" type="checkbox">下層でクリップ</label><label><input id="c03-alpha-lock" type="checkbox">透明度ロック</label></div>
+<div class="c03-actions"><button id="c03-add-mask">画素マスク追加</button><button id="c03-mask-edit" aria-pressed="false">マスク描画</button><button id="c03-add-vector-mask">矩形マスク</button></div>
+<div class="c03-lock-row"><label><input id="c03-mask-enabled" type="checkbox">マスク有効</label><label><input id="c03-mask-inverted" type="checkbox">反転</label><label><input id="c03-vector-inverted" type="checkbox">矩形反転</label></div>
+<div class="c03-actions"><button id="c03-hit-select" aria-pressed="false">作品から層を選択</button></div>
+<details><summary>階調依存合成（Blend If）</summary><label>対象<select id="c03-blendif-channel"><option value="luminance">輝度</option><option value="r">赤</option><option value="g">緑</option><option value="b">青</option></select></label><label>色空間<select id="c03-blendif-space"><option value="encoded">sRGB</option><option value="linear">linear</option></select></label>
+<label>自層下限<input id="c03-blendif-source-low" type="number" min="0" max="255" value="0"></label><label>自層上限<input id="c03-blendif-source-high" type="number" min="0" max="255" value="255"></label>
+<label>下地下限<input id="c03-blendif-back-low" type="number" min="0" max="255" value="0"></label><label>下地上限<input id="c03-blendif-back-high" type="number" min="0" max="255" value="255"></label><div class="c03-actions"><button id="c03-blendif-apply">適用</button><button id="c03-blendif-clear">解除</button></div></details>
+<details><summary>レイヤーカンプ</summary><input id="c03-comp-name" type="text" placeholder="案名"><select id="c03-comp-list"></select><div class="c03-actions"><button id="c03-comp-create">記録</button><button id="c03-comp-apply">適用</button><button id="c03-comp-delete">削除</button></div></details>`;
+layerPanel.append(advancedPanel);
+for(const mode of ['dissolve',...BLEND_MODES.filter(m=>!['normal','multiply','screen'].includes(m))])$('c03-layer-blend').append(new Option(mode,mode));
+function groupDescendant(id,parent){
+ let l=layerTree.layers.find(item=>item.id===id);
+ for(let i=0;i<100&&l?.parentId;i++){if(l.parentId===parent)return true;l=layerTree.layers.find(item=>item.id===l.parentId)}
+ return false;
+}
+function renderAdvancedLayerPanel(){
+ const selected=layerTree.layers.find(l=>l.id===layerTree.selectedId),raster=selected?.type==='raster';
+ const parent=$('c03-layer-parent');parent.replaceChildren(new Option('最上位',''));
+ for(const group of layerTree.layers.filter(l=>l.type==='group'&&l.id!==selected?.id&&!groupDescendant(l.id,selected?.id)))parent.append(new Option(group.name,group.id));
+ parent.value=selected?.parentId??'';
+ $('c03-layer-clipped').checked=Boolean(selected?.clipped);$('c03-alpha-lock').checked=Boolean(selected?.alphaLock);
+ $('c03-mask-enabled').checked=Boolean(selected?.mask&&selected.mask.enabled!==false);
+ $('c03-mask-inverted').checked=Boolean(selected?.mask?.inverted);
+ $('c03-vector-inverted').checked=Boolean(selected?.vectorMask?.inverted);
+ $('c03-mask-edit').setAttribute('aria-pressed',String(maskPaintMode&&raster));
+ $('c03-hit-select').setAttribute('aria-pressed',String(hitSelectMode));
+ for(const id of ['c03-add-mask','c03-mask-edit','c03-add-vector-mask','c03-mask-enabled','c03-mask-inverted','c03-vector-inverted','c03-alpha-lock','c03-blendif-apply','c03-blendif-clear','c03-duplicate','c03-merge-down'])$(id).disabled=!raster;
+ $('c03-layer-parent').disabled=!selected;
+ const filtered=Boolean($('c03-layer-search').value||$('c03-filter-type').value||$('c03-filter-tag').value);
+ for(const id of ['c03-layer-up','c03-layer-down'])$(id).disabled=!selected||filtered;
+ const opts=selected?.blendIf;
+ $('c03-blendif-channel').value=opts?.channel||'luminance';$('c03-blendif-space').value=opts?.space||'encoded';
+ for(const [id,field,key] of [['source-low','sourceRange','low0'],['source-high','sourceRange','high1'],['back-low','backdropRange','low0'],['back-high','backdropRange','high1']])
+  $('c03-blendif-'+id).value=Math.round(255*(opts?.[field]?.[key]??(key==='low0'?0:1)));
+ const list=$('c03-comp-list'),selectedComp=list.value;list.replaceChildren(...layerComps.map((comp,i)=>new Option(comp.name,String(i))));
+ if(layerComps.some((comp,i)=>String(i)===selectedComp))list.value=selectedComp;
+ $('c03-layer-hint').textContent=filtered?'検索中は並び替えを停止しています。':'層数: '+layerTree.layers.length+(maskPaintMode?' / マスク描画中':'');
+}
+
 function renderLayerPanel(){
  const list=$('c03-layer-list');list.replaceChildren();
  const search=$('c03-layer-search').value.trim().toLocaleLowerCase();
- const filtered=layerTree.layers.filter(layer=>layer.name.toLocaleLowerCase().includes(search));
+ const filtered=layerTree.layers.filter(layer=>layer.name.toLocaleLowerCase().includes(search)&&(!$('c03-filter-type').value||layer.type===$('c03-filter-type').value)&&(!$('c03-filter-tag').value||layer.tag===$('c03-filter-tag').value));
  for(const layer of [...filtered].reverse()){
-  const row=document.createElement('div');row.className='c03-row'+(layer.id===layerTree.selectedId?' selected':'');
+  const row=document.createElement('div');row.className='c03-row'+(layer.id===layerTree.selectedId?' selected':'');row.style.paddingLeft=(4+Math.min(6,(()=>{let n=0,p=layer.parentId;while(p&&n<6){n++;p=layerTree.layers.find(l=>l.id===p)?.parentId}return n})())*12)+'px';
+  const multi=document.createElement('input');multi.type='checkbox';multi.className='c03-multi';multi.checked=selectedMulti.has(layer.id);multi.title='複数選択';multi.onchange=()=>multi.checked?selectedMulti.add(layer.id):selectedMulti.delete(layer.id);
   const visible=document.createElement('button');visible.textContent=layer.visible?'◉':'○';visible.title='表示/非表示';
   visible.onclick=()=>{const before=structuredClone(layerTree);setLayerVisibility(layerTree,layer.id,!layer.visible);layerEdit(before,'表示切替')};
   const select=document.createElement('button');select.textContent=layer.name;select.title='描画レイヤー選択';
-  select.onclick=()=>{selectLayer(layerTree,layer.id);renderLayerPanel()};
+  select.onclick=()=>{selectLayer(layerTree,layer.id);maskPaintMode=false;renderLayerPanel()};
   if(layer.tag){const swatch=document.createElement('i');swatch.className='c03-layer-tag';swatch.dataset.tag=layer.tag;swatch.title='色タグ '+layer.tag;row.append(swatch)}
-  row.append(visible,select);list.append(row);
+  row.append(multi,visible,select);list.append(row);
  }
  const selected=layerTree.layers.find(l=>l.id===layerTree.selectedId);
  for(const id of ['c03-layer-opacity','c03-layer-name','c03-layer-tag','c03-layer-blend','c03-lock-position','c03-lock-pixels','c03-lock-all'])$(id).disabled=!selected;
@@ -741,6 +789,7 @@ function renderLayerPanel(){
  $('c03-layer-opacity-out').textContent=$('c03-layer-opacity').value+'%';
  $('c03-solo').setAttribute('aria-pressed',String(soloLayerId===selected?.id&&!!selected));
  $('c03-layer-hint').textContent=search&&!filtered.some(l=>l.id===selected?.id)?'選択中のレイヤーは検索結果外です。検索解除で表示できます。':'グループ・マスク・特殊合成は未統合です。';
+ renderAdvancedLayerPanel();
 }
 function publishLayerState(){
  if(!rasterWorker||workerFault)return;
