@@ -1,4 +1,6 @@
 import {algorithm,makeSeed,mod,validateBrush} from './brush-engine.mjs';
+import {createLayerTree,addRasterLayer,selectLayer,freezeDrawTarget,setLayerVisibility,setLayerOpacity} from './layer-tree.mjs';
+import {readLayeredManifest} from './layered-manifest.mjs';
 import {Ink,composite,rasterize,tileBox,tileSize} from './brush-raster.mjs';
 import {RetainedScene} from './retained-scene.mjs';
 import {Presentation} from './presentation.mjs';
@@ -154,6 +156,7 @@ function flushFormal(){
 function workerNative(epoch,metadata,revision){return new Promise((resolve,reject)=>{const requestId=++saveSerial;pendingSnapshots.set(requestId,{resolve,reject});queueRaster({type:'save',epoch,requestId,metadata,revision})})}
 
 let doc={name:'無題',author:'',description:'',width:1600,height:1200,dpi:300,profile:'srgb8',background:'white'};
+let layerTree=createLayerTree();
 let history=new History(),savedRev=-1,handle=null,documentEpoch=0,saveQueue=Promise.resolve(),active=null,nav=new Map(),gesture=null,view={x:0,y:0,scale:1,rotation:0,flipX:false,flipY:false};
 let navigationMoved=false,navigationTapHandled=false,navigationTapAllowed=true,navigationStarted=0;
 let settings={tool:'gpen',size:12,opacity:1,flow:1,curve:1,fingerDraw:false,gestureUndo:true,color:[34,39,51],colorAlpha:1,previous:[0,0,0],lastBrush:'gpen'};
@@ -179,14 +182,14 @@ function syncMeta(){for(const [id,key] of [['meta-name','name'],['meta-author','
 function resetDoc(data){
  clearTimeout(previewSendTimer);previewSendTimer=0;if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;presentationInterval=16;
  for(const {element,direct}of displayTiles.values()){if(!direct)element.width=element.height=1;element.remove()}displayTiles.clear();formalTiles.clear();displayImages.clear();
- rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
+ rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
  $('export-recovery').hidden=true;
  stage.removeAttribute('data-raster-error');stage.removeAttribute('data-raster-stats');$('interrupted-stroke').hidden=true;
  removePreviews();repaint.clear();clearTemporary();
  for(const request of pendingSnapshots.values())request.reject(Error('作品が切り替わりました'));
  pendingSnapshots.clear();setDimensions();
  if(rasterWorker){rasterWorker.postMessage({type:'reset',epoch:documentEpoch,width:doc.width,height:doc.height});previewWorker.postMessage({type:'reset',epoch:documentEpoch,generation:previewGeneration,width:doc.width,height:doc.height,background:doc.background,measure:!!perf,bitmap:presentationMode==='bitmap',direct:directPresentation,cpuDisplay,framePacing:!timerPresentation,navigationPicture:gpuEnabled})}
- syncMeta();fit();
+ syncMeta();fit();renderLayerPanel();
  poseTimeline.entries.length=0;cancelAnimationFrame(frame);renderView();dirty();
 }
 function selectTool(name,collapse=true){
@@ -370,7 +373,10 @@ function beginStroke(e,erase=false){
   point.p=Math.max(point.p,Math.min(1,Math.max(.07,1.25/Math.max(1,diameter))));
  }
  const brush=brushes.get(erase?brushes.input.eraser:settings.tool);
- const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
+ let frozenTarget;
+  try{frozenTarget=freezeDrawTarget(layerTree)}catch(error){notify('描画不可: '+error.message);return}
+  const stroke=strokeSettings(brush,[point],e.pointerType==='pen',erase);
+  stroke.target=frozenTarget;
  if(e.altKey)stroke.guide=null;
  const ink=previewWorker?{tiles:new Map()}:new Ink(stroke,doc.width,doc.height,true);
  if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;
@@ -460,7 +466,8 @@ function applyAction(action,isUndo){
    }
    presentation();
   }
- }else if(action.kind==='meta'){doc=structuredClone(isUndo?action.before:action.after);syncMeta()}
+ }else if(action.kind==='layers'){layerTree=structuredClone(isUndo?action.before:action.after);publishLayerState();renderLayerPanel()}
+  else if(action.kind==='meta'){doc=structuredClone(isUndo?action.before:action.after);syncMeta()}
  dirty();
 }
 function undo(){if(workerFault||interrupted)return;if(active){interruptStroke();return}applyAction(history.undo(),true)}
@@ -703,6 +710,57 @@ $('export-recovery').onclick=async()=>{
   notify('確定画像と未確定の筆を分けてダウンロードします');
  }catch(error){notify('救出に失敗: '+error.message)}
 };
+
+const layerPanel=document.createElement('section');
+layerPanel.id='c03-layer-panel';
+layerPanel.innerHTML='<h3>レイヤー <small>C03 Alpha</small></h3><button id="c03-add-layer" type="button">＋ Raster</button><div id="c03-layer-list" role="listbox" aria-label="レイヤー"></div><label>不透明度 <input id="c03-layer-opacity" type="range" min="0" max="100" value="100"><output id="c03-layer-opacity-out">100%</output></label><small>高度合成・マスク・グループは未統合です。</small>';
+document.querySelector('.workspace-scroll').prepend(layerPanel);
+function renderLayerPanel(){
+ const list=$('c03-layer-list');list.replaceChildren();
+ for(const layer of [...layerTree.layers].reverse()){
+  const row=document.createElement('div');row.className='c03-row'+(layer.id===layerTree.selectedId?' selected':'');
+  const visible=document.createElement('button');visible.textContent=layer.visible?'◉':'○';visible.title='表示/非表示';
+  visible.onclick=()=>{const before=structuredClone(layerTree);setLayerVisibility(layerTree,layer.id,!layer.visible);layerEdit(before,'表示切替')};
+  const select=document.createElement('button');select.textContent=layer.name;select.title='描画レイヤー選択';
+  select.onclick=()=>{selectLayer(layerTree,layer.id);renderLayerPanel()};
+  row.append(visible,select);list.append(row);
+ }
+ const selected=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ $('c03-layer-opacity').disabled=!selected;
+ $('c03-layer-opacity').value=Math.round((selected?.opacity??1)*100);
+ $('c03-layer-opacity-out').textContent=$('c03-layer-opacity').value+'%';
+}
+function publishLayerState(){
+ if(!rasterWorker||workerFault)return;
+ const seq=++rasterSeq;minimumPublicationSeq=seq;
+ formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+ queueRaster({type:'layers',epoch:documentEpoch,seq,layers:structuredClone(layerTree.layers)});
+ dirty();
+}
+function layerEdit(before,label){
+ history.accept({kind:'layers',label,before,after:structuredClone(layerTree)});
+ publishLayerState();renderLayerPanel();dirty();
+}
+$('c03-add-layer').onclick=()=>{
+ if(!rasterWorker){notify('この環境では複数レイヤー描画を利用できません');return}
+ if((layerTree.layers.length+1)*doc.width*doc.height*4>256*1024*1024){notify('レイヤー用メモリ予算を超えます');return}
+ const before=structuredClone(layerTree);
+ addRasterLayer(layerTree,'レイヤー'+(layerTree.layers.length+1));
+ layerEdit(before,'レイヤー追加');
+};
+let opacityOrigin=null;
+$('c03-layer-opacity').addEventListener('pointerdown',()=>{opacityOrigin=structuredClone(layerTree)});
+$('c03-layer-opacity').addEventListener('input',e=>{
+ const layer=layerTree.layers.find(l=>l.id===layerTree.selectedId);if(!layer)return;
+ if(!opacityOrigin)opacityOrigin=structuredClone(layerTree);
+ setLayerOpacity(layerTree,layer.id,Number(e.target.value)/100);
+ $('c03-layer-opacity-out').textContent=e.target.value+'%';publishLayerState();
+});
+$('c03-layer-opacity').addEventListener('change',()=>{
+ if(!opacityOrigin)return;const before=opacityOrigin;opacityOrigin=null;
+ if(JSON.stringify(before.layers)!==JSON.stringify(layerTree.layers))layerEdit(before,'不透明度');
+});
+
 async function save(as=false){
  if(interrupted||workerFault){notify('描画の中断を解消してから保存してください');return}
  const strokeArchive=rasterWorker?null:archiveStrokes(),recoveryAtFence=[...recoveryStrokes];
@@ -738,9 +796,54 @@ async function save(as=false){
   }
  }catch(err){if(epoch===documentEpoch)dirty();if(err.name==='AbortError'){notify('保存をキャンセルしました');return}notify('保存に失敗: '+err.message)}
 }
-async function open(file){if(!file||!allowDocumentChange())return;const epoch=documentEpoch,revision=history.revision;if(history.revision!==savedRev&&history.canUndo&&!confirm('未保存の作品を破棄して開きますか？'))return;try{const json=readManifest(await file.text());const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('レイヤー画像を解読できません'));img.src=json.layers[0].png});if(img.width!==json.document.width||img.height!==json.document.height)throw new Error('レイヤー寸法が一致しません');if(epoch!==documentEpoch||revision!==history.revision||!allowDocumentChange())throw Error('読み込み中に作品が変わりました');resetDoc(json.document);if(json.formatVersion===2){priorStrokes=json.brushArchive.strokes;recoveryStrokes=json.brushArchive.recovery||[]}
- lastFormal={strokes:[...priorStrokes],revision:0};ctx.drawImage(img,0,0);pctx.drawImage(img,0,0);for(let y=0;y<doc.height;y+=tileSize)for(let x=0;x<doc.width;x+=tileSize){const key=Math.floor(y/tileSize)*Math.ceil(doc.width/tileSize)+Math.floor(x/tileSize),box=tileBox(key,doc.width,doc.height);formalTiles.set(key,{box,image:ctx.getImageData(x,y,box.w,box.h)})}if(previewWorker){const pictures=[...formalTiles].map(([key,{box,image}])=>({key,box,image:new ImageData(new Uint8ClampedArray(image.data),box.w,box.h)}));previewWorker.postMessage({type:'base',epoch:documentEpoch,pictures,retired:[]},pictures.map(p=>p.image.data.buffer))}renderRepeat();if(rasterWorker)queueRaster({type:'load',epoch:documentEpoch,png:json.layers[0].png,archive:priorStrokes,recovery:recoveryStrokes});savedRev=history.revision;dirty();const unavailable=priorStrokes.some(s=>{if(s?.algorithm!==algorithm)return true;try{validateBrush(s.brush);return false}catch{return true}});
- notify(recoveryStrokes.length?'完成画像を開きました。未確定の筆は復旧情報として保持しました':unavailable?'完成画像を開きました。一部ブラシの素材または版が利用できません':'ネイティブ作品を開きました')}catch(err){notify('読込に失敗: '+err.message)}}
+async function open(file){
+ if(!file||!allowDocumentChange())return;
+ const epoch=documentEpoch,revision=history.revision;
+ if(history.revision!==savedRev&&history.canUndo&&!confirm('未保存の作品を破棄して開きますか？'))return;
+ try{
+  const native=readLayeredManifest(await file.text());
+  const layers=native.layers.map(layer=>{
+   if(layer.type!=='raster'||layer.children?.length)throw Error('Raster以外のレイヤーは未対応です');
+   if(!['normal','multiply','screen'].includes(layer.blendMode||'normal'))throw Error('この合成モードは未対応です');
+   return {...layer,lifetime:layer.lifetime||1,blendMode:layer.blendMode||'normal',locks:layer.locks||{}};
+  });
+  const images=[];
+  for(const layer of layers){
+   const img=new Image();
+   await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('PNG decode failed'));img.src=layer.png});
+   if(img.width!==native.document.width||img.height!==native.document.height)throw Error('PNGサイズの不一致');
+   images.push(img);
+  }
+  if(epoch!==documentEpoch||revision!==history.revision||!allowDocumentChange())throw Error('読込中に作品が変更されました');
+  resetDoc(native.document);
+  layerTree.layers=layers.map(({png,...other})=>other);
+  layerTree.selectedId=layerTree.layers.at(-1).id;
+  layerTree.nextId=layerTree.layers.length+1;
+  renderLayerPanel();
+  priorStrokes=native.brushArchive?.strokes||[];
+  recoveryStrokes=native.brushArchive?.recovery||[];
+  lastFormal={strokes:[...priorStrokes],revision:0};
+  ctx.clearRect(0,0,doc.width,doc.height);
+  layers.forEach((layer,i)=>{
+   if(!layer.visible)return;
+   ctx.save();ctx.globalAlpha=layer.opacity;
+   ctx.globalCompositeOperation={normal:'source-over',multiply:'multiply',screen:'screen'}[layer.blendMode];
+   ctx.drawImage(images[i],0,0);ctx.restore();
+  });
+  pctx.clearRect(0,0,doc.width,doc.height);pctx.drawImage(ctx.canvas,0,0);
+  for(let y=0;y<doc.height;y+=tileSize)for(let x=0;x<doc.width;x+=tileSize){
+   const key=Math.floor(y/tileSize)*Math.ceil(doc.width/tileSize)+Math.floor(x/tileSize),box=tileBox(key,doc.width,doc.height);
+   formalTiles.set(key,{box,image:ctx.getImageData(x,y,box.w,box.h)});
+  }
+  if(previewWorker){
+   const pictures=[...formalTiles].map(([key,{box,image}])=>({key,box,image:new ImageData(new Uint8ClampedArray(image.data),box.w,box.h)}));
+   previewWorker.postMessage({type:'base',epoch:documentEpoch,pictures,retired:[]},pictures.map(p=>p.image.data.buffer));
+  }
+  renderRepeat();
+  if(rasterWorker)queueRaster({type:'load',epoch:documentEpoch,layers,archive:priorStrokes,recovery:recoveryStrokes});
+  savedRev=history.revision;dirty();notify('Native作品を開きました');
+ }catch(error){notify('読込に失敗: '+error.message)}
+}
 $('open-file').addEventListener('change',e=>{open(e.target.files[0]);e.target.value=''})
 const commands={new:showDialog,open:()=>$('open-file').click(),save:()=>save(),saveas:()=>save(true),undo,redo,fit,actual:()=>{view=zoomAt(view,1/view.scale,{x:stage.clientWidth/2,y:stage.clientHeight/2});scheduleView()},resetrotation:()=>{view=zoomAt(view,1,{x:stage.clientWidth/2,y:stage.clientHeight/2},-view.rotation);scheduleView()},resetflip:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipX:false,flipY:false});scheduleView()},flipx:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipX:!view.flipX});scheduleView()},flipy:()=>{view=flipAtDocumentCenter(view,doc.width,doc.height,{flipY:!view.flipY});scheduleView()},grid:()=>{grid.dataset.show=grid.dataset.show==='1'?'0':'1';gridPainted=false;scheduleView()},applymeta:applyMeta,template:addTemplate};all('[data-action]').forEach(b=>b.addEventListener('click',()=>commands[b.dataset.action]?.()));all('[data-tool]').forEach(b=>b.addEventListener('click',()=>selectTool(b.dataset.tool)));
 $('quick-tool').onclick=() =>selectTool(isEraser(settings.tool)?settings.lastBrush:'hardEraser');$('quick-color').onclick=()=>{showPanel();$('color-section').scrollIntoView({block:'start'})};$('mobile-eraser').onclick=()=>selectTool(isEraser(settings.tool)?settings.lastBrush:'hardEraser');$('mobile-tools').onclick=()=>{showPanel();$('tool-name').scrollIntoView()};$('mobile-color').onclick=()=>$('quick-color').click();$('mobile-size').onclick=()=>{showPanel();$('size').focus()};

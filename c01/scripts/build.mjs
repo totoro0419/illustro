@@ -39,6 +39,7 @@ self.addEventListener('fetch',event=>{
 `;
 await writeFile('dist/sw.js',sw);
 let html=await readFile('dist/index.html','utf8');
+html=html.replace('</head>','<link rel="stylesheet" href="./app/c03.css"></head>');
 html=html.replace(/Illustro · C02/g,'Illustro · C03').replace(/<small> C02<\/small>/g,'<small> C03 alpha<\/small>');
 const registration=`<script>if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(error=>console.warn('Offline cache unavailable',error)),{once:true})}</script>`;
 html=html.replace('</body>',registration+'</body>');
