@@ -32,7 +32,7 @@ async function emitFrame(msg,stats){
  // C02-equivalent fast path: a single Normal layer is already the exact
  // authoritative raster. Never roundtrip through a second Canvas composite.
  const sole=layers.layers.length===1?layers.layers[0]:null;
- const direct=sole&&sole.opacity===1&&sole.blendMode==='normal'&&(layers.soloId===sole.id||(!layers.soloId&&sole.visible))
+ const direct=sole&&sole.type==='raster'&&!sole.mask&&!sole.vectorMask&&!sole.blendIf&&!sole.clipped&&sole.opacity===1&&sole.blendMode==='normal'&&(layers.soloId===sole.id||(!layers.soloId&&sole.visible))
   ?layers.surfaces.get(sole.id)?.ctx:null;
  for(const key of dirty.keys()){
   if(!await cooperate())return;
@@ -82,6 +82,7 @@ async function applyStroke(stroke,seq,msg){
    const patch={key,box,before,after:null};
    patches.push(patch);
    composite(inkCtx,stroke,tile,box.x,box.y);
+   layers.preserveAlpha(stroke.target,before,box);
    patch.after=inkCtx.getImageData(box.x,box.y,box.w,box.h);
   }
  }catch(error){
@@ -89,7 +90,7 @@ async function applyStroke(stroke,seq,msg){
   throw error;
  }
  actions.length=index;
- actions.push({patches,bytes:size,stroke});
+ actions.push({kind:'stroke',patches,bytes:size,stroke});
  historyBytes=retained+size;
  index++;
  for(const {key} of patches)dirty.set(key,seq);
@@ -134,20 +135,55 @@ async function execute(msg){
   await emitFrame(msg,{...stats,workerMs:performance.now()-start});
   return;
  }
+ if(msg.type==='layer-operation'){
+  const op=msg.operation||{},affected=op.kind==='duplicate'?[op.targetId]:op.kind==='merge'?[op.lowerId]:[];
+  if(!affected.length)throw Error('Unknown layer operation');
+  const before=affected.map(id=>({id,pixels:layers.surfaces.get(id)?.ctx.getImageData(0,0,canvas.width,canvas.height)||null}));
+  if(op.kind==='duplicate'){
+   const source=layers.surfaces.get(op.sourceId);
+   if(!source)throw Error('Duplicate source missing');
+   layers.setLayers(msg.layers);
+   const target=layers.surfaces.get(op.targetId);
+   target.ctx.clearRect(0,0,canvas.width,canvas.height);
+   target.ctx.drawImage(source.canvas,0,0);
+  }else if(op.kind==='merge'){
+   const source=layers.surfaces.get(op.upperId),target=layers.surfaces.get(op.lowerId);
+   if(!source||!target)throw Error('Merge target missing');
+   target.ctx.drawImage(source.canvas,0,0);
+   layers.setLayers(msg.layers);
+  }
+  const after=affected.map(id=>({id,pixels:layers.surfaces.get(id)?.ctx.getImageData(0,0,canvas.width,canvas.height)||null}));
+  const bytes=affected.length*canvas.width*canvas.height*8;
+  const retained=historyBytes-actions.slice(index).reduce((sum,a)=>sum+a.bytes,0);
+  if(retained+bytes>maxHistoryBytes){
+   for(const saved of before)if(saved.pixels)layers.surfaces.get(saved.id)?.ctx.putImageData(saved.pixels,0,0);
+   throw Error('Layer operation history memory limit');
+  }
+  actions.length=index;actions.push({kind:'operation',bytes,before,after});index++;historyBytes=retained+bytes;
+  for(let y=0;y<canvas.height;y+=tileSize)for(let x=0;x<canvas.width;x+=tileSize)dirty.set(Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize),msg.seq);
+  await emitFrame(msg);return;
+ }
  if(msg.type==='undo'||msg.type==='redo'){
   const cooperate=workSlice(msg);
   const entry=msg.type==='undo'?(index?actions[--index]:null):(index<actions.length?actions[index++]:null);
-  for(const {key,box,before,after} of entry?.patches||[]){
+  if(entry?.kind==='operation'){
+   for(const snapshot of msg.type==='undo'?entry.before:entry.after){
+    if(!await cooperate())return;
+    const ctx=layers.surfaces.get(snapshot.id)?.ctx;if(!ctx)continue;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(snapshot.pixels)ctx.putImageData(snapshot.pixels,0,0);
+   }
+   for(let y=0;y<canvas.height;y+=tileSize)for(let x=0;x<canvas.width;x+=tileSize)dirty.set(Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize),msg.seq);
+  }else for(const {key,box,before,after} of entry?.patches||[]){
    if(!await cooperate())return;
    layers.drawingContext(entry.stroke.target).putImageData(msg.type==='undo'?before:after,box.x,box.y);dirty.set(key,msg.seq);
   }
-  await emitFrame(msg);
-  return;
+  await emitFrame(msg);return;
  }
  if(msg.type==='save'){
   const start=performance.now();
   const nativeLayers=await layers.nativeLayers();
-  const brushArchive={version:1,strokes:[...priorArchive,...actions.slice(0,index).map(a=>a.stroke)]};
+  const brushArchive={version:1,strokes:[...priorArchive,...actions.slice(0,index).filter(a=>a.kind==='stroke').map(a=>a.stroke)]};
   if(recoveryArchive.length)brushArchive.recovery=recoveryArchive;
   const manifest=createLayeredManifest(msg.metadata,nativeLayers,msg.revision,{brushArchive});
   const native=new TextEncoder().encode(JSON.stringify(manifest));
