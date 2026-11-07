@@ -182,7 +182,7 @@ function syncMeta(){for(const [id,key] of [['meta-name','name'],['meta-author','
 function resetDoc(data){
  clearTimeout(previewSendTimer);previewSendTimer=0;if(sensorFrame)cancelAnimationFrame(sensorFrame);sensorFrame=0;lastPreviewFrame=0;presentationInterval=16;
  for(const {element,direct}of displayTiles.values()){if(!direct)element.width=element.height=1;element.remove()}displayTiles.clear();formalTiles.clear();displayImages.clear();
- rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
+ rasterCommands.length=0;presentationInitAt=performance.now();stage.dataset.presentationReady=rasterWorker?'initializing':'true';stage.setAttribute('aria-busy',String(!!rasterWorker));retainedScene.complete();heldFormal=null;navReady=false;navPreview.hidden=true;nav.clear();gesture=null;documentEpoch++;if(perf)perf.lastFormalSeq=0;doc={...data};layerTree=createLayerTree();addRasterLayer(layerTree,'レイヤー1');layerTree.layers[0].id='raster-1';layerTree.selectedId='raster-1';soloLayerId=null;history=new History();savedRev=-1;handle=null;active=null;interrupted=null;workerFault=null;rasterSeq=0;publishedSeq=0;displaySeq=0;minimumPublicationSeq=0;formalStates.clear();previewGeneration++;priorStrokes=[];recoveryStrokes=[];lastFormal={strokes:[],revision:0};
  $('export-recovery').hidden=true;
  stage.removeAttribute('data-raster-error');stage.removeAttribute('data-raster-stats');$('interrupted-stroke').hidden=true;
  removePreviews();repaint.clear();clearTemporary();
@@ -713,22 +713,34 @@ $('export-recovery').onclick=async()=>{
 
 const layerPanel=document.createElement('section');
 layerPanel.id='c03-layer-panel';
-layerPanel.innerHTML='<h3>レイヤー <small>C03 Alpha</small></h3><button id="c03-add-layer" type="button">＋ Raster</button><div id="c03-layer-list" role="listbox" aria-label="レイヤー"></div><label>不透明度 <input id="c03-layer-opacity" type="range" min="0" max="100" value="100"><output id="c03-layer-opacity-out">100%</output></label><small>高度合成・マスク・グループは未統合です。</small>';
+layerPanel.innerHTML='<h3>レイヤー <small>C03 Alpha</small></h3><div class="c03-actions"><button id="c03-add-layer" type="button">＋ Raster</button><button id="c03-solo" type="button" aria-pressed="false" title="一時的なSolo表示">Solo</button></div><label class="c03-search-row">検索 <input id="c03-layer-search" type="search" placeholder="名前"></label><div id="c03-layer-list" role="listbox" aria-label="レイヤー"></div><label>レイヤー名 <input id="c03-layer-name" type="text" maxlength="120"></label><label>色タグ <select id="c03-layer-tag"><option value="">なし</option><option value="red">赤</option><option value="orange">橙</option><option value="yellow">黄</option><option value="green">緑</option><option value="blue">青</option><option value="violet">紫</option></select></label><label>不透明度 <input id="c03-layer-opacity" type="range" min="0" max="100" value="100"><output id="c03-layer-opacity-out">100%</output></label><label>合成 <select id="c03-layer-blend"><option value="normal">通常</option><option value="multiply">乗算</option><option value="screen">スクリーン</option></select></label><div class="c03-lock-row"><label><input type="checkbox" id="c03-lock-position">位置ロック</label><label><input type="checkbox" id="c03-lock-pixels">画素ロック</label><label><input type="checkbox" id="c03-lock-all">全体ロック</label></div><small id="c03-layer-hint">グループ・マスク・特殊合成は未統合です。</small>';
 document.querySelector('.workspace-scroll').prepend(layerPanel);
+let soloLayerId=null;
 function renderLayerPanel(){
  const list=$('c03-layer-list');list.replaceChildren();
- for(const layer of [...layerTree.layers].reverse()){
+ const search=$('c03-layer-search').value.trim().toLocaleLowerCase();
+ const filtered=layerTree.layers.filter(layer=>layer.name.toLocaleLowerCase().includes(search));
+ for(const layer of [...filtered].reverse()){
   const row=document.createElement('div');row.className='c03-row'+(layer.id===layerTree.selectedId?' selected':'');
   const visible=document.createElement('button');visible.textContent=layer.visible?'◉':'○';visible.title='表示/非表示';
   visible.onclick=()=>{const before=structuredClone(layerTree);setLayerVisibility(layerTree,layer.id,!layer.visible);layerEdit(before,'表示切替')};
   const select=document.createElement('button');select.textContent=layer.name;select.title='描画レイヤー選択';
   select.onclick=()=>{selectLayer(layerTree,layer.id);renderLayerPanel()};
+  if(layer.tag){const swatch=document.createElement('i');swatch.className='c03-layer-tag';swatch.dataset.tag=layer.tag;swatch.title='色タグ '+layer.tag;row.append(swatch)}
   row.append(visible,select);list.append(row);
  }
  const selected=layerTree.layers.find(l=>l.id===layerTree.selectedId);
- $('c03-layer-opacity').disabled=!selected;
+ for(const id of ['c03-layer-opacity','c03-layer-name','c03-layer-tag','c03-layer-blend','c03-lock-position','c03-lock-pixels','c03-lock-all'])$(id).disabled=!selected;
+ $('c03-layer-name').value=selected?.name??'';
+ $('c03-layer-tag').value=selected?.tag??'';
+ $('c03-layer-blend').value=selected?.blendMode??'normal';
+ $('c03-lock-position').checked=Boolean(selected?.locks.position);
+ $('c03-lock-pixels').checked=Boolean(selected?.locks.pixels);
+ $('c03-lock-all').checked=Boolean(selected?.locks.all);
  $('c03-layer-opacity').value=Math.round((selected?.opacity??1)*100);
  $('c03-layer-opacity-out').textContent=$('c03-layer-opacity').value+'%';
+ $('c03-solo').setAttribute('aria-pressed',String(soloLayerId===selected?.id&&!!selected));
+ $('c03-layer-hint').textContent=search&&!filtered.some(l=>l.id===selected?.id)?'選択中のレイヤーは検索結果外です。検索解除で表示できます。':'グループ・マスク・特殊合成は未統合です。';
 }
 function publishLayerState(){
  if(!rasterWorker||workerFault)return;
@@ -760,6 +772,37 @@ $('c03-layer-opacity').addEventListener('change',()=>{
  if(!opacityOrigin)return;const before=opacityOrigin;opacityOrigin=null;
  if(JSON.stringify(before.layers)!==JSON.stringify(layerTree.layers))layerEdit(before,'不透明度');
 });
+$('c03-layer-search').addEventListener('input',renderLayerPanel);
+function editSelectedLayer(label,change){
+ const current=layerTree.layers.find(l=>l.id===layerTree.selectedId);
+ if(!current)return;
+ const before=structuredClone(layerTree);
+ change(current);
+ if(JSON.stringify(before.layers)!==JSON.stringify(layerTree.layers))layerEdit(before,label);
+ else renderLayerPanel();
+}
+$('c03-layer-name').addEventListener('change',e=>editSelectedLayer('レイヤー名',(layer)=>{
+ const name=String(e.target.value).trim();
+ if(name)layer.name=name;else notify('空のレイヤー名は使用できません');
+}));
+$('c03-layer-tag').addEventListener('change',e=>editSelectedLayer('色タグ',(layer)=>layer.tag=e.target.value));
+$('c03-layer-blend').addEventListener('change',e=>editSelectedLayer('合成モード',(layer)=>{
+ if(!['normal','multiply','screen'].includes(e.target.value))throw Error('未対応の合成モード');
+ layer.blendMode=e.target.value;
+}));
+for(const [id,field] of [['c03-lock-position','position'],['c03-lock-pixels','pixels'],['c03-lock-all','all']]){
+ $(id).addEventListener('change',e=>editSelectedLayer(field+' lock',(layer)=>layer.locks[field]=e.target.checked));
+}
+$('c03-solo').onclick=()=>{
+ const id=layerTree.selectedId;if(!id)return;
+ soloLayerId=soloLayerId===id?null:id;
+ const seq=++rasterSeq;
+ minimumPublicationSeq=seq;
+ formalStates.set(seq,{index:history.index,revision:history.revision,acceptedAt:performance.timeOrigin+performance.now()});
+ queueRaster({type:'solo',epoch:documentEpoch,seq,layerId:soloLayerId});
+ renderLayerPanel();dirty();
+};
+
 
 async function save(as=false){
  if(interrupted||workerFault){notify('描画の中断を解消してから保存してください');return}

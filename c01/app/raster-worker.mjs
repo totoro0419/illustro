@@ -114,8 +114,9 @@ async function execute(msg){
   priorArchive=msg.archive||[];recoveryArchive=msg.recovery||[];
   return;
  }
- if(msg.type==='layers'){
-  layers.setLayers(msg.layers);
+ if(msg.type==='layers'||msg.type==='solo'){
+  if(msg.type==='layers')layers.setLayers(msg.layers);
+  else layers.soloId=msg.layerId??null;
   for(let y=0;y<canvas.height;y+=tileSize)
    for(let x=0;x<canvas.width;x+=tileSize)
     dirty.set(Math.floor(y/tileSize)*Math.ceil(canvas.width/tileSize)+Math.floor(x/tileSize),msg.seq);

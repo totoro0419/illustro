@@ -34,6 +34,14 @@ try{
  assert.equal(await page.locator('#c03-layer-list .c03-row').count(),1,'Start with one raster layer');
  await page.locator('#c03-add-layer').click();
  assert.equal(await page.locator('#c03-layer-list .c03-row').count(),2,'Add a real new raster layer');
+ await page.locator('#c03-layer-name').fill('主線');
+ await page.locator('#c03-layer-name').dispatchEvent('change');
+ await page.locator('#c03-layer-tag').selectOption('blue');
+ assert.equal(await page.locator('#c03-layer-list .c03-row').first().locator('button').last().textContent(),'主線');
+ await page.locator('#c03-layer-search').fill('存在しない');
+ assert.equal(await page.locator('#c03-layer-list .c03-row').count(),0,'Filtered list must hide nonmatches');
+ await page.locator('#c03-layer-search').fill('');
+ assert.equal(await page.locator('#c03-layer-list .c03-row').count(),2);
  const coords=await page.locator('#stage').boundingBox();
  const x=coords.x+coords.width*.5,y=coords.y+coords.height*.5;
  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+55,y+17,{steps:8});await page.mouse.up();
@@ -58,6 +66,8 @@ try{
  assert.equal(archive.formatVersion,3);
  assert.equal(archive.layers.length,2);
  assert.equal(archive.layers[1].visible,true);
+ assert.equal(archive.layers[1].name,'主線');
+ assert.equal(archive.layers[1].tag,'blue');
  assert.ok(archive.layers[1].png.startsWith('data:image/png;base64,'));
  const pngPixels=await page.evaluate(async native=>{
   const decode=async png=>{

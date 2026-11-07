@@ -2,7 +2,7 @@
 export class RasterLayerStore {
  constructor(width,height){
   this.width=width;this.height=height;this.surfaces=new Map();
-  this.layers=[];
+  this.layers=[];this.soloId=null;
   this.setLayers([{id:'raster-1',type:'raster',name:'レイヤー1',lifetime:1,visible:true,opacity:1,blendMode:'normal',locks:{}}]);
  }
  getSurface(id,lifetime=1){
@@ -35,7 +35,7 @@ export class RasterLayerStore {
  renderTile(ctx,b){
   ctx.clearRect(b.x,b.y,b.w,b.h);
   for(const l of this.layers){
-   if(!l.visible||l.opacity===0)continue;
+   if((this.soloId?l.id!==this.soloId:!l.visible)||l.opacity===0)continue;
    ctx.save();ctx.globalAlpha=l.opacity;
    ctx.globalCompositeOperation=({'normal':'source-over','multiply':'multiply','screen':'screen'})[l.blendMode||'normal'];
    ctx.drawImage(this.getSurface(l.id,l.lifetime).canvas,b.x,b.y,b.w,b.h,b.x,b.y,b.w,b.h);

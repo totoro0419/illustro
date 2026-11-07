@@ -16,3 +16,8 @@ This commit adds:
 - Worker: composite dirty tiles with Canvas2D Normal/Multiply/Screen; Native v3 save/read supports multiple Raster layers.
 - C03 browser E2E added to Pages CI to require drawing on the new layer, hide/show, Undo, v3 separated pixel payload, reload.
 - Current production compositing is Canvas2D and not verified against numeric goldens; other blends remain disabled. Snapshot, branching, mask, offline edits and auto-recovery are not product-integrated.
+
+### 2026-11-07 metadata and Solo pass
+- UI metadata actions: rename, color tag, name filter, 3 lock flags, Normal/Multiply/Screen selection; document Undo stores metadata changes; Native v3 preserves properties.
+- Solo uses a separate worker presentation override, not normal visibility, not document history, and never writes the temporary state to Native.
+- Full all-mode blend and grouped/masked compositing, advanced filtering, position edits and visual lock refusal remain incomplete.
