@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {strict as assert} from 'node:assert';
 const files={'/':'index.html','/index.html':'index.html','/input-test.html':'input-test.html','/app/main.mjs':'app/main.mjs','/app/color-pickers.mjs':'app/color-pickers.mjs','/app/input-diagnostics.mjs':'app/input-diagnostics.mjs','/app/model.mjs':'app/model.mjs','/app/style.css':'app/style.css','/app/aurora-frost.css':'app/aurora-frost.css','/app/ui-icons.mjs':'app/ui-icons.mjs','/app/raster-worker.mjs':'app/raster-worker.mjs'};
-for(const name of ['brush-engine.mjs','brush-raster.mjs','brush-ui.mjs','stroke-input.mjs','c02.css','preview-worker.mjs','preview-stroke.mjs','preview-ink.mjs','preview-composite.mjs','presentation.mjs','retained-scene.mjs','layer-tree.mjs','layered-manifest.mjs','raster-layers.mjs','blend-kernels.mjs','blend-if.mjs'])files['/app/'+name]='app/'+name;
+for(const name of ['brush-engine.mjs','brush-raster.mjs','brush-ui.mjs','stroke-input.mjs','c02.css','preview-worker.mjs','preview-stroke.mjs','preview-ink.mjs','preview-composite.mjs','presentation.mjs','retained-scene.mjs','layer-tree.mjs','layered-manifest.mjs','raster-layers.mjs','blend-kernels.mjs','blend-if.mjs','recovery-store.mjs'])files['/app/'+name]='app/'+name;
 const server=createServer(async(req,res)=>{
   try {const path=files[new URL(req.url,'http://localhost').pathname];if(!path){res.writeHead(404).end();return}const content=await readFile(path);res.writeHead(200,{'content-type':path.endsWith('.mjs')?'text/javascript':path.endsWith('.css')?'text/css':'text/html'});res.end(content)}
   catch(err){res.writeHead(500).end(String(err))}
