@@ -40,8 +40,8 @@ describe('M10 protected quality baseline and new controls',()=>{
   for(const s of samples)b.accept(s);b.finish();
   const commands=b.record().commands,thickness=commands.map(c=>c[2]);
   expect(commands.length).toBeGreaterThan(samples.length);
-  expect(Math.max(...thickness)).toBeGreaterThan(thickness[0]!);
-  expect(Math.max(...thickness)).toBeGreaterThan(thickness.at(-1)!);
-  expect(thickness.every(n=>Number.isFinite(n)&&n>0)).toBe(true);
+  expect(Math.max(...thickness)).toBeGreaterThan(thickness[0]??0);
+  expect(Math.max(...thickness)).toBeGreaterThan(thickness.at(-1)??0);
+  expect(thickness.every(n=>Number.isFinite(n)&&(n??0)>0)).toBe(true);
  });
 });
