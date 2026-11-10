@@ -59,10 +59,13 @@ try{
     measures:performance.getEntriesByType('measure').filter(e=>e.name.startsWith('illustro-canvas:')).map(e=>({stage:e.name.slice('illustro-canvas:'.length),ms:Math.round(e.duration*10)/10})),
     backend:document.getElementById('canvas')?.dataset.backend??'',
     gpuWarmupMs:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationWallMs??null,
+    gpuPreparationPaths:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationPaths??null,
     hasDrawingSurface:!!document.getElementById('canvas')?.getBoundingClientRect().width,
     errorText:document.getElementById('status')?.textContent??''
    }));
    assert.ok(data.hasDrawingSurface,'canvas must be visible and editable');
+   assert.equal(data.gpuPreparationPaths,0,'no startup trial strokes are permitted');
+   assert.equal(data.gpuWarmupMs,0,'trial drawing phase must be absent');
    if(prewarmed){
     assert.ok(data.measures.some(m=>m.stage==='home-gpu-prewarm'),'the GPU should have initialized on Home');
     assert.ok(!data.measures.some(m=>m.stage==='gpu-and-worker-init'),'Create must not initialize the GPU a second time');
