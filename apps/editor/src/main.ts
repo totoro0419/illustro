@@ -90,13 +90,16 @@ function reportBlankWarmup(state:string,detail=''){
   if(perfMode)(window as unknown as {__illustroWarmup:unknown}).__illustroWarmup={state,detail,at:performance.now()};
 }
 function beginBlankWarmup(){
-  if(qaMode||documentReady||surface||initialBlankWarmup||byId<HTMLButtonElement>('new').disabled){
+  if(qaMode||documentReady||initialBlankWarmup||byId<HTMLButtonElement>('new').disabled){
     reportBlankWarmup('skipped',JSON.stringify({qaMode,documentReady,hasSurface:!!surface,pending:!!initialBlankWarmup,disabled:byId<HTMLButtonElement>('new').disabled}));
     return;
   }
   reportBlankWarmup('started');
-  const draft=new EditorController(); // Exactly the default 512×384 transparent work.
-  const drawing=makeSurface(null,draft);
+  // main.ts already creates a dormant BrushSurface for the initial document.
+  // Reusing it avoids creating two GPU owners for the same DOM canvas.
+  const draft=controller;
+  const drawing=surface??makeSurface(null,draft);
+  if(!surface)surface=drawing;
   const entry:BlankWarmup={controller:draft,drawing,cancelled:false,completed:false,started:performance.now(),ready:Promise.resolve(false)};
   initialBlankWarmup=entry;
   entry.ready=drawing.initialize().then(()=>{
@@ -123,10 +126,11 @@ function discardBlankWarmup(){
   // A host still initializing is disposed as soon as worker initialization
   // returns, so an interrupted Home warmup cannot leak pointer listeners.
   entry.drawing.destroy();
+  if(surface===entry.drawing)surface=null;
 }
 function matchedBlankWarmup(width:number,height:number,name:string,background:'transparent'|'white'){
   const ready=initialBlankWarmup;
-  return !qaMode&&!documentReady&&!surface&&ready&&!ready.cancelled&&
+  return !qaMode&&!documentReady&&ready&&!ready.cancelled&&surface===ready.drawing&&
     width===512&&height===384&&name.trim()==='新しい作品'&&background==='transparent'?ready:null;
 }
 let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
