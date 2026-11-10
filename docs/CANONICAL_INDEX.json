@@ -19,6 +19,14 @@
   },
   "entries": [
     {
+      "path": ".github/workflows/color-interaction.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": ".github/workflows/home-ui-skeleton.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": ".github/workflows/m07-pc-tablet-ui-shell.yml",
       "status": "EXPERIMENTAL"
     },
@@ -28,6 +36,14 @@
     },
     {
       "path": ".github/workflows/m09-color-basics.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": ".github/workflows/perf-thin-stroke4000.yml",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": ".github/workflows/perf-undo.yml",
       "status": "EXPERIMENTAL"
     },
     {
@@ -41,6 +57,14 @@
     {
       "path": "apps/editor/public/brand/illustro-logo.png",
       "status": "CANONICAL"
+    },
+    {
+      "path": "apps/editor/src/brushPresets.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/brushPresets.ts",
+      "status": "EXPERIMENTAL"
     },
     {
       "path": "apps/editor/src/brushSurface.ts",
@@ -75,11 +99,23 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "apps/editor/src/color/orbitGeometry.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "apps/editor/src/color/panel.ts",
       "status": "EXPERIMENTAL"
     },
     {
       "path": "apps/editor/src/controller.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/historyNavigation.test.ts",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/historyNavigation.ts",
       "status": "EXPERIMENTAL"
     },
     {
@@ -108,6 +144,14 @@
     },
     {
       "path": "apps/editor/src/ui/aurora.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/home.css",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "apps/editor/src/ui/homeShell.ts",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1031,6 +1075,14 @@
       "status": "OBSOLETE"
     },
     {
+      "path": "docs/investigations/input-loss-static-2026-10-26/REPORT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/investigations/input-loss-static-2026-10-26/SOURCE_INVENTORY.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/LEGACY_REFERENCE_POLICY.md",
       "status": "OBSOLETE"
     },
@@ -1095,12 +1147,37 @@
       "status": "OBSOLETE"
     },
     {
+      "path": "docs/research/CANVAS_FADE_LAYER_2026-10-17.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/CANVAS_PERFORMANCE_2026-10-14.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/COLOR_INTERACTION_2026-10-14.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/research/COMPETITOR_MATRIX.md",
       "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/research/COMPETITOR_PASS2.md",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/CONTINUOUS_UNDO_2026-10-15.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/FORMAL_STROKE_RESOURCES_2026-10-16.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/INSTANT_CANVAS_2026-10-16.md",
+      "status": "EXPERIMENTAL",
+      "note": "Screen-area transient feedback, immutable A/B/C comparison and exact strict regression; physical user acceptance remains unverified."
     },
     {
       "path": "docs/research/M01_STROKE_COMMIT_COMPETITOR_RESEARCH.md",
@@ -1147,6 +1224,67 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "docs/research/M10_BRUSH_QUALITY_RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_BRUSH_SETTINGS_DESIGN_2026-10-22.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_NAVIGATION_2026-10-19.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_PRESENTATION_REBUILD_2026-10-21.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/M10_PREVIEW_2026-10-19.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/MOBILE_CANVAS_4000_2026-10-15.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/PENDING_STROKE_UNDO_2026-10-18.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/STROKE_HANDOFF_2026-10-14.md",
+      "status": "EXPERIMENTAL",
+      "note": "Measured stroke handoff design and isolated review evidence; no acceptance promotion."
+    },
+    {
+      "path": "docs/research/STROKE_HANDOFF_LATENCY_2026-10-17.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/STROKE_OVERLAY_2026-10-16.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/THIN_STROKE_4000_2026-10-15.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/TILE_HISTORY_2026-10-18.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/research/TILE_HISTORY_RECHECK_2026-10-18.json",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/revival/M10_BRUSH_CATALOG_RESTART_2026-11-10.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/revival/OLD_NEW_INTEGRATION_PLAN_2026-11-10.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
       "status": "OBSOLETE"
     },
@@ -1160,6 +1298,10 @@
     },
     {
       "path": "docs/ui/COMPACT_UI_SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/ui/HOME_MY_WORKS_IMPLEMENTATION_BRIEF_2026-10-12.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1391,6 +1533,10 @@
       "status": "ACCEPTED PROTOTYPE"
     },
     {
+      "path": "packages/brush-rt/src/preview-policy.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "packages/brush-rt/src/renderer.mjs",
       "status": "ACCEPTED PROTOTYPE"
     },
@@ -1403,6 +1549,14 @@
       "status": "ACCEPTED PROTOTYPE"
     },
     {
+      "path": "packages/brush-rt/test/cancellation.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/document-preview.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "packages/brush-rt/test/foundation-contract.test.mjs",
       "status": "ACCEPTED PROTOTYPE"
     },
@@ -1413,6 +1567,18 @@
     {
       "path": "packages/brush-rt/test/model.test.mjs",
       "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "packages/brush-rt/test/pending-solid-pruning.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/preview-policy.test.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "packages/brush-rt/test/viewport-cache.test.mjs",
+      "status": "EXPERIMENTAL"
     },
     {
       "path": "packages/brush/package.json",
@@ -1787,47 +1953,7 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "scripts/editor-m07-smoke.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/ui/HOME_MY_WORKS_IMPLEMENTATION_BRIEF_2026-10-12.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": ".github/workflows/home-ui-skeleton.yml",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/ui/home.css",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/ui/homeShell.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/editor-home-smoke.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/CANVAS_PERFORMANCE_2026-10-14.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "packages/brush-rt/test/cancellation.test.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/editor-gesture-cancel-smoke.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/stroke-cancellation-quality.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/instrument-gesture-baseline.mjs",
+      "path": "scripts/check-color-interaction-review.mjs",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1835,112 +1961,19 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "apps/editor/src/color/orbitGeometry.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "scripts/editor-color-hit-smoke.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "scripts/check-color-interaction-review.mjs",
+      "path": "scripts/editor-gesture-cancel-smoke.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": ".github/workflows/color-interaction.yml",
+      "path": "scripts/editor-home-smoke.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/COLOR_INTERACTION_2026-10-14.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/STROKE_HANDOFF_2026-10-14.md",
-      "status": "EXPERIMENTAL",
-      "note": "Measured stroke handoff design and isolated review evidence; no acceptance promotion."
-    },
-    {
-      "path": "docs/research/CONTINUOUS_UNDO_2026-10-15.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": ".github/workflows/perf-undo.yml",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/historyNavigation.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/historyNavigation.test.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/undo-navigation-benchmark.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/undo-navigation-quality.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/undo-navigation-report.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/MOBILE_CANVAS_4000_2026-10-15.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/mobile-canvas-benchmark.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/mobile-composition-quality.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/mobile-canvas-report.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/mobile-input-smoke.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/mobile-solid-benchmark.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "packages/brush-rt/test/pending-solid-pruning.test.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": ".github/workflows/perf-thin-stroke4000.yml",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/THIN_STROKE_4000_2026-10-15.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "packages/brush-rt/test/viewport-cache.test.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/thin-stroke-benchmark.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/thin-stroke-report.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/viewport-cache-quality.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "scripts/preview-pressure-quality.mjs",
+      "path": "scripts/editor-m07-smoke.mjs",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1948,60 +1981,19 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/FORMAL_STROKE_RESOURCES_2026-10-16.md",
+      "path": "scripts/instrument-gesture-baseline.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/INSTANT_CANVAS_2026-10-16.md",
-      "status": "EXPERIMENTAL",
-      "note": "Screen-area transient feedback, immutable A/B/C comparison and exact strict regression; physical user acceptance remains unverified."
-    },
-    {
-      "path": "docs/research/STROKE_OVERLAY_2026-10-16.md",
+      "path": "scripts/m10-navigation-review.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/STROKE_HANDOFF_LATENCY_2026-10-17.md",
+      "path": "scripts/m10-navigation-validation.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/CANVAS_FADE_LAYER_2026-10-17.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/TILE_HISTORY_2026-10-18.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/TILE_HISTORY_RECHECK_2026-10-18.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/PENDING_STROKE_UNDO_2026-10-18.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/brushPresets.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "apps/editor/src/brushPresets.test.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/research/M10_BRUSH_QUALITY_RESEARCH.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "packages/brush-rt/src/preview-policy.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "packages/brush-rt/test/document-preview.test.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "packages/brush-rt/test/preview-policy.test.mjs",
+      "path": "scripts/m10-preview-availability.mjs",
       "status": "EXPERIMENTAL"
     },
     {
@@ -2017,31 +2009,55 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/M10_PREVIEW_2026-10-19.md",
+      "path": "scripts/mobile-canvas-benchmark.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "scripts/m10-preview-availability.mjs",
+      "path": "scripts/mobile-canvas-report.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "scripts/m10-navigation-review.mjs",
+      "path": "scripts/mobile-composition-quality.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "scripts/m10-navigation-validation.mjs",
+      "path": "scripts/mobile-input-smoke.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/M10_NAVIGATION_2026-10-19.md",
+      "path": "scripts/mobile-solid-benchmark.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/M10_PRESENTATION_REBUILD_2026-10-21.md",
+      "path": "scripts/preview-pressure-quality.mjs",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/research/M10_BRUSH_SETTINGS_DESIGN_2026-10-22.md",
+      "path": "scripts/stroke-cancellation-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/thin-stroke-benchmark.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/thin-stroke-report.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/undo-navigation-benchmark.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/undo-navigation-quality.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/undo-navigation-report.mjs",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "scripts/viewport-cache-quality.mjs",
       "status": "EXPERIMENTAL"
     }
   ]
