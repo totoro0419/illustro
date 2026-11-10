@@ -38,7 +38,10 @@ try{
    // unrelated warmup context or an early fake "ready" label.
    let prewarmed=false;
    if(item.width===512&&item.height===384&&item.background==='transparent'){
-    await page.waitForFunction(()=>performance.getEntriesByName('illustro-canvas:home-gpu-prewarm').length>0,null,{timeout:120000});
+    await page.waitForFunction(()=>['ready','failed','skipped'].includes(window.__illustroWarmup?.state),null,{timeout:45000});
+    const progress=await page.evaluate(()=>window.__illustroWarmup);
+    assert.equal(progress.state,'ready','Home prewarm status: '+JSON.stringify(progress));
+    assert.ok(await page.evaluate(()=>performance.getEntriesByName('illustro-canvas:home-gpu-prewarm').length>0));
     prewarmed=true;
    }
    await page.locator('#ihStart').click();

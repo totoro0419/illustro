@@ -86,8 +86,15 @@ type BlankWarmup={
 let initialBlankWarmup:BlankWarmup|null=null;
 // Prepares the ACTUAL drawing host in the hidden editor, not an unrelated
 // temporary GPU context whose shaders would need to be compiled a second time.
+function reportBlankWarmup(state:string,detail=''){
+  if(perfMode)(window as unknown as {__illustroWarmup:unknown}).__illustroWarmup={state,detail,at:performance.now()};
+}
 function beginBlankWarmup(){
-  if(qaMode||documentReady||surface||initialBlankWarmup||byId<HTMLButtonElement>('new').disabled)return;
+  if(qaMode||documentReady||surface||initialBlankWarmup||byId<HTMLButtonElement>('new').disabled){
+    reportBlankWarmup('skipped',JSON.stringify({qaMode,documentReady,hasSurface:!!surface,pending:!!initialBlankWarmup,disabled:byId<HTMLButtonElement>('new').disabled}));
+    return;
+  }
+  reportBlankWarmup('started');
   const draft=new EditorController(); // Exactly the default 512×384 transparent work.
   const drawing=makeSurface(null,draft);
   const entry:BlankWarmup={controller:draft,drawing,cancelled:false,completed:false,started:performance.now(),ready:Promise.resolve(false)};
@@ -96,9 +103,13 @@ function beginBlankWarmup(){
     if(entry.cancelled){drawing.destroy();return false;}
     entry.completed=true;
     measureCanvasStage('home-gpu-prewarm',entry.started);
+    reportBlankWarmup('ready');
     return true;
   }).catch(error=>{
-    if(!entry.cancelled)console.warn('Optional canvas prewarm unavailable:',error);
+    if(!entry.cancelled){
+      reportBlankWarmup('failed',error instanceof Error?error.stack??error.message:String(error));
+      console.warn('Optional canvas prewarm unavailable:',error);
+    }
     drawing.destroy();
     if(initialBlankWarmup===entry)initialBlankWarmup=null;
     return false;
