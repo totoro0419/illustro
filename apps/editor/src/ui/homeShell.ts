@@ -7,6 +7,7 @@ export type RecoverySummary = Readonly<{
 }>;
 export type HomeActions = Readonly<{
   createDocument: (width:number,height:number,name:string,background:'transparent'|'white')=>Promise<boolean>;
+  onBlankDraftChange?: (width:number,height:number,name:string,background:'transparent'|'white')=>void;
   listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
   openWork:(id:string)=>Promise<boolean>;
   readThumbnail:(id:string,revisionId:string)=>Promise<Blob|null>;
@@ -171,7 +172,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       if(location.hash!==hash)history.pushState({illustroScreen:next},'',hash);
     }
   };
-  const showNew=(mode:'blank'|'file'='blank')=>{navigate('home');setCreationMode(mode);notify('');dialog.showModal();};
+  const showNew=(mode:'blank'|'file'='blank')=>{navigate('home');setCreationMode(mode);notify('');dialog.showModal();if(mode==='blank')prefetchDraft();};
   const setCreationMode=(mode:'blank'|'file')=>{
     const blank=mode==='blank';el('ihBlankForm').hidden=!blank;el('ihFileOptions').hidden=blank;
     el('ihChoiceBlank').setAttribute('aria-pressed',String(blank));el('ihChoiceFile').setAttribute('aria-pressed',String(!blank));
@@ -276,16 +277,31 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   setButton('ihNewClose',()=>dialog.close());setButton('ihNewCancel',()=>dialog.close());
   setButton('ihChoiceBlank',()=>setCreationMode('blank'));setButton('ihChoiceFile',()=>setCreationMode('file'));
   setButton('ihSelectFile',()=>{dialog.close();actions.openFile();});
+  let draftTimer:ReturnType<typeof setTimeout>|null=null;
+  const prefetchDraft=()=>{
+    if(draftTimer!==null){clearTimeout(draftTimer);draftTimer=null;}
+    const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
+    if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)return;
+    actions.onBlankDraftChange?.(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white');
+  };
+  const schedulePrefetch=()=>{
+    if(draftTimer!==null)clearTimeout(draftTimer);
+    draftTimer=setTimeout(prefetchDraft,180);
+  };
   for(const preset of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]'))preset.addEventListener('click',()=>{
     const [width,height]=preset.dataset.ihPreset!.split('x').map(Number);
     el<HTMLInputElement>('ihNewWidth').value=String(width);el<HTMLInputElement>('ihNewHeight').value=String(height);
     for(const item of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]'))item.setAttribute('aria-pressed',String(item===preset));
+    prefetchDraft();
   });
   for(const input of [el<HTMLInputElement>('ihNewWidth'),el<HTMLInputElement>('ihNewHeight')])input.addEventListener('input',()=>{
     for(const preset of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]')){
       const sizes=preset.dataset.ihPreset!.split('x');preset.setAttribute('aria-pressed',String(sizes[0]===el<HTMLInputElement>('ihNewWidth').value&&sizes[1]===el<HTMLInputElement>('ihNewHeight').value));
     }
+    schedulePrefetch();
   });
+  el<HTMLInputElement>('ihNewName').addEventListener('input',schedulePrefetch);
+  el<HTMLSelectElement>('ihNewBackground').addEventListener('change',schedulePrefetch);
   el<HTMLFormElement>('ihBlankForm').addEventListener('submit',event=>{event.preventDefault();void(async()=>{
     const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
     if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){el('ihNewError').textContent='幅と高さを1〜8192pxで指定してください。';return;}

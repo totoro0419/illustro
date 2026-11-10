@@ -89,24 +89,29 @@ let initialBlankWarmup:BlankWarmup|null=null;
 function reportBlankWarmup(state:string,detail=''){
   if(perfMode)(window as unknown as {__illustroWarmup:unknown}).__illustroWarmup={state,detail,at:performance.now()};
 }
-function beginBlankWarmup(){
-  if(qaMode||documentReady||initialBlankWarmup||byId<HTMLButtonElement>('new').disabled){
-    reportBlankWarmup('skipped',JSON.stringify({qaMode,documentReady,hasSurface:!!surface,pending:!!initialBlankWarmup,disabled:byId<HTMLButtonElement>('new').disabled}));
-    return;
-  }
-  reportBlankWarmup('started');
-  // main.ts already creates a dormant BrushSurface for the initial document.
-  // Reusing it avoids creating two GPU owners for the same DOM canvas.
-  const draft=controller;
-  const drawing=surface??makeSurface(null,draft);
-  if(!surface)surface=drawing;
+function beginBlankWarmup(width=512,height=384,name='新しい作品',background:'transparent'|'white'='transparent'){
+  const title=name.trim()||'新しい作品';
+  if(qaMode||documentReady||byId<HTMLButtonElement>('new').disabled||background!=='transparent'||
+      !Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)return;
+  const active=initialBlankWarmup,root=active?.controller.document.root;
+  if(active&&!active.cancelled&&root?.width===width&&root.height===height&&root.name===title)return;
+  // Switching the intended blank size only replaces Home's unused renderer.
+  // An existing drawing is never in this path (documentReady is false).
+  if(active)discardBlankWarmup();
+  const idle=surface,initial=controller.document.root;
+  const reuseIdle=!!idle&&initial.width===width&&initial.height===height&&initial.name===title;
+  if(!reuseIdle)idle?.destroy();
+  const draft=reuseIdle?controller:EditorController.restored(new CoreDocument({width,height,name:title}));
+  const drawing=reuseIdle?idle!:makeSurface(null,draft);
+  surface=drawing;
+  reportBlankWarmup('started',width+'x'+height);
   const entry:BlankWarmup={controller:draft,drawing,cancelled:false,completed:false,started:performance.now(),ready:Promise.resolve(false)};
   initialBlankWarmup=entry;
   entry.ready=drawing.initialize().then(()=>{
     if(entry.cancelled){drawing.destroy();return false;}
     entry.completed=true;
     measureCanvasStage('home-gpu-prewarm',entry.started);
-    reportBlankWarmup('ready');
+    reportBlankWarmup('ready',width+'x'+height);
     return true;
   }).catch(error=>{
     if(!entry.cancelled){
@@ -115,6 +120,7 @@ function beginBlankWarmup(){
     }
     drawing.destroy();
     if(initialBlankWarmup===entry)initialBlankWarmup=null;
+    if(surface===drawing)surface=null;
     return false;
   });
 }
@@ -130,8 +136,9 @@ function discardBlankWarmup(){
 }
 function matchedBlankWarmup(width:number,height:number,name:string,background:'transparent'|'white'){
   const ready=initialBlankWarmup;
+  const root=ready?.controller.document.root;
   return !qaMode&&!documentReady&&ready&&!ready.cancelled&&surface===ready.drawing&&
-    width===512&&height===384&&name.trim()==='新しい作品'&&background==='transparent'?ready:null;
+    root?.width===width&&root.height===height&&root.name===(name.trim()||'新しい作品')&&background==='transparent'?ready:null;
 }
 let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
 let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thumbnailRepairSkipped=new Set<string>();
@@ -439,7 +446,9 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   measureCanvasStage('history-barrier',barrierStarted);
   discardBlankWarmup();
   surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
-  const firstEmptyCanvas=opened.generationId==='new'&&!hasInitializedEditorGpu&&!opened.projectionCache&&opened.document.operationsTo().length===0;
+  // Each activation below creates a fresh GPU host. Even the second or third
+  // new empty work has no pixels to restore. Do not replay a nonexistent image.
+  const firstEmptyCanvas=opened.generationId==='new'&&!opened.projectionCache&&opened.document.operationsTo().length===0;
   if(opened.generationId==='new'){
     persistence.clearFileDestination();
     const started=performance.now();
@@ -937,6 +946,7 @@ if(!qaMode){
   document.body.append(byId<HTMLInputElement>('openFile'));
   homeUi=installHomeShell(app,{
     createDocument,
+    onBlankDraftChange:(w,h,title,background)=>beginBlankWarmup(w,h,title,background),
     onEditorVisible:()=>surface?.refreshVisibleViewport(),
     openFile:()=>byId<HTMLInputElement>('openFile').click(),
     resume:async(documentId,writerEpochId)=>{
@@ -970,7 +980,7 @@ if(!qaMode){
   });
   byId<HTMLButtonElement>('home').onclick=()=>{void homeUi?.showHome();};
   // Give the Home UI a frame to appear before starting GPU work in workers.
-  window.setTimeout(beginBlankWarmup,300);
+  window.setTimeout(()=>{if(!initialBlankWarmup)beginBlankWarmup();},300);
 }
 void refreshRecoveryCandidates();if(!qaMode)void refreshWorks();
 if('serviceWorker' in navigator){const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});}

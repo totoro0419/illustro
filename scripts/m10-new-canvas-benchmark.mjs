@@ -53,6 +53,10 @@ try{
     assert.equal(await page.locator('#ihNewWidth').inputValue(),'4000','the preset must apply the width');
     assert.equal(await page.locator('#ihNewHeight').inputValue(),'4000','the preset must apply the height');
     assert.equal(await option.getAttribute('aria-pressed'),'true','the preset must indicate selection');
+    // Verify the real 4000px drawing host is prepared while the dialog is open.
+    await page.waitForFunction(()=>window.__illustroWarmup?.state==='ready'&&window.__illustroWarmup?.detail==='4000x4000',
+      null,{timeout:60000});
+    prewarmed=true;
    }
    await page.locator('#ihNewWidth').fill(String(item.width));
    await page.locator('#ihNewHeight').fill(String(item.height));
@@ -101,7 +105,28 @@ try{
    assert.deepEqual(pageErrors,[],'no browser exceptions');
    if(prewarmed)assert.ok(await page.evaluate(()=>performance.getEntriesByName('illustro-canvas:reused-home-gpu').length>0),
      'a prepared Home drawing host must be reused by the first new document');
-   results.push({...item,wallClockMs,...data,prewarmed,firstStrokeCommitted:true});
+   // A second pristine work must not replay pixels from the previous inked work.
+   // Its display worker is new, so a restore/clear round trip is unnecessary.
+   if(item.width===4000){
+    const priorRestores=await page.evaluate(()=>performance.getEntriesByName('illustro-canvas:projection-restore').length);
+    await page.locator('#home').click();
+    await page.locator('#ihStart').click();
+    await page.locator('#ihNewWidth').fill('1024');
+    await page.locator('#ihNewHeight').fill('768');
+    await page.locator('#ihNewCreate').click();
+    await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('描画できます')&&
+      !document.getElementById('app')?.inert&&window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width===1024,
+      null,{timeout:120000});
+    assert.equal(await page.evaluate(()=>performance.getEntriesByName('illustro-canvas:projection-restore').length),
+       priorRestores,'later pristine documents must not replay nonexistent canvas pixels');
+    assert.equal(await page.evaluate(()=>window.__illustroPerformance.probe().controller.committedStrokeCount),0,
+       'new work must not inherit prior ink');
+    const rect2=await page.locator('#canvas').boundingBox();
+    await page.mouse.move(rect2.x+rect2.width*.4,rect2.y+rect2.height*.4);
+    await page.mouse.down();await page.mouse.move(rect2.x+rect2.width*.6,rect2.y+rect2.height*.6,{steps:10});await page.mouse.up();
+    await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1',null,{timeout:40000});
+   }
+   results.push({...item,wallClockMs,...data,prewarmed,firstStrokeCommitted:true,secondBlankVerified:item.width===4000});
    console.log('M10_FIRST_CANVAS',JSON.stringify(results.at(-1)));
   }finally{await context.close();}
  }
