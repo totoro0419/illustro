@@ -9,7 +9,10 @@ const foundationGroups:Readonly<Record<string,BrushCatalogGroup>>={
  'foundation-pencil':'sketch',
  'foundation-marker':'paint',
  'foundation-hard-eraser':'eraser',
- 'foundation-soft-eraser':'eraser'
+ 'foundation-soft-eraser':'eraser',
+ 'illustro-fine-liner-v1':'ink',
+ 'illustro-soft-pencil-v1':'sketch',
+ 'illustro-opaque-marker-v1':'paint'
 };
 export function brushCatalogGroup(preset:FoundationPreset,isUser:(id:string)=>boolean):BrushCatalogGroup{
  if(isUser(preset.id))return 'user';

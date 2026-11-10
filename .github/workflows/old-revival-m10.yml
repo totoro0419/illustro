@@ -11,7 +11,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +33,24 @@ jobs:
       - name: Build testable old editor
         env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
         run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Chromium software-GPU checks for brush quality and editor
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/illustro-m10-browser/node_modules/playwright
+          M10_EDITOR_EVIDENCE: /tmp/illustro-m10-quality/editor.json
+          M10_EVIDENCE: /tmp/illustro-m10-quality/brush.json
+          TAIL_EVIDENCE_DIRECTORY: /tmp/illustro-m10-quality/tails
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm install --prefix /tmp/illustro-m10-browser playwright@1.56.1 --no-audit --no-fund
+          /tmp/illustro-m10-browser/node_modules/.bin/playwright install --with-deps chromium
+          node scripts/m10-brush-editor-review.mjs
+          node scripts/m10-brush-review.mjs
+          node scripts/preview-tail-quality.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: illustro-old-m10-quality-evidence
+          path: /tmp/illustro-m10-quality/
       - uses: actions/upload-artifact@v4
         if: success()
         with:

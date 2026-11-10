@@ -15,6 +15,8 @@ import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {BrushPresetLibrary} from './brushPresets';
+import {additionalBrushes} from './brushStarterPresets';
+import {installBrushDynamicsEditor} from './brushDynamicsEditor';
 import {filterBrushCatalog,type BrushCatalogGroup} from './brushCatalog';
 import {installBrushAdvancedEditor} from './brushAdvancedEditor';
 import {sameEditableBrush} from './brushEditorModel';
@@ -49,6 +51,7 @@ const brushPresets=new BrushPresetLibrary();
 let builtInBrushes:FoundationPreset[]=[];
 const brushDrafts=new Map<string,FoundationPreset>();
 let advancedBrushEditor:ReturnType<typeof installBrushAdvancedEditor>|null=null;
+let dynamicsEditor:ReturnType<typeof installBrushDynamicsEditor>|null=null;
 let eyedropperOriginal=foreground.current;
 let historyNavigation:HistoryNavigation|undefined;
 const admittedHistoryChanges:EditorHistoryChange[]=[];
@@ -234,6 +237,7 @@ function syncPreset(){
  byId('brushModifiedStatus').textContent=dirty?'変更あり・未保存':'保存済み';
  byId<HTMLButtonElement>('brushReset').disabled=!dirty;
  advancedBrushEditor?.sync(p);
+ dynamicsEditor?.sync(p);
  byId<HTMLButtonElement>('brushRename').disabled=!user;
  byId<HTMLButtonElement>('brushDelete').disabled=!user;
  updateQa();
@@ -333,7 +337,8 @@ byId('geometryApply').onclick=()=>{void applyGeometry();};
 async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache']){
   if(!surface)throw new Error('描画面がありません。');
   await surface.initialize();
-  builtInBrushes=surface.brushes.map(p=>structuredClone(p));
+  const acceptedBrushes=surface.brushes.map(p=>structuredClone(p));
+  builtInBrushes=[...acceptedBrushes,...additionalBrushes(acceptedBrushes)];
   surface.setBrushes(brushPresets.all(builtInBrushes));
   refreshBrushOptions();
   if(brushPresets.loadError)byId('brushLibraryStatus').textContent='保存済みブラシを読み取れませんでした: '+brushPresets.loadError;
@@ -529,11 +534,13 @@ for(const [id,key] of [['brushAzimuth','azimuth'],['brushTwist','twist']] as con
   if(!applyBrushChange(p=>{p.tip[key]=(event.target as HTMLInputElement).checked;}))syncPreset();
  });
 }
-advancedBrushEditor=installBrushAdvancedEditor({
+const brushHooks={
  getPreset:()=>surface?.preset??null,
  edit:applyBrushChange,
  message:brushMessage
-});
+};
+advancedBrushEditor=installBrushAdvancedEditor(brushHooks);
+dynamicsEditor=installBrushDynamicsEditor(brushHooks);
 byId<HTMLButtonElement>('brushReset').onclick=()=>{
  const current=surface?.preset;if(!current||surface?.inputActive)return;
  brushDrafts.delete(current.id);

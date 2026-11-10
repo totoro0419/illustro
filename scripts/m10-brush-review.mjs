@@ -28,7 +28,9 @@ try {
   await page.goto(url+'?qa=1&backend='+backend,{waitUntil:'domcontentloaded'});
   await page.locator('#new').click();
   await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
-  assert.equal(await page.locator('#brush option').count(),7,'standard brush catalog');
+  const initialIds=await page.locator('#brush option').evaluateAll(options=>options.map(option=>option.value));
+  assert.deepEqual(initialIds.slice(0,7),['foundation-g-pen','foundation-round-pen','foundation-technical','foundation-marker','foundation-pencil','foundation-hard-eraser','foundation-soft-eraser'],'accepted Foundation brushes remain unchanged');
+  assert.ok(initialIds.length>=10,'M10 starter brushes are available');
   await page.locator('#brushSearch').fill('鉛筆');
   assert.ok(await page.locator('#brush option').count()<=2,'filtered option list');
   await page.locator('#brushSearch').fill('');

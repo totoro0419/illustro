@@ -31,3 +31,12 @@
 .brush-curve-coordinates input{width:100%;min-width:0;padding:5px;border:1px solid #cbd7e6;border-radius:7px;font-variant-numeric:tabular-nums}
 .m10-brush-settings label>input[type=number]{width:65px;min-width:0;padding:4px;border:1px solid #cbd7e6;border-radius:7px;background:#fff}
 @media(max-width:600px){.brush-editor-section summary{padding:12px}.brush-editor-section-body{padding:12px}.brush-editor-inputs input[type=number]{width:70px;flex-basis:70px}}
+
+/* M10 Dynamics editor: compact touch-friendly controls inside the Brush box. */
+#brushDynamicsList{display:flex;flex-direction:column;gap:7px}
+.brush-dynamics-row,.brush-dynamics-add{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:8px;border:1px solid #dce5f1;border-radius:8px;background:#fff;font-size:12px}
+.brush-dynamics-row label{display:inline-flex;align-items:center;gap:5px;font-size:12px}
+.brush-dynamics-row input{width:62px;min-width:0;padding:5px;border:1px solid #ccd9e7;border-radius:7px}
+.brush-dynamics-row select,.brush-dynamics-add select{min-width:78px;flex:1;padding:6px;border:1px solid #ccd9e7;border-radius:7px;background:#fff;color:#304461}
+.brush-dynamics-row button,.brush-dynamics-add button{border:1px solid #c5d3e7;background:#f6f9ff;border-radius:7px;min-height:33px;padding:6px 9px;color:#304461;cursor:pointer}
+.brush-dynamics-add button{flex:1}
