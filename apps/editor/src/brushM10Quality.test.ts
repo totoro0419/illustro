@@ -31,7 +31,7 @@ describe('M10 protected quality baseline and new controls',()=>{
   expect(p.opacity).toBe(1);
   expect(p.size).toBe(72);
   const compiled=compilePreset(p,{forceFadeGeometry:'adaptive-v1'});
-  expect(compiled.__foundation?.solid).toBe(true);
+  expect((compiled as unknown as {__foundation?:{solid:boolean}}).__foundation?.solid).toBe(true);
   const b=new CanonicalBuilder(p,[371,552],0,{forceFadeGeometry:'adaptive-v1'});
   b.accept({x:50,y:60,t:0,pressure:.8,pointerType:'pen'});
   b.accept({x:130,y:60,t:16,pressure:.8,pointerType:'pen'});
