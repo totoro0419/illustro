@@ -15,6 +15,7 @@ import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {BrushPresetLibrary} from './brushPresets';
+import {filterBrushCatalog,type BrushCatalogGroup} from './brushCatalog';
 import {installBrushAdvancedEditor} from './brushAdvancedEditor';
 import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
@@ -472,15 +473,20 @@ document.addEventListener('keydown',e=>{
 
 function refreshBrushOptions(){
  if(!surface)return;
- const search=byId<HTMLInputElement>('brushSearch').value.trim().toLocaleLowerCase('ja');
+ const search=byId<HTMLInputElement>('brushSearch').value;
+ const group=byId<HTMLSelectElement>('brushGroup').value as BrushCatalogGroup;
  const selected=surface.preset?.id??'';
+ const matches=filterBrushCatalog(surface.brushes,{query:search,group,isUser:id=>brushPresets.isUser(id)});
  const picker=byId<HTMLSelectElement>('brush');picker.replaceChildren();
- for(const preset of surface.brushes){
-   if(search&&!preset.name.toLocaleLowerCase('ja').includes(search)&&!preset.id.toLocaleLowerCase().includes(search)&&preset.id!==selected)continue;
-   const option=new Option(preset.name+(brushPresets.isUser(preset.id)?' · 自作':''),preset.id);
-   picker.add(option);
+ // The active brush stays selectable even if excluded by the filter.
+ const active=surface.brushes.find(p=>p.id===selected);
+ const outside=Boolean(active&&!matches.some(p=>p.id===selected));
+ if(active&&outside)picker.add(new Option('選択中 · '+active.name,active.id));
+ for(const preset of matches){
+   picker.add(new Option(preset.name+(brushPresets.isUser(preset.id)?' · 自作':''),preset.id));
  }
  if(selected)picker.value=selected;
+ byId('brushCatalogCount').textContent=matches.length+'本が該当します。'+(outside?'選択中のブラシは引き続き使用できます。':'');
 }
 function refreshBrushCatalog(selectId?:string){
  if(!surface)return;
@@ -535,6 +541,7 @@ byId<HTMLButtonElement>('brushReset').onclick=()=>{
  brushMessage('保存済みのブラシ設定に戻しました。');
 };
 byId<HTMLInputElement>('brushSearch').addEventListener('input',refreshBrushOptions);
+byId<HTMLSelectElement>('brushGroup').addEventListener('change',refreshBrushOptions);
 byId<HTMLButtonElement>('brushDuplicate').onclick=()=>{
  if(!surface?.preset)return;
  try{const copy=brushPresets.duplicate(surface.preset,surface.preset.name+' のコピー');refreshBrushCatalog(copy.id);brushMessage('自作ブラシを保存しました。この端末で使用できます。');}
