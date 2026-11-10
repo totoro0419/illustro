@@ -443,10 +443,16 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   updateHistoryButtons();const barrierStarted=performance.now();await historyNavigation?.barrier();
   measureCanvasStage('history-barrier',barrierStarted);
   discardBlankWarmup();
-  surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
-  // Each activation below creates a fresh GPU host. Even the second or third
-  // new empty work has no pixels to restore. Do not replay a nonexistent image.
+  surface?.destroy();
+  // Clearing an existing displayed bitmap is a constant-size browser reset.
+  // Without it, a second pristine canvas can briefly show pixels from the
+  // previous work while its brand-new display Worker prepares the first frame.
   const firstEmptyCanvas=opened.generationId==='new'&&!opened.projectionCache&&opened.document.operationsTo().length===0;
+  if(firstEmptyCanvas){
+    const canvas=byId<HTMLCanvasElement>('canvas');
+    canvas.width=canvas.width;
+  }
+  controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
   if(opened.generationId==='new'){
     persistence.clearFileDestination();
     const started=performance.now();
