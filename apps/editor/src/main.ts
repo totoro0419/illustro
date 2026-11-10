@@ -75,6 +75,49 @@ let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=n
 // The very first blank work has neither cached pixels nor old canvas pixels.
 // Later new works still clear the reused presentation backing through restore.
 let hasInitializedEditorGpu=false;
+type BlankWarmup={
+  controller:EditorController;
+  drawing:BrushSurface;
+  ready:Promise<boolean>;
+  cancelled:boolean;
+  completed:boolean;
+  started:number;
+};
+let initialBlankWarmup:BlankWarmup|null=null;
+// Prepares the ACTUAL drawing host in the hidden editor, not an unrelated
+// temporary GPU context whose shaders would need to be compiled a second time.
+function beginBlankWarmup(){
+  if(qaMode||documentReady||surface||initialBlankWarmup||byId<HTMLButtonElement>('new').disabled)return;
+  const draft=new EditorController(); // Exactly the default 512×384 transparent work.
+  const drawing=makeSurface(null,draft);
+  const entry:BlankWarmup={controller:draft,drawing,cancelled:false,completed:false,started:performance.now(),ready:Promise.resolve(false)};
+  initialBlankWarmup=entry;
+  entry.ready=drawing.initialize().then(()=>{
+    if(entry.cancelled){drawing.destroy();return false;}
+    entry.completed=true;
+    measureCanvasStage('home-gpu-prewarm',entry.started);
+    return true;
+  }).catch(error=>{
+    if(!entry.cancelled)console.warn('Optional canvas prewarm unavailable:',error);
+    drawing.destroy();
+    if(initialBlankWarmup===entry)initialBlankWarmup=null;
+    return false;
+  });
+}
+function discardBlankWarmup(){
+  const entry=initialBlankWarmup;
+  if(!entry)return;
+  initialBlankWarmup=null;
+  entry.cancelled=true;
+  // A host still initializing is disposed as soon as worker initialization
+  // returns, so an interrupted Home warmup cannot leak pointer listeners.
+  entry.drawing.destroy();
+}
+function matchedBlankWarmup(width:number,height:number,name:string,background:'transparent'|'white'){
+  const ready=initialBlankWarmup;
+  return !qaMode&&!documentReady&&!surface&&ready&&!ready.cancelled&&
+    width===512&&height===384&&name.trim()==='新しい作品'&&background==='transparent'?ready:null;
+}
 let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
 let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thumbnailRepairSkipped=new Set<string>();
 
@@ -176,7 +219,7 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   inputFreezeTrace?.mark('save-prepare:start');persistence.noteCommit(controller.document,handoff);inputFreezeTrace?.mark('save-prepare:end');if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null){return new BrushSurface(byId('canvas'),controller,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){return new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';restoreDrawingTool();}return;}
  const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value!=='layer');
@@ -342,12 +385,18 @@ async function applyGeometry(){
 }
 byId('geometryApply').onclick=()=>{void applyGeometry();};
 
-async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache']){
+async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache'],prewarmed=false){
   if(!surface)throw new Error('描画面がありません。');
-  const gpuStarted=performance.now();
-  await surface.initialize();
+  if(!prewarmed){
+    const gpuStarted=performance.now();
+    await surface.initialize();
+    measureCanvasStage('gpu-and-worker-init',gpuStarted);
+  }else{
+    // The already-initialized host keeps its shader pipelines, Workers, and
+    // renderer state. Re-initializing would destroy the whole benefit.
+    performance.mark('illustro-canvas:reused-home-gpu');
+  }
   hasInitializedEditorGpu=true;
-  measureCanvasStage('gpu-and-worker-init',gpuStarted);
   const acceptedBrushes=surface.brushes.map(p=>structuredClone(p));
   builtInBrushes=[...acceptedBrushes,...additionalBrushes(acceptedBrushes)];
   surface.setBrushes(brushPresets.all(builtInBrushes));
@@ -373,6 +422,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   try{
   updateHistoryButtons();const barrierStarted=performance.now();await historyNavigation?.barrier();
   measureCanvasStage('history-barrier',barrierStarted);
+  discardBlankWarmup();
   surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
   const firstEmptyCanvas=opened.generationId==='new'&&!hasInitializedEditorGpu&&!opened.projectionCache&&opened.document.operationsTo().length===0;
   if(opened.generationId==='new'){
@@ -421,6 +471,40 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     throw error;
   }
 }
+async function activateFirstPrewarmedBlank(entry:BlankWarmup){
+  // All resources belong to the exact document that was initialized on Home.
+  // Never replace the CoreDocument after the host has bound its surface IDs.
+  initialBlankWarmup=null;
+  controller=entry.controller;
+  surface=entry.drawing;
+  lastQueuedRevision=null;
+  resetCheckpointTracking();
+  persistence.clearFileDestination();
+  const storageStarted=performance.now();
+  const storagePromise=persistence.initialize(controller,null,{manifestExtras:{},optionalSections:[]},false)
+    .then(()=>{measureCanvasStage('storage-init',storageStarted);return {ok:true as const};},
+      error=>({ok:false as const,error}));
+  try{
+    const ready=await entry.ready;
+    if(!ready)throw Error('Home GPU preparation unavailable');
+    await initializeCurrentSurface(false,undefined,true);
+    const storage=await storagePromise;
+    if(!storage.ok)throw storage.error;
+    const bindStarted=performance.now();
+    await persistence.bindWork(null);
+    measureCanvasStage('work-bind',bindStarted);
+    scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
+    updatePersistenceDisplay();
+    updateQa();
+  }catch(error){
+    await storagePromise;
+    entry.drawing.destroy();
+    surface=null;
+    documentReady=false;
+    controller=new EditorController();
+    throw error;
+  }
+}
 async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent'):Promise<boolean>{
   const createStarted=performance.now();
   const trigger=byId<HTMLButtonElement>('new');
@@ -433,14 +517,17 @@ async function createDocument(width:number,height:number,name='新しい作品',
   trigger.disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
     const documentStarted=performance.now();
-    const document=new CoreDocument({width,height,name:name.trim()||'新しい作品'});let selected=document.root.rootLayerIds[0]!;
+    const warm=matchedBlankWarmup(width,height,name,background);
+    if(!warm)discardBlankWarmup();
+    const document=warm?.controller.document??new CoreDocument({width,height,name:name.trim()||'新しい作品'});let selected=document.root.rootLayerIds[0]!;
     if(background==='white'){
       const pixels=new Uint8Array(width*height*4);pixels.fill(255);const tx=document.begin('白い背景');
       tx.resizeDocument(width,height,'document.canvas-resize',new Map([[selected,pixels]]),{});tx.renameLayer(selected,'背景');tx.commit();
       const next=document.addRasterLayerAbove(selected);selected=next.layerId;
     }
     measureCanvasStage('new-document-model',documentStarted);
-    await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head});
+    if(warm)await activateFirstPrewarmedBlank(warm);
+    else await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head});
     if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,width,height,background);void refreshWorks();}
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
@@ -835,6 +922,7 @@ if(!qaMode){
   document.body.append(byId<HTMLInputElement>('openFile'));
   homeUi=installHomeShell(app,{
     createDocument,
+    onEditorVisible:()=>surface?.refreshVisibleViewport(),
     openFile:()=>byId<HTMLInputElement>('openFile').click(),
     resume:async(documentId,writerEpochId)=>{
       if(!(await prepareWorkSwitch()))return false;
@@ -866,6 +954,8 @@ if(!qaMode){
     hasDocument:()=>documentReady,
   });
   byId<HTMLButtonElement>('home').onclick=()=>{void homeUi?.showHome();};
+  // Give the Home UI a frame to appear before starting GPU work in workers.
+  window.setTimeout(beginBlankWarmup,300);
 }
 void refreshRecoveryCandidates();if(!qaMode)void refreshWorks();
 if('serviceWorker' in navigator){const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});}

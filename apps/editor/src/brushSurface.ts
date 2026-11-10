@@ -47,7 +47,9 @@ export class BrushSurface{
     const backend:'auto'|'webgl2'|'webgpu'=this.backendOverride??(requested==='webgpu'||requested==='webgl2'?requested:'auto');
     try{
       const rendererOptions={webglDesynchronized:false,strokeHandoff:true,strokeOverlay:{mode:new URLSearchParams(location.search).get('overlay')==='gpu'?'gpu':new URLSearchParams(location.search).get('overlay')==='cpu'?'cpu':'auto',ratio:new URLSearchParams(location.search).get('overlayRatio')||'auto'},tileHistory:new URLSearchParams(location.search).get('tileHistory')!=='legacy',historyMemoryBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?16*1024*1024:8*1024*1024,historyGpuBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?64*1024*1024:32*1024*1024} as const;
-      this.renderer=await DrawingHost.create(this.canvas,target.width,target.height,backend,rendererOptions,drawingWorkerUrl,workerUrl,this.traceHandoff,presentationWorkerUrl) as GpuRenderer;
+      const created=await DrawingHost.create(this.canvas,target.width,target.height,backend,rendererOptions,drawingWorkerUrl,workerUrl,this.traceHandoff,presentationWorkerUrl) as GpuRenderer;
+      if(this.disposed){created.destroy();throw Error('Discarded Home warmup completed after cancellation');}
+      this.renderer=created;
     }catch(error){
       const message=error instanceof Error?error.message:String(error);
       this._initializationError='GPU initialization failed: '+message;
@@ -83,6 +85,9 @@ export class BrushSurface{
   private densityChanged=()=>{this.observeDensity();this.setBackingSize();};
   private observeDensity(){this.densityMedia?.removeEventListener('change',this.densityChanged);this.densityMedia=window.matchMedia('(resolution: '+(window.devicePixelRatio||1)+'dppx)');this.densityMedia.addEventListener('change',this.densityChanged);}
   private windowResize=()=>this.setBackingSize();
+  // Home may have resized the editor without changing its inert DOM state.
+  // Update the real viewport after Home is hidden; do not reset actual ink.
+  refreshVisibleViewport(){if(this.disposed||!this.renderer)return;this.setBackingSize();this.updateView(true);}
   private get operationMode(): 'idle'|'drawing'|'navigation'{
     return this.navigation?.active?'navigation':this.pointer!==null?'drawing':'idle';
   }

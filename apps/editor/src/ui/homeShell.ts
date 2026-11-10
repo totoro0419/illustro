@@ -18,6 +18,7 @@ export type HomeActions = Readonly<{
   resume: (documentId:string,writerEpochId:string)=>Promise<boolean|'cancelled'>;
   prepareHome: ()=>Promise<boolean>;
   hasDocument: ()=>boolean;
+  onEditorVisible?:()=>void;
 }>;
 export type HomeShell = Readonly<{
   showHome: ()=>Promise<void>;
@@ -156,6 +157,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     if(next==='editor'&&!actions.hasDocument()){showNew('blank');return;}
     screen=next;const inEditor=next==='editor';
     root.hidden=inEditor;app.inert=!inEditor;app.setAttribute('aria-hidden',String(!inEditor));
+    if(inEditor)requestAnimationFrame(()=>actions.onEditorVisible?.());
     for(const section of root.querySelectorAll<HTMLElement>('[data-ih-screen]'))section.hidden=section.dataset.ihScreen!==next;
     const homeNav=next==='home',worksNav=next==='works';
     el('ihNavHome').classList.toggle('is-active',homeNav);el('ihNavWorks').classList.toggle('is-active',worksNav);
