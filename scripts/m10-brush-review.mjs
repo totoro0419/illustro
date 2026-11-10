@@ -57,7 +57,7 @@ try {
   assert.equal(await page.locator('#brushStabilizationValue').textContent(),'60%');
   // Verify the affected new marker itself before any history interactions.
   await page.locator('#brush').selectOption('illustro-opaque-marker-v1');
-  assert.equal(await page.locator('#brushOpacityValue').textContent(),'100%','opaque marker must not darken under a transient preview/formal overlap');
+  assert.equal(await page.locator('#brushOpacityValue').textContent(),'90%','the marker remains translucent through the transition');
   const first=await page.locator('#canvas').boundingBox();assert.ok(first?.width>100);
   await page.mouse.move(first.x+first.width*.3,first.y+first.height*.45);
   await page.mouse.down();await page.mouse.move(first.x+first.width*.7,first.y+first.height*.55,{steps:24});await page.mouse.up();

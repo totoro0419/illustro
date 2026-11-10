@@ -17,6 +17,6 @@ export function additionalBrushes(foundations:readonly FoundationPreset[]):Found
    p=>{p.size=1.5;p.pressure.smoothing=.17;p.stabilization.constant=.2;}),
   clone('foundation-pencil','illustro-soft-pencil-v1','柔らかい鉛筆','鉛筆・下描き','少し太く、薄い紙の質感で下描きをする鉛筆の設定。',
    p=>{p.size=12;p.flow=.7;p.tip.hardness=.65;p.texture.paper.strength=.7;}),
-  clone('foundation-marker','illustro-opaque-marker-v1','濃い塗りマーカー','塗り','不透明な色を広く塗るマーカーの設定。',p=>{p.size=72;p.opacity=1;})
+  clone('foundation-marker','illustro-opaque-marker-v1','濃い塗りマーカー','塗り','不透明に近い色を広く塗るマーカーの設定。',p=>{p.size=72;p.opacity=.9;})
  ];
 }

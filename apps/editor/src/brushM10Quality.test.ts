@@ -24,11 +24,11 @@ describe('M10 protected quality baseline and new controls',()=>{
   expect(referenceBrushes[0]).toEqual(base);
   expect(()=>changeSimpleMapping(b,1,{min:.99,max:.5})).toThrow();
  });
- it('opaque marker center stays fully opaque even when preview and final overlap in one display frame',()=>{
+ it('new marker stays at 90% and remains translucent in the canonical record',()=>{
   const base=referenceBrushes.find(p=>p.id==='foundation-marker')!;
   const p=additionalBrushes(referenceBrushes).find(p=>p.id==='illustro-opaque-marker-v1')!;
-  expect(base.opacity).toBe(.45); // Original accepted marker remains unchanged.
-  expect(p.opacity).toBe(1);
+  expect(base.opacity).toBe(.45);
+  expect(p.opacity).toBe(.9); // Do not disguise a transition problem by forcing opacity=1.
   expect(p.size).toBe(72);
   const compiled=compilePreset(p,{forceFadeGeometry:'adaptive-v1'});
   expect((compiled as unknown as {__foundation?:{solid:boolean}}).__foundation?.solid).toBe(true);
@@ -38,10 +38,8 @@ describe('M10 protected quality baseline and new controls',()=>{
   b.finish();
   const pixels=cpuReference(b.record(),180,120);
   const alpha=pixels[(60*180+90)*4+3]??0;
-  expect(alpha).toBe(255);
-  // Two identical opaque layers have the same alpha as one.
-  const a=alpha/255;
-  expect(Math.round((a+a*(1-a))*255)).toBe(alpha);
+  expect(alpha).toBeGreaterThan(200);
+  expect(alpha).toBeLessThan(255);
  });
  it('records identical fine-pen paths for identical raw input and seed (no timing-dependent result)',()=>{
   const preset=additionalBrushes(referenceBrushes)[0]!;
