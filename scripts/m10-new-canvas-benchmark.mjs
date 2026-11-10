@@ -63,7 +63,12 @@ try{
     errorText:document.getElementById('status')?.textContent??''
    }));
    assert.ok(data.hasDrawingSurface,'canvas must be visible and editable');
-   assert.ok(data.measures.some(m=>m.stage==='gpu-and-worker-init'),'GPU timing must be captured');
+   if(prewarmed){
+    assert.ok(data.measures.some(m=>m.stage==='home-gpu-prewarm'),'the GPU should have initialized on Home');
+    assert.ok(!data.measures.some(m=>m.stage==='gpu-and-worker-init'),'Create must not initialize the GPU a second time');
+   }else{
+    assert.ok(data.measures.some(m=>m.stage==='gpu-and-worker-init'),'cold path GPU timing must be captured');
+   }
    assert.ok(data.measures.some(m=>m.stage==='storage-init'),'storage timing must be captured');
    assert.ok(data.measures.some(m=>m.stage==='click-to-editable'),'draw-ready measurement must exist');
    if(item.background==='transparent')assert.ok(!data.measures.some(m=>m.stage==='projection-restore'),
