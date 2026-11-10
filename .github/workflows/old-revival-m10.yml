@@ -47,6 +47,7 @@ jobs:
           node scripts/m10-brush-editor-review.mjs
           node scripts/m10-brush-review.mjs
           node scripts/preview-tail-quality.mjs
+          node scripts/m10-new-canvas-benchmark.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
