@@ -33,6 +33,14 @@ try{
   page.on('pageerror',e=>pageErrors.push(String(e)));
   try{
    await page.goto('http://127.0.0.1:'+server.address().port+'/?perf=1&backend='+item.backend);
+   // A typical artist spends time on Home choosing a document. Verify that
+   // the EXACT prepared GPU host survives the Create button, not just a spare
+   // unrelated warmup context or an early fake "ready" label.
+   let prewarmed=false;
+   if(item.width===512&&item.height===384&&item.background==='transparent'){
+    await page.waitForFunction(()=>performance.getEntriesByName('illustro-canvas:home-gpu-prewarm').length>0,null,{timeout:120000});
+    prewarmed=true;
+   }
    await page.locator('#ihStart').click();
    await page.locator('#ihNewWidth').fill(String(item.width));
    await page.locator('#ihNewHeight').fill(String(item.height));
@@ -66,7 +74,9 @@ try{
    await page.mouse.up();
    await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,null,{timeout:40000});
    assert.deepEqual(pageErrors,[],'no browser exceptions');
-   results.push({...item,wallClockMs,...data,firstStrokeCommitted:true});
+   if(prewarmed)assert.ok(await page.evaluate(()=>performance.getEntriesByName('illustro-canvas:reused-home-gpu').length>0),
+     'a prepared Home drawing host must be reused by the first new document');
+   results.push({...item,wallClockMs,...data,prewarmed,firstStrokeCommitted:true});
    console.log('M10_FIRST_CANVAS',JSON.stringify(results.at(-1)));
   }finally{await context.close();}
  }
