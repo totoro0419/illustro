@@ -34,6 +34,11 @@ const m09Mode=new URLSearchParams(location.search).has('m09')||qaPath.endsWith('
 const m08Mode=m09Mode||new URLSearchParams(location.search).has('m08')||qaPath.endsWith('/qa/m08')||qaPath.endsWith('/qa/m08/index.html');
 const qaMode=new URLSearchParams(location.search).get('qa')==='1'||qaPath.endsWith('/qa/m05')||qaPath.endsWith('/qa/m05/index.html')||qaPath.endsWith('/qa/m06')||qaPath.endsWith('/qa/m06/index.html')||qaPath.endsWith('/qa/m07')||qaPath.endsWith('/qa/m07/index.html')||m08Mode;
 const qaStartedAt=new Date().toISOString();
+// Focused startup timings, accessible in ?perf=1 without a busy-loop profiler.
+// They distinguish the real editing-ready state from merely displaying white.
+function measureCanvasStage(stage:string,started:number){
+ if(perfMode)performance.measure('illustro-canvas:'+stage,{start:started,end:performance.now()});
+}
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=shellMarkup(qaMode,qaMode?(m09Mode?qaM09Markup():m08Mode?qaM08Markup():qaMarkup()):'');
 // Read-only TouchEvent/PointerEvent logger in opt-in QA builds. No gesture changes.
@@ -336,7 +341,9 @@ byId('geometryApply').onclick=()=>{void applyGeometry();};
 
 async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache']){
   if(!surface)throw new Error('描画面がありません。');
+  const gpuStarted=performance.now();
   await surface.initialize();
+  measureCanvasStage('gpu-and-worker-init',gpuStarted);
   const acceptedBrushes=surface.brushes.map(p=>structuredClone(p));
   builtInBrushes=[...acceptedBrushes,...additionalBrushes(acceptedBrushes)];
   surface.setBrushes(brushPresets.all(builtInBrushes));
@@ -345,15 +352,31 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   lastBrushPresetId=surface.brushes.some(p=>p.id===lastBrushPresetId)?lastBrushPresetId:surface.brushes.find(p=>p.blend!=='erase')?.id??surface.brushes[0]?.id??lastBrushPresetId;
   lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
   selectPreset(lastBrushPresetId);
-  if(replay)await surface.restoreDocumentProjection(projectionCache);
+  if(replay){
+    const replayStarted=performance.now();
+    await surface.restoreDocumentProjection(projectionCache);
+    measureCanvasStage('projection-restore',replayStarted);
+  }
   for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV','brushDuplicate','brushSave','brushOpacity','brushFlow','brushSpacing','brushPressure','brushStabilization','brushTexture','brushAzimuth','brushTwist'])(byId(id) as HTMLInputElement).disabled=false;
   syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);renderLayers();documentReady=true;updateHistoryButtons();
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null){
   const previous=controller,previousPreserved=persistence.preservedData,wasReady=documentReady;documentReady=false;
+  // A NEW work has no dependency between the GPU worker and the storage
+  // worker. Start storage during GPU initialization, but do not expose input
+  // before BOTH have finished. Other open/recovery paths stay unchanged.
+  let newStorageInit:Promise<{ok:true}|{ok:false;error:unknown}>|null=null;
   try{
-  updateHistoryButtons();await historyNavigation?.barrier();
+  updateHistoryButtons();const barrierStarted=performance.now();await historyNavigation?.barrier();
+  measureCanvasStage('history-barrier',barrierStarted);
   surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
+  if(opened.generationId==='new'){
+    persistence.clearFileDestination();
+    const started=performance.now();
+    newStorageInit=persistence.initialize(controller,null,opened.preserved,recovered)
+      .then(()=>{measureCanvasStage('storage-init',started);return {ok:true as const};},
+        error=>({ok:false as const,error}));
+  }
   try{await initializeCurrentSurface(true,opened.projectionCache);}
   catch(error){
     const requested=new URLSearchParams(location.search).get('backend'),selection=surface?.backendSelection as {selected?:string}|null;
@@ -361,7 +384,20 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(true,opened.projectionCache);
     }else throw error;
   }
-  persistence.clearFileDestination();await persistence.initialize(controller,null,opened.preserved,recovered);if(!qaMode)await persistence.bindWork(expectedEpoch);
+  if(newStorageInit){
+    const status=await newStorageInit;
+    if(!status.ok)throw status.error;
+  }else{
+    persistence.clearFileDestination();
+    const started=performance.now();
+    await persistence.initialize(controller,null,opened.preserved,recovered);
+    measureCanvasStage('storage-init',started);
+  }
+  if(!qaMode){
+    const started=performance.now();
+    await persistence.bindWork(expectedEpoch);
+    measureCanvasStage('work-bind',started);
+  }
   // Import a verified optional PNG preview without blocking first editable paint.
   if(!qaMode&&opened.previewImage){
     const id=controller.document.root.documentId,revision=controller.document.head,image=opened.previewImage.slice();
@@ -372,31 +408,38 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   }
   scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
   }catch(error){
+    // A started storage initialization must finish before rollback restores
+    // the previous document, or the late worker reply could replace its state.
+    if(newStorageInit)await newStorageInit;
     surface?.destroy();const snapshot=previous.document.capturePersistenceSnapshot();controller=EditorController.restored(CoreDocument.restore({snapshot,blockPayloads:previous.document.persistenceBlockPayloads(snapshot)}),previous.selectedLayerId);surface=makeSurface();documentReady=false;
     if(wasReady){try{await initializeCurrentSurface(true);await persistence.initialize(controller,null,previousPreserved,false);const current=(await persistence.listWorks()).works.find(x=>x.documentId===controller.document.root.documentId);if(!qaMode)await persistence.bindWork(current?.writerEpochId??null);}catch{}}
     throw error;
   }
 }
 async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent'):Promise<boolean>{
+  const createStarted=performance.now();
   const trigger=byId<HTMLButtonElement>('new');
   if(trigger.disabled)return false;
   if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){
     byId('status').textContent='幅と高さを1〜8192pxで指定してください。';return false;
   }
   if(!qaMode&&!(await prepareWorkSwitch()))return false;
+  measureCanvasStage('work-switch',createStarted);
   trigger.disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
+    const documentStarted=performance.now();
     const document=new CoreDocument({width,height,name:name.trim()||'新しい作品'});let selected=document.root.rootLayerIds[0]!;
     if(background==='white'){
       const pixels=new Uint8Array(width*height*4);pixels.fill(255);const tx=document.begin('白い背景');
       tx.resizeDocument(width,height,'document.canvas-resize',new Map([[selected,pixels]]),{});tx.renameLayer(selected,'背景');tx.commit();
       const next=document.addRasterLayerAbove(selected);selected=next.layerId;
     }
+    measureCanvasStage('new-document-model',documentStarted);
     await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head});
     if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,width,height,background);void refreshWorks();}
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
-    updateQa();return true;
+    updateQa();measureCanvasStage('click-to-editable',createStarted);return true;
   }catch(error){
     const message=surface?.initializationError||(error instanceof Error?error.message:String(error));
     updateQa();surface?.destroy();documentReady=false;byId('status').textContent='描画を開始できませんでした。'+message;return false;
