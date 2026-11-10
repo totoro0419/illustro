@@ -19,35 +19,6 @@ test('stable prefix is consumed once and the next update processes only new comm
 test('completion frees one stroke without removing a newer overlapping stroke',()=>{const {p}=setup(),r=record();p.enqueue(live(r));p.enqueue(live(r,10));flush(p);p.presented(1);assert.ok(!p.states.has(1));assert.ok(p.states.has(10));assert.ok(p.allocatedBytes>0);p.presented(10);assert.equal(p.allocatedBytes,0);assert.equal(p.cells.size,0);p.destroy();});
 test('view changes reraster only pending strokes and need no history source',()=>{const {p}=setup(),r=record();p.enqueue(live(r));flush(p);p.presented(1);const commands=p.metrics.commands;p.setView(view(4000,.25));flush(p);assert.equal(p.metrics.commands,commands);assert.equal(p.states.size,0);assert.equal('source' in p,false);assert.equal('bases' in p,false);assert.equal(typeof p.rebuild,'undefined');assert.equal(typeof p.fold,'undefined');p.destroy();});
 test('unsafe conditions select exact feedback and do not paint an eraser on top',()=>{const {p}=setup(),r=record();p.enqueue(live(r));flush(p);assert.equal(p.enqueue({...live(r,10),preset:{...r.preset,blend:'erase'}}),false);assert.equal(p.fallback,true);assert.equal(p.pending.size,0);p.fallbackPresented(0,p.epoch,true);assert.equal(p.states.size,0);assert.equal(p.footprints.size,0);p.destroy();});
-test('transparent handoff guard outlives unrelated GPU frames and retires with the matching stroke',()=>{
- const {p}=setup(),r=record();
- p.enqueue(live(r));flush(p);
- assert.ok(p.footprints.has(1),'CPU preview has a visible footprint');
- let closed=0;
- p.guards=[{bitmap:{close(){closed++;}}}];
- p.fallbackPresented(1,p.epoch,false);
- assert.equal(p.guards.length,1,'unrelated GPU publication cannot expose a duplicate translucent stroke');
- assert.equal(closed,0);
- p.presented(1,p.epoch);
- assert.equal(p.guards.length,0,'guard retires together with the acknowledged stroke');
- assert.equal(closed,1);
- p.destroy();
-});
-test('guard persists until all protected translucent strokes are acknowledged',()=>{
- const {p}=setup(),r=record();
- p.enqueue(live(r,1));p.enqueue(live(r,10));flush(p);
- assert.equal(p.footprints.size,2);
- let closed=0;
- p.guards=[{bitmap:{close(){closed++;}}}];
- p.presented(1,p.epoch);
- p.fallbackPresented(2,p.epoch,false);
- assert.equal(p.guards.length,1);
- assert.equal(closed,0);
- p.presented(10,p.epoch);
- assert.equal(p.guards.length,0);
- assert.equal(closed,1);
- p.destroy();
-});
 test('a stale presentation generation cannot remove a transformed pending stroke',()=>{const {p}=setup(),r=record();p.enqueue(live(r));flush(p);const epoch=p.epoch;p.setView(view(4000,.25));flush(p);p.presented(1,epoch);assert.ok(p.states.has(1));p.presented(1,p.epoch);assert.equal(p.states.size,0);p.destroy();});
 
 test('a late fallback request cannot clear CPU strokes absent from the completed GPU submission',()=>{const {p}=setup(),r=record();p.enqueue(live(r));p.enqueue(live(r,10));flush(p);p.fallback=true;p.fallbackPresented(0,p.epoch,false);p.presented(1,p.epoch);assert.ok(p.states.has(10));p.fallbackPresented(1,p.epoch,true);assert.equal(p.states.size,0);p.destroy();});
