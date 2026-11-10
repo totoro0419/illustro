@@ -72,6 +72,9 @@ let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;surface?.setProtectionQueueLength(state.queueLength);updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
 let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=null,workSwitchBusy=false,librarySaving=false;
+// The very first blank work has neither cached pixels nor old canvas pixels.
+// Later new works still clear the reused presentation backing through restore.
+let hasInitializedEditorGpu=false;
 let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
 let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thumbnailRepairSkipped=new Set<string>();
 
@@ -343,6 +346,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   if(!surface)throw new Error('描画面がありません。');
   const gpuStarted=performance.now();
   await surface.initialize();
+  hasInitializedEditorGpu=true;
   measureCanvasStage('gpu-and-worker-init',gpuStarted);
   const acceptedBrushes=surface.brushes.map(p=>structuredClone(p));
   builtInBrushes=[...acceptedBrushes,...additionalBrushes(acceptedBrushes)];
@@ -370,6 +374,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   updateHistoryButtons();const barrierStarted=performance.now();await historyNavigation?.barrier();
   measureCanvasStage('history-barrier',barrierStarted);
   surface?.destroy();controller=EditorController.restored(opened.document,opened.selectedLayerId);lastQueuedRevision=null;resetCheckpointTracking();surface=makeSurface();
+  const firstEmptyCanvas=opened.generationId==='new'&&!hasInitializedEditorGpu&&!opened.projectionCache&&opened.document.operationsTo().length===0;
   if(opened.generationId==='new'){
     persistence.clearFileDestination();
     const started=performance.now();
@@ -377,11 +382,11 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       .then(()=>{measureCanvasStage('storage-init',started);return {ok:true as const};},
         error=>({ok:false as const,error}));
   }
-  try{await initializeCurrentSurface(true,opened.projectionCache);}
+  try{await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache);}
   catch(error){
     const requested=new URLSearchParams(location.search).get('backend'),selection=surface?.backendSelection as {selected?:string}|null;
     if(requested!=='webgpu'&&requested!=='webgl2'&&selection?.selected==='webgpu'){
-      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(true,opened.projectionCache);
+      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache);
     }else throw error;
   }
   if(newStorageInit){
