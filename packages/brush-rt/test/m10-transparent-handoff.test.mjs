@@ -6,7 +6,7 @@ import {StrokeOverlay} from '../dist/rt/stroke-overlay.mjs';
 // frozen accepted renderer, canonical stroke data, or older regression suite.
 function scenario(ids){
  let closed=0,hidden=0;
- const sink={hideGuard(){hidden++;}};
+ const sink={hideGuard(){hidden++;},hide(){},destroy(){}};
  const backend={surfaceStack:['paint'],previews:new Map};
  const overlay=new StrokeOverlay(backend,{sink});
  overlay.epoch=1;
