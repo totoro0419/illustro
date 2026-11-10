@@ -107,16 +107,29 @@ try{
      'a prepared Home drawing host must be reused by the first new document');
    // A second pristine work must not replay pixels from the previous inked work.
    // Its display worker is new, so a restore/clear round trip is unnecessary.
-   if(item.width===4000){
+   if(item.width===512){
+    // Work switching must preserve the first stroke and wait for its real
+    // formal draw and auto-save before abandoning that active document.
+    await page.waitForFunction(()=>!window.__illustroPerformance.isDrawingBusy()&&
+      document.getElementById('saveState')?.dataset.autosavePending==='false',null,{timeout:90000});
     const priorRestores=await page.evaluate(()=>performance.getEntriesByName('illustro-canvas:projection-restore').length);
     await page.locator('#home').click();
     await page.locator('#ihStart').click();
     await page.locator('#ihNewWidth').fill('1024');
     await page.locator('#ihNewHeight').fill('768');
     await page.locator('#ihNewCreate').click();
-    await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('描画できます')&&
-      !document.getElementById('app')?.inert&&window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width===1024,
-      null,{timeout:120000});
+    await page.waitForFunction(()=>{
+      const ready=document.querySelector('#status')?.textContent?.includes('描画できます')&&
+        !document.getElementById('app')?.inert&&window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width===1024;
+      const error=document.getElementById('ihNewError')?.textContent??'';
+      return ready||(error&&error!=='キャンバスを準備しています。');
+    },null,{timeout:60000});
+    const result=await page.evaluate(()=>({
+      width:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width,
+      error:document.getElementById('ihNewError')?.textContent,
+      notice:document.getElementById('ihNotice')?.textContent,
+    }));
+    assert.equal(result.width,1024,'second blank must open: '+JSON.stringify(result));
     assert.equal(await page.evaluate(()=>performance.getEntriesByName('illustro-canvas:projection-restore').length),
        priorRestores,'later pristine documents must not replay nonexistent canvas pixels');
     assert.equal(await page.evaluate(()=>window.__illustroPerformance.probe().controller.committedStrokeCount),0,
@@ -126,7 +139,7 @@ try{
     await page.mouse.down();await page.mouse.move(rect2.x+rect2.width*.6,rect2.y+rect2.height*.6,{steps:10});await page.mouse.up();
     await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1',null,{timeout:40000});
    }
-   results.push({...item,wallClockMs,...data,prewarmed,firstStrokeCommitted:true,secondBlankVerified:item.width===4000});
+   results.push({...item,wallClockMs,...data,prewarmed,firstStrokeCommitted:true,secondBlankVerified:item.width===512});
    console.log('M10_FIRST_CANVAS',JSON.stringify(results.at(-1)));
   }finally{await context.close();}
  }
