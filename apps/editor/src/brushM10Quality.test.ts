@@ -38,7 +38,7 @@ describe('M10 protected quality baseline and new controls',()=>{
   const samples=Array.from({length:30},(_,i)=>({x:25+i*6,y:25+Math.sin(i*.12)*12,t:i*8,pressure:.15+.75*Math.sin(Math.PI*i/29),pointerType:'pen'}));
   const b=new CanonicalBuilder(preset,[1234,5678],0,{forceFadeGeometry:'adaptive-v1'});
   for(const s of samples)b.accept(s);b.finish();
-  const commands=b.record().commands,thickness=commands.map(c=>c[2]);
+  const commands=b.record().commands,thickness=commands.map(c=>c[2]??0);
   expect(commands.length).toBeGreaterThan(samples.length);
   expect(Math.max(...thickness)).toBeGreaterThan(thickness[0]??0);
   expect(Math.max(...thickness)).toBeGreaterThan(thickness.at(-1)??0);
