@@ -47,6 +47,7 @@ try{
    const data=await page.evaluate(()=>({
     measures:performance.getEntriesByType('measure').filter(e=>e.name.startsWith('illustro-canvas:')).map(e=>({stage:e.name.slice('illustro-canvas:'.length),ms:Math.round(e.duration*10)/10})),
     backend:document.getElementById('canvas')?.dataset.backend??'',
+    gpuWarmupMs:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationWallMs??null,
     hasDrawingSurface:!!document.getElementById('canvas')?.getBoundingClientRect().width,
     errorText:document.getElementById('status')?.textContent??''
    }));
@@ -54,8 +55,18 @@ try{
    assert.ok(data.measures.some(m=>m.stage==='gpu-and-worker-init'),'GPU timing must be captured');
    assert.ok(data.measures.some(m=>m.stage==='storage-init'),'storage timing must be captured');
    assert.ok(data.measures.some(m=>m.stage==='click-to-editable'),'draw-ready measurement must exist');
+   if(item.background==='transparent')assert.ok(!data.measures.some(m=>m.stage==='projection-restore'),
+     'a first pristine blank must not replay a nonexistent drawing');
+   // Being editable means that a real pointer path can reach a canonical commit.
+   const rect=await page.locator('#canvas').boundingBox();
+   assert.ok(rect&&rect.width>120&&rect.height>100,'visible drawing surface');
+   await page.mouse.move(rect.x+rect.width*.38,rect.y+rect.height*.45);
+   await page.mouse.down();
+   await page.mouse.move(rect.x+rect.width*.62,rect.y+rect.height*.54,{steps:14});
+   await page.mouse.up();
+   await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,null,{timeout:40000});
    assert.deepEqual(pageErrors,[],'no browser exceptions');
-   results.push({...item,wallClockMs,...data});
+   results.push({...item,wallClockMs,...data,firstStrokeCommitted:true});
    console.log('M10_FIRST_CANVAS',JSON.stringify(results.at(-1)));
   }finally{await context.close();}
  }
