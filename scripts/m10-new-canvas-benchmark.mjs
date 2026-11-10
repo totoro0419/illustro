@@ -9,7 +9,8 @@ const directory=path.resolve('apps/editor/dist');
 const destination=process.env.M10_CANVAS_STARTUP_EVIDENCE??'/tmp/illustro-m10-quality/initial-canvas.json';
 const configurations=[
  {width:512,height:384,background:'transparent',backend:'webgl2'},
- {width:2048,height:1536,background:'white',backend:'webgpu'}
+ {width:2048,height:1536,background:'white',backend:'webgpu'},
+ {width:4000,height:4000,background:'transparent',backend:'webgl2'}
 ];
 const results=[];
 await fs.mkdir(path.dirname(destination),{recursive:true});
@@ -45,6 +46,14 @@ try{
     prewarmed=true;
    }
    await page.locator('#ihStart').click();
+   if(item.width===4000&&item.height===4000){
+    const option=page.locator('[data-ih-preset="4000x4000"]');
+    assert.equal(await option.textContent(),'超高画質（4000×4000）','the high-resolution preset must be visible and correctly labeled');
+    await option.click();
+    assert.equal(await page.locator('#ihNewWidth').inputValue(),'4000','the preset must apply the width');
+    assert.equal(await page.locator('#ihNewHeight').inputValue(),'4000','the preset must apply the height');
+    assert.equal(await option.getAttribute('aria-pressed'),'true','the preset must indicate selection');
+   }
    await page.locator('#ihNewWidth').fill(String(item.width));
    await page.locator('#ihNewHeight').fill(String(item.height));
    await page.locator('#ihNewBackground').selectOption(item.background);
@@ -61,9 +70,14 @@ try{
     gpuWarmupMs:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationWallMs??null,
     gpuPreparationPaths:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationPaths??null,
     hasDrawingSurface:!!document.getElementById('canvas')?.getBoundingClientRect().width,
-    errorText:document.getElementById('status')?.textContent??''
+    errorText:document.getElementById('status')?.textContent??'',
+    documentSize:window.__illustroPerformance?.probe?.()?.controller?.document?.root?
+     {width:window.__illustroPerformance.probe().controller.document.root.width,
+      height:window.__illustroPerformance.probe().controller.document.root.height}:null
    }));
    assert.ok(data.hasDrawingSurface,'canvas must be visible and editable');
+   if(item.width===4000)assert.deepEqual(data.documentSize,{width:4000,height:4000},
+      'the opened document must really be 4000×4000, not only the selected controls');
    assert.equal(data.gpuPreparationPaths,0,'no startup trial strokes are permitted');
    assert.equal(data.gpuWarmupMs,0,'trial drawing phase must be absent');
    if(prewarmed){
