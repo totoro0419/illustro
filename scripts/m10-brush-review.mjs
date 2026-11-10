@@ -32,7 +32,10 @@ try {
   assert.deepEqual(initialIds.slice(0,7),['foundation-g-pen','foundation-round-pen','foundation-technical','foundation-marker','foundation-pencil','foundation-hard-eraser','foundation-soft-eraser'],'accepted Foundation brushes remain unchanged');
   assert.ok(initialIds.length>=10,'M10 starter brushes are available');
   await page.locator('#brushSearch').fill('鉛筆');
-  assert.ok(await page.locator('#brush option').count()<=2,'filtered option list');
+  const pencilOptions=await page.locator('#brush option').evaluateAll(options=>options.map(o=>({text:o.textContent,value:o.value})));
+  assert.ok(pencilOptions.some(o=>o.value==='foundation-pencil'),'original pencil remains searchable');
+  assert.ok(pencilOptions.some(o=>o.value==='illustro-soft-pencil-v1'),'new soft pencil remains searchable');
+  assert.ok(pencilOptions.every(o=>o.text.includes('鉛筆')||o.text.startsWith('選択中 ·')),'filter must show only matching brushes plus the active brush');
   await page.locator('#brushSearch').fill('');
   await page.locator('#brush').selectOption('foundation-g-pen');
   await page.locator('#brushDuplicate').click();
