@@ -19,6 +19,7 @@ const numberFields:NumberField[]=[
  {id:'brushTextureScale',minimum:.1,maximum:64,decimals:2,read:p=>p.texture.paper.scale,write:(p,v)=>{p.texture.paper.scale=v;}},
  {id:'brushTextureRotation',minimum:-180,maximum:180,decimals:1,read:p=>p.texture.paper.rotation*degrees,write:(p,v)=>{p.texture.paper.rotation=v/degrees;}},
  {id:'brushStabilizationFast',minimum:0,maximum:100,read:p=>p.stabilization.fast*100,write:(p,v)=>{p.stabilization.fast=v/100;}},
+ {id:'brushWidthChange',minimum:0,maximum:16,decimals:2,read:p=>p.pressure.sizeSlope??0,write:(p,v)=>{p.pressure.sizeSlope=v;}},
  {id:'brushScatterRadius',minimum:0,maximum:200,read:p=>p.scatter.radius*100,write:(p,v)=>{p.scatter.radius=v/100;}}
 ];
 const el=<T extends Element>(id:string)=>document.getElementById(id) as T|null;
@@ -58,6 +59,8 @@ export function installBrushAdvancedEditor(hooks:Hooks):{sync:(preset:Foundation
  for(const [id,edit] of toggleFields)el<HTMLInputElement>(id)?.addEventListener('change',e=>apply(p=>edit(p,(e.target as HTMLInputElement).checked)));
  el<HTMLSelectElement>('brushTipShape')?.addEventListener('change',e=>apply(p=>{p.tip.shape=(e.target as HTMLSelectElement).value;}));
  el<HTMLSelectElement>('brushTextureKind')?.addEventListener('change',e=>apply(p=>{p.texture.paper.kind=(e.target as HTMLSelectElement).value as 'paper'|'noise'|'hatch';p.texture.paper.resource=null;}));
+ el<HTMLSelectElement>('brushStabilizationMode')?.addEventListener('change',e=>apply(p=>{p.stabilization.speedMode=(e.target as HTMLSelectElement).value as 'increase'|'reduce';}));
+ el<HTMLInputElement>('brushPrediction')?.addEventListener('change',e=>apply(p=>{p.prediction.enabled=(e.target as HTMLInputElement).checked;}));
  function pickPoint(index:number){selectedPoint=index;const p=hooks.getPreset();if(p)sync(p);}
  pointPicker?.addEventListener('change',()=>pickPoint(Number(pointPicker.value)));
  function editPoint(){
@@ -124,6 +127,8 @@ export function installBrushAdvancedEditor(hooks:Hooks):{sync:(preset:Foundation
   const set=(id:string,value:string)=>{const node=el<HTMLInputElement|HTMLSelectElement>(id);if(node)node.value=value;};
   set('brushTipShape',p.tip.shape);
   set('brushTextureKind',p.texture.paper.kind);
+  set('brushStabilizationMode',p.stabilization.speedMode);
+  const prediction=el<HTMLInputElement>('brushPrediction');if(prediction)prediction.checked=p.prediction.enabled;
   const follow=el<HTMLInputElement>('brushTipFollow');if(follow)follow.checked=p.tip.direction;
   const scatter=el<HTMLInputElement>('brushScatterEnabled');if(scatter)scatter.checked=p.scatter.enabled;
   const radius=el<HTMLInputElement>('brushScatterRadius');if(radius)radius.disabled=!p.scatter.enabled;
