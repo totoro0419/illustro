@@ -75,6 +75,16 @@ try {
   await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='0',null,{timeout:90000});
   await page.locator('#redo').click();
   await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1',null,{timeout:90000});
+  // Exercise the actual newly-added marker on both GPU paths, including pen-up.
+  await page.locator('#brush').selectOption('illustro-opaque-marker-v1');
+  assert.equal(await page.locator('#brushOpacityValue').textContent(),'100%','opaque fill must not darken when preview and committed image overlap');
+  const markerRect=await page.locator('#canvas').boundingBox();
+  await page.mouse.move(markerRect.x+markerRect.width*.25,markerRect.y+markerRect.height*.75);
+  await page.mouse.down();
+  await page.mouse.move(markerRect.x+markerRect.width*.74,markerRect.y+markerRect.height*.73,{steps:16});
+  await page.mouse.up();
+  await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>=2,null,{timeout:20000});
+  await page.locator('#brush').selectOption(id);
   await page.locator('#brushSearch').fill('M10 検証');
   assert.equal(await page.locator('#brush option').count(),1);
   const downloadPromise=page.waitForEvent('download');

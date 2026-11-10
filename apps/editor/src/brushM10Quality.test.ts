@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {CanonicalBuilder,compilePreset,referenceBrushes} from '@illustro/brush-rt';
+import {CanonicalBuilder,compilePreset,cpuReference,referenceBrushes} from '@illustro/brush-rt';
 import {additionalBrushes} from './brushStarterPresets';
 import {addSimpleMapping,changeSimpleMapping,removeSimpleMapping,isSimpleMapping} from './brushDynamics';
 
@@ -23,6 +23,25 @@ describe('M10 protected quality baseline and new controls',()=>{
   expect(removeSimpleMapping(c,1).dynamics).toEqual(base.dynamics);
   expect(referenceBrushes[0]).toEqual(base);
   expect(()=>changeSimpleMapping(b,1,{min:.99,max:.5})).toThrow();
+ });
+ it('opaque marker center stays fully opaque even when preview and final overlap in one display frame',()=>{
+  const base=referenceBrushes.find(p=>p.id==='foundation-marker')!;
+  const p=additionalBrushes(referenceBrushes).find(p=>p.id==='illustro-opaque-marker-v1')!;
+  expect(base.opacity).toBe(.45); // Original accepted marker remains unchanged.
+  expect(p.opacity).toBe(1);
+  expect(p.size).toBe(72);
+  const compiled=compilePreset(p,{forceFadeGeometry:'adaptive-v1'});
+  expect(compiled.__foundation?.solid).toBe(true);
+  const b=new CanonicalBuilder(p,[371,552],0,{forceFadeGeometry:'adaptive-v1'});
+  b.accept({x:50,y:60,t:0,pressure:.8,pointerType:'pen'});
+  b.accept({x:130,y:60,t:16,pressure:.8,pointerType:'pen'});
+  b.finish();
+  const pixels=cpuReference(b.record(),180,120);
+  const alpha=pixels[(60*180+90)*4+3]??0;
+  expect(alpha).toBe(255);
+  // Two identical opaque layers have the same alpha as one.
+  const a=alpha/255;
+  expect(Math.round((a+a*(1-a))*255)).toBe(alpha);
  });
  it('records identical fine-pen paths for identical raw input and seed (no timing-dependent result)',()=>{
   const preset=additionalBrushes(referenceBrushes)[0]!;
