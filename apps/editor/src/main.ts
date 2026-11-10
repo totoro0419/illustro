@@ -72,9 +72,8 @@ let persistenceState:PersistenceState|null=null;
 let lastExport:(Omit<ImageExportResult,'blob'>&{downloadBytes:number})|null=null,exportError:string|null=null,exportBusy=false,exportCount=0;
 const persistence=new PersistenceCoordinator(state=>{persistenceState=state;surface?.setProtectionQueueLength(state.queueLength);updatePersistenceDisplay();if(state.storageError&&typeof homeUi!=='undefined')showStorageError(new Error(state.storageError));updateQa();});
 let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=null,workSwitchBusy=false,librarySaving=false;
-// The very first blank work has neither cached pixels nor old canvas pixels.
-// Later new works still clear the reused presentation backing through restore.
-let hasInitializedEditorGpu=false;
+// A fresh blank document never contains pixels to replay. Existing works
+// still restore their saved contents before drawing is enabled.
 type BlankWarmup={
   controller:EditorController;
   drawing:BrushSurface;
@@ -418,7 +417,6 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
     // renderer state. Re-initializing would destroy the whole benefit.
     performance.mark('illustro-canvas:reused-home-gpu');
   }
-  hasInitializedEditorGpu=true;
   const acceptedBrushes=surface.brushes.map(p=>structuredClone(p));
   builtInBrushes=[...acceptedBrushes,...additionalBrushes(acceptedBrushes)];
   surface.setBrushes(brushPresets.all(builtInBrushes));
