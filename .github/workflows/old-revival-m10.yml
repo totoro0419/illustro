@@ -39,6 +39,7 @@ jobs:
           M10_EDITOR_EVIDENCE: /tmp/illustro-m10-quality/editor.json
           M10_EVIDENCE: /tmp/illustro-m10-quality/brush.json
           TAIL_EVIDENCE_DIRECTORY: /tmp/illustro-m10-quality/tails
+          M10_TAIL_QUICK: '1'
           EXPECTED_COMMIT_SHA: ${{ github.sha }}
         run: |
           npm install --prefix /tmp/illustro-m10-browser playwright@1.56.1 --no-audit --no-fund
