@@ -104,6 +104,7 @@ try{
     backend:document.getElementById('canvas')?.dataset.backend??'',
     gpuWarmupMs:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationWallMs??null,
     gpuPreparationPaths:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationPaths??null,
+    whiteSeedStages:window.__illustroWhiteSeedStages??null,
     hasDrawingSurface:!!document.getElementById('canvas')?.getBoundingClientRect().width,
     errorText:document.getElementById('status')?.textContent??'',
     documentSize:window.__illustroPerformance?.probe?.()?.controller?.document?.root?
