@@ -1111,6 +1111,13 @@ if(perfMode){
   isDrawingBusy:()=>surface?.busy??false,
   checkpoint:(fullSeed=false)=>{if(fullSeed)checkpointNeedsFullSeed=true;return createProjectionCheckpoint();},
   capture:async()=>{if(!surface)throw new Error('No document');const before=surface.performanceDiagnostics,delta=await surface.captureProjectionDelta(controller.document.head),after=surface.performanceDiagnostics;return {replace:delta.replace,tiles:delta.tiles.length,bytes:delta.tiles.reduce((n,t)=>n+t.pixels.byteLength,0),before,after};},
+  exportCorners:async()=>{
+    const doc=controller.document,originalBlocks=doc.canonicalRasterBytes,bitmap=await createImageBitmap((await exportImage(captureExport(doc),'png')).blob);
+    const one=document.createElement('canvas');one.width=one.height=1;const ctx=one.getContext('2d')!;
+    const read=(x:number,y:number)=>{ctx.clearRect(0,0,1,1);ctx.drawImage(bitmap,x,y,1,1,0,0,1,1);return [...ctx.getImageData(0,0,1,1).data];};
+    try{return {width:bitmap.width,height:bitmap.height,first:read(0,0),last:read(bitmap.width-1,bitmap.height-1),blocksBefore:originalBlocks,blocksAfter:doc.canonicalRasterBytes};}
+    finally{bitmap.close();}
+  },
   view:(zoom:number,angle:number)=>{surface?.setViewZoom(zoom,false);surface?.setViewRotation(angle,false);},
  };
  const panel=document.createElement('details');panel.id='canvasPerformance';panel.style.cssText='position:fixed;left:80px;bottom:calc(var(--bottom, 56px) + env(safe-area-inset-bottom) + 16px);z-index:80;max-width:min(420px,calc(100vw - 100px));max-height:45vh;overflow:auto;background:#fffaf0;color:#302c26;border:1px solid #decba4;border-radius:12px;padding:8px 12px;font-size:12px';
