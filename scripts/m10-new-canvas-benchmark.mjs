@@ -98,8 +98,12 @@ try{
    await page.locator('#ihNewCreate').click();
    await page.waitForFunction(()=>{
     const app=document.getElementById('app'),brush=document.getElementById('brush'),status=document.getElementById('status');
-    return app&&!app.inert&&brush&&!brush.disabled&&status?.textContent?.includes('描画できます');
-   },null,{timeout:120000});
+    const ready=app&&!app.inert&&brush&&!brush.disabled&&status?.textContent?.includes('描画できます');
+    const error=document.getElementById('ihNewError')?.textContent??'';
+    return ready||(error&&error!=='キャンバスを準備しています。')||status?.textContent?.includes('描画を開始できませんでした');
+   },null,{timeout:45000});
+   const canvasOpen=await page.evaluate(()=>({appInert:document.getElementById('app')?.inert,brushDisabled:document.getElementById('brush')?.disabled,status:document.getElementById('status')?.textContent,dialogError:document.getElementById('ihNewError')?.textContent,warmup:window.__illustroWarmup,documentSize:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width,workerErrors:window.__illustroPerformance?.probe?.()?.renderer?.errors}));
+   assert.ok(!canvasOpen.appInert&&!canvasOpen.brushDisabled&&canvasOpen.status?.includes('描画できます'),'canvas did not open successfully: '+JSON.stringify(canvasOpen));
    const wallClockMs=Date.now()-start;
    const data=await page.evaluate(()=>({
     measures:performance.getEntriesByType('measure').filter(e=>e.name.startsWith('illustro-canvas:')).map(e=>({stage:e.name.slice('illustro-canvas:'.length),ms:Math.round(e.duration*10)/10})),
