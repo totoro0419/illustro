@@ -574,9 +574,13 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     .then(()=>{measureCanvasStage('storage-init',storageStarted);return {ok:true as const};},
       error=>({ok:false as const,error}));
   try{
+    const warmAwaitStarted=performance.now();
     const ready=await entry.ready;
+    measureCanvasStage('prewarm-await',warmAwaitStarted);
     if(!ready)throw Error('Home GPU preparation unavailable');
+    const presetSetupStarted=performance.now();
     await initializeCurrentSurface(false,undefined,true);
+    measureCanvasStage('prewarmed-editor-setup',presetSetupStarted);
     const storage=await storagePromise;
     if(!storage.ok)throw storage.error;
     const bindStarted=performance.now();
