@@ -9,6 +9,7 @@ const directory=path.resolve('apps/editor/dist');
 const destination=process.env.M10_CANVAS_STARTUP_EVIDENCE??'/tmp/illustro-m10-quality/initial-canvas.json';
 const configurations=[
  {width:512,height:384,background:'transparent',backend:'webgl2'},
+ {width:256,height:256,background:'white',backend:'webgl2'},
  {width:2048,height:1536,background:'white',backend:'webgpu'},
  {width:4000,height:4000,background:'transparent',backend:'webgl2'},
  {width:4000,height:4000,background:'white',backend:'webgl2'}
@@ -156,7 +157,7 @@ try{
     assert.equal(pixels.canonicalRasterBytes,0,'initial white must not create full-size raster blocks');
     assert.equal(pixels.whiteTileCount,0,'white tiles must remain sparse');
     assert.equal(pixels.nativeSnapshotBlockCount,0,'native white document save should not materialize a white image');
-    if(item.width===2048){
+    if(item.width===256){
      const png=await page.evaluate(()=>window.__illustroPerformance.exportCorners());
      assert.deepEqual(png.first,[255,255,255,255],'PNG export must have opaque white first corner');
      assert.deepEqual(png.last,[255,255,255,255],'PNG export must have opaque white last corner');
@@ -173,6 +174,26 @@ try{
    await page.mouse.up();
    await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,null,{timeout:40000});
    assert.deepEqual(pageErrors,[],'no browser exceptions');
+   if(item.background==='white'&&item.width===256){
+    // A user explicitly editing the background opts in to materializing the
+    // previously virtual white layer. It must not erase ink above it.
+    await page.waitForFunction(()=>!window.__illustroPerformance.isDrawingBusy(),null,{timeout:40000});
+    const lower=await page.evaluate(()=>window.__illustroPerformance.probe().controller.document.root.rootLayerIds[0]);
+    await page.locator('#layerList .layer-row').last().click();
+    await page.waitForFunction(id=>{
+     const controller=window.__illustroPerformance?.probe?.()?.controller;
+     return controller?.selectedLayerId===id&&controller.document.root.getLayer(id).baseColor===undefined&&
+      document.getElementById('status')?.textContent?.includes('背景レイヤーを編集できます');
+    },lower,{timeout:90000});
+    const materialized=await page.evaluate(id=>{
+     const doc=window.__illustroPerformance.probe().controller.document;
+     return {pixel:doc.readPixel(id,255,255),blocks:doc.canonicalRasterBytes};
+    },lower);
+    assert.deepEqual(materialized.pixel,[255,255,255,255],'background remains white after materialization');
+    assert.ok(materialized.blocks>0,'explicit background editing may materialize white raster tiles');
+    assert.ok(await page.evaluate(()=>window.__illustroPerformance.probe().controller.committedStrokeCount)>0,
+      'materializing white background must retain drawing history');
+   }
    if(prewarmed)assert.ok(await page.evaluate(()=>performance.getEntriesByName('illustro-canvas:reused-home-gpu').length>0),
      'a prepared Home drawing host must be reused by the first new document');
    // A second pristine work must not replay pixels from the previous inked work.
