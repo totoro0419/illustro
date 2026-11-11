@@ -315,6 +315,17 @@ export class BrushSurface{
     for(const layer of this.controller.layers){const bytes=await this.renderer.read(layer.surface.descriptor.surfaceId);result.set(layer.id,new Uint8Array(bytes));}
     return result;
   }
+  // A newly created white work already has exact canonical white tiles.
+  // Populate the new drawing worker directly instead of reconstructing a
+  // full-size geometry projection and uploading it a second time.
+  // Saved/recovered documents deliberately continue using normal restoration.
+  async seedFreshWhiteBackground(surfaceKey:string){
+    if(!this.renderer||!this.session)throw new Error('Renderer is not initialized');
+    if(!this.controller.layers.some(layer=>layer.surface.descriptor.surfaceId===surfaceKey))throw new Error('White background layer missing');
+    const host=this.renderer as unknown as {call?:(method:string,args:unknown)=>Promise<unknown>;update?:(state:unknown)=>void};
+    if(!host.call||!host.update)throw new Error('Drawing worker cannot seed the new background');
+    host.update(await host.call('restore',{entries:[],cache:null,geometry:true,solidWhiteSurfaceKey:surfaceKey}));
+  }
   async restoreDocumentProjection(cache?:ProjectionCache){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
     const started=performance.now();this.historySyncing=true;this.onStateChanged();    try{
