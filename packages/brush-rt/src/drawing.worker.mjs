@@ -114,6 +114,16 @@ const r=renderer,s=session,b=r.backend;r.proxy?.setEnabled(!geometry);b.setPrese
   for(const e of entries){const value=remember(e.token,e.record),id=++s.id;s.seedSequence=Math.max(s.seedSequence,value.seed?.[1]??0);s.records.push(value);s.recordIds.set(value,id);s.recordSurfaces.set(value,e.surfaceKey);s.indexRecord(value,e.keys,e.surfaceKey);
    if(!e.cached){const preset=s.presetForRecord(value);r.document.append(id,preset,value.commands,null,e.surfaceKey);r.document.end(id,preset,e.surfaceKey);}}
   r.needsFrame=true;await r.drain();stage('drained');
+  if(solidWhiteSurfaceKey){
+   // The fresh document backdrop is already opaque white in DocumentPresentation,
+   // and the real white tiles are seeded in the drawing GPU. Publishing all
+   // 128px white tiles now would duplicate the entire empty document over
+   // the Worker -> bitmap -> display pipeline, needlessly blocking Home.
+   // Actual ink, layer style changes and later restores publish exact tiles.
+   pendingTiles.clear();
+   publishRequested=false;
+   stage('initial-white-publication-elided');
+  }
  }finally{b.setPresentationHeld(false);}
  await b.presentCurrent();r.proxy?.invalidate();requestPublish();stage('publish-requested');return stats(true);
 }
