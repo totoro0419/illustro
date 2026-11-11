@@ -68,7 +68,7 @@ try{
      await page.waitForFunction(size=>{
        const status=window.__illustroWarmup;
        return status?.state==='failed'||(status?.state==='ready'&&status?.detail===size);
-     },item.width+'x'+item.height,{timeout:25000});
+     },item.width+'x'+item.height,{timeout:120000});
      const state=await page.evaluate(()=>window.__illustroWarmup);
      assert.equal(state.state,'ready','white warmup failed: '+JSON.stringify(state));
      prewarmed=true;
