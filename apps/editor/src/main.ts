@@ -26,7 +26,7 @@ import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type Im
 import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
-import {CoreDocument,type SemanticOperation} from '@illustro/core';
+import {CoreDocument,type SemanticOperation,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -77,12 +77,31 @@ let homeUi:HomeShell|null=null;let works:WorkEntry[]=[],lastWorkId:string|null=n
 type BlankWarmup={
   controller:EditorController;
   drawing:BrushSurface;
+  selectedLayerId:LayerId;
+  whiteSurfaceKey:string|null;
+  background:'transparent'|'white';
   ready:Promise<boolean>;
   cancelled:boolean;
   completed:boolean;
   started:number;
 };
 let initialBlankWarmup:BlankWarmup|null=null;
+// Keep the original editable raster background and the top drawing layer in the
+// Core document. Only the initial GPU upload differs from normal saved-work replay.
+function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white'){
+  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品'});
+  let selected=document.root.rootLayerIds[0]!;
+  let whiteSurfaceKey:string|null=null;
+  if(background==='white'){
+    const pixels=new Uint8Array(width*height*4);pixels.fill(255);
+    const tx=document.begin('白い背景');
+    tx.resizeDocument(width,height,'document.canvas-resize',new Map([[selected,pixels]]),{});
+    tx.renameLayer(selected,'背景');tx.commit();
+    whiteSurfaceKey=document.root.getLayer(selected).surface.descriptor.surfaceId;
+    selected=document.addRasterLayerAbove(selected).layerId;
+  }
+  return {document,selected,whiteSurfaceKey};
+}
 // Prepares the ACTUAL drawing host in the hidden editor, not an unrelated
 // temporary GPU context whose shaders would need to be compiled a second time.
 function reportBlankWarmup(state:string,detail=''){
@@ -90,23 +109,26 @@ function reportBlankWarmup(state:string,detail=''){
 }
 function beginBlankWarmup(width=512,height=384,name='新しい作品',background:'transparent'|'white'='transparent'){
   const title=name.trim()||'新しい作品';
-  if(qaMode||documentReady||byId<HTMLButtonElement>('new').disabled||background!=='transparent'||
+  if(qaMode||documentReady||byId<HTMLButtonElement>('new').disabled||
       !Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)return;
   const active=initialBlankWarmup,root=active?.controller.document.root;
-  if(active&&!active.cancelled&&root?.width===width&&root.height===height&&root.name===title)return;
+  if(active&&!active.cancelled&&active.background===background&&root?.width===width&&root.height===height&&root.name===title)return;
   // Switching the intended blank size only replaces Home's unused renderer.
   // An existing drawing is never in this path (documentReady is false).
   if(active)discardBlankWarmup();
   const idle=surface,initial=controller.document.root;
-  const reuseIdle=!!idle&&initial.width===width&&initial.height===height&&initial.name===title;
+  const reuseIdle=background==='transparent'&&!!idle&&initial.width===width&&initial.height===height&&initial.name===title&&controller.document.operationsTo().length===0;
   if(!reuseIdle)idle?.destroy();
-  const draft=reuseIdle?controller:EditorController.restored(new CoreDocument({width,height,name:title}));
+  const blank=reuseIdle?{document:controller.document,selected:controller.selectedLayerId,whiteSurfaceKey:null}:newBlankDocument(width,height,title,background);
+  const draft=reuseIdle?controller:EditorController.restored(blank.document,blank.selected);
   const drawing=reuseIdle?idle!:makeSurface(null,draft);
   surface=drawing;
   reportBlankWarmup('started',width+'x'+height);
-  const entry:BlankWarmup={controller:draft,drawing,cancelled:false,completed:false,started:performance.now(),ready:Promise.resolve(false)};
+  const entry:BlankWarmup={controller:draft,drawing,selectedLayerId:blank.selected,whiteSurfaceKey:blank.whiteSurfaceKey,background,cancelled:false,completed:false,started:performance.now(),ready:Promise.resolve(false)};
   initialBlankWarmup=entry;
-  entry.ready=drawing.initialize().then(()=>{
+  entry.ready=drawing.initialize().then(async()=>{
+    if(entry.cancelled){drawing.destroy();return false;}
+    if(entry.whiteSurfaceKey)await drawing.seedFreshWhiteBackground(entry.whiteSurfaceKey);
     if(entry.cancelled){drawing.destroy();return false;}
     entry.completed=true;
     measureCanvasStage('home-gpu-prewarm',entry.started);
@@ -137,7 +159,7 @@ function matchedBlankWarmup(width:number,height:number,name:string,background:'t
   const ready=initialBlankWarmup;
   const root=ready?.controller.document.root;
   return !qaMode&&!documentReady&&ready&&!ready.cancelled&&surface===ready.drawing&&
-    root?.width===width&&root.height===height&&root.name===(name.trim()||'新しい作品')&&background==='transparent'?ready:null;
+    root?.width===width&&root.height===height&&root.name===(name.trim()||'新しい作品')&&ready.background===background?ready:null;
 }
 let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
 let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thumbnailRepairSkipped=new Set<string>();
@@ -406,7 +428,7 @@ async function applyGeometry(){
 }
 byId('geometryApply').onclick=()=>{void applyGeometry();};
 
-async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache'],prewarmed=false){
+async function initializeCurrentSurface(replay:boolean,projectionCache?:PortableOpenResult['projectionCache'],prewarmed=false,freshWhiteSurfaceKey:string|null=null){
   if(!surface)throw new Error('描画面がありません。');
   if(!prewarmed){
     const gpuStarted=performance.now();
@@ -425,7 +447,11 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   lastBrushPresetId=surface.brushes.some(p=>p.id===lastBrushPresetId)?lastBrushPresetId:surface.brushes.find(p=>p.blend!=='erase')?.id??surface.brushes[0]?.id??lastBrushPresetId;
   lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
   selectPreset(lastBrushPresetId);
-  if(replay){
+  if(freshWhiteSurfaceKey){
+    const seededAt=performance.now();
+    await surface.seedFreshWhiteBackground(freshWhiteSurfaceKey);
+    measureCanvasStage('fresh-white-seed',seededAt);
+  }else if(replay){
     const replayStarted=performance.now();
     await surface.restoreDocumentProjection(projectionCache);
     measureCanvasStage('projection-restore',replayStarted);
@@ -433,7 +459,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV','brushDuplicate','brushSave','brushOpacity','brushFlow','brushSpacing','brushPressure','brushStabilization','brushTexture','brushAzimuth','brushTwist'])(byId(id) as HTMLInputElement).disabled=false;
   syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);renderLayers();documentReady=true;updateHistoryButtons();
 }
-async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null){
+async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
   const previous=controller,previousPreserved=persistence.preservedData,wasReady=documentReady;documentReady=false;
   // A NEW work has no dependency between the GPU worker and the storage
   // worker. Start storage during GPU initialization, but do not expose input
@@ -447,7 +473,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   // Clearing an existing displayed bitmap is a constant-size browser reset.
   // Without it, a second pristine canvas can briefly show pixels from the
   // previous work while its brand-new display Worker prepares the first frame.
-  const firstEmptyCanvas=opened.generationId==='new'&&!opened.projectionCache&&opened.document.operationsTo().length===0;
+  const firstEmptyCanvas=opened.generationId==='new'&&!opened.projectionCache&&(opened.document.operationsTo().length===0||freshWhiteSurfaceKey!==null);
   if(firstEmptyCanvas){
     const canvas=byId<HTMLCanvasElement>('canvas');
     canvas.width=canvas.width;
@@ -460,11 +486,11 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       .then(()=>{measureCanvasStage('storage-init',started);return {ok:true as const};},
         error=>({ok:false as const,error}));
   }
-  try{await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache);}
+  try{await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache,false,freshWhiteSurfaceKey);}
   catch(error){
     const requested=new URLSearchParams(location.search).get('backend'),selection=surface?.backendSelection as {selected?:string}|null;
     if(requested!=='webgpu'&&requested!=='webgl2'&&selection?.selected==='webgpu'){
-      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache);
+      surface?.destroy();surface=makeSurface('webgl2');await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache,false,freshWhiteSurfaceKey);
     }else throw error;
   }
   if(newStorageInit){
@@ -547,15 +573,11 @@ async function createDocument(width:number,height:number,name='新しい作品',
     const documentStarted=performance.now();
     const warm=matchedBlankWarmup(width,height,name,background);
     if(!warm)discardBlankWarmup();
-    const document=warm?.controller.document??new CoreDocument({width,height,name:name.trim()||'新しい作品'});let selected=document.root.rootLayerIds[0]!;
-    if(background==='white'){
-      const pixels=new Uint8Array(width*height*4);pixels.fill(255);const tx=document.begin('白い背景');
-      tx.resizeDocument(width,height,'document.canvas-resize',new Map([[selected,pixels]]),{});tx.renameLayer(selected,'背景');tx.commit();
-      const next=document.addRasterLayerAbove(selected);selected=next.layerId;
-    }
+    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background);
+    const {document,selected,whiteSurfaceKey}=blank;
     measureCanvasStage('new-document-model',documentStarted);
     if(warm)await activateFirstPrewarmedBlank(warm);
-    else await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head});
+    else await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head},false,null,whiteSurfaceKey);
     if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,width,height,background);void refreshWorks();}
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
