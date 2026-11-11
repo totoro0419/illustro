@@ -64,10 +64,24 @@ try{
    if(item.background==='white'){
     // White must be the actual preinitialized drawing document, not a CSS
     // imitation while a large replay continues after Create.
-    await page.waitForFunction(
-      size=>window.__illustroWarmup?.state==='ready'&&window.__illustroWarmup?.detail===size,
-      item.width+'x'+item.height,{timeout:90000});
-    prewarmed=true;
+    try{
+     await page.waitForFunction(size=>{
+       const status=window.__illustroWarmup;
+       return status?.state==='failed'||(status?.state==='ready'&&status?.detail===size);
+     },item.width+'x'+item.height,{timeout:25000});
+     const state=await page.evaluate(()=>window.__illustroWarmup);
+     assert.equal(state.state,'ready','white warmup failed: '+JSON.stringify(state));
+     prewarmed=true;
+    }catch(error){
+     const diagnostics=await page.evaluate(()=>({
+      warmup:window.__illustroWarmup??null,
+      selectedBackground:document.getElementById('ihNewBackground')?.value,
+      selectedSize:[document.getElementById('ihNewWidth')?.value,document.getElementById('ihNewHeight')?.value],
+      isReady:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width??null
+     }));
+     console.error('M10_WHITE_PREWARM_FAILURE',JSON.stringify({diagnostics,pageErrors,error:String(error)}));
+     throw error;
+    }
    }
    const start=Date.now();
    await page.locator('#ihNewCreate').click();
