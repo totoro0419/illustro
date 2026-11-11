@@ -99,20 +99,23 @@ function seedFreshWhite(surfaceKey){
  }
 }
 async function restore({entries,cache,geometry,solidWhiteSurfaceKey=null}){
+ const stage=name=>{if(solidWhiteSurfaceKey&&diagnostics)postMessage({type:'white-seed-stage',stage:name,at:performance.now()});};
+ stage('start');
  if(solidWhiteSurfaceKey&&(typeof solidWhiteSurfaceKey!=='string'||!geometry||cache||entries.length))throw Error('Invalid fresh white seed');
 const r=renderer,s=session,b=r.backend;r.proxy?.setEnabled(!geometry);b.setPresentationHeld(true);
  try{
   // Reset replaces a projection in the SAME display host. Clear every old
   // occupied region as well as seeding the new ones, including removed ink.
   for(const t of b.tiles.values())pendingTiles.add(t.key);for(const v of b.previews.values())for(const key of v.keys??[])pendingTiles.add(key);
-  await r.reset();records.clear();s.records=[];s.redoRecords=[];s.id=0;s.recordSurfaces=new WeakMap;s.recordTiles=new WeakMap;s.recordIds=new WeakMap;s.recordOrder=new WeakMap;s.tileRecords=new Map;s.nextRecordOrder=0;
+  await r.reset();stage('reset');records.clear();s.records=[];s.redoRecords=[];s.id=0;s.recordSurfaces=new WeakMap;s.recordTiles=new WeakMap;s.recordIds=new WeakMap;s.recordOrder=new WeakMap;s.tileRecords=new Map;s.nextRecordOrder=0;
   if(solidWhiteSurfaceKey)seedFreshWhite(solidWhiteSurfaceKey);
   else if(cache)await seed(cache);
+  stage('seeded');
   for(const e of entries){const value=remember(e.token,e.record),id=++s.id;s.seedSequence=Math.max(s.seedSequence,value.seed?.[1]??0);s.records.push(value);s.recordIds.set(value,id);s.recordSurfaces.set(value,e.surfaceKey);s.indexRecord(value,e.keys,e.surfaceKey);
    if(!e.cached){const preset=s.presetForRecord(value);r.document.append(id,preset,value.commands,null,e.surfaceKey);r.document.end(id,preset,e.surfaceKey);}}
-  r.needsFrame=true;await r.drain();
+  r.needsFrame=true;await r.drain();stage('drained');
  }finally{b.setPresentationHeld(false);}
- await b.presentCurrent();r.proxy?.invalidate();requestPublish();return stats(true);
+ await b.presentCurrent();r.proxy?.invalidate();requestPublish();stage('publish-requested');return stats(true);
 }
 async function pixel({x,y,surfaceKey}){const b=renderer.backend,layer=surfaceKey!==null,t=layer?b.tiles.get(surfaceKey+'\u0000'+Math.floor(x/TILE)+','+Math.floor(y/TILE)):null;if(layer&&!t)return [0,0,0,0];
  const sx=layer?x%TILE:x,sy=layer?y%TILE:y;
@@ -132,7 +135,7 @@ async function command(method,a){const r=renderer,s=session;
  case 'cancel':return s.cancel();
  case 'discardRedo':return s.discardRedo();
  case 'navigate':return s.navigateDerived(a.map(e=>({...e,record:record(e.token)})));
- case 'restore':await restore(a);await settlePictures();return stats(true);
+ case 'restore':await restore(a);if(a.solidWhiteSurfaceKey&&diagnostics)postMessage({type:'white-seed-stage',stage:'settling'});await settlePictures();if(a.solidWhiteSurfaceKey&&diagnostics)postMessage({type:'white-seed-stage',stage:'settled'});return stats(true);
  case 'pictureAck':acknowledged=Math.max(acknowledged,a.sequence);if(!a.accepted&&sentPacket){for(const key of sentPacket.keys)pendingTiles.add(key);for(const id of sink.layers.keys())sink.changed.add(id);for(const id of sentPacket.retired)sink.retired.add(id);}sentPacket=null;if(publishRequested||pendingTiles.size||sink.changed.size||sink.retired.size)requestPublish();return;
  case 'waitStroke':{const result=await r.waitStroke(a);await settlePictures();return result;}
  case 'drain':await r.drain(a);await settlePictures();return stats(true);
