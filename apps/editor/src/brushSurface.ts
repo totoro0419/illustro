@@ -404,7 +404,7 @@ export class BrushSurface{
    // eyedropper must still return the actual appearance of white paper.
    const white=this.sampleSource==='composite'?this.controller.layers.find(layer=>layer.baseColor==='white'&&layer.visible&&layer.opacity>0):null;
    if(white&&rgba&&rgba.length>=4){
-     const a=Math.max(0,Math.min(1,rgba[3]/255)),w=white.opacity,alpha=a+(1-a)*w;
+     const a=Math.max(0,Math.min(1,(rgba[3]??0)/255)),w=white.opacity,alpha=a+(1-a)*w;
      return [0,1,2].map(i=>Math.round(Math.min(255,(rgba[i]??0)+(1-a)*w*255))).concat(Math.round(alpha*255));
    }
    return rgba;
