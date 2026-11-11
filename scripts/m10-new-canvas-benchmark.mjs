@@ -106,10 +106,10 @@ try{
    const canvasOpen=await page.evaluate(()=>({appInert:document.getElementById('app')?.inert,brushDisabled:document.getElementById('brush')?.disabled,status:document.getElementById('status')?.textContent,dialogError:document.getElementById('ihNewError')?.textContent,warmup:window.__illustroWarmup,documentSize:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width,workerErrors:window.__illustroPerformance?.probe?.()?.renderer?.errors,canvasExists:!!document.getElementById('canvas'),saveStateExists:!!document.getElementById('saveState'),appElementCount:document.querySelectorAll('#app').length,bodyExists:!!document.body}));
    if(canvasOpen.appInert||canvasOpen.brushDisabled||!canvasOpen.status?.includes('描画できます')){
     for(const errorText of consoleErrors){
-     const match=errorText.match(/\/assets\/([^:\\s]+):(\\d+):(\\d+)/);
+     const match=errorText.match(/\/assets\/([^:\s]+):(\d+):(\d+)/);
      if(!match)continue;
      const filename=match[1],line=Number(match[2]),column=Number(match[3]);
-     const source=(await fs.readFile(path.join(directory,'assets',filename),'utf8')).split('\\n')[line-1];
+     const source=(await fs.readFile(path.join(directory,'assets',filename),'utf8')).split('\n')[line-1];
      if(source)console.error('M10_COMPILED_STACK_CONTEXT',JSON.stringify({filename,line,column,excerpt:source.slice(Math.max(0,column-350),column+350)}));
     }
    }
