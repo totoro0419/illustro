@@ -9,10 +9,10 @@ const directory=path.resolve('apps/editor/dist');
 const destination=process.env.M10_CANVAS_STARTUP_EVIDENCE??'/tmp/illustro-m10-quality/initial-canvas.json';
 const configurations=[
  {width:512,height:384,background:'transparent',backend:'webgl2'},
- {width:256,height:256,background:'white',backend:'webgl2'},
  {width:2048,height:1536,background:'white',backend:'webgpu'},
  {width:4000,height:4000,background:'transparent',backend:'webgl2'},
- {width:4000,height:4000,background:'white',backend:'webgl2'}
+ {width:4000,height:4000,background:'white',backend:'webgl2'},
+ {width:256,height:256,background:'white',backend:'webgl2'}
 ];
 const results=[];
 await fs.mkdir(path.dirname(destination),{recursive:true});
@@ -191,11 +191,22 @@ try{
     const lower=await page.evaluate(()=>window.__illustroPerformance.probe().controller.document.root.rootLayerIds[0]);
     console.log('M10_WHITE_MATERIALIZE_BEGIN');
     await page.evaluate(()=>document.querySelector('#layerList .layer-row:last-child')?.click());
-    await page.waitForFunction(id=>{
-     const controller=window.__illustroPerformance?.probe?.()?.controller;
-     return controller?.selectedLayerId===id&&controller.document.root.getLayer(id).baseColor===undefined&&
-      document.getElementById('status')?.textContent?.includes('背景レイヤーを編集できます');
-    },lower,{timeout:90000});
+    try{
+     await page.waitForFunction(id=>{
+      const controller=window.__illustroPerformance?.probe?.()?.controller;
+      return controller?.selectedLayerId===id&&controller.document.root.getLayer(id).baseColor===undefined&&
+       document.getElementById('status')?.textContent?.includes('背景レイヤーを編集できます');
+     },lower,{timeout:25000});
+    }catch(error){
+     const state=await page.evaluate(id=>{
+      const probe=window.__illustroPerformance?.probe?.();
+      return {status:document.getElementById('status')?.textContent,backgroundRow:document.querySelector('#layerList .layer-row:last-child')?.outerHTML,
+       layerCount:probe?.controller?.layers?.length,selectedLayerId:probe?.controller?.selectedLayerId,
+       baseColor:probe?.controller?.document?.root?.getLayer(id)?.baseColor,rendererErrors:probe?.renderer?.errors};
+     },lower);
+     console.error('M10_WHITE_MATERIALIZE_FAILURE',JSON.stringify({state,consoleErrors,error:String(error)}));
+     throw error;
+    }
     const materialized=await page.evaluate(id=>{
      const doc=window.__illustroPerformance.probe().controller.document;
      return {pixel:doc.readPixel(id,255,255),blocks:doc.canonicalRasterBytes};
