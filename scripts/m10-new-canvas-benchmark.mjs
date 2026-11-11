@@ -10,7 +10,8 @@ const destination=process.env.M10_CANVAS_STARTUP_EVIDENCE??'/tmp/illustro-m10-qu
 const configurations=[
  {width:512,height:384,background:'transparent',backend:'webgl2'},
  {width:2048,height:1536,background:'white',backend:'webgpu'},
- {width:4000,height:4000,background:'transparent',backend:'webgl2'}
+ {width:4000,height:4000,background:'transparent',backend:'webgl2'},
+ {width:4000,height:4000,background:'white',backend:'webgl2'}
 ];
 const results=[];
 await fs.mkdir(path.dirname(destination),{recursive:true});
@@ -137,14 +138,24 @@ try{
       coreTopLeft:document.readPixel(bottom,0,0),
       coreBottomRight:document.readPixel(bottom,document.root.width-1,document.root.height-1),
       gpuTopLeft:await renderer.readPixel(0,0,surfaceId),
-      gpuBottomRight:await renderer.readPixel(document.root.width-1,document.root.height-1,surfaceId)
+      gpuBottomRight:await renderer.readPixel(document.root.width-1,document.root.height-1,surfaceId),
+      baseColor:document.root.getLayer(bottom).baseColor,
+      canonicalRasterBytes:document.canonicalRasterBytes,
+      whiteTileCount:document.root.getLayer(bottom).surface.tiles.entries().length,
+      nativeSnapshotBlockCount:document.capturePersistenceSnapshot().blocks.length
      };
     });
     assert.equal(pixels.layerCount,2,'white work must have an editable background plus drawing layer');
     assert.equal(pixels.selectedIsBackground,false,'first drawing layer must be selected');
     assert.deepEqual(pixels.topTransparent,[0,0,0,0],'top drawing layer starts transparent');
-    for(const kind of ['coreTopLeft','coreBottomRight','gpuTopLeft','gpuBottomRight'])
-     assert.deepEqual(pixels[kind],[255,255,255,255],kind+' must contain actual opaque white pixels');
+    for(const kind of ['coreTopLeft','coreBottomRight'])
+     assert.deepEqual(pixels[kind],[255,255,255,255],kind+' must be logically white');
+    for(const kind of ['gpuTopLeft','gpuBottomRight'])
+     assert.deepEqual(pixels[kind],[0,0,0,0],kind+' must not allocate an initial white GPU layer');
+    assert.equal(pixels.baseColor,'white','white fill must be recorded as a durable layer property');
+    assert.equal(pixels.canonicalRasterBytes,0,'initial white must not create full-size raster blocks');
+    assert.equal(pixels.whiteTileCount,0,'white tiles must remain sparse');
+    assert.equal(pixels.nativeSnapshotBlockCount,0,'native white document save should not materialize a white image');
    }
    // Being editable means that a real pointer path can reach a canonical commit.
    const rect=await page.locator('#canvas').boundingBox();
