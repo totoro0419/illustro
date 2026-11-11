@@ -28,7 +28,7 @@ if(!publicBase){
   base='http://127.0.0.1:'+server.address().port+'/';
 }
 const report={milestone:'M06',mode:publicBase?'public':'local',base,status:'FAIL',backends:[],fixedPages:[],errors:[]};
-const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface','--enable-precise-memory-info']});
+const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{}),args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface','--enable-precise-memory-info']});
 const qa=async page=>JSON.parse((await page.locator('#qaAuto').textContent())??'{}');
 async function draw(page,a,b,steps=18){
   const box=await page.locator('#canvas').boundingBox();assert.ok(box);

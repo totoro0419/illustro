@@ -1,13 +1,13 @@
-# 今の状態 — 2026-10-05
+# Illustro 開発状況（2026-11-12）
 
-**Core Drawing Sliceの本番実装を開始できる基準を整えた。アプリ本体の一連の操作は未完成。** 検証の最終結果は [VERIFICATION](production-prep/VERIFICATION.md) を参照する。
+- **正式な開発リポジトリ**：`totoro0419/illustro`（旧 `illustro_old`）。
+- **現在の区切り**：M10 は製品オーナー承認により終了。M11 は未着手。
+- **合格済みの作業を含む基準点**：[M10 終了記録](revival/M10_CLOSURE_2026-11-12.md)、`milestone/M10-accepted-2026-11-12`。
+- **PR #65**：2026-11-12に統合済み。統合先は `investigate/M10-static-input-loss-2026-10-26`。歴史的な `main` はこの統合で変更していない。
+- **ブラシ・描画・保存の確認**：最終HEAD `4722710c623d8ed31722bc9d50cd645110f5716e` の [GitHub Actions](https://github.com/totoro0419/illustro/actions/runs/43037659447) が成功。実機での全条件を網羅した技術保証とは区別。
+- **公開版の扱い**：`gh-pages` にM10テスト用アプリのファイルがある。URL変更後のすべての端末からのアクセス成功は未確認。
+- **新版の保管**：`illustro-illustro_next_archive` は存在するが、意図された名前と一致せず、アーカイブ済みではない。引き続き整理対象。
 
-- 正本入口: [IMPLEMENTATION_BASELINE](IMPLEMENTATION_BASELINE.md)。各文書の古い停止/受入待ち宣言より優先。
-- source: mainからの `integration/production-prep-2026-10-05`。既存branchは保持し、旧Lineart ADRは除外。
-- Brush: `4a7b488`と一致する採用試作を固定。現在の実機評価はユーザー申告、自動検査は別の根拠。
-- UI: PC/Tabletの承認済み構成維持。Compactの開始用骨格を固定。最終見た目・実ペン/手のひら操作・支援技術は未確認。
-- Lineart: Raster Labを同じbytesで保存。領域構造の採用予定試作であり製品統合済みではない。
-- 最小画面: `apps/editor`に文書初期化、Canvas、Foundation adapter、Layer/History/Save/Recovery接続口。新規Canvas・基準Brush・Eraserの接続確認。正式文書へのstroke確定・Layer追加・文書全体の取消・Save/Recovery/Exportは未接続として無効表示。
-- 次の最初の実装: **既存CoreのV2整合と、一筆を選択Layerへ正式確定する経路**。その後Layer/Undo/Redo/Save/再読込復元/PNGを一つの経路として完成させる。
+設計と実装の優先順位：直感的な操作 → 軽さ・体感速度 → 多機能。
 
-本番開始を妨げない残件: 各機能の実機受入、Regionの本番精度/訂正、Compact最終表現、永続ファイルの物理符号化。前者と異なり、V2のID/保存保護/画素形式の整合は最初の実装工程に必須で、省略して旧schemaを製品固定しない。
+以前の設計・実装基準や過去の検査文書は履歴として維持し、この日付以降のM10ステータスには上記の終了記録を優先する。

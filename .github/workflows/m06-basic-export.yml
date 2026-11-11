@@ -42,8 +42,7 @@ jobs:
       - name: Brush Foundation exact 93-test regression
         run: |
           node --test packages/brush-rt/test/*.test.mjs | tee /tmp/m06-brush-regression.log
-          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/m06-brush-regression.log
-          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/m06-brush-regression.log
+          node scripts/check-test-summary.mjs /tmp/m06-brush-regression.log
           grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/m06-brush-regression.log
       - name: Build M06 editor and offline assets
         env:

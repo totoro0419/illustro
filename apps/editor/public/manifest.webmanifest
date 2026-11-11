@@ -5,14 +5,6 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f7f8f2",
-  "theme_color": "#fff1c7",
-  "icons": [
-    {
-      "src": "brand/illustro-logo.png",
-      "sizes": "1254x1254",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ]
+  "background_color": "#F7F9FC",
+  "theme_color": "#F7F9FC"
 }

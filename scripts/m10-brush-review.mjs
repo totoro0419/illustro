@@ -1,0 +1,105 @@
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const {chromium}=createRequire(import.meta.url)(process.env.RT_PLAYWRIGHT_PATH??'playwright');
+const evidence=process.env.M10_EVIDENCE??'/tmp/m10-review/report.json';
+const root=path.resolve('apps/editor/dist'),errors=[],cases=[];
+await fs.mkdir(path.dirname(evidence),{recursive:true});
+let server;let browser;
+try {
+ server=http.createServer(async(request,response)=>{try{
+  const url=decodeURIComponent((request.url??'/').split('?')[0]);
+  const file=path.resolve(root,'.'+(url==='/'?'/index.html':url));
+  if(!file.startsWith(root+path.sep))return response.writeHead(403).end();
+  const bytes=await fs.readFile(file),ext=path.extname(file);
+  response.setHeader('content-type',{'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json'}[ext]??'application/octet-stream');
+  response.end(bytes);
+ }catch{response.writeHead(404).end();}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const url='http://127.0.0.1:'+server.address().port+'/';
+ browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
+ for(const backend of ['webgl2','webgpu']){
+  const context=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:2,hasTouch:true,acceptDownloads:true});
+  const page=await context.newPage(),pageErrors=[];
+  page.on('pageerror',error=>pageErrors.push(error.message));
+  page.on('console',msg=>{if(msg.type()==='error'&&!/favicon/.test(msg.text()))pageErrors.push(msg.text());});
+  await page.goto(url+'?qa=1&backend='+backend,{waitUntil:'domcontentloaded'});
+  await page.locator('#new').click();
+  await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
+  const initialIds=await page.locator('#brush option').evaluateAll(options=>options.map(option=>option.value));
+  assert.deepEqual(initialIds.slice(0,7),['foundation-g-pen','foundation-round-pen','foundation-technical','foundation-marker','foundation-pencil','foundation-hard-eraser','foundation-soft-eraser'],'accepted Foundation brushes remain unchanged');
+  assert.ok(initialIds.length>=10,'M10 starter brushes are available');
+  await page.locator('#brushSearch').fill('鉛筆');
+  const pencilOptions=await page.locator('#brush option').evaluateAll(options=>options.map(o=>({text:o.textContent,value:o.value})));
+  assert.ok(pencilOptions.some(o=>o.value==='foundation-pencil'),'original pencil remains searchable');
+  assert.ok(pencilOptions.some(o=>o.value==='illustro-soft-pencil-v1'),'new soft pencil remains searchable');
+  assert.ok(pencilOptions.every(o=>o.text.includes('鉛筆')||o.text.startsWith('選択中 ·')),'filter must show only matching brushes plus the active brush');
+  await page.locator('#brushSearch').fill('');
+  await page.locator('#brush').selectOption('foundation-g-pen');
+  await page.locator('#brushDuplicate').click();
+  const id=await page.locator('#brush').inputValue();
+  assert.ok(id.startsWith('user-brush-'),'stable user brush ID');
+  assert.equal(await page.locator('#brushSave').isDisabled(),false);
+  await page.locator('#brushFlow').evaluate(el=>{el.value='35';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert.equal(await page.locator('#brushFlowValue').textContent(),'35%');
+  await page.locator('#brushStabilization').evaluate(el=>{el.value='60';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.locator('#brushSave').click();
+  page.once('dialog',dialog=>dialog.accept('M10 検証ペン'));
+  await page.locator('#brushRename').click();
+  assert.equal(await page.locator('#brush option:checked').textContent(),'M10 検証ペン · 自作');
+  await page.reload();
+  await page.locator('#new').click();
+  await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
+  await page.locator('#brush').selectOption(id);
+  assert.equal(await page.locator('#brushFlowValue').textContent(),'35%');
+  assert.equal(await page.locator('#brushStabilizationValue').textContent(),'60%');
+  // Verify the affected new marker itself before any history interactions.
+  await page.locator('#brush').selectOption('illustro-opaque-marker-v1');
+  assert.equal(await page.locator('#brushOpacityValue').textContent(),'90%','the marker remains translucent through the transition');
+  const first=await page.locator('#canvas').boundingBox();assert.ok(first?.width>100);
+  await page.mouse.move(first.x+first.width*.3,first.y+first.height*.45);
+  await page.mouse.down();await page.mouse.move(first.x+first.width*.7,first.y+first.height*.55,{steps:24});await page.mouse.up();
+  try{await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>=1,null,{timeout:10000});}
+   catch(error){
+    const diagnostic=await page.evaluate(()=>{
+     const canvas=document.getElementById('canvas'),root=canvas?.closest('.surface'),rect=canvas?.getBoundingClientRect(),point=rect?{x:rect.x+rect.width*.5,y:rect.y+rect.height*.5}:null;
+     const hit=point?document.elementFromPoint(point.x,point.y):null,perf=window.__illustroPerformance?.read?.();
+     return {canvasRect:rect?{x:rect.x,y:rect.y,w:rect.width,h:rect.height}:null,rootClass:root?.className,
+      sceneClass:canvas?.parentElement?.className,hit:hit?.tagName,hitId:hit?.id,hitClass:hit?.className,
+      status:document.getElementById('status')?.textContent,committed:canvas?.dataset.committedStrokes,
+      inputAttempts:perf?.handoff?.inputAttempts?.slice(-3),errors:perf?.frameState?.errors,
+      lastEventTarget:document.activeElement?.id};});
+    throw Error('No committed stroke after pointer input; diagnostic='+JSON.stringify(diagnostic)+'; reason='+String(error));
+   }
+  assert.equal(await page.locator('#undo').isDisabled(),false,'Undo enabled after a stroke');
+  await page.locator('#undo').click();
+  await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='0',null,{timeout:90000});
+  await page.locator('#redo').click();
+  await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1',null,{timeout:90000});
+  // Preserve existing user-brush CRUD checks after the marker's Undo/Redo.
+  await page.locator('#brush').selectOption(id);
+  await page.locator('#brushSearch').fill('M10 検証');
+  assert.equal(await page.locator('#brush option').count(),1);
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('#brushExport').click();
+  const download=await downloadPromise;
+  const json=await fs.readFile(await download.path(),'utf8');
+  const pack=JSON.parse(json);
+  assert.ok(pack.presets.some(p=>p.id===id),'export preserved preset ID');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('#brushDelete').click();
+  assert.equal(await page.locator('#brush option[value="'+id+'"]').count(),0,'deleted custom brush removed');
+  await context.close();
+  assert.deepEqual(pageErrors,[],backend+' browser console');
+  cases.push({backend,presetCRUD:true,saveReload:true,export:true,drawAndHistory:true,consoleErrors:pageErrors});
+ }
+} catch(error){errors.push(error.stack??String(error));}
+finally{
+ if(browser)await browser.close();
+ if(server)server.close();
+ await fs.writeFile(evidence,JSON.stringify({commit:process.env.EXPECTED_COMMIT_SHA??'',scope:'software Chromium GPU only, not smartphone hardware',status:errors.length?'FAIL':'PASS',cases,errors},null,2));
+}
+if(errors.length)throw Error(errors.join('\n'));
+console.log('M10_BROWSER_REVIEW '+cases.length+' '+JSON.stringify(cases));

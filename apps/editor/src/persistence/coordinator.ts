@@ -1,9 +1,10 @@
+import {type WorkEntry} from './workLibrary';
 import {CoreDocument,type CoreRecoveryPacketV1,type LayerId,type PersistenceHandoff,type RevisionId} from '@illustro/core';
-import {validateRecord} from '@illustro/brush-rt';
 import workerUrl from './persistence.worker.ts?worker&url';
 import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortableData} from './portable';
 import type {DecodedPortableFile,PortableManifestSection} from './format';
-import type {ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
+import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
+import {cloneProjectionTiles} from './projectionTransfer';
 
 type WorkerReply={id:number;ok:boolean;result?:unknown;error?:string};
 export type Candidate=Readonly<{documentId:string;writerEpochId:string;title:string;protectedThrough:string;updatedAt:number;savedRevisionId:string|null;lastGood:boolean;previousGood:boolean}>;
@@ -13,10 +14,12 @@ export type PersistenceState=Readonly<{
   lastProtectionTime:number|null;lastExplicitSaveTime:number|null;saveDurationMs:number|null;snapshotCaptureMs:number|null;reloadDurationMs:number|null;recoveryDurationMs:number|null;
   lastGood:boolean;previousGood:boolean;offline:boolean;
 }>;
-type Pending=Readonly<{packet:CoreRecoveryPacketV1;blocks:readonly {id:string;bytes:Uint8Array}[];supportedAlgorithms:readonly string[]}>;
+type PreviewLayer=Readonly<{surfaceId:string;visible:boolean;opacity:number}>;
+type Pending=Readonly<{selectedLayerId:LayerId;packet:CoreRecoveryPacketV1;blocks:readonly {id:string;bytes:Uint8Array}[];supportedAlgorithms:readonly string[];previewLayers:readonly PreviewLayer[]}>;
 type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
 
 export class PersistenceCoordinator{
+  private destroyed=false;private navigationSequence=0;private navigationPending=0;
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
   private preserved:PreservedPortableData|undefined;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
@@ -38,13 +41,33 @@ export class PersistenceCoordinator{
   }
   noteCommit(document:CoreDocument,handoff:PersistenceHandoff){
     try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),algorithms=runtimeSupportedAlgorithms(packet);
-      this.queue.push(Object.freeze({packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms}));this.patch({currentRevision:document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
+      this.queue.push(Object.freeze({selectedLayerId:this.controller?.selectedLayerId??document.root.rootLayerIds[0]!,packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms,previewLayers:previewLayersFor(document,handoff.resultRevisionId)}));this.patch({currentRevision:document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
     catch(error){this.patch({storageError:message(error)});}
   }
   noteNavigation(document:CoreDocument){
-    this.patch({currentRevision:document.head});void this.request('set-head',{revisionId:document.head}).catch(error=>this.patch({storageError:message(error)}));
+    const sequence=++this.navigationSequence,revisionId=document.head;this.navigationPending++;this.patch({currentRevision:revisionId,protectionPending:true});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId,previewLayers:previewLayersFor(document,revisionId)});}).catch(error=>this.patch({storageError:message(error)})).finally(()=>{this.navigationPending--;this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});});
   }
-  async flushPrepared(){this.cancelIdle();await this.drain();}
+  async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
+  async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
+  async bindWork(expectedEpoch:string|null=null){if(!this.controller)throw new Error('作品が開かれていません。');return this.request('library-bind',{selectedLayerId:this.controller.selectedLayerId,expectedEpoch,preserved:this.preserved});}
+  async loadWork(documentId:string){const raw=await this.request('library-load',{documentId});
+    const document=CoreDocument.restore({snapshot:raw.snapshot,blockPayloads:new Map(raw.blocks.map((b:{id:string;bytes:Uint8Array})=>[b.id,b.bytes]))});
+    const selected=raw.entry.selectedLayerId;return {opened:{document,selectedLayerId:document.root.hasLayer(selected)?selected:document.root.rootLayerIds[0]!,preserved:raw.entry.preserved??{manifestExtras:{},optionalSections:[]},generationId:'library',snapshotRevisionId:document.head,projectionCache:raw.projectionCache??undefined} as PortableOpenResult,entry:raw.entry as WorkEntry,fallback:Boolean(raw.fallback)};}
+  async readThumbnail(documentId:string,revisionId:string):Promise<Blob|null>{const result=await this.request('library-thumbnail-read',{documentId,revisionId});return result.image??null;}
+  async repairThumbnail(documentId:string):Promise<{state:'pending'|'complete'|'current'|'unavailable'}>{return this.request('library-preview-step',{documentId});}
+  async renameWork(documentId:string,name:string){await this.request('library-rename',{documentId,name});}
+  async deleteWork(documentId:string){await this.request('library-delete',{documentId});}
+  async resetWorks(){
+    await this.flushPrepared();
+    await this.request('library-reset',{});
+    this.controller=null;this.queue=[];this.preserved=undefined;this.fileHandle=null;this.externalFingerprint=null;
+    this.patch({currentRevision:null,savedRevision:null,protectedThrough:'0',queueLength:0,protectionPending:false,recovered:false,storageError:null});
+  }
+  async selectWorkLayer(selectedLayerId:LayerId){const controller=this.controller;await this.flushPrepared();if(controller!==this.controller||controller?.selectedLayerId!==selectedLayerId)return;await this.request('library-selection',{selectedLayerId});}
+  async storeThumbnail(documentId:string,revisionId:string,thumbnail:Blob){await this.request('library-thumbnail',{documentId,revisionId,thumbnail});}
+  async barrier(){await this.flushPrepared();await this.request('flush',{});if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);}
+  async retry(){this.cancelIdle();await this.drain();if(this.queue.length)throw new Error(this.stateValue.storageError??'保存に失敗しました。');if(this.controller){const d=this.controller.document;await this.request('set-head',{revisionId:d.head,width:d.root.width,height:d.root.height,previewLayers:previewLayersFor(d,d.head)});}this.patch({storageError:null});}
+  clearFileDestination(){this.fileHandle=null;this.externalFingerprint=null;}
   async listRecoveryCandidates():Promise<readonly Candidate[]>{const result=await this.request('list-recovery',{}) as any;this.applyStorage(result.storage);if(result.backend)this.patch({backend:String(result.backend)});return Object.freeze((Array.isArray(result.candidates)?result.candidates:[]) as Candidate[]);}
   async recover(candidate:Candidate){
     const started=performance.now(),result=await this.request('load-recovery',{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}) as any,blocks=new Map<string,Uint8Array>();
@@ -59,7 +82,7 @@ export class PersistenceCoordinator{
     const decoded:Object={manifest:raw.manifest,sections},opened=openDecodedPortableDocument(decoded as DecodedPortableFile),projectionCache=isProjectionCache(raw.projectionCache)?raw.projectionCache:undefined;this.patch({reloadDurationMs:performance.now()-started});return Object.freeze({...opened,...(projectionCache?{projectionCache}:{})});
   }
   async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false){
-    if(this.stateValue.saving)throw new Error('保存中です。');this.patch({saving:true,storageError:null});const started=performance.now();
+    if(this.stateValue.saving)throw new Error('保存中です。');this.patch({saving:true});const started=performance.now();
     try{
       let handlePromise:Promise<unknown>|null=null;const w=window as AnyWindow;if(!this.fileHandle||forceSaveCopy){if(w.showSaveFilePicker)handlePromise=w.showSaveFilePicker({suggestedName:safeFileName(document.root.name)+'.illustro',types:[{description:'Illustro作品',accept:{'application/octet-stream':['.illustro']}}]});}
       const saveRevision=document.head,captureStart=performance.now(),snapshot=document.capturePersistenceSnapshot(saveRevision),snapshotCaptureMs=performance.now()-captureStart,blockEntries=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes})),generationId=crypto.randomUUID(),createdAt=Date.now();
@@ -69,7 +92,7 @@ export class PersistenceCoordinator{
       else{downloadBlob(bytes,safeFileName(document.root.name)+'.illustro');output='download';}
       this.patch({currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
       return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId});
-    }catch(error){this.patch({saving:false,storageError:message(error),saveDurationMs:performance.now()-started});throw error;}
+    }catch(error){this.patch({saving:false,saveDurationMs:performance.now()-started});throw error;}
   }
   async saveCopy(document:CoreDocument,selectedLayerId:LayerId){return this.save(document,selectedLayerId,true);}
   async storeProjectionCheckpoint(cache:ProjectionCacheV1){
@@ -81,8 +104,9 @@ export class PersistenceCoordinator{
   async storeProjectionDelta(delta:ProjectionCheckpointDeltaV2){
     if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
     await this.flushPrepared();if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
-    const tiles=delta.tiles.map(tile=>({surfaceId:tile.surfaceId,key:tile.key,pixels:tile.pixels.slice()})),transfer=tiles.map(tile=>tile.pixels.buffer as ArrayBuffer);
-    await this.request('store-projection-delta',{revisionId:delta.revisionId,width:delta.width,height:delta.height,tileSize:delta.tileSize,surfaceIds:[...delta.surfaceIds],tiles},transfer);return true;
+    const controller=this.controller,valid=()=>!this.destroyed&&this.controller===controller&&controller.document.head===delta.revisionId,tiles=await cloneProjectionTiles(delta.tiles,valid);
+    if(!tiles||!valid())return false;const transfer=tiles.map(tile=>tile.pixels.buffer as ArrayBuffer);
+    await this.request('store-projection-delta',{replace:delta.replace===true,revisionId:delta.revisionId,width:delta.width,height:delta.height,tileSize:delta.tileSize,surfaceIds:[...delta.surfaceIds],tiles},transfer);return true;
   }
   async storageStatus(requestPersistence=false){
     const storage=navigator.storage;let persisted:boolean|null=null,usage:number|null=null,quota:number|null=null;
@@ -90,18 +114,18 @@ export class PersistenceCoordinator{
     try{const estimate=storage?.estimate?await storage.estimate():null;usage=estimate?.usage??null;quota=estimate?.quota??null;}catch{}
     this.patch({storagePersisted:persisted,storageUsage:usage,storageQuota:quota});return {persisted,usage,quota};
   }
-  destroy(){this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
+  destroy(){this.destroyed=true;this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
   private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:250});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
   private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
   private async drain(){
     if(this.activeDrain)return this.activeDrain;
-    const run=(async()=>{try{while(this.queue.length){const item=this.queue.shift()!,transfers=item.blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{packet:item.packet,blocks:item.blocks,supportedAlgorithms:item.supportedAlgorithms},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
-      catch(error){this.patch({storageError:message(error)});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
-    this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length)this.schedule();}
+    const run=(async()=>{try{while(this.queue.length){const item=this.queue.shift()!,blocks=item.blocks.map(b=>({id:b.id,bytes:b.bytes.slice()})),transfers=blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{selectedLayerId:item.selectedLayerId,packet:item.packet,blocks,supportedAlgorithms:item.supportedAlgorithms,previewLayers:item.previewLayers},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
+      catch(error){this.queue.unshift(item);this.patch({storageError:message(error),protectionPending:true});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
+    this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length&&!this.stateValue.storageError)this.schedule();}
   }
   private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
   private patch(patch:Partial<PersistenceState>){
-    const next={...this.stateValue,...patch,offline:!navigator.onLine};
+    const next={...this.stateValue,...patch,offline:!navigator.onLine};if(this.navigationPending>0)next.protectionPending=true;
     next.dirty=next.savedRevision===null?true:next.currentRevision!==next.savedRevision;
     this.stateValue=Object.freeze(next);this.onChange(this.stateValue);
   }
@@ -119,12 +143,15 @@ export class PersistenceCoordinator{
     }catch(error){try{await writable.abort?.();}catch{}throw error;}
     return await verifyExternalWrite(h,stable);
   }
-  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared();};private pagehide=()=>{void this.flushPrepared();};private onlineState=()=>this.patch({offline:!navigator.onLine});
+  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared().catch(()=>{});};private pagehide=()=>{void this.flushPrepared().catch(()=>{});};private onlineState=()=>this.patch({offline:!navigator.onLine});
 }
 
+function previewLayersFor(document:CoreDocument,revisionId:RevisionId):readonly PreviewLayer[]{
+  const root=document.revision(revisionId).root;
+  return root.rootLayerIds.map(id=>{const layer=root.getLayer(id);return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})};});
+}
 function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){
-  const supported=new Set<string>();for(const operation of packet.revision.command.operations){if(operation.kind!=='brush.stroke')continue;const record=validateRecord(operation.parameters.strokeRecord);supported.add('engine:'+record.engine);supported.add('reconstruction:'+record.smoothing);supported.add('prng:'+record.random);supported.add('stroke-schema:'+record.version);}
-  return Object.freeze([...supported]);
+  const supported=new Set<string>();for(const operation of packet.revision.command.operations)for(const ref of operation.algorithmVersionRefs)supported.add(ref);return Object.freeze([...supported]);
 }
 async function fingerprintHandle(handle:unknown){const file=await (handle as {getFile:()=>Promise<File>}).getFile(),bytes=new Uint8Array(await file.arrayBuffer()),hash=await hashHex(bytes);return file.size+':'+file.lastModified+':'+hash;}
 async function verifyExternalWrite(handle:{getFile:()=>Promise<File>},expected:Uint8Array){
@@ -147,7 +174,21 @@ function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes.s
 function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
 function message(error:unknown){return error instanceof Error?error.message:String(error);}
 
-function isProjectionCache(value:unknown):value is ProjectionCacheV1{
-  if(!value||typeof value!=='object')return false;const x=value as ProjectionCacheV1;
-  return x.version===1&&typeof x.revisionId==='string'&&Number.isSafeInteger(x.width)&&Number.isSafeInteger(x.height)&&x.width>0&&x.height>0&&Array.isArray(x.layers)&&x.layers.every(layer=>typeof layer?.surfaceId==='string'&&layer.pixels instanceof Uint8Array&&layer.pixels.byteLength===x.width*x.height*4);
+export function isProjectionCache(value:unknown):value is ProjectionCache{
+  if(!value||typeof value!=='object')return false;
+  const x=value as ProjectionCache;
+  if(typeof x.revisionId!=='string'||!Number.isSafeInteger(x.width)||!Number.isSafeInteger(x.height)||x.width<1||x.height<1||!Array.isArray(x.layers))return false;
+  if(x.version===1)return x.layers.every(layer=>typeof layer?.surfaceId==='string'&&layer.pixels instanceof Uint8Array&&layer.pixels.byteLength===x.width*x.height*4);
+  if(x.version!==2||x.tileSize!==128)return false;
+  const maxX=Math.ceil(x.width/128),maxY=Math.ceil(x.height/128),surfaces=new Set<string>();
+  for(const layer of x.layers){
+    if(!layer||typeof layer.surfaceId!=='string'||surfaces.has(layer.surfaceId)||!Array.isArray(layer.tiles))return false;
+    surfaces.add(layer.surfaceId);const keys=new Set<string>();
+    for(const tile of layer.tiles){
+      if(!tile||typeof tile.key!=='string'||!/^\d+,\d+$/.test(tile.key)||keys.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.byteLength!==128*128*4)return false;
+      const [tx,ty]=tile.key.split(',').map(Number);if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||tx>=maxX||ty>=maxY)return false;
+      keys.add(tile.key);
+    }
+  }
+  return true;
 }

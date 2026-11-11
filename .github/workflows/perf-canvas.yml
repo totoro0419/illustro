@@ -1,0 +1,264 @@
+name: Canvas Performance
+on:
+  push:
+    branches: ['perf/canvas-presentation-2026-10-14']
+    # Color-only changes use the focused UI + gesture pipeline. Renderer,
+    # persistence and input-source changes still require the full performance run.
+    paths-ignore:
+      - 'apps/editor/src/color/**'
+      - 'scripts/editor-orbit-smoke.mjs'
+      - 'scripts/editor-color-hit-smoke.mjs'
+      - 'scripts/check-color-interaction-review.mjs'
+      - '.github/workflows/color-interaction.yml'
+      - '.github/workflows/perf-canvas.yml'
+      - 'docs/research/COLOR_INTERACTION_2026-10-14.md'
+      - 'docs/CANONICAL_INDEX.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: perf-canvas-${{ github.sha }}
+  cancel-in-progress: true
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare M09 baseline
+        run: |
+          git worktree add --detach /tmp/perf-before e04d3e29ab162d487d0c774524323bf49c684a4d
+          cd /tmp/perf-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/before-build.log
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Measure baseline
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          PERF_RUNTIME_ROOT: /tmp/perf-before/packages/brush-rt/dist
+          PERF_BASELINE: '1'
+          PERF_OUTPUT: /tmp/perf-evidence/before.json
+          EXPECTED_COMMIT_SHA: e04d3e29ab162d487d0c774524323bf49c684a4d
+        run: node scripts/canvas-performance.mjs
+      - run: npm run brush:build > /tmp/after-build.log
+      - name: Measure improvement
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          PERF_OUTPUT: /tmp/perf-evidence/after.json
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/canvas-performance.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: canvas-performance-measurements, path: /tmp/perf-evidence/}
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run prep:check && npm run core:check
+      - run: npm run brush:build > /tmp/brush-build.log
+      - run: npx vitest run apps/editor/src packages/core/src/geometry.test.ts
+      - run: |
+          node --test packages/brush-rt/test/*.test.mjs > /tmp/brush-tests.log
+          node scripts/check-test-summary.mjs /tmp/brush-tests.log
+      - name: Build exact review app
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: M01 to M09 runtime regression
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          M08_PERF_REVIEW: '1'
+          M05_EXPECT_MILESTONE: M07
+          M06_EXPECT_MILESTONE: M07
+          M08_CORRUPT_ALL_RENDER_CACHES: '1'
+        run: |
+          node scripts/display-cache-quality.mjs
+          node scripts/preview-tail-quality.mjs
+          node scripts/editor-perf-checkpoint.mjs
+          node scripts/editor-m09-smoke.mjs
+          node scripts/editor-orbit-smoke.mjs
+          # A renderer/performance change must also pass the full painted-band
+          # and SV overlap touch regression, not just the central Orbit smoke.
+          node scripts/editor-color-hit-smoke.mjs
+          node scripts/editor-m05-smoke.mjs
+          node scripts/editor-m06-smoke.mjs
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-home-smoke.mjs
+          node scripts/editor-works-smoke.mjs
+          node scripts/editor-works-safety-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canvas-regression-evidence
+          path: |
+            /tmp/*-evidence/
+            /tmp/brush-tests.log
+      - uses: actions/upload-artifact@v4
+        with: {name: canvas-review-build, path: apps/editor/dist/}
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run brush:build > /tmp/foundation-build.log
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Brush visual equivalence and large-size latency growth
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          RT_EVIDENCE_DIRECTORY: /tmp/foundation-perf-evidence
+          RT_QUICK_TEST: '1'
+        run: node prototypes/brush-rt/foundation-quick-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: canvas-foundation-evidence, path: /tmp/foundation-perf-evidence/}
+  latency-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build matched M09 and previous review
+        run: |
+          git worktree add --detach /tmp/latency-m09 e04d3e29ab162d487d0c774524323bf49c684a4d
+          git worktree add --detach /tmp/latency-prior 3040c4be6610bce42c3a98ec3f4646abd0253926
+          (cd /tmp/latency-m09 && npm run brush:build > /tmp/latency-m09-build.log)
+          (cd /tmp/latency-prior && npm run brush:build > /tmp/latency-prior-build.log)
+          npm run brush:build > /tmp/latency-current-build.log
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Compare complete input retention and original latency proxies
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/brush-latency-comparison.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: brush-latency-comparison, path: /tmp/brush-latency-evidence/}
+  gesture-cancellation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare previous review with counters only
+        run: |
+          git worktree add --detach /tmp/gesture-before 6f18011a4a862fff07889dd9d77fab291d0fd05e
+          node scripts/instrument-gesture-baseline.mjs /tmp/gesture-before
+          cd /tmp/gesture-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/gesture-before-build.log
+          VITE_COMMIT_SHA=6f18011a4a862fff07889dd9d77fab291d0fd05e npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Build exact cancellation fix
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm run brush:build > /tmp/gesture-current-build.log
+          npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Reproduce previous whole-document replay via trusted touch
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          GESTURE_APP_ROOT: /tmp/gesture-before/apps/editor/dist
+          GESTURE_EXPECT_REPLAY: '1'
+          GESTURE_EVIDENCE_DIRECTORY: /tmp/gesture-cancel-evidence/before
+          EXPECTED_COMMIT_SHA: 6f18011a4a862fff07889dd9d77fab291d0fd05e
+        run: node scripts/editor-gesture-cancel-smoke.mjs
+      - name: Verify committed GPU pixels and actual gesture cancellation
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          GESTURE_EVIDENCE_DIRECTORY: /tmp/gesture-cancel-evidence/after
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/stroke-cancellation-quality.mjs
+          node scripts/editor-gesture-cancel-smoke.mjs
+          mkdir -p /tmp/gesture-cancel-evidence/gpu
+          cp -a /tmp/stroke-cancellation-evidence/. /tmp/gesture-cancel-evidence/gpu/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: gesture-cancellation-evidence, path: /tmp/gesture-cancel-evidence/}
+  publish:
+    needs: [regression, benchmark, foundation, latency-comparison, gesture-cancellation]
+    # Publish a device-review build only after functional/image safety checks.
+    # A latency-only failure remains a failed CI result and is published verbatim.
+    if: ${{ always() && needs.regression.result == 'success' && needs.benchmark.result == 'success' && needs['gesture-cancellation'].result == 'success' && needs['latency-comparison'].result == 'success' && (needs.foundation.result == 'success' || needs.foundation.result == 'failure') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/download-artifact@v4
+        with: {name: canvas-review-build, path: review-build}
+      - uses: actions/download-artifact@v4
+        with: {name: canvas-performance-measurements, path: review-measurements}
+      - uses: actions/download-artifact@v4
+        with: {name: canvas-foundation-evidence, path: review-foundation}
+      - uses: actions/download-artifact@v4
+        with: {name: brush-latency-comparison, path: review-latency}
+      - uses: actions/download-artifact@v4
+        with: {name: gesture-cancellation-evidence, path: review-gestures}
+      - name: Verify experimental review safety and preserve unmet latency checks
+        env:
+          FOUNDATION_RESULT: ${{ needs.foundation.result }}
+        run: |
+          node scripts/check-performance-review.mjs review-foundation/foundation-quick-results.json review-measurements/qa-status.json review-latency/report.json
+          node scripts/check-gesture-cancellation.mjs review-gestures/before/report.json review-gestures/after/report.json review-gestures/gpu/report.json review-measurements/qa-status.json
+      - name: Preserve all earlier QA and stage isolated review
+        run: |
+          (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.before
+          mkdir -p site/qa/perf-canvas/app site/qa/perf-canvas/evidence/foundation
+          cp -a review-measurements/. site/qa/perf-canvas/evidence/
+          cp -a review-foundation/. site/qa/perf-canvas/evidence/foundation/
+          mkdir -p site/qa/perf-canvas/evidence/latency-comparison
+          cp -a review-latency/. site/qa/perf-canvas/evidence/latency-comparison/
+          mkdir -p site/qa/perf-canvas/evidence/gesture-cancellation
+          cp -a review-gestures/. site/qa/perf-canvas/evidence/gesture-cancellation/
+          cp -a review-build/. site/qa/perf-canvas/app/
+          printf '%s\n' '<!doctype html><html lang="ja"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./app/"><title>Illustro Canvas Performance</title><script>location.replace("./app/"+location.search+location.hash)</script><a href="./app/">性能改善版を開く</a></html>' > site/qa/perf-canvas/index.html
+          (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/old-qa.after
+          diff -u /tmp/old-qa.before /tmp/old-qa.after
+      - name: Publish only performance review
+        working-directory: site
+        run: |
+          current=$(git ls-remote origin refs/heads/perf/canvas-presentation-2026-10-14 | cut -f1)
+          if [ "$current" != "$GITHUB_SHA" ]; then echo 'Newer review commit exists; preserving its publication.'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-canvas
+          git diff --cached --quiet || git commit -m 'qa: publish isolated canvas performance review'
+          git push origin HEAD:gh-pages

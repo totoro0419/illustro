@@ -13,3 +13,5 @@ Gペン、丸ペン、製図ペン、マーカー、鉛筆、硬い消しゴム�
 旧WebGL2鉛筆512px/240Hzの初回反復+32.33ms（+20ms基準超過）のFAILは履歴として保持する。後続成功だけで原因解消とはしない。最新CI/回帰結果は `../production-prep/VERIFICATION.md` に記録する。古いHANDOFF_STATE/VALIDATIONのcommitや待機指示は履歴でありこの文書を上書きしない。
 
 本番接続時は現Renderer/Worker/補正/予測/入力保持を維持し、Document側adapterのみ追加する。独立セッションのUndo/Saveを文書全体のHistory/保存と誤認しない。実機で具体的な問題が再現した場合だけ最小修正する。
+
+2026-10-17追加修正: 新規の強制入り抜き付き連続丸形状はcontextの`forceFadeGeometry: adaptive-v1`で入力点間の曲線を補間する。既存の長さ式・曲線・最小幅を維持する。フラグのない旧記録は元の形状計算を保ち、保存済み画素と再生結果を変更しない。詳しくは[修正と検証の記録](../research/CANVAS_FADE_LAYER_2026-10-17.md)。実機合格・全端末合格を意味しない。

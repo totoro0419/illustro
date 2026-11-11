@@ -35,16 +35,16 @@ describe('M08 seamless live rendering is incremental',()=>{
 });
 describe('M08 view update race',()=>{
  it('preserves the latest viewport change until the next GPU presentation',async()=>{
-  const draws:Array<()=>void>=[];
-  const backend={immediatePreview:false,poll:()=>{},setViewTransform:()=>{},render:()=>new Promise<void>(resolve=>draws.push(resolve)),destroy:()=>{}};
+  const draws:Array<()=>void>=[];let presentations=0;
+  const backend={immediatePreview:false,poll:()=>{},setViewTransform:()=>{},presentView:()=>{presentations++;return true;},render:()=>new Promise<void>(resolve=>draws.push(resolve)),destroy:()=>{}};
   const Renderer=GpuRenderer as unknown as new(b:unknown,w:number,h:number)=>any;
   const renderer=new Renderer(backend,512,384);
   expect(renderer.frame(10)).toBe(true);expect(draws).toHaveLength(1);
   renderer.setViewTransform(new Float32Array([100,100,100,100,512,384,1,0,30,0,1,1,0,0,0,0]));
   draws[0]!();await Promise.resolve();await Promise.resolve();
-  expect(renderer.needsFrame).toBe(true);
-  expect(renderer.frame(20)).toBe(true);expect(draws).toHaveLength(2);
-  draws[1]!();await Promise.resolve();await Promise.resolve();
+  expect(renderer.viewPending).toBe(true);
+  expect(renderer.frame(20)).toBe(true);expect(presentations).toBe(1);
+  expect(draws).toHaveLength(1);expect(renderer.viewPending).toBe(false);
   expect(renderer.needsFrame).toBe(false);
   renderer.destroy();
  });

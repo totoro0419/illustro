@@ -11,10 +11,11 @@ const expectedCommit=(process.env.EXPECTED_COMMIT_SHA??'').trim();
 const evidence=path.resolve(process.env.M05_EVIDENCE_DIRECTORY??'/tmp/illustro-m05');
 await fs.mkdir(evidence,{recursive:true});
 
-let server=null,base=publicBase;
+let server=null,base=publicBase,localNetworkDisabled=false;
 if(!publicBase){
   const root=path.resolve(import.meta.dirname,'../apps/editor/dist');
   server=http.createServer(async(req,res)=>{
+    if(localNetworkDisabled){req.socket.destroy();return;}
     try{
       const pathname=decodeURIComponent((req.url??'/').split('?')[0]);
       const file=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
@@ -34,14 +35,14 @@ if(!publicBase){
   base=`http://127.0.0.1:${server.address().port}/`;
 }
 
-const browser=await chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface']});
+const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{}),args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface']});
 const report={milestone:'M05',mode:publicBase?'public':'local',url:base,status:'FAIL',backends:[],recovery:null,gap:null,lastGood:null,offline:null};
 
 function pageUrl(backend='webgl2'){const suffix=publicBase?`?backend=${backend}&build=${encodeURIComponent(expectedCommit)}&m05-public-check=1`:`?qa=1&backend=${backend}`;return base+suffix;}
 async function qa(page){return JSON.parse((await page.locator('#qaAuto').textContent())??'{}');}
 async function waitReady(page){await page.waitForFunction(()=>!(document.getElementById('brush')?.disabled),{timeout:45000});}
-async function waitIdle(page){await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.historyBusy==='false',{timeout:15000});}
-async function waitStroke(page,count){await page.waitForFunction(n=>document.querySelector('canvas')?.dataset.committedStrokes===String(n),count,{timeout:20000});await waitIdle(page);}
+async function waitIdle(page){await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.historyBusy==='false',{timeout:15000});}
+async function waitStroke(page,count){await page.waitForFunction(n=>document.getElementById('canvas')?.dataset.committedStrokes===String(n),count,{timeout:20000});await waitIdle(page);}
 async function waitProtected(page,min){await page.waitForFunction(n=>{try{const raw=document.querySelector('#qaAuto')?.textContent;if(!raw)return false;const p=JSON.parse(raw).persistence;return BigInt(p?.protectedThrough??'0')>=BigInt(n)&&p?.queueLength===0&&!p?.protectionPending&&!p?.storageError;}catch{return false;}},String(min),{timeout:30000});}
 async function draw(page,a=[.16,.35],b=[.84,.35],steps=20){const canvas=page.locator('#canvas'),box=await canvas.boundingBox();assert.ok(box);await page.mouse.move(box.x+a[0]*box.width,box.y+a[1]*box.height);await page.mouse.down();await page.mouse.move(box.x+b[0]*box.width,box.y+b[1]*box.height,{steps});await page.mouse.up();}
 async function freshContext(){const context=await browser.newContext({acceptDownloads:true});await context.addInitScript(()=>{try{Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true});}catch{}});return context;}
@@ -164,7 +165,7 @@ try{
   for(const backend of ['webgl2','webgpu']){
     const context=await freshContext(),page=await context.newPage({viewport:{width:1280,height:900}}),errors=await init(page,backend);
     await draw(page,[.12,.28],[.82,.28]);await waitStroke(page,1);
-    await page.locator('#addLayer').click();await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.layerCount==='2');
+    await page.locator('#addLayer').click();await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.layerCount==='2');
     await draw(page,[.12,.52],[.82,.52]);await waitStroke(page,2);
     await page.locator('#erase').click();await page.locator('#brush').selectOption('foundation-hard-eraser');await draw(page,[.43,.52],[.57,.52],10);await waitStroke(page,3);
     await waitProtected(page,4);await page.waitForTimeout(1200);
@@ -212,11 +213,12 @@ try{
   }
 
   // Checkpoint policy: every operation is journaled; finished-state checkpoint is forced
-  // at 12 operations even without an idle gap.
+  // at 12 operations even without an idle gap. Wait for the latest finished
+  // checkpoint; an earlier idle checkpoint must not satisfy this completion gate.
   {
     const context=await freshContext(),page=await context.newPage({viewport:{width:1000,height:760}});await init(page);
     for(let i=0;i<12;i++){const y=.10+(i%10)*.075;await draw(page,[.12,y],[.82,y],2);await waitStroke(page,i+1);}
-    await waitProtected(page,12);await page.waitForFunction(()=>{try{const q=JSON.parse(document.querySelector('#qaAuto')?.textContent??'{}');return q.autosaveCheckpoint?.fullSeedPending===false&&q.autosaveCheckpoint?.lastCheckpointAt!==null;}catch{return false;}},{timeout:30000});
+    await waitProtected(page,12);await page.waitForFunction(()=>{try{const q=JSON.parse(document.querySelector('#qaAuto')?.textContent??'{}');return q.autosaveCheckpoint?.fullSeedPending===false&&q.autosaveCheckpoint?.lastCheckpointAt!==null&&q.autosaveCheckpoint?.opsSinceLast===0;}catch{return false;}},null,{timeout:30000});
     const state=await qa(page);assert.equal(state.autosaveCheckpoint.operationInterval,12);assert.equal(state.autosaveCheckpoint.idleMs,800);assert.equal(state.autosaveCheckpoint.opsSinceLast,0);report.checkpointCadence={status:'PASS',operationInterval:12,idleMs:800,protectedThrough:state.persistence.protectedThrough};await context.close();
   }
 
@@ -284,14 +286,14 @@ try{
     await page.goto(pageUrl(),{waitUntil:'networkidle',timeout:45000});await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForFunction(()=>navigator.serviceWorker.controller!==null,{timeout:15000});
     const qaPanel=page.locator('#qaPanel');if(await qaPanel.count())await qaPanel.evaluate(el=>{el.open=false;});
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await waitReady(page);await draw(page);await waitStroke(page,1);await waitProtected(page,1);
-    const onlineSave=await saveDownload(page);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded',timeout:45000});assert.ok((await page.locator('body').innerText()).includes('Illustro'));
+    const onlineSave=await saveDownload(page);await context.setOffline(true);localNetworkDisabled=!!server;await page.reload({waitUntil:'domcontentloaded',timeout:45000});assert.ok((await page.locator('body').innerText()).includes('Illustro'));
     const offlineQaPanel=page.locator('#qaPanel');if(await offlineQaPanel.count())await offlineQaPanel.evaluate(el=>{el.open=false;});
     await page.getByRole('button',{name:'新規キャンバス',exact:true}).click();await waitReady(page);await draw(page,[.18,.45],[.82,.45]);await waitStroke(page,1);await waitProtected(page,1);
     const offlineSave=await saveDownload(page);assert.ok(offlineSave.filePath);await page.locator('#openFile').setInputFiles(onlineSave.filePath);await page.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('作品ファイルを開きました。自動保存を開始しました。'),{timeout:30000});await waitReady(page);
     assert.deepEqual(errors,[],'Offline app operations produced a browser error before the intentional network probe');
     const networkUnavailable=await page.evaluate(async()=>{try{await fetch('./__m05_network_probe__?t='+Date.now(),{cache:'no-store'});return false;}catch{return true;}});
     const navigatorOnline=await page.evaluate(()=>navigator.onLine),offlineState=await qa(page);assert.equal(networkUnavailable,true);
-    report.offline={status:'PASS',serviceWorker:true,networkUnavailable,draw:true,recoveryStore:true,save:true,open:true,navigatorOnline,backend:offlineState.persistence.backend};await context.setOffline(false);await context.close();
+    report.offline={status:'PASS',serviceWorker:true,networkUnavailable,draw:true,recoveryStore:true,save:true,open:true,navigatorOnline,backend:offlineState.persistence.backend};localNetworkDisabled=false;await context.setOffline(false);await context.close();
   }
 
   report.status='PASS';

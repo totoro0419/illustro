@@ -1,0 +1,116 @@
+name: Color Interaction Review
+on:
+  push:
+    branches: ['perf/canvas-presentation-2026-10-14']
+    paths:
+      - 'apps/editor/src/color/**'
+      - 'scripts/editor-orbit-smoke.mjs'
+      - 'scripts/editor-color-hit-smoke.mjs'
+      - 'scripts/check-color-interaction-review.mjs'
+      - '.github/workflows/color-interaction.yml'
+      - 'docs/research/COLOR_INTERACTION_2026-10-14.md'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: color-interaction-${{ github.sha }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Require unchanged accepted canvas fix and persistence
+        run: |
+          changes=$(git diff --name-only 719dbe455f1ef83963640d640b89a3e101e0e5d7 HEAD -- packages/brush-rt/src packages/brush/src packages/core/src apps/editor/src/brushSurface.ts apps/editor/src/main.ts apps/editor/src/persistence)
+          test -z "$changes" || { echo 'Rendering/input/persistence changed; full performance verification required.'; exit 1; }
+      - name: Source and functional checks
+        run: |
+          npm run prep:check
+          npm run core:check
+          npm run brush:build > /tmp/color-brush-build.log
+          node --test packages/brush-rt/test/*.test.mjs > /tmp/color-brush-tests.log
+          node scripts/check-test-summary.mjs /tmp/color-brush-tests.log
+          npx vitest run apps/editor/src packages/core/src/geometry.test.ts
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Build exact revised editor
+        env:
+          VITE_COMMIT_SHA: ${{ github.sha }}
+        run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Build immutable old color UI for reproduction
+        run: |
+          git worktree add --detach /tmp/color-before 719dbe455f1ef83963640d640b89a3e101e0e5d7
+          cd /tmp/color-before
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run brush:build > /tmp/color-before-brush-build.log
+          VITE_COMMIT_SHA=719dbe455f1ef83963640d640b89a3e101e0e5d7 npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install browser
+        run: |
+          npm install --prefix /tmp/perf-browser playwright@1.62.1 --no-audit --no-fund
+          /tmp/perf-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Reproduce ignored visible band on the old source
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          COLOR_HIT_BASELINE: '1'
+          COLOR_HIT_APP_ROOT: /tmp/color-before/apps/editor/dist
+          COLOR_HIT_EVIDENCE: /tmp/color-interaction-evidence/before
+          EXPECTED_COMMIT_SHA: 719dbe455f1ef83963640d640b89a3e101e0e5d7
+        run: node scripts/editor-color-hit-smoke.mjs
+      - name: Full band, SV ownership, trusted touch and prior M09 behavior
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          COLOR_HIT_EVIDENCE: /tmp/color-interaction-evidence/after
+          ORBIT_EVIDENCE_DIRECTORY: /tmp/color-interaction-evidence/orbit
+          M09_EVIDENCE_DIRECTORY: /tmp/color-interaction-evidence/m09
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/editor-color-hit-smoke.mjs
+          node scripts/editor-orbit-smoke.mjs
+          node scripts/editor-m09-smoke.mjs
+      - name: Preserve actual canvas gesture cancellation
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/perf-browser/node_modules/playwright
+          GESTURE_EVIDENCE_DIRECTORY: /tmp/color-interaction-evidence/canvas-gestures
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: node scripts/editor-gesture-cancel-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: color-interaction-evidence, path: /tmp/color-interaction-evidence/}
+      - uses: actions/upload-artifact@v4
+        with: {name: color-review-build, path: apps/editor/dist/}
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site}
+      - uses: actions/download-artifact@v4
+        with: {name: color-interaction-evidence, path: color-evidence}
+      - uses: actions/download-artifact@v4
+        with: {name: color-review-build, path: color-build}
+      - name: Validate evidence without rewriting prior GPU measurements
+        run: node scripts/check-color-interaction-review.mjs color-evidence site/qa/perf-canvas/evidence/qa-status.json
+      - name: Stage isolated QA and preserve previous milestones
+        run: |
+          (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/color-old-qa.before
+          mkdir -p site/qa/perf-canvas/evidence/color-interaction
+          cp -a color-evidence/. site/qa/perf-canvas/evidence/color-interaction/
+          cp -a color-build/. site/qa/perf-canvas/app/
+          (cd site && find qa -type f ! -path 'qa/perf-canvas/*' -print0 | sort -z | xargs -0 sha256sum) > /tmp/color-old-qa.after
+          diff -u /tmp/color-old-qa.before /tmp/color-old-qa.after
+      - name: Publish current color review only
+        working-directory: site
+        run: |
+          current=$(git ls-remote origin refs/heads/perf/canvas-presentation-2026-10-14 | cut -f1)
+          if [ "$current" != "$GITHUB_SHA" ]; then echo 'Newer review exists; skipping stale publication.'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/perf-canvas
+          git diff --cached --quiet || git commit -m 'qa: publish verified color interaction repair with preserved canvas fix'
+          git push origin HEAD:gh-pages

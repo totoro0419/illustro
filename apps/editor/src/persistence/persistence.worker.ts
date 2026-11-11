@@ -1,4 +1,7 @@
-import {mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
+import {ContiguousProtection} from './contiguousProtection';
+import {hasPixelData} from './pixelPresence';
+import {listWorks,getWork,getWorkThumbnail,storeWorkThumbnail,publishWork,updateWork,deleteWork,resetWorkLibrary,isWorkDeleted,lastWorkId,namedSnapshot,type WorkEntry} from './workLibrary';
+import {CoreDocument,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from '@illustro/core';
 import {decodeIllustroFile,encodeIllustroFile,type PortableSectionInput} from './format';
 
 type RequestMessage={id:number;type:string;[key:string]:unknown};
@@ -7,13 +10,16 @@ type Entry={name:string;kind:'file'|'directory'};
 type StoreMode='opfs-sync'|'opfs-async'|'indexeddb';
 type ProjectionEncoding='raw-rgba8'|'gzip-rgba8';
 type ProjectionIndex=Readonly<{version:1;generationId:string;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
-type ProjectionDeltaIndex=Readonly<{version:2;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number}>[]}>;
-type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>;
+type ProjectionDeltaIndex=Readonly<{version:2|3;revisionId:string;width:number;height:number;tileSize:number;surfaceIds:readonly string[];tiles:readonly Readonly<{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number;digest?:string}>[]}>;
+type ProjectionCache=Readonly<{version:1;revisionId:string;width:number;height:number;layers:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[]}>|Readonly<{version:2;revisionId:string;width:number;height:number;tileSize:128;layers:readonly Readonly<{surfaceId:string;tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[]}>[]}>;
 
 const out=self as unknown as {postMessage:(value:unknown,transfer?:Transferable[])=>void};
 const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
 const FRAME_MAGIC=encoder.encode('ILJRNL01'),FRAME_HEADER=12,FRAME_HASH=32;
 let storePromise:Promise<WorkingStore>|null=null,currentSession:Session|null=null,serial=Promise.resolve();
+let libraryWork:WorkEntry|null=null;
+let previewTask:PreviewTask|null=null;
+let justInitializedRoot:Readonly<{documentId:string;writerEpochId:string;revisionId:string;root:CorePersistenceSnapshotV1['revisions'][number]['root']}>|null=null;
 
 self.onmessage=(event:MessageEvent<RequestMessage>)=>{
   const message=event.data;serial=serial.then(()=>handle(message)).catch(error=>reply(message.id,false,undefined,error));
@@ -22,26 +28,111 @@ self.onmessage=(event:MessageEvent<RequestMessage>)=>{
 async function handle(message:RequestMessage){
   const store=await getStore();
   switch(message.type){
+    case 'library-list':{reply(message.id,true,{works:await listWorks(),lastWorkId:await lastWorkId()});break;}
+    case 'library-bind':{
+      const session=requireSession(message),cached=justInitializedRoot?.documentId===session.documentId&&justInitializedRoot.writerEpochId===session.writerEpochId?justInitializedRoot:null;
+      // 'init' has already persisted and read-verified the complete root. Reopening the
+      // journal and rebuilding Core here was duplicate work on every artwork switch.
+      let root:CorePersistenceSnapshotV1['revisions'][number]['root'],revisionId:string,protectedThrough:string;
+      if(cached){root=cached.root;revisionId=cached.revisionId;protectedThrough='0';}
+      else{
+        const loaded=await loadRecovery(store,session);
+        const document=CoreDocument.restore({snapshot:loaded.snapshot,blockPayloads:new Map(loaded.blocks.map(b=>[b.id,b.bytes]))});
+        const current=document.root;root=loaded.snapshot.revisions.find(revision=>revision.id===document.head)!.root;revisionId=document.head;protectedThrough=loaded.protectedThrough;
+        if(current.documentId!==session.documentId)throw new Error('work binding document mismatch');
+      }
+      const old=await getWork(session.documentId),now=Date.now();
+      const entry:WorkEntry={documentId:session.documentId,writerEpochId:session.writerEpochId,revisionId,protectedThrough,
+        name:root.name,width:root.width,height:root.height,createdAt:old?.createdAt??root.createdAt,updatedAt:old?.updatedAt??now,openedAt:now,
+        selectedLayerId:uuid(message.selectedLayerId,'selected layer'),thumbnail:old?.thumbnail??null,thumbnailRevision:old?.thumbnailRevision??null,
+        previewLayers:root.rootLayerIds.map(id=>{const layer=root.layers.find(layer=>layer.id===id);if(!layer)throw new Error('work binding layer missing');return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};}),
+        previous:old?{writerEpochId:old.writerEpochId,revisionId:old.revisionId,protectedThrough:old.protectedThrough}:null,preserved:message.preserved};
+      await publishWork(entry,typeof message.expectedEpoch==='string'?message.expectedEpoch:null);libraryWork=entry;reply(message.id,true,entry);break;
+    }
+    case 'library-load':{
+      const entry=await getWork(uuid(message.documentId,'document id'));if(!entry)throw new Error('作品が見つかりません。');
+      const session={documentId:entry.documentId,writerEpochId:entry.writerEpochId,path:sessionPath(entry.documentId,entry.writerEpochId)};
+      let loaded;let fallback=false,projectionSession=session;
+      try{loaded=await loadRecovery(store,session,entry.revisionId,entry.protectedThrough);}
+      catch(error){if(!entry.previous)throw error;fallback=true;const previous=entry.previous;
+        projectionSession={documentId:entry.documentId,writerEpochId:previous.writerEpochId,path:sessionPath(entry.documentId,previous.writerEpochId)};
+        loaded=await loadRecovery(store,projectionSession,previous.revisionId,previous.protectedThrough);}
+      const snapshot=namedSnapshot(loaded.snapshot,entry.name);
+      // Main thread restores and validates this exact snapshot once. Avoid a duplicate full restoration in the worker.
+      const projectionCache=await loadProjectionCheckpointRaw(store,projectionSession,new Set(snapshot.revisions.map(r=>r.id)));
+      const transfers:Transferable[]=loaded.blocks.map(block=>block.bytes.buffer as ArrayBuffer);
+      for(const layer of projectionCache?.layers??[]){if('pixels' in layer)transfers.push(layer.pixels.buffer as ArrayBuffer);else for(const tile of layer.tiles)transfers.push(tile.pixels.buffer as ArrayBuffer);}
+      reply(message.id,true,{...loaded,snapshot,entry,fallback,projectionCache},undefined,transfers);break;
+    }
+    case 'library-thumbnail-read':{
+      const entry=await getWork(uuid(message.documentId,'document id'));
+      const revisionId=String(message.revisionId??'');
+      const image=entry?.thumbnailRevision===revisionId?await getWorkThumbnail(entry.documentId,revisionId):null;
+      reply(message.id,true,{image});break;
+    }
+    case 'library-selection':{
+      if(libraryWork)await publishCurrent({selectedLayerId:uuid(message.selectedLayerId,'selected layer')});reply(message.id,true,{});break;
+    }
+    case 'library-thumbnail':{
+      const id=uuid(message.documentId,'document id');const stored=await storeWorkThumbnail(id,String(message.revisionId??''),message.thumbnail as Blob);reply(message.id,true,{stored});break;
+    }
+    case 'library-preview-step':{
+      const id=uuid(message.documentId,'document id'),entry=await getWork(id);
+      if(!entry){previewTask=null;reply(message.id,true,{state:'unavailable'});break;}
+      if(entry.thumbnailRevision===entry.revisionId&&await getWorkThumbnail(id,entry.revisionId)){if(previewTask?.documentId===id)previewTask=null;reply(message.id,true,{state:'current'});break;}
+      try{
+        if(!previewTask||previewTask.documentId!==id||previewTask.revisionId!==entry.revisionId||previewTask.writerEpochId!==entry.writerEpochId){
+          previewTask=null;previewTask=await initPreviewTask(store,entry);
+        }
+        if(!previewTask){reply(message.id,true,{state:'unavailable'});break;}
+        const done=await advancePreviewTask(store,previewTask,16);
+        if(done){previewTask=null;reply(message.id,true,{state:'complete'});}
+        else reply(message.id,true,{state:'pending'});
+      }catch(error){previewTask=null;console.warn('Deferred saved-preview reconstruction:',error);reply(message.id,true,{state:'unavailable'});}
+      break;
+    }
+    case 'library-rename':{
+      const id=uuid(message.documentId,'document id'),name=String(message.name??'').trim().slice(0,120);if(!name)throw new Error('作品名を入力してください。');
+      await updateWork(id,entry=>({...entry,name,updatedAt:Date.now()}));if(libraryWork?.documentId===id)libraryWork={...libraryWork,name};reply(message.id,true,{});break;
+    }
+    case 'library-delete':{const id=uuid(message.documentId,'document id');await deleteWork(id);if(libraryWork?.documentId===id)libraryWork=null;try{await store.removeTree('m05/sessions/'+id);await store.removeTree('m05/documents/'+id);}catch{}reply(message.id,true,{});break;}
+    case 'library-reset':{
+      // Debug-only full initialization: remove internal works AND recovery files,
+      // so a deleted artwork cannot reappear under the Resume section.
+      try{await store.removeTree('m05');}catch(error){
+        if(!(error instanceof DOMException&&error.name==='NotFoundError'))throw error;
+      }
+      await resetWorkLibrary();
+      currentSession=null;libraryWork=null;justInitializedRoot=null;previewTask=null;protectionProofs.clear();
+      reply(message.id,true,{reset:true});break;
+    }
     case 'init':{
       const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch'),snapshot=message.snapshot as CorePersistenceSnapshotV1,blocks=blockInputs(message.blocks);
       if(snapshot?.schema!=='illustro.core.snapshot'||snapshot.schemaVersion!==1)throw new Error('invalid recovery base snapshot');
-      const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};
+      const path=sessionPath(documentId,writerEpochId);currentSession={documentId,writerEpochId,path};protectionProofs.delete(path);libraryWork=null;justInitializedRoot=null;
+      const current=snapshot.revisions.find(revision=>revision.id===snapshot.snapshotRevisionId);
+      if(!current||current.root.documentId!==documentId||!current.root.rootLayerIds.length)throw new Error('invalid work root');
       await writeBlocks(store,path,blocks);await putVerified(store,path+'/base.frame',await frameJson(snapshot));
       const now=Date.now(),savedRevisionId=message.savedRevisionId===null||message.savedRevisionId===undefined?null:uuid(message.savedRevisionId,'saved revision'),meta={version:1,documentId,writerEpochId,createdAt:now,updatedAt:now,savedRevisionId};
       await putVerified(store,path+'/meta.frame',await frameJson(meta));
+      justInitializedRoot={documentId,writerEpochId,revisionId:snapshot.snapshotRevisionId,root:current.root};
       const saves=await documentSaveState(store,documentId),storage=await storageInfo();reply(message.id,true,{backend:store.mode,protectedThrough:'0',storage,...saves});break;
     }
     case 'protect':{
       const session=requireSession(message),packet=message.packet as CoreRecoveryPacketV1,blocks=blockInputs(message.blocks),supported=new Set(stringArray(message.supportedAlgorithms,'supported algorithms'));
       validateClosure(packet,blocks,supported);await writeBlocks(store,session.path,blocks);
       const seq=BigInt(packet.handoff.commitSequence),finalPath=session.path+'/commits/'+seq.toString().padStart(20,'0')+'.frame',bytes=await frameJson(packet),existing=await store.get(finalPath);
-      if(existing){if(!(await equalDigest(existing,bytes)))throw new Error('duplicate recovery packet differs');}
+      if(existing){if(!(await equalDigest(existing,bytes))){let valid=false;try{await unframeJson(existing);valid=true;}catch{}if(valid)throw new Error('duplicate recovery packet differs');await putVerified(store,finalPath,bytes);}}
       else await putVerified(store,finalPath,bytes);
-      const protectedThrough=await scanProtected(store,session);await writeHead(store,session,packet.revision.id);
-      await touchMeta(store,session);reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
+      let proof=protectionProofs.get(session.path);if(!proof){proof=new ContiguousProtection<VerifiedHead>(seq===1n?0n:await scanProtected(store,session));protectionProofs.set(session.path,proof);}
+      const root=packet.replacementRoot??libraryWork;proof.verified(seq,{revisionId:packet.revision.id,selectedLayerId:uuid(message.selectedLayerId,'selected layer'),width:root?.width??0,height:root?.height??0});const protectedThrough=proof.through;
+      if(proof.value){await writeHead(store,session,proof.value.revisionId);if(libraryWork)await publishCurrent({...proof.value,protectedThrough:protectedThrough.toString(),updatedAt:Date.now(),...(packet.revision.id===proof.value.revisionId?{previewLayers:parsePreviewLayers(message.previewLayers)}:{})});}
+      await touchMeta(store,session);
+      reply(message.id,true,{protectedThrough:protectedThrough.toString(),backend:store.mode,storage:await storageInfo()});break;
     }
     case 'set-head':{
       const session=requireSession(message),revisionId=uuid(message.revisionId,'revision id');await writeHead(store,session,revisionId);await touchMeta(store,session);
+      if(libraryWork)await publishCurrent({revisionId,selectedLayerId:typeof message.selectedLayerId==='string'?uuid(message.selectedLayerId,'selected layer'):libraryWork.selectedLayerId,width:Number(message.width)||libraryWork.width,height:Number(message.height)||libraryWork.height,previewLayers:parsePreviewLayers(message.previewLayers),updatedAt:Date.now()});
       reply(message.id,true,{backend:store.mode});break;
     }
     case 'flush':{
@@ -54,7 +145,7 @@ async function handle(message:RequestMessage){
     }
     case 'store-projection-delta':{
       const session=requireSession(message),revisionId=uuid(message.revisionId,'projection revision'),width=dimension(message.width,'projection width'),height=dimension(message.height,'projection height'),tileSize=integer(message.tileSize,'projection tile size',1),surfaceIds=stringArray(message.surfaceIds,'projection surfaces').map(x=>uuid(x,'projection surface')),tiles=projectionTileInputs(message.tiles,tileSize);
-      await storeProjectionDelta(store,session,revisionId,width,height,tileSize,surfaceIds,tiles);await touchMeta(store,session);
+      await storeProjectionDelta(store,session,revisionId,width,height,tileSize,surfaceIds,tiles,message.replace===true);await touchMeta(store,session);
       reply(message.id,true,{backend:store.mode,revisionId,tileCount:tiles.length});break;
     }
     case 'list-recovery':{
@@ -63,7 +154,8 @@ async function handle(message:RequestMessage){
     case 'load-recovery':{
       const documentId=uuid(message.documentId,'document id'),writerEpochId=uuid(message.writerEpochId,'writer epoch'),session={documentId,writerEpochId,path:sessionPath(documentId,writerEpochId)};
       const loaded=await loadRecovery(store,session),projectionCache=await loadProjectionCheckpointRaw(store,session,new Set((loaded.snapshot.revisions as readonly {id:string}[]).map(r=>r.id)));const transfers:Transferable[]=[];
-      for(const block of loaded.blocks)transfers.push(block.bytes.buffer as ArrayBuffer);for(const layer of projectionCache?.layers??[])transfers.push(layer.pixels.buffer as ArrayBuffer);
+      for(const block of loaded.blocks)transfers.push(block.bytes.buffer as ArrayBuffer);
+      for(const layer of projectionCache?.layers??[]){if('pixels' in layer)transfers.push(layer.pixels.buffer as ArrayBuffer);else for(const tile of layer.tiles)transfers.push(tile.pixels.buffer as ArrayBuffer);}
       reply(message.id,true,{...loaded,projectionCache},undefined,transfers);break;
     }
     case 'encode-save':{
@@ -74,9 +166,27 @@ async function handle(message:RequestMessage){
       sectionInputs.push({id:'editor-state',type:'editor.state.v1',required:false,bytes:encoder.encode(JSON.stringify({version:1,selectedLayerId}))});
       const preserved=preservedSections(message.preserved);for(const section of preserved.sections){if(section.required)throw new Error('unknown preserved section cannot be required');if(sectionInputs.some(x=>x.id===section.id))continue;sectionInputs.push(section);}
       const target=snapshot.revisions.find(r=>r.id===snapshot.snapshotRevisionId);if(!target)throw new Error('save target missing');
+      const preview=await getWorkThumbnail(target.root.documentId,snapshot.snapshotRevisionId);
+      if(preview&&preview.size<=8*1024*1024&&preview.type==='image/png'){
+        const image=new Uint8Array(await preview.arrayBuffer());
+        if(image.length>=24&&[137,80,78,71,13,10,26,10].every((v,i)=>image[i]===v))sectionInputs.push({id:'render-preview',type:'render.preview.png.v1',required:false,bytes:image});
+      }
       if(currentSession&&currentSession.documentId===target.root.documentId){
         const checkpoint=await loadProjectionCheckpointRaw(store,currentSession,new Set(snapshot.revisions.map(r=>r.id)));
-        if(checkpoint){
+        if(checkpoint?.version===2){
+          const layers=[] as Array<{surfaceId:string;tiles:Array<{key:string;sectionId:string;encoding:ProjectionEncoding;rawLength:number}>}>;
+          for(const layer of checkpoint.layers){
+            const tiles=[] as Array<{key:string;sectionId:string;encoding:ProjectionEncoding;rawLength:number}>;
+            for(const tile of layer.tiles){
+              const encoded=await encodeProjectionPixels(tile.pixels),sectionId='render-cache-tile:'+layer.surfaceId+':'+tile.key;
+              sectionInputs.push({id:sectionId,type:'render.cache.tile.v2',required:false,bytes:encoded.bytes});
+              tiles.push({key:tile.key,sectionId,encoding:encoded.encoding,rawLength:tile.pixels.byteLength});
+            }
+            layers.push({surfaceId:layer.surfaceId,tiles});
+          }
+          const index={version:2,revisionId:checkpoint.revisionId,width:checkpoint.width,height:checkpoint.height,tileSize:128,layers};
+          sectionInputs.push({id:'render-cache',type:'render.cache.index.v2',required:false,bytes:encoder.encode(JSON.stringify(index))});
+        }else if(checkpoint?.version===1){
           const encodedLayers=[] as Array<{surfaceId:string;encoding:ProjectionEncoding;rawLength:number;bytes:Uint8Array}>;
           for(const layer of checkpoint.layers){const encoded=await encodeProjectionPixels(layer.pixels);encodedLayers.push({surfaceId:layer.surfaceId,encoding:encoded.encoding,rawLength:layer.pixels.byteLength,bytes:encoded.bytes});}
           const index={version:1,revisionId:checkpoint.revisionId,width:checkpoint.width,height:checkpoint.height,layers:encodedLayers.map(layer=>({surfaceId:layer.surfaceId,encoding:layer.encoding,rawLength:layer.rawLength,sectionId:'render-cache-layer:'+layer.surfaceId}))};
@@ -106,11 +216,120 @@ async function handle(message:RequestMessage){
     case 'decode-portable':{
       const bytes=uint8(message.bytes,'portable bytes'),decoded=await decodeIllustroFile(bytes,{knownRequiredTypes:new Set(['document.core.v1','raster.block.v1'])}),projectionCache=await decodeProjectionCache(decoded);
       const sections=[...decoded.sections.values()].map(({descriptor,bytes})=>({descriptor,bytes})),transfers=sections.map(x=>x.bytes.buffer as ArrayBuffer);
-      for(const layer of projectionCache?.layers??[])transfers.push(layer.pixels.buffer as ArrayBuffer);
+      for(const layer of projectionCache?.layers??[]){if('pixels' in layer)transfers.push(layer.pixels.buffer as ArrayBuffer);else for(const tile of layer.tiles)transfers.push(tile.pixels.buffer as ArrayBuffer);}
       reply(message.id,true,{manifest:decoded.manifest,sections,projectionCache},undefined,transfers);break;
     }
     default:throw new Error('unknown persistence worker request');
   }
+}
+
+function parsePreviewLayers(value:unknown):readonly {surfaceId:string;visible:boolean;opacity:number;baseColor?:'white'}[]{
+  if(!Array.isArray(value)||value.length>100000)throw new Error('Invalid work preview layers');
+  const seen=new Set<string>();return value.map(item=>{
+    if(!item||typeof item!=='object')throw new Error('Invalid preview layer');
+    const x=item as Record<string,unknown>,surfaceId=uuid(x.surfaceId,'preview surface');
+    if(seen.has(surfaceId)||typeof x.visible!=='boolean'||typeof x.opacity!=='number'||!Number.isFinite(x.opacity)||x.opacity<0||x.opacity>1)throw new Error('Invalid preview layer state');
+    if(x.baseColor!==undefined&&x.baseColor!=='white')throw new Error('Invalid preview base color');
+    seen.add(surfaceId);return {surfaceId,visible:x.visible,opacity:x.opacity,...(x.baseColor==='white'?{baseColor:'white' as const}:{})};
+  });
+}
+type PreviewTask={
+  documentId:string;revisionId:string;writerEpochId:string;session:Session;index:ProjectionDeltaIndex|null;legacyIndex:ProjectionIndex|null;offset:number;
+  legacyLayer:number;legacyPixels:Uint8Array|null;
+  layers:readonly {surfaceId:string;visible:boolean;opacity:number;baseColor?:'white'}[];
+  canvases:Map<string,OffscreenCanvas>;contexts:Map<string,OffscreenCanvasRenderingContext2D>;
+  scratch:OffscreenCanvas;scratchContext:OffscreenCanvasRenderingContext2D;scale:number;width:number;height:number;
+};
+async function initPreviewTask(store:WorkingStore,entry:WorkEntry):Promise<PreviewTask|null>{
+  if(typeof OffscreenCanvas==='undefined'||typeof ImageData==='undefined')return null;
+  const session:Session={documentId:entry.documentId,writerEpochId:entry.writerEpochId,path:sessionPath(entry.documentId,entry.writerEpochId)};
+  const frame=await store.get(session.path+'/projection-v2.frame');
+  let index:ProjectionDeltaIndex|null=null,legacyIndex:ProjectionIndex|null=null;
+  if(frame){try{const parsed=parseProjectionDeltaIndex(await unframeJson(frame));
+    if(parsed.revisionId===entry.revisionId&&parsed.tileSize===128&&parsed.width===entry.width&&parsed.height===entry.height)index=parsed;
+  }catch{}}
+  if(!index){
+    // Older works may only have the original full-layer checkpoint. Decode ONE
+    // layer at a time, and draw only 16 128px cells per background iteration.
+    const oldFrame=await store.get(session.path+'/projection.frame');
+    if(oldFrame)try{const parsed=parseProjectionIndex(await unframeJson(oldFrame));
+      if(parsed.revisionId===entry.revisionId&&parsed.width===entry.width&&parsed.height===entry.height)legacyIndex=parsed;
+    }catch{}
+  }
+  if(!index&&!legacyIndex)return null;
+  const surfaceIds=index?.surfaceIds??legacyIndex!.layers.map(layer=>layer.surfaceId);
+  let layers=entry.previewLayers;
+  if(!layers){
+    // Old catalogs did not carry layer styles. Recover them only for this missing preview.
+    const recovered=await loadRecovery(store,session,entry.revisionId,entry.protectedThrough);
+    const latest=recovered.snapshot.revisions.find(revision=>revision.id===entry.revisionId);
+    if(!latest)return null;
+    const root=latest.root;
+    layers=root.rootLayerIds.map(id=>{
+      const layer=root.layers.find(l=>l.id===id);
+      if(!layer)throw new Error('Missing preview layer');
+      return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};
+    });
+  }
+  const sourceWidth=entry.width,sourceHeight=entry.height,scale=Math.min(1,320/sourceWidth,240/sourceHeight);
+  const width=Math.max(1,Math.round(sourceWidth*scale)),height=Math.max(1,Math.round(sourceHeight*scale));
+  const canvases=new Map<string,OffscreenCanvas>(),contexts=new Map<string,OffscreenCanvasRenderingContext2D>();
+  for(const layer of layers){
+    if(!surfaceIds.includes(layer.surfaceId))return null;
+    const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');if(!context)return null;
+    if(layer.baseColor==='white'){context.fillStyle='#fff';context.fillRect(0,0,width,height);}
+    canvases.set(layer.surfaceId,canvas);contexts.set(layer.surfaceId,context);
+  }
+  const scratch=new OffscreenCanvas(128,128),scratchContext=scratch.getContext('2d');if(!scratchContext)return null;
+  return {documentId:entry.documentId,revisionId:entry.revisionId,writerEpochId:entry.writerEpochId,session,index,legacyIndex,offset:0,legacyLayer:0,legacyPixels:null,
+    layers,canvases,contexts,scratch,scratchContext,scale,width,height};
+}
+async function advancePreviewTask(store:WorkingStore,task:PreviewTask,limit:number):Promise<boolean>{
+  if(task.index){
+    const end=Math.min(task.offset+limit,task.index.tiles.length);
+    for(let i=task.offset;i<end;i++){
+      const d=task.index.tiles[i]!,context=task.contexts.get(d.surfaceId);
+      if(!context)throw new Error('Unexpected thumbnail layer');
+      const bytes=await store.get(task.session.path+'/projection-v2/'+d.surfaceId+'/'+tileFileName(d.key,d.digest)+'.bin');
+      if(!bytes||(d.digest&&await digestHex(bytes)!==d.digest))throw new Error('Saved preview source changed');
+      const pixels=await decodeProjectionPixels(bytes,d.encoding,d.rawLength),[tx,ty]=parseTileKey(d.key);
+      const w=Math.min(128,task.index.width-tx*128),h=Math.min(128,task.index.height-ty*128);
+      if(w<1||h<1)throw new Error('Saved preview tile outside canvas');
+      task.scratchContext.putImageData(new ImageData(new Uint8ClampedArray(pixels),128,128),0,0);
+      context.drawImage(task.scratch,0,0,w,h,tx*128*task.scale,ty*128*task.scale,w*task.scale,h*task.scale);
+    }
+    task.offset=end;if(task.offset<task.index.tiles.length)return false;
+  }else if(task.legacyIndex){
+    const index=task.legacyIndex,tilesAcross=Math.ceil(index.width/128),tilesDown=Math.ceil(index.height/128),total=tilesAcross*tilesDown;
+    let remaining=limit;
+    while(remaining>0&&task.legacyLayer<index.layers.length){
+      const layer=index.layers[task.legacyLayer]!;
+      if(!task.legacyPixels){
+        const data=await store.get(task.session.path+'/projection-data/'+index.generationId+'/'+layer.surfaceId+'.bin');
+        if(!data)throw new Error('Legacy preview layer is missing');
+        task.legacyPixels=await decodeProjectionPixels(data,layer.encoding,layer.rawLength);
+      }
+      const source=task.legacyPixels,context=task.contexts.get(layer.surfaceId);if(!context)throw new Error('Legacy preview surface is missing');
+      while(remaining>0&&task.offset<total){
+        const tx=task.offset%tilesAcross,ty=Math.floor(task.offset/tilesAcross),w=Math.min(128,index.width-tx*128),h=Math.min(128,index.height-ty*128);
+        const pixels=new Uint8Array(128*128*4);let occupied=false;
+        for(let y=0;y<h;y++){
+          const start=((ty*128+y)*index.width+tx*128)*4,row=source.subarray(start,start+w*4);
+          pixels.set(row,y*128*4);if(hasPixelData(row))occupied=true;
+        }
+        if(occupied){task.scratchContext.putImageData(new ImageData(new Uint8ClampedArray(pixels),128,128),0,0);
+          context.drawImage(task.scratch,0,0,w,h,tx*128*task.scale,ty*128*task.scale,w*task.scale,h*task.scale);}
+        task.offset++;remaining--;
+      }
+      if(task.offset===total){task.legacyPixels=null;task.legacyLayer++;task.offset=0;}
+    }
+    if(task.legacyLayer<index.layers.length)return false;
+  }else throw new Error('Missing thumbnail source');
+  const output=new OffscreenCanvas(task.width,task.height),context=output.getContext('2d');if(!context)throw new Error('Thumbnail compositor unavailable');
+  for(const layer of task.layers){if(!layer.visible)continue;context.globalAlpha=Math.max(0,Math.min(1,layer.opacity));context.drawImage(task.canvases.get(layer.surfaceId)!,0,0);}
+  const thumbnail=await output.convertToBlob({type:'image/png'});
+  await storeWorkThumbnail(task.documentId,task.revisionId,thumbnail);
+  return true;
 }
 
 function requireSession(message:RequestMessage):Session{
@@ -139,12 +358,26 @@ async function scanProtected(store:WorkingStore,session:Session){
     try{const packet=await unframeJson(bytes) as CoreRecoveryPacketV1;if(packet?.schema!=='illustro.core.recovery-packet'||packet.handoff?.writerEpochId!==session.writerEpochId||packet.handoff?.commitSequence!==seq.toString())break;}catch{break;}expected++;}
   return expected-1n;
 }
-async function loadRecovery(store:WorkingStore,session:Session){
-  const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)throw new Error('recovery base missing');const base=await unframeJson(baseBytes),protectedThrough=await scanProtected(store,session),packets:unknown[]=[];
-  for(let seq=1n;seq<=protectedThrough;seq++){const bytes=await store.get(session.path+'/commits/'+seq.toString().padStart(20,'0')+'.frame');if(!bytes)throw new Error('recovery packet gap');packets.push(await unframeJson(bytes));}
+async function loadRecovery(store:WorkingStore,session:Session,chosenHead?:string,chosenThrough?:string){
+  const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)throw new Error('recovery base missing');const base=await unframeJson(baseBytes),protectedThrough=chosenThrough===undefined?await scanProtected(store,session):BigInt(chosenThrough),packets:unknown[]=[];
+  // Bounded concurrent reads retain commit order while avoiding one storage round-trip per stroke.
+  for(let seq=1n;seq<=protectedThrough;){
+    const reads:Promise<unknown>[]=[];
+    for(let count=0;count<16&&seq<=protectedThrough;count++,seq++){
+      const file=session.path+'/commits/'+seq.toString().padStart(20,'0')+'.frame';
+      reads.push(store.get(file).then(bytes=>{if(!bytes)throw new Error('recovery packet gap');return unframeJson(bytes);}));
+    }
+    packets.push(...await Promise.all(reads));
+  }
   let headRevisionId:string|undefined;const headBytes=await store.get(session.path+'/head.frame');if(headBytes){try{const head=await unframeJson(headBytes) as {revisionId?:unknown};if(typeof head.revisionId==='string')headRevisionId=head.revisionId;}catch{}}
-  const snapshot=mergeCoreRecovery(base,packets,headRevisionId),blocks:Array<{id:string;bytes:Uint8Array}>=[];
-  for(const descriptor of snapshot.blocks){const bytes=await store.get(session.path+'/blocks/'+descriptor.id+'.bin');if(!bytes)throw new Error('recovery block dependency missing');blocks.push({id:descriptor.id,bytes});}
+  const snapshot=mergeCoreRecovery(base,packets,chosenHead??headRevisionId),blocks:Array<{id:string;bytes:Uint8Array}>=[];
+  for(let offset=0;offset<snapshot.blocks.length;offset+=8){
+    const group=await Promise.all(snapshot.blocks.slice(offset,offset+8).map(async descriptor=>{
+      const bytes=await store.get(session.path+'/blocks/'+descriptor.id+'.bin');if(!bytes)throw new Error('recovery block dependency missing');
+      return {id:descriptor.id,bytes};
+    }));
+    blocks.push(...group);
+  }
   return {snapshot,blocks,protectedThrough:protectedThrough.toString(),documentId:session.documentId,writerEpochId:session.writerEpochId};
 }
 async function storeProjectionCheckpoint(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,layers:readonly {surfaceId:string;pixels:Uint8Array}[]){
@@ -171,37 +404,62 @@ async function loadProjectionCheckpointRaw(store:WorkingStore,session:Session,al
     return Object.freeze({version:1 as const,revisionId:encoded.index.revisionId,width:encoded.index.width,height:encoded.index.height,layers:Object.freeze(layers.map(x=>Object.freeze(x)))});
   }catch{return null;}
 }
-async function storeProjectionDelta(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,tileSize:number,surfaceIds:readonly string[],tiles:readonly {surfaceId:string;key:string;pixels:Uint8Array}[]){
+export async function storeProjectionDelta(store:WorkingStore,session:Session,revisionId:string,width:number,height:number,tileSize:number,surfaceIds:readonly string[],tiles:readonly {surfaceId:string;key:string;pixels:Uint8Array}[],replace=false){
   const path=session.path+'/projection-v2.frame',old=await store.get(path);let previous:ProjectionDeltaIndex|null=null;
   if(old)try{previous=parseProjectionDeltaIndex(await unframeJson(old));}catch{}
-  const map=new Map<string,{surfaceId:string;key:string;encoding:ProjectionEncoding;rawLength:number}>();
-  if(previous&&previous.width===width&&previous.height===height&&previous.tileSize===tileSize)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
+  const map=new Map<string,ProjectionDeltaIndex['tiles'][number]>(),file=(tile:ProjectionDeltaIndex['tiles'][number])=>session.path+'/projection-v2/'+tile.surfaceId+'/'+tileFileName(tile.key,tile.digest)+'.bin';
+  const previousFiles=new Set(previous?.tiles.map(file)??[]),staged=new Set<string>();let cleanupErrors=0;
+  const cleanup=async(target:string)=>{try{await store.remove(target);}catch(error){if(++cleanupErrors<=4)console.warn('Projection checkpoint file cleanup deferred',error);}};
+  if(!replace&&previous&&previous.width===width&&previous.height===height&&previous.tileSize===tileSize)for(const item of previous.tiles)if(surfaceIds.includes(item.surfaceId))map.set(item.surfaceId+'\u0000'+item.key,{...item});
+  try{
   for(const tile of tiles){
-    if(!surfaceIds.includes(tile.surfaceId))continue;const id=tile.surfaceId+'\u0000'+tile.key,file=session.path+'/projection-v2/'+tile.surfaceId+'/'+tileFileName(tile.key)+'.bin';
-    if(isTransparent(tile.pixels)){await store.remove(file);map.delete(id);continue;}
-    const encoded=await encodeProjectionPixels(tile.pixels);await putVerified(store,file,encoded.bytes);map.set(id,{surfaceId:tile.surfaceId,key:tile.key,encoding:encoded.encoding,rawLength:tile.pixels.byteLength});
+    if(!surfaceIds.includes(tile.surfaceId))continue;const id=tile.surfaceId+'\u0000'+tile.key;
+    if(!hasPixelData(tile.pixels)){map.delete(id);continue;}
+    const encoded=await encodeProjectionPixels(tile.pixels),hash=await digestHex(encoded.bytes),descriptor={surfaceId:tile.surfaceId,key:tile.key,encoding:encoded.encoding,rawLength:tile.pixels.byteLength,digest:hash},target=file(descriptor);
+    if(!previousFiles.has(target))staged.add(target);
+    // Existing checkpoint files stay immutable until its replacement index is durable.
+    const existing=previousFiles.has(target)?await store.get(target):null;
+    if(!existing||await digestHex(existing)!==hash)await putVerified(store,target,encoded.bytes);
+    map.set(id,descriptor);
   }
-  const index:ProjectionDeltaIndex=Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
+  const index:ProjectionDeltaIndex=Object.freeze({version:3 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze([...surfaceIds]),tiles:Object.freeze([...map.values()].map(x=>Object.freeze(x)))});
   await putVerified(store,path,await frameJson(index));
+  }catch(error){
+    const saved=await store.get(path).catch(()=>null);
+    // Clean interrupted staging only when the prior index is still authoritative.
+    if((!old&&!saved)||(old&&saved&&await equalDigest(old,saved)))for(const target of staged)await cleanup(target);
+    throw error;
+  }
+  const currentFiles=new Set([...map.values()].map(file));
+  for(const target of previousFiles)if(!currentFiles.has(target))await cleanup(target);
 }
-async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
+export async function loadProjectionDeltaRaw(store:WorkingStore,session:Session,allowedRevisions:ReadonlySet<string>):Promise<ProjectionCache|null>{
   const frame=await store.get(session.path+'/projection-v2.frame');if(!frame)return null;
   try{
     const index=parseProjectionDeltaIndex(await unframeJson(frame));if(!allowedRevisions.has(index.revisionId))return null;
-    const layers=new Map<string,Uint8Array>();for(const surfaceId of index.surfaceIds)layers.set(surfaceId,new Uint8Array(index.width*index.height*4));
-    for(const descriptor of index.tiles){
-      const target=layers.get(descriptor.surfaceId);if(!target)return null;const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key)+'.bin');if(!bytes)return null;
-      const pixels=await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength),coords=parseTileKey(descriptor.key),tx=coords[0],ty=coords[1],copyW=Math.min(index.tileSize,index.width-tx*index.tileSize),copyH=Math.min(index.tileSize,index.height-ty*index.tileSize);
-      for(let y=0;y<copyH;y++){const from=y*index.tileSize*4,to=((ty*index.tileSize+y)*index.width+tx*index.tileSize)*4;target.set(pixels.subarray(from,from+copyW*4),to);}
+    // Keep the checkpoint sparse all the way to the GPU. The former code allocated
+    // width*height*4 bytes for EVERY layer, even if the work only had a few marks.
+    if(index.tileSize!==128)return null;
+    const layers=new Map<string,Array<{key:string;pixels:Uint8Array}>>();for(const surfaceId of index.surfaceIds)layers.set(surfaceId,[]);
+    for(let offset=0;offset<index.tiles.length;offset+=8){
+      const batch=index.tiles.slice(offset,offset+8);
+      const decoded=await Promise.all(batch.map(async descriptor=>{
+        const bytes=await store.get(session.path+'/projection-v2/'+descriptor.surfaceId+'/'+tileFileName(descriptor.key,descriptor.digest)+'.bin');
+        if(!bytes||(descriptor.digest&&await digestHex(bytes)!==descriptor.digest))throw new Error('projection tile missing or changed');
+        const [tx,ty]=parseTileKey(descriptor.key);
+        if(tx*index.tileSize>=index.width||ty*index.tileSize>=index.height)throw new Error('projection tile outside canvas');
+        return {descriptor,pixels:await decodeProjectionPixels(bytes,descriptor.encoding,descriptor.rawLength)};
+      }));
+      for(const {descriptor,pixels} of decoded){const layer=layers.get(descriptor.surfaceId);if(!layer)return null;layer.push({key:descriptor.key,pixels});}
     }
-    return Object.freeze({version:1 as const,revisionId:index.revisionId,width:index.width,height:index.height,layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,pixels:layers.get(surfaceId)!})))});
+    return Object.freeze({version:2 as const,revisionId:index.revisionId,width:index.width,height:index.height,tileSize:128 as const,layers:Object.freeze(index.surfaceIds.map(surfaceId=>Object.freeze({surfaceId,tiles:Object.freeze(layers.get(surfaceId)!.map(tile=>Object.freeze(tile)))})))});
   }catch{return null;}
 }
 function parseProjectionDeltaIndex(value:unknown):ProjectionDeltaIndex{
-  if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2)throw new Error('unsupported projection delta index');
+  if(!value||typeof value!=='object')throw new Error('invalid projection delta index');const x=value as Record<string,unknown>;if(x.version!==2&&x.version!==3)throw new Error('unsupported projection delta index');
   const revisionId=uuid(x.revisionId,'projection revision'),width=dimension(x.width,'projection width'),height=dimension(x.height,'projection height'),tileSize=integer(x.tileSize,'projection tile size',1),surfaceIds=stringArray(x.surfaceIds,'projection surfaces').map(v=>uuid(v,'projection surface'));
-  if(tileSize>1024||!Array.isArray(x.tiles)||x.tiles.length>1000000)throw new Error('invalid projection delta tiles');const seen=new Set<string>(),tiles=x.tiles.map(value=>{if(!value||typeof value!=='object')throw new Error('invalid projection delta tile');const item=value as Record<string,unknown>,surfaceId=uuid(item.surfaceId,'projection surface'),key=tileKey(item.key),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection delta tile');seen.add(id);const encoding=projectionEncoding(item.encoding),rawLength=integer(item.rawLength,'projection tile length',0);if(rawLength!==tileSize*tileSize*4)throw new Error('projection tile size mismatch');return Object.freeze({surfaceId,key,encoding,rawLength});});
-  return Object.freeze({version:2 as const,revisionId,width,height,tileSize,surfaceIds:Object.freeze(surfaceIds),tiles:Object.freeze(tiles)});
+  if(tileSize>1024||!Array.isArray(x.tiles)||x.tiles.length>1000000)throw new Error('invalid projection delta tiles');const seen=new Set<string>(),tiles=x.tiles.map(value=>{if(!value||typeof value!=='object')throw new Error('invalid projection delta tile');const item=value as Record<string,unknown>,surfaceId=uuid(item.surfaceId,'projection surface'),key=tileKey(item.key),id=surfaceId+'\u0000'+key;if(seen.has(id))throw new Error('duplicate projection delta tile');seen.add(id);const encoding=projectionEncoding(item.encoding),rawLength=integer(item.rawLength,'projection tile length',0);if(rawLength!==tileSize*tileSize*4)throw new Error('projection tile size mismatch');const digest=item.digest;if(digest!==undefined&&(typeof digest!=='string'||!(/^[0-9a-f]{64}$/).test(digest)))throw new Error('invalid projection tile digest');return Object.freeze({surfaceId,key,encoding,rawLength,...(typeof digest==='string'?{digest}:{})});});
+  return Object.freeze({version:x.version as 2|3,revisionId,width,height,tileSize,surfaceIds:Object.freeze(surfaceIds),tiles:Object.freeze(tiles)});
 }
 function projectionTileInputs(value:unknown,tileSize:number){
   if(!Array.isArray(value)||value.length>1000000)throw new Error('invalid projection tile list');const expected=tileSize*tileSize*4,seen=new Set<string>();
@@ -209,13 +467,34 @@ function projectionTileInputs(value:unknown,tileSize:number){
 }
 function tileKey(value:unknown){if(typeof value!=='string'||!/^\d+,\d+$/.test(value))throw new Error('invalid projection tile key');return value;}
 function parseTileKey(key:string){const parts=key.split(','),x=Number(parts[0]),y=Number(parts[1]);if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y)||x<0||y<0)throw new Error('invalid projection tile key');return [x,y] as const;}
-function tileFileName(key:string){return key.replace(',',':');}
-function isTransparent(bytes:Uint8Array){for(let i=3;i<bytes.length;i+=4)if(bytes[i]!==0)return false;return true;}
+function tileFileName(key:string,digest?:string){return key.replace(',',':')+(digest?'.'+digest:'');}
+async function digestHex(bytes:Uint8Array){return [...await digest(bytes)].map(value=>value.toString(16).padStart(2,'0')).join('');}
 
 async function decodeProjectionCache(decoded:Awaited<ReturnType<typeof decodeIllustroFile>>):Promise<ProjectionCache|null>{
-  const section=decoded.sections.get('render-cache');if(!section||section.descriptor.type!=='render.cache.index.v1'||section.descriptor.required)return null;
+  const section=decoded.sections.get('render-cache');if(!section||section.descriptor.required)return null;
   try{
-    const raw=JSON.parse(decoder.decode(section.bytes)) as Record<string,unknown>,version=raw.version;if(version!==1) return null;
+    const raw=JSON.parse(decoder.decode(section.bytes)) as Record<string,unknown>,version=raw.version;
+    if(version===2&&section.descriptor.type==='render.cache.index.v2'){
+      const revisionId=uuid(raw.revisionId,'projection revision'),width=dimension(raw.width,'projection width'),height=dimension(raw.height,'projection height');
+      if(raw.tileSize!==128||!Array.isArray(raw.layers)||raw.layers.length>100000)return null;
+      const seen=new Set<string>(),layers:Array<{surfaceId:string;tiles:Array<{key:string;pixels:Uint8Array}>}>=[];
+      for(const item of raw.layers){
+        if(!item||typeof item!=='object')return null;const entry=item as Record<string,unknown>,surfaceId=uuid(entry.surfaceId,'projection surface');
+        if(seen.has(surfaceId)||!Array.isArray(entry.tiles)||entry.tiles.length>1000000)return null;seen.add(surfaceId);
+        const tileKeys=new Set<string>(),tiles:Array<{key:string;pixels:Uint8Array}>=[];
+        for(const row of entry.tiles){
+          if(!row||typeof row!=='object')return null;const t=row as Record<string,unknown>,key=tileKey(t.key),[tx,ty]=parseTileKey(key);
+          if(tx*128>=width||ty*128>=height||tileKeys.has(key))return null;tileKeys.add(key);
+          const sectionId='render-cache-tile:'+surfaceId+':'+key,encoding=projectionEncoding(t.encoding),rawLength=integer(t.rawLength,'projection tile size',0);
+          if(t.sectionId!==sectionId||rawLength!==128*128*4)return null;
+          const payload=decoded.sections.get(sectionId);if(!payload||payload.descriptor.type!=='render.cache.tile.v2'||payload.descriptor.required)return null;
+          tiles.push({key,pixels:await decodeProjectionPixels(payload.bytes,encoding,rawLength)});
+        }
+        layers.push({surfaceId,tiles});
+      }
+      return Object.freeze({version:2 as const,revisionId,width,height,tileSize:128 as const,layers:Object.freeze(layers.map(layer=>Object.freeze({surfaceId:layer.surfaceId,tiles:Object.freeze(layer.tiles.map(tile=>Object.freeze(tile)))})))});
+    }
+    if(version!==1||section.descriptor.type!=='render.cache.index.v1')return null;
     const revisionId=uuid(raw.revisionId,'projection revision'),width=dimension(raw.width,'projection width'),height=dimension(raw.height,'projection height'),list=raw.layers;
     if(!Array.isArray(list)||list.length>100000)return null;const seen=new Set<string>(),layers:Array<{surfaceId:string;pixels:Uint8Array}>=[];
     for(const item of list){if(!item||typeof item!=='object')return null;const x=item as Record<string,unknown>,surfaceId=uuid(x.surfaceId,'projection surface');if(seen.has(surfaceId))return null;seen.add(surfaceId);
@@ -252,7 +531,7 @@ function projectionEncoding(value:unknown):ProjectionEncoding{if(value==='raw-rg
 function dimension(value:unknown,name:string){const n=integer(value,name,1);if(n>8192)throw new Error(name+' too large');return n;}
 
 async function listRecoveryCandidates(store:WorkingStore){
-  const out:Array<Record<string,unknown>>=[],root='m05/sessions';for(const doc of await store.entries(root)){if(doc.kind!=='directory'||!isUuid(doc.name))continue;for(const epoch of await store.entries(root+'/'+doc.name)){if(epoch.kind!=='directory'||!isUuid(epoch.name))continue;
+  const out:Array<Record<string,unknown>>=[],root='m05/sessions';for(const doc of await store.entries(root)){if(doc.kind!=='directory'||!isUuid(doc.name)||await isWorkDeleted(doc.name))continue;for(const epoch of await store.entries(root+'/'+doc.name)){if(epoch.kind!=='directory'||!isUuid(epoch.name))continue;
       const session={documentId:doc.name,writerEpochId:epoch.name,path:root+'/'+doc.name+'/'+epoch.name};try{const baseBytes=await store.get(session.path+'/base.frame');if(!baseBytes)continue;const base=await unframeJson(baseBytes) as CorePersistenceSnapshotV1,protectedThrough=await scanProtected(store,session);
         const target=base.revisions.find(x=>x.id===base.snapshotRevisionId),metaBytes=await store.get(session.path+'/meta.frame'),meta=metaBytes?await unframeJson(metaBytes) as Record<string,unknown>:{};
         const saves=await documentSaveState(store,session.documentId),lastGood=saves.lastGood,previousGood=saves.previousGood;
@@ -285,6 +564,7 @@ class WorkingStore{
   async remove(path:string){if(this.root){try{const parts=split(path),name=parts.pop()!,dir=await this.dir(parts,false);await dir.removeEntry(name);}catch{}return;}await idbDelete(this.db!,path);}
   async entries(path:string):Promise<Entry[]>{if(this.root){try{const dir=await this.dir(split(path),false),result:Entry[]=[];for await(const value of (dir as unknown as {values:()=>AsyncIterableIterator<FileSystemHandle>}).values())result.push({name:value.name,kind:value.kind});return result;}catch{return [];}}
     return idbEntries(this.db!,path);}
+  async removeTree(path:string){if(this.root){const parts=split(path),name=parts.pop()!,dir=await this.dir(parts,false);await dir.removeEntry(name,{recursive:true});return;}for(const entry of await this.entries(path)){const target=path+'/'+entry.name;if(entry.kind==='directory')await this.removeTree(target);else await this.remove(target);}}
   private async file(path:string,create:boolean){const parts=split(path),name=parts.pop();if(!name)throw new Error('invalid working path');return (await this.dir(parts,create)).getFileHandle(name,{create});}
   private async dir(parts:string[],create:boolean){let dir=this.root!;for(const name of parts)dir=await dir.getDirectoryHandle(name,{create});return dir;}
 }
@@ -314,3 +594,8 @@ function idbGet(db:IDBDatabase,key:string){return new Promise<Uint8Array|null>((
 function idbHas(db:IDBDatabase,key:string){return new Promise<boolean>((resolve,reject)=>{const tx=db.transaction('files','readonly'),request=tx.objectStore('files').count(key);request.onsuccess=()=>resolve(request.result>0);request.onerror=()=>reject(request.error);});}
 function idbDelete(db:IDBDatabase,key:string){return new Promise<void>((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
 function idbEntries(db:IDBDatabase,path:string){return new Promise<Entry[]>((resolve,reject)=>{const prefix=path.replace(/\/+$/,'')+'/',entries=new Map<string,'file'|'directory'>(),tx=db.transaction('files','readonly'),request=tx.objectStore('files').openKeyCursor();request.onsuccess=()=>{const cursor=request.result;if(!cursor){resolve([...entries].map(([name,kind])=>({name,kind})));return;}const key=String(cursor.key);if(key.startsWith(prefix)){const rest=key.slice(prefix.length),slash=rest.indexOf('/'),name=slash<0?rest:rest.slice(0,slash);if(name)entries.set(name,slash<0?'file':'directory');}cursor.continue();};request.onerror=()=>reject(request.error);});}
+
+async function publishCurrent(patch:Partial<WorkEntry>){if(!libraryWork)return;const old=libraryWork,current=await getWork(old.documentId);if(!current)throw new Error('この作品は作品一覧から削除されています。');const entry={...current,...patch,writerEpochId:old.writerEpochId,...(patch.revisionId&&patch.revisionId!==current.revisionId?{previous:{writerEpochId:current.writerEpochId,revisionId:current.revisionId,protectedThrough:current.protectedThrough}}:{})};await publishWork(entry,old.writerEpochId);libraryWork=entry;}
+
+type VerifiedHead={revisionId:string;selectedLayerId:string;width:number;height:number};
+const protectionProofs=new Map<string,ContiguousProtection<VerifiedHead>>();

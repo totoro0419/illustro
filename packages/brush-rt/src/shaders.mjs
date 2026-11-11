@@ -46,6 +46,20 @@ export const glSolidLive=`#version 300 es
 precision highp float;
 uniform vec4 params[16];flat in vec4 oa,ob,oc,oe,os;out vec4 result;
 void main(){vec2 xy=vec2(gl_FragCoord.x,params[0].w==2.?gl_FragCoord.y:params[5].y-gl_FragCoord.y)*params[4].xy/params[5].xy+params[0].xy;vec2 d=oa.xy-os.xy;float f=clamp(dot(xy-os.xy,d)/max(.000001,dot(d,d)),0.,1.);float k=clamp(mix(os.z,oa.z*.5,f)+.5-length(xy-os.xy-d*f),0.,1.);if(params[0].w==1.&&k<1.)discard;float a=ob.y*k;result=vec4(oc.rgb*a,a);}`;
+// Same analytic coverage as WebGPU fragmentSweepPlain. Coverage-union
+// compilation guarantees a round, saturated, single-color swept material;
+// the backend selects this only when every command has zero texture strength.
+// Canonical geometry, material opacity and the antialias equation are unchanged.
+export const glSweepPlain=`#version 300 es
+precision highp float;
+uniform vec4 params[16];flat in vec4 oa,ob,oc,os;out vec4 result;
+void main(){
+ vec2 xy=vec2(gl_FragCoord.x,params[5].y-gl_FragCoord.y)*params[4].xy/params[5].xy+params[0].xy;
+ vec2 d=oa.xy-os.xy;float f=clamp(dot(xy-os.xy,d)/max(.000001,dot(d,d)),0.,1.);
+ float radius=mix(os.z,oa.z*.5,f),dist=length(xy-os.xy-d*f),h=radius*params[1].x;
+ float coverage=dist<=h?1.:clamp((radius+.5-dist)/max(.5,radius-h),0.,1.);
+ float a=coverage*ob.z*ob.y;result=vec4(oc.rgb*a,a);
+}`;
 export const glDisplayVertex=`#version 300 es
 uniform vec4 params[16];out vec2 doc;
 void main(){vec2 corner=vec2((gl_VertexID==1||gl_VertexID==2||gl_VertexID==4)?1.:0.,(gl_VertexID==2||gl_VertexID==4||gl_VertexID==5)?1.:0.);doc=params[0].xy+corner*128.;vec2 p=doc/params[4].xy;gl_Position=vec4(p.x*2.-1.,1.-p.y*2.,0,1);}`;
@@ -67,6 +81,20 @@ void main(){ivec2 q=ivec2(doc-params[0].xy),pos=ivec2(gl_FragCoord.xy);vec4 d=te
 
 // WGSL equations are explicitly matched to the Float64 reference. Integer grain
 // hashing uses wrapping u32 arithmetic; geometry is intentionally f32 on GPU.
+// The same direct single-preview composition as fragmentSweepDisplay below.
+// Use the unchanged straight-alpha composition function from the general shader.
+export const glSweepDisplay=`#version 300 es
+precision highp float;
+uniform vec4 params[16];uniform sampler2D layer,liveImage0,liveImage1;
+in vec2 doc;out vec4 result;
+${glMath.slice(glMath.indexOf('vec4 compose('))}
+void main(){
+ ivec2 q=ivec2(doc-params[0].xy),pos=ivec2(gl_FragCoord.xy);
+ vec4 base=texelFetch(layer,q,0);
+ vec4 paint=max(texelFetch(liveImage0,pos,0),texelFetch(liveImage1,pos,0))*params[8].z;
+ vec4 color=compose(base,paint,int(params[8].y));result=vec4(color.rgb*color.a,color.a);
+}`;
+
 export const wgMath=`
 fn sat(x:f32)->f32{return clamp(x,0.,1.);}
 fn img(t:texture_2d<f32>,uv0:vec2f,repeatImage:bool)->f32{var uv=uv0;if(repeatImage){uv=fract(uv);}else if(any(uv<vec2f(0))||any(uv>vec2f(1))){return 0.;}let sz=textureDimensions(t);return textureLoad(t,min(vec2u(floor(uv*vec2f(sz))),sz-1u),0).r;}
@@ -145,3 +173,21 @@ struct VOut{@builtin(position)position:vec4f,@location(0)doc:vec2f};
 // Single MAX-coverage overlay over a committed tile has no archive or formal source.
 @fragment fn fragmentSweepDisplay(v:VOut)->@location(0)vec4f{let q=vec2i(v.doc-p.v[0].xy);let pos=vec2i(v.position.xy);let base=textureLoad(layer,q,0);let paint=max(textureLoad(liveImage0,pos,0),textureLoad(liveImage1,pos,0))*p.v[8].z;let composited=compose(base,paint,i32(p.v[8].y));return vec4f(composited.rgb*composited.a,composited.a);}
 `;
+
+// Handoff feedback is composed in bounded groups in a 128px scratch tile.
+// Keep straight alpha between groups; compose() already rounds every stroke to
+// the same RGBA8 values used by strict deposition. Premultiply only for display.
+export const glFeedbackComposeVertex=glDisplayVertex.replace('vec2 p=doc/params[4].xy;', 'vec2 p=corner;');
+export const glFeedbackCompose=glDisplay.replace('pos=ivec2(gl_FragCoord.xy)', 'pos=ivec2(q.x,127-q.y)').replace('result=vec4(d.rgb*d.a,d.a);', 'result=d;');
+// Same quantized composition, directly into the retained scene. Sparse previews
+// use tile-local feedback coordinates; no intermediate RGBA8 copy is needed.
+export const glFeedbackDirect=glDisplay.replace('pos=ivec2(gl_FragCoord.xy)', 'pos=ivec2(q.x,127-q.y)');
+export const glFeedbackContinue=glFeedbackCompose.replace('d=texelFetch(layer,q,0)', 'd=texelFetch(layer,ivec2(q.x,127-q.y),0)');
+export const glFeedbackTile=`#version 300 es
+precision highp float;uniform vec4 params[16];uniform sampler2D layer;in vec2 doc;out vec4 result;
+void main(){ivec2 q=ivec2(doc-params[0].xy);vec4 color=texelFetch(layer,ivec2(q.x,127-q.y),0);result=vec4(color.rgb*color.a,color.a);}`;
+export const wgFeedbackCompose=wgDisplay.replace('let xy=o.doc/p.v[4].xy;', 'let xy=corner;').replace('return vec4f(d.rgb*d.a,d.a);', 'return d;');
+export const wgFeedbackTile=wgDisplay.slice(0,wgDisplay.indexOf('@fragment fn fragment('))+`
+@fragment fn fragment(v:VOut)->@location(0)vec4f{let q=vec2i(v.doc-p.v[0].xy);let color=textureLoad(layer,q,0);return vec4f(color.rgb*color.a,color.a);}`;
+
+export const wgFeedbackDirect=wgDisplay.replaceAll('preview(i,vec2i(v.position.xy))','preview(i,q)').replaceAll('preview(i+1,vec2i(v.position.xy))','preview(i+1,q)');

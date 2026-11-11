@@ -306,8 +306,11 @@ export function installShellUi():ShellControl{
     // Finish clicks on OTHER controls before moving a floating Workspace:
     // moving QA / feature launchers on pointerdown causes a lost pointerup
     // and accidental non-activation, especially at tablet overlay widths.
-    if(floatingDockOpen()&&!rightDock.contains(t)&&!toggle.contains(t)&&!drawer.contains(t))close(false);
-    if(!rightDock.contains(t))return;
+    // A swatch action may replace its button before this bubbling click arrives.
+    // The event path still identifies the original dock; a detached target does not.
+    const clickedInsideDock=event.composedPath().includes(rightDock);
+    if(floatingDockOpen()&&!clickedInsideDock&&!toggle.contains(t)&&!drawer.contains(t))close(false);
+    if(!clickedInsideDock)return;
     if(t instanceof Element&&t.closest('.box-more'))return;
     for(const menu of document.querySelectorAll<HTMLElement>('.box-more-menu')){
       if(!menu.hidden&&!menu.contains(t)){

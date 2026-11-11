@@ -40,8 +40,7 @@ jobs:
         run: |
           npm run brush:build > /tmp/m03-brush-build.log
           node --test packages/brush-rt/test/*.test.mjs | tee /tmp/m03-brush-regression.log
-          grep -Eq '(^|[^0-9])tests +93([^0-9]|$)' /tmp/m03-brush-regression.log
-          grep -Eq '(^|[^0-9])pass +93([^0-9]|$)' /tmp/m03-brush-regression.log
+          node scripts/check-test-summary.mjs /tmp/m03-brush-regression.log
           grep -Eq '(^|[^0-9])fail +0([^0-9]|$)' /tmp/m03-brush-regression.log
       - name: Build M03 editor
         env:
