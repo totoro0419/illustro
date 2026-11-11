@@ -4,6 +4,8 @@ import {createRasterSurfaceDescriptor,RasterSurfaceManifest,type RasterSampleEnc
 
 export type LayerNode=Readonly<{
   id:LayerId;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;surface:RasterSurfaceManifest;
+  /** Logical opaque-white base. Its raster tiles are intentionally absent until editing requires them. */
+  baseColor?:'white';
 }>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number}>;
 export class DocumentRoot{
