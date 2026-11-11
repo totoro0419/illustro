@@ -307,7 +307,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){el('ihNewError').textContent='幅と高さを1〜8192pxで指定してください。';return;}
     const button=el<HTMLButtonElement>('ihNewCreate');button.disabled=true;el('ihNewError').textContent='キャンバスを準備しています。';
     try{if(await actions.createDocument(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white'))navigate('editor');else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';}
-    catch(error){el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}finally{button.disabled=false;}
+    catch(error){console.error('M10_CREATE_DOCUMENT_FAULT',error instanceof Error?error.stack??error.message:error);el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}finally{button.disabled=false;}
   })();});
   let swipeStart:number|null=null;
   el('ihFeatureVisual').addEventListener('touchstart',event=>{swipeStart=event.touches[0]?.clientX??null;},{passive:true});
