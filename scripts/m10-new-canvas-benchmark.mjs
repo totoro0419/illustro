@@ -57,7 +57,7 @@ try{
     assert.equal(await page.locator('#ihNewHeight').inputValue(),'4000','the preset must apply the height');
     assert.equal(await option.getAttribute('aria-pressed'),'true','the preset must indicate selection');
     // Verify the real 4000px drawing host is prepared while the dialog is open.
-    await page.waitForFunction(()=>window.__illustroWarmup?.state==='ready'&&window.__illustroWarmup?.detail==='4000x4000',
+    await page.waitForFunction(()=>window.__illustroWarmup?.state==='ready'&&window.__illustroWarmup?.detail==='4000x4000'&&window.__illustroWarmup?.background==='transparent',
       null,{timeout:60000});
     prewarmed=true;
    }
@@ -70,10 +70,11 @@ try{
     try{
      await page.waitForFunction(size=>{
        const status=window.__illustroWarmup;
-       return status?.state==='failed'||(status?.state==='ready'&&status?.detail===size);
+       return status?.background==='white'&&(status?.state==='failed'||(status?.state==='ready'&&status?.detail===size));
      },item.width+'x'+item.height,{timeout:120000});
      const state=await page.evaluate(()=>window.__illustroWarmup);
      assert.equal(state.state,'ready','white warmup failed: '+JSON.stringify(state));
+     assert.equal(state.background,'white','must wait for the selected WHITE host, not a stale transparent host');
      prewarmed=true;
     }catch(error){
      const diagnostics=await page.evaluate(()=>({
