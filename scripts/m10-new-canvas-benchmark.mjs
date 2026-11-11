@@ -61,6 +61,14 @@ try{
    await page.locator('#ihNewWidth').fill(String(item.width));
    await page.locator('#ihNewHeight').fill(String(item.height));
    await page.locator('#ihNewBackground').selectOption(item.background);
+   if(item.background==='white'){
+    // White must be the actual preinitialized drawing document, not a CSS
+    // imitation while a large replay continues after Create.
+    await page.waitForFunction(
+      size=>window.__illustroWarmup?.state==='ready'&&window.__illustroWarmup?.detail===size,
+      item.width+'x'+item.height,{timeout:90000});
+    prewarmed=true;
+   }
    const start=Date.now();
    await page.locator('#ihNewCreate').click();
    await page.waitForFunction(()=>{
@@ -92,8 +100,28 @@ try{
    }
    assert.ok(data.measures.some(m=>m.stage==='storage-init'),'storage timing must be captured');
    assert.ok(data.measures.some(m=>m.stage==='click-to-editable'),'draw-ready measurement must exist');
-   if(item.background==='transparent')assert.ok(!data.measures.some(m=>m.stage==='projection-restore'),
-     'a first pristine blank must not replay a nonexistent drawing');
+   assert.ok(!data.measures.some(m=>m.stage==='projection-restore'),
+     'a fresh canvas must not run a full document projection replay');
+   if(item.background==='white'){
+    const pixels=await page.evaluate(async()=>{
+     const {controller,renderer}=window.__illustroPerformance.probe(),document=controller.document;
+     const bottom=document.root.rootLayerIds[0],surfaceId=document.root.getLayer(bottom).surface.descriptor.surfaceId;
+     return {
+      layerCount:controller.layers.length,
+      selectedIsBackground:controller.selectedLayerId===bottom,
+      topTransparent:document.readPixel(controller.selectedLayerId,0,0),
+      coreTopLeft:document.readPixel(bottom,0,0),
+      coreBottomRight:document.readPixel(bottom,document.root.width-1,document.root.height-1),
+      gpuTopLeft:await renderer.readPixel(0,0,surfaceId),
+      gpuBottomRight:await renderer.readPixel(document.root.width-1,document.root.height-1,surfaceId)
+     };
+    });
+    assert.equal(pixels.layerCount,2,'white work must have an editable background plus drawing layer');
+    assert.equal(pixels.selectedIsBackground,false,'first drawing layer must be selected');
+    assert.deepEqual(pixels.topTransparent,[0,0,0,0],'top drawing layer starts transparent');
+    for(const kind of ['coreTopLeft','coreBottomRight','gpuTopLeft','gpuBottomRight'])
+     assert.deepEqual(pixels[kind],[255,255,255,255],kind+' must contain actual opaque white pixels');
+   }
    // Being editable means that a real pointer path can reach a canonical commit.
    const rect=await page.locator('#canvas').boundingBox();
    assert.ok(rect&&rect.width>120&&rect.height>100,'visible drawing surface');
