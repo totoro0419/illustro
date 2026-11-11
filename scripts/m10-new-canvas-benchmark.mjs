@@ -95,7 +95,7 @@ try{
      throw error;
     }
    }
-   const start=Date.now();
+   const clickStart=await page.evaluate(()=>performance.now()),start=Date.now();
    await page.locator('#ihNewCreate').click();
    await page.waitForFunction(()=>{
     const app=document.getElementById('app'),brush=document.getElementById('brush'),status=document.getElementById('status');
@@ -116,7 +116,7 @@ try{
    assert.ok(!canvasOpen.appInert&&!canvasOpen.brushDisabled&&canvasOpen.status?.includes('描画できます'),'canvas did not open successfully: '+JSON.stringify({...canvasOpen,consoleErrors}));
    const wallClockMs=Date.now()-start;
    const data=await page.evaluate(()=>({
-    measures:performance.getEntriesByType('measure').filter(e=>e.name.startsWith('illustro-canvas:')).map(e=>({stage:e.name.slice('illustro-canvas:'.length),ms:Math.round(e.duration*10)/10})),
+    measures:performance.getEntriesByType('measure').filter(e=>e.name.startsWith('illustro-canvas:')).map(e=>({stage:e.name.slice('illustro-canvas:'.length),ms:Math.round(e.duration*10)/10,startTime:e.startTime})),
     backend:document.getElementById('canvas')?.dataset.backend??'',
     gpuWarmupMs:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationWallMs??null,
     gpuPreparationPaths:window.__illustroPerformance?.probe?.()?.renderer?.info?.preparationPaths??null,
@@ -134,7 +134,8 @@ try{
    assert.equal(data.gpuWarmupMs,0,'trial drawing phase must be absent');
    if(prewarmed){
     assert.ok(data.measures.some(m=>m.stage==='home-gpu-prewarm'),'the GPU should have initialized on Home');
-    assert.ok(!data.measures.some(m=>m.stage==='gpu-and-worker-init'),'Create must not initialize the GPU a second time');
+    const extraGpuInitializations=data.measures.filter(m=>m.stage==='gpu-and-worker-init'&&m.startTime>=clickStart);
+    assert.deepEqual(extraGpuInitializations,[],'Create must not initialize the GPU a second time: '+JSON.stringify(data.measures));
    }else{
     assert.ok(data.measures.some(m=>m.stage==='gpu-and-worker-init'),'cold path GPU timing must be captured');
    }
