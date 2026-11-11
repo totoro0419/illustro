@@ -62,6 +62,33 @@ try{
   assert.equal(await page.locator('#brushTextureKind').inputValue(),'hatch');
   assert.equal(await page.locator('#brushTipShape').inputValue(),'ellipse');
   assert.equal(await page.locator('#brushCurvePoint option').count(),3);
+  // The new M10 UI must be reachable and persist its meaning on both backends.
+  const newBrushIds=await page.locator('#brush option').evaluateAll(options=>options.map(o=>o.value));
+  for(const candidate of ['illustro-fine-liner-v1','illustro-soft-pencil-v1','illustro-opaque-marker-v1'])
+   assert.ok(newBrushIds.includes(candidate),'new brush missing '+candidate);
+  await page.locator('#brushDynamicsSource').selectOption('velocity');
+  await page.locator('#brushDynamicsTarget').selectOption('opacity');
+  const before=await page.locator('#brushDynamicsList .brush-dynamics-row').count();
+  await page.locator('#brushDynamicsAdd').click();
+  assert.equal(await page.locator('#brushDynamicsList .brush-dynamics-row').count(),before+1,'new mapping added');
+  const last=page.locator('#brushDynamicsList .brush-dynamics-row').last();
+  assert.equal(await last.locator('select').first().inputValue(),'velocity');
+  assert.equal(await last.locator('select').nth(1).inputValue(),'opacity');
+  await last.locator('input').first().fill('45');await last.locator('input').first().press('Tab');
+  assert.equal(await page.locator('#brushDynamicsList .brush-dynamics-row').last().locator('input').first().inputValue(),'45');
+  await page.locator('#brushWidthChangeNumber').fill('2.5');await page.locator('#brushWidthChangeNumber').press('Tab');
+  await page.locator('#brushStabilizationMode').selectOption('reduce');
+  await page.locator('#brushPrediction').check();
+  await page.locator('#brushSave').click();
+  await page.reload();await page.locator('#new').click();
+  await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
+  await page.locator('#brush').selectOption(id);
+  await page.locator('.brush-editor-section').evaluateAll(items=>items.forEach(item=>item.open=true));
+  assert.equal(await page.locator('#brushDynamicsList .brush-dynamics-row').last().locator('select').first().inputValue(),'velocity');
+  assert.equal(await page.locator('#brushDynamicsList .brush-dynamics-row').last().locator('input').first().inputValue(),'45');
+  assert.equal(await page.locator('#brushWidthChangeNumber').inputValue(),'2.5');
+  assert.equal(await page.locator('#brushStabilizationMode').inputValue(),'reduce');
+  assert.equal(await page.locator('#brushPrediction').isChecked(),true);
   assert.deepEqual(pageErrors,[],backend+' browser exceptions');
   checks.push({backend,drafts:true,reset:true,curve:true,tipAndTexture:true,persist:true,pageErrors});
   await context.close();

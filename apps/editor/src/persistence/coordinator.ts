@@ -148,7 +148,7 @@ export class PersistenceCoordinator{
 
 function previewLayersFor(document:CoreDocument,revisionId:RevisionId):readonly PreviewLayer[]{
   const root=document.revision(revisionId).root;
-  return root.rootLayerIds.map(id=>{const layer=root.getLayer(id);return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity};});
+  return root.rootLayerIds.map(id=>{const layer=root.getLayer(id);return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})};});
 }
 function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){
   const supported=new Set<string>();for(const operation of packet.revision.command.operations)for(const ref of operation.algorithmVersionRefs)supported.add(ref);return Object.freeze([...supported]);

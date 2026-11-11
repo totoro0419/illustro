@@ -3,6 +3,7 @@ import {nativeBrushSensors} from './brushInput';
 import {EmptyStrokeError} from './strokeCommit';
 import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
+import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
 import {CANONICAL_TILE_SIZE,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
@@ -47,7 +48,9 @@ export class BrushSurface{
     const backend:'auto'|'webgl2'|'webgpu'=this.backendOverride??(requested==='webgpu'||requested==='webgl2'?requested:'auto');
     try{
       const rendererOptions={webglDesynchronized:false,strokeHandoff:true,strokeOverlay:{mode:new URLSearchParams(location.search).get('overlay')==='gpu'?'gpu':new URLSearchParams(location.search).get('overlay')==='cpu'?'cpu':'auto',ratio:new URLSearchParams(location.search).get('overlayRatio')||'auto'},tileHistory:new URLSearchParams(location.search).get('tileHistory')!=='legacy',historyMemoryBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?16*1024*1024:8*1024*1024,historyGpuBudgetBytes:((navigator as Navigator&{deviceMemory?:number}).deviceMemory??0)>=8?64*1024*1024:32*1024*1024} as const;
-      this.renderer=await DrawingHost.create(this.canvas,target.width,target.height,backend,rendererOptions,drawingWorkerUrl,workerUrl,this.traceHandoff,presentationWorkerUrl) as GpuRenderer;
+      const created=await DrawingHost.create(this.canvas,target.width,target.height,backend,rendererOptions,drawingWorkerUrl,workerUrl,this.traceHandoff,presentationWorkerUrl) as GpuRenderer;
+      if(this.disposed){created.destroy();throw Error('Discarded Home warmup completed after cancellation');}
+      this.renderer=created;
     }catch(error){
       const message=error instanceof Error?error.message:String(error);
       this._initializationError='GPU initialization failed: '+message;
@@ -83,6 +86,9 @@ export class BrushSurface{
   private densityChanged=()=>{this.observeDensity();this.setBackingSize();};
   private observeDensity(){this.densityMedia?.removeEventListener('change',this.densityChanged);this.densityMedia=window.matchMedia('(resolution: '+(window.devicePixelRatio||1)+'dppx)');this.densityMedia.addEventListener('change',this.densityChanged);}
   private windowResize=()=>this.setBackingSize();
+  // Home may have resized the editor without changing its inert DOM state.
+  // Update the real viewport after Home is hidden; do not reset actual ink.
+  refreshVisibleViewport(){if(this.disposed||!this.renderer)return;this.setBackingSize();this.updateView(true);}
   private get operationMode(): 'idle'|'drawing'|'navigation'{
     return this.navigation?.active?'navigation':this.pointer!==null?'drawing':'idle';
   }
@@ -111,6 +117,9 @@ export class BrushSurface{
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
   private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0),t:e.timeStamp,...nativeBrushSensors(e)};}
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
+    // Undo can restore a virtual background while it remains selected. Do not
+    // admit a stroke against nonexistent white raster; reselect to materialize.
+    if(!this.eyedropper&&this.controller.selectedLayer.baseColor==='white'){this.status('背景レイヤーをもう一度選ぶと、背景にも直接描けます。');return;}
     // Always accept a new gesture on the fixed viewport, even when a temporary
     // stroke / document layer becomes the hit target during formal painting.
     // Interactive editor controls inside the viewport must remain interactive.
@@ -290,6 +299,7 @@ export class BrushSurface{
       const key=layer.surface.descriptor.surfaceId;
       const layerCanvas=new OffscreenCanvas(width,height),layerContext=layerCanvas.getContext('2d');
       if(!layerContext)throw new Error('Thumbnail layer canvas unavailable');
+      if(layer.baseColor==='white'){layerContext.fillStyle='#fff';layerContext.fillRect(0,0,width,height);}
       const tiles=occupied.filter(tile=>tile.surfaceKey===key),revision=this.controller.document.head,valid=()=>!this.busy&&!this.disposed&&this.controller.document.head===revision;
       for(let offset=0;offset<tiles.length;offset+=16){
         const batch=tiles.slice(offset,offset+16),read=await readGpuTiles(backend,batch.map(tile=>({surfaceId:key,key:tile.key})),valid);
@@ -307,8 +317,28 @@ export class BrushSurface{
   async captureDocumentLayers(){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
     await this.renderer.drain();
     const result=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
-    for(const layer of this.controller.layers){const bytes=await this.renderer.read(layer.surface.descriptor.surfaceId);result.set(layer.id,new Uint8Array(bytes));}
+    for(const layer of this.controller.layers){
+      const bytes=new Uint8Array(await this.renderer.read(layer.surface.descriptor.surfaceId));
+      if(layer.baseColor==='white')bytes.fill(255);
+      result.set(layer.id,bytes);
+    }
     return result;
+  }
+  // A newly created white work already has exact canonical white tiles.
+  // Populate the new drawing worker directly instead of reconstructing a
+  // full-size geometry projection and uploading it a second time.
+  // Saved/recovered documents deliberately continue using normal restoration.
+  async seedFreshWhiteBackground(surfaceKey:string){
+    if(!this.renderer||!this.session)throw new Error('Renderer is not initialized');
+    if(!this.controller.layers.some(layer=>layer.surface.descriptor.surfaceId===surfaceKey))throw new Error('White background layer missing');
+    const host=this.renderer as unknown as {call?:(method:string,args:unknown)=>Promise<unknown>;update?:(state:unknown)=>void;worker?:Worker};
+    if(!host.call||!host.update)throw new Error('Drawing worker cannot seed the new background');
+    const monitor=(event:MessageEvent)=>{
+      if(event.data?.type==='white-seed-stage'){const recorder=window as unknown as {__illustroWhiteSeedStage?:unknown;__illustroWhiteSeedStages?:unknown[]};recorder.__illustroWhiteSeedStage=event.data;(recorder.__illustroWhiteSeedStages??=[]).push(event.data);}
+    };
+    if(new URLSearchParams(location.search).has('perf'))host.worker?.addEventListener('message',monitor);
+    try{host.update(await host.call('restore',{entries:[],cache:null,geometry:true,solidWhiteSurfaceKey:surfaceKey}));}
+    finally{host.worker?.removeEventListener('message',monitor);}
   }
   async restoreDocumentProjection(cache?:ProjectionCache){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
@@ -351,7 +381,14 @@ export class BrushSurface{
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);this.syncLayerStyles();}
   discardRedoProjection(){this.handoff?.discardRedo();this.session?.discardRedo();}
   private syncLayerStyles(){this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({surfaceKey:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity})));}
-  private surfaceKeys(){return this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId);}
+  private surfaceKeys(){
+    // White paper is a logical backdrop until the user explicitly edits it.
+    // Do not place this virtual (pixel-free) layer into the realtime GPU
+    // compositor; normal drawing has the exact same active GPU layer count
+    // as a transparent document. Materialized/legacy backgrounds remain real.
+    const physical=this.controller.layers.filter(layer=>layer.baseColor!=='white');
+    return (physical.length?physical:this.controller.layers).map(layer=>layer.surface.descriptor.surfaceId);
+  }
   private surfaceForOperation(operation:SemanticOperation,revisionId?:RevisionId){const target=operation.targetEntityIds[0],root=revisionId?this.controller.document.revision(revisionId).root:this.controller.document.root;if(!target||!root.hasLayer(target))throw new Error('History target layer missing');return root.getLayer(target).surface.descriptor.surfaceId;}
   private strokeRecord(operation:SemanticOperation){const record=operation.parameters.strokeRecord;if(!record||typeof record!=='object'||!Array.isArray((record as StrokeRecord).commands))throw new Error('History stroke record missing');return this.restoredRecords.get(record as object)??record as StrokeRecord;}
   private runtimeKeys(operation:SemanticOperation){const root=this.controller.document.root,keys=new Set<string>(),maxX=Math.ceil(root.width/TILE)-1,maxY=Math.ceil(root.height/TILE)-1;
@@ -371,7 +408,16 @@ export class BrushSurface{
    const x=Math.floor(point.x),y=Math.floor(point.y),w=this.controller.document.root.width,h=this.controller.document.root.height;
    if(x<0||y<0||x>=w||y>=h)return null;
    const backend=(this.renderer as unknown as {backend?:any}|null)?.backend;if(!backend)return null;
-   return (this.renderer as any).readPixel(x,y,this.sampleSource==='layer'?this.controller.selectedLayer.surface.descriptor.surfaceId:null);
+   const selected=this.controller.selectedLayer;
+   if(this.sampleSource==='layer'&&selected.baseColor==='white')return [255,255,255,255];
+   const rgba=await (this.renderer as any).readPixel(x,y,this.sampleSource==='layer'?selected.surface.descriptor.surfaceId:null) as number[];
+   // The logical white layer is not uploaded to the GPU. The composite
+   // eyedropper must still return the actual appearance of white paper.
+   const white=this.sampleSource==='composite'?this.controller.layers.find(layer=>layer.baseColor==='white'&&layer.visible&&layer.opacity>0):null;
+   if(white&&rgba&&rgba.length>=4){
+     return compositeWhiteBackdrop(rgba,white.opacity);
+   }
+   return rgba;
   }
   /** Refresh preset catalog without mutating an in-flight stroke or the artwork. */
   setBrushes(brushes:readonly FoundationPreset[]){

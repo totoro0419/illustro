@@ -7,6 +7,7 @@ export type RecoverySummary = Readonly<{
 }>;
 export type HomeActions = Readonly<{
   createDocument: (width:number,height:number,name:string,background:'transparent'|'white')=>Promise<boolean>;
+  onBlankDraftChange?: (width:number,height:number,name:string,background:'transparent'|'white')=>void;
   listWorks:()=>Promise<{works:WorkEntry[];lastWorkId:string|null}>;
   openWork:(id:string)=>Promise<boolean>;
   readThumbnail:(id:string,revisionId:string)=>Promise<Blob|null>;
@@ -18,6 +19,7 @@ export type HomeActions = Readonly<{
   resume: (documentId:string,writerEpochId:string)=>Promise<boolean|'cancelled'>;
   prepareHome: ()=>Promise<boolean>;
   hasDocument: ()=>boolean;
+  onEditorVisible?:()=>void;
 }>;
 export type HomeShell = Readonly<{
   showHome: ()=>Promise<void>;
@@ -108,7 +110,7 @@ const html = [
   '<dialog id="ihNewDialog" class="ih-new-dialog" aria-labelledby="ihNewTitle"><div class="ih-dialog-content">',
     '<div class="ih-dialog-head"><div><span class="ih-overline">START CREATING</span><h2 id="ihNewTitle">新しい作品</h2></div><button type="button" id="ihNewClose" class="ih-dialog-close" aria-label="閉じる">×</button></div>',
     '<div class="ih-start-choices"><button type="button" id="ihChoiceBlank" class="ih-choice" aria-pressed="true"><span class="ih-choice-icon">'+icon('document')+'</span><strong>空白から作成</strong><small>新しいキャンバスを準備</small></button><button type="button" id="ihChoiceFile" class="ih-choice" aria-pressed="false"><span class="ih-choice-icon">'+icon('open')+'</span><strong>ファイルから開く</strong><small>.illustro 形式の作品</small></button></div>',
-    '<form id="ihBlankForm"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><div class="ih-size-heading"><strong>キャンバスサイズ</strong><span>px</span></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button></div>',
+    '<form id="ihBlankForm"><label class="ih-name-field">作品名<input id="ihNewName" name="name" type="text" value="新しい作品" maxlength="120" required></label><div class="ih-size-heading"><strong>キャンバスサイズ</strong><span>px</span></div><div class="ih-size-presets"><button type="button" data-ih-preset="512x384" aria-pressed="true">標準</button><button type="button" data-ih-preset="1920x1080" aria-pressed="false">フルHD</button><button type="button" data-ih-preset="2048x1536" aria-pressed="false">高解像度</button><button type="button" data-ih-preset="4000x4000" aria-pressed="false">超高画質（4000×4000）</button></div>',
       '<div class="ih-dimensions"><label>幅 <input name="width" id="ihNewWidth" type="number" min="1" max="8192" step="1" required value="512" inputmode="numeric"></label><span aria-hidden="true">×</span><label>高さ <input name="height" id="ihNewHeight" type="number" min="1" max="8192" step="1" required value="384" inputmode="numeric"></label></div>',
       '<label class="ih-name-field">背景<select id="ihNewBackground"><option value="transparent">透明</option><option value="white">白い背景レイヤー</option></select></label><p class="ih-dialog-hint">作品はIllustro内に自動保存されます。ファイル保存はバックアップ用です。</p><p id="ihNewError" class="ih-dialog-error" role="status" aria-live="polite"></p>',
       '<div class="ih-dialog-actions"><button type="button" id="ihNewCancel" class="ih-quiet-button">キャンセル</button><button type="submit" id="ihNewCreate" class="ih-solid-button">キャンバスを作成 <span aria-hidden="true">↗</span></button></div>',
@@ -156,6 +158,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     if(next==='editor'&&!actions.hasDocument()){showNew('blank');return;}
     screen=next;const inEditor=next==='editor';
     root.hidden=inEditor;app.inert=!inEditor;app.setAttribute('aria-hidden',String(!inEditor));
+    if(inEditor)requestAnimationFrame(()=>actions.onEditorVisible?.());
     for(const section of root.querySelectorAll<HTMLElement>('[data-ih-screen]'))section.hidden=section.dataset.ihScreen!==next;
     const homeNav=next==='home',worksNav=next==='works';
     el('ihNavHome').classList.toggle('is-active',homeNav);el('ihNavWorks').classList.toggle('is-active',worksNav);
@@ -169,7 +172,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       if(location.hash!==hash)history.pushState({illustroScreen:next},'',hash);
     }
   };
-  const showNew=(mode:'blank'|'file'='blank')=>{navigate('home');setCreationMode(mode);notify('');dialog.showModal();};
+  const showNew=(mode:'blank'|'file'='blank')=>{navigate('home');setCreationMode(mode);notify('');dialog.showModal();if(mode==='blank')prefetchDraft();};
   const setCreationMode=(mode:'blank'|'file')=>{
     const blank=mode==='blank';el('ihBlankForm').hidden=!blank;el('ihFileOptions').hidden=blank;
     el('ihChoiceBlank').setAttribute('aria-pressed',String(blank));el('ihChoiceFile').setAttribute('aria-pressed',String(!blank));
@@ -274,22 +277,37 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   setButton('ihNewClose',()=>dialog.close());setButton('ihNewCancel',()=>dialog.close());
   setButton('ihChoiceBlank',()=>setCreationMode('blank'));setButton('ihChoiceFile',()=>setCreationMode('file'));
   setButton('ihSelectFile',()=>{dialog.close();actions.openFile();});
+  let draftTimer:ReturnType<typeof setTimeout>|null=null;
+  const prefetchDraft=()=>{
+    if(draftTimer!==null){clearTimeout(draftTimer);draftTimer=null;}
+    const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
+    if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)return;
+    actions.onBlankDraftChange?.(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white');
+  };
+  const schedulePrefetch=()=>{
+    if(draftTimer!==null)clearTimeout(draftTimer);
+    draftTimer=setTimeout(prefetchDraft,180);
+  };
   for(const preset of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]'))preset.addEventListener('click',()=>{
     const [width,height]=preset.dataset.ihPreset!.split('x').map(Number);
     el<HTMLInputElement>('ihNewWidth').value=String(width);el<HTMLInputElement>('ihNewHeight').value=String(height);
     for(const item of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]'))item.setAttribute('aria-pressed',String(item===preset));
+    prefetchDraft();
   });
   for(const input of [el<HTMLInputElement>('ihNewWidth'),el<HTMLInputElement>('ihNewHeight')])input.addEventListener('input',()=>{
     for(const preset of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]')){
       const sizes=preset.dataset.ihPreset!.split('x');preset.setAttribute('aria-pressed',String(sizes[0]===el<HTMLInputElement>('ihNewWidth').value&&sizes[1]===el<HTMLInputElement>('ihNewHeight').value));
     }
+    schedulePrefetch();
   });
+  el<HTMLInputElement>('ihNewName').addEventListener('input',schedulePrefetch);
+  el<HTMLSelectElement>('ihNewBackground').addEventListener('change',prefetchDraft);
   el<HTMLFormElement>('ihBlankForm').addEventListener('submit',event=>{event.preventDefault();void(async()=>{
     const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
     if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){el('ihNewError').textContent='幅と高さを1〜8192pxで指定してください。';return;}
     const button=el<HTMLButtonElement>('ihNewCreate');button.disabled=true;el('ihNewError').textContent='キャンバスを準備しています。';
     try{if(await actions.createDocument(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white'))navigate('editor');else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';}
-    catch(error){el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}finally{button.disabled=false;}
+    catch(error){console.error('M10_CREATE_DOCUMENT_FAULT',error instanceof Error?error.stack??error.message:error);el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}finally{button.disabled=false;}
   })();});
   let swipeStart:number|null=null;
   el('ihFeatureVisual').addEventListener('touchstart',event=>{swipeStart=event.touches[0]?.clientX??null;},{passive:true});

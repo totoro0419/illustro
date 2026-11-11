@@ -28,9 +28,14 @@ try {
   await page.goto(url+'?qa=1&backend='+backend,{waitUntil:'domcontentloaded'});
   await page.locator('#new').click();
   await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
-  assert.equal(await page.locator('#brush option').count(),7,'standard brush catalog');
+  const initialIds=await page.locator('#brush option').evaluateAll(options=>options.map(option=>option.value));
+  assert.deepEqual(initialIds.slice(0,7),['foundation-g-pen','foundation-round-pen','foundation-technical','foundation-marker','foundation-pencil','foundation-hard-eraser','foundation-soft-eraser'],'accepted Foundation brushes remain unchanged');
+  assert.ok(initialIds.length>=10,'M10 starter brushes are available');
   await page.locator('#brushSearch').fill('鉛筆');
-  assert.ok(await page.locator('#brush option').count()<=2,'filtered option list');
+  const pencilOptions=await page.locator('#brush option').evaluateAll(options=>options.map(o=>({text:o.textContent,value:o.value})));
+  assert.ok(pencilOptions.some(o=>o.value==='foundation-pencil'),'original pencil remains searchable');
+  assert.ok(pencilOptions.some(o=>o.value==='illustro-soft-pencil-v1'),'new soft pencil remains searchable');
+  assert.ok(pencilOptions.every(o=>o.text.includes('鉛筆')||o.text.startsWith('選択中 ·')),'filter must show only matching brushes plus the active brush');
   await page.locator('#brushSearch').fill('');
   await page.locator('#brush').selectOption('foundation-g-pen');
   await page.locator('#brushDuplicate').click();
@@ -50,6 +55,9 @@ try {
   await page.locator('#brush').selectOption(id);
   assert.equal(await page.locator('#brushFlowValue').textContent(),'35%');
   assert.equal(await page.locator('#brushStabilizationValue').textContent(),'60%');
+  // Verify the affected new marker itself before any history interactions.
+  await page.locator('#brush').selectOption('illustro-opaque-marker-v1');
+  assert.equal(await page.locator('#brushOpacityValue').textContent(),'90%','the marker remains translucent through the transition');
   const first=await page.locator('#canvas').boundingBox();assert.ok(first?.width>100);
   await page.mouse.move(first.x+first.width*.3,first.y+first.height*.45);
   await page.mouse.down();await page.mouse.move(first.x+first.width*.7,first.y+first.height*.55,{steps:24});await page.mouse.up();
@@ -70,6 +78,8 @@ try {
   await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='0',null,{timeout:90000});
   await page.locator('#redo').click();
   await page.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1',null,{timeout:90000});
+  // Preserve existing user-brush CRUD checks after the marker's Undo/Redo.
+  await page.locator('#brush').selectOption(id);
   await page.locator('#brushSearch').fill('M10 検証');
   assert.equal(await page.locator('#brush option').count(),1);
   const downloadPromise=page.waitForEvent('download');

@@ -8,12 +8,13 @@ const require=createRequire(import.meta.url),pw=require(process.env.RT_PLAYWRIGH
 const html=await fs.readFile(new URL('../prototypes/brush-rt/dist/illustro-brush-rt.html',import.meta.url));
 const output=process.env.TAIL_EVIDENCE_DIRECTORY??'/tmp/preview-tail-evidence';
 await fs.mkdir(output,{recursive:true});
-const report={commit:process.env.EXPECTED_COMMIT_SHA??null,cases:[],errors:[]};
+const quick=process.env.M10_TAIL_QUICK==='1';
+const report={commit:process.env.EXPECTED_COMMIT_SHA??null,profile:quick?'focused-12':'full-32',cases:[],errors:[]};
 const server=http.createServer((q,r)=>{r.setHeader('Content-Type','text/html');r.end(html);});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await pw.chromium.launch({headless:true,args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--enable-features=Vulkan','--disable-vulkan-surface']});
 try{
- for(const backend of ['webgl2','webgpu'])for(const width of [512,3000])for(const layered of [false,true]){
+ for(const backend of ['webgl2','webgpu'])for(const width of [512,3000])for(const layered of (quick?[false]:[false,true])){
   const page=await browser.newPage();
   page.on('pageerror',e=>report.errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
@@ -21,7 +22,7 @@ try{
    await page.goto(`http://127.0.0.1:${server.address().port}/?backend=${backend}&document=${width}`);
    await page.waitForFunction(()=>window.__rt||document.getElementById('status').classList.contains('danger'),{timeout:45000});
    assert.ok(await page.evaluate(()=>!!window.__rt),await page.locator('#status').textContent());
-   for(const variant of [{index:0,stamp:false},{index:4,stamp:false},{index:4,stamp:true},{index:6,stamp:false}]){
+   for(const variant of (quick?[{index:0,stamp:false},{index:4,stamp:false},{index:6,stamp:false}]:[{index:0,stamp:false},{index:4,stamp:false},{index:4,stamp:true},{index:6,stamp:false}])){
     const result=await page.evaluate(async({index,stamp,width,layered})=>{
      const {renderer,session,foundationPresets}=window.__rt;
      const {CanonicalBuilder,cpuReference}=await import('@rt/model');
@@ -94,7 +95,7 @@ try{
    }
   }finally{await page.close();}
  }
- assert.equal(report.cases.length,32);assert.deepEqual(report.errors,[]);
+ assert.equal(report.cases.length,quick?12:32);assert.deepEqual(report.errors,[]);
 }catch(e){report.errors.push(e.stack);throw e;}
 finally{
  await fs.writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));
