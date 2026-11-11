@@ -45,7 +45,7 @@ async function handle(message:RequestMessage){
       const entry:WorkEntry={documentId:session.documentId,writerEpochId:session.writerEpochId,revisionId,protectedThrough,
         name:root.name,width:root.width,height:root.height,createdAt:old?.createdAt??root.createdAt,updatedAt:old?.updatedAt??now,openedAt:now,
         selectedLayerId:uuid(message.selectedLayerId,'selected layer'),thumbnail:old?.thumbnail??null,thumbnailRevision:old?.thumbnailRevision??null,
-        previewLayers:root.rootLayerIds.map(id=>{const layer=root.layers.find(layer=>layer.id===id);if(!layer)throw new Error('work binding layer missing');return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity};}),
+        previewLayers:root.rootLayerIds.map(id=>{const layer=root.layers.find(layer=>layer.id===id);if(!layer)throw new Error('work binding layer missing');return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};}),
         previous:old?{writerEpochId:old.writerEpochId,revisionId:old.revisionId,protectedThrough:old.protectedThrough}:null,preserved:message.preserved};
       await publishWork(entry,typeof message.expectedEpoch==='string'?message.expectedEpoch:null);libraryWork=entry;reply(message.id,true,entry);break;
     }
@@ -223,19 +223,20 @@ async function handle(message:RequestMessage){
   }
 }
 
-function parsePreviewLayers(value:unknown):readonly {surfaceId:string;visible:boolean;opacity:number}[]{
+function parsePreviewLayers(value:unknown):readonly {surfaceId:string;visible:boolean;opacity:number;baseColor?:'white'}[]{
   if(!Array.isArray(value)||value.length>100000)throw new Error('Invalid work preview layers');
   const seen=new Set<string>();return value.map(item=>{
     if(!item||typeof item!=='object')throw new Error('Invalid preview layer');
     const x=item as Record<string,unknown>,surfaceId=uuid(x.surfaceId,'preview surface');
     if(seen.has(surfaceId)||typeof x.visible!=='boolean'||typeof x.opacity!=='number'||!Number.isFinite(x.opacity)||x.opacity<0||x.opacity>1)throw new Error('Invalid preview layer state');
-    seen.add(surfaceId);return {surfaceId,visible:x.visible,opacity:x.opacity};
+    if(x.baseColor!==undefined&&x.baseColor!=='white')throw new Error('Invalid preview base color');
+    seen.add(surfaceId);return {surfaceId,visible:x.visible,opacity:x.opacity,...(x.baseColor==='white'?{baseColor:'white' as const}:{})};
   });
 }
 type PreviewTask={
   documentId:string;revisionId:string;writerEpochId:string;session:Session;index:ProjectionDeltaIndex|null;legacyIndex:ProjectionIndex|null;offset:number;
   legacyLayer:number;legacyPixels:Uint8Array|null;
-  layers:readonly {surfaceId:string;visible:boolean;opacity:number}[];
+  layers:readonly {surfaceId:string;visible:boolean;opacity:number;baseColor?:'white'}[];
   canvases:Map<string,OffscreenCanvas>;contexts:Map<string,OffscreenCanvasRenderingContext2D>;
   scratch:OffscreenCanvas;scratchContext:OffscreenCanvasRenderingContext2D;scale:number;width:number;height:number;
 };
@@ -267,7 +268,7 @@ async function initPreviewTask(store:WorkingStore,entry:WorkEntry):Promise<Previ
     layers=root.rootLayerIds.map(id=>{
       const layer=root.layers.find(l=>l.id===id);
       if(!layer)throw new Error('Missing preview layer');
-      return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity};
+      return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};
     });
   }
   const sourceWidth=entry.width,sourceHeight=entry.height,scale=Math.min(1,320/sourceWidth,240/sourceHeight);
@@ -276,6 +277,7 @@ async function initPreviewTask(store:WorkingStore,entry:WorkEntry):Promise<Previ
   for(const layer of layers){
     if(!surfaceIds.includes(layer.surfaceId))return null;
     const canvas=new OffscreenCanvas(width,height),context=canvas.getContext('2d');if(!context)return null;
+    if(layer.baseColor==='white'){context.fillStyle='#fff';context.fillRect(0,0,width,height);}
     canvases.set(layer.surfaceId,canvas);contexts.set(layer.surfaceId,context);
   }
   const scratch=new OffscreenCanvas(128,128),scratchContext=scratch.getContext('2d');if(!scratchContext)return null;
