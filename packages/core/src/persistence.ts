@@ -17,7 +17,7 @@ export type PersistedRoot=Readonly<{
   rootLayerIds:readonly string[];layers:readonly PersistedLayer[];
 }>;
 export type PersistedLayer=Readonly<{
-  id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;
+  id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;baseColor?:'white';
   surface:Readonly<{descriptor:RasterSurfaceDescriptor;tiles:readonly Readonly<{key:string;value:RasterTileValue}>[]}>;
 }>;
 export type PersistedRevision=Readonly<{
@@ -86,7 +86,7 @@ function serializeRoot(root:DocumentRoot,blockIds:Set<BlockId>):PersistedRoot{
   const layers:PersistedLayer[]=[],seenSurfaces=new Set<string>(),entries=root.layers.entries();if(entries.length>MAX_LAYERS)throw new Error('too many layers');
   for(const [id,layer] of entries){if(seenSurfaces.has(layer.surface.descriptor.surfaceId))throw new Error('duplicate surface id');seenSurfaces.add(layer.surface.descriptor.surfaceId);
     const tiles=layer.surface.tiles.entries().map(([key,value])=>{if(value.baseBlockId)blockIds.add(value.baseBlockId);return Object.freeze({key,value});});
-    if(tiles.length>MAX_TILES_PER_ROOT)throw new Error('too many raster tiles');layers.push(Object.freeze({id,kind:'raster' as const,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,
+    if(tiles.length>MAX_TILES_PER_ROOT)throw new Error('too many raster tiles');layers.push(Object.freeze({id,kind:'raster' as const,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,...(layer.baseColor?{baseColor:layer.baseColor}:{}),
       surface:Object.freeze({descriptor:layer.surface.descriptor,tiles:Object.freeze(tiles)})}));}
   return Object.freeze({documentId:root.documentId,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,createdAt:root.metadata.createdAt,modifiedAt:root.metadata.modifiedAt,
     rootLayerIds:Object.freeze([...root.rootLayerIds]),layers:Object.freeze(layers)});
@@ -115,11 +115,12 @@ function parseRoot(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescripto
 function parseLayer(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescriptor>):LayerNode{
   const r=record(value,'layer'),id=uuid(r.id,'layer id') as LayerId;if(r.kind!=='raster')throw new Error('unsupported layer kind');const name=text(r.name,'layer name',1,4096);
   if(typeof r.visible!=='boolean'||typeof r.locked!=='boolean'||typeof r.opacity!=='number'||!Number.isFinite(r.opacity)||r.opacity<0||r.opacity>1)throw new Error('invalid layer state');
+  if(r.baseColor!==undefined&&r.baseColor!=='white')throw new Error('invalid layer base color');
   const s=record(r.surface,'surface'),descriptor=parseSurfaceDescriptor(s.descriptor);if(!Array.isArray(s.tiles)||s.tiles.length>MAX_TILES_PER_ROOT)throw new Error('invalid surface tiles');
   const edit=PagedMap.empty<TileKey,RasterTileValue>().edit(),keys=new Set<string>();
   for(const item of s.tiles){const t=record(item,'tile'),key=text(t.key,'tile key',1,64) as TileKey;parseTileKey(key);if(keys.has(key))throw new Error('duplicate tile key');keys.add(key);
     const value=parseTileValue(t.value,blocks);edit.set(key,value);}
-  return Object.freeze({id,kind:'raster' as const,name,visible:r.visible,opacity:r.opacity,locked:r.locked,surface:new RasterSurfaceManifest(descriptor,edit.commit())});
+  return Object.freeze({id,kind:'raster' as const,name,visible:r.visible,opacity:r.opacity,locked:r.locked,...(r.baseColor==='white'?{baseColor:'white' as const}:{}),surface:new RasterSurfaceManifest(descriptor,edit.commit())});
 }
 function parseSurfaceDescriptor(value:unknown):RasterSurfaceDescriptor{
   const d=record(value,'surface descriptor'),surfaceId=uuid(d.surfaceId,'surface id') as RasterSurfaceId,sampleEncoding=d.sampleEncoding;
