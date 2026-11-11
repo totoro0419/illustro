@@ -15,8 +15,8 @@ export class ViewportScene {
    const previous=canvas.parentElement,parent=previous.parentElement;
    const target=parent??document.querySelector('#canvasArea .surface');
    if(!target)throw Error('Canvas has no stable display parent');
-   target.insertBefore?.(canvas,parent?previous:null);
-   if(!parent)target.append(canvas);
+   if(parent)parent.insertBefore(canvas,previous);
+   else target.append(canvas);
    previous.remove();
   }
   canvas.before(this.element);this.element.append(canvas);this.baseView=null;
