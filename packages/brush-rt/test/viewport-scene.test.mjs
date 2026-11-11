@@ -10,7 +10,7 @@ function fixture(){
   if(child.parent){const old=child.parent.children.indexOf(child);child.parent.children.splice(old,1);}
   child.parent=parent;parent.children.splice(Math.max(0,Math.min(index,parent.children.length)),0,child);
  };
- const surface={children:[],append(child){move(child,this,this.children.length);},insertBefore(child,ref){
+ const surface={children:[],classList:{contains:()=>false},append(child){move(child,this,this.children.length);},insertBefore(child,ref){
   move(child,this,ref?this.children.indexOf(ref):this.children.length);
  }};
  const make=kind=>({
