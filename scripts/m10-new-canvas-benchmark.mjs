@@ -75,6 +75,7 @@ try{
     }catch(error){
      const diagnostics=await page.evaluate(()=>({
       warmup:window.__illustroWarmup??null,
+      whiteSeedStage:window.__illustroWhiteSeedStage??null,
       selectedBackground:document.getElementById('ihNewBackground')?.value,
       selectedSize:[document.getElementById('ihNewWidth')?.value,document.getElementById('ihNewHeight')?.value],
       isReady:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width??null,
