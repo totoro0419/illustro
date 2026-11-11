@@ -322,9 +322,14 @@ export class BrushSurface{
   async seedFreshWhiteBackground(surfaceKey:string){
     if(!this.renderer||!this.session)throw new Error('Renderer is not initialized');
     if(!this.controller.layers.some(layer=>layer.surface.descriptor.surfaceId===surfaceKey))throw new Error('White background layer missing');
-    const host=this.renderer as unknown as {call?:(method:string,args:unknown)=>Promise<unknown>;update?:(state:unknown)=>void};
+    const host=this.renderer as unknown as {call?:(method:string,args:unknown)=>Promise<unknown>;update?:(state:unknown)=>void;worker?:Worker};
     if(!host.call||!host.update)throw new Error('Drawing worker cannot seed the new background');
-    host.update(await host.call('restore',{entries:[],cache:null,geometry:true,solidWhiteSurfaceKey:surfaceKey}));
+    const monitor=(event:MessageEvent)=>{
+      if(event.data?.type==='white-seed-stage')(window as unknown as {__illustroWhiteSeedStage?:unknown}).__illustroWhiteSeedStage=event.data;
+    };
+    if(new URLSearchParams(location.search).has('perf'))host.worker?.addEventListener('message',monitor);
+    try{host.update(await host.call('restore',{entries:[],cache:null,geometry:true,solidWhiteSurfaceKey:surfaceKey}));}
+    finally{host.worker?.removeEventListener('message',monitor);}
   }
   async restoreDocumentProjection(cache?:ProjectionCache){
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
