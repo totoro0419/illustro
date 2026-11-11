@@ -116,6 +116,9 @@ export class BrushSurface{
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
   private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e);return {x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0),t:e.timeStamp,...nativeBrushSensors(e)};}
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
+    // Undo can restore a virtual background while it remains selected. Do not
+    // admit a stroke against nonexistent white raster; reselect to materialize.
+    if(!this.eyedropper&&this.controller.selectedLayer.baseColor==='white'){this.status('背景レイヤーをもう一度選ぶと、背景にも直接描けます。');return;}
     // Always accept a new gesture on the fixed viewport, even when a temporary
     // stroke / document layer becomes the hit target during formal painting.
     // Interactive editor controls inside the viewport must remain interactive.
