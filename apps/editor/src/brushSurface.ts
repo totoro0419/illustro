@@ -325,7 +325,7 @@ export class BrushSurface{
     const host=this.renderer as unknown as {call?:(method:string,args:unknown)=>Promise<unknown>;update?:(state:unknown)=>void;worker?:Worker};
     if(!host.call||!host.update)throw new Error('Drawing worker cannot seed the new background');
     const monitor=(event:MessageEvent)=>{
-      if(event.data?.type==='white-seed-stage')(window as unknown as {__illustroWhiteSeedStage?:unknown}).__illustroWhiteSeedStage=event.data;
+      if(event.data?.type==='white-seed-stage'){const recorder=window as unknown as {__illustroWhiteSeedStage?:unknown;__illustroWhiteSeedStages?:unknown[]};recorder.__illustroWhiteSeedStage=event.data;(recorder.__illustroWhiteSeedStages??=[]).push(event.data);}
     };
     if(new URLSearchParams(location.search).has('perf'))host.worker?.addEventListener('message',monitor);
     try{host.update(await host.call('restore',{entries:[],cache:null,geometry:true,solidWhiteSurfaceKey:surfaceKey}));}
