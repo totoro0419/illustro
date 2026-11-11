@@ -179,7 +179,7 @@ try{
     // previously virtual white layer. It must not erase ink above it.
     await page.waitForFunction(()=>!window.__illustroPerformance.isDrawingBusy(),null,{timeout:40000});
     const lower=await page.evaluate(()=>window.__illustroPerformance.probe().controller.document.root.rootLayerIds[0]);
-    await page.locator('#layerList .layer-row').last().click();
+    await page.evaluate(()=>document.querySelector('#layerList .layer-row:last-child')?.click());
     await page.waitForFunction(id=>{
      const controller=window.__illustroPerformance?.probe?.()?.controller;
      return controller?.selectedLayerId===id&&controller.document.root.getLayer(id).baseColor===undefined&&
