@@ -77,7 +77,15 @@ try{
       warmup:window.__illustroWarmup??null,
       selectedBackground:document.getElementById('ihNewBackground')?.value,
       selectedSize:[document.getElementById('ihNewWidth')?.value,document.getElementById('ihNewHeight')?.value],
-      isReady:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width??null
+      isReady:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width??null,
+      renderer:(()=>{
+       const host=window.__illustroPerformance?.probe?.()?.renderer;
+       if(!host)return null;
+       return {pendingRequests:[...host.requests.keys()],faults:host.errors,selection:host.info?.selection,
+         disposed:host.disposed,document:host.document,presentationVersion:host.presentationVersion,
+         pendingInstall:host.pendingDocumentInstall?'yes':'no',layers:host.documentPresentation?.tiles?.size,
+         documentVersion:host.documentVersion,sequence:host.sequence,uncoveredVersion:host.uncoveredVersion};
+      })()
      }));
      console.error('M10_WHITE_PREWARM_FAILURE',JSON.stringify({diagnostics,pageErrors,error:String(error)}));
      throw error;
