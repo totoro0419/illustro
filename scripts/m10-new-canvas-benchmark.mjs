@@ -158,7 +158,12 @@ try{
     assert.equal(pixels.whiteTileCount,0,'white tiles must remain sparse');
     assert.equal(pixels.nativeSnapshotBlockCount,0,'native white document save should not materialize a white image');
     if(item.width===256){
-     const png=await page.evaluate(()=>window.__illustroPerformance.exportCorners());
+     console.log('M10_WHITE_EXPORT_BEGIN');
+     const png=await Promise.race([
+      page.evaluate(()=>window.__illustroPerformance.exportCorners()),
+      new Promise((_,reject)=>setTimeout(()=>reject(Error('PNG export did not finish within 30 seconds')),30000))
+     ]);
+     console.log('M10_WHITE_EXPORT_END',JSON.stringify(png));
      assert.deepEqual(png.first,[255,255,255,255],'PNG export must have opaque white first corner');
      assert.deepEqual(png.last,[255,255,255,255],'PNG export must have opaque white last corner');
      assert.equal(png.blocksBefore,0,'native work must still be sparse before PNG export');
@@ -179,6 +184,7 @@ try{
     // previously virtual white layer. It must not erase ink above it.
     await page.waitForFunction(()=>!window.__illustroPerformance.isDrawingBusy(),null,{timeout:40000});
     const lower=await page.evaluate(()=>window.__illustroPerformance.probe().controller.document.root.rootLayerIds[0]);
+    console.log('M10_WHITE_MATERIALIZE_BEGIN');
     await page.evaluate(()=>document.querySelector('#layerList .layer-row:last-child')?.click());
     await page.waitForFunction(id=>{
      const controller=window.__illustroPerformance?.probe?.()?.controller;
@@ -191,6 +197,7 @@ try{
     },lower);
     assert.deepEqual(materialized.pixel,[255,255,255,255],'background remains white after materialization');
     assert.ok(materialized.blocks>0,'explicit background editing may materialize white raster tiles');
+    console.log('M10_WHITE_MATERIALIZE_END');
     assert.ok(await page.evaluate(()=>window.__illustroPerformance.probe().controller.committedStrokeCount)>0,
       'materializing white background must retain drawing history');
    }
