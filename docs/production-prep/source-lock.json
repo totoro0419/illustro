@@ -476,7 +476,7 @@
     },
     {
       "path": "packages/brush-rt/src/drawing.worker.mjs",
-      "sha256": "7fc430e24f2e359d976f0c6f0117fcea94a56895b69b93c9a927a851238b326f",
+      "sha256": "f29394d20384802028dd23af3b152d9479999b19e8931507df22fc73dc38e4f7",
       "presentationRebuildException": "User-authorized document-tile publication and independent input/raster/display roles. Requires full-byte transfer/reveal, M08/brush, history/save/reopen and matched performance tests. Physical acceptance UNVERIFIED.",
       "baseCommit": "8fa3857b5ce8deb4dadacce45f06e121a16e8d85",
       "sourceBranch": "rebuild/M10-presentation-correctness-2026-10-21",
