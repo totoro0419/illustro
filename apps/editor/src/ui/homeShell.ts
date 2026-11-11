@@ -301,7 +301,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     schedulePrefetch();
   });
   el<HTMLInputElement>('ihNewName').addEventListener('input',schedulePrefetch);
-  el<HTMLSelectElement>('ihNewBackground').addEventListener('change',schedulePrefetch);
+  el<HTMLSelectElement>('ihNewBackground').addEventListener('change',prefetchDraft);
   el<HTMLFormElement>('ihBlankForm').addEventListener('submit',event=>{event.preventDefault();void(async()=>{
     const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
     if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){el('ihNewError').textContent='幅と高さを1〜8192pxで指定してください。';return;}
