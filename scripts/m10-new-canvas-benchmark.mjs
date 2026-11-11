@@ -32,8 +32,9 @@ try{
  browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
  for(const item of configurations){
   const context=await browser.newContext({viewport:{width:1440,height:900},hasTouch:true,deviceScaleFactor:2});
-  const page=await context.newPage(),pageErrors=[];
+  const page=await context.newPage(),pageErrors=[],consoleErrors=[];
   page.on('pageerror',e=>pageErrors.push(String(e)));
+  page.on('console',e=>{if(e.type()==='error')consoleErrors.push(e.text());});
   try{
    await page.goto('http://127.0.0.1:'+server.address().port+'/?perf=1&backend='+item.backend);
    // A typical artist spends time on Home choosing a document. Verify that
@@ -102,7 +103,7 @@ try{
     const error=document.getElementById('ihNewError')?.textContent??'';
     return ready||(error&&error!=='キャンバスを準備しています。')||status?.textContent?.includes('描画を開始できませんでした');
    },null,{timeout:45000});
-   const canvasOpen=await page.evaluate(()=>({appInert:document.getElementById('app')?.inert,brushDisabled:document.getElementById('brush')?.disabled,status:document.getElementById('status')?.textContent,dialogError:document.getElementById('ihNewError')?.textContent,warmup:window.__illustroWarmup,documentSize:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width,workerErrors:window.__illustroPerformance?.probe?.()?.renderer?.errors}));
+   const canvasOpen=await page.evaluate(()=>({appInert:document.getElementById('app')?.inert,brushDisabled:document.getElementById('brush')?.disabled,status:document.getElementById('status')?.textContent,dialogError:document.getElementById('ihNewError')?.textContent,warmup:window.__illustroWarmup,documentSize:window.__illustroPerformance?.probe?.()?.controller?.document?.root?.width,workerErrors:window.__illustroPerformance?.probe?.()?.renderer?.errors,consoleErrors}));
    assert.ok(!canvasOpen.appInert&&!canvasOpen.brushDisabled&&canvasOpen.status?.includes('描画できます'),'canvas did not open successfully: '+JSON.stringify(canvasOpen));
    const wallClockMs=Date.now()-start;
    const data=await page.evaluate(()=>({
