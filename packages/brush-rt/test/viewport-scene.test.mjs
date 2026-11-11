@@ -6,17 +6,26 @@ import {DrawingHost} from '../dist/rt/drawing-host.mjs';
 
 function fixture(){
  const prior=globalThis.document;
- const surface={children:[]};
+ const move=(child,parent,index)=>{
+  if(child.parent){const old=child.parent.children.indexOf(child);child.parent.children.splice(old,1);}
+  child.parent=parent;parent.children.splice(Math.max(0,Math.min(index,parent.children.length)),0,child);
+ };
+ const surface={children:[],append(child){move(child,this,this.children.length);},insertBefore(child,ref){
+  move(child,this,ref?this.children.indexOf(ref):this.children.length);
+ }};
  const make=kind=>({
-  kind,style:{},children:[],parent:null,
-  append(child){if(child.parent)child.parent.children.splice(child.parent.children.indexOf(child),1);child.parent=this;this.children.push(child);},
-  before(child){const i=this.parent.children.indexOf(this);if(child.parent)child.parent.children.splice(child.parent.children.indexOf(child),1);child.parent=this.parent;this.parent.children.splice(i,0,child);},
-  after(child){const i=this.parent.children.indexOf(this);if(child.parent)child.parent.children.splice(child.parent.children.indexOf(child),1);child.parent=this.parent;this.parent.children.splice(i+1,0,child);},
+  kind,style:{},children:[],parent:null,className:'',
+  get parentElement(){return this.parent;},
+  get classList(){return {contains:className=>this.className.split(/\\s+/).includes(className)};},
+  append(child){move(child,this,this.children.length);},
+  insertBefore(child,ref){move(child,this,ref?this.children.indexOf(ref):this.children.length);},
+  before(child){move(child,this.parent,this.parent.children.indexOf(this));},
+  after(child){move(child,this.parent,this.parent.children.indexOf(this)+1);},
   remove(){if(this.parent)this.parent.children.splice(this.parent.children.indexOf(this),1);this.parent=null;},
   setAttribute(){},
   getContext(){return {transferFromImageBitmap(){}};}
  });
- globalThis.document={createElement:make};
+ globalThis.document={createElement:make,querySelector:selector=>selector==='#canvasArea .surface'?surface:null};
  const canvas=make('canvas');surface.children.push(canvas);canvas.parent=surface;
  canvas.offsetLeft=0;canvas.offsetTop=0;
  return {canvas,surface,restore(){if(prior===undefined)delete globalThis.document;else globalThis.document=prior;}};
@@ -64,5 +73,35 @@ test('fifty active-gesture view changes do not message either drawing or display
   assert.equal(calls.filter(x=>x[0]==='draw'&&x[1]==='view').length,1);
   assert.equal(calls.filter(x=>x[0]==='reproject').length,1);
   scene.destroy(f.canvas);
+ }finally{f.restore();}
+});
+
+test('stale Home warmup cannot detach the canvas adopted by a newer viewport scene',()=>{
+ const f=fixture();
+ try{
+  const first=new ViewportScene(f.canvas);
+  assert.equal(f.canvas.parentElement,first.element);
+  const second=new ViewportScene(f.canvas);
+  assert.equal(f.canvas.parentElement,second.element,'new host owns the one canvas');
+  assert.deepEqual(f.surface.children,[second.element],'no nested viewport scenes');
+  first.destroy(f.canvas);
+  assert.equal(f.canvas.parentElement,second.element,'stale disposal leaves the new host intact');
+  assert.deepEqual(f.surface.children,[second.element]);
+  second.destroy(f.canvas);
+  assert.deepEqual(f.surface.children,[f.canvas],'final disposal restores exact original canvas');
+ }finally{f.restore();}
+});
+test('a detached old viewport scene can never delete the live canvas',()=>{
+ const f=fixture();
+ try{
+  const first=new ViewportScene(f.canvas);
+  const second=new ViewportScene(f.canvas);
+  first.destroy(f.canvas);
+  const third=new ViewportScene(f.canvas);
+  second.destroy(f.canvas);
+  assert.deepEqual(f.surface.children,[third.element]);
+  assert.equal(f.canvas.parentElement,third.element);
+  third.destroy(f.canvas);
+  assert.deepEqual(f.surface.children,[f.canvas]);
  }finally{f.restore();}
 });
