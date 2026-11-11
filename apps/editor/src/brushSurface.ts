@@ -380,7 +380,14 @@ export class BrushSurface{
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);this.syncLayerStyles();}
   discardRedoProjection(){this.handoff?.discardRedo();this.session?.discardRedo();}
   private syncLayerStyles(){this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({surfaceKey:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity})));}
-  private surfaceKeys(){return this.controller.layers.map(layer=>layer.surface.descriptor.surfaceId);}
+  private surfaceKeys(){
+    // White paper is a logical backdrop until the user explicitly edits it.
+    // Do not place this virtual (pixel-free) layer into the realtime GPU
+    // compositor; normal drawing has the exact same active GPU layer count
+    // as a transparent document. Materialized/legacy backgrounds remain real.
+    const physical=this.controller.layers.filter(layer=>layer.baseColor!=='white');
+    return (physical.length?physical:this.controller.layers).map(layer=>layer.surface.descriptor.surfaceId);
+  }
   private surfaceForOperation(operation:SemanticOperation,revisionId?:RevisionId){const target=operation.targetEntityIds[0],root=revisionId?this.controller.document.revision(revisionId).root:this.controller.document.root;if(!target||!root.hasLayer(target))throw new Error('History target layer missing');return root.getLayer(target).surface.descriptor.surfaceId;}
   private strokeRecord(operation:SemanticOperation){const record=operation.parameters.strokeRecord;if(!record||typeof record!=='object'||!Array.isArray((record as StrokeRecord).commands))throw new Error('History stroke record missing');return this.restoredRecords.get(record as object)??record as StrokeRecord;}
   private runtimeKeys(operation:SemanticOperation){const root=this.controller.document.root,keys=new Set<string>(),maxX=Math.ceil(root.width/TILE)-1,maxY=Math.ceil(root.height/TILE)-1;
