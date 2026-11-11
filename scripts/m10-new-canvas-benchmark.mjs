@@ -156,6 +156,13 @@ try{
     assert.equal(pixels.canonicalRasterBytes,0,'initial white must not create full-size raster blocks');
     assert.equal(pixels.whiteTileCount,0,'white tiles must remain sparse');
     assert.equal(pixels.nativeSnapshotBlockCount,0,'native white document save should not materialize a white image');
+    if(item.width===2048){
+     const png=await page.evaluate(()=>window.__illustroPerformance.exportCorners());
+     assert.deepEqual(png.first,[255,255,255,255],'PNG export must have opaque white first corner');
+     assert.deepEqual(png.last,[255,255,255,255],'PNG export must have opaque white last corner');
+     assert.equal(png.blocksBefore,0,'native work must still be sparse before PNG export');
+     assert.equal(png.blocksAfter,0,'PNG export must not inflate the editable native document');
+    }
    }
    // Being editable means that a real pointer path can reach a canonical commit.
    const rect=await page.locator('#canvas').boundingBox();
