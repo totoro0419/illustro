@@ -617,7 +617,7 @@ async function createDocument(width:number,height:number,name='新しい作品',
     measureCanvasStage('new-document-model',documentStarted);
     if(warm)await activateFirstPrewarmedBlank(warm);
     else await activateOpened({document,selectedLayerId:selected,preserved:{manifestExtras:{},optionalSections:[]},generationId:'new',snapshotRevisionId:document.head},false,null,whiteSurfaceKey);
-    if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,width,height,background);void refreshWorks();}
+    if(!qaMode){void storeBlankThumbnail(document.root.documentId,document.head,background);void refreshWorks();}
     const selection=surface?.backendSelection as {fallbackUsed?:boolean;selected?:string;webgpu?:{stage?:string;error?:string|null}}|null;
     byId('status').textContent=selection?.fallbackUsed?'描画できます。WebGPUを使えなかったためWebGL2に切り替えました。':'描画できます。作業内容は自動的に保護されます。';
     updateQa();measureCanvasStage('click-to-editable',createStarted);return true;
@@ -952,11 +952,19 @@ function copyOpened(opened:PortableOpenResult,name:string):PortableOpenResult{
   return {...opened,document,snapshotRevisionId:document.head,generationId:'copy'};
 }
 // A new blank work needs no expensive full-resolution GPU readback.
-async function storeBlankThumbnail(documentId:string,revisionId:string,width:number,height:number,background:'transparent'|'white'){
-  const scale=Math.min(1,320/width,240/height),preview=new OffscreenCanvas(Math.max(1,Math.round(width*scale)),Math.max(1,Math.round(height*scale)));
-  if(background==='white'){const context=preview.getContext('2d')!;context.fillStyle='#ffffff';context.fillRect(0,0,preview.width,preview.height);}
-  try{await persistence.storeThumbnail(documentId,revisionId,await preview.convertToBlob({type:'image/png'}));}
-  catch(error){console.warn('Initial thumbnail deferred:',error);}
+// A pristine canvas is a solid color, so its preview never needs a new
+// OffscreenCanvas/2D graphics context. On software GPUs that allocation was
+// blocking the CREATE button for seconds, after the drawing host was ready.
+// Both PNGs are exact, 1x1 RGBA images (white and transparent respectively).
+const EMPTY_PREVIEW_PNG={
+  white:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP4////fwAJ+wP99djxmgAAAABJRU5ErkJggg==',
+  transparent:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNgYGBgAAAABQABeqhXUAAAAABJRU5ErkJggg=='
+} as const;
+async function storeBlankThumbnail(documentId:string,revisionId:string,background:'transparent'|'white'){
+  try{
+    const png=Uint8Array.from(atob(EMPTY_PREVIEW_PNG[background]),character=>character.charCodeAt(0));
+    await persistence.storeThumbnail(documentId,revisionId,new Blob([png],{type:'image/png'}));
+  }catch(error){console.warn('Initial thumbnail deferred:',error);}
 }
 async function createWorkThumbnail(){
   if(qaMode||!documentReady||!surface||surface.busy)return;
