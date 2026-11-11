@@ -89,14 +89,13 @@ let initialBlankWarmup:BlankWarmup|null=null;
 // Keep the original editable raster background and the top drawing layer in the
 // Core document. Only the initial GPU upload differs from normal saved-work replay.
 function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white'){
-  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品'});
+  // White is a logical base color, not 4*width*height initial raster bytes.
+  // The upper transparent drawing layer is immediately usable. Native saves
+  // carry the white-base metadata, and image export composites it on demand.
+  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',...(background==='white'?{blankBackground:'white' as const}:{})});
   let selected=document.root.rootLayerIds[0]!;
   let whiteSurfaceKey:string|null=null;
   if(background==='white'){
-    const pixels=new Uint8Array(width*height*4);pixels.fill(255);
-    const tx=document.begin('白い背景');
-    tx.resizeDocument(width,height,'document.canvas-resize',new Map([[selected,pixels]]),{});
-    tx.renameLayer(selected,'背景');tx.commit();
     whiteSurfaceKey=document.root.getLayer(selected).surface.descriptor.surfaceId;
     selected=document.addRasterLayerAbove(selected).layerId;
   }
@@ -128,7 +127,6 @@ function beginBlankWarmup(width=512,height=384,name='新しい作品',background
   initialBlankWarmup=entry;
   entry.ready=drawing.initialize().then(async()=>{
     if(entry.cancelled){drawing.destroy();return false;}
-    if(entry.whiteSurfaceKey)await drawing.seedFreshWhiteBackground(entry.whiteSurfaceKey);
     if(entry.cancelled){drawing.destroy();return false;}
     entry.completed=true;
     measureCanvasStage('home-gpu-prewarm',entry.started);
@@ -178,6 +176,10 @@ const renderLayers=()=>{
       name.className='layer-name';name.textContent=layer.name;state.className='layer-state';state.textContent=selected?'選択中':'';
       row.append(name,state);
       row.onclick=()=>{
+        if(layer.baseColor==='white'){
+          void materializeAndSelectWhiteLayer(layer.id).catch(showStorageError);
+          return;
+        }
         try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+'を選びました。次の線はこのレイヤーに入ります。';updateHistoryButtons();updateQa();}
         catch{byId('status').textContent='そのレイヤーを選択できませんでした。';}
       };
@@ -398,6 +400,39 @@ async function reloadGeometryProjection(){
  if(oldPreset){try{selectPreset(oldPreset);}catch{}}
  updateViewControls();renderLayers();updateQa();redrawCrop();
 }
+/** Editing the white base itself is uncommon; only then do we materialize it.
+ * All other layers are rebased from exact current GPU pixels, preserving ink.
+ * This never runs during canvas creation, ordinary drawing, or native saves. */
+async function materializeAndSelectWhiteLayer(layerId:LayerId){
+  if(geometryBusy||!surface?.canChangeGeometry)throw new Error('描画処理中です。背景レイヤーの準備ができません。');
+  const root=controller.document.root;
+  if(!root.hasLayer(layerId))throw new Error('背景レイヤーが見つかりません。');
+  if(root.getLayer(layerId).baseColor!=='white'){controller.selectLayer(layerId);renderLayers();return;}
+  geometryBusy=true;surface.setInputBarrier(true);
+  byId('status').textContent='背景レイヤーを編集できるようにしています。';
+  try{
+    await surface.settleStrokes();
+    await historyNavigation?.barrier();
+    const pixels=await surface.captureDocumentLayers();
+    // This is the first point at which physical white bytes are needed.
+    // The usual path never allocates them, including native .illustro save.
+    const white=pixels.get(layerId);
+    if(!white)throw new Error('白背景のデータがありません。');
+    white.fill(255);
+    const tx=controller.document.begin('背景レイヤーを編集用に変換');
+    tx.resizeDocument(root.width,root.height,'document.canvas-resize',pixels,{materializeLogicalWhite:true});
+    const receipt=tx.commit();
+    controller.lastPersistenceHandoff=receipt.persistence;
+    queueLatestCommit();
+    await reloadGeometryProjection();
+    controller.selectLayer(layerId);
+    if(!qaMode)void persistence.selectWorkLayer(layerId).catch(showStorageError);
+    renderLayers();updateHistoryButtons();updateQa();
+    byId('status').textContent='背景レイヤーを編集できます。';
+  }finally{
+    geometryBusy=false;surface?.setInputBarrier(false);updateHistoryButtons();
+  }
+}
 async function applyGeometry(){
  if(!geometryMode||geometryBusy||!surface?.canChangeGeometry)return;
  const mode=geometryMode,old=controller.document.root,w=Number(dimensionInput('geometryWidth').value),h=Number(dimensionInput('geometryHeight').value);
@@ -448,9 +483,9 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   lastEraserPresetId=surface.brushes.find(p=>p.id==='foundation-hard-eraser')?.id??surface.brushes.find(p=>p.blend==='erase')?.id??lastEraserPresetId;
   selectPreset(lastBrushPresetId);
   if(freshWhiteSurfaceKey){
-    const seededAt=performance.now();
-    await surface.seedFreshWhiteBackground(freshWhiteSurfaceKey);
-    measureCanvasStage('fresh-white-seed',seededAt);
+    // No white pixels are generated at startup. The editor already displays
+    // an ordinary white paper; the layer's real color is recorded in Core.
+    performance.mark('illustro-canvas:logical-white-ready');
   }else if(replay){
     const replayStarted=performance.now();
     await surface.restoreDocumentProjection(projectionCache);
