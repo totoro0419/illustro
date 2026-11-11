@@ -103,8 +103,8 @@ function newBlankDocument(width:number,height:number,name:string,background:'tra
 }
 // Prepares the ACTUAL drawing host in the hidden editor, not an unrelated
 // temporary GPU context whose shaders would need to be compiled a second time.
-function reportBlankWarmup(state:string,detail=''){
-  if(perfMode)(window as unknown as {__illustroWarmup:unknown}).__illustroWarmup={state,detail,at:performance.now()};
+function reportBlankWarmup(state:string,detail='',background:'transparent'|'white'='transparent'){
+  if(perfMode)(window as unknown as {__illustroWarmup:unknown}).__illustroWarmup={state,detail,background,at:performance.now()};
 }
 function beginBlankWarmup(width=512,height=384,name='新しい作品',background:'transparent'|'white'='transparent'){
   const title=name.trim()||'新しい作品';
@@ -122,7 +122,7 @@ function beginBlankWarmup(width=512,height=384,name='新しい作品',background
   const draft=reuseIdle?controller:EditorController.restored(blank.document,blank.selected);
   const drawing=reuseIdle?idle!:makeSurface(null,draft);
   surface=drawing;
-  reportBlankWarmup('started',width+'x'+height);
+  reportBlankWarmup('started',width+'x'+height,background);
   const entry:BlankWarmup={controller:draft,drawing,selectedLayerId:blank.selected,whiteSurfaceKey:blank.whiteSurfaceKey,background,cancelled:false,completed:false,started:performance.now(),ready:Promise.resolve(false)};
   initialBlankWarmup=entry;
   entry.ready=drawing.initialize().then(async()=>{
@@ -130,11 +130,11 @@ function beginBlankWarmup(width=512,height=384,name='新しい作品',background
     if(entry.cancelled){drawing.destroy();return false;}
     entry.completed=true;
     measureCanvasStage('home-gpu-prewarm',entry.started);
-    reportBlankWarmup('ready',width+'x'+height);
+    reportBlankWarmup('ready',width+'x'+height,entry.background);
     return true;
   }).catch(error=>{
     if(!entry.cancelled){
-      reportBlankWarmup('failed',error instanceof Error?error.stack??error.message:String(error));
+      reportBlankWarmup('failed',error instanceof Error?error.stack??error.message:String(error),entry.background);
       console.warn('Optional canvas prewarm unavailable:',error);
     }
     drawing.destroy();
