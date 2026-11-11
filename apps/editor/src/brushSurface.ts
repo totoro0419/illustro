@@ -295,6 +295,7 @@ export class BrushSurface{
       const key=layer.surface.descriptor.surfaceId;
       const layerCanvas=new OffscreenCanvas(width,height),layerContext=layerCanvas.getContext('2d');
       if(!layerContext)throw new Error('Thumbnail layer canvas unavailable');
+      if(layer.baseColor==='white'){layerContext.fillStyle='#fff';layerContext.fillRect(0,0,width,height);}
       const tiles=occupied.filter(tile=>tile.surfaceKey===key),revision=this.controller.document.head,valid=()=>!this.busy&&!this.disposed&&this.controller.document.head===revision;
       for(let offset=0;offset<tiles.length;offset+=16){
         const batch=tiles.slice(offset,offset+16),read=await readGpuTiles(backend,batch.map(tile=>({surfaceId:key,key:tile.key})),valid);
@@ -312,7 +313,11 @@ export class BrushSurface{
   async captureDocumentLayers(){if(!this.renderer||this.busy)throw new Error('画像を変更できません。描画終了後に操作してください。');
     await this.renderer.drain();
     const result=new Map<ReturnType<EditorController['target']>['layerId'],Uint8Array>();
-    for(const layer of this.controller.layers){const bytes=await this.renderer.read(layer.surface.descriptor.surfaceId);result.set(layer.id,new Uint8Array(bytes));}
+    for(const layer of this.controller.layers){
+      const bytes=new Uint8Array(await this.renderer.read(layer.surface.descriptor.surfaceId));
+      if(layer.baseColor==='white')bytes.fill(255);
+      result.set(layer.id,bytes);
+    }
     return result;
   }
   // A newly created white work already has exact canonical white tiles.
@@ -392,7 +397,17 @@ export class BrushSurface{
    const x=Math.floor(point.x),y=Math.floor(point.y),w=this.controller.document.root.width,h=this.controller.document.root.height;
    if(x<0||y<0||x>=w||y>=h)return null;
    const backend=(this.renderer as unknown as {backend?:any}|null)?.backend;if(!backend)return null;
-   return (this.renderer as any).readPixel(x,y,this.sampleSource==='layer'?this.controller.selectedLayer.surface.descriptor.surfaceId:null);
+   const selected=this.controller.selectedLayer;
+   if(this.sampleSource==='layer'&&selected.baseColor==='white')return [255,255,255,255];
+   const rgba=await (this.renderer as any).readPixel(x,y,this.sampleSource==='layer'?selected.surface.descriptor.surfaceId:null) as number[];
+   // The logical white layer is not uploaded to the GPU. The composite
+   // eyedropper must still return the actual appearance of white paper.
+   const white=this.sampleSource==='composite'?this.controller.layers.find(layer=>layer.baseColor==='white'&&layer.visible&&layer.opacity>0):null;
+   if(white&&rgba&&rgba.length>=4){
+     const a=Math.max(0,Math.min(1,rgba[3]/255)),w=white.opacity,alpha=a+(1-a)*w;
+     return [0,1,2].map(i=>Math.round(Math.min(255,(rgba[i]??0)+(1-a)*w*255))).concat(Math.round(alpha*255));
+   }
+   return rgba;
   }
   /** Refresh preset catalog without mutating an in-flight stroke or the artwork. */
   setBrushes(brushes:readonly FoundationPreset[]){
