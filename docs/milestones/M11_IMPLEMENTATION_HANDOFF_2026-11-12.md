@@ -1,6 +1,6 @@
 > **設計移行の重要更新（2026-11-12）**：PR #68により、正式開発ブランチ `integration/production-prep-2026-10-05` の設計正本がアーカイブ版へ置き換わりました（統合HEAD `47c560078ba436d07219d35a6b22c9c9241cfb82`）。
 >
-> **このM11ブランチは移行前の基準から作られているため、本書の旧設計資料指定をそのまま適用して実装を始めないでください。** 最初に統合ブランチの最新成果を安全に取り込み、`docs/DESIGN_AUTHORITY.md` と `docs/product-planning/`・`docs/performance-research/`・`docs/product-architecture/`・`docs/detailed-design/` を正本として読み直してください。下記の `docs/FEATURE_SPEC.md`・旧 `docs/ui/`・旧 `docs/architecture/ARCHITECTURE_V2.md` 等の参照は設計移行前の履歴です。矛盾がある場合は新正本を目標とし、M01〜M10の合格済み機能を壊さない移行方法を検証してから本書の実装範囲を更新してください。
+> **このM11ブランチにはPR #69で新設計資料を取り込み済みです。ただし本書の旧設計資料指定をそのまま適用して実装を始めないでください。** まず最新の設計正本を確認し、`docs/DESIGN_AUTHORITY.md` と `docs/product-planning/`・`docs/performance-research/`・`docs/product-architecture/`・`docs/detailed-design/` を正本として読み直してください。下記の `docs/FEATURE_SPEC.md`・旧 `docs/ui/`・旧 `docs/architecture/ARCHITECTURE_V2.md` 等の参照は設計移行前の履歴です。矛盾がある場合は新正本を目標とし、M01〜M10の合格済み機能を壊さない移行方法を検証してから本書の実装範囲を更新してください。
 >
 > 本文のM11機能は候補であり、**アーカイブ版C03の正式要件との差分を照合するまでは旧M11指示書のまま製品実装を開始・完了宣言しない**。M10受入コード・作品保存の互換性・既存QAを保護します。
 
