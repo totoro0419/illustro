@@ -21,7 +21,7 @@ try{
   }catch{res.writeHead(404).end();}
  });
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
- browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+ browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-unsafe-swiftshader','--use-vulkan=swiftshader','--disable-vulkan-surface','--enable-features=Vulkan']});
  for(const backend of ['webgl2','webgpu']){
   const context=await browser.newContext({viewport:{width:1280,height:800},hasTouch:true,deviceScaleFactor:2});
   try{
@@ -30,7 +30,7 @@ try{
    const url='http://127.0.0.1:'+server.address().port+'/?qa=1&backend='+backend;
    await page.goto(url);
    await page.locator('#new').click();
-   await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
+   try{await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});}catch(error){const state=await page.evaluate(()=>({status:document.getElementById('status')?.textContent,brushDisabled:document.getElementById('brush')?.disabled,appMode:document.body.dataset.appMode,canvas:document.getElementById('canvas')?.dataset.backend}));throw new Error('Editor not ready on '+backend+': '+JSON.stringify({state,pageErrors})+'; '+String(error));}
    await page.locator('#brush').selectOption('foundation-pencil');
    await page.locator('#brushFavorite').evaluate(el=>el.click());
    assert.equal(await page.locator('#brushFavorite').getAttribute('aria-pressed'),'true');
@@ -43,7 +43,7 @@ try{
    await setGroup('recent');
    assert.equal(await page.locator('#brush option').first().getAttribute('value'),'foundation-pencil');
    await page.reload();await page.locator('#new').click();
-   await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
+   try{await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});}catch(error){const state=await page.evaluate(()=>({status:document.getElementById('status')?.textContent,brushDisabled:document.getElementById('brush')?.disabled,appMode:document.body.dataset.appMode,canvas:document.getElementById('canvas')?.dataset.backend}));throw new Error('Editor not ready on '+backend+': '+JSON.stringify({state,pageErrors})+'; '+String(error));}
    await setGroup('favorites');
    assert.ok((await page.locator('#brush option').evaluateAll(nodes=>nodes.map(n=>n.value))).includes('foundation-pencil'),'favorite must survive reload');
    // A held eraser key is a temporary tool, not a permanent brush change.
