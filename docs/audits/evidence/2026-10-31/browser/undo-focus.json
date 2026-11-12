@@ -1,0 +1,12 @@
+{
+  "undoCapture": {
+    "enabled": false,
+    "hint": "候補内の直前の変更を戻す",
+    "saveHint": "保存対象と現作品を区別。現在：2操作、計算中：0。"
+  },
+  "escapeLeavesDetail": true,
+  "afterClose": {
+    "id": "",
+    "tag": "BODY"
+  }
+}
