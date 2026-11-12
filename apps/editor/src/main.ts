@@ -834,6 +834,38 @@ for(const id of ['size','sizeNumber']){
 for(const [id,handler] of Object.entries({fitView:()=>surface?.fitView(),zoomOut:()=>surface?.zoomView(1/1.25),zoomIn:()=>surface?.zoomView(1.25),view100:()=>surface?.viewAt100(),actualPixels:()=>surface?.actualPixels(),resetRotation:()=>surface?.resetRotation(),flipH:()=>surface?.flipView('x'),flipV:()=>surface?.flipView('y')}))byId<HTMLButtonElement>(id).onclick=handler;
 byId<HTMLInputElement>('zoomPercent').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewZoom(n/100);};
 byId<HTMLInputElement>('angleDegree').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewRotation(n*Math.PI/180);};
+// C02 BRU-012 / GST-004: hold E to temporarily use the eraser on PC.
+// Preserve the active preset and drawing target, and never switch an in-progress stroke.
+let temporaryEraserReturn:string|null=null;
+let temporaryEraserRestoreRequested=false;
+function restoreTemporaryEraser(){
+ if(!temporaryEraserRestoreRequested)return;
+ if(surface?.inputActive){window.setTimeout(restoreTemporaryEraser,32);return;}
+ temporaryEraserRestoreRequested=false;
+ const previous=temporaryEraserReturn;
+ temporaryEraserReturn=null;
+ if(previous&&surface&&documentReady&&selectedTool==='eraser'&&surface.brushes.some(brush=>brush.id===previous)){
+  selectPreset(previous);
+ }
+}
+document.addEventListener('keydown',event=>{
+ if(event.key.toLowerCase()!=='e'||event.repeat||event.altKey||event.ctrlKey||event.metaKey
+   ||isTextEditingTarget(event.target)||temporaryEraserReturn||!documentReady||!surface
+   ||surface.inputActive||selectedTool!=='brush')return;
+ const active=surface.brushId;
+ if(!surface.brushes.some(brush=>brush.id===active))return;
+ event.preventDefault();
+ temporaryEraserReturn=active;
+ try{selectPreset(lastEraserPresetId);}catch{temporaryEraserReturn=null;}
+});
+const releaseTemporaryEraser=()=>{
+ if(!temporaryEraserReturn||temporaryEraserRestoreRequested)return;
+ temporaryEraserRestoreRequested=true;restoreTemporaryEraser();
+};
+document.addEventListener('keyup',event=>{
+ if(event.key.toLowerCase()==='e')releaseTemporaryEraser();
+});
+window.addEventListener('blur',releaseTemporaryEraser);
 byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as HTMLInputElement).checked);
 const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
 byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.forceFade)p.forceFade.enabled=(e.target as HTMLInputElement).checked;}))syncPreset();updateQa();};byId<HTMLInputElement>('finger').onchange=e=>{if(surface)surface.fingerDrawing=(e.target as HTMLInputElement).checked;};byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
