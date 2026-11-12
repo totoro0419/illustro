@@ -46,6 +46,14 @@ try{
    await page.waitForFunction(()=>!document.getElementById('brush')?.disabled,null,{timeout:90000});
    await setGroup('favorites');
    assert.ok((await page.locator('#brush option').evaluateAll(nodes=>nodes.map(n=>n.value))).includes('foundation-pencil'),'favorite must survive reload');
+   // A held eraser key is a temporary tool, not a permanent brush change.
+   await page.locator('#brushGroup').selectOption('all');
+   await page.locator('#brush').selectOption('foundation-pencil');
+   await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();});
+   await page.keyboard.down('e');
+   assert.equal(await page.locator('#brush').inputValue(),'foundation-hard-eraser','holding E selects temporary eraser');
+   await page.keyboard.up('e');
+   assert.equal(await page.locator('#brush').inputValue(),'foundation-pencil','releasing E restores previous brush');
    assert.deepEqual(pageErrors,[],'unhandled browser errors on '+backend);
    checks.push({backend,feature:'BRU-004',favorites:true,recent:true,reload:true,pageErrors});
   }finally{await context.close();}
