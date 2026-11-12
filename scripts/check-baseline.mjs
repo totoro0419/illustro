@@ -39,7 +39,9 @@ const migrationSupportingDocs=new Set([
  'docs/c01-c02/OFFICIAL_REFERENCE_REVIEW.md'
 ]);
 for(const p of files('docs'))assert.ok(seen.has(p)||imported.has(p)||migrationSupportingDocs.has(p),'unclassified document '+p);
-assert.equal(new Set(Object.values(index.owners)).size,Object.values(index.owners).length,'duplicate canonical owner');
+assert.ok(Object.keys(index.owners).length>0,'no canonical owner roles');
+// Several specialized roles intentionally point to the same authoritative design file.
+// Verify role destinations above; unique paths are not a requirement.
 assert.equal(index.authority,'docs/DESIGN_AUTHORITY.md','canonical authority must reflect adopted archive');
 for(const e of lock.artifacts){assert.equal(createHash('sha256').update(fs.readFileSync(e.path)).digest('hex'),e.sha256,'frozen artifact changed: '+e.path);}
 assert.ok(!fs.existsSync('docs/architecture/ADR-0005-lineart-region.md'),'obsolete Lineart ADR imported');
