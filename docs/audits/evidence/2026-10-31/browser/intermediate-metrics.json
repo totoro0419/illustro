@@ -1,0 +1,30 @@
+{
+  "dock": {
+    "display": "flex",
+    "h": 546,
+    "w": 344,
+    "x": 456,
+    "y": 54
+  },
+  "frame": {
+    "display": "block",
+    "h": 600,
+    "w": 800,
+    "x": 0,
+    "y": 0
+  },
+  "rail": {
+    "display": "flex",
+    "h": 546,
+    "w": 64,
+    "x": 0,
+    "y": 54
+  },
+  "surface": {
+    "display": "block",
+    "h": 466,
+    "w": 392,
+    "x": 64,
+    "y": 134
+  }
+}
