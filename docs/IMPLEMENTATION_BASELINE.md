@@ -1,6 +1,6 @@
 # Illustro — 実装の開始基準（アーカイブ設計採用後）
 
-**必ず先に [DESIGN_AUTHORITY.md](DESIGN_AUTHORITY.md) を読む。** 以後の仕様正本はアーカイブ版から取り込んだ製品・性能・UI・詳細設計です。
+**必ず先に [DESIGN_AUTHORITY.md](DESIGN_AUTHORITY.md) を読む。** 開発マネージャーは [C01〜C17管理入口](management/README.md) と [C03実装開始準備](management/C03_SCOPE_AND_HANDOFF.md) を読み、最新のGitHub統合コミットと作業PRを確認する。 以後の仕様正本はアーカイブ版から取り込んだ製品・性能・UI・詳細設計です。
 
 - 本番コード: totoro0419/illustro。M01〜M10の受入済みコードと保存互換性を保持する。
 - 現在地: C03の高度なレイヤー機能が次の実装対象。M11 PR #67は保護し、設計変更後の作業範囲を再点検する。
