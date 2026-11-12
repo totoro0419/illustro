@@ -1,0 +1,583 @@
+{
+  "source": "6bfc95f5e8451074234b3b8a79a423833b825153",
+  "workflowRun": 37131153403,
+  "artifactId": 11277672237,
+  "artifactSha256": "63519e6a80c11ede7c7e49796797a484a7af45a62785881140cfb31e2da92fd6",
+  "backend": "webgpu",
+  "status": "CHECKS_PASS",
+  "checks": 229,
+  "nodeTests": 78,
+  "auditLimit": "Chronological arrays and recorded phase counts; capture-window timestamps not independently stored.",
+  "conditions": [
+    {
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "long",
+      "duration": 180028.5,
+      "inputs": 43200,
+      "growth": -56.366666666736364,
+      "steadyGrowth": 0.4333333333088376,
+      "sampleCounts": [
+        79,
+        92,
+        93
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 4,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4002.4000000001397,
+      "inputs": 960,
+      "growth": -8.19999999995298,
+      "steadyGrowth": -0.03333333328600929,
+      "sampleCounts": [
+        20,
+        22,
+        22
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4005.100000000093,
+      "inputs": 960,
+      "growth": 6.233333333239443,
+      "steadyGrowth": 4.099999999859392,
+      "sampleCounts": [
+        20,
+        21,
+        21
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 128,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4026.6999999999534,
+      "inputs": 960,
+      "growth": -12.600000000093587,
+      "steadyGrowth": -13.16666666666697,
+      "sampleCounts": [
+        19,
+        19,
+        20
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4027.100000000093,
+      "inputs": 960,
+      "growth": -4.1333333333791415,
+      "steadyGrowth": -3.4333333334261624,
+      "sampleCounts": [
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4011.3000000000466,
+      "inputs": 960,
+      "growth": -15.766666666759647,
+      "steadyGrowth": -11.233333333473183,
+      "sampleCounts": [
+        14,
+        16,
+        17
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 512,
+      "hz": 60,
+      "shape": "fast-curve",
+      "duration": 4004.100000000093,
+      "inputs": 240,
+      "growth": -8.866666666619494,
+      "steadyGrowth": -5.899999999905958,
+      "sampleCounts": [
+        16,
+        19,
+        19
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 512,
+      "hz": 120,
+      "shape": "fast-curve",
+      "duration": 4005.8000000000466,
+      "inputs": 480,
+      "growth": -10.133333333380506,
+      "steadyGrowth": -0.4000000001406079,
+      "sampleCounts": [
+        16,
+        18,
+        19
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4030.5,
+      "inputs": 960,
+      "growth": -8.20000000018672,
+      "steadyGrowth": -9.300000000047476,
+      "sampleCounts": [
+        15,
+        18,
+        18
+      ]
+    },
+    {
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4013.600000000093,
+      "inputs": 960,
+      "growth": -16.100000000093132,
+      "steadyGrowth": -2.0,
+      "sampleCounts": [
+        12,
+        14,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4003.4000000001397,
+      "inputs": 960,
+      "growth": -11.666666666667425,
+      "steadyGrowth": -0.1333333333805058,
+      "sampleCounts": [
+        16,
+        17,
+        18
+      ]
+    },
+    {
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4008.600000000093,
+      "inputs": 960,
+      "growth": -2.9333333331937865,
+      "steadyGrowth": 1.6000000000931323,
+      "sampleCounts": [
+        14,
+        16,
+        16
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "reversal",
+      "duration": 4003.5,
+      "inputs": 960,
+      "growth": -4.199999999953889,
+      "steadyGrowth": -1.8333333333339397,
+      "sampleCounts": [
+        20,
+        21,
+        21
+      ]
+    },
+    {
+      "brush": "foundation-round-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "small-circle",
+      "duration": 4001.5,
+      "inputs": 960,
+      "growth": -5.666666666666515,
+      "steadyGrowth": -1.733333333239898,
+      "sampleCounts": [
+        20,
+        22,
+        22
+      ]
+    },
+    {
+      "brush": "foundation-round-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "small-circle",
+      "duration": 4013.1999999999534,
+      "inputs": 960,
+      "growth": -4.866666666619949,
+      "steadyGrowth": -3.733333333239898,
+      "sampleCounts": [
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "brush": "foundation-round-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "small-circle",
+      "duration": 4003.5999999998603,
+      "inputs": 960,
+      "growth": -0.3333333333325754,
+      "steadyGrowth": 1.433333333427072,
+      "sampleCounts": [
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "brush": "foundation-round-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "small-circle",
+      "duration": 4018.1999999999534,
+      "inputs": 960,
+      "growth": -0.26666666675964734,
+      "steadyGrowth": -1.266666666760102,
+      "sampleCounts": [
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "long",
+      "duration": 180018.30000000005,
+      "inputs": 43200,
+      "growth": -61.799999999823285,
+      "steadyGrowth": 3.8000000000365617,
+      "sampleCounts": [
+        77,
+        90,
+        91
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 1,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4002,
+      "inputs": 960,
+      "growth": 0.6583455127670277,
+      "steadyGrowth": 3.3915992544802975,
+      "sampleCounts": [
+        15,
+        16,
+        16
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 1,
+      "hz": 480,
+      "shape": "fast-curve",
+      "duration": 4035.600000000093,
+      "inputs": 1920,
+      "growth": 2.1566245203580365,
+      "steadyGrowth": 4.99401245026047,
+      "sampleCounts": [
+        15,
+        16,
+        17
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 4,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4014.600000000093,
+      "inputs": 960,
+      "growth": -14.029214243298156,
+      "steadyGrowth": 10.072643079526642,
+      "sampleCounts": [
+        15,
+        17,
+        17
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 4,
+      "hz": 480,
+      "shape": "fast-curve",
+      "duration": 4013.4000000001397,
+      "inputs": 1920,
+      "growth": -14.32415695049076,
+      "steadyGrowth": 4.171897518062906,
+      "sampleCounts": [
+        15,
+        16,
+        17
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 16,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4024.3000000000466,
+      "inputs": 960,
+      "growth": -22.098878722760674,
+      "steadyGrowth": -1.8427941958989322,
+      "sampleCounts": [
+        15,
+        16,
+        17
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 16,
+      "hz": 480,
+      "shape": "fast-curve",
+      "duration": 4007,
+      "inputs": 1920,
+      "growth": -28.226890605333665,
+      "steadyGrowth": -6.015574944997752,
+      "sampleCounts": [
+        15,
+        16,
+        17
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 16,
+      "hz": 60,
+      "shape": "fast-curve",
+      "duration": 4021.600000000093,
+      "inputs": 240,
+      "growth": -4.66666666666606,
+      "steadyGrowth": 1.4000000001406079,
+      "sampleCounts": [
+        20,
+        22,
+        22
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 16,
+      "hz": 120,
+      "shape": "fast-curve",
+      "duration": 4009.100000000093,
+      "inputs": 480,
+      "growth": -24.63333333337914,
+      "steadyGrowth": -5.699999999952524,
+      "sampleCounts": [
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 16,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4025.600000000093,
+      "inputs": 960,
+      "growth": -4.433333333427072,
+      "steadyGrowth": -3.3666666666204037,
+      "sampleCounts": [
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 128,
+      "hz": 60,
+      "shape": "fast-curve",
+      "duration": 4032.1999999999534,
+      "inputs": 240,
+      "growth": -3.900000000140153,
+      "steadyGrowth": -3.266666666760102,
+      "sampleCounts": [
+        19,
+        20,
+        21
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 128,
+      "hz": 120,
+      "shape": "fast-curve",
+      "duration": 4015.8000000000466,
+      "inputs": 480,
+      "growth": -3.1666666666660603,
+      "steadyGrowth": -1.066666666572928,
+      "sampleCounts": [
+        18,
+        20,
+        20
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 128,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4029.8000000000466,
+      "inputs": 960,
+      "growth": -1.5,
+      "steadyGrowth": 0.8000000000465661,
+      "sampleCounts": [
+        18,
+        19,
+        20
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 512,
+      "hz": 60,
+      "shape": "fast-curve",
+      "duration": 4011.0999999998603,
+      "inputs": 240,
+      "growth": -6.166666666667425,
+      "steadyGrowth": -4.066666666806668,
+      "sampleCounts": [
+        16,
+        18,
+        19
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 512,
+      "hz": 120,
+      "shape": "fast-curve",
+      "duration": 4001.399999999907,
+      "inputs": 480,
+      "growth": -12.999999999999545,
+      "steadyGrowth": -2.9999999999990905,
+      "sampleCounts": [
+        16,
+        18,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4005.5,
+      "inputs": 960,
+      "growth": -10.566666666572928,
+      "steadyGrowth": 2.433333333427072,
+      "sampleCounts": [
+        16,
+        17,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 60,
+      "shape": "fast-curve",
+      "duration": 4017.3000000000466,
+      "inputs": 240,
+      "growth": -35.56666666657338,
+      "steadyGrowth": -7.666666666666515,
+      "sampleCounts": [
+        15,
+        17,
+        20
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 120,
+      "shape": "fast-curve",
+      "duration": 4026.600000000093,
+      "inputs": 480,
+      "growth": -20.699999999953434,
+      "steadyGrowth": 4.766666666760102,
+      "sampleCounts": [
+        14,
+        17,
+        19
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4003.399999999907,
+      "inputs": 960,
+      "growth": -25.733333333473638,
+      "steadyGrowth": -3.5000000000009095,
+      "sampleCounts": [
+        13,
+        16,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "duration": 5024.700000000186,
+      "inputs": 1200,
+      "growth": -27.46666666671399,
+      "steadyGrowth": -15.266666666760102,
+      "sampleCounts": [
+        11,
+        12,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "duration": 4027,
+      "inputs": 960,
+      "growth": -12.099999999860756,
+      "steadyGrowth": -11.00000000000091,
+      "sampleCounts": [
+        16,
+        18,
+        19
+      ]
+    }
+  ]
+}

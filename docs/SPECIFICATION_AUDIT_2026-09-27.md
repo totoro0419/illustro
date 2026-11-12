@@ -1,3 +1,5 @@
+> Classification: OBSOLETE / historical evidence; valid technical principles may be reused. Current authority: `docs/IMPLEMENTATION_BASELINE.md` and `docs/CANONICAL_INDEX.json`. Old stop/PASS/candidate declarations below apply to their recorded version only.
+
 # Illustro Specification Precision Audit — 2026-09-27
 
 > **Lineart Layer reset notice (2026-10-01):** この監査内の旧 Region / Lineart-linked Coloring に関する達成度・解決済み判定は現在の進捗として扱わない。該当設計は破棄され、線画レイヤーとしてゼロから再設計する。

@@ -1,0 +1,8 @@
+node_modules/
+packages/*/dist/
+apps/*/dist/
+prototypes/brush-rt/dist/legacy/
+prototypes/brush-rt/dist/rt/
+playwright-report/
+test-results/
+experiments/raster-region-lab-v01/fixtures/

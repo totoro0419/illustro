@@ -1,0 +1,80 @@
+name: M10 Brush Editor (presentation rebuild descendant)
+on:
+  push:
+    branches: ['feature/M10-brush-settings-2026-10-22']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: m10-brush-editor
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/m10-brush-browser/node_modules/playwright
+      RT_PNG_PATH: /tmp/m10-brush-browser/node_modules/pngjs
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source lock, canonical and engine tests
+        run: |
+          npm run brush:build
+          npm run prep:check
+          npm run core:check
+          npm run brush:regression
+      - name: Editor unit tests and types
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Build exact editor
+        env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
+        run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install Chromium for browser tests
+        run: |
+          npm install --prefix /tmp/m10-brush-browser playwright@1.56.1 pngjs@7.0.0 --no-audit --no-fund
+          /tmp/m10-brush-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: New settings curve and persistence
+        run: M10_EDITOR_EVIDENCE=/tmp/m10-brush-evidence/editor.json node scripts/m10-brush-editor-review.mjs
+      - name: Existing brush selection, Undo, save
+        run: M10_EVIDENCE=/tmp/m10-brush-evidence/brush.json node scripts/m10-brush-review.mjs
+      - name: M08 and M09 regression
+        run: |
+          M08_SMOKE_QUICK=1 M08_PERF_REVIEW=1 M08_EVIDENCE_DIRECTORY=/tmp/m10-brush-evidence/m08 node scripts/editor-m08-smoke.mjs
+          M09_EVIDENCE_DIRECTORY=/tmp/m10-brush-evidence/m09 node scripts/editor-m09-smoke.mjs
+      - name: Rebuild regression for rapid zoom, dark tiles, stale previews and Undo
+        run: REBUILD_VERSIONS=after REBUILD_OUTPUT=/tmp/m10-brush-evidence/rebuild/report.json node scripts/m10-rebuild-correctness.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: m10-brush-evidence, path: /tmp/m10-brush-evidence/}
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with: {name: m10-brush-editor-app, path: apps/editor/dist/}
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site, fetch-depth: 0}
+      - uses: actions/download-artifact@v4
+        with: {name: m10-brush-editor-app, path: site/qa/m10-brush-editor/app}
+      - uses: actions/download-artifact@v4
+        with: {name: m10-brush-evidence, path: site/qa/m10-brush-editor/evidence}
+      - name: Keep old QA intact and publish isolated M10 preview
+        run: |
+          sed "s/__COMMIT__/$GITHUB_SHA/g" qa/m10-brush-editor/index.html > site/qa/m10-brush-editor/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m10-brush-editor
+          test -z "$(git diff --cached --name-only | sed '/^qa\/m10-brush-editor\//d')"
+          git diff --cached --quiet || git commit -m "qa: M10 brush editor $GITHUB_SHA"
+          git push origin HEAD:gh-pages

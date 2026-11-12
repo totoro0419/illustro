@@ -1,3 +1,5 @@
+> Classification: OBSOLETE / historical evidence; valid technical principles may be reused. Current authority: `docs/IMPLEMENTATION_BASELINE.md` and `docs/CANONICAL_INDEX.json`. Old stop/PASS/candidate declarations below apply to their recorded version only.
+
 # Interaction Precision Re-audit — 2026-09-27
 
 > **Lineart Layer reset notice (2026-10-01):** 旧 Region / Linked Coloring に関する改善済み・確定済み判定は撤回され、現在の進捗に数えない。

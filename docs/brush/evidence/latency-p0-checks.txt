@@ -1,0 +1,22 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro-p0-prototype@0.0.1 build
+> tsc --noEmit && vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 18 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                              0.63 kB │ gzip: 0.39 kB
+dist/assets/realtime.worker-C6iXMfCP.js      0.79 kB
+dist/assets/persistence.worker-C1pExZYp.js   6.14 kB
+dist/assets/index-D84Inj9t.css               0.42 kB │ gzip: 0.28 kB
+dist/assets/wasmBoundary-BHJh2yjN.js         0.61 kB │ gzip: 0.38 kB
+dist/assets/graphicsProbe-B-RupKhL.js        0.78 kB │ gzip: 0.48 kB
+dist/assets/api-5B6iTy3y.js                  2.37 kB │ gzip: 1.02 kB
+dist/assets/renderBackend-Cf2Crjzk.js        3.07 kB │ gzip: 1.26 kB
+dist/assets/extended-DahQ6Wor.js             4.74 kB │ gzip: 1.79 kB
+dist/assets/index-DfWSZxCE.js               10.62 kB │ gzip: 4.03 kB
+
+✓ built in 91ms

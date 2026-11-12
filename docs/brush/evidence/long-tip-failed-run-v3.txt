@@ -1,0 +1,20 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:paced
+> node prototypes/brush-lab/paced-check.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: completed latest-tip age p95 exceeds 100ms in software test: {"id":"rough-pencil","size":512,"hz":240,"seconds":10,"maxLiveDabs":2,"phaseP95Ms":[154,286.1999999997206,129.1999999997206],"ageGrowthMs":-24.800000000279397,"accepted":2400,"acceptedByEngine":2400,"submittedFrames":183,"completedFrames":183,"contactImmediate":true,"latestInputCompleted":true,"submittedDurationMs":10637.700000000186,"completedDurationMs":21140.80000000028,"queuePeak":2,"completionAgeP95Ms":161.6999999997206,"completionAgeMaxMs":429.10000000009313,"oldestUnpresentedInputAgeP95Ms":281.20000000018626,"oldestUnpresentedInputAgeMaxMs":523.8999999999069,"inputHandlerP95Ms":0.10000000009313226,"previewMeanChannelError":6.357828776041666e-7,"previewChannelsOver2":0,"pipeline":{"inFlight":1,"coalesced":6503,"paced":true,"pendingCommitDabs":0,"liveDabBudget":2,"lastLiveDabs":2,"droppedPreviewDabs":532,"provisionalCommits":0},"canonicalReplayExact":true,"canonicalGeometrySamples":2400,"errors":[]}
+    at file:///workspace/scratch/9ba3e7d038e2/illustro-integration/prototypes/brush-lab/paced-check.mjs:232:18 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

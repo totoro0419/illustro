@@ -1,0 +1,2763 @@
+{
+  "date": "2026-10-03T14:40:06.932Z",
+  "scope": "current G-pen default adjustment; all renderer/scheduling functions unchanged from25ac91e",
+  "environment": "headless Chromium software GPU; NOT physical latency",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "checks": [
+        {
+          "name": "foundation-transition-0-4",
+          "brush": "foundation-g-pen",
+          "size": 4,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 1.9073486328125e-06,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-0-512",
+          "brush": "foundation-g-pen",
+          "size": 512,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 9.854634602864584e-06,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-1-4",
+          "brush": "foundation-round-pen",
+          "size": 4,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 2.2252400716145835e-06,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-1-512",
+          "brush": "foundation-round-pen",
+          "size": 512,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 1.2079874674479166e-05,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-2-4",
+          "brush": "foundation-technical",
+          "size": 4,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 2.5431315104166665e-06,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-2-512",
+          "brush": "foundation-technical",
+          "size": 512,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 1.4940897623697916e-05,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-3-4",
+          "brush": "foundation-marker",
+          "size": 4,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 2.5431315104166665e-06,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-3-512",
+          "brush": "foundation-marker",
+          "size": 512,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 1.049041748046875e-05,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-4-4",
+          "brush": "foundation-pencil",
+          "size": 4,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 0.4980392156862745,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 0.4980392156862745,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-4-512",
+          "brush": "foundation-pencil",
+          "size": 512,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 51,
+            "meanChannelError": 3.910064697265625e-05,
+            "channelsOver3": 3,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [
+              {
+                "x": 505,
+                "y": 150,
+                "channel": 0,
+                "gpu": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "reference": [
+                  31,
+                  38,
+                  51,
+                  1
+                ]
+              },
+              {
+                "x": 505,
+                "y": 150,
+                "channel": 1,
+                "gpu": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "reference": [
+                  31,
+                  38,
+                  51,
+                  1
+                ]
+              },
+              {
+                "x": 505,
+                "y": 150,
+                "channel": 2,
+                "gpu": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "reference": [
+                  31,
+                  38,
+                  51,
+                  1
+                ]
+              }
+            ],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 1
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-5-4",
+          "brush": "foundation-hard-eraser",
+          "size": 4,
+          "activeError": {
+            "maxChannelError": 1.2000000000000028,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 0.22372150421142578,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 2
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1.2000000000000028,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1.2000000000000028,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-5-512",
+          "brush": "foundation-hard-eraser",
+          "size": 512,
+          "activeError": {
+            "maxChannelError": 1.2000000000000028,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 204,
+            "meanChannelError": 0.11770057678222656,
+            "channelsOver3": 3,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [
+              {
+                "x": 295,
+                "y": 634,
+                "channel": 0,
+                "gpu": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "reference": [
+                  26,
+                  102,
+                  204,
+                  1
+                ]
+              },
+              {
+                "x": 295,
+                "y": 634,
+                "channel": 1,
+                "gpu": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "reference": [
+                  26,
+                  102,
+                  204,
+                  1
+                ]
+              },
+              {
+                "x": 295,
+                "y": 634,
+                "channel": 2,
+                "gpu": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "reference": [
+                  26,
+                  102,
+                  204,
+                  1
+                ]
+              }
+            ],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 2
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1.2000000000000028,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1.2000000000000028,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-6-4",
+          "brush": "foundation-soft-eraser",
+          "size": 4,
+          "activeError": {
+            "maxChannelError": 1.2000000000000028,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 0.22396341959635416,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 2
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 0.4980392156862745,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 0.4980392156862745,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-transition-6-512",
+          "brush": "foundation-soft-eraser",
+          "size": 512,
+          "activeError": {
+            "maxChannelError": 1.2000000000000028,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 0.223968505859375,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              1024,
+              768
+            ],
+            "strokes": 2
+          },
+          "historyExact": true,
+          "loadExact": true,
+          "historyError": {
+            "maxChannelError": 1.1999999999999886,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "loadError": {
+            "maxChannelError": 1.1999999999999886,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 32,
+          "measurement": "GPU viewport readback; physical presentation/perceptibility unverified"
+        },
+        {
+          "name": "foundation-advanced-mask",
+          "variant": "mask",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.002620647156160663,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-advanced-texture",
+          "variant": "texture",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.002363870658126577,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 1.0172526041666666e-05,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-advanced-scatter",
+          "variant": "scatter",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0016510857476128762,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-advanced-color",
+          "variant": "color",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0026129978154999654,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-advanced-phase",
+          "variant": "phase",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.00233644971660545,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-advanced-absolute",
+          "variant": "absolute",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0021132076487822686,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-advanced-build-up",
+          "variant": "build-up",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.002578107048483566,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-advanced-airbrush-contract",
+          "variant": "airbrush-contract",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0004968381395526939,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-advanced-image-pattern-contract",
+          "variant": "image-pattern-contract",
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0015843659444572345,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-g-pen-tap-visible",
+          "maxAlpha": 255,
+          "canonicalExact": true,
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              128,
+              96
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-shape-4-small-circle",
+          "brush": "foundation-pencil",
+          "shape": "small-circle",
+          "expected": 48,
+          "actual": 48,
+          "strokes": 1,
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0026863696528417014,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-shape-4-zigzag",
+          "brush": "foundation-pencil",
+          "shape": "zigzag",
+          "expected": 48,
+          "actual": 48,
+          "strokes": 1,
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.03597831975403861,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 2.5431315104166665e-06,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 1
+          }
+        },
+        {
+          "name": "foundation-shape-4-short-burst",
+          "brush": "foundation-pencil",
+          "shape": "short-burst",
+          "expected": 40,
+          "actual": 40,
+          "strokes": 24,
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.00397292991089669,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 24
+          }
+        },
+        {
+          "name": "foundation-shape-6-small-circle",
+          "brush": "foundation-soft-eraser",
+          "shape": "small-circle",
+          "expected": 48,
+          "actual": 48,
+          "strokes": 1,
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.0030275531843597524,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 2
+          }
+        },
+        {
+          "name": "foundation-shape-6-zigzag",
+          "brush": "foundation-soft-eraser",
+          "shape": "zigzag",
+          "expected": 48,
+          "actual": 48,
+          "strokes": 1,
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 1,
+            "meanPremultipliedChannelError": 0.040557502297839616,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 1,
+            "meanChannelError": 5.086263020833333e-06,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 1,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 2
+          }
+        },
+        {
+          "name": "foundation-shape-6-short-burst",
+          "brush": "foundation-soft-eraser",
+          "shape": "short-burst",
+          "expected": 40,
+          "actual": 40,
+          "strokes": 24,
+          "live": {
+            "measurement": "persistent GPU viewport readback, NOT browser presentation",
+            "maxPremultipliedChannelError": 0.4980392156862745,
+            "meanPremultipliedChannelError": 0.005758926291870337,
+            "channelsOver3": 0
+          },
+          "final": {
+            "maxChannelError": 0,
+            "meanChannelError": 0,
+            "channelsOver3": 0,
+            "maxVisualChannelError": 0,
+            "visualChannelsOver3": 0,
+            "lowAlphaComparison": "premultiplied RGB when either alpha<8; alpha always checked directly",
+            "badPixels": [],
+            "dimensions": [
+              512,
+              384
+            ],
+            "strokes": 25
+          }
+        },
+        {
+          "name": "foundation-wide-streaming-4-512-slow-curve",
+          "brush": "foundation-pencil",
+          "size": 512,
+          "shape": "slow-curve",
+          "stableCommands": 69,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 96
+        },
+        {
+          "name": "foundation-wide-streaming-4-512-reversal",
+          "brush": "foundation-pencil",
+          "size": 512,
+          "shape": "reversal",
+          "stableCommands": 1,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 96
+        },
+        {
+          "name": "foundation-wide-streaming-6-512-slow-curve",
+          "brush": "foundation-soft-eraser",
+          "size": 512,
+          "shape": "slow-curve",
+          "stableCommands": 69,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 96
+        },
+        {
+          "name": "foundation-wide-streaming-6-512-reversal",
+          "brush": "foundation-soft-eraser",
+          "size": 512,
+          "shape": "reversal",
+          "stableCommands": 1,
+          "activeError": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "liftChange": {
+            "maxChannelError": 0,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "confirmationChange": {
+            "maxChannelError": 1,
+            "channelsOver3": 0,
+            "missingPixels": 0
+          },
+          "actualInputs": 96
+        }
+      ],
+      "benchmarks": [
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 0.8,
+            "spacing": 0.12,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 0.9,
+            "bristles": 7,
+            "grain": 0.65,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-pencil",
+            "name": "鉛筆",
+            "category": "基準ブラシ",
+            "purpose": "筆圧で太さ・濃さ・かすれが変わる。質感は最初から描きます。",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-pencil",
+                "name": "鉛筆",
+                "category": "基準ブラシ",
+                "purpose": "筆圧で太さ・濃さ・かすれが変わる。質感は最初から描きます。",
+                "kind": "mono",
+                "renderer": "sweep",
+                "size": 512,
+                "opacity": 1,
+                "flow": 0.8,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "normal",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 0.9,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.12,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [
+                  {
+                    "source": "pressure",
+                    "target": "size",
+                    "mode": "multiply",
+                    "min": 0.2,
+                    "max": 1,
+                    "curve": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "source": "pressure",
+                    "target": "opacity",
+                    "mode": "multiply",
+                    "min": 0.1,
+                    "max": 1,
+                    "curve": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "source": "pressure",
+                    "target": "grain",
+                    "mode": "multiply",
+                    "min": 1,
+                    "max": 1.8,
+                    "curve": [
+                      [
+                        0,
+                        1
+                      ],
+                      [
+                        1,
+                        0
+                      ]
+                    ]
+                  }
+                ],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0.65,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": false,
+              "coverageUnion": true,
+              "material": true,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0.65,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4010.5,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 21.266666666760102,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 44,
+          "startSamples": 10,
+          "middleSamples": 11,
+          "endSamples": 12,
+          "startP95": 101.53333333305386,
+          "middleP95": 101.43333333342616,
+          "endP95": 101.26666666675919,
+          "growth": -0.2666666662946682,
+          "steadyGrowth": -0.16666666666696983,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 105.16666666666652,
+          "maxDistance": 184.77513033675984,
+          "maxPreviewQueueAge": 22.866666666386664,
+          "maxQueueAge": 3963.8666666663876,
+          "maxConfirmedLag": 3875.000000000001,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 304,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 87.1999999997206
+              },
+              {
+                "gpuWorkMs": 83
+              },
+              {
+                "gpuWorkMs": 83.39999999990687
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 68.60000000009313
+              },
+              {
+                "gpuWorkMs": 83.40000000037253
+              },
+              {
+                "gpuWorkMs": 71
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 512,
+            "opacity": 1,
+            "flow": 0.65,
+            "spacing": 0.12,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 0.05,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "erase",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-soft-eraser",
+            "name": "柔らかい消しゴム",
+            "category": "基準ブラシ",
+            "purpose": "柔らかい輪郭で少しずつ消す。",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-soft-eraser",
+                "name": "柔らかい消しゴム",
+                "category": "基準ブラシ",
+                "purpose": "柔らかい輪郭で少しずつ消す。",
+                "kind": "mono",
+                "renderer": "sweep",
+                "size": 512,
+                "opacity": 1,
+                "flow": 0.65,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "erase",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 0.05,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.12,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": false,
+              "coverageUnion": true,
+              "material": true,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 512,
+          "hz": 240,
+          "duration": 4003.2000000001863,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 23.40000000037253,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 39,
+          "startSamples": 9,
+          "middleSamples": 10,
+          "endSamples": 9,
+          "startP95": 104.20000000018626,
+          "middleP95": 103.90000000037253,
+          "endP95": 104.33333333333394,
+          "growth": 0.13333333314767515,
+          "steadyGrowth": 0.43333333296141063,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 115.73333333370579,
+          "maxDistance": 179.68957844508944,
+          "maxPreviewQueueAge": 25.16666666666606,
+          "maxQueueAge": 3869.8666666668532,
+          "maxConfirmedLag": 3766.666666666667,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 310,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 101
+              },
+              {
+                "gpuWorkMs": 99.90000000037253
+              },
+              {
+                "gpuWorkMs": 83.20000000018626
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 83.29999999981374
+              },
+              {
+                "gpuWorkMs": 83.39999999990687
+              },
+              {
+                "gpuWorkMs": 83.5
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-foundation-1",
+          "preset": {
+            "version": 1,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "signature": false,
+            "size": 1024,
+            "opacity": 0.45,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.75,
+            "pressureSmoothing": 0.15,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": [],
+            "id": "foundation-marker",
+            "name": "マーカー",
+            "category": "基準ブラシ",
+            "purpose": "一筆の濃さを一定に保ち、別の線とは重なります。",
+            "__foundation": {
+              "version": 1,
+              "preset": {
+                "format": "illustro-brush-preset",
+                "version": 2,
+                "engine": "illustro-foundation-1",
+                "id": "foundation-marker",
+                "name": "マーカー",
+                "category": "基準ブラシ",
+                "purpose": "一筆の濃さを一定に保ち、別の線とは重なります。",
+                "kind": "mono",
+                "renderer": "auto",
+                "size": 1024,
+                "opacity": 0.45,
+                "flow": 1,
+                "color": [
+                  0.2,
+                  0.23529411764705882,
+                  0.3137254901960784
+                ],
+                "blend": "normal",
+                "paint": "saturated",
+                "tip": {
+                  "shape": "round",
+                  "resource": null,
+                  "aspect": 1,
+                  "hardness": 1,
+                  "angle": 0,
+                  "direction": false,
+                  "azimuth": false,
+                  "twist": false
+                },
+                "spacing": {
+                  "unit": "relative",
+                  "value": 0.09,
+                  "minimum": 0.25,
+                  "maximum": 32,
+                  "exposureMs": 0
+                },
+                "pressure": {
+                  "deviceCurve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "curve": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      1,
+                      1
+                    ]
+                  ],
+                  "smoothing": 0.15,
+                  "fallback": 1
+                },
+                "stabilization": {
+                  "scope": "brush",
+                  "constant": 0.75,
+                  "fast": 0,
+                  "speedMode": "increase",
+                  "post": 0
+                },
+                "prediction": {
+                  "enabled": false,
+                  "source": "auto",
+                  "horizon": 6,
+                  "maxDistance": 0.75,
+                  "turnCos": 0.95
+                },
+                "dynamics": [],
+                "limits": {
+                  "size": [
+                    0.01,
+                    4096
+                  ],
+                  "opacity": [
+                    0,
+                    1
+                  ],
+                  "flow": [
+                    0,
+                    1
+                  ]
+                },
+                "taper": {
+                  "size": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 0.15,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 200,
+                      "minimum": 0.03,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "opacity": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "flow": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  },
+                  "grain": {
+                    "start": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    },
+                    "end": {
+                      "mode": "none",
+                      "unit": "distance",
+                      "length": 0,
+                      "minimum": 1,
+                      "curve": [
+                        [
+                          0,
+                          0
+                        ],
+                        [
+                          1,
+                          1
+                        ]
+                      ]
+                    }
+                  }
+                },
+                "texture": {
+                  "tip": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "paper": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  },
+                  "stroke": {
+                    "kind": "paper",
+                    "resource": null,
+                    "strength": 0,
+                    "minimum": 0,
+                    "scale": 2,
+                    "sizeMode": "absolute",
+                    "space": "paper",
+                    "rotation": 0,
+                    "followDirection": false,
+                    "invert": false,
+                    "aa": false
+                  }
+                },
+                "scatter": {
+                  "enabled": false,
+                  "radius": 0,
+                  "radiusMode": "relative",
+                  "particleSize": 1,
+                  "sizeMode": "relative",
+                  "density": 1,
+                  "bias": 0,
+                  "rotation": "tip"
+                },
+                "random": [],
+                "resources": {},
+                "extensions": {}
+              },
+              "context": {},
+              "solid": true,
+              "material": false,
+              "texture": {
+                "kind": "paper",
+                "resource": null,
+                "strength": 0,
+                "minimum": 0,
+                "scale": 2,
+                "sizeMode": "absolute",
+                "space": "paper",
+                "rotation": 0,
+                "followDirection": false,
+                "invert": false,
+                "aa": false
+              },
+              "opacity": 1
+            }
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4004.8000000002794,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 30.466666666945912,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 62,
+          "startSamples": 14,
+          "middleSamples": 15,
+          "endSamples": 18,
+          "startP95": 84.53333333351975,
+          "middleP95": 70.7666666667601,
+          "endP95": 70.43333333342707,
+          "growth": -14.100000000092678,
+          "steadyGrowth": -0.33333333333303017,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 124.70000000018626,
+          "maxDistance": 211.26717270976079,
+          "maxPreviewQueueAge": 34.53333333351975,
+          "maxQueueAge": 3989.8000000002794,
+          "maxConfirmedLag": 3937.5,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 384,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 120.89999999990687
+              },
+              {
+                "gpuWorkMs": 66.70000000018626
+              },
+              {
+                "gpuWorkMs": 50.10000000009313
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 33.299999999813735
+              },
+              {
+                "gpuWorkMs": 36.10000000009313
+              },
+              {
+                "gpuWorkMs": 36.200000000186265
+              }
+            ]
+          }
+        },
+        {
+          "engine": "illustro-rt-2.5",
+          "preset": {
+            "version": 1,
+            "id": "fine-ink",
+            "name": "細線",
+            "category": "線画",
+            "purpose": "小さなパーツを一定の太さで描く",
+            "signature": false,
+            "compatibility": "illustro-brush-1",
+            "preview": "stroke:1",
+            "size": 1024,
+            "opacity": 1,
+            "flow": 1,
+            "spacing": 0.09,
+            "rotation": 0,
+            "follow": false,
+            "scatter": 0,
+            "stabilization": 0.5,
+            "pressureSmoothing": 0.25,
+            "pressureCurve": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "tip": "round",
+            "aspect": 1,
+            "hardness": 1,
+            "bristles": 7,
+            "grain": 0,
+            "grainKind": "paper",
+            "grainScale": 2,
+            "grainRotation": 0,
+            "sizeJitter": 0,
+            "opacityJitter": 0,
+            "flowJitter": 0,
+            "rotationJitter": 0,
+            "hueJitter": 0,
+            "taperStart": 0,
+            "taperEnd": 0,
+            "taperMinimum": 0.05,
+            "exposureMs": 0,
+            "blend": "normal",
+            "color": [
+              0.2,
+              0.23529411764705882,
+              0.3137254901960784
+            ],
+            "mappings": []
+          },
+          "seed": [
+            305419896,
+            5
+          ],
+          "fast": 0,
+          "backend": {
+            "backend": "WebGL2",
+            "desynchronized": true,
+            "renderer": "WebKit WebGL",
+            "hardwareVerified": false
+          },
+          "size": 1024,
+          "hz": 240,
+          "duration": 4005.9000000003725,
+          "shape": "fast-curve",
+          "prediction": false,
+          "confirmDelay": 0,
+          "actualSamples": 960,
+          "scheduledSamples": 960,
+          "inputGeneratorMaxLateness": 19.96666666694614,
+          "stopped": false,
+          "measurement": "GPU-completion proxy; NOT photon/presentation latency",
+          "windowMs": 1000,
+          "windowReason": "matched one-second short-workload phases",
+          "samples": 61,
+          "startSamples": 13,
+          "middleSamples": 15,
+          "endSamples": 17,
+          "startP95": 85.76666666675987,
+          "middleP95": 70.33333333333348,
+          "endP95": 68.5,
+          "growth": -17.266666666759875,
+          "steadyGrowth": -1.833333333333485,
+          "growthGate": "PASS_PROXY",
+          "maxAge": 122.90000000037253,
+          "maxDistance": 218.8495997149565,
+          "maxPreviewQueueAge": 22.666666666666515,
+          "maxQueueAge": 3991.2000000001863,
+          "maxConfirmedLag": 3937.5,
+          "physicalVisibleTip": "UNVERIFIED",
+          "documentDimensions": [
+            2048,
+            1536
+          ],
+          "pendingFormalJobs": 384,
+          "retainedCanonicalInputs": 960,
+          "submissionProfile": {
+            "first": [
+              {
+                "gpuWorkMs": 118
+              },
+              {
+                "gpuWorkMs": 68.29999999981374
+              },
+              {
+                "gpuWorkMs": 54.299999999813735
+              }
+            ],
+            "last": [
+              {
+                "gpuWorkMs": 33.799999999813735
+              },
+              {
+                "gpuWorkMs": 35.700000000186265
+              },
+              {
+                "gpuWorkMs": 36.39999999990687
+              }
+            ]
+          }
+        }
+      ],
+      "info": {
+        "backend": "WebGL2",
+        "desynchronized": true,
+        "renderer": "WebKit WebGL",
+        "hardwareVerified": false
+      },
+      "latencyDifferences": [],
+      "status": "CHECKS_PASS",
+      "consoleErrors": [],
+      "physicalVisibleTip": "UNVERIFIED"
+    }
+  ],
+  "bundleBlob": "036b69675d9016eafb04bac3573731d9069267fb"
+}

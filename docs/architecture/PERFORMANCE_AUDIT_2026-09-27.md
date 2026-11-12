@@ -1,3 +1,5 @@
+> Classification: OBSOLETE / historical evidence; valid technical principles may be reused. Current authority: `docs/IMPLEMENTATION_BASELINE.md` and `docs/CANONICAL_INDEX.json`. Old stop/PASS/candidate declarations below apply to their recorded version only.
+
 # Architecture Precision Audit — 2026-09-27
 
 > Scope: 現在のIllustro仕様・Architecture成果物の精密検査  

@@ -1,0 +1,82 @@
+name: Adopt Archived Illustro Design (review branch only)
+
+on:
+  push:
+    branches:
+      - migration/archive-design-canonical-2026-11-12
+    paths:
+      - .github/workflows/archive-design-migration.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: archive-design-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate-and-verify:
+    if: github.ref == 'refs/heads/migration/archive-design-canonical-2026-11-12'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout the M10-accepted production repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Checkout the archived final stage-four design sources
+        uses: actions/checkout@v4
+        with:
+          repository: totoro0419/illustro-illustro_next_archive
+          ref: implementation/stage4-c03-layers-history-persistence
+          path: archive-source
+          persist-credentials: false
+
+      - name: Verify ancestry and isolate temporary archive checkout
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor d890e7cc9579305138bb4ea0513e7e4d6602db0f HEAD
+          echo "/archive-source/" >> .git/info/exclude
+          test -f docs/revival/M10_CLOSURE_2026-11-12.md
+          test -f archive-source/docs/detailed-design/FINAL_DESIGN_AUDIT.md
+          test -f archive-source/docs/product-planning/FINAL_PRODUCT_SCOPE.json
+
+      - name: Copy and verify all archived design documents and establish canonical authority
+        run: |
+          set -euo pipefail
+          python3 scripts/migrate_archive_design.py
+          python3 -m py_compile scripts/migrate_archive_design.py
+          git diff --check
+
+      - name: Confirm the accepted product remains unchanged
+        run: |
+          set -euo pipefail
+          git add -A README.md docs scripts/migrate_archive_design.py
+          git diff --cached --name-only | tee /tmp/archived-design-files.txt
+          if grep -v -E '^(README.md|docs/|scripts/migrate_archive_design.py)' /tmp/archived-design-files.txt; then
+            echo "Unrelated product or source files were modified"
+            exit 1
+          fi
+          # Preserve the archive documents byte-for-byte, including legitimate Markdown line-break spaces.
+          # Only lint our newly authored canonical entrypoints for whitespace errors.
+          git diff --cached --check -- README.md docs/DESIGN_AUTHORITY.md docs/roadmap/C01_C17_ROADMAP.md docs/IMPLEMENTATION_BASELINE.md docs/CANONICAL_INDEX.md docs/CANONICAL_INDEX.json docs/migration/ARCHIVE_IMPORT_MANIFEST.json
+          git diff --quiet HEAD -- apps packages prototypes qa public || {
+            echo "Production application changed unexpectedly"
+            exit 1
+          }
+          test "$(git show HEAD:docs/IMPLEMENTATION_CHECKLIST.md | sha256sum | awk '{print $1}')" = "$(sha256sum docs/IMPLEMENTATION_CHECKLIST.md | awk '{print $1}')"
+
+      - name: Save migration in review branch without merging or publishing
+        run: |
+          set -euo pipefail
+          if git diff --cached --quiet; then
+            echo "No new design changes; current files already match archive"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: replace design authority with full archived Stage III / Stage IV blueprint"
+          git push origin "HEAD:$GITHUB_REF_NAME"

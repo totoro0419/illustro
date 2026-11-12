@@ -1,0 +1,194 @@
+import {type WorkEntry} from './workLibrary';
+import {CoreDocument,type CoreRecoveryPacketV1,type LayerId,type PersistenceHandoff,type RevisionId} from '@illustro/core';
+import workerUrl from './persistence.worker.ts?worker&url';
+import {openDecodedPortableDocument,type PortableOpenResult,type PreservedPortableData} from './portable';
+import type {DecodedPortableFile,PortableManifestSection} from './format';
+import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
+import {cloneProjectionTiles} from './projectionTransfer';
+
+type WorkerReply={id:number;ok:boolean;result?:unknown;error?:string};
+export type Candidate=Readonly<{documentId:string;writerEpochId:string;title:string;protectedThrough:string;updatedAt:number;savedRevisionId:string|null;lastGood:boolean;previousGood:boolean}>;
+export type PersistenceState=Readonly<{
+  currentRevision:RevisionId|null;savedRevision:RevisionId|null;dirty:boolean;protectionPending:boolean;protectedThrough:string;saving:boolean;recovered:boolean;
+  storageError:string|null;backend:string;storagePersisted:boolean|null;storageUsage:number|null;storageQuota:number|null;queueLength:number;
+  lastProtectionTime:number|null;lastExplicitSaveTime:number|null;saveDurationMs:number|null;snapshotCaptureMs:number|null;reloadDurationMs:number|null;recoveryDurationMs:number|null;
+  lastGood:boolean;previousGood:boolean;offline:boolean;
+}>;
+type PreviewLayer=Readonly<{surfaceId:string;visible:boolean;opacity:number}>;
+type Pending=Readonly<{selectedLayerId:LayerId;packet:CoreRecoveryPacketV1;blocks:readonly {id:string;bytes:Uint8Array}[];supportedAlgorithms:readonly string[];previewLayers:readonly PreviewLayer[]}>;
+type AnyWindow=Window&typeof globalThis&{showSaveFilePicker?:(options?:unknown)=>Promise<unknown>};
+
+export class PersistenceCoordinator{
+  private destroyed=false;private navigationSequence=0;private navigationPending=0;
+  private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
+  private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
+  private preserved:PreservedPortableData|undefined;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
+    currentRevision:null,savedRevision:null,dirty:true,protectionPending:false,protectedThrough:'0',saving:false,recovered:false,storageError:null,backend:'未初期化',
+    storagePersisted:null,storageUsage:null,storageQuota:null,queueLength:0,lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,reloadDurationMs:null,recoveryDurationMs:null,lastGood:false,previousGood:false,offline:!navigator.onLine,
+  });
+  constructor(private readonly onChange:(state:PersistenceState)=>void=()=>{}){
+    this.worker.onmessage=(event:MessageEvent<WorkerReply>)=>{const pending=this.pendingRequests.get(event.data.id);if(!pending)return;this.pendingRequests.delete(event.data.id);event.data.ok?pending.resolve(event.data.result):pending.reject(new Error(event.data.error??'Persistence Worker error'));};
+    this.worker.onerror=event=>this.patch({storageError:event.message||'Persistence Worker error'});
+    addEventListener('online',this.onlineState);addEventListener('offline',this.onlineState);document.addEventListener('visibilitychange',this.visibility,{capture:true});addEventListener('pagehide',this.pagehide,{capture:true});
+  }
+  get state(){return this.stateValue;}get preservedData(){return this.preserved;}
+  async initialize(controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>,savedRevision:RevisionId|null=null,preserved?:PreservedPortableData,recovered=false){
+    this.cancelIdle();await this.drain();this.queue=[];this.controller=controller;this.preserved=preserved;const document=controller.document,snapshot=document.capturePersistenceSnapshot(),blocks=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes}));
+    const storage=await this.storageStatus(true);const result=await this.request('init',{documentId:document.root.documentId,writerEpochId:document.writerEpochId,snapshot,blocks,savedRevisionId:savedRevision},blocks.map(x=>x.bytes.buffer as ArrayBuffer)) as any;
+    this.patch({currentRevision:document.head,savedRevision,protectedThrough:String(result.protectedThrough??'0'),backend:String(result.backend??'unknown'),recovered,
+      storagePersisted:storage.persisted,storageUsage:storage.usage,storageQuota:storage.quota,storageError:null,queueLength:0,protectionPending:false,saving:false,
+      lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,recoveryDurationMs:null,lastGood:Boolean(result.lastGood),previousGood:Boolean(result.previousGood)});
+  }
+  noteCommit(document:CoreDocument,handoff:PersistenceHandoff){
+    try{const packet=document.captureRecoveryPacket(handoff),blockMap=document.recoveryBlockPayloads(packet),blocks=[...blockMap].map(([id,bytes])=>({id,bytes})),algorithms=runtimeSupportedAlgorithms(packet);
+      this.queue.push(Object.freeze({selectedLayerId:this.controller?.selectedLayerId??document.root.rootLayerIds[0]!,packet,blocks:Object.freeze(blocks),supportedAlgorithms:algorithms,previewLayers:previewLayersFor(document,handoff.resultRevisionId)}));this.patch({currentRevision:document.head,queueLength:this.queue.length,protectionPending:true});this.schedule();}
+    catch(error){this.patch({storageError:message(error)});}
+  }
+  noteNavigation(document:CoreDocument){
+    const sequence=++this.navigationSequence,revisionId=document.head;this.navigationPending++;this.patch({currentRevision:revisionId,protectionPending:true});void this.flushPrepared().then(()=>{if(this.controller?.document!==document||sequence!==this.navigationSequence||document.head!==revisionId)return;return this.request('set-head',{revisionId,width:document.root.width,height:document.root.height,selectedLayerId:this.controller?.selectedLayerId,previewLayers:previewLayersFor(document,revisionId)});}).catch(error=>this.patch({storageError:message(error)})).finally(()=>{this.navigationPending--;this.patch({protectionPending:this.queue.length>0||this.navigationPending>0||this.activeDrain!==null});});
+  }
+  async flushPrepared(){this.cancelIdle();await this.drain();if(this.stateValue.storageError||this.queue.length)throw new Error(this.stateValue.storageError??'自動保存が完了していません。');}
+  async listWorks():Promise<{works:WorkEntry[];lastWorkId:string|null}>{return this.request('library-list',{});}
+  async bindWork(expectedEpoch:string|null=null){if(!this.controller)throw new Error('作品が開かれていません。');return this.request('library-bind',{selectedLayerId:this.controller.selectedLayerId,expectedEpoch,preserved:this.preserved});}
+  async loadWork(documentId:string){const raw=await this.request('library-load',{documentId});
+    const document=CoreDocument.restore({snapshot:raw.snapshot,blockPayloads:new Map(raw.blocks.map((b:{id:string;bytes:Uint8Array})=>[b.id,b.bytes]))});
+    const selected=raw.entry.selectedLayerId;return {opened:{document,selectedLayerId:document.root.hasLayer(selected)?selected:document.root.rootLayerIds[0]!,preserved:raw.entry.preserved??{manifestExtras:{},optionalSections:[]},generationId:'library',snapshotRevisionId:document.head,projectionCache:raw.projectionCache??undefined} as PortableOpenResult,entry:raw.entry as WorkEntry,fallback:Boolean(raw.fallback)};}
+  async readThumbnail(documentId:string,revisionId:string):Promise<Blob|null>{const result=await this.request('library-thumbnail-read',{documentId,revisionId});return result.image??null;}
+  async repairThumbnail(documentId:string):Promise<{state:'pending'|'complete'|'current'|'unavailable'}>{return this.request('library-preview-step',{documentId});}
+  async renameWork(documentId:string,name:string){await this.request('library-rename',{documentId,name});}
+  async deleteWork(documentId:string){await this.request('library-delete',{documentId});}
+  async resetWorks(){
+    await this.flushPrepared();
+    await this.request('library-reset',{});
+    this.controller=null;this.queue=[];this.preserved=undefined;this.fileHandle=null;this.externalFingerprint=null;
+    this.patch({currentRevision:null,savedRevision:null,protectedThrough:'0',queueLength:0,protectionPending:false,recovered:false,storageError:null});
+  }
+  async selectWorkLayer(selectedLayerId:LayerId){const controller=this.controller;await this.flushPrepared();if(controller!==this.controller||controller?.selectedLayerId!==selectedLayerId)return;await this.request('library-selection',{selectedLayerId});}
+  async storeThumbnail(documentId:string,revisionId:string,thumbnail:Blob){await this.request('library-thumbnail',{documentId,revisionId,thumbnail});}
+  async barrier(){await this.flushPrepared();await this.request('flush',{});if(this.stateValue.storageError)throw new Error(this.stateValue.storageError);}
+  async retry(){this.cancelIdle();await this.drain();if(this.queue.length)throw new Error(this.stateValue.storageError??'保存に失敗しました。');if(this.controller){const d=this.controller.document;await this.request('set-head',{revisionId:d.head,width:d.root.width,height:d.root.height,previewLayers:previewLayersFor(d,d.head)});}this.patch({storageError:null});}
+  clearFileDestination(){this.fileHandle=null;this.externalFingerprint=null;}
+  async listRecoveryCandidates():Promise<readonly Candidate[]>{const result=await this.request('list-recovery',{}) as any;this.applyStorage(result.storage);if(result.backend)this.patch({backend:String(result.backend)});return Object.freeze((Array.isArray(result.candidates)?result.candidates:[]) as Candidate[]);}
+  async recover(candidate:Candidate){
+    const started=performance.now(),result=await this.request('load-recovery',{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}) as any,blocks=new Map<string,Uint8Array>();
+    for(const item of result.blocks as {id:string;bytes:Uint8Array}[])blocks.set(item.id,item.bytes);
+    const document=CoreDocument.restore({snapshot:result.snapshot,blockPayloads:blocks}),selected=document.root.rootLayerIds[0];if(!selected)throw new Error('回復した作品にレイヤーがありません。');
+    const controller={document,selectedLayerId:selected},projectionCache=isProjectionCache(result.projectionCache)?result.projectionCache:undefined;this.patch({recoveryDurationMs:performance.now()-started,recovered:true});return Object.freeze({document,selectedLayerId:selected,savedRevision:(candidate.savedRevisionId&&document.hasRevision(candidate.savedRevisionId as RevisionId)?candidate.savedRevisionId as RevisionId:null),projectionCache});
+  }
+  async reloadLastGood(candidate?:Pick<Candidate,'documentId'|'writerEpochId'>){const payload=candidate?{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}:{};const raw=await this.request('load-last-good',payload) as any;return this.decodePortable(raw.bytes as Uint8Array);}
+  async decodePortable(bytes:Uint8Array):Promise<PortableOpenResult>{
+    const started=performance.now(),copy=bytes.slice(),raw=await this.request('decode-portable',{bytes:copy},[copy.buffer as ArrayBuffer]) as any;
+    const sections=new Map<string,{descriptor:PortableManifestSection;bytes:Uint8Array}>();for(const item of raw.sections as {descriptor:PortableManifestSection;bytes:Uint8Array}[])sections.set(item.descriptor.id,item);
+    const decoded:Object={manifest:raw.manifest,sections},opened=openDecodedPortableDocument(decoded as DecodedPortableFile),projectionCache=isProjectionCache(raw.projectionCache)?raw.projectionCache:undefined;this.patch({reloadDurationMs:performance.now()-started});return Object.freeze({...opened,...(projectionCache?{projectionCache}:{})});
+  }
+  async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false){
+    if(this.stateValue.saving)throw new Error('保存中です。');this.patch({saving:true});const started=performance.now();
+    try{
+      let handlePromise:Promise<unknown>|null=null;const w=window as AnyWindow;if(!this.fileHandle||forceSaveCopy){if(w.showSaveFilePicker)handlePromise=w.showSaveFilePicker({suggestedName:safeFileName(document.root.name)+'.illustro',types:[{description:'Illustro作品',accept:{'application/octet-stream':['.illustro']}}]});}
+      const saveRevision=document.head,captureStart=performance.now(),snapshot=document.capturePersistenceSnapshot(saveRevision),snapshotCaptureMs=performance.now()-captureStart,blockEntries=[...document.persistenceBlockPayloads(snapshot)].map(([id,bytes])=>({id,bytes})),generationId=crypto.randomUUID(),createdAt=Date.now();
+      const transfer=blockEntries.map(x=>x.bytes.buffer as ArrayBuffer),raw=await this.request('encode-save',{snapshot,blocks:blockEntries,selectedLayerId,generationId,createdAt,preserved:this.preserved},transfer) as any,bytes=raw.bytes as Uint8Array;
+      let output:'picker'|'download';if(handlePromise){const handle=await handlePromise;const fingerprint=await this.writeExternal(handle,bytes,false);this.fileHandle=handle;this.externalFingerprint=fingerprint;output='picker';}
+      else if(this.fileHandle&&!forceSaveCopy){this.externalFingerprint=await this.writeExternal(this.fileHandle,bytes,true);output='picker';}
+      else{downloadBlob(bytes,safeFileName(document.root.name)+'.illustro');output='download';}
+      this.patch({currentRevision:document.head,lastExplicitSaveTime:Date.now(),saveDurationMs:performance.now()-started,snapshotCaptureMs,saving:false});
+      return Object.freeze({revisionId:saveRevision,bytes,byteLength:bytes.byteLength,output,generationId});
+    }catch(error){this.patch({saving:false,saveDurationMs:performance.now()-started});throw error;}
+  }
+  async saveCopy(document:CoreDocument,selectedLayerId:LayerId){return this.save(document,selectedLayerId,true);}
+  async storeProjectionCheckpoint(cache:ProjectionCacheV1){
+    if(!this.controller||this.controller.document.head!==cache.revisionId)return false;
+    await this.flushPrepared();if(!this.controller||this.controller.document.head!==cache.revisionId)return false;
+    const layers=cache.layers.map(layer=>({surfaceId:layer.surfaceId,pixels:layer.pixels.slice()})),transfer=layers.map(layer=>layer.pixels.buffer as ArrayBuffer);
+    await this.request('store-projection-checkpoint',{revisionId:cache.revisionId,width:cache.width,height:cache.height,layers},transfer);return true;
+  }
+  async storeProjectionDelta(delta:ProjectionCheckpointDeltaV2){
+    if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
+    await this.flushPrepared();if(!this.controller||this.controller.document.head!==delta.revisionId)return false;
+    const controller=this.controller,valid=()=>!this.destroyed&&this.controller===controller&&controller.document.head===delta.revisionId,tiles=await cloneProjectionTiles(delta.tiles,valid);
+    if(!tiles||!valid())return false;const transfer=tiles.map(tile=>tile.pixels.buffer as ArrayBuffer);
+    await this.request('store-projection-delta',{replace:delta.replace===true,revisionId:delta.revisionId,width:delta.width,height:delta.height,tileSize:delta.tileSize,surfaceIds:[...delta.surfaceIds],tiles},transfer);return true;
+  }
+  async storageStatus(requestPersistence=false){
+    const storage=navigator.storage;let persisted:boolean|null=null,usage:number|null=null,quota:number|null=null;
+    try{persisted=storage?.persisted?await storage.persisted():null;if(requestPersistence&&persisted===false&&storage?.persist){try{persisted=await storage.persist();}catch{}}}catch{}
+    try{const estimate=storage?.estimate?await storage.estimate():null;usage=estimate?.usage??null;quota=estimate?.quota??null;}catch{}
+    this.patch({storagePersisted:persisted,storageUsage:usage,storageQuota:quota});return {persisted,usage,quota};
+  }
+  destroy(){this.destroyed=true;this.cancelIdle();this.worker.terminate();removeEventListener('online',this.onlineState);removeEventListener('offline',this.onlineState);document.removeEventListener('visibilitychange',this.visibility,{capture:true});removeEventListener('pagehide',this.pagehide,{capture:true});}
+  private schedule(){if(this.idleHandle!==null||this.activeDrain)return;const idle=(window as unknown as {requestIdleCallback?:(fn:()=>void,o?:{timeout:number})=>number}).requestIdleCallback;if(idle)this.idleHandle=idle(()=>{this.idleHandle=null;void this.drain();},{timeout:250});else this.idleHandle=window.setTimeout(()=>{this.idleHandle=null;void this.drain();},60);}
+  private cancelIdle(){if(this.idleHandle===null)return;const cancel=(window as unknown as {cancelIdleCallback?:(id:number)=>void}).cancelIdleCallback;if(cancel)cancel(this.idleHandle);else clearTimeout(this.idleHandle);this.idleHandle=null;}
+  private async drain(){
+    if(this.activeDrain)return this.activeDrain;
+    const run=(async()=>{try{while(this.queue.length){const item=this.queue.shift()!,blocks=item.blocks.map(b=>({id:b.id,bytes:b.bytes.slice()})),transfers=blocks.map(x=>x.bytes.buffer as ArrayBuffer);try{const result=await this.request('protect',{selectedLayerId:item.selectedLayerId,packet:item.packet,blocks,supportedAlgorithms:item.supportedAlgorithms,previewLayers:item.previewLayers},transfers) as any;this.applyStorage(result.storage);this.patch({protectedThrough:String(result.protectedThrough??this.stateValue.protectedThrough),backend:String(result.backend??this.stateValue.backend),lastProtectionTime:Date.now(),storageError:null});}
+      catch(error){this.queue.unshift(item);this.patch({storageError:message(error),protectionPending:true});break;}this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}}finally{this.patch({queueLength:this.queue.length,protectionPending:this.queue.length>0});}})();
+    this.activeDrain=run;try{await run;}finally{if(this.activeDrain===run)this.activeDrain=null;if(this.queue.length&&!this.stateValue.storageError)this.schedule();}
+  }
+  private request(type:string,payload:Record<string,unknown>,transfer:Transferable[]=[]){const id=this.nextId++;return new Promise<any>((resolve,reject)=>{this.pendingRequests.set(id,{resolve,reject});this.worker.postMessage({id,type,...payload},transfer);});}
+  private patch(patch:Partial<PersistenceState>){
+    const next={...this.stateValue,...patch,offline:!navigator.onLine};if(this.navigationPending>0)next.protectionPending=true;
+    next.dirty=next.savedRevision===null?true:next.currentRevision!==next.savedRevision;
+    this.stateValue=Object.freeze(next);this.onChange(this.stateValue);
+  }
+  private applyStorage(value:unknown){if(!value||typeof value!=='object')return;const x=value as {persisted?:unknown;usage?:unknown;quota?:unknown};this.patch({storagePersisted:typeof x.persisted==='boolean'?x.persisted:null,storageUsage:typeof x.usage==='number'?x.usage:null,storageQuota:typeof x.quota==='number'?x.quota:null});}
+  private async writeExternal(handle:unknown,bytes:Uint8Array,checkConflict:boolean){
+    type Writable={write:(b:Blob|BufferSource|string)=>Promise<void>;truncate?:(size:number)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>};
+    const h=handle as {getFile:()=>Promise<File>;createWritable:(options?:{keepExistingData?:boolean})=>Promise<Writable>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
+    if(checkConflict&&this.externalFingerprint){const current=await fingerprintHandle(handle);if(current!==this.externalFingerprint&&!confirm('保存先のファイルが外部で変更されています。上書きしますか？\nキャンセルした場合は「別名保存」を使えます。'))throw new Error('外部変更を検出したため上書きを中止しました。');}
+    const stable=bytes.slice(),writable=await h.createWritable({keepExistingData:false});
+    try{
+      await writable.truncate?.(0);
+      await writable.write(new Blob([stable.buffer as ArrayBuffer],{type:'application/octet-stream'}));
+      await writable.truncate?.(stable.byteLength);
+      await writable.close();
+    }catch(error){try{await writable.abort?.();}catch{}throw error;}
+    return await verifyExternalWrite(h,stable);
+  }
+  private visibility=()=>{if(document.visibilityState==='hidden')void this.flushPrepared().catch(()=>{});};private pagehide=()=>{void this.flushPrepared().catch(()=>{});};private onlineState=()=>this.patch({offline:!navigator.onLine});
+}
+
+function previewLayersFor(document:CoreDocument,revisionId:RevisionId):readonly PreviewLayer[]{
+  const root=document.revision(revisionId).root;
+  return root.rootLayerIds.map(id=>{const layer=root.getLayer(id);return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})};});
+}
+function runtimeSupportedAlgorithms(packet:CoreRecoveryPacketV1){
+  const supported=new Set<string>();for(const operation of packet.revision.command.operations)for(const ref of operation.algorithmVersionRefs)supported.add(ref);return Object.freeze([...supported]);
+}
+async function fingerprintHandle(handle:unknown){const file=await (handle as {getFile:()=>Promise<File>}).getFile(),bytes=new Uint8Array(await file.arrayBuffer()),hash=await hashHex(bytes);return file.size+':'+file.lastModified+':'+hash;}
+async function verifyExternalWrite(handle:{getFile:()=>Promise<File>},expected:Uint8Array){
+  const expectedHash=await hashHex(expected),delays=[0,30,80,160,320,640,1200,2000];let lastSize:number|null=null,lastReason='読み戻しできませんでした';
+  for(const delay of delays){
+    if(delay)await sleep(delay);
+    try{
+      const file=await handle.getFile();lastSize=file.size;
+      if(file.size!==expected.byteLength){lastReason='保存先のサイズが反映待ちです';continue;}
+      const actual=new Uint8Array(await file.arrayBuffer());if(actual.byteLength!==expected.byteLength){lastReason='保存先の読み戻しサイズが一致しません';continue;}
+      const actualHash=await hashHex(actual);if(actualHash===expectedHash)return file.size+':'+file.lastModified+':'+actualHash;
+      lastReason='保存先の内容がまだ反映されていません';
+    }catch(error){lastReason=message(error);}
+  }
+  const sizeText=lastSize===null?'不明':String(lastSize);throw new Error('保存先の検証に失敗しました。書き込み後のファイルが端末側で正しく確認できませんでした（確認サイズ '+sizeText+' B / 予定 '+expected.byteLength+' B、'+lastReason+'）。');
+}
+function sleep(ms:number){return new Promise<void>(resolve=>setTimeout(resolve,ms));}
+async function hashHex(bytes:Uint8Array){const copy=bytes.byteOffset===0&&bytes.byteLength===bytes.buffer.byteLength?bytes:bytes.slice(),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',copy as Uint8Array<ArrayBuffer>));return [...hash].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function downloadBlob(bytes:Uint8Array,name:string){const blob=new Blob([bytes.slice().buffer as ArrayBuffer],{type:'application/octet-stream'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.style.display='none';document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);}
+function safeFileName(value:string){return (value.trim()||'Illustro作品').replace(/[\\/:*?"<>|\u0000-\u001f]+/g,'_').slice(0,120);}
+function message(error:unknown){return error instanceof Error?error.message:String(error);}
+
+export function isProjectionCache(value:unknown):value is ProjectionCache{
+  if(!value||typeof value!=='object')return false;
+  const x=value as ProjectionCache;
+  if(typeof x.revisionId!=='string'||!Number.isSafeInteger(x.width)||!Number.isSafeInteger(x.height)||x.width<1||x.height<1||!Array.isArray(x.layers))return false;
+  if(x.version===1)return x.layers.every(layer=>typeof layer?.surfaceId==='string'&&layer.pixels instanceof Uint8Array&&layer.pixels.byteLength===x.width*x.height*4);
+  if(x.version!==2||x.tileSize!==128)return false;
+  const maxX=Math.ceil(x.width/128),maxY=Math.ceil(x.height/128),surfaces=new Set<string>();
+  for(const layer of x.layers){
+    if(!layer||typeof layer.surfaceId!=='string'||surfaces.has(layer.surfaceId)||!Array.isArray(layer.tiles))return false;
+    surfaces.add(layer.surfaceId);const keys=new Set<string>();
+    for(const tile of layer.tiles){
+      if(!tile||typeof tile.key!=='string'||!/^\d+,\d+$/.test(tile.key)||keys.has(tile.key)||!(tile.pixels instanceof Uint8Array)||tile.pixels.byteLength!==128*128*4)return false;
+      const [tx,ty]=tile.key.split(',').map(Number);if(!Number.isSafeInteger(tx)||!Number.isSafeInteger(ty)||tx<0||ty<0||tx>=maxX||ty>=maxY)return false;
+      keys.add(tile.key);
+    }
+  }
+  return true;
+}

@@ -1,0 +1,122 @@
+{
+  "source": "7ecdf9b4283e0d8f2b850845a7f6675f11e818f4",
+  "status": "IMPLEMENTATION_REVIEW",
+  "note": "Defaults are reviewed, not a physical-pen certification. All presets compile through the same Foundation; no brush-ID branch occurs outside these declarations.",
+  "sharedCapabilities": [
+    "pressure curves and smoothing",
+    "entry/ending envelopes",
+    "stabilization",
+    "prediction outside journal",
+    "source-to-target dynamics",
+    "tip/paper/stroke resource slots (one simultaneous builtin layer)",
+    "stroke opacity versus flow",
+    "blend/erase",
+    "deterministic replay"
+  ],
+  "brushes": [
+    {
+      "id": "foundation-g-pen",
+      "name": "G\u30da\u30f3",
+      "compiledPath": "solid-MAX",
+      "pressureTargets": [
+        "size"
+      ],
+      "entry": "ramp",
+      "ending": "none",
+      "predictionDefault": false,
+      "opacity": 1,
+      "flow": 1,
+      "blend": "normal",
+      "activeTextures": []
+    },
+    {
+      "id": "foundation-round-pen",
+      "name": "\u4e38\u30da\u30f3",
+      "compiledPath": "solid-MAX",
+      "pressureTargets": [
+        "size"
+      ],
+      "entry": "none",
+      "ending": "none",
+      "predictionDefault": false,
+      "opacity": 1,
+      "flow": 1,
+      "blend": "normal",
+      "activeTextures": []
+    },
+    {
+      "id": "foundation-technical",
+      "name": "\u30df\u30ea\u30da\u30f3 / \u88fd\u56f3\u30da\u30f3",
+      "compiledPath": "solid-MAX",
+      "pressureTargets": [],
+      "entry": "none",
+      "ending": "none",
+      "predictionDefault": false,
+      "opacity": 1,
+      "flow": 1,
+      "blend": "normal",
+      "activeTextures": []
+    },
+    {
+      "id": "foundation-marker",
+      "name": "\u30de\u30fc\u30ab\u30fc",
+      "compiledPath": "solid-MAX",
+      "pressureTargets": [],
+      "entry": "none",
+      "ending": "none",
+      "predictionDefault": false,
+      "opacity": 0.45,
+      "flow": 1,
+      "blend": "normal",
+      "activeTextures": []
+    },
+    {
+      "id": "foundation-pencil",
+      "name": "\u925b\u7b46",
+      "compiledPath": "sweep-MAX",
+      "pressureTargets": [
+        "size",
+        "opacity",
+        "grain"
+      ],
+      "entry": "none",
+      "ending": "none",
+      "predictionDefault": false,
+      "opacity": 1,
+      "flow": 0.8,
+      "blend": "normal",
+      "activeTextures": [
+        "paper"
+      ]
+    },
+    {
+      "id": "foundation-hard-eraser",
+      "name": "\u786c\u3044\u6d88\u3057\u30b4\u30e0",
+      "compiledPath": "solid-MAX",
+      "pressureTargets": [],
+      "entry": "none",
+      "ending": "none",
+      "predictionDefault": false,
+      "opacity": 1,
+      "flow": 1,
+      "blend": "erase",
+      "activeTextures": []
+    },
+    {
+      "id": "foundation-soft-eraser",
+      "name": "\u67d4\u3089\u304b\u3044\u6d88\u3057\u30b4\u30e0",
+      "compiledPath": "sweep-MAX",
+      "pressureTargets": [],
+      "entry": "none",
+      "ending": "none",
+      "predictionDefault": false,
+      "opacity": 1,
+      "flow": 0.65,
+      "blend": "erase",
+      "activeTextures": []
+    }
+  ],
+  "recheckedAgainstCompiledDefaults": true,
+  "sourceCommit": "7ecdf9b4283e0d8f2b850845a7f6675f11e818f4",
+  "htmlGitBlob": "925804bf751b4a6b9066cb5c89f59849dc89091e"
+}

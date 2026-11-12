@@ -1,0 +1,239 @@
+{
+  "scope": "Headless Chromium / SwiftShader. Input handler time plus explicit finish/one-pixel readback completion barriers at measurement boundaries; not pen-to-photon. 4096 inputs in one stroke, repeated 128-input path, compared after warmup and at end. Instrumented pixel area is submitted work, not hardware GPU duration.",
+  "cases": [
+    {
+      "id": "clean-ink",
+      "size": 16,
+      "cpuHandlerTotalMs": 25.40000000037253,
+      "submittedMs": 28.40000000037253,
+      "gpuCompletedMs": 239.7000000011176,
+      "gpuWaitAfterSubmissionMs": 211.30000000074506,
+      "rawToCorrectedMaxPx": 2.3754862891727164,
+      "copies": 0,
+      "copyPixels": 0,
+      "draws": 297,
+      "blits": 100,
+      "blitPixels": 73380,
+      "screenPixels": 73380,
+      "floatBlend": true,
+      "desynchronized": true
+    },
+    {
+      "id": "clean-ink",
+      "size": 128,
+      "cpuHandlerTotalMs": 15.899999998509884,
+      "submittedMs": 20.5,
+      "gpuCompletedMs": 130.90000000037253,
+      "gpuWaitAfterSubmissionMs": 110.40000000037253,
+      "rawToCorrectedMaxPx": 2.3754862891727164,
+      "copies": 0,
+      "copyPixels": 0,
+      "draws": 262,
+      "blits": 100,
+      "blitPixels": 814974,
+      "screenPixels": 814974,
+      "floatBlend": true,
+      "desynchronized": true
+    },
+    {
+      "id": "clean-ink",
+      "size": 512,
+      "cpuHandlerTotalMs": 16.100000001490116,
+      "submittedMs": 17.899999998509884,
+      "gpuCompletedMs": 206.59999999962747,
+      "gpuWaitAfterSubmissionMs": 188.7000000011176,
+      "rawToCorrectedMaxPx": 2.3754862891727164,
+      "copies": 0,
+      "copyPixels": 0,
+      "draws": 216,
+      "blits": 100,
+      "blitPixels": 4856114,
+      "screenPixels": 4856114,
+      "floatBlend": true,
+      "desynchronized": true
+    },
+    {
+      "id": "clean-ink",
+      "size": 1024,
+      "cpuHandlerTotalMs": 10.599999999627471,
+      "submittedMs": 12.100000001490116,
+      "gpuCompletedMs": 218.40000000037253,
+      "gpuWaitAfterSubmissionMs": 206.2999999988824,
+      "rawToCorrectedMaxPx": 2.3754862891727164,
+      "copies": 0,
+      "copyPixels": 0,
+      "draws": 216,
+      "blits": 100,
+      "blitPixels": 4856114,
+      "screenPixels": 4856114,
+      "floatBlend": true,
+      "desynchronized": true
+    },
+    {
+      "id": "rough-pencil",
+      "size": 16,
+      "cpuHandlerTotalMs": 14,
+      "submittedMs": 14.599999999627471,
+      "gpuCompletedMs": 65.59999999962747,
+      "gpuWaitAfterSubmissionMs": 51,
+      "rawToCorrectedMaxPx": 2.3754862891727164,
+      "copies": 0,
+      "copyPixels": 0,
+      "draws": 298,
+      "blits": 100,
+      "blitPixels": 56649,
+      "screenPixels": 56649,
+      "floatBlend": true,
+      "desynchronized": true
+    },
+    {
+      "id": "rough-pencil",
+      "size": 128,
+      "cpuHandlerTotalMs": 17.40000000037253,
+      "submittedMs": 19.299999998882413,
+      "gpuCompletedMs": 100.40000000037253,
+      "gpuWaitAfterSubmissionMs": 81.10000000149012,
+      "rawToCorrectedMaxPx": 2.3754862891727164,
+      "copies": 0,
+      "copyPixels": 0,
+      "draws": 255,
+      "blits": 100,
+      "blitPixels": 1091656,
+      "screenPixels": 1091656,
+      "floatBlend": true,
+      "desynchronized": true
+    },
+    {
+      "id": "rough-pencil",
+      "size": 512,
+      "cpuHandlerTotalMs": 14.900000000372529,
+      "submittedMs": 16,
+      "gpuCompletedMs": 581.8000000007451,
+      "gpuWaitAfterSubmissionMs": 565.8000000007451,
+      "rawToCorrectedMaxPx": 2.3754862891727164,
+      "copies": 0,
+      "copyPixels": 0,
+      "draws": 213,
+      "blits": 100,
+      "blitPixels": 14132067,
+      "screenPixels": 14132067,
+      "floatBlend": true,
+      "desynchronized": true
+    },
+    {
+      "id": "rough-pencil",
+      "size": 1024,
+      "cpuHandlerTotalMs": 3.9000000040978193,
+      "submittedMs": 5.099999999627471,
+      "gpuCompletedMs": 607.4000000003725,
+      "gpuWaitAfterSubmissionMs": 602.3000000007451,
+      "rawToCorrectedMaxPx": 2.3754862891727164,
+      "copies": 0,
+      "copyPixels": 0,
+      "draws": 213,
+      "blits": 100,
+      "blitPixels": 14132067,
+      "screenPixels": 14132067,
+      "floatBlend": true,
+      "desynchronized": true
+    }
+  ],
+  "long": [
+    {
+      "size": 16,
+      "totalInputs": 4096,
+      "windows": [
+        {
+          "inputs": 128,
+          "endingInput": 384,
+          "handlerP95Ms": 0.40000000037252903,
+          "handlerTotalMs": 14.799999998882413,
+          "GPUWaitMs": 50.59999999962747,
+          "copies": 0,
+          "copyPixels": 0,
+          "draws": 389,
+          "blits": 128,
+          "blitPixels": 137224,
+          "screenPixels": 137224
+        },
+        {
+          "inputs": 128,
+          "endingInput": 4096,
+          "handlerP95Ms": 0.30000000074505806,
+          "handlerTotalMs": 15.300000000745058,
+          "GPUWaitMs": 44.59999999962747,
+          "copies": 0,
+          "copyPixels": 0,
+          "draws": 388,
+          "blits": 128,
+          "blitPixels": 137468,
+          "screenPixels": 137468
+        }
+      ]
+    },
+    {
+      "size": 128,
+      "totalInputs": 4096,
+      "windows": [
+        {
+          "inputs": 128,
+          "endingInput": 384,
+          "handlerP95Ms": 0.19999999925494194,
+          "handlerTotalMs": 8,
+          "GPUWaitMs": 126.59999999962747,
+          "copies": 0,
+          "copyPixels": 0,
+          "draws": 375,
+          "blits": 128,
+          "blitPixels": 1609781,
+          "screenPixels": 1609781
+        },
+        {
+          "inputs": 128,
+          "endingInput": 4096,
+          "handlerP95Ms": 0.10000000149011612,
+          "handlerTotalMs": 7.199999999254942,
+          "GPUWaitMs": 151.90000000037253,
+          "copies": 0,
+          "copyPixels": 0,
+          "draws": 375,
+          "blits": 128,
+          "blitPixels": 1606457,
+          "screenPixels": 1606457
+        }
+      ]
+    },
+    {
+      "size": 512,
+      "totalInputs": 4096,
+      "windows": [
+        {
+          "inputs": 128,
+          "endingInput": 384,
+          "handlerP95Ms": 0.30000000074505806,
+          "handlerTotalMs": 18.40000000037253,
+          "GPUWaitMs": 775.5999999996275,
+          "copies": 0,
+          "copyPixels": 0,
+          "draws": 292,
+          "blits": 128,
+          "blitPixels": 16945250,
+          "screenPixels": 16945250
+        },
+        {
+          "inputs": 128,
+          "endingInput": 4096,
+          "handlerP95Ms": 0.2999999988824129,
+          "handlerTotalMs": 13.199999999254942,
+          "GPUWaitMs": 703.5,
+          "copies": 0,
+          "copyPixels": 0,
+          "draws": 292,
+          "blits": 128,
+          "blitPixels": 16943490,
+          "screenPixels": 16943490
+        }
+      ]
+    }
+  ]
+}

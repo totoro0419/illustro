@@ -7,6 +7,11 @@ export class PagedMap<K extends string,V>{
   }
   static empty<K extends string,V>(){return new PagedMap<K,V>();}
   get(key:K){return this.#pages.get(pageIndex(key))?.get(key);}
+  entries():readonly (readonly [K,V])[]{
+    const values:Array<readonly [K,V]>=[];for(const page of this.#pages.values())for(const entry of page)values.push(entry);
+    values.sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);return Object.freeze(values);
+  }
+  keys():readonly K[]{return Object.freeze(this.entries().map(([key])=>key));}
   edit(){return new PagedMapEdit(this);}
   _copyPage(i:number){return new Map(this.#pages.get(i)??[]);}
   _with(changed:ReadonlyMap<number,ReadonlyMap<K,V>>,size:number){

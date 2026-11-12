@@ -1,0 +1,13 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro-p0-prototype@0.0.1 test
+> vitest run
+
+
+ RUN  v5.0.2 /workspace/scratch/9ba3e7d038e2/brush-verified/prototypes/p0-architecture
+
+
+ Test Files  12 passed (12)
+      Tests  29 passed (29)
+   Start at  21:55:16
+   Duration  685ms (transform 56%, tests 23%, import 16%, worker 5%)
