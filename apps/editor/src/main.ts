@@ -18,6 +18,7 @@ import {BrushPresetLibrary} from './brushPresets';
 import {additionalBrushes} from './brushStarterPresets';
 import {installBrushDynamicsEditor} from './brushDynamicsEditor';
 import {filterBrushCatalog,type BrushCatalogGroup} from './brushCatalog';
+import {BrushUsage} from './brushUsage';
 import {installBrushAdvancedEditor} from './brushAdvancedEditor';
 import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
@@ -53,6 +54,7 @@ const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 let controller=new EditorController();
 const foreground=new ForegroundColor();
 const brushPresets=new BrushPresetLibrary();
+const brushUsage=new BrushUsage();
 let builtInBrushes:FoundationPreset[]=[];
 const brushDrafts=new Map<string,FoundationPreset>();
 let advancedBrushEditor:ReturnType<typeof installBrushAdvancedEditor>|null=null;
@@ -705,17 +707,20 @@ function refreshBrushOptions(){
  const search=byId<HTMLInputElement>('brushSearch').value;
  const group=byId<HTMLSelectElement>('brushGroup').value as BrushCatalogGroup;
  const selected=surface.preset?.id??'';
- const matches=filterBrushCatalog(surface.brushes,{query:search,group,isUser:id=>brushPresets.isUser(id)});
+ const matches=filterBrushCatalog(surface.brushes,{query:search,group,isUser:id=>brushPresets.isUser(id),favoriteIds:brushUsage.favoriteIds,recentIds:brushUsage.recentIds});
  const picker=byId<HTMLSelectElement>('brush');picker.replaceChildren();
  // The active brush stays selectable even if excluded by the filter.
  const active=surface.brushes.find(p=>p.id===selected);
  const outside=Boolean(active&&!matches.some(p=>p.id===selected));
  if(active&&outside)picker.add(new Option('選択中 · '+active.name,active.id));
  for(const preset of matches){
-   picker.add(new Option(preset.name+(brushPresets.isUser(preset.id)?' · 自作':''),preset.id));
+   picker.add(new Option((brushUsage.isFavorite(preset.id)?'★ ':'')+preset.name+(brushPresets.isUser(preset.id)?' · 自作':''),preset.id));
  }
  if(selected)picker.value=selected;
  byId('brushCatalogCount').textContent=matches.length+'本が該当します。'+(outside?'選択中のブラシは引き続き使用できます。':'');
+ const favorite=byId<HTMLButtonElement>('brushFavorite');favorite.disabled=!selected;
+ favorite.setAttribute('aria-pressed',String(brushUsage.isFavorite(selected)));
+ favorite.textContent=brushUsage.isFavorite(selected)?'★ お気に入りを解除':'☆ お気に入り';
 }
 function refreshBrushCatalog(selectId?:string){
  if(!surface)return;
@@ -725,7 +730,7 @@ function refreshBrushCatalog(selectId?:string){
 }
 function selectPreset(id:string){
  if(!surface)return;
- surface.setEyedropper(false);surface.selectById(id);
+ surface.setEyedropper(false);surface.selectById(id);brushUsage.markUsed(surface.brushId);
  const pending=brushDrafts.get(id);if(pending)surface.applyPreset(pending);
  surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);
  const erasing=surface.blendMode==='erase';selectedTool=erasing?'eraser':'brush';
@@ -773,6 +778,11 @@ byId<HTMLButtonElement>('brushReset').onclick=()=>{
 };
 byId<HTMLInputElement>('brushSearch').addEventListener('input',refreshBrushOptions);
 byId<HTMLSelectElement>('brushGroup').addEventListener('change',refreshBrushOptions);
+byId<HTMLButtonElement>('brushFavorite').onclick=()=>{
+ const id=surface?.preset?.id;if(!id)return;
+ const active=brushUsage.toggleFavorite(id);refreshBrushOptions();
+ brushMessage(active?'お気に入りに登録しました。':'お気に入りを解除しました。');
+};
 byId<HTMLButtonElement>('brushDuplicate').onclick=()=>{
  if(!surface?.preset)return;
  try{const copy=brushPresets.duplicate(surface.preset,surface.preset.name+' のコピー');refreshBrushCatalog(copy.id);brushMessage('自作ブラシを保存しました。この端末で使用できます。');}
@@ -796,7 +806,7 @@ byId<HTMLButtonElement>('brushRename').onclick=()=>{
 byId<HTMLButtonElement>('brushDelete').onclick=()=>{
  if(!surface?.preset||!brushPresets.isUser(surface.preset.id))return;
  if(!confirm('この自作ブラシを削除しますか？作品に描いた線は消えません。'))return;
- try{const id=surface.preset.id;brushPresets.remove(id);brushDrafts.delete(id);refreshBrushCatalog('foundation-g-pen');brushMessage('自作ブラシを削除しました。');}
+ try{const id=surface.preset.id;brushPresets.remove(id);brushDrafts.delete(id);brushUsage.remove(id);refreshBrushCatalog('foundation-g-pen');brushMessage('自作ブラシを削除しました。');}
  catch(error){brushMessage('削除できません: '+String(error));}
 };
 byId<HTMLButtonElement>('brushImport').onclick=()=>byId<HTMLInputElement>('brushImportFile').click();
