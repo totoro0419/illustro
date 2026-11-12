@@ -1,0 +1,184 @@
+{
+  "type": "illustro_cpu_js_smoke",
+  "timestamp": "2026-10-31T01:31:32.777Z",
+  "node": "v24.22.1",
+  "platform": "linux",
+  "arch": "x64",
+  "os": "6.18.57",
+  "testGroups": [
+    {
+      "name": "fixture repeatability",
+      "pass": true,
+      "ms": 2.6781640000000024
+    },
+    {
+      "name": "box blur exact equality (rectangular and tiny)",
+      "pass": true,
+      "ms": 23.915819999999997
+    },
+    {
+      "name": "transparent RGBA blur exact equality",
+      "pass": true,
+      "ms": 8.13264000000001
+    },
+    {
+      "name": "4-neighbor BFS and scanline fill equality",
+      "pass": true,
+      "ms": 7.500856999999996
+    },
+    {
+      "name": "randomized fill equality",
+      "pass": true,
+      "ms": 7.14380899999999
+    },
+    {
+      "name": "lasso polygon and scanline equality",
+      "pass": true,
+      "ms": 20.404561
+    },
+    {
+      "name": "self-intersecting polygon equality",
+      "pass": true,
+      "ms": 0.18621100000000013
+    },
+    {
+      "name": "warp full matches preview factor=1",
+      "pass": true,
+      "ms": 13.870621
+    },
+    {
+      "name": "warp original unchanged",
+      "pass": true,
+      "ms": 0.632002
+    },
+    {
+      "name": "chunked stroke exactly matches sync",
+      "pass": true,
+      "ms": 0.2377480000000105
+    },
+    {
+      "name": "chunked warp exactly matches full",
+      "pass": true,
+      "ms": 0.13236900000001128
+    },
+    {
+      "name": "stale transform job cancelled",
+      "pass": true,
+      "ms": 0.049234000000012657
+    }
+  ],
+  "failures": [],
+  "measurements": [
+    {
+      "kind": "brush",
+      "name": "synchronous",
+      "samples_ms": [
+        7.89600200000001,
+        7.249178000000001,
+        7.014775000000014,
+        8.429335000000009
+      ],
+      "median_ms": 7.89600200000001
+    },
+    {
+      "kind": "brush",
+      "name": "chunked_wall",
+      "single_ms": 12.399664999999999,
+      "yields": 1
+    },
+    {
+      "kind": "fill",
+      "name": "BFS",
+      "samples_ms": [
+        0.6678460000000257,
+        0.6219869999999901,
+        0.6102089999999976,
+        0.589067
+      ],
+      "median_ms": 0.6219869999999901
+    },
+    {
+      "kind": "fill",
+      "name": "scanline",
+      "samples_ms": [
+        1.1264869999999974,
+        1.1888910000000124,
+        2.6676980000000015,
+        1.1216189999999813
+      ],
+      "median_ms": 1.1888910000000124
+    },
+    {
+      "kind": "lasso",
+      "name": "per_pixel",
+      "samples_ms": [
+        25.59585900000002,
+        22.597815000000026,
+        22.337131,
+        22.518714999999986
+      ],
+      "median_ms": 22.597815000000026
+    },
+    {
+      "kind": "lasso",
+      "name": "scanline",
+      "samples_ms": [
+        0.25154800000001387,
+        0.16225500000001603,
+        0.1881230000000187,
+        0.16436799999996765
+      ],
+      "median_ms": 0.1881230000000187
+    },
+    {
+      "kind": "box_blur",
+      "name": "direct",
+      "samples_ms": [
+        56.78365100000002,
+        57.521252000000004,
+        52.07873599999999,
+        55.724616000000026
+      ],
+      "median_ms": 56.78365100000002
+    },
+    {
+      "kind": "box_blur",
+      "name": "separable",
+      "samples_ms": [
+        1.5831040000000485,
+        1.5242150000000265,
+        1.4917270000000826,
+        1.4408900000000813
+      ],
+      "median_ms": 1.5242150000000265
+    },
+    {
+      "kind": "warp",
+      "name": "full",
+      "samples_ms": [
+        10.661568000000102,
+        11.361711000000014,
+        11.302172999999925,
+        11.220117000000073
+      ],
+      "median_ms": 11.302172999999925
+    },
+    {
+      "kind": "warp",
+      "name": "quarter_preview",
+      "samples_ms": [
+        0.7716020000000299,
+        0.6617969999999787,
+        0.6335249999999633,
+        1.572497999999996
+      ],
+      "median_ms": 0.7716020000000299
+    }
+  ],
+  "limits": [
+    "CPU-only tiny fixtures; not Android, GPU, production app, or input-to-photon",
+    "Warp preview is approximate; compare only final result to final oracle",
+    "Short samples and fixed order are not adoption evidence"
+  ],
+  "duration_ms": 446.004371
+}
