@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "commit": "a4f6a6646e1b502f7c4d79ad3107d1c24cf908f4",
+  "checks": [
+    {
+      "backend": "webgl2",
+      "feature": "BRU-004",
+      "favorites": true,
+      "recent": true,
+      "reload": true,
+      "pageErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "feature": "BRU-004",
+      "favorites": true,
+      "recent": true,
+      "reload": true,
+      "pageErrors": []
+    }
+  ],
+  "errors": [],
+  "limitations": "Emulated browser/SwiftShader; pen button, palm rejection, physical latency and overall 35-feature compliance are unverified."
+}
