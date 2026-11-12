@@ -65,6 +65,6 @@ for(const e of index.entries.filter(e=>e.status==='CANONICAL'&&e.path.endsWith('
 }
 assert.deepEqual(broken,[],'broken canonical links');
 const brief=fs.readFileSync('docs/IMPLEMENTATION_BASELINE.md','utf8');
-for(const word of ['Core Drawing Slice','Recovery','256','128','Compact','Undo','Save','Export'])assert.ok(brief.includes(word),word);
+for(const word of ['DESIGN_AUTHORITY.md','C03','M01〜M10','描画直後','実機ユーザー確認'])assert.ok(brief.includes(word),'missing adopted baseline invariant: '+word);
 console.log(JSON.stringify({status:'PASS',classifiedPaths:seen.size,canonicalOwners:Object.keys(index.owners).length,
   frozenArtifacts:lock.artifacts.length,brokenCanonicalLinks:broken.length,branch:'clean main ancestry'},null,2));
