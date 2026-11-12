@@ -1,21 +1,21 @@
 {
-  "authority": "docs/IMPLEMENTATION_BASELINE.md",
+  "authority": "docs/DESIGN_AUTHORITY.md",
   "owners": {
-    "product": "docs/PRODUCT_SPEC.md",
+    "product": "docs/product-planning/FINAL_PRODUCT_SPEC.md",
     "implementation": "docs/IMPLEMENTATION_BASELINE.md",
-    "features": "docs/FEATURE_SPEC.md",
-    "families": "docs/FEATURE_SYSTEM_INTEGRATION_2026-10-04.md",
-    "architecture": "docs/architecture/ARCHITECTURE_V2.md",
-    "leftUI": "docs/ui/LEFT_UI_SPEC.md",
-    "rightUI": "docs/ui/RIGHT_UI_SPEC.md",
-    "layerPage": "docs/ui/RIGHT_LAYER_PAGE_SPEC.md",
-    "compactUI": "docs/ui/COMPACT_IMPLEMENTATION_BASELINE.md",
-    "numericInput": "docs/ui/UI_INPUT_CONTROL_STANDARD.md",
-    "workspaceCustomization": "docs/ui/WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md",
-    "brushAdoption": "docs/brush-foundation/ADOPTION_BASELINE.md",
-    "regionAdoption": "docs/architecture/REGION_ADOPTION.md",
-    "performance": "docs/architecture/FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md",
-    "roadmap": "docs/IMPLEMENTATION_CHECKLIST.md"
+    "features": "docs/product-planning/FEATURE_MASTER_CATALOG.md",
+    "families": "docs/product-planning/REQUIREMENT_TRACEABILITY.md",
+    "architecture": "docs/detailed-design/SYSTEM_CONTRACTS.md",
+    "leftUI": "docs/product-architecture/UI_NAVIGATION.md",
+    "rightUI": "docs/product-architecture/PRODUCT_ARCHITECTURE.md",
+    "layerPage": "docs/product-architecture/PRODUCT_ARCHITECTURE.md",
+    "compactUI": "docs/detailed-design/IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md",
+    "numericInput": "docs/detailed-design/NUMERIC_CONTRACTS_V1.json",
+    "workspaceCustomization": "docs/product-architecture/PRODUCT_ARCHITECTURE.md",
+    "brushAdoption": "docs/product-planning/features/BRU.md",
+    "regionAdoption": "docs/product-planning/features/LIN.md",
+    "performance": "docs/performance-research/UNIFIED_SYSTEM_DESIGN.md",
+    "roadmap": "docs/roadmap/C01_C17_ROADMAP.md"
   },
   "entries": [
     {
@@ -175,8 +175,76 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/architecture/ADR_TEMPLATE.md",
+      "path": "docs/CANONICAL_INDEX.json",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/CANONICAL_INDEX.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/CREATION_PROXIMITY_PRINCIPLES.md",
       "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/DESIGN_AUTHORITY.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/DESIGN_COMPLETION_GATE.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/FEATURE_CATALOG.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/FEATURE_DELIVERY_GATE.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/FEATURE_SPEC.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/FEATURE_SYSTEM_INTEGRATION_2026-10-04.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/FUTURE.md",
+      "status": "FUTURE"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_BASELINE.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_CHECKLIST.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/LEGACY_REFERENCE_POLICY.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/PRODUCT_SPEC.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/PRODUCT_VISION.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/REDESIGN_PRINCIPLES.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
+      "status": "OBSOLETE"
+    },
+    {
+      "path": "docs/STATUS.md",
+      "status": "CANONICAL"
     },
     {
       "path": "docs/architecture/ADR-0001-document-layer-model.md",
@@ -215,6 +283,10 @@
       "status": "OBSOLETE"
     },
     {
+      "path": "docs/architecture/ADR_TEMPLATE.md",
+      "status": "OBSOLETE"
+    },
+    {
       "path": "docs/architecture/ARCHITECTURE_OVERVIEW.md",
       "status": "OBSOLETE"
     },
@@ -224,7 +296,7 @@
     },
     {
       "path": "docs/architecture/ARCHITECTURE_V2.md",
-      "status": "CANONICAL"
+      "status": "OBSOLETE"
     },
     {
       "path": "docs/architecture/BRUSH_RENDER_CONTRACT_V2.md",
@@ -244,7 +316,7 @@
     },
     {
       "path": "docs/architecture/FEATURE_PERFORMANCE_RESOLUTION_2026-10-04.md",
-      "status": "CANONICAL"
+      "status": "OBSOLETE"
     },
     {
       "path": "docs/architecture/IDENTITY_OPERATION_REVISION_V2.md",
@@ -308,6 +380,42 @@
     },
     {
       "path": "docs/brush-foundation/COMPLETION_CONTRACT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/FAILURE_ANALYSIS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/HANDOFF_STATE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/HUMAN_CHECKS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/REQUIREMENT_COVERAGE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/VALIDATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-foundation/evidence/README.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -416,10 +524,6 @@
     },
     {
       "path": "docs/brush-foundation/evidence/preset-io-check.mjs",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/evidence/README.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -555,43 +659,11 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/brush-foundation/FAILURE_ANALYSIS.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/HANDOFF_STATE.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/HUMAN_CHECKS.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "docs/brush-foundation/package_handoff.py",
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/brush-foundation/README.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "docs/brush-foundation/reference-brushes.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/REQUIREMENT_COVERAGE.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/RESEARCH.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/SPEC.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-foundation/VALIDATION.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -604,6 +676,26 @@
     },
     {
       "path": "docs/brush-rt/COMPETITOR_COMPARISON.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/EXPERIENCE_CONTRACT.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/FAILURE_ANALYSIS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/RESEARCH.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush-rt/VALIDATION.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -651,31 +743,39 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/brush-rt/EXPERIENCE_CONTRACT.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/FAILURE_ANALYSIS.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/README.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/RESEARCH.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush-rt/VALIDATION.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "docs/brush/AUDIT.md",
       "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/brush/COMPETITORS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/LATENCY.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/PRESETS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/README.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/SPEC.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/THICK_LATENCY.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/VALIDATION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/brush/WORK_CHECKPOINT.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -891,63 +991,15 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/brush/LATENCY.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/PRESETS.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/README.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/SPEC.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/THICK_LATENCY.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/VALIDATION.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/brush/WORK_CHECKPOINT.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/CANONICAL_INDEX.json",
+      "path": "docs/detailed-design/FINAL_DESIGN_AUDIT.md",
       "status": "CANONICAL"
     },
     {
-      "path": "docs/CANONICAL_INDEX.md",
+      "path": "docs/detailed-design/NUMERIC_CONTRACTS_V1.json",
       "status": "CANONICAL"
     },
     {
-      "path": "docs/CREATION_PROXIMITY_PRINCIPLES.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/DESIGN_COMPLETION_GATE.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/FEATURE_CATALOG.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/FEATURE_DELIVERY_GATE.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/FEATURE_SPEC.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/FEATURE_SYSTEM_INTEGRATION_2026-10-04.md",
+      "path": "docs/detailed-design/SYSTEM_CONTRACTS.md",
       "status": "CANONICAL"
     },
     {
@@ -1001,18 +1053,6 @@
     {
       "path": "docs/features/smart-fill.md",
       "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/FUTURE.md",
-      "status": "FUTURE"
-    },
-    {
-      "path": "docs/IMPLEMENTATION_BASELINE.md",
-      "status": "CANONICAL"
-    },
-    {
-      "path": "docs/IMPLEMENTATION_CHECKLIST.md",
-      "status": "CANONICAL"
     },
     {
       "path": "docs/implementation/CORE_SLICE_001_FINAL_DISPOSITION.md",
@@ -1083,12 +1123,44 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/LEGACY_REFERENCE_POLICY.md",
-      "status": "OBSOLETE"
+      "path": "docs/performance-research/UNIFIED_SYSTEM_DESIGN.md",
+      "status": "CANONICAL"
     },
     {
-      "path": "docs/PRODUCT_SPEC.md",
+      "path": "docs/product-architecture/PRODUCT_ARCHITECTURE.md",
       "status": "CANONICAL"
+    },
+    {
+      "path": "docs/product-architecture/UI_NAVIGATION.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/product-planning/FEATURE_MASTER_CATALOG.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/product-planning/FINAL_PRODUCT_SCOPE.json",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/product-planning/FINAL_PRODUCT_SPEC.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/product-planning/REQUIREMENT_TRACEABILITY.md",
+      "status": "CANONICAL"
+    },
+    {
+      "path": "docs/production-prep/PR_DISPOSITION.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/REFERENCE_DECISIONS.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "docs/production-prep/VERIFICATION.md",
+      "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/production-prep/brush-verification.json",
@@ -1104,14 +1176,6 @@
     },
     {
       "path": "docs/production-prep/github-audit.json",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/PR_DISPOSITION.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/production-prep/REFERENCE_DECISIONS.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1135,15 +1199,7 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/production-prep/VERIFICATION.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
       "path": "docs/prototypes/P0_ARCHITECTURE_PROTOTYPE.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/REDESIGN_PRINCIPLES.md",
       "status": "OBSOLETE"
     },
     {
@@ -1289,16 +1345,12 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/SPECIFICATION_AUDIT_2026-09-27.md",
-      "status": "OBSOLETE"
-    },
-    {
-      "path": "docs/STATUS.md",
+      "path": "docs/roadmap/C01_C17_ROADMAP.md",
       "status": "CANONICAL"
     },
     {
       "path": "docs/ui/COMPACT_IMPLEMENTATION_BASELINE.md",
-      "status": "CANONICAL"
+      "status": "OBSOLETE"
     },
     {
       "path": "docs/ui/COMPACT_UI_SPEC.md",
@@ -1326,11 +1378,11 @@
     },
     {
       "path": "docs/ui/LEFT_UI_SPEC.md",
-      "status": "CANONICAL"
+      "status": "OBSOLETE"
     },
     {
       "path": "docs/ui/RIGHT_LAYER_PAGE_SPEC.md",
-      "status": "CANONICAL"
+      "status": "OBSOLETE"
     },
     {
       "path": "docs/ui/RIGHT_UI_FEATURE_COVERAGE.md",
@@ -1342,7 +1394,7 @@
     },
     {
       "path": "docs/ui/RIGHT_UI_SPEC.md",
-      "status": "CANONICAL"
+      "status": "OBSOLETE"
     },
     {
       "path": "docs/ui/RIGHT_WORKSPACE_BOX_TAXONOMY.md",
@@ -1361,15 +1413,15 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "docs/ui/UI_GATE_E.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "docs/ui/UI_GATE_E_VISUAL_BRIEF.md",
       "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/ui/UI_GATE_E_VISUAL_REVIEW_2026-09-29.md",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "docs/ui/UI_GATE_E.md",
       "status": "EXPERIMENTAL"
     },
     {
@@ -1389,12 +1441,12 @@
       "status": "EXPERIMENTAL"
     },
     {
-      "path": "docs/ui/UI_INPUT_CONTROL_STANDARD_VERIFICATION.json",
-      "status": "EXPERIMENTAL"
+      "path": "docs/ui/UI_INPUT_CONTROL_STANDARD.md",
+      "status": "OBSOLETE"
     },
     {
-      "path": "docs/ui/UI_INPUT_CONTROL_STANDARD.md",
-      "status": "CANONICAL"
+      "path": "docs/ui/UI_INPUT_CONTROL_STANDARD_VERIFICATION.json",
+      "status": "EXPERIMENTAL"
     },
     {
       "path": "docs/ui/UI_INPUT_CONTROL_VERIFICATION.json",
@@ -1426,11 +1478,19 @@
     },
     {
       "path": "docs/ui/WORKSPACE_VISUAL_CUSTOMIZATION_SPEC.md",
-      "status": "CANONICAL"
+      "status": "OBSOLETE"
     },
     {
       "path": "docs/ui/WORKSPACE_VISUAL_CUSTOMIZATION_VERIFICATION.json",
       "status": "EXPERIMENTAL"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/DESIGN.md",
+      "status": "ACCEPTED PROTOTYPE"
+    },
+    {
+      "path": "experiments/raster-region-lab-v01/README.md",
+      "status": "ACCEPTED PROTOTYPE"
     },
     {
       "path": "experiments/raster-region-lab-v01/browser-extension-verification.json",
@@ -1446,10 +1506,6 @@
     },
     {
       "path": "experiments/raster-region-lab-v01/build-html.py",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "experiments/raster-region-lab-v01/DESIGN.md",
       "status": "ACCEPTED PROTOTYPE"
     },
     {
@@ -1474,10 +1530,6 @@
     },
     {
       "path": "experiments/raster-region-lab-v01/raster-verification.json",
-      "status": "ACCEPTED PROTOTYPE"
-    },
-    {
-      "path": "experiments/raster-region-lab-v01/README.md",
       "status": "ACCEPTED PROTOTYPE"
     },
     {
@@ -1797,6 +1849,10 @@
       "status": "EXPERIMENTAL"
     },
     {
+      "path": "prototypes/p0-architecture/PROTOTYPE.md",
+      "status": "EXPERIMENTAL"
+    },
+    {
       "path": "prototypes/p0-architecture/index.html",
       "status": "EXPERIMENTAL"
     },
@@ -1806,10 +1862,6 @@
     },
     {
       "path": "prototypes/p0-architecture/playwright.config.ts",
-      "status": "EXPERIMENTAL"
-    },
-    {
-      "path": "prototypes/p0-architecture/PROTOTYPE.md",
       "status": "EXPERIMENTAL"
     },
     {
