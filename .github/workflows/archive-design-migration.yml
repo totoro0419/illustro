@@ -60,7 +60,9 @@ jobs:
             echo "Unrelated product or source files were modified"
             exit 1
           fi
-          git diff --cached --check
+          # Preserve the archive documents byte-for-byte, including legitimate Markdown line-break spaces.
+          # Only lint our newly authored canonical entrypoints for whitespace errors.
+          git diff --cached --check -- README.md docs/DESIGN_AUTHORITY.md docs/roadmap/C01_C17_ROADMAP.md docs/IMPLEMENTATION_BASELINE.md docs/CANONICAL_INDEX.md docs/CANONICAL_INDEX.json docs/migration/ARCHIVE_IMPORT_MANIFEST.json
           git diff --quiet HEAD -- apps packages prototypes qa public || {
             echo "Production application changed unexpectedly"
             exit 1
