@@ -13,9 +13,34 @@ for(const e of index.entries){assert.ok(statuses.has(e.status),e.path);assert.ok
   seen.add(e.path);byPath.set(e.path,e.status);assert.ok(fs.existsSync(e.path),'missing classified path '+e.path);}
 for(const p of Object.values(index.owners))assert.equal(byPath.get(p),'CANONICAL',p);
 function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
-for(const p of files('docs'))assert.ok(seen.has(p),'unclassified document '+p);
+// The 2026-11-12 archive import supersedes the original document inventory.
+ // Verify every imported file against its recorded bytes and SHA-256; do not silently
+ // permit arbitrary new docs or downgrade source-lock checks.
+const migration=JSON.parse(fs.readFileSync('docs/migration/ARCHIVE_IMPORT_MANIFEST.json','utf8'));
+assert.equal(migration.file_count,215,'archived design file count changed');
+assert.equal(migration.files.length,migration.file_count,'archived design manifest incomplete');
+const imported=new Set;
+for(const file of migration.files){
+ assert.ok(file.path.startsWith('docs/'),'archive import outside docs: '+file.path);
+ assert.ok(!imported.has(file.path),'duplicate imported path: '+file.path);
+ imported.add(file.path);
+ const bytes=fs.readFileSync(file.path);
+ assert.equal(bytes.length,file.bytes,'archive design size mismatch: '+file.path);
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256,'archive design changed: '+file.path);
+}
+const migrationSupportingDocs=new Set([
+ 'docs/migration/ARCHIVE_IMPORT_MANIFEST.json',
+ 'docs/migration/before-archive-2026-11-12/CANONICAL_INDEX.json',
+ 'docs/migration/before-archive-2026-11-12/CANONICAL_INDEX.md',
+ 'docs/migration/before-archive-2026-11-12/IMPLEMENTATION_BASELINE.md',
+ 'docs/migration/before-archive-2026-11-12/README.md',
+ 'docs/revival/M10_CLOSURE_2026-11-12.md',
+ 'docs/c01-c02/FEATURE_AUDIT.md',
+ 'docs/c01-c02/OFFICIAL_REFERENCE_REVIEW.md'
+]);
+for(const p of files('docs'))assert.ok(seen.has(p)||imported.has(p)||migrationSupportingDocs.has(p),'unclassified document '+p);
 assert.equal(new Set(Object.values(index.owners)).size,Object.values(index.owners).length,'duplicate canonical owner');
-assert.equal(index.authority,'docs/IMPLEMENTATION_BASELINE.md');
+assert.equal(index.authority,'docs/DESIGN_AUTHORITY.md','canonical authority must reflect adopted archive');
 for(const e of lock.artifacts){assert.equal(createHash('sha256').update(fs.readFileSync(e.path)).digest('hex'),e.sha256,'frozen artifact changed: '+e.path);}
 assert.ok(!fs.existsSync('docs/architecture/ADR-0005-lineart-region.md'),'obsolete Lineart ADR imported');
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
