@@ -59,9 +59,24 @@ try{
    assert.equal(await page.locator('#ihNewWidth').inputValue(),'100');
    assert.equal(await page.locator('#ihNewHeight').inputValue(),'150');
    await page.locator('#ihNewClose').click();
-   await page.locator('#openFile').setInputFiles({name:'Unit test artwork.illustro',mimeType:'application/octet-stream',buffer:content});
-   await page.waitForFunction(()=>!document.getElementById('brush')?.disabled&&document.getElementById('canvas')?.dataset.documentName==='Unit test artwork',null,{timeout:90000});
-   const restored=await page.locator('#canvas').evaluate(canvas=>({width:canvas.dataset.documentWidth,height:canvas.dataset.documentHeight,dpi:canvas.dataset.documentDpi,name:canvas.dataset.documentName}));
+   // Reopen in a fresh browser profile: importing an existing work with the same document ID
+   // is a distinct library-conflict workflow and must not mask native file portability.
+   const restoredContext=await browser.newContext({acceptDownloads:true,viewport:{width:1400,height:850},deviceScaleFactor:2});
+   let restored;
+   try{
+    const reopened=await restoredContext.newPage(),reopenedErrors=[];
+    reopened.on('pageerror',error=>reopenedErrors.push(error.message));
+    await reopened.goto('http://127.0.0.1:'+server.address().port+'/?backend='+backend);
+    await reopened.locator('#openFile').setInputFiles({name:'Unit test artwork.illustro',mimeType:'application/octet-stream',buffer:content});
+    try{
+     await reopened.waitForFunction(()=>!document.getElementById('brush')?.disabled&&document.getElementById('canvas')?.dataset.documentName==='Unit test artwork',null,{timeout:90000});
+    }catch(error){
+     const state=await reopened.evaluate(()=>({status:document.getElementById('status')?.textContent,documentName:document.getElementById('canvas')?.dataset.documentName,home:document.querySelector('[data-ih-screen]:not([hidden])')?.getAttribute('data-ih-screen')}));
+     throw Error('Native file import did not open: '+JSON.stringify({backend,state,reopenedErrors})+' '+String(error));
+    }
+    restored=await reopened.locator('#canvas').evaluate(canvas=>({width:canvas.dataset.documentWidth,height:canvas.dataset.documentHeight,dpi:canvas.dataset.documentDpi,name:canvas.dataset.documentName}));
+    assert.deepEqual(reopenedErrors,[]);
+   }finally{await restoredContext.close();}
    assert.deepEqual(restored,{width:'100',height:'150',dpi:'100',name:'Unit test artwork'});
    assert.deepEqual(pageErrors,[],'no unhandled browser errors on '+backend);
    checks.push({backend,created:initial,restored,nativeBytes:content.byteLength,templatePersisted:true,pageErrors});
