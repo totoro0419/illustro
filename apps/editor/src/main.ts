@@ -311,6 +311,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
   return eraser?.blend==='erase'?(inputPreferences.eraserSizeLink&&active?{...eraser,size:active.size}:eraser):null;
  };
  applyInputPreferences(drawing);
+ drawing.onSelectionChanged=()=>{if(surface===drawing)refreshSelectionControls();};
  drawing.setGuideSettings(guidePreferences);
  drawing.setCommonStabilization(commonStabilization);
  drawing.setPressureCalibration(devicePressureSensitivity);
@@ -425,6 +426,17 @@ byId('panView').onclick=()=>{
 };
 const shellUi=installShellUi(),workspace=shellUi.workspace;
 const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b])});
+function refreshSelectionControls(){
+ const selecting=surface?.selectingRectangle??false;
+ const rectangle=surface?.selectedRectangle;
+ byId<HTMLButtonElement>('selection').setAttribute('aria-pressed',String(selecting));
+ byId<HTMLButtonElement>('selectionStart').textContent=selecting?'選択範囲を描いてください':'四角く範囲を選ぶ';
+ byId<HTMLButtonElement>('selectionClear').disabled=!rectangle;
+ byId<HTMLElement>('selectionStatus').textContent=selecting
+   ?'キャンバス上をドラッグして範囲を作成してください。'
+   :rectangle?'範囲を設定しました。ブラシまたは消しゴムで内側に描けます。'
+   :'選択範囲なし。キャンバス全体に描けます。';
+}
 function reflectRailTool(){for(const [id,active] of [['paint',selectedTool==='brush'],['erase',selectedTool==='eraser'],['eyedropper',selectedTool==='eyedropper']] as const)byId(id).setAttribute('aria-pressed',String(active));}
 function activateEyedropper(){if(!surface||!documentReady)return;surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');if(selectedTool!=='eyedropper')lastDrawingTool=selectedTool==='eraser'?'eraser':'brush';eyedropperOriginal=foreground.current;selectedTool='eyedropper';surface.setEyedropper(true,byId<HTMLSelectElement>('colorSampleSource').value as 'composite'|'layer');reflectRailTool();byId('status').textContent='キャンバスに触れて、取りたい色を選んでください。';updateQa();}
 let holdingColorKey=false,releasedColorHold=false;
@@ -933,6 +945,7 @@ function refreshBrushCatalog(selectId?:string){
 }
 function selectPreset(id:string){
  if(!surface)return;
+ surface.setSelectionMode(false);
  surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');
  surface.setEyedropper(false);surface.selectById(id);brushUsage.markUsed(surface.brushId);
  const pending=brushDrafts.get(id);if(pending)surface.applyPreset(pending);
@@ -1147,6 +1160,20 @@ byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.force
  };
 }
 byId('erase').onclick=()=>selectPreset(lastEraserPresetId);byId('paint').onclick=()=>selectPreset(lastBrushPresetId);
+function toggleSelectionMode(){
+ if(!surface||!documentReady)return;
+ if(selectedTool==='eyedropper')restoreDrawingTool();
+ surface.setEyedropper(false);
+ surface.panTool=false;byId<HTMLButtonElement>('panView').setAttribute('aria-pressed','false');
+ surface.setSelectionMode(!surface.selectingRectangle);
+}
+byId<HTMLButtonElement>('selection').onclick=toggleSelectionMode;
+byId<HTMLButtonElement>('selectionStart').onclick=toggleSelectionMode;
+byId<HTMLButtonElement>('selectionClear').onclick=()=>{
+ surface?.clearRectangleSelection();
+ if(surface)byId<HTMLElement>('status').textContent='選択範囲を解除しました。';
+};
+refreshSelectionControls();
 
 byId<HTMLButtonElement>('open').onclick=()=>{if(homeUi&&!qaMode){homeUi.showNew('file');return;}byId<HTMLInputElement>('openFile').click();};
 byId<HTMLInputElement>('openFile').onchange=async e=>{
