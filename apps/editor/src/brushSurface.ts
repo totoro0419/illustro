@@ -41,6 +41,7 @@ export class BrushSurface{
   eraserPreset:()=>FoundationPreset|null=()=>null;
   private suppressedTouches=new Set<number>();
   private commonStabilization=0.25;
+  private pressureCalibrationMidpoint=0.5;
   private guideSettings:GuideSettings=DEFAULT_GUIDE_SETTINGS;
   private activeGuide:LockedGuide|null=null;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'view-command'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
@@ -129,6 +130,7 @@ export class BrushSurface{
   /** BRU-010: settings are snapshotted when a stroke starts. */
   setGuideSettings(settings:GuideSettings){this.guideSettings=normalizeGuideSettings(settings);this.updateGuideOverlay();}
   setCommonStabilization(strength:number){if(Number.isFinite(strength))this.commonStabilization=Math.min(1,Math.max(0,strength));}
+  setPressureCalibration(midpoint:number){if(Number.isFinite(midpoint))this.pressureCalibrationMidpoint=Math.min(1,Math.max(0,midpoint));}
   private updateGuideOverlay(){
     let overlay=this.inputViewport.querySelector<SVGSVGElement>('.illustro-straight-guide');
     const guide=this.activeGuide,v=this.view;
@@ -188,7 +190,8 @@ export class BrushSurface{
       this.activeGuide=lockStraightGuide({x:origin.x-(this.wrapOrigin?.x??0),y:origin.y-(this.wrapOrigin?.y??0)},this.guideSettings,preset.blend==='erase',e.shiftKey);
       this.updateGuideOverlay();
       this.renderer?.setSeamlessPreview(this.view.seamless);
-      this.activeStrokeId=this.session.begin(preset,0,preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{},this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
+      const context={...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})};
+      this.activeStrokeId=this.session.begin(preset,0,context,this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'&&this.navigation?.touchMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
      if(this.navigation?.mouseMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
