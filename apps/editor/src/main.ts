@@ -76,7 +76,7 @@ try{
     if(typeof saved?.[key]==='boolean')inputPreferences[key]=saved[key];
 }catch{/* Defaults remain available if preferences cannot be read. */}
 let commonStabilization=0.25;
-try{const saved=Number(localStorage.getItem('illustro.common-stabilization.v1'));if(Number.isFinite(saved)&&saved>=0&&saved<=1)commonStabilization=saved;}catch{}
+try{const raw=localStorage.getItem('illustro.common-stabilization.v1');if(raw!==null){const saved=Number(raw);if(Number.isFinite(saved)&&saved>=0&&saved<=1)commonStabilization=saved;}}catch{}
 let guidePreferences:GuideSettings=DEFAULT_GUIDE_SETTINGS;
 try{
  const saved=JSON.parse(localStorage.getItem('illustro.guide-settings.v1')??'null') as Partial<GuideSettings>|null;
