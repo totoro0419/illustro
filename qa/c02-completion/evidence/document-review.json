@@ -1,5 +1,5 @@
 {
-  "commit": "99ba87df6f49c1f9cd9e8514e9745c8fef68295f",
+  "commit": "ef3926ef3d2302fa812f8558e5e14e1f58bfaa48",
   "cases": [
     {
       "backend": "webgl2",
@@ -11,7 +11,9 @@
       "dpi": 600,
       "undoRedo": true,
       "saveCopy": true,
-      "template": true
+      "template": true,
+      "viewRestore": true,
+      "brushImages": true
     },
     {
       "backend": "webgpu",
@@ -23,7 +25,9 @@
       "dpi": 600,
       "undoRedo": true,
       "saveCopy": true,
-      "template": true
+      "template": true,
+      "viewRestore": true,
+      "brushImages": true
     }
   ]
 }
