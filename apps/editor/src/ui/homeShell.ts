@@ -338,6 +338,9 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   templatePicker.addEventListener('change',()=>{
     const template=listCreationTemplates(templateStore).find(x=>x.name===templatePicker.value);
     if(!template)return;
+    // Stored templates retain exact pixel dimensions even if the dialog was in mm mode.
+    currentUnit='px';el<HTMLSelectElement>('ihNewUnit').value='px';
+    for(const id of ['ihNewWidth','ihNewHeight']){const input=el<HTMLInputElement>(id);input.step='1';input.min='1';input.max='8192';}
     el<HTMLInputElement>('ihNewDpi').value=String(template.dpi);
     el<HTMLSelectElement>('ihNewBackground').value=template.background;
     setFromPixels(template.width,template.height);
