@@ -4,10 +4,10 @@ import {additionalBrushes} from './brushStarterPresets';
 import {addSimpleMapping,changeSimpleMapping,removeSimpleMapping,isSimpleMapping} from './brushDynamics';
 
 describe('M10 protected quality baseline and new controls',()=>{
- it('preserves the seven original Foundation brushes while adding three ready-to-use presets',()=>{
+ it('preserves the seven original Foundation brushes while adding additional ready-to-use presets',()=>{
   const before=structuredClone(referenceBrushes),extra=additionalBrushes(referenceBrushes);
-  expect(extra.map(p=>p.id)).toEqual(['illustro-fine-liner-v1','illustro-soft-pencil-v1','illustro-opaque-marker-v1']);
-  expect(new Set([...referenceBrushes,...extra].map(p=>p.id)).size).toBe(10);
+  expect(extra.map(p=>p.id)).toEqual(['illustro-fine-liner-v1','illustro-soft-pencil-v1','illustro-opaque-marker-v1','illustro-airbrush-v1']);
+  expect(new Set([...referenceBrushes,...extra].map(p=>p.id)).size).toBe(11);
   for(const p of extra)expect(()=>compilePreset(p,{forceFadeGeometry:'adaptive-v1'})).not.toThrow();
   expect(referenceBrushes).toEqual(before);
  });
@@ -76,4 +76,18 @@ it('uses the renderer for distance-controlled size and reversible color dynamics
  };
  expect(draw(colored)).not.toEqual(draw(reversed));
  expect(draw(sized)).not.toEqual(draw(base));
+});
+
+it('renders the airbrush with a soft edge and stronger coverage after overlapping dabs',()=>{
+ const preset=additionalBrushes(referenceBrushes).find(brush=>brush.id==='illustro-airbrush-v1')!;
+ const draw=(samples:number)=>{
+  const builder=new CanonicalBuilder(preset,[1,2],0);
+  for(let i=0;i<samples;i++)builder.accept({x:44+i*8,y:72,t:i*9,pointerType:'mouse'});
+  builder.finish();
+  return cpuReference(builder.record(),150,150);
+ };
+ const dab=draw(1),line=draw(8),alpha=(pixels:Uint8Array|Uint8ClampedArray,x:number,y:number)=>pixels[(y*150+x)*4+3]!;
+ expect(alpha(dab,44,72)).toBeGreaterThan(alpha(dab,44,100));
+ expect(alpha(dab,44,100)).toBeGreaterThan(0);
+ expect(alpha(line,68,72)).toBeGreaterThan(alpha(dab,44,72));
 });
