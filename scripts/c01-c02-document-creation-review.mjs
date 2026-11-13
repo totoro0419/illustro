@@ -34,6 +34,7 @@ try{
    await page.locator('#ihNewWidth').fill('25.4');
    await page.locator('#ihNewHeight').fill('38.1');
    await page.locator('#ihNewName').fill('Unit test artwork');
+   await page.locator('#ihNewAuthor').evaluate(el=>{const details=el.closest('details');if(details)details.open=true;});
    await page.locator('#ihNewAuthor').fill('Sample author');
    await page.locator('#ihNewDescription').fill('Printed at 100 DPI');
    assert.match(await page.locator('#ihPixelPreview').textContent(),/100 × 150 px · 100 DPI/);
