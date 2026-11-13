@@ -75,6 +75,8 @@ try{
   for(const key of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[])
     if(typeof saved?.[key]==='boolean')inputPreferences[key]=saved[key];
 }catch{/* Defaults remain available if preferences cannot be read. */}
+let commonStabilization=0.25;
+try{const saved=Number(localStorage.getItem('illustro.common-stabilization.v1'));if(Number.isFinite(saved)&&saved>=0&&saved<=1)commonStabilization=saved;}catch{}
 let guidePreferences:GuideSettings=DEFAULT_GUIDE_SETTINGS;
 try{
  const saved=JSON.parse(localStorage.getItem('illustro.guide-settings.v1')??'null') as Partial<GuideSettings>|null;
@@ -308,6 +310,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  };
  applyInputPreferences(drawing);
  drawing.setGuideSettings(guidePreferences);
+ drawing.setCommonStabilization(commonStabilization);
  return drawing;
 }
 function applyInputPreferences(drawing:BrushSurface){
@@ -466,6 +469,7 @@ function syncPreset(){
   const numeric=document.getElementById(id+'Number') as HTMLInputElement|null;
   if(numeric&&document.activeElement!==numeric)numeric.value=String(Math.round(value*100));
  }
+ byId<HTMLSelectElement>('brushStabilizationScope').value=p.stabilization.scope;
  byId<HTMLInputElement>('brushAzimuth').checked=p.tip.azimuth;
  byId<HTMLInputElement>('brushTwist').checked=p.tip.twist;
  const user=brushPresets.isUser(p.id);
@@ -967,6 +971,19 @@ const brushHooks={
 };
 advancedBrushEditor=installBrushAdvancedEditor(brushHooks);
 dynamicsEditor=installBrushDynamicsEditor(brushHooks);
+byId<HTMLSelectElement>('brushStabilizationScope').onchange=event=>{
+ const choice=(event.target as HTMLSelectElement).value;
+ if(!applyBrushChange(p=>{p.stabilization.scope=choice==='common'?'common':'brush';}))syncPreset();
+};
+const commonStabilizationInput=byId<HTMLInputElement>('commonStabilization');
+commonStabilizationInput.value=String(Math.round(commonStabilization*100));
+byId<HTMLOutputElement>('commonStabilizationValue').textContent=Math.round(commonStabilization*100)+'%';
+commonStabilizationInput.oninput=()=>{
+ commonStabilization=Math.max(0,Math.min(1,Number(commonStabilizationInput.value)/100));
+ byId<HTMLOutputElement>('commonStabilizationValue').textContent=Math.round(commonStabilization*100)+'%';
+ surface?.setCommonStabilization(commonStabilization);
+ try{localStorage.setItem('illustro.common-stabilization.v1',String(commonStabilization));}catch{}
+};
 byId<HTMLButtonElement>('brushReset').onclick=()=>{
  const current=surface?.preset;if(!current||surface?.inputActive)return;
  brushDrafts.delete(current.id);
