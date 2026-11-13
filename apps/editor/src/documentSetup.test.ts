@@ -2,7 +2,9 @@ import {expect,it} from 'vitest';
 import {resolveDocumentDimensions,pixelToMillimeters,listCreationTemplates,storeCreationTemplate,removeCreationTemplate} from './documentSetup';
 it('converts A4 millimeter values to precise pixel dimensions',()=>{
  expect(resolveDocumentDimensions(210,297,'mm',300)).toEqual({width:2480,height:3508,dpi:300});
- expect(pixelToMillimeters(2480,300)).toBe(209.97);
+ expect(pixelToMillimeters(2480,300)).toBeCloseTo(2480*25.4/300,5);
+ expect(resolveDocumentDimensions(pixelToMillimeters(8191,2400),pixelToMillimeters(384,2400),'mm',2400))
+  .toEqual({width:8191,height:384,dpi:2400});
 });
 it('rejects silent truncation and invalid documents',()=>{
  expect(()=>resolveDocumentDimensions(1.5,30,'px',72)).toThrow();

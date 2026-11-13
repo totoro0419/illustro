@@ -8,6 +8,7 @@ export class CanvasNavigation {
  private pair:{center:Point;distance:number;angle:number}|null=null;
  private wheelTimer:number|null=null;
  private gestureActive=false;
+ snapRotation=false;
  constructor(private view:CanvasView,private start:()=>void,private changed:()=>void,private finish:()=>void){}
  get active(){return this.gestureActive;}
  get touching(){return this.touches.size>0;}
@@ -45,6 +46,7 @@ export class CanvasNavigation {
   return false;
  }
  touchUp(id:number){
+  if(!this.touches.has(id))return;
   const wasActive=this.gestureActive;this.touches.delete(id);
   if(this.touches.size>=2){this.pair=this.pairOf();return;}
   this.pair=null;
@@ -52,7 +54,16 @@ export class CanvasNavigation {
    const [remaining,point]=this.touches.entries().next().value as [number,Point];
    this.pan={id:remaining,point};return;
   }
-  this.pan=null;if(this.touches.size===0)this.end();
+  this.pan=null;if(this.touches.size===0){
+   if(wasActive&&this.snapRotation){
+    const angle=this.view.rotation,quarterTurn=Math.PI/2;
+    const nearest=Math.round(angle/quarterTurn)*quarterTurn;
+    if(Math.abs(nearest-angle)<=Math.PI/36&&nearest!==angle){
+     this.view.setRotation(nearest);this.changed();
+    }
+   }
+   this.end();
+  }
  }
  mouseDown(id:number,point:Point){this.pan={id,point};this.begin();}
  mouseMove(id:number,point:Point){

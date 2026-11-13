@@ -11,7 +11,7 @@ export function resolveDocumentDimensions(width:number,height:number,unit:Docume
  if(!Number.isSafeInteger(w)||!Number.isSafeInteger(h)||w<1||h<1||w>8192||h>8192)throw new Error('換算後の幅と高さを1〜8192pxにしてください。');
  return {width:w,height:h,dpi};
 }
-export function pixelToMillimeters(px:number,dpi:number){return Math.round(px*25.4/dpi*100)/100;}
+export function pixelToMillimeters(px:number,dpi:number){return Math.round(px*25.4/dpi*1e6)/1e6;}
 export type CreationTemplate=Readonly<DocumentDimensions&{name:string;background:'white'|'transparent'}>;
 const STORAGE_KEY='illustro.creation-templates.v1';
 type TemplateStore=Pick<Storage,'getItem'|'setItem'>;

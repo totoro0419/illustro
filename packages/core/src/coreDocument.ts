@@ -1,6 +1,6 @@
 import {cryptoIdFactory,type IdFactory,type LayerId,type RevisionId,type WriterEpochId} from './ids';
 import {RevisionHistory,type Command} from './history';
-import {DocumentRoot,rasterLayer} from './model';
+import {DocumentRoot,rasterLayer,validateDocumentInfo} from './model';
 import {PagedMap} from './pagedMap';
 import {blockPayloadsForSnapshot,captureCoreRecoveryPacket,captureCoreSnapshot,parseCoreSnapshot,restoreBlocks,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from './persistence';
 import {CanonicalTileStore,type OwnershipTransfer} from './raster/store';
@@ -21,9 +21,15 @@ export class CoreDocument{
       const parsed=parseCoreSnapshot(o.snapshot,o.blockPayloads,this.idsValue);restoreBlocks(this.storeValue,o.snapshot,o.blockPayloads);this.historyValue=RevisionHistory.hydrate(parsed.history,this.idsValue);this.defaultRasterLayerId=parsed.defaultRasterLayerId;
       const first=this.root.getLayer(this.defaultRasterLayerId),sampleEncoding=first.surface.descriptor.sampleEncoding;this.tileBytes=CANONICAL_TILE_SIZE*CANONICAL_TILE_SIZE*bytesPerPixel(sampleEncoding);return;
     }
-    validSize(o.width);validSize(o.height);if(o.dpi!==undefined&&(!Number.isSafeInteger(o.dpi)||o.dpi<1||o.dpi>2400))throw new Error('invalid document dpi');if(o.author!==undefined&&(o.author.length>160||/[\u0000-\u001f]/.test(o.author)))throw new Error('invalid document author');if(o.description!==undefined&&(o.description.length>2000||/[\u0000-\u001f]/.test(o.description)))throw new Error('invalid document description');const sampleEncoding=o.sampleEncoding??'rgba.unorm8.v1';this.tileBytes=CANONICAL_TILE_SIZE*CANONICAL_TILE_SIZE*bytesPerPixel(sampleEncoding);
+    validSize(o.width);validSize(o.height);const sampleEncoding=o.sampleEncoding??'rgba.unorm8.v1';this.tileBytes=CANONICAL_TILE_SIZE*CANONICAL_TILE_SIZE*bytesPerPixel(sampleEncoding);
     const id=this.idsValue.layer(),plain=rasterLayer(id,this.idsValue.surface(),o.colorProfileId??'srgb',sampleEncoding,'Layer 1'),layer=o.blankBackground==='white'?Object.freeze({...plain,name:'背景',baseColor:'white' as const}):plain,e=PagedMap.empty<LayerId,typeof layer>().edit();e.set(id,layer);
-    const now=this.clockValue(),root=new DocumentRoot(this.idsValue.document(),o.width,o.height,o.name??'Untitled',o.colorProfileId??'srgb',e.commit(),[id],{createdAt:now,modifiedAt:now,...(o.dpi!==undefined?{dpi:o.dpi}:{}),...(o.author?{author:o.author}:{}),...(o.description?{description:o.description}:{})});this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.idsValue,now);
+    const now=this.clockValue(),name=o.name??'Untitled';
+    const info=o.dpi!==undefined||o.author!==undefined||o.description!==undefined
+      ?validateDocumentInfo({name,author:o.author??'',description:o.description??'',dpi:o.dpi??null}):null;
+    const root=new DocumentRoot(this.idsValue.document(),o.width,o.height,info?.name??name,o.colorProfileId??'srgb',e.commit(),[id],
+      {createdAt:now,modifiedAt:now,...(info?.author?{author:info.author}:{}),
+       ...(info?.description?{description:info.description}:{}),...(info?.dpi?{dpi:info.dpi}:{})});
+    this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.idsValue,now);
   }
   static restore(options:CoreRestoreOptions){return new CoreDocument(options);}
   get root(){return this.historyValue.current.root;}get head(){return this.historyValue.head;}get revisionCount(){return this.historyValue.count;}get currentRevision(){return this.historyValue.current;}

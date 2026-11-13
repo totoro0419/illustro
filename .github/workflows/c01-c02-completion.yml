@@ -43,7 +43,9 @@ jobs:
           /tmp/c01-c02-browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Verify real new-document UI, templates and native save/reopen on WebGL2 and WebGPU
         env: {C01_DOCUMENT_BROWSER_EVIDENCE: /tmp/c01-c02-evidence/document-creation.json}
-        run: node scripts/c01-c02-document-creation-review.mjs
+        run: |
+          node scripts/c01-c02-document-creation-review.mjs
+          node scripts/c01-c02-document-review.mjs
       - name: Test favorites and recent brushes in real browser
         env: {C01_C02_BROWSER_EVIDENCE: /tmp/c01-c02-evidence/brush-usage.json}
         run: node scripts/c01-c02-brush-usage-review.mjs
