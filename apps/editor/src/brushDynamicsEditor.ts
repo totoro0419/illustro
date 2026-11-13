@@ -1,19 +1,21 @@
 import type {FoundationPreset} from '@illustro/brush-rt';
-import {addSimpleMapping,changeSimpleMapping,isSimpleMapping,removeSimpleMapping,simpleSources,simpleTargets,type SimpleSource,type SimpleTarget} from './brushDynamics';
+import {addSimpleMapping,changeSimpleMapping,isAngularTarget,isSimpleMapping,removeSimpleMapping,simpleSources,simpleTargets,type SimpleSource,type SimpleTarget} from './brushDynamics';
 
 type Hooks={
  getPreset:()=>FoundationPreset|null;
  edit:(change:(draft:FoundationPreset)=>void)=>boolean;
  message:(value:string)=>void;
 };
-const sourceLabel:Record<SimpleSource,string>={pressure:'筆圧',velocity:'ペンの速さ',tilt:'ペンの傾き'};
-const targetLabel:Record<SimpleTarget,string>={size:'太さ',opacity:'濃さ',flow:'塗りの量'};
+const sourceLabel:Record<SimpleSource,string>={pressure:'筆圧',velocity:'ペンの速さ',tilt:'ペンの傾き',azimuth:'ペンの向き',twist:'ペンのひねり',direction:'線の向き',distance:'描いた距離',time:'経過時間',random:'ランダム'};
+const targetLabel:Record<SimpleTarget,string>={size:'太さ',opacity:'濃さ',flow:'塗りの量',spacing:'間隔',rotation:'先端の角度',aspect:'先端の縦横比',scatter:'散らばる範囲',density:'粒の密度',grain:'紙の質感',hue:'色相',saturation:'彩度',value:'明度'};
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T|null;
 
 export function installBrushDynamicsEditor(hooks:Hooks):{sync:(p:FoundationPreset)=>void}{
  const list=byId<HTMLDivElement>('brushDynamicsList');
  const addSource=byId<HTMLSelectElement>('brushDynamicsSource');
  const addTarget=byId<HTMLSelectElement>('brushDynamicsTarget');
+ if(addSource)addSource.replaceChildren(...simpleSources.map(value=>new Option(sourceLabel[value],value)));
+ if(addTarget)addTarget.replaceChildren(...simpleTargets.map(value=>new Option(targetLabel[value],value)));
  const apply=(change:(p:FoundationPreset)=>FoundationPreset)=>{
   const current=hooks.getPreset();if(!current)return;
   if(!hooks.edit(draft=>{
@@ -49,15 +51,21 @@ export function installBrushDynamicsEditor(hooks:Hooks):{sync:(p:FoundationPrese
    row.append(source,target);
    for(const [field,label] of [['min','最小'],['max','最大']] as const){
     const wrapper=document.createElement('label');wrapper.textContent=label+' ';
-    const input=document.createElement('input');input.type='number';input.min='0';input.max='100';input.step='1';
-    input.value=String(Math.round(m[field]*100));input.setAttribute('aria-label',label+'の反応 '+(index+1));
+    const angular=isAngularTarget(m.target),scale=m.target==='rotation'?180/Math.PI:m.target==='hue'?360:100;
+    const maximum=angular?360:100;
+    const input=document.createElement('input');input.type='number';input.min='0';input.max=String(maximum);input.step='0.1';
+    input.value=String(Math.round(m[field]*scale*10)/10);input.setAttribute('aria-label',label+'の反応 '+(index+1));
     input.addEventListener('change',()=>{
      const v=Number(input.value);
-     if(!input.value||!Number.isFinite(v)||v<0||v>100){hooks.message('0〜100%で指定してください');sync(hooks.getPreset()??p);return;}
-     apply(p=>changeSimpleMapping(p,index,{[field]:v/100}));
+     if(!input.value||!Number.isFinite(v)||v<0||v>maximum){hooks.message('0〜'+maximum+(angular?'°':'%')+'で指定してください');sync(hooks.getPreset()??p);return;}
+     apply(p=>changeSimpleMapping(p,index,{[field]:v/scale}));
     });
-    wrapper.append(input,'%');row.append(wrapper);
+    wrapper.append(input,angular?'°':'%');row.append(wrapper);
    }
+   const reverse=document.createElement('button');reverse.type='button';reverse.textContent='反応を反転';
+   reverse.setAttribute('aria-label','反応設定 '+(index+1)+' の強弱を反転');
+   reverse.addEventListener('click',()=>apply(p=>changeSimpleMapping(p,index,{curve:m.curve.map(([x,y])=>[x,1-y] as const)})));
+   row.append(reverse);
    const remove=document.createElement('button');remove.type='button';remove.textContent='削除';
    remove.setAttribute('aria-label','反応設定 '+(index+1)+' を削除');
    remove.addEventListener('click',()=>apply(p=>removeSimpleMapping(p,index)));

@@ -62,3 +62,18 @@ describe('M10 protected quality baseline and new controls',()=>{
   expect(thickness.every(n=>Number.isFinite(n)&&(n??0)>0)).toBe(true);
  });
 });
+
+it('uses the renderer for distance-controlled size and reversible color dynamics',()=>{
+ const base=structuredClone(referenceBrushes.find(brush=>brush.id==='foundation-round-pen')!);
+ const sized=addSimpleMapping(base,'distance','size'),colored=addSimpleMapping(sized,'direction','hue');
+ const index=colored.dynamics.length-1;
+ const reversed=changeSimpleMapping(colored,index,{curve:[[0,1],[1,0]]});
+ const draw=(preset:typeof base)=>{
+  const builder=new CanonicalBuilder(preset,[19,42],0,{forceFadeGeometry:'adaptive-v1'});
+  for(let i=0;i<9;i++)builder.accept({x:20+i*12,y:20+i*3,t:i*8,pointerType:'pen',pressure:.8});
+  builder.finish();
+  return cpuReference(builder.record(),160,80);
+ };
+ expect(draw(colored)).not.toEqual(draw(reversed));
+ expect(draw(sized)).not.toEqual(draw(base));
+});

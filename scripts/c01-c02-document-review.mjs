@@ -86,8 +86,14 @@ try{
         const restored=await reopened.newPage();
         await restored.goto(origin+'/?backend='+backend,{waitUntil:'domcontentloaded'});
         await restored.locator('#openFile').setInputFiles({name:'Review.illustro',mimeType:'application/octet-stream',buffer:Buffer.from(bytes)});
-        await restored.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1'&&
-          document.getElementById('status')?.textContent?.includes('作品ファイルを開きました'),null,{timeout:60_000});
+        try{
+          await restored.waitForFunction(()=>document.getElementById('canvas')?.dataset.committedStrokes==='1'&&
+            document.getElementById('app')?.inert===false,null,{timeout:40_000});
+        }catch(error){
+          const state=await restored.evaluate(()=>({status:document.getElementById('status')?.textContent,
+            notice:document.getElementById('ihNotice')?.textContent,strokes:document.getElementById('canvas')?.dataset.committedStrokes}));
+          throw new Error(JSON.stringify(state),{cause:error});
+        }
         await restored.locator('#documentInfoOpen').evaluate(button=>button.click());
         assert.equal(await restored.locator('#documentInfoAuthor').inputValue(),'Artist');
         assert.equal(await restored.locator('#documentInfoDpi').inputValue(),'600');

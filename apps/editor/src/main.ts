@@ -96,6 +96,7 @@ type BlankWarmup={
   started:number;
 };
 let initialBlankWarmup:BlankWarmup|null=null;
+let documentActivationPending=false;
 // Keep the original editable raster background and the top drawing layer in the
 // Core document. Only the initial GPU upload differs from normal saved-work replay.
 function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description=''){
@@ -118,7 +119,7 @@ function reportBlankWarmup(state:string,detail='',background:'transparent'|'whit
 }
 function beginBlankWarmup(width=512,height=384,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description=''){
   const title=name.trim()||'新しい作品';
-  if(qaMode||documentReady||byId<HTMLButtonElement>('new').disabled||
+  if(qaMode||documentReady||documentActivationPending||byId<HTMLButtonElement>('new').disabled||
       !Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)return;
   const active=initialBlankWarmup,root=active?.controller.document.root;
   if(active&&!active.cancelled&&active.background===background&&root?.width===width&&root.height===height&&root.name===title&&root.metadata.dpi===dpi&&(root.metadata.author??'')===author&&(root.metadata.description??'')===description)return;
@@ -652,7 +653,9 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
   syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);renderLayers();documentReady=true;updateHistoryButtons();
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
-  const previous=controller,previousPreserved=persistence.preservedData,wasReady=documentReady;documentReady=false;
+  if(documentActivationPending)throw new Error('別の作品を開いています。');
+  const previous=controller,previousPreserved=persistence.preservedData,wasReady=documentReady;
+  documentActivationPending=true;documentReady=false;
   // A NEW work has no dependency between the GPU worker and the storage
   // worker. Start storage during GPU initialization, but do not expose input
   // before BOTH have finished. Other open/recovery paths stay unchanged.
@@ -715,7 +718,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     surface?.destroy();const snapshot=previous.document.capturePersistenceSnapshot();controller=EditorController.restored(CoreDocument.restore({snapshot,blockPayloads:previous.document.persistenceBlockPayloads(snapshot)}),previous.selectedLayerId);surface=makeSurface();documentReady=false;
     if(wasReady){try{await initializeCurrentSurface(true);await persistence.initialize(controller,null,previousPreserved,false);const current=(await persistence.listWorks()).works.find(x=>x.documentId===controller.document.root.documentId);if(!qaMode)await persistence.bindWork(current?.writerEpochId??null);}catch{}}
     throw error;
-  }
+  }finally{documentActivationPending=false;}
 }
 async function activateFirstPrewarmedBlank(entry:BlankWarmup){
   // All resources belong to the exact document that was initialized on Home.
@@ -1053,7 +1056,11 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
         opened=copyOpened(opened,opened.document.root.name+'（読み込み）');
       }
     }
-    await activateOpened(opened,false);if(!qaMode){await createWorkThumbnail();await refreshWorks();}byId('status').textContent='作品ファイルを開きました。自動保存を開始しました。';homeUi?.showEditor();}
+    await activateOpened(opened,false);
+    byId('status').textContent='作品ファイルを開きました。自動保存を開始しました。';
+    homeUi?.showEditor();
+    if(!qaMode){scheduleWorkThumbnail();void refreshWorks();}
+  }
   catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);}
   updateQa();
 };
