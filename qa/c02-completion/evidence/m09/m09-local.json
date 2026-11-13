@@ -1,5 +1,5 @@
 {
-  "commit": "ef3926ef3d2302fa812f8558e5e14e1f58bfaa48",
+  "commit": "3a5149b7637844e8eaf8cba40422c8475084ea48",
   "target": "local",
   "cases": [
     {
@@ -36,7 +36,7 @@
           }
         },
         "milestone": "M09",
-        "commit": "ef3926ef3d2302fa812f8558e5e14e1f58bfaa48",
+        "commit": "3a5149b7637844e8eaf8cba40422c8475084ea48",
         "backend": "WebGL2",
         "backendSelection": {
           "requested": "webgl2",
@@ -60,9 +60,9 @@
         "eraserType": null,
         "size": 64,
         "layerCount": 1,
-        "selectedLayerId": "e3895691-7c02-4a8c-9597-415764738987",
+        "selectedLayerId": "df734ddc-4321-4125-9a2a-2a9535ef8da1",
         "selectedLayerName": "Layer 1",
-        "currentRevision": "d82546d9-0fbe-49e1-9933-f2a7b75c06bd",
+        "currentRevision": "1ce586b1-386d-4340-b2d0-25945aac7a78",
         "canUndo": true,
         "canRedo": false,
         "seamlessCopyCount": 0,
@@ -83,11 +83,11 @@
         "presentationAlpha": false,
         "presentationDesynchronized": false,
         "presentationFrames": 48,
-        "presentationLastAt": 3918.2000000000116,
+        "presentationLastAt": 4595,
         "projectionRestoreMs": 0,
         "projectionRestoreMode": "none",
         "projectionCacheRevision": null,
-        "browserPredictionSamples": 25,
+        "browserPredictionSamples": 28,
         "lastInputTarget": "button",
         "lastInputType": "mouse",
         "lastInputPoint": "1243,829",
@@ -109,22 +109,22 @@
         },
         "layers": [
           {
-            "id": "e3895691-7c02-4a8c-9597-415764738987",
-            "surfaceId": "c650585c-f965-4126-8f40-f5b5876e4754",
+            "id": "df734ddc-4321-4125-9a2a-2a9535ef8da1",
+            "surfaceId": "d6a3f547-99b2-48b1-bf4d-6c64a1840019",
             "name": "Layer 1",
             "committedStrokes": 2
           }
         ],
-        "documentId": "d2e5c757-a8b5-4e1a-96f8-7207f21fef3d",
+        "documentId": "b90e5e1b-3e5c-4ae9-8a49-83fa1d0d6680",
         "documentMetadata": {
-          "createdAt": 1794564710229,
-          "modifiedAt": 1794564713389,
+          "createdAt": 1794567233548,
+          "modifiedAt": 1794567237009,
           "dpi": 72
         },
-        "writerEpoch": "df566eaa-45ea-4e31-8001-2a5ce04cd97d",
+        "writerEpoch": "1a4360f4-00a6-4b83-b1c6-a411cf88d03d",
         "commitSequence": "2",
         "persistence": {
-          "currentRevision": "d82546d9-0fbe-49e1-9933-f2a7b75c06bd",
+          "currentRevision": "1ce586b1-386d-4340-b2d0-25945aac7a78",
           "savedRevision": null,
           "dirty": true,
           "protectionPending": false,
@@ -134,10 +134,10 @@
           "storageError": null,
           "backend": "opfs-sync",
           "storagePersisted": false,
-          "storageUsage": 3071247,
-          "storageQuota": 896774032,
+          "storageUsage": 3077059,
+          "storageQuota": 953607552,
           "queueLength": 0,
-          "lastProtectionTime": 1794564713447,
+          "lastProtectionTime": 1794567237063,
           "lastExplicitSaveTime": null,
           "saveDurationMs": null,
           "snapshotCaptureMs": null,
@@ -152,11 +152,11 @@
           "idleMs": 800,
           "opsSinceLast": 0,
           "fullSeedPending": false,
-          "lastCheckpointAt": 1794564714293,
-          "cancelled": 1,
+          "lastCheckpointAt": 1794567237941,
+          "cancelled": 0,
           "errors": []
         },
-        "qaStartedAt": "2026-11-13T10:11:49.832Z"
+        "qaStartedAt": "2026-11-13T10:53:53.066Z"
       }
     },
     {
@@ -193,7 +193,7 @@
           }
         },
         "milestone": "M09",
-        "commit": "ef3926ef3d2302fa812f8558e5e14e1f58bfaa48",
+        "commit": "3a5149b7637844e8eaf8cba40422c8475084ea48",
         "backend": "WebGPU",
         "backendSelection": {
           "requested": "webgpu",
@@ -217,9 +217,9 @@
         "eraserType": null,
         "size": 64,
         "layerCount": 1,
-        "selectedLayerId": "c17ef4a9-d268-4964-870c-7278918c3874",
+        "selectedLayerId": "2f7f7fb2-2158-41da-8ac2-9719d24541bc",
         "selectedLayerName": "Layer 1",
-        "currentRevision": "d9a57ccf-a781-4777-8acf-aaa3a06fa134",
+        "currentRevision": "73931247-800d-4d73-a3be-c5edf7a5a3ba",
         "canUndo": true,
         "canRedo": false,
         "seamlessCopyCount": 0,
@@ -239,12 +239,12 @@
         "presentationMode": "worker-images",
         "presentationAlpha": false,
         "presentationDesynchronized": false,
-        "presentationFrames": 36,
-        "presentationLastAt": 4708.5,
+        "presentationFrames": 33,
+        "presentationLastAt": 5186.100000000035,
         "projectionRestoreMs": 0,
         "projectionRestoreMode": "none",
         "projectionCacheRevision": null,
-        "browserPredictionSamples": 12,
+        "browserPredictionSamples": 23,
         "lastInputTarget": "button",
         "lastInputType": "mouse",
         "lastInputPoint": "1243,829",
@@ -266,22 +266,22 @@
         },
         "layers": [
           {
-            "id": "c17ef4a9-d268-4964-870c-7278918c3874",
-            "surfaceId": "c4fc9292-d992-42d0-9c18-a292cb47cf81",
+            "id": "2f7f7fb2-2158-41da-8ac2-9719d24541bc",
+            "surfaceId": "de5605e9-08d9-4582-a463-d0edcf724792",
             "name": "Layer 1",
             "committedStrokes": 2
           }
         ],
-        "documentId": "06a0b654-5665-4267-877e-fc2ba0d4fb42",
+        "documentId": "d5b1901c-daf2-48a2-a17e-4365222aa665",
         "documentMetadata": {
-          "createdAt": 1794564716787,
-          "modifiedAt": 1794564720671,
+          "createdAt": 1794567241135,
+          "modifiedAt": 1794567245359,
           "dpi": 72
         },
-        "writerEpoch": "b633b5f7-a939-4bfb-9d70-e18401cd8f82",
+        "writerEpoch": "443e5699-cd1a-4037-a268-c08aecc8118b",
         "commitSequence": "2",
         "persistence": {
-          "currentRevision": "d9a57ccf-a781-4777-8acf-aaa3a06fa134",
+          "currentRevision": "73931247-800d-4d73-a3be-c5edf7a5a3ba",
           "savedRevision": null,
           "dirty": true,
           "protectionPending": false,
@@ -291,10 +291,10 @@
           "storageError": null,
           "backend": "opfs-sync",
           "storagePersisted": false,
-          "storageUsage": 3071120,
-          "storageQuota": 1082961783,
+          "storageUsage": 3077054,
+          "storageQuota": 1031689284,
           "queueLength": 0,
-          "lastProtectionTime": 1794564720737,
+          "lastProtectionTime": 1794567245418,
           "lastExplicitSaveTime": null,
           "saveDurationMs": null,
           "snapshotCaptureMs": null,
@@ -309,11 +309,11 @@
           "idleMs": 800,
           "opsSinceLast": 0,
           "fullSeedPending": false,
-          "lastCheckpointAt": 1794564721594,
+          "lastCheckpointAt": 1794567246272,
           "cancelled": 0,
           "errors": []
         },
-        "qaStartedAt": "2026-11-13T10:11:56.570Z"
+        "qaStartedAt": "2026-11-13T10:54:00.902Z"
       }
     },
     {
@@ -350,7 +350,7 @@
           }
         },
         "milestone": "M09",
-        "commit": "ef3926ef3d2302fa812f8558e5e14e1f58bfaa48",
+        "commit": "3a5149b7637844e8eaf8cba40422c8475084ea48",
         "backend": "WebGL2",
         "backendSelection": {
           "requested": "webgl2",
@@ -374,9 +374,9 @@
         "eraserType": null,
         "size": 64,
         "layerCount": 1,
-        "selectedLayerId": "d34c64b7-5ac1-4811-b8e6-45c876f0f6c6",
+        "selectedLayerId": "088cb0b6-16c2-4d81-bb9c-8d6e99dc5239",
         "selectedLayerName": "Layer 1",
-        "currentRevision": "fc95b5e2-ebbe-4e3c-b758-637f4c05bc81",
+        "currentRevision": "c92a62e7-5316-43ed-9e5f-4d0af440dccd",
         "canUndo": true,
         "canRedo": false,
         "seamlessCopyCount": 0,
@@ -396,8 +396,8 @@
         "presentationMode": "worker-images",
         "presentationAlpha": false,
         "presentationDesynchronized": false,
-        "presentationFrames": 47,
-        "presentationLastAt": 4647.599999999977,
+        "presentationFrames": 58,
+        "presentationLastAt": 4837.200000000012,
         "projectionRestoreMs": 0,
         "projectionRestoreMode": "none",
         "projectionCacheRevision": null,
@@ -423,22 +423,22 @@
         },
         "layers": [
           {
-            "id": "d34c64b7-5ac1-4811-b8e6-45c876f0f6c6",
-            "surfaceId": "a28e865d-c811-4c07-a332-fc30c588dca9",
+            "id": "088cb0b6-16c2-4d81-bb9c-8d6e99dc5239",
+            "surfaceId": "84c3b23f-5cb9-4cf0-8cee-75b90bbf9846",
             "name": "Layer 1",
             "committedStrokes": 2
           }
         ],
-        "documentId": "717f42c1-48f5-4d2f-ba75-89b338b4c517",
+        "documentId": "c89bd4d2-2f4b-4aa1-ba40-84e630b12f0e",
         "documentMetadata": {
-          "createdAt": 1794564723580,
-          "modifiedAt": 1794564726406,
+          "createdAt": 1794567248648,
+          "modifiedAt": 1794567252111,
           "dpi": 72
         },
-        "writerEpoch": "30be4208-7ce2-45ff-8d99-04bc2721df99",
+        "writerEpoch": "0fc5d5d7-80b4-4aaa-baaa-0c78ce23f3a0",
         "commitSequence": "2",
         "persistence": {
-          "currentRevision": "fc95b5e2-ebbe-4e3c-b758-637f4c05bc81",
+          "currentRevision": "c92a62e7-5316-43ed-9e5f-4d0af440dccd",
           "savedRevision": null,
           "dirty": true,
           "protectionPending": false,
@@ -448,10 +448,10 @@
           "storageError": null,
           "backend": "opfs-sync",
           "storagePersisted": false,
-          "storageUsage": 3071302,
-          "storageQuota": 857369048,
+          "storageUsage": 3076210,
+          "storageQuota": 1110216848,
           "queueLength": 0,
-          "lastProtectionTime": 1794564726597,
+          "lastProtectionTime": 1794567252203,
           "lastExplicitSaveTime": null,
           "saveDurationMs": null,
           "snapshotCaptureMs": null,
@@ -466,11 +466,11 @@
           "idleMs": 800,
           "opsSinceLast": 0,
           "fullSeedPending": false,
-          "lastCheckpointAt": 1794564728405,
+          "lastCheckpointAt": 1794567253153,
           "cancelled": 0,
           "errors": []
         },
-        "qaStartedAt": "2026-11-13T10:12:03.404Z"
+        "qaStartedAt": "2026-11-13T10:54:08.439Z"
       }
     }
   ],
