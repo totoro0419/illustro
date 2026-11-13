@@ -7,7 +7,7 @@ export type LayerNode=Readonly<{
   /** Logical opaque-white base. Its raster tiles are intentionally absent until editing requires them. */
   baseColor?:'white';
 }>;
-export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number}>;
+export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;dpi?:number;author?:string;description?:string}>;
 export class DocumentRoot{
   readonly metadata:DocumentMetadata;
   constructor(readonly documentId:DocumentId,readonly width:number,readonly height:number,readonly name:string,
@@ -29,7 +29,7 @@ export class DocumentRoot{
     return new DocumentRoot(this.documentId,width,height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,this.metadata);
   }
   withModifiedAt(modifiedAt:number){if(!Number.isSafeInteger(modifiedAt)||modifiedAt<this.metadata.createdAt)throw new Error('invalid modifiedAt');
-    if(modifiedAt===this.metadata.modifiedAt)return this;return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{createdAt:this.metadata.createdAt,modifiedAt});}
+    if(modifiedAt===this.metadata.modifiedAt)return this;return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{...this.metadata,modifiedAt});}
 }
 export function rasterLayer(id:LayerId,surfaceId:RasterSurfaceId,workingColorSpaceRef:string,sampleEncoding:RasterSampleEncoding,name='Layer 1'):LayerNode{
   if(!name.trim())throw new Error('empty layer name');const descriptor=createRasterSurfaceDescriptor(surfaceId,sampleEncoding,workingColorSpaceRef);
