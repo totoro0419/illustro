@@ -279,36 +279,91 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   setButton('ihChoiceBlank',()=>setCreationMode('blank'));setButton('ihChoiceFile',()=>setCreationMode('file'));
   setButton('ihSelectFile',()=>{dialog.close();actions.openFile();});
   let draftTimer:ReturnType<typeof setTimeout>|null=null;
+  let currentUnit:DocumentUnit='px';
+  const templateStore=(()=>{try{return localStorage;}catch{return null;}})();
+  const templatePicker=el<HTMLSelectElement>('ihTemplateSelect');
+  const refillTemplates=(selected='')=>{
+    templatePicker.replaceChildren(new Option('選択してください',''),...listCreationTemplates(templateStore).map(x=>new Option(x.name,x.name)));
+    templatePicker.value=selected;
+  };
+  const size=()=>resolveDocumentDimensions(
+    Number(el<HTMLInputElement>('ihNewWidth').value),
+    Number(el<HTMLInputElement>('ihNewHeight').value),
+    currentUnit,Number(el<HTMLInputElement>('ihNewDpi').value));
+  const background=()=>el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white';
+  const author=()=>el<HTMLInputElement>('ihNewAuthor').value.trim();
+  const description=()=>el<HTMLTextAreaElement>('ihNewDescription').value.trim();
+  const sizePreview=()=>{
+    try{const d=size();el('ihPixelPreview').textContent=d.width+' × '+d.height+' px · '+d.dpi+' DPI';return d;}
+    catch(error){el('ihPixelPreview').textContent=error instanceof Error?error.message:String(error);return null;}
+  };
   const prefetchDraft=()=>{
     if(draftTimer!==null){clearTimeout(draftTimer);draftTimer=null;}
-    const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
-    if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)return;
-    actions.onBlankDraftChange?.(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white');
+    const d=sizePreview();if(d)actions.onBlankDraftChange?.(d.width,d.height,el<HTMLInputElement>('ihNewName').value,background(),d.dpi,author(),description());
   };
   const schedulePrefetch=()=>{
     if(draftTimer!==null)clearTimeout(draftTimer);
     draftTimer=setTimeout(prefetchDraft,180);
   };
+  const setFromPixels=(width:number,height:number)=>{
+    const dpi=Number(el<HTMLInputElement>('ihNewDpi').value);
+    el<HTMLInputElement>('ihNewWidth').value=String(currentUnit==='mm'?pixelToMillimeters(width,dpi):width);
+    el<HTMLInputElement>('ihNewHeight').value=String(currentUnit==='mm'?pixelToMillimeters(height,dpi):height);
+    prefetchDraft();
+  };
   for(const preset of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]'))preset.addEventListener('click',()=>{
     const [width,height]=preset.dataset.ihPreset!.split('x').map(Number);
-    el<HTMLInputElement>('ihNewWidth').value=String(width);el<HTMLInputElement>('ihNewHeight').value=String(height);
+    setFromPixels(width!,height!);
     for(const item of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]'))item.setAttribute('aria-pressed',String(item===preset));
-    prefetchDraft();
   });
-  for(const input of [el<HTMLInputElement>('ihNewWidth'),el<HTMLInputElement>('ihNewHeight')])input.addEventListener('input',()=>{
+  const refreshPresetSelection=()=>{
+    const d=sizePreview();
     for(const preset of root.querySelectorAll<HTMLButtonElement>('[data-ih-preset]')){
-      const sizes=preset.dataset.ihPreset!.split('x');preset.setAttribute('aria-pressed',String(sizes[0]===el<HTMLInputElement>('ihNewWidth').value&&sizes[1]===el<HTMLInputElement>('ihNewHeight').value));
+      const [w,h]=preset.dataset.ihPreset!.split('x').map(Number);
+      preset.setAttribute('aria-pressed',String(d!==null&&d.width===w&&d.height===h));
     }
     schedulePrefetch();
+  };
+  for(const input of [el<HTMLInputElement>('ihNewWidth'),el<HTMLInputElement>('ihNewHeight')])input.addEventListener('input',refreshPresetSelection);
+  el<HTMLSelectElement>('ihNewUnit').addEventListener('change',()=>{
+    const before=sizePreview();currentUnit=el<HTMLSelectElement>('ihNewUnit').value as DocumentUnit;
+    for(const id of ['ihNewWidth','ihNewHeight']){
+      const input=el<HTMLInputElement>(id);
+      input.step=currentUnit==='mm'?'0.01':'1';input.min=currentUnit==='mm'?'0.01':'1';input.max=currentUnit==='mm'?'10000':'8192';
+    }
+    if(before)setFromPixels(before.width,before.height);else prefetchDraft();
   });
-  el<HTMLInputElement>('ihNewName').addEventListener('input',schedulePrefetch);
+  for(const id of ['ihNewName','ihNewDpi','ihNewAuthor','ihNewDescription'])el(id).addEventListener('input',schedulePrefetch);
   el<HTMLSelectElement>('ihNewBackground').addEventListener('change',prefetchDraft);
+  templatePicker.addEventListener('change',()=>{
+    const template=listCreationTemplates(templateStore).find(x=>x.name===templatePicker.value);
+    if(!template)return;
+    el<HTMLInputElement>('ihNewDpi').value=String(template.dpi);
+    el<HTMLSelectElement>('ihNewBackground').value=template.background;
+    setFromPixels(template.width,template.height);
+    el('ihNewError').textContent='サイズ設定を読み込みました。作者情報はテンプレートに含めません。';
+  });
+  el<HTMLButtonElement>('ihTemplateSave').onclick=()=>{
+    try{
+      const d=size(),name=el<HTMLInputElement>('ihTemplateName').value.trim();
+      storeCreationTemplate(templateStore,{...d,name,background:background()});
+      refillTemplates(name);el('ihNewError').textContent='この端末に設定を保存しました。';
+    }catch(error){el('ihNewError').textContent=error instanceof Error?error.message:String(error);}
+  };
+  el<HTMLButtonElement>('ihTemplateDelete').onclick=()=>{
+    if(!templatePicker.value)return;
+    try{removeCreationTemplate(templateStore,templatePicker.value);refillTemplates();el('ihNewError').textContent='設定を削除しました。';}
+    catch(error){el('ihNewError').textContent=error instanceof Error?error.message:String(error);}
+  };
+  refillTemplates();
   el<HTMLFormElement>('ihBlankForm').addEventListener('submit',event=>{event.preventDefault();void(async()=>{
-    const width=Number(el<HTMLInputElement>('ihNewWidth').value),height=Number(el<HTMLInputElement>('ihNewHeight').value);
-    if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192){el('ihNewError').textContent='幅と高さを1〜8192pxで指定してください。';return;}
+    const d=sizePreview();if(!d){el('ihNewError').textContent='サイズと解像度を確認してください。';return;}
     const button=el<HTMLButtonElement>('ihNewCreate');button.disabled=true;el('ihNewError').textContent='キャンバスを準備しています。';
-    try{if(await actions.createDocument(width,height,el<HTMLInputElement>('ihNewName').value,el<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white'))navigate('editor');else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';}
-    catch(error){console.error('M10_CREATE_DOCUMENT_FAULT',error instanceof Error?error.stack??error.message:error);el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}finally{button.disabled=false;}
+    try{
+      if(await actions.createDocument(d.width,d.height,el<HTMLInputElement>('ihNewName').value,background(),d.dpi,author(),description()))navigate('editor');
+      else el('ihNewError').textContent='作成できませんでした。描画画面の状態を確認してください。';
+    }catch(error){console.error('C01_CREATE_DOCUMENT_FAULT',error instanceof Error?error.stack??error.message:error);el('ihNewError').textContent=error instanceof Error?error.message:'作成できませんでした。';}
+    finally{button.disabled=false;}
   })();});
   let swipeStart:number|null=null;
   el('ihFeatureVisual').addEventListener('touchstart',event=>{swipeStart=event.touches[0]?.clientX??null;},{passive:true});
