@@ -266,7 +266,7 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   inputFreezeTrace?.mark('save-prepare:start');persistence.noteCommit(controller.document,handoff);inputFreezeTrace?.mark('save-prepare:end');if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){return new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const created=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';restoreDrawingTool();}return;}
  const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value!=='layer');
@@ -284,7 +284,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
    loupe.hidden=false;}
  }
  else{byId('colorSampleLoupe').hidden=true;foreground.begin();foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';restoreDrawingTool();}
- });}
+ });created.setPenEraserHandler(active=>setTemporaryPenEraser(created,active));return created;}
 surface=makeSurface();
 function updateViewControls(){const state=surface?.viewState;if(!state)return;
   const zoom=byId<HTMLInputElement>('zoomPercent'),zoomValue=String(Math.round(state.zoom*1000)/10);if(zoom.value!==zoomValue)zoom.value=zoomValue;
@@ -834,6 +834,25 @@ for(const id of ['size','sizeNumber']){
 for(const [id,handler] of Object.entries({fitView:()=>surface?.fitView(),zoomOut:()=>surface?.zoomView(1/1.25),zoomIn:()=>surface?.zoomView(1.25),view100:()=>surface?.viewAt100(),actualPixels:()=>surface?.actualPixels(),resetRotation:()=>surface?.resetRotation(),flipH:()=>surface?.flipView('x'),flipV:()=>surface?.flipView('y')}))byId<HTMLButtonElement>(id).onclick=handler;
 byId<HTMLInputElement>('zoomPercent').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewZoom(n/100);};
 byId<HTMLInputElement>('angleDegree').onchange=e=>{const n=Number((e.target as HTMLInputElement).value);surface?.setViewRotation(n*Math.PI/180);};
+// C02 INP-003: a genuine pen eraser contact temporarily uses the selected eraser.
+// Never interpret a mouse right button or pen barrel button as an eraser.
+let penEraserReturn:string|null=null;
+function restorePenEraser(){
+ const previous=penEraserReturn;
+ if(!previous||!surface||!documentReady)return;
+ if(surface.inputActive){window.setTimeout(restorePenEraser,32);return;}
+ penEraserReturn=null;
+ if(selectedTool==='eraser'&&surface.brushes.some(p=>p.id===previous))selectPreset(previous);
+}
+function setTemporaryPenEraser(origin:BrushSurface,active:boolean){
+ if(!documentReady||surface!==origin)return;
+ if(!active){restorePenEraser();return;}
+ if(penEraserReturn||origin.inputActive||selectedTool!=='brush')return;
+ const previous=origin.brushId;
+ if(!origin.brushes.some(p=>p.id===previous))return;
+ penEraserReturn=previous;
+ try{selectPreset(lastEraserPresetId);}catch{penEraserReturn=null;}
+}
 // C02 BRU-012 / GST-004: hold E to temporarily use the eraser on PC.
 // Preserve the active preset and drawing target, and never switch an in-progress stroke.
 let temporaryEraserReturn:string|null=null;
