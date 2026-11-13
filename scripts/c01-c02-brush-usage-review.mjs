@@ -54,6 +54,23 @@ try{
    assert.equal(await page.locator('#brush').inputValue(),'foundation-hard-eraser','holding E selects temporary eraser');
    await page.keyboard.up('e');
    assert.equal(await page.locator('#brush').inputValue(),'foundation-pencil','releasing E restores previous brush');
+   // BRU-010: the selection is created in canvas coordinates and survives
+   // switching back to the brush (it must not paint during the rectangle drag).
+   const viewport=await page.locator('.surface').boundingBox();
+   assert.ok(viewport,'canvas viewport must be visible');
+   const center={x:viewport.x+viewport.width/2,y:viewport.y+viewport.height/2};
+   await page.locator('#selection').click();
+   await page.mouse.move(center.x-48,center.y-42);
+   await page.mouse.down();await page.mouse.move(center.x+48,center.y+42,{steps:4});await page.mouse.up();
+   assert.match(await page.locator('#selectionStatus').textContent(),/範囲を設定しました/);
+   assert.equal(await page.locator('.illustro-selection-overlay').evaluate(el=>getComputedStyle(el).display!=='none'),true);
+   await page.locator('#paint').click();
+   assert.equal(await page.locator('#selectionClear').isEnabled(),true);
+   await page.mouse.move(center.x-10,center.y-10);
+   await page.mouse.down();await page.mouse.move(center.x+10,center.y+10,{steps:3});await page.mouse.up();
+   await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,null,{timeout:25000});
+   await page.locator('#selectionClear').click();
+   assert.equal(await page.locator('#selectionClear').isDisabled(),true);
    assert.deepEqual(pageErrors,[],'unhandled browser errors on '+backend);
    checks.push({backend,feature:'BRU-004',favorites:true,recent:true,reload:true,pageErrors});
   }finally{await context.close();}
