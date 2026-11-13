@@ -1,5 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {nativeBrushSensors} from './brushInput';
+import {penEraserInput} from './stylusButtons';
 const event=(pointerType:string,values:Record<string,number>={})=>
   ({pointerType,pressure:.5,tiltX:0,tiltY:0,twist:0,...values}) as PointerEvent;
 describe('M10 pen sensor normalization',()=>{
@@ -25,4 +26,12 @@ describe('M10 pen sensor normalization',()=>{
   expect(sample.pressure).toBeUndefined();expect(sample.tilt).toBeUndefined();
   expect(sample.twist).toBeUndefined();expect(sample.azimuth).toBeUndefined();
  });
+});
+
+it('distinguishes a pen eraser and a held barrel button from hover or mouse buttons',()=>{
+ expect(penEraserInput(event('pen',{button:5,buttons:32}),false)).toBe(true);
+ expect(penEraserInput(event('pen',{button:0,buttons:3}),true)).toBe(true);
+ expect(penEraserInput(event('pen',{button:0,buttons:3}),false)).toBe(false);
+ expect(penEraserInput(event('pen',{button:2,buttons:2,pressure:0}),true)).toBe(false);
+ expect(penEraserInput(event('mouse',{button:2,buttons:2}),true)).toBe(false);
 });

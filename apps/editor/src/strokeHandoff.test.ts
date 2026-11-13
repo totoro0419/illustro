@@ -59,3 +59,24 @@ it('accepts reserved Redo while older image restoration owns publication, then p
  const c=new EditorController(),published:number[]=[],q=new StrokeHandoff(c,r=>published.push(r.sequence)),a=q.reserve(c.target());await q.release(a,record());const b=q.reserve(c.target());q.undoPending();q.setPublicationHeld(true);
  c.undo();q.rebase();c.redo();q.rebase();expect(q.redoPending()).toBe(b);q.resume();const pending=q.release(b,record(60));await Promise.resolve();expect(c.committedStrokeCount).toBe(1);expect(published).toEqual([1]);q.setPublicationHeld(false);await pending;await q.barrier();expect(c.committedStrokeCount).toBe(2);expect(published).toEqual([1,2]);
 });
+
+it('pins the revision for a save while allowing later input to proceed',async()=>{
+ const c=new EditorController(),q=new StrokeHandoff(c,()=>{}),a=q.reserve(c.target());
+ const save=q.saveBoundary(),b=q.reserve(c.target());
+ const first=await q.release(a,record());
+ expect(await save).toBe(first?.revisionId);
+ expect(q.pending).toBe(1);
+ await q.release(b,record(60));
+ expect(await save).not.toBe(c.document.head);
+ expect(c.committedStrokeCount).toBe(2);
+});
+
+it('fixes a save to the state with a hidden stroke even when it is redone',async()=>{
+ const c=new EditorController(),q=new StrokeHandoff(c,()=>{}),a=q.reserve(c.target()),b=q.reserve(c.target());
+ q.undoPending();
+ const save=q.saveBoundary();
+ q.redoPending();q.resume();
+ const first=await q.release(a,record());
+ await q.release(b,record(60));
+ expect(await save).toBe(first?.revisionId);
+});

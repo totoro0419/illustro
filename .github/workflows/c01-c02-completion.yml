@@ -1,0 +1,110 @@
+name: C01 C02 completion candidate validation
+on:
+  push:
+    branches: ['feature/c01-c02-completion-2026-11-12']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: c01-c02-completion-preview
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      EXPECTED_COMMIT_SHA: ${{ github.sha }}
+      RT_PLAYWRIGHT_PATH: /tmp/c01-c02-browser/node_modules/playwright
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Rebuild brush source and existing canonical tests
+        run: |
+          npm run brush:build
+          npm run prep:check
+          npm run core:check
+          npm run brush:regression
+      - name: Check full C01 C02 target list and QA scripts
+        run: node scripts/c01-c02-scope-check.mjs
+      - name: Check editor TypeScript and all editor unit tests
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Build exact editor commit
+        env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
+        run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Install Chromium
+        run: |
+          npm install --prefix /tmp/c01-c02-browser playwright@1.56.1 --no-audit --no-fund
+          /tmp/c01-c02-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify real new-document UI, templates and native save/reopen on WebGL2 and WebGPU
+        env: {C01_DOCUMENT_BROWSER_EVIDENCE: /tmp/c01-c02-evidence/document-creation.json}
+        run: |
+          node scripts/c01-c02-document-creation-review.mjs
+          node scripts/c01-c02-document-review.mjs
+      - name: Test favorites and recent brushes in real browser
+        env: {C01_C02_BROWSER_EVIDENCE: /tmp/c01-c02-evidence/brush-usage.json}
+        run: node scripts/c01-c02-brush-usage-review.mjs
+      - name: Protect existing M10 brush editor and save behavior
+        env:
+          M10_EDITOR_EVIDENCE: /tmp/c01-c02-evidence/m10-editor.json
+          M10_EVIDENCE: /tmp/c01-c02-evidence/m10-brush.json
+        run: |
+          node scripts/m10-brush-editor-review.mjs
+          node scripts/m10-brush-review.mjs
+      - name: Protect M08 canvas and M09 color
+        env:
+          M08_SMOKE_QUICK: '1'
+          M08_PERF_REVIEW: '1'
+          M08_EVIDENCE_DIRECTORY: /tmp/c01-c02-evidence/m08
+          M09_EVIDENCE_DIRECTORY: /tmp/c01-c02-evidence/m09
+        run: |
+          node scripts/editor-m08-smoke.mjs
+          node scripts/editor-m09-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c01-c02-verification-records
+          path: /tmp/c01-c02-evidence/
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: c01-c02-editor-app
+          path: apps/editor/dist/
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: {ref: gh-pages, path: site, fetch-depth: 0}
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-c02-editor-app
+          path: site/qa/c01-completion/app
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-c02-editor-app
+          path: site/qa/c02-completion/app
+      - uses: actions/download-artifact@v4
+        with:
+          name: c01-c02-verification-records
+          path: site/qa/c02-completion/evidence
+      - name: Publish only isolated C01 C02 QA paths
+        run: |
+          sed "s/__COMMIT__/$GITHUB_SHA/g" qa/c01-completion/index.html > site/qa/c01-completion/index.html
+          sed "s/__COMMIT__/$GITHUB_SHA/g" qa/c02-completion/index.html > site/qa/c02-completion/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/c01-completion qa/c02-completion
+          test -z "$(git diff --cached --name-only | grep -Ev '^qa/(c01|c02)-completion/' || true)"
+          if ! git diff --cached --quiet; then
+            git commit -m "qa: isolated C01 C02 candidate $GITHUB_SHA"
+            git push origin HEAD:gh-pages
+          fi

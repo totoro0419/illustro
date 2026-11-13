@@ -12,6 +12,7 @@ export class StrokeHandoff{
   private items:Pending[]=[];private redoItems:Pending[]=[];private entries=new Map<StrokeReservation,Pending>();
   private publicationHeld=false;private sequence=0;private running=false;private expected:DrawingTarget['baseRevision']|null=null;private fault:unknown=null;
   private waiters:Array<{resolve:()=>void;reject:(error:unknown)=>void}>=[];
+  private saveWaiters:Array<{through:number;resolve:(revision:DrawingTarget['baseRevision'])=>void;reject:(error:unknown)=>void}>=[];
   constructor(private controller:EditorController,private published:(reservation:StrokeReservation,record:StrokeRecord,additional:readonly StrokeRecord[],result:StrokeCommitResult,undone?:boolean)=>void,private discarded:(record:StrokeRecord,reservation:StrokeReservation)=>void=()=>{}){}
   owns(reservation:StrokeReservation){return this.entries.has(reservation);}
   get pending(){return this.items.length;}
@@ -39,6 +40,19 @@ export class StrokeHandoff{
     // The caller restores preview ownership before publication starts.
     return item.reservation;
   }
+  saveBoundary(){
+    if(this.fault)return Promise.reject(this.fault);
+    const through=this.items.at(-1)?.reservation.sequence;
+    if(through===undefined)return Promise.resolve(this.controller.document.head);
+    return new Promise<DrawingTarget['baseRevision']>((resolve,reject)=>this.saveWaiters.push({through,resolve,reject}));
+  }
+  private resolveSaveBoundaries(){
+    const first=this.items[0]?.reservation.sequence??Infinity;
+    this.saveWaiters=this.saveWaiters.filter(waiter=>{
+      if(first<=waiter.through)return true;
+      waiter.resolve(this.controller.document.head);return false;
+    });
+  }
   setPublicationHeld(held:boolean){this.publicationHeld=held;if(!held)void this.pump();}
   resume(){void this.pump();}
   rebase(){if(!this.items.length&&!this.running)this.expected=this.controller.document.head;}
@@ -49,19 +63,19 @@ export class StrokeHandoff{
     if(item.hidden)return Promise.resolve(null);
     const result=new Promise<StrokeCommitResult|null>((resolve,reject)=>{Object.assign(item,{resolve,reject});});void this.pump();return result;
   }
-  fail(error:unknown){this.fault=error;for(const item of this.entries.values())item.reject?.(error);for(const waiter of this.waiters)waiter.reject(error);this.waiters=[];}
+  fail(error:unknown){this.fault=error;for(const item of this.entries.values())item.reject?.(error);for(const waiter of this.waiters)waiter.reject(error);this.waiters=[];for(const waiter of this.saveWaiters)waiter.reject(error);this.saveWaiters=[];}
   barrier():Promise<void>{if(this.fault)return Promise.reject(this.fault);if(!this.items.length&&!this.running)return Promise.resolve();return new Promise((resolve,reject)=>this.waiters.push({resolve,reject}));}
   private async pump(){
     if(this.running||this.fault||this.publicationHeld)return;this.running=true;
-    try{while(!this.publicationHeld&&this.items[0]?.record){const item=this.items[0],record=item.record!,additional=item.additional;
+    try{this.resolveSaveBoundaries();while(!this.publicationHeld&&this.items[0]?.record){const item=this.items[0],record=item.record!,additional=item.additional;
       if(this.controller.document.head!==this.expected)throw new Error('描画中に作品の状態が変わりました。');
       try{item.publishing=true;const target={...item.reservation.target,baseRevision:this.expected!},result=await this.controller.finishStroke(target,record,additional);
         this.expected=result.revisionId;this.items.shift();
         // An asynchronous document port may complete after cancellation. Move its
         // immutable entry directly into Redo without submitting formal GPU work.
         const undone=item.hidden||item.discarded;if(undone){this.controller.undo();this.expected=this.controller.document.head;this.redoItems=this.redoItems.filter(e=>e!==item);}
-        this.published(item.reservation,record,additional,result,undone);this.entries.delete(item.reservation);item.resolve?.(result);
-      }catch(error){if(error instanceof EmptyStrokeError){this.items=this.items.filter(e=>e!==item);this.redoItems=this.redoItems.filter(e=>e!==item);this.entries.delete(item.reservation);item.reject?.(error);continue;}throw error;}
+        this.published(item.reservation,record,additional,result,undone);this.entries.delete(item.reservation);item.resolve?.(result);this.resolveSaveBoundaries();
+      }catch(error){if(error instanceof EmptyStrokeError){this.items=this.items.filter(e=>e!==item);this.redoItems=this.redoItems.filter(e=>e!==item);this.entries.delete(item.reservation);item.reject?.(error);this.resolveSaveBoundaries();continue;}throw error;}
     }}catch(error){this.fail(error);}finally{this.running=false;if(!this.items.length&&!this.fault){for(const waiter of this.waiters)waiter.resolve();this.waiters=[];}}
   }
 }

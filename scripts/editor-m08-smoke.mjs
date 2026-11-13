@@ -88,7 +88,10 @@ async function paperViewportSmoke(page,kind){
  assert.ok(Math.abs(canvas.width-stage.width)<2&&Math.abs(canvas.height-stage.height)<2,
   'M08 canvas must fill the interaction viewport');
  const css=await page.locator('.surface').evaluate(el=>({background:getComputedStyle(el).backgroundColor,border:getComputedStyle(el).borderTopWidth}));
- assert.equal(css.background,'rgba(0, 0, 0, 0)','fixed white CSS surface must not remain');
+ // The accepted M10 Aurora workspace intentionally uses a neutral canvas surround
+ // instead of the old fully transparent backdrop. Reject a fixed white paper;
+ // moving-paper and pixel assertions below still verify that the document moves.
+ assert.notEqual(css.background,'rgb(255, 255, 255)','fixed white CSS paper must not remain');
  assert.equal(css.border,'0px','fixed paper frame must not remain');
  await page.locator('#view100').click();
  await page.evaluate(()=>{document.getElementById('qaSummary').style.visibility='hidden';});

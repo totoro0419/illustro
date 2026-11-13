@@ -1,6 +1,6 @@
 import {cryptoIdFactory,type IdFactory,type LayerId,type RevisionId,type WriterEpochId} from './ids';
 import {RevisionHistory,type Command} from './history';
-import {DocumentRoot,rasterLayer} from './model';
+import {DocumentRoot,rasterLayer,validateDocumentInfo} from './model';
 import {PagedMap} from './pagedMap';
 import {blockPayloadsForSnapshot,captureCoreRecoveryPacket,captureCoreSnapshot,parseCoreSnapshot,restoreBlocks,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1} from './persistence';
 import {CanonicalTileStore,type OwnershipTransfer} from './raster/store';
@@ -9,7 +9,7 @@ import {DocumentTransaction} from './transaction';
 import type {PersistenceHandoff} from './recovery';
 import {CORE_INTERNAL,type CoreInternalToken} from './internal';
 
-export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;blankBackground?:'white';ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
+export type CoreOptions=Readonly<{width:number;height:number;name?:string;colorProfileId?:string;sampleEncoding?:RasterSampleEncoding;blankBackground?:'white';dpi?:number;author?:string;description?:string;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
 export type CoreRestoreOptions=Readonly<{snapshot:unknown;blockPayloads:ReadonlyMap<string,Uint8Array>;ids?:IdFactory;clock?:()=>number;transfer?:OwnershipTransfer}>;
 export class CoreDocument{
   readonly tileSize=CANONICAL_TILE_SIZE;readonly tileBytes:number;private readonly idsValue:IdFactory;private readonly clockValue:()=>number;
@@ -23,7 +23,13 @@ export class CoreDocument{
     }
     validSize(o.width);validSize(o.height);const sampleEncoding=o.sampleEncoding??'rgba.unorm8.v1';this.tileBytes=CANONICAL_TILE_SIZE*CANONICAL_TILE_SIZE*bytesPerPixel(sampleEncoding);
     const id=this.idsValue.layer(),plain=rasterLayer(id,this.idsValue.surface(),o.colorProfileId??'srgb',sampleEncoding,'Layer 1'),layer=o.blankBackground==='white'?Object.freeze({...plain,name:'背景',baseColor:'white' as const}):plain,e=PagedMap.empty<LayerId,typeof layer>().edit();e.set(id,layer);
-    const now=this.clockValue(),root=new DocumentRoot(this.idsValue.document(),o.width,o.height,o.name??'Untitled',o.colorProfileId??'srgb',e.commit(),[id],{createdAt:now,modifiedAt:now});this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.idsValue,now);
+    const now=this.clockValue(),name=o.name??'Untitled';
+    const info=o.dpi!==undefined||o.author!==undefined||o.description!==undefined
+      ?validateDocumentInfo({name,author:o.author??'',description:o.description??'',dpi:o.dpi??null}):null;
+    const root=new DocumentRoot(this.idsValue.document(),o.width,o.height,info?.name??name,o.colorProfileId??'srgb',e.commit(),[id],
+      {createdAt:now,modifiedAt:now,...(info?.author?{author:info.author}:{}),
+       ...(info?.description?{description:info.description}:{}),...(info?.dpi?{dpi:info.dpi}:{})});
+    this.defaultRasterLayerId=id;this.historyValue=new RevisionHistory(root,this.idsValue,now);
   }
   static restore(options:CoreRestoreOptions){return new CoreDocument(options);}
   get root(){return this.historyValue.current.root;}get head(){return this.historyValue.head;}get revisionCount(){return this.historyValue.count;}get currentRevision(){return this.historyValue.current;}

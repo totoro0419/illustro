@@ -70,3 +70,30 @@ describe('M05 core persistence',()=>{
   });
 
 });
+
+it('keeps document information through recovery, undo, redo and older snapshots',()=>{
+  const doc=new CoreDocument({width:512,height:384,name:'Original',dpi:300});
+  const layer=doc.defaultRasterLayerId;
+  const ink=doc.begin('Ink');ink.setPixel(layer,3,4,[10,20,30,255]);ink.commit();
+  const original=doc.capturePersistenceSnapshot(),blocks=doc.persistenceBlockPayloads(original);
+  const change=doc.begin('作品情報');
+  expect(change.setDocumentInfo({name:'Updated',author:'Artist',description:'First\nSecond',dpi:600})).toBe(true);
+  const receipt=change.commit();
+  const packet=doc.captureRecoveryPacket(receipt.persistence);
+  expect(packet.tileChanges).toEqual([]);
+  expect(receipt.changedBlockIds).toEqual([]);
+  const merged=mergeCoreRecovery(
+    // Recovery starts at the base of each writer epoch.
+    original,[{...packet,handoff:{...packet.handoff,commitSequence:'1'},
+      revision:{...packet.revision,commitStamp:{...packet.revision.commitStamp,commitSequence:'1'}}}],
+  );
+  const restored=CoreDocument.restore({snapshot:merged,blockPayloads:blocks});
+  expect(restored.root.info).toEqual({name:'Updated',author:'Artist',description:'First\nSecond',dpi:600});
+  expect(restored.readPixel(layer,3,4)).toEqual([10,20,30,255]);
+  restored.undo();expect(restored.root.info).toEqual({name:'Original',author:'',description:'',dpi:300});
+  doc.undo();expect(doc.root.name).toBe('Original');
+  doc.redo();expect(doc.root.name).toBe('Updated');
+  const older=new CoreDocument({width:32,height:32,name:'Existing file'});
+  const reopened=CoreDocument.restore({snapshot:older.capturePersistenceSnapshot(),blockPayloads:new Map()});
+  expect(reopened.root.info.dpi).toBeNull();
+});

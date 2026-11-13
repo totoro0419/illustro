@@ -1,12 +1,27 @@
 /** M08: view-only geometry. Coordinates remain in document pixels. */
 export type Point=Readonly<{x:number;y:number}>;
 export type ViewState=Readonly<{documentWidth:number;documentHeight:number;cssWidth:number;cssHeight:number;zoom:number;rotation:number;panX:number;panY:number;flipX:boolean;flipY:boolean;seamless:boolean;reference:boolean}>;
+export type SavedCanvasView=Pick<ViewState,'zoom'|'rotation'|'panX'|'panY'|'flipX'|'flipY'|'seamless'>;
+export function parseSavedCanvasView(value:unknown):SavedCanvasView|null{
+ if(!value||typeof value!=='object')return null;
+ const v=value as Partial<SavedCanvasView>;
+ const {zoom,rotation,panX,panY,flipX,flipY,seamless}=v;
+ if(typeof zoom!=='number'||!Number.isFinite(zoom)||zoom<.001||zoom>64||
+    typeof rotation!=='number'||!Number.isFinite(rotation)||
+    typeof panX!=='number'||!Number.isFinite(panX)||typeof panY!=='number'||!Number.isFinite(panY)||
+    typeof flipX!=='boolean'||typeof flipY!=='boolean'||typeof seamless!=='boolean')return null;
+ return {zoom,rotation,panX,panY,flipX,flipY,seamless};
+}
 export class CanvasView {
  readonly documentWidth:number;readonly documentHeight:number;
  cssWidth=1;cssHeight=1;zoom=1;rotation=0;panX=0;panY=0;flipX=false;flipY=false;seamless=false;reference=false;
  private fitted=false;
  constructor(width:number,height:number,private readonly fitRatio=1){if(!(width>0&&height>0)||!(fitRatio>0&&fitRatio<=1))throw new Error('Invalid canvas size');this.documentWidth=width;this.documentHeight=height;}
  get state():ViewState{return {documentWidth:this.documentWidth,documentHeight:this.documentHeight,cssWidth:this.cssWidth,cssHeight:this.cssHeight,zoom:this.zoom,rotation:this.rotation,panX:this.panX,panY:this.panY,flipX:this.flipX,flipY:this.flipY,seamless:this.seamless,reference:this.reference};}
+ restore(state:SavedCanvasView){
+  this.zoom=state.zoom;this.rotation=state.rotation;this.panX=state.panX;this.panY=state.panY;
+  this.flipX=state.flipX;this.flipY=state.flipY;this.seamless=state.seamless;this.fitted=true;
+ }
  resize(width:number,height:number){if(!(width>0&&height>0))return;this.cssWidth=width;this.cssHeight=height;if(!this.fitted){this.fit();this.fitted=true;}}
  fit(){const c=Math.abs(Math.cos(this.rotation)),s=Math.abs(Math.sin(this.rotation));const w=this.documentWidth*c+this.documentHeight*s,h=this.documentWidth*s+this.documentHeight*c;this.zoom=Math.max(0.001,Math.min(this.cssWidth/w,this.cssHeight/h)*this.fitRatio);this.panX=0;this.panY=0;}
  screen(point:Point):Point{let x=(point.x-this.documentWidth/2)*(this.flipX?-1:1),y=(point.y-this.documentHeight/2)*(this.flipY?-1:1);const c=Math.cos(this.rotation),s=Math.sin(this.rotation);return {x:this.cssWidth/2+this.panX+(x*c-y*s)*this.zoom,y:this.cssHeight/2+this.panY+(x*s+y*c)*this.zoom};}
