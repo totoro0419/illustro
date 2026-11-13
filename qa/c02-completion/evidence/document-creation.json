@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "commit": "99ba87df6f49c1f9cd9e8514e9745c8fef68295f",
+  "checks": [
+    {
+      "backend": "webgl2",
+      "created": {
+        "width": "100",
+        "height": "150",
+        "dpi": "100",
+        "name": "Unit test artwork",
+        "backend": "WebGL2"
+      },
+      "restored": {
+        "width": "100",
+        "height": "150",
+        "dpi": "100",
+        "name": "Unit test artwork"
+      },
+      "nativeBytes": 2048,
+      "templatePersisted": true,
+      "pageErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "created": {
+        "width": "100",
+        "height": "150",
+        "dpi": "100",
+        "name": "Unit test artwork",
+        "backend": "WebGPU"
+      },
+      "restored": {
+        "width": "100",
+        "height": "150",
+        "dpi": "100",
+        "name": "Unit test artwork"
+      },
+      "nativeBytes": 2048,
+      "templatePersisted": true,
+      "pageErrors": []
+    }
+  ],
+  "errors": [],
+  "limitations": "Chromium simulation only. Physical pen/tablet response, ICC color handling and full C01/C02 compliance were not tested."
+}

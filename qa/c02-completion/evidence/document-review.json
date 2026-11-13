@@ -1,0 +1,29 @@
+{
+  "commit": "99ba87df6f49c1f9cd9e8514e9745c8fef68295f",
+  "cases": [
+    {
+      "backend": "webgl2",
+      "result": "PASS",
+      "pixels": [
+        320,
+        240
+      ],
+      "dpi": 600,
+      "undoRedo": true,
+      "saveCopy": true,
+      "template": true
+    },
+    {
+      "backend": "webgpu",
+      "result": "PASS",
+      "pixels": [
+        320,
+        240
+      ],
+      "dpi": 600,
+      "undoRedo": true,
+      "saveCopy": true,
+      "template": true
+    }
+  ]
+}
