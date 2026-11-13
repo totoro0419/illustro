@@ -90,11 +90,11 @@ type BlankWarmup={
 let initialBlankWarmup:BlankWarmup|null=null;
 // Keep the original editable raster background and the top drawing layer in the
 // Core document. Only the initial GPU upload differs from normal saved-work replay.
-function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white'){
+function newBlankDocument(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description=''){
   // White is a logical base color, not 4*width*height initial raster bytes.
   // The upper transparent drawing layer is immediately usable. Native saves
   // carry the white-base metadata, and image export composites it on demand.
-  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',...(background==='white'?{blankBackground:'white' as const}:{})});
+  const document=new CoreDocument({width,height,name:name.trim()||'新しい作品',dpi,author,description,...(background==='white'?{blankBackground:'white' as const}:{})});
   let selected=document.root.rootLayerIds[0]!;
   let whiteSurfaceKey:string|null=null;
   if(background==='white'){
@@ -108,19 +108,19 @@ function newBlankDocument(width:number,height:number,name:string,background:'tra
 function reportBlankWarmup(state:string,detail='',background:'transparent'|'white'='transparent'){
   if(perfMode)(window as unknown as {__illustroWarmup:unknown}).__illustroWarmup={state,detail,background,at:performance.now()};
 }
-function beginBlankWarmup(width=512,height=384,name='新しい作品',background:'transparent'|'white'='transparent'){
+function beginBlankWarmup(width=512,height=384,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description=''){
   const title=name.trim()||'新しい作品';
   if(qaMode||documentReady||byId<HTMLButtonElement>('new').disabled||
       !Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)return;
   const active=initialBlankWarmup,root=active?.controller.document.root;
-  if(active&&!active.cancelled&&active.background===background&&root?.width===width&&root.height===height&&root.name===title)return;
+  if(active&&!active.cancelled&&active.background===background&&root?.width===width&&root.height===height&&root.name===title&&root.metadata.dpi===dpi&&(root.metadata.author??'')===author&&(root.metadata.description??'')===description)return;
   // Switching the intended blank size only replaces Home's unused renderer.
   // An existing drawing is never in this path (documentReady is false).
   if(active)discardBlankWarmup();
   const idle=surface,initial=controller.document.root;
-  const reuseIdle=background==='transparent'&&!!idle&&initial.width===width&&initial.height===height&&initial.name===title&&controller.document.operationsTo().length===0;
+  const reuseIdle=background==='transparent'&&!!idle&&initial.width===width&&initial.height===height&&initial.name===title&&initial.metadata.dpi===dpi&&(initial.metadata.author??'')===author&&(initial.metadata.description??'')===description&&controller.document.operationsTo().length===0;
   if(!reuseIdle)idle?.destroy();
-  const blank=reuseIdle?{document:controller.document,selected:controller.selectedLayerId,whiteSurfaceKey:null}:newBlankDocument(width,height,title,background);
+  const blank=reuseIdle?{document:controller.document,selected:controller.selectedLayerId,whiteSurfaceKey:null}:newBlankDocument(width,height,title,background,dpi,author,description);
   const draft=reuseIdle?controller:EditorController.restored(blank.document,blank.selected);
   const drawing=reuseIdle?idle!:makeSurface(null,draft);
   surface=drawing;
@@ -155,11 +155,11 @@ function discardBlankWarmup(){
   entry.drawing.destroy();
   if(surface===entry.drawing)surface=null;
 }
-function matchedBlankWarmup(width:number,height:number,name:string,background:'transparent'|'white'){
+function matchedBlankWarmup(width:number,height:number,name:string,background:'transparent'|'white',dpi=72,author='',description=''){
   const ready=initialBlankWarmup;
   const root=ready?.controller.document.root;
   return !qaMode&&!documentReady&&ready&&!ready.cancelled&&surface===ready.drawing&&
-    root?.width===width&&root.height===height&&root.name===(name.trim()||'新しい作品')&&ready.background===background?ready:null;
+    root?.width===width&&root.height===height&&root.name===(name.trim()||'新しい作品')&&ready.background===background&&root.metadata.dpi===dpi&&(root.metadata.author??'')===author&&(root.metadata.description??'')===description?ready:null;
 }
 let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
 let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thumbnailRepairSkipped=new Set<string>();
@@ -600,7 +600,7 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     throw error;
   }
 }
-async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent'):Promise<boolean>{
+async function createDocument(width:number,height:number,name='新しい作品',background:'transparent'|'white'='transparent',dpi=72,author='',description=''):Promise<boolean>{
   const createStarted=performance.now();
   const trigger=byId<HTMLButtonElement>('new');
   if(trigger.disabled)return false;
@@ -612,9 +612,9 @@ async function createDocument(width:number,height:number,name='新しい作品',
   trigger.disabled=true;byId('status').textContent='キャンバスを準備しています。';
   try{
     const documentStarted=performance.now();
-    const warm=matchedBlankWarmup(width,height,name,background);
+    const warm=matchedBlankWarmup(width,height,name,background,dpi,author,description);
     if(!warm)discardBlankWarmup();
-    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background);
+    const blank=warm?{document:warm.controller.document,selected:warm.selectedLayerId,whiteSurfaceKey:warm.whiteSurfaceKey}:newBlankDocument(width,height,name,background,dpi,author,description);
     const {document,selected,whiteSurfaceKey}=blank;
     measureCanvasStage('new-document-model',documentStarted);
     if(warm)await activateFirstPrewarmedBlank(warm);
@@ -1061,7 +1061,7 @@ if(!qaMode){
   document.body.append(byId<HTMLInputElement>('openFile'));
   homeUi=installHomeShell(app,{
     createDocument,
-    onBlankDraftChange:(w,h,title,background)=>beginBlankWarmup(w,h,title,background),
+    onBlankDraftChange:(w,h,title,background,dpi,author,description)=>beginBlankWarmup(w,h,title,background,dpi,author,description),
     onEditorVisible:()=>surface?.refreshVisibleViewport(),
     openFile:()=>byId<HTMLInputElement>('openFile').click(),
     resume:async(documentId,writerEpochId)=>{
