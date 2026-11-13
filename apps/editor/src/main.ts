@@ -980,6 +980,24 @@ byId<HTMLButtonElement>('brushFavorite').onclick=()=>{
  const active=brushUsage.toggleFavorite(id);refreshBrushOptions();
  brushMessage(active?'お気に入りに登録しました。':'お気に入りを解除しました。');
 };
+// BRU-004: recover the actual saved Foundation brush, not its current catalog version.
+byId<HTMLButtonElement>('brushRecoverLast').onclick=()=>{
+ if(!documentReady){brushMessage('作品を開いてから使用してください。');return;}
+ let recovered:FoundationPreset|null=null;
+ const operations=controller.document.operationsTo();
+ for(let i=operations.length-1;i>=0;i--){
+  const operation=operations[i]!;
+  if(operation.kind!=='brush.stroke'||operation.parameters.seamlessCopy===true)continue;
+  const record=operation.parameters.strokeRecord as {preset?:{__foundation?:{preset?:FoundationPreset}}}|undefined;
+  if(record?.preset?.__foundation?.preset){recovered=record.preset.__foundation.preset;break;}
+ }
+ if(!recovered){brushMessage('この作品には取り出せるブラシの線がありません。');return;}
+ try{
+  const restored=brushPresets.duplicate(recovered,recovered.name+'（作品から）');
+  refreshBrushCatalog(restored.id);
+  brushMessage('直前に描いた線のブラシ設定を、自作ブラシとして保存しました。');
+ }catch(error){brushMessage('ブラシを取り出せません: '+String(error));}
+};
 byId<HTMLButtonElement>('brushDuplicate').onclick=()=>{
  if(!surface?.preset)return;
  try{const copy=brushPresets.duplicate(surface.preset,surface.preset.name+' のコピー');refreshBrushCatalog(copy.id);brushMessage('自作ブラシを保存しました。この端末で使用できます。');}
