@@ -18,6 +18,7 @@ import {CanvasView,type SavedCanvasView,type Point} from './canvasView';
 import {CanvasNavigation} from './canvasNavigation';
 import {wrappedCopies} from './seamlessStroke';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,lockStraightGuide,snapToStraightGuide,type GuideSettings,type LockedGuide} from './strokeGuide';
+import {rectangleFromPoints,clampSelectionRect,selectionContains,insetSelection,clipSelectionExit,type SelectionRect} from './strokeSelection';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
 
 
@@ -42,6 +43,10 @@ export class BrushSurface{
   private suppressedTouches=new Set<number>();
   private commonStabilization=0.25;
   private pressureCalibrationMidpoint=0.5;
+  private selectionRect:SelectionRect|null=null;
+  private selectionMode=false;private selectionPointer:number|null=null;private selectionAnchor:Point|null=null;
+  private strokeClip:SelectionRect|null=null;private strokeLast:Point|null=null;private strokeExited=false;
+  onSelectionChanged:()=>void=()=>{};
   private guideSettings:GuideSettings=DEFAULT_GUIDE_SETTINGS;
   private activeGuide:LockedGuide|null=null;
   constructor(private canvas:HTMLCanvasElement,private controller:EditorController,private status:(text:string)=>void,private onCommitted:()=>void=()=>{},private onStateChanged:(reason?:'view'|'view-command'|'state')=>void=()=>{},private backendOverride:'auto'|'webgl2'|'webgpu'|null=null,private onSample:(rgba:readonly number[]|null,phase:'preview'|'commit'|'cancel',point:Point|null)=>void=()=>{}){}
@@ -111,7 +116,7 @@ export class BrushSurface{
     if(!this.navigation)return;
     e.preventDefault();this.navigation.wheelZoom(e.deltaY,this.pointerLocation(e));
   };
-  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(immediate)this.onStateChanged('view-command');}}
+  private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(this.activeGuide)this.updateGuideOverlay();if(this.selectionRect)this.updateSelectionOverlay();if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
   restoreView(state:SavedCanvasView){this.view?.restore(state);this.updateView(true);}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
@@ -128,6 +133,41 @@ export class BrushSurface{
   setRotationSnap(enabled:boolean){this.rotationSnap=enabled;if(this.navigation)this.navigation.snapRotation=enabled;}
   setViewRotation(angle:number,notify=true){if(this.view){this.view.setRotation(angle);this.updateView(notify);}}
   /** BRU-010: settings are snapshotted when a stroke starts. */
+  /** Document-pixel selection, independent of canvas zoom and angle. */
+  get selectedRectangle(){return this.selectionRect;}
+  get selectingRectangle(){return this.selectionMode;}
+  setSelectionMode(enabled:boolean){
+    if(this.inputActive)return;
+    this.selectionMode=enabled;this.onSelectionChanged();
+  }
+  clearRectangleSelection(){
+    if(this.inputActive)return;
+    this.selectionRect=null;this.selectionMode=false;this.selectionAnchor=null;
+    this.selectionPointer=null;this.updateSelectionOverlay();this.onSelectionChanged();
+  }
+  private updateSelectionOverlay(){
+    let overlay=this.inputViewport.querySelector<SVGSVGElement>('.illustro-selection-overlay');
+    const rectangle=this.selectionRect,v=this.view;
+    if(!rectangle||!v){if(overlay)overlay.style.display='none';return;}
+    if(!overlay){
+      overlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      overlay.classList.add('illustro-selection-overlay');overlay.setAttribute('aria-hidden','true');
+      overlay.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:4';
+      const polygon=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      polygon.setAttribute('stroke','#43bfea');polygon.setAttribute('stroke-width','1.5');
+      polygon.setAttribute('stroke-dasharray','7 4');polygon.setAttribute('fill','#43bfea');
+      polygon.setAttribute('fill-opacity','0.08');overlay.append(polygon);
+      this.inputViewport.append(overlay);
+    }
+    overlay.style.display='block';
+    const points=[
+      {x:rectangle.x,y:rectangle.y},
+      {x:rectangle.x+rectangle.width,y:rectangle.y},
+      {x:rectangle.x+rectangle.width,y:rectangle.y+rectangle.height},
+      {x:rectangle.x,y:rectangle.y+rectangle.height}
+    ].map(p=>v.screen(p));
+    overlay.firstElementChild!.setAttribute('points',points.map(p=>p.x+','+p.y).join(' '));
+  }
   setGuideSettings(settings:GuideSettings){this.guideSettings=normalizeGuideSettings(settings);this.updateGuideOverlay();}
   setCommonStabilization(strength:number){if(Number.isFinite(strength))this.commonStabilization=Math.min(1,Math.max(0,strength));}
   setPressureCalibration(midpoint:number){if(Number.isFinite(midpoint))this.pressureCalibrationMidpoint=Math.min(1,Math.max(0,midpoint));}
@@ -164,6 +204,14 @@ export class BrushSurface{
     // stroke / document layer becomes the hit target during formal painting.
     // Interactive editor controls inside the viewport must remain interactive.
     if(e.target instanceof Element&&e.target.closest('button,input,select,textarea,[contenteditable="true"],.crop-overlay,[data-canvas-no-input]'))return;
+    if(this.selectionMode){
+      if(this.selectionPointer!==null||e.button!==0)return;
+      e.preventDefault();this.selectionPointer=e.pointerId;
+      const start=this.view.document(this.pointerLocation(e));
+      this.selectionAnchor=start;this.selectionRect=rectangleFromPoints(start,start);
+      this.inputViewport.setPointerCapture(e.pointerId);
+      this.updateSelectionOverlay();this.onSelectionChanged();return;
+    }
     if(this.eyedropper){if(e.button!==0||this.eyedropperPointer!==null)return;e.preventDefault();this.eyedropperPointer=e.pointerId;this.inputViewport.setPointerCapture(e.pointerId);this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'){
       e.preventDefault();
@@ -182,6 +230,15 @@ export class BrushSurface{
       this.inputViewport.setPointerCapture(e.pointerId);return;
     }
     const eraser=penEraserInput(e,this.barrelErases)?this.eraserPreset():null,preset=eraser??this.preset;
+    if(this.selectionRect){
+      const pad=Math.max(0.5,preset.size/2);
+      const clipped=insetSelection(this.selectionRect,pad);
+      const start=this.view.document(this.pointerLocation(e));
+      if(!clipped||!selectionContains(clipped,{x:start.x-(this.wrapOrigin?.x??0),y:start.y-(this.wrapOrigin?.y??0)})){
+        this.status('選択範囲の内側から描いてください。ブラシより小さい範囲には描けません。');return;
+      }
+      this.strokeClip=clipped;this.strokeExited=false;
+    }else this.strokeClip=null;
     if(this.controller.selectedLayer.baseColor==='white'){this.status('背景レイヤーをもう一度選ぶと、背景にも直接描けます。');return;}
     const inputReason=e.button!==0&&!eraser?'button':this.pointer!==null?'pointer-active':this.finishing?'cancelling':this.historySyncing?'history':this.inputBarrier?'document-barrier':this.operationMode!=='idle'?this.operationMode:null;const attempt=this.traceHandoff?{at:performance.now(),eventAt:e.timeStamp,reason:inputReason,state:{finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,formalCommands:(this.renderer as any)?.document.count??0,pendingRaw:this.session.pendingRawCount,protectionQueue:this.protectionQueueLength}} as (typeof this.inputAttempts)[number]:null;if(attempt){this.inputAttempts.push(attempt);if(this.inputAttempts.length>1200)this.inputAttempts.shift();}if(inputReason)return;if(this.handoffFault){if(attempt)attempt.reason='fault';this.handoffRejected++;this.status('描画処理が停止しています。'+this.handoffFault);return;}const r=this.renderer as any;if((this.handoff?.pending??0)+this.gpuFinishes.size>=64||r?.document.count>100000||this.session.pendingRawCount>50000||this.protectionQueueLength>=128){if(attempt)attempt.reason='resource-limit';this.handoffRejected++;this.status('処理量の上限に達しました。作品の処理が終わるまで次の一筆をお待ちください。');return;}e.preventDefault();
     try{this.target=this.controller.target();this.pendingBranch=this.controller.canRedo;this.reservation=this.handoff!.reserve(this.target);
@@ -191,13 +248,40 @@ export class BrushSurface{
       this.updateGuideOverlay();
       this.renderer?.setSeamlessPreview(this.view.seamless);
       const context={...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})};
-      this.activeStrokeId=this.session.begin(preset,0,context,this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.session.predictions([]);this.pointer=e.pointerId;this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
-  private move=(e:PointerEvent)=>{if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
+      this.activeStrokeId=this.session.begin(preset,0,context,this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.strokeLast={x:s.x,y:s.y};this.session.predictions([]);this.pointer=e.pointerId;this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
+  private move=(e:PointerEvent)=>{if(e.pointerId===this.selectionPointer){
+      if(!this.view||!this.selectionAnchor)return;
+      const end=this.view.document(this.pointerLocation(e));
+      this.selectionRect=clampSelectionRect(rectangleFromPoints(this.selectionAnchor,end),this.controller.document.root.width,this.controller.document.root.height);
+      this.updateSelectionOverlay();e.preventDefault();return;
+    }
+    if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;}
     if(e.pointerType==='touch'&&this.navigation?.touchMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
      if(this.navigation?.mouseMove(e.pointerId,this.pointerLocation(e))){e.preventDefault();return;}
-     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];for(let i=0;i<events.length;i++){const s=this.sample(events[i]!);actual.push(s);this.session.accept(s,i===events.length-1);}const predictedEvents=e.getPredictedEvents?.()??[],predicted=this.clampPredicted(actual.at(-1)??this.sample(e),predictedEvents.slice(0,2).map(event=>({...this.sample(event),origin:'predicted'})));this.session.predictions(predicted);};
-  private up=(e:PointerEvent)=>{if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.eyedropperPointer=null;this.queueSample(this.screenToDocument(this.pointerLocation(e)),'commit');return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId!==this.pointer||!this.session||!this.target)return;this.finishStroke(this.sample(e));};
-  private finishStroke(release:Sample|null=null){if(!this.session||!this.target||this.pointer===null)return;const session=this.session,target=this.target,seamless=this.view?.seamless??false,strokeId=this.activeStrokeId,reservation=this.reservation!;session.predictions([]);const upAt=performance.now();this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.activeStrokeId=null;this.reservation=null;
+     if(e.pointerId!==this.pointer||!this.session)return;e.preventDefault();const coalesced=e.getCoalescedEvents?.()??[],events=coalesced.length?coalesced:[e],actual:Sample[]=[];for(let i=0;i<events.length;i++){
+      let sample=this.sample(events[i]!);
+      if(this.strokeClip){
+        if(this.strokeExited)break;
+        if(!selectionContains(this.strokeClip,{x:sample.x,y:sample.y})){
+          const clipped=clipSelectionExit(this.strokeLast??{x:sample.x,y:sample.y},{x:sample.x,y:sample.y},this.strokeClip);
+          sample={...sample,x:clipped.x,y:clipped.y};
+          this.strokeExited=true;
+        }
+        this.strokeLast={x:sample.x,y:sample.y};
+      }
+      actual.push(sample);this.session.accept(sample,i===events.length-1||this.strokeExited);
+      if(this.strokeExited)break;
+    }
+    const predictedEvents=this.strokeClip?[]:e.getPredictedEvents?.()??[];
+    const predicted=this.strokeExited?[]:this.clampPredicted(actual.at(-1)??this.sample(e),predictedEvents.slice(0,2).map(event=>({...this.sample(event),origin:'predicted'})));
+    this.session.predictions(predicted);};
+  private up=(e:PointerEvent)=>{if(e.pointerId===this.selectionPointer){
+      e.preventDefault();this.selectionPointer=null;this.selectionAnchor=null;
+      if(!this.selectionRect||this.selectionRect.width<2||this.selectionRect.height<2)this.selectionRect=null;
+      this.selectionMode=false;this.updateSelectionOverlay();this.onSelectionChanged();return;
+    }
+    if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){e.preventDefault();this.eyedropperPointer=null;this.queueSample(this.screenToDocument(this.pointerLocation(e)),'commit');return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId!==this.pointer||!this.session||!this.target)return;this.finishStroke(this.strokeExited?null:this.sample(e));};
+  private finishStroke(release:Sample|null=null){if(!this.session||!this.target||this.pointer===null)return;const session=this.session,target=this.target,seamless=this.view?.seamless??false,strokeId=this.activeStrokeId,reservation=this.reservation!;session.predictions([]);const upAt=performance.now();this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.strokeClip=null;this.strokeLast=null;this.strokeExited=false;this.activeStrokeId=null;this.reservation=null;
     const promise=session.end(release?{...release,origin:'release'}:null),trace={id:strokeId!,upAt,readyMs:performance.now()-upAt} as (typeof this.handoffTraces)[number];if(this.traceHandoff){this.handoffTraces.push(trace);if(this.handoffTraces.length>1200)this.handoffTraces.shift();}const uiAt=performance.now();this.onStateChanged();trace.uiStateMs=performance.now()-uiAt;trace.readyMs=performance.now()-upAt;
     void promise.then(async record=>{if(!record||this.disposed)return;trace.recordMs=performance.now()-upAt;const copies=seamless?wrappedCopies(record,target.width,target.height).map(copy=>copy.record):[];
       try{const result=await this.handoff!.release(reservation,record,copies);if(result)trace.logicalMs=performance.now()-upAt;else trace.parkedMs=performance.now()-upAt;}
@@ -235,9 +319,13 @@ export class BrushSurface{
   get hasUncommittedInput(){return this.pointer!==null||(this.handoff?.pending??0)>0;}
   get hasPendingStrokes(){return (this.handoff?.pending??0)>0||this.gpuFinishes.size>0;}
   get inputActive(){return this.pointer!==null||this.finishing||this.historySyncing;}
-  private cancel=(e:PointerEvent)=>{if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId===this.pointer){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}};
+  private cancel=(e:PointerEvent)=>{if(e.pointerId===this.selectionPointer){
+      this.selectionPointer=null;this.selectionAnchor=null;this.selectionMode=false;this.updateSelectionOverlay();this.onSelectionChanged();return;
+    }
+    if(this.suppressedTouches.delete(e.pointerId))return;if(e.pointerId===this.eyedropperPointer){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);return;}if(e.pointerType==='touch')this.navigation?.touchUp(e.pointerId);else this.navigation?.mouseUp(e.pointerId);if(e.pointerId===this.pointer){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}};
   private interruptInput=()=>{
     this.spacePressed=false;
+    if(this.selectionPointer!==null){this.selectionPointer=null;this.selectionAnchor=null;this.selectionMode=false;this.updateSelectionOverlay();this.onSelectionChanged();}
     this.suppressedTouches.clear();
     this.navigation?.dispose();
     if(this.eyedropperPointer!==null){
@@ -245,7 +333,7 @@ export class BrushSurface{
     }
     if(this.pointer!==null){void this.cancelStroke();this.status('入力が中断されたため、この線を取り消しました。');}
   };
-  private async cancelStroke(){const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
+  private async cancelStroke(){const id=this.activeStrokeId;if(this.reservation){this.handoff?.cancel(this.reservation);this.pendingStrokeIds.delete(this.reservation);if(!this.handoff?.pending)this.pendingBranch=false;this.reservation=null;}this.pointer=null;this.target=null;this.wrapOrigin=null;this.activeGuide=null;this.updateGuideOverlay();this.strokeClip=null;this.strokeLast=null;this.strokeExited=false;this.activeStrokeId=null;this.finishing=true;this.onStateChanged();try{this.session?.predictions([]);await this.session?.cancel();}catch{this.status('描画を取り消せませんでした。');}finally{if(id!==null)this.renderer?.clearSeamlessPreviews(id);this.renderer?.setSeamlessPreview(false);this.finishing=false;this.onStateChanged();}}
   private frame=(now:number)=>{if(this.disposed)return;this.lastFrameAt=performance.now();this.session?.frame(now);if(this.viewNotificationPending){this.viewNotificationPending=false;this.onStateChanged('view');}const pressure=!!(this.renderer as any)?.backend.previewPressure;if(pressure!==this.previewPressureShown){this.previewPressureShown=pressure;if(pressure)this.status('表示処理が混み合っています。入力を保持して線の確定を優先しています。');else if(!this.handoffFault&&!this.historySyncing)this.status('描画を続けられます。');this.onStateChanged();}if(this.renderer?.errors.length||this.session?.errors.length)this.status('描画中に問題が起きました。');this.frameId=requestAnimationFrame(this.frame);};
   private markPresented(){this.presentedFrames++;this.lastPresentedAt=performance.now();const diagnostic=this.canvas as HTMLCanvasElement&{__illustroPresentationFrames?:number;__illustroPresentationLastAt?:number};diagnostic.__illustroPresentationFrames=this.presentedFrames;diagnostic.__illustroPresentationLastAt=this.lastPresentedAt;}
   async inspectRendering(){
@@ -505,5 +593,5 @@ export class BrushSurface{
   get performanceDiagnostics(){const r=this.renderer as any;return {...this.renderer?.performanceSummary(),handoff:{inputAttempts:this.traceHandoff?this.inputAttempts:[],accepted:this.handoffAccepted,rejected:this.handoffRejected,pendingLogical:this.handoff?.pending??0,pendingGpu:this.gpuFinishes.size,pendingEntries:this.handoff?.diagnostics,historyVisibility:this.historyTraces,protectionQueue:this.protectionQueueLength,fault:this.handoffFault,traces:this.traceHandoff?this.handoffTraces:[]},frameState:{lastFrameAt:this.lastFrameAt,disposed:this.disposed,operationMode:this.operationMode,pointer:this.pointer,finishing:this.finishing,historySyncing:this.historySyncing,inputBarrier:this.inputBarrier,pendingRawCount:this.session?.pendingRawCount??0,formalCommands:r?.document.count??0,inflight:r?.inflight,viewPending:r?.viewPending,navigationActive:r?.navigationActive,navigationUntil:r?.navigationUntil,guardPreparing:r?.guardPreparing,overlayViewPending:!!r?.overlayViewPending,overlayPending:r?.proxy?.pending.size,overlayFinalizations:r?.proxy?.finalizations.size,viewFence:!!r?.backend.viewFence,viewSubmission:!!r?.backend.viewSubmission,cancellingStroke:!!r?.cancellingStroke,needsFrame:r?.needsFrame,jobs:r?.document.jobs.length,presentationHeld:r?.backend.presentationHeld,glFence:!!r?.backend.fence,pending:!!r?.backend.pending,errors:r?.errors,sessionErrors:this.session?.errors},checkpoint:{...this.checkpointMetrics},strokeReplayFallbacks:this.historyReplayFallbacks,fullDocumentRebuilds:this.session?.fullDocumentRebuilds??0,fullReplayStrokes:this.session?.fullReplayStrokes??0,cancelledStrokeCount:this.session?.cancelledStrokeCount??0,projectionRestoreMode:this._projectionRestoreMode};}
   get interacting(){return !!this.navigation?.touching||this.busy;}
   get initializationError(){return this._initializationError;}get backendSelection(){return this.renderer?.info.selection??null;}get backend(){return String(this.renderer?.info.backend??'未取得');}get rendererDesynchronized(){return Boolean(this.renderer?.info.desynchronized);}get rendererAlpha(){return Boolean(this.renderer?.info.alpha);}get rendererPremultipliedAlpha(){return Boolean(this.renderer?.info.premultipliedAlpha);}get rendererArtworkAlpha(){return Boolean(this.renderer?.info.artworkAlpha);}get presentationOpaque(){return Boolean(this.renderer?.info.presentationOpaque);}get presentationMode(){return 'worker-images';}get presentationAlpha(){return this.renderer?.info.alpha??null;}get presentationDesynchronized(){return this.renderer?.info.desynchronized??null;}get presentationFrames(){return this.presentedFrames;}get presentationLastAt(){return this.lastPresentedAt;}get projectionRestoreMs(){return this._projectionRestoreMs;}get projectionRestoreMode(){return this._projectionRestoreMode;}get projectionCacheRevision(){return this._projectionCacheRevision;}get browserPredictionSamples(){return this.session?.browserPredictions??0;}get brushName(){return this.preset?.name??'未選択';}get brushId(){return this.preset?.id??'未選択';}get blendMode(){return this.preset?.blend??'normal';}get eraserType(){return this.preset?.id==='foundation-hard-eraser'?'hard':this.preset?.id==='foundation-soft-eraser'?'soft':this.preset?.blend==='erase'?'erase':null;}get brushSize(){return this.preset?.size??0;}get historyPatchHits(){return this.session?.historyPatchHits??0;}get historyReplayFallbacks(){return this.session?.historyReplayFallbacks??0;}get busy(){return this.inputActive||this.hasPendingStrokes;}
-  destroy(){this.activeGuide=null;this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
+  destroy(){this.activeGuide=null;this.selectionRect=null;this.updateSelectionOverlay();this.updateGuideOverlay();this.resizeObserver?.disconnect();this.densityMedia?.removeEventListener('change',this.densityChanged);this.navigation?.dispose();this.navigation=null;this.disposed=true;cancelAnimationFrame(this.frameId);this.abort.abort();if(this.renderer)this.renderer.onPresentation=null;this.session?.destroy();}
 }
