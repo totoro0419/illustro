@@ -14,7 +14,7 @@ import presentationWorkerUrl from '../../../packages/brush-rt/dist/rt/presentati
 // @ts-expect-error Runtime JS port is deliberately separate from the engine API.
 import {DrawingHost} from '../../../packages/brush-rt/dist/rt/drawing-host.mjs';
 import type {EditorController,EditorHistoryChange} from './controller';
-import {CanvasView,type Point} from './canvasView';
+import {CanvasView,type SavedCanvasView,type Point} from './canvasView';
 import {CanvasNavigation} from './canvasNavigation';
 import {wrappedCopies} from './seamlessStroke';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
@@ -108,6 +108,7 @@ export class BrushSurface{
   };
   private updateView(immediate=false,backing?:readonly number[]){if(this.view&&this.renderer){const size=backing??(this.renderer as unknown as {backend:{viewTransform?:Float32Array}}).backend.viewTransform??[this.canvas.width,this.canvas.height];this.renderer.setViewTransform(this.view.uniform(size[0]!,size[1]!));this.viewNotificationPending=!immediate;if(immediate)this.onStateChanged('view-command');}}
   get viewState(){return this.view?.state??null;}
+  restoreView(state:SavedCanvasView){this.view?.restore(state);this.updateView(true);}
   documentToScreen(point:Point){return this.view?.screen(point)??point;}
   screenToDocument(point:Point){return this.view?.document(point)??point;}
   get canChangeGeometry(){return !this.busy&&!!this.renderer;}

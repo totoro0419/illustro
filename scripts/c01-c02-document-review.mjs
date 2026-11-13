@@ -98,12 +98,22 @@ try{
         assert.equal(await restored.locator('#documentInfoAuthor').inputValue(),'Artist');
         assert.equal(await restored.locator('#documentInfoDpi').inputValue(),'600');
       }finally{await reopened.close();}
+      await page.locator('#zoomPercent').fill('180');
+      await page.locator('#zoomPercent').press('Tab');
+      const workId=await page.locator('#canvas').getAttribute('data-document-id');
+      await page.waitForFunction(id=>JSON.parse(localStorage.getItem('illustro.canvas-views.v1')??'[]')
+        .some(entry=>entry.documentId===id&&entry.view.zoom===1.8),workId);
+      await page.reload();
+      await page.locator('#ihNavWorks').click();
+      await page.locator('[data-work-id="'+workId+'"] .ih-work-preview').click();
+      await page.waitForFunction(()=>document.getElementById('app')?.inert===false);
+      assert.equal(await page.locator('#zoomPercent').inputValue(),'180');
       await page.locator('#ihNavHome').evaluate(button=>button.click());
       await page.locator('#ihStart').click();
       await page.locator('#ihTemplateSelect').selectOption('Review template');
       assert.deepEqual(await Promise.all(['#ihNewWidth','#ihNewHeight','#ihNewDpi'].map(id=>page.locator(id).inputValue())),['320','240','600']);
       assert.deepEqual(errors,[]);
-      cases.push({backend,result:'PASS',pixels:[320,240],dpi:600,undoRedo:true,saveCopy:true,template:true});
+      cases.push({backend,result:'PASS',pixels:[320,240],dpi:600,undoRedo:true,saveCopy:true,template:true,viewRestore:true});
     }finally{await context.close();}
   }
 }catch(error){cases.push({result:'FAIL',error:error.stack??String(error)});process.exitCode=1;}
