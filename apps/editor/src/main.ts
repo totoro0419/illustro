@@ -16,6 +16,7 @@ import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {penEraserInput} from './stylusButtons';
 import {parseSavedCanvasView} from './canvasView';
+import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,type GuideSettings} from './strokeGuide';
 import {BrushPresetLibrary} from './brushPresets';
 import {additionalBrushes} from './brushStarterPresets';
 import {installBrushDynamicsEditor} from './brushDynamicsEditor';
@@ -74,6 +75,11 @@ try{
   for(const key of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[])
     if(typeof saved?.[key]==='boolean')inputPreferences[key]=saved[key];
 }catch{/* Defaults remain available if preferences cannot be read. */}
+let guidePreferences:GuideSettings=DEFAULT_GUIDE_SETTINGS;
+try{
+ const saved=JSON.parse(localStorage.getItem('illustro.guide-settings.v1')??'null') as Partial<GuideSettings>|null;
+ if(saved&&typeof saved==='object')guidePreferences=normalizeGuideSettings(saved);
+}catch{/* Drawing remains usable when preferences are unavailable. */}
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
@@ -301,6 +307,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
   return eraser?.blend==='erase'?(inputPreferences.eraserSizeLink&&active?{...eraser,size:active.size}:eraser):null;
  };
  applyInputPreferences(drawing);
+ drawing.setGuideSettings(guidePreferences);
  return drawing;
 }
 function applyInputPreferences(drawing:BrushSurface){
@@ -1061,6 +1068,25 @@ document.addEventListener('keyup',event=>{
 });
 window.addEventListener('blur',releaseTemporaryEraser);
 byId<HTMLInputElement>('seamless').onchange=e=>surface?.setSeamless((e.target as HTMLInputElement).checked);
+// C02 BRU-010: ruler changes affect the next stroke, not strokes already in progress.
+function refreshGuideSettings(){
+ guidePreferences=normalizeGuideSettings({
+  enabled:byId<HTMLInputElement>('guideEnabled').checked,
+  angle:Number(byId<HTMLInputElement>('guideAngle').value),
+  strength:Number(byId<HTMLInputElement>('guideStrength').value)/100,
+  applyEraser:byId<HTMLInputElement>('guideApplyEraser').checked
+ });
+ byId<HTMLOutputElement>('guideStrengthValue').textContent=Math.round(guidePreferences.strength*100)+'%';
+ surface?.setGuideSettings(guidePreferences);
+ try{localStorage.setItem('illustro.guide-settings.v1',JSON.stringify(guidePreferences));}catch{}
+}
+byId<HTMLInputElement>('guideEnabled').checked=guidePreferences.enabled;
+byId<HTMLInputElement>('guideAngle').value=String(Math.round(guidePreferences.angle));
+byId<HTMLInputElement>('guideStrength').value=String(Math.round(guidePreferences.strength*100));
+byId<HTMLInputElement>('guideApplyEraser').checked=guidePreferences.applyEraser;
+byId<HTMLOutputElement>('guideStrengthValue').textContent=Math.round(guidePreferences.strength*100)+'%';
+for(const id of ['guideEnabled','guideAngle','guideStrength','guideApplyEraser'])
+ byId<HTMLInputElement>(id).addEventListener('input',refreshGuideSettings);
 const referenceToggle=document.getElementById('referencePattern') as HTMLInputElement|null;if(referenceToggle)referenceToggle.onchange=()=>surface?.setReferencePattern(referenceToggle.checked);
 byId<HTMLInputElement>('force').onchange=e=>{if(!applyBrushChange(p=>{if(p.forceFade)p.forceFade.enabled=(e.target as HTMLInputElement).checked;}))syncPreset();updateQa();};for(const id of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[]){
  const input=byId<HTMLInputElement>(id);
