@@ -75,6 +75,8 @@ try{
   for(const key of Object.keys(inputPreferences) as (keyof typeof inputPreferences)[])
     if(typeof saved?.[key]==='boolean')inputPreferences[key]=saved[key];
 }catch{/* Defaults remain available if preferences cannot be read. */}
+let devicePressureSensitivity=0.5;
+try{const raw=localStorage.getItem('illustro.device-pressure-midpoint.v1');if(raw!==null){const saved=Number(raw);if(Number.isFinite(saved)&&saved>=0&&saved<=1)devicePressureSensitivity=saved;}}catch{}
 let commonStabilization=0.25;
 try{const raw=localStorage.getItem('illustro.common-stabilization.v1');if(raw!==null){const saved=Number(raw);if(Number.isFinite(saved)&&saved>=0&&saved<=1)commonStabilization=saved;}}catch{}
 let guidePreferences:GuideSettings=DEFAULT_GUIDE_SETTINGS;
@@ -311,6 +313,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  applyInputPreferences(drawing);
  drawing.setGuideSettings(guidePreferences);
  drawing.setCommonStabilization(commonStabilization);
+ drawing.setPressureCalibration(devicePressureSensitivity);
  return drawing;
 }
 function applyInputPreferences(drawing:BrushSurface){
@@ -978,6 +981,16 @@ byId<HTMLSelectElement>('brushStabilizationScope').onchange=event=>{
 const commonStabilizationInput=byId<HTMLInputElement>('commonStabilization');
 commonStabilizationInput.value=String(Math.round(commonStabilization*100));
 byId<HTMLOutputElement>('commonStabilizationValue').textContent=Math.round(commonStabilization*100)+'%';
+const devicePressureInput=byId<HTMLInputElement>('devicePressureSensitivity');
+devicePressureInput.value=String(Math.round(devicePressureSensitivity*100));
+const pressureLabel=byId<HTMLOutputElement>('devicePressureSensitivityValue');
+pressureLabel.textContent=devicePressureSensitivity===0.5?'標準':Math.round(devicePressureSensitivity*100)+'%';
+devicePressureInput.oninput=()=>{
+ devicePressureSensitivity=Math.max(0,Math.min(1,Number(devicePressureInput.value)/100));
+ pressureLabel.textContent=devicePressureSensitivity===0.5?'標準':Math.round(devicePressureSensitivity*100)+'%';
+ surface?.setPressureCalibration(devicePressureSensitivity);
+ try{localStorage.setItem('illustro.device-pressure-midpoint.v1',String(devicePressureSensitivity));}catch{}
+};
 commonStabilizationInput.oninput=()=>{
  commonStabilization=Math.max(0,Math.min(1,Number(commonStabilizationInput.value)/100));
  byId<HTMLOutputElement>('commonStabilizationValue').textContent=Math.round(commonStabilization*100)+'%';
