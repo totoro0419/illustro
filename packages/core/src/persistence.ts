@@ -13,7 +13,7 @@ const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.uno
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
 export type PersistedRoot=Readonly<{
-  documentId:string;width:number;height:number;name:string;colorProfileId:string;createdAt:number;modifiedAt:number;
+  documentId:string;width:number;height:number;name:string;colorProfileId:string;createdAt:number;modifiedAt:number;dpi?:number;author?:string;description?:string;
   rootLayerIds:readonly string[];layers:readonly PersistedLayer[];
 }>;
 export type PersistedLayer=Readonly<{
@@ -89,6 +89,7 @@ function serializeRoot(root:DocumentRoot,blockIds:Set<BlockId>):PersistedRoot{
     if(tiles.length>MAX_TILES_PER_ROOT)throw new Error('too many raster tiles');layers.push(Object.freeze({id,kind:'raster' as const,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,...(layer.baseColor?{baseColor:layer.baseColor}:{}),
       surface:Object.freeze({descriptor:layer.surface.descriptor,tiles:Object.freeze(tiles)})}));}
   return Object.freeze({documentId:root.documentId,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,createdAt:root.metadata.createdAt,modifiedAt:root.metadata.modifiedAt,
+    ...(root.metadata.dpi!==undefined?{dpi:root.metadata.dpi}:{}),...(root.metadata.author!==undefined?{author:root.metadata.author}:{}),...(root.metadata.description!==undefined?{description:root.metadata.description}:{}),
     rootLayerIds:Object.freeze([...root.rootLayerIds]),layers:Object.freeze(layers)});
 }
 
@@ -110,7 +111,9 @@ function parseRoot(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescripto
   if(!Array.isArray(r.layers)||r.layers.length===0||r.layers.length>MAX_LAYERS)throw new Error('invalid layers');const edit=PagedMap.empty<LayerId,LayerNode>().edit(),layerIds=new Set<LayerId>(),surfaceIds=new Set<RasterSurfaceId>();
   for(const item of r.layers){const layer=parseLayer(item,blocks);if(layerIds.has(layer.id))throw new Error('duplicate layer id');if(surfaceIds.has(layer.surface.descriptor.surfaceId))throw new Error('duplicate surface id');layerIds.add(layer.id);surfaceIds.add(layer.surface.descriptor.surfaceId);edit.set(layer.id,layer);}
   const rootLayerIds=uuidArray(r.rootLayerIds,'root layer') as LayerId[];if(rootLayerIds.length!==layerIds.size||new Set(rootLayerIds).size!==rootLayerIds.length)throw new Error('root layer order mismatch');for(const id of rootLayerIds)if(!layerIds.has(id))throw new Error('root layer missing');
-  return new DocumentRoot(documentId,width,height,name,colorProfileId,edit.commit(),rootLayerIds,{createdAt,modifiedAt});
+  const dpi=r.dpi===undefined?undefined:integer(r.dpi,'dpi',1);if(dpi!==undefined&&dpi>2400)throw new Error('invalid dpi');
+  const author=r.author===undefined?undefined:text(r.author,'author',0,160),description=r.description===undefined?undefined:text(r.description,'description',0,2000);
+  return new DocumentRoot(documentId,width,height,name,colorProfileId,edit.commit(),rootLayerIds,{createdAt,modifiedAt,...(dpi!==undefined?{dpi}:{}),...(author!==undefined?{author}:{}),...(description!==undefined?{description}:{})});
 }
 function parseLayer(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescriptor>):LayerNode{
   const r=record(value,'layer'),id=uuid(r.id,'layer id') as LayerId;if(r.kind!=='raster')throw new Error('unsupported layer kind');const name=text(r.name,'layer name',1,4096);
