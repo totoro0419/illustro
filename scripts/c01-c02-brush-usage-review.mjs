@@ -69,6 +69,7 @@ try{
    await page.mouse.move(center.x-10,center.y-10);
    await page.mouse.down();await page.mouse.move(center.x+10,center.y+10,{steps:3});await page.mouse.up();
    await page.waitForFunction(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>0,null,{timeout:25000});
+   await page.locator('[data-box-id="right.navigator"] .box-toggle').click();
    await page.locator('#selectionClear').click();
    assert.equal(await page.locator('#selectionClear').isDisabled(),true);
    assert.deepEqual(pageErrors,[],'unhandled browser errors on '+backend);
