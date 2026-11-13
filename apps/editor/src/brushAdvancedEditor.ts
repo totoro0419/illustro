@@ -27,6 +27,7 @@ const readable=(n:number,decimals=0)=>String(Number(n.toFixed(decimals)));
 
 export function installBrushAdvancedEditor(hooks:Hooks):{sync:(preset:FoundationPreset)=>void}{
  let selectedPoint=1;
+ let importSequence=0;
  let dragging:number|null=null;
  const chart=el<SVGSVGElement>('brushCurveChart');
  const pointPicker=el<HTMLSelectElement>('brushCurvePoint');
@@ -57,8 +58,60 @@ export function installBrushAdvancedEditor(hooks:Hooks):{sync:(preset:Foundation
   ['brushScatterEnabled',(p:FoundationPreset,v:boolean)=>{p.scatter.enabled=v;}]
  ] as const;
  for(const [id,edit] of toggleFields)el<HTMLInputElement>(id)?.addEventListener('change',e=>apply(p=>edit(p,(e.target as HTMLInputElement).checked)));
- el<HTMLSelectElement>('brushTipShape')?.addEventListener('change',e=>apply(p=>{p.tip.shape=(e.target as HTMLSelectElement).value;}));
- el<HTMLSelectElement>('brushTextureKind')?.addEventListener('change',e=>apply(p=>{p.texture.paper.kind=(e.target as HTMLSelectElement).value as 'paper'|'noise'|'hatch';p.texture.paper.resource=null;}));
+ el<HTMLSelectElement>('brushTipShape')?.addEventListener('change',e=>apply(p=>{
+  const shape=(e.target as HTMLSelectElement).value;
+  if(shape==='mask'){
+   if(p.tip.shape!=='mask')throw new Error('先に先端画像を読み込んでください。');
+   return;
+  }
+  p.tip.shape=shape;p.tip.resource=null;delete p.resources['editor-tip-image'];
+ }));
+ el<HTMLSelectElement>('brushTextureKind')?.addEventListener('change',e=>apply(p=>{
+  const kind=(e.target as HTMLSelectElement).value as 'paper'|'noise'|'hatch'|'image';
+  if(kind==='image'){
+   if(p.texture.paper.kind!=='image')throw new Error('先に紙の質感の画像を読み込んでください。');
+   return;
+  }
+  p.texture.paper.kind=kind;p.texture.paper.resource=null;delete p.resources['editor-paper-image'];
+ }));
+ el<HTMLSelectElement>('brushTextureSpace')?.addEventListener('change',e=>
+  apply(p=>{p.texture.paper.space=(e.target as HTMLSelectElement).value as 'paper'|'tip';}));
+ for(const [id,kind] of [['brushTipFile','mask'],['brushTextureFile','texture']] as const){
+  el<HTMLInputElement>(id)?.addEventListener('change',async event=>{
+   const input=event.target as HTMLInputElement,file=input.files?.[0];input.value='';
+   const original=hooks.getPreset();if(!file||!original)return;
+   const request=++importSequence;
+   try{
+    if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>8*1024*1024)
+     throw new Error('8 MB以下のPNG・JPEG・WebP画像を選んでください。');
+    const bitmap=await createImageBitmap(file);
+    let width:number,height:number,alpha:number[];
+    try{
+     const factor=Math.min(1,64/Math.max(bitmap.width,bitmap.height));
+     width=Math.max(1,Math.round(bitmap.width*factor));height=Math.max(1,Math.round(bitmap.height*factor));
+     const canvas=new OffscreenCanvas(width,height),ctx=canvas.getContext('2d',{willReadFrequently:true});
+     if(!ctx)throw new Error('画像を読み込めませんでした。');
+     ctx.drawImage(bitmap,0,0,width,height);
+     const pixels=ctx.getImageData(0,0,width,height).data;
+     const hasTransparency=pixels.some((value,index)=>index%4===3&&value<255);
+     alpha=Array.from({length:width*height},(_,i)=>{
+      const index=i*4,opacity=pixels[index+3]!/255;
+      if(kind==='mask'&&hasTransparency)return opacity;
+      const light=(pixels[index]!*.2126+pixels[index+1]!*.7152+pixels[index+2]!*.0722)/255;
+      return (kind==='mask'?1-light:light)*opacity;
+     });
+     if(!alpha.some(value=>value>0))throw new Error('描画に使える部分がない画像です。');
+    }finally{bitmap.close();}
+    if(request!==importSequence||hooks.getPreset()?.id!==original.id)return;
+    if(apply(p=>{
+     const key=kind==='mask'?'editor-tip-image':'editor-paper-image';
+     p.resources[key]={kind,width,height,alpha,label:file.name.slice(0,120)};
+     if(kind==='mask'){p.tip.shape='mask';p.tip.resource=key;}
+     else{p.texture.paper.kind='image';p.texture.paper.resource=key;if(!p.texture.paper.strength)p.texture.paper.strength=.4;}
+    }))hooks.message(kind==='mask'?'先端画像を設定しました。':'紙の質感に画像を設定しました。');
+   }catch(error){if(request===importSequence)hooks.message(error instanceof Error?error.message:String(error));}
+  });
+ }
  el<HTMLSelectElement>('brushStabilizationMode')?.addEventListener('change',e=>apply(p=>{p.stabilization.speedMode=(e.target as HTMLSelectElement).value as 'increase'|'reduce';}));
  el<HTMLInputElement>('brushPrediction')?.addEventListener('change',e=>apply(p=>{p.prediction.enabled=(e.target as HTMLInputElement).checked;}));
  function pickPoint(index:number){selectedPoint=index;const p=hooks.getPreset();if(p)sync(p);}
@@ -127,6 +180,8 @@ export function installBrushAdvancedEditor(hooks:Hooks):{sync:(preset:Foundation
   const set=(id:string,value:string)=>{const node=el<HTMLInputElement|HTMLSelectElement>(id);if(node)node.value=value;};
   set('brushTipShape',p.tip.shape);
   set('brushTextureKind',p.texture.paper.kind);
+  set('brushTextureSpace',p.texture.paper.space);
+  const tipFile=el<HTMLInputElement>('brushTipFile');if(tipFile)tipFile.disabled=p.renderer==='sweep';
   set('brushStabilizationMode',p.stabilization.speedMode);
   const prediction=el<HTMLInputElement>('brushPrediction');if(prediction)prediction.checked=p.prediction.enabled;
   const follow=el<HTMLInputElement>('brushTipFollow');if(follow)follow.checked=p.tip.direction;

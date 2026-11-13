@@ -63,6 +63,16 @@ try{
       assert.match(await page.locator('#documentInfoStatus').innerText(),/保存しました/);
       await page.locator('#documentInfoClose').click();
 
+      const image=await page.evaluate(()=>{
+        const canvas=document.createElement('canvas');canvas.width=canvas.height=16;
+        const ctx=canvas.getContext('2d');ctx.fillStyle='black';ctx.fillRect(2,2,12,12);ctx.fillStyle='white';ctx.fillRect(5,5,6,6);
+        return canvas.toDataURL().split(',')[1];
+      });
+      const picture={name:'brush-mask.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')};
+      await page.locator('#brushTipFile').setInputFiles(picture);
+      await page.waitForFunction(()=>document.getElementById('brushTipShape').value==='mask');
+      await page.locator('#brushTextureFile').setInputFiles(picture);
+      await page.waitForFunction(()=>document.getElementById('brushTextureKind').value==='image');
       const box=await page.locator('.surface').boundingBox();
       await page.mouse.move(box.x+box.width*.45,box.y+box.height*.44);
       await page.mouse.down();
@@ -81,6 +91,9 @@ try{
       assert.equal(revision.root.description,'First\nSecond');
       assert.equal(revision.root.name,'Edited review');
       assert.equal(revision.command.operations[0].kind,'brush.stroke');
+      const stroke=revision.command.operations[0].parameters.strokeRecord;
+      assert.ok(stroke.preset.__foundation.preset.resources['editor-tip-image'].alpha.some(value=>value>0));
+      assert.ok(stroke.preset.__foundation.preset.resources['editor-paper-image']);
       const reopened=await browser.newContext({acceptDownloads:true});
       try{
         const restored=await reopened.newPage();
@@ -113,7 +126,7 @@ try{
       await page.locator('#ihTemplateSelect').selectOption('Review template');
       assert.deepEqual(await Promise.all(['#ihNewWidth','#ihNewHeight','#ihNewDpi'].map(id=>page.locator(id).inputValue())),['320','240','600']);
       assert.deepEqual(errors,[]);
-      cases.push({backend,result:'PASS',pixels:[320,240],dpi:600,undoRedo:true,saveCopy:true,template:true,viewRestore:true});
+      cases.push({backend,result:'PASS',pixels:[320,240],dpi:600,undoRedo:true,saveCopy:true,template:true,viewRestore:true,brushImages:true});
     }finally{await context.close();}
   }
 }catch(error){cases.push({result:'FAIL',error:error.stack??String(error)});process.exitCode=1;}
