@@ -31,8 +31,9 @@ export class DrawingHost {
    if(m.type==='fault'){this.presentationReject(Error(m.error));this.fault(m.error);return;}
    if(m.type==='document'){
     const accepted=m.epoch===this.epoch&&m.version>=this.documentVersion;
-    const complete=()=>{
-     if(accepted&&!this.disposed){
+    const complete=(applied=accepted)=>{
+     const current=applied&&!this.disposed&&m.epoch===this.epoch&&m.version>=this.documentVersion;
+     if(current){
       this.documentVersion=m.version;
       const coverage=this.pendingCoverage.get(m.version);
       if(!coverage?.covered)this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);
@@ -42,7 +43,7 @@ export class DrawingHost {
      }
      const request=this.presentationRequests.get(m.request);
      this.presentationRequests.delete(m.request);
-     request?.resolve({accepted:accepted&&!this.disposed});
+     request?.resolve({accepted:current});
     };
     if(!accepted){for(const t of m.tiles)t.bitmap.close();complete();return;}
     if(this.inputFirstProbe){
@@ -55,8 +56,8 @@ export class DrawingHost {
        this.presentationRequests.delete(m.request);request?.resolve({accepted:false});
        return;
       }
-      await this.documentPresentation.applyCooperatively(m.tiles);
-      complete();
+      const applied=await this.documentPresentation.applyCooperatively(m.tiles,()=>!this.disposed&&m.epoch===this.epoch&&m.version>=this.documentVersion);
+      complete(applied);
      }).catch(error=>{
       const request=this.presentationRequests.get(m.request);
       this.presentationRequests.delete(m.request);request?.reject(error);
