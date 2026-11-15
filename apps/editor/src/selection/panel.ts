@@ -162,6 +162,23 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       if(current===job&&callbacks.getDocument()?.id===doc.id)publish(next);
     }).catch(error=>{status.textContent=String(error);});
   });
+  const grow=asButton('範囲を広げる',()=>void adjust('grow'));
+  const shrink=asButton('範囲を縮める',()=>void adjust('shrink'));
+  const border=asButton('境界だけ選ぶ',()=>void adjust('border'));
+  async function adjust(operation:'grow'|'shrink'|'border'){
+    if(!active)return;
+    const question=operation==='grow'?'広げる幅':operation==='shrink'?'縮める幅':'境界の幅';
+    const response=window.prompt(question+'（0〜128px）','5');
+    if(response===null)return;
+    const radius=Number(response);
+    if(!Number.isInteger(radius)||radius<0||radius>128){status.textContent='0〜128pxで指定してください。';return;}
+    const initial=active,doc=source(),current=++job;if(!doc)return;
+    status.textContent=question+'を計算しています。';
+    try{
+      const next=await raster.adjust(initial,radius,operation);
+      if(job===current&&callbacks.getDocument()?.id===doc.id)publish(next);
+    }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+  }
   const undo=asButton('選択だけ元に戻す',()=>{
     if(!history.length)return;
     const prior=history.pop()??null;future.push(active);
@@ -172,7 +189,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     history.push(active);
     publish(future.pop()??null,false);
   });
-  actions.append(all,clear,reselect,invert,shift,feather,undo,redo);
+  actions.append(all,clear,reselect,invert,shift,grow,shrink,feather,border,undo,redo);
   const named=document.createElement('select');named.setAttribute('aria-label','保存した選択範囲');
   const save=asButton('名前を付けて保存',()=>void saveCurrent());
   const load=asButton('保存した範囲を使う',()=>void loadCurrent());
@@ -214,7 +231,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     undoPoint.disabled=tool!=='polygon'||points.length===0;
     finishPolygon.disabled=tool!=='polygon'||points.length<3;
     const enabled=!!active;
-    for(const button of [clear,invert,shift,feather])button.disabled=!enabled;
+    for(const button of [clear,invert,shift,grow,shrink,feather,border])button.disabled=!enabled;
     reselect.disabled=!lastSelection;undo.disabled=!history.length;redo.disabled=!future.length;
     save.disabled=!enabled;
   }
