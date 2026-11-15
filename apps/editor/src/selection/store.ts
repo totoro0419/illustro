@@ -24,7 +24,7 @@ export async function listSavedSelections(documentId:string):Promise<SavedSelect
     const items:SavedSelection[]=[],req=store.openCursor();
     req.onsuccess=()=>{const c=req.result;if(c){const item=c.value as SavedSelection;if(item.documentId===documentId)items.push(item);c.continue();}else done(items);};
   });
-  return values.sort((a,b)=>b.modifiedAt-a.modifiedAt);
+  return values.filter(item=>!item.id.startsWith('current:')).sort((a,b)=>b.modifiedAt-a.modifiedAt);
 }
 export async function saveNamedSelection(documentId:string,name:string,mask:MaskData,currentId?:string):Promise<SavedSelection>{
   const title=name.trim().slice(0,80);
@@ -51,4 +51,31 @@ export async function loadNamedSelection(entry:SavedSelection):Promise<MaskData>
 }
 export async function deleteNamedSelection(id:string):Promise<void>{
   await transaction<void>('readwrite',(store,done)=>{store.delete(id);done(undefined);});
+}
+
+/** The current selection is separate from named masks and never appears in menus. */
+const activeId=(documentId:string)=>'current:'+documentId;
+export async function storeCurrentSelection(documentId:string,mask:MaskData|null):Promise<void>{
+  if(!documentId)throw Error('作品IDがありません。');
+  if(!mask){
+    await transaction<void>('readwrite',(store,done)=>{
+      store.delete(activeId(documentId));done(undefined);
+    });return;
+  }
+  if(mask.width<=0||mask.height<=0||mask.alpha.length!==mask.width*mask.height)
+    throw Error('現在の選択の大きさが不正です。');
+  const entry:SavedSelection={
+    id:activeId(documentId),documentId,name:'現在の選択',width:mask.width,height:mask.height,
+    createdAt:Date.now(),modifiedAt:Date.now(),
+    alpha:new Blob([mask.alpha.slice().buffer as ArrayBuffer],{type:'application/octet-stream'})
+  };
+  await transaction<void>('readwrite',(store,done)=>{store.put(entry);done(undefined);});
+}
+export async function loadCurrentSelection(documentId:string):Promise<MaskData|null>{
+  const record=await transaction<SavedSelection|null>('readonly',(store,done)=>{
+    const request=store.get(activeId(documentId));
+    request.onsuccess=()=>done((request.result as SavedSelection|undefined)??null);
+  });
+  if(!record)return null;
+  return loadNamedSelection(record);
 }
