@@ -43,3 +43,22 @@
  #c04ContextBar{flex-wrap:nowrap;overflow-x:auto;flex:none}
  #c04ContextBar button{flex:none;max-width:140px}
 }
+
+/* UI-007: leave Save, persistence warnings and the exit control visible. */
+#c04FocusExit[hidden]{display:none!important}
+#c04FocusExit{border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-accent-soft,#fff6d7);color:inherit;white-space:nowrap}
+body.illustro-focus-mode .rail,
+body.illustro-focus-mode .right-dock,
+body.illustro-focus-mode #splitter,
+body.illustro-focus-mode .bottom,
+body.illustro-focus-mode .features-panel,
+body.illustro-focus-mode .c04-quick-controller,
+body.illustro-focus-mode .canvas-view-strip,
+body.illustro-focus-mode .document-actions{display:none!important}
+body.illustro-focus-mode .topbar .brand,
+body.illustro-focus-mode .topbar #home,
+body.illustro-focus-mode .topbar #workspaceToggle,
+body.illustro-focus-mode .topbar #commandSearchOpen{display:none!important}
+body.illustro-focus-mode main#canvasArea{margin:var(--top) 0 0 0!important;height:calc(100dvh - var(--top))!important}
+body.illustro-focus-mode .canvas-top{min-height:32px;padding:4px 10px}
+body.illustro-focus-mode .topbar #saveState{display:inline;max-width:65vw;overflow:hidden;text-overflow:ellipsis}
