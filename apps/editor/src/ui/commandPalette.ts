@@ -5,13 +5,15 @@
 import type {ShellControl} from './shellBehavior';
 import {fromHex,hex,type ForegroundColor} from '../color/model';
 
-type Command=Readonly<{
+export type CommandDefinition=Readonly<{
   id:string;label:string;category:string;aliases:string;
   availability:()=>string|null;execute:()=>void;
 }>;
 export type CommandService=Readonly<{
   list:()=>readonly Readonly<{id:string;label:string;category:string}>[];
   invoke:(id:string)=>Readonly<{ok:boolean;reason:string|null}>;
+  registerProvider:(provider:()=>readonly CommandDefinition[])=>()=>void;
+  refresh:()=>void;
 }>;
 type PinState=Readonly<{version:1;slots:readonly string[]}>;
 const PIN_KEY='illustro.c04.quick-controller.v1';
@@ -80,7 +82,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     ['c04FullscreenToggle','画面いっぱいに表示','表示','全画面 Fullscreen'],
     ['home','ホーム画面','作品','作品一覧'],
   ];
-  const known:Command[]=actions.map(([id,label,category,aliases])=>({
+  const known:CommandDefinition[]=actions.map(([id,label,category,aliases])=>({
     id,label,category,aliases,
     availability:()=>disabledReason(id),
     execute:()=>el<HTMLButtonElement>(id)?.click(),
@@ -95,8 +97,10 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     id,label,category:'設定',aliases:'パネル 作業欄 開く',
     availability:()=>null,execute:()=>shell.openBox(section)
   });
+  const providers:Array<()=>readonly CommandDefinition[]>=[];
   function dynamicCommands(){
     const commands=[...known];
+    for(const provider of providers)commands.push(...provider());
     // Color command IDs store the exact color rather than an unstable palette index.
     const paletteColors=new Set<string>([hex(colorState.current),hex(colorState.background)]);
     for(const chip of document.querySelectorAll<HTMLElement>('.color-swatch[data-hex]')){
@@ -189,7 +193,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   };
   let isConfiguring=false;
 
-  function execute(command:Command){
+  function execute(command:CommandDefinition){
     const reason=command.availability();
     if(reason){status.textContent=reason;return;}
     dialog.close();quick.hidden=true;quickButton.setAttribute('aria-expanded','false');
@@ -251,7 +255,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       const haystack=[command.label,command.category,command.aliases,command.id].join(' ').toLocaleLowerCase('ja-JP');
       return tokens.every(token=>haystack.includes(token));
     }).sort((a,b)=>{
-      const score=(c:Command)=>(slots.includes(c.id)?2:0)+(recents.includes(c.id)?1:0)+((q&&c.label.toLocaleLowerCase('ja-JP').startsWith(q))?5:0);
+      const score=(c:CommandDefinition)=>(slots.includes(c.id)?2:0)+(recents.includes(c.id)?1:0)+((q&&c.label.toLocaleLowerCase('ja-JP').startsWith(q))?5:0);
       return score(b)-score(a);
     });
     results.replaceChildren();
@@ -325,8 +329,14 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     quick.hidden=true;quickButton.setAttribute('aria-expanded','false');
   },{capture:true});
   renderQuick();
+  const refresh=()=>{renderQuick();if(dialog.open)renderSearch();};
   return {
     list:()=>dynamicCommands().map(({id,label,category})=>({id,label,category})),
+    registerProvider:(provider:()=>readonly CommandDefinition[])=>{
+      providers.push(provider);refresh();
+      return ()=>{const i=providers.indexOf(provider);if(i>=0)providers.splice(i,1);refresh();};
+    },
+    refresh,
     invoke:(id:string)=>{
       const command=find(id);
       if(!command)return {ok:false,reason:'この機能はまだ利用できません。'};
