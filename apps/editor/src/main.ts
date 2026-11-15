@@ -17,6 +17,7 @@ import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
 import {ArtworkClipboard} from './selection/clipboard';
 import {installClipboardPanel,type ClipboardUI} from './selection/clipboardPanel';
+import {installSelectionWorkbench,type SelectionWorkbench} from './selection/panel';
 import './ui/c06.css';
 import './ui/c05.css';
 import {shellMarkup} from './ui/shell';
@@ -119,6 +120,7 @@ try{
 }catch{/* Drawing remains usable when preferences are unavailable. */}
 let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
+let c06Selection:SelectionWorkbench|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
@@ -1534,6 +1536,10 @@ function refreshSelectionControls(){
    :rectangle?'範囲を設定しました。ブラシまたは消しゴムで内側に描けます。'
    :'選択範囲なし。キャンバス全体に描けます。';
  updateContextBar();c06ClipboardUI?.refresh();
+ if(c06Selection&&surface&&!surface.selectingRectangle&&!c06Selection.active()){
+   const rect=surface.selectedRectangle;
+   if(rect&&rect.width>0&&rect.height>0)c06Selection.applyRectangle(rect);
+ }
 }
 function reflectRailTool(){for(const [id,active] of [['paint',selectedTool==='brush'],['erase',selectedTool==='eraser'],['eyedropper',selectedTool==='eyedropper']] as const)byId(id).setAttribute('aria-pressed',String(active));updateContextBar();}
 function activateEyedropper(){if(!surface||!documentReady)return;surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');if(selectedTool!=='eyedropper')lastDrawingTool=selectedTool==='eraser'?'eraser':'brush';eyedropperOriginal=foreground.current;selectedTool='eyedropper';surface.configureSample(eyedropperSettings.options());surface.setEyedropper(true,eyedropperSettings.options().source);reflectRailTool();byId('status').textContent='キャンバスに触れて、取りたい色を選んでください。';updateQa();}
@@ -3238,6 +3244,18 @@ const c06Download=(blob:Blob,fileName:string)=>{
   link.href=url;link.download=fileName;document.body.append(link);link.click();link.remove();
   window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
+c06Selection=installSelectionWorkbench({
+  getSurface:()=>documentReady?surface:null,
+  getDocument:()=>documentReady?{
+    id:controller.document.root.documentId,
+    width:controller.document.root.width,
+    height:controller.document.root.height
+  }:null,
+  onMaskChanged:mask=>{
+    c06Clipboard.setSelectionMask(mask);
+    c06ClipboardUI?.refresh();
+  }
+});
 c06ClipboardUI=installClipboardPanel({
   canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending&&!documentActivationPending,
   hasSelection:()=>!!surface?.selectedRectangle,
