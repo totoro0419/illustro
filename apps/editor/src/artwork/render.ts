@@ -1,4 +1,5 @@
 import type {ArtPoint,EditableArtwork,EditableGradient,EditablePath,EditableText} from '@illustro/core';
+import {sampledPath} from './pathOperations';
 
 type Context=CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D;
 type RenderSize={width:number;height:number;outputWidth:number;outputHeight:number};
@@ -23,7 +24,11 @@ export function tracePath(ctx:Context,path:EditablePath){
     else ctx.lineTo(b.x,b.y);
     if(b.close)ctx.closePath();
   }
-  if(path.closed)ctx.closePath();
+  if(path.closed){
+    if(last.outX!==undefined||first.inX!==undefined)
+      ctx.bezierCurveTo(last.outX??last.x,last.outY??last.y,first.inX??first.x,first.inY??first.y,first.x,first.y);
+    ctx.closePath();
+  }
 }
 
 function rgba(color:string){return [1,3,5].map(i=>parseInt(color.slice(i,i+2),16));}
@@ -103,7 +108,20 @@ export function renderArtwork(content:EditableArtwork,size:RenderSize,canvas:HTM
       ctx.lineWidth=content.width;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=content.stroke;
       if(content.lineStyle==='dashed')ctx.setLineDash([content.width*4,content.width*2]);
       if(content.lineStyle==='dotted')ctx.setLineDash([.01,content.width*2]);
-      ctx.stroke();
+      if(content.lineStyle==='pressure'){
+        ctx.fillStyle=content.stroke;
+        const radius=(point:ArtPoint)=>content.width*(.15+.35*(point.pressure??1));
+        for(const line of sampledPath(content)){
+          for(let i=1;i<line.length;i++){
+            const a=line[i-1]!,b=line[i]!,dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy);
+            if(!length)continue;
+            const u=dx/length,v=dy/length,ra=radius(a),rb=radius(b);
+            ctx.beginPath();ctx.moveTo(a.x-v*ra,a.y+u*ra);ctx.lineTo(b.x-v*rb,b.y+u*rb);
+            ctx.lineTo(b.x+v*rb,b.y-u*rb);ctx.lineTo(a.x+v*ra,a.y-u*ra);ctx.closePath();ctx.fill();
+          }
+          for(const point of line){ctx.beginPath();ctx.arc(point.x,point.y,radius(point),0,2*Math.PI);ctx.fill();}
+        }
+      }else ctx.stroke();
     }
   }
   const pixels=ctx.getImageData(0,0,size.outputWidth,size.outputHeight).data;

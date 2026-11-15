@@ -1,4 +1,4 @@
-export type ArtPoint=Readonly<{x:number;y:number;inX?:number;inY?:number;outX?:number;outY?:number;move?:boolean;close?:boolean}>;
+export type ArtPoint=Readonly<{x:number;y:number;inX?:number;inY?:number;outX?:number;outY?:number;pressure?:number;move?:boolean;close?:boolean}>;
 export type GradientStop=Readonly<{at:number;color:string;opacity:number;midpoint:number}>;
 export type EditableGradient=Readonly<{
   kind:'gradient';mode:'linear'|'radial'|'reflected'|'angular';start:ArtPoint;end:ArtPoint;
@@ -7,11 +7,11 @@ export type EditableGradient=Readonly<{
 export type EditablePath=Readonly<{
   kind:'path';shape:'rectangle'|'ellipse'|'polyline'|'bezier'|'freehand';
   points:readonly ArtPoint[];closed:boolean;stroke:string;fill:string|null;width:number;
-  lineStyle?:'solid'|'dashed'|'dotted';
+  lineStyle?:'solid'|'dashed'|'dotted'|'pressure';
 }>;
 export type EditableText=Readonly<{
   kind:'text';text:string;origin:ArtPoint;vertical:boolean;size:number;family:string;color:string;
-  align:'left'|'center'|'right';spacing:number;lineHeight:number;fontAsset?:string;
+  align:'left'|'center'|'right';spacing:number;lineHeight:number;fontAsset?:string;embedFont?:boolean;
 }>;
 export type EditableArtwork=EditableGradient|EditablePath|EditableText;
 
@@ -23,11 +23,12 @@ const invalid=()=>new Error('編集できるレイヤーのデータが正しく
 const known=new WeakSet<object>();
 function point(value:unknown):ArtPoint{
   if(!field(value)||!coordinate(value.x)||!coordinate(value.y))throw invalid();
-  const {x,y,inX,inY,outX,outY,move,close}=value;
+  const {x,y,inX,inY,outX,outY,pressure,move,close}=value;
+  if(pressure!==undefined&&!numeric(pressure,0,1))throw invalid();
   if((move!==undefined&&typeof move!=='boolean')||(close!==undefined&&typeof close!=='boolean'))throw invalid();
   if((inX!==undefined||inY!==undefined)&&(!coordinate(inX)||!coordinate(inY)))throw invalid();
   if((outX!==undefined||outY!==undefined)&&(!coordinate(outX)||!coordinate(outY)))throw invalid();
-  return Object.freeze({x,y,...(move?{move:true}:{}),...(close?{close:true}:{}),...(coordinate(inX)&&coordinate(inY)?{inX,inY}:{}),...(coordinate(outX)&&coordinate(outY)?{outX,outY}:{})});
+  return Object.freeze({x,y,...(typeof pressure==='number'?{pressure}:{}),...(move?{move:true}:{}),...(close?{close:true}:{}),...(coordinate(inX)&&coordinate(inY)?{inX,inY}:{}),...(coordinate(outX)&&coordinate(outY)?{outX,outY}:{})});
 }
 export function validateEditableArtwork(value:unknown):EditableArtwork|null{
   if(value===undefined||value===null)return null;
@@ -49,16 +50,17 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
     if(shape!=='rectangle'&&shape!=='ellipse'&&shape!=='polyline'&&shape!=='bezier'&&shape!=='freehand')throw invalid();
     if(!Array.isArray(points)||points.length<2||points.length>4096||typeof closed!=='boolean'||!color(stroke)||
       (fill!==null&&!color(fill))||!numeric(width,0,4096)||
-      (lineStyle!==undefined&&lineStyle!=='solid'&&lineStyle!=='dashed'&&lineStyle!=='dotted'))throw invalid();
+      (lineStyle!==undefined&&lineStyle!=='solid'&&lineStyle!=='dashed'&&lineStyle!=='dotted'&&lineStyle!=='pressure'))throw invalid();
     checked=Object.freeze({kind:'path',shape,points:Object.freeze(points.map(point)),closed,stroke,fill,width,...(lineStyle?{lineStyle}:{})});
   }else if(value.kind==='text'){
-    const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset}=value;
+    const {text,origin,vertical,size,family,align,spacing,lineHeight,fontAsset,embedFont}=value;
     if(typeof text!=='string'||!text.trim()||text.length>8192||typeof vertical!=='boolean'||!numeric(size,1,4096)||
       typeof family!=='string'||!family.trim()||family.length>128||!color(value.color)||
       (align!=='left'&&align!=='center'&&align!=='right')||!numeric(spacing,-4096,4096)||!numeric(lineHeight,.2,8)||
-      (fontAsset!==undefined&&(typeof fontAsset!=='string'||fontAsset.length>128)))throw invalid();
+      (fontAsset!==undefined&&(typeof fontAsset!=='string'||fontAsset.length>128))||
+      (embedFont!==undefined&&typeof embedFont!=='boolean'))throw invalid();
     checked=Object.freeze({kind:'text',text,origin:point(origin),vertical,size,family,align,spacing,lineHeight,
-      color:value.color,...(typeof fontAsset==='string'?{fontAsset}:{})});
+      color:value.color,...(typeof fontAsset==='string'?{fontAsset,...(embedFont?{embedFont:true}:{})}:{})});
   }else throw invalid();
   known.add(checked);
   return checked;
@@ -66,7 +68,7 @@ export function validateEditableArtwork(value:unknown):EditableArtwork|null{
 
 export function moveEditableArtwork(content:EditableArtwork,dx:number,dy:number):EditableArtwork{
   const move=(point:ArtPoint):ArtPoint=>({
-    x:point.x+dx,y:point.y+dy,...(point.move?{move:true}:{}),...(point.close?{close:true}:{}),
+    x:point.x+dx,y:point.y+dy,...(point.pressure!==undefined?{pressure:point.pressure}:{}),...(point.move?{move:true}:{}),...(point.close?{close:true}:{}),
     ...(point.inX!==undefined&&point.inY!==undefined?{inX:point.inX+dx,inY:point.inY+dy}:{}),
     ...(point.outX!==undefined&&point.outY!==undefined?{outX:point.outX+dx,outY:point.outY+dy}:{})
   });

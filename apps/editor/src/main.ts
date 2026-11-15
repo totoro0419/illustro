@@ -15,6 +15,7 @@ import {installEyedropperSettings} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import {exportFonts,importFonts} from './artwork/fontAttachments';
 import {installTextPanel} from './artwork/textPanel';
 import {installVectorPanel} from './artwork/vectorPanel';
 import {installRulerPanel} from './artwork/ruler';
@@ -2328,6 +2329,11 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       byId('status').textContent='選択範囲を復元できませんでした。'+(error instanceof Error?error.message:String(error));
     });
   }
+  if(opened.preserved?.optionalSections.some(section=>section.id.startsWith('c10.font.'))){
+    void importFonts(controller.document.root,opened.preserved).catch(error=>{
+      byId('status').textContent=error instanceof Error?error.message:String(error);
+    });
+  }
   scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
   }catch(error){
     // A started storage initialization must finish before rollback restores
@@ -3301,10 +3307,11 @@ c06Selection=installSelectionWorkbench({
     });
   }
 });
-persistence.setSaveAttachmentProvider(async()=>{
+persistence.setSaveAttachmentProvider(async root=>{
   const reference=await c05References.exportNative();
   const selections=await c06Selection?.exportNative()??[];
-  return [...(reference?[reference]:[]),...selections];
+  const fonts=await exportFonts(root);
+  return [...(reference?[reference]:[]),...selections,...fonts];
 });
 installTransformPanel(byId('documentBoxBody'),async target=>{
   const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
@@ -3404,7 +3411,9 @@ const artworkActions:ArtworkActions={
     const {width,height}=controller.document.root;
     return {width,height,color:hex(foreground.current),drawing,
       selected:{id:layer.id,name:layer.name,content:layer.editable??null},
-      paths:controller.layers.flatMap(item=>item.editable?.kind==='path'?[{id:item.id,name:item.name,content:item.editable}]:[])};
+      paths:controller.layers.flatMap(item=>item.editable?.kind==='path'?[{id:item.id,name:item.name,content:item.editable}]:[]),
+      missingFontCandidates:controller.layers.flatMap(item=>item.editable?.kind==='text'&&item.editable.fontAsset
+        ?[{name:item.name,assetId:item.editable.fontAsset}]:[])};
   },
   save:async(content,name,editing)=>{
     const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();

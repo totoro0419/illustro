@@ -28,8 +28,8 @@ export class PersistenceCoordinator{
   private destroyed=false;private navigationSequence=0;private navigationPending=0;
   private readonly worker=new Worker(workerUrl,{type:'module'});private nextId=1;private readonly pendingRequests=new Map<number,{resolve:(value:any)=>void;reject:(reason?:unknown)=>void}>();
   private queue:Pending[]=[];private idleHandle:number|null=null;private activeDrain:Promise<void>|null=null;private controller:Readonly<{document:CoreDocument;selectedLayerId:LayerId}>|null=null;
-  private saveAttachmentProvider:(()=>Promise<readonly PortableSectionInput[]>)|null=null;
-  setSaveAttachmentProvider(provider:(()=>Promise<readonly PortableSectionInput[]>)|null){this.saveAttachmentProvider=provider;}
+  private saveAttachmentProvider:((root:CoreDocument['root'])=>Promise<readonly PortableSectionInput[]>)|null=null;
+  setSaveAttachmentProvider(provider:((root:CoreDocument['root'])=>Promise<readonly PortableSectionInput[]>)|null){this.saveAttachmentProvider=provider;}
   private preserved:PreservedPortableData|undefined;private selection:SelectionRect|null=null;private fileHandle:unknown=null;private externalFingerprint:string|null=null;private stateValue:PersistenceState=Object.freeze({
     currentRevision:null,savedRevision:null,dirty:true,protectionPending:false,protectedThrough:'0',saving:false,recovered:false,storageError:null,backend:'未初期化',
     storagePersisted:null,storageUsage:null,storageQuota:null,queueLength:0,lastProtectionTime:null,lastExplicitSaveTime:null,saveDurationMs:null,snapshotCaptureMs:null,reloadDurationMs:null,recoveryDurationMs:null,lastGood:false,previousGood:false,offline:!navigator.onLine,
@@ -113,7 +113,7 @@ export class PersistenceCoordinator{
         generationId=crypto.randomUUID(),createdAt=Date.now();
       const destination=picker?await picker:null;
       if(destination?.error)throw destination.error;
-      const extras=await this.saveAttachmentProvider?.()??[];
+      const extras=await this.saveAttachmentProvider?.(document.revision(saveRevision).root)??[];
       const old=this.preserved??{manifestExtras:{},optionalSections:[]};
       const ids=new Set(extras.map(section=>section.id));
       if(ids.size!==extras.length||extras.some(section=>section.required))
@@ -124,6 +124,7 @@ export class PersistenceCoordinator{
           if(ids.has(section.id))return false;
           // The C06 selection state is a complete snapshot. In particular an
           // empty selection must remove the previous file's stale mask bytes.
+          if(section.type==='font.asset.v1'&&section.id.startsWith('c10.font.'))return false;
           if(section.type==='selection.index.v1'||section.type==='selection.alpha.v1')
             return !section.id.startsWith('c06.selection.');
           return true;

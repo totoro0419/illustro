@@ -2,7 +2,7 @@ import {validateEditableArtwork,type ArtPoint,type EditablePath,type LayerId} fr
 import type {BrushSurface} from '../brushSurface';
 import {runArtwork} from './run';
 import {movePoint} from './render';
-import {eraseSegment,intersectPolygons,polygonOf,simplifyPath,smoothPath} from './pathOperations';
+import {combineShapes,eraseBetweenIntersections,eraseSegment,joinPaths,simplifyPath,smoothPath,splitPath} from './pathOperations';
 import {button,labelledField,locate,numberField,paintPreview,selectField,type ArtworkActions} from './tools';
 
 export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
@@ -18,14 +18,17 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   const closed=document.createElement('input');closed.type='checkbox';labelledField(appearance,'線を閉じる',closed);
   const thickness=numberField(appearance,'線幅（px）',5,0,4096,.1);
   const lineStyle=selectField(appearance,'線の見た目',[
-    ['solid','実線'],['dashed','破線'],['dotted','点線']
+    ['solid','実線'],['dashed','破線'],['dotted','点線'],['pressure','筆圧で太さを変える']
   ] as const);
   const pointIndex=numberField(coordinates,'編集する点の番号',1,1,4096);
   const pointX=numberField(coordinates,'点の X',0,-8192,16384,.1),pointY=numberField(coordinates,'点の Y',0,-8192,16384,.1);
   const inX=numberField(coordinates,'前の曲線ハンドル X',0,-8192,16384,.1),inY=numberField(coordinates,'前の曲線ハンドル Y',0,-8192,16384,.1);
   const outX=numberField(coordinates,'次の曲線ハンドル X',0,-8192,16384,.1),outY=numberField(coordinates,'次の曲線ハンドル Y',0,-8192,16384,.1);
   const tolerance=numberField(coordinates,'点を減らす許容幅（px）',2,.1,80,.1);
-  const secondary=selectField(coordinates,'重なりを調べるレイヤー',[]);
+  const secondary=selectField(coordinates,'組み合わせるレイヤー',[]);
+  const combination=selectField(coordinates,'形の組み合わせ方',[
+    ['union','重ね合わせる'],['intersection','重なる部分だけ'],['difference','重なる部分を引く'],['xor','重ならない部分だけ']
+  ] as const);
   let path:EditablePath|null=null,editing:LayerId|undefined,previewId=0,pointDrawing:BrushSurface|null=null;
   function draft(){
     if(!path)throw Error('線を描くか、ベクターレイヤーを選んでください。');
@@ -66,6 +69,11 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
   }
   const stopPoints=()=>{pointDrawing?.setCanvasEditGesture(null);pointDrawing=null;};
   const closePath=(current:EditablePath)=>current.points.some(p=>p.move||p.close);
+  const otherPath=()=>{
+    const other=api.context()?.paths.find(layer=>layer.id===secondary.value)?.content;
+    if(other?.kind!=='path')throw Error('組み合わせるベクターレイヤーを選んでください。');
+    return other;
+  };
   tools.append(
     button('新しいベクター線を描く',()=>{
       const context=api.context();
@@ -75,7 +83,7 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
         if(points.length<2)return;
         pointIndex.value='1';
         readPath({kind:'path',shape:'freehand',points:simplifyPath(points,.65),closed:false,
-          stroke:context.color,fill:null,width:5});
+          stroke:context.color,fill:null,width:5,lineStyle:'pressure'});
       });
     },status),
     button('選んだベクターを編集',()=>{
@@ -138,13 +146,24 @@ export function installVectorPanel(host:HTMLElement,api:ArtworkActions){
       if(closePath(current)||current.shape==='rectangle'||current.shape==='ellipse')throw Error('通常の線または折れ線を選んでください。');
       readPath({...current,shape:'bezier',points:smoothPath(current.points,current.closed,1)},editing);
     },status),
-    button('2つの形の重なる部分を作る',()=>{
-      const current=draft(),other=api.context()?.paths.find(layer=>layer.id===secondary.value)?.content;
-      if(other?.kind!=='path')throw Error('もう一つの図形レイヤーを選んでください。');
-      const points=intersectPolygons(polygonOf(current),polygonOf(other));
-      if(points.length<3)throw Error('共通する面がありません。');
-      readPath({...current,shape:'polyline',points,closed:true,fill:current.fill??current.stroke});
-      status.textContent='重なりを新しいベクターレイヤーに作ります。';
+    button('選んだ点で線を分ける',()=>readPath(splitPath(draft(),pointNumber()),editing),status),
+    button('別の線と端をつなぐ',()=>{
+      readPath(joinPaths(draft(),otherPath()));
+      status.textContent='つないだ線を新しいベクターレイヤーに作ります。';
+    },status),
+    button('交点まで消す',()=>{
+      const current=draft(),other=otherPath(),context=api.context();
+      if(!context)throw Error('作品を開いてください。');
+      status.textContent='消したい区間をタップしてください。曲線は折れ線に変換して計算します。';
+      locate(context.drawing,points=>{
+        try{readPath(eraseBetweenIntersections(current,other,points[0]!),editing);}
+        catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+      });
+    },status),
+    button('2つの形を組み合わせる',async()=>{
+      const result=await combineShapes(draft(),otherPath(),combination.value as 'union'|'intersection'|'difference'|'xor');
+      readPath(result);
+      status.textContent='新しいベクターレイヤーに作ります。曲線は細かい折れ線で表現します。';
     },status),
     button('作品に反映',async()=>{
       stopPoints();await api.save(draft(),'ベクター線',editing);status.textContent='ベクター線を保存しました。';

@@ -22,6 +22,8 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   const systemFont=selectField(controls,'端末のフォント',[
     ['sans-serif','ゴシック'],['serif','明朝'],['monospace','等幅']
   ] as const);
+  const embed=document.createElement('input');embed.type='checkbox';labelledField(controls,'共有が許可されたフォントを作品ファイルに同梱',embed);
+  const missing=document.createElement('output');missing.setAttribute('role','status');
   const file=document.createElement('input');file.type='file';file.hidden=true;file.accept='.ttf,.otf,.woff,.woff2';
   let fontId='',editing:LayerId|undefined,previewRequest=0,initialized=false,composing=false;
 
@@ -33,14 +35,17 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
       status.textContent='元のフォントがこの端末にありません。保存済みの外観を保持しています。編集を適用する前にフォントを選び直してください。';
     }
     family.value=fontId;
-    systemFont.disabled=!!fontId;
+    systemFont.disabled=!!fontId;embed.disabled=!fontId;
+    const ids=new Set(assets.map(asset=>asset.id));
+    const layers=api.context()?.missingFontCandidates.filter(layer=>!ids.has(layer.assetId))??[];
+    missing.textContent=layers.length?'不足しているフォントを使うレイヤー '+layers.map(layer=>layer.name).join('、'):'';
   }
   function draft():EditableText{
     return validateEditableArtwork({
       kind:'text',text:text.value.replace(/\r\n?/g,'\n'),origin:{x:x.valueAsNumber,y:y.valueAsNumber},
       size:size.valueAsNumber,align:align.value,spacing:spacing.valueAsNumber,lineHeight:lineHeight.valueAsNumber,
       vertical:direction.value==='vertical',color:color.value,family:fontId?fontFamily(fontId):systemFont.value,
-      ...(fontId?{fontAsset:fontId}:{})
+      ...(fontId?{fontAsset:fontId,...(embed.checked?{embedFont:true}:{})}:{})
     }) as EditableText;
   }
   async function show(content:EditableText|Awaited<ReturnType<typeof outlineText>>){
@@ -60,7 +65,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
   function reset(){
     const context=api.context();
     if(!context)throw Error('作品を開いてください。');
-    editing=undefined;initialized=true;fontId='';text.value='';
+    editing=undefined;initialized=true;fontId='';embed.checked=false;text.value='';
     x.value=String(Math.round(context.width/4));y.value=String(Math.round(context.height/4));
     color.value=context.color;direction.value='horizontal';align.value='left';
     preview.hidden=true;status.textContent='新しい文字を入力してください。';
@@ -74,10 +79,10 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     text.value=content.text;x.value=String(content.origin.x);y.value=String(content.origin.y);
     size.value=String(content.size);align.value=content.align;spacing.value=String(content.spacing);
     lineHeight.value=String(content.lineHeight);direction.value=content.vertical?'vertical':'horizontal';
-    color.value=content.color;fontId=content.fontAsset??'';
+    color.value=content.color;fontId=content.fontAsset??'';embed.checked=content.embedFont===true;
     if(!fontId)systemFont.value=content.family;
   }
-  family.onchange=()=>{fontId=family.value;systemFont.disabled=!!fontId;void refresh();};
+  family.onchange=()=>{fontId=family.value;systemFont.disabled=!!fontId;embed.disabled=!fontId;embed.checked=false;void refresh();};
   controls.addEventListener('change',()=>void refresh());
   text.addEventListener('compositionstart',()=>{composing=true;});
   text.addEventListener('compositionend',()=>{composing=false;void refresh();});
@@ -87,7 +92,7 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     if(!selected)return;
     try{
       const asset=await importFont(selected);
-      fontId=asset.id;await refreshFonts();await refresh();status.textContent='フォントをこの端末の素材庫へ読み込みました。';
+      fontId=asset.id;embed.checked=false;await refreshFonts();await refresh();status.textContent='フォントをこの端末の素材庫へ読み込みました。';
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   };
   actions.append(
@@ -131,5 +136,5 @@ export function installTextPanel(host:HTMLElement,api:ArtworkActions){
     if(!initialized&&api.context())reset();
     void refreshFonts().catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
   };
-  panel.append(title,controls,actions,file,preview,status);host.append(panel);
+  panel.append(title,controls,actions,file,preview,missing,status);host.append(panel);
 }

@@ -54,37 +54,128 @@ export function eraseSegment(path:EditablePath,point:ArtPoint){
   return {...path,fill:null,points};
 }
 
-export function polygonOf(path:EditablePath):ArtPoint[]{
-  if(path.shape==='rectangle'){
-    const a=path.points[0]!,b=path.points.at(-1)!;
-    return [a,{x:b.x,y:a.y},b,{x:a.x,y:b.y}];
-  }
-  if(!path.closed||path.points.length<3||path.points.some(point=>point.inX!==undefined||point.outX!==undefined||point.move))
-    throw Error('形の重なりを求めるには、閉じた直線の多角形か長方形を選んでください。');
-  return [...path.points];
+
+function sampleCurve(a:ArtPoint,b:ArtPoint,t:number){
+  const u=1-t,hasHandles=a.outX!==undefined||b.inX!==undefined;
+  const coord=(a:number,b:number,c:number,d:number)=>hasHandles?u**3*a+3*u*u*t*b+3*u*t*t*c+t**3*d:a+(d-a)*t;
+  const pa=a.pressure??1,pb=b.pressure??1;
+  return {x:coord(a.x,a.outX??a.x,b.inX??b.x,b.x),y:coord(a.y,a.outY??a.y,b.inY??b.y,b.y),pressure:pa+(pb-pa)*t};
 }
-const side=(p:ArtPoint,a:ArtPoint,b:ArtPoint)=>(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
-export function intersectPolygons(subject:ArtPoint[],clip:ArtPoint[]){
-  if(clip.length<3||subject.length<3)return [];
-  const area=clip.reduce((sum,p,i)=>{const next=clip[(i+1)%clip.length]!;return sum+p.x*next.y-p.y*next.x;},0);
-  const sign=Math.sign(area);
-  if(!sign||clip.some((p,i)=>side(clip[(i+2)%clip.length]!,p,clip[(i+1)%clip.length]!)*sign<0))
-    throw Error('重なりの境界に使う形は、へこみのない多角形を選んでください。');
-  let result=subject;
-  for(let i=0;i<clip.length;i++){
-    const a=clip[i]!,b=clip[(i+1)%clip.length]!,input=result;
-    result=[];
-    if(!input.length)break;
-    let previous=input.at(-1)!,prior=side(previous,a,b)*sign;
-    for(const point of input){
-      const current=side(point,a,b)*sign;
-      if((current>=0)!==(prior>=0)){
-        const t=prior/(prior-current);
-        result.push({x:previous.x+(point.x-previous.x)*t,y:previous.y+(point.y-previous.y)*t});
-      }
-      if(current>=0)result.push(point);
-      previous=point;prior=current;
+export function sampledPath(path:EditablePath):ArtPoint[][]{
+  const anchors=path.points,first=anchors[0]!,last=anchors.at(-1)!;
+  if(path.shape==='rectangle')return [[first,{x:last.x,y:first.y},last,{x:first.x,y:last.y},first]];
+  if(path.shape==='ellipse'){
+    const cx=(first.x+last.x)/2,cy=(first.y+last.y)/2,rx=Math.abs(first.x-last.x)/2,ry=Math.abs(first.y-last.y)/2;
+    const count=Math.min(320,Math.max(40,Math.ceil(Math.PI*Math.max(rx,ry)/5)));
+    return [Array.from({length:count+1},(_,i)=>{const t=i*2*Math.PI/count;return {x:cx+Math.cos(t)*rx,y:cy+Math.sin(t)*ry};})];
+  }
+  const groups:ArtPoint[][]=[];
+  let group:ArtPoint[]=[];
+  let prior:ArtPoint|null=null,anchor:ArtPoint|null=null;
+  function addCurve(a:ArtPoint,b:ArtPoint){
+    if(a.outX===undefined&&b.inX===undefined){group.push(b);return;}
+    const steps=Math.min(64,Math.max(6,Math.ceil((distance(a,b)+
+      distance(a,{x:a.outX??a.x,y:a.outY??a.y})+distance(b,{x:b.inX??b.x,y:b.inY??b.y}))/8)));
+    for(let i=1;i<=steps;i++)group.push(sampleCurve(a,b,i/steps));
+  }
+  for(const point of anchors){
+    if(point.move||!prior){
+      if(group.length)groups.push(group);
+      group=[point];anchor=point;
+    }else addCurve(prior,point);
+    if(point.close&&anchor){addCurve(point,anchor);groups.push(group);group=[];prior=null;anchor=null;}
+    else prior=point;
+  }
+  if(group.length){
+    if(path.closed&&prior&&anchor)addCurve(prior,anchor);
+    groups.push(group);
+  }
+  return groups;
+}
+
+type Coordinate=[number,number];
+type Polygon=Coordinate[][];
+type ShapeMode='union'|'intersection'|'difference'|'xor';
+export async function combineShapes(current:EditablePath,other:EditablePath,mode:ShapeMode):Promise<EditablePath>{
+  const polygon=(input:EditablePath):Polygon=>{
+    const result=sampledPath(input);
+    if(!result.length||result.some(ring=>ring.length<4||distance(ring[0]!,ring.at(-1)!)>.00001))
+      throw Error('形状演算には面を持つ閉じた形を選んでください。');
+    // The source's even-odd fill can contain separate island outlines as well as holes.
+    return result.map(ring=>ring.map(p=>[p.x,p.y]));
+  };
+  const a=polygon(current),b=polygon(other);
+  const imported=await import('polygon-clipping');
+  const operations=('default' in imported?imported.default:imported) as typeof imported;
+  const rings=(polygon:Polygon)=>{
+    const [outer,...rings]=polygon;
+    if(!outer)throw Error('形状の輪郭がありません。');
+    return rings.length?operations.xor([outer],...rings.map(ring=>[ring])):[[outer]];
+  };
+  const groups=operations[mode](rings(a),rings(b));
+  const points=groups.flatMap(group=>group.flatMap(ring=>
+    ring.slice(0,-1).map(([x,y],index,list):ArtPoint=>({x,y,...(index===0?{move:true}:{}),...(index===list.length-1?{close:true}:{})}))));
+  if(points.length<3)throw Error('演算結果に面がありません。');
+  if(points.length>4096)throw Error('演算結果の点が多すぎます。元の形の点数を減らしてください。');
+  return {...current,shape:'polyline',closed:false,points,fill:current.fill??current.stroke};
+}
+
+export function splitPath(path:EditablePath,index:number):EditablePath{
+  if(path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(p=>p.move||p.close)||index<1||index>=path.points.length-1)
+    throw Error('開いた線の途中にある点を選んでください。');
+  if(path.closed)throw Error('先に線を開いてから分割してください。');
+  const point=path.points[index]!;
+  return {...path,fill:null,points:[...path.points.slice(0,index+1),{...point,move:true},...path.points.slice(index+1)]};
+}
+function reversePath(points:readonly ArtPoint[]){
+  return [...points].reverse().map(point=>{
+    const {inX,inY,outX,outY,...rest}=point;
+    return {...rest,...(outX===undefined||outY===undefined?{}:{inX:outX,inY:outY}),
+      ...(inX===undefined||inY===undefined?{}:{outX:inX,outY:inY})};
+  });
+}
+export function joinPaths(a:EditablePath,b:EditablePath):EditablePath{
+  for(const path of [a,b])if(path.closed||path.shape==='rectangle'||path.shape==='ellipse'||path.points.some(point=>point.move||point.close))
+    throw Error('接続するには開いた線を2本選んでください。');
+  const paths=[[a.points,b.points],[a.points,reversePath(b.points)],
+    [reversePath(a.points),b.points],[reversePath(a.points),reversePath(b.points)]] as const;
+  const candidates=paths.map(([left,right])=>({left,right,length:distance(left.at(-1)!,right[0]!)}));
+  candidates.sort((a,b)=>a.length-b.length);
+  const {left,right}=candidates[0]!;
+  if(left.length+right.length>4096)throw Error('接続する線の点が多すぎます。点を減らしてください。');
+  return {...a,shape:'bezier',points:[...left,...right],fill:null,closed:false};
+}
+
+export function eraseBetweenIntersections(path:EditablePath,reference:EditablePath,position:ArtPoint):EditablePath{
+  if(path.closed||path.shape==='ellipse'||path.shape==='rectangle'||path.points.some(p=>p.move||p.close))
+    throw Error('交点まで消すには、開いた1本の線を選んでください。');
+  const subject=sampledPath(path)[0]!,edges=sampledPath(reference);
+  if(subject.length>4096||edges.reduce((n,edge)=>n+edge.length,0)>8192)throw Error('線が複雑です。先に点を減らしてください。');
+  const stops=[0,subject.length-1];
+  let nearest=0,best=Infinity;
+  for(let i=1;i<subject.length;i++){
+    const a=subject[i-1]!,b=subject[i]!,vx=b.x-a.x,vy=b.y-a.y,den=vx*vx+vy*vy;
+    if(!den)continue;
+    const fraction=Math.max(0,Math.min(1,((position.x-a.x)*vx+(position.y-a.y)*vy)/den)),d=segmentDistance(position,a,b);
+    if(d<best){best=d;nearest=i-1+fraction;}
+    for(const line of edges)for(let j=1;j<line.length;j++){
+      const c=line[j-1]!,d=line[j]!,wx=d.x-c.x,wy=d.y-c.y,cross=vx*wy-vy*wx;
+      if(Math.abs(cross)<.000001)continue;
+      const t=((c.x-a.x)*wy-(c.y-a.y)*wx)/cross;
+      const u=((c.x-a.x)*vy-(c.y-a.y)*vx)/cross;
+      if(t>=0&&t<=1&&u>=0&&u<=1)stops.push(i-1+t);
     }
   }
-  return result.filter((point,i)=>i===0||distance(point,result[i-1]!)>.000001);
+  if(best>Math.max(10,path.width*2)||stops.length<=2)throw Error('交点のある線の近くをタップしてください。');
+  let low=0,high=Infinity;
+  for(const stop of stops){if(stop<=nearest)low=Math.max(low,stop);else high=Math.min(high,stop);}
+  if(!Number.isFinite(high))throw Error('交点より内側の区間を指定してください。');
+  const at=(index:number)=>{
+    const i=Math.floor(index),a=subject[i]!,b=subject[i+1]??a,t=index-i;
+    return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};
+  };
+  const left=low>0?[...subject.slice(0,Math.ceil(low)).map(p=>({x:p.x,y:p.y})),at(low)]:[];
+  const right=high<subject.length-1?[{...at(high),move:left.length>0},...subject.slice(Math.floor(high)+1).map(p=>({x:p.x,y:p.y}))]:[];
+  if(left.length+right.length<2)throw Error('線をすべて消す場合はレイヤーを削除してください。');
+  return {...path,shape:'polyline',points:[...left,...right],closed:false,fill:null};
 }

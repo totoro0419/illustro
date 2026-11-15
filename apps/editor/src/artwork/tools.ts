@@ -1,10 +1,12 @@
-import type {ArtPoint,EditableArtwork,LayerId} from '@illustro/core';
+import type {EditableArtwork,LayerId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
+import type {MaskStrokePoint} from '../layerMaskEditing';
 
 export type ArtworkContext=Readonly<{
   width:number;height:number;color:string;drawing:BrushSurface;
   selected:Readonly<{id:LayerId;name:string;content:EditableArtwork|null}>;
   paths:readonly Readonly<{id:LayerId;name:string;content:EditableArtwork}>[];
+  missingFontCandidates:readonly Readonly<{name:string;assetId:string}>[];
 }>;
 export type ArtworkActions=Readonly<{
   context:()=>ArtworkContext|null;
@@ -35,7 +37,7 @@ export function selectField<T extends string>(parent:HTMLElement,label:string,en
   labelledField(parent,label,control);
   return control;
 }
-export function locate(drawing:BrushSurface,complete:(points:readonly ArtPoint[])=>void){
+export function locate(drawing:BrushSurface,complete:(points:readonly MaskStrokePoint[])=>void){
   drawing.setCanvasEditGesture({path:false,width:2,color:'#ffb742',complete:points=>{
     drawing.setCanvasEditGesture(null);
     if(points.length)complete(points);
