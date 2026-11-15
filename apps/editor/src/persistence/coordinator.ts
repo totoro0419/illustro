@@ -120,7 +120,14 @@ export class PersistenceCoordinator{
         throw Error('追加の保存データが正しくありません。');
       const preserved:PreservedPortableData={
         manifestExtras:old.manifestExtras,
-        optionalSections:[...old.optionalSections.filter(section=>!ids.has(section.id)),...extras]
+        optionalSections:[...old.optionalSections.filter(section=>{
+          if(ids.has(section.id))return false;
+          // The C06 selection state is a complete snapshot. In particular an
+          // empty selection must remove the previous file's stale mask bytes.
+          if(section.type==='selection.index.v1'||section.type==='selection.alpha.v1')
+            return !section.id.startsWith('c06.selection.');
+          return true;
+        }),...extras]
       };
       const transfer=blockEntries.map(x=>x.bytes.buffer as ArrayBuffer);
       const raw=await this.request('encode-save',{snapshot,blocks:blockEntries,selectedLayerId,generationId,createdAt,preserved,selection},transfer) as {bytes:Uint8Array};
