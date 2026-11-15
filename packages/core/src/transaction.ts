@@ -8,7 +8,7 @@ import type {SemanticOperationDraft} from './history';
 import {CANONICAL_TILE_SIZE,pixelToTile,tileKey,RasterSurfaceManifest,type DirtyTileHint} from './raster/surface';
 
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
-type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
+type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
 
 export class DocumentTransaction{
@@ -24,6 +24,22 @@ export class DocumentTransaction{
     for(const id of order){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.surface.descriptor.surfaceId===surfaceId)throw new Error('duplicate raster surface id');}
     const name=`Layer ${order.length+1}`,layer=rasterLayer(layerId,surfaceId,reference.surface.descriptor.workingColorSpaceRef,reference.surface.descriptor.sampleEncoding,name),insertIndex=index+1;
     const next=[...order];next.splice(insertIndex,0,layerId);this.rootOrderValue=next;this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
+  }
+  moveRasterLayer(id:LayerId,direction:-1|1){
+    this.open();
+    if(this.slotsValue.length)throw new Error('Layer move must start its own transaction');
+    if(direction!==-1&&direction!==1)throw new Error('invalid layer move direction');
+    const order=[...this.rootValue.rootLayerIds],fromIndex=order.indexOf(id),toIndex=fromIndex+direction;
+    if(fromIndex<0)throw new Error('missing layer');
+    const adjacent=order[toIndex];
+    if(!adjacent)return false;
+    const layer=this.rootValue.getLayer(id);
+    if(layer.locked||layer.baseColor==='white'||this.rootValue.getLayer(adjacent).baseColor==='white')return false;
+    order[fromIndex]=adjacent;
+    order[toIndex]=id;
+    this.rootOrderValue=order;
+    this.slotsValue.push(Object.freeze({type:'reorder',layerId:id,fromIndex,toIndex}));
+    return true;
   }
   editTile(layerId:LayerId,x:number,y:number,edit:(b:Uint8Array)=>void){this.open();tileKey(x,y);let w=this.workingValue.get(layerId);
     if(!w){const l=this.editableRaster(layerId);if(l.baseColor==='white')throw new Error('Materialize the white background before direct pixel editing');if(l.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('direct byte edit requires rgba.unorm8.v1');w=new RasterWorkingSet(l.surface,this.doc._internal(CORE_INTERNAL).store);this.workingValue.set(layerId,w);this.slotsValue.push(Object.freeze({type:'working' as const,layerId}));}
@@ -84,7 +100,7 @@ export class DocumentTransaction{
   _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked)throw new Error('drawing target is locked');return layer;}
-  private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='dimensions'||x.type==='document-info'));}
+  private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='dimensions'||x.type==='document-info'));}
   private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);

@@ -8,7 +8,7 @@ import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
 const UUID_V4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','document.crop','document.canvas-resize','document.image-resize','document.info']);
+const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','document.crop','document.canvas-resize','document.image-resize','document.info']);
 const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.unorm16.v1','rgba.float32.v1']);
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
@@ -193,6 +193,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
       geometry=true;continue;
     }
     if(operation.kind==='document.info')continue;
+    if(operation.kind==='layer.reorder'){structural=true;continue;}
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
     if(operation.kind==='layer.metadata'||operation.kind==='layer.add-raster'){
       if(!layerStateIds.has(layerId)){layerStateIds.add(layerId);layerStates.push(Object.freeze({id:layer.id,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,surfaceDescriptor:layer.surface.descriptor}));}

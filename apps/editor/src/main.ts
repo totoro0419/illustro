@@ -221,6 +221,11 @@ const renderLayers=()=>{
   if(document.activeElement!==nameField||nameField.dataset.layerId!==selectedLayer.id)nameField.value=selectedName;
   nameField.dataset.layerId=selectedLayer.id;
   nameField.disabled=!documentReady;
+  const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
+  const canMove=!!documentReady&&!query&&!selectedLayer.locked&&selectedLayer.baseColor!=='white';
+  const previous=rows[selectedIndex-1],next=rows[selectedIndex+1];
+  byId<HTMLButtonElement>('moveLayerUp').disabled=!canMove||!previous||previous.baseColor==='white';
+  byId<HTMLButtonElement>('moveLayerDown').disabled=!canMove||!next||next.baseColor==='white';
   for(const id of ['layerList','layerPageList']){
     const list=byId<HTMLDivElement>(id);
     const matching=id==='layerPageList'&&query?rows.filter(layer=>layer.name.toLocaleLowerCase().includes(query)):rows;
@@ -308,6 +313,8 @@ const updateQa=()=>{
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
 };
 byId<HTMLInputElement>('layerSearch').oninput=renderLayers;
+byId<HTMLButtonElement>('moveLayerUp').onclick=()=>changeLayer('レイヤーを一つ上に移動しました。',tx=>tx.moveRasterLayer(controller.selectedLayerId,1));
+byId<HTMLButtonElement>('moveLayerDown').onclick=()=>changeLayer('レイヤーを一つ下に移動しました。',tx=>tx.moveRasterLayer(controller.selectedLayerId,-1));
 const layerNameField=byId<HTMLInputElement>('selectedLayerName');
 layerNameField.onchange=()=>{
   const nextName=layerNameField.value.trim();
