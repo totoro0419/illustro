@@ -299,7 +299,7 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     // stroke reaches Canvas. Inside the dock, DON'T fold a menu until click:
     // removing its inline layout during pointerdown shifts neighboring More
     // buttons away from pointerup and silently loses the click.
-    if(!rightDock.contains(t))closeBoxMenus();
+    if(!rightDock.contains(t)&&!(t instanceof Element&&t.closest('.c04-panel-float')))closeBoxMenus();
     if(floatingDockOpen()&&t instanceof Element&&t.closest('#canvas')){
       // Artwork does not change position on dismiss. Closing here leaves the
       // initiating pen/touch pointerdown available to the Canvas renderer.
@@ -314,7 +314,8 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     // and accidental non-activation, especially at tablet overlay widths.
     // A swatch action may replace its button before this bubbling click arrives.
     // The event path still identifies the original dock; a detached target does not.
-    const clickedInsideDock=event.composedPath().includes(rightDock);
+    const clickedInsideDock=event.composedPath().includes(rightDock)||
+      (t instanceof Element&&!!t.closest('.c04-panel-float'));
     if(floatingDockOpen()&&!clickedInsideDock&&!toggle.contains(t)&&!drawer.contains(t))close(false);
     if(!clickedInsideDock)return;
     if(t instanceof Element&&t.closest('.box-more'))return;
