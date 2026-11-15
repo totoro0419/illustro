@@ -26,6 +26,12 @@ export class DocumentPresentation {
  // Bitmap uploads yield to touch events while remaining invisible. Only
  // the final, synchronous DOM swap reveals a complete Undo/Redo revision.
  async applyCooperatively(groups,isCurrent){
+  // A single group already switches in one task. Keep the established
+  // low-allocation path for the common short stroke.
+  if(groups.length<=1){
+   if(isCurrent&&!isCurrent()){for(const group of groups)group.bitmap?.close?.();return false;}
+   this.apply(groups);return true;
+  }
   return publishDocumentGroupsAtomically(this,groups,isCurrent);
  }
  update(view){if(!view)return;this.element.style.display=view[12]>.5||view[14]>.5?'none':'block';this.element.style.imageRendering=view[13]>.5?'pixelated':'auto';this.element.style.transform='matrix('+viewAffine(this.view,view).join(',')+')';}
