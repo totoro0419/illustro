@@ -1,5 +1,5 @@
 /** C06 bounded asynchronous mask jobs. The input thread never waits for pixel loops. */
-import {rasterizeSelection,combineSelection,featherMask,growOrShrink,selectionBorder,type SelectionShape,type MaskData,type CombineMode} from './mask';
+import {rasterizeSelection,combineSelection,featherMask,growOrShrink,selectionBorder,brushSelection,type SelectionBrushPoint,type SelectionBrushSettings,type SelectionShape,type MaskData,type CombineMode} from './mask';
 import {selectFromPixels,type AnalyzeOptions} from './autoSelect';
 type Reply=Readonly<{id:number;ok:boolean;alpha?:Uint8Array;error?:string}>;
 export class MaskRasterWorker{
@@ -23,8 +23,9 @@ export class MaskRasterWorker{
       };
     }catch{this.worker=null;}
   }
-  private execute(width:number,height:number,action:'shape'|'feather'|'grow'|'shrink'|'border',params:{
-    shape?:SelectionShape;mode?:CombineMode;previous?:MaskData|null;radius?:number
+  private execute(width:number,height:number,action:'shape'|'feather'|'grow'|'shrink'|'border'|'brush',params:{
+    shape?:SelectionShape;mode?:CombineMode;previous?:MaskData|null;radius?:number;
+    brushPoints?:readonly SelectionBrushPoint[];brushSettings?:SelectionBrushSettings
   }):Promise<MaskData>{
     if(!this.worker){
       return Promise.resolve().then(()=>{
@@ -32,6 +33,10 @@ export class MaskRasterWorker{
         if(action==='feather'){
           if(!old)throw Error('選択範囲がありません。');
           return featherMask(old,params.radius??0);
+        }
+        if(action==='brush'){
+          if(!params.brushPoints||!params.brushSettings)throw Error('選択ブラシの設定が不足しています。');
+          return brushSelection(old??{width,height,alpha:new Uint8Array(width*height)},params.brushPoints,params.brushSettings);
         }
         if(action==='grow'||action==='shrink'||action==='border'){
           if(!old)throw Error('選択範囲がありません。');
@@ -44,6 +49,8 @@ export class MaskRasterWorker{
     const id=++this.nextId,old=params.previous?.alpha.slice()??null;
     const request={id,action,width,height,...(params.shape?{shape:params.shape}:{}),
       ...(params.mode?{mode:params.mode}:{}),...(params.radius!==undefined?{radius:params.radius}:{}),
+      ...(params.brushPoints?{brushPoints:params.brushPoints}:{}),
+      ...(params.brushSettings?{brushSettings:params.brushSettings}:{}),
       ...(old?{previous:old}:{})};
     return new Promise((resolve,reject)=>{
       this.pending.set(id,{resolve,reject,width,height});
@@ -58,6 +65,9 @@ export class MaskRasterWorker{
   }
   adjust(mask:MaskData,radius:number,mode:'grow'|'shrink'|'border'){
     return this.execute(mask.width,mask.height,mode,{previous:mask,radius});
+  }
+  brush(previous:MaskData|null,width:number,height:number,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings){
+    return this.execute(width,height,'brush',{previous,brushPoints:points,brushSettings:settings});
   }
   analyze(pixels:Uint8ClampedArray,options:AnalyzeOptions):Promise<MaskData>{
     if(pixels.length!==options.width*options.height*4)
