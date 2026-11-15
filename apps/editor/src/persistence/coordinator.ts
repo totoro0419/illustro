@@ -63,6 +63,8 @@ export class PersistenceCoordinator{
   async repairThumbnail(documentId:string):Promise<{state:'pending'|'complete'|'current'|'unavailable'}>{return this.request('library-preview-step',{documentId});}
   async renameWork(documentId:string,name:string){await this.request('library-rename',{documentId,name});}
   async deleteWork(documentId:string){await this.request('library-delete',{documentId});}
+  async restoreWork(documentId:string){await this.request('library-restore',{documentId});}
+  async purgeWork(documentId:string){await this.request('library-purge',{documentId});}
   async resetWorks(){
     await this.flushPrepared();
     await this.request('library-reset',{});
