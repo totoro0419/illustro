@@ -9,7 +9,7 @@ export class CoreStrokeDocumentPort implements DocumentPort{
   constructor(readonly document:CoreDocument,private readonly selectedLayer:()=>LayerId=()=>document.defaultRasterLayerId){}
   target():DrawingTarget{
     const root=this.document.root,layer=root.getLayer(this.selectedLayer());
-    if(layer.kind!=='raster')throw new Error('選択中のレイヤーには描けません。');
+    if(layer.kind!=='raster'||layer.editable)throw new Error('選択中のレイヤーには描けません。');
     if(root.isLayerContentLocked(layer.id))throw new Error('選択中のレイヤーはロックされています。');
     return Object.freeze({documentId:root.documentId,layerId:layer.id,surfaceId:layer.surface.descriptor.surfaceId,width:root.width,height:root.height,baseRevision:this.document.head});
   }

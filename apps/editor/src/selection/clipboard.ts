@@ -1,5 +1,5 @@
 /** C06 copy/cut/paste operating on real document pixels and history. */
-import {transformLayerMask,type LayerNode,type LayerGroup} from '@illustro/core';
+import {transformLayerMask,moveEditableArtwork,type LayerNode,type LayerGroup} from '@illustro/core';
 import type {EditorController} from '../controller';
 import type {BrushSurface} from '../brushSurface';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
@@ -149,14 +149,15 @@ export class ArtworkClipboard {
         throw Error('貼り付けを取り消しました。');
       const entries=record.editable.layers.map(({layer,pixels})=>{
         if(x===0&&y===0&&record.width===root.width&&record.height===root.height){
-          return {layer,pixels,mask:layer.vectorMask??null};
+          return {layer,pixels,mask:layer.vectorMask??null,editable:layer.editable??null};
         }
         const placed=new Uint8Array(root.width*root.height*4);
         for(let row=0;row<record.height;row++){
           const start=row*record.width*4;
           placed.set(pixels.subarray(start,start+record.width*4),((row+y)*root.width+x)*4);
         }
-        return {layer,pixels:placed,mask:layer.vectorMask?transformLayerMask(layer.vectorMask,1,1,x,y):null};
+        return {layer,pixels:placed,mask:layer.vectorMask?transformLayerMask(layer.vectorMask,1,1,x,y):null,
+          editable:layer.editable?moveEditableArtwork(layer.editable,x,y):null};
       });
       const tx=document.begin('編集できるレイヤーを貼り付ける');
       const id=tx.pasteRasterLayers(controller.selectedLayer.id,entries,record.editable.groups);

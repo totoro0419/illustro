@@ -15,6 +15,11 @@ import {installEyedropperSettings} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import {installRulerPanel} from './artwork/ruler';
+import {installShapeGradientPanel} from './artwork/shapeGradient';
+import {runArtwork} from './artwork/run';
+import {selectionAsLayerMask} from './artwork/selectionMask';
+import type {ArtworkActions} from './artwork/tools';
 import {installFillPanel} from './fill/panel';
 import {installTransformPanel} from './transform/panel';
 import {transformLinkedMask} from './transform/mask';
@@ -1336,6 +1341,7 @@ function scheduleProjectionCheckpoint(delay=CHECKPOINT_IDLE_MS){
   projectionCheckpointTimer=window.setTimeout(()=>{projectionCheckpointTimer=null;void createProjectionCheckpoint();},Math.max(0,delay));
 }
 function noteCheckpointOperations(operations:readonly SemanticOperation[]){
+  if(operations.some(operation=>operation.kind==='layer.snapshot'&&operation.parameters.replacesRaster))checkpointNeedsFullSeed=true;
   checkpointOperations.push(...operations);checkpointOpsSinceLast+=Math.max(1,operations.length);
   scheduleProjectionCheckpoint(checkpointOpsSinceLast>=CHECKPOINT_OPERATION_INTERVAL?0:CHECKPOINT_IDLE_MS);
 }
@@ -1361,7 +1367,7 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   inputFreezeTrace?.mark('save-prepare:start');persistence.noteCommit(controller.document,handoff);inputFreezeTrace?.mark('save-prepare:end');if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');if(drawing.selectionMask())checkpointNeedsFullSeed=true;queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();if(releasedColorHold)restoreDrawingTool();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';if(!holdingColorKey&&selectedTool==='eyedropper')restoreDrawingTool();}return;}
  const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value==='composite');
@@ -3383,6 +3389,50 @@ installFillPanel(byId('documentBoxBody'),{
       })
     };
   }
+});
+const artworkActions:ArtworkActions={
+  context:()=>{
+    const drawing=surface,layer=controller.selectedLayer;
+    if(!drawing||!documentReady)return null;
+    const {width,height}=controller.document.root;
+    return {width,height,color:hex(foreground.current),drawing,
+      selected:{id:layer.id,name:layer.name,content:layer.editable??null}};
+  },
+  save:async(content,name,editing)=>{
+    const artwork=controller.document,head=artwork.head,drawing=surface,selection=c06Selection?.active();
+    if(!drawing||!documentReady)throw Error('作品を開いてください。');
+    const {width,height}=artwork.root,reference=controller.selectedLayer.id;
+    if(editing&&reference!==editing)throw Error('編集するレイヤーを選び直してください。');
+    const pixels=await runArtwork({content,width,height,outputWidth:width,outputHeight:height});
+    await withClipboardAccess(async()=>{
+      if(surface!==drawing||controller.document!==artwork||artwork.head!==head||controller.selectedLayer.id!==reference)
+        throw Error('作品が変更されたため中止しました。');
+      const tx=artwork.begin(editing?'図形・文字などを編集':'編集できるレイヤーを追加');
+      const id=editing??tx.addRasterSnapshotAbove(reference,pixels,name);
+      if(editing)tx.replaceLayerRaster(id,pixels,undefined,content);
+      else{
+        tx.setEditableArtwork(id,content);
+        if(selection)tx.setVectorLayerMask(id,selectionAsLayerMask(selection));
+      }
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      controller.selectLayer(id);
+      return 'edit';
+    });
+  },
+  rasterize:async id=>withClipboardAccess(async()=>{
+    const artwork=controller.document,layer=artwork.root.getLayer(id);
+    if(!layer.editable||artwork.root.isLayerContentLocked(id))throw Error('編集できるロックされていないレイヤーを選んでください。');
+    const tx=artwork.begin('レイヤーを描画用に変換');
+    tx.setEditableArtwork(id,null);
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    return 'edit';
+  })
+};
+installShapeGradientPanel(byId('documentBoxBody'),artworkActions);
+installRulerPanel(byId('documentBoxBody'),artworkActions,settings=>{
+  guidePreferences=settings;
+  surface?.setGuideSettings(settings);
+  try{localStorage.setItem('illustro.guide-settings.v1',JSON.stringify(settings));}catch{}
 });
 c06ClipboardUI=installClipboardPanel({
   canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending&&!documentActivationPending,

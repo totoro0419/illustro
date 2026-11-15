@@ -1,3 +1,4 @@
+import type {EditableArtwork} from './editableArtwork';
 import type {LayerBlend} from './layerBlend';
 import type {LayerMask} from './layerMask';
 import type {LayerComp} from './layerComps';
@@ -27,6 +28,7 @@ export type LayerNode=Readonly<{
   clipSourceId?:LayerId|null;
   vectorMask?:LayerMask|null;
   blend?:LayerBlend|null;
+  editable?:EditableArtwork|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;

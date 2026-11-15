@@ -1,3 +1,4 @@
+import {validateEditableArtwork,type EditableArtwork} from './editableArtwork';
 import {validateLayerBlend,type LayerBlend} from './layerBlend';
 import {transformLayerMask,validateLayerMask,type LayerMask} from './layerMask';
 import type {LayerComp} from './layerComps';
@@ -50,12 +51,13 @@ export class DocumentTransaction{
       if(source.clipSourceId)this.meta(id,{clipSourceId:source.clipSourceId});
       if(source.blend)this.meta(id,{blend:source.blend});
       if(source.vectorMask)this.meta(id,{vectorMask:source.vectorMask});
+      if(source.editable)this.meta(id,{editable:source.editable});
     }
     this.seedRasterPixels(id,pixels);
     return id;
   }
   pasteRasterLayers(referenceId:LayerId,entries:readonly Readonly<{
-    layer:LayerNode;pixels:Uint8Array|Uint8ClampedArray;mask?:LayerMask|null;
+    layer:LayerNode;pixels:Uint8Array|Uint8ClampedArray;mask?:LayerMask|null;editable?:EditableArtwork|null;
   }>[],groups:readonly LayerGroup[]){
     this.open();
     if(!entries.length)throw new Error('貼り付けるレイヤーがありません。');
@@ -65,14 +67,14 @@ export class DocumentTransaction{
       referenceId=[...this.rootValue.rootLayerIds].reverse().find(id=>members.has(id))??referenceId;
     }
     const ids=new Map<LayerId,LayerId>();
-    for(const {layer,pixels,mask} of entries){
+    for(const {layer,pixels,mask,editable} of entries){
       const id=this.addRasterSnapshotAbove(referenceId,pixels,layer.name,false,false);
       const clipSourceId=layer.clipSourceId?ids.get(layer.clipSourceId):undefined;
       this.meta(id,{
         visible:layer.visible,opacity:layer.opacity,locked:layer.locked,
         colorTag:layer.colorTag??null,positionLocked:layer.positionLocked??false,
         contentLocked:layer.contentLocked??false,alphaLocked:layer.alphaLocked??false,
-        vectorMask:validateLayerMask(mask),blend:layer.blend??null,clipSourceId:clipSourceId??null
+        vectorMask:validateLayerMask(mask),blend:layer.blend??null,clipSourceId:clipSourceId??null,editable:validateEditableArtwork(editable)
       });
       ids.set(layer.id,id);
       referenceId=id;
@@ -90,14 +92,19 @@ export class DocumentTransaction{
     }
     return referenceId;
   }
-  replaceLayerRaster(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,source?:RevisionId){
+  setEditableArtwork(id:LayerId,artwork:EditableArtwork|null){
+    return this.meta(id,{editable:validateEditableArtwork(artwork)});
+  }
+  replaceLayerRaster(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,source?:RevisionId,editable?:EditableArtwork|null){
     this.open();
     if(this.slotsValue.length)throw new Error('Replace layer pixels as a standalone operation');
     if(source&&!this.doc.hasRevision(source))throw new Error('復元元の履歴が見つかりません。');
     const layer=this.editableRaster(id);
     if(layer.baseColor==='white')throw new Error('白背景を描画用に変換してから復元してください。');
+    if(layer.editable&&editable===undefined)throw new Error('編集できるレイヤーです。専用の操作画面で編集するか、描画用に変換してください。');
     this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
     this.seedRasterPixels(id,pixels,true,source);
+    if(editable!==undefined)this.setEditableArtwork(id,editable);
     return true;
   }
   private seedRasterPixels(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,replace=false,source?:RevisionId){
@@ -364,7 +371,7 @@ export class DocumentTransaction{
     try{w.editTile(x,y,edit);}catch(e){this.failed=true;throw e;}}
   setPixel(layerId:LayerId,x:number,y:number,rgba:readonly [number,number,number,number]){this.open();if(!Number.isSafeInteger(x)||!Number.isSafeInteger(y))throw new Error('invalid pixel coordinate');for(const v of rgba)if(!Number.isInteger(v)||v<0||v>255)throw new Error('invalid channel');
     const tx=pixelToTile(x),ty=pixelToTile(y),p=(ty.local*CANONICAL_TILE_SIZE+tx.local)*4;this.editTile(layerId,tx.tile,ty.tile,b=>{b[p]=rgba[0];b[p+1]=rgba[1];b[p+2]=rgba[2];b[p+3]=rgba[3];});}
-  recordRasterOperation(layerId:LayerId,mutation:RasterSemanticMutation,dirtyTiles:readonly DirtyTileHint[]):OperationKey{this.open();const layer=this.editableRaster(layerId);if(layer.baseColor==='white')throw new Error('Materialize the white background before brush editing');if(!dirtyTiles.length)throw new Error('semantic raster operation has no dirty tiles');for(const hint of dirtyTiles){tileKey(hint.tileX,hint.tileY);if(!Number.isSafeInteger(hint.workUnits)||hint.workUnits<=0)throw new Error('invalid raster work estimate');}
+  recordRasterOperation(layerId:LayerId,mutation:RasterSemanticMutation,dirtyTiles:readonly DirtyTileHint[]):OperationKey{this.open();const layer=this.editableRaster(layerId);if(layer.baseColor==='white')throw new Error('Materialize the white background before brush editing');if(layer.editable)throw new Error('編集できるレイヤーには専用の操作を使ってください。');if(!dirtyTiles.length)throw new Error('semantic raster operation has no dirty tiles');for(const hint of dirtyTiles){tileKey(hint.tileX,hint.tileY);if(!Number.isSafeInteger(hint.workUnits)||hint.workUnits<=0)throw new Error('invalid raster work estimate');}
     const ordinal=this.slotsValue.length,key=operationKey(this.idValue,ordinal),footprint=Object.freeze(dirtyTiles.map(x=>Object.freeze({layerId,tileX:x.tileX,tileY:x.tileY,bounds:Object.freeze({...x.bounds})})));
     const draft:SemanticOperationDraft=Object.freeze({kind:mutation.kind,schemaVersion:mutation.schemaVersion,targetEntityIds:Object.freeze([layer.id]),parameters:Object.freeze({...mutation.parameters}),
       algorithmVersionRefs:Object.freeze([...(mutation.algorithmVersionRefs??[])]),resourceRefs:Object.freeze([...(mutation.resourceRefs??[])]),sourceRevisionIds:Object.freeze([...(mutation.sourceRevisionIds??[this.baseValue])]),
@@ -375,6 +382,7 @@ export class DocumentTransaction{
     this.open();if(this.slotsValue.length)throw new Error('geometry must be the only action in this transaction');
     if(!['document.crop','document.canvas-resize','document.image-resize'].includes(kind))throw new Error('unknown geometry action');
     if(!Number.isSafeInteger(width)||!Number.isSafeInteger(height)||width<1||height<1||width>8192||height>8192)throw new Error('invalid canvas dimensions');
+    if(this.rootValue.rootLayerIds.some(id=>this.rootValue.getLayer(id).editable))throw new Error('図形・文字・グラデーションを描画用レイヤーへ変換してから、作品の大きさを変更してください。');
     if(layerPixels.size!==this.rootValue.rootLayerIds.length)throw new Error('each raster layer must be rebased');
     const byteLength=width*height*4,T=CANONICAL_TILE_SIZE;
     for(const id of this.rootValue.rootLayerIds){
@@ -475,7 +483,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||layer.contentLocked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='restore-revision'||x.type==='pin-revision'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'contentLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'|'implicitRaster'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'contentLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'|'implicitRaster'|'editable'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

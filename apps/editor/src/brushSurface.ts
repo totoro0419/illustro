@@ -229,6 +229,19 @@ export class BrushSurface{
     const x=guide.origin.x+(this.wrapOrigin?.x??0),y=guide.origin.y+(this.wrapOrigin?.y??0);
     const start=v.screen({x:x-dx,y:y-dy}),end=v.screen({x:x+dx,y:y+dy});
     const line=overlay.firstElementChild!;
+    let ellipse=overlay.querySelector('polyline');
+    if(guide.ellipse){
+      if(!ellipse){
+        ellipse=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+        ellipse.setAttribute('stroke','#42b9e8');ellipse.setAttribute('stroke-dasharray','8 5');ellipse.setAttribute('fill','none');overlay.append(ellipse);
+      }
+      const {rx,ry}=guide.ellipse,c=Math.cos(guide.angle),s=Math.sin(guide.angle);
+      ellipse.setAttribute('points',Array.from({length:97},(_,i)=>{
+        const theta=i*Math.PI/48,u=Math.cos(theta)*rx,w=Math.sin(theta)*ry,p=v.screen({x:x+u*c-w*s,y:y+u*s+w*c});
+        return p.x+','+p.y;
+      }).join(' '));
+    }else ellipse?.remove();
+    if(guide.ellipse)line.setAttribute('visibility','hidden');else line.removeAttribute('visibility');
     line.setAttribute('x1',String(start.x));line.setAttribute('y1',String(start.y));
     line.setAttribute('x2',String(end.x));line.setAttribute('y2',String(end.y));
   }
@@ -507,6 +520,7 @@ export class BrushSurface{
       this.status(locked?'このレイヤーはロック中です。解除するか、別のレイヤーを選んでください。':'このレイヤーは非表示です。表示するか、別のレイヤーを選んでください。');
       return;
     }
+    if(layer.editable){this.status('このレイヤーは専用の操作画面で編集できます。筆で描くには描画用レイヤーを選んでください。');return;}
     if(layer.alphaLocked&&preset.blend==='erase'){
       this.status('不透明度をロックしているため消しゴムは使えません。');
       return;
