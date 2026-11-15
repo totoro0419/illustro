@@ -55,6 +55,13 @@ function measureCanvasStage(stage:string,started:number){
 }
 const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=shellMarkup(qaMode,qaMode?(m09Mode?qaM09Markup():m08Mode?qaM08Markup():qaMarkup()):'');
+const contextBar=document.createElement('div');
+contextBar.id='c04ContextBar';contextBar.setAttribute('role','group');contextBar.setAttribute('aria-label','今の操作対象');
+for(const [id,label] of [['c04ContextTool','ブラシ'],['c04ContextLayer','描画先'],['c04ContextSelection','選択なし']] as const){
+  const button=document.createElement('button');button.id=id;button.type='button';button.textContent=label;button.disabled=true;contextBar.append(button);
+}
+const contextPending=document.createElement('output');contextPending.id='c04ContextPending';contextPending.setAttribute('role','status');
+contextBar.append(contextPending);document.querySelector('.canvas-view-strip')?.append(contextBar);
 // Read-only TouchEvent/PointerEvent logger in opt-in QA builds. No gesture changes.
 installPassiveTouchProbe();
 // Opt-in physical-device trace; registers capture before editor input handlers.
@@ -1063,6 +1070,7 @@ const renderLayers=()=>{
     if(!entries.length)list.textContent=selectedLayer.implicitRaster?'ひと筆描くとレイヤーができます。':'一致するレイヤーがありません。';
   }
   scheduleLayerDrawingThumbnail();
+  updateContextBar();
   byId('layersBoxSummary').textContent=selectedName;
   byId('documentBoxSummary').textContent=controller.document.root.width+'×'+controller.document.root.height;
 };
@@ -1473,6 +1481,20 @@ byId('panView').onclick=()=>{
  byId('status').textContent=surface.panTool?'キャンバスをドラッグして移動できます。':'描画に戻りました。';
 };
 const shellUi=installShellUi(scheduleLayerDrawingThumbnail),workspace=shellUi.workspace;
+function updateContextBar(){
+  const active=documentReady&&!!surface;
+  const tool=byId<HTMLButtonElement>('c04ContextTool'),layer=byId<HTMLButtonElement>('c04ContextLayer');
+  const selection=byId<HTMLButtonElement>('c04ContextSelection');
+  tool.disabled=layer.disabled=selection.disabled=!active;
+  tool.textContent='道具: '+(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
+  layer.textContent='描画先: '+(active?controller.selectedLayer.name:'作品なし');
+  const selected=surface?.selectedRectangle;
+  selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):'選択なし';
+  byId('c04ContextPending').textContent=historyPending?'履歴を反映中':surface?.busy?'描画処理中':'';
+}
+byId<HTMLButtonElement>('c04ContextTool').onclick=()=>shellUi.openBox('brushBox');
+byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true);
+byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
 const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b])});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
@@ -1484,8 +1506,9 @@ function refreshSelectionControls(){
    ?'キャンバス上をドラッグして範囲を作成してください。'
    :rectangle?'範囲を設定しました。ブラシまたは消しゴムで内側に描けます。'
    :'選択範囲なし。キャンバス全体に描けます。';
+ updateContextBar();
 }
-function reflectRailTool(){for(const [id,active] of [['paint',selectedTool==='brush'],['erase',selectedTool==='eraser'],['eyedropper',selectedTool==='eyedropper']] as const)byId(id).setAttribute('aria-pressed',String(active));}
+function reflectRailTool(){for(const [id,active] of [['paint',selectedTool==='brush'],['erase',selectedTool==='eraser'],['eyedropper',selectedTool==='eyedropper']] as const)byId(id).setAttribute('aria-pressed',String(active));updateContextBar();}
 function activateEyedropper(){if(!surface||!documentReady)return;surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');if(selectedTool!=='eyedropper')lastDrawingTool=selectedTool==='eraser'?'eraser':'brush';eyedropperOriginal=foreground.current;selectedTool='eyedropper';surface.setEyedropper(true,byId<HTMLSelectElement>('colorSampleSource').value as 'composite'|'layer');reflectRailTool();byId('status').textContent='キャンバスに触れて、取りたい色を選んでください。';updateQa();}
 let holdingColorKey=false,releasedColorHold=false;
 function restoreDrawingTool(){if(!surface)return;holdingColorKey=releasedColorHold=false;byId('colorSampleLoupe').hidden=true;surface.setEyedropper(false);selectPreset(lastDrawingTool==='eraser'?lastEraserPresetId:lastBrushPresetId);updateQa();}
