@@ -2292,6 +2292,13 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       try{if(bitmap.width>0&&bitmap.height>0&&bitmap.width<=320&&bitmap.height<=240)await persistence.storeThumbnail(id,revision,blob);}finally{bitmap.close();}
     })().catch(error=>console.warn('Imported optional preview ignored:',error));},0);
   }
+  // Native-file reference contents are optional. Preserve first editable paint
+  // and read the reference-only section independently of artwork initialization.
+  if(opened.preserved?.optionalSections.some(section=>section.id==='c05.reference-board')){
+    void c05ReferenceBoard?.importNative(opened.preserved).catch(error=>{
+      byId('status').textContent='参考資料を読み込めませんでした。'+(error instanceof Error?error.message:String(error));
+    });
+  }
   scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
   }catch(error){
     // A started storage initialization must finish before rollback restores
@@ -3189,6 +3196,10 @@ const c05References=installReferenceBoard({
   }
 });
 c05ReferenceBoard=c05References;
+persistence.setSaveAttachmentProvider(async()=>{
+  const section=await c05References.exportNative();
+  return section?[section]:[];
+});
 installAssetPanel({openReference:assetId=>c05References.add(assetId)});
 document.querySelector('#referenceBoxBody')?.closest('.workspace-box')?.querySelector('.box-toggle')
   ?.addEventListener('click',()=>{void c05References.refreshIfChanged();});
