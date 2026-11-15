@@ -70,7 +70,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     brushPoints:SelectionBrushPoint[]=[],
     drawing:{pointer:number;first:{x:number;y:number}}|null=null;
   const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
-  const raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
+  let raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
   let pendingStore:{id:string;mask:MaskData|null}|null=null;
   let storeTimer:number|null=null,storeQueue:Promise<void>=Promise.resolve();
   function flushStoredSelection(){
@@ -98,6 +98,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const info=callbacks.getDocument();
     if(!info||!callbacks.getSurface())return null;
     if(info.id!==currentWork){
+      raster.destroy();raster=new MaskRasterWorker();
       flushStoredSelection();
       currentWork=info.id;active=null;lastSelection=null;history.length=0;future.length=0;
       tool=null;points=[];brushPoints=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
@@ -453,7 +454,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!drawing||event.pointerId!==drawing.pointer)return;
     drawing=null;points=[];brushPoints=[];overlayPath();
   },true);
-  const documentChanged=()=>{job++;currentWork=null;source();void updateNamed();};
+  const documentChanged=()=>{job++;currentWork=null;source();
+    callbacks.getSurface()?.setSelectionVisible(showSelection.checked);
+    void updateNamed();};
   refresh();documentChanged();
   return {
     active:()=>active,
