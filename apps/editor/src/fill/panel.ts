@@ -71,6 +71,8 @@ export function installFillPanel(host:HTMLElement,api:{
   const gap=number('埋める隙間（px）',0,0,12);
   const edge=number('塗りの拡張・縮小（px）',0,-24,24);
   const inspectId=number('調べる領域の番号',1,1,1);
+  const edgeShape=select('拡張・縮小の角',[['square','角を保つ'],['round','角を丸める']]);
+  const diagnostic=checkbox('補完と塗り残しの候補を表示');
   const trace=number('なぞりの幅（px）',1,1,25);
   const opacity=number('塗りの濃さ（%）',100,0,100);
   const condition=select('画素の条件',[['all','すべて'],['transparent','透明な画素だけ'],['color','設定色に近い画素だけ']]);
@@ -83,7 +85,7 @@ export function installFillPanel(host:HTMLElement,api:{
   const usesRegions=()=>method.value==='line'||method.value==='lasso-closed';
   const settings=():FillSettings=>({
     method:method.value as FillSettings['method'],tolerance:value(tolerance),gap:value(gap),opacity:value(opacity)/100,
-    edge:value(edge),traceWidth:value(trace),condition:condition.value as 'all'|'transparent'|'color',
+    edge:Math.round(value(edge)),edgeShape:edgeShape.value as 'square'|'round',traceWidth:value(trace),condition:condition.value as 'all'|'transparent'|'color',
     color:api.color(),erase:erase.checked,contiguous:contiguous.checked,closedOnly:closedOnly.checked
   });
   const activeIds=()=>reference.value==='layers'
@@ -176,6 +178,8 @@ export function installFillPanel(host:HTMLElement,api:{
       if(result?.mask){
         const intensity=result.mask.alpha[p]!/255*.42;
         r=r*(1-intensity)+245*intensity;g=g*(1-intensity)+145*intensity;b=b*(1-intensity);
+        if(result.diagnostics?.bridges[p]){r=244;g=152;b=30;}
+        if(result.diagnostics?.remaining[p]){r=216;g=34;b=149;}
       }else if(!pending&&graph&&view.value!=='original'){
         if(graph.bridges[p]){r=231;g=124;b=26;}
         else if(graph.walls[p]){r=32;g=32;b=35;}
@@ -261,10 +265,12 @@ export function installFillPanel(host:HTMLElement,api:{
     }
     const result=await runFill({type:'fill',source:source.source,target:source.target,width:source.width,height:source.height,
       graph,selection:asSelection?null:selection,settings:{...options,excluded:edit.excluded,included:edit.included},points,
-      output:asSelection?'selection':'pixels',alphaLocked:source.alphaLocked});
+      output:asSelection?'selection':'pixels',alphaLocked:source.alphaLocked,diagnostics:diagnostic.checked});
     if(candidate!==edit||request!==candidateGeneration||!candidateValid(edit))return;
     pending=result;pendingColor=options.color;paint();
-    output.textContent='塗り候補を表示しました。範囲や濃さを調整してから適用できます。';
+    output.textContent=diagnostic.checked
+      ?'オレンジは補った隙間、ピンクは縁の未塗り候補です。範囲と角を調整して適用できます。'
+      :'塗り候補を表示しました。範囲や濃さを調整してから適用できます。';
   }
   async function fill(points:readonly Point[],asSelection:boolean){
     const options=settings();
@@ -366,7 +372,7 @@ export function installFillPanel(host:HTMLElement,api:{
   destination.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
   compare.onchange=()=>{inspectedRegion=0;inspectId.max=String(Math.max(1,(compare.checked?previous:currentGraph)?.count??1));paint();};
   showBefore.onchange=paint;view.onchange=paint;compare.disabled=true;
-  for(const control of [opacity,edge,trace,condition,closedOnly,erase,contiguous]){
+  for(const control of [opacity,edge,edgeShape,diagnostic,trace,condition,closedOnly,erase,contiguous]){
     control.addEventListener('change',()=>{if(candidate)void work(refreshCandidate);});
   }
   for(const control of [gap,tolerance])control.addEventListener('change',()=>{

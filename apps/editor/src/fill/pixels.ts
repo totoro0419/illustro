@@ -4,7 +4,7 @@ import type {Point} from '../transform/geometry';
 export type FillSettings=Readonly<{
   method:'color'|'line'|'lasso'|'lasso-closed';tolerance:number;gap:number;opacity:number;color:string;
   erase:boolean;contiguous:boolean;closedOnly:boolean;
-  edge?:number;traceWidth?:number;condition?:'all'|'transparent'|'color';excluded?:readonly number[];included?:readonly number[];
+  edge?:number;edgeShape?:'square'|'round';traceWidth?:number;condition?:'all'|'transparent'|'color';excluded?:readonly number[];included?:readonly number[];
 }>;
 export type Walls=readonly Readonly<{remove:boolean;points:readonly Point[]}>[];
 export type GapCandidate=Readonly<{from:Point;to:Point;length:number}>;
@@ -69,7 +69,7 @@ function regionTopology(labels:Uint32Array,width:number,height:number,external:U
   return {neighborOffsets,neighbors,depth};
 }
 
-export function buildRegions(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls):RegionGraph{
+export function fillBoundaries(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls=[]){
   const count=width*height,walls=new Uint8Array(count);
   const threshold=Math.max(1,tolerance*2.55);
   for(let i=0;i<count;i++){
@@ -117,6 +117,11 @@ export function buildRegions(source:Uint8Array,width:number,height:number,tolera
       }
     }
   }
+  return {walls,bridges,candidates};
+}
+
+export function buildRegions(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls):RegionGraph{
+  const count=width*height,{walls,bridges,candidates}=fillBoundaries(source,width,height,tolerance,gap,manual);
   const labels=new Uint32Array(count),queue=new Uint32Array(count),external:number[]=[0];
   let regions=0;
   for(let i=0;i<count;i++){
@@ -130,8 +135,43 @@ export function buildRegions(source:Uint8Array,width:number,height:number,tolera
     ...regionTopology(labels,width,height,externalFlags)};
 }
 
+function roundedEdge(mask:MaskData,radius:number,grow:boolean){
+  const {width,height,alpha}=mask,distances=new Uint16Array(alpha.length);
+  const far=0x7fff;
+  for(let i=0;i<alpha.length;i++)distances[i]=(alpha[i]!>127)===grow?0:far;
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const i=y*width+x;
+    let distance=distances[i]!;
+    if(x)distance=Math.min(distance,distances[i-1]!+10);
+    if(y)distance=Math.min(distance,distances[i-width]!+10,
+      x?distances[i-width-1]!+14:far,x+1<width?distances[i-width+1]!+14:far);
+    distances[i]=distance;
+  }
+  for(let y=height-1;y>=0;y--)for(let x=width-1;x>=0;x--){
+    const i=y*width+x;
+    let distance=distances[i]!;
+    if(x+1<width)distance=Math.min(distance,distances[i+1]!+10);
+    if(y+1<height)distance=Math.min(distance,distances[i+width]!+10,
+      x?distances[i+width-1]!+14:far,x+1<width?distances[i+width+1]!+14:far);
+    distances[i]=distance;
+  }
+  return Uint8Array.from(alpha,(a,i)=>{
+    const fade=limit(((radius+.5)*10-distances[i]!)/10,0,1);
+    return grow?Math.max(a,Math.round(255*fade)):Math.min(a,Math.round(255*(1-fade)));
+  });
+}
+
+export function unpaintedFillEdges(mask:MaskData,pixels:Uint8ClampedArray|null,selection:MaskData|null,ink:Uint8Array){
+  const nearby=growOrShrink(mask,2,'grow').alpha,remaining=new Uint8Array(nearby.length);
+  for(let i=0;i<remaining.length;i++){
+    if(nearby[i]&&!mask.alpha[i]&&(!selection||selection.alpha[i])&&!ink[i]&&!(pixels?.[i*4+3]))
+      remaining[i]=255;
+  }
+  return remaining;
+}
+
 export function fillMask(source:Uint8Array,width:number,height:number,settings:FillSettings,points:readonly Point[],
-  graph:RegionGraph|null,selection:MaskData|null):MaskData{
+  graph:RegionGraph|null,selection:MaskData|null,bridges?:Uint8Array):MaskData{
   const length=width*height;
   let alpha:Uint8Array=new Uint8Array(length);
   const seed=(point:Point)=>{
@@ -190,13 +230,16 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
       const queue=new Uint32Array(length);
       for(const point of sampledPath()){
         const start=seed(point);
-        if(start<0||alpha[start]||!equalColor(start))continue;
-        flood(width,height,start,i=>!alpha[i]&&equalColor(i),i=>{alpha[i]=255;},queue);
+        if(start<0||alpha[start]||bridges?.[start]||!equalColor(start))continue;
+        flood(width,height,start,i=>!alpha[i]&&!bridges?.[i]&&equalColor(i),i=>{alpha[i]=255;},queue);
       }
     }else for(let i=0;i<length;i++)if(equalColor(i))alpha[i]=255;
   }
   const edge=settings.edge??0;
-  if(edge&&alpha.some(Boolean))alpha=growOrShrink({width,height,alpha},Math.min(24,Math.abs(edge)),edge>0?'grow':'shrink').alpha;
+  if(edge&&alpha.some(Boolean)){
+    const radius=Math.min(24,Math.abs(edge)),mask={width,height,alpha};
+    alpha=settings.edgeShape==='round'?roundedEdge(mask,radius,edge>0):growOrShrink(mask,radius,edge>0?'grow':'shrink').alpha;
+  }
   const rgb=[1,3,5].map(offset=>parseInt(settings.color.slice(offset,offset+2),16));
   for(let i=0;i<length;i++){
     if(!alpha[i])continue;

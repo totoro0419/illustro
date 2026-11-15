@@ -1,4 +1,4 @@
-import {buildRegions,colorMask,fillMask,type FillSettings,type RegionGraph,type Walls} from './pixels';
+import {buildRegions,colorMask,fillBoundaries,fillMask,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
 import type {MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
 
@@ -6,7 +6,7 @@ export type FillImage={source:Uint8Array;width:number;height:number;settings:Fil
 export type FillJob=FillImage&(
   |{type:'graph';manual:Walls}
   |{type:'fill';target:Uint8Array|null;selection:MaskData|null;graph:RegionGraph|null;
-    points:readonly Point[];output:'selection'|'pixels';alphaLocked:boolean}
+    points:readonly Point[];output:'selection'|'pixels';alphaLocked:boolean;diagnostics?:boolean}
 );
 
 self.onmessage=({data}:MessageEvent<FillJob>)=>{
@@ -19,12 +19,24 @@ self.onmessage=({data}:MessageEvent<FillJob>)=>{
         graph.neighborOffsets.buffer as ArrayBuffer,graph.neighbors.buffer as ArrayBuffer,graph.depth.buffer as ArrayBuffer]);
       return;
     }
-    const mask=fillMask(source,width,height,settings,data.points,data.graph,data.selection);
+    const repairs=data.graph??(settings.method==='color'&&settings.contiguous&&settings.gap
+      ?fillBoundaries(source,width,height,settings.tolerance,settings.gap):null);
+    const mask=fillMask(source,width,height,settings,data.points,data.graph,data.selection,repairs?.bridges);
     if(data.output==='selection'){
       post.postMessage({mask},[mask.alpha.buffer as ArrayBuffer]);return;
     }
     const pixels=colorMask(data.target,mask,settings,data.alphaLocked);
     const changed=pixels.some((value,index)=>value!==(data.target?.[index]??0));
-    post.postMessage({pixels:changed?pixels:null,mask},changed?[pixels.buffer,mask.alpha.buffer as ArrayBuffer]:[mask.alpha.buffer as ArrayBuffer]);
+    const transfer=[mask.alpha.buffer as ArrayBuffer];
+    if(changed)transfer.push(pixels.buffer);
+    let diagnostics;
+    if(data.diagnostics){
+      const bounds=repairs??fillBoundaries(source,width,height,settings.tolerance,0);
+      const remaining=unpaintedFillEdges(mask,pixels,data.selection,bounds.walls);
+      const bridges=bounds.bridges.slice();
+      diagnostics={remaining,bridges};
+      transfer.push(remaining.buffer as ArrayBuffer,bridges.buffer);
+    }
+    post.postMessage({pixels:changed?pixels:null,mask,diagnostics},transfer);
   }catch(error){self.postMessage({error:error instanceof Error?error.message:String(error)});}
 };

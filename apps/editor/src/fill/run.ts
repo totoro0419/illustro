@@ -2,7 +2,7 @@ import type {FillJob} from './worker';
 import type {RegionGraph} from './pixels';
 import type {MaskData} from '../selection/mask';
 
-type Response={graph?:RegionGraph;mask?:MaskData;pixels?:Uint8ClampedArray<ArrayBuffer>;error?:string};
+type Response={graph?:RegionGraph;mask?:MaskData;diagnostics?:Readonly<{remaining:Uint8Array;bridges:Uint8Array}>;pixels?:Uint8ClampedArray<ArrayBuffer>;error?:string};
 
 export function runFill(job:FillJob){
   return new Promise<Response>((resolve,reject)=>{
