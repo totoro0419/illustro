@@ -18,6 +18,7 @@ import {installWorkspaceProfiles} from './ui/workspaceProfiles';
 import {installFloatingPanels} from './ui/floatingPanels';
 import {installInputDeviceProfiles,readPointerRoles} from './ui/inputDeviceProfiles';
 import {installEditorHelp} from './ui/help';
+import {installGestureShortcuts} from './ui/gestureShortcuts';
 import {installShortcutSettings} from './ui/shortcutSettings';
 import {installFocusMode} from './ui/focusMode';
 import './ui/c04.css';
@@ -3144,6 +3145,7 @@ installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 installWorkspaceProfiles(c04FloatingPanels);
 installInputDeviceProfiles(()=>surface);
+installGestureShortcuts();
 installShortcutSettings(c04Commands);
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
