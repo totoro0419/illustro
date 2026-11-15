@@ -57,7 +57,7 @@ const normalizedKey=(event:KeyboardEvent)=>event.key===' '?'space':event.key.toL
 const isText=(target:EventTarget|null)=>target instanceof Element&&!!target.closest('input,textarea,select,[contenteditable], [role="textbox"]');
 const isHoldable=(id:string)=>id==='eyedropper'||id==='panView'||id==='erase';
 
-export function installShortcutSettings(commands:CommandService){
+export function installShortcutSettings(commands:CommandService,canSwitchTools:()=>boolean=()=>true){
   const parent=el('workspaceBoxBody');if(!parent)return;
   let bindings:Binding[]=[];
   try{const saved=read();if(saved)bindings=parse(JSON.parse(saved));}catch{/* invalid old settings remain in storage; user may import a valid file */}
@@ -187,6 +187,7 @@ export function installShortcutSettings(commands:CommandService){
     }catch(error){status.textContent=error instanceof Error?error.message:'読み込みに失敗しました。';}
   };
   function startHold(binding:Binding){
+    if(!canSwitchTools()){status.textContent='線を描いている間は道具を切り替えられません。';return;}
     const id=binding.commandId;
     const on=el<HTMLButtonElement>(id)?.getAttribute('aria-pressed')==='true';
     if(on){active.set(id,{restore:()=>{}});return;}
@@ -203,6 +204,10 @@ export function installShortcutSettings(commands:CommandService){
     event.preventDefault();event.stopPropagation();
     if(binding.mode==='hold')startHold(binding);
     else {
+      if(['paint','erase','eyedropper','panView'].includes(binding.commandId)&&!canSwitchTools()){
+        status.textContent='線を描いている間は道具を切り替えられません。';
+        return;
+      }
       const result=commands.invoke(binding.commandId);
       if(!result.ok)status.textContent=result.reason??'現在は使えません。';
     }
