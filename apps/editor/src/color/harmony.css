@@ -13,3 +13,8 @@
 .c04-color-harmony label input{flex:none}
 .c04-color-harmony p{margin:2px 0;color:var(--a-subtle,#667);line-height:1.4}
 body.c04-gray-proof .surface{filter:grayscale(1)}
+
+.c04-secondary-color{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid var(--a-border,#ddd);font-size:11px}
+.c04-secondary-color label{display:flex;align-items:center;gap:7px}
+.c04-secondary-color input[type=color]{width:39px;height:35px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:transparent;cursor:pointer}
+.c04-secondary-color button{border:1px solid var(--a-border,#ddd);border-radius:7px;background:transparent;min-height:37px;padding:5px 8px;color:inherit;font-size:11px}
