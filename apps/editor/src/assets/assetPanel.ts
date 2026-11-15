@@ -108,6 +108,9 @@ export function installAssetPanel(opts:PanelOptions){
         if(item.kind==='reference')controls.append(button('資料として開く',()=>void run(async()=>{
           await opts.openReference(item.id);await markAssetUsed(item.id);await refresh();
         })));
+        if(item.kind==='brush'||item.kind==='palette')controls.append(button('この素材を使う',()=>void run(async()=>{
+          await useAsset(item);await markAssetUsed(item.id);await refresh();
+        })));
         controls.append(button('ファイルを出す',()=>void run(async()=>{
           const saved=await getAsset(item.id);if(!saved)throw Error('素材がありません。');
           saveBlob(saved.name,saved.data);await markAssetUsed(item.id);
@@ -130,6 +133,19 @@ export function installAssetPanel(opts:PanelOptions){
     const notes=window.prompt('素材についてのメモ',item.notes);if(notes===null)return;
     await updateAsset(item.id,{name,folder,tags:tags.split(/[,、，]+/),license,origin,notes});
     status.textContent='素材の情報を更新しました。';await refresh();
+  }
+  async function useAsset(item:AssetInfo){
+    const targetId=item.kind==='brush'?'brushImportFile':'colorPaletteFile';
+    const target=document.getElementById(targetId) as HTMLInputElement|null;
+    if(!target)throw Error('この素材を使用する機能がまだ開かれていません。');
+    const entry=await getAsset(item.id);if(!entry)throw Error('素材が見つかりません。');
+    const blob=new File([entry.data],entry.name.endsWith('.json')?entry.name:entry.name+'.json',{
+      type:entry.mime||'application/json'
+    });
+    const transfer=new DataTransfer();transfer.items.add(blob);
+    target.files=transfer.files;
+    target.dispatchEvent(new Event('change',{bubbles:true}));
+    status.textContent=item.kind==='brush'?'ブラシの読み込み画面へ渡しました。':'色パレットの読み込み画面へ渡しました。';
   }
   async function previewAsset(assetId:string){
     const item=await getAsset(assetId);if(!item||!item.mime.startsWith('image/'))return;
