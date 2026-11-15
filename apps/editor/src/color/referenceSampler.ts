@@ -75,7 +75,11 @@ export function installReferenceColorPicker(
   }
   function preview(event:PointerEvent,commit=false){
     const sampled=average(event);
-    if(!sampled){feedback.textContent='この場所から色を取得できません。';return;}
+    if(!sampled){
+      if(commit){foreground.cancel();swatch(current,'現在の色',foreground.current);}
+      feedback.textContent='この場所から色を取得できません。';
+      return;
+    }
     if(!commit){
       foreground.preview(sampled);
       swatch(current,'取得する色',sampled);
