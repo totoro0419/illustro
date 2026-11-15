@@ -239,6 +239,7 @@ export class BrushSurface{
       }
       this.strokeClip=clipped;this.strokeExited=false;
     }else this.strokeClip=null;
+    if(this.inspectedLayer){this.status('レイヤーの単独表示を解除してから描いてください。');return;}
     const layer=this.controller.selectedLayer;
     if(layer.locked||!layer.visible){
       this.status(layer.locked?'このレイヤーはロック中です。解除するか、別のレイヤーを選んでください。':'このレイヤーは非表示です。表示するか、別のレイヤーを選んでください。');
@@ -539,13 +540,24 @@ export class BrushSurface{
   }
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);this.syncLayerStyles();}
   discardRedoProjection(){this.handoff?.discardRedo();this.session?.discardRedo();}
+  private soloLayerId:LayerId|null=null;
+  get inspectedLayer(){
+    const root=this.controller.document.root;
+    return this.soloLayerId&&root.hasLayer(this.soloLayerId)?root.getLayer(this.soloLayerId):null;
+  }
+  setSoloLayer(id:LayerId|null){
+    if(id&&!this.controller.document.root.hasLayer(id))throw new Error('unknown solo layer');
+    this.soloLayerId=id;
+    this.syncLayerStyles();
+  }
   setLayerOpacityPreview(preview?:{layerId:LayerId;opacity:number}){
     this.syncLayerStyles(preview);
   }
   private syncLayerStyles(preview?:{layerId:LayerId;opacity:number}){
+    const solo=this.inspectedLayer;
     this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({
       surfaceKey:layer.surface.descriptor.surfaceId,
-      visible:layer.visible,
+      visible:solo?layer.id===solo.id:layer.visible,
       opacity:preview&&preview.layerId===layer.id?preview.opacity:layer.opacity,
     })));
   }
@@ -583,7 +595,8 @@ export class BrushSurface{
    const rgba=await (this.renderer as any).readPixel(x,y,this.sampleSource==='layer'?selected.surface.descriptor.surfaceId:null) as number[];
    // The logical white layer is not uploaded to the GPU. The composite
    // eyedropper must still return the actual appearance of white paper.
-   const white=this.sampleSource==='composite'?this.controller.layers.find(layer=>layer.baseColor==='white'&&layer.visible&&layer.opacity>0):null;
+   const solo=this.inspectedLayer;
+   const white=this.sampleSource==='composite'?this.controller.layers.find(layer=>layer.baseColor==='white'&&(solo?solo.id===layer.id:layer.visible)&&layer.opacity>0):null;
    if(white&&rgba&&rgba.length>=4){
      return compositeWhiteBackdrop(rgba,white.opacity);
    }

@@ -271,6 +271,11 @@ const renderLayers=()=>{
   for(const id of layerBatchIds){
     if(!controller.document.root.hasLayer(id))layerBatchIds.delete(id);
   }
+  const soloButton=byId<HTMLButtonElement>('layerSoloToggle'),inspected=surface?.inspectedLayer;
+  soloButton.disabled=!documentReady;
+  soloButton.setAttribute('aria-pressed',String(!!inspected));
+  soloButton.textContent=inspected?'単独表示を解除':'選択レイヤーだけ表示';
+  byId('layerSoloStatus').textContent=inspected?inspected.name+'を単独表示中':'';
   const batchButton=byId<HTMLButtonElement>('layerBatchToggle');
   batchButton.disabled=!documentReady;
   batchButton.setAttribute('aria-pressed',String(layerBatchMode));
@@ -429,6 +434,16 @@ const updateQa=()=>{
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
 };
 byId<HTMLInputElement>('layerSearch').oninput=renderLayers;
+byId<HTMLButtonElement>('layerSoloToggle').onclick=()=>{
+  if(!surface||!documentReady||geometryBusy||historyPending)return;
+  if(surface.busy){
+    byId('status').textContent='描画が終わってから単独表示を切り替えてください。';
+    return;
+  }
+  surface.setSoloLayer(surface.inspectedLayer?null:controller.selectedLayerId);
+  renderLayers();
+};
+
 byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchMode=!layerBatchMode;
   layerBatchIds.clear();
@@ -1484,6 +1499,11 @@ exportFormat.onchange=updateExportOptions;exportQuality.oninput=updateExportOpti
 byId<HTMLButtonElement>('exportImage').onclick=()=>{
   if(!documentReady)return;
   byId('exportStatus').textContent='';
+  const inspected=surface?.inspectedLayer;
+  byId('exportLayerScopeRow').hidden=!inspected;
+  const scope=byId<HTMLSelectElement>('exportLayerScope');
+  scope.value='artwork';
+  byId('exportSoloOption').textContent=inspected?inspected.name+'だけ':'単独表示レイヤーだけ';
   exportDialog.showModal();
 };
 byId<HTMLButtonElement>('exportCancel').onclick=()=>{if(!exportBusy)exportDialog.close();};
@@ -1492,7 +1512,13 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
   const format=exportFormat.value as ImageFormat,quality=Number(exportQuality.value)/100;
   // The snapshot is captured synchronously: later brush transactions cannot enter it.
   let fixed:ReturnType<typeof captureExport>;
-  try{await historyNavigation?.barrier();fixed=captureExport(controller.document);}
+  const requestedSolo=byId<HTMLSelectElement>('exportLayerScope').value==='solo';
+  try{
+    await historyNavigation?.barrier();
+    const solo=surface?.inspectedLayer;
+    if(requestedSolo&&!solo)throw new Error('単独表示を切り替えたため、書き出し範囲を選び直してください。');
+    fixed=captureExport(controller.document,requestedSolo?solo?.id:undefined);
+  }
   catch(error){byId('exportStatus').textContent=String(error instanceof Error?error.message:error);return;}
   const filename=exportFileName(fixed.name,format);
   exportBusy=true;exportError=null;byId<HTMLButtonElement>('exportRun').disabled=true;byId<HTMLButtonElement>('exportCancel').disabled=true;

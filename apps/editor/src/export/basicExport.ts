@@ -1,4 +1,4 @@
-import {CoreDocument,type RevisionId} from '@illustro/core';
+import {CoreDocument,type LayerId,type RevisionId} from '@illustro/core';
 import {GpuRenderer,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 
 export type ImageFormat='png'|'jpeg'|'webp';
@@ -14,15 +14,16 @@ export type ImageExportResult=Readonly<{
   encodeMs:number;totalMs:number;estimatedPeakBytes:number;
 }>;
 
-export function captureExport(document:CoreDocument):FrozenExport {
+export function captureExport(document:CoreDocument,soloLayerId?:LayerId):FrozenExport {
   // All logical references are captured before the first asynchronous operation.
   const revision=document.head,root=document.revision(revision).root;
   if(!Number.isSafeInteger(root.width)||!Number.isSafeInteger(root.height)||root.width<1||root.height<1||root.width>8192||root.height>8192)throw new Error('作品の大きさが正しくありません。');
   if(root.colorProfileId!=='srgb')throw new Error('この作品の色設定はM06の書き出しに対応していません。');
+  if(soloLayerId&&!root.hasLayer(soloLayerId))throw new Error('単独表示のレイヤーが見つかりません。');
   const layers=root.rootLayerIds.map(id=>{
     const layer=root.getLayer(id);
     if(layer.kind!=='raster'||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1'||layer.surface.descriptor.workingColorSpaceRef!=='srgb')throw new Error('このレイヤーの色形式はM06に未対応です。');
-    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
+    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,visible:soloLayerId?id===soloLayerId:layer.visible,opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
   });
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord}[]=[];
