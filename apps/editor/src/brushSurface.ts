@@ -126,6 +126,7 @@ export class BrushSurface{
   private keyNavigation=(e:KeyboardEvent)=>{
     if(e.type==='keydown'&&e.key==='Escape'&&this.editPointer!==null){
       this.clearCanvasEditGestureStroke();
+      if(this.editGesture?.pointEdit)this.updateEditStrokeOutline();
       e.preventDefault();
     }
     if(e.code==='Space')this.spacePressed=e.type==='keydown'&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&
@@ -163,6 +164,14 @@ export class BrushSurface{
     if(this.inputActive)return;
     this.selectionRect=null;this.selectionMode=false;this.selectionAnchor=null;
     this.selectionPointer=null;this.updateSelectionOverlay();this.onSelectionChanged();
+  }
+  restoreRectangleSelection(selection:SelectionRect|null){
+    if(this.inputActive)return;
+    this.selectionMode=false;this.selectionAnchor=null;this.selectionPointer=null;
+    const root=this.controller.document.root;
+    const next=selection?clampSelectionRect(selection,root.width,root.height):null;
+    this.selectionRect=next&&next.width>0&&next.height>0?next:null;
+    this.updateSelectionOverlay();this.onSelectionChanged();
   }
   private updateSelectionOverlay(){
     let overlay=this.inputViewport.querySelector<SVGSVGElement>('.illustro-selection-overlay');
@@ -592,7 +601,7 @@ export class BrushSurface{
   get inputActive(){return this.editPointer!==null||this.pointer!==null||this.finishing||this.historySyncing;}
   private cancel=(e:PointerEvent)=>{
     if(this.layerPickHold?.pointer===e.pointerId)this.cancelLayerPickHold();
-    if(e.pointerId===this.editPointer)this.clearCanvasEditGestureStroke();
+    if(e.pointerId===this.editPointer){this.clearCanvasEditGestureStroke();if(this.editGesture?.pointEdit)this.updateEditStrokeOutline();}
     if(e.pointerId===this.selectionPointer){
       this.selectionPointer=null;this.selectionAnchor=null;this.selectionMode=false;this.updateSelectionOverlay();this.onSelectionChanged();return;
     }
