@@ -1,8 +1,8 @@
 /* M07 Aurora design tokens — presentation only; renderer ownership remains in canvas. */
 :root{
-  --a-surface:#fff;--a-surface-soft:#f9fbff;--a-background:#f7f9fc;
-  --a-border:#e2e7f0;--a-border-strong:#ced8e7;--a-text:#222c40;
-  --a-subtle:#5c6c83;--a-accent:#718dfa;--a-accent-soft:#e9eeff;--a-focus:#5865cc;
+  --a-surface:#fff;--a-surface-soft:#fffdf9;--a-background:#f5f4f1;
+  --a-border:#e8e3d9;--a-border-strong:#d9c8aa;--a-text:#2d2b28;
+  --a-subtle:#666258;--a-accent:#dda048;--a-accent-soft:#fff0d4;--a-focus:#85501c;
   --a-elevation:0 4px 19px #272f2b16;--a-radius:12px;
   --a-space:8px;--a-box-header:40px;--a-strip:52px;--a-target:40px;
   --rail:68px;--top:56px;--bottom:52px;--workspace:344px;
@@ -35,7 +35,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible,select:focus-visi
 .rail .all{margin-top:auto !important;min-height:59px!important;border-top:1px solid var(--a-border)!important;border-radius:9px!important;color:var(--a-focus)}
 .rail .all>span:first-child{font-size:22px}
 .rail .tool-button:disabled{opacity:.43}
-main#canvasArea{margin:var(--top) var(--workspace) 0 var(--rail);height:calc(100dvh - var(--top));min-height:0;overflow:auto;padding:0;display:flex;flex-direction:column;align-items:center;background:radial-gradient(circle at 50% 32%,#f4f7fd,#e9eef5 80%)}
+main#canvasArea{margin:var(--top) var(--workspace) 0 var(--rail);height:calc(100dvh - var(--top));min-height:0;overflow:auto;padding:0;display:flex;flex-direction:column;align-items:center;background:radial-gradient(circle at 50% 32%,#f1f0ed,#e3e3e1 80%)}
 .canvas-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%;min-height:58px;padding:8px 20px;background:#ffffffc9;border-bottom:1px solid var(--a-border)}
 #status{font-size:11px;line-height:1.35;margin:0;min-width:170px;flex:1;color:var(--a-subtle)}
 .document-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
