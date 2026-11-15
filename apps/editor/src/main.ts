@@ -23,7 +23,7 @@ import {installShapeGradientPanel} from './artwork/shapeGradient';
 import {runArtwork} from './artwork/run';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import type {ArtworkActions} from './artwork/tools';
-import {installFillPanel} from './fill/panel';
+import {fillLayerName,installFillPanel} from './fill/panel';
 import {installTransformPanel} from './transform/panel';
 import {digestLayerMask,readSelectionMask,transformLinkedMask} from './transform/mask';
 import {cornerMode,initialTransform,meshMode} from './transform/geometry';
@@ -3487,6 +3487,8 @@ installFillPanel(byId('documentBoxBody'),{
     if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||root.isLayerContentLocked(layer.id)))
       throw Error('塗れるレイヤーを選ぶか、新しいレイヤーに塗ってください。');
     if(needTarget&&destination==='under'&&layer.baseColor==='white')throw Error('白い背景より上に塗りレイヤーを作ってください。');
+    if(needTarget&&destination!=='active'&&root.groupsForLayer(layer.id).some(group=>group.locked))
+      throw Error('新しい彩色レイヤーを置くグループのロックを解除してください。');
     const revision=stored?.sourceRevision??head,referenceRoot=artwork.revision(revision).root;
     const mode=stored?.reference??reference;
     const sourceIds:readonly LayerId[]=stored?.sources??(mode==='active'?[layer.id]:mode==='merged'?[]:layerIds as readonly LayerId[]);
@@ -3534,10 +3536,10 @@ installFillPanel(byId('documentBoxBody'),{
         artwork.root.width===width&&artwork.root.height===height,
       width,height,source,target,selection,targetMask,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,
       select:mask=>c06Selection?.replaceActive(mask),
-      apply:async pixels=>withClipboardAccess(async()=>{
+      apply:async(pixels,color)=>withClipboardAccess(async()=>{
         if(!valid())throw Error('作品が変わったため塗りを取り消しました。');
         const tx=artwork.begin('塗りつぶす');
-        const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,'塗りつぶし',false,true,destination==='under');
+        const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,fillLayerName(destination,color),false,true,destination==='under');
         if(destination==='active')tx.replaceLayerRaster(id,pixels);
         controller.lastPersistenceHandoff=tx.commit().persistence;
         controller.selectLayer(id);

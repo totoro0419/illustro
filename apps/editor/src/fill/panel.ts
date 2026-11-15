@@ -6,12 +6,13 @@ import type {FillSettings,RegionGraph,Walls} from './pixels';
 import {runFill} from './run';
 
 export type Reference=LineRegions['reference'];
-type Destination='active'|'new'|'under';
+export type Destination='active'|'new'|'under'|'color-layer';
+export const fillLayerName=(destination:Destination,color:string)=>destination==='color-layer'?'彩色 '+color.toUpperCase():destination==='under'?'塗りつぶしの下地':'塗りつぶし';
 export type FillCapture=Readonly<{
   name:string;targetName:string;key:string;width:number;height:number;source:Uint8Array;target:Uint8Array|null;
   revision:RevisionId;sourceIds:readonly LayerId[];reference:Reference;
   selection:MaskData|null;targetMask:MaskData|null;alphaLocked:boolean;valid:()=>boolean;referenceValid:()=>boolean;
-  apply:(pixels:Uint8ClampedArray)=>Promise<void>;select:(mask:MaskData)=>void;
+  apply:(pixels:Uint8ClampedArray,color:string)=>Promise<void>;select:(mask:MaskData)=>void;
 }>;
 type Candidate={source:FillCapture;points:readonly Point[];asSelection:boolean;excluded:number[];included:number[]};
 type Entry={id:LayerId;name:string;data:LineRegions};
@@ -36,7 +37,7 @@ export function installFillPanel(host:HTMLElement,api:{
   let saved:Entry|undefined,candidate:Candidate|null=null,excludedGap=-1;
   let pending:Awaited<ReturnType<typeof runFill>>|null=null;
   let displayDocument='';
-  let candidateGeneration=0;
+  let candidateGeneration=0,pendingColor='#000000';
   const manuals=new Map<string,Walls>();
   const makeLabel=(text:string,control:HTMLElement)=>{
     const label=document.createElement('label');label.append(text,control);options.append(label);
@@ -63,7 +64,7 @@ export function installFillPanel(host:HTMLElement,api:{
     ['vector','ベクターのパス'],['vector-visible','ベクターの見た目']]);
   const referenceLayer=select('参照するレイヤー',[]);
   const selectedRefs=document.createElement('div');selectedRefs.className='c06-clipboard-grid';options.append(selectedRefs);
-  const destination=select('塗る場所',[['active','選んだレイヤー'],['new','上の新しいレイヤー'],['under','下の新しいレイヤー']]);
+  const destination=select('塗る場所',[['active','選んだレイヤー'],['new','上の新しいレイヤー'],['under','下の新しいレイヤー'],['color-layer','色の名前でレイヤーを作る']]);
   const regionLayers=select('作品に保存した線画領域',[]);
   const view=select('解析の表示',[['regions','色分け'],['walls','境界と補完候補'],['outside','外側と閉領域'],['original','元の線画']]);
   const tolerance=number('色の許容範囲・線の濃さ（%）',15,0,100);
@@ -134,9 +135,15 @@ export function installFillPanel(host:HTMLElement,api:{
     }
     const names=api.references().filter(entry=>activeIds().includes(entry.id)).map(entry=>entry.name);
     const sourceName=reference.value==='active'?api.targetName():reference.value==='merged'?'表示中の全レイヤー':names.join('、')||'未指定';
-    targets.textContent='参照元 '+sourceName+'　塗り先 '+(destination.value==='active'?api.targetName():destination.value==='under'?'下に新規レイヤー':'上に新規レイヤー');
+    const outputLayer=destination.value as Destination;
+    const color=pending?pendingColor:api.color();
+    const layerName=fillLayerName(outputLayer,color);
+    const placement=outputLayer==='under'?'の下':'の上';
+    const targetName=outputLayer==='active'?api.targetName():api.targetName()+placement+'に「'+layerName+'」を作成';
+    targets.textContent='参照元 '+(pending&&candidate?candidate.source.name:sourceName)+'　塗り先 '+targetName;
     confirmGraph.disabled=running||!currentGraph||!capture||confirmed;
     applyPaint.disabled=running||!pending||!candidate;
+    applyPaint.textContent=candidate?.asSelection||outputLayer==='active'?'候補を適用':'レイヤーを作成して塗る';
     dropPaint.disabled=!candidate;
     rejectGap.disabled=running||!capture||excludedGap<0;
     nextGap.disabled=running||!currentGraph?.candidates.length;
@@ -229,7 +236,7 @@ export function installFillPanel(host:HTMLElement,api:{
       graph:usesRegions()?currentGraph:null,selection:asSelection?null:selection,settings:{...options,excluded,included},points,
       output:asSelection?'selection':'pixels',alphaLocked:source.alphaLocked});
     if(candidate!==edit||request!==candidateGeneration||!source.valid())return;
-    pending=result;paint();
+    pending=result;pendingColor=options.color;paint();
     output.textContent='塗り候補を表示しました。設定を調整するか「候補を適用」を押してください。';
   }
   async function fill(points:readonly Point[],asSelection:boolean){
@@ -254,7 +261,7 @@ export function installFillPanel(host:HTMLElement,api:{
     if(!candidate||!candidate.source.valid())throw Error('塗る対象が変わりました。');
     const {source,asSelection}=candidate;
     if(asSelection&&pending?.mask)source.select(pending.mask);
-    else if(pending?.pixels)await source.apply(pending.pixels);
+    else if(pending?.pixels)await source.apply(pending.pixels,pendingColor);
     else throw Error('変更される画素がありません。');
     candidate=null;pending=null;paint();output.textContent=asSelection?'領域を選択しました。':'塗りを反映しました。';
   });
