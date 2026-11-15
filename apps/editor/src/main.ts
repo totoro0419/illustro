@@ -8,6 +8,7 @@ import './ui/aurora.css';
 import './ui/home.css';
 import {installHomeShell,type HomeShell} from './ui/homeShell';
 import './color/color.css';
+import './color/harmony.css';
 import {ForegroundColor,rgb,hex} from './color/model';
 import {installColorPanel} from './color/panel';
 import {shellMarkup} from './ui/shell';
