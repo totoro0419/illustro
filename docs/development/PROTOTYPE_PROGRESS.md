@@ -4,7 +4,7 @@
 
 - 現在の作業は **C03 レイヤー・履歴・保存基盤**。
 - 作業ブランチは `prototype/C03`。現在のコードと次の作業は [C03ブランチの最新コミット](https://github.com/totoro0419/illustro/commits/prototype/C03/)。
-- 統合先は `prototype/C03-C17`。C03の完了後に取り込む。現在の統合先は受け入れ済み開始点 `7944d9d9229d6df95349bbebf99a8805d74ff52e`。
+- 統合先は `prototype/C03-C17`。C03の未検証初期実装と後続Cに必要な土台を反映する。C03は依存残件があるため **21/24のまま** であり、C03完了や品質合格を意味しない。
 - [正式設計の入口](../CANONICAL_INDEX.md) と [17区分ロードマップ](../roadmap/C01_C17_ROADMAP.md) を使用。アーカイブ設計の出所は [DESIGN_AUTHORITY.md](../DESIGN_AUTHORITY.md) に記載。旧M11 PR #67の独自差分は引き継ぎ文書のみ。
 
 | C | 今回の状態 |
