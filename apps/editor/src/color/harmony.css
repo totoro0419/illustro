@@ -35,3 +35,22 @@ body[data-c04-vision="tritan"] .surface{filter:url("#c04-vision-tritan")}
 .c04-color-opacity input[type=range]{width:100%;min-width:0}
 .c04-color-opacity input[type=number]{width:48px;padding:5px 2px;min-height:36px;border:1px solid var(--a-border,#ddd);border-radius:7px;color:inherit;background:var(--a-surface,#fff);text-align:center}
 #c04ColorOpacityStatus{display:block;font-size:10px;color:var(--a-subtle,#667);padding:0 9px}
+
+/* Reference sampling is an isolated temporary view, not an artwork layer. */
+.color-sample-options .color-detail-inner{display:flex;flex-direction:column;gap:7px}
+.color-sample-options label{display:flex;flex-direction:column;align-items:stretch;gap:4px;font-size:11px}
+.color-sample-options select{width:100%;min-height:38px;border:1px solid var(--a-border,#ddd);border-radius:7px;padding:6px;background:var(--a-surface,#fff);color:inherit}
+.color-sample-options #colorSampleLayerLabel[hidden]{display:none!important}
+#referenceSampleOpen{padding:8px;min-height:40px;border-radius:8px;border:1px solid var(--a-border,#ddd);background:var(--a-accent-soft,#fff3d9);color:inherit}
+.c04-reference-sample-dialog{position:fixed;top:7dvh;left:50%;transform:translateX(-50%);margin:0;padding:15px;width:min(620px,calc(100vw - 22px));max-height:86dvh;overflow:auto;z-index:32;border:1px solid var(--a-border-strong,#ccc);border-radius:14px;background:var(--a-surface,#fff);color:inherit;box-shadow:0 20px 55px #171b2848}
+.c04-reference-sample-dialog::backdrop{background:#111a3155}
+.c04-reference-sample-dialog h2{margin:0 0 8px;font-size:17px}
+.c04-reference-sample-dialog p{font-size:11px;line-height:1.45;margin:4px 0 10px;color:var(--a-subtle,#667)}
+.c04-reference-sample-canvas{display:block;max-width:100%;max-height:57dvh;margin:0 auto;border:1px solid var(--a-border,#ddd);border-radius:7px;cursor:crosshair;object-fit:contain;image-rendering:auto}
+.c04-reference-sample-pair{display:flex;align-items:center;gap:10px;margin:9px 0;flex-wrap:wrap}
+.c04-reference-sample-pair span{display:flex;align-items:center;gap:6px;font-size:11px}
+.c04-reference-sample-pair i{display:inline-block;width:27px;height:27px;border:1px solid var(--a-border,#ddd);border-radius:6px}
+.c04-reference-sample-dialog output{display:block;font-size:11px;min-height:18px}
+.c04-reference-sample-dialog small{display:block;font-size:10px;line-height:1.4;color:var(--a-subtle,#667);margin:7px 0}
+.c04-reference-sample-dialog .c04-workspace-actions{display:flex;flex-wrap:wrap;gap:7px}
+.c04-reference-sample-dialog button{min-height:40px;border:1px solid var(--a-border,#ddd);padding:7px 10px;border-radius:8px;background:var(--a-accent-soft,#fff3d9);color:inherit}
