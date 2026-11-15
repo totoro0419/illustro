@@ -1,0 +1,13 @@
+/* C04 detachable panels live in document.body, outside the scrolling dock. */
+.c04-panel-placeholder{min-height:43px;margin-bottom:8px;padding:5px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px dashed var(--a-border-strong,#c8c7c0);border-radius:8px;color:var(--a-subtle,#63676b);font-size:11px}
+.c04-panel-placeholder button{min-height:32px;border:1px solid var(--a-border,#ddd);border-radius:7px;padding:5px 8px;background:var(--a-surface,#fff);color:inherit}
+.workspace-box.c04-panel-float{position:fixed!important;margin:0!important;z-index:23!important;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);min-height:170px;min-width:240px;box-shadow:0 13px 46px #10182855;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--a-border-strong,#c6c4be);border-radius:12px}
+.c04-panel-float .box-heading{flex:none;min-width:0;background:var(--a-surface-soft,#fbfbfa);border-bottom:1px solid var(--a-border,#ddd)}
+.c04-panel-float .box-body{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;padding-bottom:28px}
+.c04-panel-float .box-more-menu{z-index:25;position:absolute}
+.c04-float-handle{flex:none;min-width:39px;min-height:34px;touch-action:none;cursor:grab;border:1px solid var(--a-border,#ddd);border-radius:6px;background:var(--a-accent-soft,#ffeebe);font-size:10px;color:inherit}
+.c04-float-handle:active{cursor:grabbing}
+.c04-float-resize{position:absolute;right:1px;bottom:1px;z-index:9;touch-action:none;cursor:nwse-resize;min-width:39px;min-height:39px;border:1px solid var(--a-border-strong,#ccc);border-radius:8px 0 8px 0;background:var(--a-accent-soft,#ffeebe);color:inherit;font-size:21px}
+.c04-float-menu{width:100%;min-height:36px;text-align:left}
+body.illustro-focus-mode>.c04-panel-float{display:none!important}
+@media(max-width:760px){.workspace-box.c04-panel-float{min-width:240px}.c04-float-handle{min-width:44px;min-height:40px}}
