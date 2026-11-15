@@ -6,7 +6,7 @@ import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
-import {CANONICAL_TILE_SIZE,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,type LayerComp,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import drawingWorkerUrl from '../../../packages/brush-rt/dist/rt/drawing.worker.mjs?worker&url';
 import presentationWorkerUrl from '../../../packages/brush-rt/dist/rt/presentation.worker.mjs?worker&url';
@@ -239,6 +239,7 @@ export class BrushSurface{
       }
       this.strokeClip=clipped;this.strokeExited=false;
     }else this.strokeClip=null;
+    if(this.layerCompPreview){this.status('表示案の比較を終了してから描いてください。');return;}
     if(this.inspectedLayer){this.status('レイヤーの単独表示を解除してから描いてください。');return;}
     const layer=this.controller.selectedLayer;
     const root=this.controller.document.root,locked=root.isLayerLocked(layer.id);
@@ -557,16 +558,29 @@ export class BrushSurface{
     this.soloLayerId=id;
     this.syncLayerStyles();
   }
+  private layerCompPreview:LayerComp|null=null;
+  setLayerCompPreview(comp:LayerComp|null){
+    this.layerCompPreview=comp;
+    this.syncLayerStyles();
+  }
   setLayerOpacityPreview(preview?:{layerId:LayerId;opacity:number}){
     this.syncLayerStyles(preview);
   }
   private syncLayerStyles(preview?:{layerId:LayerId;opacity:number}){
-    const solo=this.inspectedLayer;
-    this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({
-      surfaceKey:layer.surface.descriptor.surfaceId,
-      visible:solo?layer.id===solo.id:this.controller.document.root.isLayerVisible(layer.id),
-      opacity:preview&&preview.layerId===layer.id?preview.opacity:layer.opacity,
-    })));
+    const solo=this.inspectedLayer,root=this.controller.document.root;
+    const layers=this.layerCompPreview?new Map(this.layerCompPreview.layers.map(layer=>[layer.id,layer])):null;
+    const groups=this.layerCompPreview?new Map(this.layerCompPreview.groups.map(group=>[group.id,group.visible])):null;
+    this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>{
+      const candidate=layers?.get(layer.id);
+      const visible=this.layerCompPreview
+        ?(candidate?.visible??layer.visible)&&root.groupsForLayer(layer.id).every(group=>groups?.get(group.id)??group.visible)
+        :root.isLayerVisible(layer.id);
+      return {
+        surfaceKey:layer.surface.descriptor.surfaceId,
+        visible:solo?layer.id===solo.id:visible,
+        opacity:preview?.layerId===layer.id?preview.opacity:candidate?.opacity??layer.opacity,
+      };
+    }));
   }
   private surfaceKeys(){
     // White paper is a logical backdrop until the user explicitly edits it.

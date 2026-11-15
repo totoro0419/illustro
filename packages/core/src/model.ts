@@ -1,3 +1,4 @@
+import type {LayerComp} from './layerComps';
 import {EMPTY_LAYER_GROUPS,groupsForLayer,validateLayerGroups,type LayerGroup} from './layerGroups';
 import type {DocumentId,LayerId,RasterSurfaceId} from './ids';
 import {PagedMap} from './pagedMap';
@@ -20,7 +21,7 @@ export type LayerNode=Readonly<{
   positionLocked?:boolean;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
-export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];author?:string;description?:string;dpi?:number}>;
+export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;
 export function validateDocumentInfo(info:DocumentInfo):DocumentInfo{
   const name=info.name.trim(),author=info.author.trim(),description=info.description.trim();
   if(!name||name.length>4096||author.length>160||description.length>2000||
@@ -32,6 +33,10 @@ export function validateDocumentInfo(info:DocumentInfo):DocumentInfo{
 }
 export class DocumentRoot{
   readonly metadata:DocumentMetadata;
+  get layerComps(){return this.metadata.layerComps??[];}
+  withLayerComps(layerComps:readonly LayerComp[]){
+    return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{...this.metadata,layerComps});
+  }
   get layerGroups(){return this.metadata.layerGroups??EMPTY_LAYER_GROUPS;}
   groupsForLayer(id:LayerId){return groupsForLayer(this.layerGroups,id);}
   isLayerVisible(id:LayerId){return this.getLayer(id).visible&&this.groupsForLayer(id).every(group=>group.visible);}

@@ -32,9 +32,9 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
         resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([]),
       });
       operations.push(finalizeOperation(v.id,ordinal,draft));
-    }else if(slot.type==='groups'){
+    }else if(slot.type==='groups'||slot.type==='comps'){
       const draft:SemanticOperationDraft=Object.freeze({
-        kind:'layer.groups',schemaVersion:1,targetEntityIds:Object.freeze([slot.id]),
+        kind:slot.type==='groups'?'layer.groups':'layer.comps',schemaVersion:1,targetEntityIds:Object.freeze([slot.id]),
         parameters:Object.freeze({action:slot.action}),algorithmVersionRefs:Object.freeze([]),
         resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),
         selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([]),
@@ -54,6 +54,7 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
     }else{let layer=updates.get(slot.layerId)??v.root.getLayer(slot.layerId);layer=Object.freeze({...layer,surface:layer.surface.withMutations(slot.key,slot.dirtyTiles)});updates.set(slot.layerId,layer);operations.push(finalizeOperation(v.id,ordinal,slot.draft));}}
   let nextRoot=v.rootLayerIds?v.root.withLayerState(updates,v.rootLayerIds,v.deleted):v.root.withLayers(updates);
   if(v.groups)nextRoot=nextRoot.withLayerGroups(v.groups);
+  if(v.comps)nextRoot=nextRoot.withLayerComps(v.comps);
   if(v.dimensions)nextRoot=nextRoot.withDimensions(v.dimensions.width,v.dimensions.height);
   if(documentInfo)nextRoot=nextRoot.withInfo(documentInfo);
   const at=s.clock(),root=nextRoot.withModifiedAt(at),stamp=s.nextCommitStamp(),command=Object.freeze({version:2 as const,kind:'core.transaction.v2' as const,label:tx.label,operations:Object.freeze(operations)});

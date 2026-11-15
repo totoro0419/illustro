@@ -31,7 +31,7 @@ import {captureExport,compositeLayer,exportImage,exportFileName,type ImageFormat
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerGroup,type SemanticOperation,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type SemanticOperation,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -203,6 +203,7 @@ function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)
     return;
   }
   try{
+    stopLayerCompComparison();
     const previousOrder=controller.document.root.rootLayerIds;
     const tx=controller.document.begin(label);
     if(!change(tx)){tx.cancel();return;}
@@ -419,7 +420,55 @@ function groupLayerRow(group:LayerGroup,depth:number){
   return row;
 }
 
+let layerCompComparison:{surface:BrushSurface;id:LayerId}|null=null;
+
+function selectedLayerComp(){
+  const id=byId<HTMLSelectElement>('layerCompList').value;
+  return controller.document.root.layerComps.find(comp=>comp.id===id);
+}
+function stopLayerCompComparison(){
+  layerCompComparison?.surface.setLayerCompPreview(null);
+  layerCompComparison=null;
+}
+function renderLayerComps(){
+  const list=byId<HTMLSelectElement>('layerCompList'),previous=list.value,root=controller.document.root;
+  const comps=root.layerComps;
+  list.replaceChildren(...comps.map(comp=>new Option(comp.name,comp.id)));
+  if(comps.some(comp=>comp.id===previous))list.value=previous;
+  const comp=selectedLayerComp();
+  if(layerCompComparison&&(layerCompComparison.surface!==surface||layerCompComparison.id!==comp?.id))stopLayerCompComparison();
+  for(const id of ['layerCompCompare','layerCompApply','layerCompUpdate','layerCompDelete']){
+    byId<HTMLButtonElement>(id).disabled=!documentReady||!comp;
+  }
+  byId<HTMLButtonElement>('layerCompSave').disabled=!documentReady;
+  const compare=byId<HTMLButtonElement>('layerCompCompare');
+  compare.setAttribute('aria-pressed',String(!!layerCompComparison));
+  compare.textContent=layerCompComparison?'比較を終了':'比較';
+  const saved=new Set(comp?.layers.map(layer=>layer.id));
+  const deleted=comp?.layers.filter(layer=>!root.hasLayer(layer.id)).length??0;
+  const added=comp?root.rootLayerIds.filter(id=>!saved.has(id)).length:0;
+  const attributes=comp?[comp.saveVisibility?'表示':'',comp.saveOpacity?'不透明度':''].filter(Boolean).join('・'):'';
+  byId('layerCompStatus').textContent=comp
+    ?attributes+(deleted||added?'。削除済み '+deleted+'枚、追加 '+added+'枚は適用対象外。':'')
+    :'保存した表示案はありません。';
+}
+function saveLayerComp(comp?:LayerComp){
+  const name=byId<HTMLInputElement>('layerCompName').value.trim();
+  const visibility=byId<HTMLInputElement>('layerCompVisibility').checked;
+  const opacity=byId<HTMLInputElement>('layerCompOpacity').checked;
+  stopLayerCompComparison();
+  changeLayer(comp?'表示案を更新しました。':'表示案を保存しました。',tx=>tx.saveLayerComp(name||comp?.name||'',visibility,opacity,comp?.id));
+}
+function loadLayerCompFields(){
+  const comp=selectedLayerComp();
+  const name=byId<HTMLInputElement>('layerCompName');
+  name.value=comp?.name??'';
+  byId<HTMLInputElement>('layerCompVisibility').checked=comp?.saveVisibility??true;
+  byId<HTMLInputElement>('layerCompOpacity').checked=comp?.saveOpacity??true;
+}
+
 const renderLayers=()=>{
+  renderLayerComps();
   const root=controller.document.root;
   const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
   if(layerBatchDocument!==controller.document){
@@ -636,12 +685,46 @@ const updateQa=()=>{
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
 };
 byId<HTMLInputElement>('layerSearch').oninput=renderLayers;
+byId<HTMLSelectElement>('layerCompList').onchange=()=>{
+  stopLayerCompComparison();
+  loadLayerCompFields();
+  renderLayerComps();
+};
+byId<HTMLButtonElement>('layerCompCompare').onclick=()=>{
+  const comp=selectedLayerComp(),drawing=surface;
+  if(!comp||!drawing||drawing.busy||geometryBusy||historyPending)return;
+  if(layerCompComparison)stopLayerCompComparison();
+  else{
+    drawing.setSoloLayer(null);
+    drawing.setLayerCompPreview(comp);
+    layerCompComparison={surface:drawing,id:comp.id};
+  }
+  renderLayers();
+};
+byId<HTMLButtonElement>('layerCompSave').onclick=()=>saveLayerComp();
+byId<HTMLButtonElement>('layerCompUpdate').onclick=()=>{
+  const comp=selectedLayerComp();
+  if(comp)saveLayerComp(comp);
+};
+byId<HTMLButtonElement>('layerCompApply').onclick=()=>{
+  const comp=selectedLayerComp();
+  if(!comp)return;
+  stopLayerCompComparison();
+  changeLayer('表示案を適用しました。',tx=>tx.applyLayerComp(comp.id));
+};
+byId<HTMLButtonElement>('layerCompDelete').onclick=()=>{
+  const comp=selectedLayerComp();
+  if(!comp||!window.confirm(comp.name+'を削除しますか？'))return;
+  stopLayerCompComparison();
+  changeLayer('表示案を削除しました。',tx=>tx.deleteLayerComp(comp.id));
+};
 byId<HTMLButtonElement>('layerSoloToggle').onclick=()=>{
   if(!surface||!documentReady||geometryBusy||historyPending)return;
   if(surface.busy){
     byId('status').textContent='描画が終わってから単独表示を切り替えてください。';
     return;
   }
+  stopLayerCompComparison();
   surface.setSoloLayer(surface.inspectedLayer?null:controller.selectedLayerId);
   renderLayers();
 };

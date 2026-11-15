@@ -1,3 +1,4 @@
+import type {LayerComp} from './layerComps';
 import {EMPTY_LAYER_GROUPS,type LayerGroup} from './layerGroups';
 import type {BlockId,DocumentId,IdFactory,LayerId,OperationKey,RasterSurfaceId,ResourceId,RevisionId,TransactionId,WriterEpochId} from './ids';
 import type {Command,CommitStamp,Revision,RevisionHistoryState,SemanticOperation} from './history';
@@ -9,13 +10,13 @@ import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
 const UUID_V4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.delete','layer.snapshot','document.crop','document.canvas-resize','document.image-resize','document.info']);
+const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.comps','layer.delete','layer.snapshot','document.crop','document.canvas-resize','document.image-resize','document.info']);
 const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.unorm16.v1','rgba.float32.v1']);
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
 export type PersistedRoot=Readonly<{
   documentId:string;width:number;height:number;name:string;colorProfileId:string;createdAt:number;modifiedAt:number;
-  rootLayerIds:readonly string[];layers:readonly PersistedLayer[];layerGroups?:readonly LayerGroup[];author?:string;description?:string;dpi?:number;
+  rootLayerIds:readonly string[];layers:readonly PersistedLayer[];layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number;
 }>;
 export type PersistedLayer=Readonly<{
   id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;baseColor?:'white';colorTag?:LayerNode['colorTag'];positionLocked?:boolean;
@@ -112,12 +113,35 @@ function parseRoot(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescripto
   for(const item of r.layers){const layer=parseLayer(item,blocks);if(layerIds.has(layer.id))throw new Error('duplicate layer id');if(surfaceIds.has(layer.surface.descriptor.surfaceId))throw new Error('duplicate surface id');layerIds.add(layer.id);surfaceIds.add(layer.surface.descriptor.surfaceId);edit.set(layer.id,layer);}
   const rootLayerIds=uuidArray(r.rootLayerIds,'root layer') as LayerId[];if(rootLayerIds.length!==layerIds.size||new Set(rootLayerIds).size!==rootLayerIds.length)throw new Error('root layer order mismatch');for(const id of rootLayerIds)if(!layerIds.has(id))throw new Error('root layer missing');
   const base=new DocumentRoot(documentId,width,height,name,colorProfileId,edit.commit(),rootLayerIds,{createdAt,modifiedAt});
-  const root=r.layerGroups===undefined?base:base.withLayerGroups(parseLayerGroups(r.layerGroups));
+  const grouped=r.layerGroups===undefined?base:base.withLayerGroups(parseLayerGroups(r.layerGroups));
+  const root=r.layerComps===undefined?grouped:grouped.withLayerComps(parseLayerComps(r.layerComps));
   if(r.author===undefined&&r.description===undefined&&r.dpi===undefined)return root;
   const info=parseDocumentInfo({name,author:r.author??'',description:r.description??'',dpi:r.dpi??null});
   const {author,description,dpi}=info;
   return new DocumentRoot(documentId,width,height,name,colorProfileId,root.layers,rootLayerIds,
     {...root.metadata,...(author?{author}:{}),...(description?{description}:{}),...(dpi===null?{}:{dpi})});
+}
+function parseLayerComps(value:unknown):readonly LayerComp[]{
+  if(!Array.isArray(value)||value.length>MAX_LAYERS)throw new Error('invalid layer comps');
+  const seen=new Set<LayerId>();
+  return Object.freeze(value.map(item=>{
+    const comp=record(item,'layer comp'),id=uuid(comp.id,'layer comp id') as LayerId;
+    const {saveVisibility,saveOpacity}=comp;
+    if(seen.has(id)||typeof saveVisibility!=='boolean'||typeof saveOpacity!=='boolean'||(!saveVisibility&&!saveOpacity)||!Array.isArray(comp.layers)||comp.layers.length>MAX_LAYERS||!Array.isArray(comp.groups)||comp.groups.length>MAX_LAYERS)throw new Error('invalid layer comp');
+    seen.add(id);
+    const layers=comp.layers.map(value=>{
+      const state=record(value,'layer comp state'),layerId=uuid(state.id,'layer comp layer id') as LayerId;
+      const {visible,opacity}=state;
+      if((saveVisibility?typeof visible!=='boolean':visible!==undefined)||(saveOpacity?(typeof opacity!=='number'||!Number.isFinite(opacity)||opacity<0||opacity>1):opacity!==undefined))throw new Error('invalid layer comp state');
+      return Object.freeze({id:layerId,...(typeof visible==='boolean'?{visible}:{}),...(typeof opacity==='number'?{opacity}:{})});
+    });
+    const groups=comp.groups.map(value=>{
+      const group=record(value,'layer comp group');
+      if(typeof group.visible!=='boolean'||!saveVisibility)throw new Error('invalid comp group visibility');
+      return Object.freeze({id:uuid(group.id,'layer comp group id') as LayerId,visible:group.visible});
+    });
+    return Object.freeze({id,name:text(comp.name,'layer comp name',1,4096),saveVisibility,saveOpacity,layers:Object.freeze(layers),groups:Object.freeze(groups)});
+  }));
 }
 function parsePositionLock(value:unknown):boolean{
   if(value===undefined)return false;
@@ -200,6 +224,7 @@ export type CoreRecoveryPacketV1=Readonly<{
   /** M08: complete rebased document root for a dimension-changing transaction. */
   replacementRoot?:PersistedRoot|null;
   layerGroups?:readonly LayerGroup[];
+  layerComps?:readonly LayerComp[];
 }>;
 
 export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentRoot>,store:CanonicalTileStore,handoff:PersistenceHandoff):CoreRecoveryPacketV1{
@@ -211,7 +236,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
     if(operation.kind==='document.crop'||operation.kind==='document.canvas-resize'||operation.kind==='document.image-resize'){
       geometry=true;continue;
     }
-    if(operation.kind==='document.info')continue;
+    if(operation.kind==='document.info'||operation.kind==='layer.comps')continue;
     if(operation.kind==='layer.groups'||operation.kind==='layer.delete'){structural=true;continue;}
     if(operation.kind==='layer.reorder'){structural=true;continue;}
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
@@ -239,7 +264,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
   return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff:persistedHandoff,
     revision:Object.freeze({id:revision.id,parentIds:Object.freeze([...revision.parentIds]),transactionId:revision.transactionId!,command:revision.command,
       commitStamp:Object.freeze({writerEpochId:revision.commitStamp.writerEpochId,commitSequence:revision.commitStamp.commitSequence.toString()}),committedAt:revision.committedAt}),
-    modifiedAt:revision.root.metadata.modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds:structural?Object.freeze([...revision.root.rootLayerIds]):null,tileChanges:Object.freeze(tileChanges),blocks,replacementRoot,...(revision.command.operations.some(op=>(op.kind==='layer.groups'||op.kind==='layer.delete'))?{layerGroups:revision.root.layerGroups}:{})});
+    modifiedAt:revision.root.metadata.modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds:structural?Object.freeze([...revision.root.rootLayerIds]):null,tileChanges:Object.freeze(tileChanges),blocks,replacementRoot,...(revision.command.operations.some(op=>(op.kind==='layer.groups'||op.kind==='layer.delete'))?{layerGroups:revision.root.layerGroups}:{}),...(revision.command.operations.some(op=>op.kind==='layer.comps')?{layerComps:revision.root.layerComps}:{})});
 }
 
 export function mergeCoreRecovery(baseValue:unknown,packetValues:readonly unknown[],headRevisionId?:string):CorePersistenceSnapshotV1{
@@ -287,7 +312,7 @@ function parseRecoveryPacket(value:unknown):CoreRecoveryPacketV1{
     return root;
   })();
   if(geometry!==!!replacementRoot)throw new Error('geometry recovery root missing or unexpected');
-  return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff,revision:Object.freeze({id:resultRevisionId,parentIds:Object.freeze(revisionParentIds),transactionId,command,commitStamp:Object.freeze({writerEpochId,commitSequence}),committedAt}),modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds,tileChanges:Object.freeze(tileChanges),blocks:Object.freeze(packetBlocks),replacementRoot,...(p.layerGroups!==undefined?{layerGroups:parseLayerGroups(p.layerGroups)}:{})});
+  return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff,revision:Object.freeze({id:resultRevisionId,parentIds:Object.freeze(revisionParentIds),transactionId,command,commitStamp:Object.freeze({writerEpochId,commitSequence}),committedAt}),modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds,tileChanges:Object.freeze(tileChanges),blocks:Object.freeze(packetBlocks),replacementRoot,...(p.layerGroups!==undefined?{layerGroups:parseLayerGroups(p.layerGroups)}:{}),...(p.layerComps!==undefined?{layerComps:parseLayerComps(p.layerComps)}:{})});
 }
 
 function parseDocumentInfo(value:unknown):DocumentInfo{
@@ -317,5 +342,5 @@ function applyRootDelta(parent:PersistedRoot,packet:CoreRecoveryPacketV1):Persis
   for(const change of packet.tileChanges){const layer=layers.find(x=>x.id===change.layerId);if(!layer)throw new Error('recovery tile layer missing');const index=layer.surface.tiles.findIndex(x=>x.key===change.key),previous=index>=0?layer.surface.tiles[index]!.value:Object.freeze({baseBlockId:null,mutations:Object.freeze([])});
     let value:RasterTileValue;if(change.mode==='set-block')value=Object.freeze({baseBlockId:change.blockId as BlockId,mutations:Object.freeze([])});else value=Object.freeze({baseBlockId:previous.baseBlockId,mutations:Object.freeze([...previous.mutations,change.mutation])});
     const entry={key:change.key,value};if(index>=0)layer.surface.tiles[index]=entry;else layer.surface.tiles.push(entry);}
-  const rootLayerIds=packet.rootLayerIds??parent.rootLayerIds;return Object.freeze({...parent,modifiedAt:packet.modifiedAt,...(packet.layerGroups!==undefined?{layerGroups:packet.layerGroups}:{}),rootLayerIds:Object.freeze([...rootLayerIds]),layers:Object.freeze(layers.map(layer=>Object.freeze({...layer,surface:Object.freeze({descriptor:layer.surface.descriptor,tiles:Object.freeze(layer.surface.tiles.map(item=>Object.freeze(item)))})})))});
+  const rootLayerIds=packet.rootLayerIds??parent.rootLayerIds;return Object.freeze({...parent,modifiedAt:packet.modifiedAt,...(packet.layerGroups!==undefined?{layerGroups:packet.layerGroups}:{}),...(packet.layerComps!==undefined?{layerComps:packet.layerComps}:{}),rootLayerIds:Object.freeze([...rootLayerIds]),layers:Object.freeze(layers.map(layer=>Object.freeze({...layer,surface:Object.freeze({descriptor:layer.surface.descriptor,tiles:Object.freeze(layer.surface.tiles.map(item=>Object.freeze(item)))})})))});
 }

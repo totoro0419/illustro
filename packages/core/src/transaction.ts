@@ -1,3 +1,4 @@
+import type {LayerComp} from './layerComps';
 import {validateLayerGroups,type LayerGroup} from './layerGroups';
 import {operationKey,type LayerId,type OperationKey,type RasterSurfaceId,type TransactionId,type RevisionId} from './ids';
 import {rasterLayer,parseLayerColorTag,validateDocumentInfo,type DocumentInfo,type LayerNode} from './model';
@@ -9,12 +10,12 @@ import type {SemanticOperationDraft} from './history';
 import {CANONICAL_TILE_SIZE,pixelToTile,tileKey,RasterSurfaceManifest,type DirtyTileHint} from './raster/surface';
 
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
-type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
+type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId;initial?:true}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'delete';ids:readonly LayerId[]}>|Readonly<{type:'comps';id:LayerId;action:string}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
 
 export class DocumentTransaction{
   private readonly baseValue:RevisionId;private readonly rootValue;private readonly idValue:TransactionId;private readonly workingValue=new Map<LayerId,RasterWorkingSet>();
-  private readonly updatesValue=new Map<LayerId,LayerNode>();private readonly slotsValue:OperationSlot[]=[];private rootOrderValue:LayerId[]|null=null;private groupsValue:readonly LayerGroup[]|null=null;private deletedValue=new Set<LayerId>();private closed=false;private failed=false;private dimensionUpdate:{width:number;height:number}|null=null;
+  private readonly updatesValue=new Map<LayerId,LayerNode>();private readonly slotsValue:OperationSlot[]=[];private rootOrderValue:LayerId[]|null=null;private groupsValue:readonly LayerGroup[]|null=null;private compsValue:readonly LayerComp[]|null=null;private deletedValue=new Set<LayerId>();private closed=false;private failed=false;private dimensionUpdate:{width:number;height:number}|null=null;
   constructor(private readonly doc:CoreDocument,readonly label:string){if(!label.trim())throw new Error('empty transaction label');this.baseValue=doc.head;this.rootValue=doc.root;this.idValue=doc._internal(CORE_INTERNAL).ids.transaction();}
   get transactionId(){return this.idValue;}get baseRevision(){return this.baseValue;}
   addRasterLayerAbove(referenceId:LayerId,inheritGroup=true):LayerId{
@@ -87,6 +88,49 @@ export class DocumentTransaction{
     this.deletedValue=new Set(ids);
     if(originalGroups.length)this.groupsValue=validateLayerGroups(groups,order);
     this.slotsValue.push(Object.freeze({type:'delete',ids:Object.freeze([...ids])}));
+    return true;
+  }
+  saveLayerComp(name:string,saveVisibility:boolean,saveOpacity:boolean,existingId?:LayerId){
+    this.open();
+    const title=name.trim(),root=this.rootValue,existing=root.layerComps;
+    if(!title||title.length>4096||(!saveVisibility&&!saveOpacity))throw new Error('名前と保存する項目を指定してください。');
+    if(existingId&&!existing.some(comp=>comp.id===existingId))throw new Error('表示案が見つかりません。');
+    const id=existingId??this.doc._internal(CORE_INTERNAL).ids.layer();
+    const layers=root.rootLayerIds.map(layerId=>{
+      const layer=root.getLayer(layerId);
+      return Object.freeze({id:layerId,...(saveVisibility?{visible:layer.visible}:{}),...(saveOpacity?{opacity:layer.opacity}:{})});
+    });
+    const groups=saveVisibility?root.layerGroups.map(group=>Object.freeze({id:group.id,visible:group.visible})):[];
+    const comp=Object.freeze({id,name:title,saveVisibility,saveOpacity,layers:Object.freeze(layers),groups:Object.freeze(groups)});
+    return this.editComps(id,existingId?'update':'create',existingId?existing.map(old=>old.id===id?comp:old):[...existing,comp]);
+  }
+  deleteLayerComp(id:LayerId){
+    this.open();
+    const comps=this.rootValue.layerComps;
+    if(!comps.some(comp=>comp.id===id))return false;
+    return this.editComps(id,'delete',comps.filter(comp=>comp.id!==id));
+  }
+  applyLayerComp(id:LayerId){
+    this.open();
+    const root=this.rootValue,comp=root.layerComps.find(item=>item.id===id);
+    if(!comp)throw new Error('表示案が見つかりません。');
+    let changed=false;
+    for(const state of comp.layers){
+      if(!root.hasLayer(state.id))continue;
+      if(state.visible!==undefined)changed=this.setLayerVisibility(state.id,state.visible)||changed;
+      if(state.opacity!==undefined)changed=this.setLayerOpacity(state.id,state.opacity)||changed;
+    }
+    const groupStates=new Map(comp.groups.map(group=>[group.id,group.visible]));
+    const groups=root.layerGroups.map(group=>{
+      const visible=groupStates.get(group.id);
+      return visible===undefined||visible===group.visible?group:{...group,visible};
+    });
+    if(groups.some((group,index)=>group!==root.layerGroups[index]))return this.editGroups('apply-comp',id,groups);
+    return changed;
+  }
+  private editComps(id:LayerId,action:string,comps:readonly LayerComp[]){
+    this.compsValue=Object.freeze(comps);
+    this.slotsValue.push(Object.freeze({type:'comps',id,action}));
     return true;
   }
   createLayerGroup(ids:ReadonlySet<LayerId>,name:string){
@@ -295,10 +339,10 @@ export class DocumentTransaction{
   }
   commit():CommitReceipt{this.open();try{return commitTransaction(this);}catch(e){this.failed=true;throw e;}}
   cancel(){if(this.closed)throw new Error('transaction closed');this.workingValue.clear();this.updatesValue.clear();this.slotsValue.length=0;this.rootOrderValue=null;this.dimensionUpdate=null;this.closed=true;}
-  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,groups:this.groupsValue,deleted:this.deletedValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
+  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,groups:this.groupsValue,comps:this.compsValue,deleted:this.deletedValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
-  private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
+  private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
   private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
