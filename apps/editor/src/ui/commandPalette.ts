@@ -95,6 +95,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     ['workspace:history','履歴','historyBox'],
     ['workspace:workspace','作業欄の設定','workspaceBox'],
     ['workspace:navigator','表示の設定','navigatorBox'],
+    ['workspace:reference','参考資料ボード','referenceBox'],
+    ['workspace:assets','素材庫','assetsBox'],
   ] as const)known.push({
     id,label,category:'設定',aliases:'パネル 作業欄 開く',
     availability:()=>null,execute:()=>shell.openBox(section)
