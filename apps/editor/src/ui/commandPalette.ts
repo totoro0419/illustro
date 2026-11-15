@@ -4,6 +4,7 @@
  */
 import type {ShellControl} from './shellBehavior';
 import {fromHex,hex,type ForegroundColor} from '../color/model';
+import {icon,type IconName} from './icons';
 
 export type CommandDefinition=Readonly<{
   id:string;label:string;category:string;aliases:string;
@@ -15,7 +16,7 @@ export type CommandService=Readonly<{
   registerProvider:(provider:()=>readonly CommandDefinition[])=>()=>void;
   refresh:()=>void;
 }>;
-type PinState=Readonly<{version:1;slots:readonly string[]}>;
+type PinState=Readonly<{version:1;slots:readonly string[];names?:readonly string[];groups?:readonly string[]}>;
 const PIN_KEY='illustro.c04.quick-controller.v1';
 const RECENTS_KEY='illustro.c04.command-history.v1';
 const SLOT_COUNT=6;
@@ -137,6 +138,16 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     return commands;
   }
   let slots=parsePins(),recents=parseRecents(),lastFocus:HTMLElement|null=null,editingSlot:number|null=null;
+  const pinMeta=(()=>{
+    try{
+      const meta=JSON.parse(read(PIN_KEY)||'null') as PinState|null;
+      return {
+        names:Array.from({length:SLOT_COUNT},(_,i)=>typeof meta?.names?.[i]==='string'?meta.names[i]!.slice(0,28):''),
+        groups:Array.from({length:SLOT_COUNT},(_,i)=>typeof meta?.groups?.[i]==='string'?meta.groups[i]!.slice(0,22):''),
+      };
+    }catch{return {names:Array(SLOT_COUNT).fill('') as string[],groups:Array(SLOT_COUNT).fill('') as string[]};}
+  })();
+  const savePins=()=>write(PIN_KEY,JSON.stringify({version:1,slots,names:pinMeta.names,groups:pinMeta.groups}));
   const find=(id:string)=>dynamicCommands().find(command=>command.id===id);
   const remember=(id:string)=>{
     recents=[id,...recents.filter(key=>key!==id)].slice(0,24);
@@ -203,10 +214,20 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     quickSlots.replaceChildren();
     for(let i=0;i<SLOT_COUNT;i++){
       const command=slots[i]?find(slots[i]!):undefined;
+      const wrapper=document.createElement('div');wrapper.className='c04-quick-slot-wrap';
       const button=document.createElement('button');button.type='button';
       button.className='c04-quick-slot';
-      button.textContent=isConfiguring?(command?command.label:'未登録')+' · 変更':command?.label||'登録';
-      button.title='スロット'+(i+1);
+      const iconName:IconName=command?.id==='undo'?'undo':command?.id==='redo'?'redo':
+        command?.id==='erase'?'eraser':command?.id==='save'?'save':
+        command?.id==='layer'||command?.category==='レイヤー'?'layers':
+        command?.category==='色'?'color':command?.category==='描画'?'brush':'all';
+      const visual=document.createElement('span');visual.className='c04-quick-icon';visual.innerHTML=icon(iconName);
+      const label=document.createElement('strong');
+      label.textContent=(pinMeta.names[i]||command?.label||'登録')+(isConfiguring?' · 変更':'');
+      const group=document.createElement('small');
+      group.textContent=pinMeta.groups[i]||command?.category||'未登録';
+      button.append(visual,label,group);
+      button.title='スロット'+(i+1)+'：'+(command?.label??'未登録');
       if(!isConfiguring){
         const reason=command?.availability()??null;
         button.disabled=!!reason||!command;
@@ -219,7 +240,22 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
           execute(command);
         }
       };
-      quickSlots.append(button);
+      wrapper.append(button);
+      if(isConfiguring){
+        const edit=document.createElement('div');edit.className='c04-quick-edit-labels';
+        for(const [name,field,max] of [['名前','names',28],['グループ','groups',22]] as const){
+          const change=document.createElement('button');change.type='button';change.textContent=name;
+          change.onclick=()=>{
+            const previous=pinMeta[field][i]||'';
+            const value=window.prompt('スロット'+(i+1)+'の'+name+'を入力（空欄で自動表示）',previous);
+            if(value===null)return;
+            pinMeta[field][i]=value.trim().slice(0,max);savePins();renderQuick();
+          };
+          edit.append(change);
+        }
+        wrapper.append(edit);
+      }
+      quickSlots.append(wrapper);
     }
     note.hidden=!isConfiguring;
     note.textContent='変更する場所を押して機能を選びます。もう一度「完了」で確定します。';
@@ -243,8 +279,9 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     const index=target>=0?target:SLOT_COUNT-1;
     const duplicate=slots.indexOf(id);
     if(duplicate>=0&&duplicate!==index)slots[duplicate]='';
+    if(slots[index]!==id){pinMeta.names[index]='';pinMeta.groups[index]='';}
     slots[index]=id;editingSlot=null;
-    write(PIN_KEY,JSON.stringify({version:1,slots}));
+    savePins();
     renderQuick();
   };
   function renderSearch(){
