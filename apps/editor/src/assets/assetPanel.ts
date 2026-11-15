@@ -1,6 +1,6 @@
 /** C05 personal asset library, independent of artwork layers. */
 import {ASSET_KINDS,ASSET_LABELS,type AssetInfo,type AssetKind,listAssets,getAsset,addAsset,
-  updateAsset,removeAsset,restoreAsset,markAssetUsed} from './library';
+  updateAsset,removeAsset,restoreAsset,markAssetUsed,duplicateAsset,createAssetVersion} from './library';
 import {exportAssetPack,readAssetPack,previewAssetPack,importAssetPack} from './packs';
 
 type PanelOptions=Readonly<{openReference:(assetId:string)=>Promise<void>}>;
@@ -82,8 +82,9 @@ export function installAssetPanel(opts:PanelOptions){
       const head=document.createElement('div');head.className='c05-asset-entry-head';
       const h=document.createElement('strong');h.textContent=item.name;
       const meta=document.createElement('small');
-      meta.textContent=[ASSET_LABELS[item.kind],item.folder,item.tags.join(' / ')].filter(Boolean).join(' · ')+
-        ' · 第'+item.version+'版 · '+Math.round(item.bytes/1024)+'KB';
+      meta.textContent=[ASSET_LABELS[item.kind],item.folder,item.tags.join(' / '),
+        '第'+item.version+'版',item.parentId?'旧版 '+item.parentId.slice(0,8):'',
+        Math.round(item.bytes/1024)+'KB',item.license?'利用条件あり':''].filter(Boolean).join(' · ');
       head.append(h,meta);
       const controls=document.createElement('div');controls.className='c05-asset-entry-actions';
       const edit=button('整理',()=>void run(async()=>editMetadata(item)));
@@ -93,12 +94,17 @@ export function installAssetPanel(opts:PanelOptions){
         })));
       }else{
         controls.append(edit);
+        controls.append(button('複製',()=>void run(async()=>{
+          const copy=await duplicateAsset(item.id);status.textContent='「'+copy.name+'」を複製しました。';await refresh();
+        })));
+        controls.append(button('新版を保存',()=>chooseNewVersion(item)));
         controls.append(button(item.favorite?'★ お気に入り解除':'☆ お気に入り',()=>void run(async()=>{
           await updateAsset(item.id,{favorite:!item.favorite});await refresh();
         })));
         controls.append(button(item.hidden?'再表示':'非表示',()=>void run(async()=>{
           await updateAsset(item.id,{hidden:!item.hidden});await refresh();
         })));
+        if(item.mime.startsWith('image/'))controls.append(button('プレビュー',()=>void run(async()=>previewAsset(item.id))));
         if(item.kind==='reference')controls.append(button('資料として開く',()=>void run(async()=>{
           await opts.openReference(item.id);await markAssetUsed(item.id);await refresh();
         })));
@@ -119,9 +125,39 @@ export function installAssetPanel(opts:PanelOptions){
     if(!name.trim())throw Error('素材名は空にできません。');
     const folder=window.prompt('フォルダー名（空白なら未分類）',item.folder);if(folder===null)return;
     const tags=window.prompt('タグ（カンマ区切り）',item.tags.join(', '));if(tags===null)return;
-    const license=window.prompt('利用条件や出典のメモ',item.license);if(license===null)return;
-    await updateAsset(item.id,{name,folder,tags:tags.split(/[,、，]+/),license});
+    const license=window.prompt('利用条件や使用許諾（例：自作、許可済み等）',item.license);if(license===null)return;
+    const origin=window.prompt('配布元・作成元（入力は任意）',item.origin);if(origin===null)return;
+    const notes=window.prompt('素材についてのメモ',item.notes);if(notes===null)return;
+    await updateAsset(item.id,{name,folder,tags:tags.split(/[,、，]+/),license,origin,notes});
     status.textContent='素材の情報を更新しました。';await refresh();
+  }
+  async function previewAsset(assetId:string){
+    const item=await getAsset(assetId);if(!item||!item.mime.startsWith('image/'))return;
+    const dialog=document.createElement('dialog');dialog.className='c05-asset-preview';
+    const title=document.createElement('h3');title.textContent=item.name;
+    const image=document.createElement('img');image.alt=item.name;
+    const url=URL.createObjectURL(item.data);image.src=url;
+    const metadata=document.createElement('p');
+    metadata.textContent=[ASSET_LABELS[item.kind],item.license,item.origin,item.notes].filter(Boolean).join(' · ');
+    const close=button('閉じる',()=>dialog.close());
+    dialog.append(title,image,metadata,close);document.body.append(dialog);
+    dialog.addEventListener('close',()=>{URL.revokeObjectURL(url);dialog.remove();},{once:true});
+    dialog.showModal();
+  }
+  function chooseNewVersion(item:AssetInfo){
+    const file=document.createElement('input');file.type='file';file.hidden=true;file.accept=item.mime||'*/*';
+    document.body.append(file);
+    file.onchange=()=>{
+      const blob=file.files?.[0];file.remove();if(!blob)return;
+      void run(async()=>{
+        if(!window.confirm('「'+item.name+'」の新版として別の素材IDで保存します。旧版は残ります。続けますか？'))return;
+        const next=await createAssetVersion(item.id,blob);
+        status.textContent='新版「'+next.name+'」を保存しました。旧版も使えます。';
+        await refresh();
+      });
+    };
+    file.addEventListener('cancel',()=>file.remove(),{once:true});
+    file.click();
   }
   query.oninput=kind.onchange=filter.onchange=render;
   importKind.onchange=()=>{
