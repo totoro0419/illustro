@@ -30,7 +30,7 @@ export async function createPortableDocument(input:Readonly<{
   for(const block of snapshot.blocks){const bytes=blocks.get(block.id as never);if(!bytes)throw new Error('save block dependency missing');sections.push(Object.freeze({id:blockSectionId(block.id),type:BLOCK_TYPE,required:true,bytes}));}
   const selected=input.document.revision(revisionId).root.hasLayer(input.selectedLayerId)?input.selectedLayerId:input.document.revision(revisionId).root.rootLayerIds[0];
   if(!selected)throw new Error('save snapshot has no selectable layer');
-  sections.push(Object.freeze({id:EDITOR_SECTION,type:EDITOR_TYPE,required:false,bytes:textEncoder.encode(JSON.stringify(makeEditorState(selected,input.selection??null,input.document.root.width,input.document.root.height)))}));
+  sections.push(Object.freeze({id:EDITOR_SECTION,type:EDITOR_TYPE,required:false,bytes:textEncoder.encode(JSON.stringify(makeEditorState(selected,input.selection??null,input.document.revision(revisionId).root.width,input.document.revision(revisionId).root.height)))}));
   if(input.previewImage&&isPngPreview(input.previewImage))sections.push(Object.freeze({id:'render-preview',type:'render.preview.png.v1',required:false,bytes:input.previewImage.slice()}));
   for(const section of input.preserved?.optionalSections??[]){if(section.required)throw new Error('cannot preserve unknown required section');if(sections.some(x=>x.id===section.id))continue;sections.push(Object.freeze({...section,bytes:section.bytes.slice(),required:false}));}
   const generationId=input.generationId??crypto.randomUUID(),createdAt=input.createdAt??Date.now(),root=input.document.revision(revisionId).root;
