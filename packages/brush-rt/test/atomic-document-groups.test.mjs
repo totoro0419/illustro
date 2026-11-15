@@ -23,26 +23,30 @@ const group=(key,image,x=0)=>({key,x,y:0,w:64,h:64,bitmap:{id:image,width:64,hei
 const createOwner=()=>({tiles:new Map,element:new FakeElement('div'),bytes:0,peakBytes:0});
 
 test('Undo/Redo never exposes per-group intermediate images across cooperative yields',async()=>{
- const owner=createOwner();
- await publishDocumentGroupsAtomically(owner,[group('a','old-a'),group('b','old-b'),group('c','old-c')]);
- assert.deepEqual(snapshot(owner),['old-a','old-b','old-c']);
- const publish=publishDocumentGroupsAtomically(owner,[group('a','new-a'),group('b','new-b'),group('c','new-c')]);
- await Promise.resolve(); // the first new bitmap has been staged, never displayed
- assert.deepEqual(snapshot(owner),['old-a','old-b','old-c']);
+ const owner=createOwner(),keys=Array.from({length:9},(_,i)=>String(i));
+ const old=keys.map(k=>group(k,'old-'+k)),next=keys.map(k=>group(k,'new-'+k));
+ await publishDocumentGroupsAtomically(owner,old);
+ assert.deepEqual(snapshot(owner),keys.map(k=>'old-'+k));
+ const publish=publishDocumentGroupsAtomically(owner,next);
+ // Eight bitmap uploads are prepared offscreen before the scheduled yield.
+ await Promise.resolve();
+ assert.deepEqual(snapshot(owner),keys.map(k=>'old-'+k));
  await publish;
- assert.deepEqual(snapshot(owner),['new-a','new-b','new-c']);
- assert.equal(owner.tiles.size,3);
- assert.equal(owner.bytes,3*64*64*4);
+ assert.deepEqual(snapshot(owner),keys.map(k=>'new-'+k));
+ assert.equal(owner.tiles.size,9);
+ assert.equal(owner.bytes,9*64*64*4);
+ assert.equal(owner.lastAtomicDisplay.groups,9);
+ assert.ok(owner.lastAtomicDisplay.yields>=1);
 });
 
 test('Stale history revision is discarded with no partial DOM update',async()=>{
- const owner=createOwner();
- await publishDocumentGroupsAtomically(owner,[group('a','old-a'),group('b','old-b')]);
+ const owner=createOwner(),keys=Array.from({length:9},(_,i)=>String(i));
+ await publishDocumentGroupsAtomically(owner,keys.map(k=>group(k,'old-'+k)));
  let valid=true;
- const publish=publishDocumentGroupsAtomically(owner,[group('a','stale-a'),group('b','stale-b')],()=>valid);
+ const publish=publishDocumentGroupsAtomically(owner,keys.map(k=>group(k,'stale-'+k)),()=>valid);
  await Promise.resolve();valid=false;
  assert.equal(await publish,false);
- assert.deepEqual(snapshot(owner),['old-a','old-b']);
+ assert.deepEqual(snapshot(owner),keys.map(k=>'old-'+k));
 });
 
 test('Failed staging leaves every old tile visible',async()=>{
@@ -60,8 +64,8 @@ test('Failed staging leaves every old tile visible',async()=>{
 test('New tiles appear together with the replaced tiles and preserve accounting',async()=>{
  const owner=createOwner();
  await publishDocumentGroupsAtomically(owner,[group('a','old-a')]);
+ // Two groups may be completed in one JS task with zero intermediate frames.
  const update=publishDocumentGroupsAtomically(owner,[group('a','new-a'),group('b','new-b')]);
- await Promise.resolve();assert.deepEqual(snapshot(owner),['old-a']);
  assert.equal(await update,true);
  assert.deepEqual(snapshot(owner),['new-a','new-b']);
  assert.equal(owner.bytes,2*64*64*4);
