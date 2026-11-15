@@ -143,6 +143,7 @@ let symmetryPanel:ReturnType<typeof installSymmetryPanel>|undefined;
 let c05ReferenceBoard:ReferenceBoardService|undefined;
 let c06ClipboardUI:ClipboardUI|undefined;
 let c06Selection:SelectionWorkbench|undefined;
+let fillPanel:ReturnType<typeof installFillPanel>|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
@@ -922,6 +923,7 @@ function scheduleLayerDrawingThumbnail(open=documentReady&&shellUi.layerPageOpen
 }
 
 const renderLayers=()=>{
+  fillPanel?.refresh();
   syncHistoryBrush();
   renderLayerComps();
   updateVectorMaskControls();
@@ -3475,7 +3477,7 @@ async function collectFillMask(mask:LayerMask,width:number,height:number,valid:(
   }
   return {width,height,alpha};
 }
-installFillPanel(byId('documentBoxBody'),{
+fillPanel=installFillPanel(byId('documentBoxBody'),{
   drawing:()=>documentReady?surface:null,
   color:()=>hex(foreground.current),
   documentId:()=>controller.document.root.documentId,
@@ -3535,7 +3537,12 @@ installFillPanel(byId('documentBoxBody'),{
       key:root.documentId+':'+(mode==='merged'?'merged':(mode==='vector'||mode==='vector-visible'?mode+':':'')+sourceIds.join(',')),
       sourceIds,reference:mode,revision,
       referenceValid:()=>surface===drawing&&controller.document===artwork&&
-        (mode==='merged'?artwork.head===revision:sourceIds.every(id=>artwork.root.hasLayer(id)&&artwork.root.getLayer(id)===referenceRoot.getLayer(id)))&&
+        (mode==='merged'?(()=>{
+          const original=referenceRoot.rootLayerIds.filter(id=>!referenceRoot.getLayer(id).lineRegions);
+          const present=artwork.root.rootLayerIds.filter(id=>!artwork.root.getLayer(id).lineRegions);
+          return original.length===present.length&&original.every((id,index)=>id===present[index]&&
+            referenceRoot.getLayer(id)===artwork.root.getLayer(id)&&referenceRoot.isLayerVisible(id)===artwork.root.isLayerVisible(id));
+        })():sourceIds.every(id=>artwork.root.hasLayer(id)&&artwork.root.getLayer(id)===referenceRoot.getLayer(id)))&&
         artwork.root.width===width&&artwork.root.height===height,
       width,height,source,target,selection,targetMask,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,canAdjust,
       select:mask=>c06Selection?.replaceActive(mask),

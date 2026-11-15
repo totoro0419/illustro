@@ -26,7 +26,7 @@ self.onmessage=({data}:MessageEvent<FillJob>)=>{
     if(data.type==='graph'){
       const graph=buildRegions(source,width,height,settings.tolerance,settings.gap,data.manual);
       post.postMessage({graph},[graph.labels.buffer as ArrayBuffer,graph.walls.buffer as ArrayBuffer,graph.bridges.buffer as ArrayBuffer,graph.external.buffer as ArrayBuffer,
-        graph.neighborOffsets.buffer as ArrayBuffer,graph.neighbors.buffer as ArrayBuffer,graph.depth.buffer as ArrayBuffer]);
+        graph.neighborOffsets.buffer as ArrayBuffer,graph.neighbors.buffer as ArrayBuffer,graph.depth.buffer as ArrayBuffer,graph.anchors.buffer as ArrayBuffer]);
       return;
     }
     if(data.type==='hints'){

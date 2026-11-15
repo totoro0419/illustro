@@ -12,7 +12,7 @@ export type GapCandidate=Readonly<{from:Point;to:Point;length:number;kind?:'tips
 export type RegionGraph=Readonly<{
   width:number;height:number;walls:Uint8Array;bridges:Uint8Array;labels:Uint32Array;external:Uint8Array;count:number;
   candidates:readonly GapCandidate[];
-  neighborOffsets:Uint32Array;neighbors:Uint32Array;depth:Int32Array;
+  neighborOffsets:Uint32Array;neighbors:Uint32Array;depth:Int32Array;anchors:Uint32Array;hasInk:boolean;
 }>;
 
 const limit=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
@@ -130,16 +130,16 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
 
 export function buildRegions(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls):RegionGraph{
   const count=width*height,{walls,bridges,candidates}=fillBoundaries(source,width,height,tolerance,gap,manual);
-  const labels=new Uint32Array(count),queue=new Uint32Array(count),external:number[]=[0];
+  const labels=new Uint32Array(count),queue=new Uint32Array(count),external:number[]=[0],anchors=[0];
   let regions=0;
   for(let i=0;i<count;i++){
     if(walls[i]||labels[i])continue;
-    regions++;
+    regions++;anchors.push(i);
     const outside=flood(width,height,i,j=>!walls[j]&&!labels[j],j=>{labels[j]=regions;},queue);
     external.push(outside?1:0);
   }
   const externalFlags=Uint8Array.from(external);
-  return {width,height,walls,bridges,labels,external:externalFlags,count:regions,candidates,
+  return {width,height,walls,bridges,labels,external:externalFlags,count:regions,candidates,anchors:Uint32Array.from(anchors),hasInk:walls.some(Boolean),
     ...regionTopology(labels,width,height,externalFlags)};
 }
 
@@ -295,6 +295,7 @@ export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],tar
   const {width,height,labels}=graph,assignments=new Map<number,number>(),colors=hints.map(hint=>{
     return {erase:hint.color===null,channels:hint.color?colorChannels(hint.color):[]};
   });
+  const excluded=new Set(settings.excluded);
   for(const [index,hint] of hints.entries()){
     const radius=Math.max(0,Math.floor((hint.width-1)/2));
     for(const point of sampledPath(hint.points)){
@@ -302,7 +303,7 @@ export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],tar
       for(let y=-radius;y<=radius;y++)for(let x=-radius;x<=radius;x++){
         if(x*x+y*y>radius*radius||px+x<0||py+y<0||px+x>=width||py+y>=height)continue;
         const id=labels[(py+y)*width+px+x]!;
-        if(id&&(!settings.closedOnly||!graph.external[id]))assignments.set(id,index);
+        if(id&&!excluded.has(id)&&(!settings.closedOnly||!graph.external[id]))assignments.set(id,index);
       }
     }
   }

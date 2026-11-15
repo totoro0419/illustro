@@ -7,14 +7,14 @@ export type LineRegions=Readonly<{
   sourceRevision:RevisionId;
   sources:readonly LayerId[];
   reference:'active'|'merged'|'layer'|'layers'|'vector'|'vector-visible';
-  tolerance:number;gap:number;manual:RegionWalls;hints?:readonly ColorHint[];
+  tolerance:number;gap:number;manual:RegionWalls;hints?:readonly ColorHint[];excluded?:readonly RegionPoint[];review?:'reviewed'|'needs-review';
 }>;
 
 export function validateLineRegions(value:unknown):LineRegions|null{
   if(value==null)return null;
   const error=()=>new Error('線画領域の保存データが正しくありません。');
   if(typeof value!=='object')throw error();
-  const {sourceRevision,sources,reference,tolerance,gap,manual,hints}=value as LineRegions;
+  const {sourceRevision,sources,reference,tolerance,gap,manual,hints,excluded,review}=value as LineRegions;
   const uuid=(input:unknown)=>typeof input==='string'&&/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(input);
   if(!uuid(sourceRevision)||!Array.isArray(sources)||sources.length>256||sources.some(id=>!uuid(id))||
     !['active','merged','layer','layers','vector','vector-visible'].includes(reference)||
@@ -39,7 +39,9 @@ export function validateLineRegions(value:unknown):LineRegions|null{
       throw error();
     return Object.freeze({color:hint.color,width:hint.width,points:readPoints(hint.points)});
   }):null;
-  if(hints!==undefined&&!hintValues)throw error();
+  if(hints!==undefined&&!hintValues||review!==undefined&&review!=='reviewed'&&review!=='needs-review')throw error();
+  if(excluded!==undefined&&(!Array.isArray(excluded)||excluded.length>512))throw error();
+  const exclusions=excluded?.length?readPoints(excluded):null;
   return Object.freeze({sourceRevision,sources:Object.freeze([...sources]),reference,tolerance,gap,manual:walls,
-    ...(hintValues?{hints:Object.freeze(hintValues)}:{})});
+    ...(hintValues?{hints:Object.freeze(hintValues)}:{}),...(exclusions?{excluded:exclusions}:{}),...(review?{review}:{})});
 }
