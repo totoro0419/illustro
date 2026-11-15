@@ -24,6 +24,16 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
       operations.push(finalizeOperation(v.id,ordinal,draft));
       if(slot.type==='document-info')documentInfo=slot.info;
     }else if(slot.type==='metadata'){const draft:SemanticOperationDraft=Object.freeze({kind:'layer.metadata',schemaVersion:2,targetEntityIds:Object.freeze([slot.layerId]),parameters:Object.freeze((()=>{const layer=updates.get(slot.layerId)??v.root.getLayer(slot.layerId);return {name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,...(layer.clipSourceId!==undefined?{clipSourceId:layer.clipSourceId}:{}),...(layer.alphaLocked!==undefined?{alphaLocked:layer.alphaLocked}:{}),...(layer.positionLocked!==undefined?{positionLocked:layer.positionLocked}:{}),...(layer.colorTag!==undefined?{colorTag:layer.colorTag}:{})};})()),algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([])});operations.push(finalizeOperation(v.id,ordinal,draft));
+    }else if(slot.type==='pin-revision'){
+      if(v.slots.length!==1)throw new Error('Save snapshot as a standalone operation');
+      const draft:SemanticOperationDraft=Object.freeze({
+        kind:'document.pin-revision',schemaVersion:1,targetEntityIds:Object.freeze([]),
+        parameters:Object.freeze({name:slot.name,note:slot.note}),
+        algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),
+        sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),
+        resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([]),
+      });
+      operations.push(finalizeOperation(v.id,ordinal,draft));
     }else if(slot.type==='restore-revision'){
       if(v.slots.length!==1)throw new Error('History restore must be its own transaction');
       restoreRevision=slot.revisionId;

@@ -39,7 +39,12 @@ export class CoreDocument{
   addRasterLayerAbove(referenceId:LayerId){const tx=this.begin('Add raster layer'),layerId=tx.addRasterLayerAbove(referenceId),receipt=tx.commit();return Object.freeze({layerId,receipt});}
   undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}
   historyEntries(){
-    return this.historyValue.snapshot().revisions.map(({id,parentIds,command,committedAt})=>({id,parentIds,label:command?.label??'作品を作成',committedAt}));
+    return this.historyValue.snapshot().revisions.map(({id,parentIds,command,committedAt})=>{
+      const pin=command?.operations.find(operation=>operation.kind==='document.pin-revision');
+      const snapshot=pin&&typeof pin.parameters.name==='string'&&typeof pin.parameters.note==='string'
+        ?{name:pin.parameters.name,note:pin.parameters.note}:undefined;
+      return {id,parentIds,label:command?.label??'作品を作成',committedAt,snapshot};
+    });
   }
   capturePersistenceSnapshot(revisionId:RevisionId=this.head):CorePersistenceSnapshotV1{return captureCoreSnapshot(this.historyValue.snapshot(),this.storeValue,revisionId);}
   persistenceBlockPayloads(snapshot:CorePersistenceSnapshotV1){return blockPayloadsForSnapshot(snapshot,this.storeValue);}

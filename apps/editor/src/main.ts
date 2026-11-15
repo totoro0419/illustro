@@ -1218,14 +1218,14 @@ cropOverlay.addEventListener('pointermove',e=>{
  dimensionInput('geometryWidth').value=String(x1-x0);dimensionInput('geometryHeight').value=String(y1-y0);redrawCrop();
 });
 for(const type of ['pointerup','pointercancel','lostpointercapture'])cropOverlay.addEventListener(type,()=>draggingCrop=null);
-async function restoreArtworkHistory(artwork:CoreDocument,id:RevisionId){
+async function restoreArtworkHistory(artwork:CoreDocument,id:RevisionId,branchName?:string){
   const drawing=surface;
   if(!drawing?.canChangeGeometry||geometryBusy||historyPending||artwork!==controller.document)return;
   geometryBusy=true;
   drawing.setInputBarrier(true);
   const oldOrder=artwork.root.rootLayerIds;
   try{
-    const tx=artwork.begin('以前の状態を復元');
+    const tx=artwork.begin(branchName?'別案「'+branchName+'」':'以前の状態を復元');
     if(!tx.restoreRevision(id)){tx.cancel();return;}
     controller.lastPersistenceHandoff=tx.commit().persistence;
     controller.restoreEditHistory(oldOrder);
@@ -1233,7 +1233,7 @@ async function restoreArtworkHistory(artwork:CoreDocument,id:RevisionId){
     persistence.noteNavigation(artwork);
     checkpointNeedsFullSeed=true;
     await reloadGeometryProjection();
-    byId('status').textContent='以前の状態を復元しました。元に戻す操作で直前の状態へ戻れます。';
+    byId('status').textContent=branchName?'別案を開きました。直前の案も作品の履歴に残っています。':'以前の状態を復元しました。元に戻す操作で直前の状態へ戻れます。';
   }catch(error){
     byId('status').textContent='履歴の処理中にエラーが発生しました。'+(error instanceof Error?error.message:'');
   }finally{
@@ -1241,6 +1241,39 @@ async function restoreArtworkHistory(artwork:CoreDocument,id:RevisionId){
     surface?.setInputBarrier(historyPending);
     updateHistoryButtons();updateQa();
   }
+}
+
+function saveNamedArtworkSnapshot(reopen:()=>void){
+  const artwork=controller.document;
+  if(!documentReady||!surface||surface.busy||geometryBusy||historyPending)return;
+  const dialog=document.createElement('dialog'),form=document.createElement('form');
+  const title=document.createElement('h2'),nameLabel=document.createElement('label'),memoLabel=document.createElement('label');
+  const input=document.createElement('input'),memo=document.createElement('textarea');
+  const save=document.createElement('button'),cancel=document.createElement('button');
+  const date=new Date(artwork.root.metadata.modifiedAt).toLocaleString('ja-JP');
+  title.textContent='現在の状態を名前付きで残す';
+  nameLabel.textContent='名前 ';
+  input.required=true;input.maxLength=160;input.value=date;
+  nameLabel.append(input);
+  memoLabel.textContent='メモ ';
+  memo.maxLength=2000;memo.rows=3;
+  memoLabel.append(memo);
+  save.type='submit';save.textContent='保存';
+  cancel.type='button';cancel.textContent='取消';cancel.onclick=()=>dialog.close();
+  form.append(title,nameLabel,memoLabel,save,cancel);
+  dialog.className='export-dialog';
+  dialog.setAttribute('aria-label','スナップショットを保存');
+  dialog.append(form);
+  document.body.append(dialog);
+  const head=artwork.head;
+  form.onsubmit=event=>{
+    event.preventDefault();
+    if(artwork!==controller.document||head!==artwork.head){dialog.close();return;}
+    changeLayer('名前付きスナップショットを保存しました。',tx=>tx.pinRevision(input.value,memo.value));
+    dialog.close();
+  };
+  dialog.addEventListener('close',()=>{dialog.remove();reopen();},{once:true});
+  dialog.showModal();
 }
 
 function openArtworkHistory(){
@@ -1252,6 +1285,8 @@ function openArtworkHistory(){
   const label=document.createElement('label'),list=document.createElement('select');
   const more=document.createElement('button'),compare=document.createElement('button');
   const restore=document.createElement('button'),close=document.createElement('button');
+  const pin=document.createElement('button'),branch=document.createElement('button');
+  const note=document.createElement('p');
   const previews=document.createElement('div');
   const urls:string[]=[];
   let shown=0,request=0;
@@ -1264,12 +1299,13 @@ function openArtworkHistory(){
     for(const entry of page){
       const label=entry.label==='Add raster layer'?'レイヤーを追加':entry.label==='Brush stroke'?'描画':entry.label;
       const time=new Date(entry.committedAt).toLocaleString('ja-JP');
-      list.add(new Option((entry.id===head?'現在 · ':'')+label+' · '+time,entry.id));
+      const description=entry.snapshot?'保存した状態「'+entry.snapshot.name+'」':label;
+      list.add(new Option((entry.id===head?'現在 · ':'')+description+' · '+time,entry.id));
     }
     shown+=page.length;
     more.hidden=shown>=entries.length;
   }
-  for(const [button,text] of [[more,'さらに表示'],[compare,'現在と比較'],[restore,'この時点を復元'],[close,'閉じる']] as const){
+  for(const [button,text] of [[more,'さらに表示'],[compare,'現在と比較'],[restore,'この時点を復元'],[pin,'現在の状態を名前付きで保存'],[branch,'この時点から別案を作る'],[close,'閉じる']] as const){
     button.type='button';button.textContent=text;
   }
   title.textContent='作品の履歴';
@@ -1284,11 +1320,23 @@ function openArtworkHistory(){
     clearPreviews();
     restore.disabled=!list.value||list.value===head;
     compare.disabled=restore.disabled;
+    branch.disabled=restore.disabled;
+    note.textContent=entries.find(entry=>entry.id===list.value)?.snapshot?.note??'';
+    note.hidden=!note.textContent;
     status.textContent='';
   };
   list.onchange=update;
   more.onclick=appendEntries;
   close.onclick=()=>dialog.close();
+  pin.onclick=()=>{dialog.close();saveNamedArtworkSnapshot(openArtworkHistory);};
+  branch.onclick=()=>{
+    const id=list.value as RevisionId;
+    if(!id||id===head)return;
+    const title=window.prompt('別案の名前',entries.find(entry=>entry.id===id)?.snapshot?.name??'別案')?.trim();
+    if(!title)return;
+    dialog.close();
+    void restoreArtworkHistory(artwork,id,title.slice(0,160));
+  };
   restore.onclick=()=>{
     const id=list.value as RevisionId;
     if(!id||id===head||!window.confirm('この時点を復元しますか？ 直前の状態も履歴に残ります。'))return;
@@ -1317,7 +1365,7 @@ function openArtworkHistory(){
       if(request===token&&dialog.open)compare.disabled=false;
     }
   };
-  form.append(title,label,more,compare,restore,close,status,previews);
+  form.append(title,label,note,more,compare,restore,pin,branch,close,status,previews);
   dialog.className='export-dialog artwork-history-dialog';
   dialog.setAttribute('aria-label','作品の履歴');
   dialog.append(form);
