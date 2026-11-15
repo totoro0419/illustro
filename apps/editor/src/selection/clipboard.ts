@@ -131,7 +131,7 @@ export class ArtworkClipboard {
   }
   async writeSystemClipboard():Promise<void>{
     const blob=await this.makePng();
-    if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw Error('このブラウザーは画像のコピーに対応していません。PNGを書き出してください。');
+    if(!navigator.clipboard?.write||typeof globalThis.ClipboardItem==='undefined')throw Error('このブラウザーは画像のコピーに対応していません。PNGを書き出してください。');
     await navigator.clipboard.write([new globalThis.ClipboardItem({'image/png':blob})]);
   }
   async readSystemClipboard():Promise<ClipboardItem>{
