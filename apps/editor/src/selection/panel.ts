@@ -97,10 +97,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const source=()=>{
     const info=callbacks.getDocument();
     if(!info||!callbacks.getSurface())return null;
-    if(info.id!==currentWork){
+    const identity=info.id+':'+info.width+'x'+info.height;
+    if(identity!==currentWork){
       raster.destroy();raster=new MaskRasterWorker();
       flushStoredSelection();
-      currentWork=info.id;active=null;lastSelection=null;history.length=0;future.length=0;
+      currentWork=identity;active=null;lastSelection=null;history.length=0;future.length=0;
       tool=null;points=[];brushPoints=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
       const request=++job,loadedId=info.id;
       void storeQueue.then(()=>loadCurrentSelection(loadedId)).then(loaded=>{
