@@ -117,6 +117,11 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     const stack=byId<HTMLElement>('boxStack').getBoundingClientRect();
     const heading=menu.closest<HTMLElement>('.workspace-box')?.querySelector<HTMLElement>('.box-heading');
     if(!heading)return;
+    if(heading.closest('.c04-panel-float')){
+      menu.dataset.placement='below';
+      menu.style.removeProperty('--box-menu-above');
+      return;
+    }
     // Floating menus never resize the Box stack; select the direction with
     // adequate visible room, including when the list has been scrolled.
     menu.dataset.placement='below';
