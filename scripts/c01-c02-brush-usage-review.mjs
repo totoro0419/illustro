@@ -72,6 +72,44 @@ try{
    await page.locator('[data-box-id="right.navigator"] .box-toggle').click();
    await page.locator('#selectionClear').click();
    assert.equal(await page.locator('#selectionClear').isDisabled(),true);
+   // Android pen pointerup can be followed by a compatibility click carrying
+   // a DIFFERENT pointerId. A single physical tap must admit exactly one Undo.
+   const strokeCount=()=>page.evaluate(()=>Number(document.getElementById('canvas')?.dataset.committedStrokes));
+   for(let i=0;i<2;i++){
+     const before=await strokeCount();
+     await page.mouse.move(center.x-90+i*34,center.y+75);
+     await page.mouse.down();
+     await page.mouse.move(center.x-60+i*34,center.y+90,{steps:4});
+     await page.mouse.up();
+     await page.waitForFunction(n=>Number(document.getElementById('canvas')?.dataset.committedStrokes)>=n+1,before,{timeout:25000});
+   }
+   const beforeUndo=await strokeCount();
+   assert.ok(beforeUndo>=3,'three painted strokes available for pen Undo check');
+   await page.evaluate(()=>{
+     const button=[...document.querySelectorAll('#undo,#compactUndo')].find(el=>el.getBoundingClientRect().width>0&&!el.disabled);
+     if(!button)throw Error('Undo button unavailable for pen test');
+     const rect=button.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+     const params={bubbles:true,cancelable:true,pointerType:'pen',button:0,clientX:x,clientY:y};
+     button.dispatchEvent(new PointerEvent('pointerdown',{...params,pointerId:47}));
+     button.dispatchEvent(new PointerEvent('pointerup',{...params,pointerId:47}));
+     // Chrome may use a fallback mouse pointer identifier for this click.
+     button.dispatchEvent(new PointerEvent('click',{...params,pointerId:1,detail:1}));
+   });
+   await page.waitForFunction(n=>Number(document.getElementById('canvas')?.dataset.committedStrokes)===n-1,beforeUndo,{timeout:30000});
+   await page.waitForTimeout(100);
+   assert.equal(await strokeCount(),beforeUndo-1,'one pen tap must remove only one stroke');
+   await page.evaluate(()=>{
+     const button=[...document.querySelectorAll('#redo,#compactRedo')].find(el=>el.getBoundingClientRect().width>0&&!el.disabled);
+     if(!button)throw Error('Redo button unavailable for pen test');
+     const rect=button.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+     const params={bubbles:true,cancelable:true,pointerType:'pen',button:0,clientX:x,clientY:y};
+     button.dispatchEvent(new PointerEvent('pointerdown',{...params,pointerId:48}));
+     button.dispatchEvent(new PointerEvent('pointerup',{...params,pointerId:48}));
+     button.dispatchEvent(new PointerEvent('click',{...params,pointerId:1,detail:1}));
+   });
+   await page.waitForFunction(n=>Number(document.getElementById('canvas')?.dataset.committedStrokes)===n,beforeUndo,{timeout:30000});
+   await page.waitForTimeout(100);
+   assert.equal(await strokeCount(),beforeUndo,'one pen Redo tap must restore exactly one stroke');
    assert.deepEqual(pageErrors,[],'unhandled browser errors on '+backend);
    checks.push({backend,feature:'BRU-004',favorites:true,recent:true,reload:true,pageErrors});
   }finally{await context.close();}
