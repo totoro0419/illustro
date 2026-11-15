@@ -1,4 +1,5 @@
 import {installOrbitPicker} from './orbit';
+import {installHarmonyTools} from './harmony';
 import {ORBIT_WHEEL,orbitHuePaths} from './orbitGeometry';
 import {ForegroundColor,exportPalette,clamp,hex,fromHex,hslToRgb,hsvToRgb,rgb,rgbToHsl,rgbToHsv,type RGB} from './model';
 
@@ -69,6 +70,7 @@ export function colorMarkup():string {
 }
 
 export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>void,onBrushColor:()=>void}){
+ const harmony=installHarmonyTools(state);
  let model='HSV' as 'HSV'|'HSL'|'RGB',hueMemory=rgbToHsv(state.current).h;
  // Black RGB cannot encode the selected saturation. Preserve the SV marker
  // coordinate separately when Value reaches zero.
@@ -265,5 +267,5 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
  };
  const unsubscribe=state.subscribe(()=>{reflect();if(!state.isEditing)renderCollections();});
  renderChannels();reflect();renderCollections();
- return {destroy:()=>{unsubscribe();orbit.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1){model='RGB';(document.querySelector<HTMLInputElement>('input[name="colorModel"][value="RGB"]')!).checked=true;renderChannels();}}};
+ return {destroy:()=>{unsubscribe();orbit.destroy();harmony.destroy();},showTab:(n:number)=>{selectScreen(n>=2?'palette':'color');if(n===1){model='RGB';(document.querySelector<HTMLInputElement>('input[name="colorModel"][value="RGB"]')!).checked=true;renderChannels();}}};
 }
