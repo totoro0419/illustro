@@ -12,12 +12,13 @@ import './color/harmony.css';
 import {ForegroundColor,rgb,hex} from './color/model';
 import {installColorPanel} from './color/panel';
 import {installEyedropperSettings} from './color/eyedropperSettings';
-import {getAsset} from './assets/library';
+import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
 import {ArtworkClipboard} from './selection/clipboard';
 import {installClipboardPanel,type ClipboardUI} from './selection/clipboardPanel';
 import {installSelectionWorkbench,type SelectionWorkbench} from './selection/panel';
+import {installImageDropRouting} from './selection/dropImport';
 import './ui/c06.css';
 import './ui/c05.css';
 import {shellMarkup} from './ui/shell';
@@ -3281,6 +3282,23 @@ c06ClipboardUI=installClipboardPanel({
   },
   writeSystem:()=>c06Clipboard.writeSystemClipboard()
 },c06Clipboard);
+installImageDropRouting({
+  canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending,
+  place:async file=>{
+    await c06Clipboard.importImage(file,file.name);
+    await withClipboardAccess(async()=>{
+      c06Clipboard.paste(controller,'center');return 'edit';
+    });
+  },
+  reference:async file=>{
+    const asset=await addAsset({kind:'reference',name:file.name,data:file});
+    await c05References.add(asset.id);
+  },
+  asset:async file=>{
+    await addAsset({kind:'texture',name:file.name,data:file});
+    byId('status').textContent='素材庫に「'+file.name+'」を保存しました。';
+  }
+});
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
 if(perfMode){
