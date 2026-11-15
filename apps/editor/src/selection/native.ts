@@ -13,7 +13,7 @@ const INDEX_TYPE='selection.index.v1',ALPHA_TYPE='selection.alpha.v1',MAX_TOTAL=
 export const C06_SELECTION_PREFIX='c06.selection.';
 type Index=Readonly<{
   schema:'illustro.selection';version:1;width:number;height:number;active:boolean;
-  saved:readonly Readonly<{id:string;name:string;createdAt:number;modifiedAt:number}>[];
+  saved:readonly Readonly<{id:string;name:string;width:number;height:number;createdAt:number;modifiedAt:number}>[];
 }>;
 const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
 const textSection=(index:Index):PortableSectionInput=>({
@@ -34,13 +34,11 @@ export async function exportSelectionSections(
   const items:Index['saved'][number][]=[],sections:PortableSectionInput[]=[];
   if(active)sections.push({id:ACTIVE,type:ALPHA_TYPE,required:false,bytes:active.alpha.slice()});
   for(const entry of saved){
-    if(entry.width!==width||entry.height!==height)
-      throw Error('名前付き選択範囲「'+entry.name+'」は作品サイズと異なります。');
     const bytes=new Uint8Array(await entry.alpha.arrayBuffer());
-    if(bytes.byteLength!==width*height)throw Error('「'+entry.name+'」の保存された範囲が壊れています。');
+    if(bytes.byteLength!==entry.width*entry.height)throw Error('「'+entry.name+'」の保存された範囲が壊れています。');
     total+=bytes.byteLength;
     if(total>MAX_TOTAL)throw Error('作品内の選択範囲の合計が160MBを超えています。範囲の保存件数を減らしてください。');
-    items.push({id:entry.id,name:entry.name,createdAt:entry.createdAt,modifiedAt:entry.modifiedAt});
+    items.push({id:entry.id,name:entry.name,width:entry.width,height:entry.height,createdAt:entry.createdAt,modifiedAt:entry.modifiedAt});
     sections.push({id:PREFIX+entry.id,type:ALPHA_TYPE,required:false,bytes});
   }
   sections.push(textSection({schema:'illustro.selection',version:1,width,height,active:!!active,saved:items}));
@@ -60,13 +58,13 @@ export async function importSelectionSections(
   if(index.schema!=='illustro.selection'||index.version!==1||!Array.isArray(index.saved)||index.saved.length>32)
     throw Error('この作品の選択範囲の保存形式には対応していません。');
   if(index.width!==width||index.height!==height)throw Error('選択範囲と作品の大きさが異なります。');
-  const from=(id:string):Uint8Array=>{
+  const from=(id:string,expectedPixels:number):Uint8Array=>{
     const entry=preserved!.optionalSections.find(s=>s.id===id&&s.type===ALPHA_TYPE);
-    if(!entry||entry.bytes.byteLength!==width*height)throw Error('保存した範囲の画素情報が不足しています。');
+    if(!entry||entry.bytes.byteLength!==expectedPixels)throw Error('保存した範囲の画素情報が不足しています。');
     return entry.bytes.slice();
   };
   let selection:MaskData|null=null;
-  if(index.active)selection={width,height,alpha:from(ACTIVE)};
+  if(index.active)selection={width,height,alpha:from(ACTIVE,width*height)};
   const existing=await listSavedSelections(documentId);
   for(const item of index.saved){
     if(!item||typeof item.id!=='string'||!item.id||item.id.length>120||
@@ -74,8 +72,10 @@ export async function importSelectionSections(
       throw Error('作品内の選択範囲の名前が不正です。');
     const current=existing.find(e=>e.name===item.name);
     if(current)continue; // Never overwrite a locally edited saved selection.
-    const saved=from(PREFIX+item.id);
-    await saveNamedSelection(documentId,item.name,{width,height,alpha:saved});
+    if(!Number.isInteger(item.width)||!Number.isInteger(item.height)||item.width<1||item.height<1||item.width*item.height>64_000_000)
+      throw Error('名前付き選択範囲のサイズが不正です。');
+    const saved=from(PREFIX+item.id,item.width*item.height);
+    await saveNamedSelection(documentId,item.name,{width:item.width,height:item.height,alpha:saved});
   }
   return selection;
 }
