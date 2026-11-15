@@ -35,8 +35,6 @@ export function installGestureShortcuts(){
     active:Map<number,Contact>;count:number;cancelled:boolean;finished:number;
   }|null=null;
   const cancel=()=>{sequence=null;};
-  const checkTouch=(e:PointerEvent)=>e.pointerType==='touch'&&!!(e.target instanceof Element&&e.target.closest('.surface'))&&!e.isPrimary&&false;
-  void checkTouch; // pointerType is used directly; no primary-pointer restriction.
   viewport.addEventListener('pointerdown',e=>{
     if(e.pointerType!=='touch'||(!settings.twoFingerUndo&&!settings.threeFingerRedo))return;
     if(e.target instanceof Element&&e.target.closest('button,input,select,textarea,[contenteditable]'))return;
