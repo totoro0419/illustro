@@ -8,6 +8,9 @@ type Actions=Readonly<{
   cut:()=>Promise<void>;
   paste:(placement:'center'|'original')=>Promise<void>;
   exportPng:()=>Promise<void>;
+  importFile:(file:File)=>Promise<void>;
+  readSystem:()=>Promise<void>;
+  writeSystem:()=>Promise<void>;
 }>;
 export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard):ClipboardUI{
   const host=document.getElementById('documentBoxBody');
@@ -16,6 +19,8 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   const summary=document.createElement('summary');summary.textContent='コピー・切り取り・貼り付け';
   const intro=document.createElement('p');intro.textContent='コピーは作品を変えません。貼り付けは新しいレイヤーを作ります。';
   const commands=document.createElement('div');commands.className='c06-clipboard-grid';
+  const imageFile=document.createElement('input');imageFile.type='file';imageFile.hidden=true;
+  imageFile.accept='image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
   const message=document.createElement('output');message.setAttribute('role','status');
   const description=document.createElement('small');
   const buttons=new Map<string,HTMLButtonElement>();
@@ -37,17 +42,26 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   make('c06Paste','中央に貼り付け',()=>actions.paste('center'));
   make('c06PasteInPlace','元の位置に貼り付け',()=>actions.paste('original'));
   make('c06CopyPng','コピーをPNGで取り出す',actions.exportPng);
+  make('c06ImportImage','画像ファイルを貼り付け用に読む',async()=>imageFile.click());
+  make('c06SystemCopy','端末へ画像をコピー',actions.writeSystem);
+  make('c06SystemPaste','端末から画像を読む',actions.readSystem);
+  imageFile.onchange=()=>{
+    const file=imageFile.files?.[0];imageFile.value='';if(!file)return;
+    void actions.importFile(file).then(()=>{message.textContent='画像を読み込みました。貼り付けできます。';})
+      .catch(error=>{message.textContent=error instanceof Error?error.message:String(error);})
+      .finally(refresh);
+  };
   function refresh(){
     const ready=actions.canEdit(),selected=actions.hasSelection(),has=clipboard.hasContent;
     for(const [id,button] of buttons)button.disabled=!ready||(
       (id==='c06CopySelection'||id==='c06CutSelection')&&!selected
-    )||((id==='c06Paste'||id==='c06PasteInPlace'||id==='c06CopyPng')&&!has);
+    )||((id==='c06Paste'||id==='c06PasteInPlace'||id==='c06CopyPng'||id==='c06SystemCopy')&&!has);
     const current=clipboard.summary;
     description.textContent=current?
       'コピー済み：'+current.name+' · '+current.width+'×'+current.height+'px'+(current.selected?' · 選択範囲':''):
       'まだコピーした画像はありません。';
   }
-  panel.append(summary,intro,commands,description,message);host.append(panel);
+  panel.append(summary,intro,commands,imageFile,description,message);host.append(panel);
   const editing=(target:EventTarget|null)=>target instanceof HTMLElement&&!!target.closest(
     'input,textarea,select,[contenteditable="true"],dialog[open]'
   );
