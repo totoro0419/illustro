@@ -219,9 +219,56 @@ function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)
 }
 
 let draggedLayer:{document:CoreDocument;id:LayerId}|null=null;
+let layerBatchDocument:CoreDocument|null=null;
+let layerBatchMode=false;
+let layerBatchAnchor:LayerId|null=null;
+const layerBatchIds=new Set<LayerId>();
+
+function selectLayerForBatch(id:LayerId,visibleRows:readonly {id:LayerId}[],extend:boolean){
+  const anchor=visibleRows.findIndex(layer=>layer.id===layerBatchAnchor);
+  const current=visibleRows.findIndex(layer=>layer.id===id);
+  if(extend&&anchor>=0&&current>=0){
+    for(const layer of visibleRows.slice(Math.min(anchor,current),Math.max(anchor,current)+1))layerBatchIds.add(layer.id);
+  }else{
+    if(layerBatchIds.has(id))layerBatchIds.delete(id);
+    else layerBatchIds.add(id);
+    layerBatchAnchor=id;
+  }
+  renderLayers();
+  byId('layerPageList').querySelector<HTMLButtonElement>(`[data-layer-id="${id}"]`)?.focus();
+}
+
+function changeLayerBatch(label:string,apply:(tx:ReturnType<CoreDocument['begin']>,id:LayerId)=>boolean){
+  if(layerBatchDocument!==controller.document)return;
+  changeLayer(label,tx=>{
+    let changed=false;
+    for(const id of layerBatchIds){
+      if(controller.document.root.hasLayer(id))changed=apply(tx,id)||changed;
+    }
+    return changed;
+  });
+}
+
 
 const renderLayers=()=>{
   const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
+  if(layerBatchDocument!==controller.document){
+    layerBatchDocument=controller.document;
+    layerBatchMode=false;
+    layerBatchAnchor=null;
+    layerBatchIds.clear();
+  }
+  for(const id of layerBatchIds){
+    if(!controller.document.root.hasLayer(id))layerBatchIds.delete(id);
+  }
+  const batchButton=byId<HTMLButtonElement>('layerBatchToggle');
+  batchButton.disabled=!documentReady;
+  batchButton.setAttribute('aria-pressed',String(layerBatchMode));
+  byId('layerBatchActions').hidden=!layerBatchMode;
+  byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
+  for(const id of ['layerBatchShow','layerBatchHide','layerBatchLock','layerBatchUnlock']){
+    byId<HTMLButtonElement>(id).disabled=!documentReady||!layerBatchIds.size;
+  }
   const query=byId<HTMLInputElement>('layerSearch').value.trim().toLocaleLowerCase();
   const tagFilter=byId<HTMLSelectElement>('layerTagFilter').value;
   const tagField=byId<HTMLSelectElement>('selectedLayerTag');
@@ -236,7 +283,7 @@ const renderLayers=()=>{
   nameField.dataset.layerId=selectedLayer.id;
   nameField.disabled=!documentReady;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
-  const canMove=!!documentReady&&!query&&!tagFilter&&!selectedLayer.locked&&selectedLayer.baseColor!=='white';
+  const canMove=!!documentReady&&!layerBatchMode&&!query&&!tagFilter&&!selectedLayer.locked&&selectedLayer.baseColor!=='white';
   const previous=rows[selectedIndex-1],next=rows[selectedIndex+1];
   byId<HTMLButtonElement>('moveLayerUp').disabled=!canMove||!previous||previous.baseColor==='white';
   byId<HTMLButtonElement>('moveLayerDown').disabled=!canMove||!next||next.baseColor==='white';
@@ -251,16 +298,22 @@ const renderLayers=()=>{
     }
     list.replaceChildren(...matching.map(layer=>{
       const selected=layer.id===controller.selectedLayerId,row=document.createElement('button'),name=document.createElement('span'),state=document.createElement('span');
+      const batchRow=id==='layerPageList'&&layerBatchMode;
+      const batchSelected=batchRow&&layerBatchIds.has(layer.id);
       row.type='button';row.className='layer-row';row.dataset.layerId=layer.id;
-      row.setAttribute('aria-pressed',String(selected));row.setAttribute('aria-label',layer.name+(selected?'、選択中':''));
+      row.setAttribute('aria-pressed',String(batchRow?batchSelected:selected));row.setAttribute('aria-label',layer.name+(batchRow?(batchSelected?'、まとめて操作する対象':''):(selected?'、選択中':'')));
       name.className='layer-name';name.textContent=layer.name;
       if(layer.colorTag){
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[selected?'選択中':'',layer.locked?'ロック中':'',layer.visible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',layer.locked?'ロック中':'',layer.visible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
-      row.onclick=()=>{
+      row.onclick=event=>{
+        if(batchRow){
+          selectLayerForBatch(layer.id,matching,event.shiftKey);
+          return;
+        }
         if(layer.baseColor==='white'&&layer.visible&&!layer.locked){
           void materializeAndSelectWhiteLayer(layer.id).catch(showStorageError);
           return;
@@ -270,7 +323,7 @@ const renderLayers=()=>{
       };
       const entry=document.createElement('div');
       entry.className='layer-entry';
-      if(id==='layerPageList'&&documentReady&&!query&&!tagFilter&&layer.baseColor!=='white'){
+      if(id==='layerPageList'&&documentReady&&!layerBatchMode&&!query&&!tagFilter&&layer.baseColor!=='white'){
         row.draggable=!layer.locked;
         row.ondragstart=event=>{
           if(!event.dataTransfer)return;
@@ -365,6 +418,16 @@ const updateQa=()=>{
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
 };
 byId<HTMLInputElement>('layerSearch').oninput=renderLayers;
+byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
+  layerBatchMode=!layerBatchMode;
+  layerBatchIds.clear();
+  layerBatchAnchor=null;
+  renderLayers();
+};
+byId<HTMLButtonElement>('layerBatchShow').onclick=()=>changeLayerBatch('選んだレイヤーを表示しました。',(tx,id)=>tx.setLayerVisibility(id,true));
+byId<HTMLButtonElement>('layerBatchHide').onclick=()=>changeLayerBatch('選んだレイヤーを非表示にしました。',(tx,id)=>tx.setLayerVisibility(id,false));
+byId<HTMLButtonElement>('layerBatchLock').onclick=()=>changeLayerBatch('選んだレイヤーをロックしました。',(tx,id)=>tx.setLayerLocked(id,true));
+byId<HTMLButtonElement>('layerBatchUnlock').onclick=()=>changeLayerBatch('選んだレイヤーのロックを解除しました。',(tx,id)=>tx.setLayerLocked(id,false));
 byId<HTMLSelectElement>('layerTagFilter').onchange=renderLayers;
 const layerTagField=byId<HTMLSelectElement>('selectedLayerTag');
 layerTagField.onchange=()=>changeLayer('レイヤーの色タグを変更しました。',tx=>tx.setLayerColorTag(controller.selectedLayerId,parseLayerColorTag(layerTagField.value||null)));
