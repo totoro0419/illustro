@@ -63,6 +63,7 @@ export class BrushSurface{
   private commonStabilization=0.25;
   private pressureCalibrationMidpoint=0.5;
   private selectionRect:SelectionRect|null=null;
+  private selectionVisible=true;
   private selectionMode=false;private selectionPointer:number|null=null;private selectionAnchor:Point|null=null;
   private strokeClip:SelectionRect|null=null;private strokeLast:Point|null=null;private strokeExited=false;
   onSelectionChanged:()=>void=()=>{};
@@ -159,6 +160,8 @@ export class BrushSurface{
   /** BRU-010: settings are snapshotted when a stroke starts. */
   /** Document-pixel selection, independent of canvas zoom and angle. */
   get selectedRectangle(){return this.selectionRect;}
+  setSelectionVisible(show:boolean){this.selectionVisible=show;this.updateSelectionOverlay();}
+  get selectionIsVisible(){return this.selectionVisible;}
   get selectingRectangle(){return this.selectionMode;}
   setSelectionMode(enabled:boolean){
     if(this.inputActive)return;
@@ -180,7 +183,7 @@ export class BrushSurface{
   private updateSelectionOverlay(){
     let overlay=this.inputViewport.querySelector<SVGSVGElement>('.illustro-selection-overlay');
     const rectangle=this.selectionRect,v=this.view;
-    if(!rectangle||!v){if(overlay)overlay.style.display='none';return;}
+    if(!rectangle||!v||!this.selectionVisible){if(overlay)overlay.style.display='none';return;}
     if(!overlay){
       overlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
       overlay.classList.add('illustro-selection-overlay');overlay.setAttribute('aria-hidden','true');
