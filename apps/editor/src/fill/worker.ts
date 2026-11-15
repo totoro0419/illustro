@@ -1,18 +1,22 @@
-import {buildRegions,colorMask,fillBoundaries,fillMask,paintColorHints,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
+import {buildRegions,colorMask,fillBoundaries,fillMask,paintColorHints,sharedBoundary,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
 import type {ColorHint} from '@illustro/core';
 import type {MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
 
 export type FillImage={source:Uint8Array;width:number;height:number;settings:FillSettings};
-export type FillJob=FillImage&(
+export type FillJob={type:'boundary';graph:RegionGraph;first:number;second:number;near?:Point}|(FillImage&(
   |{type:'graph';manual:Walls}
   |{type:'hints';target:Uint8Array|null;selection:MaskData|null;graph:RegionGraph;hints:readonly ColorHint[];alphaLocked:boolean}
   |{type:'fill';target:Uint8Array|null;selection:MaskData|null;graph:RegionGraph|null;
     points:readonly Point[];output:'selection'|'pixels';alphaLocked:boolean;diagnostics?:boolean}
-);
+));
 
 self.onmessage=({data}:MessageEvent<FillJob>)=>{
   try{
+    if(data.type==='boundary'){
+      self.postMessage({boundary:sharedBoundary(data.graph,data.first,data.second,data.near)});
+      return;
+    }
     const {source,width,height,settings}=data;
     const post=self as unknown as Worker;
     if(data.type==='graph'){

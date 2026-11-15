@@ -3487,8 +3487,9 @@ installFillPanel(byId('documentBoxBody'),{
     let created=id;
     await withClipboardAccess(async()=>{
       if(controller.document!==artwork||!artwork.hasRevision(data.sourceRevision))throw Error('元の線画が見つかりません。');
+      if(id&&(!artwork.root.hasLayer(id)||!artwork.root.getLayer(id).lineRegions))throw Error('更新する線画領域が見つかりません。');
       const tx=artwork.begin(id?'線画領域を更新':'線画領域を作成');
-      created=id&&artwork.root.hasLayer(id)?id:tx.addRasterLayerAbove(layer.id);
+      created=id??tx.addRasterLayerAbove(layer.id);
       tx.setLineRegions(created,data);
       if(created!==id){
         tx.renameLayer(created,'線画領域');

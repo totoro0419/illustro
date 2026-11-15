@@ -311,3 +311,31 @@ export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],tar
   }
   return {pixels,mask:{width,height,alpha}};
 }
+
+export function sharedBoundary(graph:RegionGraph,first:number,second:number,near?:Point):readonly Point[]{
+  if(first===second||first<1||second<1||first>graph.count||second>graph.count)
+    throw Error('隣り合う二つの領域を選んでください。');
+  const {width,height,labels}=graph;
+  let best=Infinity,result:readonly Point[]=[];
+  const scan=(start:number,step:number,length:number)=>{
+    let last=0,at=start;
+    for(let j=0;j<length;j++){
+      const i=start+j*step,id=labels[i]!;
+      if(!id)continue;
+      if((last===first&&id===second)||(last===second&&id===first)){
+        const span=(i-at)/step-1;
+        if(span>0){
+          const from=at+step,to=i-step;
+          const a={x:from%width,y:Math.floor(from/width)},b={x:to%width,y:Math.floor(to/width)};
+          const score=span+(near?Math.hypot((a.x+b.x)/2-near.x,(a.y+b.y)/2-near.y)*.05:0);
+          if(score<best){best=score;result=[a,b];}
+        }
+      }
+      last=id;at=i;
+    }
+  };
+  for(let y=0;y<height;y++)scan(y*width,1,width);
+  for(let x=0;x<width;x++)scan(x,width,height);
+  if(!result.length)throw Error('二つの領域の共通境界を見つけられませんでした。境界を手でなぞってください。');
+  return result;
+}
