@@ -15,6 +15,7 @@ import {installShellUi} from './ui/shellBehavior';
 import {installCommandPalette} from './ui/commandPalette';
 import {installWorkspaceProfiles} from './ui/workspaceProfiles';
 import {installShortcutSettings} from './ui/shortcutSettings';
+import {installFocusMode} from './ui/focusMode';
 import './ui/c04.css';
 import './ui/workspaceProfiles.css';
 import {EditorController,type EditorHistoryChange} from './controller';
@@ -3131,6 +3132,7 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 '</ol><details class="qa-auto"><summary>問題があるときの動作確認</summary><button id="qaDiagInitial" type="button">状態を記録する</button><button id="qaDiagCopy" type="button">結果をコピーする</button><pre id="qaGpuReport"></pre></details><label>結果<select id="qaState"><option value="unchecked">まだ確認していない</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3" placeholder="具体的に教えてください"></textarea></label><button id="qaCopy" type="button">確認結果をコピー</button><details class="qa-auto"><summary>詳しい動作記録</summary><pre id="qaAuto"></pre></details></details>';}
 
 // C04 command entries forward to the installed real controls; do not duplicate their logic.
+installFocusMode();
 const c04Commands=installCommandPalette(shellUi);
 installWorkspaceProfiles();
 installShortcutSettings(c04Commands);
