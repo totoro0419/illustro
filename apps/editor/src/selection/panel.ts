@@ -9,6 +9,7 @@ export type SelectionWorkbench=Readonly<{
   documentChanged:()=>void;
   refresh:()=>void;
   applyRectangle:(rect:Readonly<{x:number;y:number;width:number;height:number}>)=>void;
+  clear:()=>void;
 }>;
 type SelectionCallbacks=Readonly<{
   getSurface:()=>BrushSurface|null;
@@ -22,7 +23,7 @@ const asButton=(label:string,fn:()=>void)=>{
 };
 export function installSelectionWorkbench(callbacks:SelectionCallbacks):SelectionWorkbench{
   const host=document.getElementById('documentBoxBody');
-  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},applyRectangle:()=>{}};
+  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},applyRectangle:()=>{},clear:()=>{}};
   const panel=document.createElement('details');panel.className='c06-selection-panel';
   const summary=document.createElement('summary');summary.textContent='選択範囲を編集';
   const intro=document.createElement('p');
@@ -39,10 +40,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   ] as const)mode.add(new Option(label,key));
   modes.append(mode);
   const shapeButtons=new Map<Tool,HTMLButtonElement>();
-  let tool:Tool|null=null,active:MaskData|null=null,
-    currentDocumentId:string|null=null,points:{x:number;y:number}[]=[],
+  let tool:Tool|null=null,active:MaskData|null=null,points:{x:number;y:number}[]=[],
     drawing:{pointer:number;first:{x:number;y:number}}|null=null;
-  const history:MaskData[]=[];const future:MaskData[]=[];
+  const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
   let previous:MaskData|null=null;let lastSelection:MaskData|null=null;
   const viewport=document.querySelector<HTMLElement>('.surface');
   const box=document.createElement('div');box.className='c06-selection-notice';box.hidden=true;
@@ -84,8 +84,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   function publish(next:MaskData|null,record=true){
     const doc=source();if(!doc)return;
     if(next&&(next.width!==doc.width||next.height!==doc.height))throw Error('作品と選択範囲の大きさが異なります。');
-    if(record){if(active)history.push(active);else if(lastSelection)history.push(lastSelection);
-      if(history.length>30)history.shift();future.length=0;}
+    if(record){history.push(active);if(history.length>30)history.shift();future.length=0;}
     if(active)lastSelection=active;
     active=next;
     const bounds=active?boundsOfSelection(active):null;
@@ -152,13 +151,13 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   });
   const undo=asButton('選択だけ元に戻す',()=>{
     if(!history.length)return;
-    const prior=history.pop()!;if(active)future.push(active);
+    const prior=history.pop()??null;future.push(active);
     publish(prior,false);
   });
   const redo=asButton('選択だけやり直す',()=>{
     if(!future.length)return;
-    if(active)history.push(active);
-    publish(future.pop()!,false);
+    history.push(active);
+    publish(future.pop()??null,false);
   });
   actions.append(all,clear,reselect,invert,shift,feather,undo,redo);
   const named=document.createElement('select');named.setAttribute('aria-label','保存した選択範囲');
@@ -220,6 +219,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     }
     if(drawing)return;
     drawing={pointer:event.pointerId,first:point};
+    try{viewport.setPointerCapture(event.pointerId);}catch{}
     points=[point,point];overlayPath();
   },true);
   document.addEventListener('pointermove',event=>{
@@ -239,6 +239,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(tool==='lasso'){if(points.length<4096)points.push(point);}
     else points[1]=point;
     endStroke();
+    try{viewport?.releasePointerCapture(event.pointerId);}catch{}
   },true);
   document.addEventListener('pointercancel',event=>{
     if(!drawing||event.pointerId!==drawing.pointer)return;
@@ -250,6 +251,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     active:()=>active,
     documentChanged,
     refresh,
+    clear:()=>publish(null),
     applyRectangle:rect=>{
       const doc=source();if(!doc)return;
       publish(combineSelection(active,
