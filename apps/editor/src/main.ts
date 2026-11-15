@@ -2228,7 +2228,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
     measureCanvasStage('projection-restore',replayStarted);
   }
   for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV','brushDuplicate','brushSave','brushOpacity','brushFlow','brushSpacing','brushPressure','brushStabilization','brushTexture','brushAzimuth','brushTwist'])(byId(id) as HTMLInputElement).disabled=false;
-  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity);documentReady=true;renderLayers();void c05ReferenceBoard?.refreshIfChanged();updateHistoryButtons();
+  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity);documentReady=true;c06Selection?.documentChanged();renderLayers();void c05ReferenceBoard?.refreshIfChanged();updateHistoryButtons();
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
   if(documentActivationPending)throw new Error('別の作品を開いています。');
@@ -2717,7 +2717,8 @@ function toggleSelectionMode(){
 byId<HTMLButtonElement>('selection').onclick=toggleSelectionMode;
 byId<HTMLButtonElement>('selectionStart').onclick=toggleSelectionMode;
 byId<HTMLButtonElement>('selectionClear').onclick=()=>{
- surface?.clearRectangleSelection();
+ if(c06Selection)c06Selection.clear();
+ else surface?.clearRectangleSelection();
  if(surface)byId<HTMLElement>('status').textContent='選択範囲を解除しました。';
 };
 refreshSelectionControls();
