@@ -5,6 +5,7 @@ import {rasterizeSelection,combineSelection,invertSelection,fullSelection,transl
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
 import {SelectionOverlay} from './overlay';
+import type {AnalyzeOptions} from './autoSelect';
 
 export type SelectionWorkbench=Readonly<{
   active:()=>MaskData|null;
@@ -18,8 +19,9 @@ type SelectionCallbacks=Readonly<{
   getSurface:()=>BrushSurface|null;
   getDocument:()=>{id:string;width:number;height:number}|null;
   onMaskChanged:(mask:MaskData|null)=>void;
+  capturePixels:(source:'layer'|'merged')=>Promise<Uint8ClampedArray>;
 }>;
-type Tool='rectangle'|'ellipse'|'lasso'|'polygon';
+type Tool='rectangle'|'ellipse'|'lasso'|'polygon'|'autoColor'|'autoBrightness';
 const asButton=(label:string,fn:()=>void)=>{
   const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=fn;
   return button;
@@ -34,6 +36,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const tools=document.createElement('div');tools.className='c06-selection-tools';
   const modes=document.createElement('div');modes.className='c06-selection-tools';
   const actions=document.createElement('div');actions.className='c06-selection-tools';
+  const autoTools=document.createElement('div');autoTools.className='c06-auto-selection';
   const saveArea=document.createElement('div');saveArea.className='c06-selection-save';
   const status=document.createElement('output');status.setAttribute('role','status');
   const mode=document.createElement('select');mode.setAttribute('aria-label','選択範囲を組み合わせる方法');
@@ -61,7 +64,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!info||!callbacks.getSurface())return null;
     if(info.id!==currentWork){
       currentWork=info.id;active=null;lastSelection=null;history.length=0;future.length=0;
-      tool=null;points=[];drawing=null;callbacks.onMaskChanged(null);refresh();
+      tool=null;points=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
     }
     return info;
   };
@@ -87,6 +90,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   function publish(next:MaskData|null,record=true){
     const doc=source();if(!doc)return;
+    job++;
     if(next&&(next.width!==doc.width||next.height!==doc.height))throw Error('作品と選択範囲の大きさが異なります。');
     if(record){history.push(active);if(history.length>30)history.shift();future.length=0;}
     if(active)lastSelection=active;
@@ -139,6 +143,58 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(tool==='polygon'&&points.length>=3)applyShape({type:'polygon',points});
   });
   tools.append(undoPoint,finishPolygon);
+  // Pixel-derived selection works with the artwork's actual pixel data.
+  // All expensive scanning and connected-region search occurs in the worker.
+  const autoSource=document.createElement('select');autoSource.setAttribute('aria-label','自動選択に使う画像');
+  autoSource.add(new Option('選択中のレイヤー','layer'));
+  autoSource.add(new Option('見えている絵の合成','merged'));
+  const tolerance=document.createElement('input');tolerance.type='range';tolerance.min='0';tolerance.max='100';tolerance.step='1';tolerance.value='18';
+  tolerance.setAttribute('aria-label','色の許容範囲');
+  const tolLabel=document.createElement('output');tolLabel.textContent='許容範囲：18';
+  tolerance.oninput=()=>{tolLabel.textContent='許容範囲：'+tolerance.value;};
+  const connected=document.createElement('input');connected.type='checkbox';connected.checked=true;
+  const contiguous=document.createElement('label');contiguous.append(connected,document.createTextNode('つながった部分だけ選ぶ'));
+  const low=document.createElement('input');low.type='number';low.min='0';low.max='255';low.step='1';low.value='0';
+  const high=document.createElement('input');high.type='number';high.min='0';high.max='255';high.step='1';high.value='255';
+  low.setAttribute('aria-label','明るさの下限');high.setAttribute('aria-label','明るさの上限');
+  const autoColor=asButton('色をタップして選ぶ',()=>armAuto('autoColor'));
+  const autoBrightness=asButton('明るさをタップして選ぶ',()=>armAuto('autoBrightness'));
+  const alpha=asButton('レイヤーの描いた部分',()=>void pickAutomatic('alpha',{x:0,y:0}));
+  const brightRange=document.createElement('label');
+  brightRange.textContent='明るさの範囲（0〜255）';
+  const levels=document.createElement('div');levels.className='c06-selection-brightness';levels.append(low,high);
+  brightRange.append(levels);
+  autoTools.append(autoSource,tolLabel,tolerance,contiguous,brightRange,autoColor,autoBrightness,alpha);
+  const armAuto=(name:'autoColor'|'autoBrightness')=>{
+    if(!source())return;
+    tool=tool===name?null:name;points=[];drawing=null;
+    callbacks.getSurface()?.setSelectionMode(false);refresh();overlayPath();
+    if(tool)status.textContent='作品の中で選びたい色・明るさの場所をタップしてください。';
+  };
+  async function pickAutomatic(action:AnalyzeOptions['action'],seed:{x:number;y:number}){
+    const doc=source();if(!doc)return;
+    const request=++job,previous=active,combine=mode.value as CombineMode;
+    const target=autoSource.value==='merged'?'merged' as const:'layer' as const;
+    const levelMin=Number(low.value),levelMax=Number(high.value);
+    if(!Number.isInteger(levelMin)||!Number.isInteger(levelMax)||levelMin<0||levelMax>255||levelMin>levelMax){
+      status.textContent='明るさの範囲は0〜255の正しい順序で入力してください。';return;
+    }
+    tool=null;points=[];overlayPath();refresh();
+    status.textContent='画像から選択範囲を調べています。';
+    try{
+      const pixels=await callbacks.capturePixels(target);
+      if(request!==job||callbacks.getDocument()?.id!==doc.id)return;
+      const result=await raster.analyze(pixels,{
+        action,width:doc.width,height:doc.height,
+        seedX:seed.x,seedY:seed.y,tolerance:Number(tolerance.value),
+        connected:connected.checked,brightnessMin:levelMin,brightnessMax:levelMax
+      });
+      if(request!==job||callbacks.getDocument()?.id!==doc.id)return;
+      const next=combineSelection(previous,result,combine);
+      publish(next);
+      if(!boundsOfSelection(next))status.textContent='一致する色の範囲がありませんでした。';
+    }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+  }
   const all=asButton('すべて選ぶ',()=>{const d=source();if(d)publish(fullSelection(d.width,d.height));});
   const clear=asButton('選択を解除',()=>publish(null));
   const reselect=asButton('直前を選び直す',()=>{if(lastSelection)publish(lastSelection);});
@@ -224,10 +280,12 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!window.confirm('保存した選択範囲を削除しますか？ 現在の選択は維持します。'))return;
     await deleteNamedSelection(named.value);await updateNamed();
   }
-  panel.append(summary,intro,modes,tools,actions,saveArea,status);host.append(panel);
+  panel.append(summary,intro,modes,tools,autoTools,actions,saveArea,status);host.append(panel);
   panel.addEventListener('toggle',()=>{if(panel.open)void updateNamed();});
   function refresh(){
     for(const [name,button] of shapeButtons){button.setAttribute('aria-pressed',String(tool===name));}
+    autoColor.setAttribute('aria-pressed',String(tool==='autoColor'));
+    autoBrightness.setAttribute('aria-pressed',String(tool==='autoBrightness'));
     undoPoint.disabled=tool!=='polygon'||points.length===0;
     finishPolygon.disabled=tool!=='polygon'||points.length<3;
     const enabled=!!active;
@@ -243,6 +301,10 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       event.button!==0)return;
     event.preventDefault();event.stopImmediatePropagation();
     const point=toDoc(event);
+    if(tool==='autoColor'||tool==='autoBrightness'){
+      void pickAutomatic(tool==='autoColor'?'color':'brightness',point);
+      return;
+    }
     if(tool==='polygon'){
       if(points.length<4096)points.push(point);
       overlayPath();refresh();return;
