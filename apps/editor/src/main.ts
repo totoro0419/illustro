@@ -16,6 +16,7 @@ import {installShellUi} from './ui/shellBehavior';
 import {installCommandPalette} from './ui/commandPalette';
 import {installWorkspaceProfiles} from './ui/workspaceProfiles';
 import {installFloatingPanels} from './ui/floatingPanels';
+import {installInputDeviceProfiles,readPointerRoles} from './ui/inputDeviceProfiles';
 import {installShortcutSettings} from './ui/shortcutSettings';
 import {installFocusMode} from './ui/focusMode';
 import './ui/c04.css';
@@ -1380,6 +1381,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
 function applyInputPreferences(drawing:BrushSurface){
  drawing.fingerDrawing=inputPreferences.finger;drawing.palmGuard=inputPreferences.palmGuard;drawing.barrelErases=inputPreferences.penBarrelErase;
  drawing.setRotationSnap(inputPreferences.rotationSnap);
+ drawing.setPointerRoles(readPointerRoles());
 }
 surface=makeSurface();
 function updateViewControls(){const state=surface?.viewState;if(!state)return;
@@ -3139,6 +3141,7 @@ installFocusMode();
 const c04Commands=installCommandPalette(shellUi);
 const c04FloatingPanels=installFloatingPanels();
 installWorkspaceProfiles(c04FloatingPanels);
+installInputDeviceProfiles(()=>surface);
 installShortcutSettings(c04Commands);
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
