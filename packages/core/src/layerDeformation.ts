@@ -8,6 +8,11 @@ export type TransformHandle=TransformPoint&Readonly<{fixed:boolean}>;
 export type TransformMesh=
   |Readonly<{kind:'grid';columns:number;rows:number;points:readonly TransformHandle[]}>
   |Readonly<{kind:'cage';source:readonly TransformPoint[];points:readonly TransformHandle[]}>;
+export type LiquifyStroke=Readonly<{
+  mode:'push'|'expand'|'pinch'|'twist'|'restore'|'protect'|'unprotect';
+  radius:number;strength:number;
+  points:readonly (TransformPoint&Readonly<{pressure:number}>)[];
+}>;
 type LayerDeformationSource=Readonly<{
   version:1;
   sourceRevision:RevisionId;
@@ -21,6 +26,7 @@ type LayerDeformationSource=Readonly<{
 export type LayerDeformation=LayerDeformationSource&(
   |Readonly<{mode:'free'|'projective'|'skew';corners:TransformQuad}>
   |Readonly<{mode:'mesh-grid'|'cage';mesh:TransformMesh}>
+  |Readonly<{mode:'liquify';strokes:readonly LiquifyStroke[]}>
 );
 const validated=new WeakSet<object>();
 export function validateLayerDeformation(input:unknown):LayerDeformation|null{
@@ -33,7 +39,7 @@ export function validateLayerDeformation(input:unknown):LayerDeformation|null{
   const coordinate=(value:unknown):value is number=>typeof value==='number'&&Number.isFinite(value)&&Math.abs(value)<=1e6;
   if(version!==1||typeof sourceRevision!=='string'||
     !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(sourceRevision)||
-    (mode!=='free'&&mode!=='projective'&&mode!=='skew'&&mode!=='mesh-grid'&&mode!=='cage')||
+    (mode!=='free'&&mode!=='projective'&&mode!=='skew'&&mode!=='mesh-grid'&&mode!=='cage'&&mode!=='liquify')||
     !bounds||!coordinate(bounds.x)||!coordinate(bounds.y)||!coordinate(bounds.width)||!coordinate(bounds.height)||
     bounds.width<1||bounds.height<1||
     (interpolation!=='nearest'&&interpolation!=='bilinear'&&interpolation!=='area')||typeof linkedMask!=='boolean'||
@@ -48,7 +54,23 @@ export function validateLayerDeformation(input:unknown):LayerDeformation|null{
   const base={version,sourceRevision,bounds:Object.freeze({x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}),
     interpolation,selection:mask,linkedMask,...(maskDigest?{maskDigest}:{})};
   let safe:LayerDeformation;
-  if(value.mode==='mesh-grid'||value.mode==='cage'){
+  if(value.mode==='liquify'){
+    if(!Array.isArray(value.strokes)||value.strokes.length>512)throw invalid();
+    let total=0;
+    const strokes=value.strokes.map((stroke:LiquifyStroke)=>{
+      if(!stroke||!['push','expand','pinch','twist','restore','protect','unprotect'].includes(stroke.mode)||
+        !coordinate(stroke.radius)||stroke.radius<1||stroke.radius>4096||!coordinate(stroke.strength)||stroke.strength<0||stroke.strength>1||
+        !Array.isArray(stroke.points)||!stroke.points.length||stroke.points.length>2048)throw invalid();
+      total+=stroke.points.length;
+      if(total>32_768)throw invalid();
+      const points=stroke.points.map((point:LiquifyStroke['points'][number])=>{
+        if(!point||!coordinate(point.pressure)||point.pressure<0||point.pressure>1)throw invalid();
+        return Object.freeze({...corner(point),pressure:point.pressure});
+      });
+      return Object.freeze({mode:stroke.mode,radius:stroke.radius,strength:stroke.strength,points:Object.freeze(points)});
+    });
+    safe=Object.freeze({...base,mode:value.mode,strokes:Object.freeze(strokes)});
+  }else if(value.mode==='mesh-grid'||value.mode==='cage'){
     const mesh=value.mesh;
     if(!mesh||!Array.isArray(mesh.points)||mesh.points.length>36)throw invalid();
     const points=Object.freeze(mesh.points.map((point:TransformHandle)=>{

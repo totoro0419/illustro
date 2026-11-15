@@ -19,4 +19,4 @@ export {LAYER_BLEND_MODES,validateLayerBlend,type LayerBlend,type LayerBlendMode
 
 export {validateEditableArtwork,moveEditableArtwork,type ArtPoint,type GradientStop,type EditableArtwork,type EditablePath,type EditableGradient,type EditableText} from './editableArtwork';
 
-export {type LayerDeformation,type TransformBounds,type TransformHandle,type TransformMesh,type TransformPoint,type TransformQuad} from './layerDeformation';
+export {type LayerDeformation,type LiquifyStroke,type TransformBounds,type TransformHandle,type TransformMesh,type TransformPoint,type TransformQuad} from './layerDeformation';

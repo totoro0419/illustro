@@ -1,14 +1,16 @@
-import type {TransformBounds,TransformMesh,TransformQuad} from '@illustro/core';
+import type {LiquifyStroke,TransformBounds,TransformMesh,TransformQuad} from '@illustro/core';
 import {quadrilateralMapping} from './quadrilateral';
 import {meshMapping} from './mesh';
+import {liquifyMapping} from './liquify';
 import type {MaskData} from '../selection/mask';
 
 export type Point={x:number;y:number};
-export type Deform='affine'|'perspective'|'free'|'projective'|'skew'|'mesh-grid'|'cage'|'mesh'|'push'|'expand'|'pinch'|'twist'|'restore';
+export type Deform='affine'|'perspective'|'free'|'projective'|'skew'|'mesh-grid'|'cage'|'liquify'|'mesh'|'push'|'expand'|'pinch'|'twist'|'restore';
 export type Transform=Readonly<{
   mode:Deform;dx:number;dy:number;sx:number;sy:number;angle:number;shear:number;
   perspective:number;warpX:number;warpY:number;cx:number;cy:number;radius:number;strength:number;
   interpolation:'nearest'|'bilinear'|'area';
+  liquify?:readonly LiquifyStroke[];
   mesh?:Readonly<{bounds:TransformBounds;controls:TransformMesh}>;
   quadrilateral?:Readonly<{bounds:TransformBounds;corners:TransformQuad}>;
 }>;
@@ -23,6 +25,7 @@ export function meshMode(mode:Deform):mode is 'mesh-grid'|'cage'{
   return mode==='mesh-grid'||mode==='cage';
 }
 export function inverseTransform(t:Transform,width:number,height:number){
+  if(t.mode==='liquify')return liquifyMapping(t.liquify??[]).inverse;
   if(meshMode(t.mode)){
     if(!t.mesh)throw Error('変形の制御点を指定してください。');
     return meshMapping(t.mesh.bounds,t.mesh.controls).inverse;
@@ -77,9 +80,10 @@ function sample(source:Uint8Array,width:number,height:number,x:number,y:number,m
 }
 
 export function transformRaster(source:Uint8Array,width:number,height:number,t:Transform,selection:MaskData|null=null,
-  previewWidth=width,previewHeight=height){
+  previewWidth=width,previewHeight=height,showProtection=false){
   if(source.length!==width*height*4)throw Error('変形する画像の大きさが一致しません。');
-  const inverse=inverseTransform(t,width,height),out=new Uint8ClampedArray(previewWidth*previewHeight*4);
+  const warp=t.mode==='liquify'?liquifyMapping(t.liquify??[]):null;
+  const inverse=warp?.inverse??inverseTransform(t,width,height),out=new Uint8ClampedArray(previewWidth*previewHeight*4);
   const sx=width/previewWidth,sy=height/previewHeight;
   const read=(x:number,y:number):Pixel=>{
     if(!Number.isFinite(x)||!Number.isFinite(y))return empty;
@@ -107,6 +111,13 @@ export function transformRaster(source:Uint8Array,width:number,height:number,t:T
       const remaining=1-amount;
       const uncovered=Math.min(1-alpha,remaining);
       red+=base[0]*uncovered;green+=base[1]*uncovered;blue+=base[2]*uncovered;alpha+=base[3]*uncovered;
+    }
+    const protection=showProtection&&warp?warp.coverage(px,py)*.43:0;
+    if(protection){
+      red=red*(1-protection)+40*protection;
+      green=green*(1-protection)+145*protection;
+      blue=blue*(1-protection)+240*protection;
+      alpha=alpha*(1-protection)+protection;
     }
     if(alpha>0){out[index]=red/alpha;out[index+1]=green/alpha;out[index+2]=blue/alpha;out[index+3]=alpha*255;}
   }

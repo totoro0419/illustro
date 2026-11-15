@@ -1,5 +1,5 @@
 import {samplePixelMask} from '@illustro/brush-rt';
-import {MASK_TILE_SIZE,transformLayerMask,validateLayerMask,type LayerMask,type PixelLayerMask} from '@illustro/core';
+import {MASK_TILE_SIZE,transformLayerMask,validateLayerMask,vectorMaskCoverage,type LayerMask,type PixelLayerMask} from '@illustro/core';
 import {cornerMode,inverseTransform,meshMode,type Transform} from './geometry';
 import {quadrilateralMapping} from './quadrilateral';
 import {meshMapping} from './mesh';
@@ -42,22 +42,22 @@ export function transformLinkedMask(mask:LayerMask,settings:Transform,width:numb
       return {x:u*cos-v*sin+t.cx+t.dx,y:u*sin+v*cos+t.cy+t.dy};
     })};
   }
-  if(mask.shape!=='pixels')throw Error('曲げる前に、連動した形のマスクを解除するかピクセルマスクに切り替えてください。');
+  if(mask.shape!=='pixels'&&t.mode!=='liquify')throw Error('曲げる前に、連動した形のマスクを解除するかピクセルマスクに切り替えてください。');
   const mapping=cornerMode(t.mode)&&t.quadrilateral?quadrilateralMapping(t.quadrilateral.bounds,t.quadrilateral.corners,t.mode):null;
   const inverse=mapping?(x:number,y:number)=>mapping.inverse(x,y,false):inverseTransform(t,width,height);
   const size=MASK_TILE_SIZE,tiles:Record<string,string>={};
-  const raw:PixelLayerMask={...mask,enabled:true,density:1,inverted:false};
+  const raw={...mask,enabled:true,density:1,inverted:false};
   for(let y=0;y<height;y+=size)for(let x=0;x<width;x+=size){
     const tile=new Uint8Array(size*size).fill(255);
     for(let row=0;row<size&&y+row<height;row++)for(let col=0;col<size&&x+col<width;col++){
       const p=inverse(x+col+.5,y+row+.5);
-      tile[row*size+col]=Number.isFinite(p.x)&&Number.isFinite(p.y)?samplePixelMask(raw,p.x,p.y):255;
+      tile[row*size+col]=Number.isFinite(p.x)&&Number.isFinite(p.y)?(raw.shape==='pixels'?samplePixelMask(raw,p.x,p.y):Math.round(vectorMaskCoverage(raw,p.x,p.y)*255)):255;
     }
     const uniform=tile.every(value=>value===tile[0]);
     if(uniform&&tile[0]===255)continue;
     tiles[x/size+','+y/size]=uniform?tile[0]!.toString(16).padStart(2,'0'):btoa(String.fromCharCode(...tile));
   }
-  return {...mask,x:0,y:0,scaleX:1,scaleY:1,tiles};
+  return {...mask,shape:'pixels',x:0,y:0,scaleX:1,scaleY:1,tiles};
 }
 
 

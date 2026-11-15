@@ -1,8 +1,9 @@
-import type {TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
+import type {LiquifyStroke,TransformBounds,TransformMesh,TransformPoint,TransformQuad} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import type {MaskData} from '../selection/mask';
 import {cornerMode,initialTransform,inverseTransform,meshMode,type Transform} from './geometry';
 import {runTransform} from './run';
+import {makeLiquifyStroke} from './liquify';
 import {cornersTowardVanishingPoint,rectCorners} from './quadrilateral';
 import {addCagePoint,cageMesh,changeGrid,gridMesh,meshEdges} from './mesh';
 
@@ -32,14 +33,14 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   compare.type='checkbox';comparison.append(compare,' 変形前を見る');comparison.hidden=true;
   let source:TransformSource|null=null,settings=initialTransform,undo:Transform[]=[],redo:Transform[]=[],previewId=0,busy=false;
   let ownedGesture:BrushSurface|null=null,editingHandles=false,placingPoints=false,previewAbort:AbortController|null=null;
-  const inputs=new Map<keyof Omit<Transform,'quadrilateral'|'mesh'>,HTMLSelectElement|HTMLInputElement>();
+  const inputs=new Map<keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,HTMLSelectElement|HTMLInputElement>();
 
   function button(label:string,handler:()=>void|Promise<void>){
     const button=document.createElement('button');button.type='button';button.textContent=label;
     button.onclick=async()=>{try{await handler();}catch(error){status.textContent=error instanceof Error?error.message:String(error);}};
     return button;
   }
-  function field(key:keyof Omit<Transform,'quadrilateral'|'mesh'>,label:string,control:HTMLInputElement|HTMLSelectElement){
+  function field(key:keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,label:string,control:HTMLInputElement|HTMLSelectElement){
     const wrapper=document.createElement('label');wrapper.append(label,control);controls.append(wrapper);
     inputs.set(key,control);
     control.onchange=()=>{
@@ -53,7 +54,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     for(const [value,name] of items)select.add(new Option(name,value));
     field(key,label,select);
   }
-  function number(key:keyof Omit<Transform,'quadrilateral'|'mesh'>,label:string,min:number,max:number,step=1){
+  function number(key:keyof Omit<Transform,'quadrilateral'|'mesh'|'liquify'>,label:string,min:number,max:number,step=1){
     const input=document.createElement('input');
     input.type='number';input.min=String(min);input.max=String(max);input.step=String(step);
     field(key,label,input);
@@ -61,8 +62,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   options('mode','変形の方法',[
     ['affine','移動・回転・拡縮・傾斜'],['free','自由変形・四隅'],['projective','遠近・四隅'],
     ['skew','傾斜・辺をずらす'],['perspective','遠近・強さで指定'],['mesh-grid','網で曲げる'],['cage','囲いで曲げる'],['mesh','中央を曲げる'],
-    ['push','ゆがみ・押す'],['expand','ゆがみ・膨らませる'],['pinch','ゆがみ・縮める'],
-    ['twist','ゆがみ・回す'],['restore','ゆがみを戻す']
+    ['liquify','ゆがみブラシ']
   ]);
   options('interpolation','変形後の画素',[['bilinear','なめらか'],['nearest','ドット絵向け'],['area','縮小向け']]);
   number('dx','横の移動（px）',-8192,8192,.5);number('dy','縦の移動（px）',-8192,8192,.5);
@@ -198,6 +198,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   const direct=button('絵の上で位置を指定',()=>{
     if(!source?.valid())throw Error('作品が変更されました。変形を開始し直してください。');
     stopGesture();
+    if(settings.mode==='liquify'){armLiquify();return;}
     if(usesHandles(settings.mode)){
       editingHandles=true;placingPoints=false;sync();refreshHandles();status.textContent='キャンバス上の点をドラッグできます。';return;
     }
@@ -213,6 +214,38 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       else change({...settings,dx:settings.dx+dx,dy:settings.dy+dy});
     }});
   });
+  const liquifyFields=document.createElement('fieldset');
+  const liquifyTitle=document.createElement('legend');liquifyTitle.textContent='ゆがみブラシ';liquifyFields.append(liquifyTitle);
+  const brushMode=document.createElement('select');
+  for(const [mode,label] of [
+    ['push','押す'],['expand','膨らませる'],['pinch','縮める'],['twist','回す'],['restore','なぞった場所を戻す'],
+    ['protect','なぞった場所を保護'],['unprotect','保護を消す']
+  ])brushMode.add(new Option(label,mode));
+  const modeLabel=document.createElement('label');modeLabel.append('作用',brushMode);
+  const protectionVisible=document.createElement('input');protectionVisible.type='checkbox';protectionVisible.checked=true;
+  const protectionLabel=document.createElement('label');protectionLabel.append(protectionVisible,' 仮表示に保護した範囲を表示');
+  liquifyFields.append(modeLabel,protectionLabel);
+  protectionVisible.onchange=()=>void refreshPreview();
+  brushMode.onchange=()=>{if(ownedGesture)armLiquify();};
+  function armLiquify(){
+    const current=source;
+    if(!current)return;
+    stopGesture();
+    const mode=brushMode.value as LiquifyStroke['mode'];
+    ownedGesture=current.drawing;
+    status.textContent='キャンバスをなぞると一筆ずつ反映します。';
+    ownedGesture.setCanvasEditGesture({path:false,width:settings.radius*2,color:mode==='protect'||mode==='unprotect'?'#3c99e8':'#ffb742',complete:points=>{
+      if(busy||!current.valid())return;
+      try{
+        const stroke=makeLiquifyStroke(mode,settings.radius,mode==='protect'||mode==='unprotect'?1:settings.strength,points);
+        if(!stroke)return;
+        const prior=settings.liquify??[];
+        if(prior.length>=512||prior.reduce((total,item)=>total+item.points.length,stroke.points.length)>32_768)
+          throw Error('ゆがみの操作数が上限に達しました。');
+        change({...settings,liquify:[...prior,stroke]});
+      }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
+    }});
+  }
   const vanishing=button('消失点を置く',()=>{
     if(!source?.valid()||settings.mode!=='projective')throw Error('遠近・四隅モードで変形を始めてください。');
     stopGesture();ownedGesture=source.drawing;
@@ -261,10 +294,13 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       }
       editingHandles=usesHandles(next.mode);placingPoints=false;
     }
-    undo.push(prior);redo=[];settings=next;sync();refreshHandles();void refreshPreview();
+    undo.push(prior);redo=[];settings=next;sync();refreshHandles();
+    if(next.mode==='liquify'&&ownedGesture&&prior.radius!==next.radius)armLiquify();
+    void refreshPreview();
   }
   function sync(){
-    const usingCorners=!!source&&cornerMode(settings.mode);
+    const usingCorners=!!source&&cornerMode(settings.mode),liquify=!!source&&settings.mode==='liquify';
+    liquifyFields.hidden=!liquify;liquifyFields.disabled=busy;
     const mesh=source&&meshMode(settings.mode)?settings.mesh?.controls:undefined;
     meshFields.hidden=!mesh;meshFields.disabled=busy;
     if(mesh){
@@ -288,12 +324,14 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
     for(const [key,input] of inputs){
       input.value=String(settings[key]);
       input.disabled=!source||busy;
-      if(input.parentElement)input.parentElement.hidden=(usingCorners||!!mesh)&&key!=='mode'&&key!=='interpolation';
+      if(input.parentElement)input.parentElement.hidden=
+        ((usingCorners||!!mesh)&&key!=='mode'&&key!=='interpolation')||
+        (liquify&&!['mode','interpolation','radius','strength'].includes(key));
     }
     start.disabled=busy||!!source;target.disabled=busy||!!source;cancel.disabled=!source||busy;
     apply.disabled=!source||busy;back.disabled=!source||busy||!undo.length;forward.disabled=!source||busy||!redo.length;
-    direct.disabled=!source||busy;
-    flipX.hidden=flipY.hidden=usingCorners||!!mesh;
+    direct.disabled=!source||busy;direct.textContent=liquify?'キャンバスでゆがみブラシを使う':'絵の上で位置を指定';
+    flipX.hidden=flipY.hidden=usingCorners||!!mesh||liquify;
     flipX.disabled=flipY.disabled=!source||busy;
     vanishing.hidden=settings.mode!=='projective'||!source;vanishing.disabled=busy;
     bakeButton.disabled=!!source||busy;
@@ -308,7 +346,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
       const outputWidth=Math.max(1,Math.round(current.width*scale)),outputHeight=Math.max(1,Math.round(current.height*scale));
       const pixels=await runTransform({pixels:current.pixels,width:current.width,height:current.height,
         settings:compare.checked?{...initialTransform,cx:settings.cx,cy:settings.cy}:settings,
-        selection:current.selection,outputWidth,outputHeight},controller.signal);
+        selection:current.selection,outputWidth,outputHeight,showProtection:!compare.checked&&protectionVisible.checked},controller.signal);
       if(id!==previewId)return;
       preview.width=outputWidth;preview.height=outputHeight;
       preview.getContext('2d')?.putImageData(new ImageData(pixels,outputWidth,outputHeight),0,0);
@@ -317,7 +355,7 @@ export function installTransformPanel(host:HTMLElement,capture:(target:Target)=>
   }
   compare.onchange=()=>void refreshPreview();
   tools.append(start,direct,vanishing,flipX,flipY,back,forward,apply,cancel,bakeButton);
-  panel.append(summary,target,status,tools,controls,cornerFields,meshFields,comparison,preview);host.append(panel);
+  panel.append(summary,target,status,tools,controls,cornerFields,meshFields,liquifyFields,comparison,preview);host.append(panel);
   panel.ontoggle=()=>{if(!panel.open&&!busy&&source)reset('候補を取り消しました。');};
   sync();
 }
