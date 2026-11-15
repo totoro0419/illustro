@@ -160,10 +160,30 @@ export function installShortcutSettings(commands:CommandService){
     try{
       if(item.size>1048576)throw Error('ファイルが大きすぎます。');
       const imported=parse(JSON.parse(await item.text()));
+      const known=new Map(commands.list().map(c=>[c.id,c.label]));
+      const identity=(binding:Binding)=>[binding.commandId,binding.physical?'physical':'logical',human(binding),binding.mode].join('|');
+      const beforeIds=new Set(bindings.map(identity)),afterIds=new Set(imported.map(identity));
+      const added=imported.filter(b=>!beforeIds.has(identity(b)));
+      const removed=bindings.filter(b=>!afterIds.has(identity(b)));
       const reserved=imported.filter(b=>RESERVED.has(signature(b)));
-      if(reserved.length&&!window.confirm('端末・既定の操作と重なる割当が'+reserved.length+'件あります。記録は残しますが、動作時は無効です。読み込みますか？'))return;
+      const unsupported=imported.filter(b=>!known.has(b.commandId));
+      const details=[
+        '取り込む設定 '+imported.length+'件',
+        '追加・変更 '+added.length+'件 / 解除 '+removed.length+'件',
+        '別の端末で未対応の機能 '+unsupported.length+'件',
+        '既定・OSキーとの衝突 '+reserved.length+'件（記録は保持・操作は無効）',
+        '', '追加される操作:',
+        ...added.slice(0,8).map(b=>' ＋ '+(known.get(b.commandId)??b.commandId)+' : '+human(b)),
+        ...(added.length>8?[' ほか'+(added.length-8)+'件']:[]),
+        '', '解除される操作:',
+        ...removed.slice(0,8).map(b=>' − '+(known.get(b.commandId)??b.commandId)+' : '+human(b)),
+        ...(removed.length>8?[' ほか'+(removed.length-8)+'件']:[]),
+        '', '現在の設定と入れ替えますか？'
+      ];
+      if(!window.confirm(details.join('\n')))return;
       bindings=imported;persist();render();
-      status.textContent='キー設定を読み込みました。別の端末で未対応の操作も削除せず残しています。';
+      status.textContent='キー設定を読み込みました。追加・変更'+added.length+'件、解除'+removed.length+
+        '件、未対応'+unsupported.length+'件。元の未対応情報も保持しています。';
     }catch(error){status.textContent=error instanceof Error?error.message:'読み込みに失敗しました。';}
   };
   function startHold(binding:Binding){
