@@ -1,0 +1,37 @@
+/* C04 search and Quick controls: transient, never intercept canvas input while closed. */
+.c04-command-open{min-height:34px;white-space:nowrap;padding:5px 10px;border-radius:9px;border:1px solid var(--a-border,#ddd);background:var(--a-surface,#fff);color:inherit;font:inherit}
+.c04-command-open:focus-visible,.c04-quick-open:focus-visible{outline:2px solid var(--a-focus,#317ab6);outline-offset:2px}
+.rail .c04-quick-open{font:600 11px/1.2 system-ui,sans-serif;width:100%;min-height:42px;border:1px solid var(--a-border,#ddd);border-radius:9px;background:var(--a-accent-soft,#fff6d7);color:var(--a-focus,#344)}
+.c04-command-dialog{position:fixed;z-index:40;inset:8vh auto auto 50%;transform:translateX(-50%);margin:0;max-width:calc(100vw - 30px);width:min(610px,calc(100vw - 30px));max-height:80dvh;overflow:hidden;border-radius:16px;border:1px solid var(--a-border,#ddd);background:var(--a-surface,#fff);box-shadow:0 24px 66px #121b3250;color:var(--a-text,#242a36);padding:0}
+.c04-command-dialog::backdrop{background:#14192262}
+.c04-command-dialog section{padding:16px;display:flex;flex-direction:column;gap:10px;max-height:80dvh}
+.c04-command-dialog h2{font-size:17px;margin:0}
+.c04-command-dialog p{margin:0;color:var(--a-subtle,#62666d);font-size:12px}
+.c04-command-dialog input{min-height:45px;width:100%;padding:10px 12px;border:1px solid var(--a-border-strong,#ccc);border-radius:10px;font:inherit}
+.c04-command-results{min-height:0;max-height:55dvh;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:4px}
+.c04-command-result{display:flex;gap:4px;align-items:stretch;min-height:48px;border-radius:8px}
+.c04-command-result:focus-within{background:var(--a-accent-soft,#fff6d7)}
+.c04-command-run{flex:1;min-width:0;padding:8px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:transparent;border:1px solid transparent;border-radius:8px;color:inherit;cursor:pointer}
+.c04-command-run:hover{background:var(--a-accent-soft,#fff6d7)}
+.c04-command-run strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.c04-command-run small{font-size:11px;color:var(--a-subtle,#707070)}
+.c04-command-run:disabled{opacity:.53;cursor:not-allowed}
+.c04-command-pin{min-width:48px;border:1px solid var(--a-border,#ddd);border-radius:8px;background:transparent;color:inherit;cursor:pointer;font-size:20px}
+.c04-command-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px}
+.c04-command-footer button{min-height:36px;border-radius:8px;border:1px solid var(--a-border,#ddd);background:transparent;color:inherit;padding:6px 12px}
+.c04-quick-controller[hidden]{display:none!important}
+.c04-quick-controller{position:fixed;z-index:19;left:calc(var(--rail,68px) + 10px);bottom:calc(var(--bottom,52px) + 14px);width:min(324px,calc(100vw - var(--rail,68px) - 24px));max-height:60dvh;overflow:auto;padding:12px;background:var(--a-surface,#fff);color:var(--a-text,#222);border:1px solid var(--a-border,#ddd);border-radius:14px;box-shadow:0 12px 40px #11172544}
+.c04-quick-heading{display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.c04-quick-heading strong{flex:1}
+.c04-quick-heading button{padding:4px 8px;border-radius:7px;border:1px solid var(--a-border,#ddd);background:transparent;color:inherit;min-height:32px}
+.c04-quick-slots{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.c04-quick-slot{min-height:54px;text-align:center;padding:7px;background:var(--a-accent-soft,#fffae4);border:1px solid var(--a-border,#ddd);border-radius:9px;color:inherit;font-size:12px;line-height:1.4}
+.c04-quick-slot:disabled{opacity:.53}
+.c04-quick-note{font-size:11px;margin:8px 0 0}
+@media(max-width:760px){
+ .topbar .c04-command-open{min-width:34px;font-size:11px;padding:5px;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+ .rail .c04-quick-open{min-height:42px;font-size:10px}
+ .c04-command-dialog{inset:calc(var(--top,44px) + 10px) auto auto 50%;max-height:75dvh}
+ .c04-command-dialog section{max-height:75dvh}
+ .c04-quick-controller{bottom:calc(var(--bottom,52px) + 10px)}
+}
