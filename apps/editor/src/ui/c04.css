@@ -79,3 +79,6 @@ body.illustro-focus-mode .topbar #saveState{display:inline;max-width:65vw;overfl
 .c04-workspace-settings>label select{width:100%;min-height:36px}
 .c04-workspace-settings>button{min-height:37px;border:1px solid var(--a-border,#ddd);border-radius:8px;background:var(--a-accent-soft,#fff6d7);color:inherit}
 @media(max-width:760px){#c04HelpOpen{padding:4px!important;min-width:40px}.c04-help-dialog,.c04-layout-preview{inset:calc(var(--top,44px) + 12px) auto auto 50%}}
+
+.c04-quick-pen{display:flex;align-items:center;gap:7px;min-height:37px;margin-top:10px;font-size:10px;line-height:1.4;color:var(--a-subtle,#667)}
+.c04-quick-pen input{width:18px;height:18px;flex:none}
