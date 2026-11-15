@@ -27,7 +27,7 @@ import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
 import {compilePreset,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
-import {captureExport,compositeLayer,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
+import {captureExport,compositeLayer,exportImage,exportFileName,renderFrozenArtwork,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
@@ -1276,6 +1276,50 @@ function saveNamedArtworkSnapshot(reopen:()=>void){
   dialog.showModal();
 }
 
+async function copyHistoricalLayer(artwork:CoreDocument,revision:RevisionId,layerId:LayerId,selectedRegion:boolean){
+  const drawing=surface,head=artwork.head;
+  if(!documentReady||!drawing?.canChangeGeometry||geometryBusy||historyPending||artwork!==controller.document)return;
+  const historic=artwork.revision(revision).root,layer=historic.getLayer(layerId),current=artwork.root;
+  const region=selectedRegion?drawing.selectedRectangle:null;
+  if(selectedRegion&&!region){
+    byId('status').textContent='先に現在のキャンバスで範囲を選んでください。';
+    return;
+  }
+  const x0=region?Math.max(0,Math.ceil(region.x)):0,y0=region?Math.max(0,Math.ceil(region.y)):0;
+  const x1=Math.min(current.width,historic.width,region?Math.floor(region.x+region.width):Infinity);
+  const y1=Math.min(current.height,historic.height,region?Math.floor(region.y+region.height):Infinity);
+  if(x0>=x1||y0>=y1){byId('status').textContent='復元元と現在の範囲が重なっていません。';return;}
+  const sizesDifferent=current.width!==historic.width||current.height!==historic.height;
+  if(sizesDifferent&&!window.confirm('作品の大きさが異なります。左上をそろえて、重なる範囲だけをコピーしますか？'))return;
+  geometryBusy=true;
+  drawing.setInputBarrier(true);
+  byId('status').textContent='以前のレイヤーを読み込んでいます。';
+  try{
+    const frozen=captureExport(artwork,layerId,revision);
+    const source=await renderFrozenArtwork({...frozen,layers:frozen.layers.map(item=>({...item,opacity:item.visible?1:item.opacity}))});
+    if(artwork!==controller.document||surface!==drawing||artwork.head!==head)throw new Error('作品が切り替わりました。');
+    const pixels=new Uint8ClampedArray(current.width*current.height*4);
+    for(let y=y0;y<y1;y++){
+      const offset=(y*historic.width+x0)*4;
+      pixels.set(source.subarray(offset,offset+(x1-x0)*4),(y*current.width+x0)*4);
+    }
+    const tx=artwork.begin('以前のレイヤーを部分復元');
+    const id=tx.addRasterSnapshotAbove(current.rootLayerIds.at(-1)!,pixels,layer.name.slice(0,4000)+'（履歴から）',false,false);
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    controller.selectLayer(id);
+    queueLatestCommit();
+    checkpointNeedsFullSeed=true;
+    await drawing.restoreDocumentProjection();
+    byId('status').textContent='以前の内容を新しいレイヤーにコピーしました。';
+  }catch(error){
+    byId('status').textContent='履歴からコピーできませんでした。'+(error instanceof Error?error.message:'');
+  }finally{
+    geometryBusy=false;
+    if(surface===drawing)drawing.setInputBarrier(false);
+    renderLayers();updateHistoryButtons();updateQa();
+  }
+}
+
 function openArtworkHistory(){
   if(!documentReady)return;
   const artwork=controller.document,head=artwork.head;
@@ -1287,6 +1331,16 @@ function openArtworkHistory(){
   const restore=document.createElement('button'),close=document.createElement('button');
   const pin=document.createElement('button'),branch=document.createElement('button');
   const note=document.createElement('p');
+  const partial=document.createElement('details'),partialTitle=document.createElement('summary');
+  const sourceLabel=document.createElement('label'),sources=document.createElement('select');
+  const copyLayer=document.createElement('button'),copyRegion=document.createElement('button');
+  partialTitle.textContent='以前のレイヤーからコピー';
+  sourceLabel.textContent='復元元のレイヤー ';
+  sourceLabel.append(sources);
+  copyLayer.type=copyRegion.type='button';
+  copyLayer.textContent='レイヤー全体';
+  copyRegion.textContent='現在選んでいる範囲だけ';
+  partial.append(partialTitle,sourceLabel,copyLayer,copyRegion);
   const previews=document.createElement('div');
   const urls:string[]=[];
   let shown=0,request=0;
@@ -1323,8 +1377,23 @@ function openArtworkHistory(){
     branch.disabled=restore.disabled;
     note.textContent=entries.find(entry=>entry.id===list.value)?.snapshot?.note??'';
     note.hidden=!note.textContent;
+    sources.replaceChildren();
+    if(list.value&&list.value!==head){
+      const root=artwork.revision(list.value as RevisionId).root;
+      for(const id of [...root.rootLayerIds].reverse())sources.add(new Option(root.getLayer(id).name,id));
+    }
+    copyLayer.disabled=!sources.value;
+    copyRegion.disabled=!sources.value||!surface?.selectedRectangle;
     status.textContent='';
   };
+  const copy=(selectedRegion:boolean)=>{
+    const id=list.value as RevisionId,source=sources.value as LayerId;
+    if(!id||!source)return;
+    dialog.close();
+    void copyHistoricalLayer(artwork,id,source,selectedRegion);
+  };
+  copyLayer.onclick=()=>copy(false);
+  copyRegion.onclick=()=>copy(true);
   list.onchange=update;
   more.onclick=appendEntries;
   close.onclick=()=>dialog.close();
@@ -1365,7 +1434,7 @@ function openArtworkHistory(){
       if(request===token&&dialog.open)compare.disabled=false;
     }
   };
-  form.append(title,label,note,more,compare,restore,pin,branch,close,status,previews);
+  form.append(title,label,note,more,compare,restore,pin,branch,close,partial,status,previews);
   dialog.className='export-dialog artwork-history-dialog';
   dialog.setAttribute('aria-label','作品の履歴');
   dialog.append(form);
