@@ -170,7 +170,23 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   quickTitle.append(quickLabel,configure,closeQuick);
   const quickSlots=document.createElement('div');quickSlots.className='c04-quick-slots';
   const note=document.createElement('p');note.className='c04-quick-note';note.hidden=true;
-  quick.append(quickTitle,quickSlots,note);document.body.append(quick);
+  const penSetting=document.createElement('label');penSetting.className='c04-quick-pen';
+  const penButton=document.createElement('input');penButton.type='checkbox';
+  penButton.checked=read('illustro.c04.quick.pen-barrel')==='true';
+  penSetting.append(penButton,document.createTextNode(' ペンのサイドボタンで開く（対応機種のみ）'));
+  quick.append(quickTitle,quickSlots,note,penSetting);document.body.append(quick);
+  penButton.onchange=()=>{
+    if(penButton.checked){
+      const eraser=document.getElementById('penBarrelErase') as HTMLInputElement|null;
+      if(eraser?.checked){
+        if(!window.confirm('このペンボタンには現在「消しゴム」が設定されています。Quickへ変更しますか？')){
+          penButton.checked=false;return;
+        }
+        eraser.checked=false;eraser.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+    }
+    write('illustro.c04.quick.pen-barrel',String(penButton.checked));
+  };
   let isConfiguring=false;
 
   function execute(command:Command){
@@ -211,6 +227,13 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     if(!quick.hidden){dialog.close();renderQuick();}
   }
   quickButton.onclick=toggleQuick;
+  document.addEventListener('pointerdown',event=>{
+    if(!penButton.checked||event.pointerType!=='pen'||event.button!==2)return;
+    if(!(event.target instanceof Element&&event.target.closest('.surface')))return;
+    // Explicit opt-in replaces the pen barrel's eraser action on this input.
+    event.preventDefault();event.stopPropagation();
+    toggleQuick();
+  },{capture:true});
   const pinIntoSlot=(id:string)=>{
     const target=editingSlot===null?slots.findIndex(x=>!x):editingSlot;
     const index=target>=0?target:SLOT_COUNT-1;
@@ -232,12 +255,22 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
       return score(b)-score(a);
     });
     results.replaceChildren();
+    const shortcuts=(()=>{
+      try{
+        const data=JSON.parse(read('illustro.c04.shortcut-settings.v1')||'null') as {bindings?:unknown[]}|null;
+        return Array.isArray(data?.bindings)?data.bindings as Array<Record<string,unknown>>:[];
+      }catch{return [] as Array<Record<string,unknown>>;}
+    })();
     for(const command of sorted.slice(0,70)){
       const row=document.createElement('div');row.className='c04-command-result';row.setAttribute('role','option');
       const run=document.createElement('button');run.type='button';run.className='c04-command-run';
       const name=document.createElement('strong');name.textContent=command.label;
       const reason=command.availability();
-      const desc=document.createElement('small');desc.textContent=reason??command.category;
+      const desc=document.createElement('small');
+      const key=shortcuts.find(binding=>binding.commandId===command.id);
+      const displayKey=key?[key.ctrl?'Ctrl':null,key.meta?'Meta':null,key.alt?'Alt':null,key.shift?'Shift':null,
+        key.physical?key.code:key.key].filter(Boolean).join('+'):'';
+      desc.textContent=(reason??command.category)+(displayKey?' · '+displayKey:'');
       run.append(name,desc);run.disabled=!!reason;
       run.onclick=()=>execute(command);
       const pin=document.createElement('button');pin.type='button';pin.className='c04-command-pin';
