@@ -1510,7 +1510,7 @@ byId<HTMLButtonElement>('c04ContextTool').onclick=()=>shellUi.openBox('brushBox'
 byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true);
 byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
 byId<HTMLButtonElement>('c04ContextReference').onclick=()=>shellUi.openBox('colorBox');
-const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b])});
+const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity)});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
  const rectangle=surface?.selectedRectangle;
@@ -2210,7 +2210,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
     measureCanvasStage('projection-restore',replayStarted);
   }
   for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV','brushDuplicate','brushSave','brushOpacity','brushFlow','brushSpacing','brushPressure','brushStabilization','brushTexture','brushAzimuth','brushTwist'])(byId(id) as HTMLInputElement).disabled=false;
-  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);documentReady=true;renderLayers();updateHistoryButtons();
+  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity);documentReady=true;renderLayers();updateHistoryButtons();
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
   if(documentActivationPending)throw new Error('別の作品を開いています。');
@@ -2471,7 +2471,7 @@ function selectPreset(id:string){
  surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');
  surface.setEyedropper(false);surface.selectById(id);brushUsage.markUsed(surface.brushId);
  const pending=brushDrafts.get(id);if(pending)surface.applyPreset(pending);
- surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);
+ surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity);
  const erasing=surface.blendMode==='erase';selectedTool=erasing?'eraser':'brush';
  if(erasing)lastEraserPresetId=surface.brushId;else lastBrushPresetId=surface.brushId;
  lastDrawingTool=selectedTool;refreshBrushOptions();byId<HTMLSelectElement>('brush').value=surface.brushId;
