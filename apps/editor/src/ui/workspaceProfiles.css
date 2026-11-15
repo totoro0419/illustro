@@ -1,0 +1,31 @@
+/* UI-006: mirrored dock/rail remain purely layout: canvas coordinates come from BrushSurface. */
+.c04-workspace-settings{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding:12px 8px;border-top:1px solid var(--a-border,#ddd);font-size:12px}
+.c04-workspace-settings h4{font-size:13px;margin:0}
+.c04-workspace-settings>input[type=text],.c04-workspace-settings>select{width:100%;min-height:36px;padding:6px;border:1px solid var(--a-border,#ddd);border-radius:8px}
+.c04-workspace-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.c04-workspace-actions button{border:1px solid var(--a-border,#ddd);border-radius:8px;background:transparent;min-height:40px;padding:6px 4px;font-size:11px;color:inherit}
+.c04-workspace-settings label{display:flex;gap:5px;align-items:center;min-height:36px}
+.c04-workspace-settings label input{width:17px;height:17px;flex:none}
+.c04-workspace-settings output{font-size:11px;line-height:1.4;color:var(--a-subtle,#565c65)}
+.box-more-menu .c04-move-action{display:block;width:100%;text-align:left;min-height:33px}
+body.workspace-compact-density .workspace-box .box-heading{height:37px}
+body.workspace-compact-density .workspace-box .box-toggle{height:36px}
+body.workspace-compact-density .box-stack{padding-top:5px}
+@media(min-width:761px){
+ body.workspace-left-handed .rail{left:auto;right:0;border-right:0;border-left:1px solid var(--a-border)}
+ body.workspace-left-handed .right-dock{left:0;right:auto;border-left:0;border-right:1px solid var(--a-border)}
+ body.workspace-left-handed main#canvasArea{margin-left:var(--workspace);margin-right:var(--rail)}
+ body.workspace-left-handed.right-collapsed main#canvasArea,body.workspace-left-handed.right-overlay main#canvasArea{margin-left:0;margin-right:var(--rail)}
+ body.workspace-left-handed #splitter{left:var(--workspace);right:auto}
+ body.workspace-left-handed .c04-quick-controller{left:auto;right:calc(var(--rail) + 10px)}
+ body.workspace-left-handed .features-panel{left:auto;right:var(--features-right,calc(var(--rail) + 8px))}
+ body.workspace-left-handed .right-overlay .right-dock{box-shadow:9px 0 26px #2c302720}
+}
+@media(max-width:760px){
+ body.workspace-left-handed .rail{left:auto;right:0;border-right:0;border-left:1px solid var(--a-border)}
+ body.workspace-left-handed main#canvasArea,body.workspace-left-handed.right-overlay main#canvasArea{margin:var(--top) var(--rail) var(--bottom) 0}
+ body.workspace-left-handed .right-dock,body.workspace-left-handed.right-overlay .right-dock{left:0;right:var(--rail)}
+ body.workspace-left-handed .c04-quick-controller{left:10px;right:auto;width:calc(100vw - var(--rail) - 24px)}
+ body.workspace-left-handed .features-panel{left:auto;right:var(--features-right,calc(var(--rail) + 6px))}
+ body.workspace-left-handed .bottom{right:0;left:0}
+}
