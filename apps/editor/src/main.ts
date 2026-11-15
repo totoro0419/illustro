@@ -15,6 +15,7 @@ import {installEyedropperSettings} from './color/eyedropperSettings';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {installCommandPalette} from './ui/commandPalette';
+import {installSimpleMacros} from './ui/simpleMacros';
 import {installWorkspaceProfiles} from './ui/workspaceProfiles';
 import {installFloatingPanels} from './ui/floatingPanels';
 import {installInputDeviceProfiles,readPointerRoles} from './ui/inputDeviceProfiles';
@@ -3150,6 +3151,7 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 // C04 command entries forward to the installed real controls; do not duplicate their logic.
 installFocusMode();
 const c04Commands=installCommandPalette(shellUi,foreground);
+installSimpleMacros(c04Commands);
 installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 const c04Toolbar=installToolbarSettings();
