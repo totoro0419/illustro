@@ -15,6 +15,8 @@ import {installEyedropperSettings} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import {installTransformPanel} from './transform/panel';
+import {transformLinkedMask} from './transform/mask';
 import {ArtworkClipboard} from './selection/clipboard';
 import {installClipboardPanel,type ClipboardUI} from './selection/clipboardPanel';
 import {installSelectionWorkbench,type SelectionWorkbench} from './selection/panel';
@@ -1358,7 +1360,7 @@ function queueLatestCommit(){
   const handoff=controller.lastPersistenceHandoff;if(!handoff||handoff.resultRevisionId===lastQueuedRevision)return;lastQueuedRevision=handoff.resultRevisionId;
   inputFreezeTrace?.mark('save-prepare:start');persistence.noteCommit(controller.document,handoff);inputFreezeTrace?.mark('save-prepare:end');if(controller.document.head!==handoff.resultRevisionId)persistence.noteNavigation(controller.document);const revision=controller.document.revision(handoff.resultRevisionId),operations=revision.command?.operations??[];noteCheckpointOperations(operations);
 }
-function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
+function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');if(drawing.selectionMask())checkpointNeedsFullSeed=true;queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();if(releasedColorHold)restoreDrawingTool();return;}
  if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';if(!holdingColorKey&&selectedTool==='eyedropper')restoreDrawingTool();}return;}
  const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value==='composite');
@@ -3294,6 +3296,48 @@ persistence.setSaveAttachmentProvider(async()=>{
   const reference=await c05References.exportNative();
   const selections=await c06Selection?.exportNative()??[];
   return [...(reference?[reference]:[]),...selections];
+});
+installTransformPanel(byId('documentBoxBody'),async target=>{
+  const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
+  const {width,height}=artwork.root;
+  const drawing=surface,selection=target==='layer'?null:c06Selection?.active()??null;
+  if(!drawing)throw Error('作品を開いてください。');
+  if(target!=='layer'&&!selection)throw Error('先に範囲を選択してください。');
+  if(target!=='boundary'&&(layer.baseColor==='white'||artwork.root.isLayerContentLocked(layer.id)||artwork.root.isLayerPositionLocked(layer.id)))
+    throw Error('変形できるレイヤーを選び、位置と内容のロックを解除してください。');
+  let pixels:Uint8Array|undefined;
+  await withClipboardAccess(async active=>{
+    if(target==='boundary'&&selection){
+      pixels=new Uint8Array(width*height*4);
+      for(let i=0;i<selection.alpha.length;i++){pixels[i*4]=255;pixels[i*4+1]=155;pixels[i*4+3]=selection.alpha[i]!;}
+    }else pixels=(await active.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
+    return 'read';
+  });
+  if(!pixels)throw Error('変形する絵を読み込めません。');
+  const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
+    controller.selectedLayer.id===layer.id&&(target==='layer'||c06Selection?.active()===selection);
+  return {
+    width,height,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
+    pixels,selection:target==='selected'?selection:null,drawing,valid,
+    apply:async(settings,result)=>{
+      if(!valid())throw Error('変形を開始したときの対象から変更されています。');
+      if(target==='boundary'){
+        const alpha=new Uint8Array(width*height);
+        for(let i=0;i<alpha.length;i++)alpha[i]=result[i*4+3]!;
+        c06Selection?.replaceActive({width,height,alpha});
+        return;
+      }
+      await withClipboardAccess(async()=>{
+        const mask=target==='layer'&&layer.vectorMask?.linked!==false&&layer.vectorMask
+          ?transformLinkedMask(layer.vectorMask,settings,width,height):null;
+        const tx=artwork.begin(target==='selected'?'選択した絵を変形':'レイヤーを変形');
+        tx.replaceLayerRaster(layer.id,result);
+        if(mask)tx.setVectorLayerMask(layer.id,mask);
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+        return 'edit';
+      });
+    }
+  };
 });
 c06ClipboardUI=installClipboardPanel({
   canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending&&!documentActivationPending,

@@ -18,6 +18,7 @@ export type SelectionWorkbench=Readonly<{
   applyRectangle:(rect:Readonly<{x:number;y:number;width:number;height:number}>)=>void;
   clear:()=>void;
   shiftActive:(dx:number,dy:number)=>void;
+  replaceActive:(mask:MaskData)=>void;
   exportNative:()=>Promise<readonly PortableSectionInput[]>;
   importNative:(preserved:PreservedPortableData|undefined)=>Promise<void>;
 }>;
@@ -35,7 +36,7 @@ const asButton=(label:string,fn:()=>void)=>{
 };
 export function installSelectionWorkbench(callbacks:SelectionCallbacks):SelectionWorkbench{
   const host=document.getElementById('documentBoxBody');
-  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{},exportNative:async()=>[],importNative:async()=>{}};
+  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{},shiftActive:()=>{},replaceActive:()=>{},exportNative:async()=>[],importNative:async()=>{}};
   const panel=document.createElement('details');panel.className='c06-selection-panel';
   const summary=document.createElement('summary');summary.textContent='選択範囲を編集';
   const intro=document.createElement('p');
@@ -474,6 +475,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     updateView:()=>{visual?.updateView();overlayPath();},
     refresh,
     clear:()=>{job++;publish(null);},
+    replaceActive:mask=>{job++;publish(mask);},
     shiftActive:(dx,dy)=>{if(active)publish(translateSelection(active,dx,dy));},
     exportNative:async()=>{
       const doc=source();if(!doc)return [];
