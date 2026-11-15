@@ -1,7 +1,7 @@
 import {installPassiveTouchProbe} from './passiveTouchProbe';
 import {installInputFreezeTrace} from './inputFreezeTrace';
 import {HistoryNavigation,type HistoryDirection} from './historyNavigation';
-import {namedSnapshot,type WorkEntry} from './persistence/workLibrary';
+import {namedSnapshot,type WorkEntry,listWorks as listLocalWorks,updateWorkCatalog as updateLocalCatalog} from './persistence/workLibrary';
 import './style.css';
 import './ui/shell.css';
 import './ui/aurora.css';
@@ -3057,7 +3057,20 @@ if(!qaMode){
       await refreshWorks();
     },
     duplicateWork:async(id)=>{if(!(await prepareWorkSwitch()))throw new Error('現在の作品を保存できませんでした。');const loaded=await persistence.loadWork(id),copy=copyOpened(loaded.opened,loaded.entry.name+' のコピー');await activateOpened(copy);await refreshWorks();},
-    deleteWork:async(id)=>{await persistence.deleteWork(id);if(documentReady&&controller.document.root.documentId===id){surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();}await refreshWorks();},
+    deleteWork:async(id)=>{
+      if(documentReady&&controller.document.root.documentId===id){
+        if(!(await prepareWorkSwitch()))throw Error('現在の作品を保存してからゴミ箱へ移してください。');
+      }
+      await persistence.deleteWork(id);
+      if(documentReady&&controller.document.root.documentId===id){
+        surface?.destroy();surface=null;documentReady=false;resetCheckpointTracking();
+      }
+      await refreshWorks();
+    },
+    listTrashedWorks:async()=>(await listLocalWorks(true)).filter(work=>!!work.trashedAt),
+    restoreWork:async id=>{await persistence.restoreWork(id);await refreshWorks();},
+    purgeWork:async id=>{await persistence.purgeWork(id);await refreshWorks();},
+    updateWorkCatalog:async(id,changes)=>{await updateLocalCatalog(id,changes);await refreshWorks();},
     resetWorks:async()=>{
       if(workSwitchBusy||!(await prepareWorkSwitch()))throw new Error('現在の操作が終わってから初期化してください。');
       workSwitchBusy=true;
