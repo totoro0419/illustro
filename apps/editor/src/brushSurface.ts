@@ -51,7 +51,7 @@ export class BrushSurface{
   private lastFrameAt=0;private viewNotificationPending=false;private checkpointMetrics={captures:0,tiles:0,batches:0,bytes:0,lastMs:0};private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private navigation:CanvasNavigation|null=null;
   private pointerRoles:PointerRoleSettings={pen:'draw',mouse:'draw'};
   setPointerRoles(roles:PointerRoleSettings){this.pointerRoles={...roles};}
-  private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'='composite';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private colorOpacity=1;private foreground:readonly [number,number,number]=[.12,.15,.2];
+  private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'|'specific'='composite';private sampleLayerId:LayerId|null=null;private sampleDiameter:1|3|5=1;private sampleTransparency:'skip'|'keep'|'white'='skip';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private colorOpacity=1;private foreground:readonly [number,number,number]=[.12,.15,.2];
   private densityMedia:MediaQueryList|null=null;private spacePressed=false;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;private strokePointerType='';
   // Navigation transforms the published canvas, not its fixed input viewport.
   private get inputViewport(){return this.canvas.closest<HTMLElement>('.surface')??this.canvas;}
@@ -906,20 +906,58 @@ export class BrushSurface{
     if(this.preset?.blend!=='erase'&&this.preset)this.preset.color=[...this.foreground];
   }
   get samplingColor(){return this.eyedropperPointer!==null||this.commitSamplePending;}
-  setEyedropper(enabled:boolean,source:'composite'|'layer'='composite'){if(!enabled&&this.eyedropperPointer!==null){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);}this.eyedropper=enabled;this.sampleSource=source;}
+  setEyedropper(enabled:boolean,source:'composite'|'layer'|'specific'='composite'){
+    if(!enabled&&this.eyedropperPointer!==null){
+      this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);
+    }
+    this.eyedropper=enabled;this.sampleSource=source;
+  }
+  configureSample(settings:{source:'composite'|'layer'|'specific';layerId:LayerId|null;diameter:1|3|5;transparency:'skip'|'keep'|'white'}){
+    this.sampleSource=settings.source;this.sampleLayerId=settings.layerId;this.sampleDiameter=settings.diameter;
+    this.sampleTransparency=settings.transparency;
+  }
   private commitSamplePending=false;
   private queueSample(point:Point,phase:'preview'|'commit'){if(phase==='commit')this.commitSamplePending=true;this.pendingSample={point,phase};if(!this.sampleRunning)void this.flushSamples();}
-  private async flushSamples(){this.sampleRunning=true;const epoch=this.sampleEpoch;try{while(this.pendingSample&&epoch===this.sampleEpoch&&!this.disposed){const requested=this.pendingSample;this.pendingSample=null;let rgba:readonly number[]|null=null;try{rgba=await this.readOnePixel(requested.point);}catch(error){this.status('色を取得できませんでした。'+(error instanceof Error?error.message:String(error)));}
+  private async flushSamples(){this.sampleRunning=true;const epoch=this.sampleEpoch;try{while(this.pendingSample&&epoch===this.sampleEpoch&&!this.disposed){const requested=this.pendingSample;this.pendingSample=null;let rgba:readonly number[]|null=null;try{rgba=await this.readSampleArea(requested.point);}catch(error){this.status('色を取得できませんでした。'+(error instanceof Error?error.message:String(error)));}
     if(epoch!==this.sampleEpoch||this.disposed)return;if(this.pendingSample&&requested.phase!=='commit')continue;if(requested.phase==='commit')this.commitSamplePending=false;this.onSample(rgba,requested.phase,requested.point);
    }}finally{this.sampleRunning=false;if(this.pendingSample&&!this.disposed)void this.flushSamples();}}
+  /** Optional 3x3/5x5 eyedropper averaging. One-pixel path stays the default. */
+  private async readSampleArea(point:Point):Promise<readonly number[]|null>{
+    const diameter=this.sampleDiameter,mode=this.sampleTransparency;
+    if(diameter===1){
+      const rgba=await this.readOnePixel(point);
+      if(!rgba||rgba.length<4)return null;
+      if(mode==='skip'&&(rgba[3]??0)===0)return null;
+      return mode==='white'?this.sampleAgainstWhite(rgba):rgba;
+    }
+    const half=Math.floor(diameter/2);
+    const sum=[0,0,0,0];let count=0;
+    for(let y=-half;y<=half;y++)for(let x=-half;x<=half;x++){
+      const rgba=await this.readOnePixel({x:point.x+x,y:point.y+y});
+      if(!rgba||rgba.length<4)continue;
+      if(mode==='skip'&&(rgba[3]??0)===0)continue;
+      const c=mode==='white'?this.sampleAgainstWhite(rgba):rgba;
+      for(let i=0;i<4;i++)sum[i]+=c[i]??0;
+      count++;
+    }
+    if(!count)return null;
+    return sum.map(n=>Math.min(255,Math.max(0,Math.round(n/count))));
+  }
+  private sampleAgainstWhite(rgba:readonly number[]):readonly number[]{
+    const opacity=Math.min(1,Math.max(0,(rgba[3]??0)/255));
+    return [0,1,2].map(index=>Math.min(255,Math.max(0,Math.round((rgba[index]??0)+(1-opacity)*255)))).concat([255]);
+  }
   /** Read only a 1x1 GPU region. Neither a canvas readback nor a layer recomposition is allowed here. */
   private async readOnePixel(point:Point):Promise<readonly number[]|null>{
    const x=Math.floor(point.x),y=Math.floor(point.y),w=this.controller.document.root.width,h=this.controller.document.root.height;
    if(x<0||y<0||x>=w||y>=h)return null;
    const backend=(this.renderer as unknown as {backend?:any}|null)?.backend;if(!backend)return null;
-   const selected=this.controller.selectedLayer;
-   if(this.sampleSource==='layer'&&selected.baseColor==='white')return [255,255,255,255];
-   const rgba=await (this.renderer as any).readPixel(x,y,this.sampleSource==='layer'?selected.surface.descriptor.surfaceId:null) as number[];
+   const selected=this.sampleSource==='specific'
+     ?this.controller.layers.find(layer=>layer.id===this.sampleLayerId):this.controller.selectedLayer;
+   if(this.sampleSource==='specific'&&!selected)return null;
+   if(this.sampleSource!=='composite'&&selected?.baseColor==='white')return [255,255,255,255];
+   const key=this.sampleSource==='composite'?null:selected?.surface.descriptor.surfaceId??null;
+   const rgba=await (this.renderer as any).readPixel(x,y,key) as number[];
    // The logical white layer is not uploaded to the GPU. The composite
    // eyedropper must still return the actual appearance of white paper.
    const solo=this.inspectedLayer;
