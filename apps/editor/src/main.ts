@@ -732,9 +732,18 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   if(opened.generationId==='new'){
     persistence.clearFileDestination();
     const started=performance.now();
+    // Library binding depends on storage initialization, but neither depends
+    // on GPU worker readiness. Start both now instead of serializing them.
     newStorageInit=persistence.initialize(controller,null,opened.preserved,recovered)
-      .then(()=>{measureCanvasStage('storage-init',started);return {ok:true as const};},
-        error=>({ok:false as const,error}));
+      .then(async()=>{
+        measureCanvasStage('storage-init',started);
+        if(!qaMode){
+          const boundAt=performance.now();
+          await persistence.bindWork(expectedEpoch);
+          measureCanvasStage('work-bind',boundAt);
+        }
+        return {ok:true as const};
+      }).catch(error=>({ok:false as const,error}));
   }
   try{await initializeCurrentSurface(!firstEmptyCanvas,opened.projectionCache,false,freshWhiteSurfaceKey);}
   catch(error){
@@ -754,7 +763,9 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     await persistence.initialize(controller,null,opened.preserved,recovered);
     measureCanvasStage('storage-init',started);
   }
-  if(!qaMode){
+  // For NEW works the library was bound concurrently with GPU startup.
+  // Restored/imported works retain the existing serialized binding semantics.
+  if(!qaMode&&!newStorageInit){
     const started=performance.now();
     await persistence.bindWork(expectedEpoch);
     measureCanvasStage('work-bind',started);
@@ -788,8 +799,13 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
   persistence.clearFileDestination();
   const storageStarted=performance.now();
   const storagePromise=persistence.initialize(controller,null,{manifestExtras:{},optionalSections:[]},false)
-    .then(()=>{measureCanvasStage('storage-init',storageStarted);return {ok:true as const};},
-      error=>({ok:false as const,error}));
+    .then(async()=>{
+      measureCanvasStage('storage-init',storageStarted);
+      const bindStarted=performance.now();
+      await persistence.bindWork(null);
+      measureCanvasStage('work-bind',bindStarted);
+      return {ok:true as const};
+    }).catch(error=>({ok:false as const,error}));
   try{
     const warmAwaitStarted=performance.now();
     const ready=await entry.ready;
@@ -800,9 +816,6 @@ async function activateFirstPrewarmedBlank(entry:BlankWarmup){
     measureCanvasStage('prewarmed-editor-setup',presetSetupStarted);
     const storage=await storagePromise;
     if(!storage.ok)throw storage.error;
-    const bindStarted=performance.now();
-    await persistence.bindWork(null);
-    measureCanvasStage('work-bind',bindStarted);
     scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);
     updatePersistenceDisplay();
     updateQa();
