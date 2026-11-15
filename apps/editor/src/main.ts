@@ -356,6 +356,75 @@ function chooseLayerGroupDestination(action:(id:LayerId|null)=>void){
   dialog.showModal();
 }
 
+let cancelLayerPick:(()=>void)|null=null;
+
+function pickLayerOnCanvas(){
+  const drawing=surface,artwork=controller.document;
+  if(!drawing||!documentReady||drawing.busy||geometryBusy||historyPending)return;
+  cancelLayerPick?.();
+  stopLayerCompComparison();
+  shellUi.setLayerPage(false);
+  byId('status').textContent='絵の上で探したい場所をタップしてください。非表示のレイヤーは候補に含みません。';
+  const cancel=()=>{
+    window.removeEventListener('keydown',onKey);
+    drawing.setLayerPick(null);
+    if(cancelLayerPick===cancel)cancelLayerPick=null;
+  };
+  const onKey=(event:KeyboardEvent)=>{
+    if(event.key!=='Escape')return;
+    event.preventDefault();
+    cancel();
+    byId('status').textContent='レイヤー選択を取り消しました。';
+  };
+  cancelLayerPick=cancel;
+  window.addEventListener('keydown',onKey);
+  drawing.setLayerPick(ids=>{
+    if(cancelLayerPick!==cancel)return;
+    cancel();
+    if(surface!==drawing||controller.document!==artwork)return;
+    if(!ids.length){
+      byId('status').textContent='そこには表示中のレイヤーの絵がありません。';
+      shellUi.setLayerPage(true);
+      return;
+    }
+    const dialog=document.createElement('dialog'),form=document.createElement('form');
+    const title=document.createElement('h2'),options=document.createElement('select'),label=document.createElement('label');
+    const choose=document.createElement('button'),close=document.createElement('button');
+    title.textContent='この場所に重なるレイヤー';
+    label.textContent='上のレイヤーから順に表示 ';
+    for(const id of ids){
+      const root=artwork.root,layer=root.getLayer(id);
+      options.add(new Option(layer.name+(root.isLayerLocked(id)?'（ロック中）':''),id));
+    }
+    label.append(options);
+    const initialSolo=drawing.inspectedLayer?.id??null;
+    options.onchange=()=>drawing.setSoloLayer(options.value as LayerId);
+    form.method='dialog';
+    choose.type='submit';choose.value='choose';choose.textContent='描画先に選ぶ';
+    close.type='submit';close.value='cancel';close.textContent='取消';
+    form.append(title,label,choose,close);
+    dialog.className='export-dialog';
+    dialog.setAttribute('aria-label','この場所に重なるレイヤー');
+    dialog.append(form);
+    document.body.append(dialog);
+    dialog.addEventListener('close',()=>{
+      dialog.remove();
+      if(surface!==drawing||controller.document!==artwork)return;
+      drawing.setSoloLayer(initialSolo&&artwork.root.hasLayer(initialSolo)?initialSolo:null);
+      if(dialog.returnValue==='choose'&&artwork.root.hasLayer(options.value as LayerId)){
+        const id=options.value as LayerId;
+        controller.selectLayer(id);
+        if(!qaMode)void persistence.selectWorkLayer(id).catch(showStorageError);
+        byId('status').textContent=controller.selectedLayer.name+'を描画先に選びました。';
+      }
+      shellUi.setLayerPage(true);
+      renderLayers();updateQa();
+    },{once:true});
+    drawing.setSoloLayer(ids[0]!);
+    dialog.showModal();
+  });
+}
+
 function groupLayerRow(group:LayerGroup,depth:number){
   const row=document.createElement('div');
   row.className='layer-group-row';
@@ -495,6 +564,7 @@ const renderLayers=()=>{
   positionLock.disabled=!documentReady;
   positionLock.textContent=selectedLayer.positionLocked?'位置ロックを解除':'位置をロック';
   positionLock.setAttribute('aria-pressed',String(!!selectedLayer.positionLocked));
+  byId<HTMLButtonElement>('pickLayerOnCanvas').disabled=!documentReady;
   byId<HTMLButtonElement>('duplicateLayer').disabled=!documentReady;
   byId<HTMLButtonElement>('flattenLayerCopy').disabled=!documentReady||!visibleLayerIds().size;
   byId<HTMLButtonElement>('mergeVisibleLayers').disabled=!documentReady||visibleLayerIds().size<2;
@@ -735,6 +805,7 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchAnchor=null;
   renderLayers();
 };
+byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=pickLayerOnCanvas;
 byId<HTMLButtonElement>('layerPositionLock').onclick=()=>{
   const layer=controller.selectedLayer;
   changeLayer(layer.positionLocked?'位置ロックを解除しました。':'レイヤーの位置をロックしました。',tx=>tx.setLayerPositionLocked(layer.id,!layer.positionLocked));

@@ -143,6 +143,14 @@ async function command(method,a){const r=renderer,s=session;
  case 'readViewport':await r.drain();return r.backend.readViewport();
  case 'readTiles':return readTiles(a);
  case 'pixel':return pixel(a);
+ case 'layerHits':{
+  if(!Array.isArray(a.layers))throw Error('Invalid layer hit request');
+  const ids=[];
+  for(const layer of a.layers){
+   if(layer.white||(await pixel({x:a.x,y:a.y,surfaceKey:layer.key}))[3]>0)ids.push(layer.id);
+  }
+  return ids;
+ }
  case 'view':latestView=a;if(!initialView){initialView=true;r.setViewTransform(a);r.syncOverlayView();}else r.proxy?.setView(a);return;
  case 'stack':r.setSurfaceStack(a);return;
  case 'styles':r.setSurfaceStyles(a);return;

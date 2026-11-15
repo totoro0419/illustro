@@ -196,6 +196,26 @@ export class BrushSurface{
   setSeamless(enabled:boolean){if(this.view){this.view.seamless=enabled;this.updateView(true);}}
   setReferencePattern(enabled:boolean){if(this.view){this.view.reference=enabled;this.updateView(true);}}
   private sample(e:PointerEvent):Sample{const v=this.view,d=v?v.document(this.pointerLocation(e)):this.pointerLocation(e),p=snapToStraightGuide({x:d.x-(this.wrapOrigin?.x??0),y:d.y-(this.wrapOrigin?.y??0)},this.activeGuide);return {x:p.x,y:p.y,t:e.timeStamp,...nativeBrushSensors(e)};}
+  private layerPick:((ids:readonly LayerId[])=>void)|null=null;
+  setLayerPick(callback:((ids:readonly LayerId[])=>void)|null){this.layerPick=callback;}
+  private async findLayersAt(point:Point,receive:(ids:readonly LayerId[])=>void){
+    const root=this.controller.document.root,revision=this.controller.document.head,solo=this.inspectedLayer;
+    const x=Math.floor(point.x),y=Math.floor(point.y);
+    if(x<0||y<0||x>=root.width||y>=root.height){receive([]);return;}
+    const layers=[...this.controller.layers].reverse().filter(layer=>layer.opacity>0&&(solo?layer.id===solo.id:root.isLayerVisible(layer.id))).map(layer=>({
+      key:layer.surface.descriptor.surfaceId,id:layer.id,white:layer.baseColor==='white',
+    }));
+    const host=this.renderer as unknown as {call:(name:string,args:unknown)=>Promise<LayerId[]>}|null;
+    if(!host){receive([]);return;}
+    try{
+      const hits=await host.call('layerHits',{x,y,layers});
+      if(!this.disposed&&this.controller.document.head===revision)receive(hits);
+      else receive([]);
+    }catch(error){
+      receive([]);
+      this.status('重なっているレイヤーを取得できませんでした。'+(error instanceof Error?error.message:''));
+    }
+  }
   private down=(e:PointerEvent)=>{if(!this.view||!this.session||!this.preset)return;
     // Undo can restore a virtual background while it remains selected. Do not
     // admit a stroke against nonexistent white raster; reselect to materialize.
@@ -204,6 +224,13 @@ export class BrushSurface{
     // stroke / document layer becomes the hit target during formal painting.
     // Interactive editor controls inside the viewport must remain interactive.
     if(e.target instanceof Element&&e.target.closest('button,input,select,textarea,[contenteditable="true"],.crop-overlay,[data-canvas-no-input]'))return;
+    if(this.layerPick&&e.button===0){
+      e.preventDefault();
+      const receive=this.layerPick;
+      this.layerPick=null;
+      void this.findLayersAt(this.screenToDocument(this.pointerLocation(e)),receive);
+      return;
+    }
     if(this.selectionMode){
       if(this.selectionPointer!==null||e.button!==0)return;
       e.preventDefault();this.selectionPointer=e.pointerId;
