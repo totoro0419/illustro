@@ -56,12 +56,13 @@ export function exportPalette(p:Palette):string{
  return JSON.stringify({format:'illustro-palette',version:1,name:p.name,swatches:p.swatches.map(s=>({id:s.id,color:{space:'srgb',channels:[s.color.r,s.color.g,s.color.b]}}))},null,2);
 }
 export class ForegroundColor {
- current:RGB=rgb(.12,.15,.2);previous:RGB=rgb(.12,.15,.2);history:RGB[]=[];
+ current:RGB=rgb(.12,.15,.2);previous:RGB=rgb(.12,.15,.2);background:RGB=rgb(1,1,1);history:RGB[]=[];
  palettes:Palette[]=[{id:ident(),name:'マイパレット',swatches:[]}];paletteId=this.palettes[0]!.id;
  private origin:RGB|null=null;private listeners=new Set<()=>void>();
  constructor(storage=true){if(!storage)return;try{const stored=localStorage.getItem(key);if(!stored)return;const d=JSON.parse(stored) as Record<string,unknown>;
   if(d?.version!==1)return;if(validRGB(d.current))this.current=rgb(d.current.r,d.current.g,d.current.b);
   if(validRGB(d.previous))this.previous=rgb(d.previous.r,d.previous.g,d.previous.b);
+  if(validRGB(d.background))this.background=rgb(d.background.r,d.background.g,d.background.b);
   if(Array.isArray(d.history))this.history=d.history.filter(validRGB).slice(0,MAX_HISTORY);
   if(Array.isArray(d.palettes)){const items=d.palettes.slice(0,MAX_PALETTES).map((p:unknown)=>{const q=p as Palette;if(typeof q?.id!=='string'||typeof q.name!=='string'||!Array.isArray(q.swatches))return null;return {id:q.id,name:cleanName(q.name),swatches:q.swatches.slice(0,MAX_SWATCHES).filter(s=>typeof s?.id==='string'&&validRGB(s.color))};}).filter((p):p is Palette=>p!==null&&!!p.name);if(items.length)this.palettes=items;}
   if(typeof d.paletteId==='string'&&this.palettes.some(p=>p.id===d.paletteId))this.paletteId=d.paletteId;
@@ -69,7 +70,7 @@ export class ForegroundColor {
  get isEditing(){return this.origin!==null;}
  subscribe(f:()=>void){this.listeners.add(f);return ()=>this.listeners.delete(f);}
  private notify(){for(const f of this.listeners)f();}
- private save(){try{localStorage.setItem(key,JSON.stringify({version:1,current:this.current,previous:this.previous,history:this.history,palettes:this.palettes,paletteId:this.paletteId}));}catch{/* Storage quota/unavailable is nonfatal; palette export stays usable. */}}
+ private save(){try{localStorage.setItem(key,JSON.stringify({version:1,current:this.current,previous:this.previous,background:this.background,history:this.history,palettes:this.palettes,paletteId:this.paletteId}));}catch{/* Storage quota/unavailable is nonfatal; palette export stays usable. */}}
  begin(){if(!this.origin)this.origin=this.current;}
  preview(c:RGB){if(!validRGB(c))return;this.current=rgb(c.r,c.g,c.b);this.notify();}
  commit(c?:RGB){if(c)this.preview(c);const prior=this.origin??this.current;this.origin=null;
@@ -78,6 +79,11 @@ export class ForegroundColor {
  }
  cancel(){if(this.origin){this.current=this.origin;this.origin=null;this.notify();}}
  choose(c:RGB){this.begin();this.preview(c);this.commit();}
+ setBackground(c:RGB){if(!validRGB(c))return;this.background=rgb(c.r,c.g,c.b);this.save();this.notify();}
+ swapBackground(){
+   const old=this.current,newForeground=this.background;
+   this.background=old;this.choose(newForeground);this.save();this.notify();
+ }
  clearHistory(){this.history=[];this.save();this.notify();}
  get palette(){return this.palettes.find(p=>p.id===this.paletteId)??this.palettes[0]!;}
  selectPalette(id:string){if(this.palettes.some(p=>p.id===id)){this.paletteId=id;this.save();this.notify();}}
