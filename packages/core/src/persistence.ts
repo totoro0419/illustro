@@ -82,8 +82,9 @@ export function parseCoreSnapshot(value:unknown,blockPayloads:ReadonlyMap<string
       }
       const deformation=layer.deformation;
       if(!deformation)continue;
-      const original=byRevision.get(deformation.sourceRevision)?.root;
-      if(deformation.sourceRevision===revision.id||!original?.hasLayer(id)||original.width!==revision.root.width||original.height!==revision.root.height)
+      const original=byRevision.get(deformation.sourceRevision)?.root,source=deformation.sourceLayerId??id;
+      if(!original?.hasLayer(source)||original.width!==revision.root.width||original.height!==revision.root.height||
+        deformation.sourceRevision===revision.id&&(source===id||original.getLayer(source).deformation))
         throw Error('変形前の原本が見つかりません。');
     }
     validateMutationRefs(revision.root,operationKeys,blockDescriptors);

@@ -1,4 +1,4 @@
-import {CANONICAL_TILE_SIZE,CoreDocument,type DirtyTileHint,type LayerId} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,CoreDocument,type DirtyTileHint,type LayerId,type RasterSemanticMutation} from '@illustro/core';
 import type {StrokeRecord} from '@illustro/brush-rt';
 import type {DocumentPort,DrawingTarget,StrokeCommitResult} from './ports';
 
@@ -23,8 +23,7 @@ export class CoreStrokeDocumentPort implements DocumentPort{
     // stroke can starve later touchstart events until formal completion.
     for(const item of records){
       await shallowRecordGuard(item);
-      const dirty=await dirtyTiles(item);
-      dirtyByRecord.push(dirty.filter(h=>h.tileX>=0&&h.tileY>=0&&h.tileX*CANONICAL_TILE_SIZE<target.width&&h.tileY*CANONICAL_TILE_SIZE<target.height));
+      dirtyByRecord.push(await strokeTilesForCanvas(item,target.width,target.height));
     }
     if(!dirtyByRecord[0]?.length)throw new EmptyStrokeError('確定できる線がありません。');
     // The UI can now process gestures/history between preparation chunks.
@@ -39,16 +38,23 @@ export class CoreStrokeDocumentPort implements DocumentPort{
     let operationKey:StrokeCommitResult['operationKey']|null=null,dirtyTileCount=0;
     for(let i=0;i<records.length;i++){const item=records[i]!,dirty=dirtyByRecord[i]!;
       if(!dirty.length)continue;
-      const key=tx.recordRasterOperation(target.layerId,{
-        kind:'brush.stroke',schemaVersion:1,parameters:Object.freeze({strokeRecord:item,strokeRecordVersion:item.version,engine:item.engine,brushId:brushId(item),action:item.preset.blend==='erase'?'erase':'paint',...(i>0?{seamlessCopy:true}:{} )}),
-        algorithmVersionRefs:Object.freeze([`engine:${item.engine}`,`reconstruction:${item.smoothing}`,`prng:${item.random}`,`stroke-schema:${item.version}`]),sourceRevisionIds:Object.freeze([target.baseRevision]),
-      },dirty);
+      const key=tx.recordRasterOperation(target.layerId,describeStroke(item,i>0),dirty);
       if(i===0)operationKey=key;
       dirtyTileCount+=dirty.length;
     }
     if(!operationKey)throw new Error('確定できる線がありません。');
     const receipt=tx.commit();return Object.freeze({revisionId:receipt.revision.id,operationKey,dirtyTileCount,persistence:receipt.persistence});
   }
+}
+export function describeStroke(record:StrokeRecord,supplemental:boolean):RasterSemanticMutation{
+  return {kind:'brush.stroke',schemaVersion:1,parameters:{
+    strokeRecord:record,strokeRecordVersion:record.version,engine:record.engine,brushId:brushId(record),
+    action:record.preset.blend==='erase'?'erase':'paint',...(supplemental?{seamlessCopy:true}:{})
+  },algorithmVersionRefs:[`engine:${record.engine}`,`reconstruction:${record.smoothing}`,`prng:${record.random}`,`stroke-schema:${record.version}`]};
+}
+export async function strokeTilesForCanvas(record:StrokeRecord,width:number,height:number){
+  const dirty=await dirtyTiles(record);
+  return dirty.filter(item=>item.tileX>=0&&item.tileY>=0&&item.tileX*CANONICAL_TILE_SIZE<width&&item.tileY*CANONICAL_TILE_SIZE<height);
 }
 async function shallowRecordGuard(record:StrokeRecord){
   if((record.version!==2&&record.version!==3)||record.random!=='philox4x32-10'||!Array.isArray(record.commands)||!Array.isArray(record.raw)||record.raw.length>500000)throw new Error('未対応の線データです。');

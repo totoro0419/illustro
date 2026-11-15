@@ -1,4 +1,4 @@
-import type {RevisionId} from './ids';
+import type {LayerId,RevisionId} from './ids';
 import {validateLayerMask,type PixelLayerMask} from './layerMask';
 
 export type TransformPoint=Readonly<{x:number;y:number}>;
@@ -16,6 +16,7 @@ export type LiquifyStroke=Readonly<{
 type LayerDeformationSource=Readonly<{
   version:1;
   sourceRevision:RevisionId;
+  sourceLayerId?:LayerId;
   bounds:TransformBounds;
   interpolation:'nearest'|'bilinear'|'area';
   selection:PixelLayerMask|null;
@@ -35,10 +36,11 @@ export function validateLayerDeformation(input:unknown):LayerDeformation|null{
   if(typeof input!=='object')throw invalid();
   if(validated.has(input))return input as LayerDeformation;
   const value=input as LayerDeformation;
-  const {version,sourceRevision,mode,bounds,interpolation,selection,linkedMask,maskDigest}=value;
+  const {version,sourceRevision,sourceLayerId,mode,bounds,interpolation,selection,linkedMask,maskDigest}=value;
   const coordinate=(value:unknown):value is number=>typeof value==='number'&&Number.isFinite(value)&&Math.abs(value)<=1e6;
   if(version!==1||typeof sourceRevision!=='string'||
     !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(sourceRevision)||
+    (sourceLayerId!==undefined&&(typeof sourceLayerId!=='string'||!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(sourceLayerId)))||
     (mode!=='free'&&mode!=='projective'&&mode!=='skew'&&mode!=='mesh-grid'&&mode!=='cage'&&mode!=='liquify')||
     !bounds||!coordinate(bounds.x)||!coordinate(bounds.y)||!coordinate(bounds.width)||!coordinate(bounds.height)||
     bounds.width<1||bounds.height<1||
@@ -51,7 +53,7 @@ export function validateLayerDeformation(input:unknown):LayerDeformation|null{
   };
   const mask=validateLayerMask(selection);
   if(mask&&mask.shape!=='pixels')throw invalid();
-  const base={version,sourceRevision,bounds:Object.freeze({x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}),
+  const base={version,sourceRevision,...(sourceLayerId?{sourceLayerId}:{}),bounds:Object.freeze({x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}),
     interpolation,selection:mask,linkedMask,...(maskDigest?{maskDigest}:{})};
   let safe:LayerDeformation;
   if(value.mode==='liquify'){

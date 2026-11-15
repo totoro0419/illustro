@@ -19,7 +19,7 @@ type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
 
 export class DocumentTransaction{
-  private readonly baseValue:RevisionId;private readonly rootValue;private readonly idValue:TransactionId;private readonly workingValue=new Map<LayerId,RasterWorkingSet>();
+  private readonly baseValue:RevisionId;private resultId:RevisionId|undefined;private readonly rootValue;private readonly idValue:TransactionId;private readonly workingValue=new Map<LayerId,RasterWorkingSet>();
   private readonly updatesValue=new Map<LayerId,LayerNode>();private readonly slotsValue:OperationSlot[]=[];private rootOrderValue:LayerId[]|null=null;private groupsValue:readonly LayerGroup[]|null=null;private compsValue:readonly LayerComp[]|null=null;private deletedValue=new Set<LayerId>();private closed=false;private failed=false;private dimensionUpdate:{width:number;height:number}|null=null;
   constructor(private readonly doc:CoreDocument,readonly label:string){if(!label.trim())throw new Error('empty transaction label');this.baseValue=doc.head;this.rootValue=doc.root;this.idValue=doc._internal(CORE_INTERNAL).ids.transaction();}
   get transactionId(){return this.idValue;}get baseRevision(){return this.baseValue;}
@@ -44,9 +44,10 @@ export class DocumentTransaction{
   addRasterSnapshotAbove(referenceId:LayerId,pixels:Uint8Array|Uint8ClampedArray,name:string,copyStyle=false,inheritGroup=true,below=false){
     const root=this.rootValue;
     if(pixels.length!==root.width*root.height*4)throw new Error('画像の大きさが作品と一致しません。');
-    const source=root.getLayer(referenceId),id=this.addRasterLayerAbove(referenceId,inheritGroup,below);
+    const id=this.addRasterLayerAbove(referenceId,inheritGroup,below);
     this.renameLayer(id,name);
     if(copyStyle){
+      const source=this.updatesValue.get(referenceId)??root.getLayer(referenceId);
       if(source.deformation)throw new Error('変形を保持したレイヤーの複製は未対応です。見た目を複製する場合は画像に焼き込んでください。');
       this.setLayerOpacity(id,source.opacity);
       this.setLayerVisibility(id,source.visible);
@@ -61,6 +62,9 @@ export class DocumentTransaction{
   }
   pasteRasterLayers(referenceId:LayerId,entries:readonly Readonly<{
     layer:LayerNode;pixels:Uint8Array|Uint8ClampedArray;mask?:LayerMask|null;editable?:EditableArtwork|null;
+    source?:Readonly<{pixels:Uint8Array;mask:LayerMask|null;deformation:LayerDeformation}>;
+    strokes?:readonly Readonly<{operation:RasterSemanticMutation;tiles:readonly DirtyTileHint[]}>[];
+    regionSource?:Readonly<{pixels:Uint8Array;recipe:LineRegions}>;
   }>[],groups:readonly LayerGroup[]){
     this.open();
     if(!entries.length)throw new Error('貼り付けるレイヤーがありません。');
@@ -69,15 +73,40 @@ export class DocumentTransaction{
       const members=new Set(parent.members);
       referenceId=[...this.rootValue.rootLayerIds].reverse().find(id=>members.has(id))??referenceId;
     }
+    const originals=new Map<LayerId,LayerId>(),regionSources=new Map<LayerId,LayerId>();
+    for(const {layer,source,regionSource} of entries){
+      if(layer.deformation&&!source)throw Error('貼り付ける変形の原本がありません。');
+      if(layer.lineRegions&&!regionSource)throw Error('貼り付ける線画領域の参照元がありません。');
+      if(regionSource){
+        const id=this.addRasterSnapshotAbove(referenceId,regionSource.pixels,layer.name.slice(0,4060)+'（参照元の版）',false,false);
+        this.meta(id,{visible:false,locked:true,positionLocked:true});
+        regionSources.set(layer.id,id);
+        referenceId=id;
+      }
+      if(!source)continue;
+      const id=this.addRasterSnapshotAbove(referenceId,source.pixels,layer.name.slice(0,4060)+'（変形原本）',false,false);
+      this.meta(id,{visible:false,locked:true,positionLocked:true,vectorMask:validateLayerMask(source.mask)});
+      originals.set(layer.id,id);
+      referenceId=id;
+    }
+    if(originals.size||regionSources.size)this.resultId=this.doc._internal(CORE_INTERNAL).ids.revision();
     const ids=new Map<LayerId,LayerId>();
-    for(const {layer,pixels,mask,editable} of entries){
+    for(const {layer,pixels,mask,editable,source,strokes,regionSource} of entries){
       const id=this.addRasterSnapshotAbove(referenceId,pixels,layer.name,false,false);
       const clipSourceId=layer.clipSourceId?ids.get(layer.clipSourceId):undefined;
+      for(const {operation,tiles} of strokes??[])this.recordRasterOperation(id,operation,tiles);
+      const sourceLayerId=originals.get(layer.id);
+      const deformation=source&&sourceLayerId&&this.resultId
+        ?validateLayerDeformation({...source.deformation,sourceRevision:this.resultId,sourceLayerId}):null;
+      const regionSourceId=regionSources.get(layer.id);
+      const lineRegions=regionSource&&regionSourceId&&this.resultId?validateLineRegions({
+        ...regionSource.recipe,sourceRevision:this.resultId,sources:[regionSourceId],reference:'layer'
+      }):null;
       this.meta(id,{
         visible:layer.visible,opacity:layer.opacity,locked:layer.locked,
         colorTag:layer.colorTag??null,positionLocked:layer.positionLocked??false,
         contentLocked:layer.contentLocked??false,alphaLocked:layer.alphaLocked??false,
-        vectorMask:validateLayerMask(mask),blend:layer.blend??null,clipSourceId:clipSourceId??null,editable:validateEditableArtwork(editable)
+        vectorMask:validateLayerMask(mask),blend:layer.blend??null,clipSourceId:clipSourceId??null,editable:validateEditableArtwork(editable),...(deformation?{deformation}:{}),...(lineRegions?{lineRegions}:{})
       });
       ids.set(layer.id,id);
       referenceId=id;
@@ -106,7 +135,7 @@ export class DocumentTransaction{
     if(layer.baseColor==='white')throw new Error('白背景を描画用に変換してから復元してください。');
     if(layer.deformation&&deformation===undefined)throw new Error('このレイヤーは変形を保持しています。画像に焼き込むか、変形の上に別レイヤーを追加してください。');
     if(deformation&&(!this.doc.hasRevision(deformation.sourceRevision)||
-      !this.doc.revision(deformation.sourceRevision).root.hasLayer(id)))throw new Error('変形前の原本が見つかりません。');
+      !this.doc.revision(deformation.sourceRevision).root.hasLayer(deformation.sourceLayerId??id)))throw new Error('変形前の原本が見つかりません。');
     if(layer.editable&&editable===undefined)throw new Error('編集できるレイヤーです。専用の操作画面で編集するか、描画用に変換してください。');
     this.updatesValue.set(id,Object.freeze({...layer,surface:new RasterSurfaceManifest(layer.surface.descriptor)}));
     this.seedRasterPixels(id,pixels,true,deformation?.sourceRevision??source);
@@ -519,7 +548,7 @@ export class DocumentTransaction{
   }
   commit():CommitReceipt{this.open();try{return commitTransaction(this);}catch(e){this.failed=true;throw e;}}
   cancel(){if(this.closed)throw new Error('transaction closed');this.workingValue.clear();this.updatesValue.clear();this.slotsValue.length=0;this.rootOrderValue=null;this.dimensionUpdate=null;this.closed=true;}
-  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,groups:this.groupsValue,comps:this.compsValue,deleted:this.deletedValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
+  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,resultId:this.resultId,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,groups:this.groupsValue,comps:this.compsValue,deleted:this.deletedValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||layer.contentLocked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='restore-revision'||x.type==='pin-revision'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}

@@ -26,6 +26,7 @@ import {runArtwork} from './artwork/run';
 import {selectionAsLayerMask} from './artwork/selectionMask';
 import type {ArtworkActions} from './artwork/tools';
 import {fillLayerName,installFillPanel} from './fill/panel';
+import {readFillReference} from './fill/reference';
 import {installTransformPanel} from './transform/panel';
 import {digestLayerMask,readSelectionMask,transformLinkedMask} from './transform/mask';
 import {cornerMode,initialTransform,meshMode} from './transform/geometry';
@@ -3377,7 +3378,7 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
   if(target!=='boundary'&&(layer.baseColor==='white'||layer.editable||artwork.root.isLayerContentLocked(layer.id)||artwork.root.isLayerPositionLocked(layer.id)))
     throw Error('変形できる描画用レイヤーを選び、位置と内容のロックを解除してください。');
   const sourceRevision=saved?.sourceRevision??head;
-  const original=artwork.revision(sourceRevision).root.getLayer(layer.id);
+  const original=artwork.revision(sourceRevision).root.getLayer(saved?.sourceLayerId??layer.id);
   const selection=saved?.selection?readSelectionMask(saved.selection,width,height):target==='layer'?null:activeSelection;
   let pixels:Uint8Array|undefined;
   await withClipboardAccess(async viewport=>{
@@ -3385,7 +3386,7 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
       pixels=new Uint8Array(width*height*4);
       for(let i=0;i<activeSelection.alpha.length;i++){pixels[i*4]=255;pixels[i*4+1]=155;pixels[i*4+3]=activeSelection.alpha[i]!;}
     }else if(saved){
-      const frozen=captureExport(artwork,layer.id,sourceRevision),surfaceId=original.surface.descriptor.surfaceId;
+      const frozen=captureExport(artwork,original.id,sourceRevision),surfaceId=original.surface.descriptor.surfaceId;
       pixels=new Uint8Array(await renderFrozenArtwork({
         ...frozen,layers:[{surfaceId,visible:true,opacity:1}],
         strokes:frozen.strokes.filter(item=>item.surfaceId===surfaceId),
@@ -3423,6 +3424,7 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
       let deformation:LayerDeformation|null=null;
       if(cornerMode(mode)||meshMode(mode)||mode==='liquify'){
         const base={version:1 as const,sourceRevision,bounds,interpolation:settings.interpolation,linkedMask,
+          ...(saved?.sourceLayerId?{sourceLayerId:saved.sourceLayerId}:{}),
           selection:saved?.selection??(target==='selected'&&selection?selectionAsLayerMask(selection):null),
           ...(maskDigest?{maskDigest}:{})
         };
@@ -3510,36 +3512,15 @@ installFillPanel(byId('documentBoxBody'),{
     const revision=stored?.sourceRevision??head,referenceRoot=artwork.revision(revision).root;
     const mode=stored?.reference??reference;
     const sourceIds:readonly LayerId[]=stored?.sources??(mode==='active'?[layer.id]:mode==='merged'?[]:layerIds as readonly LayerId[]);
-    if(mode!=='merged'&&(!sourceIds.length||sourceIds.some(id=>!referenceRoot.hasLayer(id)||referenceRoot.getLayer(id).lineRegions)))
-      throw Error('参照するレイヤーが選ばれていないか、見つかりません。参照元を確認してください。');
-    const referenced=sourceIds[0]?referenceRoot.getLayer(sourceIds[0]):undefined;
-    if((mode==='vector'||mode==='vector-visible')&&referenced?.editable?.kind!=='path')throw Error('ベクターの線画レイヤーを指定してください。');
-    let source:Uint8Array|undefined,target:Uint8Array|null=null;
+    let target:Uint8Array|null=null;
     const {width,height}=root;
     if(referenceRoot.width!==width||referenceRoot.height!==height)throw Error('保存した領域と現在の作品の大きさが違います。解析を更新してください。');
     await withClipboardAccess(async active=>{
       if(needTarget&&destination==='active')target=(await active.captureDocumentLayers(new Set([layer.id]))).get(layer.id)??null;
       return 'read';
     });
-    if(mode==='vector'&&referenced?.editable?.kind==='path'){
-      const path=referenced.editable;
-      source=new Uint8Array(await runArtwork({content:{...path,fill:null,stroke:'#000000',width:1,lineStyle:'solid'},
-        width,height,outputWidth:width,outputHeight:height}));
-    }else{
-      const frozen=captureExport(artwork,undefined,revision);
-      if(mode==='merged')source=new Uint8Array(await renderFrozenArtwork(frozen));
-      else{
-        const surfaceIds=new Set<string>(sourceIds.map(id=>referenceRoot.getLayer(id).surface.descriptor.surfaceId));
-        const used=new Set(surfaceIds);
-        for(const item of frozen.layers)if(surfaceIds.has(item.surfaceId)&&item.clipSurfaceId)used.add(item.clipSurfaceId);
-        source=new Uint8Array(await renderFrozenArtwork({...frozen,layers:frozen.layers.filter(item=>used.has(item.surfaceId)).map(item=>{
-          const {clipSurfaceId,...view}=item;
-          // An excluded clipping base still supplies its alpha without becoming a fill reference.
-          return {...view,...(clipSurfaceId?{clipSurfaceId}:{}),visible:true,referenceOnly:!surfaceIds.has(item.surfaceId)};
-        }),strokes:frozen.strokes.filter(item=>used.has(item.surfaceId)),basePixels:frozen.basePixels?.filter(item=>used.has(item.surfaceId))??[]}));
-      }
-    }
-    if(!source||(needTarget&&destination==='active'&&!target))throw Error('塗りつぶしに必要な画像を取得できません。');
+    const source=await readFillReference(artwork,revision,mode,sourceIds);
+    if(needTarget&&destination==='active'&&!target)throw Error('塗りつぶしに必要な画像を取得できません。');
     const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
       controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
     const targetMask=needTarget&&destination==='active'&&layer.vectorMask?.enabled
@@ -3635,7 +3616,7 @@ c06ClipboardUI=installClipboardPanel({
     await c06Clipboard.cut(controller,drawing);return 'edit';
   }),
   paste:placement=>withClipboardAccess(async()=>{
-    c06Clipboard.paste(controller,placement);return 'edit';
+    await c06Clipboard.paste(controller,placement);return 'edit';
   }),
   exportPng:async()=>c06Download(await c06Clipboard.makePng(),'illustro-copy.png'),
   importFile:async(file:File)=>{
@@ -3653,7 +3634,7 @@ installImageDropRouting({
   place:async file=>{
     await c06Clipboard.importImage(file,file.name);
     await withClipboardAccess(async()=>{
-      c06Clipboard.paste(controller,'center');return 'edit';
+      await c06Clipboard.paste(controller,'center');return 'edit';
     });
   },
   reference:async file=>{

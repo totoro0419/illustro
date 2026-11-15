@@ -11,6 +11,16 @@ export function strokeBounds(record:StrokeRecord):Bounds{
  }
  return {x0,y0,x1,y1};
 }
+export function translateStroke(record:StrokeRecord,dx:number,dy:number):StrokeRecord{
+ if(!dx&&!dy)return record;
+ const builder=new CanonicalBuilder(record.version===3?record.foundation:record.preset,
+  [record.seed[0],record.seed[1]],record.fast,record.version===3?record.context:undefined);
+ for(const sample of record.raw)builder.accept({...sample,x:sample.x+dx,y:sample.y+dy});
+ if(record.version===3&&record.releaseInput)
+  builder.release({...record.releaseInput,x:record.releaseInput.x+dx,y:record.releaseInput.y+dy});
+ builder.finish();
+ return builder.record();
+}
 /** Reconstructs valid, deterministic seam copies; never mutates canonical brush records. */
 export function wrappedCopies(record:StrokeRecord,width:number,height:number):WrappedStroke[]{
  if(!(width>0&&height>0&&Number.isSafeInteger(width)&&Number.isSafeInteger(height)))throw new Error('invalid seamless size');
@@ -21,10 +31,7 @@ export function wrappedCopies(record:StrokeRecord,width:number,height:number):Wr
  for(const dx of xs)for(const dy of ys){
   if(dx===0&&dy===0)continue;
   if(b.x0+dx>=width||b.x1+dx<=0||b.y0+dy>=height||b.y1+dy<=0)continue;
-  const builder=new CanonicalBuilder(record.version===3?record.foundation:record.preset,[record.seed[0],record.seed[1]],record.fast,record.version===3?record.context:undefined);
-  for(const sample of record.raw)builder.accept({...sample,x:sample.x+dx,y:sample.y+dy});
-  if(record.version===3&&record.releaseInput)builder.release({...record.releaseInput,x:record.releaseInput.x+dx,y:record.releaseInput.y+dy});
-  builder.finish();result.push(Object.freeze({dx,dy,record:builder.record()}));
+  result.push(Object.freeze({dx,dy,record:translateStroke(record,dx,dy)}));
  }
  return result;
 }

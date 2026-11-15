@@ -80,7 +80,7 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
   if(v.dimensions)nextRoot=nextRoot.withDimensions(v.dimensions.width,v.dimensions.height);
   if(documentInfo)nextRoot=nextRoot.withInfo(documentInfo);
   const at=s.clock(),root=nextRoot.withModifiedAt(at),stamp=s.nextCommitStamp(),command=Object.freeze({version:2 as const,kind:'core.transaction.v2' as const,label:tx.label,operations:Object.freeze(operations)});
-  let published=false;try{s.store.publishPrepared(prepared);published=true;const revision=s.history.publish(v.base,v.id,root,command,at,stamp);s.acceptCommitSequence(stamp.commitSequence);v.close();
+  let published=false;try{s.store.publishPrepared(prepared);published=true;const revision=s.history.publish(v.base,v.id,root,command,at,stamp,v.resultId);s.acceptCommitSequence(stamp.commitSequence);v.close();
     const requiredResourceIds=uniqueResources(operations.flatMap(x=>x.resourceRefs)),requiredAlgorithms=Object.freeze([...new Set(operations.flatMap(x=>x.algorithmVersionRefs))]);
     const persistence:PersistenceHandoff=Object.freeze({schemaVersion:2 as const,commitStamp:stamp,transactionId:v.id,parentRevisionIds:Object.freeze([v.base]),resultRevisionId:revision.id,
       documentRootRef:Object.freeze({documentId:root.documentId,revisionId:revision.id}),semanticOperationRefs:Object.freeze(operations.map(x=>x.key)),requiredBlockIds:Object.freeze(prepared.entries.map(x=>x.id)),

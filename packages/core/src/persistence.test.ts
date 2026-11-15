@@ -1,5 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {CoreDocument} from './coreDocument';
+import type {LayerDeformation} from './layerDeformation';
 import {createDeterministicIdFactory} from './ids';
 import {ProtectionTracker} from './recovery';
 import {mergeCoreRecovery} from './persistence';
@@ -36,6 +37,38 @@ describe('M05 core persistence',()=>{
     expect(restored.readPixel(layer,1,1)).toEqual([7,8,9,255]);
     expect(restored.readPixel(layer,2,2)).toEqual([0,0,0,0]);
     expect(d.head).toBe(laterId);
+  });
+  it('saves and recovers the original of a pasted editable transform with one undo',()=>{
+    const d=new CoreDocument({width:2,height:2,ids:createDeterministicIdFactory()}),id=d.defaultRasterLayerId;
+    const base=d.capturePersistenceSnapshot(),before=d.head,layer=d.root.getLayer(id);
+    const mask={shape:'rectangle',x:0,y:0,width:1,height:1,enabled:true,inverted:false,density:.5,linked:true} as const;
+    const deformation:LayerDeformation={version:1,sourceRevision:before,mode:'projective',bounds:{x:0,y:0,width:2,height:2},
+      corners:[{x:0,y:0},{x:2,y:0},{x:2,y:2},{x:0,y:2}],interpolation:'bilinear',selection:null,linkedMask:true};
+    const tx=d.begin('paste transformed layer');
+    const input=new Uint8Array(16);input.set([90,80,70,255],0);
+    const output=new Uint8Array(16);output.set([90,80,70,255],4);
+    const pasted=tx.pasteRasterLayers(id,[{layer,pixels:output,mask,source:{pixels:input,mask,deformation}}],[]);
+    const receipt=tx.commit(),result=d.root.getLayer(pasted).deformation!;
+    const original=result.sourceLayerId!;
+    expect(result.sourceRevision).toBe(receipt.revision.id);
+    expect(d.root.getLayer(original).visible).toBe(false);
+    expect(d.readPixel(original,0,0)).toEqual([90,80,70,255]);
+    expect(d.readPixel(pasted,1,0)).toEqual([90,80,70,255]);
+    const packet=d.captureRecoveryPacket(receipt.persistence);
+    const snapshot=d.capturePersistenceSnapshot();
+    for(const restoredSnapshot of [snapshot,mergeCoreRecovery(base,[packet])]){
+      const restored=CoreDocument.restore({snapshot:restoredSnapshot,blockPayloads:d.persistenceBlockPayloads(snapshot)});
+      const source=restored.revision(result.sourceRevision).root.getLayer(original);
+      expect(source.vectorMask?.density).toBe(.5);
+      const edit=restored.begin('edit pasted transform');
+      edit.replaceLayerDeformation(pasted,input,result);edit.commit();
+      expect(restored.readPixel(pasted,0,0)).toEqual([90,80,70,255]);
+    }
+    d.undo();
+    expect(d.head).toBe(before);
+    expect(d.root.rootLayerIds).toEqual([id]);
+    d.redo();
+    expect(d.root.hasLayer(pasted)).toBe(true);
   });
   it('continues CommitSequence across Undo branch edits and protection never skips a gap',()=>{
     const ids=createDeterministicIdFactory(),d=new CoreDocument({width:64,height:64,ids}),l=d.defaultRasterLayerId;
