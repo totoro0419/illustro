@@ -46,6 +46,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const autoTools=document.createElement('div');autoTools.className='c06-auto-selection';
   const saveArea=document.createElement('div');saveArea.className='c06-selection-save';
   const status=document.createElement('output');status.setAttribute('role','status');
+  const allowFinger=document.createElement('input');allowFinger.type='checkbox';allowFinger.checked=false;
+  const fingerLabel=document.createElement('label');fingerLabel.className='c06-visibility';
+  fingerLabel.append(allowFinger,document.createTextNode('指で選択範囲を描く（OFFなら指はキャンバス移動）'));
   const showSelection=document.createElement('input');showSelection.type='checkbox';showSelection.checked=true;
   const showSelectionLabel=document.createElement('label');showSelectionLabel.className='c06-visibility';
   showSelectionLabel.append(showSelection,document.createTextNode('選択の境界を表示する（隠しても選択は有効）'));
@@ -338,7 +341,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!window.confirm('保存した選択範囲を削除しますか？ 現在の選択は維持します。'))return;
     await deleteNamedSelection(named.value);await updateNamed();
   }
-  panel.append(summary,intro,modes,showSelectionLabel,tools,autoTools,actions,saveArea,status);host.append(panel);
+  panel.append(summary,intro,modes,showSelectionLabel,fingerLabel,tools,autoTools,actions,saveArea,status);host.append(panel);
   panel.addEventListener('toggle',()=>{if(panel.open)void updateNamed();});
   function refresh(){
     for(const [name,button] of shapeButtons){button.setAttribute('aria-pressed',String(tool===name));}
@@ -354,7 +357,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   // Intercept only while intentionally entering a selection gesture. In all other
   // cases brush, pen, touch navigation and pointer capture remain untouched.
   document.addEventListener('pointerdown',event=>{
-    if(!tool||!source()||!viewport||!(event.target instanceof Element)||!event.target.closest('.surface')||
+    if(!tool||(!allowFinger.checked&&event.pointerType==='touch')||
+      (drawing!==null&&event.pointerId!==drawing.pointer)||!source()||!viewport||
+      !(event.target instanceof Element)||!event.target.closest('.surface')||
       event.target.closest('button,input,select,textarea,[contenteditable],.c05-reference-frame')||
       event.button!==0)return;
     event.preventDefault();event.stopImmediatePropagation();
@@ -400,7 +405,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   return {
     active:()=>active,
     documentChanged,
-    updateView:()=>visual?.updateView(),
+    updateView:()=>{visual?.updateView();overlayPath();},
     refresh,
     clear:()=>{job++;publish(null);},
     shiftActive:(dx,dy)=>{if(active)publish(translateSelection(active,dx,dy));},
@@ -416,10 +421,6 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       publish(imported,false);
       await updateNamed();
     },
-    applyRectangle:rect=>{
-      const doc=source();if(!doc)return;
-      publish(combineSelection(active,
-        rasterizeSelection({type:'rectangle',...rect},doc.width,doc.height),mode.value as CombineMode));
-    }
+    applyRectangle:rect=>{if(source())applyShape({type:'rectangle',...rect});}
   };
 }
