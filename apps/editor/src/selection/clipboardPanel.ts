@@ -5,6 +5,7 @@ type Actions=Readonly<{
   canEdit:()=>boolean;
   hasSelection:()=>boolean;
   copy:(merged:boolean,selection:boolean)=>Promise<void>;
+  copyGroup:()=>Promise<void>;
   cut:()=>Promise<void>;
   paste:(placement:'center'|'original')=>Promise<void>;
   exportPng:()=>Promise<void>;
@@ -37,6 +38,7 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   };
   make('c06CopySelection','選択範囲をコピー',()=>actions.copy(false,true));
   make('c06CopyLayer','レイヤー全体をコピー',()=>actions.copy(false,false));
+  make('c06CopyGroup','現在のグループをコピー',actions.copyGroup);
   make('c06CopyMerged','見えている絵をコピー',()=>actions.copy(true,false));
   make('c06CopyMergedSelection','選択範囲の見た目をコピー',()=>actions.copy(true,true));
   make('c06CutSelection','選択範囲を切り取る',actions.cut);
@@ -58,8 +60,9 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
       (id==='c06CopySelection'||id==='c06CopyMergedSelection'||id==='c06CutSelection')&&!selected
     )||((id==='c06Paste'||id==='c06PasteInPlace'||id==='c06CopyPng'||id==='c06SystemCopy')&&!has);
     const current=clipboard.summary;
+    if(current?.group){buttons.get('c06CopyPng')!.disabled=true;buttons.get('c06SystemCopy')!.disabled=true;}
     description.textContent=current?
-      'コピー済み：'+current.name+' · '+current.width+'×'+current.height+'px'+(current.selected?' · 選択範囲':''):
+      'コピー済み：'+current.name+' · '+current.width+'×'+current.height+'px'+(current.selected?' · 選択範囲':current.editable?` · 編集できるレイヤー ${current.editable} 枚`:''):
       'まだコピーした画像はありません。';
   }
   panel.append(summary,intro,commands,imageFile,description,message);host.append(panel);

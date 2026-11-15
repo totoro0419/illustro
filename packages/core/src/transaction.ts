@@ -54,6 +54,42 @@ export class DocumentTransaction{
     this.seedRasterPixels(id,pixels);
     return id;
   }
+  pasteRasterLayers(referenceId:LayerId,entries:readonly Readonly<{
+    layer:LayerNode;pixels:Uint8Array|Uint8ClampedArray;mask?:LayerMask|null;
+  }>[],groups:readonly LayerGroup[]){
+    this.open();
+    if(!entries.length)throw new Error('貼り付けるレイヤーがありません。');
+    const parent=this.rootValue.groupsForLayer(referenceId)[0];
+    if(parent){
+      const members=new Set(parent.members);
+      referenceId=[...this.rootValue.rootLayerIds].reverse().find(id=>members.has(id))??referenceId;
+    }
+    const ids=new Map<LayerId,LayerId>();
+    for(const {layer,pixels,mask} of entries){
+      const id=this.addRasterSnapshotAbove(referenceId,pixels,layer.name,false,false);
+      const clipSourceId=layer.clipSourceId?ids.get(layer.clipSourceId):undefined;
+      this.meta(id,{
+        visible:layer.visible,opacity:layer.opacity,locked:layer.locked,
+        colorTag:layer.colorTag??null,positionLocked:layer.positionLocked??false,
+        contentLocked:layer.contentLocked??false,alphaLocked:layer.alphaLocked??false,
+        vectorMask:validateLayerMask(mask),blend:layer.blend??null,clipSourceId:clipSourceId??null
+      });
+      ids.set(layer.id,id);
+      referenceId=id;
+    }
+    if(groups.length){
+      const makeId=this.doc._internal(CORE_INTERNAL).ids;
+      this.editGroups('paste',referenceId,[...this.rootValue.layerGroups,...groups.map(group=>({
+        ...group,id:makeId.layer(),
+        members:group.members.map(member=>{
+          const id=ids.get(member);
+          if(!id)throw new Error('コピーしたグループのレイヤーが見つかりません。');
+          return id;
+        })
+      }))]);
+    }
+    return referenceId;
+  }
   replaceLayerRaster(id:LayerId,pixels:Uint8Array|Uint8ClampedArray,source?:RevisionId){
     this.open();
     if(this.slotsValue.length)throw new Error('Replace layer pixels as a standalone operation');

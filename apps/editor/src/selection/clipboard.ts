@@ -1,4 +1,5 @@
 /** C06 copy/cut/paste operating on real document pixels and history. */
+import {transformLayerMask,type LayerNode,type LayerGroup} from '@illustro/core';
 import type {EditorController} from '../controller';
 import type {BrushSurface} from '../brushSurface';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
@@ -10,6 +11,7 @@ export type ClipboardItem=Readonly<{
   sourceDocumentId:string;sourceColorProfile:string;sourceName:string;
   originX:number;originY:number;width:number;height:number;
   selected:boolean;merged:boolean;pixels:Uint8ClampedArray;
+  editable?:Readonly<{layers:readonly Readonly<{layer:LayerNode;pixels:Uint8Array}>[];groups:readonly LayerGroup[]}>;
 }>;
 const safeRect=(selection:SelectionRect|null,width:number,height:number)=>{
   const x0=Math.max(0,Math.min(width,Math.ceil(selection?.x??0)));
@@ -34,21 +36,36 @@ export class ArtworkClipboard {
   get hasContent(){return this.item!==null;}
   get summary(){return this.item?{
     name:this.item.sourceName,width:this.item.width,height:this.item.height,
-    sourceDocumentId:this.item.sourceDocumentId,selected:this.item.selected,merged:this.item.merged
+    sourceDocumentId:this.item.sourceDocumentId,selected:this.item.selected,merged:this.item.merged,editable:this.item.editable?.layers.length??0,group:this.item.editable?.groups.length!==0&&!!this.item.editable
   }:null;}
   clear(){this.item=null;}
-  async copy(controller:EditorController,drawing:BrushSurface,opts:Readonly<{merged:boolean;selectionOnly:boolean}>){
+  async copy(controller:EditorController,drawing:BrushSurface,opts:Readonly<{merged:boolean;selectionOnly:boolean;group?:boolean}>){
     const document=controller.document,root=document.root,head=document.head;
     const selection=opts.selectionOnly?drawing.selectedRectangle:null;
     if(opts.selectionOnly&&!selection)throw Error('先に選択範囲を作成してください。');
     const area=safeRect(selection,root.width,root.height);
-    let source:Uint8Array|Uint8ClampedArray;
+    let source:Uint8Array|Uint8ClampedArray,editable:ClipboardItem['editable'];
+    const selectedLayer=controller.selectedLayer;
+    const group=opts.group?root.groupsForLayer(selectedLayer.id).at(-1):undefined;
+    if(opts.group&&!group)throw Error('コピーするグループ内のレイヤーを選んでください。');
     if(opts.merged){
       source=await renderFrozenArtwork(captureExport(document));
     }else{
-      const layer=controller.selectedLayer;
+      const layer=selectedLayer;
       if(layer.kind!=='raster')throw Error('このレイヤーは画素のコピーに対応していません。');
-      const captured=await drawing.captureDocumentLayers(new Set([layer.id]));
+      const ids=new Set(group?.members??[layer.id]);
+      const captured=await drawing.captureDocumentLayers(ids);
+      if(!selection&&layer.baseColor!=='white'){
+        const layers=root.rootLayerIds.filter(id=>ids.has(id)).map(id=>{
+          const pixels=captured.get(id);
+          if(!pixels)throw Error('コピーするレイヤーを読み込めませんでした。');
+          return {layer:root.getLayer(id),pixels};
+        });
+        const groups=group?root.layerGroups.filter(candidate=>
+          candidate.members.every(id=>ids.has(id))&&root.layerGroups.indexOf(candidate)>=root.layerGroups.indexOf(group)
+        ):[];
+        editable={layers,groups};
+      }
       const pixels=captured.get(layer.id);
       if(!pixels)throw Error('レイヤーを読み込めませんでした。');
       source=pixels;
@@ -57,12 +74,12 @@ export class ArtworkClipboard {
     const masked=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height&&selection
       ?await runMaskedPixelJob(source,this.selectionMask,'copy'):source;
     if(document.head!==head)throw Error('コピー中に作品が変更されました。');
-    const pixels=crop(masked,root.width,area);
+    const pixels=group?new Uint8ClampedArray(0):crop(masked,root.width,area);
     const record:ClipboardItem={
       sourceDocumentId:root.documentId,sourceColorProfile:root.colorProfileId,
-      sourceName:opts.merged?'合成した作品':controller.selectedLayer.name,
+      sourceName:opts.merged?'合成した作品':group?.name??selectedLayer.name,
       originX:area.x,originY:area.y,width:area.width,height:area.height,
-      selected:!!selection,merged:opts.merged,pixels
+      selected:!!selection,merged:opts.merged,pixels,...(editable?{editable}:{})
     };
     this.item=record;
     return record;
@@ -117,11 +134,36 @@ export class ArtworkClipboard {
     const document=controller.document,root=document.root;
     if(record.sourceColorProfile!==root.colorProfileId)
       throw Error('元作品と色空間が異なります。色変換はC15の機能を使ってください。');
-    if(record.sourceDocumentId!=='external-image'&&record.sourceDocumentId!==root.documentId&&
+    if(!record.editable&&record.sourceDocumentId!=='external-image'&&record.sourceDocumentId!==root.documentId&&
       !window.confirm('別の作品から貼り付けます。現段階では画素だけを新しいレイヤーへ移し、元のブラシ履歴・特殊なレイヤー設定は移せません。続けますか？'))
       throw Error('別作品への貼り付けを取り消しました。');
     const x=placement==='original'?record.originX:Math.round((root.width-record.width)/2);
     const y=placement==='original'?record.originY:Math.round((root.height-record.height)/2);
+    if(record.editable){
+      if(x<0||y<0||x+record.width>root.width||y+record.height>root.height)
+        throw Error('編集できるレイヤーを保つには、元作品と同じ大きさ以上のキャンバスに貼り付けてください。');
+      const ids=new Set(record.editable.layers.map(entry=>entry.layer.id));
+      const clipLoss=record.editable.layers.some(({layer})=>layer.clipSourceId&&!ids.has(layer.clipSourceId));
+      const detached=clipLoss?'別のレイヤーへのクリッピングは、元になるレイヤーがコピーに含まれないため引き継げません。':'';
+      if(!window.confirm(`レイヤー ${ids.size} 枚を位置 (${x}, ${y}) に貼り付けます。レイヤーの設定とマスクを保持します。元作品の編集履歴は含みません。${detached}`))
+        throw Error('貼り付けを取り消しました。');
+      const entries=record.editable.layers.map(({layer,pixels})=>{
+        if(x===0&&y===0&&record.width===root.width&&record.height===root.height){
+          return {layer,pixels,mask:layer.vectorMask??null};
+        }
+        const placed=new Uint8Array(root.width*root.height*4);
+        for(let row=0;row<record.height;row++){
+          const start=row*record.width*4;
+          placed.set(pixels.subarray(start,start+record.width*4),((row+y)*root.width+x)*4);
+        }
+        return {layer,pixels:placed,mask:layer.vectorMask?transformLayerMask(layer.vectorMask,1,1,x,y):null};
+      });
+      const tx=document.begin('編集できるレイヤーを貼り付ける');
+      const id=tx.pasteRasterLayers(controller.selectedLayer.id,entries,record.editable.groups);
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      controller.selectLayer(id);
+      return {revision:document.head,layerId:id,x,y};
+    }
     if(x>=root.width||y>=root.height||x+record.width<=0||y+record.height<=0)
       throw Error('元の座標では画像がキャンバスの外に出ます。中央に貼り付けてください。');
     if((x<0||y<0||x+record.width>root.width||y+record.height>root.height)&&
@@ -183,6 +225,7 @@ export class ArtworkClipboard {
   async makePng():Promise<Blob>{
     const item=this.item;
     if(!item)throw Error('コピーした内容がありません。');
+    if(!item.pixels.length)throw Error('グループを画像にするには、見えている絵をコピーしてください。');
     const canvas=document.createElement('canvas');canvas.width=item.width;canvas.height=item.height;
     const context=canvas.getContext('2d');
     if(!context)throw Error('画像を作成できません。');

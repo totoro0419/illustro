@@ -3301,6 +3301,9 @@ c06ClipboardUI=installClipboardPanel({
   copy:(merged,selection)=>withClipboardAccess(async drawing=>{
     await c06Clipboard.copy(controller,drawing,{merged,selectionOnly:selection});return 'read';
   }),
+  copyGroup:()=>withClipboardAccess(async drawing=>{
+    await c06Clipboard.copy(controller,drawing,{merged:false,selectionOnly:false,group:true});return 'read';
+  }),
   cut:()=>withClipboardAccess(async drawing=>{
     await c06Clipboard.cut(controller,drawing);return 'edit';
   }),
