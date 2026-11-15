@@ -143,8 +143,8 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     try{
       const meta=JSON.parse(read(PIN_KEY)||'null') as PinState|null;
       return {
-        names:Array.from({length:SLOT_COUNT},(_,i)=>typeof meta?.names?.[i]==='string'?meta.names[i]!.slice(0,28):''),
-        groups:Array.from({length:SLOT_COUNT},(_,i)=>typeof meta?.groups?.[i]==='string'?meta.groups[i]!.slice(0,22):''),
+        names:Array.from({length:SLOT_COUNT},(_,i)=>{const value=meta?.names?.[i];return typeof value==='string'?value.slice(0,28):'';}),
+        groups:Array.from({length:SLOT_COUNT},(_,i)=>{const value=meta?.groups?.[i];return typeof value==='string'?value.slice(0,22):'';}),
       };
     }catch{return {names:Array(SLOT_COUNT).fill('') as string[],groups:Array(SLOT_COUNT).fill('') as string[]};}
   })();
