@@ -17,6 +17,7 @@ import {installCommandPalette} from './ui/commandPalette';
 import {installWorkspaceProfiles} from './ui/workspaceProfiles';
 import {installFloatingPanels} from './ui/floatingPanels';
 import {installInputDeviceProfiles,readPointerRoles} from './ui/inputDeviceProfiles';
+import {installEditorHelp} from './ui/help';
 import {installShortcutSettings} from './ui/shortcutSettings';
 import {installFocusMode} from './ui/focusMode';
 import './ui/c04.css';
@@ -3139,6 +3140,7 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 // C04 command entries forward to the installed real controls; do not duplicate their logic.
 installFocusMode();
 const c04Commands=installCommandPalette(shellUi);
+installEditorHelp();
 const c04FloatingPanels=installFloatingPanels();
 installWorkspaceProfiles(c04FloatingPanels);
 installInputDeviceProfiles(()=>surface);
