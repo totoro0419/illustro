@@ -39,6 +39,37 @@ export class CoreDocument{
   get commitSequence(){return this.commitSequenceValue;}get canonicalBlockCount(){return this.storeValue.blockCount;}get canonicalRasterBytes(){return this.storeValue.allocatedBytes;}
   begin(label:string){return new DocumentTransaction(this,label);}
   addRasterLayerAbove(referenceId:LayerId){const tx=this.begin('Add raster layer'),layerId=tx.addRasterLayerAbove(referenceId),receipt=tx.commit();return Object.freeze({layerId,receipt});}
+  historyCleanupCandidates(){
+    const state=this.historyValue.snapshot(),keep=this.retainedHistoryIds(state);
+    return this.historyEntries().filter(entry=>!keep.has(entry.id));
+  }
+  private retainedHistoryIds(state:ReturnType<RevisionHistory<DocumentRoot>['snapshot']>){
+    const all=new Map(state.revisions.map(revision=>[revision.id,revision] as const)),keep=new Set<RevisionId>();
+    const pending=[state.head,...state.redoIds];
+    for(const revision of state.revisions){
+      if(revision.command?.operations.some(operation=>operation.kind==='document.pin-revision'||operation.kind==='document.history-restore')){
+        pending.push(revision.id);
+      }
+    }
+    while(pending.length){
+      const id=pending.pop()!;
+      if(keep.has(id))continue;
+      const revision=all.get(id);
+      if(!revision)throw new Error('履歴の参照先が見つかりません。');
+      keep.add(id);
+      pending.push(...revision.parentIds);
+      for(const operation of revision.command?.operations??[])pending.push(...operation.sourceRevisionIds);
+    }
+    return keep;
+  }
+  forkCopy(name:string,removeDetachedHistory=false){
+    const state=this.historyValue.snapshot(),keep=removeDetachedHistory?this.retainedHistoryIds(state):null;
+    const history=keep?{...state,revisions:state.revisions.filter(revision=>keep.has(revision.id))}:state;
+    const snapshot=captureCoreSnapshot(history,this.storeValue,state.head),documentId=this.idsValue.document();
+    const title=validateDocumentInfo({...this.root.info,name}).name;
+    const revisions=snapshot.revisions.map(revision=>Object.freeze({...revision,root:Object.freeze({...revision.root,documentId,...(revision.id===this.head?{name:title}:{})})}));
+    return CoreDocument.restore({snapshot:{...snapshot,revisions},blockPayloads:this.persistenceBlockPayloads(snapshot)});
+  }
   undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}
   historyEntries(){
     return this.historyValue.snapshot().revisions.map(({id,parentIds,command,committedAt})=>{

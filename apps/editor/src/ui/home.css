@@ -289,3 +289,7 @@ body[data-app-mode="production"] .workspace-box[data-box-id="right.document"] [d
 
 .ih-works-controls{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
 @media(max-width:600px){.ih-works-controls{justify-content:flex-start}.ih-works-bar{align-items:flex-start;flex-direction:column;gap:10px}.ih-debug-reset{width:100%}}
+
+.ih-recovery-item h2 { margin: 0; font-size: 1rem; }
+.ih-recovery-item div { display: flex; flex-wrap: wrap; gap: .4rem; }
+.ih-recovery-preview { width: min(160px, 100%); height: auto; }

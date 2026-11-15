@@ -17,6 +17,7 @@ export type HomeActions = Readonly<{
   deleteWork:(id:string)=>Promise<void>;
   resetWorks:()=>Promise<void>;
   openFile: ()=>void;
+  previewRecovery?: (documentId:string,writerEpochId:string)=>Promise<Blob>;
   resume: (documentId:string,writerEpochId:string)=>Promise<boolean|'cancelled'>;
   prepareHome: ()=>Promise<boolean>;
   hasDocument: ()=>boolean;
@@ -245,16 +246,56 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   const showRename=(work:WorkEntry)=>{renamedWork=work;rename.querySelector<HTMLInputElement>('input')!.value=work.name;rename.querySelector('p')!.textContent='';rename.showModal();rename.querySelector<HTMLInputElement>('input')!.focus();};
   rename.querySelector<HTMLButtonElement>('button[type=button]')!.onclick=()=>rename.close();
   rename.querySelector('form')!.onsubmit=event=>{event.preventDefault();if(!renamedWork)return;const work=renamedWork,button=rename.querySelector<HTMLButtonElement>('button[type=submit]')!;void run(async()=>{try{await actions.renameWork(work.documentId,rename.querySelector<HTMLInputElement>('input')!.value);rename.close();await loadWorks();}catch(error){rename.querySelector('p')!.textContent=error instanceof Error?error.message:String(error);}},button);};
-  const showRecovery=()=>{void run(async()=>{
-    const last=works.find(x=>x.documentId===lastWorkId),newer=last?recovery.filter(x=>x.documentId===last.documentId&&x.writerEpochId!==last.writerEpochId&&x.updatedAt>last.updatedAt):recovery;
-    if(last&&!newer.length){if(await actions.openWork(last.documentId))navigate('editor');return;}
+  const recoveryPreviewUrls=new Set<string>();
+  const showRecovery=(continueLast=false)=>{void run(async()=>{
+    const last=works.find(x=>x.documentId===lastWorkId);
+    const newer=last?recovery.filter(x=>x.documentId===last.documentId&&x.writerEpochId!==last.writerEpochId&&x.updatedAt>last.updatedAt):recovery;
+    if(continueLast&&last&&!newer.length){if(await actions.openWork(last.documentId))navigate('editor');return;}
     const list=el('ihRecoveryList');list.replaceChildren();
-    if(last){const button=document.createElement('button');button.type='button';button.className='ih-recovery-item';button.textContent=last.name+' — マイ作品の保存から続ける';button.onclick=()=>void run(async()=>{if(await actions.openWork(last.documentId))navigate('editor');},button);list.append(button);}
-    const valid=newer.filter(x=>{try{return BigInt(x.protectedThrough)>0n;}catch{return false;}});
-    if(!valid.length&&!last){const empty=document.createElement('p');empty.textContent='復元できる作業はありません。新しい作品から描き始められます。';list.append(empty);}
-    for(const item of valid){const button=document.createElement('button');button.type='button';button.className='ih-recovery-item';
-      button.textContent=(item.title||'名前のない作品')+' · '+new Date(item.updatedAt).toLocaleString('ja-JP')+' — 作業途中から復元';
-      button.onclick=()=>void run(async()=>{if(await actions.resume(item.documentId,item.writerEpochId)===true)navigate('editor');},button);list.append(button);
+    for(const url of recoveryPreviewUrls)URL.revokeObjectURL(url);
+    recoveryPreviewUrls.clear();
+    if(last){
+      const button=document.createElement('button');button.type='button';button.className='ih-recovery-item';
+      button.textContent=last.name+' — マイ作品の保存から続ける';
+      button.onclick=()=>void run(async()=>{if(await actions.openWork(last.documentId))navigate('editor');},button);
+      list.append(button);
+    }
+    const valid=continueLast?newer:recovery;
+    if(!valid.length&&!last){
+      const empty=document.createElement('p');empty.textContent='復元できる作業はありません。';list.append(empty);
+    }
+    for(const item of valid){
+      const card=document.createElement('section'),title=document.createElement('h2');
+      const status=document.createElement('p'),actionsRow=document.createElement('div');
+      const button=document.createElement('button');button.type='button';button.className='ih-quiet-button';
+      card.className='ih-recovery-item';
+      title.textContent=item.title||'名前のない作品';
+      const date=item.updatedAt?new Date(item.updatedAt).toLocaleString('ja-JP'):'時刻不明';
+      status.textContent=date+' · 記録 '+item.protectedThrough+'件。プレビューで復元内容を確認できます。';
+      status.setAttribute('aria-live','polite');
+      button.textContent='復元コピーを開く';
+      button.onclick=()=>void run(async()=>{if(await actions.resume(item.documentId,item.writerEpochId)===true)navigate('editor');},button);
+      if(actions.previewRecovery){
+        const preview=document.createElement('button');preview.type='button';preview.className='ih-quiet-button';
+        preview.textContent='プレビューを確認';
+        preview.onclick=()=>void run(async()=>{
+          status.textContent=date+' · 復元内容を読み込んでいます。';
+          try{
+            const blob=await actions.previewRecovery!(item.documentId,item.writerEpochId);
+            if(!card.isConnected)return;
+            const image=new Image(),url=URL.createObjectURL(blob);
+            recoveryPreviewUrls.add(url);
+            image.src=url;image.alt=title.textContent+'の復元プレビュー';image.className='ih-recovery-preview';
+            card.insertBefore(image,actionsRow);
+            status.textContent=date+' · 復元内容を読み込めました。';
+            preview.remove();
+          }catch{
+            if(card.isConnected)status.textContent=date+' · プレビューを作成できませんでした。';
+          }
+        },preview);
+        actionsRow.append(preview);
+      }
+      actionsRow.append(button);card.append(title,status,actionsRow);list.append(card);
     }
     navigate('recovery');
   });};
@@ -270,7 +311,7 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
 
   setButton('ihBrand',()=>void showHome());setButton('ihNavHome',()=>void showHome());setButton('ihNavWorks',()=>navigate('works'));
   setButton('ihNavSettings',()=>navigate('settings'));setButton('ihStart',()=>showNew());setButton('ihWorks',()=>navigate('works'));
-  setButton('ihContinue',showRecovery);setButton('ihReturnEditor',()=>navigate('editor'));
+  setButton('ihContinue',()=>showRecovery(true));setButton('ihReturnEditor',()=>navigate('editor'));
   setButton('ihWorksStart',()=>showNew());setButton('ihSettingsEditor',()=>actions.hasDocument()?navigate('editor'):showNew());
   setButton('ihFeaturePrev',()=>chooseTrivia(featureIndex-1));setButton('ihFeatureNext',()=>chooseTrivia(featureIndex+1));
   setButton('ihFeatureVisual',showFeature);setButton('ihFeatureMore',showFeature);

@@ -97,3 +97,5 @@ details p{font-size:13px}
 
 #layerPage{overflow-y:auto}
 #layerPageList{flex:1 0 120px;min-height:120px}
+
+.history-cleanup-list { max-height: 25dvh; overflow: auto; }

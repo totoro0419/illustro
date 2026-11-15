@@ -6,6 +6,11 @@ import type {DecodedPortableFile,PortableManifestSection} from './format';
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './projectionCache';
 import {cloneProjectionTiles} from './projectionTransfer';
 
+export class ExternalFileConflict extends Error{
+  constructor(readonly changedFile:File){
+    super('保存先のファイルが別の画面やアプリで更新されています。');
+  }
+}
 type WorkerReply={id:number;ok:boolean;result?:unknown;error?:string};
 export type Candidate=Readonly<{documentId:string;writerEpochId:string;title:string;protectedThrough:string;updatedAt:number;savedRevisionId:string|null;lastGood:boolean;previousGood:boolean}>;
 export type PersistenceState=Readonly<{
@@ -69,11 +74,11 @@ export class PersistenceCoordinator{
   async retry(){this.cancelIdle();await this.drain();if(this.queue.length)throw new Error(this.stateValue.storageError??'保存に失敗しました。');if(this.controller){const d=this.controller.document;await this.request('set-head',{revisionId:d.head,name:d.root.name,width:d.root.width,height:d.root.height,previewLayers:previewLayersFor(d,d.head)});}this.patch({storageError:null});}
   clearFileDestination(){this.fileHandle=null;this.externalFingerprint=null;}
   async listRecoveryCandidates():Promise<readonly Candidate[]>{const result=await this.request('list-recovery',{}) as any;this.applyStorage(result.storage);if(result.backend)this.patch({backend:String(result.backend)});return Object.freeze((Array.isArray(result.candidates)?result.candidates:[]) as Candidate[]);}
-  async recover(candidate:Candidate){
+  async recover(candidate:Candidate,preview=false){
     const started=performance.now(),result=await this.request('load-recovery',{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}) as any,blocks=new Map<string,Uint8Array>();
     for(const item of result.blocks as {id:string;bytes:Uint8Array}[])blocks.set(item.id,item.bytes);
     const document=CoreDocument.restore({snapshot:result.snapshot,blockPayloads:blocks}),selected=document.root.rootLayerIds[0];if(!selected)throw new Error('回復した作品にレイヤーがありません。');
-    const controller={document,selectedLayerId:selected},projectionCache=isProjectionCache(result.projectionCache)?result.projectionCache:undefined;this.patch({recoveryDurationMs:performance.now()-started,recovered:true});return Object.freeze({document,selectedLayerId:selected,savedRevision:(candidate.savedRevisionId&&document.hasRevision(candidate.savedRevisionId as RevisionId)?candidate.savedRevisionId as RevisionId:null),projectionCache});
+    const controller={document,selectedLayerId:selected},projectionCache=isProjectionCache(result.projectionCache)?result.projectionCache:undefined;if(!preview)this.patch({recoveryDurationMs:performance.now()-started,recovered:true});return Object.freeze({document,selectedLayerId:selected,savedRevision:(candidate.savedRevisionId&&document.hasRevision(candidate.savedRevisionId as RevisionId)?candidate.savedRevisionId as RevisionId:null),projectionCache});
   }
   async reloadLastGood(candidate?:Pick<Candidate,'documentId'|'writerEpochId'>){const payload=candidate?{documentId:candidate.documentId,writerEpochId:candidate.writerEpochId}:{};const raw=await this.request('load-last-good',payload) as any;return this.decodePortable(raw.bytes as Uint8Array);}
   async decodePortable(bytes:Uint8Array):Promise<PortableOpenResult>{
@@ -84,7 +89,7 @@ export class PersistenceCoordinator{
   async save(document:CoreDocument,selectedLayerId:LayerId,forceSaveCopy=false,pending?:Promise<RevisionId>){
     if(this.stateValue.saving)throw new Error('保存中です。');
     const existingHandle=this.fileHandle,previousFingerprint=this.externalFingerprint,preserved=this.preserved;
-    const suggestedName=safeFileName(document.root.name)+'.illustro',started=performance.now();
+    const suggestedName=safeFileName(document.root.name)+(forceSaveCopy?'（コピー）':'')+'.illustro',started=performance.now();
     this.patch({saving:true});
     try{
       const w=window as AnyWindow;
@@ -153,7 +158,7 @@ export class PersistenceCoordinator{
   private async writeExternal(handle:unknown,bytes:Uint8Array,expectedFingerprint:string|null){
     type Writable={write:(b:Blob|BufferSource|string)=>Promise<void>;truncate?:(size:number)=>Promise<void>;close:()=>Promise<void>;abort?:()=>Promise<void>};
     const h=handle as {getFile:()=>Promise<File>;createWritable:(options?:{keepExistingData?:boolean})=>Promise<Writable>};if(!h?.getFile||!h?.createWritable)throw new Error('保存先を使用できません。');
-    if(expectedFingerprint){const current=await fingerprintHandle(handle);if(current!==expectedFingerprint&&!confirm('保存先のファイルが外部で変更されています。上書きしますか？\nキャンセルした場合は「別名保存」を使えます。'))throw new Error('外部変更を検出したため上書きを中止しました。');}
+    if(expectedFingerprint&&await fingerprintHandle(handle)!==expectedFingerprint)throw new ExternalFileConflict(await h.getFile());
     const stable=bytes.slice(),writable=await h.createWritable({keepExistingData:false});
     try{
       await writable.truncate?.(0);

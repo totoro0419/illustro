@@ -30,7 +30,7 @@ export type PersistedRevision=Readonly<{
 }>;
 export type PersistedBlockDescriptor=Readonly<{id:string;descriptor:RasterBlockDescriptor}>;
 export type CorePersistenceSnapshotV1=Readonly<{
-  schema:'illustro.core.snapshot';schemaVersion:1;snapshotRevisionId:string;revisions:readonly PersistedRevision[];blocks:readonly PersistedBlockDescriptor[];
+  schema:'illustro.core.snapshot';schemaVersion:1;snapshotRevisionId:string;redoIds?:readonly string[];revisions:readonly PersistedRevision[];blocks:readonly PersistedBlockDescriptor[];
 }>;
 
 export function captureCoreSnapshot(history:RevisionHistoryState<DocumentRoot>,store:CanonicalTileStore,targetRevisionId:RevisionId):CorePersistenceSnapshotV1{
@@ -41,7 +41,7 @@ export function captureCoreSnapshot(history:RevisionHistoryState<DocumentRoot>,s
   visit(targetRevisionId);for(const revision of history.revisions)visit(revision.id);if(ordered.length>MAX_REVISIONS)throw new Error('too many retained revisions');
   const blockIds=new Set<BlockId>();const revisions=ordered.map(revision=>serializeRevision(revision,blockIds));
   const blocks=Object.freeze([...blockIds].sort().map(id=>Object.freeze({id,descriptor:store.descriptor(id)})));
-  return Object.freeze({schema:'illustro.core.snapshot' as const,schemaVersion:1 as const,snapshotRevisionId:targetRevisionId,revisions:Object.freeze(revisions),blocks});
+  return Object.freeze({schema:'illustro.core.snapshot' as const,schemaVersion:1 as const,snapshotRevisionId:targetRevisionId,...(targetRevisionId===history.head&&history.redoIds.length?{redoIds:history.redoIds}:{}),revisions:Object.freeze(revisions),blocks});
 }
 
 export function blockPayloadsForSnapshot(snapshot:CorePersistenceSnapshotV1,store:CanonicalTileStore){
@@ -73,7 +73,16 @@ export function parseCoreSnapshot(value:unknown,blockPayloads:ReadonlyMap<string
     validateMutationRefs(revision.root,operationKeys,blockDescriptors);
   }
   const target=revisions.find(revision=>revision.id===snapshotRevisionId)!;const first=target.root.rootLayerIds[0];if(!first)throw new Error('document has no layer');
-  const history=Object.freeze({revisions:Object.freeze(revisions),head:snapshotRevisionId,redoIds:Object.freeze([])}) as RevisionHistoryState<DocumentRoot>;
+  const redoIds=raw.redoIds;
+  if(redoIds!==undefined&&(!Array.isArray(redoIds)||redoIds.length>revisions.length))throw new Error('invalid redo history');
+  const redo=(redoIds??[]).map(value=>uuid(value,'redo revision') as RevisionId);
+  const revisionsById=new Map(revisions.map(revision=>[revision.id,revision]));
+  let parent=snapshotRevisionId;
+  for(const id of [...redo].reverse()){
+    if(revisionsById.get(id)?.parentIds[0]!==parent)throw new Error('redo history is not a continuation');
+    parent=id;
+  }
+  const history=Object.freeze({revisions:Object.freeze(revisions),head:snapshotRevisionId,redoIds:Object.freeze(redo)}) as RevisionHistoryState<DocumentRoot>;
   return Object.freeze({history,defaultRasterLayerId:first,documentId:target.root.documentId});
 }
 
@@ -290,7 +299,7 @@ export function mergeCoreRecovery(baseValue:unknown,packetValues:readonly unknow
     latest=packet.revision.id;
   }
   const selectedHead=headRevisionId&&revisionMap.has(headRevisionId)?headRevisionId:latest;
-  return Object.freeze({schema:'illustro.core.snapshot' as const,schemaVersion:1 as const,snapshotRevisionId:selectedHead,revisions:Object.freeze(revisions),blocks:Object.freeze(blocks)});
+  return Object.freeze({schema:'illustro.core.snapshot' as const,schemaVersion:1 as const,snapshotRevisionId:selectedHead,...(!packetValues.length&&selectedHead===base.snapshotRevisionId&&base.redoIds?{redoIds:base.redoIds}:{}),revisions:Object.freeze(revisions),blocks:Object.freeze(blocks)});
 }
 
 function parseRecoveryPacket(value:unknown):CoreRecoveryPacketV1{

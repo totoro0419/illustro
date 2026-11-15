@@ -32,7 +32,7 @@ import './ui/brushEditor.css';
 import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
 import {captureExport,compositeLayer,exportImage,exportFileName,renderFrozenArtwork,type ImageFormat,type ImageExportResult} from './export/basicExport';
-import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
+import {ExternalFileConflict,PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
 import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerId} from '@illustro/core';
@@ -188,7 +188,7 @@ function matchedBlankWarmup(width:number,height:number,name:string,background:'t
 let thumbnailTimer:number|null=null,thumbnailInProgress=false,thumbnailRetryCount=0;
 let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thumbnailRepairSkipped=new Set<string>();
 
-document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};byId('saveState').after(retry);}
+document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};const rescue=document.createElement('button');rescue.type='button';rescue.id='rescueWorkSave';rescue.textContent='作品ファイルに救出';rescue.hidden=true;rescue.onclick=()=>{void saveWork(true);};byId('saveState').after(retry,rescue);}
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
 const layerTagNames:Record<LayerColorTag,string>={
@@ -1036,6 +1036,8 @@ function updatePersistenceDisplay(){
   if(!state){indicator.textContent='自動保存準備中';return;}
   indicator.textContent=state.storageError?'保存できません・再試行してください':inputPending||state.protectionPending||state.queueLength>0?'アプリ内に保存中':qaMode?'自動保存済み':documentReady?'アプリ内に保存済み':'作品はまだ開かれていません';
   const retry=document.getElementById('retryWorkSave');if(retry)retry.hidden=!state.storageError;
+  const rescue=document.getElementById('rescueWorkSave');if(rescue)rescue.hidden=!state.storageError||!documentReady;
+  if(state.storageError&&state.queueLength)indicator.textContent='保存待ち '+state.queueLength+'件。再試行または作品ファイルに救出できます。';
   indicator.dataset.autosavePending=String(inputPending||state.protectionPending||state.queueLength>0);indicator.dataset.saving=String(state.saving||librarySaving);indicator.dataset.protectedThrough=state.protectedThrough;
   const homeSaveState=document.getElementById('ihHomeSaveState');
   if(homeSaveState){
@@ -1732,7 +1734,7 @@ function loadHistoryUndoLimit(artwork:CoreDocument){
     if(stored!==null)artwork.setHistoryUndoLimit(Number(stored));
   }catch{}
 }
-function createHistorySettings(artwork:CoreDocument,entries:ReturnType<CoreDocument['historyEntries']>){
+function createHistorySettings(artwork:CoreDocument,entries:ReturnType<CoreDocument['historyEntries']>,close:()=>void){
   const details=document.createElement('details'),summary=document.createElement('summary');
   const label=document.createElement('label'),limit=document.createElement('select'),status=document.createElement('output');
   const backup=document.createElement('button'),stats=document.createElement('p');
@@ -1756,16 +1758,44 @@ function createHistorySettings(artwork:CoreDocument,entries:ReturnType<CoreDocum
     }catch{status.textContent='この設定を端末に保存できませんでした。';}
     updateHistoryButtons();
   };
-  details.append(summary,stats,label,status,backup);
+  const candidates=artwork.historyCleanupCandidates(),cleanup=document.createElement('details'),cleanupSummary=document.createElement('summary');
+  const retained=document.createElement('p'),removed=document.createElement('ul'),copy=document.createElement('button');
+  cleanupSummary.textContent='使われていない履歴を整理する（'+candidates.length+'件）';
+  retained.textContent='現在の履歴、やり直せる操作、名前付きの状態、別案、これらが参照する時点を残します。除外候補は新しいコピーだけから外れます。';
+  for(const entry of candidates){
+    const item=document.createElement('li');
+    const label=entry.label==='Brush stroke'?'描画':entry.label==='Add raster layer'?'レイヤーを追加':entry.label;
+    item.textContent=label+' · '+new Date(entry.committedAt).toLocaleString('ja-JP');
+    removed.append(item);
+  }
+  removed.className='history-cleanup-list';
+  copy.type='button';copy.textContent='整理したコピーを開く';copy.disabled=!candidates.length;
+  copy.onclick=()=>{close();void openCleanedHistory(artwork);};
+  cleanup.append(cleanupSummary,retained,removed,copy);
+  details.append(summary,stats,label,status,backup,cleanup);
   return details;
+}
+
+async function openCleanedHistory(artwork:CoreDocument){
+  if(artwork!==controller.document||!(await prepareWorkSwitch())||artwork!==controller.document)return;
+  try{
+    const selectedLayerId=controller.selectedLayerId;
+    const prepared=artwork.forkCopy(artwork.root.name.slice(0,4060)+'（履歴整理コピー）',true);
+    const preserved=persistence.preservedData??{manifestExtras:{},optionalSections:[]};
+    await activateOpened({document:prepared,selectedLayerId,preserved,generationId:'history-cleanup',snapshotRevisionId:prepared.head});
+    byId('status').textContent='整理した履歴を持つ別の作品を開きました。';
+    if(!qaMode){void refreshWorks();scheduleWorkThumbnail();}
+  }catch(error){
+    byId('status').textContent='整理したコピーを開けませんでした。'+(error instanceof Error?error.message:'');
+  }
 }
 
 function openArtworkHistory(){
   if(!documentReady)return;
   const artwork=controller.document,head=artwork.head;
   const entries=[...artwork.historyEntries()].sort((a,b)=>b.committedAt-a.committedAt);
-  const settings=createHistorySettings(artwork,entries);
   const dialog=document.createElement('dialog'),form=document.createElement('form');
+  const settings=createHistorySettings(artwork,entries,()=>dialog.close());
   const title=document.createElement('h2'),status=document.createElement('output');
   const label=document.createElement('label'),list=document.createElement('select');
   const more=document.createElement('button'),compare=document.createElement('button');
@@ -2597,6 +2627,47 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
   catch(error){const message='作品ファイルは正常ですが、表示の復元に失敗しました。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);}
   updateQa();
 };
+function showExternalSaveConflict(error:ExternalFileConflict,local:CoreDocument){
+  const dialog=document.createElement('dialog'),section=document.createElement('section'),title=document.createElement('h2');
+  const details=document.createElement('p'),status=document.createElement('output'),previews=document.createElement('div');
+  title.textContent='保存先に別の版があります';
+  details.textContent=error.changedFile.name+' · '+new Date(error.changedFile.lastModified).toLocaleString('ja-JP');
+  status.setAttribute('aria-live','polite');
+  previews.className='artwork-history-previews';
+  dialog.className='export-dialog artwork-history-dialog';dialog.setAttribute('aria-label',title.textContent);
+  const save=document.createElement('button'),compare=document.createElement('button'),close=document.createElement('button');
+  save.type=compare.type=close.type='button';
+  save.textContent='別名で保存';compare.textContent='版を見比べる';close.textContent='閉じる';
+  close.onclick=()=>dialog.close();
+  save.onclick=()=>{dialog.close();if(controller.document===local)void saveWork(true);};
+  const urls:string[]=[],views:Array<()=>void>=[];
+  compare.onclick=async()=>{
+    compare.disabled=true;status.textContent='比較画像を準備しています。';
+    try{
+      const external=await persistence.decodePortable(new Uint8Array(await error.changedFile.arrayBuffer()));
+      for(const [artwork,label] of [[local,'作業中の作品'],[external.document,'保存先の作品']] as const){
+        if(!dialog.open)return;
+        const result=await exportImage(captureExport(artwork),'png');
+        if(!dialog.open)return;
+        const url=URL.createObjectURL(result.blob);urls.push(url);
+        const view=createHistoryComparison(url,label,result.width,result.height);
+        previews.append(view.figure);views.push(view.dispose);
+      }
+      status.textContent='';
+    }catch(cause){
+      if(dialog.open)status.textContent='比較できませんでした。'+(cause instanceof Error?cause.message:'');
+    }
+  };
+  section.append(title,details,save,compare,close,status,previews);
+  dialog.append(section);document.body.append(dialog);
+  dialog.addEventListener('close',()=>{
+    for(const dispose of views)dispose();
+    for(const url of urls)URL.revokeObjectURL(url);
+    dialog.remove();
+  },{once:true});
+  dialog.showModal();
+}
+
 async function saveWork(asCopy=false){
   if(!documentReady||!surface)return;
   if(surface.inputActive&&!historyPending){
@@ -2613,6 +2684,7 @@ async function saveWork(asCopy=false){
     byId('status').textContent=asCopy?'別名の作品ファイルを保存しました。自動保存状態には影響しません。':
       '作品ファイルを保存しました（'+formatFileSize(result.byteLength)+'）。自動保存状態には影響しません。';
   }catch(error){
+    if(error instanceof ExternalFileConflict)showExternalSaveConflict(error,document);
     byId('status').textContent=error instanceof DOMException&&error.name==='AbortError'
       ?'保存をキャンセルしました。':'作品ファイルを保存できませんでした。'+(error instanceof Error?error.message:String(error));
   }
@@ -2679,10 +2751,17 @@ byId<HTMLButtonElement>('exportRun').onclick=async()=>{
 };
 
 async function recoverCandidate(candidate:Candidate):Promise<boolean>{
+  if(!qaMode&&!(await prepareWorkSwitch()))return false;
   byId('status').textContent='作業途中の状態を確認しています。';
   try{
-    const recovered=await persistence.recover(candidate),opened={document:recovered.document,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},generationId:'recovery',snapshotRevisionId:recovered.document.head,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})} as PortableOpenResult;
-    const existing=!qaMode?(await persistence.listWorks()).works.find(x=>x.documentId===opened.document.root.documentId):null;await activateOpened(opened,true,existing?.writerEpochId??null);if(!qaMode)await refreshWorks();recoveryCandidates=[];byId('status').textContent=qaMode?'自動保存された最新の作業状態へ戻しました。':'選択した作業状態へ戻しました。';
+    const recovered=await persistence.recover(candidate);
+    const artwork=qaMode?recovered.document:recovered.document.forkCopy(recovered.document.root.name.slice(0,4070)+'（復元コピー）');
+    const opened:PortableOpenResult={document:artwork,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},
+      generationId:'recovery',snapshotRevisionId:artwork.head,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})};
+    await activateOpened(opened,true);
+    if(!qaMode){await refreshWorks();void refreshRecoveryCandidates();}
+    else recoveryCandidates=[];
+    byId('status').textContent=qaMode?'自動保存された最新の作業状態へ戻しました。':'復元した状態を別の作品として開きました。';
     updatePersistenceDisplay();updateQa();return true;
   }catch(error){
     const message='作業途中の状態を戻せませんでした。'+(error instanceof Error?error.message:String(error));
@@ -2804,6 +2883,12 @@ if(!qaMode){
     listWorks:async()=>{const result=await persistence.listWorks();works=result.works;lastWorkId=result.lastWorkId;return {works,lastWorkId};},
     openWork,
     readThumbnail:(id,revisionId)=>persistence.readThumbnail(id,revisionId),
+    previewRecovery:async(documentId,writerEpochId)=>{
+      const candidate=recoveryCandidates.find(item=>item.documentId===documentId&&item.writerEpochId===writerEpochId);
+      if(!candidate)throw new Error('作業の復元元が見つかりません。');
+      const {document}=await persistence.recover(candidate,true);
+      return historyThumbnail(document,document.head);
+    },
     renameWork:async(id,name)=>{
       const isOpen=documentReady&&controller.document.root.documentId===id;
       if(isOpen&&!(await prepareWorkSwitch()))throw new Error('現在の操作が終わってから名前を変更してください。');
