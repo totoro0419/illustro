@@ -159,3 +159,51 @@ export function selectionBorder(mask:MaskData,radius:number):MaskData{
   for(let i=0;i<out.length;i++)out[i]=Math.max(0,outer.alpha[i]!-inner.alpha[i]!);
   return {width:mask.width,height:mask.height,alpha:out};
 }
+
+/** A selection brush deposits partial alpha and records one mask change per stroke. */
+export type SelectionBrushPoint=Readonly<{x:number;y:number;pressure:number}>;
+export type SelectionBrushSettings=Readonly<{
+  size:number;opacity:number;hardness:number;mode:'add'|'subtract';
+}>;
+export function brushSelection(
+  mask:MaskData,points:readonly SelectionBrushPoint[],settings:SelectionBrushSettings
+):MaskData{
+  const {width,height}=mask;
+  if(mask.alpha.length!==width*height||points.length>10000||
+    !Number.isFinite(settings.size)||settings.size<1||settings.size>800||
+    !Number.isFinite(settings.opacity)||settings.opacity<0||settings.opacity>1||
+    !Number.isFinite(settings.hardness)||settings.hardness<0||settings.hardness>1)
+    throw Error('選択ブラシの設定か入力が正しくありません。');
+  const out=mask.alpha.slice();
+  if(points.length===0)return {width,height,alpha:out};
+  const paint=(x:number,y:number,pressure:number)=>{
+    const radius=Math.max(.5,settings.size*(.25+.75*limit(pressure,0,1))*.5);
+    const inner=radius*settings.hardness;
+    const x0=Math.max(0,Math.floor(x-radius)),x1=Math.min(width,Math.ceil(x+radius));
+    const y0=Math.max(0,Math.floor(y-radius)),y1=Math.min(height,Math.ceil(y+radius));
+    for(let py=y0;py<y1;py++)for(let px=x0;px<x1;px++){
+      const dist=Math.hypot(px+.5-x,py+.5-y);
+      if(dist>=radius)continue;
+      const coverage=settings.opacity*(dist<=inner?1:
+        Math.max(0,1-(dist-inner)/Math.max(.01,radius-inner)));
+      const index=py*width+px,prior=out[index]!;
+      out[index]=settings.mode==='add'
+        ?Math.round(prior+(255-prior)*coverage)
+        :Math.round(prior*(1-coverage));
+    }
+  };
+  // Interpolate dots to avoid gaps when events are sparse or sampling is delayed.
+  const step=Math.max(1,settings.size*.23);
+  for(let i=0;i<points.length;i++){
+    const current=points[i]!;
+    if(!Number.isFinite(current.x)||!Number.isFinite(current.y)||!Number.isFinite(current.pressure))
+      throw Error('選択ブラシの位置が正しくありません。');
+    const prior=points[Math.max(0,i-1)]!,distance=Math.hypot(current.x-prior.x,current.y-prior.y);
+    const count=Math.min(10000,Math.max(1,Math.ceil(distance/step)));
+    for(let k=1;k<=count;k++){
+      const t=k/count;
+      paint(prior.x+(current.x-prior.x)*t,prior.y+(current.y-prior.y)*t,prior.pressure+(current.pressure-prior.pressure)*t);
+    }
+  }
+  return {width,height,alpha:out};
+}
