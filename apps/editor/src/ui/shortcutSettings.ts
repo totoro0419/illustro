@@ -55,7 +55,7 @@ const read=()=>{try{return localStorage.getItem(KEY)}catch{return null;}};
 const write=(bindings:readonly Binding[])=>{try{localStorage.setItem(KEY,JSON.stringify({schema:'illustro.user.shortcuts',version:1,bindings} satisfies Settings));return true;}catch{return false;}};
 const normalizedKey=(event:KeyboardEvent)=>event.key===' '?'space':event.key.toLowerCase();
 const isText=(target:EventTarget|null)=>target instanceof Element&&!!target.closest('input,textarea,select,[contenteditable], [role="textbox"]');
-const isHoldable=(id:string)=>id==='eyedropper'||id==='panView'||id==='erase';
+const isHoldable=(id:string)=>id==='eyedropper'||id==='panView'||id==='erase'||id==='quickControllerOpen';
 
 export function installShortcutSettings(commands:CommandService,canSwitchTools:()=>boolean=()=>true){
   const parent=el('workspaceBoxBody');if(!parent)return;
@@ -187,12 +187,12 @@ export function installShortcutSettings(commands:CommandService,canSwitchTools:(
     }catch(error){status.textContent=error instanceof Error?error.message:'読み込みに失敗しました。';}
   };
   function startHold(binding:Binding){
-    if(!canSwitchTools()){status.textContent='線を描いている間は道具を切り替えられません。';return;}
+    if(binding.commandId!=='quickControllerOpen'&&!canSwitchTools()){status.textContent='線を描いている間は道具を切り替えられません。';return;}
     const id=binding.commandId;
-    const on=el<HTMLButtonElement>(id)?.getAttribute('aria-pressed')==='true';
+    const on=(el<HTMLButtonElement>(id)?.getAttribute(id==='quickControllerOpen'?'aria-expanded':'aria-pressed')==='true');
     if(on){active.set(id,{restore:()=>{}});return;}
     const wasEraser=el<HTMLButtonElement>('erase')?.getAttribute('aria-pressed')==='true';
-    const restore=id==='panView'?'panView':wasEraser?'erase':'paint';
+    const restore=id==='quickControllerOpen'?'quickControllerOpen':id==='panView'?'panView':wasEraser?'erase':'paint';
     const result=commands.invoke(id);
     if(result.ok)active.set(id,{restore:()=>{if(restore)el<HTMLButtonElement>(restore)?.click();}});
     else status.textContent=result.reason??'ショートカットを使えませんでした。';
