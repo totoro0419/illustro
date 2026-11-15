@@ -267,3 +267,9 @@ body.right-overlay .right-dock{box-shadow:-9px 0 26px #2c302720}
 .pixel-coordinates{position:absolute;right:8px;bottom:8px;z-index:1;background:#fff;color:#27354b;padding:3px 7px;border-radius:4px;pointer-events:none;font-variant-numeric:tabular-nums}
 .brush-cursor{position:absolute;top:0;left:0;box-sizing:border-box;border:1px solid #151b2a;box-shadow:0 0 0 1px #fff;border-radius:50%;pointer-events:none;z-index:2}
 .brush-cursor::after{content:"";position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;background:#151b2a;box-shadow:0 0 0 1px #fff;transform:translate(-50%,-50%)}
+
+#maskThumbnail { padding: 2px; vertical-align: middle; }
+#maskThumbnail[aria-pressed="true"] { outline: 2px solid #43bfea; outline-offset: 2px; }
+#maskThumbnail canvas { display: block; width: 48px; height: 48px; }
+#maskEditingBar:not([hidden]) { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+#maskEditingBar button[aria-pressed="true"] { outline: 2px solid #43bfea; outline-offset: -2px; }

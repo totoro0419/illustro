@@ -1,3 +1,4 @@
+import {layerMaskCoverage} from '@rt/layer-mask-coverage';
 import {GpuRenderer} from '@rt/renderer';
 import {RealtimeSession} from '@rt/session';
 import {WorkerStrokeSink} from '@rt/worker-stroke-sink';
@@ -147,7 +148,14 @@ async function command(method,a){const r=renderer,s=session;
   if(!Array.isArray(a.layers))throw Error('Invalid layer hit request');
   const ids=[];
   for(const layer of a.layers){
-   if(layer.white||(await pixel({x:a.x,y:a.y,surfaceKey:layer.key}))[3]>0)ids.push(layer.id);
+   const {x,y}=a,style=r.backend.surfaceStyles?.get(layer.key);
+   if(!layerMaskCoverage(style?.mask,x,y))continue;
+   if(style?.clipKey){
+    const source=r.backend.surfaceStyles.get(style.clipKey);
+    if(!source?.visible||!source.opacity||!layerMaskCoverage(source.mask,x,y))continue;
+    if(r.backend.surfaceStack.includes(style.clipKey)&&!(await pixel({x,y,surfaceKey:style.clipKey}))[3])continue;
+   }
+   if(layer.white||(await pixel({x,y,surfaceKey:layer.key}))[3]>0)ids.push(layer.id);
   }
   return ids;
  }

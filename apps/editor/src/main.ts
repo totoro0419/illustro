@@ -14,6 +14,7 @@ import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
+import {drawMaskPreview,paintPixelMask} from './layerMaskEditing';
 import {penEraserInput} from './stylusButtons';
 import {parseSavedCanvasView} from './canvasView';
 import {DEFAULT_GUIDE_SETTINGS,normalizeGuideSettings,type GuideSettings} from './strokeGuide';
@@ -25,13 +26,13 @@ import {BrushUsage} from './brushUsage';
 import {installBrushAdvancedEditor} from './brushAdvancedEditor';
 import {sameEditableBrush} from './brushEditorModel';
 import './ui/brushEditor.css';
-import {compilePreset,type FoundationPreset} from '@illustro/brush-rt';
+import {compilePreset,layerMaskTile,TILE,type FoundationPreset} from '@illustro/brush-rt';
 import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type ImageResample} from './canvasGeometry';
 import {captureExport,compositeLayer,exportImage,exportFileName,renderFrozenArtwork,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,vectorMaskCoverage,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type VectorLayerMask,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerMask,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -335,22 +336,133 @@ function visibleLayerIds(){
   return new Set(root.rootLayerIds.filter(id=>root.isLayerVisible(id)&&root.getLayer(id).opacity>0));
 }
 
+type MaskEditMode='pixels'|'path';
+let maskEditing:{drawing:BrushSurface;artwork:CoreDocument;id:LayerId;mode:MaskEditMode;reveal:boolean}|null=null;
+let thumbnailState:{mask:LayerMask;width:number;height:number}|null=null;
+let maskInspection:{drawing:BrushSurface;artwork:CoreDocument;id:LayerId;mode:'red'|'grayscale';mask:LayerMask;width:number;height:number}|null=null;
+function stopMaskInspection(){
+  maskInspection?.drawing.setMaskInspection();
+  maskInspection=null;
+}
+function inspectSelectedMask(mode:'red'|'grayscale'){
+  const drawing=surface,artwork=controller.document,layer=controller.selectedLayer,mask=layer.vectorMask;
+  if(!drawing||!mask||drawing.busy)return;
+  stopMaskEditing();
+  const {width,height}=artwork.root;
+  maskInspection={drawing,artwork,id:layer.id,mode,mask,width,height};
+  drawing.setMaskInspection(mask,mode);
+  shellUi.setLayerPage(false);
+  updateVectorMaskControls();
+}
+
+function stopMaskEditing(){
+  if(!maskEditing)return;
+  maskEditing.drawing.setMaskGesture(null);
+  maskEditing=null;
+}
 function updateVectorMaskControls(){
-  const layer=controller.selectedLayer,mask=layer.vectorMask;
-  const disabled=!documentReady||layer.baseColor==='white'||controller.document.root.isLayerLocked(layer.id);
+  const layer=controller.selectedLayer,mask=layer.vectorMask,root=controller.document.root;
+  const disabled=!documentReady||layer.baseColor==='white'||root.isLayerLocked(layer.id);
+  if(maskEditing&&(disabled||maskEditing.id!==layer.id||maskEditing.artwork!==controller.document||
+    maskEditing.drawing!==surface||(maskEditing.mode==='pixels'&&mask?.shape!=='pixels')))stopMaskEditing();
+  if(maskInspection){
+    if(!mask||maskInspection.id!==layer.id||maskInspection.artwork!==controller.document||maskInspection.drawing!==surface){
+      stopMaskInspection();
+    }else if(maskInspection.mask!==mask||maskInspection.width!==root.width||maskInspection.height!==root.height){
+      maskInspection={...maskInspection,mask,width:root.width,height:root.height};
+      maskInspection.drawing.setMaskInspection(mask,maskInspection.mode);
+    }
+  }
+  byId('maskInspectionBar').hidden=!maskInspection;
+  byId<HTMLButtonElement>('maskInspectOnly').disabled=!mask;
+  byId<HTMLButtonElement>('maskInspectRed').disabled=!mask;
   byId<HTMLButtonElement>('vectorMaskFromSelection').disabled=disabled||!surface?.selectedRectangle;
-  for(const id of ['vectorMaskEnabled','vectorMaskInverted','vectorMaskDensity','vectorMaskRemove','vectorMaskApply']){
+  byId<HTMLButtonElement>('pixelMaskAdd').disabled=disabled;
+  byId<HTMLButtonElement>('maskPathEdit').disabled=disabled;
+  byId('pixelMaskAdd').textContent=mask?.shape==='pixels'?'マスクを塗る':'塗って隠すマスクを追加';
+  for(const id of ['vectorMaskEnabled','maskLinked','vectorMaskInverted','vectorMaskDensity','vectorMaskRemove','vectorMaskApply']){
     (byId(id) as HTMLInputElement|HTMLButtonElement).disabled=disabled||!mask;
   }
   byId<HTMLButtonElement>('vectorMaskApply').disabled=disabled||!mask?.enabled;
   byId<HTMLInputElement>('vectorMaskEnabled').checked=mask?.enabled??false;
+  byId<HTMLInputElement>('maskLinked').checked=mask?.linked??true;
   byId<HTMLInputElement>('vectorMaskInverted').checked=mask?.inverted??false;
   byId<HTMLInputElement>('vectorMaskDensity').value=String(Math.round((mask?.density??1)*100));
-  byId('vectorMaskStatus').textContent=mask?(mask.shape==='ellipse'?'楕円':'長方形')+'のマスク'+(mask.enabled?'':'（無効）'):'選択範囲からマスクを作成できます。';
+  const thumbnail=byId<HTMLButtonElement>('maskThumbnail');
+  thumbnail.hidden=!mask;
+  thumbnail.disabled=disabled;
+  thumbnail.setAttribute('aria-pressed',String(!!maskEditing));
+  if(mask&&(thumbnailState?.mask!==mask||thumbnailState.width!==root.width||thumbnailState.height!==root.height)){
+    drawMaskPreview(byId<HTMLCanvasElement>('maskThumbnailImage'),mask,root.width,root.height,'grayscale');
+    thumbnailState={mask,width:root.width,height:root.height};
+  }
+  const shape=mask?.shape;
+  const name=shape==='ellipse'?'楕円':shape==='rectangle'?'長方形':shape==='path'?'手描きの輪郭':'ブラシで塗る';
+  byId('vectorMaskStatus').textContent=mask?name+'マスク'+(mask.enabled?'':'（無効）'):'マスクを追加すると元の絵を残したまま一部を隠せます。';
+  byId('maskEditingBar').hidden=!maskEditing;
+  if(maskEditing){
+    const pixels=maskEditing.mode==='pixels',reveal=maskEditing.reveal;
+    byId('maskEditingTarget').textContent='編集中 '+layer.name+' のマスク';
+    byId('maskPaintHide').hidden=!pixels;
+    byId('maskPaintReveal').hidden=!pixels;
+    byId('maskPaintHide').setAttribute('aria-pressed',String(!reveal));
+    byId('maskPaintReveal').setAttribute('aria-pressed',String(reveal));
+  }
 }
-function modifyVectorMask(patch:Partial<VectorLayerMask>){
-  const layer=controller.selectedLayer;
-  if(layer.vectorMask)changeLayer('マスクを変更しました。',tx=>tx.setVectorLayerMask(layer.id,{...layer.vectorMask!,...patch}));
+function modifyVectorMask(patch:Partial<Pick<LayerMask,'enabled'|'inverted'|'density'|'linked'>>){
+  const layer=controller.selectedLayer,mask=layer.vectorMask;
+  if(mask)changeLayer('マスクを変更しました。',tx=>tx.setVectorLayerMask(layer.id,{...mask,...patch}));
+}
+function replaceMaskAllowed(next:LayerMask['shape']){
+  const mask=controller.selectedLayer.vectorMask;
+  return !mask||mask.shape===next||window.confirm('現在のマスクを置き換えますか？ 元に戻す操作で復元できます。');
+}
+function startMaskEditing(mode:MaskEditMode,reveal=false){
+  const drawing=surface,artwork=controller.document,layer=controller.selectedLayer;
+  if(!drawing||drawing.busy||geometryBusy||historyPending||artwork.root.isLayerLocked(layer.id))return;
+  if(!artwork.root.isLayerVisible(layer.id)){
+    byId('status').textContent='レイヤーを表示するとマスクを編集できます。';return;
+  }
+  let mask=layer.vectorMask;
+  if(mode==='pixels'&&mask?.shape!=='pixels'){
+    if(!replaceMaskAllowed('pixels'))return;
+    changeLayer('ピクセルマスクを追加しました。',tx=>tx.setVectorLayerMask(layer.id,{
+      shape:'pixels',x:0,y:0,scaleX:1,scaleY:1,tiles:{},enabled:true,inverted:false,density:1,linked:true,
+    }));
+    mask=controller.selectedLayer.vectorMask;
+    if(mask?.shape!=='pixels')return;
+  }
+  if(mode==='path'&&!replaceMaskAllowed('path'))return;
+  stopLayerCompComparison();
+  cancelLayerPick?.();
+  drawing.setSelectionMode(false);
+  if(drawing.inspectedLayer)drawing.setSoloLayer(null);
+  stopMaskInspection();
+  maskEditing={drawing,artwork,id:layer.id,mode,reveal};
+  drawing.setMaskGesture({
+    path:mode==='path',width:drawing.brushSize,color:mode==='path'?'#43bfea':reveal?'#fff':'#e35060',
+    complete:points=>{
+      if(surface!==drawing||controller.document!==artwork||controller.selectedLayerId!==layer.id)return;
+      const current=controller.selectedLayer.vectorMask;
+      if(mode==='path'){
+        if(points.length<3){byId('status').textContent='マスクにする範囲を囲んでください。';return;}
+        const next:LayerMask={
+          shape:'path',points,
+          enabled:true,inverted:current?.shape==='path'?current.inverted:false,density:current?.shape==='path'?current.density:1,
+          linked:current?.linked??true,
+        };
+        stopMaskEditing();
+        changeLayer('輪郭のマスクを保存しました。',tx=>tx.setVectorLayerMask(layer.id,next));
+      }else if(current?.shape==='pixels'){
+        const {width,height}=artwork.root;
+        const next=paintPixelMask(current,points,{reveal,size:drawing.brushSize,opacity:drawing.maskBrushOpacity,width,height,selection:drawing.selectedRectangle});
+        if(next!==current)changeLayer('マスクを塗りました。',tx=>tx.setVectorLayerMask(layer.id,next));
+      }
+    },
+  });
+  shellUi.setLayerPage(false);
+  updateVectorMaskControls();
+  byId('status').textContent=mode==='path'?'残したい範囲を一筆で囲んでください。':'マスクを塗れます。黒で隠し、白で表示を戻します。';
 }
 
 async function applyVectorMask(){
@@ -363,12 +475,17 @@ async function applyVectorMask(){
   try{
     const pixels=(await drawing.captureDocumentLayers(new Set([layer.id]))).get(layer.id)!;
     if(surface!==drawing||controller.document!==artwork||artwork.head!==head)throw new Error('作品が切り替わりました。');
-    for(let y=0;y<root.height;y++){
-      for(let x=0;x<root.width;x++){
-        const index=(y*root.width+x)*4;
-        const alpha=Math.round(pixels[index+3]!*vectorMaskCoverage(mask,x+.5,y+.5));
-        pixels[index+3]=alpha;
-        if(!alpha)pixels.fill(0,index,index+3);
+    for(let ty=0;ty<Math.ceil(root.height/TILE);ty++){
+      for(let tx=0;tx<Math.ceil(root.width/TILE);tx++){
+        const coverage=layerMaskTile(mask,tx+','+ty);
+        if(coverage===255)continue;
+        const tileWidth=Math.min(TILE,root.width-tx*TILE),tileHeight=Math.min(TILE,root.height-ty*TILE);
+        for(let y=0;y<tileHeight;y++)for(let x=0;x<tileWidth;x++){
+          const index=((ty*TILE+y)*root.width+tx*TILE+x)*4;
+          const alpha=typeof coverage==='number'?coverage:coverage[y*TILE+x]!;
+          pixels[index+3]=Math.round(pixels[index+3]!*alpha/255);
+          if(!pixels[index+3])pixels.fill(0,index,index+3);
+        }
       }
     }
     const tx=artwork.begin('マスクをレイヤーに適用');
@@ -891,13 +1008,36 @@ byId<HTMLButtonElement>('vectorMaskFromSelection').onclick=()=>{
   const rect=surface?.selectedRectangle,layer=controller.selectedLayer;
   if(!rect)return;
   const shape=byId<HTMLSelectElement>('vectorMaskShape').value==='ellipse'?'ellipse':'rectangle';
-  changeLayer('選択範囲からマスクを作成しました。',tx=>tx.setVectorLayerMask(layer.id,{...rect,shape,density:1,enabled:true,inverted:false}));
+  if(!replaceMaskAllowed(shape))return;
+  stopMaskEditing();
+  changeLayer('選択範囲からマスクを作成しました。',tx=>tx.setVectorLayerMask(layer.id,{...rect,shape,density:1,enabled:true,inverted:false,linked:true}));
+};
+byId<HTMLButtonElement>('pixelMaskAdd').onclick=()=>startMaskEditing('pixels');
+byId<HTMLButtonElement>('maskPathEdit').onclick=()=>startMaskEditing('path');
+byId<HTMLButtonElement>('maskThumbnail').onclick=()=>{
+  const mask=controller.selectedLayer.vectorMask;
+  if(mask?.shape==='pixels')startMaskEditing('pixels');
+  else if(mask)startMaskEditing('path');
+};
+byId<HTMLButtonElement>('maskInspectOnly').onclick=()=>inspectSelectedMask('grayscale');
+byId<HTMLButtonElement>('maskInspectRed').onclick=()=>inspectSelectedMask('red');
+byId<HTMLButtonElement>('doneMaskInspection').onclick=()=>{
+  stopMaskInspection();updateVectorMaskControls();
+};
+byId<HTMLButtonElement>('maskPaintHide').onclick=()=>startMaskEditing('pixels');
+byId<HTMLButtonElement>('maskPaintReveal').onclick=()=>startMaskEditing('pixels',true);
+byId<HTMLButtonElement>('doneMaskEditing').onclick=()=>{
+  stopMaskEditing();updateVectorMaskControls();byId('status').textContent='絵を編集できます。';
 };
 byId<HTMLInputElement>('vectorMaskEnabled').onchange=event=>modifyVectorMask({enabled:(event.currentTarget as HTMLInputElement).checked});
+byId<HTMLInputElement>('maskLinked').onchange=event=>modifyVectorMask({linked:(event.currentTarget as HTMLInputElement).checked});
 byId<HTMLInputElement>('vectorMaskInverted').onchange=event=>modifyVectorMask({inverted:(event.currentTarget as HTMLInputElement).checked});
 byId<HTMLInputElement>('vectorMaskDensity').onchange=event=>modifyVectorMask({density:Number((event.currentTarget as HTMLInputElement).value)/100});
 byId<HTMLButtonElement>('vectorMaskApply').onclick=()=>{void applyVectorMask();};
-byId<HTMLButtonElement>('vectorMaskRemove').onclick=()=>changeLayer('マスクを外しました。',tx=>tx.setVectorLayerMask(controller.selectedLayerId,null));
+byId<HTMLButtonElement>('vectorMaskRemove').onclick=()=>{
+  stopMaskEditing();
+  changeLayer('マスクを外しました。',tx=>tx.setVectorLayerMask(controller.selectedLayerId,null));
+};
 byId<HTMLButtonElement>('layerClipping').onclick=()=>{
   const layer=controller.selectedLayer;
   changeLayer(layer.clipSourceId?'クリッピングを解除しました。':'クリッピングを設定しました。',tx=>tx.setLayerClipping(layer.id,!layer.clipSourceId));

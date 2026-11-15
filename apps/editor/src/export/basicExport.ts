@@ -1,10 +1,10 @@
-import {CoreDocument,vectorMaskCoverage,type VectorLayerMask,type LayerId,type RevisionId} from '@illustro/core';
-import {GpuRenderer,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
+import {CoreDocument,type LayerMask,type LayerId,type RevisionId} from '@illustro/core';
+import {GpuRenderer,layerMaskTile,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
   revision:RevisionId;width:number;height:number;name:string;colorProfileId:string;
-  layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string;mask?:VectorLayerMask}>[];
+  layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string;mask?:LayerMask}>[];
   basePixels?:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[];
   strokes:readonly Readonly<{surfaceId:string;record:StrokeRecord}>[];
 }>;
@@ -47,15 +47,29 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
 }
 
 /** Straight-alpha source-over; layer order is bottom to top. Output is never the presentation canvas. */
-export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|Uint8ClampedArray,opacity=1,clip?:{pixels:Uint8Array|Uint8ClampedArray;opacity:number;mask?:VectorLayerMask|null},shape?:{width:number;mask?:VectorLayerMask|null}):void{
+export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|Uint8ClampedArray,opacity=1,clip?:{pixels:Uint8Array|Uint8ClampedArray;opacity:number;mask?:LayerMask|null},shape?:{width:number;mask?:LayerMask|null}):void{
   if(destination.length!==source.length||destination.length%4)throw new Error('レイヤーの画像サイズが違います。');
   if(!Number.isFinite(opacity)||opacity<0||opacity>1)throw new Error('不正なレイヤー不透明度です。');
+  const tileSize=128;
+  const hasMask=shape&&(shape.mask?.enabled||clip?.mask?.enabled);
+  const maskRows=new Map<number,readonly [number|Uint8Array,number|Uint8Array]>();
+  let tileY=-1;
   for(let i=0;i<destination.length;i+=4){
     let sa=source[i+3]!/255*opacity*(clip?clip.pixels[i+3]!/255*clip.opacity:1);
     if(sa===0)continue;
-    if(shape&&(shape.mask?.enabled||clip?.mask?.enabled)){
-      const pixel=i/4,x=pixel%shape.width+.5,y=Math.floor(pixel/shape.width)+.5;
-      sa*=vectorMaskCoverage(shape.mask,x,y)*vectorMaskCoverage(clip?.mask,x,y);
+    if(hasMask){
+      const pixel=i/4,x=pixel%shape.width,y=Math.floor(pixel/shape.width);
+      const tx=Math.floor(x/tileSize),ty=Math.floor(y/tileSize);
+      if(ty!==tileY){maskRows.clear();tileY=ty;}
+      let alpha=maskRows.get(tx);
+      if(!alpha){
+        const key=tx+','+ty;
+        alpha=[layerMaskTile(shape.mask,key),layerMaskTile(clip?.mask,key)];
+        maskRows.set(tx,alpha);
+      }
+      const offset=(y%tileSize)*tileSize+x%tileSize;
+      const [own,source]=alpha;
+      sa*=(typeof own==='number'?own:own[offset]!)*(typeof source==='number'?source:source[offset]!)/65025;
     }
     const da=destination[i+3]!/255;
     if(sa===0)continue;

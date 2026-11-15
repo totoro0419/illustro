@@ -1,4 +1,4 @@
-import {validateVectorLayerMask,type VectorLayerMask} from './layerMask';
+import {transformLayerMask,validateLayerMask,type LayerMask} from './layerMask';
 import type {LayerComp} from './layerComps';
 import {validateLayerGroups,type LayerGroup} from './layerGroups';
 import {operationKey,type LayerId,type OperationKey,type RasterSurfaceId,type TransactionId,type RevisionId} from './ids';
@@ -335,12 +335,12 @@ export class DocumentTransaction{
       if(mask){
         if(kind==='document.image-resize'){
           const scaleX=width/this.rootValue.width,scaleY=height/this.rootValue.height;
-          vectorMask=validateVectorLayerMask({...mask,x:mask.x*scaleX,y:mask.y*scaleY,width:mask.width*scaleX,height:mask.height*scaleY});
+          vectorMask=transformLayerMask(mask,scaleX,scaleY,0,0);
         }else{
           const deltaX=width-this.rootValue.width,deltaY=height-this.rootValue.height,anchor=parameters.anchor;
           const shiftX=kind==='document.crop'?-Number(parameters.x??0):anchor==='center'?Math.floor(deltaX/2):anchor==='top-right'||anchor==='bottom-right'?deltaX:0;
           const shiftY=kind==='document.crop'?-Number(parameters.y??0):anchor==='center'?Math.floor(deltaY/2):anchor==='bottom-left'||anchor==='bottom-right'?deltaY:0;
-          vectorMask=validateVectorLayerMask({...mask,x:mask.x+shiftX,y:mask.y+shiftY});
+          vectorMask=transformLayerMask(mask,1,1,shiftX,shiftY);
         }
       }
       this.updatesValue.set(id,Object.freeze({...materialized,surface:empty,...(vectorMask?{vectorMask}:{})}));
@@ -368,12 +368,12 @@ export class DocumentTransaction{
   renameLayer(id:LayerId,name:string){return this.meta(id,{name:name.trim()});}
   setLayerVisibility(id:LayerId,visible:boolean){return this.meta(id,{visible});}
   setLayerLocked(id:LayerId,locked:boolean){return this.meta(id,{locked});}
-  setVectorLayerMask(id:LayerId,mask:VectorLayerMask|null){
+  setVectorLayerMask(id:LayerId,mask:LayerMask|null){
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(layer.baseColor==='white')throw new Error('白背景は描画できるレイヤーに変えてからマスクを設定してください。');
     if(this.rootValue.isLayerLocked(id))throw new Error('マスクを変える前にロックを解除してください。');
-    const value=validateVectorLayerMask(mask);
-    if(JSON.stringify(value)===JSON.stringify(layer.vectorMask??null))return false;
+    const value=validateLayerMask(mask);
+    if(value===(layer.vectorMask??null))return false;
     return this.meta(id,{vectorMask:value});
   }
   setLayerClipping(id:LayerId,enabled:boolean){

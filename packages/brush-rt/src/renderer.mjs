@@ -1,3 +1,4 @@
+import {layerMaskTile} from '@rt/layer-mask-coverage';
 import {TileHistory} from '@rt/tile-history';
 import {historyYield,releaseHistoryImage} from '@rt/history-io';
 import * as B from '@rt/baseline-shaders';
@@ -297,8 +298,28 @@ export class GpuRenderer {
  }
  constructor(backend,width,height,options={}){this.tiledPresentation=!!options.tiledPresentation;backend.tiledPresentation=this.tiledPresentation;backend.historyBudget=Number.isSafeInteger(options.historyGpuBudgetBytes)?Math.max(HISTORY_TILE_RESERVATION,Math.min(64*1024*1024,options.historyGpuBudgetBytes)):HISTORY_GPU_BUDGET;if(typeof Worker==='function'&&options.tileHistory!==false&&options.strokeHandoff&&(backend.gl||backend.device))backend.imageHistory=new TileHistory(backend,{gpuBudget:backend.historyBudget,memoryBudget:options.historyMemoryBudgetBytes,diskBudget:options.historyDiskBudgetBytes,storageDisabled:options.historyStorageDisabled});this.hiddenStrokeIds=new Set;this.hiddenPreviewStates=new Map;this.previewCleanup=new Set;this.historyPreparing=false;this.navigationActive=false;this.navigationEpoch=0;this.historySupersededGpuJobs=0;this.historySupersededGpuCommands=0;this.historyBaseReuses=0;this.strokeHandoff=!!options.strokeHandoff;this.handoffJobLimit=32;this.inputStarts=new Map;this.inputPreviewSamples=[];this.strokeFrames=new Map;this.presentedStrokes=new Set;this.submissionNumber=0;this.backend=backend;this.document=new TileDocument(width,height);this.document.pruneSolid=this.strokeHandoff;this.mailbox=new LatestMailbox;this.snapshot=null;this.inflight=false;this.completions=[];this.confirmedTime=0;this.errors=[];this.disposed=false;this.ended=new Set;this.formalQuantum=4;this.lastGpuWork=0;this.previewStates=new Map;this.seamlessPreview=false;this.wrapPreviews=new Map;this.wrapCaches=new Map;this.confirmDelay=0;this.lastConfirmed=0;this.onComplete=null;this.needsFrame=true;this.viewPending=false;this.finishSubmission=null;this.onPresentation=null;this.proxy=null;if(options.strokeOverlay&&this.strokeHandoff){try{this.proxy=new StrokeOverlay(backend,{...options.strokeOverlay,liveStates:this.previewStates,onFallback:state=>{releaseOverlayPublication(backend,state.id);this.mailbox.set(state);this.requestWork();}});}catch(error){backend.info.proxyUnavailable=String(error);}}this.instantJobLimit=16;this.workTimer=null;this.guardPreparing=false;backend.overlayHoldIds=new Set;backend.overlayDirty=new Map;this.performance={presentations:0,viewPresentations:0,renders:0,compositedTiles:0,compositedLayerPasses:0,supersededViews:0,samples:[]};}
  setSurfaceStack(surfaceKeys){if(!Array.isArray(surfaceKeys)||!surfaceKeys.length||new Set(surfaceKeys).size!==surfaceKeys.length||surfaceKeys.some(x=>typeof x!=='string'||!x))throw Error('invalid surface stack');if(this.backend.surfaceStack?.length===surfaceKeys.length&&surfaceKeys.every((key,i)=>key===this.backend.surfaceStack[i]))return;this.backend.setSurfaceStack(surfaceKeys);if(this.proxy?.footprints.size)this.proxy.fallback=true;else this.proxy?.invalidate();this.needsFrame=true;}
- setSurfaceStyles(styles){if(!this.backend.sparsePreview)throw Error('Surface styles require the layered renderer');const next=new Map;for(const s of styles){if(typeof s.surfaceKey!=='string'||next.has(s.surfaceKey)||typeof s.visible!=='boolean'||!Number.isFinite(s.opacity)||s.opacity<0||s.opacity>1)throw Error('Invalid surface style');if(s.clipKey!==undefined&&typeof s.clipKey!=='string')throw Error('Invalid clipping source');
- next.set(s.surfaceKey,{visible:s.visible,opacity:s.opacity,...(s.clipKey!==undefined?{clipKey:s.clipKey}:{}),...(s.mask?.enabled?{mask:s.mask}:{})});}const signature=JSON.stringify([...next]);if(signature===this.surfaceStyleSignature)return;this.surfaceStyleSignature=signature;this.backend.surfaceStyles=next;for(const t of this.backend.tiles.values())this.backend.dirtyConfirmed.add(t.key);for(const v of this.backend.previews.values())for(const key of v.keys)this.backend.dirtyConfirmed.add(key);if(this.proxy?.footprints.size)this.proxy.fallback=true;else this.proxy?.invalidate();this.needsFrame=true;this.requestWork();}
+ setSurfaceStyles(styles){
+  const b=this.backend;
+  if(!b.sparsePreview)throw Error('Surface styles require the layered renderer');
+  const next=new Map(),previous=b.surfaceStyles??new Map();
+  let changed=previous.size!==styles.length;
+  for(const {surfaceKey,visible,opacity,clipKey,mask} of styles){
+   if(typeof surfaceKey!=='string'||next.has(surfaceKey)||typeof visible!=='boolean'||!Number.isFinite(opacity)||opacity<0||opacity>1)throw Error('Invalid surface style');
+   if(clipKey!==undefined&&typeof clipKey!=='string')throw Error('Invalid clipping source');
+   const before=previous.get(surfaceKey),maskSignature=mask?.enabled?JSON.stringify(mask):null;
+   const activeMask=maskSignature===before?.maskSignature?before.mask:maskSignature?mask:null;
+   changed||=!before||before.visible!==visible||before.opacity!==opacity||before.clipKey!==clipKey||before.mask!==activeMask;
+   next.set(surfaceKey,{visible,opacity,clipKey,mask:activeMask,maskSignature});
+  }
+  if(!changed)return;
+  b.surfaceStyles=next;
+  const active=new Set([...next.values()].map(style=>style.mask));
+  for(const mask of b.layerMaskTextures?.keys()??[])if(!active.has(mask))releaseLayerMaskTextures(b,mask);
+  for(const t of b.tiles.values())b.dirtyConfirmed.add(t.key);
+  for(const v of b.previews.values())for(const key of v.keys)b.dirtyConfirmed.add(key);
+  if(this.proxy?.footprints.size)this.proxy.fallback=true;else this.proxy?.invalidate();
+  this.needsFrame=true;this.requestWork();
+ }
  setSeamlessPreview(enabled){this.seamlessPreview=!!enabled;}
  clearSeamlessPreviews(id){
   for(const key of this.wrapPreviews.get(id)??[]){this.previewStates.delete(key);this.backend.retirePreview(key);}
@@ -588,7 +609,7 @@ class WebGpuBackend {
  constructor(canvas,width,height,device,adapter,sparse=false,tiled=false){this.tiledPresentation=tiled;this.sparsePreview=sparse;this.immediatePreview=true;this.canvas=canvas;this.width=width;this.height=height;this.presentationHeld=false;this.historyPatches=new Map;this.historyOrder=[];this.historyReservedBytes=0;this.historyRejectedId=-1;this.historyRetired=null;this.historyRetirementPeak=0;this.device=device;this.adapter=adapter;this.tiles=new Map;this.surfaceStack=['default'];this.layered=false;this.previews=new Map;this.dirtyConfirmed=new Set;this.archiveIds=new Map;this.archivedThrough=-1;this.obsoleteFinished=0;this.images=new Map;this.maskKeys=new WeakMap;this.transient=[];this.error=null;this.device.lost.then(i=>{this.error=Error('GPU device lost: '+i.reason+'; raw strokes remain exportable');});this.device.addEventListener('uncapturederror',e=>{this.error=e.error;});this.info={backend:'WebGPU',adapter:adapter.info?.description??'unspecified',hardwareVerified:false,desynchronized:false,alpha:false,premultipliedAlpha:false,artworkAlpha:true,presentationOpaque:true};}
  async initialize(){const d=this.device;this.format=navigator.gpu.getPreferredCanvasFormat();const tex=(binding,sampleType='unfilterable-float')=>({binding,visibility:GPUShaderStage.COMPUTE|GPUShaderStage.FRAGMENT,texture:{sampleType}});const u={binding:0,visibility:GPUShaderStage.COMPUTE|GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,buffer:{type:'uniform'}};
   this.depositLayout=d.createBindGroupLayout({entries:[u,tex(1),{binding:2,visibility:GPUShaderStage.COMPUTE,storageTexture:{access:'write-only',format:'rgba32float'}},{binding:3,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},tex(4),tex(5),tex(6),{binding:7,visibility:GPUShaderStage.COMPUTE,storageTexture:{access:'write-only',format:'rgba8unorm'}}]});
-  this.liveLayout=d.createBindGroupLayout({entries:[u,{binding:1,visibility:GPUShaderStage.VERTEX,buffer:{type:'read-only-storage'}},tex(2),tex(3)]});this.displayLayout=d.createBindGroupLayout({entries:[u,tex(1),tex(2),...Array.from({length:8},(_,i)=>tex(i+3)),tex(11)]});
+  this.liveLayout=d.createBindGroupLayout({entries:[u,{binding:1,visibility:GPUShaderStage.VERTEX,buffer:{type:'read-only-storage'}},tex(2),tex(3)]});const displayEntries=[u,tex(1),tex(2),...Array.from({length:8},(_,i)=>tex(i+3)),tex(11)];this.displayLayout=d.createBindGroupLayout({entries:displayEntries});if(this.sparsePreview)this.feedbackLayout=d.createBindGroupLayout({entries:[...displayEntries,tex(12)]});
   d.pushErrorScope('validation');const module=code=>d.createShaderModule({code});for(const code of [S.wgDeposit,S.wgLive,S.wgDisplay,PRESENT_WGSL,PRESENT_WGSL_LINEAR]){const info=await module(code).getCompilationInfo();const errors=info.messages.filter(x=>x.type==='error');if(errors.length)throw Error(errors.map(x=>x.message).join('\n'));}
   this.deposit=await d.createComputePipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[this.depositLayout]}),compute:{module:module(B.wgDeposit),entryPoint:'main'}});
   this.live=await d.createRenderPipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[this.liveLayout]}),vertex:{module:module(B.wgLive),entryPoint:'vertex'},fragment:{module:module(B.wgLive),entryPoint:'fragment',targets:[{format:'rgba16float',blend:{color:{operation:'max',srcFactor:'one',dstFactor:'one'},alpha:{operation:'max',srcFactor:'one',dstFactor:'one'}}}]},primitive:{topology:'triangle-list'}});
@@ -664,7 +685,7 @@ export function boundedFormalJobs(document,budget=2_000_000,limit=128){
 async function initializeSparseBackend(b){
  b.sparsePreview=true;b.layered=true;b.previewBytes=0;b.previewPoolBytes=0;b.peakPreviewBytes=0;b.previewPool=[];b.previewLimitBytes=PREVIEW_LIMIT;b.previewPressure=false;b.previewDeferredFrames=0;
  if(b.gl){const g=b.gl;b.feedbackCompose=b.program(S.glFeedbackComposeVertex,S.glFeedbackCompose);b.feedbackContinue=b.program(S.glFeedbackComposeVertex,S.glFeedbackContinue);b.feedbackTile=b.program(S.glDisplayVertex,S.glFeedbackTile.replace('result=vec4(color.rgb*color.a,color.a);','result=vec4(color.rgb*color.a,color.a)*params[7].w*clipCoverage(q)*shapeCoverage(q);'));b.feedbackDirect=b.program(S.glDisplayVertex,S.glFeedbackDirect.replace('result=vec4(d.rgb*d.a,d.a);','result=vec4(d.rgb*d.a,d.a)*params[7].w*clipCoverage(q)*shapeCoverage(q);'));b.feedbackScratch=[b.surface(TILE,TILE,g.RGBA8,g.UNSIGNED_BYTE),b.surface(TILE,TILE,g.RGBA8,g.UNSIGNED_BYTE)];}
- else{const d=b.device;const make=async(code,entry,format,blend)=>{const module=d.createShaderModule({code});return d.createRenderPipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[b.displayLayout]}),vertex:{module,entryPoint:'vertex'},fragment:{module,entryPoint:entry,targets:[{format,...(blend?{blend}:{})}]},primitive:{topology:'triangle-list'}});};b.feedbackCompose=await make(S.wgFeedbackCompose,'fragment','rgba8unorm');b.feedbackDirect=await make(S.wgFeedbackDirect.replace('return vec4f(d.rgb*d.a,d.a);','return vec4f(d.rgb*d.a,d.a)*p.v[7].w*clipCoverage(q)*shapeCoverage(q);'),'fragment',b.format,{color:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'},alpha:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'}});b.feedbackTile=await make(S.wgFeedbackTile.replace('return vec4f(color.rgb*color.a,color.a);','return vec4f(color.rgb*color.a,color.a)*p.v[7].w*clipCoverage(q)*shapeCoverage(q);'),'fragment',b.format,{color:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'},alpha:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'}});b.feedbackScratch=[b.texture(TILE,TILE,'rgba8unorm'),b.texture(TILE,TILE,'rgba8unorm')];}
+ else{const d=b.device;const make=async(code,entry,format,blend)=>{const module=d.createShaderModule({code});return d.createRenderPipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[b.feedbackLayout]}),vertex:{module,entryPoint:'vertex'},fragment:{module,entryPoint:entry,targets:[{format,...(blend?{blend}:{})}]},primitive:{topology:'triangle-list'}});};b.feedbackCompose=await make(S.wgFeedbackCompose,'fragment','rgba8unorm');b.feedbackDirect=await make(S.wgFeedbackDirect.replace('return vec4f(d.rgb*d.a,d.a);','return vec4f(d.rgb*d.a,d.a)*p.v[7].w*clipCoverage(q)*shapeCoverage(q);'),'fragment',b.format,{color:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'},alpha:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'}});b.feedbackTile=await make(S.wgFeedbackTile.replace('return vec4f(color.rgb*color.a,color.a);','return vec4f(color.rgb*color.a,color.a)*p.v[7].w*clipCoverage(q)*shapeCoverage(q);'),'fragment',b.format,{color:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'},alpha:{operation:'add',srcFactor:'one',dstFactor:'one-minus-src-alpha'}});b.feedbackScratch=[b.texture(TILE,TILE,'rgba8unorm'),b.texture(TILE,TILE,'rgba8unorm')];}
 }
 function clearPreviewPool(b){for(const t of b.previewPool)dropPreviewTile(b,t);b.previewPool=[];b.previewPoolBytes=0;}
 function dropPreviewTile(b,t){if(b.gl){b.release(t.prefix);b.release(t.tail);}else{t.prefix.destroy();t.tail.destroy();t.depth?.destroy();}}
@@ -677,7 +698,7 @@ function acquirePreviewTile(b,depth){
  t.bytes=bytes;t.hasDepth=depth;t.fresh=true;t.depthFresh=true;b.previewBytes+=bytes;b.peakPreviewBytes=Math.max(b.peakPreviewBytes,b.previewBytes+b.previewPoolBytes);return t;
 }
 function retireSparsePreview(b,v){if(v.replacement){const next=v.replacement;v.replacement=null;retireSparsePreview(b,next);}for(const key of v.keys)b.dirtyConfirmed.add(key);for(const t of v.tiles.values()){b.previewBytes-=t.bytes;if(b.previewPoolBytes+t.bytes<=PREVIEW_POOL_BUDGET){b.previewPool.push(t);b.previewPoolBytes+=t.bytes;}else dropPreviewTile(b,t);}b.previews.delete(v.id);}
-function destroySparse(b){for(const v of [...b.previews.values()])if(v.tiles)retireSparsePreview(b,v);clearPreviewPool(b);for(const t of [...(b.feedbackScratch??[]),...(b.clipScratch??[])])b.gl?b.release(t):t.destroy();}
+function destroySparse(b){for(const mask of b.layerMaskTextures?.keys()??[])releaseLayerMaskTextures(b,mask);for(const v of [...b.previews.values()])if(v.tiles)retireSparsePreview(b,v);clearPreviewPool(b);for(const t of [...(b.feedbackScratch??[]),...(b.clipScratch??[])])b.gl?b.release(t):t.destroy();}
 // Preflight all allocations before consuming any published cursor. When the
 // bounded preview cannot fit, retain the last complete image and drain formal
 // work. Accepted samples and canonical jobs are never discarded or acknowledged
@@ -738,13 +759,39 @@ function getClipInput(b,key,clipKey){
  if(!b.surfaceStack.includes(clipKey))return {factor:style.opacity};
  return {factor:style.opacity,layer:sparseLayer(b,key,clipKey),mask:style.mask};
 }
-function shapeParameters(params,mask){
- if(mask?.enabled){
-  params[18]=mask.x;params[19]=mask.y;params[20]=mask.width;params[21]=mask.height;
-  params[22]=(mask.shape==='ellipse'?2:1)*(mask.inverted?-1:1);
-  params[23]=mask.density;
+function releaseLayerMaskTextures(b,mask){
+ const textures=b.layerMaskTextures.get(mask);
+ if(!textures)return;
+ b.layerMaskTextures.delete(mask);
+ if(b.gl){for(const {t} of textures.values())b.gl.deleteTexture(t);}
+ else for(const texture of textures.values())texture.destroy();
+}
+function maskTexture(b,key,mask,params){
+ if(!mask?.enabled)return b.zeroLayer;
+ const alpha=layerMaskTile(mask,key);
+ if(typeof alpha==='number'){
+  params[22]=1;params[23]=alpha/255;
+  return b.zeroLayer;
  }
- return params;
+ params[22]=2;
+ b.layerMaskTextures??=new Map();
+ let textures=b.layerMaskTextures.get(mask);
+ if(!textures){textures=new Map();b.layerMaskTextures.set(mask,textures);}
+ if(textures.has(key))return textures.get(key);
+ let texture;
+ if(b.gl){
+  const g=b.gl,t=g.createTexture();
+  g.bindTexture(g.TEXTURE_2D,t);
+  g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.NEAREST);
+  g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.NEAREST);
+  g.texImage2D(g.TEXTURE_2D,0,g.R8,TILE,TILE,0,g.RED,g.UNSIGNED_BYTE,alpha);
+  texture={t};
+ }else{
+  texture=b.device.createTexture({size:[TILE,TILE],format:'r8unorm',usage:GPUTextureUsage.TEXTURE_BINDING|GPUTextureUsage.COPY_DST});
+  b.device.queue.writeTexture({texture},alpha,{bytesPerRow:TILE},[TILE,TILE]);
+ }
+ textures.set(key,texture);
+ return texture;
 }
 function clipParameters(params,input,flipped){
  if(input){
@@ -774,7 +821,9 @@ function clipTextureGl(b,key,input){
  for(let at=0;at<Math.max(1,overlays.length);at+=8){
   const group=overlays.slice(at,at+8),target=b.clipScratch[(at/8)%2];
   g.bindFramebuffer(g.FRAMEBUFFER,target.f);g.viewport(0,0,TILE,TILE);g.disable(g.BLEND);
-  b.use(at?b.feedbackContinue:b.feedbackCompose,shapeParameters(compositionParams(b,key,t,group,at>0),at+8>=overlays.length?input.mask:null),glTextures(b,t,group,base));
+  const params=compositionParams(b,key,t,group,at>0);
+  const layerMaskImage=maskTexture(b,key,at+8>=overlays.length?input.mask:null,params);
+  b.use(at?b.feedbackContinue:b.feedbackCompose,params,{...glTextures(b,t,group,base),layerMaskImage});
   g.drawArrays(g.TRIANGLES,0,6);base=target;
  }
  return base;
@@ -789,7 +838,9 @@ function clipTextureGpu(b,e,key,input){
   const group=overlays.slice(at,at+8),target=b.clipScratch[(at/8)%2];
   const rp=e.beginRenderPass({colorAttachments:[{view:target.createView(),loadOp:'load',storeOp:'store'}]});
   rp.setPipeline(b.feedbackCompose);
-  rp.setBindGroup(0,b.group(b.displayLayout,[b.buffer(shapeParameters(compositionParams(b,key,t,group,at>0),at+8>=overlays.length?input.mask:null),GPUBufferUsage.UNIFORM),...gpuTextures(b,t,group,base)]));
+  const params=compositionParams(b,key,t,group,at>0);
+  const layerMaskImage=maskTexture(b,key,at+8>=overlays.length?input.mask:null,params);
+  rp.setBindGroup(0,b.group(b.feedbackLayout,[b.buffer(params,GPUBufferUsage.UNIFORM),...gpuTextures(b,t,group,base),layerMaskImage]));
   rp.draw(6);rp.end();base=target;
  }
  return base;
@@ -811,12 +862,26 @@ function renderSparseGl(b,states,dirty,diag){
    const input=getClipInput(b,key,clipKey);
    if(input?.factor===0)continue;
    const clip=input?clipTextureGl(b,key,input):null;
-   const clippedParams=()=>shapeParameters(clipParameters(compositionParams(b,key,null,[],false,opacity),input,b.clipScratch?.includes(clip)),mask);
    if(clip){g.bindFramebuffer(g.FRAMEBUFFER,b.liveTarget.f);g.viewport(0,0,b.width,b.height);}
-
-   if(b.feedbackDirect&&overlays.length<=8){g.enable(g.BLEND);g.blendEquation(g.FUNC_ADD);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);b.use(b.feedbackDirect,shapeParameters(clipParameters(compositionParams(b,key,t,overlays,false,opacity),input,b.clipScratch?.includes(clip)),mask),{...glTextures(b,t,overlays,null),...(clip?{archiveImage:clip}:{})});g.drawArrays(g.TRIANGLES,0,6);g.disable(g.BLEND);diag.compositedLayerPasses++;diag.feedbackDirectPasses=(diag.feedbackDirectPasses??0)+1;continue;}
-   let base=null;for(let at=0;at<Math.max(1,overlays.length);at+=8){const group=overlays.slice(at,at+8),params=compositionParams(b,key,t,group,at>0),target=b.feedbackScratch[(at/8)%2];g.bindFramebuffer(g.FRAMEBUFFER,target.f);g.viewport(0,0,TILE,TILE);g.disable(g.BLEND);b.use(at?b.feedbackContinue:b.feedbackCompose,params,glTextures(b,t,group,base));g.drawArrays(g.TRIANGLES,0,6);base=target;}
-   g.bindFramebuffer(g.FRAMEBUFFER,b.liveTarget.f);g.viewport(0,0,b.width,b.height);g.enable(g.BLEND);g.blendEquation(g.FUNC_ADD);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);b.use(b.feedbackTile,clippedParams(),{layer:base,archiveImage:clip??b.zeroLayer});g.drawArrays(g.TRIANGLES,0,6);g.disable(g.BLEND);diag.compositedLayerPasses++;
+   const direct=b.feedbackDirect&&overlays.length<=8;
+   const params=clipParameters(compositionParams(b,key,direct?t:null,direct?overlays:[],false,opacity),input,b.clipScratch?.includes(clip));
+   const layerMaskImage=maskTexture(b,key,mask,params);
+   if(direct){
+    g.enable(g.BLEND);g.blendEquation(g.FUNC_ADD);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);
+    b.use(b.feedbackDirect,params,{...glTextures(b,t,overlays,null),...(clip?{archiveImage:clip}:{}),layerMaskImage});
+    g.drawArrays(g.TRIANGLES,0,6);g.disable(g.BLEND);diag.compositedLayerPasses++;diag.feedbackDirectPasses=(diag.feedbackDirectPasses??0)+1;continue;
+   }
+   let base=null;
+   for(let at=0;at<Math.max(1,overlays.length);at+=8){
+    const group=overlays.slice(at,at+8),scratchParams=compositionParams(b,key,t,group,at>0),target=b.feedbackScratch[(at/8)%2];
+    g.bindFramebuffer(g.FRAMEBUFFER,target.f);g.viewport(0,0,TILE,TILE);g.disable(g.BLEND);
+    b.use(at?b.feedbackContinue:b.feedbackCompose,scratchParams,{...glTextures(b,t,group,base),layerMaskImage:b.zeroLayer});
+    g.drawArrays(g.TRIANGLES,0,6);base=target;
+   }
+   g.bindFramebuffer(g.FRAMEBUFFER,b.liveTarget.f);g.viewport(0,0,b.width,b.height);
+   g.enable(g.BLEND);g.blendEquation(g.FUNC_ADD);g.blendFunc(g.ONE,g.ONE_MINUS_SRC_ALPHA);
+   b.use(b.feedbackTile,params,{layer:base,archiveImage:clip??b.zeroLayer,layerMaskImage});
+   g.drawArrays(g.TRIANGLES,0,6);g.disable(g.BLEND);diag.compositedLayerPasses++;
   }
  }diag.dirtyTiles=dirty.size;if(b.tiledPresentation)diag.compositionKeys=[...dirty];b.presentationPyramid.invalidate(dirty);
 }
@@ -863,11 +928,28 @@ function renderSparseGpu(b,e,states,dirty,diag){
    if(input?.factor===0)continue;
    if(input?.layer&&(input.layer.overlays.length||input.layer.t?.stroke||input.mask)){scenePass?.end();scenePass=null;}
    const clip=input?clipTextureGpu(b,e,key,input):null;
-if(b.feedbackDirect&&overlays.length<=8){const rp=scene(),textures=gpuTextures(b,t,overlays,null);
-   if(clip)textures[textures.length-1]=clip;
-   rp.setPipeline(b.feedbackDirect);rp.setBindGroup(0,b.group(b.displayLayout,[b.buffer(shapeParameters(clipParameters(compositionParams(b,key,t,overlays,false,opacity),input,false),mask),GPUBufferUsage.UNIFORM),...textures]));rp.draw(6);diag.compositedLayerPasses++;diag.feedbackDirectPasses=(diag.feedbackDirectPasses??0)+1;continue;}
-   scenePass?.end();scenePass=null;let base=null;for(let at=0;at<Math.max(1,overlays.length);at+=8){const group=overlays.slice(at,at+8),params=compositionParams(b,key,t,group,at>0),target=b.feedbackScratch[(at/8)%2],rp=e.beginRenderPass({colorAttachments:[{view:target.createView(),loadOp:'load',storeOp:'store'}]});rp.setPipeline(b.feedbackCompose);rp.setBindGroup(0,b.group(b.displayLayout,[b.buffer(params,GPUBufferUsage.UNIFORM),...gpuTextures(b,t,group,base)]));rp.draw(6);rp.end();base=target;}
-   const rp=scene();rp.setPipeline(b.feedbackTile);rp.setBindGroup(0,b.group(b.displayLayout,[b.buffer(shapeParameters(clipParameters(compositionParams(b,key,null,[],false,opacity),input,false),mask),GPUBufferUsage.UNIFORM),base,b.zeroStroke,...Array(8).fill(b.zeroLive),clip??b.archiveTarget]));rp.draw(6);diag.compositedLayerPasses++;
+   const direct=b.feedbackDirect&&overlays.length<=8;
+   const params=clipParameters(compositionParams(b,key,direct?t:null,direct?overlays:[],false,opacity),input,false);
+   const layerMaskImage=maskTexture(b,key,mask,params);
+   if(direct){
+    const rp=scene(),textures=gpuTextures(b,t,overlays,null);
+    if(clip)textures[textures.length-1]=clip;
+    rp.setPipeline(b.feedbackDirect);
+    rp.setBindGroup(0,b.group(b.feedbackLayout,[b.buffer(params,GPUBufferUsage.UNIFORM),...textures,layerMaskImage]));
+    rp.draw(6);diag.compositedLayerPasses++;diag.feedbackDirectPasses=(diag.feedbackDirectPasses??0)+1;continue;
+   }
+   scenePass?.end();scenePass=null;
+   let base=null;
+   for(let at=0;at<Math.max(1,overlays.length);at+=8){
+    const group=overlays.slice(at,at+8),scratchParams=compositionParams(b,key,t,group,at>0),target=b.feedbackScratch[(at/8)%2];
+    const rp=e.beginRenderPass({colorAttachments:[{view:target.createView(),loadOp:'load',storeOp:'store'}]});
+    rp.setPipeline(b.feedbackCompose);
+    rp.setBindGroup(0,b.group(b.feedbackLayout,[b.buffer(scratchParams,GPUBufferUsage.UNIFORM),...gpuTextures(b,t,group,base),b.zeroLayer]));
+    rp.draw(6);rp.end();base=target;
+   }
+   const rp=scene();rp.setPipeline(b.feedbackTile);
+   rp.setBindGroup(0,b.group(b.feedbackLayout,[b.buffer(params,GPUBufferUsage.UNIFORM),base,b.zeroStroke,...Array(8).fill(b.zeroLive),clip??b.archiveTarget,layerMaskImage]));
+   rp.draw(6);diag.compositedLayerPasses++;
   }
  }scenePass?.end();diag.dirtyTiles=dirty.size;if(b.tiledPresentation)diag.compositionKeys=[...dirty];b.presentationPyramid.invalidate(dirty);
 }

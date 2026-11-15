@@ -198,19 +198,19 @@ struct VOut{@builtin(position)position:vec4f,@location(0)doc:vec2f};
 // Handoff feedback is composed in bounded groups in a 128px scratch tile.
 // Keep straight alpha between groups; compose() already rounds every stroke to
 // the same RGBA8 values used by strict deposition. Premultiply only for display.
-const glShapeCoverage=`float shapeCoverage(ivec2 q){
+const glShapeCoverage=`uniform highp sampler2D layerMaskImage;
+float shapeCoverage(ivec2 q){
  float kind=params[5].z;
  if(kind==0.)return 1.;
- vec2 local=(params[0].xy+vec2(q)+.5-params[4].zw)*2./params[5].xy-1.;
- bool inside=abs(kind)>1.5?dot(local,local)<=1.:all(lessThanEqual(abs(local),vec2(1.)));
- return inside==(kind>0.)?1.:1.-params[5].w;
+ if(kind==1.)return params[5].w;
+ return texelFetch(layerMaskImage,q,0).r;
 }`;
-const wgShapeCoverage=`fn shapeCoverage(q:vec2i)->f32{
+const wgShapeCoverage=`@group(0)@binding(12)var layerMaskImage:texture_2d<f32>;
+fn shapeCoverage(q:vec2i)->f32{
  let kind=p.v[5].z;
  if(kind==0.){return 1.;}
- let local=(p.v[0].xy+vec2f(q)+.5-p.v[4].zw)*2./p.v[5].xy-1.;
- let inside=select(all(abs(local)<=vec2f(1.)),dot(local,local)<=1.,abs(kind)>1.5);
- return select(1.-p.v[5].w,1.,inside==(kind>0.));
+ if(kind==1.){return p.v[5].w;}
+ return textureLoad(layerMaskImage,q,0).r;
 }`;
 export const glFeedbackComposeVertex=glDisplayVertex.replace('vec2 p=doc/params[4].xy;', 'vec2 p=corner;');
 export const glFeedbackCompose=glDisplay.replace('pos=ivec2(gl_FragCoord.xy)', 'pos=ivec2(q.x,127-q.y)').replace('void main()',glShapeCoverage+'\nvoid main()').replace('result=vec4(d.rgb*d.a,d.a);', 'result=vec4(d.rgb,d.a*shapeCoverage(q));');
