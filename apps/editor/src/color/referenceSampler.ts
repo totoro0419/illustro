@@ -112,8 +112,7 @@ export function installReferenceColorPicker(
   dialog.addEventListener('close',()=>{
     if(pointer!==null){pointer=null;foreground.cancel();}
   });
-  file.onchange=async()=>{
-    const image=file.files?.[0];file.value='';if(!image)return;
+  async function openBlob(image:Blob){
     if(image.size>32*1024*1024){feedback.textContent='32MB以下の画像を選んでください。';return;}
     try{
       const bitmap=await createImageBitmap(image);
@@ -133,7 +132,11 @@ export function installReferenceColorPicker(
         if(!dialog.open)dialog.showModal();
       }finally{bitmap.close();}
     }catch(error){feedback.textContent='画像を開けませんでした。'+(error instanceof Error?error.message:String(error));}
+  }
+  file.onchange=async()=>{
+    const image=file.files?.[0];file.value='';if(!image)return;
+    await openBlob(image);
   };
   open.onclick=()=>file.click();
-  return {open:()=>file.click(),isOpen:()=>dialog.open};
+  return {open:()=>file.click(),openBlob,isOpen:()=>dialog.open};
 }
