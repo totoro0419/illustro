@@ -899,8 +899,11 @@ function bindHistoryButton(id:string,direction:'undo'|'redo'){
     touchHandled=event.pointerId;const result=performHistory(direction);traceHistoryInput(button,direction,result==='accepted'?'accepted':'rejected',event,result);
   });
   button.onclick=event=>{
-    const pointerId=(event as PointerEvent).pointerId;
-    if(event.detail>0&&touchHandled!==null&&(pointerId===touchHandled||!pointerId)){touchHandled=null;press=null;traceHistoryInput(button,direction,'compatibility-click',event);return;}
+    // Chromium/Android can assign a different pointerId to the synthesized
+    // click than to the pen's pointerup. A handled pen/touch release always
+    // consumes its following compatibility click, regardless of click pointerId.
+    // A genuinely new physical press resets touchHandled in pointerdown.
+    if(event.detail>0&&touchHandled!==null){touchHandled=null;press=null;event.preventDefault();traceHistoryInput(button,direction,'compatibility-click',event);return;}
     if(event.detail>0&&press===null){blockedHistoryGhostClicks++;event.preventDefault();traceHistoryInput(button,direction,'rejected',event,'outside-press');updateQa();return;}
     press=null;const result=performHistory(direction);traceHistoryInput(button,direction,result==='accepted'?'accepted':'rejected',event,result);
   };
