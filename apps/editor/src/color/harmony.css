@@ -1,0 +1,15 @@
+
+.c04-color-harmony{padding:9px 5px;border-top:1px solid var(--a-border,#ddd);font-size:11px}
+.c04-color-harmony summary{cursor:pointer;font-weight:650;min-height:34px}
+.c04-color-harmony>section{display:flex;flex-direction:column;gap:8px}
+.c04-color-harmony select{width:100%;min-height:36px;padding:5px;border:1px solid var(--a-border,#ddd);border-radius:8px}
+.c04-harmony-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.c04-harmony-swatch{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:3px;background:transparent;border:1px solid var(--a-border,#ddd);border-radius:8px;padding:6px;color:inherit}
+.c04-harmony-swatch i{display:block;height:26px;border-radius:6px;border:1px solid #0002}
+.c04-harmony-swatch span{font-size:11px;font-weight:600}
+.c04-harmony-swatch small{font-size:10px;color:var(--a-subtle,#667)}
+.c04-color-harmony output{font-size:11px;color:var(--a-text,#333)}
+.c04-color-harmony label{display:flex;align-items:center;min-height:32px;gap:5px}
+.c04-color-harmony label input{flex:none}
+.c04-color-harmony p{margin:2px 0;color:var(--a-subtle,#667);line-height:1.4}
+body.c04-gray-proof .surface{filter:grayscale(1)}
