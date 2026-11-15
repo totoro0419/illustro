@@ -203,9 +203,11 @@ function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)
     return;
   }
   try{
+    const previousOrder=controller.document.root.rootLayerIds;
     const tx=controller.document.begin(label);
     if(!change(tx)){tx.cancel();return;}
     controller.lastPersistenceHandoff=tx.commit().persistence;
+    controller.reconcileSelection(previousOrder);
     queueLatestCommit();
     surface.discardRedoProjection();
     surface.syncLayerStack();
@@ -259,6 +261,12 @@ function clearLayerOpacityPreview(){
   opacityPreviewFrame=0;
   opacityPreview?.surface.setLayerOpacityPreview();
   opacityPreview=null;
+}
+
+function deleteLayers(ids:ReadonlySet<LayerId>){
+  if(!ids.size)return;
+  if(!window.confirm(ids.size===1?'このレイヤーを削除しますか？':ids.size+'枚のレイヤーを削除しますか？'))return;
+  changeLayer('レイヤーを削除しました。',tx=>tx.deleteRasterLayers(ids));
 }
 
 function chooseLayerGroupDestination(action:(id:LayerId|null)=>void){
@@ -375,6 +383,8 @@ const renderLayers=()=>{
   batchButton.setAttribute('aria-pressed',String(layerBatchMode));
   byId('layerBatchActions').hidden=!layerBatchMode;
   byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
+  byId<HTMLButtonElement>('deleteLayer').disabled=!documentReady||root.isLayerLocked(selectedLayer.id)||!rows.some(layer=>layer.id!==selectedLayer.id&&layer.baseColor!=='white');
+  byId<HTMLButtonElement>('layerBatchDelete').disabled=!documentReady||!layerBatchIds.size||[...layerBatchIds].some(id=>root.isLayerLocked(id))||!rows.some(layer=>!layerBatchIds.has(layer.id)&&layer.baseColor!=='white');
   byId<HTMLButtonElement>('layerBatchGroup').disabled=!documentReady||!layerBatchIds.size;
   byId<HTMLButtonElement>('layerBatchDestination').disabled=!documentReady||!layerBatchIds.size||!root.layerGroups.length;
   byId<HTMLButtonElement>('layerDestination').disabled=!documentReady||!root.layerGroups.length||root.isLayerLocked(selectedLayer.id)||selectedLayer.baseColor==='white';
@@ -574,6 +584,8 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchAnchor=null;
   renderLayers();
 };
+byId<HTMLButtonElement>('deleteLayer').onclick=()=>deleteLayers(new Set([controller.selectedLayerId]));
+byId<HTMLButtonElement>('layerBatchDelete').onclick=()=>deleteLayers(new Set(layerBatchIds));
 byId<HTMLButtonElement>('layerDestination').onclick=()=>{
   const ids=new Set([controller.selectedLayerId]);
   chooseLayerGroupDestination(destination=>changeLayer('レイヤーを移動しました。',tx=>tx.moveLayersIntoGroup(ids,destination)));
@@ -1268,7 +1280,7 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
     for(const direction of directions){const change=admittedHistoryChanges.shift();if(!change||change.direction!==direction)throw new Error('履歴操作の順序が一致しません。');if(change.changed)changes.push(change);}
     if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
     updateQa();
-    if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
+    if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'||op.kind==='layer.delete')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
     undoCount+=changes.filter(c=>c.direction==='undo').length;redoCount+=changes.filter(c=>c.direction==='redo').length;
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
     const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';

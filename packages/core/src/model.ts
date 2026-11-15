@@ -48,8 +48,12 @@ export class DocumentRoot{
   hasLayer(id:LayerId){return this.layers.get(id)!==undefined;}
   withLayers(changes:ReadonlyMap<LayerId,LayerNode>){if(!changes.size)return this;const e=this.layers.edit();for(const [k,v] of changes)e.set(k,v);
     return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,e.commit(),this.rootLayerIds,this.metadata);}
-  withLayerState(changes:ReadonlyMap<LayerId,LayerNode>,rootLayerIds:readonly LayerId[]){
-    if(!changes.size&&sameOrder(rootLayerIds,this.rootLayerIds))return this;const e=this.layers.edit();for(const [k,v] of changes)e.set(k,v);const layers=e.commit(),seen=new Set<LayerId>();
+  withLayerState(changes:ReadonlyMap<LayerId,LayerNode>,rootLayerIds:readonly LayerId[],removed:ReadonlySet<LayerId>=new Set()){
+    if(!changes.size&&!removed.size&&sameOrder(rootLayerIds,this.rootLayerIds))return this;
+    const e=this.layers.edit();
+    for(const [k,v] of changes)e.set(k,v);
+    for(const id of removed)e.delete(id);
+    const layers=e.commit(),seen=new Set<LayerId>();
     for(const id of rootLayerIds){if(seen.has(id))throw new Error('duplicate root layer');if(!layers.get(id))throw new Error('root layer is missing');seen.add(id);}
     return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,layers,rootLayerIds,this.metadata);
   }

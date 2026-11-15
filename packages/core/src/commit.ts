@@ -24,6 +24,14 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
       operations.push(finalizeOperation(v.id,ordinal,draft));
       if(slot.type==='document-info')documentInfo=slot.info;
     }else if(slot.type==='metadata'){const draft:SemanticOperationDraft=Object.freeze({kind:'layer.metadata',schemaVersion:2,targetEntityIds:Object.freeze([slot.layerId]),parameters:Object.freeze((()=>{const layer=updates.get(slot.layerId)??v.root.getLayer(slot.layerId);return {name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,...(layer.colorTag!==undefined?{colorTag:layer.colorTag}:{})};})()),algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([])});operations.push(finalizeOperation(v.id,ordinal,draft));
+    }else if(slot.type==='delete'){
+      const draft:SemanticOperationDraft=Object.freeze({
+        kind:'layer.delete',schemaVersion:1,targetEntityIds:slot.ids,
+        parameters:Object.freeze({}),algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),
+        sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),
+        resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([]),
+      });
+      operations.push(finalizeOperation(v.id,ordinal,draft));
     }else if(slot.type==='groups'){
       const draft:SemanticOperationDraft=Object.freeze({
         kind:'layer.groups',schemaVersion:1,targetEntityIds:Object.freeze([slot.id]),
@@ -44,7 +52,7 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
       operations.push(finalizeOperation(v.id,ordinal,draft));
     }else if(slot.type==='structure'){const draft:SemanticOperationDraft=Object.freeze({kind:'layer.add-raster',schemaVersion:1,targetEntityIds:Object.freeze([slot.layerId]),parameters:Object.freeze({surfaceId:slot.surfaceId,insertIndex:slot.insertIndex,name:slot.name}),algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze([slot.surfaceId]),dirtyFootprint:Object.freeze([])});operations.push(finalizeOperation(v.id,ordinal,draft));
     }else{let layer=updates.get(slot.layerId)??v.root.getLayer(slot.layerId);layer=Object.freeze({...layer,surface:layer.surface.withMutations(slot.key,slot.dirtyTiles)});updates.set(slot.layerId,layer);operations.push(finalizeOperation(v.id,ordinal,slot.draft));}}
-  let nextRoot=v.rootLayerIds?v.root.withLayerState(updates,v.rootLayerIds):v.root.withLayers(updates);
+  let nextRoot=v.rootLayerIds?v.root.withLayerState(updates,v.rootLayerIds,v.deleted):v.root.withLayers(updates);
   if(v.groups)nextRoot=nextRoot.withLayerGroups(v.groups);
   if(v.dimensions)nextRoot=nextRoot.withDimensions(v.dimensions.width,v.dimensions.height);
   if(documentInfo)nextRoot=nextRoot.withInfo(documentInfo);

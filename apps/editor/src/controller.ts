@@ -43,7 +43,7 @@ export class EditorController{
     this.committedByLayer.clear();this.committedStrokeCount=0;this.committedEraserStrokeCount=0;
     for(const operation of this.document.operationsTo()){if(operation.kind!=='brush.stroke'||operation.parameters.seamlessCopy===true)continue;const layerId=operation.targetEntityIds[0];if(!layerId)continue;this.committedStrokeCount++;if(operation.parameters.action==='erase')this.committedEraserStrokeCount++;this.committedByLayer.set(layerId,this.strokeCountForLayer(layerId)+1);}
   }
-  private reconcileSelection(previousOrder:readonly LayerId[]){
+  reconcileSelection(previousOrder:readonly LayerId[]){
     const root=this.document.root;if(root.hasLayer(this.selectedLayerIdValue))return;
     const order=root.rootLayerIds;if(!order.length)throw new Error('Document has no selectable Raster Layer');
     const oldIndex=previousOrder.indexOf(this.selectedLayerIdValue),fallbackIndex=Math.max(0,Math.min(order.length-1,oldIndex>0?oldIndex-1:0));

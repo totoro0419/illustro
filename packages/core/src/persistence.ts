@@ -9,7 +9,7 @@ import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
 const UUID_V4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','document.crop','document.canvas-resize','document.image-resize','document.info']);
+const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.delete','document.crop','document.canvas-resize','document.image-resize','document.info']);
 const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.unorm16.v1','rgba.float32.v1']);
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
@@ -207,7 +207,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
       geometry=true;continue;
     }
     if(operation.kind==='document.info')continue;
-    if(operation.kind==='layer.groups'){structural=true;continue;}
+    if(operation.kind==='layer.groups'||operation.kind==='layer.delete'){structural=true;continue;}
     if(operation.kind==='layer.reorder'){structural=true;continue;}
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
     if(operation.kind==='layer.metadata'||operation.kind==='layer.add-raster'){
@@ -234,7 +234,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
   return Object.freeze({schema:'illustro.core.recovery-packet' as const,schemaVersion:1 as const,handoff:persistedHandoff,
     revision:Object.freeze({id:revision.id,parentIds:Object.freeze([...revision.parentIds]),transactionId:revision.transactionId!,command:revision.command,
       commitStamp:Object.freeze({writerEpochId:revision.commitStamp.writerEpochId,commitSequence:revision.commitStamp.commitSequence.toString()}),committedAt:revision.committedAt}),
-    modifiedAt:revision.root.metadata.modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds:structural?Object.freeze([...revision.root.rootLayerIds]):null,tileChanges:Object.freeze(tileChanges),blocks,replacementRoot,...(revision.command.operations.some(op=>op.kind==='layer.groups')?{layerGroups:revision.root.layerGroups}:{})});
+    modifiedAt:revision.root.metadata.modifiedAt,layerStates:Object.freeze(layerStates),rootLayerIds:structural?Object.freeze([...revision.root.rootLayerIds]):null,tileChanges:Object.freeze(tileChanges),blocks,replacementRoot,...(revision.command.operations.some(op=>(op.kind==='layer.groups'||op.kind==='layer.delete'))?{layerGroups:revision.root.layerGroups}:{})});
 }
 
 export function mergeCoreRecovery(baseValue:unknown,packetValues:readonly unknown[],headRevisionId?:string):CorePersistenceSnapshotV1{
@@ -305,7 +305,8 @@ function applyRootDelta(parent:PersistedRoot,packet:CoreRecoveryPacketV1):Persis
     return Object.freeze({...rest,name,modifiedAt:packet.modifiedAt,...(author?{author}:{}),
       ...(description?{description}:{}),...(dpi===null?{}:{dpi})});
   }
-  const layers=parent.layers.map(layer=>({...layer,surface:{descriptor:layer.surface.descriptor,tiles:[...layer.surface.tiles]}})) as Array<{id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;colorTag?:LayerNode['colorTag'];surface:{descriptor:RasterSurfaceDescriptor;tiles:Array<{key:string;value:RasterTileValue}>}}>;
+  const deleted=new Set(packet.revision.command.operations.filter(operation=>operation.kind==='layer.delete').flatMap(operation=>operation.targetEntityIds));
+  const layers=parent.layers.filter(layer=>!deleted.has(layer.id as LayerId)).map(layer=>({...layer,surface:{descriptor:layer.surface.descriptor,tiles:[...layer.surface.tiles]}})) as Array<{id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;colorTag?:LayerNode['colorTag'];surface:{descriptor:RasterSurfaceDescriptor;tiles:Array<{key:string;value:RasterTileValue}>}}>;
   for(const state of packet.layerStates){let layer=layers.find(x=>x.id===state.id);if(!layer){layer={id:state.id,kind:'raster',name:state.name,visible:state.visible,opacity:state.opacity,locked:state.locked,...(state.colorTag?{colorTag:state.colorTag}:{}),surface:{descriptor:state.surfaceDescriptor,tiles:[]}};layers.push(layer);}
     else{layer.name=state.name;layer.visible=state.visible;layer.opacity=state.opacity;layer.locked=state.locked;if(state.colorTag!==undefined)layer.colorTag=state.colorTag;if(layer.surface.descriptor.surfaceId!==state.surfaceDescriptor.surfaceId)throw new Error('recovery surface identity changed');}}
   for(const change of packet.tileChanges){const layer=layers.find(x=>x.id===change.layerId);if(!layer)throw new Error('recovery tile layer missing');const index=layer.surface.tiles.findIndex(x=>x.key===change.key),previous=index>=0?layer.surface.tiles[index]!.value:Object.freeze({baseBlockId:null,mutations:Object.freeze([])});

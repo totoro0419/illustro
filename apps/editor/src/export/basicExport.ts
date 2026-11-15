@@ -30,6 +30,8 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId):Frozen
   const operations=document.operationsTo(revision),geometryIndex=operations.findLastIndex(op=>['document.crop','document.canvas-resize','document.image-resize'].includes(op.kind));
   const basePixels=geometryIndex>=0?root.rootLayerIds.map(id=>({surfaceId:root.getLayer(id).surface.descriptor.surfaceId,pixels:document.readBaseRasterPixels(id)})):undefined;
   for(const op of operations.slice(geometryIndex+1)){
+    const target=op.targetEntityIds[0];
+    if(target&&!byLayer.has(target))continue;
     if(op.kind==='brush.stroke'){
       const id=op.targetEntityIds[0],surfaceId=id===undefined?undefined:byLayer.get(id);
       if(!surfaceId)throw new Error('書き出し対象に不明なレイヤーがあります。');

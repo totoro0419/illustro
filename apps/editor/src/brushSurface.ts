@@ -505,12 +505,14 @@ export class BrushSurface{
     if(!this.session||!this.renderer)throw new Error('Renderer is not initialized');if(this.busy)throw new Error('Renderer is busy');
     const started=performance.now();this.historySyncing=true;this.onStateChanged();    try{
       this.syncLayerStack();const operations=this.controller.document.operationsTo(),geometryIndex=operations.findLastIndex(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize');
+      const root=this.controller.document.root;
       const geometry=geometryIndex>=0;((this.renderer as any).proxy)?.setEnabled(!geometry);const visibleOperations=geometry?operations.slice(geometryIndex+1):operations;
       const entries:Array<{operation:SemanticOperation;record:StrokeRecord;surfaceKey:string;keys:string[]}>=[];for(const operation of visibleOperations){
+        const target=operation.targetEntityIds[0];
+        if(target&&!root.hasLayer(target))continue;
         if(operation.kind==='brush.stroke'){const record=validateRecord(operation.parameters.strokeRecord);this.restoredRecords.set(operation.parameters.strokeRecord as object,record);entries.push({operation,record,surfaceKey:this.surfaceForOperation(operation),keys:this.runtimeKeys(operation)});}
         else if(operation.kind==='raster.strict-delta')throw new Error('Direct raster deltas outside geometry need materialization');
       }
-      const root=this.controller.document.root;
       const savedCache=this.validProjectionCache(cache);
       const baseGeometry:ProjectionCacheV1|undefined=geometry&&!savedCache?{version:1,revisionId:this.controller.document.head,width:root.width,height:root.height,layers:this.controller.layers.map(layer=>({surfaceId:layer.surface.descriptor.surfaceId,pixels:this.controller.document.readBaseRasterPixels(layer.id)}))}:undefined;
       const validCache=savedCache??this.validProjectionCache(baseGeometry);

@@ -27,5 +27,17 @@ export class PagedMapEdit<K extends string,V>{
     if(!p){p=this.base._copyPage(i);this.#changed.set(i,p);}
     if(!p.has(key))this.#count++;p.set(key,value);
   }
+  delete(key:K){
+    const index=pageIndex(key);
+    let page=this.#changed.get(index);
+    if(!page){
+      if(this.base.get(key)===undefined)return false;
+      page=this.base._copyPage(index);
+      this.#changed.set(index,page);
+    }
+    if(!page.delete(key))return false;
+    this.#count--;
+    return true;
+  }
   commit(){return this.#changed.size?this.base._with(this.#changed,this.#count):this.base;}
 }

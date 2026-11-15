@@ -45,7 +45,7 @@ async function handle(message:RequestMessage){
       const entry:WorkEntry={documentId:session.documentId,writerEpochId:session.writerEpochId,revisionId,protectedThrough,
         name:root.name,width:root.width,height:root.height,createdAt:old?.createdAt??root.createdAt,updatedAt:old?.updatedAt??now,openedAt:now,
         selectedLayerId:uuid(message.selectedLayerId,'selected layer'),thumbnail:old?.thumbnail??null,thumbnailRevision:old?.thumbnailRevision??null,
-        previewLayers:root.rootLayerIds.map(id=>{const layer=root.layers.find(layer=>layer.id===id);if(!layer)throw new Error('work binding layer missing');return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};}),
+        previewLayers:root.rootLayerIds.map(id=>{const layer=root.layers.find(layer=>layer.id===id);if(!layer)throw new Error('work binding layer missing');return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible&&!(root.layerGroups??[]).some(group=>!group.visible&&group.members.some(member=>member===id)),opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};}),
         previous:old?{writerEpochId:old.writerEpochId,revisionId:old.revisionId,protectedThrough:old.protectedThrough}:null,preserved:message.preserved};
       await publishWork(entry,typeof message.expectedEpoch==='string'?message.expectedEpoch:null);libraryWork=entry;reply(message.id,true,entry);break;
     }
@@ -269,7 +269,7 @@ async function initPreviewTask(store:WorkingStore,entry:WorkEntry):Promise<Previ
     layers=root.rootLayerIds.map(id=>{
       const layer=root.layers.find(l=>l.id===id);
       if(!layer)throw new Error('Missing preview layer');
-      return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};
+      return {surfaceId:layer.surface.descriptor.surfaceId,visible:layer.visible&&!(root.layerGroups??[]).some(group=>!group.visible&&group.members.some(member=>member===id)),opacity:layer.opacity,...(layer.baseColor==='white'?{baseColor:'white' as const}:{})};
     });
   }
   const sourceWidth=entry.width,sourceHeight=entry.height,scale=Math.min(1,320/sourceWidth,240/sourceHeight);
