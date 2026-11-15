@@ -30,7 +30,7 @@ import {changeCanvasBounds,cropCanvas,shiftedForAnchor,resizeImagePixels,type Im
 import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExportResult} from './export/basicExport';
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
-import {storeCreationTemplate} from './documentSetup';
+import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
 import {CoreDocument,type SemanticOperation,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
@@ -1436,8 +1436,25 @@ if(!qaMode){
     hasDocument:()=>documentReady,
   });
   byId<HTMLButtonElement>('home').onclick=()=>{void homeUi?.showHome();};
-  // Give the Home UI a frame to appear before starting GPU work in workers.
-  window.setTimeout(()=>{if(!initialBlankWarmup)beginBlankWarmup();},300);
+  // Warm exactly the size saved in the new-work dialog, not a hard-coded
+  // 512×384 document. High-resolution users would otherwise compile a throwaway
+  // renderer before the 4000×4000 renderer was even requested.
+  window.setTimeout(()=>{
+    if(initialBlankWarmup)return;
+    try{
+      const unit=byId<HTMLSelectElement>('ihNewUnit').value as 'px'|'mm';
+      const selected=resolveDocumentDimensions(
+        Number(byId<HTMLInputElement>('ihNewWidth').value),
+        Number(byId<HTMLInputElement>('ihNewHeight').value),
+        unit,Number(byId<HTMLInputElement>('ihNewDpi').value));
+      beginBlankWarmup(selected.width,selected.height,
+        byId<HTMLInputElement>('ihNewName').value,
+        byId<HTMLSelectElement>('ihNewBackground').value as 'transparent'|'white',
+        selected.dpi,
+        byId<HTMLInputElement>('ihNewAuthor').value.trim(),
+        byId<HTMLTextAreaElement>('ihNewDescription').value.trim());
+    }catch{/* Invalid saved preferences do not block the new-work dialog. */}
+  },300);
 }
 void refreshRecoveryCandidates();if(!qaMode)void refreshWorks();
 if('serviceWorker' in navigator){const build=encodeURIComponent(import.meta.env.VITE_COMMIT_SHA??'dev');void navigator.serviceWorker.register('./sw.js?build='+build,{scope:'./'}).catch(()=>{});}
