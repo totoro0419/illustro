@@ -3257,6 +3257,25 @@ c06Selection=installSelectionWorkbench({
   onMaskChanged:mask=>{
     c06Clipboard.setSelectionMask(mask);
     c06ClipboardUI?.refresh();
+  },
+  capturePixels:async source=>{
+    const drawing=surface,artwork=controller.document,revision=artwork.head;
+    if(!documentReady||!drawing||drawing.busy||drawing.inputActive||historyPending||geometryBusy)
+      throw Error('描画が終わってから色による選択を実行してください。');
+    const width=artwork.root.width,height=artwork.root.height;
+    let result:Uint8Array|Uint8ClampedArray;
+    if(source==='merged')result=await renderFrozenArtwork(captureExport(artwork));
+    else{
+      const layerId=controller.selectedLayer.id;
+      const captured=await drawing.captureDocumentLayers(new Set([layerId]));
+      const bytes=captured.get(layerId);
+      if(!bytes)throw Error('選んだレイヤーを読み込めませんでした。');
+      result=bytes;
+    }
+    if(drawing!==surface||artwork!==controller.document||artwork.head!==revision)
+      throw Error('計算中に作品が変更されました。もう一度選択してください。');
+    if(result.length!==width*height*4)throw Error('作品の画素が不足しています。');
+    return new Uint8ClampedArray(result);
   }
 });
 c06ClipboardUI=installClipboardPanel({
