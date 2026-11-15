@@ -187,26 +187,79 @@ let thumbnailRepairTimer:number|null=null,thumbnailRepairRunning=false;const thu
 document.body.dataset.appMode=qaMode?'qa':'production';if(!qaMode){const retry=document.createElement('button');retry.type='button';retry.textContent='保存を再試行';retry.id='retryWorkSave';retry.onclick=()=>{void persistence.retry().then(()=>{byId('status').textContent='アプリ内に保存しました。';updatePersistenceDisplay();}).catch(showStorageError);};byId('saveState').after(retry);}
 const historyButtons=()=>[byId<HTMLButtonElement>('undo'),byId<HTMLButtonElement>('redo'),byId<HTMLButtonElement>('compactUndo'),byId<HTMLButtonElement>('compactRedo')];
 
+function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)=>boolean){
+  if(!documentReady||!surface)return;
+  if(surface.busy||historyPending||geometryBusy){
+    byId('status').textContent='今の操作が終わってからレイヤーを変更してください。';
+    renderLayers();
+    return;
+  }
+  try{
+    const tx=controller.document.begin(label);
+    if(!change(tx)){tx.cancel();return;}
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    queueLatestCommit();
+    surface.discardRedoProjection();
+    surface.syncLayerStack();
+    byId('status').textContent=label;
+  }catch(error){
+    byId('status').textContent='レイヤーを変更できませんでした。'+(error instanceof Error?error.message:'');
+  }
+  renderLayers();
+  updateHistoryButtons();
+  updateQa();
+}
+
 const renderLayers=()=>{
-  const rows=[...controller.layers].reverse(),selectedName=controller.selectedLayer.name;
+  const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
+  const query=byId<HTMLInputElement>('layerSearch').value.trim().toLocaleLowerCase();
+  const opacity=byId<HTMLInputElement>('layerOpacity');
+  opacity.value=String(Math.round(selectedLayer.opacity*100));
+  opacity.disabled=!documentReady;
+  byId('layerOpacityValue').textContent=opacity.value+'%';
+  const nameField=byId<HTMLInputElement>('selectedLayerName');
+  if(document.activeElement!==nameField||nameField.dataset.layerId!==selectedLayer.id)nameField.value=selectedName;
+  nameField.dataset.layerId=selectedLayer.id;
+  nameField.disabled=!documentReady;
   for(const id of ['layerList','layerPageList']){
     const list=byId<HTMLDivElement>(id);
-    list.replaceChildren(...rows.map(layer=>{
+    const matching=id==='layerPageList'&&query?rows.filter(layer=>layer.name.toLocaleLowerCase().includes(query)):rows;
+    list.replaceChildren(...matching.map(layer=>{
       const selected=layer.id===controller.selectedLayerId,row=document.createElement('button'),name=document.createElement('span'),state=document.createElement('span');
       row.type='button';row.className='layer-row';row.dataset.layerId=layer.id;
       row.setAttribute('aria-pressed',String(selected));row.setAttribute('aria-label',layer.name+(selected?'、選択中':''));
-      name.className='layer-name';name.textContent=layer.name;state.className='layer-state';state.textContent=selected?'選択中':'';
+      name.className='layer-name';name.textContent=layer.name;state.className='layer-state';state.textContent=[selected?'選択中':'',layer.locked?'ロック中':'',layer.visible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=()=>{
-        if(layer.baseColor==='white'){
+        if(layer.baseColor==='white'&&layer.visible&&!layer.locked){
           void materializeAndSelectWhiteLayer(layer.id).catch(showStorageError);
           return;
         }
         try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+'を選びました。次の線はこのレイヤーに入ります。';updateHistoryButtons();updateQa();}
         catch{byId('status').textContent='そのレイヤーを選択できませんでした。';}
       };
-      return row;
+      const entry=document.createElement('div');
+      entry.className='layer-entry';
+      const visibility=document.createElement('button'),lock=document.createElement('button');
+      visibility.type=lock.type='button';
+      visibility.textContent=layer.visible?'表示':'非表示';
+      lock.textContent=layer.locked?'解除':'ロック';
+      visibility.setAttribute('aria-label',layer.name+(layer.visible?'を非表示にする':'を表示する'));
+      lock.setAttribute('aria-label',layer.name+(layer.locked?'のロックを解除する':'をロックする'));
+      visibility.onclick=()=>{
+        changeLayer(layer.visible?'レイヤーを非表示にしました。':'レイヤーを表示しました。',tx=>tx.setLayerVisibility(layer.id,!layer.visible));
+        list.querySelector<HTMLButtonElement>(`[data-layer-id="${layer.id}"]`)?.parentElement?.querySelector<HTMLButtonElement>('.layer-visibility')?.focus();
+      };
+      lock.onclick=()=>{
+        changeLayer(layer.locked?'レイヤーのロックを解除しました。':'レイヤーをロックしました。',tx=>tx.setLayerLocked(layer.id,!layer.locked));
+        list.querySelector<HTMLButtonElement>(`[data-layer-id="${layer.id}"]`)?.parentElement?.querySelector<HTMLButtonElement>('.layer-lock')?.focus();
+      };
+      visibility.className='layer-visibility';
+      lock.className='layer-lock';
+      entry.append(row,visibility,lock);
+      return entry;
     }));
+    if(!matching.length)list.textContent='一致するレイヤーがありません。';
   }
   byId('layerPageSelected').textContent=selectedName;
   byId('layersBoxSummary').textContent=selectedName;
@@ -254,6 +307,22 @@ const updateQa=()=>{
     export:{last:lastExport,error:exportError,busy:exportBusy,count:exportCount},layers:controller.layers.map(layer=>({id:layer.id,surfaceId:layer.surface.descriptor.surfaceId,name:layer.name,committedStrokes:controller.strokeCountForLayer(layer.id)})),documentId:controller.document.root.documentId,documentMetadata:controller.document.root.metadata,writerEpoch:controller.document.writerEpochId,commitSequence:controller.document.commitSequence.toString(),persistence:persistenceState,autosaveCheckpoint:{operationInterval:CHECKPOINT_OPERATION_INTERVAL,idleMs:CHECKPOINT_IDLE_MS,opsSinceLast:checkpointOpsSinceLast,fullSeedPending:checkpointNeedsFullSeed,lastCheckpointAt,cancelled:checkpointCancelled,errors:checkpointErrors},qaStartedAt};
   byId('qaAuto').textContent=JSON.stringify(data,null,2);
 };
+byId<HTMLInputElement>('layerSearch').oninput=renderLayers;
+const layerNameField=byId<HTMLInputElement>('selectedLayerName');
+layerNameField.onchange=()=>{
+  const nextName=layerNameField.value.trim();
+  if(!nextName){
+    layerNameField.value=controller.selectedLayer.name;
+    byId('status').textContent='レイヤー名を入力してください。';
+    return;
+  }
+  changeLayer('レイヤー名を変更しました。',tx=>tx.renameLayer(controller.selectedLayerId,nextName));
+  layerNameField.value=controller.selectedLayer.name;
+};
+layerNameField.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();layerNameField.blur();}};
+const layerOpacityInput=byId<HTMLInputElement>('layerOpacity');
+layerOpacityInput.oninput=()=>{byId('layerOpacityValue').textContent=layerOpacityInput.value+'%';};
+layerOpacityInput.onchange=()=>changeLayer('レイヤーの不透明度を変更しました。',tx=>tx.setLayerOpacity(controller.selectedLayerId,Number(layerOpacityInput.value)/100));
 renderLayers();
 
 function scheduleProjectionCheckpoint(delay=CHECKPOINT_IDLE_MS){
@@ -705,7 +774,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
     measureCanvasStage('projection-restore',replayStarted);
   }
   for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV','brushDuplicate','brushSave','brushOpacity','brushFlow','brushSpacing','brushPressure','brushStabilization','brushTexture','brushAzimuth','brushTwist'])(byId(id) as HTMLInputElement).disabled=false;
-  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);renderLayers();documentReady=true;updateHistoryButtons();
+  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b]);documentReady=true;renderLayers();updateHistoryButtons();
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
   if(documentActivationPending)throw new Error('別の作品を開いています。');

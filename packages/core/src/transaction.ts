@@ -72,14 +72,29 @@ export class DocumentTransaction{
     this.slotsValue.push({type:'document-info',info});
     return true;
   }
-  renameLayer(id:LayerId,name:string){this.meta(id,{name:name.trim()});}setLayerVisibility(id:LayerId,visible:boolean){this.meta(id,{visible});}setLayerLocked(id:LayerId,locked:boolean){this.meta(id,{locked});}
+  renameLayer(id:LayerId,name:string){return this.meta(id,{name:name.trim()});}
+  setLayerVisibility(id:LayerId,visible:boolean){return this.meta(id,{visible});}
+  setLayerLocked(id:LayerId,locked:boolean){return this.meta(id,{locked});}
+  setLayerOpacity(id:LayerId,opacity:number){
+    if(!Number.isFinite(opacity)||opacity<0||opacity>1)throw new Error('invalid layer opacity');
+    return this.meta(id,{opacity});
+  }
   commit():CommitReceipt{this.open();try{return commitTransaction(this);}catch(e){this.failed=true;throw e;}}
   cancel(){if(this.closed)throw new Error('transaction closed');this.workingValue.clear();this.updatesValue.clear();this.slotsValue.length=0;this.rootOrderValue=null;this.dimensionUpdate=null;this.closed=true;}
   _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked)throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,p:Partial<Pick<LayerNode,'name'|'visible'|'locked'>>){this.open();const b=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(p.name!==undefined&&!p.name)throw new Error('empty layer name');
-    if((p.name===undefined||p.name===b.name)&&(p.visible===undefined||p.visible===b.visible)&&(p.locked===undefined||p.locked===b.locked))return;
-    if(!this.updatesValue.has(id))this.slotsValue.push(Object.freeze({type:'metadata' as const,layerId:id}));this.updatesValue.set(id,Object.freeze({...b,...p}));}
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'>>){
+    this.open();
+    const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
+    if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');
+    const keys=Object.keys(patch) as (keyof typeof patch)[];
+    if(keys.every(key=>patch[key]===layer[key]))return false;
+    if(!this.slotsValue.some(slot=>slot.type==='metadata'&&slot.layerId===id)){
+      this.slotsValue.push(Object.freeze({type:'metadata' as const,layerId:id}));
+    }
+    this.updatesValue.set(id,Object.freeze({...layer,...patch}));
+    return true;
+  }
 }
