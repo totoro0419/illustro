@@ -3,6 +3,7 @@ import type {EditorController} from '../controller';
 import type {BrushSurface} from '../brushSurface';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 import type {SelectionRect} from '../strokeSelection';
+import {type MaskData,maskImage,eraseMaskedPixels} from './mask';
 
 export type ClipboardItem=Readonly<{
   sourceDocumentId:string;sourceColorProfile:string;sourceName:string;
@@ -27,6 +28,8 @@ function crop(source:Uint8Array|Uint8ClampedArray,srcWidth:number,area:Readonly<
 }
 export class ArtworkClipboard {
   private item:ClipboardItem|null=null;
+  private selectionMask:MaskData|null=null;
+  setSelectionMask(mask:MaskData|null){this.selectionMask=mask;}
   get hasContent(){return this.item!==null;}
   get summary(){return this.item?{
     name:this.item.sourceName,width:this.item.width,height:this.item.height,
@@ -50,7 +53,9 @@ export class ArtworkClipboard {
       source=pixels;
     }
     if(document.head!==head)throw Error('コピー中に作品が変更されました。もう一度コピーしてください。');
-    const pixels=crop(source,root.width,area);
+    const masked=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height&&selection
+      ?maskImage(source,this.selectionMask):source;
+    const pixels=crop(masked,root.width,area);
     const record:ClipboardItem={
       sourceDocumentId:root.documentId,sourceColorProfile:root.colorProfileId,
       sourceName:opts.merged?'合成した作品':controller.selectedLayer.name,
@@ -72,11 +77,14 @@ export class ArtworkClipboard {
     if(head!==document.head)throw Error('作品が変更されたため切り取りを中止しました。');
     const previous=(await drawing.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
     if(!previous||head!==document.head)throw Error('切り取るレイヤーの読み込みに失敗しました。');
-    const result=new Uint8ClampedArray(previous);
-    const rect=safeRect(area,root.width,root.height);
-    for(let y=rect.y;y<rect.y+rect.height;y++){
-      const from=(y*root.width+rect.x)*4;
-      result.fill(0,from,from+rect.width*4);
+    const result=this.selectionMask&&this.selectionMask.width===root.width&&this.selectionMask.height===root.height
+      ?eraseMaskedPixels(previous,this.selectionMask):new Uint8ClampedArray(previous);
+    if(!this.selectionMask){
+      const rect=safeRect(area,root.width,root.height);
+      for(let y=rect.y;y<rect.y+rect.height;y++){
+        const from=(y*root.width+rect.x)*4;
+        result.fill(0,from,from+rect.width*4);
+      }
     }
     const tx=document.begin('選択範囲を切り取る');
     tx.replaceLayerRaster(layer.id,result);
