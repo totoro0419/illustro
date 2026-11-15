@@ -1,10 +1,10 @@
-import {CoreDocument,type LayerId,type RevisionId} from '@illustro/core';
+import {CoreDocument,vectorMaskCoverage,type VectorLayerMask,type LayerId,type RevisionId} from '@illustro/core';
 import {GpuRenderer,validateRecord,type StrokeRecord} from '@illustro/brush-rt';
 
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
   revision:RevisionId;width:number;height:number;name:string;colorProfileId:string;
-  layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string}>[];
+  layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string;mask?:VectorLayerMask}>[];
   basePixels?:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[];
   strokes:readonly Readonly<{surfaceId:string;record:StrokeRecord}>[];
 }>;
@@ -24,7 +24,7 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
     const layer=root.getLayer(id);
     if(layer.kind!=='raster'||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1'||layer.surface.descriptor.workingColorSpaceRef!=='srgb')throw new Error('このレイヤーの色形式はM06に未対応です。');
     const clip=soloLayerId?null:root.clippingSource(id);
-    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
+    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,...(clip?{clipSurfaceId:clip.surface.descriptor.surfaceId}:{}),...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
   });
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord}[]=[];
@@ -47,11 +47,17 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revisio
 }
 
 /** Straight-alpha source-over; layer order is bottom to top. Output is never the presentation canvas. */
-export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|Uint8ClampedArray,opacity=1,clip?:{pixels:Uint8Array|Uint8ClampedArray;opacity:number}):void{
+export function compositeLayer(destination:Uint8ClampedArray,source:Uint8Array|Uint8ClampedArray,opacity=1,clip?:{pixels:Uint8Array|Uint8ClampedArray;opacity:number;mask?:VectorLayerMask|null},shape?:{width:number;mask?:VectorLayerMask|null}):void{
   if(destination.length!==source.length||destination.length%4)throw new Error('レイヤーの画像サイズが違います。');
   if(!Number.isFinite(opacity)||opacity<0||opacity>1)throw new Error('不正なレイヤー不透明度です。');
   for(let i=0;i<destination.length;i+=4){
-    const sa=source[i+3]!/255*opacity*(clip?clip.pixels[i+3]!/255*clip.opacity:1),da=destination[i+3]!/255;
+    let sa=source[i+3]!/255*opacity*(clip?clip.pixels[i+3]!/255*clip.opacity:1);
+    if(sa===0)continue;
+    if(shape&&(shape.mask?.enabled||clip?.mask?.enabled)){
+      const pixel=i/4,x=pixel%shape.width+.5,y=Math.floor(pixel/shape.width)+.5;
+      sa*=vectorMaskCoverage(shape.mask,x,y)*vectorMaskCoverage(clip?.mask,x,y);
+    }
+    const da=destination[i+3]!/255;
     if(sa===0)continue;
     const oa=sa+da*(1-sa),inva=da*(1-sa);
     destination[i]=Math.round((source[i]!*sa+destination[i]!*inva)/oa);
@@ -100,7 +106,7 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
       const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
       if(clip&&(!clip.visible||clip.opacity<=0))continue;
       const pixels=await readLayer(layer);
-      compositeLayer(composite,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity}:undefined);
+      compositeLayer(composite,pixels,layer.opacity,clip?{pixels:await readLayer(clip),opacity:clip.opacity,...(clip.mask?{mask:clip.mask}:{})}:undefined,{width,...(layer.mask?{mask:layer.mask}:{})});
       // Let pointer input and normal drawing frames execute between layers.
       await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
     }

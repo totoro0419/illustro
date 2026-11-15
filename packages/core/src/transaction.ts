@@ -1,3 +1,4 @@
+import {validateVectorLayerMask,type VectorLayerMask} from './layerMask';
 import type {LayerComp} from './layerComps';
 import {validateLayerGroups,type LayerGroup} from './layerGroups';
 import {operationKey,type LayerId,type OperationKey,type RasterSurfaceId,type TransactionId,type RevisionId} from './ids';
@@ -42,6 +43,7 @@ export class DocumentTransaction{
       this.setLayerVisibility(id,source.visible);
       if(source.colorTag)this.setLayerColorTag(id,source.colorTag);
       if(source.clipSourceId)this.meta(id,{clipSourceId:source.clipSourceId});
+      if(source.vectorMask)this.meta(id,{vectorMask:source.vectorMask});
     }
     const layer=this.updatesValue.get(id)!;
     if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('対応していない画素形式です。');
@@ -315,7 +317,20 @@ export class DocumentTransaction{
       const empty=new RasterSurfaceManifest(layer.surface.descriptor);
       // Geometry rebase writes exact full pixels; it no longer needs a virtual fill.
       const {baseColor:_baseColor,...materialized}=layer;
-      this.updatesValue.set(id,Object.freeze({...materialized,surface:empty}));
+      const mask=layer.vectorMask;
+      let vectorMask=mask;
+      if(mask){
+        if(kind==='document.image-resize'){
+          const scaleX=width/this.rootValue.width,scaleY=height/this.rootValue.height;
+          vectorMask=validateVectorLayerMask({...mask,x:mask.x*scaleX,y:mask.y*scaleY,width:mask.width*scaleX,height:mask.height*scaleY});
+        }else{
+          const deltaX=width-this.rootValue.width,deltaY=height-this.rootValue.height,anchor=parameters.anchor;
+          const shiftX=kind==='document.crop'?-Number(parameters.x??0):anchor==='center'?Math.floor(deltaX/2):anchor==='top-right'||anchor==='bottom-right'?deltaX:0;
+          const shiftY=kind==='document.crop'?-Number(parameters.y??0):anchor==='center'?Math.floor(deltaY/2):anchor==='bottom-left'||anchor==='bottom-right'?deltaY:0;
+          vectorMask=validateVectorLayerMask({...mask,x:mask.x+shiftX,y:mask.y+shiftY});
+        }
+      }
+      this.updatesValue.set(id,Object.freeze({...materialized,surface:empty,...(vectorMask?{vectorMask}:{})}));
       const working=new RasterWorkingSet(empty,this.doc._internal(CORE_INTERNAL).store);
       for(let ty=0;ty<Math.ceil(height/T);ty++)for(let tx=0;tx<Math.ceil(width/T);tx++){
         const tile=new Uint8Array(T*T*4),copyW=Math.min(T,width-tx*T),copyH=Math.min(T,height-ty*T);let filled=false;
@@ -340,6 +355,14 @@ export class DocumentTransaction{
   renameLayer(id:LayerId,name:string){return this.meta(id,{name:name.trim()});}
   setLayerVisibility(id:LayerId,visible:boolean){return this.meta(id,{visible});}
   setLayerLocked(id:LayerId,locked:boolean){return this.meta(id,{locked});}
+  setVectorLayerMask(id:LayerId,mask:VectorLayerMask|null){
+    const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
+    if(layer.baseColor==='white')throw new Error('白背景は描画できるレイヤーに変えてからマスクを設定してください。');
+    if(this.rootValue.isLayerLocked(id))throw new Error('マスクを変える前にロックを解除してください。');
+    const value=validateVectorLayerMask(mask);
+    if(JSON.stringify(value)===JSON.stringify(layer.vectorMask??null))return false;
+    return this.meta(id,{vectorMask:value});
+  }
   setLayerClipping(id:LayerId,enabled:boolean){
     const layer=this.rootValue.getLayer(id);
     if(layer.baseColor==='white')throw new Error('白背景にはクリッピングを設定できません。');
@@ -374,7 +397,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='restore-revision'||x.type==='pin-revision'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'|'clipSourceId'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

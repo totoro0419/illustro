@@ -611,6 +611,7 @@ export class BrushSurface{
         surfaceKey:layer.surface.descriptor.surfaceId,
         visible:solo?layer.id===solo.id:visible,
         ...(!solo&&clip?{clipKey:clip.surface.descriptor.surfaceId}:{}),
+        ...(layer.vectorMask?.enabled?{mask:layer.vectorMask}:{}),
         opacity:preview?.layerId===layer.id?preview.opacity:candidate?.opacity??layer.opacity,
       };
     }));

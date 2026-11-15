@@ -31,7 +31,7 @@ import {captureExport,compositeLayer,exportImage,exportFileName,renderFrozenArtw
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type VectorLayerMask,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -306,7 +306,8 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
       for(const id of sourceOrder){
         const clip=root.clippingSource(id);
         if(!root.isLayerVisible(id)||(clip&&!root.isLayerVisible(clip.id)))continue;
-        compositeLayer(combined,snapshots.get(id)!,root.getLayer(id).opacity,clip?{pixels:snapshots.get(clip.id)!,opacity:clip.opacity}:undefined);
+        const item=root.getLayer(id);
+        compositeLayer(combined,snapshots.get(id)!,item.opacity,clip?{pixels:snapshots.get(clip.id)!,opacity:clip.opacity,mask:clip.vectorMask??null}:undefined,{width:root.width,mask:item.vectorMask??null});
       }
       pixels=combined;
     }
@@ -332,6 +333,23 @@ async function createLayerFromPixels(mode:'duplicate'|'copy'|'merge',ids:Readonl
 function visibleLayerIds(){
   const root=controller.document.root;
   return new Set(root.rootLayerIds.filter(id=>root.isLayerVisible(id)&&root.getLayer(id).opacity>0));
+}
+
+function updateVectorMaskControls(){
+  const layer=controller.selectedLayer,mask=layer.vectorMask;
+  const disabled=!documentReady||layer.baseColor==='white'||controller.document.root.isLayerLocked(layer.id);
+  byId<HTMLButtonElement>('vectorMaskFromSelection').disabled=disabled||!surface?.selectedRectangle;
+  for(const id of ['vectorMaskEnabled','vectorMaskInverted','vectorMaskDensity','vectorMaskRemove']){
+    (byId(id) as HTMLInputElement|HTMLButtonElement).disabled=disabled||!mask;
+  }
+  byId<HTMLInputElement>('vectorMaskEnabled').checked=mask?.enabled??false;
+  byId<HTMLInputElement>('vectorMaskInverted').checked=mask?.inverted??false;
+  byId<HTMLInputElement>('vectorMaskDensity').value=String(Math.round((mask?.density??1)*100));
+  byId('vectorMaskStatus').textContent=mask?(mask.shape==='ellipse'?'楕円':'長方形')+'のマスク'+(mask.enabled?'':'（無効）'):'選択範囲からマスクを作成できます。';
+}
+function modifyVectorMask(patch:Partial<VectorLayerMask>){
+  const layer=controller.selectedLayer;
+  if(layer.vectorMask)changeLayer('マスクを変更しました。',tx=>tx.setVectorLayerMask(layer.id,{...layer.vectorMask!,...patch}));
 }
 
 function deleteLayers(ids:ReadonlySet<LayerId>){
@@ -555,6 +573,7 @@ function loadLayerCompFields(){
 
 const renderLayers=()=>{
   renderLayerComps();
+  updateVectorMaskControls();
   const root=controller.document.root;
   const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
   if(layerBatchDocument!==controller.document){
@@ -668,7 +687,7 @@ const renderLayers=()=>{
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',layer.vectorMask?.enabled?'マスク中':'',layer.clipSourceId?(root.clippingSource(layer.id)?'クリップ中':'クリップ元なし'):'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=event=>{
         if(batchRow){
@@ -832,6 +851,16 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   renderLayers();
 };
 byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=pickLayerOnCanvas;
+byId<HTMLButtonElement>('vectorMaskFromSelection').onclick=()=>{
+  const rect=surface?.selectedRectangle,layer=controller.selectedLayer;
+  if(!rect)return;
+  const shape=byId<HTMLSelectElement>('vectorMaskShape').value==='ellipse'?'ellipse':'rectangle';
+  changeLayer('選択範囲からマスクを作成しました。',tx=>tx.setVectorLayerMask(layer.id,{...rect,shape,density:1,enabled:true,inverted:false}));
+};
+byId<HTMLInputElement>('vectorMaskEnabled').onchange=event=>modifyVectorMask({enabled:(event.currentTarget as HTMLInputElement).checked});
+byId<HTMLInputElement>('vectorMaskInverted').onchange=event=>modifyVectorMask({inverted:(event.currentTarget as HTMLInputElement).checked});
+byId<HTMLInputElement>('vectorMaskDensity').onchange=event=>modifyVectorMask({density:Number((event.currentTarget as HTMLInputElement).value)/100});
+byId<HTMLButtonElement>('vectorMaskRemove').onclick=()=>changeLayer('マスクを外しました。',tx=>tx.setVectorLayerMask(controller.selectedLayerId,null));
 byId<HTMLButtonElement>('layerClipping').onclick=()=>{
   const layer=controller.selectedLayer;
   changeLayer(layer.clipSourceId?'クリッピングを解除しました。':'クリッピングを設定しました。',tx=>tx.setLayerClipping(layer.id,!layer.clipSourceId));
@@ -976,7 +1005,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
   return eraser?.blend==='erase'?(inputPreferences.eraserSizeLink&&active?{...eraser,size:active.size}:eraser):null;
  };
  applyInputPreferences(drawing);
- drawing.onSelectionChanged=()=>{if(surface===drawing)refreshSelectionControls();};
+ drawing.onSelectionChanged=()=>{if(surface===drawing){refreshSelectionControls();updateVectorMaskControls();}};
  drawing.setGuideSettings(guidePreferences);
  drawing.setCommonStabilization(commonStabilization);
  drawing.setPressureCalibration(devicePressureSensitivity);

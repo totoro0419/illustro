@@ -1,3 +1,4 @@
+import type {VectorLayerMask} from './layerMask';
 import type {LayerComp} from './layerComps';
 import {EMPTY_LAYER_GROUPS,groupsForLayer,validateLayerGroups,type LayerGroup} from './layerGroups';
 import type {DocumentId,LayerId,RasterSurfaceId} from './ids';
@@ -21,6 +22,7 @@ export type LayerNode=Readonly<{
   positionLocked?:boolean;
   alphaLocked?:boolean;
   clipSourceId?:LayerId|null;
+  vectorMask?:VectorLayerMask|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;

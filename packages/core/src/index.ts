@@ -13,3 +13,4 @@ export {CANONICAL_TILE_SIZE,createRasterSurfaceDescriptor,pixelToTile,tileKey,ty
 
 export type {LayerGroup} from './layerGroups';
 export type {LayerComp} from './layerComps';
+export {vectorMaskCoverage,type VectorLayerMask} from './layerMask';
