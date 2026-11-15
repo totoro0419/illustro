@@ -28,7 +28,7 @@ type SelectionCallbacks=Readonly<{
   capturePixels:(source:'layer'|'merged')=>Promise<Uint8ClampedArray>;
   moveContent:(dx:number,dy:number)=>Promise<void>;
 }>;
-type Tool='rectangle'|'ellipse'|'lasso'|'polygon'|'autoColor'|'autoBrightness'|'brushAdd'|'brushSubtract';
+type Tool='rectangle'|'ellipse'|'lasso'|'polygon'|'autoColor'|'autoBrightness'|'autoInk'|'brushAdd'|'brushSubtract';
 const asButton=(label:string,fn:()=>void)=>{
   const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=fn;
   return button;
@@ -204,21 +204,22 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const autoColor=asButton('色をタップして選ぶ',()=>armAuto('autoColor'));
   const autoBrightness=asButton('明るさをタップして選ぶ',()=>armAuto('autoBrightness'));
   const alpha=asButton('レイヤーの描いた部分',()=>void pickAutomatic('alpha',{x:0,y:0}));
+  const autoInk=asButton('線画で囲まれた部分を選ぶ',()=>armAuto('autoInk'));
   const brightRange=document.createElement('label');
   brightRange.textContent='明るさの範囲（0〜255）';
   const levels=document.createElement('div');levels.className='c06-selection-brightness';levels.append(low,high);
   brightRange.append(levels);
-  autoTools.append(autoSource,tolLabel,tolerance,contiguous,brightRange,autoColor,autoBrightness,alpha);
-  const armAuto=(name:'autoColor'|'autoBrightness')=>{
+  autoTools.append(autoSource,tolLabel,tolerance,contiguous,brightRange,autoColor,autoBrightness,autoInk,alpha);
+  const armAuto=(name:'autoColor'|'autoBrightness'|'autoInk')=>{
     if(!source())return;
     tool=tool===name?null:name;points=[];drawing=null;
     callbacks.getSurface()?.setSelectionMode(false);refresh();overlayPath();
-    if(tool)status.textContent='作品の中で選びたい色・明るさの場所をタップしてください。';
+    if(tool)status.textContent=name==='autoInk'?'線画があるレイヤーを選び、線で囲まれた中をタップしてください。':'作品の中で選びたい色・明るさの場所をタップしてください。';
   };
   async function pickAutomatic(action:AnalyzeOptions['action'],seed:{x:number;y:number}){
     const doc=source();if(!doc)return;
     const request=++job,previous=active,combine=mode.value as CombineMode;
-    const target=autoSource.value==='merged'?'merged' as const:'layer' as const;
+    const target=action==='lineRegion'?'layer' as const:autoSource.value==='merged'?'merged' as const:'layer' as const;
     const levelMin=Number(low.value),levelMax=Number(high.value);
     if(!Number.isInteger(levelMin)||!Number.isInteger(levelMax)||levelMin<0||levelMax>255||levelMin>levelMax){
       status.textContent='明るさの範囲は0〜255の正しい順序で入力してください。';return;
@@ -382,6 +383,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     for(const [name,button] of shapeButtons){button.setAttribute('aria-pressed',String(tool===name));}
     autoColor.setAttribute('aria-pressed',String(tool==='autoColor'));
     autoBrightness.setAttribute('aria-pressed',String(tool==='autoBrightness'));
+    autoInk.setAttribute('aria-pressed',String(tool==='autoInk'));
     addByBrush.setAttribute('aria-pressed',String(tool==='brushAdd'));
     eraseByBrush.setAttribute('aria-pressed',String(tool==='brushSubtract'));
     undoPoint.disabled=tool!=='polygon'||points.length===0;
@@ -401,8 +403,8 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       event.button!==0)return;
     event.preventDefault();event.stopImmediatePropagation();
     const point=toDoc(event);
-    if(tool==='autoColor'||tool==='autoBrightness'){
-      void pickAutomatic(tool==='autoColor'?'color':'brightness',point);
+    if(tool==='autoColor'||tool==='autoBrightness'||tool==='autoInk'){
+      void pickAutomatic(tool==='autoColor'?'color':tool==='autoInk'?'lineRegion':'brightness',point);
       return;
     }
     if(tool==='brushAdd'||tool==='brushSubtract'){
