@@ -38,6 +38,7 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   make('c06CopySelection','選択範囲をコピー',()=>actions.copy(false,true));
   make('c06CopyLayer','レイヤー全体をコピー',()=>actions.copy(false,false));
   make('c06CopyMerged','見えている絵をコピー',()=>actions.copy(true,false));
+  make('c06CopyMergedSelection','選択範囲の見た目をコピー',()=>actions.copy(true,true));
   make('c06CutSelection','選択範囲を切り取る',actions.cut);
   make('c06Paste','中央に貼り付け',()=>actions.paste('center'));
   make('c06PasteInPlace','元の位置に貼り付け',()=>actions.paste('original'));
@@ -54,7 +55,7 @@ export function installClipboardPanel(actions:Actions,clipboard:ArtworkClipboard
   function refresh(){
     const ready=actions.canEdit(),selected=actions.hasSelection(),has=clipboard.hasContent;
     for(const [id,button] of buttons)button.disabled=!ready||(
-      (id==='c06CopySelection'||id==='c06CutSelection')&&!selected
+      (id==='c06CopySelection'||id==='c06CopyMergedSelection'||id==='c06CutSelection')&&!selected
     )||((id==='c06Paste'||id==='c06PasteInPlace'||id==='c06CopyPng'||id==='c06SystemCopy')&&!has);
     const current=clipboard.summary;
     description.textContent=current?
