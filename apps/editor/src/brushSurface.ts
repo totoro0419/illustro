@@ -6,7 +6,7 @@ import {canExtendProjection} from './persistence/projectionLineage';
 import {readGpuTiles} from './gpuReadback';
 import {compositeWhiteBackdrop} from './logicalWhitePixel';
 import {TILE,validateRecord,validateFoundation,referenceBrushes,type FoundationPreset,type GpuRenderer,type RealtimeSession,type Sample,type StrokeRecord} from '@illustro/brush-rt';
-import {CANONICAL_TILE_SIZE,type RevisionId,type SemanticOperation} from '@illustro/core';
+import {CANONICAL_TILE_SIZE,type LayerId,type RevisionId,type SemanticOperation} from '@illustro/core';
 import workerUrl from '../../../packages/brush-rt/dist/rt/canonical.worker.mjs?worker&url';
 import drawingWorkerUrl from '../../../packages/brush-rt/dist/rt/drawing.worker.mjs?worker&url';
 import presentationWorkerUrl from '../../../packages/brush-rt/dist/rt/presentation.worker.mjs?worker&url';
@@ -539,7 +539,16 @@ export class BrushSurface{
   }
   syncLayerStack(){const keys=this.surfaceKeys();this.renderer?.setSurfaceStack(keys);this.session?.setSurfaceStack(keys);this.syncLayerStyles();}
   discardRedoProjection(){this.handoff?.discardRedo();this.session?.discardRedo();}
-  private syncLayerStyles(){this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({surfaceKey:layer.surface.descriptor.surfaceId,visible:layer.visible,opacity:layer.opacity})));}
+  setLayerOpacityPreview(preview?:{layerId:LayerId;opacity:number}){
+    this.syncLayerStyles(preview);
+  }
+  private syncLayerStyles(preview?:{layerId:LayerId;opacity:number}){
+    this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({
+      surfaceKey:layer.surface.descriptor.surfaceId,
+      visible:layer.visible,
+      opacity:preview&&preview.layerId===layer.id?preview.opacity:layer.opacity,
+    })));
+  }
   private surfaceKeys(){
     // White paper is a logical backdrop until the user explicitly edits it.
     // Do not place this virtual (pixel-free) layer into the realtime GPU

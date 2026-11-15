@@ -250,6 +250,16 @@ function changeLayerBatch(label:string,apply:(tx:ReturnType<CoreDocument['begin'
 }
 
 
+let opacityPreview:{document:CoreDocument;layerId:LayerId;surface:BrushSurface}|null=null;
+let opacityPreviewFrame=0;
+
+function clearLayerOpacityPreview(){
+  cancelAnimationFrame(opacityPreviewFrame);
+  opacityPreviewFrame=0;
+  opacityPreview?.surface.setLayerOpacityPreview();
+  opacityPreview=null;
+}
+
 const renderLayers=()=>{
   const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
   if(layerBatchDocument!==controller.document){
@@ -274,6 +284,7 @@ const renderLayers=()=>{
   const tagField=byId<HTMLSelectElement>('selectedLayerTag');
   tagField.value=selectedLayer.colorTag??'';
   tagField.disabled=!documentReady;
+  clearLayerOpacityPreview();
   const opacity=byId<HTMLInputElement>('layerOpacity');
   opacity.value=String(Math.round(selectedLayer.opacity*100));
   opacity.disabled=!documentReady;
@@ -446,8 +457,34 @@ layerNameField.onchange=()=>{
 };
 layerNameField.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();layerNameField.blur();}};
 const layerOpacityInput=byId<HTMLInputElement>('layerOpacity');
-layerOpacityInput.oninput=()=>{byId('layerOpacityValue').textContent=layerOpacityInput.value+'%';};
-layerOpacityInput.onchange=()=>changeLayer('レイヤーの不透明度を変更しました。',tx=>tx.setLayerOpacity(controller.selectedLayerId,Number(layerOpacityInput.value)/100));
+layerOpacityInput.oninput=()=>{
+  byId('layerOpacityValue').textContent=layerOpacityInput.value+'%';
+  if(!surface||surface.busy||historyPending||geometryBusy)return;
+  opacityPreview={document:controller.document,layerId:controller.selectedLayerId,surface};
+  if(opacityPreviewFrame)return;
+  opacityPreviewFrame=requestAnimationFrame(()=>{
+    opacityPreviewFrame=0;
+    const preview=opacityPreview;
+    if(!preview||preview.document!==controller.document||preview.surface!==surface||surface.busy||historyPending||geometryBusy)return;
+    surface.setLayerOpacityPreview({layerId:preview.layerId,opacity:Number(layerOpacityInput.value)/100});
+  });
+};
+layerOpacityInput.onchange=()=>{
+  const next=Number(layerOpacityInput.value)/100;
+  cancelAnimationFrame(opacityPreviewFrame);
+  opacityPreviewFrame=0;
+  const preview=opacityPreview;
+  opacityPreview=null;
+  if(preview&&(preview.document!==controller.document||preview.layerId!==controller.selectedLayerId)){
+    preview.surface.setLayerOpacityPreview();
+    return;
+  }
+  const current=controller.selectedLayer.opacity;
+  changeLayer('レイヤーの不透明度を変更しました。',tx=>tx.setLayerOpacity(controller.selectedLayerId,next));
+  if(controller.selectedLayer.opacity===current)preview?.surface.setLayerOpacityPreview();
+};
+layerOpacityInput.onpointercancel=renderLayers;
+layerOpacityInput.onkeydown=event=>{if(event.key==='Escape'){event.preventDefault();renderLayers();}};
 renderLayers();
 
 function scheduleProjectionCheckpoint(delay=CHECKPOINT_IDLE_MS){
