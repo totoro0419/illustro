@@ -1,7 +1,7 @@
 /** C06 selection workbench. Paint and geometry are intentionally different modes. */
 import type {BrushSurface} from '../brushSurface';
 import {rasterizeSelection,combineSelection,invertSelection,fullSelection,translateSelection,featherMask,boundsOfSelection,
-  type SelectionShape,type MaskData,type CombineMode} from './mask';
+  type SelectionShape,type MaskData,type CombineMode,type SelectionBrushPoint} from './mask';
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection,storeCurrentSelection,loadCurrentSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
 import {SelectionOverlay} from './overlay';
@@ -28,7 +28,7 @@ type SelectionCallbacks=Readonly<{
   capturePixels:(source:'layer'|'merged')=>Promise<Uint8ClampedArray>;
   moveContent:(dx:number,dy:number)=>Promise<void>;
 }>;
-type Tool='rectangle'|'ellipse'|'lasso'|'polygon'|'autoColor'|'autoBrightness';
+type Tool='rectangle'|'ellipse'|'lasso'|'polygon'|'autoColor'|'autoBrightness'|'brushAdd'|'brushSubtract';
 const asButton=(label:string,fn:()=>void)=>{
   const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=fn;
   return button;
@@ -43,6 +43,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const tools=document.createElement('div');tools.className='c06-selection-tools';
   const modes=document.createElement('div');modes.className='c06-selection-tools';
   const actions=document.createElement('div');actions.className='c06-selection-tools';
+  const brushTools=document.createElement('div');brushTools.className='c06-selection-brush';
   const autoTools=document.createElement('div');autoTools.className='c06-auto-selection';
   const saveArea=document.createElement('div');saveArea.className='c06-selection-save';
   const status=document.createElement('output');status.setAttribute('role','status');
@@ -66,6 +67,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   modes.append(mode);
   const shapeButtons=new Map<Tool,HTMLButtonElement>();
   let tool:Tool|null=null,active:MaskData|null=null,points:{x:number;y:number}[]=[],
+    brushPoints:SelectionBrushPoint[]=[],
     drawing:{pointer:number;first:{x:number;y:number}}|null=null;
   const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
   const raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
@@ -98,7 +100,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(info.id!==currentWork){
       flushStoredSelection();
       currentWork=info.id;active=null;lastSelection=null;history.length=0;future.length=0;
-      tool=null;points=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
+      tool=null;points=[];brushPoints=[];drawing=null;visual?.set(null);box.hidden=true;callbacks.onMaskChanged(null);refresh();
       const request=++job,loadedId=info.id;
       void storeQueue.then(()=>loadCurrentSelection(loadedId)).then(loaded=>{
         const doc=callbacks.getDocument();
@@ -237,6 +239,39 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       if(!boundsOfSelection(next))status.textContent='一致する色の範囲がありませんでした。';
     }catch(error){status.textContent=error instanceof Error?error.message:String(error);}
   }
+  const addByBrush=asButton('選択を筆で足す',()=>arm('brushAdd'));
+  const eraseByBrush=asButton('選択を筆で消す',()=>arm('brushSubtract'));
+  const brushSize=document.createElement('input');brushSize.type='number';brushSize.min='1';brushSize.max='800';brushSize.step='1';brushSize.value='28';
+  const brushDensity=document.createElement('input');brushDensity.type='range';brushDensity.min='1';brushDensity.max='100';brushDensity.value='100';
+  const brushHardness=document.createElement('input');brushHardness.type='range';brushHardness.min='0';brushHardness.max='100';brushHardness.value='65';
+  const brushLabel=(label:string,control:HTMLInputElement)=>{
+    const text=document.createElement('label');text.textContent=label;text.append(control);return text;
+  };
+  brushTools.append(addByBrush,eraseByBrush,
+    brushLabel('選択ブラシの太さ（px）',brushSize),
+    brushLabel('選択の濃さ（%）',brushDensity),
+    brushLabel('縁の硬さ（%）',brushHardness));
+  function addBrushPoint(event:PointerEvent){
+    const point=toDoc(event),last=brushPoints.at(-1);
+    const size=Number(brushSize.value);
+    if(brushPoints.length>=10000)return;
+    if(last&&Math.hypot(last.x-point.x,last.y-point.y)<Math.max(.8,size*.075))return;
+    brushPoints.push({...point,pressure:event.pressure>0?event.pressure:.5});
+  }
+  function finishBrushStroke(){
+    const doc=source(),input=brushPoints.slice(),initial=active;
+    brushPoints=[];drawing=null;
+    if(!doc||!input.length||!(tool==='brushAdd'||tool==='brushSubtract'))return;
+    const operation=tool==='brushAdd'?'add' as const:'subtract' as const;
+    const size=Number(brushSize.value),opacity=Number(brushDensity.value)/100,
+      hardness=Number(brushHardness.value)/100;
+    if(!Number.isFinite(size)||size<1||size>800){status.textContent='ブラシの太さを1〜800pxにしてください。';return;}
+    const current=++job;status.textContent='選択ブラシを反映しています。';
+    void raster.brush(initial,doc.width,doc.height,input,{size,opacity,hardness,mode:operation})
+      .then(next=>{
+        if(current===job&&callbacks.getDocument()?.id===doc.id)publish(next);
+      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
+  }
   const all=asButton('すべて選ぶ',()=>{const d=source();if(d)publish(fullSelection(d.width,d.height));});
   const clear=asButton('選択を解除',()=>publish(null));
   const reselect=asButton('直前を選び直す',()=>{if(lastSelection)publish(lastSelection);});
@@ -341,12 +376,14 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!window.confirm('保存した選択範囲を削除しますか？ 現在の選択は維持します。'))return;
     await deleteNamedSelection(named.value);await updateNamed();
   }
-  panel.append(summary,intro,modes,showSelectionLabel,fingerLabel,tools,autoTools,actions,saveArea,status);host.append(panel);
+  panel.append(summary,intro,modes,showSelectionLabel,fingerLabel,tools,brushTools,autoTools,actions,saveArea,status);host.append(panel);
   panel.addEventListener('toggle',()=>{if(panel.open)void updateNamed();});
   function refresh(){
     for(const [name,button] of shapeButtons){button.setAttribute('aria-pressed',String(tool===name));}
     autoColor.setAttribute('aria-pressed',String(tool==='autoColor'));
     autoBrightness.setAttribute('aria-pressed',String(tool==='autoBrightness'));
+    addByBrush.setAttribute('aria-pressed',String(tool==='brushAdd'));
+    eraseByBrush.setAttribute('aria-pressed',String(tool==='brushSubtract'));
     undoPoint.disabled=tool!=='polygon'||points.length===0;
     finishPolygon.disabled=tool!=='polygon'||points.length<3;
     const enabled=!!active;
@@ -368,6 +405,12 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
       void pickAutomatic(tool==='autoColor'?'color':'brightness',point);
       return;
     }
+    if(tool==='brushAdd'||tool==='brushSubtract'){
+      if(drawing)return;
+      drawing={pointer:event.pointerId,first:point};brushPoints=[];addBrushPoint(event);
+      try{viewport.setPointerCapture(event.pointerId);}catch{}
+      return;
+    }
     if(tool==='polygon'){
       if(points.length<4096)points.push(point);
       overlayPath();refresh();return;
@@ -380,6 +423,9 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   document.addEventListener('pointermove',event=>{
     if(!drawing||event.pointerId!==drawing.pointer||!tool)return;
     event.preventDefault();event.stopImmediatePropagation();
+    if(tool==='brushAdd'||tool==='brushSubtract'){
+      addBrushPoint(event);return;
+    }
     const point=toDoc(event);
     if(tool==='lasso'){
       const last=points.at(-1)!;
@@ -390,6 +436,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   document.addEventListener('pointerup',event=>{
     if(!drawing||event.pointerId!==drawing.pointer)return;
     event.preventDefault();event.stopImmediatePropagation();
+    if(tool==='brushAdd'||tool==='brushSubtract'){
+      addBrushPoint(event);finishBrushStroke();
+      try{viewport?.releasePointerCapture(event.pointerId);}catch{}
+      return;
+    }
     const point=toDoc(event);
     if(tool==='lasso'){if(points.length<4096)points.push(point);}
     else points[1]=point;
@@ -398,7 +449,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   },true);
   document.addEventListener('pointercancel',event=>{
     if(!drawing||event.pointerId!==drawing.pointer)return;
-    drawing=null;points=[];overlayPath();
+    drawing=null;points=[];brushPoints=[];overlayPath();
   },true);
   const documentChanged=()=>{job++;currentWork=null;source();void updateNamed();};
   refresh();documentChanged();
