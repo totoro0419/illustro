@@ -2311,6 +2311,11 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
       byId('status').textContent='参考資料を読み込めませんでした。'+(error instanceof Error?error.message:String(error));
     });
   }
+  if(opened.preserved?.optionalSections.some(section=>section.id==='c06.selection.index')){
+    void c06Selection?.importNative(opened.preserved).catch(error=>{
+      byId('status').textContent='選択範囲を復元できませんでした。'+(error instanceof Error?error.message:String(error));
+    });
+  }
   scheduleProjectionCheckpoint(CHECKPOINT_IDLE_MS);updatePersistenceDisplay();updateQa();
   }catch(error){
     // A started storage initialization must finish before rollback restores
@@ -3283,6 +3288,11 @@ c06Selection=installSelectionWorkbench({
       return 'edit';
     });
   }
+});
+persistence.setSaveAttachmentProvider(async()=>{
+  const reference=await c05References.exportNative();
+  const selections=await c06Selection?.exportNative()??[];
+  return [...(reference?[reference]:[]),...selections];
 });
 c06ClipboardUI=installClipboardPanel({
   canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending&&!documentActivationPending,
