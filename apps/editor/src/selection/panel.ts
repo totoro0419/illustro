@@ -4,11 +4,13 @@ import {rasterizeSelection,combineSelection,invertSelection,fullSelection,transl
   type SelectionShape,type MaskData,type CombineMode} from './mask';
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection} from './store';
 import {MaskRasterWorker} from './maskWorker';
+import {SelectionOverlay} from './overlay';
 
 export type SelectionWorkbench=Readonly<{
   active:()=>MaskData|null;
   documentChanged:()=>void;
   refresh:()=>void;
+  updateView:()=>void;
   applyRectangle:(rect:Readonly<{x:number;y:number;width:number;height:number}>)=>void;
   clear:()=>void;
 }>;
@@ -24,7 +26,7 @@ const asButton=(label:string,fn:()=>void)=>{
 };
 export function installSelectionWorkbench(callbacks:SelectionCallbacks):SelectionWorkbench{
   const host=document.getElementById('documentBoxBody');
-  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},applyRectangle:()=>{},clear:()=>{}};
+  if(!host)return {active:()=>null,documentChanged:()=>{},refresh:()=>{},updateView:()=>{},applyRectangle:()=>{},clear:()=>{}};
   const panel=document.createElement('details');panel.className='c06-selection-panel';
   const summary=document.createElement('summary');summary.textContent='選択範囲を編集';
   const intro=document.createElement('p');
@@ -46,6 +48,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
   const raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
   const viewport=document.querySelector<HTMLElement>('.surface');
+  const visual=viewport?new SelectionOverlay(viewport,callbacks.getSurface):null;
   const box=document.createElement('div');box.className='c06-selection-notice';box.hidden=true;
   const preview=document.createElement('svg');
   preview.classList.add('c06-selection-preview');preview.setAttribute('aria-hidden','true');
@@ -88,6 +91,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(record){history.push(active);if(history.length>30)history.shift();future.length=0;}
     if(active)lastSelection=active;
     active=next;
+    visual?.set(active);
     const bounds=active?boundsOfSelection(active):null;
     callbacks.getSurface()?.restoreRectangleSelection(bounds);
     callbacks.onMaskChanged(active);
@@ -259,6 +263,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   return {
     active:()=>active,
     documentChanged,
+    updateView:()=>visual?.updateView(),
     refresh,
     clear:()=>{job++;publish(null);},
     applyRectangle:rect=>{
