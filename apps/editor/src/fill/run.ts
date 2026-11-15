@@ -1,9 +1,9 @@
 import type {Point} from '../transform/geometry';
 import type {FillJob} from './worker';
-import type {RegionGraph} from './pixels';
+import type {GapCandidate,RegionGraph} from './pixels';
 import type {MaskData} from '../selection/mask';
 
-type Response={graph?:RegionGraph;boundary?:readonly Point[];mask?:MaskData;diagnostics?:Readonly<{remaining:Uint8Array;bridges:Uint8Array}>;pixels?:Uint8ClampedArray<ArrayBuffer>;error?:string};
+type Response={graph?:RegionGraph;boundary?:readonly Point[];gaps?:readonly GapCandidate[];mask?:MaskData;diagnostics?:Readonly<{remaining:Uint8Array;bridges:Uint8Array}>;pixels?:Uint8ClampedArray<ArrayBuffer>;error?:string};
 
 export function runFill(job:FillJob){
   return new Promise<Response>((resolve,reject)=>{

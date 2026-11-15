@@ -1,4 +1,4 @@
-import type {ColorHint} from '@illustro/core';
+import type {ColorHint,RegionWalls} from '@illustro/core';
 import {growOrShrink,rasterizeSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
 
@@ -7,8 +7,8 @@ export type FillSettings=Readonly<{
   erase:boolean;contiguous:boolean;closedOnly:boolean;
   edge?:number;edgeShape?:'square'|'round';traceWidth?:number;condition?:'all'|'transparent'|'color';excluded?:readonly number[];included?:readonly number[];
 }>;
-export type Walls=readonly Readonly<{remove:boolean;points:readonly Point[]}>[];
-export type GapCandidate=Readonly<{from:Point;to:Point;length:number}>;
+export type Walls=RegionWalls;
+export type GapCandidate=Readonly<{from:Point;to:Point;length:number;kind?:'tips'|'edge'|'junction'|'near'}>;
 export type RegionGraph=Readonly<{
   width:number;height:number;walls:Uint8Array;bridges:Uint8Array;labels:Uint32Array;external:Uint8Array;count:number;
   candidates:readonly GapCandidate[];
@@ -107,18 +107,25 @@ export function fillBoundaries(source:Uint8Array,width:number,height:number,tole
       if(y){connect(0,y,1,1);connect(width-1,y,-1,1);}
     }
   }
-  for(const {remove,points} of manual){
+  for(const {remove,preserveInk,points} of manual){
     for(let i=0;i<points.length;i++){
       const a=points[Math.max(0,i-1)]!,b=points[i]!,steps=Math.max(1,Math.ceil(Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))*2));
       for(let j=0;j<=steps;j++){
         const x=Math.floor(a.x+(b.x-a.x)*j/steps),y=Math.floor(a.y+(b.y-a.y)*j/steps);
         if(x<0||x>=width||y<0||y>=height)continue;
-        walls[y*width+x]=remove?0:1;
-        bridges[y*width+x]=0;
+        const index=y*width+x;
+        if(remove&&preserveInk&&original[index])continue;
+        walls[index]=remove?0:1;
+        bridges[index]=0;
       }
     }
   }
-  return {walls,bridges,candidates};
+  const remaining=candidates.filter(({from,to})=>{
+    const dx=Math.sign(to.x-from.x),dy=Math.sign(to.y-from.y),steps=Math.max(Math.abs(to.x-from.x),Math.abs(to.y-from.y));
+    for(let i=1;i<steps;i++)if(bridges[(from.y+dy*i)*width+from.x+dx*i])return true;
+    return false;
+  });
+  return {walls,bridges,candidates:remaining};
 }
 
 export function buildRegions(source:Uint8Array,width:number,height:number,tolerance:number,gap:number,manual:Walls):RegionGraph{
@@ -310,6 +317,57 @@ export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],tar
     applyColor(pixels,i*4,color.channels,value,color.erase,alphaLocked);
   }
   return {pixels,mask:{width,height,alpha}};
+}
+
+export function suggestLocalGaps(graph:RegionGraph,at:Point,reach:number,manual:Walls){
+  const {width,height,walls,bridges}=graph;
+  const radius=Math.max(3,Math.min(12,reach)),extent=radius+3;
+  const isInk=(x:number,y:number)=>x>=0&&y>=0&&x<width&&y<height&&
+    !!walls[y*width+x]&&!bridges[y*width+x];
+  const directions=[[-1,0],[-1,-1],[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1]] as const;
+  const nodes=[];
+  for(let y=Math.max(0,Math.ceil(at.y-extent));y<=Math.min(height-1,Math.floor(at.y+extent));y++){
+    for(let x=Math.max(0,Math.ceil(at.x-extent));x<=Math.min(width-1,Math.floor(at.x+extent));x++){
+      if(!isInk(x,y))continue;
+      const neighbors=directions.map(([dx,dy])=>isInk(x+dx,y+dy));
+      const ink=neighbors.filter(Boolean).length;
+      if(!ink||ink===8)continue;
+      const branches=neighbors.filter((filled,index)=>filled&&!neighbors[(index+7)%8]).length;
+      const inward=directions.reduce((sum,[dx,dy],index)=>neighbors[index]?{x:sum.x+dx,y:sum.y+dy}:sum,{x:0,y:0});
+      nodes.push({x,y,inward,tip:ink<=3&&branches===1,junction:branches>=3});
+    }
+  }
+  const proposals:Array<{candidate:GapCandidate;score:number}>=[];
+  const rejected=new Set(manual.filter(edit=>edit.remove&&edit.preserveInk)
+    .flatMap(edit=>edit.points.filter(point=>Math.hypot(point.x-at.x,point.y-at.y)<=extent*2)
+      .map(point=>Math.round(point.x)+','+Math.round(point.y))));
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+    const a=nodes[i]!,b=nodes[j]!,dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy);
+    if(length<1.99||length>radius+1)continue;
+    const midpoint=Math.hypot((a.x+b.x)/2-at.x,(a.y+b.y)/2-at.y);
+    if(midpoint>radius*.8+1)continue;
+    if(a.tip&&dx*a.inward.x+dy*a.inward.y>0||b.tip&&dx*b.inward.x+dy*b.inward.y<0)continue;
+    let obstruction=false;
+    const steps=Math.max(Math.abs(dx),Math.abs(dy));
+    for(let step=1;step<steps;step++){
+      const x=Math.round(a.x+dx*step/steps),y=Math.round(a.y+dy*step/steps);
+      if(isInk(x,y)||rejected.has(x+','+y)){obstruction=true;break;}
+    }
+    if(obstruction)continue;
+    const kind=a.junction||b.junction?'junction':a.tip&&b.tip?'tips':a.tip||b.tip?'edge':'near';
+    const score=length+midpoint*(kind==='tips'?.7:1.1)+(kind==='near'?4:kind==='junction'?2:0);
+    proposals.push({candidate:{from:{x:a.x,y:a.y},to:{x:b.x,y:b.y},length:length-1,kind},score});
+  }
+  proposals.sort((a,b)=>a.score-b.score);
+  const output:GapCandidate[]=[];
+  for(const {candidate} of proposals){
+    if(output.some(other=>other.kind===candidate.kind&&
+      Math.hypot(other.from.x-candidate.from.x,other.from.y-candidate.from.y)+
+      Math.hypot(other.to.x-candidate.to.x,other.to.y-candidate.to.y)<4))continue;
+    output.push(candidate);
+    if(output.length>=24)break;
+  }
+  return output;
 }
 
 export function sharedBoundary(graph:RegionGraph,first:number,second:number,near?:Point):readonly Point[]{

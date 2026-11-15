@@ -1,7 +1,7 @@
 import type {LayerId,RevisionId} from './ids';
 
 export type RegionPoint=Readonly<{x:number;y:number}>;
-export type RegionWalls=readonly Readonly<{remove:boolean;points:readonly RegionPoint[]}>[];
+export type RegionWalls=readonly Readonly<{remove:boolean;preserveInk?:boolean;points:readonly RegionPoint[]}>[];
 export type ColorHint=Readonly<{color:string|null;width:number;points:readonly RegionPoint[]}>;
 export type LineRegions=Readonly<{
   sourceRevision:RevisionId;
@@ -31,8 +31,8 @@ export function validateLineRegions(value:unknown):LineRegions|null{
     return Object.freeze(points);
   };
   const walls:RegionWalls=Object.freeze(manual.map((wall:RegionWalls[number])=>{
-    if(!wall||typeof wall.remove!=='boolean')throw error();
-    return Object.freeze({remove:wall.remove,points:readPoints(wall.points)});
+    if(!wall||typeof wall.remove!=='boolean'||(wall.preserveInk!==undefined&&typeof wall.preserveInk!=='boolean'))throw error();
+    return Object.freeze({remove:wall.remove,points:readPoints(wall.points),...(wall.preserveInk?{preserveInk:true}:{})});
   }));
   const hintValues=Array.isArray(hints)&&hints.length<=256?hints.map((hint:ColorHint)=>{
     if(!hint||hint.color!==null&&!/^#[0-9a-f]{6}$/i.test(hint.color)||!Number.isFinite(hint.width)||hint.width<1||hint.width>25)
