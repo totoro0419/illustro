@@ -3,7 +3,7 @@ import type {EditorController} from '../controller';
 import type {BrushSurface} from '../brushSurface';
 import {captureExport,renderFrozenArtwork} from '../export/basicExport';
 import type {SelectionRect} from '../strokeSelection';
-import {type MaskData,maskImage,eraseMaskedPixels} from './mask';
+import {type MaskData,maskImage,eraseMaskedPixels,rasterizeSelection} from './mask';
 
 export type ClipboardItem=Readonly<{
   sourceDocumentId:string;sourceColorProfile:string;sourceName:string;
@@ -89,6 +89,42 @@ export class ArtworkClipboard {
     const tx=document.begin('選択範囲を切り取る');
     tx.replaceLayerRaster(layer.id,result);
     controller.lastPersistenceHandoff=tx.commit().persistence;
+    return {revision:document.head,layerId:layer.id};
+  }
+  /** One transaction and one Undo, unlike a cut followed by paste. */
+  async moveContent(controller:EditorController,drawing:BrushSurface,dx:number,dy:number){
+    dx=Math.round(dx);dy=Math.round(dy);
+    if(!Number.isSafeInteger(dx)||!Number.isSafeInteger(dy)||Math.abs(dx)>16384||Math.abs(dy)>16384)
+      throw Error('移動距離が正しくありません。');
+    if(dx===0&&dy===0)throw Error('移動距離を指定してください。');
+    const document=controller.document,root=document.root,layer=controller.selectedLayer,head=document.head;
+    if(layer.kind!=='raster'||layer.baseColor==='white'||root.isLayerContentLocked(layer.id)||root.isLayerPositionLocked(layer.id))
+      throw Error('このレイヤーの内容は移動できません。ロックを確認してください。');
+    const rect=drawing.selectedRectangle;
+    if(!rect)throw Error('先に移動する範囲を選択してください。');
+    const selection=this.selectionMask??rasterizeSelection({type:'rectangle',...rect},root.width,root.height);
+    if(selection.width!==root.width||selection.height!==root.height)
+      throw Error('選択範囲の大きさが作品と異なります。');
+    const snapshot=(await drawing.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
+    if(!snapshot||document.head!==head)throw Error('作品が変更されたため、移動を中止しました。');
+    const selected=maskImage(snapshot,selection),target=eraseMaskedPixels(snapshot,selection);
+    // Selected material is composited on top of the remaining layer.
+    const w=root.width,h=root.height;
+    for(let y=0;y<h;y++){
+      const py=y+dy;if(py<0||py>=h)continue;
+      for(let x=0;x<w;x++){
+        const px=x+dx;if(px<0||px>=w)continue;
+        const src=(y*w+x)*4,sa=selected[src+3]!/255;if(!sa)continue;
+        const dest=(py*w+px)*4,da=target[dest+3]!/255;
+        const outA=sa+da*(1-sa);
+        for(let c=0;c<3;c++)
+          target[dest+c]=outA?Math.round((selected[src+c]!*sa+target[dest+c]!*da*(1-sa))/outA):0;
+        target[dest+3]=Math.round(outA*255);
+      }
+    }
+    const transaction=document.begin('選択した絵を移動');
+    transaction.replaceLayerRaster(layer.id,target);
+    controller.lastPersistenceHandoff=transaction.commit().persistence;
     return {revision:document.head,layerId:layer.id};
   }
   paste(controller:EditorController,placement:'center'|'original'='center'){
