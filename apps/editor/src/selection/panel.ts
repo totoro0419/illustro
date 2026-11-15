@@ -70,6 +70,15 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     brushPoints:SelectionBrushPoint[]=[],
     drawing:{pointer:number;first:{x:number;y:number}}|null=null;
   const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
+  const MAX_MASK_UNDO_BYTES=64*1024*1024;
+  function boundUndo(stack:(MaskData|null)[]){
+    let bytes=0;
+    for(let i=stack.length-1;i>=0;i--){
+      bytes+=stack[i]?.alpha.byteLength??0;
+      if(bytes>MAX_MASK_UNDO_BYTES){stack.splice(0,i+1);break;}
+    }
+    while(stack.length>30)stack.shift();
+  }
   let raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
   let pendingStore:{id:string;mask:MaskData|null}|null=null;
   let storeTimer:number|null=null,storeQueue:Promise<void>=Promise.resolve();
@@ -137,7 +146,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     const doc=source();if(!doc)return;
     job++;
     if(next&&(next.width!==doc.width||next.height!==doc.height))throw Error('作品と選択範囲の大きさが異なります。');
-    if(record){history.push(active);if(history.length>30)history.shift();future.length=0;}
+    if(record){history.push(active);boundUndo(history);future.length=0;}
     if(active)lastSelection=active;
     active=next;
     visual?.set(active);
@@ -336,12 +345,12 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   const undo=asButton('選択だけ元に戻す',()=>{
     if(!history.length)return;
-    const prior=history.pop()??null;future.push(active);
+    const prior=history.pop()??null;future.push(active);boundUndo(future);
     publish(prior,false);
   });
   const redo=asButton('選択だけやり直す',()=>{
     if(!future.length)return;
-    history.push(active);
+    history.push(active);boundUndo(history);
     publish(future.pop()??null,false);
   });
   actions.append(all,clear,reselect,invert,shift,movePixels,grow,shrink,feather,border,undo,redo);
