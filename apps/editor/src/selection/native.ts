@@ -6,7 +6,7 @@
 import type {PortableSectionInput} from '../persistence/format';
 import type {PreservedPortableData} from '../persistence/portable';
 import type {MaskData} from './mask';
-import {listSavedSelections,saveNamedSelection,loadNamedSelection} from './store';
+import {listSavedSelections,saveNamedSelection} from './store';
 
 const META='c06.selection.index',ACTIVE='c06.selection.active',PREFIX='c06.selection.saved.';
 const INDEX_TYPE='selection.index.v1',ALPHA_TYPE='selection.alpha.v1',MAX_TOTAL=160*1024*1024;
