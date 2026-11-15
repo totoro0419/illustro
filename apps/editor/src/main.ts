@@ -15,10 +15,12 @@ import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {installCommandPalette} from './ui/commandPalette';
 import {installWorkspaceProfiles} from './ui/workspaceProfiles';
+import {installFloatingPanels} from './ui/floatingPanels';
 import {installShortcutSettings} from './ui/shortcutSettings';
 import {installFocusMode} from './ui/focusMode';
 import './ui/c04.css';
 import './ui/workspaceProfiles.css';
+import './ui/floatingPanels.css';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {layerBlendNames,openLayerBlendDialog} from './ui/layerBlendDialog';
@@ -3135,7 +3137,8 @@ function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary
 // C04 command entries forward to the installed real controls; do not duplicate their logic.
 installFocusMode();
 const c04Commands=installCommandPalette(shellUi);
-installWorkspaceProfiles();
+const c04FloatingPanels=installFloatingPanels();
+installWorkspaceProfiles(c04FloatingPanels);
 installShortcutSettings(c04Commands);
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
