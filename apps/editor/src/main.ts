@@ -1349,7 +1349,12 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
  };
  applyInputPreferences(drawing);
  drawing.onLayerPickShortcut=point=>{if(surface===drawing&&documentReady)pickLayerOnCanvas(point);};
- drawing.onSelectionChanged=()=>{if(surface===drawing){refreshSelectionControls();updateVectorMaskControls();}};
+ drawing.onSelectionChanged=()=>{if(surface===drawing){
+    refreshSelectionControls();updateVectorMaskControls();
+    if(documentReady)void persistence.updateSelection(drawing.selectedRectangle).catch(error=>{
+      byId('status').textContent='選択範囲の保護に失敗しました。'+(error instanceof Error?error.message:'');
+    });
+  }};
  drawing.setGuideSettings(guidePreferences);
  drawing.setCommonStabilization(commonStabilization);
  drawing.setPressureCalibration(devicePressureSensitivity);
@@ -2191,7 +2196,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     const started=performance.now();
     // Library binding depends on storage initialization, but neither depends
     // on GPU worker readiness. Start both now instead of serializing them.
-    newStorageInit=persistence.initialize(controller,null,opened.preserved,recovered)
+    newStorageInit=persistence.initialize(controller,null,opened.preserved,recovered,opened.selection??null)
       .then(async()=>{
         measureCanvasStage('storage-init',started);
         if(!qaMode){
@@ -2217,7 +2222,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
   }else{
     persistence.clearFileDestination();
     const started=performance.now();
-    await persistence.initialize(controller,null,opened.preserved,recovered);
+    await persistence.initialize(controller,null,opened.preserved,recovered,opened.selection??null);
     measureCanvasStage('storage-init',started);
   }
   // For NEW works the library was bound concurrently with GPU startup.
@@ -2227,6 +2232,7 @@ async function activateOpened(opened:PortableOpenResult,recovered=false,expected
     await persistence.bindWork(expectedEpoch);
     measureCanvasStage('work-bind',started);
   }
+  surface?.restoreRectangleSelection(opened.selection??null);
   // Import a verified optional PNG preview without blocking first editable paint.
   if(!qaMode&&opened.previewImage){
     const id=controller.document.root.documentId,revision=controller.document.head,image=opened.previewImage.slice();
@@ -2654,6 +2660,16 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
   byId('status').textContent='作品ファイルを確認しています。';let opened:PortableOpenResult;
   try{opened=await persistence.decodePortable(new Uint8Array(await file.arrayBuffer()));}
   catch(error){const message='この作品ファイルは安全に読み込めませんでした。'+(error instanceof Error?error.message:String(error));byId('status').textContent=message;homeUi?.notify(message);updateQa();return;}
+  let migrationCopy=false;
+  if(opened.legacyEditorState){
+    const source=opened.legacyEditorState.version===0?'編集状態なし':'編集状態 v1';
+    const explanation=opened.legacyEditorState.notices.join('\n');
+    const decision=window.confirm('旧形式の作品です（'+source+' → 編集状態 v2）。\n'+explanation+
+      '\n\n元ファイルを変更せず、別の作品として取り込みます。新しい作品ファイルは「別名で保存」から作れます。続けますか？');
+    if(!decision)return;
+    opened=copyOpened(opened,opened.document.root.name.slice(0,4060)+'（形式移行）');
+    migrationCopy=true;
+  }
   byId('status').textContent='作品を表示しています。';
   try{
     if(!qaMode){
@@ -2666,7 +2682,9 @@ byId<HTMLInputElement>('openFile').onchange=async e=>{
       }
     }
     await activateOpened(opened,false);
-    byId('status').textContent='作品ファイルを開きました。自動保存を開始しました。';
+    byId('status').textContent=migrationCopy
+      ?'旧形式から移行コピーを開きました。元ファイルは変更していません。新形式を残すには「別名で保存」を押してください。'
+      :'作品ファイルを開きました。自動保存を開始しました。';
     homeUi?.showEditor();
     if(!qaMode){scheduleWorkThumbnail();void refreshWorks();}
   }
@@ -2726,7 +2744,7 @@ async function saveWork(asCopy=false){
     : drawing.hasUncommittedInput?drawing.saveBoundary():undefined;
   byId('status').textContent='作品ファイルを作成しています。';
   try{
-    const result=await persistence.save(document,layer,asCopy,pending);
+    const result=await persistence.save(document,layer,asCopy,pending,drawing.selectedRectangle);
     byId('status').textContent=asCopy?'別名の作品ファイルを保存しました。自動保存状態には影響しません。':
       '作品ファイルを保存しました（'+formatFileSize(result.byteLength)+'）。自動保存状態には影響しません。';
   }catch(error){
@@ -2803,7 +2821,7 @@ async function recoverCandidate(candidate:Candidate):Promise<boolean>{
     const recovered=await persistence.recover(candidate);
     const artwork=qaMode?recovered.document:recovered.document.forkCopy(recovered.document.root.name.slice(0,4070)+'（復元コピー）');
     const opened:PortableOpenResult={document:artwork,selectedLayerId:recovered.selectedLayerId,preserved:{manifestExtras:{},optionalSections:[]},
-      generationId:'recovery',snapshotRevisionId:artwork.head,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})};
+      generationId:'recovery',snapshotRevisionId:artwork.head,selection:recovered.selection,...(recovered.projectionCache?{projectionCache:recovered.projectionCache}:{})};
     await activateOpened(opened,true);
     if(!qaMode){await refreshWorks();void refreshRecoveryCandidates();}
     else recoveryCandidates=[];
