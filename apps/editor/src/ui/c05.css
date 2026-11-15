@@ -33,3 +33,15 @@
 .c05-reference-resize{position:absolute;right:0;bottom:0;width:29px;height:31px;border:1px solid var(--a-border-strong,#ccc);border-radius:6px 0 0 0;background:var(--a-accent-soft,#fff2d5);touch-action:none;cursor:nwse-resize;color:inherit}
 body.illustro-focus-mode .c05-reference-layer{display:none}
 @media(max-width:600px){.c05-reference-frame{max-width:calc(100vw - 8px)}.c05-reference-tools button{min-height:40px}.c05-asset-results{max-height:48dvh}}
+
+/* C05 additions to the existing Home workspace. */
+.ih-works-tools{display:flex;flex-wrap:wrap;gap:8px}
+.ih-works-tools label{min-width:140px;flex:1}
+.ih-works-tools label input,.ih-works-tools label select{width:100%;min-width:0}
+.ih-work-trash{margin:12px 0;border:1px solid var(--a-border,#ddd);padding:10px;border-radius:12px;background:var(--a-surface,#fff)}
+.ih-work-trash summary{cursor:pointer;min-height:38px;font-size:13px;font-weight:600}
+.ih-work-trash-list{display:flex;flex-direction:column;gap:8px;font-size:12px}
+.ih-work-trash-entry{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--a-border,#ddd);border-radius:9px}
+.ih-work-trash-entry strong{flex:1 1 100%;font-size:13px}
+.ih-work-trash-entry small{font-size:10px;color:var(--a-subtle,#667)}
+.ih-work-trash-entry button{min-height:40px;padding:8px 12px;border:1px solid var(--a-border,#ddd);border-radius:8px;background:var(--a-accent-soft,#fff1d7);color:inherit}
