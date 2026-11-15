@@ -119,6 +119,11 @@ export class ArtworkClipboard {
       throw Error('元作品と色空間が異なります。色変換はC15の機能を使ってください。');
     const x=placement==='original'?record.originX:Math.round((root.width-record.width)/2);
     const y=placement==='original'?record.originY:Math.round((root.height-record.height)/2);
+    if(x>=root.width||y>=root.height||x+record.width<=0||y+record.height<=0)
+      throw Error('元の座標では画像がキャンバスの外に出ます。中央に貼り付けてください。');
+    if((x<0||y<0||x+record.width>root.width||y+record.height>root.height)&&
+      !window.confirm('貼り付ける画像の一部がキャンバスの外です。はみ出した部分は省いて新しいレイヤーへ貼り付けます。続けますか？'))
+      throw Error('貼り付けを取り消しました。');
     const pixels=new Uint8ClampedArray(root.width*root.height*4);
     for(let row=0;row<record.height;row++){
       const dy=y+row;
