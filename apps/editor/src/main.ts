@@ -26,7 +26,7 @@ import type {ArtworkActions} from './artwork/tools';
 import {installFillPanel} from './fill/panel';
 import {installTransformPanel} from './transform/panel';
 import {digestLayerMask,readSelectionMask,transformLinkedMask} from './transform/mask';
-import {cornerMode,initialTransform} from './transform/geometry';
+import {cornerMode,initialTransform,meshMode} from './transform/geometry';
 import {alphaBounds} from './transform/quadrilateral';
 import {boundsOfSelection} from './selection/mask';
 import type {LayerDeformation} from '@illustro/core';
@@ -3369,7 +3369,7 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
     width,height,bounds,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
     pixels,selection:target==='boundary'?null:selection,drawing,valid,...(layer.vectorMask?{maskLink:linkedMask}:{}),
     ...(saved?{initial:{...initialTransform,mode:saved.mode,interpolation:saved.interpolation,
-      quadrilateral:{bounds:saved.bounds,corners:saved.corners}}}:{}),
+      ...('mesh' in saved?{mesh:{bounds:saved.bounds,controls:saved.mesh}}:{quadrilateral:{bounds:saved.bounds,corners:saved.corners}})}}:{}),
     apply:async(settings,result)=>{
       if(!valid())throw Error('変形を開始したときの対象から変更されています。');
       if(target==='boundary'){
@@ -3380,17 +3380,21 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
       }
       const quadrilateral=settings.quadrilateral;
       const mode=settings.mode;
-      if(saved&&!cornerMode(mode))throw Error('元の絵と後から描いた線を保つには、四隅の変形モードを選んでください。');
+      if(saved&&!cornerMode(mode)&&!meshMode(mode))throw Error('元の絵と後から描いた線を保つには、四隅・網・囲いの変形を選んでください。');
       if(linkedMask&&saved?.maskDigest&&layer.vectorMask&&await digestLayerMask(layer.vectorMask)!==saved.maskDigest)
         throw Error('変形後にマスクを編集しています。編集したマスクを保つには、マスクのリンクを外してから変形してください。');
       const sourceMask=saved?original.vectorMask:layer.vectorMask;
       const mask=linkedMask&&sourceMask?transformLinkedMask(sourceMask,settings,width,height):null;
       const maskDigest=mask?await digestLayerMask(mask):null;
-      const deformation:LayerDeformation|null=cornerMode(mode)&&quadrilateral?{
-        version:1,sourceRevision,mode,...quadrilateral,interpolation:settings.interpolation,linkedMask,
-        selection:saved?.selection??(target==='selected'&&selection?selectionAsLayerMask(selection):null),
-        ...(maskDigest?{maskDigest}:{})
-      }:null;
+      let deformation:LayerDeformation|null=null;
+      if(cornerMode(mode)||meshMode(mode)){
+        const base={version:1 as const,sourceRevision,bounds,interpolation:settings.interpolation,linkedMask,
+          selection:saved?.selection??(target==='selected'&&selection?selectionAsLayerMask(selection):null),
+          ...(maskDigest?{maskDigest}:{})
+        };
+        if(cornerMode(mode)&&quadrilateral)deformation={...base,mode,corners:quadrilateral.corners};
+        if(meshMode(mode)&&settings.mesh)deformation={...base,mode,mesh:settings.mesh.controls};
+      }
       await withClipboardAccess(async()=>{
         if(!valid())throw Error('作品が変更されました。');
         const tx=artwork.begin(target==='selected'?'選択した絵を変形':'レイヤーを変形');

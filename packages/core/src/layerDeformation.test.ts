@@ -46,3 +46,21 @@ it('keeps the original and later brush commands when a transform is reapplied an
   recovered.redo();
   expect(recovered.head).toBe(receipt.revision.id);
 });
+
+it('round-trips mesh subdivisions and fixed control points from a saved document',()=>{
+  const doc=new CoreDocument({width:8,height:8,ids:createDeterministicIdFactory()}),layer=doc.defaultRasterLayerId;
+  const mesh:LayerDeformation={
+    version:1,mode:'mesh-grid',sourceRevision:doc.head,bounds:{x:0,y:0,width:8,height:8},
+    interpolation:'bilinear',selection:null,linkedMask:false,
+    mesh:{kind:'grid',columns:2,rows:2,points:[
+      {x:0,y:0,fixed:true},{x:8,y:0,fixed:false},{x:0,y:8,fixed:true},{x:9,y:9,fixed:false}
+    ]}
+  };
+  const transaction=doc.begin('mesh');
+  transaction.replaceLayerDeformation(layer,new Uint8Array(8*8*4),mesh);
+  transaction.commit();
+  const snapshot=doc.capturePersistenceSnapshot();
+  const restored=CoreDocument.restore({snapshot:JSON.parse(JSON.stringify(snapshot)),blockPayloads:doc.persistenceBlockPayloads(snapshot)});
+  expect(restored.root.getLayer(layer).deformation).toEqual(mesh);
+  expect(restored.hasRevision(mesh.sourceRevision)).toBe(true);
+});

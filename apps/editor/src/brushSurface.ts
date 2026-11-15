@@ -30,7 +30,7 @@ export type InputPointerRole='draw'|'pan'|'sample';
 export type PointerRoleSettings=Readonly<{pen:InputPointerRole;mouse:InputPointerRole}>;
 type CanvasEditGesture=Readonly<{
   path:boolean;width:number;color:string;complete:(points:readonly MaskStrokePoint[])=>void;
-  pointEdit?:Readonly<{points:readonly MaskPoint[];closed?:boolean;commit:(index:number,point:MaskPoint)=>void}>;
+  pointEdit?:Readonly<{points:readonly MaskPoint[];edges?:readonly (readonly [number,number])[];fixed?:readonly boolean[];closed?:boolean;commit:(index:number,point:MaskPoint)=>void}>;
 }>;
 
 export class BrushSurface{
@@ -380,7 +380,12 @@ export class BrushSurface{
           return dot;
         }));
       }
-      path.setAttribute('d',points.map(({x,y},i)=>(i?'L':'M')+x+' '+y).join(' ')+(gesture.pointEdit.closed===false?'':' Z'));
+      const edges=gesture.pointEdit.edges;
+      const outline=edges?edges.map(([a,b])=>{
+        const start=points[a]!,end=points[b]!;
+        return 'M'+start.x+' '+start.y+'L'+end.x+' '+end.y;
+      }).join(' '):points.map(({x,y},i)=>(i?'L':'M')+x+' '+y).join(' ')+(gesture.pointEdit.closed===false?'':' Z');
+      path.setAttribute('d',outline);
       path.setAttribute('fill',gesture.pointEdit.closed===false?'none':'rgba(60,180,220,.12)');
       path.setAttribute('stroke','#43bfea');
       path.setAttribute('stroke-width','2');
@@ -390,6 +395,7 @@ export class BrushSurface{
         dot.setAttribute('cx',String(points[i]!.x));
         dot.setAttribute('cy',String(points[i]!.y));
         dot.setAttribute('r',i===this.editPointIndex?'8':'6');
+        dot.setAttribute('fill',gesture.pointEdit.fixed?.[i]?'#303640':'#fff');
       }
       return;
     }
@@ -428,6 +434,7 @@ export class BrushSurface{
       const location=this.pointerLocation(e),v=this.view;
       let index=-1,distance=22;
       this.editGesture.pointEdit.points.forEach((point,i)=>{
+        if(this.editGesture?.pointEdit?.fixed?.[i])return;
         const screen=v.screen(point),d=Math.hypot(location.x-screen.x,location.y-screen.y);
         if(d<distance){index=i;distance=d;}
       });

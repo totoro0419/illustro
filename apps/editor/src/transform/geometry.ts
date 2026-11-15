@@ -1,13 +1,15 @@
-import type {TransformBounds,TransformQuad} from '@illustro/core';
+import type {TransformBounds,TransformMesh,TransformQuad} from '@illustro/core';
 import {quadrilateralMapping} from './quadrilateral';
+import {meshMapping} from './mesh';
 import type {MaskData} from '../selection/mask';
 
 export type Point={x:number;y:number};
-export type Deform='affine'|'perspective'|'free'|'projective'|'skew'|'mesh'|'push'|'expand'|'pinch'|'twist'|'restore';
+export type Deform='affine'|'perspective'|'free'|'projective'|'skew'|'mesh-grid'|'cage'|'mesh'|'push'|'expand'|'pinch'|'twist'|'restore';
 export type Transform=Readonly<{
   mode:Deform;dx:number;dy:number;sx:number;sy:number;angle:number;shear:number;
   perspective:number;warpX:number;warpY:number;cx:number;cy:number;radius:number;strength:number;
   interpolation:'nearest'|'bilinear'|'area';
+  mesh?:Readonly<{bounds:TransformBounds;controls:TransformMesh}>;
   quadrilateral?:Readonly<{bounds:TransformBounds;corners:TransformQuad}>;
 }>;
 export const initialTransform:Transform={mode:'affine',dx:0,dy:0,sx:1,sy:1,angle:0,shear:0,
@@ -17,7 +19,14 @@ export function cornerMode(mode:Deform):mode is 'free'|'projective'|'skew'{
   return mode==='free'||mode==='projective'||mode==='skew';
 }
 
+export function meshMode(mode:Deform):mode is 'mesh-grid'|'cage'{
+  return mode==='mesh-grid'||mode==='cage';
+}
 export function inverseTransform(t:Transform,width:number,height:number){
+  if(meshMode(t.mode)){
+    if(!t.mesh)throw Error('変形の制御点を指定してください。');
+    return meshMapping(t.mesh.bounds,t.mesh.controls).inverse;
+  }
   if(cornerMode(t.mode)){
     if(!t.quadrilateral)throw Error('変形する四隅を指定してください。');
     return quadrilateralMapping(t.quadrilateral.bounds,t.quadrilateral.corners,t.mode).inverse;
