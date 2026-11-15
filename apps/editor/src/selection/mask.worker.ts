@@ -1,7 +1,8 @@
-import {rasterizeSelection,combineSelection,featherMask,growOrShrink,selectionBorder,boundsOfSelection,type MaskData,type SelectionShape,type CombineMode} from './mask';
+import {rasterizeSelection,combineSelection,featherMask,growOrShrink,selectionBorder,brushSelection,boundsOfSelection,type SelectionBrushPoint,type SelectionBrushSettings,type MaskData,type SelectionShape,type CombineMode} from './mask';
 import {selectFromPixels,type AnalyzeOptions} from './autoSelect';
-type Request={id:number;action:'shape'|'feather'|'grow'|'shrink'|'border'|'analyze';width:number;height:number;pixels?:Uint8ClampedArray;analyze?:AnalyzeOptions;
-  shape?:SelectionShape;previous?:Uint8Array;mode?:CombineMode;radius?:number};
+type Request={id:number;action:'shape'|'feather'|'grow'|'shrink'|'border'|'analyze'|'brush';width:number;height:number;pixels?:Uint8ClampedArray;analyze?:AnalyzeOptions;
+  shape?:SelectionShape;previous?:Uint8Array;mode?:CombineMode;radius?:number;
+  brushPoints?:readonly SelectionBrushPoint[];brushSettings?:SelectionBrushSettings;};
 self.onmessage=(event:MessageEvent<Request>)=>{
   const input=event.data;
   try{
@@ -12,6 +13,9 @@ self.onmessage=(event:MessageEvent<Request>)=>{
       result=combineSelection(previous,fresh,input.mode??'replace');
     }else if(input.action==='feather'&&input.previous){
       result=featherMask({width:input.width,height:input.height,alpha:input.previous},input.radius??0);
+    }else if(input.action==='brush'&&input.brushPoints&&input.brushSettings){
+      const previous=input.previous??new Uint8Array(input.width*input.height);
+      result=brushSelection({width:input.width,height:input.height,alpha:previous},input.brushPoints,input.brushSettings);
     }else if(input.action==='analyze'&&input.pixels&&input.analyze){
       result=selectFromPixels(input.pixels,input.analyze);
     }else if(input.previous&&(input.action==='grow'||input.action==='shrink'||input.action==='border')){
