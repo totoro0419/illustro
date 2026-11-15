@@ -126,3 +126,36 @@ export function featherMask(mask:MaskData,radius:number):MaskData{
   }
   return {width:w,height:h,alpha:out};
 }
+
+/** Separable monotone sliding-window maximum/minimum; O(width*height). */
+export function growOrShrink(mask:MaskData,radius:number,mode:'grow'|'shrink'):MaskData{
+  if(!Number.isInteger(radius)||radius<0||radius>128)throw Error('拡張・縮小幅は0〜128pxで指定してください。');
+  if(!radius)return mask;
+  const w=mask.width,h=mask.height;
+  const temporary=new Uint8Array(mask.alpha.length),result=new Uint8Array(mask.alpha.length);
+  const max=mode==='grow',windowLength=2*radius+1;
+  const slide=(length:number,read:(index:number)=>number,write:(index:number,value:number)=>void)=>{
+    const deque=new Int32Array(length+windowLength);
+    let head=0,tail=0;
+    for(let i=-radius;i<length+radius;i++){
+      const value=read(limit(i,0,length-1));
+      while(tail>head&&(max?read(limit(deque[tail-1]!,0,length-1))<=value:
+        read(limit(deque[tail-1]!,0,length-1))>=value))tail--;
+      deque[tail++]=i;
+      while(tail>head&&deque[head]!<=i-windowLength)head++;
+      if(i>=radius){
+        const x=i-radius;
+        if(x<length)write(x,read(limit(deque[head]!,0,length-1)));
+      }
+    }
+  };
+  for(let y=0;y<h;y++)slide(w,x=>mask.alpha[y*w+x]!, (x,value)=>{temporary[y*w+x]=value;});
+  for(let x=0;x<w;x++)slide(h,y=>temporary[y*w+x]!, (y,value)=>{result[y*w+x]=value;});
+  return {width:w,height:h,alpha:result};
+}
+export function selectionBorder(mask:MaskData,radius:number):MaskData{
+  const outer=growOrShrink(mask,radius,'grow'),
+    inner=growOrShrink(mask,radius,'shrink'),out=new Uint8Array(mask.alpha.length);
+  for(let i=0;i<out.length;i++)out[i]=Math.max(0,outer.alpha[i]!-inner.alpha[i]!);
+  return {width:mask.width,height:mask.height,alpha:out};
+}
