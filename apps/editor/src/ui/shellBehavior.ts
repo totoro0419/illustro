@@ -1,6 +1,6 @@
 import {FEATURE_CATEGORIES,RIGHT_BOXES} from './shell';
 
-type ShellControl={workspace:HTMLElement;drawer:HTMLButtonElement;openBox:(id:string)=>void;close:(focus?:boolean)=>void;setLayerPage:(value:boolean)=>void;layerPageOpen:()=>boolean;refreshWidth:()=>void};
+export type ShellControl={workspace:HTMLElement;drawer:HTMLButtonElement;openBox:(id:string)=>void;close:(focus?:boolean)=>void;setLayerPage:(value:boolean)=>void;layerPageOpen:()=>boolean;refreshWidth:()=>void};
 const byId=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
 const safeRead=(key:string)=>{try{return localStorage.getItem(key)}catch{return null}};
 const safeWrite=(key:string,value:string)=>{try{localStorage.setItem(key,value)}catch{/* private browsing may disallow storage */}};
