@@ -16,7 +16,7 @@ export type EyedropperOptions=Readonly<{
 }>;
 const KEY='illustro.c04.eyedropper-options.v1';
 const el=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T;
-const read=():Partial<EyedropperOptions>=>{
+const read=():Partial<Omit<EyedropperOptions,'layerId'>>&{layerId?:string}=>{
   try{
     const raw=JSON.parse(localStorage.getItem(KEY)||'null') as Record<string,unknown>|null;
     if(!raw||raw.version!==1)return {};

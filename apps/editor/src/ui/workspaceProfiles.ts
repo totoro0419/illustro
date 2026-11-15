@@ -53,9 +53,10 @@ function download(name:string,text:string){
 
 export function installWorkspaceProfiles(floating:FloatingPanelService,toolbar:ToolbarSettingsService){
   const panel=document.getElementById('workspaceBoxBody');
-  const stack=document.getElementById('boxStack');
-  const width=document.getElementById('width') as HTMLInputElement|null;
-  if(!panel||!stack||!width)return;
+  const stackElement=document.getElementById('boxStack');
+  const widthElement=document.getElementById('width');
+  if(!panel||!stackElement||!(widthElement instanceof HTMLInputElement))return;
+  const stack=stackElement,width=widthElement;
   const boxIds=()=>[...stack.children].map(node=>node instanceof HTMLElement
     ?node.dataset.boxId??node.dataset.placeholderFor:null).filter((value):value is string=>!!value);
   let profiles:Profile[]=[];

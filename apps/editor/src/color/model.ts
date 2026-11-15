@@ -66,7 +66,7 @@ export class ForegroundColor {
   if(validRGB(d.background))this.background=rgb(d.background.r,d.background.g,d.background.b);
   if(typeof d.opacity==='number'&&Number.isFinite(d.opacity)&&d.opacity>=0&&d.opacity<=1)this.opacity=d.opacity;
   if(Array.isArray(d.history))this.history=d.history.filter(validRGB).slice(0,MAX_HISTORY);
-  if(Array.isArray(d.palettes)){const items=d.palettes.slice(0,MAX_PALETTES).map((p:unknown)=>{const q=p as Palette;if(typeof q?.id!=='string'||typeof q.name!=='string'||!Array.isArray(q.swatches))return null;return {id:q.id,name:cleanName(q.name),folder:typeof q.folder==='string'?cleanName(q.folder):'',swatches:q.swatches.slice(0,MAX_SWATCHES).filter(s=>typeof s?.id==='string'&&validRGB(s.color)).map(s=>({...s,tags:Array.isArray(s.tags)?s.tags.filter((t):t is string=>typeof t==='string').slice(0,12):[]}))};}).filter((p):p is Palette=>p!==null&&!!p.name);if(items.length)this.palettes=items;}
+  if(Array.isArray(d.palettes)){const items=d.palettes.slice(0,MAX_PALETTES).map((p:unknown):Palette|null=>{const q=p as Palette;if(typeof q?.id!=='string'||typeof q.name!=='string'||!Array.isArray(q.swatches))return null;return {id:q.id,name:cleanName(q.name),folder:typeof q.folder==='string'?cleanName(q.folder):'',swatches:q.swatches.slice(0,MAX_SWATCHES).filter(s=>typeof s?.id==='string'&&validRGB(s.color)).map(s=>({...s,tags:Array.isArray(s.tags)?s.tags.filter((t):t is string=>typeof t==='string').slice(0,12):[]}))};}).filter((p):p is Palette=>p!==null&&!!p.name);if(items.length)this.palettes=items;}
   if(typeof d.paletteId==='string'&&this.palettes.some(p=>p.id===d.paletteId))this.paletteId=d.paletteId;
  }catch{/* Corrupt workspace preferences never prevent startup. */}}
  get isEditing(){return this.origin!==null;}

@@ -29,8 +29,9 @@ const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,valu
 const all=()=>[...document.querySelectorAll<HTMLElement>(selector)];
 const isFloat=(box:HTMLElement)=>box.classList.contains('c04-panel-float');
 export function installFloatingPanels():FloatingPanelService{
-  const stack=document.getElementById('boxStack');
-  if(!stack)return {snapshot:()=>[],restore:()=>{},reset:()=>{}};
+  const anchor=document.getElementById('boxStack');
+  if(!anchor)return {snapshot:()=>[],restore:()=>{},reset:()=>{}};
+  const stack=anchor;
   const slots=new Map<string,HTMLElement>();
   const placements=new Map<string,FloatPlacement>();
   const controls=new Map<HTMLElement,{handle:HTMLButtonElement;resize:HTMLButtonElement}>();

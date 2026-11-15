@@ -25,7 +25,7 @@ const read=():SimpleMacro[]=>{
       if(!item||typeof item.id!=='string'||item.id.length>100||!item.id||
         ids.has(item.id)||typeof item.name!=='string'||!item.name.trim()||item.name.length>80||
         !Array.isArray(item.steps)||item.steps.length<1||item.steps.length>MAX_STEPS||
-        !item.steps.every(step=>typeof step==='string'&&permitted(step)))return [];
+        !item.steps.every((step:unknown)=>typeof step==='string'&&permitted(step)))return [];
       ids.add(item.id);
       return [{id:item.id,name:item.name,steps:[...item.steps]}];
     });

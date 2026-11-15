@@ -176,11 +176,12 @@ export function installAssetPanel(opts:PanelOptions){
     file.click();
   }
   query.oninput=kind.onchange=filter.onchange=render;
-  importKind.onchange=()=>{
+  const syncImportAccept=()=>{
     importFile.accept=importKind.value==='reference'?'image/png,image/jpeg,image/webp,image/avif,image/gif':
       'image/*,application/json,.json';
   };
-  importKind.onchange();
+  importKind.onchange=syncImportAccept;
+  syncImportAccept();
   importFile.onchange=()=>{
     const files=[...(importFile.files??[])];importFile.value='';
     void run(async()=>{

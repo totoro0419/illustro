@@ -876,7 +876,7 @@ function scheduleLayerDrawingThumbnail(open=documentReady&&shellUi.layerPageOpen
   const drawing=surface,artwork=controller.document,layer=controller.selectedLayer;
   const canvas=byId<HTMLCanvasElement>('layerDrawingThumbnail'),ctx=canvas.getContext('2d');
   const ticket=++layerDrawingThumbTicket,head=artwork.head;
-  canvas.hidden=!open||!documentReady||layer.implicitRaster;
+  canvas.hidden=!open||!documentReady||Boolean(layer.implicitRaster);
   if(canvas.hidden||!drawing||!ctx)return;
   if(canvas.dataset.layerId!==layer.id){
     canvas.dataset.layerId=layer.id;

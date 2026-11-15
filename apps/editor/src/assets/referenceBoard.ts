@@ -68,7 +68,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   let saving:Promise<void>=Promise.resolve(),transition=0,renderEpoch=0;
   let back:BoardSnapshot[]=[],forward:BoardSnapshot[]=[];
   const urls=new Map<string,string>();
-  const error=(reason:unknown)=>status.textContent=reason instanceof Error?reason.message:String(reason);
+  const error=(reason:unknown)=>{status.textContent=reason instanceof Error?reason.message:String(reason);};
   function download(name:string,blob:Blob){
     const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;link.click();
     window.setTimeout(()=>URL.revokeObjectURL(url),1000);
