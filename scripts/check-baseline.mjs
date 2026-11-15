@@ -48,8 +48,33 @@ assert.equal(index.authority,'docs/DESIGN_AUTHORITY.md','canonical authority mus
 // any unrelated renderer edits still fail this check.
 const allowedRendererResourceChange="image(mask){let key=mask?this.maskKeys.get(mask):'default';if(mask&&!key){key=JSON.stringify(mask);this.maskKeys.set(mask,key);}if(this.images.has(key))return this.images.get(key);const g=this.gl,w=mask?.width??1,h=mask?.height??1,a=new Uint8Array(w*h*4);for(let i=0;i<w*h;i++)a[i*4]=Math.round((mask?.alpha[i]??1)*255);// Brush resources are sampled only. Creating a render target here changes\n // the active framebuffer when a saved stroke first loads its brush images.\n const t=g.createTexture();g.bindTexture(g.TEXTURE_2D,t);\n g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.NEAREST);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.NEAREST);\n g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,w,h,0,g.RGBA,g.UNSIGNED_BYTE,a);\n const image={t,w,h};this.images.set(key,image);return image;}";
 const frozenRendererResourceCode="image(mask){let key=mask?this.maskKeys.get(mask):'default';if(mask&&!key){key=JSON.stringify(mask);this.maskKeys.set(mask,key);}if(this.images.has(key))return this.images.get(key);const g=this.gl,w=mask?.width??1,h=mask?.height??1,a=new Uint8Array(w*h*4);for(let i=0;i<w*h;i++)a[i*4]=Math.round((mask?.alpha[i]??1)*255);const s=this.surface(w,h,g.RGBA8,g.UNSIGNED_BYTE);g.bindTexture(g.TEXTURE_2D,s.t);g.texSubImage2D(g.TEXTURE_2D,0,0,0,w,h,g.RGBA,g.UNSIGNED_BYTE,a);this.images.set(key,s);return s;}";
+
+// Undo/Redo atomic display publication: only these exact two source edits
+// are permitted in formerly frozen UI display files. We restore their original
+// code in memory and verify the previously frozen SHA-256. Any unrelated change
+// is still rejected (including the canonical brush/tiling shaders).
+const atomicDocumentImport="import {publishDocumentGroupsAtomically} from '@rt/atomic-document-groups';\n";
+const atomicDocumentOldMethod=" // QA input-first presentation: yield between groups rather than submitting\n // every bitmap transfer in one uninterruptible main-thread task. The worker\n // still renders full-accuracy pixels and confirms the exact same version.\n async applyCooperatively(groups){\n  const groupCount=groups.length;\n  for(let i=0;i<groupCount;i++){\n   this.apply([groups[i]]);\n   if(i+1<groupCount){\n    // A new macrotask gives queued touchstart and pointerdown a chance to run.\n    // requestAnimationFrame can itself starve when the GPU is busy.\n    await new Promise(resolve=>setTimeout(resolve,0));\n   }\n  }\n }\n";
+const atomicDocumentNewMethod=" // Bitmap uploads yield to touch events while remaining invisible. Only\n // the final, synchronous DOM swap reveals a complete Undo/Redo revision.\n async applyCooperatively(groups,isCurrent){\n  return publishDocumentGroupsAtomically(this,groups,isCurrent);\n }\n";
+const atomicHostOldComplete="    const complete=()=>{\n     if(accepted&&!this.disposed){\n      this.documentVersion=m.version;\n      const coverage=this.pendingCoverage.get(m.version);\n      if(!coverage?.covered)this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);\n      this.pendingCoverage.delete(m.version);\n      this.documentPresentation.update(this.viewportScene.baseView??this.backend.viewTransform);\n      this.syncVisibility();\n     }\n     const request=this.presentationRequests.get(m.request);\n     this.presentationRequests.delete(m.request);\n     request?.resolve({accepted:accepted&&!this.disposed});\n    };\n";
+const atomicHostNewComplete="    const complete=(applied=accepted)=>{\n     const current=applied&&!this.disposed&&m.epoch===this.epoch&&m.version>=this.documentVersion;\n     if(current){\n      this.documentVersion=m.version;\n      const coverage=this.pendingCoverage.get(m.version);\n      if(!coverage?.covered)this.uncoveredVersion=Math.max(this.uncoveredVersion,m.version);\n      this.pendingCoverage.delete(m.version);\n      this.documentPresentation.update(this.viewportScene.baseView??this.backend.viewTransform);\n      this.syncVisibility();\n     }\n     const request=this.presentationRequests.get(m.request);\n     this.presentationRequests.delete(m.request);\n     request?.resolve({accepted:current});\n    };\n";
+const atomicHostOldUpload="      await this.documentPresentation.applyCooperatively(m.tiles);\n      complete();";
+const atomicHostNewUpload="      const applied=await this.documentPresentation.applyCooperatively(m.tiles,()=>!this.disposed&&m.epoch===this.epoch&&m.version>=this.documentVersion);\n      complete(applied);";
+function undoApprovedDisplayDiff(content,oldValue,newValue,name){
+ const text=content.toString('utf8');
+ assert.equal(text.split(newValue).length,2,'Unapproved display source change: '+name);
+ return Buffer.from(text.replace(newValue,oldValue));
+}
 for(const e of lock.artifacts){
  let content=fs.readFileSync(e.path);
+ if(e.path==='packages/brush-rt/src/document-presentation.mjs'){
+  content=undoApprovedDisplayDiff(content,atomicDocumentOldMethod,atomicDocumentNewMethod,'document atomic method');
+  content=undoApprovedDisplayDiff(content,'',atomicDocumentImport,'document import');
+ }
+ if(e.path==='packages/brush-rt/src/drawing-host.mjs'){
+  content=undoApprovedDisplayDiff(content,atomicHostOldUpload,atomicHostNewUpload,'host atomic apply');
+  content=undoApprovedDisplayDiff(content,atomicHostOldComplete,atomicHostNewComplete,'host exact version ACK');
+ }
  if(e.path==='packages/brush-rt/src/renderer.mjs'){
   const current=content.toString('utf8');
   assert.equal(current.split(allowedRendererResourceChange).length,2,'renderer changed beyond reviewed brush image patch');
