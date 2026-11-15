@@ -50,3 +50,10 @@ body.workspace-compact-density .box-stack{padding-top:5px}
 .c04-device-profile-fields select{min-height:40px;width:100%;border:1px solid var(--a-border,#ddd);border-radius:8px;padding:6px;color:inherit;background:var(--a-surface,#fff)}
 .c04-device-profile-fields input[type=checkbox]{width:18px;height:18px;flex:none}
 .c04-device-profile-fields output{display:block;min-height:18px;font-size:11px;color:var(--a-subtle,#667)}
+
+.c04-gesture-settings{margin:12px 8px;padding:8px 2px;border-top:1px solid var(--a-border,#ddd);font-size:12px}
+.c04-gesture-settings summary{cursor:pointer;min-height:37px;font-weight:600;padding:7px 0}
+.c04-gesture-settings p{color:var(--a-subtle,#667);font-size:11px;line-height:1.5;margin:0 0 7px}
+.c04-gesture-settings label{display:flex;align-items:center;gap:7px;min-height:39px;font-size:11px}
+.c04-gesture-settings label input{width:18px;height:18px;flex:none}
+.c04-gesture-settings output{display:block;margin-top:5px;color:var(--a-subtle,#667);font-size:11px}
