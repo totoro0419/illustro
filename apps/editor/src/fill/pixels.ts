@@ -1,12 +1,17 @@
-import {rasterizeSelection,type MaskData} from '../selection/mask';
+import {growOrShrink,rasterizeSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
 
 export type FillSettings=Readonly<{
-  method:'color'|'line'|'lasso';tolerance:number;gap:number;opacity:number;color:string;
+  method:'color'|'line'|'lasso'|'lasso-closed';tolerance:number;gap:number;opacity:number;color:string;
   erase:boolean;contiguous:boolean;closedOnly:boolean;
+  edge?:number;traceWidth?:number;condition?:'all'|'transparent'|'color';excluded?:readonly number[];included?:readonly number[];
 }>;
 export type Walls=readonly Readonly<{remove:boolean;points:readonly Point[]}>[];
-export type RegionGraph=Readonly<{width:number;height:number;walls:Uint8Array;labels:Uint32Array;external:Uint8Array;count:number}>;
+export type GapCandidate=Readonly<{from:Point;to:Point;length:number}>;
+export type RegionGraph=Readonly<{
+  width:number;height:number;walls:Uint8Array;bridges:Uint8Array;labels:Uint32Array;external:Uint8Array;count:number;
+  candidates:readonly GapCandidate[];
+}>;
 
 const limit=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
 function flood(width:number,height:number,seed:number,hit:(index:number)=>boolean,write:(index:number)=>void,queue:Uint32Array){
@@ -31,20 +36,34 @@ export function buildRegions(source:Uint8Array,width:number,height:number,tolera
     const p=i*4,ink=(255-(source[p]!*.2126+source[p+1]!*.7152+source[p+2]!*.0722))*source[p+3]!/255;
     if(ink>=threshold)walls[i]=1;
   }
-  const radius=Math.round(limit(gap,0,12));
-  if(radius){
-    // Bridge small gaps between opposing line pixels in both axis directions.
-    for(let direction=0;direction<2;direction++){
-      const length=direction?height:width,groups=direction?width:height,step=direction?width:1;
-      for(let line=0;line<groups;line++){
-        const offset=direction?line:line*width;
-        let previous=-Infinity;
-        for(let i=0;i<length;i++){
-          if(!walls[offset+i*step])continue;
-          if(i-previous<=radius+1)for(let j=previous+1;j<i;j++)walls[offset+j*step]=1;
-          previous=i;
+  const radius=Math.round(limit(gap,0,12)),original=walls.slice(),bridges=new Uint8Array(count),candidates:GapCandidate[]=[];
+  const connect=(x:number,y:number,dx:number,dy:number)=>{
+    let from:Point|null=null,steps=0;
+    while(x>=0&&y>=0&&x<width&&y<height){
+      if(original[y*width+x]){
+        if(from&&steps>1&&steps<=radius+1){
+          const distance=Math.hypot(x-from.x,y-from.y);
+          // Diagonal scanning must find a real gap, not bridge a corner around an existing line.
+          if(distance<=radius+1&&(!dx||!dy||
+            (!original[from.y*width+from.x+dx]&&!original[(from.y+dy)*width+from.x]))){
+            if(candidates.length<4096)candidates.push({from,to:{x,y},length:distance-1});
+            for(let step=1;step<steps;step++){
+              const i=(from.y+dy*step)*width+from.x+dx*step;
+              walls[i]=bridges[i]=1;
+            }
+          }
         }
+        from={x,y};steps=0;
       }
+      if(from&&++steps>radius+1)from=null;
+      x+=dx;y+=dy;
+    }
+  };
+  if(radius){
+    for(let x=0;x<width;x++){connect(x,0,0,1);connect(x,0,1,1);connect(x,0,-1,1);}
+    for(let y=0;y<height;y++){
+      connect(0,y,1,0);
+      if(y){connect(0,y,1,1);connect(width-1,y,-1,1);}
     }
   }
   for(const {remove,points} of manual){
@@ -54,6 +73,7 @@ export function buildRegions(source:Uint8Array,width:number,height:number,tolera
         const x=Math.floor(a.x+(b.x-a.x)*j/steps),y=Math.floor(a.y+(b.y-a.y)*j/steps);
         if(x<0||x>=width||y<0||y>=height)continue;
         walls[y*width+x]=remove?0:1;
+        bridges[y*width+x]=0;
       }
     }
   }
@@ -65,7 +85,7 @@ export function buildRegions(source:Uint8Array,width:number,height:number,tolera
     const outside=flood(width,height,i,j=>!walls[j]&&!labels[j],j=>{labels[j]=regions;},queue);
     external.push(outside?1:0);
   }
-  return {width,height,walls,labels,external:Uint8Array.from(external),count:regions};
+  return {width,height,walls,bridges,labels,external:Uint8Array.from(external),count:regions,candidates};
 }
 
 export function fillMask(source:Uint8Array,width:number,height:number,settings:FillSettings,points:readonly Point[],
@@ -83,15 +103,33 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
       for(let j=1;j<=steps;j++)yield {x:a.x+(b.x-a.x)*j/steps,y:a.y+(b.y-a.y)*j/steps};
     }
   }
-  if(settings.method==='lasso'){
+  if(settings.method==='lasso'||settings.method==='lasso-closed'){
     if(points.length<3)throw Error('塗る範囲を一筆で囲んでください。');
     alpha=rasterizeSelection({type:'lasso',points},width,height).alpha;
+    if(settings.method==='lasso-closed'){
+      if(!graph)throw Error('先に線画を解析してください。');
+      const rejected=new Set<number>(settings.excluded),inside=new Set<number>();
+      for(let i=0;i<length;i++){
+        const id=graph.labels[i]!;
+        if(!id)continue;
+        if(alpha[i])inside.add(id);else rejected.add(id);
+      }
+      for(let i=0;i<length;i++){
+        const id=graph.labels[i]!;
+        if(!id||!inside.has(id)||rejected.has(id)||graph.external[id])alpha[i]=0;
+      }
+    }
   }else if(settings.method==='line'){
     if(!graph)throw Error('先に線画を解析してください。');
-    const regions=new Set<number>();
+    const excluded=new Set(settings.excluded);
+    const regions=new Set((settings.included??[]).filter(id=>!excluded.has(id)&&(!settings.closedOnly||!graph.external[id])));
+    const traceRadius=Math.max(0,Math.min(12,Math.round((settings.traceWidth??1)/2-.5)));
     for(const point of sampledPath()){
-      const i=seed(point),id=graph.labels[i]??0;
-      if(id&&(!settings.closedOnly||!graph.external[id]))regions.add(id);
+      for(let y=-traceRadius;y<=traceRadius;y++)for(let x=-traceRadius;x<=traceRadius;x++){
+        if(x*x+y*y>traceRadius*traceRadius)continue;
+        const i=seed({x:point.x+x,y:point.y+y}),id=graph.labels[i]??0;
+        if(id&&!excluded.has(id)&&(!settings.closedOnly||!graph.external[id]))regions.add(id);
+      }
     }
     if(!regions.size)throw Error('塗れる領域がありません。線の上や開いた領域を避けてください。');
     for(let i=0;i<length;i++)if(regions.has(graph.labels[i]!))alpha[i]=255;
@@ -115,7 +153,18 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
       }
     }else for(let i=0;i<length;i++)if(equalColor(i))alpha[i]=255;
   }
-  if(selection)for(let i=0;i<length;i++)alpha[i]=Math.round(alpha[i]!*selection.alpha[i]!/255);
+  const edge=settings.edge??0;
+  if(edge&&alpha.some(Boolean))alpha=growOrShrink({width,height,alpha},Math.min(24,Math.abs(edge)),edge>0?'grow':'shrink').alpha;
+  const rgb=[1,3,5].map(offset=>parseInt(settings.color.slice(offset,offset+2),16));
+  for(let i=0;i<length;i++){
+    if(!alpha[i])continue;
+    if(selection)alpha[i]=Math.round(alpha[i]!*selection.alpha[i]!/255);
+    if(settings.condition==='transparent'&&source[i*4+3])alpha[i]=0;
+    if(settings.condition==='color'){
+      const p=i*4;
+      if(!source[p+3]||Math.hypot(source[p]!-rgb[0]!,source[p+1]!-rgb[1]!,source[p+2]!-rgb[2]!)>settings.tolerance*4.42)alpha[i]=0;
+    }
+  }
   return {width,height,alpha};
 }
 

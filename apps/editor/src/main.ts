@@ -3421,47 +3421,107 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
     return 'edit';
   });
 });
+async function collectFillMask(mask:LayerMask,width:number,height:number,valid:()=>boolean){
+  const alpha=new Uint8Array(width*height);
+  for(let y=0;y<height;y+=TILE){
+    const tileHeight=Math.min(TILE,height-y);
+    for(let x=0;x<width;x+=TILE){
+      const tileWidth=Math.min(TILE,width-x);
+      const tile=layerMaskTile(mask,(x/TILE)+','+(y/TILE));
+      for(let dy=0;dy<tileHeight;dy++){
+        const offset=(y+dy)*width+x;
+        if(typeof tile==='number')alpha.fill(tile,offset,offset+tileWidth);
+        else alpha.set(tile.subarray(dy*TILE,dy*TILE+tileWidth),offset);
+      }
+    }
+    await new Promise<void>(resolve=>setTimeout(resolve,0));
+    if(!valid())throw Error('塗る対象が変わりました。');
+  }
+  return {width,height,alpha};
+}
 installFillPanel(byId('documentBoxBody'),{
   drawing:()=>documentReady?surface:null,
   color:()=>hex(foreground.current),
-  references:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name,vector:layer.editable?.kind==='path'})),
-  capture:async(reference,destination,specifiedId,needTarget)=>{
+  documentId:()=>controller.document.root.documentId,
+  targetName:()=>controller.selectedLayer.name,
+  references:()=>controller.layers.filter(layer=>!layer.lineRegions).map(layer=>({id:layer.id,name:layer.name,vector:layer.editable?.kind==='path'})),
+  regionLayers:()=>controller.layers.flatMap(layer=>layer.lineRegions?[{id:layer.id,name:layer.name,data:layer.lineRegions}]:[]),
+  saveRegion:async(data,id)=>{
+    const artwork=controller.document,layer=controller.selectedLayer;
+    let created=id;
+    await withClipboardAccess(async()=>{
+      if(controller.document!==artwork||!artwork.hasRevision(data.sourceRevision))throw Error('元の線画が見つかりません。');
+      const tx=artwork.begin(id?'線画領域を更新':'線画領域を作成');
+      created=id&&artwork.root.hasLayer(id)?id:tx.addRasterLayerAbove(layer.id);
+      tx.setLineRegions(created,data);
+      if(created!==id){
+        tx.renameLayer(created,'線画領域');
+        tx.setLayerVisibility(created,false);
+        tx.setLayerLocked(created,true);
+      }
+      controller.lastPersistenceHandoff=tx.commit().persistence;
+      return 'edit';
+    });
+    return created!;
+  },
+  capture:async(reference,destination,layerIds,needTarget,stored)=>{
     const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
     const drawing=surface,selection=c06Selection?.active()??null;
     if(!drawing)throw Error('作品を開いてください。');
-    const referenced=reference==='layer'||reference==='vector'?controller.layers.find(item=>item.id===specifiedId):layer;
-    if(!referenced)throw Error('参照するレイヤーを選んでください。');
-    if(reference==='vector'&&referenced.editable?.kind!=='path')throw Error('ベクターの線画レイヤーを指定してください。');
-    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||root.isLayerContentLocked(layer.id)))
+    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||layer.editable||layer.deformation||layer.lineRegions||root.isLayerContentLocked(layer.id)))
       throw Error('塗れるレイヤーを選ぶか、新しいレイヤーに塗ってください。');
+    if(needTarget&&destination==='under'&&layer.baseColor==='white')throw Error('白い背景より上に塗りレイヤーを作ってください。');
+    const revision=stored?.sourceRevision??head,referenceRoot=artwork.revision(revision).root;
+    const mode=stored?.reference??reference;
+    const sourceIds:readonly LayerId[]=stored?.sources??(mode==='active'?[layer.id]:mode==='merged'?[]:layerIds as readonly LayerId[]);
+    if(mode!=='merged'&&(!sourceIds.length||sourceIds.some(id=>!referenceRoot.hasLayer(id)||referenceRoot.getLayer(id).lineRegions)))
+      throw Error('参照するレイヤーが選ばれていないか、見つかりません。参照元を確認してください。');
+    const referenced=sourceIds[0]?referenceRoot.getLayer(sourceIds[0]):undefined;
+    if((mode==='vector'||mode==='vector-visible')&&referenced?.editable?.kind!=='path')throw Error('ベクターの線画レイヤーを指定してください。');
     let source:Uint8Array|undefined,target:Uint8Array|null=null;
+    const {width,height}=root;
+    if(referenceRoot.width!==width||referenceRoot.height!==height)throw Error('保存した領域と現在の作品の大きさが違います。解析を更新してください。');
     await withClipboardAccess(async active=>{
-      const wanted=new Set([referenced.id]);
-      if(needTarget&&destination==='active')wanted.add(layer.id);
-      const layers=await active.captureDocumentLayers(wanted);
-      if(reference==='merged')source=new Uint8Array(await renderFrozenArtwork(captureExport(artwork)));
-      else if(reference==='vector'&&referenced.editable?.kind==='path'){
-        const {width,height}=root;
-        source=new Uint8Array(await runArtwork({content:referenced.editable,width,height,outputWidth:width,outputHeight:height}));
-      }else source=layers.get(referenced.id);
-      if(needTarget&&destination==='active')target=layers.get(layer.id)??null;
+      if(needTarget&&destination==='active')target=(await active.captureDocumentLayers(new Set([layer.id]))).get(layer.id)??null;
       return 'read';
     });
+    if(mode==='vector'&&referenced?.editable?.kind==='path'){
+      const path=referenced.editable;
+      source=new Uint8Array(await runArtwork({content:{...path,fill:null,stroke:'#000000',width:1,lineStyle:'solid'},
+        width,height,outputWidth:width,outputHeight:height}));
+    }else{
+      const frozen=captureExport(artwork,undefined,revision);
+      if(mode==='merged')source=new Uint8Array(await renderFrozenArtwork(frozen));
+      else{
+        const surfaceIds=new Set<string>(sourceIds.map(id=>referenceRoot.getLayer(id).surface.descriptor.surfaceId));
+        const used=new Set(surfaceIds);
+        for(const item of frozen.layers)if(surfaceIds.has(item.surfaceId)&&item.clipSurfaceId)used.add(item.clipSurfaceId);
+        source=new Uint8Array(await renderFrozenArtwork({...frozen,layers:frozen.layers.filter(item=>used.has(item.surfaceId)).map(item=>{
+          const {clipSurfaceId,...view}=item;
+          // An excluded clipping base still supplies its alpha without becoming a fill reference.
+          return {...view,...(clipSurfaceId?{clipSurfaceId}:{}),visible:true,referenceOnly:!surfaceIds.has(item.surfaceId)};
+        }),strokes:frozen.strokes.filter(item=>used.has(item.surfaceId)),basePixels:frozen.basePixels?.filter(item=>used.has(item.surfaceId))??[]}));
+      }
+    }
     if(!source||(needTarget&&destination==='active'&&!target))throw Error('塗りつぶしに必要な画像を取得できません。');
     const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
-      controller.selectedLayer.id===layer.id&&c06Selection?.active()===selection;
-    const {width,height}=root;
+      controller.selectedLayer.id===layer.id&&(c06Selection?.active()??null)===selection;
+    const targetMask=needTarget&&destination==='active'&&layer.vectorMask?.enabled
+      ?await collectFillMask(layer.vectorMask,width,height,valid):null;
     return {
-      name:reference==='merged'?'見えている絵':referenced.name,key:root.documentId+':'+(reference==='merged'?'merged':referenced.id),
+      name:mode==='merged'?'見えている絵':sourceIds.map(id=>referenceRoot.getLayer(id).name).join('、'),
+      targetName:destination==='active'?layer.name:destination==='under'?'下に新規レイヤー':'上に新規レイヤー',
+      key:root.documentId+':'+(mode==='merged'?'merged':(mode==='vector'||mode==='vector-visible'?mode+':':'')+sourceIds.join(',')),
+      sourceIds,reference:mode,revision,
       referenceValid:()=>surface===drawing&&controller.document===artwork&&
-        (reference==='merged'?artwork.head===head:
-          artwork.root.hasLayer(referenced.id)&&artwork.root.getLayer(referenced.id)===referenced&&artwork.root.width===width&&artwork.root.height===height),
-      width,height,source,target,selection,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,
+        (mode==='merged'?artwork.head===revision:sourceIds.every(id=>artwork.root.hasLayer(id)&&artwork.root.getLayer(id)===referenceRoot.getLayer(id)))&&
+        artwork.root.width===width&&artwork.root.height===height,
+      width,height,source,target,selection,targetMask,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,
       select:mask=>c06Selection?.replaceActive(mask),
       apply:async pixels=>withClipboardAccess(async()=>{
         if(!valid())throw Error('作品が変わったため塗りを取り消しました。');
         const tx=artwork.begin('塗りつぶす');
-        const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,'塗りつぶし');
+        const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,'塗りつぶし',false,true,destination==='under');
         if(destination==='active')tx.replaceLayerRaster(id,pixels);
         controller.lastPersistenceHandoff=tx.commit().persistence;
         controller.selectLayer(id);

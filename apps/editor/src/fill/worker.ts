@@ -15,7 +15,7 @@ self.onmessage=({data}:MessageEvent<FillJob>)=>{
     const post=self as unknown as Worker;
     if(data.type==='graph'){
       const graph=buildRegions(source,width,height,settings.tolerance,settings.gap,data.manual);
-      post.postMessage({graph},[graph.labels.buffer as ArrayBuffer,graph.walls.buffer as ArrayBuffer,graph.external.buffer as ArrayBuffer]);
+      post.postMessage({graph},[graph.labels.buffer as ArrayBuffer,graph.walls.buffer as ArrayBuffer,graph.bridges.buffer as ArrayBuffer,graph.external.buffer as ArrayBuffer]);
       return;
     }
     const mask=fillMask(source,width,height,settings,data.points,data.graph,data.selection);
@@ -24,6 +24,6 @@ self.onmessage=({data}:MessageEvent<FillJob>)=>{
     }
     const pixels=colorMask(data.target,mask,settings,data.alphaLocked);
     const changed=pixels.some((value,index)=>value!==(data.target?.[index]??0));
-    post.postMessage({pixels:changed?pixels:null},changed?[pixels.buffer]:[]);
+    post.postMessage({pixels:changed?pixels:null,mask},changed?[pixels.buffer,mask.alpha.buffer as ArrayBuffer]:[mask.alpha.buffer as ArrayBuffer]);
   }catch(error){self.postMessage({error:error instanceof Error?error.message:String(error)});}
 };

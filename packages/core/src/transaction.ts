@@ -1,3 +1,4 @@
+import {validateLineRegions,type LineRegions} from './lineRegions';
 import {validateLayerDeformation,type LayerDeformation} from './layerDeformation';
 import {validateEditableArtwork,type EditableArtwork} from './editableArtwork';
 import {validateLayerBlend,type LayerBlend} from './layerBlend';
@@ -26,13 +27,13 @@ export class DocumentTransaction{
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     return !!layer.implicitRaster&&this.meta(id,{implicitRaster:false});
   }
-  addRasterLayerAbove(referenceId:LayerId,inheritGroup=true):LayerId{
+  addRasterLayerAbove(referenceId:LayerId,inheritGroup=true,below=false):LayerId{
     this.open();const reference=this.updatesValue.get(referenceId)??this.rootValue.layers.get(referenceId);if(!reference)throw new Error('missing reference layer');if(reference.kind!=='raster')throw new Error('reference layer is not raster');
     const order=this.rootOrderValue??[...this.rootValue.rootLayerIds],index=order.indexOf(referenceId);if(index<0)throw new Error('reference layer is not in root order');
     const ids=this.doc._internal(CORE_INTERNAL).ids,layerId=ids.layer(),surfaceId=ids.surface();
     if(this.rootValue.layers.get(layerId)||this.updatesValue.has(layerId))throw new Error('duplicate layer id');
     for(const id of order){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.surface.descriptor.surfaceId===surfaceId)throw new Error('duplicate raster surface id');}
-    const name=`Layer ${order.length+1}`,layer=rasterLayer(layerId,surfaceId,reference.surface.descriptor.workingColorSpaceRef,reference.surface.descriptor.sampleEncoding,name),insertIndex=index+1;
+    const name=`Layer ${order.length+1}`,layer=rasterLayer(layerId,surfaceId,reference.surface.descriptor.workingColorSpaceRef,reference.surface.descriptor.sampleEncoding,name),insertIndex=below?index:index+1;
     const next=[...order];next.splice(insertIndex,0,layerId);this.rootOrderValue=next;
     const groups=this.groupsValue??this.rootValue.layerGroups;
     if(inheritGroup&&groups.some(group=>group.members.includes(referenceId))){
@@ -40,10 +41,10 @@ export class DocumentTransaction{
     }
     this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
   }
-  addRasterSnapshotAbove(referenceId:LayerId,pixels:Uint8Array|Uint8ClampedArray,name:string,copyStyle=false,inheritGroup=true){
+  addRasterSnapshotAbove(referenceId:LayerId,pixels:Uint8Array|Uint8ClampedArray,name:string,copyStyle=false,inheritGroup=true,below=false){
     const root=this.rootValue;
     if(pixels.length!==root.width*root.height*4)throw new Error('画像の大きさが作品と一致しません。');
-    const source=root.getLayer(referenceId),id=this.addRasterLayerAbove(referenceId,inheritGroup);
+    const source=root.getLayer(referenceId),id=this.addRasterLayerAbove(referenceId,inheritGroup,below);
     this.renameLayer(id,name);
     if(copyStyle){
       if(source.deformation)throw new Error('変形を保持したレイヤーの複製は未対応です。見た目を複製する場合は画像に焼き込んでください。');
@@ -133,6 +134,13 @@ export class DocumentTransaction{
       if(!hints?.length)continue;
       this.recordRasterOperation(id,operation,hints);
     }
+  }
+  setLineRegions(id:LayerId,data:LineRegions){
+    const region=validateLineRegions(data)!;
+    if(!this.doc.hasRevision(region.sourceRevision))throw Error('元の線画が見つかりません。');
+    const root=this.doc.revision(region.sourceRevision).root;
+    if(region.sources.some(source=>!root.hasLayer(source)))throw Error('参照元の線画が見つかりません。');
+    return this.meta(id,{lineRegions:region});
   }
   bakeLayerDeformation(id:LayerId){
     const layer=this.editableRaster(id);
@@ -515,7 +523,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||layer.contentLocked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='restore-revision'||x.type==='pin-revision'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'contentLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'|'implicitRaster'|'editable'|'deformation'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'contentLocked'|'alphaLocked'|'clipSourceId'|'vectorMask'|'blend'|'implicitRaster'|'editable'|'deformation'|'lineRegions'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

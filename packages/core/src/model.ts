@@ -1,3 +1,4 @@
+import type {LineRegions} from './lineRegions';
 import type {LayerDeformation} from './layerDeformation';
 import type {EditableArtwork} from './editableArtwork';
 import type {LayerBlend} from './layerBlend';
@@ -31,6 +32,7 @@ export type LayerNode=Readonly<{
   blend?:LayerBlend|null;
   editable?:EditableArtwork|null;
   deformation?:LayerDeformation|null;
+  lineRegions?:LineRegions|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;

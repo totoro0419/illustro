@@ -4,7 +4,7 @@ import {blendArtworkPixel,GpuRenderer,layerMaskTile,TILE,validateRecord,type Str
 export type ImageFormat='png'|'jpeg'|'webp';
 export type FrozenExport=Readonly<{
   revision:RevisionId;width:number;height:number;name:string;colorProfileId:string;
-  layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string;mask?:LayerMask;blend?:LayerBlend}>[];
+  layers:readonly Readonly<{surfaceId:string;visible:boolean;opacity:number;baseColor?:'white';clipSurfaceId?:string;referenceOnly?:boolean;mask?:LayerMask;blend?:LayerBlend}>[];
   basePixels?:readonly Readonly<{surfaceId:string;pixels:Uint8Array}>[];
   strokes:readonly Readonly<{surfaceId:string;record:StrokeRecord}>[];
 }>;
@@ -121,7 +121,7 @@ export async function renderFrozenArtwork(frozen:FrozenExport):Promise<Uint8Clam
       return image;
     };
     for(const layer of layers){
-      if(!layer.visible||layer.opacity<=0)continue;
+      if(layer.referenceOnly||!layer.visible||layer.opacity<=0)continue;
       const clip=layer.clipSurfaceId?layerBySurface.get(layer.clipSurfaceId):undefined;
       if(clip&&(!clip.visible||clip.opacity<=0))continue;
       const pixels=await readLayer(layer);

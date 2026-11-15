@@ -59,6 +59,10 @@ export class CoreDocument{
       keep.add(id);
       pending.push(...revision.parentIds);
       for(const operation of revision.command?.operations??[])pending.push(...operation.sourceRevisionIds);
+      for(const layerId of revision.root.rootLayerIds){
+        const regions=revision.root.getLayer(layerId).lineRegions;
+        if(regions)pending.push(regions.sourceRevision);
+      }
     }
     return keep;
   }
