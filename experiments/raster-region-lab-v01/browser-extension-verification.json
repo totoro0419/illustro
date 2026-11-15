@@ -1,0 +1,40 @@
+{
+  "version": "0.3",
+  "kind": "Browser execution and structural comparison; no artwork quality grading",
+  "input": "Screenshot crop with dark pixels extracted: approximation, not original Raster",
+  "checks": [
+    {
+      "name": "standalone HTML served; default mode generous and gap 24",
+      "status": "PASS"
+    },
+    {
+      "name": "same gap 24, former mode",
+      "closedRegions": 2,
+      "accepted": 5,
+      "pending": 2,
+      "hash": "9e6ee05a"
+    },
+    {
+      "name": "same gap 24, generous mode",
+      "closedRegions": 4,
+      "accepted": 8,
+      "pending": 6,
+      "hash": "24f899e"
+    },
+    {
+      "name": "pointer drawing then Undo then reanalysis",
+      "restoredHash": "24f899e",
+      "status": "PASS"
+    },
+    {
+      "name": "extension display checkbox off/on",
+      "status": "PASS"
+    }
+  ],
+  "limitations": [
+    "file:// launch unverified; same standalone HTML tested through managed preview",
+    "more inferred boundaries are not evidence of higher artistic accuracy",
+    "straight continuation at multiple sampled directions; curvature extrapolation is not implemented"
+  ],
+  "quality": "人間による実線画検査待ち"
+}

@@ -1,0 +1,37 @@
+export type ProjectionCacheLayerV1=Readonly<{surfaceId:string;pixels:Uint8Array}>;
+
+export type ProjectionCacheV1=Readonly<{
+  version:1;
+  revisionId:string;
+  width:number;
+  height:number;
+  layers:readonly ProjectionCacheLayerV1[];
+}>;
+
+/** Sparse, lossless 128px projection tiles. Never inflate blank canvas regions. */
+export type ProjectionCacheV2=Readonly<{
+  version:2;
+  revisionId:string;
+  width:number;
+  height:number;
+  tileSize:number;
+  layers:readonly Readonly<{surfaceId:string;tiles:readonly Readonly<{key:string;pixels:Uint8Array}>[]}>[];
+}>;
+export type ProjectionCache=ProjectionCacheV1|ProjectionCacheV2;
+
+export type ProjectionTileDeltaV2=Readonly<{
+  surfaceId:string;
+  key:string;
+  pixels:Uint8Array;
+}>;
+
+export type ProjectionCheckpointDeltaV2=Readonly<{
+  version:2;
+  replace?:boolean;
+  revisionId:string;
+  width:number;
+  height:number;
+  tileSize:number;
+  surfaceIds:readonly string[];
+  tiles:readonly ProjectionTileDeltaV2[];
+}>;

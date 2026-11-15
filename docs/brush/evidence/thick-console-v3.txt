@@ -1,0 +1,6 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> illustro@0.0.0 brush:thick
+> node prototypes/brush-lab/thick-check.mjs
+
+PASS 13 thick variants, 39 independent previews, exact replay, contact without copy/readback/wait, cancellation and region commit

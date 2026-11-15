@@ -1,0 +1,10 @@
+{
+  "durationMs": 180235,
+  "accepted": 42648,
+  "strokes": 36,
+  "errors": 0,
+  "sendP95Ms": 0.30000000074505806,
+  "frameP95Ms": 16.79999999998836,
+  "frameMaxMs": 50,
+  "scope": "scheduled software input; not physical pen, thermal or display certification"
+}

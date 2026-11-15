@@ -1,0 +1,80 @@
+{
+  "overflow1440": {
+    "sw": 1440,
+    "sh": 900,
+    "cw": 1440,
+    "ch": 900
+  },
+  "cardWidths1440": [
+    344,
+    344,
+    344,
+    344
+  ],
+  "hookInitial": {
+    "version": "candidate-1",
+    "brushSize": 18,
+    "hsv": [
+      228,
+      44,
+      100
+    ],
+    "cards": 4
+  },
+  "outputRangeVisible": {
+    "min": "20",
+    "max": "100",
+    "minWidth": 147.5,
+    "maxWidth": 147.5
+  },
+  "brushAfterNumber": {
+    "num": "42",
+    "range": "315",
+    "preview": "12.8906px"
+  },
+  "opacitySync": "63",
+  "colorAfterH": {
+    "hex": "#8FFFFF",
+    "hsv": [
+      180,
+      44,
+      100
+    ]
+  },
+  "rgbVisible": "grid",
+  "colorAfterRgb": {
+    "hex": "#FF0000",
+    "hsv": [
+      0,
+      100,
+      100
+    ]
+  },
+  "colorAfterHex": {
+    "hex": "#00FF00",
+    "hsv": [
+      120,
+      100,
+      100
+    ]
+  },
+  "hsvFieldsAfterRoundTrip": {
+    "display": "grid",
+    "h": "120",
+    "s": "100",
+    "v": "100"
+  },
+  "curveCx": "153",
+  "angle": {
+    "num": "120",
+    "range": "120",
+    "hand": "rotate(120deg)"
+  },
+  "overflow1024": {
+    "sw": 1024,
+    "sh": 768,
+    "cw": 1024,
+    "ch": 768
+  },
+  "errors": []
+}

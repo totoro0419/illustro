@@ -1,0 +1,46 @@
+{
+  "source_commit": "ce98f6c5bd805b5055cdfcaec98e3e5adba6111d",
+  "workflow_run": "https://github.com/totoro0419/illustro/actions/runs/41206428072",
+  "job_id": 124552315279,
+  "conclusion": "success",
+  "executed": {
+    "baseline_model": 12,
+    "additional_model": 12,
+    "existing_chromium": 11,
+    "additional_chromium": 32,
+    "known_id_dom_routes": 988,
+    "cpu_reference": 30,
+    "structure_checks": 7,
+    "typescript": "success",
+    "runtime_no_document": "success",
+    "standalone_html_rebuild": "identical",
+    "lcms_version": 2140,
+    "lcms_base_samples": 6,
+    "lcms_format_samples": 24
+  },
+  "before": {
+    "source": "fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04",
+    "same_browser_expectations": 32,
+    "pass": 2,
+    "fail": 30,
+    "qualification": "includes unavailable new controls; failures are not defect count"
+  },
+  "artifact": "https://github.com/totoro0419/illustro/actions/runs/41206428072/artifacts/13044706016",
+  "unverified": [
+    "physical devices",
+    "real GPU workload and device-loss recovery",
+    "physical Native/OPFS crash durability",
+    "arbitrary ICC and Proof",
+    "full geometry Warp",
+    "first-time user testing"
+  ],
+  "prototype_deployment": {
+    "site": "https://illustro-stage3-review-c2c1.ibukioike2009.chatgpt.site/",
+    "site_source_commit": "44f8f2f8452acdd4bafbeacfcfb67f7a184392c1",
+    "deployment_id": "appgdep_6ae5efacda9c81919e65a390c19b28d8",
+    "status": "succeeded",
+    "audience": "owner-private",
+    "deployed_browser_interaction": "not verified: sign-in wall",
+    "managed_local_browser_interaction": "executed"
+  }
+}

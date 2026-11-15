@@ -1,0 +1,544 @@
+{
+  "checked_at_jst": "2026-10-28T00:18:18.375099+09:00",
+  "base_commit": "92daaf5ac23a015a834141f7d08275d903711404",
+  "check_count": 37,
+  "checks": [
+    {
+      "name": "source_exact_247",
+      "passed": true,
+      "evidence": 247
+    },
+    {
+      "name": "map_bijective_247",
+      "passed": true,
+      "evidence": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "name": "all_30_categories",
+      "passed": true,
+      "evidence": {
+        "CAN": 10,
+        "INP": 8,
+        "BRU": 12,
+        "WET": 7,
+        "COL": 11,
+        "FIL": 10,
+        "LIN": 8,
+        "LAY": 12,
+        "SEL": 8,
+        "TRN": 8,
+        "VEC": 8,
+        "GUI": 7,
+        "GRA": 4,
+        "FX": 45,
+        "NDE": 5,
+        "REF": 6,
+        "HIS": 6,
+        "SAV": 8,
+        "IO": 9,
+        "AST": 5,
+        "AUT": 6,
+        "UI": 8,
+        "GST": 5,
+        "DEV": 5,
+        "REC": 4,
+        "A11": 6,
+        "AI": 4,
+        "EXT": 5,
+        "CLP": 4,
+        "PIX": 3
+      }
+    },
+    {
+      "name": "substantive_fields_present",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "individually_authored_unique_findings",
+      "passed": true,
+      "evidence": {
+        "unique_issues": 247,
+        "unique_tests": 247
+      }
+    },
+    {
+      "name": "risk_not_fabricated_product_bug",
+      "passed": true,
+      "evidence": "All feature findings are conditional specification risks, not observed product defects."
+    },
+    {
+      "name": "all_feature_source_fields_and_section_hashes",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "baseline_input_hashes_unchanged",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "all_existing_repository_files_unchanged",
+      "passed": true,
+      "evidence": {
+        "files_checked": 54,
+        "changed": []
+      }
+    },
+    {
+      "name": "baseline_has_no_product_executable_source",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "individual_markdown_247",
+      "passed": true,
+      "evidence": {
+        "sections": 247
+      }
+    },
+    {
+      "name": "bidirectional_feature_root_mapping",
+      "passed": true,
+      "evidence": {
+        "relations": 625,
+        "invalid": []
+      }
+    },
+    {
+      "name": "all_QR_22",
+      "passed": true,
+      "evidence": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ]
+    },
+    {
+      "name": "all_NB_12",
+      "passed": true,
+      "evidence": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "name": "all_EXP_25",
+      "passed": true,
+      "evidence": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25"
+      ]
+    },
+    {
+      "name": "14_cards_six_fields",
+      "passed": true,
+      "evidence": "Each card has all six requested fields."
+    },
+    {
+      "name": "ideation_open_and_separate",
+      "passed": true,
+      "evidence": "Card file does not embed/link solution list; user answers remain open."
+    },
+    {
+      "name": "42_alternatives_recorded",
+      "passed": true,
+      "evidence": {
+        "records": 42,
+        "proposal_rows": 42
+      }
+    },
+    {
+      "name": "no_formal_adoption_or_device_pass",
+      "passed": true,
+      "evidence": "All 42 candidates are explicitly pending, all required metric dimensions unmeasured on product/device."
+    },
+    {
+      "name": "primary_source_ids_resolve",
+      "passed": true,
+      "evidence": {
+        "ids": [
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16",
+          "S17",
+          "S18",
+          "S19",
+          "S20",
+          "S21"
+        ],
+        "missing": []
+      }
+    },
+    {
+      "name": "relative_links_and_anchors",
+      "passed": true,
+      "evidence": {
+        "links": 4031,
+        "broken": []
+      }
+    },
+    {
+      "name": "experiment_source_hashes",
+      "passed": true,
+      "evidence": "Recorded scripts match actual files."
+    },
+    {
+      "name": "model_evidence_values",
+      "passed": true,
+      "evidence": {
+        "E01": {
+          "seeds": 250,
+          "safe_schedules": 1000,
+          "cancel_closures": 250,
+          "save_fences": 250,
+          "naive_completion_order_failures": 250,
+          "selective_cancel_keeps_independent_edit": true,
+          "limit": "Pure integer commands with exact read/write sets; no pixels, I/O, crash or asynchronous runtime."
+        },
+        "E03": {
+          "grid": [
+            65,
+            65
+          ],
+          "edited_cells": 1,
+          "changed_reachable_cells": 2081,
+          "changed_outside_radius4": 2044,
+          "far_point_now_reachable": [
+            64,
+            32
+          ],
+          "limit": "Binary grid connectivity only, not thick-line extraction or artistic intent."
+        },
+        "E04": {
+          "filter": "1D finite truncated Gaussian, radius=5, clamp global boundary",
+          "output_range": [
+            40,
+            60
+          ],
+          "safe_max_abs_error": 0.0,
+          "cropped_without_halo_max_abs_error": 0.1636000239308827,
+          "opaque_white_transparent_black_correct_straight": 1.0,
+          "naive_straight_average": 0.5,
+          "limit": "No 2D, ICC, GPU, infinite-support Gaussian, lens blur or deep stack tested."
+        }
+      }
+    },
+    {
+      "name": "storage_fault_evidence",
+      "passed": true,
+      "evidence": [
+        {
+          "fault": "before_data",
+          "recovered_generation": 0,
+          "old_data_unchanged": true
+        },
+        {
+          "fault": "truncated_data",
+          "recovered_generation": 0,
+          "old_data_unchanged": true
+        },
+        {
+          "fault": "after_data",
+          "recovered_generation": 0,
+          "old_data_unchanged": true
+        },
+        {
+          "fault": "truncated_manifest",
+          "recovered_generation": 0,
+          "old_data_unchanged": true
+        },
+        {
+          "fault": "after_manifest_temp",
+          "recovered_generation": 0,
+          "old_data_unchanged": true
+        },
+        {
+          "fault": "after_publish",
+          "recovered_generation": 1,
+          "old_data_unchanged": true
+        },
+        {
+          "fault": "corrupt_published_data",
+          "recovered_generation": 0,
+          "old_data_unchanged": true
+        }
+      ]
+    },
+    {
+      "name": "research_python_syntax",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "all_json_parse",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "diff_scope_research_only",
+      "passed": true,
+      "evidence": [
+        "docs/performance-research/AI_INDEPENDENT_PROPOSALS.md",
+        "docs/performance-research/AUDIT.md",
+        "docs/performance-research/CANDIDATE_DESIGN.md",
+        "docs/performance-research/COMPETITIVE_COMPARISON.md",
+        "docs/performance-research/DECISIONS.md",
+        "docs/performance-research/EXPERIMENT_RESULTS.md",
+        "docs/performance-research/FEATURE_PROBLEM_MAP.md",
+        "docs/performance-research/README.md",
+        "docs/performance-research/REQUIREMENT_CROSSWALK.md",
+        "docs/performance-research/ROADMAP.md",
+        "docs/performance-research/ROOT_PROBLEMS.md",
+        "docs/performance-research/SOURCES.md",
+        "docs/performance-research/USER_RESEARCH_CARDS.md",
+        "docs/performance-research/VALIDATION_PLAN.md",
+        "docs/performance-research/baseline_manifest.json",
+        "docs/performance-research/build_decisions.py",
+        "docs/performance-research/build_indexes.py",
+        "docs/performance-research/candidate_decisions.json",
+        "docs/performance-research/card_content.json",
+        "docs/performance-research/experiments/results.json",
+        "docs/performance-research/experiments/run_models.py",
+        "docs/performance-research/experiments/storage_fault_model.py",
+        "docs/performance-research/experiments/storage_results.json",
+        "docs/performance-research/feature_notes.tsv",
+        "docs/performance-research/features/A11.md",
+        "docs/performance-research/features/AI.md",
+        "docs/performance-research/features/AST.md",
+        "docs/performance-research/features/AUT.md",
+        "docs/performance-research/features/BRU.md",
+        "docs/performance-research/features/CAN.md",
+        "docs/performance-research/features/CLP.md",
+        "docs/performance-research/features/COL.md",
+        "docs/performance-research/features/DEV.md",
+        "docs/performance-research/features/EXT.md",
+        "docs/performance-research/features/FIL.md",
+        "docs/performance-research/features/FX.md",
+        "docs/performance-research/features/GRA.md",
+        "docs/performance-research/features/GST.md",
+        "docs/performance-research/features/GUI.md",
+        "docs/performance-research/features/HIS.md",
+        "docs/performance-research/features/INP.md",
+        "docs/performance-research/features/IO.md",
+        "docs/performance-research/features/LAY.md",
+        "docs/performance-research/features/LIN.md",
+        "docs/performance-research/features/NDE.md",
+        "docs/performance-research/features/PIX.md",
+        "docs/performance-research/features/REC.md",
+        "docs/performance-research/features/REF.md",
+        "docs/performance-research/features/SAV.md",
+        "docs/performance-research/features/SEL.md",
+        "docs/performance-research/features/TRN.md",
+        "docs/performance-research/features/UI.md",
+        "docs/performance-research/features/VEC.md",
+        "docs/performance-research/features/WET.md",
+        "docs/performance-research/problem_map.json",
+        "docs/performance-research/root_coverage.json",
+        "docs/performance-research/roots.json",
+        "docs/performance-research/validate_research.py",
+        "docs/performance-research/validation_results.json"
+      ]
+    },
+    {
+      "name": "deliverable_FEATURE_PROBLEM_MAP.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 45387
+      }
+    },
+    {
+      "name": "deliverable_ROOT_PROBLEMS.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 53045
+      }
+    },
+    {
+      "name": "deliverable_USER_RESEARCH_CARDS.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 21279
+      }
+    },
+    {
+      "name": "deliverable_AI_INDEPENDENT_PROPOSALS.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 18742
+      }
+    },
+    {
+      "name": "deliverable_SOURCES.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 9711
+      }
+    },
+    {
+      "name": "deliverable_COMPETITIVE_COMPARISON.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 5223
+      }
+    },
+    {
+      "name": "deliverable_VALIDATION_PLAN.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 11989
+      }
+    },
+    {
+      "name": "deliverable_DECISIONS.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 4965
+      }
+    },
+    {
+      "name": "deliverable_CANDIDATE_DESIGN.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 12649
+      }
+    },
+    {
+      "name": "deliverable_ROADMAP.md",
+      "passed": true,
+      "evidence": {
+        "bytes": 4154
+      }
+    }
+  ],
+  "failed_checks": [],
+  "scope": "Structural/source/consistency/model-evidence audit by same author; not independent reviewer or product acceptance.",
+  "artifact_sha256": {
+    "AI_INDEPENDENT_PROPOSALS.md": "c02fcf52200ca0f15300dfdac6617d1d6451ac9905162a1c8665f6104dc26bd2",
+    "AUDIT.md": "d847f2713cc7ee19c89071d03af6d6743ed39fb27b7d155b22489aa1daacfe6f",
+    "CANDIDATE_DESIGN.md": "886199b44fc007428967862f6926acef6478eb8262211c1327a65693e9ccf94b",
+    "COMPETITIVE_COMPARISON.md": "231c6239c5834573956960e9ac90912cc46d0c756800902a63d53753a91865e0",
+    "DECISIONS.md": "3acc3854903d3f9decfb5ca8dc9173478f08095e9aa635c191edbc13ebe2987e",
+    "EXPERIMENT_RESULTS.md": "8b4e61d2ee63c88968f307dc415df0918d9be8b4fcd1c5752d0ab80c63e9d654",
+    "FEATURE_PROBLEM_MAP.md": "0fb4c460eebabaa3c6433b6f0e2998bd7037af5998b534048b33a492fd858eb1",
+    "README.md": "12ab3efc27f7231382e2c4f061c336839abe6d262d5e06bff0571e4235ea8323",
+    "REQUIREMENT_CROSSWALK.md": "4190be4469bb4d570d8627ecaf2de1fdf2f2920e193f2d146a4140a329e2bff5",
+    "ROADMAP.md": "06206349198c9f5f81e7066bca9124246a9e2bdd0f8290e849ce3499ba703c5e",
+    "ROOT_PROBLEMS.md": "b5fbef6efd520877aaa8fd9c19d507b78b77d65301b48fec799e5214f7495253",
+    "SOURCES.md": "bbe2c1df4b935eef9e0d2ca5236cd2c8e23b292a45eaceebf51475c0103eef4c",
+    "USER_RESEARCH_CARDS.md": "586bb8a6e2d3d5eaf7e61349566e43095d5337cd744d884850ff824786ac7877",
+    "VALIDATION_PLAN.md": "e2b57a3e20fd506e19ecc64457e108ce7f3625c3119c0b38402ee1bdda6459d2",
+    "baseline_manifest.json": "47b70df7068053d7aa46050d48e08a54c819b75aa64a08c4437d0c689d96779a",
+    "build_decisions.py": "5faf869b9aefcc158ffff3b36c2be53dfc43c313ed0da8635c2c552163b21fe0",
+    "build_indexes.py": "425688a1dd63181dfb691d79fb0b875cf15eedb17b01fdf1717cfaff8ceb2a74",
+    "candidate_decisions.json": "6d562d12f7fee43dcfb4c436abdfdce428bdbfccbb6e11680a6f00ec40491966",
+    "card_content.json": "3f8a6b831a209bfbe633afbcda1412520427ac10b0739da36dea58dd7232d6c8",
+    "experiments/results.json": "62fe63730ec7a279819cf5975b1046b80aa9ff1712e8942144657c6626e0d393",
+    "experiments/run_models.py": "16d6af0660efce232f2528281c6afe3f15341844354a15e04c83c52eb612dc67",
+    "experiments/storage_fault_model.py": "6a1711eaeba912ce0dc7590e5e58e964547bd58da0dc5eebc4b3bd4a93916a6e",
+    "experiments/storage_results.json": "0ca9fa5a8d9fb119f8ca9f21707bf3534236672488f2de9de96a2e5cf986b66b",
+    "feature_notes.tsv": "622feee2081a86a1113082f7856194b436276ab17b50df8da8263ef322447b8b",
+    "features/A11.md": "9fef00d863ae5058d373af0cc8698459d4822d9fdc771543a877d37823c44c13",
+    "features/AI.md": "72733528c1852cddfe7b93c83e051a8e85e8b6d167c752de7c9637537582ae04",
+    "features/AST.md": "bab69bd6e5b3759fc2ec4c9ba23c0b401eb19da686bc3299837f597d7f6709d3",
+    "features/AUT.md": "3580e19407b6bae957306fdbf826c1b8ff66589c4c5257e10e16ca40a094eda7",
+    "features/BRU.md": "91314805e5d1539dae528afb1304df582488c70fd4b9f64543f9f9d848c8cf61",
+    "features/CAN.md": "8b6ca71b375eecb037b3b71f94a8bc86a8a4617ae362f9b378daa2ee495e5c6d",
+    "features/CLP.md": "de0953090c67cf0782fff0d04f06241bcc086a46ad3dd34bf9c65c8caafe03b5",
+    "features/COL.md": "7f90e845f773d3b0595e81d6489be54e3f44bf18c9e4ec30f881ff338fa4612e",
+    "features/DEV.md": "4908edc588a6ebc3d7625dddec6fab2f0c2c82401fe9ff46a785dafe4f647207",
+    "features/EXT.md": "0a92402d6b6dfeb96087f9de5f0ef3f9a6e0df458d1ba0617536bc229d038d5e",
+    "features/FIL.md": "4755774a7515055aa8930ca2fbe10a6ed81f310c4aac1fd740c1cf17074637f5",
+    "features/FX.md": "aa7f1460e9a80873006bcc3d3d13a0359e0b25fa71bfc83ffc2619f7a726a69e",
+    "features/GRA.md": "01b8d0313bdd87bddb5a84f0102b5922e852a624d401e09c14968ed9863ed0d2",
+    "features/GST.md": "f1c031f40e554f81b4f5bea7f2143962146a50a103b00fdc192d83f041ec24c6",
+    "features/GUI.md": "27e2afc1ac9c209cb1236d4f3c7ccf6793181a0699a97d45cf1950f751f26b75",
+    "features/HIS.md": "12f707bbc1b404178ea462efc6ee8f31b775dea9f18a22b1ad40ce21668de42a",
+    "features/INP.md": "c6826396ab27ae50227d6e80d63a727bef8ef841bb644acfddf00ddb438bd07d",
+    "features/IO.md": "d0ec94d9495429149d1aa6b2d5bcf7916fe7bcdc24a977976db697723d367790",
+    "features/LAY.md": "49a2632d1449aaa766a943c1ea0bad1ab989ca952be220616e1de28ad937ef54",
+    "features/LIN.md": "18f016a26b29e0b791f6782add721389bd308eccf5bd083c1539beb7bf2b7024",
+    "features/NDE.md": "38058bd374881b40a6ae254c2c3dc35a3766cac5aff30cd77bfa493da004ab22",
+    "features/PIX.md": "48fe40c2d564862f1c7b5f1f7f664d081a9ff1ad52407bdd1cfce081ee9cfa50",
+    "features/REC.md": "69ca239da06c3cb2fe5f093cd76222829dea068b90d36d21e4671771a93eed31",
+    "features/REF.md": "d06ad0ccab08a0d40ffe6843d079bd6ee7ad214e6b49e1e92270c3ce2977a5b9",
+    "features/SAV.md": "304581291b14d73e99e8579fe4bed9ccf1fb1f268c14bba2d106b20fb0b7685a",
+    "features/SEL.md": "352deab38cb8ded805f3a09cb694c805f6a970f4e8b4ac1361597d4545d07d57",
+    "features/TRN.md": "2f0c3b2c5abf04fe6f2e1d126f1ab9542c6841723240c724e89f4c05f8582a11",
+    "features/UI.md": "7e65b8f2ae4661df5c4d79a8891800a83820ce97972e7852a3dffebf795a2693",
+    "features/VEC.md": "3ac283332b88be9872a79c994545d8a46e7b4e0badb3f45b0e78dd49a150849b",
+    "features/WET.md": "3d9924a257c66b6f1bf1b0d2f1617d280499c26cdac94d8726b078fb9d87b893",
+    "problem_map.json": "955288bdfd5c982574df9e249755a89ba8915b689a3d8c95f96da35df22e6a8f",
+    "root_coverage.json": "3344ee5d3c162d12dae8c7eeaaf7a6fad4b552f7f2ff013f54b69c9102d1c668",
+    "roots.json": "5f08b28d18dfc0ce23abcdfdbf05bea670a7c544ec6a4eb782f33c89d336ea48",
+    "validate_research.py": "0728623dee2e9f158ac5d901cb2b62f1a8c6e18f8231c770180a458bfe20ff40"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "Extension/relaxed mode execution and geometry checks; human quality pending",
+  "tests": [
+    {
+      "name": "short converging sides: relaxed connects, former criteria do not",
+      "status": "PASS"
+    },
+    {
+      "name": "both extended sides meet: join real endpoints, never draw to virtual intersection",
+      "status": "PASS"
+    },
+    {
+      "name": "one extension: land on real boundary interior",
+      "status": "PASS"
+    },
+    {
+      "name": "a third boundary blocks the endpoint link; first boundary can receive it",
+      "status": "PASS"
+    },
+    {
+      "name": "constant width parallel lines stay unconnected in relaxed mode",
+      "status": "PASS"
+    },
+    {
+      "name": "same taper facing a boundary: former holds, relaxed accepts",
+      "status": "PASS"
+    },
+    {
+      "name": "larger cap within new default gap closes; former default leaves open",
+      "status": "PASS"
+    },
+    {
+      "name": "human blocked connection remains blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "zero gap and no helpers produce no inferred boundaries",
+      "status": "PASS"
+    },
+    {
+      "name": "same relaxed Raster repeats with same boundary and labels",
+      "status": "PASS"
+    }
+  ]
+}

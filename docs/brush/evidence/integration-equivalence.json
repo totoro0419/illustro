@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "scope": "Regression equivalence to concurrent dd35 update; this is not the competitive quality benchmark",
+  "records": 1344,
+  "rasters": 56
+}

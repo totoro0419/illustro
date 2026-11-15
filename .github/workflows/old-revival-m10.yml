@@ -1,0 +1,87 @@
+name: Old Illustro M10 revival brush catalog
+on:
+  push:
+    branches: ['revival/old-with-new-lessons-2026-11-10']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: old-illustro-m10-revival
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Source lock and existing Core and Brush tests
+        run: |
+          npm run brush:build
+          npm run prep:check
+          npm run core:check
+          npm run brush:regression
+      - name: Existing editor and M10 brush-catalog tests
+        run: |
+          npm --workspace @illustro/editor exec -- vitest run
+          npm --workspace @illustro/editor exec -- tsc --noEmit
+      - name: Build testable old editor
+        env: {VITE_COMMIT_SHA: '${{ github.sha }}'}
+        run: npm --workspace @illustro/editor exec -- vite build --base=./
+      - name: Chromium software-GPU checks for brush quality and editor
+        env:
+          RT_PLAYWRIGHT_PATH: /tmp/illustro-m10-browser/node_modules/playwright
+          M10_EDITOR_EVIDENCE: /tmp/illustro-m10-quality/editor.json
+          M10_EVIDENCE: /tmp/illustro-m10-quality/brush.json
+          TAIL_EVIDENCE_DIRECTORY: /tmp/illustro-m10-quality/tails
+          M10_TAIL_QUICK: '1'
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          npm install --prefix /tmp/illustro-m10-browser playwright@1.56.1 --no-audit --no-fund
+          /tmp/illustro-m10-browser/node_modules/.bin/playwright install chromium
+          node scripts/m10-new-canvas-benchmark.mjs
+          node scripts/m10-brush-editor-review.mjs
+          node scripts/m10-brush-review.mjs
+          node scripts/preview-tail-quality.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: illustro-old-m10-quality-evidence
+          path: /tmp/illustro-m10-quality/
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: illustro-old-m10-revival
+          path: apps/editor/dist/
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: illustro-old-m10-revival
+          path: site/qa/m10-revival-2026-11-10/app
+      - name: Publish only isolated revival QA
+        run: |
+          sed "s/__COMMIT__/$GITHUB_SHA/g" qa/m10-revival-2026-11-10/index.html > site/qa/m10-revival-2026-11-10/index.html
+          cd site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add qa/m10-revival-2026-11-10
+          test -z "$(git diff --cached --name-only | grep -v '^qa/m10-revival-2026-11-10/' || true)"
+          if ! git diff --cached --quiet; then
+            git commit -m "qa: old Illustro M10 catalog $GITHUB_SHA"
+            git push origin HEAD:gh-pages
+          fi

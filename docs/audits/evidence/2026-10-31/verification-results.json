@@ -1,0 +1,87 @@
+{
+  "kind": "audit-artifact-consistency-not-product-acceptance",
+  "checks": [
+    {
+      "name": "247 unique IDs equal formal scope",
+      "passed": true
+    },
+    {
+      "name": "30 categories",
+      "passed": true
+    },
+    {
+      "name": "all names/categories/scope exact",
+      "passed": true
+    },
+    {
+      "name": "12 dimensions for each row",
+      "passed": true
+    },
+    {
+      "name": "all finding links resolve",
+      "passed": true
+    },
+    {
+      "name": "all finding feature links resolve",
+      "passed": true
+    },
+    {
+      "name": "severity counts",
+      "passed": true
+    },
+    {
+      "name": "247 Markdown rows each exactly once",
+      "passed": true
+    },
+    {
+      "name": "19 finding sections",
+      "passed": true
+    },
+    {
+      "name": "finding headings and severities agree",
+      "passed": true
+    },
+    {
+      "name": "relative Markdown file links exist",
+      "passed": true
+    },
+    {
+      "name": "all 184 target files byte-identical",
+      "passed": true
+    },
+    {
+      "name": "247 desktop DOM entries",
+      "passed": true
+    },
+    {
+      "name": "30 phone category representatives",
+      "passed": true
+    },
+    {
+      "name": "scope-excluded entries have no start",
+      "passed": true
+    },
+    {
+      "name": "two model counterexamples reproduced",
+      "passed": true
+    },
+    {
+      "name": "positive preservation examples retained",
+      "passed": true
+    },
+    {
+      "name": "recorded layer counterexample",
+      "passed": true
+    },
+    {
+      "name": "recorded session occlusion",
+      "passed": true
+    }
+  ],
+  "count": 19,
+  "all_passed": true,
+  "limits": [
+    "No product performance or real device acceptance",
+    "Counterexamples and unknowns remain documented"
+  ]
+}

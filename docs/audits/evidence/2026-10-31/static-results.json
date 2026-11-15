@@ -1,0 +1,34 @@
+{
+  "target": "fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04",
+  "features": 247,
+  "categories": 30,
+  "missing_ids": [],
+  "duplicate_ids": [],
+  "name_or_scope_mismatch": [],
+  "scope_counts": {
+    "included": 234,
+    "included_limited": 2,
+    "deferred": 10,
+    "excluded_suite": 1
+  },
+  "desktop_search_dom": 247,
+  "desktop_not_visible": [],
+  "phone_category_dom": 30,
+  "untested_phone_individual_features": 217,
+  "findings_by_severity": {
+    "P0": 0,
+    "P1": 7,
+    "P2": 11,
+    "P3": 1
+  },
+  "features_linked_to_findings": 51,
+  "protected_files": 184,
+  "changed_protected_files": [],
+  "declared_step_counts": {
+    "1": 22,
+    "3": 225
+  },
+  "identical_pc_tablet_step_arrays": 247,
+  "unique_cancel_strings": 1,
+  "interpretation": "Counts/presence assertions only. No product usability, pixels, GPU or storage guarantee."
+}

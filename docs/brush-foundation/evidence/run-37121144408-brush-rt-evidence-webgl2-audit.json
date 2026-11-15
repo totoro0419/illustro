@@ -1,0 +1,544 @@
+{
+  "artifactId": 11274300870,
+  "artifactSha256": "f92461c40db44b53a43ab225715f7caaa17e1218ae30e09eaf4675d560e7e39c",
+  "source": "6f72a2c19b8a1c20f4017fb6e5bf0579cee9d8b6",
+  "backend": "webgl2",
+  "checks": 226,
+  "benchmarks": 38,
+  "status": "CHECKS_PASS",
+  "conditions": [
+    {
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "long",
+      "inputs": 43200,
+      "growth": -85.9333333333102,
+      "steadyGrowth": 0.6666666666678793,
+      "sampleCounts": [
+        54,
+        73,
+        74
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 4,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -1.4333333333092924,
+      "steadyGrowth": -0.9999999999990905,
+      "sampleCounts": [
+        16,
+        16,
+        17
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -3.466666666596666,
+      "steadyGrowth": 0.03333333340287936,
+      "sampleCounts": [
+        15,
+        18,
+        17
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 128,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -17.000000000000455,
+      "steadyGrowth": -9.094947017729282e-13,
+      "sampleCounts": [
+        13,
+        15,
+        15
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -17.133333333380506,
+      "steadyGrowth": -0.06666666680712297,
+      "sampleCounts": [
+        10,
+        12,
+        12
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -35.96666666671308,
+      "steadyGrowth": -8.633333333380051,
+      "sampleCounts": [
+        6,
+        9,
+        10
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 512,
+      "hz": 60,
+      "shape": "fast-curve",
+      "inputs": 240,
+      "growth": -63.333333333333485,
+      "steadyGrowth": -13.433333333193332,
+      "sampleCounts": [
+        9,
+        11,
+        12
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 512,
+      "hz": 120,
+      "shape": "fast-curve",
+      "inputs": 480,
+      "growth": -49.333333333333485,
+      "steadyGrowth": 0.5333333335192947,
+      "sampleCounts": [
+        9,
+        11,
+        12
+      ]
+    },
+    {
+      "brush": "foundation-marker",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -31.56666666680576,
+      "steadyGrowth": -0.23333333347272855,
+      "sampleCounts": [
+        8,
+        11,
+        11
+      ]
+    },
+    {
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -1.2333333332408074,
+      "steadyGrowth": 0.23333333347272855,
+      "sampleCounts": [
+        5,
+        6,
+        5
+      ]
+    },
+    {
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -51.56666666657293,
+      "steadyGrowth": -0.9999999999990905,
+      "sampleCounts": [
+        8,
+        11,
+        11
+      ]
+    },
+    {
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": 2.333333333333485,
+      "steadyGrowth": -14.633333333379596,
+      "sampleCounts": [
+        4,
+        5,
+        5
+      ]
+    },
+    {
+      "brush": "foundation-g-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 960,
+      "growth": -1.4333333331937865,
+      "steadyGrowth": -1,
+      "sampleCounts": [
+        15,
+        16,
+        16
+      ]
+    },
+    {
+      "brush": "foundation-round-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "small-circle",
+      "inputs": 960,
+      "growth": 1.3333333333325754,
+      "steadyGrowth": 1.6666666666660603,
+      "sampleCounts": [
+        16,
+        17,
+        18
+      ]
+    },
+    {
+      "brush": "foundation-round-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "small-circle",
+      "inputs": 960,
+      "growth": 13.499999999999545,
+      "steadyGrowth": 4.566666666805759,
+      "sampleCounts": [
+        15,
+        18,
+        17
+      ]
+    },
+    {
+      "brush": "foundation-round-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "small-circle",
+      "inputs": 960,
+      "growth": -1.333333333333485,
+      "steadyGrowth": 3.16666666666697,
+      "sampleCounts": [
+        16,
+        17,
+        18
+      ]
+    },
+    {
+      "brush": "foundation-round-pen",
+      "size": 16,
+      "hz": 240,
+      "shape": "small-circle",
+      "inputs": 960,
+      "growth": 0.5666666668057587,
+      "steadyGrowth": 1.3333333333330302,
+      "sampleCounts": [
+        16,
+        17,
+        18
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "long",
+      "inputs": 43200,
+      "growth": -100.09999999986985,
+      "steadyGrowth": -1.000444171950221e-11,
+      "sampleCounts": [
+        54,
+        74,
+        74
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 1,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -13.980796552853462,
+      "steadyGrowth": 0.0849506727959124,
+      "sampleCounts": [
+        14,
+        15,
+        16
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 1,
+      "hz": 480,
+      "shape": "fast-curve",
+      "inputs": 1920,
+      "growth": -15.563659310372714,
+      "steadyGrowth": 1.766565880822327,
+      "sampleCounts": [
+        14,
+        15,
+        15
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 4,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -27.082594098029404,
+      "steadyGrowth": 0.5787942292281514,
+      "sampleCounts": [
+        14,
+        15,
+        16
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 4,
+      "hz": 480,
+      "shape": "fast-curve",
+      "inputs": 1920,
+      "growth": -18.176149862093553,
+      "steadyGrowth": -1.3318536846736606,
+      "sampleCounts": [
+        14,
+        15,
+        16
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 16,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -55.082938578824724,
+      "steadyGrowth": 0.18060977947379797,
+      "sampleCounts": [
+        13,
+        16,
+        17
+      ]
+    },
+    {
+      "brush": "rough-pencil",
+      "size": 16,
+      "hz": 480,
+      "shape": "fast-curve",
+      "inputs": 1920,
+      "growth": -31.169242203661724,
+      "steadyGrowth": -1.741104842065397,
+      "sampleCounts": [
+        14,
+        16,
+        16
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 16,
+      "hz": 60,
+      "shape": "fast-curve",
+      "inputs": 240,
+      "growth": -14.333333333333485,
+      "steadyGrowth": 0.33333333333303017,
+      "sampleCounts": [
+        15,
+        17,
+        17
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 16,
+      "hz": 120,
+      "shape": "fast-curve",
+      "inputs": 480,
+      "growth": -17.86666666662086,
+      "steadyGrowth": -0.4333333334270719,
+      "sampleCounts": [
+        15,
+        17,
+        17
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 16,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -17.766666666526817,
+      "steadyGrowth": -0.5666666665738376,
+      "sampleCounts": [
+        15,
+        17,
+        17
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 128,
+      "hz": 60,
+      "shape": "fast-curve",
+      "inputs": 240,
+      "growth": -12.866666666620858,
+      "steadyGrowth": 0.9999999999990905,
+      "sampleCounts": [
+        13,
+        15,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 128,
+      "hz": 120,
+      "shape": "fast-curve",
+      "inputs": 480,
+      "growth": -22.766666666526362,
+      "steadyGrowth": -1.0999999998593921,
+      "sampleCounts": [
+        13,
+        15,
+        15
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 128,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -1.4333333331937865,
+      "steadyGrowth": 1.3333333333330302,
+      "sampleCounts": [
+        12,
+        14,
+        14
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 512,
+      "hz": 60,
+      "shape": "fast-curve",
+      "inputs": 240,
+      "growth": -48.46666666671308,
+      "steadyGrowth": -16.466666666713536,
+      "sampleCounts": [
+        9,
+        11,
+        12
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 512,
+      "hz": 120,
+      "shape": "fast-curve",
+      "inputs": 480,
+      "growth": -50.96666666671399,
+      "steadyGrowth": -1.200000000187174,
+      "sampleCounts": [
+        9,
+        11,
+        11
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -44.4000000001397,
+      "steadyGrowth": 0.6666666666669698,
+      "sampleCounts": [
+        8,
+        11,
+        12
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 60,
+      "shape": "fast-curve",
+      "inputs": 240,
+      "growth": -66.83333333333394,
+      "steadyGrowth": -2.766666666760102,
+      "sampleCounts": [
+        6,
+        9,
+        13
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 120,
+      "shape": "fast-curve",
+      "inputs": 480,
+      "growth": -69.73333333347364,
+      "steadyGrowth": -3.8333333333339397,
+      "sampleCounts": [
+        6,
+        9,
+        12
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -84.10000000009268,
+      "steadyGrowth": -15.633333333379596,
+      "sampleCounts": [
+        5,
+        9,
+        13
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "growth": -66,
+      "steadyGrowth": -49.33333333333303,
+      "sampleCounts": [
+        4,
+        4,
+        5
+      ]
+    },
+    {
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "growth": -63.500000000000455,
+      "steadyGrowth": -4.547473508864641e-13,
+      "sampleCounts": [
+        9,
+        12,
+        13
+      ]
+    }
+  ],
+  "arithmeticAudit": "p95 recalculated from chronological samples using recorded window counts; capture-window boundaries not independently timestamped"
+}

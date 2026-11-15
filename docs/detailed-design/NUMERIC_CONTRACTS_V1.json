@@ -1,0 +1,1794 @@
+{
+  "schema_version": 1,
+  "contract_id": "Illustro.Numeric.v1",
+  "shared": {
+    "authority": "Normative Stage III equations for the listed v1 variants; existing per-feature interaction/source scope stays authoritative. References are small CPU oracles, not production engines.",
+    "target_and_admission": "Use row.action_owner/action_variants. Document operations freeze DocumentID/lifetime, LayerID/lifetime, Selection/Mask/Clip/read prefix, profile and precision at admission; settings remain settings, region comparison remains Session until Apply. Reject stale target, cycle or missing resource before mutation.",
+    "apply_cancel_history": "Session changes only candidate root; Apply publishes one immutable operation/root including all sidecars. Cancel discards this candidate only, returns prior tool/Focus, retains independent accepted edits. Artwork Undo/Redo always Document; candidate, pad, reference, manager remain separate histories. Branch drops current redo references only after preserving Save/consumer pins.",
+    "save_reload_crash": "SaveFence includes versioned algorithm descriptor, all parameters/seeds/assets/source hashes and referenced immutable roots/sidecars. Save waits for accepted dependency closure, not provisional preview. Reload reconstructs same values and decisions; missing kernel version blocks evaluation with recoverable original, never substitutes latest version. Crash publishes only verified manifest closure; old valid root retained. Physical fsync/OPFS/codec/GPU persistence tests require product implementation, not executed here.",
+    "numeric": "Binary64 reference intermediates; SYSTEM_CONTRACTS §9 final8U/16U nearestties-even and16F limits. NoNaN/Inf admitted; no implicit gamut clamp in16F unless formulaexplicit. Linearpremul computations, straightchannels only at named blend/adjustment step; alpha0 evaluationRGB0 while raworiginalhiddenRGB retained.",
+    "failure": "Failure leaves oldroot/history/SaveFence unchanged; candidate and accepted input recoverable, show target+reason+retry/cancel. Never show candidate as saved/formal, never resume stale GPUepoch output. Cache keys include every dependency/descriptor/kernel/quality.",
+    "verification_boundary": "Numeric equations/reference tests verify specified subset. Product quality/full parameter rasterization/arbitrary LUT ICC/GPU/error latency/native durable storage not executed. Human first-use/real-finger/long-session tests remain Stage III closure obligations and cannot be moved to IV to declare completion.",
+    "review": "The 61 entries specialize feature-specific cases; shared family equations are intentionally linked, not duplicated as 247 generic acceptance paragraphs. Remaining nonnumerical UI/lifecycle contracts stay in the 247-row matrix.",
+    "seed_serialization": "Unsigned64 seed persists as exactly16 lowercase hexadecimal digits in JSON/native descriptors, not a JavaScript Number. Counter coordinates signed64 are decimal strings when outside safe integer range. Byte hash format remains defined in FX124; no precision-losing numeric coercion."
+  },
+  "features": [
+    {
+      "feature_id": "BRU-003",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Accepted monotonic seconds and Document x/y/pressure in [0,1]; no predicted samples. Modes OFF/light/strong/custom: position tau 0/.0125/.05/[0,.2] seconds, speed tau default0/custom[0,.2]; pressure tau default0/custom[0,.2].",
+      "algorithm": "Causal EMA: tau=positionTau+speedTau*min(raw speed/1000 Document px/s,1), a=1-exp(-dt/tau), filtered=previousFiltered+a*(raw-previousFiltered). Pressure has its independent tau. First sample exact; formal last x/y is accepted raw endpoint (terminal segment from previous filtered point). Interpolate filtered polyline by arc length for stamps; elapsed timestamps are saved input, never wall-clock replay.",
+      "boundary_precision": "OFF exact identity. Equal/decreasing time rejected before admission; coalesced sensor timestamps with equal time are collapsed to last sample by input adapter BEFORE admission. Pointercancel retains recoverable accepted prefix, does not synthesize endpoint/auto commit. Frame rate/View zoom do not change formal samples. binary64 reference; final raster follows SYSTEM §9.",
+      "dependencies": "sample sequence, frozen pressure calibration, ViewPose-at-sample, correction parameters and version; no display Preview dependency.",
+      "variants": [
+        "position",
+        "pressure",
+        "speed-dependent position",
+        "OFF/light/strong/custom"
+      ],
+      "reference_functions": [
+        "numeric_brush_v1.corrected_samples"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.BrushNumericTests.test_BRU003_off_identity_and_endpoint",
+        "test_numeric_v1.BrushNumericTests.test_BRU003_analytic_ema_and_invalid_time"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "BRU-006",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Freeze base preset, ordered mapping nodes, source normalization/scales and seed per stroke. Pressure calibration [0,1]; tilt magnitude/90; azimuth, barrel, direction degrees modulo360 /360; speed/explicit pxPerSecondScale; distance/pxScale; time/secondScale; start/end distance divided by explicit taper length. Clamp normalized sources to [0,1]. Missing hardware sensor: UI disables mapping; imported mapping requires explicit constant substitution, never silently zero.",
+      "algorithm": "Piecewise-linear knot curves, strictly increasing normalized x; endpoint clamp. Nodes ordered add/multiply/replace, clamp only after last node to output domain. Random=SHA256 counter(seed,stampIndex,channel) v1. Direction uses most recent nonzero accepted displacement; initial direction0; end mapping requires full accepted stroke and recomputes formal stamps at end, transient preview only before then. Dabs at arc-length spacing max(1/256 px,baseSpacing*currentDiameter); first and terminal dabs included once; interpolate inputs linearly. Per-stamp ellipse inverse rotate/radius/deformation then radial coverage 1 inside hardness, 1-smoothstep(h,1,r) outside. Pixel coverage is fixed 8x8 midpoint integral.",
+      "boundary_precision": "Diameter/spacing/textureScale/particle count nonnegative; opacity/flow/hardness/mix/water/pigment/dryness unit interval; angle/hue modulo360; scatter x/y and HSV offsets signed; deformation matrix inverse rejects |det|<1e-12 before root mutation. Scatter offsets (2u-1)*scatterRadius in Document axes, independent channels; aspect determines radii diameter/2 and aspect*diameter/2. Opacity once per stroke coverage union; flow once per dab, alpha=coverage*flow*paintAlpha; grain multiplies coverage with saved texture samples. Imported bitmap tip bilinear premul/alpha transparent exterior. Final target quantization once per operation.",
+      "dependencies": "All curve knots, output units, taper lengths, source scales, tip/texture hashes, spacing, seed, mapping order, BRU003 corrected path, media version. No cyclic output-to-source maps.",
+      "variants": [
+        "size",
+        "opacity",
+        "flow",
+        "spacing",
+        "angle",
+        "scatter",
+        "shape deformation",
+        "HSV",
+        "hardness",
+        "texture",
+        "mix/water/pigment",
+        "particle density"
+      ],
+      "reference_functions": [
+        "numeric_brush_v1.curve",
+        "numeric_brush_v1.modulation",
+        "numeric_brush_v1.dab_coverage",
+        "numeric_brush_v1.stamp_random"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.BrushNumericTests.test_BRU006_curve_order_endpoints_missing_sensor",
+        "test_numeric_v1.BrushNumericTests.test_BRU006_dab_shape_hardness_and_frozen_random"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "WET-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Premultiplied linear working RGB and alpha; destination D, frozen-reference pickup P, reservoir R; strength/pickup/paintAmount/mask in [0,1]. Drag pickup center=previous formal dab center; first=current. Sample source current layer or explicitly frozen visible prefix without Proof.",
+      "algorithm": "Pickup bilinear or blur box (2r+1)^2 uniform zero exterior; blur radius integer ceil(userRadius). Drag/mix: R=P on first dab, else lerp(R,P,pickupRate); source-over paint*paintAmount onto R; output lerp(D,R,strength*coverage*Selection). Blur uses pickup with radius and reservoir disabled. Alpha Lock rescales output premul RGB to original destination alpha (zero alpha => all zero). Write each dab into stroke scratch, but frozen pickup never reads later jobs. Final sampled mix stored as scoped fixed Replace in Document coordinates, not re-picked after earlier Transform reedit.",
+      "boundary_precision": "Premul alpha-zero RGB canonical0, finite colors; exact transparent/partial alpha goldens. Selection enters once; layer Mask/Clip downstream once. No black fringe from straight RGB interpolation. Failed reservoir/output allocation preserves old root and recoverable inputs.",
+      "dependencies": "sampled prefix/root IDs, target lifetime, stroke seed/preset, Selection version, color/precision, pickup source, sampling radius, reservoir order; no Proof/View.",
+      "variants": [
+        "blur",
+        "drag",
+        "mix",
+        "paint addition",
+        "Alpha Lock"
+      ],
+      "reference_functions": [
+        "numeric_brush_v1.blur_pickup",
+        "numeric_brush_v1.smudge_dab",
+        "numeric_brush_v1.rgba_mix"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.BrushNumericTests.test_WET001_premul_mix_literal_no_black_fringe",
+        "test_numeric_v1.BrushNumericTests.test_WET001_reservoir_paint_and_alpha_lock",
+        "test_numeric_v1.BrushNumericTests.test_WET001_blur_reference_zero_exterior"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "WET-007",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "WET001 color and pickup; thickness>=0 in height units, dryness/oil/pressure/paper/coverage [0,1]; paper from frozen scalar texture at Document position, white=high tooth. Height H binary16 nonnegative sidecar per layer with color-independent source.",
+      "algorithm": "Dry gate=1-dryness+dryness*smoothstep(1-pressure,1-pressure+max(1e-6,pressure),paper). Effective coverage=tip coverage*gate. WET001 pickupRate=oil, paintAmount=1-oil, strength=effective coverage. Hnew=H+thickness*coverage; Selection enters effective coverage once. Height normal=(-heightScale*centralDxH,-heightScale*centralDyH,1), normalized; lighting difference=N dot L-Lz, shared layer light controls, highlight/screen and shadow/multiply as FX136. Paper/thickness/lighting reedit changes appearance node, never destroys stored color/H. No time-dependent drying simulation.",
+      "boundary_precision": "Thickness0 yields flat color, dryness0 no tooth gating, oil0 deposits paint, oil1 pickup. H>65504 or NaN/Inf rejects complete operation, no saturation or alpha corruption. Sidecar color+height roots commit/Undo/Save atomically; document light angle degrees clockwise and altitude [0,90], depth scale [0,64]. Export renders selected lighting; original color/H stay editable.",
+      "dependencies": "paper hash/origin/scale, wet reference, color/H roots, height kernel, light version; global-light changes invalidate affected appearance only.",
+      "variants": [
+        "thick paint",
+        "oil pickup",
+        "dry tooth",
+        "editable shared/local lighting"
+      ],
+      "reference_functions": [
+        "numeric_brush_v1.media_dab",
+        "numeric_effects_v1.bevel"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.BrushNumericTests.test_WET007_dry_paper_and_height_no_time_drift",
+        "test_numeric_v1.BrushNumericTests.test_WET007_height_overflow_does_not_mutate_input"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "COL-011",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Oklab Ottosson 2021-01-25 matrices (public-domain source linked in TECHNICAL_DECISIONS). L in [0,1], hue modulo360. Predefined sRGB/Display-P3 D65 transfer; arbitrary imported ICC must pass existing ICC validation/CMM requirements.",
+      "algorithm": "Predefined masks: constant L/h chroma ray, solve each target linear RGB cubic for 0/1 boundaries. Split intervals at cubic derivative roots; binary64 bracketed bisection64 iterations; choose first exit, not largest root. L endpoints return C0. C upper8; UI selected chroma<=boundary, maps user radius linearly to boundary. Arbitrary LUT ICC: explicit discrete gamut mask at C=i/2048 (i=0..1024), Cmax=.5; membership = pinned CMM relative-colorimetric BPC-off roundtrip Oklab Euclidean error<=1/512. First failure terminates ray (do not bridge disconnected island). No continuous gamut-hull claim. Convert Oklab D65 through pinned PCS D50 Bradford; profile class/intent unsupported => unavailable mask, not fake sRGB.",
+      "boundary_precision": "Predefined boundary absoluteC error<=1e-10; sampled ICC mask resolution1/2048 and membership tolerance stated to user in advanced info. Gray/hue singularity retains last hue in UI, hue value no RGB effect at C0. Out-of-range L rejected. P3/sRGB CPU evidence only; arbitrary CMM membership adapter requires product fixture tests before release.",
+      "dependencies": "profile bytes hash/CMM build/intent/BPC/adaptation/kernel, L/h/grid; Proof excluded; choosing color changes Settings, not Document/history.",
+      "variants": [
+        "perceptual plane/ring",
+        "sRGB boundary",
+        "P3 boundary",
+        "ICC discrete mask",
+        "out-of-gamut indication"
+      ],
+      "reference_functions": [
+        "numeric_color_v1.linear_to_oklab",
+        "numeric_color_v1.oklab_to_linear",
+        "numeric_color_v1.gamut_limit",
+        "numeric_color_v1.sampled_profile_limit"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.ColorNumericTests.test_COL011_author_roundtrip_and_primary",
+        "test_numeric_v1.ColorNumericTests.test_COL011_published_yellow_boundary_and_both_gamuts"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FIL-002",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Frozen canonical line-ink scalar plane, maxGap [0,256] Document px (0 disables), threshold [0,1], confirmed virtual walls/manual constraints; skeleton from Guo-Hall ink>=threshold.",
+      "algorithm": "8-neighbor skeleton endpoints degree1; walk up to5 unique neighbors until branch; outward tangent normalized endpoint-last; three-point signed curvature -4*signedArea/(ab*bc*ca). End-to-end requires distance>0<=maxGap and each outward alignment>=cos60=.5. Cost=.35*d/maxGap+.35*((1-ca)+(1-cb))/2+.2*min(1,abs(kp+kq)*d)+.1*sideAmbiguity. End-to-segment projects onto open interior of each skeleton segment, tip alignment>=.5, cost=.45*d/maxGap+.35*(1-align)+.2*min(1,abs(kp)*d). End-end Hermite tangents distance-scaled, 32 equal t intervals; end-segment straight. Supercover every cell intersecting piecewise path. Reject path crossing unrelated existing wall; endpoint cells excluded from collision. Rank by cost, kind, stable endpoint/segment IDs. Symmetric ties remain explicit choices, no automatic winner. SUPPLEMENT: Region growth uses4-connected complement of8-connected ink. Manual boundary addition draws supercover polyline as virtual wall; cut removes chosen virtual wall segment only; source-derived boundary cut records explicit override mask, never sourcepixel erase. Union records selected region ID set (new ID) and retains constituents for Undo; cannot union exterior without explicit confirmation. Vector appearance mode renders saved fill/stroke width/caps/joins with8x8 AA then LIN001; path mode closes only explicitly closed subpaths using nonzero winding, openpath unresolved. Grow/shrink fill uses disk dilation/erosion of result mask with zerooutside then restrictwriteSelection; not reference-wall change. Boundary corners round via Euclidean disk; no miter implied.",
+      "boundary_precision": "Cost is heuristic ranking, never confidence/probability. Hair/chin/T-junction intent cannot be inferred reliably: preview wall/affected connected region, explicit confirm only. High-curvature/ambiguous alternatives remain visible. No pair if maxGap0; zero tangent unresolved. Apply adds virtual barrier and recomputes 4-connected fill over full plane; source artwork untouched. Fill correction can add/subtract explicit residual coverage with independent transaction. Manual operations versioned and all affect one graphtransaction; subsequent analysis never overwrites constraints. Planargraph cycles are valid closedregions; only invalid references/dependencycycles rejected (not all geometriccycles). Emptyselection writesnothing, unrestricted sentinel distinct.",
+      "dependencies": "source/layer/ICC versions, extraction polarity, threshold, gap controls, confirmed constraints; any source change invalidates analysis, not silently accept cached wall.",
+      "variants": [
+        "endpoint-endpoint",
+        "endpoint-segment",
+        "curvature penalty",
+        "hair/chin ambiguous choices",
+        "virtual wall",
+        "fill residual correction",
+        "connect/cut/union",
+        "vector appearance/path",
+        "fill expand/shrink"
+      ],
+      "reference_functions": [
+        "numeric_geometry_v1.gap_score",
+        "numeric_geometry_v1.gap_candidates",
+        "numeric_geometry_v1.endpoint_segment_candidate",
+        "numeric_geometry_v1.skeleton_endpoint_records",
+        "numeric_geometry_v1.hermite_bridge",
+        "numeric_geometry_v1.supercover"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.GeometryNumericTests.test_FIL002_confirmed_bridge_seals_gap_without_line_mutation",
+        "test_numeric_v1.GeometryNumericTests.test_FIL002_barrier_collision_and_zero_gap_rejected"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "LIN-006",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Frozen canonical line-ink scalar plane, maxGap [0,256] Document px (0 disables), threshold [0,1], confirmed virtual walls/manual constraints; skeleton from Guo-Hall ink>=threshold.",
+      "algorithm": "8-neighbor skeleton endpoints degree1; walk up to5 unique neighbors until branch; outward tangent normalized endpoint-last; three-point signed curvature -4*signedArea/(ab*bc*ca). End-to-end requires distance>0<=maxGap and each outward alignment>=cos60=.5. Cost=.35*d/maxGap+.35*((1-ca)+(1-cb))/2+.2*min(1,abs(kp+kq)*d)+.1*sideAmbiguity. End-to-segment projects onto open interior of each skeleton segment, tip alignment>=.5, cost=.45*d/maxGap+.35*(1-align)+.2*min(1,abs(kp)*d). End-end Hermite tangents distance-scaled, 32 equal t intervals; end-segment straight. Supercover every cell intersecting piecewise path. Reject path crossing unrelated existing wall; endpoint cells excluded from collision. Rank by cost, kind, stable endpoint/segment IDs. Symmetric ties remain explicit choices, no automatic winner.",
+      "boundary_precision": "Cost is heuristic ranking, never confidence/probability. Hair/chin/T-junction intent cannot be inferred reliably: preview wall/affected connected region, explicit confirm only. High-curvature/ambiguous alternatives remain visible. No pair if maxGap0; zero tangent unresolved. Apply adds virtual barrier and recomputes 4-connected fill over full plane; source artwork untouched. Fill correction can add/subtract explicit residual coverage with independent transaction.",
+      "dependencies": "source/layer/ICC versions, extraction polarity, threshold, gap controls, confirmed constraints; any source change invalidates analysis, not silently accept cached wall.",
+      "variants": [
+        "endpoint-endpoint",
+        "endpoint-segment",
+        "curvature penalty",
+        "hair/chin ambiguous choices",
+        "virtual wall",
+        "fill residual correction"
+      ],
+      "reference_functions": [
+        "numeric_geometry_v1.gap_score",
+        "numeric_geometry_v1.gap_candidates",
+        "numeric_geometry_v1.endpoint_segment_candidate",
+        "numeric_geometry_v1.skeleton_endpoint_records",
+        "numeric_geometry_v1.hermite_bridge",
+        "numeric_geometry_v1.supercover"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.GeometryNumericTests.test_LIN006_rank_direction_curvature_and_tie_determinism",
+        "test_numeric_v1.GeometryNumericTests.test_LIN006_T_junction_and_estimated_tangent"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "LIN-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Full frozen linear working luminance Y, alpha, source root and explicit dark/light/alpha extraction. Default dark threshold .5. Dark ink=alpha*(1-clamp(Y)); light=alpha*clamp(Y); alpha mode=alpha. Convert source profile to working linear before Y; no Proof. Virtual walls added after extraction.",
+      "algorithm": "Ink>=threshold barrier, complementary free cells 4-connected, ink8-connected. Deterministic component scan y then x. Mark all border-touching regions exterior; holes remain separate. First graph ID=(DocumentUUID,analysisGeneration,ordinal); candidate ordinals are not persistent IDs. Retain source as original, create derived region layer; region IDs reference topology and colors/manual constraints. Painting region color changes region property, not source line pixels.",
+      "boundary_precision": "Empty plane has no graph; all clear yields exterior only; all barrier yields zero regions. threshold0 means all barrier (explicit), threshold1 only fully ink barrier. Hidden RGB at alpha0 never blocks. Full-plane topology needed; ROI/tile-only result cannot claim region closure. Maximum allocation failures preserve original and current derived layer.",
+      "dependencies": "source/transform/effect prefix, ICC/precision, ink polarity/threshold, wall constraints/graph schema; all-plane invalidation for topology.",
+      "variants": [
+        "dark on opaque white",
+        "light on dark",
+        "alpha line",
+        "holes/exterior",
+        "derived layer"
+      ],
+      "reference_functions": [
+        "numeric_geometry_v1.line_ink",
+        "numeric_geometry_v1.segment_regions",
+        "numeric_geometry_v1.components"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.GeometryNumericTests.test_LIN001_opaque_white_is_not_ink",
+        "test_numeric_v1.GeometryNumericTests.test_LIN001_hole_exterior_connectivity_and_scan_order"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "LIN-005",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Old graph sets in Document coordinates, new source generation/graph, saved manual color and wall decisions anchored to IDs/geometry. Frozen comparison basis; source cannot mutate during publication.",
+      "algorithm": "Exact identical region wins if unique. Otherwise transfer ID only unique reciprocal overlap>50% of BOTH old and new sets AND no other overlap parent/child. Any split/merge/tie -> conflict, never silent nearest/color reassignment. New regions get new Document/generation/ordinal IDs, never recycle deleted ID. Conflict UI shows old/new overlays and affected manual choices; keep old graph, assign decisions, or regenerate/drop affected decisions explicitly. Apply comparison as one graph+decision transaction; Cancel keeps old graph.",
+      "boundary_precision": "Zero overlap/unmatched/moved-off-document unresolved, not erased. Exact equality does not override another parent overlap. Snapshot old source/graph until user chooses. Reopened conflict uses saved anchors, does not recompute IDs based on scan order.",
+      "dependencies": "old+new source/root/generation, region ID schema, coordinate mapping, decision version, comparison algorithm. Transform/ICC change invalidates comparison basis.",
+      "variants": [
+        "unchanged",
+        "unique overlap",
+        "split",
+        "merge",
+        "new/deleted",
+        "explicit decision rebind"
+      ],
+      "reference_functions": [
+        "numeric_geometry_v1.match_regions"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.GeometryNumericTests.test_LIN005_unchanged_and_shift_keep_only_unambiguous_ids",
+        "test_numeric_v1.GeometryNumericTests.test_LIN005_split_merge_and_no_name_rebinding"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "TRN-004",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Document-coordinate rest/current mesh with shared vertex IDs, positive CCW triangles; default grid spacing8 Document px and explicit density setting [1,64]; drag center/radius>0, strength/pressure/protect [0,1], direction vector Document px; protect mask frozen.",
+      "algorithm": "r=distance/radius, w=(1-r*r)^2*strength*pressure*(1-protect) for r<1 else0. Push adds w*drag; inflate multiplies radial vector by1+w, pinch by1-w; twirl rotates by w*angleRad. Restore current displacement *=1-w. Evaluate proposal from pre-dab field (not order-dependent per vertex). Line search lambda=1,1/2,...2^-24; accept first candidate with each face signed area>=1e-4 rest area AND no positive-area intersection between any distinct triangles and no contact outside the vertex/edge IDs shared by their rest topology (exact predicates on binary64 coordinates). Reject invalid rest/current mesh. Inverse sample via containing target triangle barycentric mapping to rest; shared edge chooses smallest face ID. Failure keeps prior candidate. Equivalent accelerated collision predicates must be exact/adaptive, not absolute epsilon.",
+      "boundary_precision": "Full protection/off-radius exact unchanged; reset is identity field. Reject nonfinite, singular/no admissible step, disconnected incompatible mesh. Field edges include outer content; out-of-domain inverse transparent. Existing bilinear/B-spline magnification and TRN006 area minification apply premul. Never invert fold ambiguously. Downstream committed paint/erase/mix remains Document-fixed.",
+      "dependencies": "rest/current field, grid topology, brush params/protect version, sample source and interpolation; independent View input mapping at sample time.",
+      "variants": [
+        "push",
+        "inflate",
+        "pinch",
+        "twirl clockwise/counterclockwise",
+        "restore",
+        "protect",
+        "reset"
+      ],
+      "reference_functions": [
+        "numeric_geometry_v1.liquify_point",
+        "numeric_geometry_v1.restore_displacement",
+        "numeric_geometry_v1.safe_mesh_update_global",
+        "numeric_geometry_v1.inverse_triangle"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.GeometryNumericTests.test_TRN004_protection_push_twirl_restore_boundary",
+        "test_numeric_v1.GeometryNumericTests.test_TRN004_line_search_prevents_fold_and_inverse_matches"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "TRN-006",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Pixel cells [x,x+1]x[y,y+1], centers(.5,.5), premul linear or explicitly selected encoded working coordinates. Nearest for pixel-art; bilinear/cubic B-spline existing references for continuous magnification; Area for minification. Method stored, final recompute from frozen original for all repeated previews.",
+      "algorithm": "Area integral of piecewise-constant source pixel values projected into DESTINATION pixels divided by unit destination area. Axis aligned exact overlap boxes. Projective: map each source pixel quadrilateral by homography (reject w0 crossing); mesh: split source cells against rest triangles, map each clipped convex polygon affinely, then clip by destination unit square. Sum channel*destination overlap; transparent outside, no edge renormalization. Mixed-axis scale uses area along shrinking axis and selected reconstruction along growing axis; at non-axis mesh/projective choose area whenever local singular minimum<1, otherwise reconstruction. Sharpness control for B-spline is blend with bilinear t[0,1] (t0 B-spline,t1 bilinear); no unspecified sharpening. Final alpha clamp0..1 with premul correction only numerical noise.",
+      "boundary_precision": "Identity lattice/integer nearest exact; 8x8 checker->2x2 area=.5, not alias0/1. CPU polygon oracle error<=1e-12 per pixel; GPU SYSTEM§9. Source edge transparency preserved, all transparent exact0. Reject zero/negative dims/singular transforms before root change; support fold only prior explicit many-fragment contract, never in Liquify injective path.",
+      "dependencies": "original root/transform chain/interpolation/sharpness/color/precision/kernel; zoom/preview resolution never formal input.",
+      "variants": [
+        "nearest",
+        "bilinear",
+        "cubic B-spline with continuous sharpness",
+        "exact area shrink",
+        "mesh/projective antialias"
+      ],
+      "reference_functions": [
+        "numeric_geometry_v1.area_resample",
+        "numeric_geometry_v1.transformed_area",
+        "numeric_geometry_v1.clip_convex"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.GeometryNumericTests.test_TRN006_checker_area_is_not_aliasing_nearest",
+        "test_numeric_v1.GeometryNumericTests.test_TRN006_fractional_scale_area_conservation_and_identity"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "NDE-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Straight RGB in named blend space (encoded working profile DEFAULT; explicit linear-light option), normalized blend domain [0,1]. Alpha/mask/clip/opacity [0,1]. Preserve source raw HDR; artistic B clamps its RGB arguments only, source-over uncovered terms remain original HDR. Normal uses original RGB unbounded. Reference executable currently normalized RGB subset.",
+      "algorithm": "Twenty separable equations are normative SEPARABLE table; four W3C nonseparable modes use Lum=.3R+.59G+.11B, SetSat/SetLum/ClipColor, stable equal-channel order R,G,B. Dissolve thresholds effective a=sourceAlpha*mask*clip*opacity with saved SHA256(seed,DocumentPixelX,Y,0), then Normal. Other modes output premul (1-a)*ab*Cb+(1-ab)*a*Cs+a*ab*B(Cb,Cs), alpha=a+ab*(1-a). Each mask/clip once. W3C edge cases dodge(0,1)=0,burn(1,0)=1; divide(source0)=1 incl0/0. Extended modes are Illustro definitions, not proprietary compatibility.",
+      "boundary_precision": "Modes: normal,darken,lighten,multiply,screen,color-burn,color-dodge,hard-light,overlay,soft-light,difference,exclusion,linear-burn,linear-dodge,vivid-light,linear-light,pin-light,hard-mix,subtract,divide,hue,saturation,color,luminosity,dissolve. Layer select preview is Session, commit selection one document Undo, cancel original. Fixed RNG on zoom/reload/reorder evaluation. Independent Canvas 16 modes*4 conditions tolerance2 8U codes, predefined before run; literal extended modes and alpha goldens exact/binary64 <=1e-12.",
+      "dependencies": "layer/root/order/isolation/mask/clip/opacity/color profile and blend space/seed/mode/kernel. Proof excluded, blending cache cannot cross group boundaries.",
+      "variants": [
+        "25 named modes",
+        "encoded default",
+        "linear explicit",
+        "preview/commit/cancel"
+      ],
+      "reference_functions": [
+        "numeric_color_v1.blend_rgb",
+        "numeric_color_v1.compose",
+        "numeric_color_v1.random_u"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.ColorNumericTests.test_NDE001_all_separable_literal_goldens",
+        "test_numeric_v1.ColorNumericTests.test_NDE001_nonseparable_luminance_and_grey",
+        "test_numeric_v1.ColorNumericTests.test_NDE001_alpha_mask_clip_exact_fraction",
+        "test_numeric_v1.ColorNumericTests.test_NDE001_all_modes_finite_domain_and_zero_edges",
+        "test_numeric_v1.ColorNumericTests.test_NDE001_dissolve_mask_seed_reload"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "W3C Canvas 64 cases for NDE-001; analytic/Fraction literals, topology enumeration and author coefficient checks in named CPU tests. Not a full renderer oracle."
+    },
+    {
+      "feature_id": "FX-107",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Linear working RGB; shadows/midtones/highlights per-channel delta [-1,1]; preserve luminance defaulttrue.",
+      "algorithm": "Y=working-profile normalized luminance weights dot RGB, y=clamp(Y). Weights (1-y)^2,2y(1-y),y^2; delta weighted sum of three controls. Preserve adds equal-channel offset -(Yout-Yin); no hidden 16F clamp. Source alpha unchanged.",
+      "boundary_precision": "All controls0 exact identity, pureblack shadows only, white highlights only. Luma weights normalized to sum1. Integer output clamps only explicit operation boundary; finite out-of-range16F retained within65504.",
+      "dependencies": "source/color profile weights/control/preserve/kernel; halo0.",
+      "variants": [
+        "shadows",
+        "midtones",
+        "highlights",
+        "preserve on/off"
+      ],
+      "reference_functions": [
+        "numeric_color_v1.color_balance"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.ColorNumericTests.test_FX107_weights_neutral_and_luminance",
+        "test_numeric_v1.ColorNumericTests.test_FX107_three_weights_partition_and_isolate"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-108",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Linear working RGB; relative warm/tint [-1,1]. Absolute mode uses source/destination CIE xy white, x>=0,y>0,x+y<=1, positive Bradford cone responses. UI labels relative controls as relative; no Kelvin number for relative effect.",
+      "algorithm": "Relative delta=(warm+tint/2,-tint,-warm+tint/2). Absolute: working RGB->XYZ; Bradford inverse * diag(Bradford(Wdest)/Bradford(Wsource)) * Bradford * XYZ; convert back to same working RGB. Optional presets D65(.3127,.3290),D50(.3457,.3585); custom xy explicit. Reference matrix/constants pinned. Kelvin UI not exposed until a separately pinned temperature-locus contract exists; original feature is temperature/tint, not promised Kelvin simulator.",
+      "boundary_precision": "Same white exact bypass, preserve alpha; invert white adaptation roundtrip <=1e-12 CPU. Reject invalid white/cones, nonfinite. Floating RGB no implicit gamut clip; display out-of-range according to color pipeline.",
+      "dependencies": "source/profile matrices, relative controls or source/destination white/CAT version; halo0.",
+      "variants": [
+        "relative warm/tint",
+        "Bradford absolute white adaptation",
+        "white presets/customxy"
+      ],
+      "reference_functions": [
+        "numeric_color_v1.relative_temperature",
+        "numeric_color_v1.adapt_xyz"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.ColorNumericTests.test_FX108_neutral_and_relative_controls",
+        "test_numeric_v1.ColorNumericTests.test_FX108_white_mapping_and_inverse"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-109",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Encoded working RGB for hue; linear working Y for grayscale, normalized profile Y weights. Six contributions red/yellow/green/cyan/blue/magenta [-1,1], tint linear RGB [0,1], tintStrength[0,1].",
+      "algorithm": "HSV hue*6 has two adjacent triangular band weights sum1; gray saturation0. g=linearY+saturation*sum(bandWeight*contribution). Gray output=(g,g,g). Tint output lerp(gray,g*tintRGB,tintStrength); alpha unchanged. Overlap continuous through red wrap.",
+      "boundary_precision": "Zero controls gives normalized linear luminance; each primary/secondary isolates one band; gray ignores bands. No hidden16F clamp. sRGB reference; profile-luma adapter normalized working Y.",
+      "dependencies": "source/profile/luminance weights/six controls/tint/kernel; halo0.",
+      "variants": [
+        "default gray",
+        "six hue contributions",
+        "tint on/off"
+      ],
+      "reference_functions": [
+        "numeric_color_v1.hue_weights",
+        "numeric_color_v1.monochrome"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.ColorNumericTests.test_FX109_six_hues_and_grey_independence",
+        "test_numeric_v1.ColorNumericTests.test_FX109_tint_endpoints"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-111",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Encoded normalized RGB; target six hue bands or white/black/neutral; CMYK-like delta each[-1,1]; relative boolean.",
+      "algorithm": "Six chromatic weights=saturation*triangularHueBand. White=(1-s)*max(0,2V-1); black=max(0,1-2V); neutral=(1-s)*(1-abs(2V-1)). RGB delta=-(C,M,Y)-K. Absolute: c+=weight*delta. Relative: c+=weight*delta*(1-c if delta>0 else c). Multiple target controls evaluated on same original RGB then sum deltas; UI order irrelevant. Output alpha unchanged. These are complement-channel controls, not CMYK profile conversion.",
+      "boundary_precision": "Zero identity; unselected band unchanged; gray no chromatic band. Float output out-of-range retained; integer clamp at root. No proprietary selective-color compatibility claim.",
+      "dependencies": "source/encoded profile/targets/relative/kernel; halo0.",
+      "variants": [
+        "six hue targets",
+        "white/black/neutral",
+        "absolute/relative"
+      ],
+      "reference_functions": [
+        "numeric_color_v1.selective_color",
+        "numeric_color_v1.hue_weights"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.ColorNumericTests.test_FX111_absolute_relative_targets_and_no_cmky_claim"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-120",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Premul linear RGB+alpha, depth[0,1] near0/far1 orexplicitinverse; focus[0,1], range(0,1], maxRadius[0,256] Documentpx; aperturecircle or regularN blades3..12, rotationdegrees.",
+      "algorithm": "CoC_i=Rmax*min(1,abs(depth_i-focus)/range). Discrete source aperture footprint: 8x8 midpoint coverage at each integer offset, circle or regular polygon circumradiusCoC, normalize lattice sum1; CoC0 delta. For each destination gather weights K_source(dest-source), reject sources farther than destination depth, normalize accepted sum (fallback destination whenzero). Source/depth clamped at image edge. Output weighted premul; clamp alpha numerical noise and rescale RGB to preserve straight color. This explicitly defined depth-aware gather approximation is not physical lens simulation.",
+      "boundary_precision": "R0 or allfocus identity, constantpremul invariant, transparent canonical0, foregroundfocus rejects farther bleed. Depth-map dimension mismatch/NaN rejects candidate. Halo ceil(Rmax+.5) for local kernel; depth source full dependency. Missing map disables depth variant; lens withoutmap uses constantdepth/radius mode.",
+      "dependencies": "image/depth roots, invert/focus/range/radius/aperture/rotation/kernel; depth map version included.",
+      "variants": [
+        "circle",
+        "3..12 blade polygon",
+        "rotation",
+        "depth invert",
+        "constant-radius lens"
+      ],
+      "reference_functions": [
+        "numeric_effects_v1.aperture_kernel",
+        "numeric_effects_v1.depth_blur",
+        "numeric_effects_v1.lens_blur"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.EffectsNumericTests.test_FX120_focus_identity_and_constant_all_apertures",
+        "test_numeric_v1.EffectsNumericTests.test_FX120_far_background_does_not_bleed_over_focused_front",
+        "test_numeric_v1.EffectsNumericTests.test_FX120_premul_transparency_aperture_and_invalid_map"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-124",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Amount[0,1], uniform/Gaussian, monochrome/per-channel, particle width>=1 Documentpx, stored uint64 seed. Document integer pixel coordinate origin, negativecoordinates floor.",
+      "algorithm": "SHA256 bytes ASCII Illustro.Numeric.v1 then NUL then seed unsignedbigendian64 then each signedbigendian64 counter. Uniform u=top53 digestbits/2^53. Pixel cell=floor(x/particle),floor(y/particle); counter(cellX,cellY,channel,draw). Uniform delta=amount*(2u-1); Gaussian amount*sqrt(-2ln(max(u,2^-53)))*cos(2pi*u2). Monochrome channel0 shared else0/1/2. Add to straight linear color, preservealpha; alpha0 evaluationRGB0. Reseed explicit action, preview/reopen never reseeds.",
+      "boundary_precision": "Amount0 exact identity, uniform bounds±amount, Gaussian unbounded before targetprecision (nonfinite/16F overflow candidatefailure). Saved seed version mandatory; not cross-platform built-in random. Particle groups exactlyequal random delta, View independent.",
+      "dependencies": "source/seed/distribution/amount/particle/color mode/hash version; halo0.",
+      "variants": [
+        "uniform",
+        "Gaussian",
+        "mono",
+        "RGB",
+        "particle",
+        "reseed"
+      ],
+      "reference_functions": [
+        "numeric_color_v1.random_u",
+        "numeric_color_v1.noise_delta"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.ColorNumericTests.test_FX124_seed_distribution_particle_and_domain"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-129",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Density[0,1], round/square/diamond/line, angledegrees, originDocumentpx, spacing>0 explicitpx or DPI/LPI (DPI frozen at creation, positiveLPI). Alpha/tint and source-density optional.",
+      "algorithm": "Rotate pixel subsamples to periodic grid; u=fract(rotatedDelta/spacing)-.5. Round radius solves exact circle clipped to unit square area=density by48 bisections over[0,sqrt(.5)]. Square halfside sqrt(d)/2; diamond radius sqrt(d/2) ifd<=.5 else1-sqrt((1-d)/2); line abs(u)<=d/2. Pixel area fixed16x16 midpoint grid. Source-density mode samples linearY at cell center using frozen premul source (transparentwhite density0), d=1-Y; constantdensitydirect. Multiply tone coverage by inputalpha for in-layer filter; explicit generated-tone layer has tonecolor alpha*coverage.",
+      "boundary_precision": "d0 empty/d1 full exact, periodorigin saved, changingDPI metadata alone does not re-render frozenpxspacing. Round continuous throughpi/4 no inverted-hole jump. Gridphase stable across tile/zoom. Analytic shapearea inverse<=1e-12; sampled8px halfdensity area error<=.015 fixedbeforetests.",
+      "dependencies": "source/color/shape/density/spacing/resolvedDPI/LPI/origin/angle/AA version. Halo0 forconstant; cellcenterlookup needsceil(spacing*sqrt2) source.",
+      "variants": [
+        "four shapes",
+        "angle/origin",
+        "px or LPI",
+        "constant/source density",
+        "generated/filter"
+      ],
+      "reference_functions": [
+        "numeric_effects_v1.tone_area",
+        "numeric_effects_v1.tone_radius",
+        "numeric_effects_v1.tone_coverage"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.EffectsNumericTests.test_FX129_analytic_round_dot_density_without_inverted_hole_jump",
+        "test_numeric_v1.EffectsNumericTests.test_FX129_all_shapes_area_and_periodic_origin"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-130",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Linear working luminance source; medianinteger radius0..16; gain>=0; threshold[0,1]; minComponentpixels>=0; thinningboolean; width>=1px; transparency/whitebackground; RGB inversionexplicit.",
+      "algorithm": "Median square zeroexterior -> Sobel3x3 (/8), hypotgradient, gain clamp[0,1]. Withoutcleanup returncontinuousedge. Cleanup threshold>= createsbinary8components, remove size<min; optionally Guo-Hall thinning two phases repeated tofixedpoint, zeroexterior. Reconstruct width by disk dilation of skeleton centers distance<=(width-1)/2. Edge output inkRGB with computededgealpha; whitebackground output source-over white, invert changesinkRGB only notalpha. Morphology/removal beforewidth, notafter; no auto closing gaps. FX line extraction alone does not create LIN graph.",
+      "boundary_precision": "Constantinterior gradient0; minComponent0 no removal. Guo-Hall chosen after Zhang-Suen erased isolated2x2. All512 3x3patterns preserve8foreground/4backgroundholes and idempotence. Medianradius halo r+1; globalcomponent/thinning require fullconnected dependency (not finitehalo). Widthdilation addsceil((width-1)/2).",
+      "dependencies": "source/profile/median/gain/threshold/cleanup/thinning/width/background/invert/kernel; globaltopologyinvalidated.",
+      "variants": [
+        "continuous edge",
+        "median",
+        "smallcomponent removal",
+        "thinning",
+        "line width",
+        "transparent/white/invert"
+      ],
+      "reference_functions": [
+        "numeric_effects_v1.median2d",
+        "numeric_effects_v1.sobel",
+        "numeric_effects_v1.clean_edges",
+        "numeric_effects_v1.thin",
+        "numeric_effects_v1.widen_line",
+        "numeric_effects_v1.line_rgba"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.EffectsNumericTests.test_FX130_sobel_flat_step_and_salt_cleanup",
+        "test_numeric_v1.EffectsNumericTests.test_FX130_thinning_topology_and_idempotence"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-136",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Source alpha>=.5 gives binarymask; size>0 Documentpx, signed depth [-64,64] (negative reverses relief), softnesssigma>=0; angledegreesclockwise/altitude[0,90], inner/outer/emboss; highlight/shadow linearRGB and strengths[0,1]; local/sharedlight explicit.",
+      "algorithm": "Signeddistance = nearestoppositepixelcenterdistance-.5 positiveinside; transparentoutside includesonepixelborder; emptymask yieldszero output. Height inner=clamp(d/size), outer=clamp(1+d/size), emboss=clamp(.5+d/size). Gaussian soften sigma supportceil(3sigma), clampededge. Centraldifference normalnormalize(-depth*dx,-depth*dy,1). L=(cosalt*cosangle,cosalt*sinangle,sinalt), s=NdotL-Lz; H=clamp(s),S=clamp(-s). Screenhighlight then Multiplyshadow withstrength*H/S coverage. Inner preserves sourcealpha. Outer/emboss expanded appearance alpha=max(sourcealpha,outerheight*shadowOrHighlightStrength), addedsurface uses storedbasecolor defaultoriginalboundarynearestcolor, source pixels unchanged. Bounds expandedceil(size+3sigma+1), originalnode remains source.",
+      "boundary_precision": "Depth0 lightdifference0 and appearanceidentity (includingouter no expansion). Light flip reversespolarity; emptyalpha no output. Rejectnonfinite/invalidsize, overflow beforecommit. Binarythreshold is explicitgeometrychoice, sourcepartialalpha still usedfinalcomposition; distance transform exact Euclidean oracle, acceleratedequivalent allowed. Save source+heightparams+lightbinding, neverbakeautomatically.",
+      "dependencies": "sourcealpha/color/mask/size/depth/softness/mode/colors/strength/lightbinding/kernel. FullSDFsource; ROI must prove nearestboundarycomplete; halo size+3sigma+1 otherwisefull.",
+      "variants": [
+        "inner",
+        "outer",
+        "emboss",
+        "soften",
+        "highlight/shadow",
+        "shared/local light"
+      ],
+      "reference_functions": [
+        "numeric_effects_v1.signed_distance",
+        "numeric_effects_v1.gaussian2d",
+        "numeric_effects_v1.bevel",
+        "numeric_effects_v1.render_bevel"
+      ],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified-reference-tested; full-feature-review-not-closed",
+      "reference_cases": [
+        "test_numeric_v1.EffectsNumericTests.test_FX136_zero_depth_identity_and_shared_light",
+        "test_numeric_v1.EffectsNumericTests.test_FX136_inner_outer_emboss_softness_and_empty"
+      ],
+      "reference_coverage": "Named CPU subset below; not every parameter/production variant.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "BRU-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-BRU-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by BRU-001 in family-BRU-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-BRU-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-BRU-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. BRU-001 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-BRU-001"
+    },
+    {
+      "feature_id": "BRU-005",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-BRU-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by BRU-005 in family-BRU-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-BRU-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-BRU-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. BRU-005 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-BRU-001"
+    },
+    {
+      "feature_id": "BRU-007",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-BRU-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by BRU-007 in family-BRU-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-BRU-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-BRU-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. BRU-007 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-BRU-001"
+    },
+    {
+      "feature_id": "BRU-008",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-BRU-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by BRU-008 in family-BRU-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-BRU-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-BRU-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. BRU-008 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-BRU-001"
+    },
+    {
+      "feature_id": "BRU-009",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-BRU-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by BRU-009 in family-BRU-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-BRU-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-BRU-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. BRU-009 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-BRU-001"
+    },
+    {
+      "feature_id": "WET-002",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-BRU-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by WET-002 in family-BRU-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-BRU-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-BRU-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. WET-002 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-BRU-001"
+    },
+    {
+      "feature_id": "WET-005",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-BRU-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by WET-005 in family-BRU-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-BRU-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-BRU-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. WET-005 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-BRU-001"
+    },
+    {
+      "feature_id": "FIL-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FIL-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FIL-001 in family-FIL-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FIL-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FIL-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FIL-001 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FIL-001"
+    },
+    {
+      "feature_id": "FIL-005",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FIL-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FIL-005 in family-FIL-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FIL-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FIL-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FIL-005 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FIL-001"
+    },
+    {
+      "feature_id": "SEL-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FIL-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by SEL-001 in family-FIL-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FIL-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FIL-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. SEL-001 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FIL-001"
+    },
+    {
+      "feature_id": "SEL-002",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FIL-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by SEL-002 in family-FIL-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FIL-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FIL-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. SEL-002 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FIL-001"
+    },
+    {
+      "feature_id": "SEL-003",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FIL-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by SEL-003 in family-FIL-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FIL-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FIL-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. SEL-003 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FIL-001"
+    },
+    {
+      "feature_id": "LIN-003",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-LIN-003 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by LIN-003 in family-LIN-003. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-LIN-003 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-LIN-003; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. LIN-003 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-LIN-003"
+    },
+    {
+      "feature_id": "LIN-008",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-LIN-003 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by LIN-008 in family-LIN-003. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-LIN-003 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-LIN-003; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. LIN-008 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-LIN-003"
+    },
+    {
+      "feature_id": "VEC-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by VEC-001 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. VEC-001 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "VEC-002",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by VEC-002 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. VEC-002 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "VEC-003",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by VEC-003 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. VEC-003 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "VEC-004",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by VEC-004 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. VEC-004 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "GUI-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GUI-001 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GUI-001 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "GUI-002",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GUI-002 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GUI-002 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "GUI-003",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GUI-003 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GUI-003 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "GUI-004",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GUI-004 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GUI-004 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "GUI-006",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-VEC-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GUI-006 in family-VEC-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-VEC-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-VEC-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GUI-006 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-VEC-001"
+    },
+    {
+      "feature_id": "GRA-001",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-GRA-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GRA-001 in family-GRA-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-GRA-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-GRA-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GRA-001 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-GRA-001"
+    },
+    {
+      "feature_id": "GRA-002",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-GRA-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GRA-002 in family-GRA-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-GRA-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-GRA-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GRA-002 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-GRA-001"
+    },
+    {
+      "feature_id": "GRA-003",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-GRA-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GRA-003 in family-GRA-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-GRA-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-GRA-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GRA-003 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-GRA-001"
+    },
+    {
+      "feature_id": "GRA-004",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-GRA-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by GRA-004 in family-GRA-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-GRA-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-GRA-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. GRA-004 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-GRA-001"
+    },
+    {
+      "feature_id": "FX-103",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-GRA-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-103 in family-GRA-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-GRA-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-GRA-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-103 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-GRA-001"
+    },
+    {
+      "feature_id": "FX-115",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-GRA-001 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-115 in family-GRA-001. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-GRA-001 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-GRA-001; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-115 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-GRA-001"
+    },
+    {
+      "feature_id": "NDE-002",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "BlendIf neutral low0step including0, high1step specialincludes1; FX strengths0neutral, medianradius0, blur/spread0, opaque blackshadow/whiteglow, angle315deg distance0, contouridentity; selectedeffectnode withamount0 remainseditable.",
+      "algorithm": "BlendIf membership low(l0,l1)*high(h0,h1), low=smoothstep(l0,l1,x), high=1-smoothstep(h0,h1,x), equalpair step x>=threshold (low) or x<threshold(high); neutral highpair(1,1) includes endpoint1; apply source andbackdrop weights product once. Channel basis encodedcomponent orlinearY explicit. Sharpen B=box3x3 fixed, detail=I-B; unsharp B=Gaussian sigmaRadius, threshold onabs(detail), highpass I-B+.5; alphaprotect preservesalpha and straightcolor atalpha>0. Luminanceonly computes detailY, adds identicaldeltaRGB. Edgeprotection option multipliesdetail by1-clamp(Sobel(Y)*edgeProtect), defaultoff. Mediancomponentwise oddsquarezerooutside, cleanup removesbinaryalpha components<size onlyafterthreshold andexplicitEnable; alphaprotect preservesoriginalalpha. Linecolor preserveLuminance: convert chosenlinearcolor toOklab, replaceL with sourceOklabL; recolorreplace straightcolor, sourcealpha preserved. Outline binaryalpha>=.5 and Euclideandisk dilate/erode (SEL003), inner=A-erode, outer=dilate-A, center=dilatehalf-erodehalf; multiply selectedlinecolor/gradient/pattern byringcoverage. Shadow: shifted bilinearsampledalpha -> diskspread -> Gaussian -> color/opacity; outerbehindsource, innermultiplycomplementshadow with sourcealpha; apply sourceocclusion once. Glow nooffset: outer=max(0,blur(dilate(A))-A); inner=A*blur(dilate(1-A)); contour piecewiselinearunitcurve andstrength, selectedblend then sourcecomposition. Overlay uses chosenpattern/gradient/solid andNDEblend, constrained byoriginalalpha; notdoubleMask.",
+      "boundary_precision": "Allradius0/amount0identity whereapplicable; zeroextenttransparent, noextraRGBunderalpha0. Gaussianhaloceil3sigma; morphologyhaloceildistance; shiftedshadowhaloceilmagnitudeoffset+spread+ceil3sigma. Alpha-protect uses straightcolorfilter sampling transparent0butpreservesoriginalalpha. Topologycleanupfullplanedependency. BlendIforderl0<=l1<=h0<=h1 elseinvalidcandidate. Highlight/glowstrength unitinterval. SourceMaskstage defaultpost-source-mask alpha; group/effectscopeexplicit.",
+      "variants": [
+        "BlendIf splitthreshold",
+        "edge/alpha/lumaprotect",
+        "median/cleanup",
+        "linecolor",
+        "outline",
+        "inner/outershadow/glow",
+        "overlay"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. NDE-002 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-121",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-121 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-121 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-122",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-122 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-122 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-123",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-123 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-123 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-125",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-125 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-125 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-131",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-131 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-131 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-132",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-132 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-132 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-133",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-133 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-133 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-134",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-134 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-134 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-135",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "See family-FX-121 inputs and this feature row parameters.",
+      "algorithm": "Apply only the operation named by FX-135 in family-FX-121. Existing individual action, parameters and fixture in FEATURE_CONTRACT_CROSSWALK_247 remain binding.",
+      "boundary_precision": "See family-FX-121 boundaries, specialized by this feature specific case.",
+      "variants": [
+        "See family-FX-121; only variants of this feature ID"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-135 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution.",
+      "algorithm_family_ref": "family-FX-121"
+    },
+    {
+      "feature_id": "FX-007",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Clonecurrentlayerreference, sourceanchorunset requiresexplicitpick; healingstrength1, alpha preserved; boundaryDirichlet.",
+      "algorithm": "Clone samples frozenoriginalpremul at p+(sourceAnchor-destinationAnchor), bilinearzerooutside; aligned keeps offset acrossstrokes, unaligned resets destinationAnchor onnextstroke. Patch defines explicit source/destinationpolygons, rigidtranslation default, source preserved. Healing solves each straightlinearRGB channel discrete4-neighborPoisson insideconfirmedbinarypatchMask (alpha>=.5): degree4*u - sum(internalneighbors)=sum(sourceGradientEdges)+sum(destinationboundaryNeighbors). Dirichletdestinationoutside, sourcegradientfromfrozenoffsetsource; transparentdestination usescanonicalzeroRGB. Softselection blends healedpremulresult withoriginal once, originalalpha retained inheal; clone canchangealpha. ForfullDocumentmask padonepixel transparentDirichletborder. UniqueSPDsolve residualInfinity<=1e-8*max(1,|rhs|Infinity), failure/nonconvergence noApply.",
+      "boundary_precision": "No undefinedcontent-awaregeneration. Source/destinationroot,offset,patchshape,mask frozen. Emptyselectionidentity; sourceoutofboundsvisiblewarning/transparentaschosen, neverinventedtexture. Reference gradient-domain numericalsolve can beCPU/GPUimplementationchoice butmustmeetresidual+golden thresholds and productperformance. Failedheal retainsoriginalandcandidate.",
+      "variants": [
+        "clone aligned/unaligned",
+        "patch",
+        "Poissonheal",
+        "softmask"
+      ],
+      "dependencies": "Frozen source/target lifetime, selection, assets/ICC, all named parameters and numerical v1; shared history/SaveFence/failure contracts apply. FX-007 keeps its existing action owner, UI and original scope.",
+      "reference_functions": [],
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; reference coverage explicitly partial",
+      "reference_cases": [],
+      "reference_coverage": "Equations specified; shared primitive coverage only. Not every advertised variant is executable in the review reference.",
+      "independent_oracle": "See named CPU tests for literal/invariant scope; no independent product renderer execution."
+    },
+    {
+      "feature_id": "FX-101",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Encoded straight RGB, brightness b[-1,1], UI contrast c[-4,4], neutralb0/c0; internal factor k=2^c.",
+      "algorithm": "result=clamp((RGB-.5)*k+.5+b). Luminance-only applies same equation to normalized linearY then adds common deltaRGB, no channelclamp in16F until explicit domain output. Alpha unchanged.",
+      "boundary_precision": "Internal factor1 is neutral; UI0 mapsfactor1, notzero. CPU scalar reference brightness takes k directly.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-101 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "brightness",
+        "contrast",
+        "luminance"
+      ],
+      "reference_functions": [
+        "effect_reference.brightness"
+      ],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-102",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Input black<white, outputblack/outputwhite finite, gamma>0; neutral0/1/1/0/1.",
+      "algorithm": "t=clamp((c-inBlack)/(inWhite-inBlack)); out=outBlack+(outWhite-outBlack)*t^(1/gamma). RGBmaster then percomponent in storedorder; luminanceonly changesY by common-channel delta.",
+      "boundary_precision": "Reject zero/reversed inputrange before candidate; reversedoutput permitted explicit inversion.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-102 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "RGB",
+        "perchannel",
+        "output",
+        "gamma"
+      ],
+      "reference_functions": [
+        "effect_reference.levels"
+      ],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-104",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "LinearworkingRGB, EV[-32,32], offset[-16,16], gamma(0,16], neutral0/0/1.",
+      "algorithm": "out=max(0,c*2^EV+offset)^(1/gamma); alpha unchanged.",
+      "boundary_precision": "EV0offset0gamma1 exactidentity for nonnegativecolors; signed16F negativechannels preserved only neutralbypass, nonneutralpositive-domain formula explicit; overflowreject completecandidate.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-104 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "exposure",
+        "offset",
+        "gamma"
+      ],
+      "reference_functions": [
+        "effect_reference.exposure"
+      ],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-105",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Encoded HSL per standard RGBmax/min equations, deltaHue[-360,360]degrees, deltaS/L[-1,1], neutral0; ColorizeOFF.",
+      "algorithm": "Normal H=(H+dh)mod360, S=clamp(S+ds),L=clamp(L+dl). Colorize uses explicitHue andSaturation [0,1] instead of originalH/S; L=clamp(originalL+dl). Color-target weight triangularhue bands fromoriginal; blend source/result byselectedbandweight once.",
+      "boundary_precision": "Achromatichue0 computationally, UI retainslastHue. HSL lightness=(maxRGB+minRGB)/2, never HSVvalue. Grayhuechangealone no effect; alpha unchanged.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-105 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "master",
+        "colorband",
+        "Colorize"
+      ],
+      "reference_functions": [],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-106",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "HSV source, saturationgain g[0,4], vibrancev[-1,1], neutralg1/v0.",
+      "algorithm": "s=clamp(originalS*g); Snew=clamp(s+v*s*(1-s)); originalH/V retained; alpha unchanged.",
+      "boundary_precision": "GrayS0 stays0, saturatedS1 fixedbyv; no hidden skintone model.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-106 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "vibrance",
+        "saturation"
+      ],
+      "reference_functions": [],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-110",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "LinearworkingRGB matrix3x3 coefficients[-4,4], bias[-4,4]; identitymatrix/zerobias.",
+      "algorithm": "OutputRGB=M*inputRGB+bias. Monochrome copies declaredsingle row dotRGB+bias intoeachchannel; defaultrow normalizedworkingY.",
+      "boundary_precision": "No auto row normalization; 16F negative/outofgamut retained, overflowreject. Alpha unchanged.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-110 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "RGBmatrix",
+        "monochrome"
+      ],
+      "reference_functions": [],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-112",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Encoded RGB default inversion; optional luminance-only and explicitalpha inversionseparate.",
+      "algorithm": "RGB=1-c. Luminanceonly OklabL=1-L, a/b unchanged, convertback. Alpha invert aNew=1-a, straightcolorunchanged fororiginala>0; atoriginala0 evaluationRGB0 thenaNew1 yieldsblack.",
+      "boundary_precision": "TwiceRGB/alphainvert restoresrepresentableevaluatedcolor exceptalpha0hiddenraw stillsavedsource. Sourcealpha unchanged unlessexplicitflag; no implicitclip16F.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-112 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "RGB",
+        "luminance",
+        "alpha"
+      ],
+      "reference_functions": [],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-113",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "N integer2..65536, componentorlinearY, ditherOFF seedv1.",
+      "algorithm": "q=tiesEven(clamp(c+noise)*(N-1))/(N-1); ifditherON noise=FX124uniformamount .5/(N-1). Luminance variant compute Ynew then add (Ynew-Y) toalllinearRGB, so Y matches exactly.",
+      "boundary_precision": "N2 endpoints0/1, ditherseedstable; alpha unchanged.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-113 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "RGB",
+        "luminance",
+        "dither"
+      ],
+      "reference_functions": [
+        "effect_reference.posterize"
+      ],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-114",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "ThresholdT[0,1] default.5, normalizedlinearY orencodedcomponent; low/highcolorsdefaultblack/white.",
+      "algorithm": "t=(sample>=T); result=lowColor iffalse elsehighColor, alpha unchanged.",
+      "boundary_precision": "T0 allfiniteunit sampleshigh; T1 onlysample1high; selectedsourceprofile/polarity explicit.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-114 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "luminance",
+        "component",
+        "customcolors"
+      ],
+      "reference_functions": [
+        "effect_reference.threshold"
+      ],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-116",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Sigma[0,256]Documentpx default0, edge transparent/default orclamp/reflectexplicit; alphaProtectOFF.",
+      "algorithm": "GaussianK(i,j)=exp(-(i²+j²)/(2sigma²)), integerextentceil3sigma normalizedfullsum. Filter premulRGB/alpha; transparentexterior notrenormalized. Protectalpha filtersstraightRGB (alpha0canonical0) thenusesoriginalalpha, distinctdescriptor.",
+      "boundary_precision": "Sigma0 exactbypass. Reflect integerindex period2n edge repeated (n1constant); haloceil3sigma. Tile/fullsame and no duplicateMask.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-116 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "Gaussian",
+        "edge",
+        "alphaprotect"
+      ],
+      "reference_functions": [
+        "effect_reference.gaussian"
+      ],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-117",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Integer halfwidth rx/ry>=0 default0, coupledexplicit, edge modes asFX116.",
+      "algorithm": "Uniformsquare (2rx+1)*(2ry+1), normalizefullsum, premulRGBA.",
+      "boundary_precision": "Transparentexterior noedge renormalization; halo(rx,ry); zeroaxes allow1D.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-117 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "box",
+        "coupled",
+        "edge"
+      ],
+      "reference_functions": [
+        "effect_reference.box"
+      ],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-118",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Distance>=0 Documentpx default0, angledegreesclockwise, center/default orone-sided, alphaProtectOFF.",
+      "algorithm": "N=max(1,ceil(distance)+1). IfN1 identity. Uniform t=j/(N-1); centered t-=.5; inversesample source(p-distance*t*(cosangle,sinangle)), bilinearpremultransparentexterior. Alphaprotect variant perFX116.",
+      "boundary_precision": "Haloceil(distance/2+1)centered,ceil(distance+1)one-sided; directionandoriginpersist; no rotatingkernel inViewcoords.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-118 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "motion center",
+        "one-sided",
+        "alphaprotect"
+      ],
+      "reference_functions": [],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-119",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "CenterDocumentcoord, angledegrees[-360,360]orzoomz[-.95,.95], neutral0; protectedradius r0>=0, transitionr1>=r0 defaultboth0(no protect).",
+      "algorithm": "Useuniformt in[-.5,.5], rotateinverse source=C+Rot(-t*angle)*(p-C), orzoom source=C+(p-C)/(1+t*z). Protectionf=smoothstep(r0,r1,distance) (equalradii step) multipliesangle/z locally; no protection whenboth0. N=ceil(Rmax*abs(angleRad))+1 forrotate, ceil(Rmax*abs(z)/(1-.5abs(z)))+1 forzoom, Rmax=maxdistancefromC todocumentcorners. N1 identity. Averagebilinearpremulsources, transparentexterior; alphaprotectperFX116.",
+      "boundary_precision": "Fullreadextent boundingallsamplepositions plus1; do not claim fixed1pxhalo. Pre-reserve samplework; OOM reject notcapNquality.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-119 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "rotation",
+        "zoom",
+        "protectedzone",
+        "alphaprotect"
+      ],
+      "reference_functions": [],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-126",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Block w/hpositiveintegers, originDocumentcoords, default8px/8px origin0.",
+      "algorithm": "For eachDocumentanchoredhalfopenblock meanpremulRGBA overvalidDocumentpixels; replicate mean toblockpixels. Partialedge dividebyvalidpixelcount, notnominalblockarea.",
+      "boundary_precision": "No alpha0straightcolorleak; zoomdoesnotmovegrid; fractionalblockdimrejected. Dependencyincludesentiretouchedblock.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-126 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "xyblock",
+        "linked",
+        "origin"
+      ],
+      "reference_functions": [],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-127",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "OffsetDocumentdx/dy finite, wrap/default ortransparent/extend; default0.",
+      "algorithm": "Inversesample source(p-offset), bilinearpremul forfractionaloffset; wrap floor-modulo peraxis, transparent0outside,extendclamp. Integeroffsetdirectexact. Halfwidthbutton offset +=width/2 explicitlymayfractional.",
+      "boundary_precision": "Negativecoordinatesnormalized, dimensionspositive; no halo readsplit omission withwrap.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-127 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "wrap",
+        "transparent",
+        "extend",
+        "halfwidth"
+      ],
+      "reference_functions": [
+        "effect_reference.offset"
+      ],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    },
+    {
+      "feature_id": "FX-128",
+      "version": "Illustro.Numeric.v1",
+      "inputs": "Frozen mapRGBA, strengthX/YDocumentpx default0, neutral.5; mapFit(defaultfit imagebounds)/native withsavedorigin; sourceedge transparent/default/wrap/extend.",
+      "algorithm": "MapR/G bilinearstraight data(no ICC colortransform for displacement data). Alpha0map meansneutral .5, partialalpha lerp(.5,RG,alpha). Fit: mapcell centers scaledbydimension ratio; singletonaxis constant. Source=bilinearpremul(p+(sx,sy)*(mapRG-.5)), explicitinversemap signpositive.",
+      "boundary_precision": "Strength0 exactidentity; mapmissing blocksApply, noautoguess; readhalo ceil(.5*maxabsstrength+1) forunitmap, rejectoutofunitmapvalues or chooseexplicitnormalization beforeadmission.",
+      "dependencies": "Source/profile/target and all controls; frozen read-prefix, mask/clip order, precision and kernel. FX-128 retains original action owner and full existing interaction contract.",
+      "variants": [
+        "mapfit",
+        "native",
+        "edges"
+      ],
+      "reference_functions": [],
+      "reference_cases": [],
+      "reference_coverage": "Equations specified. Existing primitive CPU cases where linked; full 2D/variant production reference NOT_EXECUTED.",
+      "production_verification": "NOT_EXECUTED",
+      "design_status": "specified; independent production validation pending",
+      "independent_oracle": "No full product renderer comparison; see linked primitive CPU tests and declared unverified scope."
+    }
+  ],
+  "algorithm_families": {
+    "family-BRU-001": {
+      "algorithm": "Use BRU006 ellipse/tip integration. Ordinary round: hardness1, spacing=.1 diameter, flow1, opacity1, taperOFF. Soft: hardness0; marker hardround with stroke-cap opacity .5; airbrush soft with flow .05; G-pen hardround diameter*pressure; pencil hardround opacity*pressure and saved paper gating WET007 dryness1, thickness0. These initial descriptors are editable, not hidden name-dependent kernels. Texture bilinear scalar repeat in saved Document/brush-local coordinates; depth d[0,1] multiplies coverage by (1-d)+d*texture. Taper start/end factors clamp(arcLength/startLength),clamp(remaining/endLength), smoothstep on each factor, multiply both, width=max(minWidth,baseWidth*factors); opacity taper separate. Zero taper length bypass. Zero-length dab uses explicit minimumWidth. Stroke opacity cap: maintain union coverage Unew=Uold+(1-Uold)*dabCoverage*flow; apply strokeOpacity once to original destination. Accumulate mode applies each dab source-over. Watercolor-style uses WET001 mix, edge factor 1+edgeAmount*(1-coverage), granulation factor (1-grain)+grain*paper; clamp finalcoverage. No water/time field. Paper reapply uses same saved coordinate transform; selecting paper alone changes Settings.",
+      "inputs": "All unit controls [0,1], lengths Documentpx>=0; defaults defined in algorithm, source assets hashed. Solid tip with white scalar paper if no resource selected.",
+      "boundary_precision": "8x8 AA, seeds/version frozen; no forced taper ordinary pen. Stroke opacity vs flow separate. Blur/mix/protection delegated WET001, erase alpha D*(1-coverage), Behind source-under, Alpha Lock preserve current destinationalpha. Imported unsupported tip schema rejected, never guessed. Thin/zero diameter zero coverage. Media labels do not promise physical simulation.",
+      "variants": [
+        "named initial presets",
+        "bitmap/ellipse",
+        "paper depth",
+        "taper width/alpha",
+        "stroke cap/accumulate",
+        "watercolor-style"
+      ],
+      "applies_to": [
+        "BRU-001",
+        "BRU-005",
+        "BRU-007",
+        "BRU-008",
+        "BRU-009",
+        "WET-002",
+        "WET-005"
+      ]
+    },
+    "family-FIL-001": {
+      "algorithm": "Pixel centers (.5,.5). Rectangle/ellipse coverage8x8 midpoint; half-open rectangle; polygon nonzero-winding with explicit closing segment, same grid. Selection add=max(A,B), subtract=max(0,A-B), intersection=min(A,B), replacement=B. Unrestricted selection is separate sentinel, not emptyzero mask. Color match: convert sampled source to frozen encoded workingRGB, compare max(abs(R-Rseed),abs(G-Gseed),abs(B-Bseed),abs(alpha-alphaSeed))<=tolerance; alpha0 RGB treatedzero. Luminance range uses normalized linearworkingY inclusive bounds. Flood/automatic selection4-connected; global match no connectivity restriction. Dilate=max over disk offset centers distance<=radius, erode=min with zerooutside; feather separableGaussian sigma=radius with ceil3sigma transparentexterior, radius0 identity. Boundary band=max(0,dilate(S,width/2)-erode(S,width/2)). Magnetic lasso uses integer8neighbor shortest path between explicit anchors inside corridor radius; edge strength normalized Sobel(linearY), edgecost length*(1+4*(1-(edgeA+edgeB)/2)); Dijkstra ties by cost,y,x; invalid corridor unresolved, no invented closure. Freeform endpoints remain manual when no edge.",
+      "inputs": "Tolerance default0, comparison depth normalized, 4-neighborflood; polygon windingnonzero; magneticcorridor default16Documentpx, feather0.",
+      "boundary_precision": "Tolerance0 exact working-code match, tie comparator<=. Contour operations never change source; selectionMask frozen at admission and applied once. Mask arithmetic round only at operationboundary. Morphological fractionalradius selects lattice disk, no Euclideaninterpolation. Corridor pxDocument unless UI shows screenpx conversion; sourceROI includes whole corridor. Negative/nonfinite radii rejected. Outputselection alpha8x8 exact multiples1/64 beforefinalprecision.",
+      "variants": [
+        "shape coverage",
+        "set algebra",
+        "flood/global",
+        "luminance",
+        "magnetic anchors",
+        "expand/erode/feather/band"
+      ],
+      "applies_to": [
+        "FIL-001",
+        "FIL-005",
+        "SEL-001",
+        "SEL-002",
+        "SEL-003"
+      ]
+    },
+    "family-LIN-003": {
+      "algorithm": "Region growth uses4-connected complement of8-connected ink. Manual boundary addition draws supercover polyline as virtual wall; cut removes chosen virtual wall segment only; source-derived boundary cut records explicit override mask, never sourcepixel erase. Union records selected region ID set (new ID) and retains constituents for Undo; cannot union exterior without explicit confirmation. Vector appearance mode renders saved fill/stroke width/caps/joins with8x8 AA then LIN001; path mode closes only explicitly closed subpaths using nonzero winding, openpath unresolved. Grow/shrink fill uses disk dilation/erosion of result mask with zerooutside then restrictwriteSelection; not reference-wall change. Boundary corners round via Euclidean disk; no miter implied.",
+      "inputs": "Boundary polyline Documentcoords; grow/shrink signedDocumentradius default0; preserve original sources.",
+      "boundary_precision": "Manual operations versioned and all affect one graphtransaction; subsequent analysis never overwrites constraints. Planargraph cycles are valid closedregions; only invalid references/dependencycycles rejected (not all geometriccycles). Emptyselection writesnothing, unrestricted sentinel distinct.",
+      "variants": [
+        "connect/cut/union",
+        "vector appearance/path",
+        "fill expand/shrink"
+      ],
+      "applies_to": [
+        "LIN-003",
+        "LIN-008"
+      ]
+    },
+    "family-VEC-001": {
+      "algorithm": "Geometry binary64 Documentcoords; cubicBezier evaluation deCasteljau, rasterflatten subdivision until maximumcontrolpoint-chord distance<=1/256Documentpx (or<=1/8outputpx for export; choose stricter), maxdepth32 -> explicit precisionerror if unmet. Fill nonzero-winding. Stroke defaultroundcap/roundjoin, centered width; butt/square/bevel/miter choices explicit, miterlimit4 thenbevel. Variablewidth linearlyinterpolates saved arc-length widthknots. Smoothnode handles collinear, preserve separate lengths; symmetric option equal lengths. Simplify Ramer-Douglas-Peucker maxperpendiculardistance<=tolerance, closedloop preservesfirstanchor; smoothpass replaces internalpoint by .25prev+.5point+.25next once per requestedpass, endpointsfixed; originals retained. Boolean returns planararrangement face set nonzero-inside predicates union/difference/intersection/xor; intersections exact/adaptive, snap only explicitmergeTolerance default0, no absoluteepsilon. Guide projection nearestline/circle/ellipse (ellipse bracketed angle minima1e-10rad), perspective ray nearest in screen coordinates, tie guideID. Snapstrength s lerp(raw,projection,s) within explicitscreenradius; guides frozenperstroke. Symmetry output unique rigidtransforms of acceptedstroke, coincidentcopies coalesce bytransformidentity onaxis; one transaction.",
+      "inputs": "Nonzero winding, centeredstroke, roundcaps/joins, miter4, simplifytolerance0 (identity), smoothpasses0, snapstrength1/radius5screenpx. Other initial dimensions fromexplicitcreationgesture.",
+      "boundary_precision": "Geometry error<=1/256Documentpx and resultarea fixtures independentlyintegrated; selfintersections follow winding, degenerate edges omitted withoutwholeobjectloss. Zero-lengthstroke roundcapdab, zero-widthstroke invisible buteditable. Boolean failure preservesoriginal. Vectoreraser mode removes identified parametricinterval, not arbitrarynearestpath; intersectionlimitmode uses sortedpathparameters and explicitnointersection fallbackchoice. Guided preset dimensions/bounds positive; transformsingular rejected.",
+      "variants": [
+        "Bezier",
+        "variablewidth/caps/joins",
+        "simplify/smooth",
+        "boolean",
+        "line/circle/ellipse/perspective",
+        "symmetry"
+      ],
+      "applies_to": [
+        "VEC-001",
+        "VEC-002",
+        "VEC-003",
+        "VEC-004",
+        "GUI-001",
+        "GUI-002",
+        "GUI-003",
+        "GUI-004",
+        "GUI-006"
+      ]
+    },
+    "family-GRA-001": {
+      "algorithm": "Stops sorted(position,stableID). Equalposition hardtransition takes lastID at exactposition/right; precedingsegmentends atfirstID. Color interpolation linearworkingpremul default; encodedoption explicit. Alpha ownlinearstops, recombine byunpremulcolor then alpha once. Midpoint m(0,1): map t to .5*t/m when t<=m else .5+.5*(t-m)/(1-m). Linearparameter dot(p-start,end-start)/length²; radial Euclideandistance/radius; reflect abs(linearparameter); angular atan2 signedclockwise normalizedturn, zero-centerparameter0. Extend clamp/repeat modulo1/reflect period2. Zero vector/radius laststop. CurveRGB perchannel piecewiselinear knots, nospline option in v1; monotonicallyincreasingx, outputy maynonmonotonic. Gradientmap t=clamp(normalizedlinearY), optionalposterize ties-evenN; dither uses FX124uniform ±.5/(N-1) beforequantization. LUT trilinear normalizeddomain: x=(c-domainMin)/(max-min)*(size-1), floorcornersclamped, lexicographicRGB axis, fileentryorderingexplicit LUT parser, blendstrength0identity.",
+      "inputs": "Gradientblack->white stops0/1, midpoint.5, linearworkingpremul, clamp; LUTidentitynone, intensity1 whenexplicitselected; curveidentitydiag.",
+      "boundary_precision": "MissingLUT/profile blocksApply; .cube size2..256 andfiniteentries validated beforeallocation, domainMin<max. No assumed spline/undefinedhardstop. Savedcoordlink invertible; unlinkfreezesmatrix. NativepreservesstopsIDs/space/ditherseed. Interpolationin16F noimplicitclipexceptnormalizedt.",
+      "variants": [
+        "gradient four geometries",
+        "hard/mid stops",
+        "repeat/reflect",
+        "map/posterize/dither",
+        "piecewise curve",
+        "trilinearLUT"
+      ],
+      "applies_to": [
+        "GRA-001",
+        "GRA-002",
+        "GRA-003",
+        "GRA-004",
+        "FX-103",
+        "FX-115"
+      ]
+    },
+    "family-FX-121": {
+      "algorithm": "BlendIf membership low(l0,l1)*high(h0,h1), low=smoothstep(l0,l1,x), high=1-smoothstep(h0,h1,x), equalpair step x>=threshold (low) or x<threshold(high); apply source andbackdrop weights product once. Channel basis encodedcomponent orlinearY explicit. Sharpen B=box3x3 fixed, detail=I-B; unsharp B=Gaussian sigmaRadius, threshold onabs(detail), highpass I-B+.5; alphaprotect preservesalpha and straightcolor atalpha>0. Luminanceonly computes detailY, adds identicaldeltaRGB. Edgeprotection option multipliesdetail by1-clamp(Sobel(Y)*edgeProtect), defaultoff. Mediancomponentwise oddsquarezerooutside, cleanup removesbinaryalpha components<size onlyafterthreshold andexplicitEnable; alphaprotect preservesoriginalalpha. Linecolor preserveLuminance: convert chosenlinearcolor toOklab, replaceL with sourceOklabL; recolorreplace straightcolor, sourcealpha preserved. Outline binaryalpha>=.5 and Euclideandisk dilate/erode (SEL003), inner=A-erode, outer=dilate-A, center=dilatehalf-erodehalf; multiply selectedlinecolor/gradient/pattern byringcoverage. Shadow: shifted bilinearsampledalpha -> diskspread -> Gaussian -> color/opacity; outerbehindsource, innermultiplycomplementshadow with sourcealpha; apply sourceocclusion once. Glow nooffset: outer=max(0,blur(dilate(A))-A); inner=A*blur(dilate(1-A)); contour piecewiselinearunitcurve andstrength, selectedblend then sourcecomposition. Overlay uses chosenpattern/gradient/solid andNDEblend, constrained byoriginalalpha; notdoubleMask.",
+      "inputs": "BlendIf neutral low0step including0, high1step specialincludes1; FX strengths0neutral, medianradius0, blur/spread0, opaque blackshadow/whiteglow, angle315deg distance0, contouridentity; selectedeffectnode withamount0 remainseditable.",
+      "boundary_precision": "Allradius0/amount0identity whereapplicable; zeroextenttransparent, noextraRGBunderalpha0. Gaussianhaloceil3sigma; morphologyhaloceildistance; shiftedshadowhaloceilmagnitudeoffset+spread+ceil3sigma. Alpha-protect uses straightcolorfilter sampling transparent0butpreservesoriginalalpha. Topologycleanupfullplanedependency. BlendIforderl0<=l1<=h0<=h1 elseinvalidcandidate. Highlight/glowstrength unitinterval. SourceMaskstage defaultpost-source-mask alpha; group/effectscopeexplicit.",
+      "variants": [
+        "BlendIf splitthreshold",
+        "edge/alpha/lumaprotect",
+        "median/cleanup",
+        "linecolor",
+        "outline",
+        "inner/outershadow/glow",
+        "overlay"
+      ],
+      "applies_to": [
+        "FX-121",
+        "FX-122",
+        "FX-123",
+        "FX-125",
+        "FX-131",
+        "FX-132",
+        "FX-133",
+        "FX-134",
+        "FX-135"
+      ]
+    }
+  }
+}

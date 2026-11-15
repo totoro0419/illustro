@@ -1,3 +1,5 @@
+> Classification: OBSOLETE / historical evidence; valid technical principles may be reused. Current authority: `docs/IMPLEMENTATION_BASELINE.md` and `docs/CANONICAL_INDEX.json`. Old stop/PASS/candidate declarations below apply to their recorded version only.
+
 # 過去Illustro資料の参照ポリシー
 
 > 対象資料: `ILLUSTRO_SECTION9_ALGORITHM_REVIEW_DRAFT(2).txt`  

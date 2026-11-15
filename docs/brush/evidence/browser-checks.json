@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "measuredAt": "2026-10-02T11:27:20.842Z",
+  "browser": "133.0.6943.0",
+  "durationMs": 189217,
+  "checks": [
+    {
+      "name": "offline initialization, 56 brushes, no HTTP dependency",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "actual mouse capture and final raster replay",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "undo then redo preserve canvas bytes",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "synthetic CDP pen pressure and tilt, not hardware evidence",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "cancel discards unpublished artwork",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "JSON save/import and reload restoration",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "corrupt imports retain current artwork",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "search, no-result state and native controls",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "invalid custom preset rejected with visible error",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "comparison canvases and point toggles",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "all eight synthetic stroke shapes replay exactly",
+      "status": "PASS",
+      "observed": {
+        "shapes": 8
+      }
+    },
+    {
+      "name": "held airbrush gains color without fabricated input geometry",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "320px, phone/tablet/desktop and text-resize layout",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "touch, high DPI and CPU-throttle software mobile profile",
+      "status": "PASS",
+      "observed": {
+        "width": 390,
+        "height": 844,
+        "dpr": 2.75,
+        "cpuThrottle": 4,
+        "physicalAndroid": false
+      }
+    },
+    {
+      "name": "keyboard reaches controls and focus is visible",
+      "status": "PASS",
+      "observed": null
+    },
+    {
+      "name": "three-minute scheduled 240Hz input run",
+      "status": "PASS",
+      "observed": {
+        "durationMs": 180244,
+        "accepted": 42648,
+        "strokes": 36
+      }
+    },
+    {
+      "name": "no browser script errors or HTTP requests",
+      "status": "PASS",
+      "observed": null
+    }
+  ],
+  "errors": [],
+  "network": [],
+  "physicalDeviceStatus": "UNVERIFIED",
+  "humanDrawingQuality": "UNVERIFIED"
+}

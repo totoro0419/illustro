@@ -1,0 +1,49 @@
+{
+  "backends": [
+    {
+      "backend": "webgl2",
+      "drawn": {
+        "channelsOver3": 0,
+        "expectedPaint": 2349,
+        "visiblePaint": 2349
+      },
+      "redo": {
+        "channelsOver3": 9367,
+        "expectedPaint": 2349,
+        "visiblePaint": 0
+      },
+      "load": {
+        "channelsOver3": 9367,
+        "expectedPaint": 2349,
+        "visiblePaint": 0
+      },
+      "canonicalExact": true
+    },
+    {
+      "backend": "webgpu",
+      "drawn": {
+        "channelsOver3": 0,
+        "expectedPaint": 2349,
+        "visiblePaint": 2349
+      },
+      "redo": {
+        "channelsOver3": 9367,
+        "expectedPaint": 2349,
+        "visiblePaint": 0
+      },
+      "load": {
+        "channelsOver3": 9367,
+        "expectedPaint": 2349,
+        "visiblePaint": 0
+      },
+      "canonicalExact": true
+    }
+  ],
+  "provenance": {
+    "sourceCommit": "7f006fa8b4bf4e177feba40130c1eb08f60d2b19",
+    "scope": "persistent GPU viewport at 1:1 versus independent CPU reference; physical display unverified",
+    "browser": "Chromium 153.0.8010.0",
+    "gateChannelTolerance": 3,
+    "canonicalDataPreserved": true
+  }
+}

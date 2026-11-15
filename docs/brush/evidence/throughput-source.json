@@ -1,0 +1,12 @@
+{
+  "baselineCommit": "1bde40602addbfa1830e9c913235f4e752af226e",
+  "scope": "lab renderer and CPU preview locality; canonical reconstruction unchanged",
+  "sha256": {
+    "packages/brush/src/raster.ts": "930963b4da6c685c5a776c077fddf12888a083fabcb52b733a56ca373e8e56b4",
+    "prototypes/brush-lab/main.ts": "a0af94956d7b115891022863bdf419cf580894428b8ea75be87400c218ea4c38",
+    "prototypes/brush-lab/immediate.ts": "7d6a3767f3f73255960e1c592dfd14d750bd5072098681c50ae075c54a365e69",
+    "prototypes/brush-lab/immediate-cpu.ts": "7bcbeb6ee1d79bc3b456d478655262a6ed0a7849fbbd2b04cf7af1c4233b1c09",
+    "prototypes/brush-lab/illustro-brush-lab.html": "60aecb62d5417465c77c2420df99b40db838a52e015ec0a9e5df55f4fb67ed04",
+    "prototypes/brush-lab/throughput-check.mjs": "c540d3d0652258e2a03aa22e7ebf2270d8fabac03f0d3589a6b44690cc0ae10a"
+  }
+}

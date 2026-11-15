@@ -1,0 +1,65 @@
+/* M07 editor structural foundation.
+ * Brand-specific colors and tool states belong to ui/aurora.css.
+ * This stylesheet deliberately has no legacy yellow / olive theme.
+ */
+*{box-sizing:border-box}
+html,body,#app{margin:0;min-height:100%}
+button,input,select,textarea{font:inherit}
+button{padding:8px;border:1px solid var(--a-border,#dfe5ef);border-radius:8px;background:var(--a-surface,#fff);color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed;color:var(--a-subtle,#627086);background:var(--a-surface-soft,#f8faff)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{
+ outline:3px solid var(--a-focus,#5865cc);outline-offset:2px
+}
+label{display:block;margin:9px 0;font-size:13px}
+input[type=range],select,input[type=number],textarea{width:100%;margin-top:6px}
+input[type=checkbox]{width:auto}
+details{border:1px solid var(--a-border,#dfe5ef);border-radius:8px;background:var(--a-surface,#fff);margin-bottom:7px;padding:9px}
+summary{cursor:pointer}
+details p{font-size:13px}
+.surface{position:relative}
+.layer-list{display:grid;gap:5px;margin:9px 0}
+.layer-row{width:100%;min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;padding:7px 9px;border-left:4px solid transparent}
+.layer-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-state{font-size:11px;font-weight:700;white-space:nowrap}
+.layer-row[aria-pressed=false] .layer-state:empty::after{content:' ';white-space:pre}
+.compact-only{display:none}
+#splitter{position:fixed;right:var(--workspace);top:var(--top);bottom:var(--bottom);width:8px;cursor:ew-resize;touch-action:none;z-index:9}
+.qa-panel{position:static;width:auto;min-width:0;max-height:none;overflow:visible;box-shadow:none;background:transparent}
+.qa-panel>summary{font-weight:700}
+.qa-panel ol{padding-left:22px;font-size:13px;line-height:1.55}
+.qa-panel textarea{resize:vertical}
+.qa-panel button{width:100%}
+.qa-auto{margin-top:8px;background:var(--a-surface-soft,#f8faff)}
+.qa-auto pre{white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.4}
+.bottom{display:none}
+/* M06 export functionality, refreshed with the same Aurora tokens used by M07. */
+.export-dialog{
+ border:1px solid var(--a-border-strong,#ced8e7);border-radius:14px;
+ background:var(--a-surface,#fff);color:var(--a-text,#222c40);
+ box-sizing:border-box;width:min(428px,calc(100vw - 32px));max-width:calc(100vw - 32px);
+ max-height:calc(100dvh - 32px);overflow:auto;padding:20px;
+ box-shadow:0 15px 48px #2d3b6533
+}
+.export-dialog::backdrop{background:#2636548c}
+.export-dialog h2{font-size:19px;margin:0 0 8px}
+.export-dialog p{font-size:13px;line-height:1.6}
+.export-dialog select,.export-dialog input[type=range]{min-height:35px}
+.export-dialog label{font-size:14px;font-weight:600}
+.export-dialog #exportTransparencyInfo{background:var(--a-accent-soft,#e9eeff);padding:10px;border-radius:8px}
+.export-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.export-actions button{min-height:42px;padding:9px 15px}
+#exportRun{background:var(--a-accent-soft,#e9eeff);border-color:var(--a-border-strong,#ced8e7);font-weight:700}
+#exportStatus{min-height:20px;overflow-wrap:anywhere}
+@media(max-width:760px){
+ .compact-only{display:block}
+ #splitter{display:none}
+ .bottom{
+  position:fixed;left:var(--rail);right:env(safe-area-inset-right);bottom:0;
+  display:flex;height:calc(var(--bottom) + env(safe-area-inset-bottom));
+  padding:5px 5px calc(5px + env(safe-area-inset-bottom));gap:5px;
+  background:var(--a-surface-soft,#f8faff);z-index:12;
+ }
+ .bottom button{flex:1;min-width:0;font-size:12px}
+ .export-dialog{padding:16px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}

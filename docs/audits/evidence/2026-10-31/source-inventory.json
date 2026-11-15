@@ -1,0 +1,1100 @@
+[
+  {
+    "path": "README.md",
+    "kind": "開発/生成・検査",
+    "sha256": "8bc6da90063f54cb2a0f6744c942eb5648ac208fe51f4864c05940e00c0a3fe9",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/DEVELOPMENT_PROCESS.md",
+    "kind": "開発/生成・検査",
+    "sha256": "4eb5a60e073b6e27d5824215857eb128d7c28334085dd2ed70227d84db0720d9",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/PRODUCT_VISION.md",
+    "kind": "開発/生成・検査",
+    "sha256": "20f72eaa59cfe0d285900653dbcc855ef47c108496143b3244d37f9cedb0e2b4",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/AI_INDEPENDENT_PROPOSALS.md",
+    "kind": "研究/統合設計",
+    "sha256": "bb5e8cc45e2079a13ad3bc218903ecf2ce6b845527a9f97ecb74cb67c4db17b2",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/AUDIT.md",
+    "kind": "研究/統合設計",
+    "sha256": "5fe7f7d1f90dcdafe552df655df8e17ccb3c78e0f5b5ac0f47f3ca243a26014f",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/CANDIDATE_DESIGN.md",
+    "kind": "研究/統合設計",
+    "sha256": "4336e7b6c32fad6dc8e92bf9b8bb613520349bff102c42fa60b6082f3a55874a",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/COMPETITIVE_COMPARISON.md",
+    "kind": "研究/統合設計",
+    "sha256": "231c6239c5834573956960e9ac90912cc46d0c756800902a63d53753a91865e0",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/DECISIONS.md",
+    "kind": "研究/統合設計",
+    "sha256": "7bc7e382176cc3f0c945e0355b88473400787d6cb4e8257941d9be8249b2f793",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/EXPERIMENT_RESULTS.md",
+    "kind": "研究/統合設計",
+    "sha256": "8b4e61d2ee63c88968f307dc415df0918d9be8b4fcd1c5752d0ab80c63e9d654",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/FEATURE_INTEGRATION_MAP.md",
+    "kind": "研究/統合設計",
+    "sha256": "632cb3d3b2a715c630684d319dc9e79744af3bfce6e6ac4dcd6c5fc40e1e9675",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/FEATURE_PROBLEM_MAP.md",
+    "kind": "研究/統合設計",
+    "sha256": "2979fe27ba410e44ad8b9a1cd3bcb884692520ada6e0080b87f383c4dbe258ac",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/INTEGRATION_AUDIT.md",
+    "kind": "研究/統合設計",
+    "sha256": "377c8b7a787cc072d8313448a16e33deb6ce495f327f7018f52a2fee5962cee4",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/INTEGRATION_FINAL_REVIEW.md",
+    "kind": "研究/統合設計",
+    "sha256": "eb0a064b190c58bc504de8edc59977f620254b7be2f94959ecb50e6d12eb1b5b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/OPEN_DECISIONS.md",
+    "kind": "研究/統合設計",
+    "sha256": "db9ffdd47d6c694459d37daa4dc6a3cc5b662951862055e83952e0dbdec37733",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R01_USER_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "87c1d0bd2e1f5de7e614a75d7b8b5e0db9b39a5fc60dd7cf1b99ef374f13d99e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R02_USER_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "03aa8cfbbb40984a7bcb11330af24179298a203618b8ec97e43c4aa34ee0830f",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R03_DESIGN_DECISION.md",
+    "kind": "研究/統合設計",
+    "sha256": "b3eedeb6bd9f7713d080458f1e4913cb7aac0ebe22e83511e087e0e4927ecb41",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R03_EXPERIMENT_PILOT.md",
+    "kind": "研究/統合設計",
+    "sha256": "da99214444816cef841e754976ada0316704ce9695b9fc7704a5f64124996a18",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R03_MAJOR_APPS_REVIEW.md",
+    "kind": "研究/統合設計",
+    "sha256": "9450bdb79ed909d725e17b7df81596d8db405ccdd1f93adf2f73fd951a9a64ab",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R03_USER_IDEA.md",
+    "kind": "研究/統合設計",
+    "sha256": "3936c1538435b875932eb14a25cfd2bdd8431acf7be713ee213632a04d15847b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R04_USER_IDEA.md",
+    "kind": "研究/統合設計",
+    "sha256": "be272179656796f3b3061c931a9c08044ebec0a498b7ed67b30090be745977e8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R05_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "a2f71bfeac6faa378a65190f3c5ba209c96d2f4c7bacdf83c683a18c1eb70b3e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R06_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "dd263112e7a8c034106a4251d9f8cdf0dc6955d2476dd7f18ff1716681174989",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R07_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "6ba8505d1361bec7a06076b73ac6c79e62d89bbed1fd27955ea9a757e9d6b985",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R08_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "7feeabb7fe8807fa478ae398c7206c0712b8de979450d96cbd912a6806cf1528",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R09_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "3a927b4b0d161f5ec27af3dd9b559dd5f3d16e56aa20d9cf5a68a0b0f201f774",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R10_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "d735086e893f9abd4258770b23e883528186e7afe3197b988b0515f7244d1776",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R11_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "fa00d29d186eed8d8ebf06a144971e97b2afde3c7440f1844e30558bc7671a5c",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R12_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "6c85b7747e89b737d47beb2fcd5286ce9d91917f21fee07ca4ae271e8736cba3",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R13_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "a8a73acd318a3ca4221c330a348d94f4bd9ea1c186f790ad7e12d54a5992e2f0",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/R14_DESIGN_DIRECTION.md",
+    "kind": "研究/統合設計",
+    "sha256": "3d3ac00e9223bb9cf57c78fd8fcbb2379e8e863e1bf9963745f18d9c09f3c3e4",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/README.md",
+    "kind": "研究/統合設計",
+    "sha256": "139d65d6171cd682ce2e81c8ffc0d0a64e70a05b6e12d07b73fcc7e90ab30cca",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/REQUIREMENT_CROSSWALK.md",
+    "kind": "研究/統合設計",
+    "sha256": "f4a594016d0f53a43ce4e3f6311007094d29dd5976cd54d56369de3e8bea9c6d",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/ROADMAP.md",
+    "kind": "研究/統合設計",
+    "sha256": "0d7d5ff2a82ed89760ee740fe0ea25434c281a83243042642743d369e987d1c8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/ROOT_PROBLEMS.md",
+    "kind": "研究/統合設計",
+    "sha256": "7d1fd06e30655f462ae1a178b20aec7b6c68f654e8e488f14b31e127ba982bf3",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/SOURCES.md",
+    "kind": "研究/統合設計",
+    "sha256": "bbe2c1df4b935eef9e0d2ca5236cd2c8e23b292a45eaceebf51475c0103eef4c",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/UNIFIED_SYSTEM_DESIGN.md",
+    "kind": "研究/統合設計",
+    "sha256": "2046b6295df3e8b04e96b7fbafddaa98bee140e60e04e3be330b3f68d7965b84",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/USER_RESEARCH_CARDS.md",
+    "kind": "研究/統合設計",
+    "sha256": "252fc0cc3bc5538ae3f26ed1eb1d3f54509bc6786f2b33b6a412f9f1a920ec4b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/VALIDATION_PLAN.md",
+    "kind": "研究/統合設計",
+    "sha256": "36487075eeea491e929767d68689d95b97332b282b33ad80ce0082ba89e1ed14",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/baseline_manifest.json",
+    "kind": "研究/統合設計",
+    "sha256": "47b70df7068053d7aa46050d48e08a54c819b75aa64a08c4437d0c689d96779a",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/build_decisions.py",
+    "kind": "研究/統合設計",
+    "sha256": "5faf869b9aefcc158ffff3b36c2be53dfc43c313ed0da8635c2c552163b21fe0",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/build_indexes.py",
+    "kind": "研究/統合設計",
+    "sha256": "425688a1dd63181dfb691d79fb0b875cf15eedb17b01fdf1717cfaff8ceb2a74",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/candidate_decisions.json",
+    "kind": "研究/統合設計",
+    "sha256": "6d562d12f7fee43dcfb4c436abdfdce428bdbfccbb6e11680a6f00ec40491966",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/card_content.json",
+    "kind": "研究/統合設計",
+    "sha256": "3f8a6b831a209bfbe633afbcda1412520427ac10b0739da36dea58dd7232d6c8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/experiments/results.json",
+    "kind": "研究/統合設計",
+    "sha256": "62fe63730ec7a279819cf5975b1046b80aa9ff1712e8942144657c6626e0d393",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/experiments/run_models.py",
+    "kind": "研究/統合設計",
+    "sha256": "16d6af0660efce232f2528281c6afe3f15341844354a15e04c83c52eb612dc67",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/experiments/storage_fault_model.py",
+    "kind": "研究/統合設計",
+    "sha256": "6a1711eaeba912ce0dc7590e5e58e964547bd58da0dc5eebc4b3bd4a93916a6e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/experiments/storage_results.json",
+    "kind": "研究/統合設計",
+    "sha256": "0ca9fa5a8d9fb119f8ca9f21707bf3534236672488f2de9de96a2e5cf986b66b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/feature_integration.json",
+    "kind": "研究/統合設計",
+    "sha256": "bf821dc3a2268feda4f9f67fef330306f453b6d6fe14fb4b22efcc75d1c14ac8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/feature_notes.tsv",
+    "kind": "研究/統合設計",
+    "sha256": "622feee2081a86a1113082f7856194b436276ab17b50df8da8263ef322447b8b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/A11.md",
+    "kind": "研究/統合設計",
+    "sha256": "9fef00d863ae5058d373af0cc8698459d4822d9fdc771543a877d37823c44c13",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/AI.md",
+    "kind": "研究/統合設計",
+    "sha256": "72733528c1852cddfe7b93c83e051a8e85e8b6d167c752de7c9637537582ae04",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/AST.md",
+    "kind": "研究/統合設計",
+    "sha256": "bab69bd6e5b3759fc2ec4c9ba23c0b401eb19da686bc3299837f597d7f6709d3",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/AUT.md",
+    "kind": "研究/統合設計",
+    "sha256": "3580e19407b6bae957306fdbf826c1b8ff66589c4c5257e10e16ca40a094eda7",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/BRU.md",
+    "kind": "研究/統合設計",
+    "sha256": "91314805e5d1539dae528afb1304df582488c70fd4b9f64543f9f9d848c8cf61",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/CAN.md",
+    "kind": "研究/統合設計",
+    "sha256": "8b6ca71b375eecb037b3b71f94a8bc86a8a4617ae362f9b378daa2ee495e5c6d",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/CLP.md",
+    "kind": "研究/統合設計",
+    "sha256": "de0953090c67cf0782fff0d04f06241bcc086a46ad3dd34bf9c65c8caafe03b5",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/COL.md",
+    "kind": "研究/統合設計",
+    "sha256": "7f90e845f773d3b0595e81d6489be54e3f44bf18c9e4ec30f881ff338fa4612e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/DEV.md",
+    "kind": "研究/統合設計",
+    "sha256": "4908edc588a6ebc3d7625dddec6fab2f0c2c82401fe9ff46a785dafe4f647207",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/EXT.md",
+    "kind": "研究/統合設計",
+    "sha256": "0a92402d6b6dfeb96087f9de5f0ef3f9a6e0df458d1ba0617536bc229d038d5e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/FIL.md",
+    "kind": "研究/統合設計",
+    "sha256": "4755774a7515055aa8930ca2fbe10a6ed81f310c4aac1fd740c1cf17074637f5",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/FX.md",
+    "kind": "研究/統合設計",
+    "sha256": "aa7f1460e9a80873006bcc3d3d13a0359e0b25fa71bfc83ffc2619f7a726a69e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/GRA.md",
+    "kind": "研究/統合設計",
+    "sha256": "01b8d0313bdd87bddb5a84f0102b5922e852a624d401e09c14968ed9863ed0d2",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/GST.md",
+    "kind": "研究/統合設計",
+    "sha256": "f1c031f40e554f81b4f5bea7f2143962146a50a103b00fdc192d83f041ec24c6",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/GUI.md",
+    "kind": "研究/統合設計",
+    "sha256": "27e2afc1ac9c209cb1236d4f3c7ccf6793181a0699a97d45cf1950f751f26b75",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/HIS.md",
+    "kind": "研究/統合設計",
+    "sha256": "12f707bbc1b404178ea462efc6ee8f31b775dea9f18a22b1ad40ce21668de42a",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/INP.md",
+    "kind": "研究/統合設計",
+    "sha256": "c6826396ab27ae50227d6e80d63a727bef8ef841bb644acfddf00ddb438bd07d",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/IO.md",
+    "kind": "研究/統合設計",
+    "sha256": "d0ec94d9495429149d1aa6b2d5bcf7916fe7bcdc24a977976db697723d367790",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/LAY.md",
+    "kind": "研究/統合設計",
+    "sha256": "49a2632d1449aaa766a943c1ea0bad1ab989ca952be220616e1de28ad937ef54",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/LIN.md",
+    "kind": "研究/統合設計",
+    "sha256": "18f016a26b29e0b791f6782add721389bd308eccf5bd083c1539beb7bf2b7024",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/NDE.md",
+    "kind": "研究/統合設計",
+    "sha256": "38058bd374881b40a6ae254c2c3dc35a3766cac5aff30cd77bfa493da004ab22",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/PIX.md",
+    "kind": "研究/統合設計",
+    "sha256": "48fe40c2d564862f1c7b5f1f7f664d081a9ff1ad52407bdd1cfce081ee9cfa50",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/REC.md",
+    "kind": "研究/統合設計",
+    "sha256": "69ca239da06c3cb2fe5f093cd76222829dea068b90d36d21e4671771a93eed31",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/REF.md",
+    "kind": "研究/統合設計",
+    "sha256": "d06ad0ccab08a0d40ffe6843d079bd6ee7ad214e6b49e1e92270c3ce2977a5b9",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/SAV.md",
+    "kind": "研究/統合設計",
+    "sha256": "304581291b14d73e99e8579fe4bed9ccf1fb1f268c14bba2d106b20fb0b7685a",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/SEL.md",
+    "kind": "研究/統合設計",
+    "sha256": "352deab38cb8ded805f3a09cb694c805f6a970f4e8b4ac1361597d4545d07d57",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/TRN.md",
+    "kind": "研究/統合設計",
+    "sha256": "2f0c3b2c5abf04fe6f2e1d126f1ab9542c6841723240c724e89f4c05f8582a11",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/UI.md",
+    "kind": "研究/統合設計",
+    "sha256": "7e65b8f2ae4661df5c4d79a8891800a83820ce97972e7852a3dffebf795a2693",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/VEC.md",
+    "kind": "研究/統合設計",
+    "sha256": "3ac283332b88be9872a79c994545d8a46e7b4e0badb3f45b0e78dd49a150849b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/features/WET.md",
+    "kind": "研究/統合設計",
+    "sha256": "3d9924a257c66b6f1bf1b0d2f1617d280499c26cdac94d8726b078fb9d87b893",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/integration_pairs.json",
+    "kind": "研究/統合設計",
+    "sha256": "1479d1fa2f620cdd9084b58bb6159f6bfb11016febaef0495d9e14992105c0da",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/integration_validation.json",
+    "kind": "研究/統合設計",
+    "sha256": "320f9dfe3c92fe27856e9c416a921f295eae821dea0cd54bfcf1fd7d4a431bdd",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/problem_map.json",
+    "kind": "研究/統合設計",
+    "sha256": "955288bdfd5c982574df9e249755a89ba8915b689a3d8c95f96da35df22e6a8f",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/root_coverage.json",
+    "kind": "研究/統合設計",
+    "sha256": "3344ee5d3c162d12dae8c7eeaaf7a6fad4b552f7f2ff013f54b69c9102d1c668",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/roots.json",
+    "kind": "研究/統合設計",
+    "sha256": "5f08b28d18dfc0ce23abcdfdbf05bea670a7c544ec6a4eb782f33c89d336ea48",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/validate_integration.py",
+    "kind": "研究/統合設計",
+    "sha256": "555b0fd41f95447fedc6f5d6fd1274494737e36cede0b5fa60000fa4df3d4d3e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/validate_research.py",
+    "kind": "研究/統合設計",
+    "sha256": "0728623dee2e9f158ac5d901cb2b62f1a8c6e18f8231c770180a458bfe20ff40",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/performance-research/validation_results.json",
+    "kind": "研究/統合設計",
+    "sha256": "77d029e25b1ccb15b3d549d5c9c2e13a0a8067c8998d6bd545db21a5b2c0d51a",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/FEATURE_ACCESS_LEDGER.json",
+    "kind": "最新設計/導線",
+    "sha256": "da1207f5fb0f850e346ebd33d5c817bf281b28540b25124cb70d814bdb3aba16",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/FEATURE_ACCESS_MAP.md",
+    "kind": "最新設計/導線",
+    "sha256": "c76354bdac345d4473624f28366518fbbe201c49e14998b9e626356e336dabe8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/FLOWS_AND_STATES.md",
+    "kind": "最新設計/導線",
+    "sha256": "d030fb967cc52a861d23e0d9286091b49150f897ccb8693967716daf96a510ce",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/PREVIEW.md",
+    "kind": "最新設計/導線",
+    "sha256": "4fb6e2c4f58c8d3e5de4ae192e1eccc4d358a804556a7fb6d1792fd7cacf1ca2",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/PRODUCT_ARCHITECTURE.md",
+    "kind": "最新設計/導線",
+    "sha256": "3bdad656c83d3b77c892921bac40818ec23e6903ddae6f99c7e64d5a86422462",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/README.md",
+    "kind": "最新設計/導線",
+    "sha256": "951e5b9241cb7e1084001c72d22c89db16d7b611135bbbb6d55a114a70f5316b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/SOURCE_AND_CONFLICTS.md",
+    "kind": "最新設計/導線",
+    "sha256": "8c4f3f66c8dad4f32b759d54d95f95b37e4980590ca50931dc4fe6355736f935",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/SOURCE_BASELINE.json",
+    "kind": "最新設計/導線",
+    "sha256": "9fc75df63ecff6ed73c4adf1ece4afb4975d46fca72aa82de2c94fb8377e0301",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/UI_NAVIGATION.md",
+    "kind": "最新設計/導線",
+    "sha256": "920ddfdc91144ac9886ce72260655ff269b294ca43873646d653a71691dbc815",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/VALIDATION_AND_DECISIONS.md",
+    "kind": "最新設計/導線",
+    "sha256": "fa3e584c77e3a046b88552d56d023c049b65a885de287fe54e385e152705abe4",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/VALIDATION_REPORT.md",
+    "kind": "最新設計/導線",
+    "sha256": "ad28cb3a1c597b833e41c924977b8e04fa1cf561eb1b857d0d8cfbe7d859a88e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/contracts.d.ts",
+    "kind": "最新設計/導線",
+    "sha256": "ab44a3b81d3c2c7eccad58e1f79288408e7a58ad3263f11d4201a3b9a4982a5b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/evidence/desktop.jpg",
+    "kind": "最新設計/導線",
+    "sha256": "46d539d1275e70e13c84d0a4e2e1d96f3280fb7c069e2948329e98ff79779137",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/evidence/layout-metrics.json",
+    "kind": "最新設計/導線",
+    "sha256": "cf8b61e6431b11185e1cfa4c563a60c40151297d846ad7d5a11e3584d96f2955",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/evidence/phone.jpg",
+    "kind": "最新設計/導線",
+    "sha256": "e2ad72a5d29087a6b735ea085309778c14cb625b1c72e72c9deefc5b47784148",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/evidence/tablet.jpg",
+    "kind": "最新設計/導線",
+    "sha256": "63b5024ed89a0c21ba862b0f4ef40ce3f358f697a4f06d349a27afab20ec8999",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-architecture/validation.json",
+    "kind": "最新設計/導線",
+    "sha256": "fa705ca08209760d395028e51e68295149bf9dfb5aea9feadad3c854c27f2e7b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/COMPETITOR_RESEARCH.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "b56868dc1e9cad152ec692e25361d06f20fce5558b3bbd1a40bce875835ab0f5",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/DECISION_REGISTER.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "c4716020ccaa6771774c77f60a1505d32e8ff7be4531c015a5d709618bd9cae3",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/EXPERIENCE_INNOVATION.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "fc01a68fe1c28c797a0a7cd39a86ee5816071606a024fc133984e9a497d90dfb",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/FEATURE_MASTER_CATALOG.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "c0391055a4ab483615275c7680a4b7dcb487ab6c64eb5bf2be70fe4240a45caa",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/FINAL_PRODUCT_SCOPE.json",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "2d4957391d6791d2fa4a08fb9469f094470e01a3eda75ff477134db0482a5014",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/FINAL_PRODUCT_SPEC.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "89e782d5e5b022c3b13b1b1434a13960ebfb80e2b481ee0450d0726132915c64",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/FINAL_PRODUCT_SPEC_AUDIT.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "83419a42a6dcf6c1195e8dcfac22d61994bff6ff51e98857ee0818bbf5889e91",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/LEGACY_CATALOG_CROSSWALK.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "925ea255cf84d61effeffab73296fb621319eec98045496c2144140452b314d0",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/LEGACY_REQUIREMENTS.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "67d1e87c260661473e032af2bf74ab111c6ed1bf01d66ec093f547fbc321fc87",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/LEGACY_REQUIREMENT_CROSSWALK.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "304968a696544e6af76b49a9c3530370c37fbd735c3f9b67f4e2fe8d07949e6c",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/LEGACY_SOURCE_LEDGER.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "3167ee0559a312164c303cf02d222ab1c3d30d958aea9c4dd0d047efb3c7d186",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/NONBLOCKING_OPERATION_CONTRACTS.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "2ad93728baaba95c9484d8bb908d320bc8f9c4ff92ad32f7405cbe216bf11d86",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/PRODUCT_AUDIT.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "f0e5ef0c8614ad8ecf1e308cda7467974a344acd1bdb2f31d207f9a832fe8d8c",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/PRODUCT_INTERACTION_SPEC.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "9a23f6238bc7eb3703504885e7d39932cab3aa87966348afaa223fd1ff801b0a",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/PRODUCT_PLANNING_SUMMARY.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "e1160d330bd047f0120f6cb19589ae838443f4ec200d7b974dc5a85187665d4b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/PRODUCT_VISION.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "0530f4cd355fdf9daaa249af57dd205e06ebdcadc8c3b35ecea10327b69f0ff0",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/QUALITY_REQUIREMENTS.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "ce449fb750c60019373dd61008180de3c0235b12e26c3274f98cb62b1229d0ec",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/README.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "2bb945d07d1be439260883d2b4a898d82bffea7cde81ad0cfa5865e6b67711a8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/REQUIREMENT_TRACEABILITY.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "26afe93500c980a90fb85c29466b7c5a86b024d5fb7a7d1f55789314b1cc47b6",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/RESEARCH_SOURCES.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "407b4a0f7210a6f43fb2a286fdaee03b1a9c42e43876a087b3f8e6eb627f1dc5",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features.json",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "3648fcc8fb4f3f8745ec4c9e2c20908b4cb3579eb1fc8d7c9e527a095793724e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/A11.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "4d87c0a72ff4f9804ef6240bbe7dc1680300bd357e6704ec318f27e1a2a92700",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/AI.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "e5570dbdad3f91405b98fc7bd8cee806cb5be8fb82be2c955a2696aed01e9ac6",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/AST.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "d36b1d86232e5c0650ccdcb7c63b70c4a27bb58cff0ec293c982afb9ba9a0f2c",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/AUT.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "9be4571c9b7f4089c52d3bb9d6bc7d193dd17886d909af7f4f9fb63ececfad7e",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/BRU.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "6c0c0ab69e91050f7ae4c9d2001926c767ab1bee42d3e8171601ab8bdb667f96",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/CAN.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "dbd14b7212f4d6962f7c57be582350c792087a392c1e5acf45356eac9bee37b7",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/CLP.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "d1c3bb63ca7dd15b33a3bf98c7e096dd776b1838c5e623c0234ddac017bd88fb",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/COL.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "c73ab89c27c8481c74e99dab870240f307ce02975d9ebe31710bba74b0e605c8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/DEV.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "ef70a82ceef9119acebebac05faf1efabc6362e950ceaa44b3f8696f03629ac2",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/EXT.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "05623aa87c7d1eb235b1cac9a462c950ec1a5c4c74ff896fb736a8130abe83b5",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/FIL.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "8c20b34bb81fa1d0848746e7e4b1887d8e9aad57744c4aa1d610782aed112f07",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/FX.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "b374f138ce62325c0c1831caa44c760e218b8e689491bda1ab7fe8e55a837c93",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/GRA.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "314d4256d44d828f0799327d73d11cf2c9bbc40a545088255ca87041faddc689",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/GST.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "677fe087edce3e0d2990a6357bc07b6a410df00517fc6311cd93910c9a1e88a3",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/GUI.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "2dee08f3fc53e8b6d22e1769af6bc9bf1f1ec2a656be7b4d440853b2f46df8d8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/HIS.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "c05b2569fb85380a09ee0049cae11f3e5055c91b8025ae922590d21bf956ecf6",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/INP.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "c16b4c2977e1b5a446b39a5c65240d2fad5968d2cd40f91cd2b1a42711c06655",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/IO.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "d9f783cacd71130754039abc5ecbd8c6a07aa3b48822f2f383c65eeaaa6dc2f9",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/LAY.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "adec426d27a05fe3b4022b81624b3e0af2e39b0c5fa11c98dfb2cfc924e3851d",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/LIN.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "e9f19ad968cc964717b8f447f4e11cf0b9e31fd58187ab502310bbc2c7b342c9",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/NDE.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "02e3f82583fde86339a59711e739d6537c2c94f2f2f249623d690482a40ea4f3",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/PIX.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "0d35b47abf69d0af7760bbf3bd7545fd052b82556dbc96d750b2f90c0390a042",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/REC.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "2ec53313eb3f326a346f247c2f776956cc589c010d33dac9e0f61bffec02bb41",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/REF.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "600b067c578e82afa66af5baa0ae0d2147ab42cb47fa1f6dc11bd6162c62444d",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/SAV.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "24292b2da42e0a9f5ec62d3f629e63896274f0f6936c3a6be896a85e2a4a89f1",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/SEL.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "2dbd883365c50a14049af91b877de718010124366e3312a74eed03f969479942",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/TRN.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "26b27e431c5e4841be0bc6e9b761139fdba103be019f78d6a1498635654e32f8",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/UI.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "190cdf6d7cfb0eb49d9422cca61c30ca02f597ad871adeac0fa4fa0c9a83bdbc",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/VEC.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "07c21c4efd7a5b259b57f1f778be67a8a8547d24196e7442672d6fd9370006bb",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/features/WET.md",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "5d483b12cf06b50e7359de221e2e6755fbcd9790a97e1b6d5434aa0ef8090afa",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/legacy_catalog.json",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "460fe33d6c058af8693e4923470c57f899519743d6014a558d36470ff5b0f65d",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/legacy_requirements.json",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "4c709454e533df920009b9bb2a5864ef21db7e44c651b8f1b6493ad366d06b01",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "docs/product-planning/validation_results.json",
+    "kind": "原仕様/現行スコープ",
+    "sha256": "d269570f40ecc61a1789d937ac036c3b8cdd3f8029020e57692197d0eabe6918",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/HANDOFF_TEST.md",
+    "kind": "プロトタイプ/試験",
+    "sha256": "7b4aef2766df8f243b571cc2b8e026010be4fb6cd4cd4e0ef154914f525bfec9",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/HISTORY_PERF_FIX.md",
+    "kind": "プロトタイプ/試験",
+    "sha256": "014077bfd2980c557fd92b0e280c1c8daed6bad4da761877afa16bfd5cd0bd3a",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/HISTORY_TEST.md",
+    "kind": "プロトタイプ/試験",
+    "sha256": "a18661c1dd4aef5b82938a009fd38bf1319d4d98f962d596b6c6cb1ca179b974",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/README.md",
+    "kind": "プロトタイプ/試験",
+    "sha256": "a4309bae55dcd842b497345ad1b5704b6c1cce3f0f24b22c2f1ce3f02e0abae1",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/RESULTS.md",
+    "kind": "プロトタイプ/試験",
+    "sha256": "2410c5fa2a207b698f1888087309dbe4ca0db80c879d77b557e29d19a984bcd2",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/app.js",
+    "kind": "プロトタイプ/試験",
+    "sha256": "20d632cb26f99dc92b7b648fcb6ee5ef186cc1107c2438c5b4996637867c5573",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/check-inline.cjs",
+    "kind": "プロトタイプ/試験",
+    "sha256": "4106f5a86d88f4e67628b32cf45909c2da17b7f990ceace1b3c0889df28d0c9f",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/core.js",
+    "kind": "プロトタイプ/試験",
+    "sha256": "0ff7df870c76b385e0650da144fc57bf8413eb534fdd3cfb8b4941deb5aaf993",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/handoff.html",
+    "kind": "プロトタイプ/試験",
+    "sha256": "2e52293df975fc2a23571026aa38d1453040570ff2c29c5e65c90e5a1070b286",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/history.html",
+    "kind": "プロトタイプ/試験",
+    "sha256": "56ed38ab05b8c18df84f0e7dfffb72c815fed8e59d7f43f3df7feed758f9dc72",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/index.html",
+    "kind": "プロトタイプ/試験",
+    "sha256": "a3dcfc594bb4a988a7d99c5fd9c7280a237a4f4397886dfafcf6b0fdb0948729",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/performance-lab/tests.cjs",
+    "kind": "プロトタイプ/試験",
+    "sha256": "83f1b3edc8476c1429d41da3613afac71f8b8d34c96568605a226dbf85d00b98",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/README.md",
+    "kind": "プロトタイプ/試験",
+    "sha256": "63eb3f01d77877b61fcbf78dd18a79dcdf1f2680a7c28528622a8f0683dc9166",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/app.js",
+    "kind": "プロトタイプ/試験",
+    "sha256": "13c570eaa7db580552d335c25897d95848f8ca8358b97b3181b661f7a8f4bb66",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/index.html",
+    "kind": "プロトタイプ/試験",
+    "sha256": "f00dc068a2bf5ad3e668e5335b950f19d58c4f8ac443a810a3cab071036d751b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/model-test-results.json",
+    "kind": "プロトタイプ/試験",
+    "sha256": "6758ed93be641158c343adf12582de542389e462585228e07356c4eea89b0883",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/model.js",
+    "kind": "プロトタイプ/試験",
+    "sha256": "3f6f50396a1c18fc9a06c111f982a0f1aef9aff68bf9f09ecd4dff03d9aaa559",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/routes.js",
+    "kind": "プロトタイプ/試験",
+    "sha256": "1d418dbb2782efc2588d95ae8a49fb525115e191ae3821893aae77f1156e87c1",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/shell.html",
+    "kind": "プロトタイプ/試験",
+    "sha256": "930b7839e74382ec69c988a88e781c0f9be1f259241eeaa030cd075f0407674b",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/style.css",
+    "kind": "プロトタイプ/試験",
+    "sha256": "0da0b3558aa81269aa88e1aedd8d26993c6b4efb6082e0736396f5a3de276314",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "qa/ui-prototype/tests.cjs",
+    "kind": "プロトタイプ/試験",
+    "sha256": "03d5d057b7451cbfe2031d9d9c29ea80af45e52e5f6b642d78ba23893748fefc",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "tools/build_ui_prototype.py",
+    "kind": "開発/生成・検査",
+    "sha256": "de519ec4109f4331868ddd4a13184fc569579f7c71fbf02bbbd2faf7aed79455",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "tools/build_ui_routes.py",
+    "kind": "開発/生成・検査",
+    "sha256": "bb46165f7115d790734dd1be869b24e38b9e3981a96cecec431632743d02179f",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  },
+  {
+    "path": "tools/validate_ui_design.py",
+    "kind": "開発/生成・検査",
+    "sha256": "38a93876811beed5132cfbac24d77c8a935c9380ec95baa44def1ec55be5ea2c",
+    "authority": "主張されたPASSは監査対象。ファイルの存在を品質証明にしない"
+  }
+]

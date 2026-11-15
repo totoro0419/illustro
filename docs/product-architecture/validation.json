@@ -1,0 +1,174 @@
+{
+  "date_jst": "2026-10-31",
+  "generated_at": "2026-10-30T16:14:02.440348+00:00",
+  "kind": "static-design-audit",
+  "checks": [
+    {
+      "name": "247 IDの完全一致・重複なし",
+      "passed": true,
+      "evidence": 247
+    },
+    {
+      "name": "名称・カテゴリ・採否・元採否一致",
+      "passed": true,
+      "evidence": "FINAL_PRODUCT_SCOPEを独立パース"
+    },
+    {
+      "name": "PR #1の全ID・名称・カテゴリを保持",
+      "passed": true,
+      "evidence": "原仕様git blobとの比較"
+    },
+    {
+      "name": "234/2/10/1の採否件数",
+      "passed": true,
+      "evidence": {
+        "included": 234,
+        "included_limited": 2,
+        "deferred": 10,
+        "excluded_suite": 1
+      }
+    },
+    {
+      "name": "全30カテゴリ・12Panelへ接続",
+      "passed": true,
+      "evidence": [
+        "layers",
+        "color",
+        "brush",
+        "inspector",
+        "reference",
+        "assets",
+        "effects",
+        "navigator",
+        "history",
+        "automation",
+        "document",
+        "workspace"
+      ]
+    },
+    {
+      "name": "全件に指定された導線項目",
+      "passed": true,
+      "evidence": [
+        "primary_entry",
+        "auxiliary_entries",
+        "surface",
+        "steps",
+        "operation",
+        "parameters",
+        "while_operating",
+        "settings_change",
+        "apply_cancel",
+        "undo_unit",
+        "current_persistence",
+        "devices",
+        "discovery",
+        "related_features",
+        "architecture",
+        "evaluation"
+      ]
+    },
+    {
+      "name": "全件PC/Tablet/Phoneの手順",
+      "passed": true,
+      "evidence": "各247件"
+    },
+    {
+      "name": "全件の主入口・カテゴリ・検索を識別",
+      "passed": true,
+      "evidence": "1主＋2補助"
+    },
+    {
+      "name": "関連機能に無効IDなし",
+      "passed": true,
+      "evidence": "関連参照全件"
+    },
+    {
+      "name": "保留/対象外は説明のみ",
+      "passed": true,
+      "evidence": "236実行導線＋11範囲説明"
+    },
+    {
+      "name": "全14研究へ接続",
+      "passed": true,
+      "evidence": "既存研究対応を継承"
+    },
+    {
+      "name": "WET現行範囲を補正",
+      "passed": true,
+      "evidence": "PR #5優先"
+    },
+    {
+      "name": "CMYK/高度文字の交差能力維持",
+      "passed": true,
+      "evidence": "対応機能へ案内"
+    },
+    {
+      "name": "全件のステップ数と配列が一致",
+      "passed": true,
+      "evidence": "入口まで。制作完了手数ではない"
+    },
+    {
+      "name": "Markdown対応表に247 ID各一回",
+      "passed": true,
+      "evidence": "表行だけを独立集計"
+    },
+    {
+      "name": "原仕様の機能hash照合",
+      "passed": true,
+      "evidence": "元の全フィールドに対するSHA256"
+    },
+    {
+      "name": "基点の全155ファイルをbyte保護",
+      "passed": true,
+      "evidence": {
+        "files": 155,
+        "changed": []
+      }
+    },
+    {
+      "name": "単体HTMLの全生成箇所を置換",
+      "passed": true,
+      "evidence": "未置換markerなし"
+    },
+    {
+      "name": "外部JS/CSS依存なし",
+      "passed": true,
+      "evidence": "ローカル単体実行。外部リンクは通常のrepositoryリンクのみ"
+    },
+    {
+      "name": "試作を製品保存・画像処理と混同しない",
+      "passed": true,
+      "evidence": "UIの表示文言"
+    },
+    {
+      "name": "通常状態表示に画素演算なし",
+      "passed": true,
+      "evidence": "状態モデルは画素バッファを持たない。製品実装の保証ではない"
+    },
+    {
+      "name": "設計文書の相対リンクに欠落なし",
+      "passed": true,
+      "evidence": {
+        "count": 22,
+        "broken": []
+      }
+    }
+  ],
+  "failed_checks": [],
+  "scope": "ID/metadata/contracts/source-preservation; not usability/performance",
+  "files": {
+    "docs/product-architecture/FEATURE_ACCESS_LEDGER.json": "da1207f5fb0f850e346ebd33d5c817bf281b28540b25124cb70d814bdb3aba16",
+    "docs/product-architecture/FEATURE_ACCESS_MAP.md": "c76354bdac345d4473624f28366518fbbe201c49e14998b9e626356e336dabe8",
+    "docs/product-architecture/FLOWS_AND_STATES.md": "d030fb967cc52a861d23e0d9286091b49150f897ccb8693967716daf96a510ce",
+    "docs/product-architecture/PREVIEW.md": "4fb6e2c4f58c8d3e5de4ae192e1eccc4d358a804556a7fb6d1792fd7cacf1ca2",
+    "docs/product-architecture/PRODUCT_ARCHITECTURE.md": "3bdad656c83d3b77c892921bac40818ec23e6903ddae6f99c7e64d5a86422462",
+    "docs/product-architecture/README.md": "951e5b9241cb7e1084001c72d22c89db16d7b611135bbbb6d55a114a70f5316b",
+    "docs/product-architecture/SOURCE_AND_CONFLICTS.md": "8c4f3f66c8dad4f32b759d54d95f95b37e4980590ca50931dc4fe6355736f935",
+    "docs/product-architecture/SOURCE_BASELINE.json": "9fc75df63ecff6ed73c4adf1ece4afb4975d46fca72aa82de2c94fb8377e0301",
+    "docs/product-architecture/UI_NAVIGATION.md": "920ddfdc91144ac9886ce72260655ff269b294ca43873646d653a71691dbc815",
+    "docs/product-architecture/VALIDATION_AND_DECISIONS.md": "fa3e584c77e3a046b88552d56d023c049b65a885de287fe54e385e152705abe4",
+    "docs/product-architecture/VALIDATION_REPORT.md": "ad28cb3a1c597b833e41c924977b8e04fa1cf561eb1b857d0d8cfbe7d859a88e",
+    "docs/product-architecture/contracts.d.ts": "ab44a3b81d3c2c7eccad58e1f79288408e7a58ad3263f11d4201a3b9a4982a5b"
+  }
+}

@@ -1,0 +1,5 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>Illustro 監査用表示枠</title>
+<style>body{margin:0;background:#d9dfe7;font:14px sans-serif}header{padding:8px;background:white;display:flex;gap:6px;align-items:center}button,a{padding:8px}iframe{display:block;border:0;margin:8px auto;width:1363px;height:936px;max-width:100%}</style>
+<header><strong>原UI無改変・寸法確認</strong><button data-w="1363" data-h="936">PC</button><button data-w="1180" data-h="820">Tablet</button><button data-w="390" data-h="844">Phone</button><button data-w="320" data-h="568">320px</button><button data-w="740" data-h="360">横持ち</button><button data-w="800" data-h="600">中間幅</button><a href="../../../../qa/ui-prototype/index.html">原UIを直接開く</a></header>
+<iframe id="auditTarget" title="監査対象の原UI" src="../../../../qa/ui-prototype/index.html"></iframe>
+<script>document.querySelectorAll('button[data-w]').forEach(b=>b.onclick=()=>{const f=document.querySelector('iframe');f.style.width=b.dataset.w+'px';f.style.height=b.dataset.h+'px'});</script></html>

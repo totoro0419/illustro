@@ -1,0 +1,749 @@
+{
+  "source": "6bfc95f5e8451074234b3b8a79a423833b825153",
+  "workflowRun": 37131153403,
+  "artifactId": 11277200819,
+  "artifactSha256": "e039ba1c9638d59a91ce83fc5c60fa8baa941e6dc51fd4a6af1a5e65c566e864",
+  "backend": "webgl2",
+  "status": "GATE_FAIL",
+  "auditLimit": "Chronological arrays and recorded phase counts; capture-window timestamps not independently stored.",
+  "conditions": [
+    {
+      "repeat": 0,
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 152.73333333335677,
+      "middleP95": 169.66666666666697,
+      "endP95": 185.06666666668934,
+      "growth": 32.333333333332575,
+      "steadyGrowth": 15.400000000022374,
+      "gate": "FAIL_OR_INSUFFICIENT",
+      "sampleCounts": [
+        7,
+        6,
+        6
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 117.60000000000582
+        },
+        {
+          "gpuWorkMs": 134.10000000000582
+        },
+        {
+          "gpuWorkMs": 120.30000000001746
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 151.30000000001746
+        },
+        {
+          "gpuWorkMs": 169.10000000000582
+        },
+        {
+          "gpuWorkMs": 150
+        }
+      ]
+    },
+    {
+      "repeat": 0,
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 162.60000000000582,
+      "middleP95": 104.60000000000582,
+      "endP95": 87.83333333333394,
+      "growth": -74.76666666667188,
+      "steadyGrowth": -16.76666666667188,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        8,
+        10,
+        13
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 150.90000000002328
+        },
+        {
+          "gpuWorkMs": 149.69999999998254
+        },
+        {
+          "gpuWorkMs": 83.29999999998836
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 70.30000000001746
+        },
+        {
+          "gpuWorkMs": 68.60000000000582
+        },
+        {
+          "gpuWorkMs": 68.70000000001164
+        }
+      ]
+    },
+    {
+      "repeat": 0,
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 156,
+      "middleP95": 171.06666666666115,
+      "endP95": 169.16666666666606,
+      "growth": 13.16666666666606,
+      "steadyGrowth": -1.8999999999950887,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        6,
+        6,
+        6
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 135.39999999999418
+        },
+        {
+          "gpuWorkMs": 150.39999999999418
+        },
+        {
+          "gpuWorkMs": 131.10000000000582
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 134.10000000000582
+        },
+        {
+          "gpuWorkMs": 134
+        },
+        {
+          "gpuWorkMs": 152
+        }
+      ]
+    },
+    {
+      "repeat": 0,
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 168.86666666667816,
+      "middleP95": 117.33333333333348,
+      "endP95": 100.76666666667188,
+      "growth": -68.10000000000628,
+      "steadyGrowth": -16.566666666661604,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        7,
+        10,
+        12
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 184
+        },
+        {
+          "gpuWorkMs": 151.89999999999418
+        },
+        {
+          "gpuWorkMs": 83.30000000001746
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 36.30000000001746
+        },
+        {
+          "gpuWorkMs": 49.89999999999418
+        },
+        {
+          "gpuWorkMs": 52.39999999999418
+        }
+      ]
+    },
+    {
+      "repeat": 0,
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 150,
+      "middleP95": 117.33333333333303,
+      "endP95": 102.96666666668352,
+      "growth": -47.03333333331648,
+      "steadyGrowth": -14.366666666649508,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        7,
+        10,
+        12
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 202.10000000000582
+        },
+        {
+          "gpuWorkMs": 133.29999999998836
+        },
+        {
+          "gpuWorkMs": 85.60000000000582
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 37.10000000000582
+        },
+        {
+          "gpuWorkMs": 50.10000000000582
+        },
+        {
+          "gpuWorkMs": 52.39999999999418
+        }
+      ]
+    },
+    {
+      "repeat": 0,
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "startP95": 202.5666666666607,
+      "middleP95": 187.43333333333885,
+      "endP95": 153.43333333333976,
+      "growth": -49.133333333320934,
+      "steadyGrowth": -33.99999999999909,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        5,
+        5,
+        7
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 200.79999999998836
+        },
+        {
+          "gpuWorkMs": 183.60000000000582
+        },
+        {
+          "gpuWorkMs": 168.20000000001164
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 134.80000000001746
+        },
+        {
+          "gpuWorkMs": 133.60000000000582
+        },
+        {
+          "gpuWorkMs": 117.5
+        }
+      ]
+    },
+    {
+      "repeat": 1,
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 152.89999999999418,
+      "middleP95": 137.1333333333214,
+      "endP95": 151,
+      "growth": -1.8999999999941792,
+      "steadyGrowth": 13.866666666678611,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        7,
+        7,
+        8
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 135.20000000001164
+        },
+        {
+          "gpuWorkMs": 135.10000000000582
+        },
+        {
+          "gpuWorkMs": 118.20000000001164
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 133.40000000002328
+        },
+        {
+          "gpuWorkMs": 119.39999999999418
+        },
+        {
+          "gpuWorkMs": 117.89999999999418
+        }
+      ]
+    },
+    {
+      "repeat": 1,
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 120.0666666666607,
+      "middleP95": 88.5,
+      "endP95": 86.26666666667188,
+      "growth": -33.79999999998881,
+      "steadyGrowth": -2.233333333328119,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        10,
+        12,
+        13
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 133.29999999998836
+        },
+        {
+          "gpuWorkMs": 101.89999999999418
+        },
+        {
+          "gpuWorkMs": 68.39999999999418
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 67.5
+        },
+        {
+          "gpuWorkMs": 68.10000000000582
+        },
+        {
+          "gpuWorkMs": 68.89999999999418
+        }
+      ]
+    },
+    {
+      "repeat": 1,
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 168.30000000001746,
+      "middleP95": 167.6333333333505,
+      "endP95": 154.20000000001164,
+      "growth": -14.10000000000582,
+      "steadyGrowth": -13.433333333338851,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        6,
+        6,
+        6
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 151.30000000001746
+        },
+        {
+          "gpuWorkMs": 166.89999999999418
+        },
+        {
+          "gpuWorkMs": 138.30000000001746
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 135.70000000001164
+        },
+        {
+          "gpuWorkMs": 133.89999999999418
+        },
+        {
+          "gpuWorkMs": 134.70000000001164
+        }
+      ]
+    },
+    {
+      "repeat": 1,
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 168.46666666665487,
+      "middleP95": 114.83333333333303,
+      "endP95": 101.79999999998836,
+      "growth": -66.66666666666652,
+      "steadyGrowth": -13.033333333344672,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        8,
+        10,
+        13
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 184.80000000001746
+        },
+        {
+          "gpuWorkMs": 149.79999999998836
+        },
+        {
+          "gpuWorkMs": 83.60000000000582
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 35.80000000001746
+        },
+        {
+          "gpuWorkMs": 52.70000000001164
+        },
+        {
+          "gpuWorkMs": 54.10000000000582
+        }
+      ]
+    },
+    {
+      "repeat": 1,
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 167.36666666664905,
+      "middleP95": 105.93333333333885,
+      "endP95": 104.83333333333394,
+      "growth": -62.53333333331511,
+      "steadyGrowth": -1.1000000000049113,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        7,
+        10,
+        12
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 184.29999999998836
+        },
+        {
+          "gpuWorkMs": 151.09999999997672
+        },
+        {
+          "gpuWorkMs": 85
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 51.30000000001746
+        },
+        {
+          "gpuWorkMs": 53.60000000000582
+        },
+        {
+          "gpuWorkMs": 52
+        }
+      ]
+    },
+    {
+      "repeat": 1,
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "startP95": 187.60000000000582,
+      "middleP95": 186.20000000001164,
+      "endP95": 153.8666666666786,
+      "growth": -33.73333333332721,
+      "steadyGrowth": -32.33333333333303,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        5,
+        5,
+        7
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 219.39999999999418
+        },
+        {
+          "gpuWorkMs": 168
+        },
+        {
+          "gpuWorkMs": 166.60000000000582
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 133.89999999999418
+        },
+        {
+          "gpuWorkMs": 135.10000000000582
+        },
+        {
+          "gpuWorkMs": 117
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "brush": "foundation-pencil",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 154.03333333334513,
+      "middleP95": 136.03333333331557,
+      "endP95": 150.19999999998254,
+      "growth": -3.8333333333625887,
+      "steadyGrowth": 14.16666666666697,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        7,
+        7,
+        7
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 118.30000000001746
+        },
+        {
+          "gpuWorkMs": 137
+        },
+        {
+          "gpuWorkMs": 116.5
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 117.09999999997672
+        },
+        {
+          "gpuWorkMs": 118.90000000002328
+        },
+        {
+          "gpuWorkMs": 117.30000000004657
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "brush": "foundation-hard-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 117.33333333333348,
+      "middleP95": 89.59999999997672,
+      "endP95": 87.93333333331066,
+      "growth": -29.40000000002283,
+      "steadyGrowth": -1.6666666666660603,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        10,
+        12,
+        12
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 134.79999999998836
+        },
+        {
+          "gpuWorkMs": 101.79999999998836
+        },
+        {
+          "gpuWorkMs": 69.20000000001164
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 68.20000000001164
+        },
+        {
+          "gpuWorkMs": 66.59999999997672
+        },
+        {
+          "gpuWorkMs": 67.39999999996508
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "brush": "foundation-soft-eraser",
+      "size": 512,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 169.13333333332184,
+      "middleP95": 168.5,
+      "endP95": 165.29999999998836,
+      "growth": -3.833333333333485,
+      "steadyGrowth": -3.2000000000116415,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        6,
+        6,
+        6
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 134.5
+        },
+        {
+          "gpuWorkMs": 167.29999999998836
+        },
+        {
+          "gpuWorkMs": 133.5
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 133.29999999998836
+        },
+        {
+          "gpuWorkMs": 151.39999999996508
+        },
+        {
+          "gpuWorkMs": 135.69999999995343
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "brush": "foundation-marker",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 167.5666666666898,
+      "middleP95": 102.70000000001164,
+      "endP95": 101.59999999997672,
+      "growth": -65.96666666671308,
+      "steadyGrowth": -1.1000000000349246,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        7,
+        11,
+        12
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 183.79999999998836
+        },
+        {
+          "gpuWorkMs": 150.10000000003492
+        },
+        {
+          "gpuWorkMs": 100
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 52.199999999953434
+        },
+        {
+          "gpuWorkMs": 51.5
+        },
+        {
+          "gpuWorkMs": 50.899999999965075
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "fast-curve",
+      "inputs": 960,
+      "startP95": 166.40000000002328,
+      "middleP95": 115.70000000001164,
+      "endP95": 102.09999999997672,
+      "growth": -64.30000000004657,
+      "steadyGrowth": -13.600000000034925,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        7,
+        10,
+        12
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 184.5
+        },
+        {
+          "gpuWorkMs": 150.70000000001164
+        },
+        {
+          "gpuWorkMs": 84.69999999995343
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 50.70000000001164
+        },
+        {
+          "gpuWorkMs": 51.899999999965075
+        },
+        {
+          "gpuWorkMs": 53.199999999953434
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "brush": "fine-ink",
+      "size": 1024,
+      "hz": 240,
+      "shape": "reversal",
+      "inputs": 1200,
+      "startP95": 205.5,
+      "middleP95": 187.56666666669025,
+      "endP95": 153.16666666666697,
+      "growth": -52.33333333333303,
+      "steadyGrowth": -34.40000000002328,
+      "gate": "PASS_PROXY",
+      "sampleCounts": [
+        5,
+        5,
+        7
+      ],
+      "firstSubmission": [
+        {
+          "gpuWorkMs": 200.89999999996508
+        },
+        {
+          "gpuWorkMs": 185.19999999995343
+        },
+        {
+          "gpuWorkMs": 166.70000000001164
+        }
+      ],
+      "lastSubmission": [
+        {
+          "gpuWorkMs": 133.29999999998836
+        },
+        {
+          "gpuWorkMs": 134.79999999998836
+        },
+        {
+          "gpuWorkMs": 116.70000000001164
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "quality": "人間による実線画検査待ち",
+  "surface": "Chrome cloud browser, managed preview, exact standalone HTML served via Vite",
+  "verified": [
+    "HTML renders and controls are present",
+    "Actual pointer drags create Raster ink, followed by worker analysis",
+    "Drawing additional ink invalidates old results; reanalysis displays partition",
+    "Erase and Undo restore identical result hash 6b811006",
+    "Original, regions, overlay display switching",
+    "Click inside region selects region 1 and shows position (233,208)",
+    "Junction display toggle",
+    "Disable auxiliary cap: region count 3 to 2, hash 75e9aee2 to c4da03b2; reset returns 75e9aee2",
+    "T and endpoint-interior example worker execution: regions 4, auxiliary connections 3, hash 5236eebc",
+    "Save case produces nonempty JSON; clear and import restores notes and hash 5236eebc"
+  ],
+  "unverified": [
+    "Physical stylus pressure on user hardware",
+    "Direct file URL opening, blocked by browser environment; HTTP preview verified",
+    "Other browser engines",
+    "Screen reader and full responsive accessibility compliance",
+    "8K-scale performance",
+    "Human artistic intention and final accuracy"
+  ],
+  "environment_observations": [
+    "Cloud download event waiter timed out, but file was independently found, parsed and imported successfully",
+    "Chrome extension metadata errors observed; no application error was observed during the completed UI flows"
+  ]
+}

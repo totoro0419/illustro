@@ -2,10 +2,20 @@
   "name": "illustro",
   "private": true,
   "version": "0.0.0",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "core:typecheck": "npm --workspace @illustro/core run typecheck",
     "core:test": "npm --workspace @illustro/core run test",
-    "core:check": "npm run core:typecheck && npm run core:test"
+    "core:check": "npm run core:typecheck && npm run core:test",
+    "brush:typecheck": "npm --workspace @illustro/brush run typecheck",
+    "brush:test": "npm --workspace @illustro/brush run test",
+    "brush:build": "node prototypes/brush-rt/build.mjs",
+    "brush:regression": "node --test packages/brush-rt/test/*.test.mjs",
+    "editor:dev": "npm --workspace @illustro/editor run dev",
+    "editor:build": "npm --workspace @illustro/editor run build",
+    "prep:check": "node scripts/check-baseline.mjs"
   }
 }

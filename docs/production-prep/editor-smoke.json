@@ -1,0 +1,92 @@
+{
+  "scope": "production skeleton only; NOT complete Core Drawing Slice or physical pen acceptance",
+  "backends": [
+    {
+      "backend": "webgl2",
+      "status": "PASS",
+      "sevenBrushes": true,
+      "visibleStrokePixels": 2709,
+      "sizeSliderAndNumber": true,
+      "forceFadeToggle": true,
+      "eraserRoute": true,
+      "workspaceWidthKeyboard": true,
+      "unconnectedSaveDisabled": true,
+      "consoleErrors": []
+    },
+    {
+      "backend": "webgpu",
+      "status": "PASS",
+      "sevenBrushes": true,
+      "visibleStrokePixels": 2701,
+      "sizeSliderAndNumber": true,
+      "forceFadeToggle": true,
+      "eraserRoute": true,
+      "workspaceWidthKeyboard": true,
+      "unconnectedSaveDisabled": true,
+      "consoleErrors": []
+    }
+  ],
+  "layouts": [
+    {
+      "backend": "webgl2",
+      "width": 1024,
+      "height": 768,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgl2",
+      "width": 760,
+      "height": 700,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgl2",
+      "width": 390,
+      "height": 844,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgl2",
+      "width": 320,
+      "height": 640,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgl2",
+      "width": 740,
+      "height": 390,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgpu",
+      "width": 1024,
+      "height": 768,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgpu",
+      "width": 760,
+      "height": 700,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgpu",
+      "width": 390,
+      "height": 844,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgpu",
+      "width": 320,
+      "height": 640,
+      "horizontalOverflow": false
+    },
+    {
+      "backend": "webgpu",
+      "width": 740,
+      "height": 390,
+      "horizontalOverflow": false
+    }
+  ],
+  "status": "PASS"
+}

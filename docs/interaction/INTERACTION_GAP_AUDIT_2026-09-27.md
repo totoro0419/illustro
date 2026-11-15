@@ -1,3 +1,5 @@
+> Classification: OBSOLETE / historical evidence; valid technical principles may be reused. Current authority: `docs/IMPLEMENTATION_BASELINE.md` and `docs/CANONICAL_INDEX.json`. Old stop/PASS/candidate declarations below apply to their recorded version only.
+
 # Interaction Specification Gap Audit — 2026-09-27
 
 > **Lineart Layer reset notice (2026-10-01):** 旧 Lineart Region / Lineart-linked Coloring の評価・バックログは現在の進捗として無効。線画レイヤーとして再設計する。

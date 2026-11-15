@@ -1,0 +1,436 @@
+{
+  "checked_at_jst": "2026-10-30T07:35:40.244163+09:00",
+  "research_baseline_commit": "26423662192ed05b1d1c535cd15091f17d52d0bd",
+  "product_baseline_commit": "92daaf5ac23a015a834141f7d08275d903711404",
+  "scope": "Static documentation/source/identity/link/approval-boundary audit by same author; no product/model/benchmark execution.",
+  "check_count": 31,
+  "checks": [
+    {
+      "name": "source_matches_pr1_ledger",
+      "passed": true,
+      "evidence": {
+        "product_commit": "92daaf5ac23a015a834141f7d08275d903711404"
+      }
+    },
+    {
+      "name": "247_unique_source_and_map",
+      "passed": true,
+      "evidence": {
+        "source": 247,
+        "map": 247,
+        "unique": 247
+      }
+    },
+    {
+      "name": "exact_id_bijection",
+      "passed": true,
+      "evidence": {
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "name": "30_category_counts_match",
+      "passed": true,
+      "evidence": {
+        "CAN": 10,
+        "INP": 8,
+        "BRU": 12,
+        "WET": 7,
+        "COL": 11,
+        "FIL": 10,
+        "LIN": 8,
+        "LAY": 12,
+        "SEL": 8,
+        "TRN": 8,
+        "VEC": 8,
+        "GUI": 7,
+        "GRA": 4,
+        "FX": 45,
+        "NDE": 5,
+        "REF": 6,
+        "HIS": 6,
+        "SAV": 8,
+        "IO": 9,
+        "AST": 5,
+        "AUT": 6,
+        "UI": 8,
+        "GST": 5,
+        "DEV": 5,
+        "REC": 4,
+        "A11": 6,
+        "AI": 4,
+        "EXT": 5,
+        "CLP": 4,
+        "PIX": 3
+      }
+    },
+    {
+      "name": "all_nine_required_dimensions_and_source_values",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "all_247_original_md_sections_read_and_crosschecked",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "247_distinct_integration_judgments",
+      "passed": true,
+      "evidence": {
+        "unique": 247
+      }
+    },
+    {
+      "name": "lifecycle_and_data_fields_explicit",
+      "passed": true,
+      "evidence": "Every feature has start/update/stop and canonical/derived/disposal contracts"
+    },
+    {
+      "name": "all_14_directions_and_exact_source_hashes",
+      "passed": true,
+      "evidence": {
+        "R01": "user_approved_direction",
+        "R02": "user_proposed_direction_with_fifo_baseline",
+        "R03": "user_approved_direction",
+        "R04": "user_approved_direction",
+        "R05": "recorded_basic_direction_explicit_approval_not_asserted",
+        "R06": "user_approved_direction",
+        "R07": "user_approved_direction",
+        "R08": "user_approved_direction",
+        "R09": "user_approved_direction",
+        "R10": "recommendation_final_user_approval_unconfirmed",
+        "R11": "recommendation_and_user_idea_final_adoption_unconfirmed",
+        "R12": "user_decided_deprioritize_advanced_watercolor",
+        "R13": "user_approved_direction",
+        "R14": "user_approved_direction"
+      }
+    },
+    {
+      "name": "R10_R11_not_promoted",
+      "passed": true,
+      "evidence": "Each feature uses the same unconfirmed/recommended state for R10/R11"
+    },
+    {
+      "name": "no_individual_feature_adoption_inferred",
+      "passed": true,
+      "evidence": "Source policy retained; no implementation or benchmark status"
+    },
+    {
+      "name": "625_original_research_links_retained",
+      "passed": true,
+      "evidence": {
+        "original": 625,
+        "current": 658
+      }
+    },
+    {
+      "name": "additional_links_explained_and_ids_valid",
+      "passed": true,
+      "evidence": {
+        "additional": 33
+      }
+    },
+    {
+      "name": "dependency_ids_valid_and_related_not_promoted",
+      "passed": true,
+      "evidence": "Conditional feature/schema relationships; original related list stays separate"
+    },
+    {
+      "name": "watercolor_conflict_explicit_not_deleted",
+      "passed": true,
+      "evidence": [
+        "WET-002",
+        "WET-003",
+        "WET-004",
+        "WET-005"
+      ]
+    },
+    {
+      "name": "feature_specific_non_R_quality_retained",
+      "passed": true,
+      "evidence": "All unique source constraints and original risks retained"
+    },
+    {
+      "name": "markdown_247_ids_and_names",
+      "passed": true,
+      "evidence": {
+        "sections": 247
+      }
+    },
+    {
+      "name": "markdown_each_row_has_all_dimensions",
+      "passed": true,
+      "evidence": "All 247 human-readable rows include lifecycle stop and individual integration judgment"
+    },
+    {
+      "name": "all_91_pairs_once",
+      "passed": true,
+      "evidence": {
+        "pairs": 91
+      }
+    },
+    {
+      "name": "22_findings_and_residual_risks",
+      "passed": true,
+      "evidence": "IA01-22 with comparison/residual column and six multi-system scenarios"
+    },
+    {
+      "name": "12_system_sections_and_feature_references",
+      "passed": true,
+      "evidence": [
+        "U01",
+        "U02",
+        "U03",
+        "U04",
+        "U05",
+        "U06",
+        "U07",
+        "U08",
+        "U09",
+        "U10",
+        "U11",
+        "U12"
+      ]
+    },
+    {
+      "name": "18_open_decisions_and_feature_references",
+      "passed": true,
+      "evidence": [
+        "D01",
+        "D02",
+        "D03",
+        "D04",
+        "D05",
+        "D06",
+        "D07",
+        "D08",
+        "D09",
+        "D10",
+        "D11",
+        "D12",
+        "D13",
+        "D14",
+        "D15",
+        "D16",
+        "D17",
+        "D18"
+      ]
+    },
+    {
+      "name": "four_approval_topics_separate_from_evidence",
+      "passed": true,
+      "evidence": "D01/D02/D03/D05 recorded without re-opening already approved high-level policy"
+    },
+    {
+      "name": "critical_cross_flow_contracts_present",
+      "passed": true,
+      "evidence": "Save-after-Undo, strict FIFO, erase/Mask preview, atomic presentation, budget deadlock, device loss, inverse ambiguity, staged I/O"
+    },
+    {
+      "name": "all_protected_sources_byte_identical",
+      "passed": true,
+      "evidence": {
+        "protected_files": 119,
+        "changed": []
+      }
+    },
+    {
+      "name": "historical_bodies_preserved_and_current_entry_added",
+      "passed": true,
+      "evidence": "Only current-reading prefixes added, no historical body removed"
+    },
+    {
+      "name": "documentation_only_scope",
+      "passed": true,
+      "evidence": [
+        "docs/performance-research/AI_INDEPENDENT_PROPOSALS.md",
+        "docs/performance-research/AUDIT.md",
+        "docs/performance-research/CANDIDATE_DESIGN.md",
+        "docs/performance-research/DECISIONS.md",
+        "docs/performance-research/FEATURE_INTEGRATION_MAP.md",
+        "docs/performance-research/FEATURE_PROBLEM_MAP.md",
+        "docs/performance-research/INTEGRATION_AUDIT.md",
+        "docs/performance-research/INTEGRATION_FINAL_REVIEW.md",
+        "docs/performance-research/OPEN_DECISIONS.md",
+        "docs/performance-research/README.md",
+        "docs/performance-research/REQUIREMENT_CROSSWALK.md",
+        "docs/performance-research/ROADMAP.md",
+        "docs/performance-research/ROOT_PROBLEMS.md",
+        "docs/performance-research/UNIFIED_SYSTEM_DESIGN.md",
+        "docs/performance-research/USER_RESEARCH_CARDS.md",
+        "docs/performance-research/VALIDATION_PLAN.md",
+        "docs/performance-research/feature_integration.json",
+        "docs/performance-research/integration_pairs.json",
+        "docs/performance-research/integration_validation.json",
+        "docs/performance-research/validate_integration.py"
+      ]
+    },
+    {
+      "name": "all_research_relative_links_and_anchors",
+      "passed": true,
+      "evidence": {
+        "checked": 5676,
+        "broken": []
+      }
+    },
+    {
+      "name": "all_research_json_parse",
+      "passed": true,
+      "evidence": []
+    },
+    {
+      "name": "git_diff_whitespace",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "name": "completion_limits_and_review_evidence_explicit",
+      "passed": true,
+      "evidence": "Conditional design handoff with major local approval boundaries, not empirical acceptance"
+    }
+  ],
+  "failed_checks": [],
+  "counts": {
+    "features": 247,
+    "categories": 30,
+    "research_directions": 14,
+    "pairs": 91,
+    "research_links": 658,
+    "additional_links": 33,
+    "internal_links": 5676,
+    "protected_source_files": 119
+  },
+  "source_sha256": {
+    "README.md": "b138979f6c65dfbf5484d4fe13d1ed97139f3609190ca6d10efae35b65f66729",
+    "docs/DEVELOPMENT_PROCESS.md": "4eb5a60e073b6e27d5824215857eb128d7c28334085dd2ed70227d84db0720d9",
+    "docs/PRODUCT_VISION.md": "20f72eaa59cfe0d285900653dbcc855ef47c108496143b3244d37f9cedb0e2b4",
+    "docs/performance-research/COMPETITIVE_COMPARISON.md": "231c6239c5834573956960e9ac90912cc46d0c756800902a63d53753a91865e0",
+    "docs/performance-research/EXPERIMENT_RESULTS.md": "8b4e61d2ee63c88968f307dc415df0918d9be8b4fcd1c5752d0ab80c63e9d654",
+    "docs/performance-research/R01_USER_DIRECTION.md": "87c1d0bd2e1f5de7e614a75d7b8b5e0db9b39a5fc60dd7cf1b99ef374f13d99e",
+    "docs/performance-research/R02_USER_DIRECTION.md": "03aa8cfbbb40984a7bcb11330af24179298a203618b8ec97e43c4aa34ee0830f",
+    "docs/performance-research/R03_DESIGN_DECISION.md": "b3eedeb6bd9f7713d080458f1e4913cb7aac0ebe22e83511e087e0e4927ecb41",
+    "docs/performance-research/R03_EXPERIMENT_PILOT.md": "da99214444816cef841e754976ada0316704ce9695b9fc7704a5f64124996a18",
+    "docs/performance-research/R03_MAJOR_APPS_REVIEW.md": "9450bdb79ed909d725e17b7df81596d8db405ccdd1f93adf2f73fd951a9a64ab",
+    "docs/performance-research/R03_USER_IDEA.md": "3936c1538435b875932eb14a25cfd2bdd8431acf7be713ee213632a04d15847b",
+    "docs/performance-research/R04_USER_IDEA.md": "be272179656796f3b3061c931a9c08044ebec0a498b7ed67b30090be745977e8",
+    "docs/performance-research/R05_DESIGN_DIRECTION.md": "a2f71bfeac6faa378a65190f3c5ba209c96d2f4c7bacdf83c683a18c1eb70b3e",
+    "docs/performance-research/R06_DESIGN_DIRECTION.md": "dd263112e7a8c034106a4251d9f8cdf0dc6955d2476dd7f18ff1716681174989",
+    "docs/performance-research/R07_DESIGN_DIRECTION.md": "6ba8505d1361bec7a06076b73ac6c79e62d89bbed1fd27955ea9a757e9d6b985",
+    "docs/performance-research/R08_DESIGN_DIRECTION.md": "7feeabb7fe8807fa478ae398c7206c0712b8de979450d96cbd912a6806cf1528",
+    "docs/performance-research/R09_DESIGN_DIRECTION.md": "3a927b4b0d161f5ec27af3dd9b559dd5f3d16e56aa20d9cf5a68a0b0f201f774",
+    "docs/performance-research/R10_DESIGN_DIRECTION.md": "d735086e893f9abd4258770b23e883528186e7afe3197b988b0515f7244d1776",
+    "docs/performance-research/R11_DESIGN_DIRECTION.md": "fa00d29d186eed8d8ebf06a144971e97b2afde3c7440f1844e30558bc7671a5c",
+    "docs/performance-research/R12_DESIGN_DIRECTION.md": "6c85b7747e89b737d47beb2fcd5286ce9d91917f21fee07ca4ae271e8736cba3",
+    "docs/performance-research/R13_DESIGN_DIRECTION.md": "a8a73acd318a3ca4221c330a348d94f4bd9ea1c186f790ad7e12d54a5992e2f0",
+    "docs/performance-research/R14_DESIGN_DIRECTION.md": "3d3ac00e9223bb9cf57c78fd8fcbb2379e8e863e1bf9963745f18d9c09f3c3e4",
+    "docs/performance-research/SOURCES.md": "bbe2c1df4b935eef9e0d2ca5236cd2c8e23b292a45eaceebf51475c0103eef4c",
+    "docs/performance-research/baseline_manifest.json": "47b70df7068053d7aa46050d48e08a54c819b75aa64a08c4437d0c689d96779a",
+    "docs/performance-research/build_decisions.py": "5faf869b9aefcc158ffff3b36c2be53dfc43c313ed0da8635c2c552163b21fe0",
+    "docs/performance-research/build_indexes.py": "425688a1dd63181dfb691d79fb0b875cf15eedb17b01fdf1717cfaff8ceb2a74",
+    "docs/performance-research/candidate_decisions.json": "6d562d12f7fee43dcfb4c436abdfdce428bdbfccbb6e11680a6f00ec40491966",
+    "docs/performance-research/card_content.json": "3f8a6b831a209bfbe633afbcda1412520427ac10b0739da36dea58dd7232d6c8",
+    "docs/performance-research/experiments/results.json": "62fe63730ec7a279819cf5975b1046b80aa9ff1712e8942144657c6626e0d393",
+    "docs/performance-research/experiments/run_models.py": "16d6af0660efce232f2528281c6afe3f15341844354a15e04c83c52eb612dc67",
+    "docs/performance-research/experiments/storage_fault_model.py": "6a1711eaeba912ce0dc7590e5e58e964547bd58da0dc5eebc4b3bd4a93916a6e",
+    "docs/performance-research/experiments/storage_results.json": "0ca9fa5a8d9fb119f8ca9f21707bf3534236672488f2de9de96a2e5cf986b66b",
+    "docs/performance-research/feature_notes.tsv": "622feee2081a86a1113082f7856194b436276ab17b50df8da8263ef322447b8b",
+    "docs/performance-research/features/A11.md": "9fef00d863ae5058d373af0cc8698459d4822d9fdc771543a877d37823c44c13",
+    "docs/performance-research/features/AI.md": "72733528c1852cddfe7b93c83e051a8e85e8b6d167c752de7c9637537582ae04",
+    "docs/performance-research/features/AST.md": "bab69bd6e5b3759fc2ec4c9ba23c0b401eb19da686bc3299837f597d7f6709d3",
+    "docs/performance-research/features/AUT.md": "3580e19407b6bae957306fdbf826c1b8ff66589c4c5257e10e16ca40a094eda7",
+    "docs/performance-research/features/BRU.md": "91314805e5d1539dae528afb1304df582488c70fd4b9f64543f9f9d848c8cf61",
+    "docs/performance-research/features/CAN.md": "8b6ca71b375eecb037b3b71f94a8bc86a8a4617ae362f9b378daa2ee495e5c6d",
+    "docs/performance-research/features/CLP.md": "de0953090c67cf0782fff0d04f06241bcc086a46ad3dd34bf9c65c8caafe03b5",
+    "docs/performance-research/features/COL.md": "7f90e845f773d3b0595e81d6489be54e3f44bf18c9e4ec30f881ff338fa4612e",
+    "docs/performance-research/features/DEV.md": "4908edc588a6ebc3d7625dddec6fab2f0c2c82401fe9ff46a785dafe4f647207",
+    "docs/performance-research/features/EXT.md": "0a92402d6b6dfeb96087f9de5f0ef3f9a6e0df458d1ba0617536bc229d038d5e",
+    "docs/performance-research/features/FIL.md": "4755774a7515055aa8930ca2fbe10a6ed81f310c4aac1fd740c1cf17074637f5",
+    "docs/performance-research/features/FX.md": "aa7f1460e9a80873006bcc3d3d13a0359e0b25fa71bfc83ffc2619f7a726a69e",
+    "docs/performance-research/features/GRA.md": "01b8d0313bdd87bddb5a84f0102b5922e852a624d401e09c14968ed9863ed0d2",
+    "docs/performance-research/features/GST.md": "f1c031f40e554f81b4f5bea7f2143962146a50a103b00fdc192d83f041ec24c6",
+    "docs/performance-research/features/GUI.md": "27e2afc1ac9c209cb1236d4f3c7ccf6793181a0699a97d45cf1950f751f26b75",
+    "docs/performance-research/features/HIS.md": "12f707bbc1b404178ea462efc6ee8f31b775dea9f18a22b1ad40ce21668de42a",
+    "docs/performance-research/features/INP.md": "c6826396ab27ae50227d6e80d63a727bef8ef841bb644acfddf00ddb438bd07d",
+    "docs/performance-research/features/IO.md": "d0ec94d9495429149d1aa6b2d5bcf7916fe7bcdc24a977976db697723d367790",
+    "docs/performance-research/features/LAY.md": "49a2632d1449aaa766a943c1ea0bad1ab989ca952be220616e1de28ad937ef54",
+    "docs/performance-research/features/LIN.md": "18f016a26b29e0b791f6782add721389bd308eccf5bd083c1539beb7bf2b7024",
+    "docs/performance-research/features/NDE.md": "38058bd374881b40a6ae254c2c3dc35a3766cac5aff30cd77bfa493da004ab22",
+    "docs/performance-research/features/PIX.md": "48fe40c2d564862f1c7b5f1f7f664d081a9ff1ad52407bdd1cfce081ee9cfa50",
+    "docs/performance-research/features/REC.md": "69ca239da06c3cb2fe5f093cd76222829dea068b90d36d21e4671771a93eed31",
+    "docs/performance-research/features/REF.md": "d06ad0ccab08a0d40ffe6843d079bd6ee7ad214e6b49e1e92270c3ce2977a5b9",
+    "docs/performance-research/features/SAV.md": "304581291b14d73e99e8579fe4bed9ccf1fb1f268c14bba2d106b20fb0b7685a",
+    "docs/performance-research/features/SEL.md": "352deab38cb8ded805f3a09cb694c805f6a970f4e8b4ac1361597d4545d07d57",
+    "docs/performance-research/features/TRN.md": "2f0c3b2c5abf04fe6f2e1d126f1ab9542c6841723240c724e89f4c05f8582a11",
+    "docs/performance-research/features/UI.md": "7e65b8f2ae4661df5c4d79a8891800a83820ce97972e7852a3dffebf795a2693",
+    "docs/performance-research/features/VEC.md": "3ac283332b88be9872a79c994545d8a46e7b4e0badb3f45b0e78dd49a150849b",
+    "docs/performance-research/features/WET.md": "3d9924a257c66b6f1bf1b0d2f1617d280499c26cdac94d8726b078fb9d87b893",
+    "docs/performance-research/problem_map.json": "955288bdfd5c982574df9e249755a89ba8915b689a3d8c95f96da35df22e6a8f",
+    "docs/performance-research/root_coverage.json": "3344ee5d3c162d12dae8c7eeaaf7a6fad4b552f7f2ff013f54b69c9102d1c668",
+    "docs/performance-research/roots.json": "5f08b28d18dfc0ce23abcdfdbf05bea670a7c544ec6a4eb782f33c89d336ea48",
+    "docs/performance-research/validate_research.py": "0728623dee2e9f158ac5d901cb2b62f1a8c6e18f8231c770180a458bfe20ff40",
+    "docs/performance-research/validation_results.json": "77d029e25b1ccb15b3d549d5c9c2e13a0a8067c8998d6bd545db21a5b2c0d51a",
+    "docs/product-planning/COMPETITOR_RESEARCH.md": "b56868dc1e9cad152ec692e25361d06f20fce5558b3bbd1a40bce875835ab0f5",
+    "docs/product-planning/DECISION_REGISTER.md": "5f7fec933eb941635555611d74baa93ee0b47b921e5aa06af1c6c7b7e2ea82bd",
+    "docs/product-planning/EXPERIENCE_INNOVATION.md": "fc01a68fe1c28c797a0a7cd39a86ee5816071606a024fc133984e9a497d90dfb",
+    "docs/product-planning/FEATURE_MASTER_CATALOG.md": "5e5b3c0510dce62b56f65ea2776836cf15f8e6eaf5703740f0ccafd480a557c0",
+    "docs/product-planning/LEGACY_CATALOG_CROSSWALK.md": "925ea255cf84d61effeffab73296fb621319eec98045496c2144140452b314d0",
+    "docs/product-planning/LEGACY_REQUIREMENTS.md": "67d1e87c260661473e032af2bf74ab111c6ed1bf01d66ec093f547fbc321fc87",
+    "docs/product-planning/LEGACY_REQUIREMENT_CROSSWALK.md": "304968a696544e6af76b49a9c3530370c37fbd735c3f9b67f4e2fe8d07949e6c",
+    "docs/product-planning/LEGACY_SOURCE_LEDGER.md": "3167ee0559a312164c303cf02d222ab1c3d30d958aea9c4dd0d047efb3c7d186",
+    "docs/product-planning/NONBLOCKING_OPERATION_CONTRACTS.md": "2ad93728baaba95c9484d8bb908d320bc8f9c4ff92ad32f7405cbe216bf11d86",
+    "docs/product-planning/PRODUCT_AUDIT.md": "f0e5ef0c8614ad8ecf1e308cda7467974a344acd1bdb2f31d207f9a832fe8d8c",
+    "docs/product-planning/PRODUCT_INTERACTION_SPEC.md": "94d4b452bfdfc354b5f4e4a97416181ecfe6d6c935a88a5431fbc42186af26ce",
+    "docs/product-planning/PRODUCT_PLANNING_SUMMARY.md": "e1160d330bd047f0120f6cb19589ae838443f4ec200d7b974dc5a85187665d4b",
+    "docs/product-planning/PRODUCT_VISION.md": "0530f4cd355fdf9daaa249af57dd205e06ebdcadc8c3b35ecea10327b69f0ff0",
+    "docs/product-planning/QUALITY_REQUIREMENTS.md": "ce449fb750c60019373dd61008180de3c0235b12e26c3274f98cb62b1229d0ec",
+    "docs/product-planning/README.md": "544516619bfa2d3842046f217bbbaebe3065e240ccfff29f9b6ade335159bd47",
+    "docs/product-planning/REQUIREMENT_TRACEABILITY.md": "26afe93500c980a90fb85c29466b7c5a86b024d5fb7a7d1f55789314b1cc47b6",
+    "docs/product-planning/RESEARCH_SOURCES.md": "407b4a0f7210a6f43fb2a286fdaee03b1a9c42e43876a087b3f8e6eb627f1dc5",
+    "docs/product-planning/features.json": "3648fcc8fb4f3f8745ec4c9e2c20908b4cb3579eb1fc8d7c9e527a095793724e",
+    "docs/product-planning/features/A11.md": "4d87c0a72ff4f9804ef6240bbe7dc1680300bd357e6704ec318f27e1a2a92700",
+    "docs/product-planning/features/AI.md": "e5570dbdad3f91405b98fc7bd8cee806cb5be8fb82be2c955a2696aed01e9ac6",
+    "docs/product-planning/features/AST.md": "d36b1d86232e5c0650ccdcb7c63b70c4a27bb58cff0ec293c982afb9ba9a0f2c",
+    "docs/product-planning/features/AUT.md": "9be4571c9b7f4089c52d3bb9d6bc7d193dd17886d909af7f4f9fb63ececfad7e",
+    "docs/product-planning/features/BRU.md": "6c0c0ab69e91050f7ae4c9d2001926c767ab1bee42d3e8171601ab8bdb667f96",
+    "docs/product-planning/features/CAN.md": "dbd14b7212f4d6962f7c57be582350c792087a392c1e5acf45356eac9bee37b7",
+    "docs/product-planning/features/CLP.md": "d1c3bb63ca7dd15b33a3bf98c7e096dd776b1838c5e623c0234ddac017bd88fb",
+    "docs/product-planning/features/COL.md": "c73ab89c27c8481c74e99dab870240f307ce02975d9ebe31710bba74b0e605c8",
+    "docs/product-planning/features/DEV.md": "ef70a82ceef9119acebebac05faf1efabc6362e950ceaa44b3f8696f03629ac2",
+    "docs/product-planning/features/EXT.md": "05623aa87c7d1eb235b1cac9a462c950ec1a5c4c74ff896fb736a8130abe83b5",
+    "docs/product-planning/features/FIL.md": "8c20b34bb81fa1d0848746e7e4b1887d8e9aad57744c4aa1d610782aed112f07",
+    "docs/product-planning/features/FX.md": "b374f138ce62325c0c1831caa44c760e218b8e689491bda1ab7fe8e55a837c93",
+    "docs/product-planning/features/GRA.md": "314d4256d44d828f0799327d73d11cf2c9bbc40a545088255ca87041faddc689",
+    "docs/product-planning/features/GST.md": "677fe087edce3e0d2990a6357bc07b6a410df00517fc6311cd93910c9a1e88a3",
+    "docs/product-planning/features/GUI.md": "2dee08f3fc53e8b6d22e1769af6bc9bf1f1ec2a656be7b4d440853b2f46df8d8",
+    "docs/product-planning/features/HIS.md": "c05b2569fb85380a09ee0049cae11f3e5055c91b8025ae922590d21bf956ecf6",
+    "docs/product-planning/features/INP.md": "c16b4c2977e1b5a446b39a5c65240d2fad5968d2cd40f91cd2b1a42711c06655",
+    "docs/product-planning/features/IO.md": "d9f783cacd71130754039abc5ecbd8c6a07aa3b48822f2f383c65eeaaa6dc2f9",
+    "docs/product-planning/features/LAY.md": "adec426d27a05fe3b4022b81624b3e0af2e39b0c5fa11c98dfb2cfc924e3851d",
+    "docs/product-planning/features/LIN.md": "e9f19ad968cc964717b8f447f4e11cf0b9e31fd58187ab502310bbc2c7b342c9",
+    "docs/product-planning/features/NDE.md": "02e3f82583fde86339a59711e739d6537c2c94f2f2f249623d690482a40ea4f3",
+    "docs/product-planning/features/PIX.md": "0d35b47abf69d0af7760bbf3bd7545fd052b82556dbc96d750b2f90c0390a042",
+    "docs/product-planning/features/REC.md": "2ec53313eb3f326a346f247c2f776956cc589c010d33dac9e0f61bffec02bb41",
+    "docs/product-planning/features/REF.md": "600b067c578e82afa66af5baa0ae0d2147ab42cb47fa1f6dc11bd6162c62444d",
+    "docs/product-planning/features/SAV.md": "24292b2da42e0a9f5ec62d3f629e63896274f0f6936c3a6be896a85e2a4a89f1",
+    "docs/product-planning/features/SEL.md": "2dbd883365c50a14049af91b877de718010124366e3312a74eed03f969479942",
+    "docs/product-planning/features/TRN.md": "26b27e431c5e4841be0bc6e9b761139fdba103be019f78d6a1498635654e32f8",
+    "docs/product-planning/features/UI.md": "190cdf6d7cfb0eb49d9422cca61c30ca02f597ad871adeac0fa4fa0c9a83bdbc",
+    "docs/product-planning/features/VEC.md": "07c21c4efd7a5b259b57f1f778be67a8a8547d24196e7442672d6fd9370006bb",
+    "docs/product-planning/features/WET.md": "5d483b12cf06b50e7359de221e2e6755fbcd9790a97e1b6d5434aa0ef8090afa",
+    "docs/product-planning/legacy_catalog.json": "460fe33d6c058af8693e4923470c57f899519743d6014a558d36470ff5b0f65d",
+    "docs/product-planning/legacy_requirements.json": "4c709454e533df920009b9bb2a5864ef21db7e44c651b8f1b6493ad366d06b01",
+    "docs/product-planning/validation_results.json": "d269570f40ecc61a1789d937ac036c3b8cdd3f8029020e57692197d0eabe6918"
+  },
+  "artifact_sha256": {
+    "docs/performance-research/FEATURE_INTEGRATION_MAP.md": "632cb3d3b2a715c630684d319dc9e79744af3bfce6e6ac4dcd6c5fc40e1e9675",
+    "docs/performance-research/INTEGRATION_AUDIT.md": "377c8b7a787cc072d8313448a16e33deb6ce495f327f7018f52a2fee5962cee4",
+    "docs/performance-research/INTEGRATION_FINAL_REVIEW.md": "ebbe9ba34dcbb90419ae6371579a34679c5ff030c731dee282ca49ce21940549",
+    "docs/performance-research/OPEN_DECISIONS.md": "f936fbda5b29bc853c9a3423eb82b6aa11936d5a807d3c2f522512388b012310",
+    "docs/performance-research/UNIFIED_SYSTEM_DESIGN.md": "cac5672f9972081a02a6383a244266798ff670c93f46fcec5edc64fab146a2f8",
+    "docs/performance-research/feature_integration.json": "bf821dc3a2268feda4f9f67fef330306f453b6d6fe14fb4b22efcc75d1c14ac8",
+    "docs/performance-research/integration_pairs.json": "1479d1fa2f620cdd9084b58bb6159f6bfb11016febaef0495d9e14992105c0da",
+    "docs/performance-research/validate_integration.py": "555b0fd41f95447fedc6f5d6fd1274494737e36cede0b5fa60000fa4df3d4d3e"
+  }
+}

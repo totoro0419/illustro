@@ -1,0 +1,62 @@
+> 2026-11-01現行：今回の通常経路/全標的/同課題3配置比較は [残5件の対応表](STAGE3_UI_REMEDIATION_5.md) と最新HEADのCI artifactを参照。Cの細部は今回の自律選択権限で設計採用し、実利用者/実指の受入未実施を別管理する。以前の個別承認待ち表現を作業停止の理由にしない。
+
+# 第③段階 UI/UXと操作検証
+
+**製品完成/正式UI承認ではない。** Aurora明色・黄橙accent・左Rail・右可変Workspace・中央Canvas・Layer Page・Quickを維持。
+
+## 実修正
+
+- 固定/Quick/検索/Context/キーは常に作品Undo。候補UndoはSession帯に限定。Session中の別層筆と候補取消を検査。
+- Layer構造/目/合成/Undo/模擬保存は同じ正本を参照。選択だけでvisibilityが戻らず、隠したLayerの試筆も非表示。
+- Focus中でも色/層の一時Panelを表示し、閉じるとFocusへ。2026-11-01にFocus維持のAを本人が採用。標準配置へ強制復帰するBは製品方針として不採用。
+- SheetとSessionの占有高さをResizeObserverで共有。スマホは重複する作品Undo/Redoを下部固定帯へ集約し、候補Undo/取消/適用を優先。rem文字、coarse主要標的44pxを導入。
+- SV面はpointer/arrow操作、native色相range、現在色と背景gradientを同期。色管理本体ではない。
+- 二指は重心アンカーを補正。反転/回転を含む再投影誤差をDOMで検査。実物ペン/指は未実施。
+- 無関係syncで描線path DOMを再生成しない。新規模擬文書、ページ内模擬Save/再読込、Export形式選択と確認表示を追加。
+
+## 残存UI監査5件への第③段階追加修正（2026-11-01）
+
+[修正・検証・未確認の対応表](STAGE3_UI_REMEDIATION_5.md) を追加。制作目的検索4例と優先順位付き別名、3非作品scopeの明示Undo/Redo（試筆パッド・資料・作品管理）、中間幅420pxのCanvas列下限、coarse標的44pxの補強を試作へ実装。既知ID988経路とは別にカテゴリ既知247経路を測定する自動検査を追加。実利用者の発見性・作用先理解・実指誤タップは未試験なので監査5件は未閉鎖を維持する。
+
+## 8制作フロー
+
+| フロー | 操作検証 | 未実装/未検証 |
+|---|---|---|
+| 新規→最初の筆 | 模擬文書1層作成→試筆path | 正式寸法/ICC/筆エンジン |
+| ラフ→線画→着色 | 層選択/追加/目/Undo/試筆可視性 | 実レイヤー画素のGPU合成 |
+| 筆・色・サイズ | Rail/サイズ/色相/SV/キー | 筆圧/高品質筆/広色域色選択 |
+| 線画参照Fill | 参照と対象の候補設定→Fill詳細 | 2D閉領域Fill本体 |
+| Selection→Transform→Undo→再編集 | 候補・独立別層筆・作品/候補Undo・取消 | 正式選択Mask/Warp/画像ハンドル |
+| 非破壊Effect | 候補入力→適用→作品Undo | Effect正式画素/cache |
+| Save→中断→再開 | 保存要求版固定→別操作→ページ内模擬再読込 | 永続Native/OS終了/再起動 |
+| Export | PNG/JPEG/WebP選択→要求確認 | 実画像生成/ICC埋込 |
+
+## 証拠と端末の区別
+
+`stage3-browser-tests.cjs` 11件、`final-browser-tests.cjs`（最終版32件をCIで実行・成功）、`catalog-browser-tests.cjs` 247×4開始状態=988既知ID詳細導線。通常/閉Workspace/Focus/390pxから実DOMを操作。保留/対象外には実行開始ボタンがないことも照合する。IDを知っている試験なので初見発見率ではない。
+
+幅/高さ：320×568、390×844、740×360、760×600、800×600、960×700、1180×820、820×1180。追加で320px文字200%、390×420/740×280のキーボード相当geometry。実OSキーボードやAndroid/iPad/Windows実機の試験ではない。DOM中心hit、focus、Canvas寸法、合成touchを検査。読上げ実機、OSgesture、筆圧/傾き、実指誤タップ、初見探索時間は未確認。
+
+旧PR7に同じ期待を実行し失敗を確認。ただし旧版に存在しない新要素の不在も含むため、before失敗数を不具合件数と同一視しない。
+
+## プレビューと公開
+
+- 元Pages失敗の原因：`github-pages` Environmentが設計ブランチのデプロイを拒否。Actions [41192510066](https://github.com/totoro0419/illustro/actions/runs/41192510066)のAnnotationsで確認。artifactやビルド開始後の失敗ではなく、runner前の保護規則。権限・保護ルールは変更しない。
+- [別のレビュー用プレビュー](https://illustro-stage3-review-c2c1.ibukioike2009.chatgpt.site/)をSitesへowner-privateで配置。既存Performance Labを変更しない。デプロイの成功と操作確認は別：クラウドブラウザーではログイン要求を確認し、デプロイ版の操作は未確認。ローカル管理プレビューでは実表示・操作を確認済み。
+- GitHub上の単体HTMLも保持。HTMLは画像処理・永続保存を実装済みと表示しない。
+
+判断状況は [Focus・Undoの正式決定とibisPaint参照C案](UI_DECISION_PROPOSALS.md)、調査根拠は [ibisPaintスマホ横画面比較](IBISPAINT_PHONE_LANDSCAPE_REFERENCE.md) を参照。**FocusとUndoのAは本人承認済み、横持ちスマホだけが未承認**として扱う。
+
+## UI判断の状態（Focus・Undo A採用、横持ちスマホ1件未承認）
+
+| 判断 | 比較するもの | 確認方法 |
+|---|---|---|
+| FocusのPanel【A採用済】 | Focusを維持し一時Panelを開く。閉じたらFocusへ復帰。標準配置への暗黙復帰は不採用 | Focus→Quickの色/層→閉じる/Escape→Focus継続の回帰検査（実機は未評価） |
+| Undoの提示【A採用済】 | 作品Undo/Redoを固定し、候補Undo/RedoはSession帯、試筆/資料/作品管理も専用Undo/Redo。作用先の自動変更は不採用 | 変形候補→別層へ筆→作品Undo→候補Undo/Redo→取消（実ユーザーの作用先理解は未検証） |
+| 横持ちスマホ帯【ibisPaint参照C案を試作】 | 下部コンパクト操作バー、ツール選択Popup、右側一時Panel、候補Undo/Redoの別帯。左Railは横画面だけ非表示 | 740×360のPopup/Layer/設定/候補帯と390×844縦画面のDOM回帰。寸法案の本人承認・実指評価は未実施 |
+
+## 確定した製品意味（実操作UX試験とは区別）
+
+2026-11-01の対話で、旧Transformだけを再編集した場合でも後から描いた線・消去領域・確定混色の位置をDocument座標に固定する判断に本人が同意。後段も含め移動するときは新たな明示Transformを使う。演算の限定CPU参照は [AUD006](AUD006_WARP_REFERENCE_REVIEW.md)。これは画面上の表示方法、実機の操作性や初見利用者の検証まで承認した意味ではない。
+
+ユーザー本人のその他のUI承認や初見試験をAIで代行しない。技術的な資源・保存・版チェックは上の好み確認へ丸投げしない。

@@ -1,0 +1,80 @@
+{
+  "target": "fc14afdde2d25ee61e2f05e4d89a387ab5ca3c04",
+  "checks": [
+    {
+      "id": "M01",
+      "name": "Same Undo intent through fixed versus search/apply",
+      "expected": "both have zero operations",
+      "fixed": [],
+      "search": [
+        "A",
+        "Undo・Redo"
+      ],
+      "contractHolds": false
+    },
+    {
+      "id": "M02",
+      "name": "A setting dialog consumes the global Undo entry",
+      "expected": "global Undo remains available separately",
+      "session": "COL-001",
+      "sessionUndoDepth": 0,
+      "before": 1,
+      "after": 1,
+      "contractHolds": false,
+      "qualification": "UI binds every Undo to the session; the model has a private global=true escape that UI does not expose"
+    },
+    {
+      "id": "M03",
+      "name": "Save fence stays fixed across Undo and new branch",
+      "expected": "save includes A, current contains C",
+      "save": [
+        1
+      ],
+      "current": [
+        "C"
+      ],
+      "contractHolds": true
+    },
+    {
+      "id": "M04",
+      "name": "Session cancellation preserves independent C",
+      "expected": "C remains",
+      "current": [
+        "C"
+      ],
+      "contractHolds": true
+    },
+    {
+      "id": "M05",
+      "name": "Off-center pinch invariant under implemented equations",
+      "origin": 500,
+      "centroid": 700,
+      "ratio": 2,
+      "actual": 900,
+      "expected": 700,
+      "errorPx": 200,
+      "neededTranslation": -200,
+      "contractHolds": false,
+      "qualification": "mathematical counterexample to code, not a real touch-device trial"
+    },
+    {
+      "id": "M06",
+      "name": "RGBA source-over cannot implement erase postPaint",
+      "baseAlpha": 1,
+      "overlayAlpha": 0,
+      "sourceOverAlpha": 1,
+      "expectedEraseAlpha": 0,
+      "contractHolds": false,
+      "qualification": "counterexample only to naive RGBA overlay; the design has not selected that implementation. Requires an erase operator/mask/replacement contract"
+    },
+    {
+      "id": "M07",
+      "name": "One dense 8192-square RGBA16 surface",
+      "bytes": 536870912,
+      "MiB": 512,
+      "fiveSurfacesMiB": 2560,
+      "qualification": "capacity arithmetic, not measured memory; sparse residency may be much smaller",
+      "contractHolds": true
+    }
+  ]
+}

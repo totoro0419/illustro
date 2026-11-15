@@ -1,0 +1,57 @@
+{
+  "version": "0.2",
+  "kind": "Browser execution and structural checks; human quality pending",
+  "input": "Screenshot crop, dark pixels only, 1071x609. Approximation; original Raster unavailable.",
+  "checks": [
+    {
+      "name": "load final standalone HTML through managed preview",
+      "status": "PASS"
+    },
+    {
+      "name": "approximate screenshot input analyzed",
+      "regions": 1,
+      "accepted": 4,
+      "pending": 1,
+      "hash": "c67d32b5"
+    },
+    {
+      "name": "pointer drawing then Undo then analysis",
+      "restoredHash": "c67d32b5"
+    },
+    {
+      "name": "contour closure extension OFF",
+      "regions": 0,
+      "accepted": 3,
+      "pending": 1,
+      "hash": "4b1fcb07"
+    },
+    {
+      "name": "contour closure extension ON again",
+      "regions": 1,
+      "accepted": 4,
+      "hash": "c67d32b5"
+    },
+    {
+      "name": "original, region, overlay view switching",
+      "status": "PASS"
+    },
+    {
+      "name": "click label query",
+      "position": [
+        432,
+        280
+      ],
+      "region": 1,
+      "holes": 0,
+      "neighbors": [
+        0
+      ]
+    }
+  ],
+  "limitations": [
+    "file:// launch not tested in this restricted browser; hosted identical standalone file works",
+    "the target tip has open roots; connecting its tip does not create another closed face",
+    "screenshot processing does not reproduce source Raster or original scaling"
+  ],
+  "quality": "人間による実線画検査待ち"
+}
