@@ -53,6 +53,7 @@ function parse(value:unknown):Binding[]{
 }
 const read=()=>{try{return localStorage.getItem(KEY)}catch{return null;}};
 const write=(bindings:readonly Binding[])=>{try{localStorage.setItem(KEY,JSON.stringify({schema:'illustro.user.shortcuts',version:1,bindings} satisfies Settings));return true;}catch{return false;}};
+const normalizedKey=(event:KeyboardEvent)=>event.key===' '?'space':event.key.toLowerCase();
 const isText=(target:EventTarget|null)=>target instanceof Element&&!!target.closest('input,textarea,select,[contenteditable], [role="textbox"]');
 const isHoldable=(id:string)=>id==='eyedropper'||id==='panView'||id==='erase';
 
@@ -108,7 +109,7 @@ export function installShortcutSettings(commands:CommandService){
   function persist(){if(!write(bindings))status.textContent='設定を端末に保存できませんでした。書き出しで控えてください。';}
   const same=(e:KeyboardEvent,b:Binding)=>
     b.ctrl===e.ctrlKey&&b.alt===e.altKey&&b.shift===e.shiftKey&&b.meta===e.metaKey&&
-    (b.physical?b.code===e.code:b.key===e.key.toLowerCase());
+    (b.physical?b.code===e.code:b.key===normalizedKey(e));
   let capturing=false;
   const stopCapture=()=>{
     if(!capturing)return;
@@ -121,7 +122,7 @@ export function installShortcutSettings(commands:CommandService){
     if(event.key==='Escape'){stopCapture();status.textContent='登録をキャンセルしました。';return;}
     if(['Control','Meta','Alt','Shift'].includes(event.key)||event.isComposing)return;
     const proposed:Binding={
-      commandId:commandSelect.value,key:event.key.toLowerCase(),code:event.code,
+      commandId:commandSelect.value,key:normalizedKey(event),code:event.code,
       ctrl:event.ctrlKey,shift:event.shiftKey,alt:event.altKey,meta:event.metaKey,
       physical:physical.checked,mode:mode.value as Mode
     };
@@ -187,7 +188,8 @@ export function installShortcutSettings(commands:CommandService){
     }
   },{capture:true});
   const release=(event:KeyboardEvent)=>{
-    for(const b of bindings)if(b.mode==='hold'&&same(event,b)){
+    for(const b of bindings)if(b.mode==='hold'&&
+      (b.physical?b.code===event.code:b.key===normalizedKey(event))){
       const state=active.get(b.commandId);if(!state)continue;
       active.delete(b.commandId);state.restore();
     }
