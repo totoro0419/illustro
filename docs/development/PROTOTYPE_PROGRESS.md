@@ -52,7 +52,7 @@
 | COL-002 | 色履歴・前色・背景色 | 残件あり：既存の色履歴と前色は維持。背景色の独立管理等は要確認 |
 | COL-003 | 作品・資料スポイト | 残件あり：既存の作品/レイヤー採色を維持。参考資料からの採色はC05依存 |
 | COL-004 | パレット編集・交換 | 残件あり：既存パレットの保存・並替・交換・入出力は維持。色タグ・階層などが残件 |
-| COL-005 | 調和・明度・色覚支援 | 未実装：候補配色・色覚支援・非破壊比較 |
+| COL-005 | 調和・明度・色覚支援 | 残件あり：配色候補・明るさ差・白黒の非破壊表示を追加。色覚別の正確な比較と候補の編集は残件 |
 
 ### 今回のコードと依存記録
 - `apps/editor/src/ui/commandPalette.ts`: コマンド検索とQuick Controller。既存の処理を実行し、利用不能な動作を完了とは表示しない。
@@ -60,6 +60,7 @@
 - `apps/editor/src/ui/shortcutSettings.ts`: キーの実入力と一時操作、割当移行。
 - `apps/editor/src/ui/focusMode.ts`: Focus・全画面。必要な保存表示と終了入口を保つ。
 - `apps/editor/src/main.ts`, `apps/editor/src/ui/shellBehavior.ts`, `apps/editor/src/ui/c04.css`, `apps/editor/src/ui/workspaceProfiles.css`: 上記の実操作・画面への接続。
+- `apps/editor/src/color/harmony.ts`, `apps/editor/src/color/harmony.css`, `apps/editor/src/color/panel.ts`: 既存カラー画面に配色候補、明るさの数値比較、白黒表示だけの確認を追加。元の作品データを変更せず、色の採用は明示ボタンで行う。
 - C16のマクロ、C05の資料、C06の選択の拡張など、後続機能が必要な項目はC04の残件のままとする。C03の既存依存事項も継続。
 - 新規コードはGitHub `prototype/C04` に保存している。初期実装段階のため**型検査・実機検証・読み書き・端末別表示の確認は未実施**であり、正常動作確認済み・正式合格とは記載しない。
 
