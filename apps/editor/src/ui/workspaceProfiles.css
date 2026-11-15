@@ -69,3 +69,15 @@ body.workspace-compact-density .box-stack{padding-top:5px}
 .c04-toolbar-row button{min-width:37px;min-height:37px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:transparent;color:inherit}
 .c04-toolbar-settings>button{min-height:38px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:var(--a-accent-soft,#fff6d7);color:inherit;margin-top:8px}
 .c04-toolbar-settings output{display:block;min-height:18px;font-size:11px;color:var(--a-subtle,#667)}
+
+.c04-simple-macros{padding:8px 2px;margin:10px 8px;border-top:1px solid var(--a-border,#ddd);font-size:12px}
+.c04-simple-macros summary{min-height:38px;font-weight:600;padding:8px 0;cursor:pointer}
+.c04-simple-macros p{font-size:11px;line-height:1.5;color:var(--a-subtle,#667)}
+.c04-simple-macros>input,.c04-simple-macros>select{display:block;width:100%;min-height:38px;margin:5px 0;padding:6px;border:1px solid var(--a-border,#ddd);border-radius:7px;color:inherit;background:var(--a-surface,#fff)}
+.c04-macro-steps{max-height:32dvh;overflow:auto;display:flex;flex-direction:column;gap:5px;margin:8px 0}
+.c04-macro-step{display:flex;align-items:center;gap:4px;border:1px solid var(--a-border,#ddd);border-radius:7px;padding:5px}
+.c04-macro-step span{flex:1;min-width:0;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.c04-macro-step button{min-width:35px;min-height:36px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:transparent;color:inherit}
+.c04-simple-macros .c04-workspace-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.c04-simple-macros .c04-workspace-actions button{min-height:40px;border:1px solid var(--a-border,#ddd);background:var(--a-accent-soft,#fff2d7);border-radius:8px;font-size:11px;color:inherit}
+.c04-simple-macros output{display:block;min-height:20px;margin:6px 0;font-size:11px;color:var(--a-subtle,#667)}
