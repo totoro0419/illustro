@@ -84,6 +84,18 @@ export class CoreDocument{
     });
   }
   capturePersistenceSnapshot(revisionId:RevisionId=this.head):CorePersistenceSnapshotV1{return captureCoreSnapshot(this.historyValue.snapshot(),this.storeValue,revisionId);}
+  captureSaveSnapshot(revisionId:RevisionId,requestedThrough:bigint):CorePersistenceSnapshotV1{
+    const state=this.historyValue.snapshot(),stamp=this.revision(revisionId).commitStamp;
+    const through=stamp?.writerEpochId===this.writerEpochId&&stamp.commitSequence>requestedThrough
+      ?stamp.commitSequence:requestedThrough;
+    const revisions=state.revisions.filter(revision=>{
+      const committed=revision.commitStamp;
+      return committed?.writerEpochId!==this.writerEpochId||committed.commitSequence<=through;
+    });
+    const allowed=new Set(revisions.map(revision=>revision.id));
+    const redoIds=state.redoIds.filter(id=>allowed.has(id));
+    return captureCoreSnapshot({...state,revisions,redoIds},this.storeValue,revisionId);
+  }
   persistenceBlockPayloads(snapshot:CorePersistenceSnapshotV1){return blockPayloadsForSnapshot(snapshot,this.storeValue);}
   captureRecoveryPacket(handoff:PersistenceHandoff):CoreRecoveryPacketV1{return captureCoreRecoveryPacket(this.historyValue.snapshot(),this.storeValue,handoff);}
   recoveryBlockPayloads(packet:CoreRecoveryPacketV1){const out=new Map<string,Uint8Array>();for(const block of packet.blocks)out.set(block.id,this.storeValue.readCopy(block.id as never));return out;}

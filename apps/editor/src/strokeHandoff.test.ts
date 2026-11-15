@@ -71,6 +71,16 @@ it('pins the revision for a save while allowing later input to proceed',async()=
  expect(c.committedStrokeCount).toBe(2);
 });
 
+it('includes released input while leaving a stroke still held down out of the save',async()=>{
+ const controller=new EditorController(),queue=new StrokeHandoff(controller,()=>{});
+ const previous=queue.reserve(controller.target()),held=queue.reserve(controller.target());
+ const save=queue.saveBoundary(held.sequence),published=await queue.release(previous,record());
+ expect(await save).toBe(published?.revisionId);
+ expect(queue.pending).toBe(1);
+ await queue.release(held,record(60));
+ expect(await save).not.toBe(controller.document.head);
+});
+
 it('fixes a save to the state with a hidden stroke even when it is redone',async()=>{
  const c=new EditorController(),q=new StrokeHandoff(c,()=>{}),a=q.reserve(c.target()),b=q.reserve(c.target());
  q.undoPending();

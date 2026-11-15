@@ -40,9 +40,9 @@ export class StrokeHandoff{
     // The caller restores preview ownership before publication starts.
     return item.reservation;
   }
-  saveBoundary(){
+  saveBoundary(beforeSequence=Infinity){
     if(this.fault)return Promise.reject(this.fault);
-    const through=this.items.at(-1)?.reservation.sequence;
+    const through=this.items.findLast(item=>item.reservation.sequence<beforeSequence)?.reservation.sequence;
     if(through===undefined)return Promise.resolve(this.controller.document.head);
     return new Promise<DrawingTarget['baseRevision']>((resolve,reject)=>this.saveWaiters.push({through,resolve,reject}));
   }

@@ -20,6 +20,23 @@ describe('M05 core persistence',()=>{
     expect(restored.canUndo).toBe(true);restored.undo();expect(restored.readPixel(second,8,9)).toEqual([0,0,0,0]);restored.redo();expect(restored.readPixel(second,8,9)).toEqual([10,20,30,200]);
     expect(restored.writerEpochId).not.toBe(d.writerEpochId);expect(restored.commitSequence).toBe(0n);
   });
+  it('saves the accepted revision without serializing later history or pixels',()=>{
+    const d=new CoreDocument({width:12,height:12,ids:createDeterministicIdFactory()}),layer=d.defaultRasterLayerId;
+    const requestedThrough=d.commitSequence;
+    const accepted=d.begin('accepted brush');
+    accepted.setPixel(layer,1,1,[7,8,9,255]);
+    const target=accepted.commit().revision.id;
+    const later=d.begin('after save');
+    later.setPixel(layer,2,2,[4,5,6,255]);
+    const laterId=later.commit().revision.id;
+    const snapshot=d.captureSaveSnapshot(target,requestedThrough);
+    const restored=CoreDocument.restore({snapshot,blockPayloads:d.persistenceBlockPayloads(snapshot)});
+    expect(restored.head).toBe(target);
+    expect(restored.hasRevision(laterId)).toBe(false);
+    expect(restored.readPixel(layer,1,1)).toEqual([7,8,9,255]);
+    expect(restored.readPixel(layer,2,2)).toEqual([0,0,0,0]);
+    expect(d.head).toBe(laterId);
+  });
   it('continues CommitSequence across Undo branch edits and protection never skips a gap',()=>{
     const ids=createDeterministicIdFactory(),d=new CoreDocument({width:64,height:64,ids}),l=d.defaultRasterLayerId;
     const a=d.begin('A');a.setPixel(l,1,1,[1,1,1,255]);expect(a.commit().revision.commitStamp?.commitSequence).toBe(1n);

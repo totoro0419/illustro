@@ -633,7 +633,7 @@ export class BrushSurface{
   }
   setInputBarrier(enabled:boolean){this.inputBarrier=enabled;this.handoff?.setPublicationHeld(enabled);}
   setProtectionQueueLength(count:number){this.protectionQueueLength=count;}
-  saveBoundary(){return this.handoff?.saveBoundary()??Promise.resolve(this.controller.document.head);}
+  saveBoundary(){return this.handoff?.saveBoundary(this.reservation?.sequence)??Promise.resolve(this.controller.document.head);}
   async settleLogicalStrokes(){await this.handoff?.barrier();}
   /** Consume a reserved entry immediately. Worker completion stays independent. */
   navigatePending(direction:'undo'|'redo'){

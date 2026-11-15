@@ -8,7 +8,7 @@ const PREFIX='c10.font.',TYPE='font.asset.v1',LIMIT=48*1024*1024;
 const validId=(id:string)=>/^[a-f0-9-]{36}$/i.test(id);
 const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
 
-export async function exportFonts(root:DocumentRoot):Promise<readonly PortableSectionInput[]>{
+export async function exportFonts(root:DocumentRoot,preserved?:PreservedPortableData):Promise<readonly PortableSectionInput[]>{
   const ids=new Set<string>();
   for(const id of root.rootLayerIds){
     const editable=root.getLayer(id).editable;
@@ -18,7 +18,13 @@ export async function exportFonts(root:DocumentRoot):Promise<readonly PortableSe
   let total=0;
   for(const id of ids){
     const asset=await getAsset(id);
-    if(!asset||asset.deleted||asset.kind!=='font')continue;
+    if(!asset||asset.deleted||asset.kind!=='font'){
+      const original=preserved?.optionalSections.find(section=>section.id===PREFIX+id&&section.type===TYPE&&!section.required);
+      if(!original)throw Error('同梱するフォントが見つかりません。フォントを選び直すか、同梱を解除してください。');
+      total+=original.bytes.length;
+      if(total>LIMIT)throw Error('作品に同梱するフォントの合計を48MB以下にしてください。');
+      sections.push(original);continue;
+    }
     const identifier=encoder.encode(asset.name.slice(0,100));
     const blob=new Uint8Array(await asset.data.arrayBuffer());
     const bytes=new Uint8Array(2+identifier.length+blob.length);

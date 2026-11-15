@@ -2896,9 +2896,6 @@ function showExternalSaveConflict(error:ExternalFileConflict,local:CoreDocument)
 
 async function saveWork(asCopy=false){
   if(!documentReady||!surface)return;
-  if(surface.inputActive&&!historyPending){
-    byId('status').textContent='ペンや指を離してから保存してください。';return;
-  }
   if(persistence.state.saving){byId('status').textContent='保存中です。';return;}
   const drawing=surface,document=controller.document,layer=controller.selectedLayerId;
   const pending=historyPending
@@ -3255,10 +3252,6 @@ const c05References=installReferenceBoard({
   }
 });
 c05ReferenceBoard=c05References;
-persistence.setSaveAttachmentProvider(async()=>{
-  const section=await c05References.exportNative();
-  return section?[section]:[];
-});
 installAssetPanel({openReference:assetId=>c05References.add(assetId)});
 document.querySelector('#referenceBoxBody')?.closest('.workspace-box')?.querySelector('.box-toggle')
   ?.addEventListener('click',()=>{void c05References.refreshIfChanged();});
@@ -3330,11 +3323,16 @@ c06Selection=installSelectionWorkbench({
     });
   }
 });
-persistence.setSaveAttachmentProvider(async root=>{
-  const reference=await c05References.exportNative();
-  const selections=await c06Selection?.exportNative()??[];
-  const fonts=await exportFonts(root);
-  return [...(reference?[reference]:[]),...selections,...fonts];
+persistence.setSaveAttachmentProvider(()=>{
+  const preserved=persistence.preservedData;
+  const editingState=Promise.all([c05References.exportNative(),c06Selection?.exportNative()??[]])
+    .then(values=>({values}),error=>({error}));
+  return async root=>{
+    const result=await editingState;
+    if('error' in result)throw result.error;
+    const [reference,selections]=result.values,fonts=await exportFonts(root,preserved);
+    return [...(reference?[reference]:[]),...selections,...fonts];
+  };
 });
 installTransformPanel(byId('documentBoxBody'),async target=>{
   const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;

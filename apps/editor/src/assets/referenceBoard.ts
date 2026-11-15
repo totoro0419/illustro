@@ -146,10 +146,9 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   const NATIVE_ID='c05.reference-board';
   const NATIVE_TYPE='reference.board.embedded.v1';
   async function exportNative():Promise<PortableSectionInput|null>{
-    await refreshIfChanged();
-    if(!board)return null;
-    await saving;
-    const current=board;
+    const id=options.getDocumentId();
+    if(!id)return null;
+    const current=board?.documentId===id?clone(board):await readBoard(id);
     // Include each original file only once, even if the same reference is shown
     // in several windows. The corresponding document pixels remain untouched.
     const ids=[...new Set(current.items.map(item=>item.assetId))];
