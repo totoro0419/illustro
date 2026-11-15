@@ -12,6 +12,8 @@ import {ForegroundColor,rgb,hex} from './color/model';
 import {installColorPanel} from './color/panel';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
+import {installCommandPalette} from './ui/commandPalette';
+import './ui/c04.css';
 import {EditorController,type EditorHistoryChange} from './controller';
 import {BrushSurface} from './brushSurface';
 import {layerBlendNames,openLayerBlendDialog} from './ui/layerBlendDialog';
@@ -3101,6 +3103,9 @@ function qaM08Markup(){return '<details id="qaPanel" class="qa-panel" open><summ
 function qaMarkup(){return '<details id="qaPanel" class="qa-panel" open><summary>使いやすさと描画の確認</summary><ol>'+
 ['左のツール欄は見やすいですか？','ブラシと消しゴムをすぐ切り替えられますか？','右側が邪魔にならず描けますか？','右側の幅を簡単に変えられますか？','レイヤーボタンからレイヤー画面を開けますか？','その画面を開いたままでも描けますか？','元に戻す・やり直しはすぐ使えますか？','保存と画像書き出しへ迷わず行けますか？','ペンや指でボタンを押しやすいですか？','明るい見た目で制作に集中できますか？','右側を開閉しても描画が止まりませんか？','重くなっていませんか？'].map(x=>'<li>'+x+'</li>').join('')+
 '</ol><details class="qa-auto"><summary>問題があるときの動作確認</summary><button id="qaDiagInitial" type="button">状態を記録する</button><button id="qaDiagCopy" type="button">結果をコピーする</button><pre id="qaGpuReport"></pre></details><label>結果<select id="qaState"><option value="unchecked">まだ確認していない</option><option value="ok">問題なし</option><option value="problem">問題あり</option></select></label><label id="qaNoteLabel">気になったこと<textarea id="qaNote" rows="3" placeholder="具体的に教えてください"></textarea></label><button id="qaCopy" type="button">確認結果をコピー</button><details class="qa-auto"><summary>詳しい動作記録</summary><pre id="qaAuto"></pre></details></details>';}
+
+// C04 command entries forward to the installed real controls; do not duplicate their logic.
+installCommandPalette(shellUi);
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
 if(perfMode){
