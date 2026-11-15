@@ -31,7 +31,7 @@ export function validateLayerGroups(groups:readonly LayerGroup[],order:readonly 
   for(const range of ranges){
     while(parents.length&&parents.at(-1)!.high<range.low)parents.pop();
     const parent=parents.at(-1);
-    if(parent&&(range.high>parent.high||(range.low===parent.low&&range.high===parent.high)))throw new Error('overlapping layer groups');
+    if(parent&&range.high>parent.high)throw new Error('overlapping layer groups');
     parents.push(range);
   }
   return Object.freeze(ranges.map(({group})=>Object.freeze({...group,members:Object.freeze([...group.members])})));

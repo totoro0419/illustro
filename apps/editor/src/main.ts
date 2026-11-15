@@ -261,6 +261,33 @@ function clearLayerOpacityPreview(){
   opacityPreview=null;
 }
 
+function chooseLayerGroupDestination(action:(id:LayerId|null)=>void){
+  const dialog=document.createElement('dialog'),form=document.createElement('form');
+  const label=document.createElement('label'),select=document.createElement('select');
+  const cancel=document.createElement('button'),apply=document.createElement('button');
+  form.method='dialog';
+  label.textContent='移動先 ';
+  select.add(new Option('グループの外（一番上）',''));
+  for(const group of controller.document.root.layerGroups){
+    const depth=controller.document.root.groupsForLayer(group.members[0]!).findIndex(parent=>parent.id===group.id);
+    select.add(new Option('　'.repeat(Math.max(0,depth))+group.name,group.id));
+  }
+  label.append(select);
+  cancel.type='submit';cancel.value='cancel';cancel.textContent='取消';
+  apply.type='submit';apply.value='apply';apply.textContent='移動';
+  form.append(label,cancel,apply);
+  dialog.className='export-dialog';
+  dialog.setAttribute('aria-label','レイヤーの移動先');
+  dialog.append(form);
+  document.body.append(dialog);
+  const artwork=controller.document;
+  dialog.addEventListener('close',()=>{
+    dialog.remove();
+    if(dialog.returnValue==='apply'&&artwork===controller.document)action((select.value||null) as LayerId|null);
+  },{once:true});
+  dialog.showModal();
+}
+
 function groupLayerRow(group:LayerGroup,depth:number){
   const row=document.createElement('div');
   row.className='layer-group-row';
@@ -293,6 +320,32 @@ function groupLayerRow(group:LayerGroup,depth:number){
     const name=window.prompt('グループ名',group.name)?.trim();
     if(name&&name!==group.name)changeLayer('グループ名を変更しました。',tx=>tx.updateLayerGroup(group.id,{name}));
   });
+  button('上へ',group.name+'を一段上へ移動する',()=>{
+    changeLayer('グループを上へ移動しました。',tx=>tx.moveLayerGroup(group.id,1));
+  });
+  button('下へ',group.name+'を一段下へ移動する',()=>{
+    changeLayer('グループを下へ移動しました。',tx=>tx.moveLayerGroup(group.id,-1));
+  });
+  button('移動先',group.name+'の移動先を指定する',()=>{
+    chooseLayerGroupDestination(destination=>changeLayer('グループを移動しました。',tx=>tx.moveGroupIntoGroup(group.id,destination)));
+  });
+  row.ondragover=event=>{
+    if(draggedLayer?.document!==controller.document||group.members.includes(draggedLayer.id))return;
+    event.preventDefault();
+    if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+    row.classList.add('layer-drop-target');
+  };
+  row.ondragleave=event=>{
+    if(!(event.relatedTarget instanceof Node)||!row.contains(event.relatedTarget))row.classList.remove('layer-drop-target');
+  };
+  row.ondrop=event=>{
+    row.classList.remove('layer-drop-target');
+    const source=draggedLayer;
+    draggedLayer=null;
+    if(source?.document!==controller.document||group.members.includes(source.id))return;
+    event.preventDefault();
+    changeLayer('レイヤーをグループに移動しました。',tx=>tx.moveLayersIntoGroup(new Set([source.id]),group.id));
+  };
   button('解除',group.name+'をグループ解除する',()=>{
     changeLayer('グループを解除しました。',tx=>tx.dissolveLayerGroup(group.id));
   });
@@ -323,6 +376,8 @@ const renderLayers=()=>{
   byId('layerBatchActions').hidden=!layerBatchMode;
   byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
   byId<HTMLButtonElement>('layerBatchGroup').disabled=!documentReady||!layerBatchIds.size;
+  byId<HTMLButtonElement>('layerBatchDestination').disabled=!documentReady||!layerBatchIds.size||!root.layerGroups.length;
+  byId<HTMLButtonElement>('layerDestination').disabled=!documentReady||!root.layerGroups.length||root.isLayerLocked(selectedLayer.id)||selectedLayer.baseColor==='white';
   for(const id of ['layerBatchShow','layerBatchHide','layerBatchLock','layerBatchUnlock']){
     byId<HTMLButtonElement>(id).disabled=!documentReady||!layerBatchIds.size;
   }
@@ -518,6 +573,14 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchIds.clear();
   layerBatchAnchor=null;
   renderLayers();
+};
+byId<HTMLButtonElement>('layerDestination').onclick=()=>{
+  const ids=new Set([controller.selectedLayerId]);
+  chooseLayerGroupDestination(destination=>changeLayer('レイヤーを移動しました。',tx=>tx.moveLayersIntoGroup(ids,destination)));
+};
+byId<HTMLButtonElement>('layerBatchDestination').onclick=()=>{
+  const ids=new Set(layerBatchIds);
+  chooseLayerGroupDestination(destination=>changeLayer('選んだレイヤーを移動しました。',tx=>tx.moveLayersIntoGroup(ids,destination)));
 };
 byId<HTMLButtonElement>('layerBatchGroup').onclick=()=>{
   const name=window.prompt('グループ名','グループ')?.trim();

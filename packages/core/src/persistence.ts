@@ -206,7 +206,8 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
     if(operation.kind==='document.crop'||operation.kind==='document.canvas-resize'||operation.kind==='document.image-resize'){
       geometry=true;continue;
     }
-    if(operation.kind==='document.info'||operation.kind==='layer.groups')continue;
+    if(operation.kind==='document.info')continue;
+    if(operation.kind==='layer.groups'){structural=true;continue;}
     if(operation.kind==='layer.reorder'){structural=true;continue;}
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
     if(operation.kind==='layer.metadata'||operation.kind==='layer.add-raster'){

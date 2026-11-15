@@ -54,6 +54,67 @@ export class DocumentTransaction{
     if(!groups.some(group=>group.id===id))return false;
     return this.editGroups('dissolve',id,groups.filter(group=>group.id!==id));
   }
+  moveLayersIntoGroup(ids:ReadonlySet<LayerId>,destination:LayerId|null){
+    return this.moveGroupMembers(ids,destination,null);
+  }
+  moveGroupIntoGroup(id:LayerId,destination:LayerId|null){
+    const group=this.rootValue.layerGroups.find(candidate=>candidate.id===id);
+    if(!group)throw new Error('グループが見つかりません。');
+    return this.moveGroupMembers(new Set(group.members),destination,group);
+  }
+  private moveGroupMembers(ids:ReadonlySet<LayerId>,destination:LayerId|null,sourceGroup:LayerGroup|null){
+    this.open();
+    if(this.slotsValue.length)throw new Error('Layer move must start its own transaction');
+    const root=this.rootValue;
+    const members=root.rootLayerIds.filter(id=>ids.has(id));
+    if(!members.length||members.length!==ids.size)return false;
+    const groups=root.layerGroups;
+    const target=destination===null?null:groups.find(group=>group.id===destination);
+    if(destination!==null&&!target)throw new Error('移動先のグループが見つかりません。');
+    if(members.some(id=>root.getLayer(id).baseColor==='white'||root.isLayerLocked(id)))throw new Error('白背景やロック中のレイヤーは移動できません。');
+    const targetRemaining=target?.members.filter(id=>!ids.has(id));
+    if(target&&(!targetRemaining?.length||(sourceGroup&&target.members.every(id=>ids.has(id)))))throw new Error('移動するグループの内部は移動先にできません。');
+    const targetPath=target?root.groupsForLayer(target.members[0]!):[];
+    const targetAncestors=new Set(targetPath.slice(0,targetPath.findIndex(group=>group.id===target?.id)+1).map(group=>group.id));
+    if(groups.some(group=>targetAncestors.has(group.id)&&group.locked))throw new Error('ロック中のグループには移動できません。');
+    if(members.every(id=>root.groupsForLayer(id).at(-1)?.id===(target?.id))&&!sourceGroup)return false;
+    const remaining=root.rootLayerIds.filter(id=>!ids.has(id));
+    const insertion=targetRemaining?.length?remaining.indexOf(targetRemaining.reduce((top,id)=>remaining.indexOf(id)>remaining.indexOf(top)?id:top))+1:remaining.length;
+    const order=[...remaining.slice(0,insertion),...members,...remaining.slice(insertion)];
+    const updated:LayerGroup[]=[];
+    for(const group of groups){
+      if(sourceGroup&&group.members.every(id=>ids.has(id))){
+        updated.push(group);
+        continue;
+      }
+      const retained=group.members.filter(id=>!ids.has(id));
+      if(targetAncestors.has(group.id))retained.push(...members);
+      if(retained.length)updated.push({...group,members:retained});
+    }
+    this.rootOrderValue=order;
+    return this.editGroups('move',sourceGroup?.id??members[0]!,updated);
+  }
+  moveLayerGroup(id:LayerId,direction:-1|1){
+    this.open();
+    if(this.slotsValue.length)throw new Error('Layer move must start its own transaction');
+    if(direction!==1&&direction!==-1)throw new Error('invalid layer move direction');
+    const root=this.rootValue,group=root.layerGroups.find(candidate=>candidate.id===id);
+    if(!group)return false;
+    if(group.members.some(member=>root.isLayerLocked(member)))throw new Error('ロック中のグループは移動できません。');
+    const order=[...root.rootLayerIds],ids=new Set(group.members);
+    const first=order.findIndex(member=>ids.has(member)),last=first+ids.size-1;
+    const adjacent=order[direction===1?last+1:first-1];
+    if(!adjacent||root.getLayer(adjacent).baseColor==='white')return false;
+    const depth=root.groupsForLayer(order[first]!).findIndex(candidate=>candidate.id===id);
+    const adjacentPath=root.groupsForLayer(adjacent);
+    const sourcePath=root.groupsForLayer(order[first]!);
+    if(depth<0||sourcePath.slice(0,depth).some((parent,index)=>adjacentPath[index]?.id!==parent.id))return false;
+    const siblingLength=adjacentPath[depth]?.members.length??1;
+    const moved=order.splice(first,ids.size);
+    order.splice(first+direction*siblingLength,0,...moved);
+    this.rootOrderValue=order;
+    return this.editGroups('reorder',id,root.layerGroups);
+  }
   private editGroups(action:string,id:LayerId,groups:readonly LayerGroup[]){
     this.open();
     this.groupsValue=validateLayerGroups(groups,this.rootOrderValue??this.rootValue.rootLayerIds);
