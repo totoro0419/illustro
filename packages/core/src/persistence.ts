@@ -19,7 +19,7 @@ export type PersistedRoot=Readonly<{
   rootLayerIds:readonly string[];layers:readonly PersistedLayer[];layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number;
 }>;
 export type PersistedLayer=Readonly<{
-  id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;baseColor?:'white';colorTag?:LayerNode['colorTag'];positionLocked?:boolean;
+  id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;baseColor?:'white';colorTag?:LayerNode['colorTag'];positionLocked?:boolean;alphaLocked?:boolean;
   surface:Readonly<{descriptor:RasterSurfaceDescriptor;tiles:readonly Readonly<{key:string;value:RasterTileValue}>[]}>;
 }>;
 export type PersistedRevision=Readonly<{
@@ -88,7 +88,7 @@ function serializeRoot(root:DocumentRoot,blockIds:Set<BlockId>):PersistedRoot{
   const layers:PersistedLayer[]=[],seenSurfaces=new Set<string>(),entries=root.layers.entries();if(entries.length>MAX_LAYERS)throw new Error('too many layers');
   for(const [id,layer] of entries){if(seenSurfaces.has(layer.surface.descriptor.surfaceId))throw new Error('duplicate surface id');seenSurfaces.add(layer.surface.descriptor.surfaceId);
     const tiles=layer.surface.tiles.entries().map(([key,value])=>{if(value.baseBlockId)blockIds.add(value.baseBlockId);return Object.freeze({key,value});});
-    if(tiles.length>MAX_TILES_PER_ROOT)throw new Error('too many raster tiles');layers.push(Object.freeze({id,kind:'raster' as const,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,...(layer.baseColor?{baseColor:layer.baseColor}:{}),...(layer.colorTag?{colorTag:layer.colorTag}:{}),...(layer.positionLocked?{positionLocked:true}:{}),
+    if(tiles.length>MAX_TILES_PER_ROOT)throw new Error('too many raster tiles');layers.push(Object.freeze({id,kind:'raster' as const,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,...(layer.baseColor?{baseColor:layer.baseColor}:{}),...(layer.colorTag?{colorTag:layer.colorTag}:{}),...(layer.positionLocked?{positionLocked:true}:{}),...(layer.alphaLocked?{alphaLocked:true}:{}),
       surface:Object.freeze({descriptor:layer.surface.descriptor,tiles:Object.freeze(tiles)})}));}
   return Object.freeze({documentId:root.documentId,width:root.width,height:root.height,name:root.name,colorProfileId:root.colorProfileId,...root.metadata,
     rootLayerIds:Object.freeze([...root.rootLayerIds]),layers:Object.freeze(layers)});
@@ -143,9 +143,9 @@ function parseLayerComps(value:unknown):readonly LayerComp[]{
     return Object.freeze({id,name:text(comp.name,'layer comp name',1,4096),saveVisibility,saveOpacity,layers:Object.freeze(layers),groups:Object.freeze(groups)});
   }));
 }
-function parsePositionLock(value:unknown):boolean{
+function parseOptionalLayerLock(value:unknown):boolean{
   if(value===undefined)return false;
-  if(typeof value!=='boolean')throw new Error('invalid layer position lock');
+  if(typeof value!=='boolean')throw new Error('invalid layer lock');
   return value;
 }
 function parseLayerGroups(value:unknown):readonly LayerGroup[]{
@@ -162,12 +162,12 @@ function parseLayer(value:unknown,blocks:ReadonlyMap<BlockId,RasterBlockDescript
   const r=record(value,'layer'),id=uuid(r.id,'layer id') as LayerId;if(r.kind!=='raster')throw new Error('unsupported layer kind');const name=text(r.name,'layer name',1,4096);
   if(typeof r.visible!=='boolean'||typeof r.locked!=='boolean'||typeof r.opacity!=='number'||!Number.isFinite(r.opacity)||r.opacity<0||r.opacity>1)throw new Error('invalid layer state');
   if(r.baseColor!==undefined&&r.baseColor!=='white')throw new Error('invalid layer base color');
-  const colorTag=parseLayerColorTag(r.colorTag),positionLocked=parsePositionLock(r.positionLocked);
+  const colorTag=parseLayerColorTag(r.colorTag),positionLocked=parseOptionalLayerLock(r.positionLocked),alphaLocked=parseOptionalLayerLock(r.alphaLocked);
   const s=record(r.surface,'surface'),descriptor=parseSurfaceDescriptor(s.descriptor);if(!Array.isArray(s.tiles)||s.tiles.length>MAX_TILES_PER_ROOT)throw new Error('invalid surface tiles');
   const edit=PagedMap.empty<TileKey,RasterTileValue>().edit(),keys=new Set<string>();
   for(const item of s.tiles){const t=record(item,'tile'),key=text(t.key,'tile key',1,64) as TileKey;parseTileKey(key);if(keys.has(key))throw new Error('duplicate tile key');keys.add(key);
     const value=parseTileValue(t.value,blocks);edit.set(key,value);}
-  return Object.freeze({id,kind:'raster' as const,name,visible:r.visible,opacity:r.opacity,locked:r.locked,...(positionLocked?{positionLocked}:{}),...(colorTag?{colorTag}:{}),...(r.baseColor==='white'?{baseColor:'white' as const}:{}),surface:new RasterSurfaceManifest(descriptor,edit.commit())});
+  return Object.freeze({id,kind:'raster' as const,name,visible:r.visible,opacity:r.opacity,locked:r.locked,...(positionLocked?{positionLocked}:{}),...(alphaLocked?{alphaLocked}:{}),...(colorTag?{colorTag}:{}),...(r.baseColor==='white'?{baseColor:'white' as const}:{}),surface:new RasterSurfaceManifest(descriptor,edit.commit())});
 }
 function parseSurfaceDescriptor(value:unknown):RasterSurfaceDescriptor{
   const d=record(value,'surface descriptor'),surfaceId=uuid(d.surfaceId,'surface id') as RasterSurfaceId,sampleEncoding=d.sampleEncoding;
@@ -216,7 +216,7 @@ export type RecoveryTileChange=Readonly<
   {mode:'append-mutation';layerId:string;key:string;mutation:RasterMutationRef}|
   {mode:'set-block';layerId:string;key:string;blockId:string}
 >;
-export type RecoveryLayerState=Readonly<{id:string;name:string;visible:boolean;opacity:number;locked:boolean;colorTag?:LayerNode['colorTag'];positionLocked?:boolean;surfaceDescriptor:RasterSurfaceDescriptor}>;
+export type RecoveryLayerState=Readonly<{id:string;name:string;visible:boolean;opacity:number;locked:boolean;colorTag?:LayerNode['colorTag'];positionLocked?:boolean;alphaLocked?:boolean;surfaceDescriptor:RasterSurfaceDescriptor}>;
 export type CoreRecoveryPacketV1=Readonly<{
   schema:'illustro.core.recovery-packet';schemaVersion:1;handoff:PersistedPersistenceHandoff;
   revision:Readonly<{id:string;parentIds:readonly string[];transactionId:string;command:Command;commitStamp:Readonly<{writerEpochId:string;commitSequence:string}>;committedAt:number}>;
@@ -241,7 +241,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
     if(operation.kind==='layer.reorder'){structural=true;continue;}
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
     if(operation.kind==='layer.metadata'||operation.kind==='layer.add-raster'){
-      if(!layerStateIds.has(layerId)){layerStateIds.add(layerId);layerStates.push(Object.freeze({id:layer.id,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,colorTag:layer.colorTag??null,positionLocked:layer.positionLocked??false,surfaceDescriptor:layer.surface.descriptor}));}
+      if(!layerStateIds.has(layerId)){layerStateIds.add(layerId);layerStates.push(Object.freeze({id:layer.id,name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,colorTag:layer.colorTag??null,positionLocked:layer.positionLocked??false,alphaLocked:layer.alphaLocked??false,surfaceDescriptor:layer.surface.descriptor}));}
       if(operation.kind==='layer.add-raster')structural=true;
     }else if(operation.kind==='brush.stroke'){
       for(const footprint of operation.dirtyFootprint){const key=`${footprint.tileX},${footprint.tileY}`,value=layer.surface.tiles.get(key);if(!value)throw new Error('recovery brush tile missing');
@@ -296,7 +296,7 @@ function parseRecoveryPacket(value:unknown):CoreRecoveryPacketV1{
   const stamp=record(revision.commitStamp,'recovery commit stamp');if(stamp.writerEpochId!==writerEpochId||stamp.commitSequence!==commitSequence)throw new Error('recovery stamp mismatch');
   const committedAt=integer(revision.committedAt,'committedAt',0),command=revision.command as Command;if(!command||command.version!==2||command.kind!=='core.transaction.v2')throw new Error('invalid recovery command');
   const modifiedAt=integer(p.modifiedAt,'modifiedAt',0);if(!Array.isArray(p.layerStates)||!Array.isArray(p.tileChanges)||!Array.isArray(p.blocks))throw new Error('invalid recovery delta');
-  const layerStates=p.layerStates.map(x=>{const s=record(x,'recovery layer state'),id=uuid(s.id,'layer id'),name=text(s.name,'layer name',1,4096);if(typeof s.visible!=='boolean'||typeof s.locked!=='boolean'||typeof s.opacity!=='number'||s.opacity<0||s.opacity>1)throw new Error('invalid recovery layer state');return Object.freeze({id,name,visible:s.visible,opacity:s.opacity,locked:s.locked,...(s.positionLocked!==undefined?{positionLocked:parsePositionLock(s.positionLocked)}:{}),...(s.colorTag!==undefined?{colorTag:parseLayerColorTag(s.colorTag)}:{}),surfaceDescriptor:parseSurfaceDescriptor(s.surfaceDescriptor)});});
+  const layerStates=p.layerStates.map(x=>{const s=record(x,'recovery layer state'),id=uuid(s.id,'layer id'),name=text(s.name,'layer name',1,4096);if(typeof s.visible!=='boolean'||typeof s.locked!=='boolean'||typeof s.opacity!=='number'||s.opacity<0||s.opacity>1)throw new Error('invalid recovery layer state');return Object.freeze({id,name,visible:s.visible,opacity:s.opacity,locked:s.locked,...(s.positionLocked!==undefined?{positionLocked:parseOptionalLayerLock(s.positionLocked)}:{}),...(s.alphaLocked!==undefined?{alphaLocked:parseOptionalLayerLock(s.alphaLocked)}:{}),...(s.colorTag!==undefined?{colorTag:parseLayerColorTag(s.colorTag)}:{}),surfaceDescriptor:parseSurfaceDescriptor(s.surfaceDescriptor)});});
   const rootLayerIds=p.rootLayerIds===null?null:Object.freeze(uuidArray(p.rootLayerIds,'root layer'));
   const tileChanges=p.tileChanges.map(x=>{const t=record(x,'recovery tile change'),layerId=uuid(t.layerId,'layer id'),key=text(t.key,'tile key',1,64);parseTileKey(key as TileKey);
     if(t.mode==='set-block')return Object.freeze({mode:'set-block' as const,layerId,key,blockId:uuid(t.blockId,'block id')});if(t.mode==='append-mutation'){const m=record(t.mutation,'mutation'),mutation:Object=Object.freeze({operationKey:parseOperationKey(m.operationKey),bounds:parseBounds(m.bounds),workUnits:integer(m.workUnits,'workUnits',1),commandIndices:Object.freeze(Array.isArray(m.commandIndices)?m.commandIndices.map(i=>integer(i,'command index',0)):(()=>{throw new Error('invalid command indices')})())});return Object.freeze({mode:'append-mutation' as const,layerId,key,mutation:mutation as RasterMutationRef});}throw new Error('invalid recovery tile change');});
@@ -336,9 +336,9 @@ function applyRootDelta(parent:PersistedRoot,packet:CoreRecoveryPacketV1):Persis
       ...(description?{description}:{}),...(dpi===null?{}:{dpi})});
   }
   const deleted=new Set(packet.revision.command.operations.filter(operation=>operation.kind==='layer.delete').flatMap(operation=>operation.targetEntityIds));
-  const layers=parent.layers.filter(layer=>!deleted.has(layer.id as LayerId)).map(layer=>({...layer,surface:{descriptor:layer.surface.descriptor,tiles:[...layer.surface.tiles]}})) as Array<{id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;colorTag?:LayerNode['colorTag'];positionLocked?:boolean;surface:{descriptor:RasterSurfaceDescriptor;tiles:Array<{key:string;value:RasterTileValue}>}}>;
-  for(const state of packet.layerStates){let layer=layers.find(x=>x.id===state.id);if(!layer){layer={id:state.id,kind:'raster',name:state.name,visible:state.visible,opacity:state.opacity,locked:state.locked,...(state.positionLocked?{positionLocked:true}:{}),...(state.colorTag?{colorTag:state.colorTag}:{}),surface:{descriptor:state.surfaceDescriptor,tiles:[]}};layers.push(layer);}
-    else{layer.name=state.name;layer.visible=state.visible;layer.opacity=state.opacity;layer.locked=state.locked;if(state.positionLocked!==undefined)layer.positionLocked=state.positionLocked;if(state.colorTag!==undefined)layer.colorTag=state.colorTag;if(layer.surface.descriptor.surfaceId!==state.surfaceDescriptor.surfaceId)throw new Error('recovery surface identity changed');}}
+  const layers=parent.layers.filter(layer=>!deleted.has(layer.id as LayerId)).map(layer=>({...layer,surface:{descriptor:layer.surface.descriptor,tiles:[...layer.surface.tiles]}})) as Array<{id:string;kind:'raster';name:string;visible:boolean;opacity:number;locked:boolean;colorTag?:LayerNode['colorTag'];positionLocked?:boolean;alphaLocked?:boolean;surface:{descriptor:RasterSurfaceDescriptor;tiles:Array<{key:string;value:RasterTileValue}>}}>;
+  for(const state of packet.layerStates){let layer=layers.find(x=>x.id===state.id);if(!layer){layer={id:state.id,kind:'raster',name:state.name,visible:state.visible,opacity:state.opacity,locked:state.locked,...(state.positionLocked?{positionLocked:true}:{}),...(state.alphaLocked?{alphaLocked:true}:{}),...(state.colorTag?{colorTag:state.colorTag}:{}),surface:{descriptor:state.surfaceDescriptor,tiles:[]}};layers.push(layer);}
+    else{layer.name=state.name;layer.visible=state.visible;layer.opacity=state.opacity;layer.locked=state.locked;if(state.positionLocked!==undefined)layer.positionLocked=state.positionLocked;if(state.alphaLocked!==undefined)layer.alphaLocked=state.alphaLocked;if(state.colorTag!==undefined)layer.colorTag=state.colorTag;if(layer.surface.descriptor.surfaceId!==state.surfaceDescriptor.surfaceId)throw new Error('recovery surface identity changed');}}
   for(const change of packet.tileChanges){const layer=layers.find(x=>x.id===change.layerId);if(!layer)throw new Error('recovery tile layer missing');const index=layer.surface.tiles.findIndex(x=>x.key===change.key),previous=index>=0?layer.surface.tiles[index]!.value:Object.freeze({baseBlockId:null,mutations:Object.freeze([])});
     let value:RasterTileValue;if(change.mode==='set-block')value=Object.freeze({baseBlockId:change.blockId as BlockId,mutations:Object.freeze([])});else value=Object.freeze({baseBlockId:previous.baseBlockId,mutations:Object.freeze([...previous.mutations,change.mutation])});
     const entry={key:change.key,value};if(index>=0)layer.surface.tiles[index]=entry;else layer.surface.tiles.push(entry);}

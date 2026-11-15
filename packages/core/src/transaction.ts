@@ -322,6 +322,11 @@ export class DocumentTransaction{
   renameLayer(id:LayerId,name:string){return this.meta(id,{name:name.trim()});}
   setLayerVisibility(id:LayerId,visible:boolean){return this.meta(id,{visible});}
   setLayerLocked(id:LayerId,locked:boolean){return this.meta(id,{locked});}
+  setLayerAlphaLocked(id:LayerId,alphaLocked:boolean){
+    const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
+    if((layer.alphaLocked??false)===alphaLocked)return false;
+    return this.meta(id,{alphaLocked});
+  }
   setLayerPositionLocked(id:LayerId,positionLocked:boolean){
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if((layer.positionLocked??false)===positionLocked)return false;
@@ -343,7 +348,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='comps'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'|'alphaLocked'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

@@ -19,6 +19,7 @@ export type LayerNode=Readonly<{
   baseColor?:'white';
   colorTag?:LayerColorTag|null;
   positionLocked?:boolean;
+  alphaLocked?:boolean;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;

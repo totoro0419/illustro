@@ -57,14 +57,15 @@ export class RendererRegistry {
 export const rendererRegistry=new RendererRegistry;
 export function compilePreset(input,context={}){
  const p=copy(validateFoundation(input));
- keys(context,['commonStabilization','commonForceFade','deviceCurve','knownLength','knownDuration','forceFadeGeometry'],'stroke context');
+ keys(context,['commonStabilization','commonForceFade','deviceCurve','knownLength','knownDuration','forceFadeGeometry','alphaLocked'],'stroke context');
+ if(context.alphaLocked!==undefined&&typeof context.alphaLocked!=='boolean')throw Error('invalid alpha lock');
  if(context.forceFadeGeometry!==undefined&&!['legacy','adaptive-v1'].includes(context.forceFadeGeometry))throw Error('unsupported force fade geometry');
  if(context.deviceCurve){checkCurve(context.deviceCurve);p.pressure.deviceCurve=copy(context.deviceCurve);}
  if(p.stabilization.scope==='common'&&context.commonStabilization){keys(context.commonStabilization,['constant','fast','speedMode','post'],'common stabilization');p.stabilization={...p.stabilization,...context.commonStabilization};}
  if(p.forceFade?.scope==='common'&&context.commonForceFade){keys(context.commonForceFade,['enabled','start','end','minimum','curve'],'common force fade');p.forceFade={...p.forceFade,...copy(context.commonForceFade)};}
  for(const k of ['knownLength','knownDuration'])if(context[k]!==undefined)finite(context[k],0,1e9,k);
  validateFoundation(p);
- if(p.kind!=='mono'||!['auto','continuous','stamp','soft','sweep'].includes(p.renderer))return rendererRegistry.compile(p,context);
+ if(p.kind!=='mono'||!['auto','continuous','stamp','soft','sweep'].includes(p.renderer))return {...rendererRegistry.compile(p,context),...(context.alphaLocked?{__alphaLocked:true}:{})};
  if(Object.keys(p.extensions).length)throw Error('material extension requires a renderer provider');
  choice(p.tip.shape,['round','ellipse','rect','mask','bristle','star','leaf'],'tip shape');
  if(p.stabilization.post)throw Error('post correction requires explicit correctGeometry(), not live finalization');
@@ -80,6 +81,7 @@ export function compilePreset(input,context={}){
  if(out.tip==='mask')out.mask=image(p.tip.resource);if(texture.kind==='image')out.texture=image(texture.resource);
  // Validate the compatibility surface before adding private renderer metadata.
  const forValidation={...out,mappings:[]};validatePreset(forValidation);
+ if(context.alphaLocked)out.__alphaLocked=true;
  out.__foundation={version:1,preset:p,context:copy(context),solid,...(coverageUnion?{coverageUnion:true}:{}),material:!solid,texture,opacity:solid?1:p.paint==='saturated'?p.opacity:1};return out;
 }
 function sourceValue(m,q,speed,dir,distance,time,seed,index){

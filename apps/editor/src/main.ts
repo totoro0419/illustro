@@ -560,6 +560,10 @@ const renderLayers=()=>{
   batchButton.setAttribute('aria-pressed',String(layerBatchMode));
   byId('layerBatchActions').hidden=!layerBatchMode;
   byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
+  const alphaLock=byId<HTMLButtonElement>('layerAlphaLock');
+  alphaLock.disabled=!documentReady||selectedLayer.baseColor==='white';
+  alphaLock.textContent=selectedLayer.alphaLocked?'不透明度ロックを解除':'不透明度をロック';
+  alphaLock.setAttribute('aria-pressed',String(!!selectedLayer.alphaLocked));
   const positionLock=byId<HTMLButtonElement>('layerPositionLock');
   positionLock.disabled=!documentReady;
   positionLock.textContent=selectedLayer.positionLocked?'位置ロックを解除':'位置をロック';
@@ -642,7 +646,7 @@ const renderLayers=()=>{
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':layer.positionLocked?'位置ロック中':'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':layer.positionLocked?'位置ロック中':'',layer.alphaLocked?'不透明度ロック中':'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=event=>{
         if(batchRow){
@@ -806,6 +810,10 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   renderLayers();
 };
 byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=pickLayerOnCanvas;
+byId<HTMLButtonElement>('layerAlphaLock').onclick=()=>{
+  const layer=controller.selectedLayer;
+  changeLayer(layer.alphaLocked?'不透明度のロックを解除しました。':'不透明度をロックしました。',tx=>tx.setLayerAlphaLocked(layer.id,!layer.alphaLocked));
+};
 byId<HTMLButtonElement>('layerPositionLock').onclick=()=>{
   const layer=controller.selectedLayer;
   changeLayer(layer.positionLocked?'位置ロックを解除しました。':'レイヤーの位置をロックしました。',tx=>tx.setLayerPositionLocked(layer.id,!layer.positionLocked));
