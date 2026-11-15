@@ -79,6 +79,7 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     ['colorPage','色の画面','色','カラーパレット'],
     ['brushPage','ブラシの設定','描画','筆 設定'],
     ['workspaceToggle','作業欄を開閉','設定','ワークスペース'],
+    ['quickControllerOpen','Quick Controllerを開く','設定','ショートカット 固定ボタン よく使う操作'],
     ['c04FocusToggle','集中表示を切り替える','表示','Focus キャンバスだけ'],
     ['c04FullscreenToggle','画面いっぱいに表示','表示','全画面 Fullscreen'],
     ['home','ホーム画面','作品','作品一覧'],
