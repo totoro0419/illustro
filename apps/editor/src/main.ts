@@ -15,6 +15,7 @@ import {installEyedropperSettings} from './color/eyedropperSettings';
 import {getAsset,addAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import {installFillPanel} from './fill/panel';
 import {installTransformPanel} from './transform/panel';
 import {transformLinkedMask} from './transform/mask';
 import {ArtworkClipboard} from './selection/clipboard';
@@ -3338,6 +3339,50 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
       });
     }
   };
+});
+installFillPanel(byId('documentBoxBody'),{
+  drawing:()=>documentReady?surface:null,
+  color:()=>hex(foreground.current),
+  references:()=>controller.layers.map(layer=>({id:layer.id,name:layer.name})),
+  capture:async(reference,destination,specifiedId,needTarget)=>{
+    const artwork=controller.document,head=artwork.head,root=artwork.root,layer=controller.selectedLayer;
+    const drawing=surface,selection=c06Selection?.active()??null;
+    if(!drawing)throw Error('作品を開いてください。');
+    const referenced=reference==='layer'?controller.layers.find(item=>item.id===specifiedId):layer;
+    if(!referenced)throw Error('参照するレイヤーを選んでください。');
+    if(needTarget&&destination==='active'&&(layer.baseColor==='white'||root.isLayerContentLocked(layer.id)))
+      throw Error('塗れるレイヤーを選ぶか、新しいレイヤーに塗ってください。');
+    let source:Uint8Array|undefined,target:Uint8Array|null=null;
+    await withClipboardAccess(async active=>{
+      const wanted=new Set([referenced.id]);
+      if(needTarget&&destination==='active')wanted.add(layer.id);
+      const layers=await active.captureDocumentLayers(wanted);
+      source=reference==='merged'?new Uint8Array(await renderFrozenArtwork(captureExport(artwork))):layers.get(referenced.id);
+      if(needTarget&&destination==='active')target=layers.get(layer.id)??null;
+      return 'read';
+    });
+    if(!source||(needTarget&&destination==='active'&&!target))throw Error('塗りつぶしに必要な画像を取得できません。');
+    const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
+      controller.selectedLayer.id===layer.id&&c06Selection?.active()===selection;
+    const {width,height}=root;
+    return {
+      name:reference==='merged'?'見えている絵':referenced.name,key:root.documentId+':'+(reference==='merged'?'merged':referenced.id),
+      referenceValid:()=>surface===drawing&&controller.document===artwork&&
+        (reference==='merged'?artwork.head===head:
+          artwork.root.hasLayer(referenced.id)&&artwork.root.getLayer(referenced.id)===referenced&&artwork.root.width===width&&artwork.root.height===height),
+      width,height,source,target,selection,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,
+      select:mask=>c06Selection?.replaceActive(mask),
+      apply:async pixels=>withClipboardAccess(async()=>{
+        if(!valid())throw Error('作品が変わったため塗りを取り消しました。');
+        const tx=artwork.begin('塗りつぶす');
+        const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,'塗りつぶし');
+        if(destination==='active')tx.replaceLayerRaster(id,pixels);
+        controller.lastPersistenceHandoff=tx.commit().persistence;
+        controller.selectLayer(id);
+        return 'edit';
+      })
+    };
+  }
 });
 c06ClipboardUI=installClipboardPanel({
   canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending&&!documentActivationPending,
