@@ -2,6 +2,38 @@
 import {type RGB,type ForegroundColor,rgbToHsv,hsvToRgb,hex} from './model';
 
 export type HarmonyMode='complement'|'analogous'|'triad'|'split';
+type VisionMode='none'|'protan'|'deutan'|'tritan';
+// Machado, Oliveira & Fernandes (2009), full-severity matrices for linear RGB.
+// These are approximation modes for visual comparison, not a medical diagnosis.
+const VISION_MATRICES:Readonly<Record<Exclude<VisionMode,'none'>,readonly number[]>>={
+  protan:[.152286,1.052583,-.204868,.114503,.786281,.099216,-.003882,-.048116,1.051998],
+  deutan:[.367322,.860646,-.227968,.280085,.672501,.047413,-.011820,.042940,.968881],
+  tritan:[1.255528,-.076749,-.178779,-.078411,.930809,.147602,.004733,.691367,.303900],
+};
+function installVisionSvg(){
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('width','0');svg.setAttribute('height','0');
+  svg.setAttribute('aria-hidden','true');
+  svg.style.cssText='position:absolute;width:0;height:0;pointer-events:none;overflow:hidden';
+  const defs=document.createElementNS(ns,'defs');
+  for(const [key,coefficients] of Object.entries(VISION_MATRICES)){
+    const filter=document.createElementNS(ns,'filter');
+    filter.setAttribute('id','c04-vision-'+key);
+    filter.setAttribute('color-interpolation-filters','linearRGB');
+    const matrix=document.createElementNS(ns,'feColorMatrix');
+    matrix.setAttribute('type','matrix');
+    matrix.setAttribute('values',[
+      ...coefficients.slice(0,3),0,0,
+      ...coefficients.slice(3,6),0,0,
+      ...coefficients.slice(6,9),0,0,
+      0,0,0,1,0
+    ].join(' '));
+    filter.append(matrix);defs.append(filter);
+  }
+  svg.append(defs);document.body.append(svg);
+  return svg;
+}
 export function relativeLuminance(color:RGB){
   const linear=(channel:number)=>channel<=.04045?channel/12.92:((channel+.055)/1.055)**2.4;
   return .2126*linear(color.r)+.7152*linear(color.g)+.0722*linear(color.b);
@@ -30,17 +62,37 @@ export function installHarmonyTools(state:ForegroundColor){
     mode.add(new Option(name,key));
   const choices=document.createElement('div');choices.className='c04-harmony-options';
   const contrast=document.createElement('output');contrast.setAttribute('role','status');
+  const visionFilter=installVisionSvg();
+  const vision=document.createElement('select');vision.setAttribute('aria-label','色覚の見え方を比べる');
+  for(const [value,label] of [
+    ['none','通常の表示'],['protan','赤の違いを感じにくい見え方（参考）'],
+    ['deutan','緑の違いを感じにくい見え方（参考）'],
+    ['tritan','青の違いを感じにくい見え方（参考）']
+  ] as const)vision.add(new Option(label,value));
+  const visionCaption=document.createElement('label');
+  visionCaption.textContent='色覚の見え方を比較';visionCaption.append(vision);
   const gray=document.createElement('input');gray.type='checkbox';
   const grayLabel=document.createElement('label');grayLabel.append(gray,document.createTextNode(' 作品を白黒表示で確認する（元の色は変更しません）'));
   const notice=document.createElement('p');notice.textContent='候補の色を押すと現在の描画色だけ変更します。作品の画素や履歴は変更されません。';
-  contents.append(mode,choices,contrast,grayLabel,notice);
+  const limitation=document.createElement('small');
+  limitation.textContent='色覚の違いを研究モデルで近似した表示です。実際の一人ひとりの見え方を完全に示すものではありません。';
+  contents.append(mode,choices,contrast,grayLabel,visionCaption,limitation,notice);
   wrapper.append(heading,contents);
   if(target)target.before(wrapper);else screen.append(wrapper);
   const displayGray=()=>{
     document.body.classList.toggle('c04-gray-proof',gray.checked);
     grayLabel.title=gray.checked?'表示だけが白黒になっています。元の色は保持しています。':'白黒確認はオフです。';
   };
-  gray.onchange=displayGray;
+  gray.onchange=()=>{
+    if(gray.checked)vision.value='none';
+    document.body.dataset.c04Vision=vision.value;
+    displayGray();
+  };
+  vision.onchange=()=>{
+    if(vision.value!=='none')gray.checked=false;
+    document.body.dataset.c04Vision=vision.value;
+    displayGray();
+  };
   const render=()=>{
     if(!wrapper.open)return;
     const original=state.current,values=harmonyColors(original,mode.value as HarmonyMode);
@@ -64,7 +116,7 @@ export function installHarmonyTools(state:ForegroundColor){
   wrapper.addEventListener('toggle',render);mode.onchange=render;
   const unsubscribe=state.subscribe(render);
   const cleanup=()=>{
-    unsubscribe();document.body.classList.remove('c04-gray-proof');
+    unsubscribe();document.body.classList.remove('c04-gray-proof');document.body.dataset.c04Vision='none';visionFilter.remove();
   };
   // Page transitions may keep the color picker mounted. Only the checkbox may
   // enter grayscale mode; never change the document color space or export bytes.
