@@ -103,7 +103,7 @@ export async function importAssetPack(manifest:PackManifest,options?:Readonly<{o
       const id=conflict?crypto.randomUUID():item.id;
       // Create a new identity on conflict; never mutate existing saved work.
       const result=await addAsset({
-        id,kind:item.kind,name:item.name,data:new Blob([payload],{type:item.mime}),
+        id,kind:item.kind,name:item.name,data:new Blob([payload.buffer as ArrayBuffer],{type:item.mime}),
         folder:item.folder,tags:item.tags,license:item.license,origin:item.origin,notes:item.notes
       });
       renamedIds[item.id]=result.id;imported.push(result);
