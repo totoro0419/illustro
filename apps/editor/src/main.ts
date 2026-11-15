@@ -15,6 +15,9 @@ import {installEyedropperSettings} from './color/eyedropperSettings';
 import {getAsset} from './assets/library';
 import {installAssetPanel} from './assets/assetPanel';
 import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import {ArtworkClipboard} from './selection/clipboard';
+import {installClipboardPanel,type ClipboardUI} from './selection/clipboardPanel';
+import './ui/c06.css';
 import './ui/c05.css';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
@@ -115,6 +118,7 @@ try{
  if(saved&&typeof saved==='object')guidePreferences=normalizeGuideSettings(saved);
 }catch{/* Drawing remains usable when preferences are unavailable. */}
 let c05ReferenceBoard:ReferenceBoardService|undefined;
+let c06ClipboardUI:ClipboardUI|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
@@ -1529,7 +1533,7 @@ function refreshSelectionControls(){
    ?'キャンバス上をドラッグして範囲を作成してください。'
    :rectangle?'範囲を設定しました。ブラシまたは消しゴムで内側に描けます。'
    :'選択範囲なし。キャンバス全体に描けます。';
- updateContextBar();
+ updateContextBar();c06ClipboardUI?.refresh();
 }
 function reflectRailTool(){for(const [id,active] of [['paint',selectedTool==='brush'],['erase',selectedTool==='eraser'],['eyedropper',selectedTool==='eyedropper']] as const)byId(id).setAttribute('aria-pressed',String(active));updateContextBar();}
 function activateEyedropper(){if(!surface||!documentReady)return;surface.panTool=false;byId('panView').setAttribute('aria-pressed','false');if(selectedTool!=='eyedropper')lastDrawingTool=selectedTool==='eraser'?'eraser':'brush';eyedropperOriginal=foreground.current;selectedTool='eyedropper';surface.configureSample(eyedropperSettings.options());surface.setEyedropper(true,eyedropperSettings.options().source);reflectRailTool();byId('status').textContent='キャンバスに触れて、取りたい色を選んでください。';updateQa();}
@@ -3203,6 +3207,51 @@ persistence.setSaveAttachmentProvider(async()=>{
 installAssetPanel({openReference:assetId=>c05References.add(assetId)});
 document.querySelector('#referenceBoxBody')?.closest('.workspace-box')?.querySelector('.box-toggle')
   ?.addEventListener('click',()=>{void c05References.refreshIfChanged();});
+
+// C06: copy/cut/paste operate through real Core transactions and one history step.
+const c06Clipboard=new ArtworkClipboard();
+async function withClipboardAccess(action:(drawing:BrushSurface)=>Promise<'edit'|'read'>){
+  const drawing=surface,artwork=controller.document;
+  if(!drawing||!documentReady||drawing.busy||drawing.inputActive||geometryBusy||historyPending||documentActivationPending)
+    throw Error('描画や保存の処理が終わってから実行してください。');
+  // Prevent a second clipboard mutation while preserving independent UI navigation.
+  geometryBusy=true;
+  drawing.setInputBarrier(true);
+  try{
+    const head=artwork.head;
+    const result=await action(drawing);
+    if(drawing!==surface||artwork!==controller.document)throw Error('作品が切り替わったため中止しました。');
+    if(result==='edit'){
+      if(head===artwork.head)throw Error('編集内容が作品に反映されませんでした。');
+      queueLatestCommit();checkpointNeedsFullSeed=true;
+      await drawing.restoreDocumentProjection();
+      renderLayers();updateHistoryButtons();updateQa();
+    }
+  }finally{
+    geometryBusy=false;
+    if(surface===drawing)drawing.setInputBarrier(false);
+    c06ClipboardUI?.refresh();
+  }
+}
+const c06Download=(blob:Blob,fileName:string)=>{
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=fileName;document.body.append(link);link.click();link.remove();
+  window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+c06ClipboardUI=installClipboardPanel({
+  canEdit:()=>documentReady&&!!surface&&!geometryBusy&&!historyPending&&!documentActivationPending,
+  hasSelection:()=>!!surface?.selectedRectangle,
+  copy:(merged,selection)=>withClipboardAccess(async drawing=>{
+    await c06Clipboard.copy(controller,drawing,{merged,selectionOnly:selection});return 'read';
+  }),
+  cut:()=>withClipboardAccess(async drawing=>{
+    await c06Clipboard.cut(controller,drawing);return 'edit';
+  }),
+  paste:placement=>withClipboardAccess(async()=>{
+    c06Clipboard.paste(controller,placement);return 'edit';
+  }),
+  exportPng:async()=>c06Download(await c06Clipboard.makePng(),'illustro-copy.png')
+},c06Clipboard);
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
 if(perfMode){
