@@ -218,6 +218,8 @@ function changeLayer(label:string, change:(tx:ReturnType<CoreDocument['begin']>)
   updateQa();
 }
 
+let draggedLayer:{document:CoreDocument;id:LayerId}|null=null;
+
 const renderLayers=()=>{
   const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
   const query=byId<HTMLInputElement>('layerSearch').value.trim().toLocaleLowerCase();
@@ -263,11 +265,39 @@ const renderLayers=()=>{
           void materializeAndSelectWhiteLayer(layer.id).catch(showStorageError);
           return;
         }
-        try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+'を選びました。次の線はこのレイヤーに入ります。';updateHistoryButtons();updateQa();}
+        try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+(layer.locked?'を選びました。内容はロック中です。':layer.visible?'を選びました。次の線はこのレイヤーに入ります。':'を選びました。描くにはレイヤーを表示してください。');updateHistoryButtons();updateQa();}
         catch{byId('status').textContent='そのレイヤーを選択できませんでした。';}
       };
       const entry=document.createElement('div');
       entry.className='layer-entry';
+      if(id==='layerPageList'&&documentReady&&!query&&!tagFilter&&layer.baseColor!=='white'){
+        row.draggable=!layer.locked;
+        row.ondragstart=event=>{
+          if(!event.dataTransfer)return;
+          draggedLayer={document:controller.document,id:layer.id};
+          event.dataTransfer.effectAllowed='move';
+          event.dataTransfer.setData('text/plain',layer.name);
+        };
+        row.ondragend=()=>{draggedLayer=null;};
+        entry.ondragover=event=>{
+          if(draggedLayer?.document!==controller.document||draggedLayer.id===layer.id)return;
+          event.preventDefault();
+          if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+          entry.classList.add('layer-drop-target');
+        };
+        entry.ondragleave=event=>{
+          if(!(event.relatedTarget instanceof Node)||!entry.contains(event.relatedTarget))entry.classList.remove('layer-drop-target');
+        };
+        entry.ondrop=event=>{
+          entry.classList.remove('layer-drop-target');
+          const source=draggedLayer;
+          draggedLayer=null;
+          if(source?.document!==controller.document||source.id===layer.id)return;
+          event.preventDefault();
+          const index=controller.document.root.rootLayerIds.indexOf(layer.id);
+          changeLayer('レイヤーの順番を変更しました。',tx=>tx.moveRasterLayerTo(source.id,index));
+        };
+      }
       const visibility=document.createElement('button'),lock=document.createElement('button');
       visibility.type=lock.type='button';
       visibility.textContent=layer.visible?'表示':'非表示';

@@ -20,6 +20,7 @@ details p{font-size:13px}
 .layer-list{display:grid;gap:5px;margin:9px 0}
 .layer-entry{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:stretch;gap:4px}
 .layer-entry>button{min-height:40px}
+.layer-drop-target{outline:2px solid var(--a-accent,#596bd8);outline-offset:-2px;border-radius:8px}
 .layer-page-fields{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
 .layer-page-fields label{display:flex;align-items:center;gap:8px;max-width:100%}
 .layer-page-fields input{min-width:0}

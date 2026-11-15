@@ -26,17 +26,22 @@ export class DocumentTransaction{
     const next=[...order];next.splice(insertIndex,0,layerId);this.rootOrderValue=next;this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
   }
   moveRasterLayer(id:LayerId,direction:-1|1){
+    if(direction!==-1&&direction!==1)throw new Error('invalid layer move direction');
+    const fromIndex=this.rootValue.rootLayerIds.indexOf(id);
+    if(fromIndex<0)throw new Error('missing layer');
+    return this.moveRasterLayerTo(id,fromIndex+direction);
+  }
+  moveRasterLayerTo(id:LayerId,toIndex:number){
     this.open();
     if(this.slotsValue.length)throw new Error('Layer move must start its own transaction');
-    if(direction!==-1&&direction!==1)throw new Error('invalid layer move direction');
-    const order=[...this.rootValue.rootLayerIds],fromIndex=order.indexOf(id),toIndex=fromIndex+direction;
+    const order=[...this.rootValue.rootLayerIds],fromIndex=order.indexOf(id);
     if(fromIndex<0)throw new Error('missing layer');
-    const adjacent=order[toIndex];
-    if(!adjacent)return false;
+    if(!Number.isInteger(toIndex)||toIndex<0||toIndex>=order.length||toIndex===fromIndex)return false;
     const layer=this.rootValue.getLayer(id);
-    if(layer.locked||layer.baseColor==='white'||this.rootValue.getLayer(adjacent).baseColor==='white')return false;
-    order[fromIndex]=adjacent;
-    order[toIndex]=id;
+    const affected=order.slice(Math.min(fromIndex,toIndex),Math.max(fromIndex,toIndex)+1);
+    if(layer.locked||affected.some(layerId=>this.rootValue.getLayer(layerId).baseColor==='white'))return false;
+    order.splice(fromIndex,1);
+    order.splice(toIndex,0,id);
     this.rootOrderValue=order;
     this.slotsValue.push(Object.freeze({type:'reorder',layerId:id,fromIndex,toIndex}));
     return true;
