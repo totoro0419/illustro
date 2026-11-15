@@ -3,6 +3,7 @@
  * The palette never implements a second undo, brush engine or document writer.
  */
 import type {ShellControl} from './shellBehavior';
+import {fromHex,hex,type ForegroundColor} from '../color/model';
 
 type Command=Readonly<{
   id:string;label:string;category:string;aliases:string;
@@ -38,7 +39,7 @@ const parseRecents=():string[]=>{
   try{const raw=JSON.parse(read(RECENTS_KEY)||'[]') as unknown;return Array.isArray(raw)?raw.filter((s):s is string=>typeof s==='string').slice(0,24):[];}catch{return [];}
 };
 
-export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>):CommandService{
+export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>,colorState:ForegroundColor):CommandService{
   const actions:Array<readonly [string,string,string,string]>= [
     ['undo','元に戻す','履歴','Undo 取り消し'],
     ['redo','やり直す','履歴','Redo'],
@@ -96,6 +97,19 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
   });
   function dynamicCommands(){
     const commands=[...known];
+    // Color command IDs store the exact color rather than an unstable palette index.
+    const paletteColors=new Set<string>([hex(colorState.current),hex(colorState.background)]);
+    for(const chip of document.querySelectorAll<HTMLElement>('.color-swatch[data-hex]')){
+      if(chip.dataset.hex)paletteColors.add(chip.dataset.hex.toUpperCase());
+    }
+    for(const slot of slots)if(slot.startsWith('color:'))paletteColors.add(slot.slice(6));
+    for(const value of paletteColors){
+      const parsed=fromHex(value);if(!parsed)continue;
+      commands.push({
+        id:'color:'+value,label:'描画色 '+value,category:'色',aliases:'カラーパレット 色 保存した色',
+        availability:()=>null,execute:()=>colorState.choose(parsed),
+      });
+    }
     const brush=el<HTMLSelectElement>('brush');
     if(brush)for(const option of brush.options){
       if(!option.value||option.disabled)continue;
