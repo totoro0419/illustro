@@ -241,8 +241,9 @@ export class BrushSurface{
     }else this.strokeClip=null;
     if(this.inspectedLayer){this.status('レイヤーの単独表示を解除してから描いてください。');return;}
     const layer=this.controller.selectedLayer;
-    if(layer.locked||!layer.visible){
-      this.status(layer.locked?'このレイヤーはロック中です。解除するか、別のレイヤーを選んでください。':'このレイヤーは非表示です。表示するか、別のレイヤーを選んでください。');
+    const root=this.controller.document.root,locked=root.isLayerLocked(layer.id);
+    if(locked||!root.isLayerVisible(layer.id)){
+      this.status(locked?'このレイヤーはロック中です。解除するか、別のレイヤーを選んでください。':'このレイヤーは非表示です。表示するか、別のレイヤーを選んでください。');
       return;
     }
     if(this.controller.selectedLayer.baseColor==='white'){this.status('背景レイヤーをもう一度選ぶと、背景にも直接描けます。');return;}
@@ -455,7 +456,7 @@ export class BrushSurface{
     const tileCanvas=new OffscreenCanvas(TILE,TILE),tileContext=tileCanvas.getContext('2d');
     if(!tileContext)throw new Error('Thumbnail tile canvas unavailable');
     for(const layer of this.controller.layers){
-      if(!layer.visible||layer.opacity<=0)continue;
+      if(!root.isLayerVisible(layer.id)||layer.opacity<=0)continue;
       const key=layer.surface.descriptor.surfaceId;
       const layerCanvas=new OffscreenCanvas(width,height),layerContext=layerCanvas.getContext('2d');
       if(!layerContext)throw new Error('Thumbnail layer canvas unavailable');
@@ -557,7 +558,7 @@ export class BrushSurface{
     const solo=this.inspectedLayer;
     this.renderer?.setSurfaceStyles(this.controller.layers.map(layer=>({
       surfaceKey:layer.surface.descriptor.surfaceId,
-      visible:solo?layer.id===solo.id:layer.visible,
+      visible:solo?layer.id===solo.id:this.controller.document.root.isLayerVisible(layer.id),
       opacity:preview&&preview.layerId===layer.id?preview.opacity:layer.opacity,
     })));
   }

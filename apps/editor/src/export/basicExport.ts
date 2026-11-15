@@ -23,7 +23,7 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId):Frozen
   const layers=root.rootLayerIds.map(id=>{
     const layer=root.getLayer(id);
     if(layer.kind!=='raster'||layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1'||layer.surface.descriptor.workingColorSpaceRef!=='srgb')throw new Error('このレイヤーの色形式はM06に未対応です。');
-    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,visible:soloLayerId?id===soloLayerId:layer.visible,opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
+    return Object.freeze({surfaceId:layer.surface.descriptor.surfaceId,visible:soloLayerId?id===soloLayerId:root.isLayerVisible(id),opacity:layer.opacity,...(layer.baseColor?{baseColor:layer.baseColor}:{})});
   });
   const byLayer=new Map(root.rootLayerIds.map(id=>[id,root.getLayer(id).surface.descriptor.surfaceId]));
   const strokes: {surfaceId:string;record:StrokeRecord}[]=[];

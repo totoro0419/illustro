@@ -10,3 +10,5 @@ export type {PersistenceHandoff} from './recovery';
 export {ProtectionTracker} from './recovery';
 export {CORE_PERSISTENCE_SCHEMA_VERSION,mergeCoreRecovery,type CorePersistenceSnapshotV1,type CoreRecoveryPacketV1,type PersistedBlockDescriptor,type PersistedPersistenceHandoff} from './persistence';
 export {CANONICAL_TILE_SIZE,createRasterSurfaceDescriptor,pixelToTile,tileKey,type DirtyTileHint,type LocalDirtyRect,type RasterSampleEncoding,type RasterSurfaceDescriptor,type RasterTileValue} from './raster/surface';
+
+export type {LayerGroup} from './layerGroups';

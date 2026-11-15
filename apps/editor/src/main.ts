@@ -31,7 +31,7 @@ import {captureExport,exportImage,exportFileName,type ImageFormat,type ImageExpo
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type SemanticOperation,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerGroup,type SemanticOperation,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -223,6 +223,7 @@ let layerBatchDocument:CoreDocument|null=null;
 let layerBatchMode=false;
 let layerBatchAnchor:LayerId|null=null;
 const layerBatchIds=new Set<LayerId>();
+const collapsedLayerGroups=new Set<LayerId>();
 
 function selectLayerForBatch(id:LayerId,visibleRows:readonly {id:LayerId}[],extend:boolean){
   const anchor=visibleRows.findIndex(layer=>layer.id===layerBatchAnchor);
@@ -260,13 +261,53 @@ function clearLayerOpacityPreview(){
   opacityPreview=null;
 }
 
+function groupLayerRow(group:LayerGroup,depth:number){
+  const row=document.createElement('div');
+  row.className='layer-group-row';
+  row.style.marginInlineStart=Math.min(depth,8)*10+'px';
+  const button=(text:string,label:string,action:()=>void)=>{
+    const control=document.createElement('button');
+    control.type='button';
+    control.textContent=text;
+    control.setAttribute('aria-label',label);
+    control.onclick=action;
+    row.append(control);
+    return control;
+  };
+  const expanded=!collapsedLayerGroups.has(group.id);
+  const summary=button((expanded?'▾ ':'▸ ')+group.name,group.name,()=>{
+    if(expanded)collapsedLayerGroups.add(group.id);
+    else collapsedLayerGroups.delete(group.id);
+    renderLayers();
+    byId('layerPageList').querySelector<HTMLButtonElement>(`[data-group-id="${group.id}"]`)?.focus();
+  });
+  summary.dataset.groupId=group.id;
+  summary.setAttribute('aria-expanded',String(expanded));
+  button(group.visible?'表示':'非表示',group.name+'の表示を切り替える',()=>{
+    changeLayer('グループの表示を切り替えました。',tx=>tx.updateLayerGroup(group.id,{visible:!group.visible}));
+  });
+  button(group.locked?'解除':'ロック',group.name+'のロックを切り替える',()=>{
+    changeLayer('グループのロックを切り替えました。',tx=>tx.updateLayerGroup(group.id,{locked:!group.locked}));
+  });
+  button('改名',group.name+'の名前を変更する',()=>{
+    const name=window.prompt('グループ名',group.name)?.trim();
+    if(name&&name!==group.name)changeLayer('グループ名を変更しました。',tx=>tx.updateLayerGroup(group.id,{name}));
+  });
+  button('解除',group.name+'をグループ解除する',()=>{
+    changeLayer('グループを解除しました。',tx=>tx.dissolveLayerGroup(group.id));
+  });
+  return row;
+}
+
 const renderLayers=()=>{
+  const root=controller.document.root;
   const rows=[...controller.layers].reverse(),selectedLayer=controller.selectedLayer,selectedName=selectedLayer.name;
   if(layerBatchDocument!==controller.document){
     layerBatchDocument=controller.document;
     layerBatchMode=false;
     layerBatchAnchor=null;
     layerBatchIds.clear();
+    collapsedLayerGroups.clear();
   }
   for(const id of layerBatchIds){
     if(!controller.document.root.hasLayer(id))layerBatchIds.delete(id);
@@ -281,6 +322,7 @@ const renderLayers=()=>{
   batchButton.setAttribute('aria-pressed',String(layerBatchMode));
   byId('layerBatchActions').hidden=!layerBatchMode;
   byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
+  byId<HTMLButtonElement>('layerBatchGroup').disabled=!documentReady||!layerBatchIds.size;
   for(const id of ['layerBatchShow','layerBatchHide','layerBatchLock','layerBatchUnlock']){
     byId<HTMLButtonElement>(id).disabled=!documentReady||!layerBatchIds.size;
   }
@@ -299,20 +341,21 @@ const renderLayers=()=>{
   nameField.dataset.layerId=selectedLayer.id;
   nameField.disabled=!documentReady;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
-  const canMove=!!documentReady&&!layerBatchMode&&!query&&!tagFilter&&!selectedLayer.locked&&selectedLayer.baseColor!=='white';
+  const sameParent=(a:LayerId,b:LayerId)=>root.groupsForLayer(a).at(-1)?.id===root.groupsForLayer(b).at(-1)?.id;
+  const canMove=!!documentReady&&!layerBatchMode&&!query&&!tagFilter&&!root.isLayerLocked(selectedLayer.id)&&selectedLayer.baseColor!=='white';
   for(const direction of [-1,1] as const){
     const id=direction===1?'layerBatchUp':'layerBatchDown';
     const selected=rows.filter(layer=>layerBatchIds.has(layer.id));
-    const movable=selected.length>0&&selected.every(layer=>!layer.locked&&layer.baseColor!=='white');
+    const movable=selected.length>0&&selected.every(layer=>!root.isLayerLocked(layer.id)&&layer.baseColor!=='white');
     const hasRoom=rows.some((layer,index)=>{
       const adjacent=rows[index-direction];
-      return layerBatchIds.has(layer.id)&&adjacent&&!layerBatchIds.has(adjacent.id)&&adjacent.baseColor!=='white';
+      return layerBatchIds.has(layer.id)&&adjacent&&!layerBatchIds.has(adjacent.id)&&adjacent.baseColor!=='white'&&sameParent(layer.id,adjacent.id);
     });
     byId<HTMLButtonElement>(id).disabled=!documentReady||!!query||!!tagFilter||!movable||!hasRoom;
   }
   const previous=rows[selectedIndex-1],next=rows[selectedIndex+1];
-  byId<HTMLButtonElement>('moveLayerUp').disabled=!canMove||!previous||previous.baseColor==='white';
-  byId<HTMLButtonElement>('moveLayerDown').disabled=!canMove||!next||next.baseColor==='white';
+  byId<HTMLButtonElement>('moveLayerUp').disabled=!canMove||!previous||previous.baseColor==='white'||!sameParent(selectedLayer.id,previous.id);
+  byId<HTMLButtonElement>('moveLayerDown').disabled=!canMove||!next||next.baseColor==='white'||!sameParent(selectedLayer.id,next.id);
   for(const id of ['layerList','layerPageList']){
     const list=byId<HTMLDivElement>(id);
     const matching=id==='layerPageList'?rows.filter(layer=>{
@@ -322,10 +365,24 @@ const renderLayers=()=>{
     if(id==='layerPageList'){
       byId('layerPageSelected').textContent=selectedName+(matching.includes(selectedLayer)?'':'（絞り込みで一覧に表示されていません）');
     }
-    list.replaceChildren(...matching.map(layer=>{
+    const seenGroups=new Set<LayerId>();
+    const entries:HTMLElement[]=[];
+    for(const layer of matching){
+      const groups=root.groupsForLayer(layer.id);
+      if(id==='layerPageList'){
+        for(const [depth,group] of groups.entries()){
+          if(!seenGroups.has(group.id)){
+            entries.push(groupLayerRow(group,depth));
+            seenGroups.add(group.id);
+          }
+          if(!query&&!tagFilter&&collapsedLayerGroups.has(group.id))break;
+        }
+        if(!query&&!tagFilter&&groups.some(group=>collapsedLayerGroups.has(group.id)))continue;
+      }
       const selected=layer.id===controller.selectedLayerId,row=document.createElement('button'),name=document.createElement('span'),state=document.createElement('span');
       const batchRow=id==='layerPageList'&&layerBatchMode;
       const batchSelected=batchRow&&layerBatchIds.has(layer.id);
+      const effectiveLocked=root.isLayerLocked(layer.id),effectiveVisible=root.isLayerVisible(layer.id);
       row.type='button';row.className='layer-row';row.dataset.layerId=layer.id;
       row.setAttribute('aria-pressed',String(batchRow?batchSelected:selected));row.setAttribute('aria-label',layer.name+(batchRow?(batchSelected?'、まとめて操作する対象':''):(selected?'、選択中':'')));
       name.className='layer-name';name.textContent=layer.name;
@@ -333,7 +390,7 @@ const renderLayers=()=>{
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',layer.locked?'ロック中':'',layer.visible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=event=>{
         if(batchRow){
@@ -344,13 +401,14 @@ const renderLayers=()=>{
           void materializeAndSelectWhiteLayer(layer.id).catch(showStorageError);
           return;
         }
-        try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+(layer.locked?'を選びました。内容はロック中です。':layer.visible?'を選びました。次の線はこのレイヤーに入ります。':'を選びました。描くにはレイヤーを表示してください。');updateHistoryButtons();updateQa();}
+        try{controller.selectLayer(layer.id);if(!qaMode)void persistence.selectWorkLayer(layer.id).catch(showStorageError);renderLayers();byId('status').textContent=layer.name+(effectiveLocked?'を選びました。内容はロック中です。':effectiveVisible?'を選びました。次の線はこのレイヤーに入ります。':'を選びました。描くにはレイヤーを表示してください。');updateHistoryButtons();updateQa();}
         catch{byId('status').textContent='そのレイヤーを選択できませんでした。';}
       };
       const entry=document.createElement('div');
       entry.className='layer-entry';
+      if(id==='layerPageList'&&groups.length)entry.style.marginInlineStart=Math.min(groups.length,8)*10+'px';
       if(id==='layerPageList'&&documentReady&&!layerBatchMode&&!query&&!tagFilter&&layer.baseColor!=='white'){
-        row.draggable=!layer.locked;
+        row.draggable=!effectiveLocked;
         row.ondragstart=event=>{
           if(!event.dataTransfer)return;
           draggedLayer={document:controller.document,id:layer.id};
@@ -359,7 +417,7 @@ const renderLayers=()=>{
         };
         row.ondragend=()=>{draggedLayer=null;};
         entry.ondragover=event=>{
-          if(draggedLayer?.document!==controller.document||draggedLayer.id===layer.id)return;
+          if(draggedLayer?.document!==controller.document||draggedLayer.id===layer.id||!sameParent(draggedLayer.id,layer.id))return;
           event.preventDefault();
           if(event.dataTransfer)event.dataTransfer.dropEffect='move';
           entry.classList.add('layer-drop-target');
@@ -394,8 +452,9 @@ const renderLayers=()=>{
       visibility.className='layer-visibility';
       lock.className='layer-lock';
       entry.append(row,visibility,lock);
-      return entry;
-    }));
+      entries.push(entry);
+    }
+    list.replaceChildren(...entries);
     if(!matching.length)list.textContent='一致するレイヤーがありません。';
   }
   byId('layersBoxSummary').textContent=selectedName;
@@ -459,6 +518,11 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchIds.clear();
   layerBatchAnchor=null;
   renderLayers();
+};
+byId<HTMLButtonElement>('layerBatchGroup').onclick=()=>{
+  const name=window.prompt('グループ名','グループ')?.trim();
+  if(!name)return;
+  changeLayer('選んだレイヤーをグループにまとめました。',tx=>tx.createLayerGroup(layerBatchIds,name));
 };
 byId<HTMLButtonElement>('layerBatchUp').onclick=()=>changeLayer('選んだレイヤーを上に移動しました。',tx=>tx.moveRasterLayers(layerBatchIds,1));
 byId<HTMLButtonElement>('layerBatchDown').onclick=()=>changeLayer('選んだレイヤーを下に移動しました。',tx=>tx.moveRasterLayers(layerBatchIds,-1));

@@ -1,3 +1,4 @@
+import {validateLayerGroups,type LayerGroup} from './layerGroups';
 import {operationKey,type LayerId,type OperationKey,type RasterSurfaceId,type TransactionId,type RevisionId} from './ids';
 import {rasterLayer,parseLayerColorTag,validateDocumentInfo,type DocumentInfo,type LayerNode} from './model';
 import {RasterWorkingSet} from './raster/working';
@@ -8,12 +9,12 @@ import type {SemanticOperationDraft} from './history';
 import {CANONICAL_TILE_SIZE,pixelToTile,tileKey,RasterSurfaceManifest,type DirtyTileHint} from './raster/surface';
 
 export type DocumentGeometryKind='document.crop'|'document.canvas-resize'|'document.image-resize';
-type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
+type OperationSlot=Readonly<{type:'document-info';info:DocumentInfo}>|Readonly<{type:'dimensions';kind:DocumentGeometryKind;width:number;height:number;parameters:Readonly<Record<string,unknown>>}>|Readonly<{type:'working';layerId:LayerId}>|Readonly<{type:'metadata';layerId:LayerId}>|Readonly<{type:'structure';layerId:LayerId;surfaceId:RasterSurfaceId;insertIndex:number;name:string}>|Readonly<{type:'reorder';layerId:LayerId;fromIndex:number;toIndex:number}>|Readonly<{type:'groups';action:string;id:LayerId}>|Readonly<{type:'semantic';draft:SemanticOperationDraft;layerId:LayerId;key:OperationKey;dirtyTiles:readonly DirtyTileHint[]}>;
 export type RasterSemanticMutation=Readonly<{kind:string;schemaVersion:number;parameters:Readonly<Record<string,unknown>>;algorithmVersionRefs?:readonly string[];resourceRefs?:SemanticOperationDraft['resourceRefs'];sourceRevisionIds?:readonly RevisionId[];selectionSnapshotRefs?:readonly string[];resultValueRefs?:readonly string[]}>;
 
 export class DocumentTransaction{
   private readonly baseValue:RevisionId;private readonly rootValue;private readonly idValue:TransactionId;private readonly workingValue=new Map<LayerId,RasterWorkingSet>();
-  private readonly updatesValue=new Map<LayerId,LayerNode>();private readonly slotsValue:OperationSlot[]=[];private rootOrderValue:LayerId[]|null=null;private closed=false;private failed=false;private dimensionUpdate:{width:number;height:number}|null=null;
+  private readonly updatesValue=new Map<LayerId,LayerNode>();private readonly slotsValue:OperationSlot[]=[];private rootOrderValue:LayerId[]|null=null;private groupsValue:readonly LayerGroup[]|null=null;private closed=false;private failed=false;private dimensionUpdate:{width:number;height:number}|null=null;
   constructor(private readonly doc:CoreDocument,readonly label:string){if(!label.trim())throw new Error('empty transaction label');this.baseValue=doc.head;this.rootValue=doc.root;this.idValue=doc._internal(CORE_INTERNAL).ids.transaction();}
   get transactionId(){return this.idValue;}get baseRevision(){return this.baseValue;}
   addRasterLayerAbove(referenceId:LayerId):LayerId{
@@ -23,7 +24,44 @@ export class DocumentTransaction{
     if(this.rootValue.layers.get(layerId)||this.updatesValue.has(layerId))throw new Error('duplicate layer id');
     for(const id of order){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.surface.descriptor.surfaceId===surfaceId)throw new Error('duplicate raster surface id');}
     const name=`Layer ${order.length+1}`,layer=rasterLayer(layerId,surfaceId,reference.surface.descriptor.workingColorSpaceRef,reference.surface.descriptor.sampleEncoding,name),insertIndex=index+1;
-    const next=[...order];next.splice(insertIndex,0,layerId);this.rootOrderValue=next;this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
+    const next=[...order];next.splice(insertIndex,0,layerId);this.rootOrderValue=next;
+    const groups=this.groupsValue??this.rootValue.layerGroups;
+    if(groups.some(group=>group.members.includes(referenceId))){
+      this.editGroups('insert',layerId,groups.map(group=>group.members.includes(referenceId)?{...group,members:[...group.members,layerId]}:group));
+    }
+    this.updatesValue.set(layerId,layer);this.slotsValue.push(Object.freeze({type:'structure' as const,layerId,surfaceId,insertIndex,name}));return layerId;
+  }
+  createLayerGroup(ids:ReadonlySet<LayerId>,name:string){
+    this.open();
+    const members=this.rootValue.rootLayerIds.filter(id=>ids.has(id));
+    if(members.length!==ids.size||!members.length)throw new Error('まとめるレイヤーを選んでください。');
+    if(members.some(id=>this.rootValue.getLayer(id).baseColor==='white'||this.rootValue.isLayerLocked(id)))throw new Error('白背景やロック中のレイヤーはグループ化できません。');
+    const id=this.doc._internal(CORE_INTERNAL).ids.layer();
+    try{
+      return this.editGroups('create',id,[...this.rootValue.layerGroups,{id,name:name.trim(),members,visible:true,locked:false}]);
+    }catch(error){
+      if(error instanceof Error&&(error.message.includes('stay together')||error.message.includes('overlapping')))throw new Error('隣り合うレイヤーを、既存のグループを途中で分けないように選んでください。');
+      throw error;
+    }
+  }
+  updateLayerGroup(id:LayerId,patch:Partial<Pick<LayerGroup,'name'|'visible'|'locked'>>){
+    const groups=this.rootValue.layerGroups;
+    if(!groups.some(group=>group.id===id))throw new Error('グループが見つかりません。');
+    return this.editGroups('update',id,groups.map(group=>group.id===id?{...group,...patch}:group));
+  }
+  dissolveLayerGroup(id:LayerId){
+    const groups=this.rootValue.layerGroups;
+    if(!groups.some(group=>group.id===id))return false;
+    return this.editGroups('dissolve',id,groups.filter(group=>group.id!==id));
+  }
+  private editGroups(action:string,id:LayerId,groups:readonly LayerGroup[]){
+    this.open();
+    this.groupsValue=validateLayerGroups(groups,this.rootOrderValue??this.rootValue.rootLayerIds);
+    this.slotsValue.push(Object.freeze({type:'groups',action,id}));
+    return true;
+  }
+  canReorderRasterLayers(first:LayerId,second:LayerId){
+    return this.rootValue.groupsForLayer(first).map(group=>group.id).join(' ')===this.rootValue.groupsForLayer(second).map(group=>group.id).join(' ');
   }
   moveRasterLayer(id:LayerId,direction:-1|1){
     if(direction!==-1&&direction!==1)throw new Error('invalid layer move direction');
@@ -37,9 +75,8 @@ export class DocumentTransaction{
     const order=[...this.rootValue.rootLayerIds],fromIndex=order.indexOf(id);
     if(fromIndex<0)throw new Error('missing layer');
     if(!Number.isInteger(toIndex)||toIndex<0||toIndex>=order.length||toIndex===fromIndex)return false;
-    const layer=this.rootValue.getLayer(id);
     const affected=order.slice(Math.min(fromIndex,toIndex),Math.max(fromIndex,toIndex)+1);
-    if(layer.locked||affected.some(layerId=>this.rootValue.getLayer(layerId).baseColor==='white'))return false;
+    if(this.rootValue.isLayerLocked(id)||affected.some(layerId=>this.rootValue.getLayer(layerId).baseColor==='white'||!this.canReorderRasterLayers(id,layerId)))return false;
     order.splice(fromIndex,1);
     order.splice(toIndex,0,id);
     this.rootOrderValue=order;
@@ -54,12 +91,12 @@ export class DocumentTransaction{
     if(!ids.size)return false;
     for(const id of ids){
       const layer=this.rootValue.getLayer(id);
-      if(layer.locked||layer.baseColor==='white')throw new Error('ロック中のレイヤーまたは白背景はまとめて移動できません。');
+      if(this.rootValue.isLayerLocked(id)||layer.baseColor==='white')throw new Error('ロック中のレイヤーまたは白背景はまとめて移動できません。');
     }
     const original=new Map(order.map((id,index)=>[id,index]));
     for(let index=direction===1?order.length-2:1;index>=0&&index<order.length;index-=direction){
       const id=order[index]!,adjacent=order[index+direction];
-      if(!ids.has(id)||!adjacent||ids.has(adjacent)||this.rootValue.getLayer(adjacent).baseColor==='white')continue;
+      if(!ids.has(id)||!adjacent||ids.has(adjacent)||this.rootValue.getLayer(adjacent).baseColor==='white'||!this.canReorderRasterLayers(id,adjacent))continue;
       order[index]=adjacent;
       order[index+direction]=id;
     }
@@ -133,10 +170,10 @@ export class DocumentTransaction{
   }
   commit():CommitReceipt{this.open();try{return commitTransaction(this);}catch(e){this.failed=true;throw e;}}
   cancel(){if(this.closed)throw new Error('transaction closed');this.workingValue.clear();this.updatesValue.clear();this.slotsValue.length=0;this.rootOrderValue=null;this.dimensionUpdate=null;this.closed=true;}
-  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
+  _internal(token:CoreInternalToken){if(token!==CORE_INTERNAL)throw new Error('invalid internal capability');return {doc:this.doc,base:this.baseValue,root:this.rootValue,id:this.idValue,working:this.workingValue,updates:this.updatesValue,slots:this.slotsValue,rootLayerIds:this.rootOrderValue,groups:this.groupsValue,dimensions:this.dimensionUpdate,hasChanges:()=>this.hasChanges(),close:()=>{this.closed=true;}};}
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
-  private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked)throw new Error('drawing target is locked');return layer;}
-  private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='dimensions'||x.type==='document-info'));}
+  private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
+  private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='dimensions'||x.type==='document-info'));}
   private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);

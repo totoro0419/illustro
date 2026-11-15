@@ -1,3 +1,4 @@
+import {EMPTY_LAYER_GROUPS,groupsForLayer,validateLayerGroups,type LayerGroup} from './layerGroups';
 import type {DocumentId,LayerId,RasterSurfaceId} from './ids';
 import {PagedMap} from './pagedMap';
 import {createRasterSurfaceDescriptor,RasterSurfaceManifest,type RasterSampleEncoding} from './raster/surface';
@@ -18,7 +19,7 @@ export type LayerNode=Readonly<{
   colorTag?:LayerColorTag|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
-export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;author?:string;description?:string;dpi?:number}>;
+export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];author?:string;description?:string;dpi?:number}>;
 export function validateDocumentInfo(info:DocumentInfo):DocumentInfo{
   const name=info.name.trim(),author=info.author.trim(),description=info.description.trim();
   if(!name||name.length>4096||author.length>160||description.length>2000||
@@ -30,6 +31,14 @@ export function validateDocumentInfo(info:DocumentInfo):DocumentInfo{
 }
 export class DocumentRoot{
   readonly metadata:DocumentMetadata;
+  get layerGroups(){return this.metadata.layerGroups??EMPTY_LAYER_GROUPS;}
+  groupsForLayer(id:LayerId){return groupsForLayer(this.layerGroups,id);}
+  isLayerVisible(id:LayerId){return this.getLayer(id).visible&&this.groupsForLayer(id).every(group=>group.visible);}
+  isLayerLocked(id:LayerId){return this.getLayer(id).locked||this.groupsForLayer(id).some(group=>group.locked);}
+  withLayerGroups(groups:readonly LayerGroup[]){
+    const layerGroups=validateLayerGroups(groups,this.rootLayerIds);
+    return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{...this.metadata,layerGroups});
+  }
   constructor(readonly documentId:DocumentId,readonly width:number,readonly height:number,readonly name:string,
     readonly colorProfileId:string,readonly layers:PagedMap<LayerId,LayerNode>,readonly rootLayerIds:readonly LayerId[],
     metadata:DocumentMetadata=Object.freeze({createdAt:0,modifiedAt:0})){
@@ -55,7 +64,7 @@ export class DocumentRoot{
     const {name,author,description,dpi}=validateDocumentInfo(info);
     return new DocumentRoot(this.documentId,this.width,this.height,name,this.colorProfileId,this.layers,this.rootLayerIds,
       {createdAt:this.metadata.createdAt,modifiedAt:this.metadata.modifiedAt,...(author?{author}:{}),
-       ...(description?{description}:{}),...(dpi===null?{}:{dpi})});
+       ...(description?{description}:{}),...(dpi===null?{}:{dpi}),...(this.layerGroups.length?{layerGroups:this.layerGroups}:{})});
   }
   withModifiedAt(modifiedAt:number){if(!Number.isSafeInteger(modifiedAt)||modifiedAt<this.metadata.createdAt)throw new Error('invalid modifiedAt');
     if(modifiedAt===this.metadata.modifiedAt)return this;return new DocumentRoot(this.documentId,this.width,this.height,this.name,this.colorProfileId,this.layers,this.rootLayerIds,{...this.metadata,modifiedAt});}
