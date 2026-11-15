@@ -171,14 +171,15 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     resizing={pointerId:e.pointerId,original:width};
     splitter.setPointerCapture(e.pointerId);splitter.classList.add('dragging');e.preventDefault();
   });
-  splitter.addEventListener('pointermove',e=>{if(resizing?.pointerId===e.pointerId)applyWidth(innerWidth-e.clientX);});
+  splitter.addEventListener('pointermove',e=>{if(resizing?.pointerId===e.pointerId)applyWidth(document.body.classList.contains('workspace-left-handed')?e.clientX:innerWidth-e.clientX);});
   const finish=(cancel=false)=>{if(!resizing)return;const original=resizing.original;resizing=null;splitter.classList.remove('dragging');if(cancel)applyWidth(original);else applyWidth(width,true);};
   splitter.addEventListener('pointerup',e=>{if(resizing?.pointerId===e.pointerId)finish();});
   splitter.addEventListener('pointercancel',e=>{if(resizing?.pointerId===e.pointerId)finish(true);});
   splitter.addEventListener('lostpointercapture',()=>{if(resizing)finish(true);});
   splitter.addEventListener('keydown',e=>{
     if(e.key==='Escape'&&resizing){finish(true);return;}
-    const keys:Record<string,number>={ArrowLeft:10,ArrowRight:-10,Home:defaultWidth()-width};
+    const flipped=document.body.classList.contains('workspace-left-handed');
+    const keys:Record<string,number>={ArrowLeft:flipped?-10:10,ArrowRight:flipped?10:-10,Home:defaultWidth()-width};
     if(e.key in keys){e.preventDefault();applyWidth(width+keys[e.key]!,true);}
   });
   byId<HTMLInputElement>('width').oninput=e=>applyWidth(Number((e.target as HTMLInputElement).value),true);
@@ -200,12 +201,14 @@ export function installShellUi(onLayerPageChange?:(open:boolean)=>void):ShellCon
     const railEdge=Number.parseFloat(styles.getPropertyValue('--rail'))||68;
     const topInset=Number.parseFloat(styles.getPropertyValue('--top'))||56;
     const margin=8,left=railEdge+margin,topLimit=topInset+margin;
+    const mirrored=document.body.classList.contains('workspace-left-handed');
     const dockEdge=compact.matches||document.body.classList.contains('right-collapsed')
-      ?innerWidth:rightDock.getBoundingClientRect().left;
-    const available=Math.max(170,Math.min(innerWidth,dockEdge)-left-2*margin);
+      ?(mirrored?0:innerWidth):(mirrored?rightDock.getBoundingClientRect().right:rightDock.getBoundingClientRect().left);
+    const available=Math.max(170,mirrored?innerWidth-railEdge-dockEdge-3*margin:Math.min(innerWidth,dockEdge)-left-2*margin);
     const panelWidth=Math.min(348,available);
     const limitHeight=Math.max(150,Math.min(548,innerHeight-topLimit-2*margin));
     featurePanel.style.setProperty('--features-left',left+'px');
+    featurePanel.style.setProperty('--features-right',(railEdge+margin)+'px');
     featurePanel.style.setProperty('--features-width',panelWidth+'px');
     featurePanel.style.setProperty('--features-max-height',limitHeight+'px');
     const panelHeight=featurePanel.getBoundingClientRect().height;
