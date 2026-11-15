@@ -15,6 +15,10 @@ export type HomeActions = Readonly<{
   renameWork:(id:string,name:string)=>Promise<void>;
   duplicateWork:(id:string)=>Promise<void>;
   deleteWork:(id:string)=>Promise<void>;
+  listTrashedWorks:()=>Promise<readonly WorkEntry[]>;
+  restoreWork:(id:string)=>Promise<void>;
+  purgeWork:(id:string)=>Promise<void>;
+  updateWorkCatalog:(id:string,changes:{folder?:string;tags?:readonly string[];favorite?:boolean})=>Promise<void>;
   resetWorks:()=>Promise<void>;
   openFile: ()=>void;
   previewRecovery?: (documentId:string,writerEpochId:string)=>Promise<Blob>;
@@ -89,7 +93,7 @@ const html = [
     '<section class="ih-screen ih-inner-screen" data-ih-screen="works" hidden aria-labelledby="ihWorksTitle">',
       '<div class="ih-page-top"><span class="ih-overline">YOUR WORKSPACE</span><h1 id="ihWorksTitle">マイ作品<span class="ih-period">.</span></h1><p>作品を選び、続きを描くための場所。</p></div>',
       '<div class="ih-works-bar"><div class="ih-works-label"><span class="ih-works-pill">MY WORKS</span><strong>保存した作品</strong></div><div class="ih-works-controls"><span class="ih-works-count">作品を確認しています</span><button id="ihWorksReset" type="button" class="ih-debug-reset" hidden>初期化（全作品を削除）</button></div></div>',
-      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名で検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option></select></label></div><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
+      '<div class="ih-works-tools"><label>作品を検索<input id="ihWorkSearch" type="search" placeholder="作品名・タグ・フォルダーで検索"></label><label>並べ替え<select id="ihWorkSort"><option value="updated">更新が新しい順</option><option value="name">名前順</option><option value="created">作成が新しい順</option><option value="favorite">お気に入り優先</option></select></label><label>フォルダー<select id="ihWorkFolder"><option value="">すべてのフォルダー</option></select></label><label>表示<select id="ihWorkFavorites"><option value="all">すべて</option><option value="only">お気に入りだけ</option></select></label></div><details id="ihWorkTrash" class="ih-work-trash"><summary>ゴミ箱（復元・完全削除）</summary><div id="ihWorkTrashGrid" class="ih-work-trash-list"></div></details><div id="ihWorksLoading" role="status" hidden>作品を読み込んでいます。</div><div id="ihWorkGrid" class="ih-work-grid"></div><p id="ihWorkNoResults" hidden>この名前の作品は見つかりませんでした。</p>',
       '<div class="ih-empty-works"><div class="ih-empty-art" aria-hidden="true"><span class="ih-empty-sheet ih-sheet-one"></span><span class="ih-empty-sheet ih-sheet-two"></span><span class="ih-empty-spark">'+icon('effects')+'</span></div>',
         '<h2>最初の作品を、ここから。</h2><p>新しく作った作品は自動保存され、ここからいつでも続きを描けます。</p>',
         '<button id="ihWorksStart" type="button" class="ih-solid-button">新しい作品を作る <span aria-hidden="true">↗</span></button>',
@@ -195,7 +199,17 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
     const validIds=new Set(works.map(work=>work.documentId));
     for(const [id,cached] of workUrls){if(!validIds.has(id)){URL.revokeObjectURL(cached.url);workUrls.delete(id);}}
     const query=el<HTMLInputElement>('ihWorkSearch').value.trim().toLocaleLowerCase('ja-JP'),sort=el<HTMLSelectElement>('ihWorkSort').value;
-    const filtered=works.filter(work=>work.name.toLocaleLowerCase('ja-JP').includes(query)).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ja-JP'):sort==='created'?b.createdAt-a.createdAt:b.updatedAt-a.updatedAt);
+    const folder=el<HTMLSelectElement>('ihWorkFolder').value;
+    const favoriteOnly=el<HTMLSelectElement>('ihWorkFavorites').value==='only';
+    const folderSelector=el<HTMLSelectElement>('ihWorkFolder');
+    const folders=[...new Set(works.map(w=>w.catalogFolder??'').filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja-JP'));
+    folderSelector.replaceChildren(new Option('すべてのフォルダー',''),...folders.map(v=>new Option(v,v)));
+    if(folders.includes(folder))folderSelector.value=folder;
+    const filtered=works.filter(work=>
+      [work.name,work.catalogFolder??'',...(work.catalogTags??[])].join(' ').toLocaleLowerCase('ja-JP').includes(query)&&
+      (!folder||work.catalogFolder===folder)&&(!favoriteOnly||work.favorite)
+    ).sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ja-JP'):
+      sort==='created'?b.createdAt-a.createdAt:sort==='favorite'?(Number(!!b.favorite)-Number(!!a.favorite)||b.updatedAt-a.updatedAt):b.updatedAt-a.updatedAt);
     root.querySelector('.ih-works-count')!.textContent=works.length+'作品';(root.querySelector('.ih-empty-works') as HTMLElement).hidden=works.length>0;
     el('ihWorkNoResults').hidden=works.length===0||filtered.length>0;
     previewObserver?.disconnect();
@@ -209,9 +223,23 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
       const info=document.createElement('div');info.className='ih-work-info';
       const title=document.createElement('button');title.type='button';title.className='ih-work-title';title.textContent=work.name;title.setAttribute('aria-label',work.name+'の名前を変更');
       title.onclick=()=>showRename(work);
-      const meta=document.createElement('p');meta.textContent=work.width+' × '+work.height+' px · '+new Date(work.updatedAt).toLocaleString('ja-JP');
+      const meta=document.createElement('p');
+      meta.textContent=[work.favorite?'★ お気に入り':'',work.catalogFolder??'',(work.catalogTags??[]).join(' / '),
+        work.width+' × '+work.height+' px',new Date(work.updatedAt).toLocaleString('ja-JP')].filter(Boolean).join(' · ');
       const details=document.createElement('details');details.className='ih-work-actions';const summary=document.createElement('summary');summary.textContent='作品の操作';details.append(summary);
-      for(const [label,action] of [['名前を変更',async()=>showRename(work)],['複製',async()=>{await actions.duplicateWork(work.documentId);await loadWorks();}],['削除',async()=>{if(confirm('「'+work.name+'」をマイ作品から削除しますか？\n削除後は作品一覧から開けなくなります。')){await actions.deleteWork(work.documentId);await loadWorks();}}]] as const){
+      for(const [label,action] of [
+        ['名前を変更',async()=>showRename(work)],
+        [work.favorite?'★ 解除':'☆ お気に入り',async()=>{
+          await actions.updateWorkCatalog(work.documentId,{favorite:!work.favorite});await loadWorks();
+        }],
+        ['整理する',async()=>{
+          const folder=prompt('フォルダー名（空欄なら未分類）',work.catalogFolder??'');if(folder===null)return;
+          const tags=prompt('タグ（カンマで区切ってください）',(work.catalogTags??[]).join(', '));if(tags===null)return;
+          await actions.updateWorkCatalog(work.documentId,{folder,tags:tags.split(/[,、，]+/)});await loadWorks();
+        }],
+        ['複製',async()=>{await actions.duplicateWork(work.documentId);await loadWorks();}],
+        ['ゴミ箱へ移動',async()=>{if(confirm('「'+work.name+'」をゴミ箱へ移しますか？\n後からゴミ箱から復元できます。')){await actions.deleteWork(work.documentId);await loadWorks();await loadTrash();}}]
+      ] as const){
         const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.workAction=label;button.onclick=()=>void run(action,button);details.append(button);
       }
       const id=document.createElement('small');id.textContent='識別番号 '+work.documentId;details.append(id);
@@ -231,7 +259,36 @@ export function installHomeShell(app:HTMLElement,actions:HomeActions):HomeShell{
   };
   const setWorks=(values:readonly WorkEntry[],last:string|null)=>{works=values;lastWorkId=last;if(screen==='works')renderWorks();updateContinue();};
   const loadWorks=async()=>{el('ihWorksLoading').hidden=false;try{const value=await actions.listWorks();setWorks(value.works,value.lastWorkId);}catch(error){notify('作品一覧を読み込めませんでした。'+String(error));}finally{el('ihWorksLoading').hidden=true;}};
-  el('ihWorkSearch').addEventListener('input',renderWorks);el('ihWorkSort').addEventListener('change',renderWorks);
+  async function loadTrash(){
+    const grid=el('ihWorkTrashGrid');grid.textContent='ゴミ箱を確認しています。';
+    try{
+      const trashed=await actions.listTrashedWorks();
+      grid.replaceChildren();
+      if(!trashed.length){grid.textContent='ゴミ箱は空です。';return;}
+      for(const work of trashed){
+        const row=document.createElement('div');row.className='ih-work-trash-entry';
+        const title=document.createElement('strong');title.textContent=work.name;
+        const meta=document.createElement('small');
+        meta.textContent=work.trashedAt?new Date(work.trashedAt).toLocaleString('ja-JP'):'';
+        const restore=document.createElement('button');restore.type='button';restore.textContent='復元する';
+        restore.onclick=()=>void run(async()=>{
+          await actions.restoreWork(work.documentId);await loadTrash();await loadWorks();notify('作品を元に戻しました。');
+        },restore);
+        const purge=document.createElement('button');purge.type='button';purge.textContent='完全に削除';
+        purge.onclick=()=>void run(async()=>{
+          if(!window.confirm('「'+work.name+'」を完全に削除しますか？\n元に戻せなくなります。'))return;
+          await actions.purgeWork(work.documentId);await loadTrash();await loadWorks();
+          notify('作品を完全に削除しました。');
+        },purge);
+        row.append(title,meta,restore,purge);grid.append(row);
+      }
+    }catch(error){grid.textContent='ゴミ箱を確認できませんでした。'+String(error);}
+  }
+  el('ihWorkTrash').addEventListener('toggle',()=>{
+    if((el('ihWorkTrash') as HTMLDetailsElement).open)void loadTrash();
+  });
+  el('ihWorkSearch').addEventListener('input',renderWorks);
+  for(const id of ['ihWorkSort','ihWorkFolder','ihWorkFavorites'])el(id).addEventListener('change',renderWorks);
   const reset=el<HTMLButtonElement>('ihWorksReset');
   // The independent review build always exposes its reset control. Main builds
   // keep it hidden unless explicitly requested for debugging.
