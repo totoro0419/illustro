@@ -40,6 +40,15 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   const intro=document.createElement('p');
   intro.textContent='絵とは別に資料を表示します。印刷や画像への書き出しには含めません。';
   const list=document.createElement('div');list.className='c05-reference-list';
+  const navigator=document.createElement('details');navigator.className='c05-reference-navigator';
+  const navTitle=document.createElement('summary');navTitle.textContent='資料の全体と細部を見る';
+  const navSelect=document.createElement('select');navSelect.setAttribute('aria-label','ナビゲーターで見る資料');
+  const navPair=document.createElement('div');navPair.className='c05-reference-nav-pair';
+  const navFull=document.createElement('div'),navDetail=document.createElement('div');
+  navFull.className='c05-reference-nav-full';navDetail.className='c05-reference-nav-detail';
+  navPair.append(navFull,navDetail);
+  const navHelp=document.createElement('p');navHelp.textContent='左は資料全体、右は拡大した詳細です。左の画像を押すと表示位置を調整します。';
+  navigator.append(navTitle,navSelect,navHelp,navPair);
   const status=document.createElement('output');status.setAttribute('role','status');
   const buttons=document.createElement('div');buttons.className='c05-reference-actions';
   const show=input('資料を表示 / 隠す',()=>void toggleVisibility());
@@ -48,7 +57,11 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
   const exportButton=input('配置を書き出す',()=>void exportLayout().then(blob=>download('illustro-reference-layout.json',blob)).catch(error));
   const refreshButton=input('表示を更新',()=>void refresh());
   buttons.append(show,undoButton,redoButton,exportButton,refreshButton);
-  root.append(title,intro,buttons,list,status);panel.append(root);
+  const groupRow=document.createElement('div');groupRow.className='c05-reference-groups';
+  const groupSelect=document.createElement('select');groupSelect.setAttribute('aria-label','資料のグループ');
+  const groupToggle=input('グループを隠す',()=>void toggleGroup());
+  groupRow.append(groupSelect,groupToggle);
+  root.append(title,intro,buttons,navigator,groupRow,list,status);panel.append(root);
   const canvasLayer=document.createElement('div');canvasLayer.id='c05ReferenceLayer';canvasLayer.className='c05-reference-layer';
   document.body.append(canvasLayer);
   let currentDoc:string|null=null,board:BoardSnapshot|null=null;
@@ -177,19 +190,74 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
     syncAfter(imported,false);
     status.textContent=newItems.length+'枚の資料を作品ファイルから読み込みました。';
   }
+  function toggleGroup(){
+    if(!board||!groupSelect.value)return;
+    const group=groupSelect.value;
+    const hidden=board.items.filter(i=>i.group===group).every(i=>i.hidden);
+    syncAfter({...board,items:board.items.map(item=>item.group===group?{...item,hidden:!hidden}:item)});
+  }
+  async function drawNavigator(){
+    if(!navigator.open||!board)return;
+    const item=board.items.find(entry=>entry.id===navSelect.value)??board.items[0];
+    navFull.replaceChildren();navDetail.replaceChildren();
+    if(!item)return;
+    const asset=await getAsset(item.assetId);
+    if(!asset||!asset.mime.startsWith('image/')){
+      navFull.textContent='資料がありません。';return;
+    }
+    let url=urls.get(asset.id);
+    if(!url){url=URL.createObjectURL(asset.data);urls.set(asset.id,url);}
+    const img=document.createElement('img');img.src=url;img.alt=asset.name;img.draggable=false;
+    img.title='表示の中心を変更';img.onclick=event=>{
+      const rect=img.getBoundingClientRect();
+      if(rect.width<=0||rect.height<=0)return;
+      const x=(event.clientX-rect.left)/rect.width-.5;
+      const y=(event.clientY-rect.top)/rect.height-.5;
+      changeItem(item.id,{panX:-x*item.width*item.zoom,panY:-y*item.height*item.zoom});
+    };
+    navFull.append(img);
+    const detail=document.createElement('img');detail.src=url;detail.alt=asset.name+'の細部';
+    detail.style.transform='translate('+item.panX/2+'px,'+item.panY/2+'px) rotate('+item.rotation+'deg) '+
+      'scale('+(item.zoom*(item.flipX?-1:1))+','+(item.zoom*(item.flipY?-1:1))+')';
+    detail.style.filter=item.grayscale?'grayscale(1)':'';
+    navDetail.append(detail);
+  }
+  navigator.addEventListener('toggle',()=>{if(navigator.open)void drawNavigator().catch(error);});
+  navSelect.onchange=()=>void drawNavigator().catch(error);
   function drawList(){
     list.replaceChildren();const current=board;
     undoButton.disabled=!back.length;redoButton.disabled=!forward.length;
     if(!current){list.textContent='作品を開いてください。';return;}
+    const currentNav=navSelect.value;
+    navSelect.replaceChildren(...current.items.map((item,index)=>
+      new Option((item.group?item.group+' / ':'')+'資料 '+(index+1),item.id)));
+    if(current.items.some(item=>item.id===currentNav))navSelect.value=currentNav;
+    if(navigator.open)void drawNavigator().catch(error);
+    const group=groupSelect.value;
+    const groups=[...new Set(current.items.map(i=>i.group).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja-JP'));
+    groupSelect.replaceChildren(new Option('グループを選ぶ',''),...groups.map(value=>new Option(value,value)));
+    if(groups.includes(group))groupSelect.value=group;
+    groupToggle.disabled=!groupSelect.value;
+    const members=current.items.filter(i=>i.group===groupSelect.value);
+    groupToggle.textContent=members.length&&members.every(i=>i.hidden)?'グループを再表示':'グループを隠す';
     show.textContent=current.hidden?'資料をすべて再表示':'資料を一時的に隠す';
     for(const item of current.items){
       const row=document.createElement('div');row.className='c05-reference-row';
       const name=document.createElement('span');name.textContent='資料 '+item.assetId.slice(0,8);
+      const groupName=item.group?'（'+item.group+'）':'';
+      name.textContent='資料 '+item.assetId.slice(0,8)+groupName;
+      void getAsset(item.assetId).then(asset=>{
+        if(row.isConnected)name.textContent=(asset?.name??'不足している資料')+groupName;
+      }).catch(()=>{});
+      const groupButton=input('グループ',()=>{
+        const name=window.prompt('この資料のグループ名（空欄で解除）',item.group);
+        if(name!==null)changeItem(item.id,{group:name.trim().slice(0,60)});
+      });
       const pin=input(item.pinned?'固定解除':'位置を固定',()=>changeItem(item.id,{pinned:!item.pinned}));
       const visible=input(item.hidden?'再表示':'隠す',()=>changeItem(item.id,{hidden:!item.hidden}));
       const sample=input('採色',()=>void options.onPickColor(item.assetId).catch(error));
       const remove=input('外す',()=>removeItem(item.id));
-      row.append(name,pin,visible,sample,remove);list.append(row);
+      row.append(name,groupButton,pin,visible,sample,remove);list.append(row);
     }
   }
   async function render(){
@@ -281,6 +349,7 @@ export function installReferenceBoard(options:Options):ReferenceBoardService{
       attachDrag(heading,'frame');attachDrag(resize,'size');attachDrag(imageArea,'image');
     }
   }
+  groupSelect.onchange=()=>drawList();
   void refreshIfChanged();
   return {add,refresh,refreshIfChanged,exportLayout,undo,redo,exportNative,importNative};
 }
