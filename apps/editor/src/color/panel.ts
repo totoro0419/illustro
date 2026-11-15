@@ -41,7 +41,8 @@ export function colorMarkup():string {
   '</div>'+
   '<label class="color-hex-label" for="colorHex"><span>カラーコード</span><input id="colorHex" maxlength="7" spellcheck="false" inputmode="text" autocomplete="off" aria-describedby="colorHexError" value="#1F2633"></label>'+
   '<small id="colorHexError" class="color-error" role="status"></small>'+
-  '<div id="colorValueChannels" class="color-value-channels"></div>'+
+  '<div id="colorValueChannels" class="color-value-channels"></div>'+ 
+  '<div class="c04-color-opacity"><label for="c04ColorOpacity">色の不透明度</label><input id="c04ColorOpacity" type="range" min="0" max="100" step="1" value="100" aria-label="描画色の不透明度"><input id="c04ColorOpacityNumber" type="number" min="0" max="100" step="1" value="100" aria-label="描画色の不透明度の数値"><span>%</span></div><small id="c04ColorOpacityStatus" role="status"></small>'+
   '<div class="color-value-footer"><span class="color-mode-caption">色の数値</span>'+
    '<div role="radiogroup" class="color-models" aria-label="カラー形式">'+
     ['HSV','RGB','HSL'].map((m,i)=>'<label><input type="radio" name="colorModel" value="'+m+'" '+(i===0?'checked':'')+'><span>'+(m==='HSV'?'HSB':m)+'</span></label>').join('')+
@@ -122,6 +123,10 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   const displayS=hsv.v<=1e-7?saturationMemory:hsv.s;
   current.style.backgroundColor=hex(c);code.textContent=hex(c);previous.style.backgroundColor=hex(state.previous);
   id<HTMLInputElement>('c04BackgroundColor').value=hex(state.background);
+  const opacity=Math.round(state.opacity*100);
+  id<HTMLInputElement>('c04ColorOpacity').value=String(opacity);
+  const opacityNumber=id<HTMLInputElement>('c04ColorOpacityNumber');
+  if(document.activeElement!==opacityNumber)opacityNumber.value=String(opacity);
   id<HTMLElement>('colorBoxSummary').textContent=hex(c);
   plane.style.setProperty('--pure',hex(hsvToRgb(hueMemory,1,1)));
   const angle=hueMemory*Math.PI/180,hue=id<HTMLElement>('colorHueMarker');
@@ -137,6 +142,22 @@ export function installColorPanel(state:ForegroundColor,options:{onPickTool:()=>
   }
   options.onBrushColor();
  }
+ const opacityRange=id<HTMLInputElement>('c04ColorOpacity'),opacityNumeric=id<HTMLInputElement>('c04ColorOpacityNumber'),
+   opacityStatus=id<HTMLElement>('c04ColorOpacityStatus');
+ opacityRange.oninput=()=>{state.setOpacity(Number(opacityRange.value)/100);opacityStatus.textContent='';};
+ const finishOpacity=()=>{
+  if(opacityNumeric.value===''||!opacityNumeric.validity.valid||!Number.isFinite(Number(opacityNumeric.value))){
+    opacityStatus.textContent='0〜100の数字を入力してください。';
+    opacityNumeric.setCustomValidity('0〜100の数字を入力してください。');opacityNumeric.reportValidity();return;
+  }
+  try{state.setOpacity(Number(opacityNumeric.value)/100);opacityNumeric.setCustomValidity('');opacityStatus.textContent='';}
+  catch(error){opacityStatus.textContent=error instanceof Error?error.message:String(error);}
+ };
+ opacityNumeric.onchange=finishOpacity;
+ opacityNumeric.onkeydown=event=>{
+  if(event.key==='Enter'){event.preventDefault();finishOpacity();opacityNumeric.blur();}
+  if(event.key==='Escape'){event.preventDefault();opacityNumeric.setCustomValidity('');opacityNumeric.value=String(Math.round(state.opacity*100));opacityStatus.textContent='';opacityNumeric.blur();}
+ };
  current.onclick=()=>{(pickerMode==='orbit'?id<HTMLElement>('colorOrbitWheel'):ring).focus({preventScroll:true});};
  previous.onclick=()=>state.choose(state.previous);
  id<HTMLInputElement>('c04BackgroundColor').onchange=event=>{const next=fromHex((event.target as HTMLInputElement).value);if(next)state.setBackground(next);};
