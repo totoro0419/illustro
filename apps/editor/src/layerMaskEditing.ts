@@ -1,10 +1,11 @@
 import {decodeMaskTile,samplePixelMask,traceMaskPath} from '@illustro/brush-rt';
 import {MASK_TILE_SIZE,type LayerMask,type MaskPoint,type PixelLayerMask} from '@illustro/core';
+import type {MaskData} from './selection/mask';
 import type {SelectionRect} from './strokeSelection';
 
 export type MaskStrokePoint=MaskPoint&{pressure:number};
 type MaskPaintOptions={
-  reveal:boolean;size:number;opacity:number;width:number;height:number;selection:SelectionRect|null;
+  reveal:boolean;size:number;opacity:number;width:number;height:number;selection:SelectionRect|null;selectionMask?:MaskData|null;
 };
 
 function encodeMaskTile(bytes:Uint8Array){
@@ -17,7 +18,9 @@ export function paintPixelMask(mask:PixelLayerMask,points:readonly MaskStrokePoi
   if(!points.length||!options.opacity)return mask;
   const size=MASK_TILE_SIZE;
   const changed=new Map<string,{old:Uint8Array|null;alpha:Uint8Array;coverage:Uint8Array}>();
-  const {selection}=options;
+  const {selection,selectionMask}=options;
+  if(selectionMask&&(selectionMask.width!==options.width||selectionMask.height!==options.height))
+    throw Error('選択範囲の大きさが作品と異なります。');
   const left=Math.max(0,selection?.x??0),top=Math.max(0,selection?.y??0);
   const right=Math.min(options.width,selection?selection.x+selection.width:options.width);
   const bottom=Math.min(options.height,selection?selection.y+selection.height:options.height);
@@ -42,7 +45,8 @@ export function paintPixelMask(mask:PixelLayerMask,points:readonly MaskStrokePoi
         const t=length?Math.max(0,Math.min(1,(dx*vx+dy*vy)/length)):1;
         const edge=r0+(r1-r0)*t;
         const distance=Math.hypot(dx-vx*t,dy-vy*t);
-        const coverage=Math.round(255*options.opacity*Math.max(0,Math.min(1,(edge+.5-distance)/Math.max(1,edge*.25))));
+        const selectionAlpha=selectionMask?.alpha[Math.floor(cy)*options.width+Math.floor(cx)]??255;
+        const coverage=Math.round(selectionAlpha*options.opacity*Math.max(0,Math.min(1,(edge+.5-distance)/Math.max(1,edge*.25))));
         if(!coverage)continue;
         const tx=Math.floor(x/size),key=tx+','+ty,offset=row+x-tx*size;
         let tile=changed.get(key);

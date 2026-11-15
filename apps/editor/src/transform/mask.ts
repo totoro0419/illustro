@@ -2,6 +2,7 @@ import {samplePixelMask} from '@illustro/brush-rt';
 import {MASK_TILE_SIZE,transformLayerMask,validateLayerMask,vectorMaskCoverage,type LayerMask,type PixelLayerMask} from '@illustro/core';
 import {cornerMode,inverseTransform,meshMode,type Transform} from './geometry';
 import {quadrilateralMapping} from './quadrilateral';
+import {liquifyMapping} from './liquify';
 import {meshMapping} from './mesh';
 import type {MaskData} from '../selection/mask';
 
@@ -11,7 +12,7 @@ export function transformLinkedMask(mask:LayerMask,settings:Transform,width:numb
     return transformLayerMask(mask,t.sx,t.sy,t.dx+t.cx*(1-t.sx),t.dy+t.cy*(1-t.sy));
   const cos=Math.cos(t.angle*Math.PI/180),sin=Math.sin(t.angle*Math.PI/180);
   const mesh=meshMode(t.mode)&&t.mesh?meshMapping(t.mesh.bounds,t.mesh.controls):null;
-  if(mask.shape!=='pixels'&&(t.mode==='perspective'||t.mode==='affine'||cornerMode(t.mode)||mesh)){
+  if(mask.shape!=='pixels'&&(t.mode==='perspective'||t.mode==='affine'||t.mode==='liquify'||cornerMode(t.mode)||mesh)){
     const points=mask.shape==='path'?mask.points:mask.shape==='rectangle'?[
       {x:mask.x,y:mask.y},{x:mask.x+mask.width,y:mask.y},
       {x:mask.x+mask.width,y:mask.y+mask.height},{x:mask.x,y:mask.y+mask.height}
@@ -20,22 +21,23 @@ export function transformLinkedMask(mask:LayerMask,settings:Transform,width:numb
       return {x:mask.x+(1+Math.cos(theta))*mask.width/2,y:mask.y+(1+Math.sin(theta))*mask.height/2};
     });
     const quad=cornerMode(t.mode)&&t.quadrilateral?quadrilateralMapping(t.quadrilateral.bounds,t.quadrilateral.corners,t.mode):null;
-    if(quad||mesh){
-      const source=t.mode==='free'||mesh?points.flatMap((a,index)=>{
+    const liquify=t.mode==='liquify'?liquifyMapping(t.liquify??[]):null;
+    if(quad||mesh||liquify){
+      const source=t.mode==='free'||mesh||liquify?points.flatMap((a,index)=>{
         const b=points[(index+1)%points.length]!;
         const steps=Math.min(Math.max(1,Math.floor(4096/points.length)),Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/12)));
         return Array.from({length:steps},(_,i)=>({x:a.x+(b.x-a.x)*i/steps,y:a.y+(b.y-a.y)*i/steps}));
       }):points;
-      const mapping=quad??mesh!;
+      const mapping=quad??mesh??liquify!;
       const mapped=source.map(point=>{
         const result=mapping.forward(point.x,point.y);
-        if(Number.isFinite(result.x)&&Number.isFinite(result.y))return result;
+        if(result&&Number.isFinite(result.x)&&Number.isFinite(result.y))return result;
+        if(liquify)return null;
         if(mesh)return point;
         throw Error('マスクが遠近変形の範囲外にあります。');
       });
-      return {...mask,shape:'path',points:mapped};
-    }
-    return {...mask,shape:'path',points:points.map(point=>{
+      if(mapped.every(point=>point!==null))return {...mask,shape:'path',points:mapped};
+    }else return {...mask,shape:'path',points:points.map(point=>{
       const x=point.x-t.cx,y=point.y-t.cy,divisor=t.mode==='perspective'?1+t.perspective*y/height:1;
       if(divisor<=.0001)throw Error('マスクが遠近変形の範囲外にあります。');
       const u=(t.sx*x+t.shear*y)/divisor,v=t.sy*y/divisor;

@@ -73,5 +73,21 @@ export function liquifyMapping(strokes:readonly LiquifyStroke[]){
     const available=1-Math.max(protectedAt,coverage(x+offsetX,y+offsetY));
     return {x:x+available*offsetX,y:y+available*offsetY};
   };
-  return {inverse,coverage};
+  const forward=(x:number,y:number):TransformPoint|null=>{
+    let px=x,py=y;
+    for(let step=0;step<16;step++){
+      const point=inverse(px,py),ex=point.x-x,ey=point.y-y;
+      if(Math.hypot(ex,ey)<.035)return {x:px,y:py};
+      const across=inverse(px+.25,py),down=inverse(px,py+.25);
+      const xx=(across.x-point.x)*4,xy=(down.x-point.x)*4;
+      const yx=(across.y-point.y)*4,yy=(down.y-point.y)*4;
+      const determinant=xx*yy-xy*yx;
+      if(determinant<.08)return null;
+      const dx=(ex*yy-ey*xy)/determinant,dy=(ey*xx-ex*yx)/determinant;
+      const scale=Math.min(1,24/Math.max(1,Math.hypot(dx,dy)));
+      px-=dx*scale;py-=dy*scale;
+    }
+    return null;
+  };
+  return {inverse,forward,coverage};
 }

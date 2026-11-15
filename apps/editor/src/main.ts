@@ -515,7 +515,7 @@ function startMaskEditing(mode:MaskEditMode,reveal=false){
         changeLayer('輪郭のマスクを保存しました。',tx=>tx.setVectorLayerMask(layer.id,next));
       }else if(current?.shape==='pixels'){
         const {width,height}=artwork.root;
-        const next=paintPixelMask(current,points,{reveal,size:drawing.brushSize,opacity:drawing.maskBrushOpacity,width,height,selection:drawing.selectedRectangle});
+        const next=paintPixelMask(current,points,{reveal,size:drawing.brushSize,opacity:drawing.maskBrushOpacity,width,height,selection:drawing.selectedRectangle,selectionMask:c06Selection?.active()??null});
         if(next!==current)changeLayer('マスクを塗りました。',tx=>tx.setVectorLayerMask(layer.id,next));
       }
     },
@@ -1231,10 +1231,14 @@ byId<HTMLButtonElement>('pickLayerOnCanvas').onclick=()=>pickLayerOnCanvas();
 byId<HTMLButtonElement>('vectorMaskFromSelection').onclick=()=>{
   const rect=surface?.selectedRectangle,layer=controller.selectedLayer;
   if(!rect)return;
-  const shape=byId<HTMLSelectElement>('vectorMaskShape').value==='ellipse'?'ellipse':'rectangle';
-  if(!replaceMaskAllowed(shape))return;
+  const mode=byId<HTMLSelectElement>('vectorMaskShape').value;
+  const selection=c06Selection?.active();
+  const mask:LayerMask=mode==='selection'&&selection?selectionAsLayerMask(selection):{
+    ...rect,shape:mode==='ellipse'?'ellipse':'rectangle',density:1,enabled:true,inverted:false,linked:true
+  };
+  if(!replaceMaskAllowed(mask.shape))return;
   stopMaskEditing();
-  changeLayer('選択範囲からマスクを作成しました。',tx=>tx.setVectorLayerMask(layer.id,{...rect,shape,density:1,enabled:true,inverted:false,linked:true}));
+  changeLayer('選択範囲からマスクを作成しました。',tx=>tx.setVectorLayerMask(layer.id,mask));
 };
 byId<HTMLButtonElement>('pixelMaskAdd').onclick=()=>startMaskEditing('pixels');
 byId<HTMLButtonElement>('maskPathEdit').onclick=()=>startMaskEditing('path');
