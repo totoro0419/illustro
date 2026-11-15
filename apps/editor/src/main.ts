@@ -3250,7 +3250,16 @@ c06ClipboardUI=installClipboardPanel({
   paste:placement=>withClipboardAccess(async()=>{
     c06Clipboard.paste(controller,placement);return 'edit';
   }),
-  exportPng:async()=>c06Download(await c06Clipboard.makePng(),'illustro-copy.png')
+  exportPng:async()=>c06Download(await c06Clipboard.makePng(),'illustro-copy.png'),
+  importFile:async(file:File)=>{
+    await c06Clipboard.importImage(file,file.name);
+    byId('status').textContent='「'+file.name+'」を貼り付け用に読み込みました。';
+  },
+  readSystem:async()=>{
+    const image=await c06Clipboard.readSystemClipboard();
+    byId('status').textContent='端末から '+image.width+'×'+image.height+' の画像を読み込みました。';
+  },
+  writeSystem:()=>c06Clipboard.writeSystemClipboard()
 },c06Clipboard);
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
