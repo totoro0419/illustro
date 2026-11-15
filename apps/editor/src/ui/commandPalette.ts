@@ -8,6 +8,10 @@ type Command=Readonly<{
   id:string;label:string;category:string;aliases:string;
   availability:()=>string|null;execute:()=>void;
 }>;
+export type CommandService=Readonly<{
+  list:()=>readonly Readonly<{id:string;label:string;category:string}>[];
+  invoke:(id:string)=>Readonly<{ok:boolean;reason:string|null}>;
+}>;
 type PinState=Readonly<{version:1;slots:readonly string[]}>;
 const PIN_KEY='illustro.c04.quick-controller.v1';
 const RECENTS_KEY='illustro.c04.command-history.v1';
@@ -34,7 +38,7 @@ const parseRecents=():string[]=>{
   try{const raw=JSON.parse(read(RECENTS_KEY)||'[]') as unknown;return Array.isArray(raw)?raw.filter((s):s is string=>typeof s==='string').slice(0,24):[];}catch{return [];}
 };
 
-export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>){
+export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLayerPage'>):CommandService{
   const actions:Array<readonly [string,string,string,string]>= [
     ['undo','元に戻す','履歴','Undo 取り消し'],
     ['redo','やり直す','履歴','Redo'],
@@ -272,4 +276,15 @@ export function installCommandPalette(shell:Pick<ShellControl,'openBox'|'setLaye
     quick.hidden=true;quickButton.setAttribute('aria-expanded','false');
   },{capture:true});
   renderQuick();
+  return {
+    list:()=>dynamicCommands().map(({id,label,category})=>({id,label,category})),
+    invoke:(id:string)=>{
+      const command=find(id);
+      if(!command)return {ok:false,reason:'この機能はまだ利用できません。'};
+      const reason=command.availability();
+      if(reason)return {ok:false,reason};
+      command.execute();remember(id);renderQuick();
+      return {ok:true,reason:null};
+    },
+  };
 }
