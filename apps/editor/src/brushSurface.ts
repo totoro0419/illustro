@@ -23,6 +23,8 @@ import {rectangleFromPoints,clampSelectionRect,selectionContains,insetSelection,
 import type {ProjectionCache,ProjectionCacheV1,ProjectionCheckpointDeltaV2} from './persistence/projectionCache';
 
 
+export type InputPointerRole='draw'|'pan'|'sample';
+export type PointerRoleSettings=Readonly<{pen:InputPointerRole;mouse:InputPointerRole}>;
 type CanvasEditGesture=Readonly<{
   path:boolean;width:number;color:string;complete:(points:readonly MaskStrokePoint[])=>void;
   pointEdit?:Readonly<{points:readonly MaskPoint[];commit:(index:number,point:MaskPoint)=>void}>;
@@ -47,6 +49,8 @@ export class BrushSurface{
   private readonly traceHandoff=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
   private renderer:GpuRenderer|null=null;private session:RealtimeSession|null=null;private frameId=0;private pointer:number|null=null;private finishing=false;private historySyncing=false;private previewPressureShown=false;private disposed=false;private target:ReturnType<EditorController['target']>|null=null;private presentedFrames=0;private lastPresentedAt=0;private _initializationError:string|null=null;private _projectionRestoreMs=0;private _projectionRestoreMode:'none'|'cache'|'replay-fallback'='none';private _projectionCacheRevision:string|null=null;
   private lastFrameAt=0;private viewNotificationPending=false;private checkpointMetrics={captures:0,tiles:0,batches:0,bytes:0,lastMs:0};private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private navigation:CanvasNavigation|null=null;
+  private pointerRoles:PointerRoleSettings={pen:'draw',mouse:'draw'};
+  setPointerRoles(roles:PointerRoleSettings){this.pointerRoles={...roles};}
   private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'='composite';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private foreground:readonly [number,number,number]=[.12,.15,.2];
   private densityMedia:MediaQueryList|null=null;private spacePressed=false;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;private strokePointerType='';
   // Navigation transforms the published canvas, not its fixed input viewport.
@@ -423,6 +427,20 @@ export class BrushSurface{
       e.preventDefault();
       this.onLayerPickShortcut(this.screenToDocument(this.pointerLocation(e)));
       return;
+    }
+    if(!this.editGesture&&!this.selectionMode&&!this.eyedropper&&e.button===0&&
+      (e.pointerType==='mouse'||e.pointerType==='pen')){
+      const chosen=this.pointerRoles[e.pointerType];
+      if(chosen==='pan'){
+        e.preventDefault();this.navigation?.mouseDown(e.pointerId,this.pointerLocation(e));
+        this.inputViewport.setPointerCapture(e.pointerId);return;
+      }
+      if(chosen==='sample'){
+        if(this.eyedropperPointer!==null)return;
+        e.preventDefault();this.eyedropperPointer=e.pointerId;
+        this.inputViewport.setPointerCapture(e.pointerId);
+        this.queueSample(this.screenToDocument(this.pointerLocation(e)),'preview');return;
+      }
     }
     if(this.selectionMode){
       if(this.selectionPointer!==null||e.button!==0)return;
