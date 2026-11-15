@@ -49,7 +49,11 @@ export function colorMarkup():string {
    '</div>'+
   '</div>'+
   '<details id="colorEyedropperOptions" class="color-disclosure color-sample-options"><summary>スポイトの参照先</summary><div class="color-detail-inner">'+
-   '<label class="color-sample-source" for="colorSampleSource">取得する場所<select id="colorSampleSource"><option value="composite">見えている絵全体</option><option value="layer">選んでいるレイヤー</option></select></label>'+
+   '<label class="color-sample-source" for="colorSampleSource">取得する場所<select id="colorSampleSource"><option value="composite">見えている絵全体</option><option value="layer">選んでいるレイヤー</option><option value="specific">指定したレイヤー</option></select></label>'+
+   '<label class="color-sample-source" id="colorSampleLayerLabel" hidden>取得するレイヤー<select id="colorSampleLayerId"></select></label>'+
+   '<label class="color-sample-source">取得する範囲<select id="colorSampleDiameter"><option value="1">1画素（点）</option><option value="3">3×3画素の平均</option><option value="5">5×5画素の平均</option></select></label>'+
+   '<label class="color-sample-source">透明の扱い<select id="colorSampleTransparency"><option value="skip">透明な画素は除外</option><option value="keep">透明も平均に含める</option><option value="white">白背景上の見た目</option></select></label>'+
+   '<button id="referenceSampleOpen" type="button">参考画像から色を取る</button><small>作品の補助線・選択枠・色覚確認表示は採色に含めません。</small>'+
   '</div></details>'+
  '</section>'+
  '<section id="colorPaletteScreen" role="tabpanel" aria-labelledby="colorShowPalette" class="color-palette-screen" hidden>'+
