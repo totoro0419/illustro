@@ -65,7 +65,7 @@ const app=document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML=shellMarkup(qaMode,qaMode?(m09Mode?qaM09Markup():m08Mode?qaM08Markup():qaMarkup()):'');
 const contextBar=document.createElement('div');
 contextBar.id='c04ContextBar';contextBar.setAttribute('role','group');contextBar.setAttribute('aria-label','今の操作対象');
-for(const [id,label] of [['c04ContextTool','ブラシ'],['c04ContextLayer','描画先'],['c04ContextSelection','選択なし']] as const){
+for(const [id,label] of [['c04ContextTool','ブラシ'],['c04ContextLayer','描画先'],['c04ContextReference','採色元'],['c04ContextSelection','選択なし']] as const){
   const button=document.createElement('button');button.id=id;button.type='button';button.textContent=label;button.disabled=true;contextBar.append(button);
 }
 const contextPending=document.createElement('output');contextPending.id='c04ContextPending';contextPending.setAttribute('role','status');
@@ -1493,17 +1493,23 @@ const shellUi=installShellUi(scheduleLayerDrawingThumbnail),workspace=shellUi.wo
 function updateContextBar(){
   const active=documentReady&&!!surface;
   const tool=byId<HTMLButtonElement>('c04ContextTool'),layer=byId<HTMLButtonElement>('c04ContextLayer');
-  const selection=byId<HTMLButtonElement>('c04ContextSelection');
+  const selection=byId<HTMLButtonElement>('c04ContextSelection'),source=byId<HTMLButtonElement>('c04ContextReference');
   tool.disabled=layer.disabled=selection.disabled=!active;
+  source.hidden=selectedTool!=='eyedropper';
+  source.disabled=!active;
+  source.textContent='採色元: '+(byId<HTMLSelectElement>('colorSampleSource').value==='layer'?'選択したレイヤー':'見えている作品全体');
   tool.textContent='道具: '+(selectedTool==='eraser'?'消しゴム':selectedTool==='eyedropper'?'スポイト':surface?.brushName??'ブラシ');
   layer.textContent='描画先: '+(active?controller.selectedLayer.name:'作品なし');
   const selected=surface?.selectedRectangle;
   selection.textContent=selected?'選択: '+Math.round(selected.width)+'×'+Math.round(selected.height):'選択なし';
-  byId('c04ContextPending').textContent=historyPending?'履歴を反映中':surface?.busy?'描画処理中':'';
+  byId('c04ContextPending').textContent=historyPending?'履歴を反映中':
+    surface?.inputActive?'描画中':surface?.busy?'線の反映中':
+    geometryBusy?'変更を処理中':surface?.selectingRectangle?'範囲を指定中':'';
 }
 byId<HTMLButtonElement>('c04ContextTool').onclick=()=>shellUi.openBox('brushBox');
 byId<HTMLButtonElement>('c04ContextLayer').onclick=()=>shellUi.setLayerPage(true);
 byId<HTMLButtonElement>('c04ContextSelection').onclick=()=>byId<HTMLButtonElement>('selection').click();
+byId<HTMLButtonElement>('c04ContextReference').onclick=()=>shellUi.openBox('colorBox');
 const colorPanel=installColorPanel(foreground,{onPickTool:()=>activateEyedropper(),onBrushColor:()=>surface?.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b])});
 function refreshSelectionControls(){
  const selecting=surface?.selectingRectangle??false;
@@ -1534,7 +1540,7 @@ function releaseColorHold(){
 document.addEventListener('keyup',event=>{if(event.key==='Alt')releaseColorHold();});
 window.addEventListener('blur',releaseColorHold);
 byId('eyedropper').onclick=activateEyedropper;
-byId<HTMLSelectElement>('colorSampleSource').onchange=()=>{if(selectedTool==='eyedropper')surface?.setEyedropper(true,byId<HTMLSelectElement>('colorSampleSource').value as 'composite'|'layer');};
+byId<HTMLSelectElement>('colorSampleSource').onchange=()=>{if(selectedTool==='eyedropper')surface?.setEyedropper(true,byId<HTMLSelectElement>('colorSampleSource').value as 'composite'|'layer');updateContextBar();};
 addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='i'||e.altKey||e.ctrlKey||e.metaKey||e.repeat||(e.target instanceof HTMLElement&&e.target.closest('input,textarea,select,[contenteditable]')))return;e.preventDefault();if(selectedTool==='eyedropper')restoreDrawingTool();else activateEyedropper();});
 
 function savedBrush(id:string):FoundationPreset|undefined{return brushPresets.all(builtInBrushes).find(p=>p.id===id);}
