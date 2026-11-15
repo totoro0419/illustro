@@ -4,6 +4,8 @@ import type {MaskData} from './mask';
 export class SelectionOverlay{
   private canvas:HTMLCanvasElement;
   private mask:MaskData|null=null;
+  private visible=true;
+  setVisible(visible:boolean){this.visible=visible;this.canvas.hidden=!visible||!this.mask;}
   private ctx:CanvasRenderingContext2D|null;
   constructor(private viewport:HTMLElement,private surface:()=>BrushSurface|null){
     this.canvas=document.createElement('canvas');
@@ -36,7 +38,7 @@ export class SelectionOverlay{
       values[i+3]=Math.round(alpha*(border?.7:.13));
     }
     ctx.putImageData(image,0,0);
-    this.canvas.hidden=false;
+    this.canvas.hidden=!this.visible;
     this.updateView();
   }
   updateView(){
