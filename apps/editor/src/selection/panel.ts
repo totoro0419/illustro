@@ -3,6 +3,7 @@ import type {BrushSurface} from '../brushSurface';
 import {rasterizeSelection,combineSelection,invertSelection,fullSelection,translateSelection,featherMask,boundsOfSelection,
   type SelectionShape,type MaskData,type CombineMode} from './mask';
 import {listSavedSelections,saveNamedSelection,loadNamedSelection,deleteNamedSelection} from './store';
+import {MaskRasterWorker} from './maskWorker';
 
 export type SelectionWorkbench=Readonly<{
   active:()=>MaskData|null;
@@ -43,7 +44,7 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   let tool:Tool|null=null,active:MaskData|null=null,points:{x:number;y:number}[]=[],
     drawing:{pointer:number;first:{x:number;y:number}}|null=null;
   const history:(MaskData|null)[]=[];const future:(MaskData|null)[]=[];
-  let previous:MaskData|null=null;let lastSelection:MaskData|null=null;
+  const raster=new MaskRasterWorker();let job=0,lastSelection:MaskData|null=null;
   const viewport=document.querySelector<HTMLElement>('.surface');
   const box=document.createElement('div');box.className='c06-selection-notice';box.hidden=true;
   const preview=document.createElement('svg');
@@ -98,10 +99,14 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
   }
   function applyShape(shape:SelectionShape){
     const doc=source();if(!doc)return;
-    const result=rasterizeSelection(shape,doc.width,doc.height);
-    const next=combineSelection(active,result,mode.value as CombineMode);
-    publish(next);
+    const current=++job,currentMode=mode.value as CombineMode,previous=active;
     points=[];drawing=null;overlayPath();tool=null;refresh();
+    status.textContent='選択の形を反映しています。キャンバス操作は続けられます。';
+    void raster.shape(shape,previous,currentMode,doc.width,doc.height)
+      .then(next=>{
+        if(current!==job||callbacks.getDocument()?.id!==doc.id)return;
+        publish(next);
+      }).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});
   }
   function endStroke(){
     if(!drawing||!tool)return;
@@ -147,7 +152,11 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!active)return;
     const value=window.prompt('ぼかし幅 0〜32px','3');if(value===null)return;
     const amount=Number(value);if(!Number.isInteger(amount)||amount<0||amount>32){status.textContent='0〜32pxで指定してください。';return;}
-    publish(featherMask(active,amount));
+    const original=active,doc=source(),current=++job;if(!doc)return;
+    status.textContent='選択の縁を整えています。';
+    void raster.feather(original,amount).then(next=>{
+      if(current===job&&callbacks.getDocument()?.id===doc.id)publish(next);
+    }).catch(error=>{status.textContent=String(error);});
   });
   const undo=asButton('選択だけ元に戻す',()=>{
     if(!history.length)return;
@@ -245,13 +254,13 @@ export function installSelectionWorkbench(callbacks:SelectionCallbacks):Selectio
     if(!drawing||event.pointerId!==drawing.pointer)return;
     drawing=null;points=[];overlayPath();
   },true);
-  const documentChanged=()=>{currentWork=null;source();void updateNamed();};
+  const documentChanged=()=>{job++;currentWork=null;source();void updateNamed();};
   refresh();documentChanged();
   return {
     active:()=>active,
     documentChanged,
     refresh,
-    clear:()=>publish(null),
+    clear:()=>{job++;publish(null);},
     applyRectangle:rect=>{
       const doc=source();if(!doc)return;
       publish(combineSelection(active,
