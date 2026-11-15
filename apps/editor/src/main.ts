@@ -12,6 +12,10 @@ import './color/harmony.css';
 import {ForegroundColor,rgb,hex} from './color/model';
 import {installColorPanel} from './color/panel';
 import {installEyedropperSettings} from './color/eyedropperSettings';
+import {getAsset} from './assets/library';
+import {installAssetPanel} from './assets/assetPanel';
+import {installReferenceBoard,type ReferenceBoardService} from './assets/referenceBoard';
+import './ui/c05.css';
 import {shellMarkup} from './ui/shell';
 import {installShellUi} from './ui/shellBehavior';
 import {installCommandPalette} from './ui/commandPalette';
@@ -110,6 +114,7 @@ try{
  const saved=JSON.parse(localStorage.getItem('illustro.guide-settings.v1')??'null') as Partial<GuideSettings>|null;
  if(saved&&typeof saved==='object')guidePreferences=normalizeGuideSettings(saved);
 }catch{/* Drawing remains usable when preferences are unavailable. */}
+let c05ReferenceBoard:ReferenceBoardService|undefined;
 let surface:BrushSurface|null=null,historyPending=false,undoCount=0,redoCount=0,blockedHistoryGhostClicks=0,selectedTool:'brush'|'eraser'|'eyedropper'='brush',lastDrawingTool:'brush'|'eraser'='brush',lastBrushPresetId='foundation-g-pen',lastEraserPresetId='foundation-hard-eraser',documentReady=false,lastQueuedRevision:string|null=null,recoveryCandidates:readonly Candidate[]=[];
 const CHECKPOINT_OPERATION_INTERVAL=12,CHECKPOINT_IDLE_MS=800;
 let projectionCheckpointTimer:number|null=null,projectionCheckpointBusy=false,checkpointOpsSinceLast=0,checkpointNeedsFullSeed=true,lastCheckpointAt:number|null=null;
@@ -2213,7 +2218,7 @@ async function initializeCurrentSurface(replay:boolean,projectionCache?:Portable
     measureCanvasStage('projection-restore',replayStarted);
   }
   for(const id of ['brush','size','sizeNumber','force','addLayer','addLayerPage','save','saveCopy','exportImage','flipH','flipV','brushDuplicate','brushSave','brushOpacity','brushFlow','brushSpacing','brushPressure','brushStabilization','brushTexture','brushAzimuth','brushTwist'])(byId(id) as HTMLInputElement).disabled=false;
-  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity);documentReady=true;renderLayers();updateHistoryButtons();
+  syncPreset();surface.setForegroundColor([foreground.current.r,foreground.current.g,foreground.current.b],foreground.opacity);documentReady=true;renderLayers();void c05ReferenceBoard?.refreshIfChanged();updateHistoryButtons();
 }
 async function activateOpened(opened:PortableOpenResult,recovered=false,expectedEpoch:string|null=null,freshWhiteSurfaceKey:string|null=null){
   if(documentActivationPending)throw new Error('別の作品を開いています。');
@@ -3159,6 +3164,21 @@ installWorkspaceProfiles(c04FloatingPanels,c04Toolbar);
 installInputDeviceProfiles(()=>surface);
 installGestureShortcuts();
 installShortcutSettings(c04Commands,()=>!surface||!surface.inputActive);
+
+// C05: personal asset vault and reference board remain independent of raster history.
+const c05References=installReferenceBoard({
+  getDocumentId:()=>documentReady?controller.document.root.documentId:null,
+  color:foreground,
+  onPickColor:async assetId=>{
+    const entry=await getAsset(assetId);
+    if(!entry||entry.deleted||!entry.mime.startsWith('image/'))throw Error('参考画像が見つかりません。');
+    await eyedropperSettings.reference.openBlob(entry.data);
+  }
+});
+c05ReferenceBoard=c05References;
+installAssetPanel({openReference:assetId=>c05References.add(assetId)});
+document.querySelector('#referenceBoxBody')?.closest('.workspace-box')?.querySelector('.box-toggle')
+  ?.addEventListener('click',()=>{void c05References.refreshIfChanged();});
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
 if(perfMode){
