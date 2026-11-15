@@ -1,8 +1,8 @@
 /** M09 foreground color is workspace state, not an artwork transaction. */
 export type RGB=Readonly<{r:number;g:number;b:number}>;
 export type Triple=Readonly<{h:number;s:number;v:number}>;
-export type PaletteSwatch={id:string;color:RGB};
-export type Palette={id:string;name:string;swatches:PaletteSwatch[]};
+export type PaletteSwatch={id:string;color:RGB;tags?:string[]};
+export type Palette={id:string;name:string;folder?:string;swatches:PaletteSwatch[]};
 export const clamp=(n:number,min=0,max=1)=>Math.min(max,Math.max(min,n));
 export const validRGB=(o:unknown):o is RGB=>!!o&&typeof o==='object'&&['r','g','b'].every(k=>Number.isFinite((o as Record<string,unknown>)[k])&&Number((o as Record<string,unknown>)[k])>=0&&Number((o as Record<string,unknown>)[k])<=1);
 export const rgb=(r:number,g:number,b:number):RGB=>({r:clamp(r),g:clamp(g),b:clamp(b)});
@@ -43,17 +43,18 @@ export function parsePalette(text:string):Palette {
  if(p.format!=='illustro-palette'||p.version!==1)throw new Error('対応していないパレット形式またはバージョンです。');
  if(typeof p.name!=='string'||!cleanName(p.name)||!Array.isArray(p.swatches)||p.swatches.length>MAX_SWATCHES)throw new Error('パレット名または色の数が不正です。');
  const ids=new Set<string>(),swatches:PaletteSwatch[]=[];
+ const tags=(value:unknown):string[]=>Array.isArray(value)?value.filter((t):t is string=>typeof t==='string').map(t=>t.trim()).filter(Boolean).slice(0,12):[];
  for(const entry of p.swatches){
   if(!entry||typeof entry!=='object')throw new Error('色の情報が不正です。');
   const sw=entry as Record<string,unknown>,spec=sw.color as Record<string,unknown>|null;
   if(typeof sw.id!=='string'||sw.id.length<1||sw.id.length>100||ids.has(sw.id))throw new Error('色の識別番号が重複または不正です。');
   if(!spec||typeof spec!=='object'||spec.space!=='srgb'||!Array.isArray(spec.channels)||spec.channels.length!==3||!spec.channels.every(n=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=1))throw new Error('使えない色データが含まれています。');
-  ids.add(sw.id);swatches.push({id:sw.id,color:rgb(spec.channels[0],spec.channels[1],spec.channels[2])});
+  ids.add(sw.id);swatches.push({id:sw.id,color:rgb(spec.channels[0],spec.channels[1],spec.channels[2]),tags:tags(sw.tags)});
  }
- return {id:ident(),name:cleanName(p.name),swatches};
+ return {id:ident(),name:cleanName(p.name),folder:typeof p.folder==='string'?cleanName(p.folder):'',swatches};
 }
 export function exportPalette(p:Palette):string{
- return JSON.stringify({format:'illustro-palette',version:1,name:p.name,swatches:p.swatches.map(s=>({id:s.id,color:{space:'srgb',channels:[s.color.r,s.color.g,s.color.b]}}))},null,2);
+ return JSON.stringify({format:'illustro-palette',version:1,name:p.name,folder:p.folder??'',swatches:p.swatches.map(s=>({id:s.id,tags:s.tags??[],color:{space:'srgb',channels:[s.color.r,s.color.g,s.color.b]}}))},null,2);
 }
 export class ForegroundColor {
  current:RGB=rgb(.12,.15,.2);previous:RGB=rgb(.12,.15,.2);background:RGB=rgb(1,1,1);history:RGB[]=[];
@@ -64,7 +65,7 @@ export class ForegroundColor {
   if(validRGB(d.previous))this.previous=rgb(d.previous.r,d.previous.g,d.previous.b);
   if(validRGB(d.background))this.background=rgb(d.background.r,d.background.g,d.background.b);
   if(Array.isArray(d.history))this.history=d.history.filter(validRGB).slice(0,MAX_HISTORY);
-  if(Array.isArray(d.palettes)){const items=d.palettes.slice(0,MAX_PALETTES).map((p:unknown)=>{const q=p as Palette;if(typeof q?.id!=='string'||typeof q.name!=='string'||!Array.isArray(q.swatches))return null;return {id:q.id,name:cleanName(q.name),swatches:q.swatches.slice(0,MAX_SWATCHES).filter(s=>typeof s?.id==='string'&&validRGB(s.color))};}).filter((p):p is Palette=>p!==null&&!!p.name);if(items.length)this.palettes=items;}
+  if(Array.isArray(d.palettes)){const items=d.palettes.slice(0,MAX_PALETTES).map((p:unknown)=>{const q=p as Palette;if(typeof q?.id!=='string'||typeof q.name!=='string'||!Array.isArray(q.swatches))return null;return {id:q.id,name:cleanName(q.name),folder:typeof q.folder==='string'?cleanName(q.folder):'',swatches:q.swatches.slice(0,MAX_SWATCHES).filter(s=>typeof s?.id==='string'&&validRGB(s.color)).map(s=>({...s,tags:Array.isArray(s.tags)?s.tags.filter((t):t is string=>typeof t==='string').slice(0,12):[]}))};}).filter((p):p is Palette=>p!==null&&!!p.name);if(items.length)this.palettes=items;}
   if(typeof d.paletteId==='string'&&this.palettes.some(p=>p.id===d.paletteId))this.paletteId=d.paletteId;
  }catch{/* Corrupt workspace preferences never prevent startup. */}}
  get isEditing(){return this.origin!==null;}
@@ -89,6 +90,12 @@ export class ForegroundColor {
  selectPalette(id:string){if(this.palettes.some(p=>p.id===id)){this.paletteId=id;this.save();this.notify();}}
  createPalette(name:string){if(this.palettes.length>=MAX_PALETTES)throw new Error('パレットは32個までです。');const n=cleanName(name);if(!n)throw new Error('名前を入力してください。');const p={id:ident(),name:n,swatches:[]};this.palettes.push(p);this.paletteId=p.id;this.save();this.notify();}
  renamePalette(name:string){const n=cleanName(name);if(!n)throw new Error('名前を入力してください。');this.palette.name=n;this.save();this.notify();}
+ setPaletteFolder(folder:string){this.palette.folder=cleanName(folder);this.save();this.notify();}
+ setSwatchTags(id:string,tags:readonly string[]){
+   const item=this.palette.swatches.find(s=>s.id===id);if(!item)return;
+   item.tags=[...new Set(tags.map(t=>t.trim().slice(0,32)).filter(Boolean))].slice(0,12);
+   this.save();this.notify();
+ }
  addSwatch(){if(this.palette.swatches.length>=MAX_SWATCHES)throw new Error('1パレットは256色までです。');this.palette.swatches.push({id:ident(),color:this.current});this.save();this.notify();}
  removeSwatch(id:string){this.palette.swatches=this.palette.swatches.filter(s=>s.id!==id);this.save();this.notify();}
  moveSwatch(id:string,delta:number){const a=this.palette.swatches,i=a.findIndex(s=>s.id===id),j=i+delta;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j]!,a[i]!];this.save();this.notify();}
