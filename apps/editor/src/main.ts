@@ -1382,6 +1382,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
   const eraser=brushDrafts.get(lastEraserPresetId)??drawing.brushes.find(brush=>brush.id===lastEraserPresetId);
   return eraser?.blend==='erase'?(inputPreferences.eraserSizeLink&&active?{...eraser,size:active.size}:eraser):null;
  };
+ drawing.selectionMask=()=>surface===drawing?c06Selection?.active()??null:null;
  applyInputPreferences(drawing);
  drawing.onLayerPickShortcut=point=>{if(surface===drawing&&documentReady)pickLayerOnCanvas(point);};
  drawing.onSelectionChanged=()=>{if(surface===drawing){
