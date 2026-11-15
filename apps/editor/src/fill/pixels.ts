@@ -1,3 +1,4 @@
+import type {ColorHint} from '@illustro/core';
 import {growOrShrink,rasterizeSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
 
@@ -170,6 +171,14 @@ export function unpaintedFillEdges(mask:MaskData,pixels:Uint8ClampedArray|null,s
   return remaining;
 }
 
+function* sampledPath(points:readonly Point[]){
+  for(let i=0;i<points.length;i++){
+    const a=points[Math.max(0,i-1)]!,b=points[i]!;
+    const steps=Math.max(1,Math.ceil(Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))*2));
+    for(let j=1;j<=steps;j++)yield {x:a.x+(b.x-a.x)*j/steps,y:a.y+(b.y-a.y)*j/steps};
+  }
+}
+
 export function fillMask(source:Uint8Array,width:number,height:number,settings:FillSettings,points:readonly Point[],
   graph:RegionGraph|null,selection:MaskData|null,bridges?:Uint8Array):MaskData{
   const length=width*height;
@@ -178,13 +187,6 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
     const x=Math.floor(point.x),y=Math.floor(point.y);
     return x<0||y<0||x>=width||y>=height?-1:y*width+x;
   };
-  function* sampledPath(){
-    for(let i=0;i<points.length;i++){
-      const a=points[Math.max(0,i-1)]!,b=points[i]!;
-      const steps=Math.max(1,Math.ceil(Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))*2));
-      for(let j=1;j<=steps;j++)yield {x:a.x+(b.x-a.x)*j/steps,y:a.y+(b.y-a.y)*j/steps};
-    }
-  }
   if(settings.method==='lasso'||settings.method==='lasso-closed'){
     if(points.length<3)throw Error('塗る範囲を一筆で囲んでください。');
     alpha=rasterizeSelection({type:'lasso',points},width,height).alpha;
@@ -206,7 +208,7 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
     const excluded=new Set(settings.excluded);
     const regions=new Set((settings.included??[]).filter(id=>!excluded.has(id)&&(!settings.closedOnly||!graph.external[id])));
     const traceRadius=Math.max(0,Math.min(12,Math.round((settings.traceWidth??1)/2-.5)));
-    for(const point of sampledPath()){
+    for(const point of sampledPath(points)){
       for(let y=-traceRadius;y<=traceRadius;y++)for(let x=-traceRadius;x<=traceRadius;x++){
         if(x*x+y*y>traceRadius*traceRadius)continue;
         const i=seed({x:point.x+x,y:point.y+y}),id=graph.labels[i]??0;
@@ -228,7 +230,7 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
     };
     if(settings.contiguous){
       const queue=new Uint32Array(length);
-      for(const point of sampledPath()){
+      for(const point of sampledPath(points)){
         const start=seed(point);
         if(start<0||alpha[start]||bridges?.[start]||!equalColor(start))continue;
         flood(width,height,start,i=>!alpha[i]&&!bridges?.[i]&&equalColor(i),i=>{alpha[i]=255;},queue);
@@ -253,25 +255,59 @@ export function fillMask(source:Uint8Array,width:number,height:number,settings:F
   return {width,height,alpha};
 }
 
+function applyColor(result:Uint8ClampedArray,p:number,rgb:readonly number[],a:number,erase:boolean,alphaLocked:boolean){
+  const background=result[p+3]!/255;
+  if(erase){
+    if(alphaLocked)return;
+    result[p+3]=background*(1-a)*255;
+    if(!result[p+3])result.fill(0,p,p+3);
+    return;
+  }
+  if(alphaLocked){
+    if(background)for(let c=0;c<3;c++)result[p+c]=rgb[c]!*a+result[p+c]!*(1-a);
+    return;
+  }
+  const total=a+background*(1-a);
+  for(let c=0;c<3;c++)result[p+c]=(rgb[c]!*a+result[p+c]!*background*(1-a))/total;
+  result[p+3]=total*255;
+}
+const colorChannels=(color:string)=>[1,3,5].map(offset=>parseInt(color.slice(offset,offset+2),16));
+
 export function colorMask(target:Uint8Array|null,mask:MaskData,settings:FillSettings,alphaLocked:boolean){
   const result=target?new Uint8ClampedArray(target):new Uint8ClampedArray(mask.alpha.length*4);
-  const rgb=[1,3,5].map(offset=>parseInt(settings.color.slice(offset,offset+2),16));
+  const rgb=colorChannels(settings.color);
   for(let i=0;i<mask.alpha.length;i++){
-    const a=mask.alpha[i]!*settings.opacity/255,p=i*4,background=result[p+3]!/255;
-    if(!a)continue;
-    if(settings.erase){
-      if(alphaLocked)continue;
-      result[p+3]=background*(1-a)*255;
-      if(!result[p+3])result.fill(0,p,p+3);
-      continue;
-    }
-    if(alphaLocked){
-      if(background)for(let c=0;c<3;c++)result[p+c]=rgb[c]!*a+result[p+c]!*(1-a);
-      continue;
-    }
-    const total=a+background*(1-a);
-    for(let c=0;c<3;c++)result[p+c]=(rgb[c]!*a+result[p+c]!*background*(1-a))/total;
-    result[p+3]=total*255;
+    const a=mask.alpha[i]!*settings.opacity/255;
+    if(a)applyColor(result,i*4,rgb,a,settings.erase,alphaLocked);
   }
   return result;
+}
+
+export function paintColorHints(graph:RegionGraph,hints:readonly ColorHint[],target:Uint8Array|null,
+  selection:MaskData|null,settings:FillSettings,alphaLocked:boolean){
+  const {width,height,labels}=graph,assignments=new Map<number,number>(),colors=hints.map(hint=>{
+    return {erase:hint.color===null,channels:hint.color?colorChannels(hint.color):[]};
+  });
+  for(const [index,hint] of hints.entries()){
+    const radius=Math.max(0,Math.floor((hint.width-1)/2));
+    for(const point of sampledPath(hint.points)){
+      const px=Math.floor(point.x),py=Math.floor(point.y);
+      for(let y=-radius;y<=radius;y++)for(let x=-radius;x<=radius;x++){
+        if(x*x+y*y>radius*radius||px+x<0||py+y<0||px+x>=width||py+y>=height)continue;
+        const id=labels[(py+y)*width+px+x]!;
+        if(id&&(!settings.closedOnly||!graph.external[id]))assignments.set(id,index);
+      }
+    }
+  }
+  if(!assignments.size)throw Error('色指示が塗れる領域に触れていません。');
+  const alpha=new Uint8Array(labels.length),pixels=target?new Uint8ClampedArray(target):new Uint8ClampedArray(labels.length*4);
+  for(let i=0;i<labels.length;i++){
+    const id=assignments.get(labels[i]!);
+    if(id===undefined)continue;
+    const color=colors[id]!,selected=selection?.alpha[i]??255,value=selected*settings.opacity/255;
+    if(!value)continue;
+    alpha[i]=selected;
+    applyColor(pixels,i*4,color.channels,value,color.erase,alphaLocked);
+  }
+  return {pixels,mask:{width,height,alpha}};
 }

@@ -1,4 +1,4 @@
-import type {LayerId,LineRegions,RevisionId} from '@illustro/core';
+import type {ColorHint,LayerId,LineRegions,RevisionId} from '@illustro/core';
 import type {BrushSurface} from '../brushSurface';
 import {combineSelection,type MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
@@ -12,9 +12,9 @@ export type FillCapture=Readonly<{
   name:string;targetName:string;key:string;width:number;height:number;source:Uint8Array;target:Uint8Array|null;
   revision:RevisionId;sourceIds:readonly LayerId[];reference:Reference;
   selection:MaskData|null;targetMask:MaskData|null;alphaLocked:boolean;valid:()=>boolean;canAdjust:()=>boolean;referenceValid:()=>boolean;
-  apply:(pixels:Uint8ClampedArray,color:string)=>Promise<void>;select:(mask:MaskData)=>void;
+  apply:(pixels:Uint8ClampedArray,color:string,hints?:{id:LayerId;recipe:LineRegions})=>Promise<void>;select:(mask:MaskData)=>void;
 }>;
-type Candidate={source:FillCapture;points:readonly Point[];asSelection:boolean;excluded:number[];included:number[];adjustment?:boolean;savedGraph?:RegionGraph;workingGraph?:RegionGraph;workingGraphKey?:string;manual?:Walls};
+type Candidate={source:FillCapture;points:readonly Point[];asSelection:boolean;excluded:number[];included:number[];adjustment?:boolean;savedGraph?:RegionGraph;workingGraph?:RegionGraph;workingGraphKey?:string;manual?:Walls;hints?:readonly ColorHint[]};
 type Entry={id:LayerId;name:string;data:LineRegions};
 
 export function installFillPanel(host:HTMLElement,api:{
@@ -38,6 +38,7 @@ export function installFillPanel(host:HTMLElement,api:{
   let pending:Awaited<ReturnType<typeof runFill>>|null=null;
   let displayDocument='';
   let candidateGeneration=0,pendingColor='#000000';
+  let hints:readonly ColorHint[]=[];
   const manuals=new Map<string,Walls>();
   const makeLabel=(text:string,control:HTMLElement)=>{
     const label=document.createElement('label');label.append(text,control);options.append(label);
@@ -74,6 +75,9 @@ export function installFillPanel(host:HTMLElement,api:{
   const edgeShape=select('拡張・縮小の角',[['square','角を保つ'],['round','角を丸める']]);
   const diagnostic=checkbox('補完と塗り残しの候補を表示');
   const trace=number('なぞりの幅（px）',1,1,25);
+  const showHints=checkbox('色指示の線を表示',true);
+  const clearHint=checkbox('透明にする指示');
+  const hintList=select('取り消す色指示',[]);
   const opacity=number('塗りの濃さ（%）',100,0,100);
   const condition=select('画素の条件',[['all','すべて'],['transparent','透明な画素だけ'],['color','設定色に近い画素だけ']]);
   const contiguous=checkbox('続いている部分だけ',true);
@@ -131,7 +135,7 @@ export function installFillPanel(host:HTMLElement,api:{
     regionLayers.replaceChildren(new Option('選択してください',''),...entries.map(entry=>new Option(entry.name,entry.id)));
     regionLayers.value=entries.some(entry=>entry.id===current)?current:'';
   }
-  function forgetAnalysis(){capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;lastFill=null;pending=null;excludedGap=-1;inspectedRegion=0;paint();}
+  function forgetAnalysis(){capture=previousCapture=null;currentGraph=previous=null;saved=undefined;confirmed=false;candidate=null;lastFill=null;pending=null;hints=[];refreshHintList();excludedGap=-1;inspectedRegion=0;paint();}
   function sync(){
     if(displayDocument!==api.documentId()){
       displayDocument=api.documentId();forgetAnalysis();refreshReferences(true);
@@ -140,7 +144,7 @@ export function installFillPanel(host:HTMLElement,api:{
     const sourceName=reference.value==='active'?api.targetName():reference.value==='merged'?'表示中の全レイヤー':names.join('、')||'未指定';
     const outputLayer=destination.value as Destination;
     const color=pending?pendingColor:api.color();
-    const layerName=fillLayerName(outputLayer,color);
+    const layerName=candidate?.hints?'色指示の彩色':fillLayerName(outputLayer,color);
     const placement=outputLayer==='under'?'の下':'の上';
     const targetName=outputLayer==='active'?api.targetName():api.targetName()+placement+'に「'+layerName+'」を作成';
     targets.textContent='参照元 '+(pending&&candidate?candidate.source.name:sourceName)+'　塗り先 '+targetName;
@@ -153,6 +157,10 @@ export function installFillPanel(host:HTMLElement,api:{
     rejectGap.disabled=running||!capture||excludedGap<0;
     nextGap.disabled=running||!currentGraph?.candidates.length;
     vectorCompare.disabled=running||!(capture?.reference==='vector'||capture?.reference==='vector-visible');
+    addHint.disabled=previewHints.disabled=!currentGraph||!confirmed||running;
+    previewHints.disabled||=!hints.length;
+    removeHint.disabled=!hints.length||running;
+    persistHints.disabled=!saved||running;
   }
   const read=(needTarget:boolean,stored?:LineRegions)=>
     api.capture(reference.value as Reference,destination.value as Destination,activeIds(),needTarget,stored);
@@ -205,6 +213,21 @@ export function installFillPanel(host:HTMLElement,api:{
       if(method.value.startsWith('lasso'))context.closePath();
       context.stroke();
     }
+    if(showHints.checked&&hints.length&&!(pending&&showBefore.checked)){
+      context.lineCap='round';
+      for(const hint of hints){
+        context.strokeStyle=hint.color??'#ed51bf';
+        context.setLineDash(hint.color?[]:[5,3]);
+        context.lineWidth=Math.max(2,hint.width*scale);
+        context.beginPath();
+        hint.points.forEach((point,index)=>{
+          const x=point.x*w/width,y=point.y*h/height;
+          if(index)context.lineTo(x,y);else{context.moveTo(x,y);context.lineTo(x+.01,y);}
+        });
+        context.stroke();
+      }
+      context.setLineDash([]);
+    }
     const gap=currentGraph?.candidates[excludedGap];
     if(gap&&!pending){
       context.lineWidth=2;context.strokeStyle='#e11769';context.beginPath();
@@ -225,17 +248,18 @@ export function installFillPanel(host:HTMLElement,api:{
     currentGraph=response.graph;capture=source;graphTolerance=current.tolerance;graphGap=current.gap;
     compare.checked=false;compare.disabled=!previous;confirmed=!!stored&&!points;excludedGap=-1;inspectedRegion=0;candidate=null;pending=null;
     inspectId.max=String(Math.max(1,currentGraph.count));
+    if(stored){hints=stored.hints??[];refreshHintList();}
     paint();
     const outside=currentGraph.external.reduce((sum,x)=>sum+x,0);
     output.textContent=(confirmed?'保存済み':'確認待ち')+' '+source.name+'。閉領域 '+(currentGraph.count-outside)+' 件、外側 '+outside+' 件。';
   }
   function stopGesture(){gesture?.setCanvasEditGesture(null);gesture=null;}
-  function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false){
+  function onCanvas(label:string,complete:(points:readonly Point[])=>Promise<void>,closed=false,traceColor='#ffb742'){
     stopGesture();
     const drawing=api.drawing();
     if(!drawing)throw Error('作品を開いてください。');
     gesture=drawing;output.textContent=label;
-    drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:'#ffb742',complete:points=>{
+    drawing.setCanvasEditGesture({path:closed,width:usesRegions()?value(trace):2,color:traceColor,complete:points=>{
       stopGesture();
       if(points.length)void work(()=>complete(points));
     }});
@@ -263,9 +287,12 @@ export function installFillPanel(host:HTMLElement,api:{
       }
       graph=edit.workingGraph??graph;
     }
-    const result=await runFill({type:'fill',source:source.source,target:source.target,width:source.width,height:source.height,
-      graph,selection:asSelection?null:selection,settings:{...options,excluded:edit.excluded,included:edit.included},points,
-      output:asSelection?'selection':'pixels',alphaLocked:source.alphaLocked,diagnostics:diagnostic.checked});
+    const input={source:source.source,target:source.target,width:source.width,height:source.height,settings:options,alphaLocked:source.alphaLocked};
+    if(edit.hints&&!graph)throw Error('色指示に使う線画領域が見つかりません。');
+    const result=await (edit.hints&&graph?runFill({...input,type:'hints',graph,hints:edit.hints,selection}):
+      runFill({...input,type:'fill',graph,selection:asSelection?null:selection,
+        settings:{...options,excluded:edit.excluded,included:edit.included},points,
+        output:asSelection?'selection':'pixels',diagnostics:diagnostic.checked}));
     if(candidate!==edit||request!==candidateGeneration||!candidateValid(edit))return;
     pending=result;pendingColor=options.color;paint();
     output.textContent=diagnostic.checked
@@ -297,8 +324,17 @@ export function installFillPanel(host:HTMLElement,api:{
     const {source,asSelection}=candidate;
     if(asSelection&&pending?.mask)source.select(pending.mask);
     else if(pending?.pixels){
-      await source.apply(pending.pixels,pendingColor);
-      lastFill={...candidate,adjustment:true};
+      const target=saved;
+      if(candidate.hints){
+        if(!target||!api.regionLayers().some(item=>item.id===target.id&&item.data===target.data))
+          throw Error('保存した領域を開き直してください。');
+        await source.apply(pending.pixels,pendingColor,{id:target.id,recipe:{...target.data,hints:candidate.hints}});
+        saved=api.regionLayers().find(entry=>entry.id===target.id);
+        lastFill=null;
+      }else{
+        await source.apply(pending.pixels,pendingColor);
+        lastFill={...candidate,adjustment:true};
+      }
     }else throw Error('変更される画素がありません。');
     candidate=null;pending=null;paint();output.textContent=asSelection?'領域を選択しました。':'塗りを反映しました。すぐに直すには「直前の塗りを調整」を押してください。';
   });
@@ -331,7 +367,7 @@ export function installFillPanel(host:HTMLElement,api:{
     const source=capture;
     if(!source||!currentGraph||!source.referenceValid())throw Error('参照元が変わったため、解析を更新してください。');
     const recipe:LineRegions={sourceRevision:source.revision,sources:source.sourceIds,reference:source.reference,
-      tolerance:graphTolerance,gap:graphGap,manual:manuals.get(source.key)??[]};
+      tolerance:graphTolerance,gap:graphGap,manual:manuals.get(source.key)??[],hints};
     const id=await api.saveRegion(recipe,saved?.id);
     saved=api.regionLayers().find(entry=>entry.id===id);confirmed=true;refreshRegionList();regionLayers.value=id;
     output.textContent='線画領域を作品に保存しました。';
@@ -344,6 +380,47 @@ export function installFillPanel(host:HTMLElement,api:{
     for(const input of selectedRefs.querySelectorAll('input'))input.checked=entry.data.sources.some(id=>id===input.value);
     tolerance.value=String(entry.data.tolerance);gap.value=String(entry.data.gap);
     method.value='line';await analyze(undefined,false,entry.data);
+  });
+  function refreshHintList(){
+    hintList.replaceChildren(...hints.map((hint,index)=>new Option(
+      `指示 ${index+1} ${hint.color??'透明'}`,String(index)
+    )));
+  }
+  const addHint=button('色指示を描く',()=>{
+    if(!currentGraph||!confirmed||!saved)throw Error('先に線画領域を確定してください。');
+    if(hints.length>=256)throw Error('色指示は256件までです。');
+    method.value='line';
+    const color=clearHint.checked?null:api.color(),width=value(trace);
+    onCanvas('色を入れたい面をなぞってください。',async points=>{
+      if(points.length>4096)throw Error('一つの指示が長すぎます。いくつかに分けてください。');
+      hints=[...hints,{color,width,points}];candidate=null;pending=null;lastFill=null;
+      refreshHintList();hintList.value=String(hints.length-1);paint();
+      output.textContent='指示を追加しました。重なった面は後の指示を使います。';
+    },false,color??'#ed51bf');
+  });
+  const removeHint=button('選んだ色指示を取り消す',()=>{
+    hints=hints.filter((_hint,index)=>index!==Number(hintList.value));
+    candidate=null;pending=null;refreshHintList();paint();
+    output.textContent='選んだ色指示を取り消しました。既存の彩色は残っています。';
+  });
+  const previewHints=button('色指示で塗る候補を作る',async()=>{
+    if(!currentGraph||!saved||!confirmed||!hints.length)throw Error('確定した線画領域に色指示を描いてください。');
+    if(destination.value!=='active'&&hints.every(hint=>hint.color===null))
+      throw Error('透明にする指示だけの場合は、既存の彩色レイヤーを選んでください。');
+    const source=await read(true,saved.data);
+    method.value='line';erase.checked=false;lastFill=null;
+    candidate={source,asSelection:false,points:[],excluded:[],included:[],savedGraph:currentGraph,hints};
+    await refreshCandidate();
+  });
+  const persistHints=button('色指示だけを保存',async()=>{
+    const target=saved;
+    if(!target||!api.regionLayers().some(item=>item.id===target.id&&item.data===target.data))
+      throw Error('保存した線画領域を選び直してください。');
+    const id=await api.saveRegion({...target.data,hints},target.id);
+    saved=api.regionLayers().find(entry=>entry.id===id);
+    candidate=null;pending=null;
+    output.textContent='色指示を保存しました。';
+    paint();
   });
   button('境界線を足す',()=>onCanvas('接続や分割したい場所をなぞってください。',points=>analyze(points)));
   button('境界線を切る・領域をつなぐ',()=>onCanvas('消したい境界線をなぞってください。',points=>analyze(points,true)));
@@ -371,7 +448,7 @@ export function installFillPanel(host:HTMLElement,api:{
   method.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
   destination.onchange=()=>{candidate=null;lastFill=null;pending=null;paint();sync();};
   compare.onchange=()=>{inspectedRegion=0;inspectId.max=String(Math.max(1,(compare.checked?previous:currentGraph)?.count??1));paint();};
-  showBefore.onchange=paint;view.onchange=paint;compare.disabled=true;
+  showBefore.onchange=paint;showHints.onchange=paint;view.onchange=paint;compare.disabled=true;
   for(const control of [opacity,edge,edgeShape,diagnostic,trace,condition,closedOnly,erase,contiguous]){
     control.addEventListener('change',()=>{if(candidate)void work(refreshCandidate);});
   }
@@ -400,7 +477,7 @@ export function installFillPanel(host:HTMLElement,api:{
     const rect=preview.getBoundingClientRect(),x=Math.floor((event.clientX-rect.left)*frozen.width/rect.width),y=Math.floor((event.clientY-rect.top)*frozen.height/rect.height);
     if(x<0||x>=frozen.width||y<0||y>=frozen.height)return;
     const region=inspectedGraph.labels[y*frozen.width+x]!;
-    if(region&&candidate&&usesRegions()){
+    if(region&&candidate&&!candidate.hints&&usesRegions()){
       const c=candidate;
       if(c.excluded.includes(region))c.excluded=c.excluded.filter(id=>id!==region);
       else if(pending?.mask?.alpha[y*frozen.width+x])c.excluded.push(region);

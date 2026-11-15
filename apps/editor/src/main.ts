@@ -3538,11 +3538,12 @@ installFillPanel(byId('documentBoxBody'),{
         artwork.root.width===width&&artwork.root.height===height,
       width,height,source,target,selection,targetMask,alphaLocked:destination==='active'&&!!layer.alphaLocked,valid,canAdjust,
       select:mask=>c06Selection?.replaceActive(mask),
-      apply:async(pixels,color)=>withClipboardAccess(async()=>{
+      apply:async(pixels,color,hints)=>withClipboardAccess(async()=>{
         if(applied?!canAdjust():!valid())throw Error('作品が変わったため塗りを取り消しました。');
         const tx=applied?artwork.beginAdjustment(applied.revision,'調整した塗りつぶし'):artwork.begin('塗りつぶす');
-        const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,fillLayerName(destination,color),false,true,destination==='under');
+        const id=destination==='active'?layer.id:tx.addRasterSnapshotAbove(layer.id,pixels,hints?'色指示の彩色':fillLayerName(destination,color),false,true,destination==='under');
         if(destination==='active')tx.replaceLayerRaster(id,pixels);
+        if(hints)tx.setLineRegions(hints.id,hints.recipe);
         const receipt=tx.commit();
         controller.lastPersistenceHandoff=receipt.persistence;
         controller.selectLayer(id);applied={revision:receipt.revision.id,id};

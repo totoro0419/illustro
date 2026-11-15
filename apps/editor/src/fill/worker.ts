@@ -1,10 +1,12 @@
-import {buildRegions,colorMask,fillBoundaries,fillMask,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
+import {buildRegions,colorMask,fillBoundaries,fillMask,paintColorHints,unpaintedFillEdges,type FillSettings,type RegionGraph,type Walls} from './pixels';
+import type {ColorHint} from '@illustro/core';
 import type {MaskData} from '../selection/mask';
 import type {Point} from '../transform/geometry';
 
 export type FillImage={source:Uint8Array;width:number;height:number;settings:FillSettings};
 export type FillJob=FillImage&(
   |{type:'graph';manual:Walls}
+  |{type:'hints';target:Uint8Array|null;selection:MaskData|null;graph:RegionGraph;hints:readonly ColorHint[];alphaLocked:boolean}
   |{type:'fill';target:Uint8Array|null;selection:MaskData|null;graph:RegionGraph|null;
     points:readonly Point[];output:'selection'|'pixels';alphaLocked:boolean;diagnostics?:boolean}
 );
@@ -17,6 +19,11 @@ self.onmessage=({data}:MessageEvent<FillJob>)=>{
       const graph=buildRegions(source,width,height,settings.tolerance,settings.gap,data.manual);
       post.postMessage({graph},[graph.labels.buffer as ArrayBuffer,graph.walls.buffer as ArrayBuffer,graph.bridges.buffer as ArrayBuffer,graph.external.buffer as ArrayBuffer,
         graph.neighborOffsets.buffer as ArrayBuffer,graph.neighbors.buffer as ArrayBuffer,graph.depth.buffer as ArrayBuffer]);
+      return;
+    }
+    if(data.type==='hints'){
+      const result=paintColorHints(data.graph,data.hints,data.target,data.selection,data.settings,data.alphaLocked);
+      post.postMessage(result,[result.pixels.buffer,result.mask.alpha.buffer]);
       return;
     }
     const repairs=data.graph??(settings.method==='color'&&settings.contiguous&&settings.gap
