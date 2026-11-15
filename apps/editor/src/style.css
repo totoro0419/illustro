@@ -89,3 +89,6 @@ details p{font-size:13px}
 .artwork-history-previews{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
 .artwork-history-previews figure{margin:0;min-width:0}
 .artwork-history-previews img{display:block;width:100%;height:auto;max-height:52dvh;object-fit:contain;background:#fff}
+
+#layerPage{overflow-y:auto}
+#layerPageList{flex:1 0 120px;min-height:120px}

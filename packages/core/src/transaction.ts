@@ -77,7 +77,7 @@ export class DocumentTransaction{
     const layer=this.rootValue.getLayer(id);
     if(!layer.vectorMask?.enabled||this.rootValue.isLayerLocked(id))throw new Error('有効なマスクが付いた、ロックされていないレイヤーを選んでください。');
     const replacement=this.addRasterSnapshotAbove(id,pixels,layer.name,true);
-    this.meta(replacement,{vectorMask:null,...(layer.positionLocked?{positionLocked:true}:{})});
+    this.meta(replacement,{vectorMask:null,...(layer.positionLocked?{positionLocked:true}:{}),...(layer.alphaLocked?{alphaLocked:true}:{})});
     for(const otherId of this.rootValue.rootLayerIds){
       if(this.rootValue.getLayer(otherId).clipSourceId===id)this.meta(otherId,{clipSourceId:replacement});
     }
