@@ -40,3 +40,13 @@ body.workspace-compact-density .box-stack{padding-top:5px}
 .c04-shortcut-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px;border:1px solid var(--a-border,#ddd);border-radius:8px}
 .c04-shortcut-row span{font-size:11px;line-height:1.4;min-width:0;word-break:break-word}
 .c04-shortcut-row button{flex:none;min-width:42px;min-height:34px;border:1px solid var(--a-border,#ddd);border-radius:7px;background:transparent;color:inherit}
+
+.c04-device-profile{margin:12px 8px;padding:8px 2px;border-top:1px solid var(--a-border,#ddd);font-size:12px}
+.c04-device-profile summary{min-height:38px;padding:8px 0;font-weight:600;cursor:pointer}
+.c04-device-profile-fields{display:flex;flex-direction:column;gap:8px}
+.c04-device-profile-fields p{margin:0 0 4px;font-size:11px;line-height:1.5;color:var(--a-subtle,#667)}
+.c04-device-profile-fields>label{display:flex;flex-direction:column;gap:4px;font-size:11px}
+.c04-device-profile-fields label:has(input[type=checkbox]){flex-direction:row;align-items:center;min-height:39px}
+.c04-device-profile-fields select{min-height:40px;width:100%;border:1px solid var(--a-border,#ddd);border-radius:8px;padding:6px;color:inherit;background:var(--a-surface,#fff)}
+.c04-device-profile-fields input[type=checkbox]{width:18px;height:18px;flex:none}
+.c04-device-profile-fields output{display:block;min-height:18px;font-size:11px;color:var(--a-subtle,#667)}
