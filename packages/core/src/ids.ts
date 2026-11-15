@@ -55,3 +55,5 @@ export function runtimeBlockHandle(value:number):RuntimeBlockHandle{
   if(!Number.isSafeInteger(value)||value<=0)throw new Error('runtime block handle must be a positive safe integer');
   return value as RuntimeBlockHandle;
 }
+
+export function operationKeyText(key:OperationKey){return key.transactionId+':'+key.operationOrdinal;}

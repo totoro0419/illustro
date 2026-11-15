@@ -1,3 +1,4 @@
+import type {LayerDeformation} from './layerDeformation';
 import type {EditableArtwork} from './editableArtwork';
 import type {LayerBlend} from './layerBlend';
 import type {LayerMask} from './layerMask';
@@ -29,6 +30,7 @@ export type LayerNode=Readonly<{
   vectorMask?:LayerMask|null;
   blend?:LayerBlend|null;
   editable?:EditableArtwork|null;
+  deformation?:LayerDeformation|null;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];layerComps?:readonly LayerComp[];author?:string;description?:string;dpi?:number}>;

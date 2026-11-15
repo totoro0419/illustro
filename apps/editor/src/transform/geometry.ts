@@ -1,16 +1,27 @@
+import type {TransformBounds,TransformQuad} from '@illustro/core';
+import {quadrilateralMapping} from './quadrilateral';
 import type {MaskData} from '../selection/mask';
 
 export type Point={x:number;y:number};
-export type Deform='affine'|'perspective'|'mesh'|'push'|'expand'|'pinch'|'twist'|'restore';
+export type Deform='affine'|'perspective'|'free'|'projective'|'skew'|'mesh'|'push'|'expand'|'pinch'|'twist'|'restore';
 export type Transform=Readonly<{
   mode:Deform;dx:number;dy:number;sx:number;sy:number;angle:number;shear:number;
   perspective:number;warpX:number;warpY:number;cx:number;cy:number;radius:number;strength:number;
   interpolation:'nearest'|'bilinear'|'area';
+  quadrilateral?:Readonly<{bounds:TransformBounds;corners:TransformQuad}>;
 }>;
 export const initialTransform:Transform={mode:'affine',dx:0,dy:0,sx:1,sy:1,angle:0,shear:0,
   perspective:0,warpX:0,warpY:0,cx:0,cy:0,radius:80,strength:.35,interpolation:'bilinear'};
 
+export function cornerMode(mode:Deform):mode is 'free'|'projective'|'skew'{
+  return mode==='free'||mode==='projective'||mode==='skew';
+}
+
 export function inverseTransform(t:Transform,width:number,height:number){
+  if(cornerMode(t.mode)){
+    if(!t.quadrilateral)throw Error('変形する四隅を指定してください。');
+    return quadrilateralMapping(t.quadrilateral.bounds,t.quadrilateral.corners,t.mode).inverse;
+  }
   const cos=Math.cos(t.angle*Math.PI/180),sin=Math.sin(t.angle*Math.PI/180);
   if(!t.sx||!t.sy||!Number.isFinite(t.sx*t.sy))throw Error('縦と横の倍率を0以外にしてください。');
   if(t.mode==='perspective'&&Math.abs(t.perspective)>=.8)throw Error('遠近の強さを80%未満にしてください。');
@@ -51,7 +62,7 @@ type Pixel=readonly [number,number,number,number];
 const empty:Pixel=[0,0,0,0];
 function sample(source:Uint8Array,width:number,height:number,x:number,y:number,mask:MaskData|null):Pixel{
   const px=Math.floor(x),py=Math.floor(y);
-  if(px<0||py<0||px>=width||py>=height)return empty;
+  if(!Number.isFinite(px)||!Number.isFinite(py)||px<0||py<0||px>=width||py>=height)return empty;
   const index=py*width+px,at=index*4,a=source[at+3]!/255*(mask?mask.alpha[index]!/255:1);
   return [source[at]!*a,source[at+1]!*a,source[at+2]!*a,a];
 }
@@ -62,6 +73,7 @@ export function transformRaster(source:Uint8Array,width:number,height:number,t:T
   const inverse=inverseTransform(t,width,height),out=new Uint8ClampedArray(previewWidth*previewHeight*4);
   const sx=width/previewWidth,sy=height/previewHeight;
   const read=(x:number,y:number):Pixel=>{
+    if(!Number.isFinite(x)||!Number.isFinite(y))return empty;
     if(t.interpolation==='nearest')return sample(source,width,height,x,y,selection);
     const left=Math.floor(x-.5),top=Math.floor(y-.5),dx=x-left-.5,dy=y-top-.5;
     const a=sample(source,width,height,left,top,selection),b=sample(source,width,height,left+1,top,selection);

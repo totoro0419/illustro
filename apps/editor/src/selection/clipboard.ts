@@ -54,6 +54,8 @@ export class ArtworkClipboard {
       const layer=selectedLayer;
       if(layer.kind!=='raster')throw Error('このレイヤーは画素のコピーに対応していません。');
       const ids=new Set(group?.members??[layer.id]);
+      if(!selection&&[...ids].some(id=>root.getLayer(id).deformation))
+        throw Error('変形を保ったままのコピーは未対応です。現在の見た目が必要な場合は、見えている絵をコピーしてください。');
       const captured=await drawing.captureDocumentLayers(ids);
       if(!selection&&layer.baseColor!=='white'){
         const layers=root.rootLayerIds.filter(id=>ids.has(id)).map(id=>{

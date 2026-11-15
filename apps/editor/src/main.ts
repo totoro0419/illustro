@@ -25,7 +25,11 @@ import {selectionAsLayerMask} from './artwork/selectionMask';
 import type {ArtworkActions} from './artwork/tools';
 import {installFillPanel} from './fill/panel';
 import {installTransformPanel} from './transform/panel';
-import {transformLinkedMask} from './transform/mask';
+import {digestLayerMask,readSelectionMask,transformLinkedMask} from './transform/mask';
+import {cornerMode,initialTransform} from './transform/geometry';
+import {alphaBounds} from './transform/quadrilateral';
+import {boundsOfSelection} from './selection/mask';
+import type {LayerDeformation} from '@illustro/core';
 import {ArtworkClipboard} from './selection/clipboard';
 import {installClipboardPanel,type ClipboardUI} from './selection/clipboardPanel';
 import {installSelectionWorkbench,type SelectionWorkbench} from './selection/panel';
@@ -3316,25 +3320,41 @@ persistence.setSaveAttachmentProvider(async root=>{
 installTransformPanel(byId('documentBoxBody'),async target=>{
   const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
   const {width,height}=artwork.root;
-  const drawing=surface,selection=target==='layer'?null:c06Selection?.active()??null;
+  const drawing=surface,activeSelection=c06Selection?.active()??null;
   if(!drawing)throw Error('作品を開いてください。');
-  if(target!=='layer'&&!selection)throw Error('先に範囲を選択してください。');
-  if(target!=='boundary'&&(layer.baseColor==='white'||artwork.root.isLayerContentLocked(layer.id)||artwork.root.isLayerPositionLocked(layer.id)))
-    throw Error('変形できるレイヤーを選び、位置と内容のロックを解除してください。');
+  const saved=target==='boundary'?null:layer.deformation;
+  if(saved&&target==='selected')throw Error('保存済みの変形を編集するには「レイヤー全体」を選んでください。');
+  if(target!=='layer'&&!activeSelection)throw Error('先に範囲を選択してください。');
+  if(target!=='boundary'&&(layer.baseColor==='white'||layer.editable||artwork.root.isLayerContentLocked(layer.id)||artwork.root.isLayerPositionLocked(layer.id)))
+    throw Error('変形できる描画用レイヤーを選び、位置と内容のロックを解除してください。');
+  const sourceRevision=saved?.sourceRevision??head;
+  const original=artwork.revision(sourceRevision).root.getLayer(layer.id);
+  const selection=saved?.selection?readSelectionMask(saved.selection,width,height):target==='layer'?null:activeSelection;
   let pixels:Uint8Array|undefined;
-  await withClipboardAccess(async active=>{
-    if(target==='boundary'&&selection){
+  await withClipboardAccess(async viewport=>{
+    if(target==='boundary'&&activeSelection){
       pixels=new Uint8Array(width*height*4);
-      for(let i=0;i<selection.alpha.length;i++){pixels[i*4]=255;pixels[i*4+1]=155;pixels[i*4+3]=selection.alpha[i]!;}
-    }else pixels=(await active.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
+      for(let i=0;i<activeSelection.alpha.length;i++){pixels[i*4]=255;pixels[i*4+1]=155;pixels[i*4+3]=activeSelection.alpha[i]!;}
+    }else if(saved){
+      const frozen=captureExport(artwork,layer.id,sourceRevision),surfaceId=original.surface.descriptor.surfaceId;
+      pixels=new Uint8Array(await renderFrozenArtwork({
+        ...frozen,layers:[{surfaceId,visible:true,opacity:1}],
+        strokes:frozen.strokes.filter(item=>item.surfaceId===surfaceId),
+        basePixels:frozen.basePixels?.filter(item=>item.surfaceId===surfaceId)??[]
+      }));
+    }else pixels=(await viewport.captureDocumentLayers(new Set([layer.id]))).get(layer.id);
     return 'read';
   });
   if(!pixels)throw Error('変形する絵を読み込めません。');
+  const bounds=saved?.bounds??(selection?boundsOfSelection(selection):alphaBounds(pixels,width,height))??{x:0,y:0,width,height};
+  const linkedMask=Boolean((saved?saved.linkedMask:target==='layer')&&layer.vectorMask&&layer.vectorMask.linked!==false);
   const valid=()=>surface===drawing&&controller.document===artwork&&artwork.head===head&&
-    controller.selectedLayer.id===layer.id&&(target==='layer'||c06Selection?.active()===selection);
+    controller.selectedLayer.id===layer.id&&(target==='layer'||c06Selection?.active()===activeSelection);
   return {
-    width,height,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
-    pixels,selection:target==='selected'?selection:null,drawing,valid,
+    width,height,bounds,name:target==='boundary'?'選択の枠':target==='selected'?'選択した絵':layer.name,
+    pixels,selection:target==='boundary'?null:selection,drawing,valid,...(layer.vectorMask?{maskLink:linkedMask}:{}),
+    ...(saved?{initial:{...initialTransform,mode:saved.mode,interpolation:saved.interpolation,
+      quadrilateral:{bounds:saved.bounds,corners:saved.corners}}}:{}),
     apply:async(settings,result)=>{
       if(!valid())throw Error('変形を開始したときの対象から変更されています。');
       if(target==='boundary'){
@@ -3343,17 +3363,43 @@ installTransformPanel(byId('documentBoxBody'),async target=>{
         c06Selection?.replaceActive({width,height,alpha});
         return;
       }
+      const quadrilateral=settings.quadrilateral;
+      const mode=settings.mode;
+      if(saved&&!cornerMode(mode))throw Error('元の絵と後から描いた線を保つには、四隅の変形モードを選んでください。');
+      if(linkedMask&&saved?.maskDigest&&layer.vectorMask&&await digestLayerMask(layer.vectorMask)!==saved.maskDigest)
+        throw Error('変形後にマスクを編集しています。編集したマスクを保つには、マスクのリンクを外してから変形してください。');
+      const sourceMask=saved?original.vectorMask:layer.vectorMask;
+      const mask=linkedMask&&sourceMask?transformLinkedMask(sourceMask,settings,width,height):null;
+      const maskDigest=mask?await digestLayerMask(mask):null;
+      const deformation:LayerDeformation|null=cornerMode(mode)&&quadrilateral?{
+        version:1,sourceRevision,mode,...quadrilateral,interpolation:settings.interpolation,linkedMask,
+        selection:saved?.selection??(target==='selected'&&selection?selectionAsLayerMask(selection):null),
+        ...(maskDigest?{maskDigest}:{})
+      }:null;
       await withClipboardAccess(async()=>{
-        const mask=target==='layer'&&layer.vectorMask?.linked!==false&&layer.vectorMask
-          ?transformLinkedMask(layer.vectorMask,settings,width,height):null;
+        if(!valid())throw Error('作品が変更されました。');
         const tx=artwork.begin(target==='selected'?'選択した絵を変形':'レイヤーを変形');
-        tx.replaceLayerRaster(layer.id,result);
+        if(deformation)tx.replaceLayerDeformation(layer.id,result,deformation);
+        else tx.replaceLayerRaster(layer.id,result);
         if(mask)tx.setVectorLayerMask(layer.id,mask);
         controller.lastPersistenceHandoff=tx.commit().persistence;
         return 'edit';
       });
     }
   };
+},async()=>{
+  const artwork=controller.document,head=artwork.head,layer=controller.selectedLayer;
+  if(!layer.deformation)throw Error('再編集できる変形を保持したレイヤーを選んでください。');
+  if(!confirm('現在の見た目を画像として残します。以後は、元の変形を調整できません。実行しますか？'))
+    throw Error('焼き込みを取り消しました。');
+  await withClipboardAccess(async()=>{
+    if(controller.document!==artwork||artwork.head!==head||controller.selectedLayer.id!==layer.id)
+      throw Error('選んだレイヤーが変更されました。');
+    const tx=artwork.begin('変形を画像に焼き込む');
+    tx.bakeLayerDeformation(layer.id);
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    return 'edit';
+  });
 });
 installFillPanel(byId('documentBoxBody'),{
   drawing:()=>documentReady?surface:null,
