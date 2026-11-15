@@ -3154,7 +3154,7 @@ const c04Toolbar=installToolbarSettings();
 installWorkspaceProfiles(c04FloatingPanels,c04Toolbar);
 installInputDeviceProfiles(()=>surface);
 installGestureShortcuts();
-installShortcutSettings(c04Commands,()=>!!surface&&!surface.inputActive);
+installShortcutSettings(c04Commands,()=>!surface||!surface.inputActive);
 
 // Review-only performance controls: native disclosure + checkbox, no normal UI changes.
 if(perfMode){
