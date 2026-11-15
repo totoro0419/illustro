@@ -442,6 +442,10 @@ const renderLayers=()=>{
   batchButton.setAttribute('aria-pressed',String(layerBatchMode));
   byId('layerBatchActions').hidden=!layerBatchMode;
   byId('layerBatchCount').textContent=layerBatchIds.size+'枚を選択';
+  const positionLock=byId<HTMLButtonElement>('layerPositionLock');
+  positionLock.disabled=!documentReady;
+  positionLock.textContent=selectedLayer.positionLocked?'位置ロックを解除':'位置をロック';
+  positionLock.setAttribute('aria-pressed',String(!!selectedLayer.positionLocked));
   byId<HTMLButtonElement>('duplicateLayer').disabled=!documentReady;
   byId<HTMLButtonElement>('flattenLayerCopy').disabled=!documentReady||!visibleLayerIds().size;
   byId<HTMLButtonElement>('mergeVisibleLayers').disabled=!documentReady||visibleLayerIds().size<2;
@@ -451,7 +455,7 @@ const renderLayers=()=>{
   byId<HTMLButtonElement>('layerBatchDelete').disabled=!documentReady||!layerBatchIds.size||[...layerBatchIds].some(id=>root.isLayerLocked(id))||!rows.some(layer=>!layerBatchIds.has(layer.id)&&layer.baseColor!=='white');
   byId<HTMLButtonElement>('layerBatchGroup').disabled=!documentReady||!layerBatchIds.size;
   byId<HTMLButtonElement>('layerBatchDestination').disabled=!documentReady||!layerBatchIds.size||!root.layerGroups.length;
-  byId<HTMLButtonElement>('layerDestination').disabled=!documentReady||!root.layerGroups.length||root.isLayerLocked(selectedLayer.id)||selectedLayer.baseColor==='white';
+  byId<HTMLButtonElement>('layerDestination').disabled=!documentReady||!root.layerGroups.length||root.isLayerPositionLocked(selectedLayer.id)||selectedLayer.baseColor==='white';
   for(const id of ['layerBatchShow','layerBatchHide','layerBatchLock','layerBatchUnlock']){
     byId<HTMLButtonElement>(id).disabled=!documentReady||!layerBatchIds.size;
   }
@@ -471,11 +475,11 @@ const renderLayers=()=>{
   nameField.disabled=!documentReady;
   const selectedIndex=rows.findIndex(layer=>layer.id===selectedLayer.id);
   const sameParent=(a:LayerId,b:LayerId)=>root.groupsForLayer(a).at(-1)?.id===root.groupsForLayer(b).at(-1)?.id;
-  const canMove=!!documentReady&&!layerBatchMode&&!query&&!tagFilter&&!root.isLayerLocked(selectedLayer.id)&&selectedLayer.baseColor!=='white';
+  const canMove=!!documentReady&&!layerBatchMode&&!query&&!tagFilter&&!root.isLayerPositionLocked(selectedLayer.id)&&selectedLayer.baseColor!=='white';
   for(const direction of [-1,1] as const){
     const id=direction===1?'layerBatchUp':'layerBatchDown';
     const selected=rows.filter(layer=>layerBatchIds.has(layer.id));
-    const movable=selected.length>0&&selected.every(layer=>!root.isLayerLocked(layer.id)&&layer.baseColor!=='white');
+    const movable=selected.length>0&&selected.every(layer=>!root.isLayerPositionLocked(layer.id)&&layer.baseColor!=='white');
     const hasRoom=rows.some((layer,index)=>{
       const adjacent=rows[index-direction];
       return layerBatchIds.has(layer.id)&&adjacent&&!layerBatchIds.has(adjacent.id)&&adjacent.baseColor!=='white'&&sameParent(layer.id,adjacent.id);
@@ -519,7 +523,7 @@ const renderLayers=()=>{
         row.dataset.colorTag=layer.colorTag;
         row.setAttribute('aria-label',(row.getAttribute('aria-label')??layer.name)+'、'+layerTagNames[layer.colorTag]+'タグ');
       }
-      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
+      state.className='layer-state';state.textContent=[batchSelected?'操作対象':'',selected?'描画先':'',effectiveLocked?'ロック中':layer.positionLocked?'位置ロック中':'',effectiveVisible?'':'非表示'].filter(Boolean).join('・');
       row.append(name,state);
       row.onclick=event=>{
         if(batchRow){
@@ -537,7 +541,7 @@ const renderLayers=()=>{
       entry.className='layer-entry';
       if(id==='layerPageList'&&groups.length)entry.style.marginInlineStart=Math.min(groups.length,8)*10+'px';
       if(id==='layerPageList'&&documentReady&&!layerBatchMode&&!query&&!tagFilter&&layer.baseColor!=='white'){
-        row.draggable=!effectiveLocked;
+        row.draggable=!root.isLayerPositionLocked(layer.id);
         row.ondragstart=event=>{
           if(!event.dataTransfer)return;
           draggedLayer={document:controller.document,id:layer.id};
@@ -647,6 +651,10 @@ byId<HTMLButtonElement>('layerBatchToggle').onclick=()=>{
   layerBatchIds.clear();
   layerBatchAnchor=null;
   renderLayers();
+};
+byId<HTMLButtonElement>('layerPositionLock').onclick=()=>{
+  const layer=controller.selectedLayer;
+  changeLayer(layer.positionLocked?'位置ロックを解除しました。':'レイヤーの位置をロックしました。',tx=>tx.setLayerPositionLocked(layer.id,!layer.positionLocked));
 };
 byId<HTMLButtonElement>('duplicateLayer').onclick=()=>{void createLayerFromPixels('duplicate',new Set([controller.selectedLayerId]));};
 byId<HTMLButtonElement>('flattenLayerCopy').onclick=()=>{void createLayerFromPixels('copy',visibleLayerIds());};

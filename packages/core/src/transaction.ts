@@ -129,7 +129,7 @@ export class DocumentTransaction{
     const groups=root.layerGroups;
     const target=destination===null?null:groups.find(group=>group.id===destination);
     if(destination!==null&&!target)throw new Error('移動先のグループが見つかりません。');
-    if(members.some(id=>root.getLayer(id).baseColor==='white'||root.isLayerLocked(id)))throw new Error('白背景やロック中のレイヤーは移動できません。');
+    if(members.some(id=>root.getLayer(id).baseColor==='white'||root.isLayerPositionLocked(id)))throw new Error('白背景や位置をロックしたレイヤーは移動できません。');
     const targetRemaining=target?.members.filter(id=>!ids.has(id));
     if(target&&(!targetRemaining?.length||(sourceGroup&&target.members.every(id=>ids.has(id)))))throw new Error('移動するグループの内部は移動先にできません。');
     const targetPath=target?root.groupsForLayer(target.members[0]!):[];
@@ -159,7 +159,7 @@ export class DocumentTransaction{
     if(direction!==1&&direction!==-1)throw new Error('invalid layer move direction');
     const root=this.rootValue,group=root.layerGroups.find(candidate=>candidate.id===id);
     if(!group)return false;
-    if(group.members.some(member=>root.isLayerLocked(member)))throw new Error('ロック中のグループは移動できません。');
+    if(group.members.some(member=>root.isLayerPositionLocked(member)))throw new Error('位置をロックしたレイヤーを含むグループは移動できません。');
     const order=[...root.rootLayerIds],ids=new Set(group.members);
     const first=order.findIndex(member=>ids.has(member)),last=first+ids.size-1;
     const adjacent=order[direction===1?last+1:first-1];
@@ -196,7 +196,7 @@ export class DocumentTransaction{
     if(fromIndex<0)throw new Error('missing layer');
     if(!Number.isInteger(toIndex)||toIndex<0||toIndex>=order.length||toIndex===fromIndex)return false;
     const affected=order.slice(Math.min(fromIndex,toIndex),Math.max(fromIndex,toIndex)+1);
-    if(this.rootValue.isLayerLocked(id)||affected.some(layerId=>this.rootValue.getLayer(layerId).baseColor==='white'||!this.canReorderRasterLayers(id,layerId)))return false;
+    if(this.rootValue.isLayerPositionLocked(id)||affected.some(layerId=>this.rootValue.getLayer(layerId).baseColor==='white'||!this.canReorderRasterLayers(id,layerId)))return false;
     order.splice(fromIndex,1);
     order.splice(toIndex,0,id);
     this.rootOrderValue=order;
@@ -211,7 +211,7 @@ export class DocumentTransaction{
     if(!ids.size)return false;
     for(const id of ids){
       const layer=this.rootValue.getLayer(id);
-      if(this.rootValue.isLayerLocked(id)||layer.baseColor==='white')throw new Error('ロック中のレイヤーまたは白背景はまとめて移動できません。');
+      if(this.rootValue.isLayerPositionLocked(id)||layer.baseColor==='white')throw new Error('ロック中のレイヤーまたは白背景はまとめて移動できません。');
     }
     const original=new Map(order.map((id,index)=>[id,index]));
     for(let index=direction===1?order.length-2:1;index>=0&&index<order.length;index-=direction){
@@ -278,6 +278,11 @@ export class DocumentTransaction{
   renameLayer(id:LayerId,name:string){return this.meta(id,{name:name.trim()});}
   setLayerVisibility(id:LayerId,visible:boolean){return this.meta(id,{visible});}
   setLayerLocked(id:LayerId,locked:boolean){return this.meta(id,{locked});}
+  setLayerPositionLocked(id:LayerId,positionLocked:boolean){
+    const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
+    if((layer.positionLocked??false)===positionLocked)return false;
+    return this.meta(id,{positionLocked});
+  }
   setLayerColorTag(id:LayerId,colorTag:LayerNode['colorTag']){
     this.open();
     const tag=parseLayerColorTag(colorTag),layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
@@ -294,7 +299,7 @@ export class DocumentTransaction{
   private open(){if(this.closed)throw new Error('transaction closed');if(this.failed)throw new Error('transaction failed');}
   private editableRaster(id:LayerId){const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);if(layer.kind!=='raster')throw new Error('drawing target is not raster');if(layer.locked||this.rootValue.groupsForLayer(id).some(group=>group.locked))throw new Error('drawing target is locked');return layer;}
   private hasChanges(){return this.slotsValue.length>0&&((this.updatesValue.size>0)||[...this.workingValue.values()].some(w=>w.changedTileCount>0)||this.slotsValue.some(x=>x.type==='semantic'||x.type==='structure'||x.type==='reorder'||x.type==='groups'||x.type==='delete'||x.type==='dimensions'||x.type==='document-info'));}
-  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'>>){
+  private meta(id:LayerId,patch:Partial<Pick<LayerNode,'name'|'visible'|'locked'|'opacity'|'colorTag'|'positionLocked'>>){
     this.open();
     const layer=this.updatesValue.get(id)??this.rootValue.getLayer(id);
     if(patch.name!==undefined&&(!patch.name||patch.name.length>4096))throw new Error('invalid layer name');

@@ -17,6 +17,7 @@ export type LayerNode=Readonly<{
   /** Logical opaque-white base. Its raster tiles are intentionally absent until editing requires them. */
   baseColor?:'white';
   colorTag?:LayerColorTag|null;
+  positionLocked?:boolean;
 }>;
 export type DocumentInfo=Readonly<{name:string;author:string;description:string;dpi:number|null}>;
 export type DocumentMetadata=Readonly<{createdAt:number;modifiedAt:number;layerGroups?:readonly LayerGroup[];author?:string;description?:string;dpi?:number}>;
@@ -34,6 +35,7 @@ export class DocumentRoot{
   get layerGroups(){return this.metadata.layerGroups??EMPTY_LAYER_GROUPS;}
   groupsForLayer(id:LayerId){return groupsForLayer(this.layerGroups,id);}
   isLayerVisible(id:LayerId){return this.getLayer(id).visible&&this.groupsForLayer(id).every(group=>group.visible);}
+  isLayerPositionLocked(id:LayerId){return this.isLayerLocked(id)||!!this.getLayer(id).positionLocked;}
   isLayerLocked(id:LayerId){return this.getLayer(id).locked||this.groupsForLayer(id).some(group=>group.locked);}
   withLayerGroups(groups:readonly LayerGroup[]){
     const layerGroups=validateLayerGroups(groups,this.rootLayerIds);
