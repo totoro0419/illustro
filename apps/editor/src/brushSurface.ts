@@ -51,7 +51,7 @@ export class BrushSurface{
   private lastFrameAt=0;private viewNotificationPending=false;private checkpointMetrics={captures:0,tiles:0,batches:0,bytes:0,lastMs:0};private view:CanvasView|null=null;private resizeObserver:ResizeObserver|null=null;private navigation:CanvasNavigation|null=null;
   private pointerRoles:PointerRoleSettings={pen:'draw',mouse:'draw'};
   setPointerRoles(roles:PointerRoleSettings){this.pointerRoles={...roles};}
-  private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'='composite';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private foreground:readonly [number,number,number]=[.12,.15,.2];
+  private eyedropper=false;private eyedropperPointer:number|null=null;private sampleSource:'composite'|'layer'='composite';private pendingSample:{point:Point;phase:'preview'|'commit'}|null=null;private sampleRunning=false;private sampleEpoch=0;private colorOpacity=1;private foreground:readonly [number,number,number]=[.12,.15,.2];
   private densityMedia:MediaQueryList|null=null;private spacePressed=false;private wrapOrigin:Point|null=null;private activeStrokeId:number|null=null;private strokePointerType='';
   // Navigation transforms the published canvas, not its fixed input viewport.
   private get inputViewport(){return this.canvas.closest<HTMLElement>('.surface')??this.canvas;}
@@ -520,7 +520,11 @@ export class BrushSurface{
       this.updateGuideOverlay();
       this.renderer?.setSeamlessPreview(this.view.seamless);
       const context={...(layer.alphaLocked?{alphaLocked:true}:{}),...(this.pressureCalibrationMidpoint===0.5?{}:{deviceCurve:[[0,0],[0.5,this.pressureCalibrationMidpoint],[1,1]] as const}),...(preset.stabilization.scope==='common'?{commonStabilization:{constant:this.commonStabilization,fast:preset.stabilization.fast,speedMode:preset.stabilization.speedMode,post:preset.stabilization.post}}:{})};
-      this.activeStrokeId=this.session.begin(preset,0,context,this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.strokeLast={x:s.x,y:s.y};this.session.predictions([]);this.pointer=e.pointerId;this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
+      // Color opacity applies to this stroke, not to the stored brush preset.
+      // The eraser keeps its own separately configurable opacity.
+      const strokePreset=preset.blend==='erase'||this.colorOpacity===1?preset:
+        {...preset,opacity:preset.opacity*this.colorOpacity};
+      this.activeStrokeId=this.session.begin(strokePreset,0,context,this.target.surfaceId);this.pendingStrokeIds.set(this.reservation!,this.activeStrokeId);if(attempt){attempt.acceptedAt=performance.now();attempt.id=this.activeStrokeId;}this.handoffAccepted++;const s=this.sample(e);this.session.accept(s);this.strokeLast={x:s.x,y:s.y};this.session.predictions([]);this.pointer=e.pointerId;this.strokePointerType=e.pointerType;this.inputViewport.setPointerCapture(e.pointerId);this.onStateChanged();}catch{this.target=null;this.status('このレイヤーには描画できません。');void this.cancelStroke();}};
   private move=(e:PointerEvent)=>{
     if(this.layerPickHold?.pointer===e.pointerId){
       const p=this.pointerLocation(e),start=this.layerPickHold.position;
@@ -896,7 +900,11 @@ export class BrushSurface{
       for(let y=minY;y<=endY;y++)for(let x=minX;x<=endX;x++)keys.add(x+','+y);}
     return [...keys];
   }
-  setForegroundColor(color:readonly [number,number,number]){if(!color.every(x=>Number.isFinite(x)&&x>=0&&x<=1))return;this.foreground=[...color] as [number,number,number];if(this.preset?.blend!=='erase'&&this.preset)this.preset.color=[...this.foreground];}
+  setForegroundColor(color:readonly [number,number,number],opacity=1){
+    if(!color.every(x=>Number.isFinite(x)&&x>=0&&x<=1)||!Number.isFinite(opacity)||opacity<0||opacity>1)return;
+    this.foreground=[...color] as [number,number,number];this.colorOpacity=opacity;
+    if(this.preset?.blend!=='erase'&&this.preset)this.preset.color=[...this.foreground];
+  }
   get samplingColor(){return this.eyedropperPointer!==null||this.commitSamplePending;}
   setEyedropper(enabled:boolean,source:'composite'|'layer'='composite'){if(!enabled&&this.eyedropperPointer!==null){this.eyedropperPointer=null;this.pendingSample=null;this.sampleEpoch++;this.onSample(null,'cancel',null);}this.eyedropper=enabled;this.sampleSource=source;}
   private commitSamplePending=false;
