@@ -344,7 +344,7 @@ function visibleLayerIds(){
   return new Set(root.rootLayerIds.filter(id=>root.isLayerVisible(id)&&!root.getLayer(id).implicitRaster&&root.getLayer(id).opacity>0));
 }
 
-type MaskEditMode='pixels'|'path';
+type MaskEditMode='pixels'|'path'|'points';
 let historyBrush:HistoryBrushSession|null=null;
 let maskEditing:{drawing:BrushSurface;artwork:CoreDocument;id:LayerId;mode:MaskEditMode;reveal:boolean}|null=null;
 let thumbnailState:{mask:LayerMask;width:number;height:number}|null=null;
@@ -373,7 +373,7 @@ function updateVectorMaskControls(){
   const layer=controller.selectedLayer,mask=layer.vectorMask,root=controller.document.root;
   const disabled=!documentReady||layer.implicitRaster||layer.baseColor==='white'||root.isLayerContentLocked(layer.id);
   if(maskEditing&&(disabled||maskEditing.id!==layer.id||maskEditing.artwork!==controller.document||
-    maskEditing.drawing!==surface||(maskEditing.mode==='pixels'&&mask?.shape!=='pixels')))stopMaskEditing();
+    maskEditing.drawing!==surface||(maskEditing.mode==='pixels'&&mask?.shape!=='pixels')||(maskEditing.mode==='points'&&mask?.shape!=='path')))stopMaskEditing();
   if(maskInspection){
     if(!mask||maskInspection.id!==layer.id||maskInspection.artwork!==controller.document||maskInspection.drawing!==surface){
       stopMaskInspection();
@@ -388,6 +388,7 @@ function updateVectorMaskControls(){
   byId<HTMLButtonElement>('vectorMaskFromSelection').disabled=disabled||!surface?.selectedRectangle;
   byId<HTMLButtonElement>('pixelMaskAdd').disabled=disabled;
   byId<HTMLButtonElement>('maskPathEdit').disabled=disabled;
+  byId<HTMLButtonElement>('maskPointEdit').disabled=disabled||mask?.shape!=='path';
   byId('pixelMaskAdd').textContent=mask?.shape==='pixels'?'マスクを塗る':'塗って隠すマスクを追加';
   for(const id of ['vectorMaskEnabled','maskLinked','vectorMaskInverted','vectorMaskDensity','vectorMaskRemove','vectorMaskApply']){
     (byId(id) as HTMLInputElement|HTMLButtonElement).disabled=disabled||!mask;
@@ -411,7 +412,7 @@ function updateVectorMaskControls(){
   byId('maskEditingBar').hidden=!maskEditing;
   if(maskEditing){
     const pixels=maskEditing.mode==='pixels',reveal=maskEditing.reveal;
-    byId('maskEditingTarget').textContent='編集中 '+layer.name+' のマスク';
+    byId('maskEditingTarget').textContent='編集中 '+layer.name+' のマスク'+(maskEditing.mode==='points'?'（点の移動）':'');
     byId('maskPaintHide').hidden=!pixels;
     byId('maskPaintReveal').hidden=!pixels;
     byId('maskPaintHide').setAttribute('aria-pressed',String(!reveal));
@@ -473,6 +474,49 @@ function startMaskEditing(mode:MaskEditMode,reveal=false){
   shellUi.setLayerPage(false);
   updateVectorMaskControls();
   byId('status').textContent=mode==='path'?'残したい範囲を一筆で囲んでください。':'マスクを塗れます。黒で隠し、白で表示を戻します。';
+}
+
+function startMaskPointEditing(){
+  const drawing=surface,artwork=controller.document,layer=controller.selectedLayer;
+  const mask=layer.vectorMask;
+  if(!drawing||drawing.busy||geometryBusy||historyPending||mask?.shape!=='path'||
+    artwork.root.isLayerContentLocked(layer.id))return;
+  if(!artwork.root.isLayerVisible(layer.id)){
+    byId('status').textContent='レイヤーを表示すると輪郭の点を編集できます。';
+    return;
+  }
+  stopMaskEditing();stopHistoryBrush();stopLayerCompComparison();
+  cancelLayerPick?.();drawing.setSelectionMode(false);
+  if(drawing.inspectedLayer)drawing.setSoloLayer(null);
+  stopMaskInspection();
+  maskEditing={drawing,artwork,id:layer.id,mode:'points',reveal:false};
+  const installHandles=()=>{
+    const current=artwork.root.getLayer(layer.id).vectorMask;
+    if(current?.shape!=='path'||maskEditing?.drawing!==drawing||maskEditing.id!==layer.id)return;
+    drawing.setCanvasEditGesture({
+      path:false,width:2,color:'#43bfea',complete:()=>{},
+      pointEdit:{
+        points:current.points,
+        commit:(index,point)=>{
+          if(surface!==drawing||controller.document!==artwork||controller.selectedLayerId!==layer.id||
+            artwork.root.isLayerContentLocked(layer.id))return;
+          const before=artwork.root.getLayer(layer.id).vectorMask;
+          if(before?.shape!=='path'||index<0||index>=before.points.length)return;
+          const previous=before.points[index]!;
+          const x=Math.max(0,Math.min(artwork.root.width,point.x));
+          const y=Math.max(0,Math.min(artwork.root.height,point.y));
+          if(previous.x===x&&previous.y===y)return;
+          const points=before.points.map((p,i)=>i===index?{x,y}:p);
+          changeLayer('マスクの輪郭点を移動しました。',tx=>tx.setVectorLayerMask(layer.id,{...before,points}));
+          installHandles();
+        },
+      },
+    });
+  };
+  installHandles();
+  shellUi.setLayerPage(false);
+  updateVectorMaskControls();
+  byId('status').textContent='白い点をドラッグして輪郭を調整できます。変更は一回ずつ元に戻せます。';
 }
 
 async function applyVectorMask(){
@@ -1129,9 +1173,11 @@ byId<HTMLButtonElement>('vectorMaskFromSelection').onclick=()=>{
 };
 byId<HTMLButtonElement>('pixelMaskAdd').onclick=()=>startMaskEditing('pixels');
 byId<HTMLButtonElement>('maskPathEdit').onclick=()=>startMaskEditing('path');
+byId<HTMLButtonElement>('maskPointEdit').onclick=startMaskPointEditing;
 byId<HTMLButtonElement>('maskThumbnail').onclick=()=>{
   const mask=controller.selectedLayer.vectorMask;
   if(mask?.shape==='pixels')startMaskEditing('pixels');
+  else if(mask?.shape==='path')startMaskPointEditing();
   else if(mask)startMaskEditing('path');
 };
 byId<HTMLButtonElement>('maskInspectOnly').onclick=()=>inspectSelectedMask('grayscale');
