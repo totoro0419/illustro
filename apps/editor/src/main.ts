@@ -1348,7 +1348,7 @@ function queueLatestCommit(){
 }
 function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentController=controller){const drawing=new BrushSurface(byId('canvas'),documentController,text=>{inputFreezeTrace?.mark('status-write',{value:text});byId('status').textContent=text;},()=>{inputFreezeTrace?.mark('committed-ui:start');queueLatestCommit();renderLayers();updateHistoryButtons();updateQa();inputFreezeTrace?.mark('committed-ui:end');},reason=>{if(reason!=='view'&&reason!=='view-command')updatePersistenceDisplay();updateViewControls();redrawCrop();if(reason==='view'||reason==='view-command')scheduleViewSave(drawing);if(reason==='view'){scheduleQaRefresh();return;}updateHistoryButtons();updateQa();},backendOverride,(rgba,phase,point)=>{
  if(phase==='cancel'){byId('colorSampleLoupe').hidden=true;foreground.cancel();if(releasedColorHold)restoreDrawingTool();return;}
- if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';if(!holdingColorKey)restoreDrawingTool();}return;}
+ if(!rgba||rgba.length<4||rgba[3]===0){if(phase==='commit'){foreground.cancel();byId('status').textContent='透明な場所からは色を取得できません。';if(!holdingColorKey&&selectedTool==='eyedropper')restoreDrawingTool();}return;}
  const alpha=(rgba[3]??0)/255,fromComposite=(byId<HTMLSelectElement>('colorSampleSource').value==='composite');
  const channels=rgba.slice(0,3).map(v=>Math.min(1,Math.max(0,v/255)));
  // Composite surfaces store premultiplied alpha; restore the displayed RGB at translucent edges.
@@ -1363,7 +1363,7 @@ function makeSurface(backendOverride:'webgl2'|'webgpu'|null=null,documentControl
    loupe.style.top=Math.max(8,Math.min(innerHeight-110,box.top+screen.y-116))+'px';
    loupe.hidden=false;}
  }
- else{byId('colorSampleLoupe').hidden=true;foreground.begin();foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';if(!holdingColorKey)restoreDrawingTool();}
+ else{byId('colorSampleLoupe').hidden=true;foreground.begin();foreground.commit(color);byId('status').textContent='キャンバスから '+hex(foreground.current)+' を取得しました。';if(!holdingColorKey&&selectedTool==='eyedropper')restoreDrawingTool();}
  });
  drawing.eraserPreset=()=>{
   const active=drawing.preset;if(active?.blend==='erase')return active;
