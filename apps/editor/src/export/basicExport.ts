@@ -14,9 +14,9 @@ export type ImageExportResult=Readonly<{
   encodeMs:number;totalMs:number;estimatedPeakBytes:number;
 }>;
 
-export function captureExport(document:CoreDocument,soloLayerId?:LayerId):FrozenExport {
+export function captureExport(document:CoreDocument,soloLayerId?:LayerId,revision=document.head):FrozenExport {
   // All logical references are captured before the first asynchronous operation.
-  const revision=document.head,root=document.revision(revision).root;
+  const root=document.revision(revision).root;
   if(!Number.isSafeInteger(root.width)||!Number.isSafeInteger(root.height)||root.width<1||root.height<1||root.width>8192||root.height>8192)throw new Error('作品の大きさが正しくありません。');
   if(root.colorProfileId!=='srgb')throw new Error('この作品の色設定はM06の書き出しに対応していません。');
   if(soloLayerId&&!root.hasLayer(soloLayerId))throw new Error('単独表示のレイヤーが見つかりません。');
@@ -32,7 +32,7 @@ export function captureExport(document:CoreDocument,soloLayerId?:LayerId):Frozen
   const visibleOperations=operations.slice(geometryIndex+1);
   const seededLayers=new Set(visibleOperations.filter(op=>op.kind==='layer.snapshot').flatMap(op=>op.targetEntityIds));
   const basePixels=root.rootLayerIds.filter(id=>geometryIndex>=0||seededLayers.has(id)).map(id=>({
-    surfaceId:root.getLayer(id).surface.descriptor.surfaceId,pixels:document.readBaseRasterPixels(id),
+    surfaceId:root.getLayer(id).surface.descriptor.surfaceId,pixels:document.readBaseRasterPixels(id,revision),
   }));
   for(const op of visibleOperations){
     const target=op.targetEntityIds[0];

@@ -31,7 +31,7 @@ import {captureExport,compositeLayer,exportImage,exportFileName,type ImageFormat
 import {PersistenceCoordinator,type Candidate,type PersistenceState} from './persistence/coordinator';
 import type {PortableOpenResult} from './persistence/portable';
 import {storeCreationTemplate,resolveDocumentDimensions} from './documentSetup';
-import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type SemanticOperation,type LayerId} from '@illustro/core';
+import {CoreDocument,LAYER_COLOR_TAGS,parseLayerColorTag,type LayerColorTag,type LayerComp,type LayerGroup,type RevisionId,type SemanticOperation,type LayerId} from '@illustro/core';
 
 const perfMode=new URLSearchParams(location.search).has('perf')||location.pathname.includes('/qa/perf-canvas/')||location.pathname.includes('/qa/perf-stroke-handoff/')||location.pathname.includes('/qa/perf-undo/')||location.pathname.includes('/qa/perf-mobile4000/')||location.pathname.includes('/qa/perf-thin-stroke4000/');
 const qaPath=location.pathname.replace(/\/+$/,'');
@@ -1218,6 +1218,116 @@ cropOverlay.addEventListener('pointermove',e=>{
  dimensionInput('geometryWidth').value=String(x1-x0);dimensionInput('geometryHeight').value=String(y1-y0);redrawCrop();
 });
 for(const type of ['pointerup','pointercancel','lostpointercapture'])cropOverlay.addEventListener(type,()=>draggingCrop=null);
+async function restoreArtworkHistory(artwork:CoreDocument,id:RevisionId){
+  const drawing=surface;
+  if(!drawing?.canChangeGeometry||geometryBusy||historyPending||artwork!==controller.document)return;
+  geometryBusy=true;
+  drawing.setInputBarrier(true);
+  const oldOrder=artwork.root.rootLayerIds;
+  try{
+    const tx=artwork.begin('以前の状態を復元');
+    if(!tx.restoreRevision(id)){tx.cancel();return;}
+    controller.lastPersistenceHandoff=tx.commit().persistence;
+    controller.restoreEditHistory(oldOrder);
+    queueLatestCommit();
+    persistence.noteNavigation(artwork);
+    checkpointNeedsFullSeed=true;
+    await reloadGeometryProjection();
+    byId('status').textContent='以前の状態を復元しました。元に戻す操作で直前の状態へ戻れます。';
+  }catch(error){
+    byId('status').textContent='履歴の処理中にエラーが発生しました。'+(error instanceof Error?error.message:'');
+  }finally{
+    geometryBusy=false;
+    surface?.setInputBarrier(historyPending);
+    updateHistoryButtons();updateQa();
+  }
+}
+
+function openArtworkHistory(){
+  if(!documentReady)return;
+  const artwork=controller.document,head=artwork.head;
+  const entries=[...artwork.historyEntries()].sort((a,b)=>b.committedAt-a.committedAt);
+  const dialog=document.createElement('dialog'),form=document.createElement('form');
+  const title=document.createElement('h2'),status=document.createElement('output');
+  const label=document.createElement('label'),list=document.createElement('select');
+  const more=document.createElement('button'),compare=document.createElement('button');
+  const restore=document.createElement('button'),close=document.createElement('button');
+  const previews=document.createElement('div');
+  const urls:string[]=[];
+  let shown=0,request=0;
+  function clearPreviews(){
+    for(const url of urls.splice(0))URL.revokeObjectURL(url);
+    previews.replaceChildren();
+  }
+  function appendEntries(){
+    const page=entries.slice(shown,shown+200);
+    for(const entry of page){
+      const label=entry.label==='Add raster layer'?'レイヤーを追加':entry.label==='Brush stroke'?'描画':entry.label;
+      const time=new Date(entry.committedAt).toLocaleString('ja-JP');
+      list.add(new Option((entry.id===head?'現在 · ':'')+label+' · '+time,entry.id));
+    }
+    shown+=page.length;
+    more.hidden=shown>=entries.length;
+  }
+  for(const [button,text] of [[more,'さらに表示'],[compare,'現在と比較'],[restore,'この時点を復元'],[close,'閉じる']] as const){
+    button.type='button';button.textContent=text;
+  }
+  title.textContent='作品の履歴';
+  label.textContent='比較する時点 ';
+  label.append(list);
+  status.setAttribute('aria-live','polite');
+  previews.className='artwork-history-previews';
+  appendEntries();
+  list.value=head;
+  const update=()=>{
+    request++;
+    clearPreviews();
+    restore.disabled=!list.value||list.value===head;
+    compare.disabled=restore.disabled;
+    status.textContent='';
+  };
+  list.onchange=update;
+  more.onclick=appendEntries;
+  close.onclick=()=>dialog.close();
+  restore.onclick=()=>{
+    const id=list.value as RevisionId;
+    if(!id||id===head||!window.confirm('この時点を復元しますか？ 直前の状態も履歴に残ります。'))return;
+    dialog.close();
+    void restoreArtworkHistory(artwork,id);
+  };
+  compare.onclick=async()=>{
+    const id=list.value as RevisionId,token=++request;
+    compare.disabled=true;
+    clearPreviews();
+    status.textContent='画像を用意しています。';
+    try{
+      for(const [revision,caption] of [[head,'現在'],[id,'選んだ時点']] as const){
+        if(!dialog.open||request!==token)return;
+        const result=await exportImage(captureExport(artwork,undefined,revision),'png');
+        if(!dialog.open||request!==token)return;
+        const url=URL.createObjectURL(result.blob);urls.push(url);
+        const figure=document.createElement('figure'),image=new Image(),description=document.createElement('figcaption');
+        image.src=url;image.alt=caption;description.textContent=caption;
+        figure.append(image,description);previews.append(figure);
+      }
+      status.textContent='';
+    }catch(error){
+      if(request===token&&dialog.open)status.textContent='比較画像を作れませんでした。'+(error instanceof Error?error.message:'');
+    }finally{
+      if(request===token&&dialog.open)compare.disabled=false;
+    }
+  };
+  form.append(title,label,more,compare,restore,close,status,previews);
+  dialog.className='export-dialog artwork-history-dialog';
+  dialog.setAttribute('aria-label','作品の履歴');
+  dialog.append(form);
+  document.body.append(dialog);
+  dialog.addEventListener('close',()=>{request++;clearPreviews();dialog.remove();},{once:true});
+  update();
+  dialog.showModal();
+}
+byId<HTMLButtonElement>('openArtworkHistory').onclick=openArtworkHistory;
+
 async function reloadGeometryProjection(){
  const oldPreset=surface?.brushId,previousView=surface?.viewState;surface?.destroy();surface=makeSurface();
  await initializeCurrentSurface(true);surface?.setInputBarrier(historyPending);
@@ -1548,7 +1658,7 @@ async function applyHistoryBatch(directions:readonly HistoryDirection[]){
     for(const direction of directions){const change=admittedHistoryChanges.shift();if(!change||change.direction!==direction)throw new Error('履歴操作の順序が一致しません。');if(change.changed)changes.push(change);}
     if(!changes.length){byId('status').textContent='これ以上その方向へ履歴を移動できません。';return;}
     updateQa();
-    if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'||op.kind==='layer.delete'||op.kind==='layer.snapshot')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
+    if(changes.some(change=>change.operations.some(op=>op.kind==='document.crop'||op.kind==='document.canvas-resize'||op.kind==='document.image-resize'||op.kind==='layer.delete'||op.kind==='layer.snapshot'||op.kind==='document.history-restore')))await reloadGeometryProjection();else await surface!.syncHistoryBatch(changes);
     undoCount+=changes.filter(c=>c.direction==='undo').length;redoCount+=changes.filter(c=>c.direction==='redo').length;
     renderLayers();persistence.noteNavigation(controller.document);noteCheckpointOperations(changes.flatMap(c=>c.operations));
     const last=changes.at(-1)!;byId('status').textContent=last.direction==='undo'?'前の状態に戻しました。':'取り消した操作をやり直しました。';

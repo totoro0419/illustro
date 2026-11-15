@@ -1,4 +1,4 @@
-import type {BlockId,LayerId,ResourceId} from './ids';
+import type {BlockId,LayerId,ResourceId,RevisionId} from './ids';
 import {finalizeOperation,type Revision,type SemanticOperation,type SemanticOperationDraft} from './history';
 import type {DocumentRoot,LayerNode} from './model';
 import type {PersistenceHandoff} from './recovery';
@@ -15,7 +15,7 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
   const byLayer=new Map<LayerId,Map<TileKey,BlockId>>();all.forEach((m,i)=>{const entry=prepared.entries[i];if(!entry)throw new Error('block mismatch');let changes=byLayer.get(m.layerId);if(!changes){changes=new Map();byLayer.set(m.layerId,changes);}changes.set(m.key,entry.id);});
   const updates=new Map<LayerId,LayerNode>(v.updates);for(const [layerId,blocks] of byLayer){const layer=updates.get(layerId)??v.root.getLayer(layerId);updates.set(layerId,Object.freeze({...layer,surface:layer.surface.withBlocks(blocks)}));}
   const operations:SemanticOperation[]=[];
-  let documentInfo:DocumentRoot['info']|undefined;
+  let documentInfo:DocumentRoot['info']|undefined,restoreRevision:RevisionId|undefined;
   for(let ordinal=0;ordinal<v.slots.length;ordinal++){const slot=v.slots[ordinal];if(!slot)throw new Error('operation slot mismatch');
     if(slot.type==='working'){const working=v.working.get(slot.layerId);if(!working||!working.changedTileCount)throw new Error('empty raster delta');const footprint=working.mutations().map(m=>{const [tileX,tileY]=parseTileKey(m.key);return Object.freeze({layerId:slot.layerId,tileX,tileY,bounds:Object.freeze({x0:0,y0:0,x1:CANONICAL_TILE_SIZE,y1:CANONICAL_TILE_SIZE})});});
       const resultValueRefs=[...(byLayer.get(slot.layerId)?.values()??[])];const draft:SemanticOperationDraft=Object.freeze({kind:slot.initial?'layer.snapshot':'raster.strict-delta',schemaVersion:1,targetEntityIds:Object.freeze([slot.layerId]),parameters:Object.freeze({tileCount:working.changedTileCount}),algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze(resultValueRefs),dirtyFootprint:Object.freeze(footprint)});operations.push(finalizeOperation(v.id,ordinal,draft));
@@ -24,6 +24,17 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
       operations.push(finalizeOperation(v.id,ordinal,draft));
       if(slot.type==='document-info')documentInfo=slot.info;
     }else if(slot.type==='metadata'){const draft:SemanticOperationDraft=Object.freeze({kind:'layer.metadata',schemaVersion:2,targetEntityIds:Object.freeze([slot.layerId]),parameters:Object.freeze((()=>{const layer=updates.get(slot.layerId)??v.root.getLayer(slot.layerId);return {name:layer.name,visible:layer.visible,opacity:layer.opacity,locked:layer.locked,...(layer.clipSourceId!==undefined?{clipSourceId:layer.clipSourceId}:{}),...(layer.alphaLocked!==undefined?{alphaLocked:layer.alphaLocked}:{}),...(layer.positionLocked!==undefined?{positionLocked:layer.positionLocked}:{}),...(layer.colorTag!==undefined?{colorTag:layer.colorTag}:{})};})()),algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([])});operations.push(finalizeOperation(v.id,ordinal,draft));
+    }else if(slot.type==='restore-revision'){
+      if(v.slots.length!==1)throw new Error('History restore must be its own transaction');
+      restoreRevision=slot.revisionId;
+      const draft:SemanticOperationDraft=Object.freeze({
+        kind:'document.history-restore',schemaVersion:1,targetEntityIds:Object.freeze([]),
+        parameters:Object.freeze({revisionId:slot.revisionId}),
+        algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),
+        sourceRevisionIds:Object.freeze([slot.revisionId]),selectionSnapshotRefs:Object.freeze([]),
+        resultValueRefs:Object.freeze([]),dirtyFootprint:Object.freeze([]),
+      });
+      operations.push(finalizeOperation(v.id,ordinal,draft));
     }else if(slot.type==='delete'){
       const draft:SemanticOperationDraft=Object.freeze({
         kind:'layer.delete',schemaVersion:1,targetEntityIds:slot.ids,
@@ -53,6 +64,7 @@ export function commitTransaction(tx:DocumentTransaction):CommitReceipt{
     }else if(slot.type==='structure'){const draft:SemanticOperationDraft=Object.freeze({kind:'layer.add-raster',schemaVersion:1,targetEntityIds:Object.freeze([slot.layerId]),parameters:Object.freeze({surfaceId:slot.surfaceId,insertIndex:slot.insertIndex,name:slot.name}),algorithmVersionRefs:Object.freeze([]),resourceRefs:Object.freeze([]),sourceRevisionIds:Object.freeze([v.base]),selectionSnapshotRefs:Object.freeze([]),resultValueRefs:Object.freeze([slot.surfaceId]),dirtyFootprint:Object.freeze([])});operations.push(finalizeOperation(v.id,ordinal,draft));
     }else{let layer=updates.get(slot.layerId)??v.root.getLayer(slot.layerId);layer=Object.freeze({...layer,surface:layer.surface.withMutations(slot.key,slot.dirtyTiles)});updates.set(slot.layerId,layer);operations.push(finalizeOperation(v.id,ordinal,slot.draft));}}
   let nextRoot=v.rootLayerIds?v.root.withLayerState(updates,v.rootLayerIds,v.deleted):v.root.withLayers(updates);
+  if(restoreRevision)nextRoot=v.doc.revision(restoreRevision).root;
   if(v.groups)nextRoot=nextRoot.withLayerGroups(v.groups);
   if(v.comps)nextRoot=nextRoot.withLayerComps(v.comps);
   if(v.dimensions)nextRoot=nextRoot.withDimensions(v.dimensions.width,v.dimensions.height);

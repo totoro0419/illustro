@@ -38,18 +38,29 @@ export class CoreDocument{
   begin(label:string){return new DocumentTransaction(this,label);}
   addRasterLayerAbove(referenceId:LayerId){const tx=this.begin('Add raster layer'),layerId=tx.addRasterLayerAbove(referenceId),receipt=tx.commit();return Object.freeze({layerId,receipt});}
   undo(){return this.historyValue.undo();}redo(){return this.historyValue.redo();}hasRevision(id:RevisionId){return this.historyValue.has(id);}revision(id:RevisionId){return this.historyValue.get(id);}
+  historyEntries(){
+    return this.historyValue.snapshot().revisions.map(({id,parentIds,command,committedAt})=>({id,parentIds,label:command?.label??'作品を作成',committedAt}));
+  }
   capturePersistenceSnapshot(revisionId:RevisionId=this.head):CorePersistenceSnapshotV1{return captureCoreSnapshot(this.historyValue.snapshot(),this.storeValue,revisionId);}
   persistenceBlockPayloads(snapshot:CorePersistenceSnapshotV1){return blockPayloadsForSnapshot(snapshot,this.storeValue);}
   captureRecoveryPacket(handoff:PersistenceHandoff):CoreRecoveryPacketV1{return captureCoreRecoveryPacket(this.historyValue.snapshot(),this.storeValue,handoff);}
   recoveryBlockPayloads(packet:CoreRecoveryPacketV1){const out=new Map<string,Uint8Array>();for(const block of packet.blocks)out.set(block.id,this.storeValue.readCopy(block.id as never));return out;}
   operationsTo(revisionId:RevisionId=this.head){
-    const commands:Command[]=[],visiting=new Set<RevisionId>();let current=this.historyValue.get(revisionId);
-    while(current.parentIds[0]){if(visiting.has(current.id))throw new Error('revision cycle');visiting.add(current.id);if(current.command)commands.push(current.command);current=this.historyValue.get(current.parentIds[0]);}
+    const commands:Command[]=[],visiting=new Set<RevisionId>();
+    let current=this.historyValue.get(revisionId);
+    while(current.parentIds[0]){
+      if(visiting.has(current.id))throw new Error('revision cycle');
+      visiting.add(current.id);
+      const command=current.command;
+      const restore=command?.operations.find(operation=>operation.kind==='document.history-restore');
+      if(command)commands.push(command);
+      current=this.historyValue.get(restore?.sourceRevisionIds[0]??current.parentIds[0]);
+    }
     commands.reverse();return Object.freeze(commands.flatMap(command=>command.operations));
   }
   /** Geometry checkpoints contain exact base raster blocks, independent of brush history replay. */
-  readBaseRasterPixels(layerId:LayerId){
-    const root=this.root,layer=root.getLayer(layerId);if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('unsupported encoding');
+  readBaseRasterPixels(layerId:LayerId,revisionId:RevisionId=this.head){
+    const root=this.revision(revisionId).root,layer=root.getLayer(layerId);if(layer.surface.descriptor.sampleEncoding!=='rgba.unorm8.v1')throw new Error('unsupported encoding');
     const out=new Uint8Array(root.width*root.height*4),T=CANONICAL_TILE_SIZE;if(layer.baseColor==='white')out.fill(255);
     for(const [key,value] of layer.surface.tiles.entries()){if(!value.baseBlockId)continue;const [tx,ty]=parseTileKey(key);
       if(tx<0||ty<0||tx*T>=root.width||ty*T>=root.height)continue;

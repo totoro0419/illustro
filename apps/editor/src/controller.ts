@@ -29,14 +29,18 @@ export class EditorController{
     const port=this.ports.document;if(!port)throw new Error('Document connection unavailable');const result=await port.commitStroke(target,record,additional);
     this.committedStrokeCount++;if(record.preset.blend==='erase')this.committedEraserStrokeCount++;this.committedByLayer.set(target.layerId,this.strokeCountForLayer(target.layerId)+1);this.lastCommit=result;this.lastPersistenceHandoff=result.persistence;return result;
   }
+  restoreEditHistory(previousOrder:readonly LayerId[]){
+    this.reconcileSelection(previousOrder);
+    this.rebuildStrokeCounters();
+  }
   undo():EditorHistoryChange{
     const from=this.document.currentRevision,oldRoot=this.document.root,operations=from.command?.operations??[];
-    const to=this.document.undo(),changed=to.id!==from.id;if(changed){this.reconcileSelection(oldRoot.rootLayerIds);this.adjustStrokeCounters('undo',operations);}
+    const to=this.document.undo(),changed=to.id!==from.id;if(changed){this.reconcileSelection(oldRoot.rootLayerIds);if(operations.some(op=>op.kind==='document.history-restore'))this.rebuildStrokeCounters();else this.adjustStrokeCounters('undo',operations);}
     return Object.freeze({direction:'undo',changed,fromRevision:from.id,toRevision:to.id,operations,selectedLayerId:this.selectedLayerIdValue});
   }
   redo():EditorHistoryChange{
     const from=this.document.currentRevision,to=this.document.redo(),changed=to.id!==from.id,operations=changed?(to.command?.operations??[]):[];
-    if(changed){this.reconcileSelection(this.document.root.rootLayerIds);this.adjustStrokeCounters('redo',operations);}
+    if(changed){this.reconcileSelection(this.document.root.rootLayerIds);if(operations.some(op=>op.kind==='document.history-restore'))this.rebuildStrokeCounters();else this.adjustStrokeCounters('redo',operations);}
     return Object.freeze({direction:'redo',changed,fromRevision:from.id,toRevision:to.id,operations,selectedLayerId:this.selectedLayerIdValue});
   }
   private rebuildStrokeCounters(){

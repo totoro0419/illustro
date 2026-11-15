@@ -10,7 +10,7 @@ import type {CanonicalTileStore,RasterBlockDescriptor} from './raster/store';
 
 export const CORE_PERSISTENCE_SCHEMA_VERSION=1 as const;
 const UUID_V4=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.comps','layer.delete','layer.snapshot','document.crop','document.canvas-resize','document.image-resize','document.info']);
+const KNOWN_OPERATION_KINDS=new Set(['brush.stroke','raster.strict-delta','layer.metadata','layer.add-raster','layer.reorder','layer.groups','layer.comps','layer.delete','layer.snapshot','document.crop','document.canvas-resize','document.image-resize','document.info','document.history-restore']);
 const SAMPLE_ENCODINGS=new Set<RasterSampleEncoding>(['rgba.unorm8.v1','rgba.unorm16.v1','rgba.float32.v1']);
 const MAX_DIMENSION=1_000_000,MAX_LAYERS=100_000,MAX_REVISIONS=100_000,MAX_TILES_PER_ROOT=2_000_000,MAX_OPERATIONS_PER_REVISION=100_000;
 
@@ -36,7 +36,7 @@ export function captureCoreSnapshot(history:RevisionHistoryState<DocumentRoot>,s
   const ordered:Revision<DocumentRoot>[]=[],visited=new Set<RevisionId>(),visiting=new Set<RevisionId>();
   const visit=(id:RevisionId)=>{if(visited.has(id))return;if(visiting.has(id))throw new Error('revision cycle');const revision=byId.get(id);if(!revision)throw new Error('snapshot parent missing');
     visiting.add(id);for(const parent of revision.parentIds)visit(parent);visiting.delete(id);visited.add(id);ordered.push(revision);};
-  visit(targetRevisionId);if(ordered.length>MAX_REVISIONS)throw new Error('too many retained revisions');
+  visit(targetRevisionId);for(const revision of history.revisions)visit(revision.id);if(ordered.length>MAX_REVISIONS)throw new Error('too many retained revisions');
   const blockIds=new Set<BlockId>();const revisions=ordered.map(revision=>serializeRevision(revision,blockIds));
   const blocks=Object.freeze([...blockIds].sort().map(id=>Object.freeze({id,descriptor:store.descriptor(id)})));
   return Object.freeze({schema:'illustro.core.snapshot' as const,schemaVersion:1 as const,snapshotRevisionId:targetRevisionId,revisions:Object.freeze(revisions),blocks});
@@ -239,7 +239,7 @@ export function captureCoreRecoveryPacket(history:RevisionHistoryState<DocumentR
     if(operation.kind==='document.crop'||operation.kind==='document.canvas-resize'||operation.kind==='document.image-resize'){
       geometry=true;continue;
     }
-    if(operation.kind==='document.info'||operation.kind==='layer.comps')continue;
+    if(operation.kind==='document.info'||operation.kind==='layer.comps'||operation.kind==='document.history-restore')continue;
     if(operation.kind==='layer.groups'||operation.kind==='layer.delete'){structural=true;continue;}
     if(operation.kind==='layer.reorder'){structural=true;continue;}
     const layerId=operation.targetEntityIds[0];if(!layerId)throw new Error('recovery operation target missing');const layer=revision.root.getLayer(layerId);
@@ -278,7 +278,10 @@ export function mergeCoreRecovery(baseValue:unknown,packetValues:readonly unknow
     const packet=parseRecoveryPacket(packetValue);const seq=BigInt(packet.handoff.commitSequence);if(epoch===null)epoch=packet.handoff.writerEpochId;else if(epoch!==packet.handoff.writerEpochId)throw new Error('mixed recovery writer epochs');
     if(seq!==lastSequence+1n)throw new Error('recovery packet sequence gap');lastSequence=seq;if(revisionMap.has(packet.revision.id))throw new Error('duplicate recovery revision');
     const parentId=packet.revision.parentIds[0];if(!parentId)throw new Error('recovery revision parent missing');const parent=revisionMap.get(parentId);if(!parent)throw new Error('recovery parent unavailable');
-    const root=applyRootDelta(parent.root,packet);const revision:Object=Object.freeze({...packet.revision,root});
+    const restore=packet.revision.command.operations.find(operation=>operation.kind==='document.history-restore');
+    const restored=restore&&revisionMap.get(restore.sourceRevisionIds[0]??'');
+    if(restore&&(!restored||packet.revision.command.operations.length!==1||restored.root.documentId!==parent.root.documentId))throw new Error('history restore source unavailable');
+    const root=restored?Object.freeze({...restored.root,modifiedAt:packet.modifiedAt}):applyRootDelta(parent.root,packet);const revision:Object=Object.freeze({...packet.revision,root});
     revisions.push(revision as PersistedRevision);revisionMap.set(packet.revision.id,revision as PersistedRevision);
     for(const block of packet.blocks){if(blockIds.has(block.id))continue;blockIds.add(block.id);blocks.push(block);}
     latest=packet.revision.id;
